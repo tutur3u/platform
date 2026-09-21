@@ -70,10 +70,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const double _floatingNavMinItemWidth = 52;
   static const double _compactBottomNavHeight = 54;
   static const Duration _exitConfirmationWindow = Duration(seconds: 2);
-  static const Duration _navSwitcherDuration = Duration(milliseconds: 320);
-  static const Duration _navSwitcherReverseDuration = Duration(
-    milliseconds: 220,
-  );
   static const MethodChannel _androidBackChannel = MethodChannel(
     'mobile/shell_back',
   );

@@ -214,7 +214,7 @@ void main() {
       await _pumpForTransitions(tester);
 
       final compactNavItems = tester
-          .widget<CustomNavigationBar>(find.byType(CustomNavigationBar))
+          .widget<MorphingNavigationBar>(find.byType(MorphingNavigationBar))
           .children
           .whereType<shad.NavigationItem>();
 
@@ -410,12 +410,7 @@ void main() {
       router.go(Routes.apps);
       await _pumpForTransitions(tester);
       final appsState = tester.state(find.byType(AppsHubPage));
-      final island = find
-          .ancestor(
-            of: find.byType(CustomNavigationBar),
-            matching: find.byType(AnimatedSize),
-          )
-          .first;
+      final island = find.byKey(const ValueKey('navigation-morph-bounds'));
       final initialWidth = tester.getSize(island).width;
       router.go(Routes.tasks);
       await tester.pump();

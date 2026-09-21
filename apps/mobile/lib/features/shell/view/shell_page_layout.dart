@@ -119,43 +119,35 @@ extension _ShellPageLayout on _ShellPageState {
     final theme = shad.Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 240),
-      curve: Curves.easeInOutCubic,
-      alignment: Alignment.bottomCenter,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.background,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
+            blurRadius: 40,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+            spreadRadius: -2,
+          ),
+        ],
+      ),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: theme.colorScheme.background,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
-              blurRadius: 40,
-              offset: const Offset(0, 12),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-              spreadRadius: -2,
-            ),
-          ],
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.08),
-            ),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: child,
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.08),
           ),
         ),
+        child: ClipRRect(borderRadius: BorderRadius.circular(24), child: child),
       ),
     );
   }
@@ -283,60 +275,15 @@ extension _ShellPageLayout on _ShellPageState {
         (!widget.matchedLocation.startsWith(Routes.assistant) ||
             !assistantChrome.isFullscreen) &&
         !keyboardVisible;
-    final navVariantKey = ValueKey<String>(
-      useInjectedMiniNav
-          ? 'mini-nav-${injectedMiniNavRegistration.ownerId}'
-          : activeModule != null
-          ? 'mini-nav-${activeModule.id}'
-          : 'global-nav',
+    final navContent = MorphingNavigationBar(
+      selectedKey: selectedKey,
+      onSelected: (key) => useInjectedMiniNav
+          ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration)
+          : isMiniAppRoute
+          ? _onMiniAppItemTapped(key, context, activeModule, activeMiniNavItems)
+          : _onItemTapped(_ShellPageState._indexForKey(key), context),
+      children: isMiniAppRoute ? miniItems : globalItems,
     );
-    final injectedTransitionSignature = injectedMiniNavRegistration == null
-        ? null
-        : _injectedMiniNavTransitionSignature(injectedMiniNavRegistration);
-    final navTransitionKey = ValueKey<String>(
-      useInjectedMiniNav
-          ? 'injected-mini-nav-${injectedMiniNavRegistration.ownerId}-'
-                '$injectedTransitionSignature'
-          : activeModule != null
-          ? 'mini-nav-${activeModule.id}-'
-                '${_miniAppNavTransitionSignature(activeMiniNavItems)}'
-          : 'global-nav',
-    );
-    final navContent = isCompact
-        ? CustomNavigationBar(
-            key: navVariantKey,
-            selectedKey: selectedKey,
-            compact: true,
-            onSelected: (key) => useInjectedMiniNav
-                ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration)
-                : isMiniAppRoute
-                ? _onMiniAppItemTapped(
-                    key,
-                    context,
-                    activeModule,
-                    activeMiniNavItems,
-                  )
-                : _onItemTapped(_ShellPageState._indexForKey(key), context),
-            children: isMiniAppRoute ? miniItems : globalItems,
-          )
-        : CustomNavigationBar(
-            compact: true,
-            key: navVariantKey,
-            selectedKey: selectedKey,
-            onSelected: (key) => useInjectedMiniNav
-                ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration)
-                : isMiniAppRoute
-                ? _onMiniAppItemTapped(
-                    key,
-                    context,
-                    activeModule,
-                    activeMiniNavItems,
-                  )
-                : _onItemTapped(_ShellPageState._indexForKey(key), context),
-            expandItems: false,
-            minItemWidth: _ShellPageState._floatingNavMinItemWidth,
-            children: isMiniAppRoute ? miniItems : globalItems,
-          );
     final navigationBar = _buildNavigationBarContainer(
       context: context,
       isCompact: isCompact,
@@ -353,42 +300,7 @@ extension _ShellPageLayout on _ShellPageState {
                 ? null
                 : (event) => _handlePointerUp(event, navContext),
             onPointerCancel: isMiniAppRoute ? null : _stopLongPressTimer,
-            child: AnimatedSwitcher(
-              duration: _ShellPageState._navSwitcherDuration,
-              reverseDuration: _ShellPageState._navSwitcherReverseDuration,
-              layoutBuilder: (currentChild, previousChildren) => Stack(
-                alignment: Alignment.center,
-                fit: StackFit.passthrough,
-                children: [
-                  for (final previous in previousChildren)
-                    ExcludeSemantics(child: IgnorePointer(child: previous)),
-                  if (currentChild != null) currentChild,
-                ],
-              ),
-              transitionBuilder: (child, animation) {
-                final curvedAnimation = CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                  reverseCurve: Curves.easeInCubic,
-                );
-                final slideAnimation = Tween<Offset>(
-                  begin: const Offset(0, 0.18),
-                  end: Offset.zero,
-                ).animate(curvedAnimation);
-                final scaleAnimation = Tween<double>(
-                  begin: 0.98,
-                  end: 1,
-                ).animate(curvedAnimation);
-                return FadeTransition(
-                  opacity: curvedAnimation,
-                  child: SlideTransition(
-                    position: slideAnimation,
-                    child: ScaleTransition(scale: scaleAnimation, child: child),
-                  ),
-                );
-              },
-              child: RepaintBoundary(key: navTransitionKey, child: navContent),
-            ),
+            child: navContent,
           ),
         ),
       ),
@@ -423,38 +335,6 @@ extension _ShellPageLayout on _ShellPageState {
         bodyBottomInset: floatingNavInset,
       ),
     );
-  }
-
-  String _miniAppNavTransitionSignature(List<MiniAppNavItem> items) {
-    return items
-        .map((item) {
-          final icon = item.icon;
-          return [
-            item.id,
-            item.route,
-            icon.codePoint,
-            icon.fontFamily,
-            icon.fontPackage,
-          ].join(':');
-        })
-        .join('|');
-  }
-
-  String _injectedMiniNavTransitionSignature(
-    ShellMiniNavRegistration registration,
-  ) {
-    return registration.items
-        .map((item) {
-          final icon = item.icon;
-          return [
-            item.id,
-            item.label,
-            icon.codePoint,
-            icon.fontFamily,
-            icon.fontPackage,
-          ].join(':');
-        })
-        .join('|');
   }
 
   // Retained while the layered compact-shell variant is still under review.

@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+part 'morphing_navigation_bar.dart';
 
 /// Custom navigation bar with pill-shaped selection indicators.
 /// Matches outer container border radius for first/last items.
