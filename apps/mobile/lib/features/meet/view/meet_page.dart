@@ -345,6 +345,7 @@ class _MeetPageState extends State<MeetPage> {
               actions: [
                 ShellActionSpec(
                   id: 'meet-create',
+                  inDock: true,
                   icon: Icons.add_rounded,
                   tooltip: context.l10n.meetNewMeeting,
                   callbackToken: hasWorkspace,

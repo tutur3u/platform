@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -33,6 +37,29 @@ class ExtendedFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ShellChromeActionsCubit? shell;
+    try {
+      shell = context.read<ShellChromeActionsCubit>();
+    } on ProviderNotFoundException {
+      // Standalone pages retain their own action.
+    }
+    if (shell != null && GoRouter.maybeOf(context) != null) {
+      return ShellChromeActions(
+        ownerId: 'page-primary-action',
+        locations: {GoRouterState.of(context).matchedLocation},
+        actions: [
+          ShellActionSpec(
+            id: 'page-primary-$label',
+            inDock: true,
+            icon: icon,
+            tooltip: label,
+            enabled: enabled,
+            isLoading: loading,
+            onPressed: onPressed,
+          ),
+        ],
+      );
+    }
     final safeAreaPadding = MediaQuery.paddingOf(context);
     final bottomInset = includeBottomSafeArea ? safeAreaPadding.bottom : 0.0;
 

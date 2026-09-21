@@ -10,6 +10,7 @@ extension _MailShellActions on _MailWorkspaceState {
         if (_mailboxId != null && _canSend)
           ShellActionSpec(
             id: 'mail-compose',
+            inDock: true,
             icon: Icons.edit_outlined,
             tooltip: l10n.mailCompose,
             enabled: !_mutating,

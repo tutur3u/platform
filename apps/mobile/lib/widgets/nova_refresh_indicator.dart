@@ -21,19 +21,48 @@ class NovaRefreshIndicator extends StatefulWidget {
 
 class _NovaRefreshIndicatorState extends State<NovaRefreshIndicator> {
   RefreshIndicatorStatus? _status;
+  double _pull = 0;
+
+  bool _onScroll(ScrollNotification notification) {
+    if (!widget.notificationPredicate(notification) ||
+        notification.metrics.axisDirection != AxisDirection.down) {
+      return false;
+    }
+    var pull = _pull;
+    if (notification is ScrollStartNotification) pull = 0;
+    if (notification is ScrollUpdateNotification &&
+        notification.dragDetails != null) {
+      pull =
+          (notification.metrics.minScrollExtent - notification.metrics.pixels)
+              .clamp(0.0, 150.0);
+    }
+    if (notification is OverscrollNotification &&
+        notification.dragDetails != null &&
+        notification.overscroll < 0) {
+      pull = (_pull - notification.overscroll).clamp(0.0, 150.0);
+    }
+    if (pull != _pull) setState(() => _pull = pull);
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) => Stack(
     children: [
-      RefreshIndicator.noSpinner(
-        onRefresh: widget.onRefresh,
-        notificationPredicate: widget.notificationPredicate,
-        onStatusChange: (status) {
-          if (mounted) setState(() => _status = status);
-        },
-        child: widget.child,
+      NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: RefreshIndicator.noSpinner(
+          onRefresh: widget.onRefresh,
+          notificationPredicate: widget.notificationPredicate,
+          onStatusChange: (status) {
+            if (mounted) setState(() => _status = status);
+          },
+          child: widget.child,
+        ),
       ),
-      if (_status != null &&
+      if ((_pull > 8 ||
+              _status == RefreshIndicatorStatus.refresh ||
+              _status == RefreshIndicatorStatus.armed) &&
+          _status != null &&
           _status != RefreshIndicatorStatus.done &&
           _status != RefreshIndicatorStatus.canceled)
         Positioned(

@@ -150,6 +150,14 @@ class _CalendarViewState extends State<_CalendarView> {
                 ownerId: 'calendar-root',
                 locations: const {Routes.calendar},
                 actions: [
+                  ShellActionSpec(
+                    id: 'calendar-create',
+                    inDock: true,
+                    icon: Icons.add,
+                    tooltip: l10n.calendarNewEvent,
+                    enabled: wsId != null && wsId.isNotEmpty,
+                    onPressed: () => _createEvent(context),
+                  ),
                   if (_isCalendarTabSelected(state.viewMode))
                     ShellActionSpec(
                       id: 'calendar-view-selector',
@@ -262,15 +270,6 @@ class _CalendarViewState extends State<_CalendarView> {
                   ),
                 );
               },
-            ),
-          ),
-          Positioned(
-            right: 16,
-            bottom: 16,
-            child: FloatingActionButton(
-              heroTag: 'calendar_fab',
-              onPressed: () => _createEvent(context),
-              child: const Icon(Icons.add),
             ),
           ),
         ],

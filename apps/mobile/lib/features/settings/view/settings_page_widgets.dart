@@ -10,7 +10,12 @@ class _SettingsOverviewSection extends StatelessWidget {
     final l10n = context.l10n;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: _spacedSettingsTiles([
+        Text(
+          l10n.settingsGeneralGroup,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
         SettingsTile(
           icon: Icons.tune_rounded,
           title: l10n.settingsPreferencesSectionTitle,
@@ -23,6 +28,18 @@ class _SettingsOverviewSection extends StatelessWidget {
           subtitle: l10n.settingsExperimentalAppsSectionDescription,
           onTap: () => context.push(Routes.settingsExperiments),
         ),
+        if (showInfrastructure)
+          SettingsTile(
+            icon: Icons.dns_outlined,
+            title: l10n.settingsInfrastructureSectionTitle,
+            subtitle: l10n.settingsInfrastructureSectionDescription,
+            onTap: () => context.push(Routes.settingsInfrastructure),
+          ),
+        const shad.Gap(8),
+        Text(
+          l10n.settingsSupportGroup,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
         SettingsTile(
           icon: Icons.explore_outlined,
           title: l10n.connectedOnboardingSettingsTitle,
@@ -33,13 +50,6 @@ class _SettingsOverviewSection extends StatelessWidget {
             ),
           ),
         ),
-        if (showInfrastructure)
-          SettingsTile(
-            icon: Icons.dns_outlined,
-            title: l10n.settingsInfrastructureSectionTitle,
-            subtitle: l10n.settingsInfrastructureSectionDescription,
-            onTap: () => context.push(Routes.settingsInfrastructure),
-          ),
         SettingsTile(
           icon: Icons.info_outline_rounded,
           title: l10n.settingsAboutSectionTitle,
@@ -178,21 +188,6 @@ class _PreferencesSection extends StatelessWidget {
       title: l10n.settingsPreferencesSectionTitle,
       description: l10n.settingsPreferencesSectionDescription,
       children: [
-        BlocBuilder<AppTabCubit, AppTabState>(
-          builder: (context, state) => SettingsTile(
-            icon: Icons.apps_rounded,
-            title: l10n.appsShowBottomTab,
-            showChevron: false,
-            onTap: () => unawaited(
-              context.read<AppTabCubit>().setShowAppsTab(
-                value: !state.showAppsTab,
-              ),
-            ),
-            trailing: IgnorePointer(
-              child: shad.Switch(value: state.showAppsTab, onChanged: (_) {}),
-            ),
-          ),
-        ),
         SettingsTile(
           icon: Icons.palette_outlined,
           title: l10n.settingsTheme,
@@ -277,7 +272,7 @@ class _SettingsHeroCard extends StatelessWidget {
         ),
         border: Border.all(color: palette.border),
       ),
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -285,8 +280,8 @@ class _SettingsHeroCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 58,
-                height: 58,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.background.withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(18),
@@ -297,7 +292,7 @@ class _SettingsHeroCard extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Icon(
                   Icons.tune_rounded,
-                  size: 26,
+                  size: 22,
                   color: theme.colorScheme.primary,
                 ),
               ),
@@ -308,7 +303,7 @@ class _SettingsHeroCard extends StatelessWidget {
                   children: [
                     Text(
                       l10n.settingsTitle,
-                      style: theme.typography.h3.copyWith(
+                      style: theme.typography.large.copyWith(
                         fontWeight: FontWeight.w900,
                       ),
                     ),

@@ -29,10 +29,19 @@ Meet is a standard launcher module, with meeting search, scheduling, editing, an
 Phones and tablets share a compact floating icon dock. Leaving a mini-app returns
 to its Home or Apps launch screen. Root screens remain mounted with hidden
 animations paused, preserving search and scroll state. The brand control opens
-the Apps screen within the normal shell, with compact search and arrange actions. Settings
-contains the optional Apps dock toggle. In the picker, Customize exposes pin and
+the Apps screen within the normal shell, with compact search and arrange actions.
+Apps is always available in the root dock. In the picker, Customize exposes pin and
 drag controls; pinned apps sort first. Order and pins persist on the device and
 never bypass each module's visibility rules.
+
+The shell reserves physical bottom clearance, including for lists with explicit
+padding. Screens inside the shell must not add another dock inset. The dock hides
+on downward scrolling and returns on upward scrolling or after a short idle period;
+its clearance stays stable to avoid moving content. Primary actions register with
+`ShellActionSpec.inDock`; `ExtendedFab` automatically uses that registration inside
+the router shell and keeps its standalone presentation elsewhere. Action buttons
+show icons on phones and labels on tablet widths. Do not duplicate these actions
+in page-level floating buttons or top-bar actions.
 
 Nova spins once when entering Assistant and remains static afterward. Loading
 indicators continue animating, while pull-to-refresh uses an opaque circular

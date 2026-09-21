@@ -8043,4 +8043,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get voiceRecordingError => 'Không thể ghi âm. Vui lòng thử lại.';
+
+  @override
+  String get settingsGeneralGroup => 'Cá nhân hóa';
+
+  @override
+  String get settingsSupportGroup => 'Trợ giúp và tài khoản';
 }

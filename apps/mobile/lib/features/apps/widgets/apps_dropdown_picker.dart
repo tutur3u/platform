@@ -50,8 +50,6 @@ class AppsDropdownPicker extends StatelessWidget {
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
-              const SizedBox(width: 6),
-              const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
             ],
           ),
         ),

@@ -466,46 +466,25 @@ class _AssistantPageState extends State<AssistantPage> {
                                           ),
                                         ),
                                       ),
-                                      Positioned(
-                                        right:
-                                            _assistantFabSideOffset +
-                                            MediaQuery.paddingOf(context).right,
-                                        bottom:
-                                            _assistantFabBottomOffset +
-                                            (isFullscreen
-                                                ? MediaQuery.paddingOf(
-                                                    context,
-                                                  ).bottom
-                                                : 0),
-                                        child: IgnorePointer(
-                                          ignoring: _isComposerVisible,
-                                          child: AnimatedSlide(
-                                            duration: const Duration(
-                                              milliseconds: 180,
-                                            ),
-                                            curve: Curves.easeOutCubic,
-                                            offset: _isComposerVisible
-                                                ? const Offset(0, 1)
-                                                : Offset.zero,
-                                            child: AnimatedOpacity(
-                                              duration: const Duration(
-                                                milliseconds: 160,
-                                              ),
-                                              curve: Curves.easeOutCubic,
-                                              opacity: _isComposerVisible
-                                                  ? 0
-                                                  : 1,
-                                              child: AssistantComposerFab(
-                                                label: context
-                                                    .l10n
-                                                    .assistantAskPlaceholder,
-                                                onPressed:
-                                                    _restoreComposerAndFocus,
-                                              ),
-                                            ),
+                                      if (isFullscreen && !_isComposerVisible)
+                                        Positioned(
+                                          right:
+                                              _assistantFabSideOffset +
+                                              MediaQuery.paddingOf(
+                                                context,
+                                              ).right,
+                                          bottom:
+                                              _assistantFabBottomOffset +
+                                              MediaQuery.paddingOf(
+                                                context,
+                                              ).bottom,
+                                          child: AssistantComposerFab(
+                                            label: context
+                                                .l10n
+                                                .assistantAskPlaceholder,
+                                            onPressed: _restoreComposerAndFocus,
                                           ),
                                         ),
-                                      ),
                                       if (hasTranscript)
                                         Positioned(
                                           left: 0,
@@ -1205,6 +1184,14 @@ class _AssistantPageState extends State<AssistantPage> {
     required bool isLiveMode,
   }) {
     final actions = <ShellActionSpec>[
+      if (!_isComposerVisible && !isLiveMode)
+        ShellActionSpec(
+          id: 'assistant-compose',
+          inDock: true,
+          icon: Icons.chat_bubble_outline_rounded,
+          tooltip: context.l10n.assistantAskPlaceholder,
+          onPressed: _restoreComposerAndFocus,
+        ),
       ShellActionSpec(
         id: 'assistant-live-mode',
         icon: isLiveMode
