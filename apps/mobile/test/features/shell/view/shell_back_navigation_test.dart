@@ -32,6 +32,7 @@ import '../../../helpers/helpers.dart';
 import 'shell_viewport_checks.dart';
 
 part 'shell_navigation_harness.dart';
+part 'shell_profile_navigation_checks.dart';
 
 void main() {
   group('Shell back navigation', () {
@@ -129,55 +130,11 @@ void main() {
       );
     });
 
-    testWidgets(
-      'shared shell header actions stay mounted between apps and module roots',
-      (tester) async {
-        tester.view.devicePixelRatio = 1;
-        tester.view.physicalSize = const Size(390, 844);
-        addTearDown(() {
-          tester.view.resetPhysicalSize();
-          tester.view.resetDevicePixelRatio();
-        });
-
-        final router = _buildRouter(initialLocation: Routes.apps);
-        addTearDown(router.dispose);
-
-        await tester.pumpWidget(
-          _buildTestApp(
-            router: router,
-            appTabCubit: appTabCubit,
-            authCubit: authCubit,
-            workspaceCubit: workspaceCubit,
-            shellProfileCubit: shellProfileCubit,
-          ),
-        );
-        await _pumpForTransitions(tester);
-
-        final avatarStateBefore = tester.state(find.byType(AvatarDropdown));
-        final notificationsStateBefore = tester.state(
-          find.byType(NotificationsActionButton),
-        );
-
-        router.go(Routes.tasks);
-        await _pumpForTransitions(tester);
-
-        expect(find.byType(AvatarDropdown), findsOneWidget);
-        expect(find.byType(NotificationsActionButton), findsOneWidget);
-        expect(
-          identical(
-            tester.state(find.byType(AvatarDropdown)),
-            avatarStateBefore,
-          ),
-          isTrue,
-        );
-        expect(
-          identical(
-            tester.state(find.byType(NotificationsActionButton)),
-            notificationsStateBefore,
-          ),
-          isTrue,
-        );
-      },
+    _registerProfileNavigationChecks(
+      () => appTabCubit,
+      () => authCubit,
+      () => workspaceCubit,
+      () => shellProfileCubit,
     );
 
     testWidgets('module routes show app-specific bottom navigation', (
@@ -418,8 +375,8 @@ void main() {
       final halfwayWidth = tester.getSize(island).width;
       await _pumpForTransitions(tester);
       final finalWidth = tester.getSize(island).width;
-      expect(halfwayWidth, greaterThan(initialWidth));
-      expect(halfwayWidth, lessThan(finalWidth));
+      expect(halfwayWidth, lessThan(initialWidth));
+      expect(halfwayWidth, greaterThan(finalWidth));
 
       expect(router.routeInformationProvider.value.uri.path, Routes.tasks);
 

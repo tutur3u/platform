@@ -41,6 +41,7 @@ class ShellChromeConfig {
       Routes.taskEstimates => l10n.taskPlanningTitle,
       Routes.taskPortfolio => l10n.taskPlanningTitle,
       Routes.profileRoot => l10n.profileTitle,
+      Routes.profileEdit => l10n.profileTitle,
       Routes.profileAccounts => l10n.authManageAccounts,
       Routes.settings => l10n.settingsTitle,
       Routes.settingsPreferences => l10n.settingsPreferencesSectionTitle,
@@ -59,7 +60,10 @@ class ShellChromeConfig {
     if (title != null) {
       return ShellChromeConfig(
         title: title,
-        navMode: AppRegistry.moduleFromLocation(matchedLocation) != null
+        navMode:
+            matchedLocation != Routes.profileRoot &&
+                matchedLocation != Routes.notifications &&
+                AppRegistry.moduleFromLocation(matchedLocation) != null
             ? ShellNavMode.miniApp
             : ShellNavMode.global,
       );

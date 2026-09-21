@@ -8085,4 +8085,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSupportGroup => 'Help and account';
+
+  @override
+  String get profilePrivateActivity => 'Your private activity';
+
+  @override
+  String profileTrackedMinutes(int minutes) {
+    return '$minutes min tracked';
+  }
+
+  @override
+  String get profileShareActivityTitle => 'Share activity';
+
+  @override
+  String profileShareActivityConsent(String workspace) {
+    return 'Share your tracked-time totals and daily activity in $workspace with its members. Personal activity and activity in other workspaces stay private. You can stop sharing at any time.';
+  }
+
+  @override
+  String profileSharedWithWorkspace(String workspace) {
+    return 'Shared with $workspace';
+  }
+
+  @override
+  String get profilePrivateByDefault => 'Only you can see your activity.';
+
+  @override
+  String get profileWorkspaceActivity => 'Workspace activity';
+
+  @override
+  String get profileNoSharedActivity => 'No one has shared activity here yet.';
+
+  @override
+  String get profileMoreActivity => 'Show more';
+
+  @override
+  String get profileSharedActivityUnavailable => 'This activity is no longer available.';
+
+  @override
+  String get profileRecentActivity => 'Last 12 weeks';
 }

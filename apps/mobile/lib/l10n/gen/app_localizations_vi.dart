@@ -8055,4 +8055,43 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsSupportGroup => 'Trợ giúp và tài khoản';
+
+  @override
+  String get profilePrivateActivity => 'Hoạt động riêng tư của bạn';
+
+  @override
+  String profileTrackedMinutes(int minutes) {
+    return 'Đã theo dõi $minutes phút';
+  }
+
+  @override
+  String get profileShareActivityTitle => 'Chia sẻ hoạt động';
+
+  @override
+  String profileShareActivityConsent(String workspace) {
+    return 'Chia sẻ tổng thời gian và hoạt động hằng ngày tại $workspace với các thành viên. Hoạt động cá nhân và tại không gian khác vẫn riêng tư. Bạn có thể ngừng chia sẻ bất cứ lúc nào.';
+  }
+
+  @override
+  String profileSharedWithWorkspace(String workspace) {
+    return 'Đang chia sẻ với $workspace';
+  }
+
+  @override
+  String get profilePrivateByDefault => 'Chỉ bạn mới xem được hoạt động của mình.';
+
+  @override
+  String get profileWorkspaceActivity => 'Hoạt động trong không gian làm việc';
+
+  @override
+  String get profileNoSharedActivity => 'Chưa có ai chia sẻ hoạt động tại đây.';
+
+  @override
+  String get profileMoreActivity => 'Xem thêm';
+
+  @override
+  String get profileSharedActivityUnavailable => 'Hoạt động này không còn khả dụng.';
+
+  @override
+  String get profileRecentActivity => '12 tuần gần đây';
 }

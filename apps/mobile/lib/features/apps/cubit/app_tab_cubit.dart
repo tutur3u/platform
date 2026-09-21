@@ -18,8 +18,19 @@ class AppTabCubit extends Cubit<AppTabState> {
     _selectionRequestVersion += 1;
   }
 
+  static String _rootOrigin(String? route) =>
+      const {
+        Routes.home,
+        Routes.apps,
+        Routes.assistant,
+        Routes.notifications,
+        Routes.profileRoot,
+      }.contains(route)
+      ? route!
+      : Routes.home;
+
   Future<void> recordAppOrigin(String route) async {
-    final origin = route == Routes.apps ? Routes.apps : Routes.home;
+    final origin = _rootOrigin(route);
     emit(state.copyWith(appOrigin: origin));
     try {
       await _settings.setLastAppOrigin(origin);
@@ -73,11 +84,7 @@ class AppTabCubit extends Cubit<AppTabState> {
     try {
       final origin = await _settings.getLastAppOrigin();
       if (!isClosed && requestVersion == _selectionRequestVersion) {
-        emit(
-          state.copyWith(
-            appOrigin: origin == Routes.apps ? Routes.apps : Routes.home,
-          ),
-        );
+        emit(state.copyWith(appOrigin: _rootOrigin(origin)));
       }
       final order = await _settings.getAppOrder();
       final pins = await _settings.getPinnedApps();

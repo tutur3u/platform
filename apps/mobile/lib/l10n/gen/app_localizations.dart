@@ -15468,6 +15468,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Help and account'**
   String get settingsSupportGroup;
+
+  /// No description provided for @profilePrivateActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Your private activity'**
+  String get profilePrivateActivity;
+
+  /// No description provided for @profileTrackedMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min tracked'**
+  String profileTrackedMinutes(int minutes);
+
+  /// No description provided for @profileShareActivityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share activity'**
+  String get profileShareActivityTitle;
+
+  /// No description provided for @profileShareActivityConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your tracked-time totals and daily activity in {workspace} with its members. Personal activity and activity in other workspaces stay private. You can stop sharing at any time.'**
+  String profileShareActivityConsent(String workspace);
+
+  /// No description provided for @profileSharedWithWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared with {workspace}'**
+  String profileSharedWithWorkspace(String workspace);
+
+  /// No description provided for @profilePrivateByDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see your activity.'**
+  String get profilePrivateByDefault;
+
+  /// No description provided for @profileWorkspaceActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace activity'**
+  String get profileWorkspaceActivity;
+
+  /// No description provided for @profileNoSharedActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'No one has shared activity here yet.'**
+  String get profileNoSharedActivity;
+
+  /// No description provided for @profileMoreActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more'**
+  String get profileMoreActivity;
+
+  /// No description provided for @profileSharedActivityUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This activity is no longer available.'**
+  String get profileSharedActivityUnavailable;
+
+  /// No description provided for @profileRecentActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 12 weeks'**
+  String get profileRecentActivity;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

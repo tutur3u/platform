@@ -3289,5 +3289,37 @@
   "voicePermission": "Cho phép truy cập micrô để ghi âm.",
   "voiceRecordingError": "Không thể ghi âm. Vui lòng thử lại.",
     "settingsGeneralGroup": "Cá nhân hóa",
-    "settingsSupportGroup": "Trợ giúp và tài khoản"
+    "settingsSupportGroup": "Trợ giúp và tài khoản",
+    "profilePrivateActivity": "Hoạt động riêng tư của bạn",
+    "profileTrackedMinutes": "Đã theo dõi {minutes} phút",
+    "@profileTrackedMinutes": {
+        "placeholders": {
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "profileShareActivityTitle": "Chia sẻ hoạt động",
+    "profileShareActivityConsent": "Chia sẻ tổng thời gian và hoạt động hằng ngày tại {workspace} với các thành viên. Hoạt động cá nhân và tại không gian khác vẫn riêng tư. Bạn có thể ngừng chia sẻ bất cứ lúc nào.",
+    "@profileShareActivityConsent": {
+        "placeholders": {
+            "workspace": {
+                "type": "String"
+            }
+        }
+    },
+    "profileSharedWithWorkspace": "Đang chia sẻ với {workspace}",
+    "@profileSharedWithWorkspace": {
+        "placeholders": {
+            "workspace": {
+                "type": "String"
+            }
+        }
+    },
+    "profilePrivateByDefault": "Chỉ bạn mới xem được hoạt động của mình.",
+    "profileWorkspaceActivity": "Hoạt động trong không gian làm việc",
+    "profileNoSharedActivity": "Chưa có ai chia sẻ hoạt động tại đây.",
+    "profileMoreActivity": "Xem thêm",
+    "profileSharedActivityUnavailable": "Hoạt động này không còn khả dụng.",
+    "profileRecentActivity": "12 tuần gần đây"
 }

@@ -166,6 +166,8 @@ extension _ShellPageInteractions on _ShellPageState {
     final route = switch (index) {
       2 => Routes.apps,
       1 => Routes.assistant,
+      3 => Routes.notifications,
+      4 => Routes.profileRoot,
       _ => Routes.home,
     };
     _debugBack(

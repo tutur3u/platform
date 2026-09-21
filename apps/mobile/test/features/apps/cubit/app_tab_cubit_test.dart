@@ -46,6 +46,24 @@ void main() {
     },
   );
 
+  for (final origin in [
+    Routes.home,
+    Routes.apps,
+    Routes.assistant,
+    Routes.notifications,
+    Routes.profileRoot,
+  ]) {
+    test('preserves $origin as the source of an opened app', () async {
+      final first = AppTabCubit(settingsRepository: SettingsRepository());
+      await first.recordAppOrigin(origin);
+      await first.close();
+      final restored = AppTabCubit(settingsRepository: SettingsRepository());
+      addTearDown(restored.close);
+      await restored.loadLastApp();
+      expect(restored.state.appOrigin, origin);
+    });
+  }
+
   test('app order, pins and tab visibility survive a restart', () async {
     final first = AppTabCubit(settingsRepository: SettingsRepository());
     await first.setAppOrder(['calendar', 'mail', 'tasks']);

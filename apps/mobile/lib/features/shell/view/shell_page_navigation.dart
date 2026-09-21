@@ -15,6 +15,14 @@ extension _ShellPageNavigation on _ShellPageState {
       ),
     ),
     shad.NavigationItem(
+      key: _ShellPageState._appsKey,
+      child: _buildCompactNavIcon(
+        icon: Icons.apps_outlined,
+        semanticLabel: l10n.navApps,
+        itemIndex: 2,
+      ),
+    ),
+    shad.NavigationItem(
       key: _ShellPageState._assistantKey,
       child: _buildCompactNavIcon(
         icon: Icons.auto_awesome_outlined,
@@ -28,12 +36,22 @@ extension _ShellPageNavigation on _ShellPageState {
         itemIndex: 1,
       ),
     ),
+
     shad.NavigationItem(
-      key: _ShellPageState._appsKey,
+      key: _ShellPageState._notificationsKey,
       child: _buildCompactNavIcon(
-        icon: Icons.apps_outlined,
-        semanticLabel: l10n.navApps,
-        itemIndex: 2,
+        icon: Icons.notifications_outlined,
+        semanticLabel: l10n.notificationsTitle,
+        itemIndex: 3,
+      ),
+    ),
+    shad.NavigationItem(
+      key: _ShellPageState._profileKey,
+      child: _buildCompactNavIcon(
+        icon: Icons.person_outline_rounded,
+        image: const ProfileNavigationAvatar(),
+        semanticLabel: l10n.profileTitle,
+        itemIndex: 4,
       ),
     ),
   ];
@@ -193,6 +211,12 @@ extension _ShellPageNavigation on _ShellPageState {
     if (location == Routes.assistant) {
       return _ShellPageState._assistantKey;
     }
+    if (location == Routes.notifications) {
+      return _ShellPageState._notificationsKey;
+    }
+    if (location == Routes.profileRoot) {
+      return _ShellPageState._profileKey;
+    }
     if (location == Routes.apps ||
         AppRegistry.moduleFromLocation(location) != null) {
       return _ShellPageState._appsKey;
@@ -204,6 +228,8 @@ extension _ShellPageNavigation on _ShellPageState {
   bool _isRootTabLocation(String location) {
     return location == Routes.home ||
         location == Routes.assistant ||
-        location == Routes.apps;
+        location == Routes.apps ||
+        location == Routes.notifications ||
+        location == Routes.profileRoot;
   }
 }

@@ -387,3 +387,19 @@ For Drive, CRM, or Education mobile changes:
 1. Update `apps/mobile/lib/l10n/arb/*.arb` for every new user-facing string.
 2. Run `flutter gen-l10n`.
 3. Run `bun check:mobile`.
+
+## Profile activity privacy
+
+Profile shows your own tracked-time totals and activity. Nothing is shared by
+default. In a team workspace, **Share activity** asks for confirmation before
+saving that workspace's preference. Members can then view only tracked-time
+totals and daily activity from that workspace, without raw session titles,
+email addresses, personal aggregates, or activity from other workspaces.
+Turning sharing off blocks future reads. Former workspace members lose access.
+
+The API uses the existing owner-scoped `user_workspace_configs` preference
+`PROFILE_ACTIVITY_VISIBILITY=workspace`; missing or other values mean private.
+It checks viewer membership before privileged reads and subject membership and
+consent before and after aggregation. Shared activity is never stored in the
+mobile persistent cache. Test private defaults, confirmation cancellation,
+revocation, former members, and account/workspace changes before release.
