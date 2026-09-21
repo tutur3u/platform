@@ -28,6 +28,7 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
       _microphoneVersion++;
       _startupAudio.clear();
       await _recorder.stop();
+      _socket.endAudioStream();
       if (!isClosed) {
         _emitMicrophoneState(
           state.copyWith(isMicrophoneActive: false, audioLevel: 0),

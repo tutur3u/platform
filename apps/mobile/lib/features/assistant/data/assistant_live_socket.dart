@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:web_socket_channel/io.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 sealed class AssistantLiveSocketEvent {
   const AssistantLiveSocketEvent();
@@ -82,12 +83,21 @@ class AssistantLiveSocketToolCall extends AssistantLiveSocketEvent {
 }
 
 class AssistantLiveSocketClient {
+  AssistantLiveSocketClient({WebSocketChannel Function(Uri)? connectChannel})
+    : _connectChannel = connectChannel ?? _defaultConnect;
+
+  final WebSocketChannel Function(Uri) _connectChannel;
+  static WebSocketChannel _defaultConnect(Uri uri) =>
+      IOWebSocketChannel.connect(
+        uri,
+        pingInterval: const Duration(seconds: 10),
+      );
   final StreamController<AssistantLiveSocketEvent> _events =
       StreamController<AssistantLiveSocketEvent>.broadcast();
 
   Stream<AssistantLiveSocketEvent> get events => _events.stream;
 
-  IOWebSocketChannel? _channel;
+  WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _subscription;
   bool _seedHistoryPending = false;
   List<AssistantLiveSeedContent> _pendingSeedHistory = const [];
@@ -107,10 +117,7 @@ class AssistantLiveSocketClient {
     _seedHistoryPending = sessionHandle == null && seedHistory.isNotEmpty;
     _pendingSeedHistory = seedHistory;
 
-    _channel = IOWebSocketChannel.connect(
-      uri,
-      pingInterval: const Duration(seconds: 10),
-    );
+    _channel = _connectChannel(uri);
 
     _subscription = _channel!.stream.listen(
       _handleMessage,
@@ -125,14 +132,13 @@ class AssistantLiveSocketClient {
 
     _send(<String, dynamic>{
       'setup': {
-        'model': model,
-        'config': {
+        'model': model.startsWith('models/') ? model : 'models/$model',
+        'generationConfig': {
           'responseModalities': ['AUDIO'],
-          'historyConfig': {'initialHistoryInClientContent': true},
-          'sessionResumption': sessionHandle == null
-              ? <String, dynamic>{}
-              : {'handle': sessionHandle},
         },
+        'sessionResumption': sessionHandle == null
+            ? <String, dynamic>{}
+            : {'handle': sessionHandle},
       },
     });
   }
@@ -143,6 +149,10 @@ class AssistantLiveSocketClient {
       'realtimeInput': {'text': text},
     });
   }
+
+  void endAudioStream() => _send({
+    'realtimeInput': {'audioStreamEnd': true},
+  });
 
   void sendAudioChunk(Uint8List bytes) {
     if (bytes.isEmpty) return;
@@ -195,7 +205,7 @@ class AssistantLiveSocketClient {
         _send({
           'clientContent': {
             'turns': _pendingSeedHistory.map((item) => item.toJson()).toList(),
-            'turnComplete': true,
+            'turnComplete': false,
           },
         });
         _seedHistoryPending = false;
@@ -245,11 +255,6 @@ class AssistantLiveSocketClient {
       _events.add(const AssistantLiveSocketInterrupted());
     }
 
-    if (serverContent['turnComplete'] == true ||
-        serverContent['generationComplete'] == true) {
-      _events.add(const AssistantLiveSocketTurnCompleted());
-    }
-
     final outputTranscription = serverContent['outputTranscription'];
     if (outputTranscription is Map<String, dynamic>) {
       final text = outputTranscription['text'] as String?;
@@ -271,9 +276,9 @@ class AssistantLiveSocketClient {
     }
 
     final modelTurn = serverContent['modelTurn'];
-    if (modelTurn is! Map<String, dynamic>) return;
-
-    final parts = modelTurn['parts'] as List<dynamic>? ?? const [];
+    final parts = modelTurn is Map<String, dynamic>
+        ? modelTurn['parts'] as List<dynamic>? ?? const []
+        : const <dynamic>[];
     for (final rawPart in parts) {
       if (rawPart is! Map<String, dynamic>) continue;
 
@@ -290,6 +295,9 @@ class AssistantLiveSocketClient {
       final mimeType = inlineData['mimeType'] as String? ?? 'audio/pcm';
       if (!mimeType.startsWith('audio/')) continue;
       _events.add(AssistantLiveSocketAudioChunk(base64Decode(base64)));
+    }
+    if (serverContent['turnComplete'] == true) {
+      _events.add(const AssistantLiveSocketTurnCompleted());
     }
   }
 

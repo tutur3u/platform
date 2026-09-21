@@ -6,6 +6,15 @@ import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 
 void main() {
+  test('Live eligibility follows workspace tier, not personal credits', () {
+    const shell = AssistantShellState(
+      workspaceCredits: AssistantCredits(tier: 'PRO'),
+      creditSource: AssistantCreditSource.personal,
+    );
+    expect(hasAssistantLiveWorkspaceAccess(shell.workspaceCredits), isTrue);
+    expect(hasAssistantLiveWorkspaceAccess(shell.activeCredits), isFalse);
+  });
+
   group('deriveAssistantLiveUiState', () {
     test('returns available when effective credits allow live', () {
       final state = deriveAssistantLiveUiState(

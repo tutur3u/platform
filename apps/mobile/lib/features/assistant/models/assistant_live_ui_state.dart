@@ -185,3 +185,16 @@ AssistantLiveUiState deriveAssistantLiveUiState({
     showBlockedReason: showBlockedReason,
   );
 }
+
+/// Live sessions are authorized against the current workspace on the server.
+/// Selecting personal chat credits must not change that workspace entitlement.
+bool hasAssistantLiveWorkspaceAccess(AssistantCredits credits) =>
+    const {'PLUS', 'PRO', 'ENTERPRISE'}.contains(credits.tier.toUpperCase()) ||
+    credits.allowedFeatures.any(
+      const {
+        'voice_assistant',
+        'voice-assistant',
+        'live_assistant',
+        'live-assistant',
+      }.contains,
+    );

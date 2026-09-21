@@ -9,6 +9,79 @@ import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart'
 import 'package:mobile/l10n/gen/app_localizations.dart';
 
 void main() {
+  for (final size in [
+    const Size(320, 720),
+    const Size(844, 390),
+    const Size(768, 1024),
+    const Size(1376, 1032),
+  ]) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets('Live controls fit $size at text scale $scale', (
+        tester,
+      ) async {
+        tester.view
+          ..physicalSize = size
+          ..devicePixelRatio = 1;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        final scroll = ScrollController();
+        addTearDown(scroll.dispose);
+        var microphoneTaps = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Builder(
+              builder: (context) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(scale)),
+                child: Scaffold(
+                  body: AssistantLiveModeView(
+                    chatState: const AssistantChatState(
+                      fallbackChatId: 'responsive-live',
+                    ),
+                    liveState: const AssistantLiveState(
+                      status: AssistantLiveConnectionStatus.connected,
+                      isMicrophoneActive: true,
+                    ),
+                    liveUiState: const AssistantLiveUiState(
+                      kind: AssistantLiveUiKind.live,
+                      tone: AssistantLiveUiTone.positive,
+                      workspaceTier: 'PRO',
+                      activeTier: 'FREE',
+                      creditSource: AssistantCreditSource.personal,
+                      isEligible: true,
+                      isVisibleLiveSession: true,
+                    ),
+                    assistantName: 'Mira',
+                    scrollController: scroll,
+                    onClose: () async {},
+                    onRetry: () async {},
+                    onToggleMicrophone: () async {
+                      microphoneTaps++;
+                    },
+                    onToggleCamera: () async {},
+                    onDisconnect: () async {},
+                    onOpenTextEntry: () async {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.byIcon(Icons.mic_rounded).last);
+        expect(microphoneTaps, 1);
+        final control = tester.getRect(find.byIcon(Icons.keyboard_rounded));
+        expect(control.bottom, lessThan(size.height));
+      });
+    }
+  }
+
   testWidgets('renders live model badge, activity labels, and controls', (
     tester,
   ) async {
@@ -50,13 +123,13 @@ void main() {
       ),
     );
 
-    expect(find.text('Gemini 3.1 Flash Live'), findsOneWidget);
+    expect(find.text('Gemini 3.8 Live'), findsOneWidget);
     expect(
       find.text(
         'Microphone streaming is active. '
         'Mira will keep listening for new audio input.',
       ),
-      findsOneWidget,
+      findsNothing,
     );
     expect(find.text('Live'), findsWidgets);
     expect(find.text('Mute mic'), findsOneWidget);

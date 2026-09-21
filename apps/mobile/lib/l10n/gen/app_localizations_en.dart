@@ -1545,7 +1545,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveListen => 'Open mic';
 
   @override
-  String get assistantLiveModelBadge => 'Gemini 3.1 Flash Live';
+  String get assistantLiveModelBadge => 'Gemini 3.8 Live';
 
   @override
   String get assistantLiveMute => 'Mute mic';
