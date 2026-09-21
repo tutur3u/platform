@@ -28,15 +28,14 @@ extension _ShellPageNavigation on _ShellPageState {
         itemIndex: 1,
       ),
     ),
-    if (state.showAppsTab)
-      shad.NavigationItem(
-        key: _ShellPageState._appsKey,
-        child: _buildCompactNavIcon(
-          icon: Icons.apps_outlined,
-          semanticLabel: l10n.navApps,
-          itemIndex: 2,
-        ),
+    shad.NavigationItem(
+      key: _ShellPageState._appsKey,
+      child: _buildCompactNavIcon(
+        icon: Icons.apps_outlined,
+        semanticLabel: l10n.navApps,
+        itemIndex: 2,
       ),
+    ),
   ];
 
   Widget _buildCompactNavIcon({

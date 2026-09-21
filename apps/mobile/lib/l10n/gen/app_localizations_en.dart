@@ -8073,4 +8073,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voiceRecordingError => 'Could not record audio. Please try again.';
+
+  @override
+  String get settingsGeneralGroup => 'Personalize';
+
+  @override
+  String get settingsSupportGroup => 'Help and account';
 }

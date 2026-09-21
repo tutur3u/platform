@@ -120,13 +120,13 @@ class SettingsTile extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Ink(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: theme.colorScheme.card,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: theme.colorScheme.border.withValues(alpha: 0.72),
             ),
@@ -135,15 +135,15 @@ class SettingsTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: accentColor.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, size: 20, color: accentColor),
               ),
-              const shad.Gap(14),
+              const shad.Gap(12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,6 +171,8 @@ class SettingsTile extends StatelessWidget {
                       const shad.Gap(4),
                       Text(
                         subtitle!,
+                        maxLines: onTap != null ? 2 : null,
+                        overflow: onTap != null ? TextOverflow.ellipsis : null,
                         style: theme.typography.textSmall.copyWith(
                           color: theme.colorScheme.mutedForeground,
                         ),

@@ -187,8 +187,8 @@ extension _ShellPageLayout on _ShellPageState {
     final maxWidth = MediaQuery.sizeOf(context).width - 24;
 
     return SizedBox(
-      width: double.infinity,
       child: Center(
+        widthFactor: 1,
         heightFactor: 1,
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: maxWidth > 0 ? maxWidth : 0),
@@ -220,30 +220,11 @@ extension _ShellPageLayout on _ShellPageState {
     required Widget navigationBar,
     double bodyBottomInset = 0,
   }) {
-    final mediaQuery = MediaQuery.of(context);
-    final effectiveBody = MediaQuery(
-      data: mediaQuery.copyWith(
-        padding: mediaQuery.padding.copyWith(
-          bottom: mediaQuery.padding.bottom + bodyBottomInset,
-        ),
-        viewPadding: mediaQuery.viewPadding.copyWith(
-          bottom: mediaQuery.viewPadding.bottom + bodyBottomInset,
-        ),
-      ),
+    return FloatingShellDock(
+      location: widget.matchedLocation,
+      bottomInset: bodyBottomInset,
+      navigation: navigationBar,
       child: body,
-    );
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        effectiveBody,
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: SafeArea(top: false, child: navigationBar),
-        ),
-      ],
     );
   }
 
@@ -380,7 +361,7 @@ extension _ShellPageLayout on _ShellPageState {
                 fit: StackFit.passthrough,
                 children: [
                   for (final previous in previousChildren)
-                    Positioned.fill(child: IgnorePointer(child: previous)),
+                    ExcludeSemantics(child: IgnorePointer(child: previous)),
                   if (currentChild != null) currentChild,
                 ],
               ),

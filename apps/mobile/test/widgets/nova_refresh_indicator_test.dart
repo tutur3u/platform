@@ -7,6 +7,32 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import '../helpers/helpers.dart';
 
 void main() {
+  testWidgets('ordinary upward drag at top never shows refresh', (
+    tester,
+  ) async {
+    var calls = 0;
+    await tester.pumpApp(
+      NovaRefreshIndicator(
+        onRefresh: () async {
+          calls++;
+        },
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          children: const [SizedBox(height: 2000)],
+        ),
+      ),
+    );
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(ListView)),
+    );
+    await gesture.moveBy(const Offset(0, -70));
+    await tester.pump();
+    expect(find.byType(NovaLoadingIndicator), findsNothing);
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(calls, 0);
+  });
+
   testWidgets('canceled pull removes Nova without refreshing', (tester) async {
     var calls = 0;
     await tester.pumpApp(

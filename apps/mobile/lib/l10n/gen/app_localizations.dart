@@ -15444,6 +15444,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not record audio. Please try again.'**
   String get voiceRecordingError;
+
+  /// No description provided for @settingsGeneralGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Personalize'**
+  String get settingsGeneralGroup;
+
+  /// No description provided for @settingsSupportGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Help and account'**
+  String get settingsSupportGroup;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

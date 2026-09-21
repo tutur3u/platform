@@ -184,7 +184,7 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
         final resolvedActions = state.resolveForLocation(
           widget.matchedLocation,
         );
-        final actions = switch ((
+        final resolvedPlacement = switch ((
           resolvedActions.isNotEmpty,
           _retainedActions.isNotEmpty,
         )) {
@@ -192,6 +192,9 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
           (false, true) => _retainedActions,
           (false, false) => resolvedActions,
         };
+        final actions = resolvedPlacement
+            .where((action) => !action.inDock)
+            .toList();
         final showNotifications =
             widget.includeNotifications &&
             shouldShowNotificationsActionForLocation(widget.matchedLocation);

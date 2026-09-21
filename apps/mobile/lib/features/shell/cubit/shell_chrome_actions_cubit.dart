@@ -12,6 +12,7 @@ class ShellActionSpec extends Equatable {
     this.enabled = true,
     this.isLoading = false,
     this.highlighted = false,
+    this.inDock = false,
   });
 
   final String id;
@@ -22,6 +23,7 @@ class ShellActionSpec extends Equatable {
   final bool enabled;
   final bool isLoading;
   final bool highlighted;
+  final bool inDock;
 
   @override
   List<Object?> get props => [
@@ -36,6 +38,7 @@ class ShellActionSpec extends Equatable {
     enabled,
     isLoading,
     highlighted,
+    inDock,
   ];
 }
 

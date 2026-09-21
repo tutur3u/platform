@@ -3281,5 +3281,7 @@
   "voicePreview": "Preview recording",
   "voiceAttach": "Attach recording",
   "voicePermission": "Allow microphone access to record.",
-  "voiceRecordingError": "Could not record audio. Please try again."
+  "voiceRecordingError": "Could not record audio. Please try again.",
+    "settingsGeneralGroup": "Personalize",
+    "settingsSupportGroup": "Help and account"
 }

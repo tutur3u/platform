@@ -64,19 +64,10 @@ void registerShellViewportChecks(
           ),
           findsOneWidget,
         );
-        if (size.height >= 600) {
-          expect(
-            MediaQuery.paddingOf(
-              tester.element(find.byType(AppsHubPage)),
-            ).bottom,
-            greaterThan(dock.height),
-          );
-        }
+        // Clearance is physical, so explicit-padding lists also stay above it.
         final body = tester.getRect(find.byType(AppsHubPage));
-        final contentInset = MediaQuery.paddingOf(
-          tester.element(find.byType(AppsHubPage)),
-        ).bottom;
-        expect(dock.top - (body.bottom - contentInset), closeTo(8, 1));
+        expect(dock.top - body.bottom, closeTo(8, 1));
+        expect(find.byTooltip('Apps'), findsWidgets);
         final bodyState = tester.state(find.byType(AppsHubPage));
         tester.view.viewInsets = const FakeViewPadding(bottom: 300);
         await tester.pump();

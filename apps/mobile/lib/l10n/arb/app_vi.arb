@@ -3285,5 +3285,7 @@
   "voicePreview": "Nghe lại",
   "voiceAttach": "Đính kèm bản ghi",
   "voicePermission": "Cho phép truy cập micrô để ghi âm.",
-  "voiceRecordingError": "Không thể ghi âm. Vui lòng thử lại."
+  "voiceRecordingError": "Không thể ghi âm. Vui lòng thử lại.",
+    "settingsGeneralGroup": "Cá nhân hóa",
+    "settingsSupportGroup": "Trợ giúp và tài khoản"
 }
