@@ -49,12 +49,13 @@ class ExtendedFab extends StatelessWidget {
         locations: {GoRouterState.of(context).matchedLocation},
         actions: [
           ShellActionSpec(
-            id: 'page-primary-$label',
+            id: 'page-primary-action',
             inDock: true,
             icon: icon,
             tooltip: label,
             enabled: enabled,
             isLoading: loading,
+            callbackToken: (label, enabled, loading),
             onPressed: onPressed,
           ),
         ],
