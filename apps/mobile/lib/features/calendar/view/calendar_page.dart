@@ -39,12 +39,13 @@ class CalendarPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final defaultMode = _defaultCalendarMode(context);
     return BlocProvider(
       create: (context) {
         final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
         final cubit = CalendarCubit(
           calendarRepository: CalendarRepository(),
-          defaultViewMode: _defaultCalendarMode(context),
+          defaultViewMode: defaultMode,
           initialState: wsId != null
               ? CalendarCubit.cachedStateForWorkspace(wsId)
               : null,
