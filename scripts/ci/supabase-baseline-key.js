@@ -43,6 +43,7 @@ function baselineKey({
   arch,
   platform,
   seedEpoch,
+  image,
 }) {
   if (!cliVersion || !arch || !platform || !services.length) {
     throw new Error('Missing baseline runtime identity');
@@ -52,6 +53,7 @@ function baselineKey({
     JSON.stringify({
       format: FORMAT,
       cliVersion,
+      image,
       seedEpoch,
       arch,
       platform,
@@ -66,6 +68,17 @@ function baselineKey({
     hash.update(content);
   }
   return `supabase-baseline-v${FORMAT}-${platform}-${arch}-${hash.digest('hex')}`;
+}
+
+function postgresImage(services, registry = 'public.ecr.aws') {
+  const postgres = services.find(
+    (service) => service.name === 'supabase/postgres'
+  );
+  if (!postgres?.local || !/^[\w.-]+$/.test(postgres.local))
+    throw new Error('Missing Postgres version');
+  if (!/^[a-zA-Z0-9.-]+(?::[0-9]+)?$/.test(registry))
+    throw new Error('Invalid Supabase image registry');
+  return `${registry}/supabase/postgres:${postgres.local}`;
 }
 
 function migrationVersions(root) {
@@ -91,5 +104,6 @@ module.exports = {
   baselineKey,
   inputFiles,
   migrationVersions,
+  postgresImage,
   validateManifest,
 };
