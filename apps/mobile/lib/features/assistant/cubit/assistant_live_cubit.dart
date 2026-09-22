@@ -528,7 +528,6 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
 
     final turnId = _currentTurnId ?? _newTurnId();
     final messages = <Map<String, dynamic>>[];
-
     if (userContent.isNotEmpty || hasUserMetadata) {
       messages.add({
         'role': 'user',
@@ -562,7 +561,6 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     }
 
     emit(state.copyWith(isPersisting: true));
-
     try {
       await _repository.persistLiveTurn(
         wsId: wsId,
@@ -575,11 +573,13 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       emit(state.copyWith(isPersisting: false, clearError: true));
     } on ApiException catch (error) {
       _emitError(error.message, preserveDrafts: true);
+      return;
     } on Exception catch (error) {
       _emitError(error.toString(), preserveDrafts: true);
+      return;
     }
 
-    _clearDrafts();
+    if (_currentTurnId == turnId) _clearDrafts();
   }
 
   void _scheduleReconnect() {

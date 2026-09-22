@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
+import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class AssistantLiveStageCard extends StatelessWidget {
@@ -165,7 +166,7 @@ Color _statusColor(ThemeData theme, AssistantLiveConnectionStatus status) {
 
 String _stageSummary(BuildContext context, AssistantLiveState liveState) {
   if (liveState.error?.isNotEmpty == true) {
-    return liveState.error!;
+    return assistantLiveErrorLabel(context.l10n, liveState.error!);
   }
   if (liveState.goAwayTimeLeft?.isNotEmpty == true) {
     return context.l10n.assistantLiveReconnectBanner(liveState.goAwayTimeLeft!);

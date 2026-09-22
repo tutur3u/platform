@@ -49,7 +49,11 @@ class _InventoryPageState extends State<InventoryPage> {
     setState(() {
       _future = future;
     });
-    await future;
+    try {
+      await future;
+    } on Object {
+      // The FutureBuilder presents the retry state.
+    }
   }
 
   @override
@@ -66,6 +70,8 @@ class _InventoryPageState extends State<InventoryPage> {
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
         listener: (context, state) => unawaited(_reload()),
         child: FutureBuilder<InventoryOverview>(
+          key: ValueKey(_wsId),
+          initialData: _wsId == null ? null : _repository.peekOverview(_wsId!),
           future: _future,
           builder: (context, snapshot) {
             if (_wsId == null) {

@@ -18,10 +18,14 @@ class MailHtmlBody extends StatefulWidget {
     this.fallbackText = '',
     this.embedded = true,
     this.onViewOriginal,
+    this.imagesVisible,
+    this.showControls = true,
     super.key,
   });
 
   final String html;
+  final bool? imagesVisible;
+  final bool showControls;
   final Map<String, String> inlineImages;
   final String fallbackText;
   final bool embedded;
@@ -49,6 +53,7 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
   @override
   void initState() {
     super.initState();
+    _images = widget.imagesVisible ?? false;
     MailAppearancePreference.instance.addListener(_appearanceChanged);
     unawaited(MailAppearancePreference.instance.load());
   }
@@ -77,10 +82,14 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
   void didUpdateWidget(covariant MailHtmlBody oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.html != widget.html) {
-      _images = false;
+      _images = widget.imagesVisible ?? false;
       _height = 320;
     }
-    if (oldWidget.html != widget.html ||
+    if (oldWidget.imagesVisible != widget.imagesVisible) {
+      _images = widget.imagesVisible ?? false;
+    }
+    if (oldWidget.imagesVisible != widget.imagesVisible ||
+        oldWidget.html != widget.html ||
         oldWidget.inlineImages != widget.inlineImages) {
       unawaited(_prepare());
     }
@@ -210,29 +219,30 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            if (widget.onViewOriginal != null)
-              TextButton(
-                onPressed: widget.onViewOriginal,
-                child: Text(context.l10n.mailViewOriginal),
+        if (widget.showControls)
+          Row(
+            children: [
+              if (widget.onViewOriginal != null)
+                TextButton(
+                  onPressed: widget.onViewOriginal,
+                  child: Text(context.l10n.mailViewOriginal),
+                ),
+              const Spacer(),
+              MailAppearanceControl(
+                appearance: _appearance ?? MailMessageAppearance.original,
               ),
-            const Spacer(),
-            MailAppearanceControl(
-              appearance: _appearance ?? MailMessageAppearance.original,
-            ),
-            IconButton(
-              tooltip: context.l10n.mailLoadImages,
-              onPressed: () {
-                setState(() => _images = !_images);
-                unawaited(_prepare());
-              },
-              icon: Icon(
-                _images ? Icons.image : Icons.image_not_supported_outlined,
+              IconButton(
+                tooltip: context.l10n.mailLoadImages,
+                onPressed: () {
+                  setState(() => _images = !_images);
+                  unawaited(_prepare());
+                },
+                icon: Icon(
+                  _images ? Icons.image : Icons.image_not_supported_outlined,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         if (widget.embedded)
           SizedBox(height: _height, child: content)
         else

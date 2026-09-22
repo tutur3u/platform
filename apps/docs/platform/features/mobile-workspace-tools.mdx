@@ -47,9 +47,30 @@ Nova spins once when entering Assistant and remains static afterward. Loading
 indicators continue animating, while pull-to-refresh uses an opaque circular
 surface. Reduced-motion preferences disable spinning.
 
-Calendar forms and event details use opaque root-navigator sheets. Failed event
+Calendar forms and event details use readable, blurred root-navigator sheets.
+High-contrast mode uses an opaque surface. Failed event
 edits or deletions restore the previous in-memory and cached list and expose the
 server error. Verify the next reload as well as the immediate rollback.
+
+Dock action handoffs retain presentation only, never callbacks or permission
+state. Destination actions remain disabled until their mounted page registers
+current handlers; missing destinations discard previews after a short handoff.
+Long-press navigation supports dragging between enabled destinations and commits
+only on release. Releasing outside the dock cancels the change.
+
+Notification Inbox and Archive actions share a bordered segmented control with
+primary selected colors and accessibility selection state. Use `segmentGroup`
+on related `ShellActionSpec` entries instead of unrelated highlighted icons.
+
+Mail owns folder, mailbox, and filter selectors through `ShellMiniNav`. Opening
+a message replaces the shell title with its subject and reuses the dock back
+action. Child composers and attachment previews suspend reader chrome. Background
+read-state changes and revalidation do not display a refresh indicator; explicit
+pull-to-refresh does. Reply-all and forwarding remain in the message actions sheet.
+
+Chat bubbles expose copy through long press or secondary click. Markdown in these
+bubbles must not install a competing native text-selection long-press recognizer.
+Other standalone markdown views remain selectable.
 
 ## Responsive Loading And Cache Verification
 
@@ -76,6 +97,11 @@ fetched from the server. Attachment bytes, credentials, and active compose buffe
 not cached. Authorization failures discard the displayed list. Search waits 300ms
 after typing, and list rows are built lazily. Folder metadata loads independently
 so it cannot hold up the inbox.
+
+Inventory can synchronously restore an unexpired user/workspace-scoped snapshot
+before currency and permission requests finish. Editing remains disabled until
+current permissions are confirmed. A denied request removes displayed content;
+cached data must never grant mutation permissions.
 
 ### Tablet layouts and shared controls
 

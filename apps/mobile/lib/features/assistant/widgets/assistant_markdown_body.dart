@@ -10,11 +10,13 @@ class AssistantMarkdownBody extends StatelessWidget {
   const AssistantMarkdownBody({
     required this.data,
     this.subdued = false,
+    this.selectable = true,
     super.key,
   });
 
   final String data;
   final bool subdued;
+  final bool selectable;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +24,7 @@ class AssistantMarkdownBody extends StatelessWidget {
 
     return MarkdownBody(
       data: data,
-      selectable: true,
+      selectable: selectable,
       blockSyntaxes: const [_MermaidFenceSyntax()],
       builders: {'mermaid-diagram': _MermaidDiagramBuilder(subdued: subdued)},
       onTapLink: (text, href, title) {

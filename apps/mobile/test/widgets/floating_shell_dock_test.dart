@@ -104,6 +104,70 @@ void main() {
     );
   });
 
+  testWidgets('route handoff previews never retain old action callbacks', (
+    tester,
+  ) async {
+    final cubit = ShellChromeActionsCubit();
+    addTearDown(cubit.close);
+    var staleCalls = 0;
+    var currentCalls = 0;
+    cubit
+      ..register(
+        registrationId: 'old',
+        ownerId: 'mail',
+        locations: {'/mail'},
+        actions: [
+          ShellActionSpec(
+            id: 'compose',
+            icon: Icons.edit,
+            tooltip: 'Compose',
+            inDock: true,
+            onPressed: () => staleCalls++,
+          ),
+        ],
+      )
+      ..unregister('old');
+    expect(cubit.dockPreviewForLocation('/mail').single.onPressed, isNull);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider.value(
+          value: cubit,
+          child: const Scaffold(
+            body: FloatingShellDock(
+              location: '/mail',
+              bottomInset: 68,
+              navigation: SizedBox(width: 160, height: 60),
+              child: SizedBox.expand(),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.byIcon(Icons.edit), findsOneWidget);
+    await tester.tap(find.byType(FilledButton));
+    expect(staleCalls, 0);
+    cubit.register(
+      registrationId: 'current',
+      ownerId: 'mail',
+      locations: {'/mail'},
+      actions: [
+        ShellActionSpec(
+          id: 'compose',
+          icon: Icons.edit,
+          tooltip: 'Compose',
+          inDock: true,
+          onPressed: () => currentCalls++,
+        ),
+      ],
+    );
+    await tester.pump();
+    await tester.tap(find.byType(FilledButton));
+    expect(currentCalls, 1);
+    expect(staleCalls, 0);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('primary action is clickable beside the navigation', (
     tester,
   ) async {

@@ -5,8 +5,27 @@ import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/l10n/gen/app_localizations_en.dart';
+import 'package:mobile/l10n/gen/app_localizations_vi.dart';
 
 void main() {
+  for (final l10n in [AppLocalizationsEn(), AppLocalizationsVi()]) {
+    test('localizes Live media failures in ${l10n.localeName}', () {
+      expect(
+        assistantLiveErrorLabel(l10n, 'microphone_unavailable'),
+        l10n.assistantMicrophoneUnavailable,
+      );
+      expect(
+        assistantLiveErrorLabel(l10n, 'live_audio_unavailable'),
+        l10n.assistantAudioUnavailable,
+      );
+      expect(
+        assistantLiveErrorLabel(l10n, 'private provider detail'),
+        l10n.assistantLiveDescriptionError,
+      );
+    });
+  }
+
   test('Live eligibility follows workspace tier, not personal credits', () {
     const shell = AssistantShellState(
       workspaceCredits: AssistantCredits(tier: 'PRO'),

@@ -15,6 +15,7 @@ import 'package:mobile/features/chat/data/chat_repository.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
+import '../models/assistant_chat_identity.dart';
 import '../models/assistant_models.dart';
 import 'assistant_calendar_insight.dart';
 import 'assistant_stream_parser.dart';
@@ -433,7 +434,7 @@ class AssistantRepository {
     late final Map<String, dynamic> payload;
     try {
       payload = await _apiClient.postJson('/api/ai/chat/restore', {
-        'chatId': chatId,
+        'chatId': assistantLiveChatUuid(chatId) ?? chatId,
       });
     } on ApiException {
       if (!forceRefresh) {
@@ -708,7 +709,7 @@ class AssistantRepository {
     String? creditWsId,
   }) async* {
     final response = await _apiClient.sendJsonStream('POST', '/api/ai/chat', {
-      'id': chatId,
+      'id': assistantLiveChatUuid(chatId) ?? chatId,
       'wsId': wsId,
       'workspaceContextId': workspaceContextId,
       'model': modelId,
@@ -877,9 +878,7 @@ class AssistantRepository {
         attachmentsByMessageId: _assistantAttachmentsFromChatMessages(messages),
       );
     } on ApiException catch (error) {
-      if (error.statusCode == 404 || error.statusCode == 403) {
-        return null;
-      }
+      if (error.statusCode == 404 || error.statusCode == 403) return null;
       rethrow;
     }
   }

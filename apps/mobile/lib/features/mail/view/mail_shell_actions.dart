@@ -37,13 +37,7 @@ extension _MailShellActions on _MailWorkspaceState {
             callbackToken: (_mailboxId, _folder, _mutating),
             onPressed: _markAllRead,
           ),
-        ShellActionSpec(
-          id: 'mail-swipe-settings',
-          icon: Icons.swipe_outlined,
-          tooltip: l10n.mailSwipeActions,
-          onPressed: () => showMailSwipeSettings(context, _swipePreferences),
-        ),
-        if (['owner', 'admin'].contains(_mailbox['role']))
+        if (_mailboxId != null)
           ShellActionSpec(
             id: 'mail-settings',
             icon: Icons.settings_outlined,

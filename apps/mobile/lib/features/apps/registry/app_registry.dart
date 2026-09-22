@@ -16,7 +16,7 @@ import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/inventory/view/inventory_page.dart';
 import 'package:mobile/features/mail/mail_module.dart';
-import 'package:mobile/features/meet/view/meet_page.dart';
+import 'package:mobile/features/meet/view/meet_portal_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
@@ -656,7 +656,7 @@ class AppRegistry {
   static Widget _pageCms(BuildContext context) => const CmsPage();
   static Widget _pageEducation(BuildContext context) => const EducationPage();
   static Widget _pageCrm(BuildContext context) => const CrmPage();
-  static Widget _pageMeet(BuildContext context) => const MeetPage();
+  static Widget _pageMeet(BuildContext context) => const MeetPortalPage();
   static Widget _pageFinance(BuildContext context) => const FinancePage();
   static Widget _pageInventory(BuildContext context) => const InventoryPage();
   static Widget _pageNotifications(BuildContext context) =>

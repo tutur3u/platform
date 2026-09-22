@@ -18,9 +18,11 @@ class ShellChromeActions extends StatefulWidget {
     required this.ownerId,
     required this.locations,
     required this.actions,
+    this.immersive = false,
     super.key,
   });
 
+  final bool immersive;
   final String ownerId;
   final Set<String> locations;
   final List<ShellActionSpec> actions;
@@ -50,6 +52,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
     super.didUpdateWidget(oldWidget);
     if (!setEquals(oldWidget.locations, widget.locations) ||
         oldWidget.ownerId != widget.ownerId ||
+        oldWidget.immersive != widget.immersive ||
         !listEquals(oldWidget.actions, widget.actions)) {
       _syncRegistration();
     }
@@ -59,6 +62,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
     _cubit?.register(
       registrationId: _registrationId,
       ownerId: widget.ownerId,
+      immersive: widget.immersive,
       locations: widget.locations,
       actions: widget.actions,
     );
@@ -227,12 +231,7 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    for (final action in actions)
-                      Padding(
-                        key: ValueKey<String>('shell-action-slot-${action.id}'),
-                        padding: const EdgeInsets.only(right: 2),
-                        child: _ShellActionButton(action: action),
-                      ),
+                    ..._groupedActionButtons(actions),
                     if (showNotifications)
                       ShellNotificationsActionSlot(
                         matchedLocation: widget.matchedLocation,
@@ -241,6 +240,85 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
                 ),
         );
       },
+    );
+  }
+}
+
+List<Widget> _groupedActionButtons(List<ShellActionSpec> actions) {
+  final seen = <String>{};
+  return [
+    for (final action in actions)
+      if (action.segmentGroup == null)
+        _ShellActionButton(action: action)
+      else if (seen.add(action.segmentGroup!))
+        _ShellActionSegments(
+          actions: actions
+              .where((item) => item.segmentGroup == action.segmentGroup)
+              .toList(),
+        ),
+  ];
+}
+
+class _ShellActionSegments extends StatelessWidget {
+  const _ShellActionSegments({required this.actions});
+  final List<ShellActionSpec> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = shad.Theme.of(context).colorScheme;
+    return Container(
+      key: ValueKey<String>(actions.first.segmentGroup!),
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final action in actions)
+            Semantics(
+              selected: action.highlighted,
+              button: true,
+              enabled: action.enabled,
+              excludeSemantics: true,
+              onTap: action.enabled ? action.onPressed : null,
+              label: action.tooltip,
+              child: Tooltip(
+                message: action.tooltip ?? '',
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  decoration: BoxDecoration(
+                    color: action.highlighted
+                        ? colors.primary
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: IconButton(
+                    constraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    style: IconButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    icon: Icon(
+                      action.icon,
+                      size: 20,
+                      color: action.highlighted
+                          ? colors.primaryForeground
+                          : colors.mutedForeground,
+                    ),
+                    onPressed: action.enabled ? action.onPressed : null,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

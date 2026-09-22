@@ -3319,6 +3319,12 @@ abstract class AppLocalizations {
   /// **'Reset zoom'**
   String get assistantMermaidZoomReset;
 
+  /// No description provided for @assistantMessageActionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Message actions'**
+  String get assistantMessageActionsTitle;
+
   /// No description provided for @assistantCopyMessageAction.
   ///
   /// In en, this message translates to:

@@ -206,7 +206,15 @@ void main() {
     await tester.tap(find.text('First'));
     await tester.pumpAndSettle();
     expect(find.byType(MailReader), findsOneWidget);
-    expect(actions.state.resolveForLocation(Routes.mail), isEmpty);
+    expect(
+      actions.state.resolveForLocation(Routes.mail).map((action) => action.id),
+      contains('mail-star'),
+    );
+    expect(
+      actions.state.resolveForLocation(Routes.mail).map((action) => action.id),
+      isNot(contains('mail-search')),
+    );
+    expect(titles.state.resolveForLocation(Routes.mail), 'First');
     navigator.currentState!.pop();
     await tester.pumpAndSettle();
     expect(actions.state.resolveForLocation(Routes.mail), isNotEmpty);
@@ -445,6 +453,82 @@ void main() {
       expect(find.byTooltip('Labels'), findsOneWidget);
     });
   }
+
+  testWidgets('mark-all-read unlocks actions after pagination', (tester) async {
+    final pending = Completer<void>();
+    when(
+      () => repository.markFolderRead('ws', 'box', 'inbox'),
+    ).thenAnswer((_) => pending.future);
+    respond(
+      (_) async => {
+        ...inbox('Message'),
+        'pagination': {'hasMore': true},
+      },
+    );
+    await mount(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Mark all read'));
+    await tester.pump();
+    await tester.tap(find.text('Load more'));
+    await tester.pumpAndSettle();
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is IconButton && widget.tooltip == 'Mark all read',
+            ),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    expect(find.text('Message'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('choosing the active filter keeps selection and avoids reload', (
+    tester,
+  ) async {
+    var requests = 0;
+    respond((_) async {
+      requests++;
+      return inbox('Selected message');
+    });
+    await mount(tester);
+    await tester.pumpAndSettle();
+    await tester.longPress(find.text('Selected message'));
+    await tester.pumpAndSettle();
+    final before = requests;
+    await tester.tap(find.byTooltip('Labels'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All labels and folders'));
+    await tester.pumpAndSettle();
+    expect(requests, before);
+    expect(find.byTooltip('Archive'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('mailbox members can open personal Mail settings', (
+    tester,
+  ) async {
+    respond((_) async => inbox('Message'));
+    await mount(tester);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Mail settings'), findsOneWidget);
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is IconButton && widget.tooltip == 'Mail settings',
+            ),
+          )
+          .onPressed,
+      isNotNull,
+    );
+  });
 
   testWidgets('search debounces typing and ignores older responses', (
     tester,
