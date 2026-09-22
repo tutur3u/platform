@@ -8,6 +8,7 @@ import {
   KeyRound,
   Loader2,
   Pencil,
+  ShieldOff,
 } from '@tuturuuu/icons';
 import type {
   InternalAccount,
@@ -154,6 +155,13 @@ export function InternalAccountRow({
             >
               <KeyRound className="size-4" />
               {t('actions.reset_password')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={account.isSelf}
+              onSelect={() => setAction('reset_mfa')}
+            >
+              <ShieldOff className="size-4" />
+              {t('actions.reset_mfa')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {account.isDisabled ? (

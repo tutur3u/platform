@@ -8160,4 +8160,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailSwipeUndo => 'Undo';
+
+  @override
+  String get adminAccountsTitle => 'Internal accounts';
+
+  @override
+  String get adminAccountsDescription => 'Manage Tuturuuu accounts and account security.';
+
+  @override
+  String get adminAccountsSearch => 'Search accounts';
+
+  @override
+  String get adminAccountsUnavailable => 'Unable to load accounts. Check your administrator access and try again.';
+
+  @override
+  String get adminAccountsEmpty => 'No accounts found';
+
+  @override
+  String get adminAccountsMore => 'Load more';
+
+  @override
+  String get adminAccountsDisabled => 'Access disabled';
+
+  @override
+  String get adminAccountsActive => 'Access enabled';
+
+  @override
+  String get adminAccountsResetPassword => 'Reset password';
+
+  @override
+  String get adminAccountsEnableAccess => 'Enable access';
+
+  @override
+  String get adminAccountsDisableAccess => 'Disable access';
+
+  @override
+  String get adminAccountsConfirmEmail => 'Type the account email to confirm';
+
+  @override
+  String get adminAccountsNewPassword => 'New password (12–72 characters)';
+
+  @override
+  String get adminAccountsSave => 'Save changes';
+
+  @override
+  String get adminAccountsFailed => 'The change could not be saved. Try again.';
+
+  @override
+  String get adminAccountsEditProfile => 'Edit profile';
+
+  @override
+  String get adminAccountsDisplayName => 'Display name';
+
+  @override
+  String get adminAccountsUsername => 'Username';
+
+  @override
+  String get adminAccountsResetMfa => 'Reset authenticators';
+
+  @override
+  String get adminAccountsResetMfaDescription => 'Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.';
 }

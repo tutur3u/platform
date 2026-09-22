@@ -500,7 +500,7 @@ Provision `COORDINATION_TOKEN` as a Worker secret. Store its value in the
 Infrastructure root-workspace secret `cloudflare_coordination:v1` as an
 envelope (`version`, `encryptedDataKey`, `encryptedSecret`) using the existing
 mobile deployment encryption helpers, then provision the same value as the server-only
-`CLOUDFLARE_COORDINATION_TOKEN` in the web and Calendar deployment environments.
+`CLOUDFLARE_COORDINATION_TOKEN` in the web, Calendar, and Infrastructure deployment environments.
 Set `CLOUDFLARE_COORDINATION_URL` to the deployed Worker's HTTPS origin. Never
 expose these credentials in Flutter defines, public environment variables, URLs,
 or logs. Missing credentials and network failures fail closed. Deploy the Worker
@@ -530,3 +530,30 @@ environment (the existing account deployment credential is a bootstrap fallback)
 Inspect secret names only during deployment checks. A successful `/health`
 response proves routing; also verify an authenticated acquire/check/release cycle
 and rejection of unauthenticated requests before declaring coordination ready.
+
+
+## Internal account recovery
+
+Infrastructure's internal account directory and mobile Settings → Internal
+accounts share the same authorized API. Native requests use their Supabase Bearer
+session; an explicit invalid credential never falls back to another browser
+session. Operators need a currently confirmed `@tuturuuu.com` account, enabled
+access, and `manage_internal_accounts` in the root workspace.
+
+Profile, access, password, and authenticator actions apply only to exact internal
+email accounts. Sensitive actions require typing the target email and cannot
+reset the operator's own access or credentials. The mobile directory remains in
+memory only; password input is never cached or logged.
+
+Authenticator reset clears server-owned trusted-device proofs before deleting
+Supabase MFA factors. It shares the Cloudflare authenticator lease with device
+registration and fails closed if coordination is unavailable. A partial provider
+failure returns an error; retry the reset to finish removing remaining factors.
+The action preserves an existing account ban. Factor enrollment still requires
+the account holder to prove possession; administrators cannot silently enroll an
+authenticator for someone else. Resetting factors is a recovery operation, not a
+policy that requires MFA for subsequent sign-ins.
+
+Before releasing these controls, verify Infrastructure has the same server-only
+coordination credentials as web and test both authorized and denied native
+requests. Never distribute those credentials in mobile configuration.

@@ -8465,6 +8465,7 @@
       "load_more": "Tải thêm",
       "open_menu": "Mở thao tác tài khoản",
       "refresh": "Làm mới tài khoản",
+      "reset_mfa": "Đặt lại trình xác thực",
       "reset_password": "Đặt lại mật khẩu",
       "retry": "Thử lại",
       "search": "Tìm kiếm"
@@ -8495,6 +8496,11 @@
       "hide_password": "Ẩn mật khẩu",
       "new_password": "Mật khẩu tạm thời mới",
       "password_help": "Sử dụng ít nhất {count} ký tự và chỉ chia sẻ qua kênh bảo mật được phê duyệt.",
+      "reset_mfa": {
+        "confirm": "Đặt lại trình xác thực",
+        "description": "Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy của {email}. Người dùng cần đăng ký lại trình xác thực.",
+        "title": "Đặt lại trình xác thực"
+      },
       "reset_password": {
         "confirm": "Đặt mật khẩu mới",
         "copied": "Đã sao chép",

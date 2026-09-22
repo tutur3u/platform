@@ -4,6 +4,7 @@ export type InternalAccountAction =
   | 'disable_access'
   | 'enable_access'
   | 'reset_password'
+  | 'reset_mfa'
   | 'update_profile';
 
 export type InternalAccountSortBy =
@@ -48,7 +49,7 @@ export interface ListInternalAccountsResponse {
 
 export type UpdateInternalAccountPayload =
   | {
-      action: 'disable_access' | 'enable_access';
+      action: 'disable_access' | 'enable_access' | 'reset_mfa';
       confirmationEmail: string;
     }
   | {

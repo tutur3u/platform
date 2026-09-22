@@ -8465,6 +8465,7 @@
       "load_more": "Load more",
       "open_menu": "Open account actions",
       "refresh": "Refresh accounts",
+      "reset_mfa": "Reset authenticators",
       "reset_password": "Reset password",
       "retry": "Try again",
       "search": "Search"
@@ -8495,6 +8496,11 @@
       "hide_password": "Hide password",
       "new_password": "New temporary password",
       "password_help": "Use at least {count} characters and share it through an approved secure channel.",
+      "reset_mfa": {
+        "confirm": "Reset authenticators",
+        "description": "Remove all MFA factors and trusted device registrations for {email}. The user will need to register their authenticators again.",
+        "title": "Reset authenticators"
+      },
       "reset_password": {
         "confirm": "Set new password",
         "copied": "Copied",

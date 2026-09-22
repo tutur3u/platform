@@ -52,7 +52,7 @@ export function InternalAccountActionDialog({
 
   const passwordIsValid =
     selectedAction !== 'reset_password' ||
-    newPassword.length >= MIN_PASSWORD_LENGTH;
+    (newPassword.length >= MIN_PASSWORD_LENGTH && newPassword.length <= 72);
   const canSubmit =
     confirmationEmail.trim().toLowerCase() === account.email &&
     passwordIsValid &&
@@ -99,7 +99,12 @@ export function InternalAccountActionDialog({
   });
 
   return (
-    <Dialog onOpenChange={handleOpenChange} open={open}>
+    <Dialog
+      onOpenChange={(nextOpen) => {
+        if (!isSubmitting) handleOpenChange(nextOpen);
+      }}
+      open={open}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t(`dialog.${selectedAction}.title`)}</DialogTitle>
