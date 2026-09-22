@@ -149,7 +149,7 @@ export async function enforceAdaptiveStepUpChallenge({
 
   try {
     await verifyTurnstileToken(request, token, { remoteIp: ipAddress });
-    void recordAbuseStepUpChallenge({
+    await recordAbuseStepUpChallenge({
       ipAddress,
       metadata: {
         decisionSource: decision.decisionSource,
@@ -158,7 +158,11 @@ export async function enforceAdaptiveStepUpChallenge({
       route,
       status: 'passed',
       subjectKey:
-        decision.subjectKey ?? decision.subjects[0]?.subject_key ?? 'unknown',
+        decision.subjects.find((subject) => subject.subject_type === 'session')
+          ?.subject_key ??
+        decision.subjectKey ??
+        decision.subjects[0]?.subject_key ??
+        'unknown',
       userId,
     });
     void recordAbuseActivitySignal({

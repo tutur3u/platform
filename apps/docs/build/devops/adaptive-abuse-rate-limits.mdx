@@ -16,6 +16,20 @@ response headers, or public docs. User-agent, missing-header, and request-shape
 checks are weak signals; they can raise caution but cannot earn trust by
 themselves.
 
+## Authenticated native verification
+
+Native session mutations can reuse a successful, unexpired server-recorded
+step-up proof tied to the same authenticated user and session subject. Bearer
+credentials are hashed for subject keys and must never appear in logs or
+challenge metadata. A rotated credential must establish its own proof.
+
+This only satisfies heuristic step-up requests. Explicit server restrictions and
+challenge overrides still apply; proof lookup failures require a new challenge.
+The proof uses the existing `abuse_step_up_challenges` table and does not require
+a separate Redis database. Successful verification records are awaited before
+returning, so the next mutation can observe them. When debugging repeated prompts,
+check proof storage and session continuity without logging credentials.
+
 ## Trust Tiers
 
 | Tier                 | Operator meaning                                       | Rate-limit behavior                                  |
