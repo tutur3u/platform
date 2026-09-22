@@ -63,11 +63,7 @@ class AssistantLiveUiState extends Equatable {
     if ((kind == AssistantLiveUiKind.error ||
             kind == AssistantLiveUiKind.reconnecting) &&
         error?.isNotEmpty == true) {
-      return switch (error) {
-        'microphone_unavailable' => l10n.assistantMicrophoneUnavailable,
-        'live_audio_unavailable' => l10n.assistantAudioUnavailable,
-        _ => error!,
-      };
+      return assistantLiveErrorLabel(l10n, error!);
     }
     if (kind == AssistantLiveUiKind.permissionDenied) {
       return l10n.assistantLivePermissionDenied;
@@ -210,3 +206,11 @@ bool hasAssistantLiveWorkspaceAccess(
         'live-assistant',
       }.contains,
     );
+
+/// Use the same bounded, localized error in the Live stage and chat summary.
+String assistantLiveErrorLabel(AppLocalizations l10n, String error) =>
+    switch (error) {
+      'microphone_unavailable' => l10n.assistantMicrophoneUnavailable,
+      'live_audio_unavailable' => l10n.assistantAudioUnavailable,
+      _ => l10n.assistantLiveDescriptionError,
+    };
