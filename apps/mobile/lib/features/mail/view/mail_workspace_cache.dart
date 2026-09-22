@@ -1,6 +1,27 @@
 part of 'mail_page.dart';
 
 extension _MailWorkspaceCache on _MailWorkspaceState {
+  Future<void> _warmVisibleThreads(int generation, String box) async {
+    if (!_threads || !_accessVerified) return;
+    // Bound bandwidth and memory; never prefetch drafts or attachments.
+    final ids = _items.take(3).map((item) => item['id'] as String).toList();
+    for (final id in ids) {
+      if (!mounted || generation != _generation || box != _mailboxId) return;
+      try {
+        await _repository.detail(widget.workspaceId, box, id, thread: true);
+      } on ApiException catch (error) {
+        if (mounted &&
+            generation == _generation &&
+            (error.statusCode == 401 || error.statusCode == 403)) {
+          await _denyCachedAccess();
+          return;
+        }
+      } on Object {
+        // A warm-up failure must not interrupt the inbox.
+      }
+    }
+  }
+
   Future<void> _restoreView(int generation) async {
     if (_cacheRestored) return;
     _cacheRestored = true;

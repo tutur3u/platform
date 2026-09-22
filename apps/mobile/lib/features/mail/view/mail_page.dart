@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
@@ -14,17 +14,23 @@ import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_message_tile.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mobile/features/mail/view/mail_settings_page.dart';
+import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
+import 'package:mobile/features/mail/view/mail_swipe_tile.dart';
+import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'mail_workspace_layout.dart';
 part 'mail_workspace_controls.dart';
 part 'mail_shell_actions.dart';
 part 'mail_workspace_cache.dart';
+part 'mail_workspace_swipes.dart';
 
 class MailPage extends StatelessWidget {
   const MailPage({super.key});
@@ -99,6 +105,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   late final MailRepository _repository;
+  final _swipePreferences = MailSwipePreferences();
+  bool _searchVisible = false;
   final _search = TextEditingController();
   final _searchFocus = FocusNode();
   List<Map<String, dynamic>> _mailboxes = [];
@@ -124,6 +132,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   String? _visibleListKey;
   String? _openingId;
   Timer? _searchDebounce;
+  StreamSubscription<PushNotificationEvent>? _mailPushSubscription;
+  AppLifecycleListener? _lifecycle;
 
   bool get _threads => _folder != 'drafts' && _folder != 'sent';
   Map<String, dynamic> get _mailbox => _mailboxes.firstWhere(
@@ -146,7 +156,27 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     super.initState();
     _repository = widget.repository ?? MailRepository();
     _searchFocus.addListener(_onSearchFocusChanged);
+    _mailPushSubscription = PushNotificationService.instance.events.listen((
+      event,
+    ) {
+      if (event.request.openTarget == 'mail' &&
+          event.request.wsId == widget.workspaceId) {
+        _refreshVisibleMailbox();
+      }
+    });
+    _lifecycle = AppLifecycleListener(onResume: _refreshVisibleMailbox);
+    unawaited(_swipePreferences.load());
     unawaited(_bootstrap());
+  }
+
+  void _refreshVisibleMailbox() {
+    if (mounted &&
+        _accessVerified &&
+        !_mutating &&
+        !_loading &&
+        !_childRouteOpen) {
+      unawaited(_load());
+    }
   }
 
   void _onSearchFocusChanged() => setState(() {});
@@ -157,10 +187,13 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     _bootstrapGeneration++;
     _organizationGeneration++;
     _searchDebounce?.cancel();
+    unawaited(_mailPushSubscription?.cancel());
+    _lifecycle?.dispose();
     _searchFocus
       ..removeListener(_onSearchFocusChanged)
       ..dispose();
     _search.dispose();
+    _swipePreferences.dispose();
     if (widget.repository == null) _repository.dispose();
     super.dispose();
   }
@@ -275,6 +308,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
             page * 30 < (pagination['total'] as int? ?? 0);
       });
       _saveView();
+      unawaited(_warmVisibleThreads(generation, box));
     } on Object catch (error) {
       if (mounted && generation == _generation) {
         setState(() {
@@ -439,12 +473,21 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     final box = _mailboxId!;
     final generation = _generation;
     try {
-      final detail = await _repository.detail(
-        widget.workspaceId,
-        box,
-        item['id'] as String,
-        thread: _threads,
-      );
+      final cached = _threads && _accessVerified
+          ? await _repository.cachedThread(
+              widget.workspaceId,
+              box,
+              item['id'] as String,
+            )
+          : null;
+      final detail =
+          cached ??
+          await _repository.detail(
+            widget.workspaceId,
+            box,
+            item['id'] as String,
+            thread: _threads,
+          );
       if (!mounted || generation != _generation) return;
       if (_folder == 'drafts') {
         await _compose(detail);
@@ -457,6 +500,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
             workspaceId: widget.workspaceId,
             mailboxId: box,
             detail: detail,
+            refreshOnOpen: cached != null,
             thread: _threads,
             canSend: _canSend,
             fromAddress: _mailbox['address'] as String,

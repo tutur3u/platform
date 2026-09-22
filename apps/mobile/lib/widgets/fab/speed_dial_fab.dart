@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -48,6 +54,53 @@ class _SpeedDialFabState extends State<SpeedDialFab> {
 
   @override
   Widget build(BuildContext context) {
+    ShellChromeActionsCubit? shell;
+    try {
+      shell = context.read<ShellChromeActionsCubit>();
+    } on ProviderNotFoundException {
+      // Standalone overlays retain their local action.
+    }
+    if (shell != null && GoRouter.maybeOf(context) != null) {
+      return ShellChromeActions(
+        ownerId: 'page-speed-dial',
+        locations: {GoRouterState.of(context).matchedLocation},
+        actions: [
+          ShellActionSpec(
+            id: 'page-speed-dial',
+            inDock: true,
+            icon: widget.icon,
+            tooltip: widget.label,
+            callbackToken: Object.hashAll(
+              widget.actions.map((action) => action.onPressed),
+            ),
+            onPressed: () async {
+              final actions = widget.actions;
+              final index = await showAdaptiveSheet<int>(
+                context: context,
+                builder: (sheetContext) => AppDialogScaffold(
+                  title: widget.label,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (var i = 0; i < actions.length; i++)
+                          ListTile(
+                            leading: Icon(actions[i].icon),
+                            title: Text(actions[i].label),
+                            onTap: () => Navigator.of(sheetContext).pop(i),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+              if (mounted && index != null) actions[index].onPressed();
+            },
+          ),
+        ],
+      );
+    }
     final safeAreaPadding = MediaQuery.paddingOf(context);
     final adjustedRight = widget.right + safeAreaPadding.right;
     final adjustedBottom =

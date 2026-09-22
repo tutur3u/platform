@@ -18,12 +18,15 @@ extension _MailShellActions on _MailWorkspaceState {
             onPressed: _compose,
           ),
         ShellActionSpec(
-          id: 'mail-refresh',
-          icon: Icons.refresh_rounded,
-          tooltip: l10n.commonRefresh,
-          enabled: !_loading && !_mutating,
-          callbackToken: (_mailboxId, _folder, _loading, _mutating),
-          onPressed: _mailboxId == null ? _bootstrap : _load,
+          id: 'mail-search',
+          icon: Icons.search,
+          tooltip: l10n.mailSearch,
+          highlighted: _searchVisible,
+          callbackToken: _searchVisible,
+          onPressed: () {
+            _updateState(() => _searchVisible = !_searchVisible);
+            if (_searchVisible) _searchFocus.requestFocus();
+          },
         ),
         if (_mailboxId != null && ['inbox', 'archive'].contains(_folder))
           ShellActionSpec(
@@ -34,6 +37,12 @@ extension _MailShellActions on _MailWorkspaceState {
             callbackToken: (_mailboxId, _folder, _mutating),
             onPressed: _markAllRead,
           ),
+        ShellActionSpec(
+          id: 'mail-swipe-settings',
+          icon: Icons.swipe_outlined,
+          tooltip: l10n.mailSwipeActions,
+          onPressed: () => showMailSwipeSettings(context, _swipePreferences),
+        ),
         if (['owner', 'admin'].contains(_mailbox['role']))
           ShellActionSpec(
             id: 'mail-settings',

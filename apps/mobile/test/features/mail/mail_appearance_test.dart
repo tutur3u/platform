@@ -47,7 +47,12 @@ void main() {
             styles.contains('background-color:transparent!important'),
             appearance != MailMessageAppearance.original,
           );
-          expect(document.querySelector('p')!.attributes['style'], 'color:red');
+          expect(
+            document.querySelector('p')!.attributes['style'],
+            appearance == MailMessageAppearance.original
+                ? equals('color:red')
+                : contains('background:transparent!important'),
+          );
         },
       );
     }

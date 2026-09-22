@@ -1,127 +1,165 @@
 part of 'mail_page.dart';
 
 extension _MailWorkspaceControls on _MailWorkspaceState {
+  Future<String?> _chooseMailOption(
+    String title,
+    Map<String, String> options,
+    String? selected,
+  ) => showAdaptiveSheet<String>(
+    context: context,
+    builder: (sheetContext) => AppDialogScaffold(
+      title: title,
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final option in options.entries)
+              ListTile(
+                title: Text(option.value),
+                selected: selected == option.key,
+                trailing: selected == option.key
+                    ? const Icon(Icons.check)
+                    : null,
+                onTap: () => Navigator.of(sheetContext).pop(option.key),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _pickerButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) => IconButton(
+    tooltip: label,
+    onPressed: _mutating ? null : onPressed,
+    icon: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [Icon(icon, size: 22), const Icon(Icons.expand_more, size: 16)],
+    ),
+  );
+
   Widget _buildMailControls(Widget folderPicker, bool sharedShell) {
     final l10n = context.l10n;
-    final mailbox = DropdownButtonFormField<String>(
-      key: ValueKey(_mailboxId),
-      initialValue: _mailboxId,
-      isExpanded: true,
-      decoration: InputDecoration(
-        hintText: l10n.mailMailbox,
-        isDense: true,
-        border: InputBorder.none,
-      ),
-      items: _mailboxes
-          .map(
-            (box) => DropdownMenuItem(
-              value: box['id'] as String,
-              child: Text(
-                box['address'] as String,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          )
-          .toList(),
-      onChanged: (value) {
-        _updateState(() {
-          _mailboxId = value;
-          _labelId = null;
-          _folderId = null;
-        });
-        unawaited(_load());
-      },
-    );
-    final search = TextField(
-      controller: _search,
-      focusNode: _searchFocus,
-      textInputAction: TextInputAction.search,
-      decoration: InputDecoration(
-        hintText: l10n.mailSearch,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
-        ),
-        filled: true,
-        fillColor: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        prefixIcon: const Icon(Icons.search),
-        suffixIcon: IconButton(
-          tooltip: l10n.mailSearch,
-          onPressed: _load,
-          icon: const Icon(Icons.arrow_forward),
-        ),
-      ),
-      onChanged: (_) {
-        _searchDebounce?.cancel();
-        _searchDebounce = Timer(
-          const Duration(milliseconds: 300),
-          () => unawaited(_load(forceRefresh: false)),
-        );
-      },
-      onSubmitted: (_) {
-        _searchDebounce?.cancel();
-        unawaited(_load());
-      },
-    );
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= 700) {
-          return Row(
-            children: [
-              if (sharedShell) ...[folderPicker, const SizedBox(width: 16)],
-              if (_mailboxes.isNotEmpty) ...[
-                Flexible(child: mailbox),
-                const SizedBox(width: 16),
-              ],
-              Expanded(child: search),
-            ],
-          );
-        }
-        final palette = AppCardPalette.resolve(
-          context,
-          index: 0,
-          moduleId: 'mail',
-        );
-        return Column(
+    return Column(
+      children: [
+        Row(
           children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    palette.background,
-                    palette.background.withValues(alpha: 0.35),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: palette.border.withValues(alpha: 0.5),
-                ),
+            folderPicker,
+            if (_mailboxes.isNotEmpty)
+              _pickerButton(
+                label: _mailbox['address'] as String? ?? l10n.mailMailbox,
+                icon: Icons.alternate_email,
+                onPressed: () async {
+                  final value = await _chooseMailOption(l10n.mailMailbox, {
+                    for (final box in _mailboxes)
+                      box['id'] as String: box['address'] as String,
+                  }, _mailboxId);
+                  if (!mounted || value == null || value == _mailboxId) return;
+                  _updateState(() {
+                    _mailboxId = value;
+                    _labelId = null;
+                    _folderId = null;
+                    _selected.clear();
+                  });
+                  unawaited(_load(forceRefresh: false));
+                },
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  children: [
-                    if (sharedShell) ...[
-                      folderPicker,
-                      const SizedBox(width: 12),
-                    ],
-                    if (_mailboxes.isNotEmpty) Expanded(child: mailbox),
-                  ],
-                ),
+            Expanded(
+              child: Text(
+                _mailbox['address'] as String? ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
-            const SizedBox(height: 8),
-            search,
+            if (_labels.isNotEmpty || _folders.isNotEmpty)
+              _pickerButton(
+                label: l10n.mailLabels,
+                icon: _labelId != null || _folderId != null
+                    ? Icons.filter_alt
+                    : Icons.filter_alt_outlined,
+                onPressed: () async {
+                  final value = await _chooseMailOption(
+                    l10n.mailLabels,
+                    {
+                      '': l10n.mailAllLabels,
+                      for (final label in _labels)
+                        'label:${label['id']}': label['name'] as String,
+                      for (final folder in _folders)
+                        'folder:${folder['id']}': folder['name'] as String,
+                    },
+                    _labelId != null
+                        ? 'label:$_labelId'
+                        : _folderId != null
+                        ? 'folder:$_folderId'
+                        : '',
+                  );
+                  if (!mounted || value == null) return;
+                  _updateState(() {
+                    _labelId = value.startsWith('label:')
+                        ? value.substring(6)
+                        : null;
+                    _folderId = value.startsWith('folder:')
+                        ? value.substring(7)
+                        : null;
+                    _selected.clear();
+                  });
+                  unawaited(_load(forceRefresh: false));
+                },
+              ),
+            if (!sharedShell)
+              IconButton(
+                tooltip: l10n.mailSearch,
+                onPressed: () =>
+                    _updateState(() => _searchVisible = !_searchVisible),
+                icon: const Icon(Icons.search),
+              ),
           ],
-        );
-      },
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          reverseDuration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOutCubic,
+          child: _searchVisible || _search.text.isNotEmpty
+              ? TextField(
+                  controller: _search,
+                  focusNode: _searchFocus,
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    hintText: l10n.mailSearch,
+                    isDense: true,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                      tooltip: l10n.commonCancel,
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        _searchDebounce?.cancel();
+                        _search.clear();
+                        _searchFocus.unfocus();
+                        _updateState(() => _searchVisible = false);
+                        unawaited(_load(forceRefresh: false));
+                      },
+                    ),
+                  ),
+                  onChanged: (_) {
+                    _searchDebounce?.cancel();
+                    _searchDebounce = Timer(
+                      const Duration(milliseconds: 300),
+                      () => unawaited(_load(forceRefresh: false)),
+                    );
+                  },
+                  onSubmitted: (_) {
+                    _searchDebounce?.cancel();
+                    unawaited(_load());
+                  },
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 }

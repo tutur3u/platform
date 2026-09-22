@@ -107,7 +107,7 @@ class _NotificationsViewState extends State<NotificationsView> {
       builder: (context, state) {
         final feed = state.feedFor(_selectedTab);
         final list = _NotificationsList(
-          key: ValueKey('${_selectedTab.name}-${widget.pageMode}'),
+          key: PageStorageKey((_selectedTab, state.scopeWorkspaceId)),
           tab: _selectedTab,
           feed: feed,
           pageMode: widget.pageMode,

@@ -414,6 +414,15 @@ responses remain permission failures. Never bypass the server authorization or
 abuse check to repair this flow. Log status and error codes, not response bodies
 or verification tokens.
 
+Every satellite enforcing this challenge needs its own production
+`TURNSTILE_SECRET_KEY` configuration matching the mobile `TURNSTILE_SITE_KEY`.
+The mobile release vault also supplies `TURNSTILE_BASE_URL`. A successful client
+challenge followed by another 403 requires checking the server challenge audit:
+`not_configured` means the satellite secret is missing. Configure the existing
+matching secret through the provider vault and redeploy the current production
+source; never disable verification. Check names and readiness without logging
+secret values.
+
 Assistant credits must load independently of optional task, Calendar, soul, and
 model-catalog insights. Calendar insights use the authenticated workspace
 `/api/v1/workspaces/:wsId/calendar/events` gateway. A failed credit read offers a
