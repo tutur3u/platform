@@ -1,13 +1,15 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/notifications/widgets/notifications_action_button.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -200,9 +202,8 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
             shouldShowNotificationsActionForLocation(widget.matchedLocation);
         final extraActionCount = actions.length + (showNotifications ? 1 : 0);
 
-        if (extraActionCount > 1) {
-          final width = MediaQuery.sizeOf(context).width;
-          final visibleCount = width >= 840 ? 3 : (width >= 600 ? 2 : 1);
+        if (extraActionCount > 3) {
+          const visibleCount = 2;
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -257,18 +258,46 @@ class _ShellActionsOverflow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return PopupMenuButton<String>(
+    return IconButton(
       key: const ValueKey<String>('shell-actions-overflow'),
       tooltip: MaterialLocalizations.of(context).showMenuTooltip,
       icon: const Icon(Icons.more_horiz_rounded, size: 22),
-      onSelected: (id) {
+      onPressed: () async {
+        final id = await showAdaptiveSheet<String>(
+          context: context,
+          builder: (sheetContext) => AppDialogScaffold(
+            title: MaterialLocalizations.of(context).showMenuTooltip,
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final action in actions)
+                    ListTile(
+                      enabled: action.enabled && !action.isLoading,
+                      leading: action.isLoading
+                          ? const NovaLoadingIndicator(size: 20)
+                          : Icon(action.icon),
+                      title: Text(action.tooltip ?? action.id),
+                      onTap: () => Navigator.of(sheetContext).pop(action.id),
+                    ),
+                  if (showNotifications)
+                    ListTile(
+                      leading: const Icon(Icons.notifications_none_rounded),
+                      title: Text(context.l10n.notificationsTitle),
+                      onTap: () =>
+                          Navigator.of(sheetContext).pop(_notificationsId),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+        if (!context.mounted || id == null) return;
         if (id == _notificationsId) {
           unawaited(context.push(Routes.notifications));
           return;
         }
-
         for (final action in actions) {
           if (action.id == id && action.enabled && !action.isLoading) {
             action.onPressed?.call();
@@ -276,45 +305,6 @@ class _ShellActionsOverflow extends StatelessWidget {
           }
         }
       },
-      itemBuilder: (context) => [
-        for (final action in actions)
-          PopupMenuItem<String>(
-            value: action.id,
-            enabled: action.enabled && !action.isLoading,
-            child: Row(
-              children: [
-                SizedBox.square(
-                  dimension: 20,
-                  child: action.isLoading
-                      ? const Padding(
-                          padding: EdgeInsets.all(3),
-                          child: NovaLoadingIndicator(size: 20),
-                        )
-                      : Icon(
-                          action.icon,
-                          size: 19,
-                          color: action.highlighted
-                              ? theme.colorScheme.primary
-                              : null,
-                        ),
-                ),
-                const SizedBox(width: 12),
-                Flexible(child: Text(action.tooltip ?? action.id)),
-              ],
-            ),
-          ),
-        if (showNotifications)
-          PopupMenuItem<String>(
-            value: _notificationsId,
-            child: Row(
-              children: [
-                const Icon(Icons.notifications_none_rounded, size: 19),
-                const SizedBox(width: 12),
-                Flexible(child: Text(context.l10n.notificationsTitle)),
-              ],
-            ),
-          ),
-      ],
     );
   }
 }

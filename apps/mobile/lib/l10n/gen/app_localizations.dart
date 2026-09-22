@@ -15534,6 +15534,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last 12 weeks'**
   String get profileRecentActivity;
+
+  /// No description provided for @mailSwipeActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe actions'**
+  String get mailSwipeActions;
+
+  /// No description provided for @mailSwipeLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe left'**
+  String get mailSwipeLeft;
+
+  /// No description provided for @mailSwipeRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe right'**
+  String get mailSwipeRight;
+
+  /// No description provided for @mailSwipeRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read / unread'**
+  String get mailSwipeRead;
+
+  /// No description provided for @mailSwipeStar.
+  ///
+  /// In en, this message translates to:
+  /// **'Star / unstar'**
+  String get mailSwipeStar;
+
+  /// No description provided for @mailSwipeMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to folder'**
+  String get mailSwipeMove;
+
+  /// No description provided for @mailSwipeNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get mailSwipeNone;
+
+  /// No description provided for @mailSwipeUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get mailSwipeUndo;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

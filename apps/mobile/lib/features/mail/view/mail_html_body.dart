@@ -7,6 +7,7 @@ import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:url_launcher/url_launcher.dart';
 
 /// Native rendering isolated from the app's authenticated browser state.
@@ -98,6 +99,11 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
           loadImages: _images,
           inlineImages: widget.inlineImages,
           appearance: _appearance ?? MailMessageAppearance.original,
+          backgroundArgb:
+              (_appearance == MailMessageAppearance.dark) ==
+                  (Theme.of(context).brightness == Brightness.dark)
+              ? shad.Theme.of(context).colorScheme.background.toARGB32()
+              : null,
         ),
       );
       if (mounted && generation == _generation) {

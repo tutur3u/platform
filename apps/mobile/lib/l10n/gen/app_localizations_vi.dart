@@ -8094,4 +8094,28 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileRecentActivity => '12 tuần gần đây';
+
+  @override
+  String get mailSwipeActions => 'Thao tác vuốt';
+
+  @override
+  String get mailSwipeLeft => 'Vuốt sang trái';
+
+  @override
+  String get mailSwipeRight => 'Vuốt sang phải';
+
+  @override
+  String get mailSwipeRead => 'Đã đọc / chưa đọc';
+
+  @override
+  String get mailSwipeStar => 'Gắn sao / bỏ sao';
+
+  @override
+  String get mailSwipeMove => 'Chuyển vào thư mục';
+
+  @override
+  String get mailSwipeNone => 'Không có';
+
+  @override
+  String get mailSwipeUndo => 'Hoàn tác';
 }

@@ -38,7 +38,7 @@ class MailMessageTile extends StatelessWidget {
       child: Material(
         color: selected
             ? colors.primary.withValues(alpha: 0.08)
-            : colors.surfaceContainerLowest,
+            : Colors.transparent,
         child: InkWell(
           onTap: loading ? null : onTap,
           onLongPress: onSelect,

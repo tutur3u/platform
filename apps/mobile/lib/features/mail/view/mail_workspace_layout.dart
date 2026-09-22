@@ -13,42 +13,39 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
       'trash': l10n.mailTrash,
     };
     final sharedShell = lookupShellTitleOverrideCubit(context) != null;
-    final folderPicker = PopupMenuButton<String>(
-      tooltip: l10n.mailFolders,
-      onSelected: (folder) {
-        if (_folder == folder) return;
+    final folderPicker = _pickerButton(
+      label: folders[_folder] ?? l10n.mailFolders,
+      icon: switch (_folder) {
+        'starred' => Icons.star_outline,
+        'drafts' => Icons.drafts_outlined,
+        'sent' => Icons.send_outlined,
+        'archive' => Icons.archive_outlined,
+        'spam' => Icons.report_outlined,
+        'trash' => Icons.delete_outline,
+        _ => Icons.inbox_outlined,
+      },
+      onPressed: () async {
+        final folder = await _chooseMailOption(
+          l10n.mailFolders,
+          folders,
+          _folder,
+        );
+        if (!mounted || folder == null || folder == _folder) return;
         _updateState(() {
           _folder = folder;
           _labelId = null;
           _folderId = null;
+          _selected.clear();
         });
         unawaited(_load(forceRefresh: false));
       },
-      itemBuilder: (_) => [
-        for (final folder in folders.entries)
-          CheckedPopupMenuItem(
-            value: folder.key,
-            checked: _folder == folder.key,
-            child: Text(folder.value),
-          ),
-      ],
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 48),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(folders[_folder] ?? l10n.mailTitle),
-            const SizedBox(width: 4),
-            const Icon(Icons.expand_more, size: 20),
-          ],
-        ),
-      ),
     );
     return Stack(
       fit: StackFit.expand,
       children: [
         if (sharedShell && !_childRouteOpen) _buildMailShellActions(),
         Scaffold(
+          backgroundColor: shad.Theme.of(context).colorScheme.background,
           appBar: sharedShell
               ? null
               : AppBar(
@@ -97,45 +94,6 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                       ),
                       if (_loading) const NovaLoadingIndicator(size: 20),
                       if (_mutating) const NovaLoadingIndicator(size: 20),
-                      if (_labels.isNotEmpty || _folders.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: DropdownButton<String>(
-                            value: _labelId != null
-                                ? 'label:$_labelId'
-                                : _folderId != null
-                                ? 'folder:$_folderId'
-                                : '',
-                            isExpanded: true,
-                            items: [
-                              DropdownMenuItem(
-                                value: '',
-                                child: Text(l10n.mailAllLabels),
-                              ),
-                              for (final label in _labels)
-                                DropdownMenuItem(
-                                  value: 'label:${label['id']}',
-                                  child: Text(label['name'] as String),
-                                ),
-                              for (final folder in _folders)
-                                DropdownMenuItem(
-                                  value: 'folder:${folder['id']}',
-                                  child: Text(folder['name'] as String),
-                                ),
-                            ],
-                            onChanged: (v) {
-                              _updateState(() {
-                                _labelId = v?.startsWith('label:') == true
-                                    ? v!.substring(6)
-                                    : null;
-                                _folderId = v?.startsWith('folder:') == true
-                                    ? v!.substring(7)
-                                    : null;
-                              });
-                              unawaited(_load());
-                            },
-                          ),
-                        ),
                       if (_selected.isNotEmpty)
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
@@ -232,30 +190,40 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                         return const SizedBox.shrink();
                       }
                       final item = _items[index];
-                      return MailMessageTile(
+                      return MailSwipeTile(
                         key: ValueKey(item['id']),
-                        loading: _openingId == item['id'],
-                        item: item,
-                        thread: _threads,
-                        selected: _selected.contains(item['id']),
-                        onSelect: () {
-                          if (_mutating) return;
-                          _updateState(() {
-                            final id = item['id'] as String;
-                            if (!_selected.remove(id)) _selected.add(id);
-                          });
-                        },
-                        onTap: () {
-                          if (_mutating) return;
-                          if (_selected.isEmpty) {
-                            unawaited(_open(item));
-                          } else {
+                        id: item['id'] as String,
+                        preferences: _swipePreferences,
+                        enabled:
+                            !_mutating &&
+                            _accessVerified &&
+                            _selected.isEmpty &&
+                            _folder != 'drafts',
+                        onAction: (action) => _swipeMessage(item, action),
+                        child: MailMessageTile(
+                          loading: _openingId == item['id'],
+                          item: item,
+                          thread: _threads,
+                          selected: _selected.contains(item['id']),
+                          onSelect: () {
+                            if (_mutating) return;
                             _updateState(() {
                               final id = item['id'] as String;
                               if (!_selected.remove(id)) _selected.add(id);
                             });
-                          }
-                        },
+                          },
+                          onTap: () {
+                            if (_mutating) return;
+                            if (_selected.isEmpty) {
+                              unawaited(_open(item));
+                            } else {
+                              _updateState(() {
+                                final id = item['id'] as String;
+                                if (!_selected.remove(id)) _selected.add(id);
+                              });
+                            }
+                          },
+                        ),
                       );
                     },
                   ),
