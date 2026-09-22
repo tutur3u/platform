@@ -1,5 +1,5 @@
-import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/models/assistant_chat_identity.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 
 class AssistantLiveRepository {
@@ -14,7 +14,7 @@ class AssistantLiveRepository {
     String? model,
     bool forceFresh = false,
   }) async {
-    final resumableChatId = normalizeUuid(chatId);
+    final resumableChatId = assistantLiveChatUuid(chatId);
     final response = await _apiClient.postJson('/api/v1/assistant/live/token', {
       'wsId': wsId,
       if (resumableChatId != null) 'chatId': resumableChatId,
