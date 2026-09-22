@@ -30,8 +30,14 @@ class AssistantCreditSourceSheet extends StatelessWidget {
                   children: [
                     Align(
                       alignment: Alignment.centerRight,
-                      child: CloseButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                      child: IconButton(
+                        icon: const Icon(Icons.close),
+                        tooltip: MaterialLocalizations.of(
+                          context,
+                        ).closeButtonTooltip,
+                        onPressed: state.status == AssistantShellStatus.loading
+                            ? null
+                            : () => Navigator.maybePop(context),
                       ),
                     ),
                     if (failed) ...[

@@ -113,6 +113,30 @@ void main() {
                 [3, 4],
               ],
       );
+      if (!cancel) {
+        when(
+          () => repository.storeSessionHandle(
+            wsId: 'ws',
+            scopeKey: 'scope',
+            sessionHandle: 'resume',
+          ),
+        ).thenThrow(Exception('Storage unavailable'));
+        when(
+          () => repository.clearSessionHandle(wsId: 'ws', scopeKey: 'scope'),
+        ).thenThrow(Exception('Storage unavailable'));
+        for (final resumable in [true, false]) {
+          events.add(
+            AssistantLiveSocketSessionHandleUpdated(
+              resumable: resumable,
+              newHandle: resumable ? 'resume' : null,
+            ),
+          );
+          await _tick();
+          expect(cubit.state.isMicrophoneActive, isTrue);
+          expect(cubit.state.error, isNull);
+        }
+        verifyNever(recorder.stop);
+      }
       if (cancel) {
         capture(Uint8List.fromList([5, 6]));
         await _tick();

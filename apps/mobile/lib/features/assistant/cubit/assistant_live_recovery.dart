@@ -1,6 +1,27 @@
 part of 'assistant_live_cubit.dart';
 
 extension _AssistantLiveRecovery on AssistantLiveCubit {
+  Future<void> _persistSessionHandle(bool resumable, String? newHandle) async {
+    final wsId = state.workspaceId;
+    final scopeKey = state.scopeKey;
+    if (wsId == null || scopeKey == null) return;
+    try {
+      if (resumable && newHandle != null && newHandle.isNotEmpty) {
+        await _repository.storeSessionHandle(
+          wsId: wsId,
+          scopeKey: scopeKey,
+          sessionHandle: newHandle,
+        );
+        _emitSessionHandle(newHandle);
+      } else {
+        await _repository.clearSessionHandle(wsId: wsId, scopeKey: scopeKey);
+        _emitSessionHandle(null);
+      }
+    } on Exception {
+      // Resume storage is optional; a disk failure must not stop a live call.
+    }
+  }
+
   Future<void> _dispatchSocketEvent(AssistantLiveSocketEvent event) async {
     if (isClosed || _manualDisconnect) return;
     try {

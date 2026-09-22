@@ -16,10 +16,12 @@ Future<AssistantCalendarInsight> loadAssistantCalendarInsight(
   final response = await api.getJson(
     '/api/v1/workspaces/$wsId/calendar/events?$query',
   );
-  final events = (response['data'] as List<dynamic>? ?? const [])
+  final allEvents = (response['data'] as List<dynamic>? ?? const [])
       .whereType<Map<String, dynamic>>()
+      .toList(growable: false);
+  final events = allEvents
       .take(25)
       .map(AssistantCalendarEvent.fromJson)
       .toList(growable: false);
-  return AssistantCalendarInsight(events: events, total: events.length);
+  return AssistantCalendarInsight(events: events, total: allEvents.length);
 }

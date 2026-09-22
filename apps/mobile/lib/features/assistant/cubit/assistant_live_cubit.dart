@@ -428,27 +428,14 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         :final resumable,
         :final newHandle,
       ):
-        final wsId = state.workspaceId;
-        final scopeKey = state.scopeKey;
-        if (wsId != null && scopeKey != null) {
-          if (resumable && newHandle != null && newHandle.isNotEmpty) {
-            await _repository.storeSessionHandle(
-              wsId: wsId,
-              scopeKey: scopeKey,
-              sessionHandle: newHandle,
-            );
-            emit(state.copyWith(sessionHandle: newHandle));
-          } else {
-            await _repository.clearSessionHandle(
-              wsId: wsId,
-              scopeKey: scopeKey,
-            );
-            emit(state.copyWith(sessionHandle: null));
-          }
-        }
+        await _persistSessionHandle(resumable, newHandle);
       case AssistantLiveSocketToolCall(:final calls):
         await _executeToolCalls(calls);
     }
+  }
+
+  void _emitSessionHandle(String? handle) {
+    if (!isClosed) emit(state.copyWith(sessionHandle: handle));
   }
 
   Future<void> _executeToolCalls(List<AssistantLiveFunctionCall> calls) async {

@@ -94,7 +94,13 @@ void main() {
         permission.complete(true);
         directoryReady.complete(directory);
         started.complete();
-        await Future<void>.delayed(const Duration(milliseconds: 30));
+        // Wait for real filesystem cleanup, not a fixed delay that races CI.
+        await (() async {
+          while (!await directory.list().isEmpty) {
+            await Future<void>.delayed(const Duration(milliseconds: 5));
+          }
+          await Future<void>.delayed(Duration.zero);
+        })().timeout(const Duration(seconds: 5));
       });
       await tester.pumpAndSettle();
       expect(find.text('Stop'), findsNothing);
