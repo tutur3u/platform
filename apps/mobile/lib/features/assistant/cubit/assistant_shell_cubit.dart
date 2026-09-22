@@ -40,7 +40,10 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     emit(nextState);
   }
 
-  Future<void> loadWorkspace(Workspace workspace) async {
+  Future<void> loadWorkspace(
+    Workspace workspace, {
+    bool forceRefresh = false,
+  }) async {
     final requestVersion = ++_requestVersion;
     _emitIfOpen(
       state.copyWith(
@@ -61,28 +64,40 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       final storedWorkspaceContext =
           await _preferences.loadWorkspaceContextId(workspace.id) ?? 'personal';
 
-      final personalWorkspaceFuture = _repository.resolvePersonalWorkspaceId();
-      final soulFuture = _repository.fetchSoul();
-      final tasksFuture = _repository.fetchTasksInsight(
-        wsId: workspace.id,
-        isPersonal: workspace.personal,
-      );
-      final calendarFuture = _repository.fetchCalendarInsight(workspace.id);
-      final workspaceCreditsFuture = _repository.fetchCredits(workspace.id);
-      final modelsFuture = _repository.fetchGatewayModels();
-
-      final personalWorkspaceId = await personalWorkspaceFuture;
-      final personalCreditsFuture = personalWorkspaceId == null
-          ? Future.value(const AssistantCredits())
+      // Insights are optional; a missing Calendar/Tasks endpoint must not
+      // replace a paid workspace's balance and model selection with defaults.
+      // Attach handlers together so a parallel failure never escapes the zone.
+      final results = await Future.wait<Object?>([
+        _repository.resolvePersonalWorkspaceId(),
+        _optional(_repository.fetchSoul(), const AssistantSoul()),
+        _optional(
+          _repository.fetchTasksInsight(
+            wsId: workspace.id,
+            isPersonal: workspace.personal,
+          ),
+          const AssistantTasksInsight(),
+        ),
+        _optional(
+          _repository.fetchCalendarInsight(workspace.id),
+          const AssistantCalendarInsight(),
+        ),
+        _repository.fetchCredits(workspace.id, forceRefresh: forceRefresh),
+        _optional(_repository.fetchGatewayModels(), <AssistantGatewayModel>[]),
+      ]);
+      final personalWorkspaceId = results[0] as String?;
+      final soul = results[1]! as AssistantSoul;
+      final tasks = results[2]! as AssistantTasksInsight;
+      final calendar = results[3]! as AssistantCalendarInsight;
+      final workspaceCredits = results[4]! as AssistantCredits;
+      final models = results[5]! as List<AssistantGatewayModel>;
+      final personalCredits = personalWorkspaceId == null
+          ? const AssistantCredits()
           : personalWorkspaceId == workspace.id
-          ? workspaceCreditsFuture
-          : _repository.fetchCredits(personalWorkspaceId);
-      final soul = await soulFuture;
-      final tasks = await tasksFuture;
-      final calendar = await calendarFuture;
-      final workspaceCredits = await workspaceCreditsFuture;
-      final personalCredits = await personalCreditsFuture;
-      final models = await modelsFuture;
+          ? workspaceCredits
+          : await _repository.fetchCredits(
+              personalWorkspaceId,
+              forceRefresh: forceRefresh,
+            );
 
       if (isClosed || requestVersion != _requestVersion) return;
 
@@ -153,6 +168,14 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     }
   }
 
+  Future<T> _optional<T>(Future<T> request, T fallback) async {
+    try {
+      return await request;
+    } on Exception {
+      return fallback;
+    }
+  }
+
   Future<void> renameAssistant(String name) async {
     if (state.workspace == null) return;
     final soul = await _repository.updateSoulName(name);
@@ -180,9 +203,9 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     await _preferences.saveThinkingMode(workspace.id, mode);
   }
 
-  Future<void> setCreditSource(AssistantCreditSource source) async {
+  Future<bool> setCreditSource(AssistantCreditSource source) async {
     final workspace = state.workspace;
-    if (workspace == null) return;
+    if (workspace == null) return false;
 
     final effectiveSource = state.workspaceCreditLocked
         ? AssistantCreditSource.personal
@@ -190,36 +213,55 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     final creditWorkspaceId = effectiveSource == AssistantCreditSource.personal
         ? state.personalWorkspaceId
         : workspace.id;
-    if (creditWorkspaceId == null) return;
+    if (creditWorkspaceId == null) return false;
 
-    final activeCredits = await _repository.fetchCredits(creditWorkspaceId);
-    final nextPersonalCredits =
-        effectiveSource == AssistantCreditSource.personal
-        ? activeCredits
-        : state.personalCredits;
-    final nextWorkspaceCredits =
-        effectiveSource == AssistantCreditSource.workspace
-        ? activeCredits
-        : state.workspaceCredits;
-    final selectedModel = _resolveSelectedModel(
-      state.availableModels,
-      state.selectedModel,
-      activeCredits.defaultLanguageModel ?? _defaultAssistantModel.value,
-      activeCredits,
-    );
-
+    final version = _requestVersion;
     emit(
-      state.copyWith(
-        creditSource: effectiveSource,
-        workspaceCredits: nextWorkspaceCredits,
-        personalCredits: nextPersonalCredits,
-        activeCredits: activeCredits,
-        selectedModel: selectedModel,
-      ),
+      state.copyWith(status: AssistantShellStatus.loading, clearError: true),
     );
+    try {
+      final activeCredits = await _repository.fetchCredits(creditWorkspaceId);
+      if (isClosed || version != _requestVersion) return false;
+      final nextPersonalCredits =
+          effectiveSource == AssistantCreditSource.personal
+          ? activeCredits
+          : state.personalCredits;
+      final nextWorkspaceCredits =
+          effectiveSource == AssistantCreditSource.workspace
+          ? activeCredits
+          : state.workspaceCredits;
+      final selectedModel = _resolveSelectedModel(
+        state.availableModels,
+        state.selectedModel,
+        activeCredits.defaultLanguageModel ?? _defaultAssistantModel.value,
+        activeCredits,
+      );
 
-    await _preferences.saveCreditSource(workspace.id, effectiveSource);
-    await _preferences.saveModel(workspace.id, selectedModel);
+      emit(
+        state.copyWith(
+          status: AssistantShellStatus.loaded,
+          creditSource: effectiveSource,
+          workspaceCredits: nextWorkspaceCredits,
+          personalCredits: nextPersonalCredits,
+          activeCredits: activeCredits,
+          selectedModel: selectedModel,
+        ),
+      );
+
+      await _preferences.saveCreditSource(workspace.id, effectiveSource);
+      await _preferences.saveModel(workspace.id, selectedModel);
+      return true;
+    } on Exception catch (error) {
+      if (!isClosed && version == _requestVersion) {
+        emit(
+          state.copyWith(
+            status: AssistantShellStatus.error,
+            error: error.toString(),
+          ),
+        );
+      }
+      return false;
+    }
   }
 
   Future<void> setWorkspaceContextId(String contextId) async {

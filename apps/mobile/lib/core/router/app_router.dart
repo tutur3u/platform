@@ -1,9 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/validation/uuid.dart';
+import 'package:mobile/data/sources/api_verification.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
@@ -15,6 +18,7 @@ import 'package:mobile/features/auth/view/forgot_password_page.dart';
 import 'package:mobile/features/auth/view/login_page.dart';
 import 'package:mobile/features/auth/view/mfa_verify_page.dart';
 import 'package:mobile/features/auth/view/signup_page.dart';
+import 'package:mobile/features/auth/widgets/security_check_dialog.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/documents/view/document_detail_page.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
@@ -188,7 +192,13 @@ GoRouter createAppRouter(
   AppTabCubit appTabCubit, {
   String? initialLocation,
 }) {
+  final navigatorKey = GlobalKey<NavigatorState>();
+  ApiVerification.requestToken = () async {
+    final context = navigatorKey.currentContext;
+    return context == null ? null : await showSecurityCheck(context);
+  };
   return GoRouter(
+    navigatorKey: navigatorKey,
     debugLogDiagnostics: true,
     initialLocation: initialLocation ?? Routes.home,
     overridePlatformDefaultLocation: true,

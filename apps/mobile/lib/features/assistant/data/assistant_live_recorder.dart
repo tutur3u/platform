@@ -15,6 +15,7 @@ class AssistantLiveRecorder {
   Future<void> start({
     required void Function(Uint8List bytes) onData,
     void Function(double level)? onAmplitude,
+    void Function(Object error)? onError,
   }) async {
     final stream = await _recorder.startStream(
       const RecordConfig(
@@ -29,7 +30,7 @@ class AssistantLiveRecorder {
     );
 
     await _streamSubscription?.cancel();
-    _streamSubscription = stream.listen(onData);
+    _streamSubscription = stream.listen(onData, onError: onError);
 
     await _amplitudeSubscription?.cancel();
     if (onAmplitude != null) {
@@ -38,7 +39,7 @@ class AssistantLiveRecorder {
           .listen((value) {
             final normalized = ((value.current + 60) / 60).clamp(0.0, 1.0);
             onAmplitude(normalized);
-          });
+          }, onError: onError);
     }
   }
 

@@ -8094,4 +8094,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileRecentActivity => '12 tuần gần đây';
+
+  @override
+  String get assistantReplyFailed => 'Mira chưa thể hoàn tất câu trả lời. Tin nhắn của bạn vẫn được giữ ở đây; hãy thử lại.';
+
+  @override
+  String get assistantCreditsUnavailable => 'Chưa thể tải nguồn tín dụng của bạn. Vui lòng thử lại.';
+
+  @override
+  String get assistantMicrophoneUnavailable => 'Không thể sử dụng micrô. Hãy kiểm tra quyền truy cập hoặc kết nối lại tai nghe rồi thử lại.';
+
+  @override
+  String get assistantAudioUnavailable => 'Âm thanh bị gián đoạn. Hãy kết nối lại để tiếp tục cuộc trò chuyện.';
 }

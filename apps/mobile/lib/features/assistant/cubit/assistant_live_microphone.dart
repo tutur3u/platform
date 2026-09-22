@@ -27,7 +27,7 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
     if (state.isMicrophoneActive || _startingMicrophone) {
       _microphoneVersion++;
       _startupAudio.clear();
-      await _recorder.stop();
+      await _stopRecorderSafely();
       _socket.endAudioStream();
       if (!isClosed) {
         _emitMicrophoneState(
@@ -54,6 +54,10 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
       }
       final wsId = state.workspaceId;
       if (wsId == null) return;
+      // Configure playback before capture; changing the shared iOS audio
+      // category after the microphone starts can invalidate its input route.
+      await _audioPlayer.initialize();
+      if (isClosed || version != _microphoneVersion) return;
       await _recorder.start(
         onData: (bytes) {
           if (isClosed || version != _microphoneVersion) return;
@@ -66,6 +70,11 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
             unawaited(_drainStartupAudio());
           }
         },
+        onError: (_) {
+          if (!isClosed && version == _microphoneVersion) {
+            _emitError('microphone_unavailable');
+          }
+        },
         onAmplitude: (level) {
           if (!isClosed && version == _microphoneVersion) {
             _emitMicrophoneState(state.copyWith(audioLevel: level));
@@ -73,7 +82,7 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
         },
       );
       if (isClosed || version != _microphoneVersion) {
-        await _recorder.stop();
+        await _stopRecorderSafely();
         return;
       }
       _emitMicrophoneState(state.copyWith(isMicrophoneActive: true));
@@ -88,16 +97,16 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
       } else {
         await toggleMicrophone();
       }
-    } on Exception catch (error) {
+    } on Exception {
       if (!isClosed && version == _microphoneVersion) {
         _microphoneVersion++;
         _startupAudio.clear();
-        await _recorder.stop();
+        await _stopRecorderSafely();
         if (!isClosed) {
           _emitMicrophoneState(
             state.copyWith(isMicrophoneActive: false, audioLevel: 0),
           );
-          _emitError(error.toString());
+          _emitError('microphone_unavailable');
         }
       }
     } finally {

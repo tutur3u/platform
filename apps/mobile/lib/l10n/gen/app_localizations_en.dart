@@ -8124,4 +8124,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileRecentActivity => 'Last 12 weeks';
+
+  @override
+  String get assistantReplyFailed => 'Mira could not finish this reply. Your message is saved here; try again.';
+
+  @override
+  String get assistantCreditsUnavailable => 'Could not load your credit sources. Please try again.';
+
+  @override
+  String get assistantMicrophoneUnavailable => 'Microphone unavailable. Check microphone access or reconnect your headset, then try again.';
+
+  @override
+  String get assistantAudioUnavailable => 'Audio was interrupted. Reconnect to continue this conversation.';
 }

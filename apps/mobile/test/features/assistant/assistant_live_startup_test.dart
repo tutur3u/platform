@@ -42,6 +42,7 @@ void main() {
         () => recorder.start(
           onData: any(named: 'onData'),
           onAmplitude: any(named: 'onAmplitude'),
+          onError: any(named: 'onError'),
         ),
       ).thenAnswer((call) async {
         capture = call.namedArguments[#onData] as void Function(Uint8List);

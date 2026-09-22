@@ -7,10 +7,8 @@ import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 ///
 /// The dialog variant is constrained to [maxDialogWidth] (default 560).
 ///
-/// [backgroundColor] defaults to `Colors.transparent` so callers that already
-/// provide their own surface Container keep full control.  Pass an opaque
-/// colour explicitly when the sheet content should not show the barrier
-/// behind it.
+/// Uses the app surface by default. Callers with their own shaped surface can
+/// explicitly opt into a transparent background.
 ///
 /// Wraps overlay content with a [BackButtonListener] so the Android hardware
 /// back button dismisses the overlay instead of triggering shell navigation.
@@ -27,13 +25,15 @@ Future<T?> showAdaptiveSheet<T>({
   bool barrierDismissible = true,
   Color barrierColor = const Color(0x7A000000),
   bool useRootNavigator = false,
-  Color backgroundColor = Colors.transparent,
+  Color? backgroundColor,
 }) {
+  final surface =
+      backgroundColor ?? shad.Theme.of(context).colorScheme.background;
   if (context.isCompact) {
     return showModalBottomSheet<T>(
       context: context,
       useRootNavigator: useRootNavigator,
-      backgroundColor: backgroundColor,
+      backgroundColor: surface,
       barrierColor: barrierColor,
       isScrollControlled: isScrollControlled,
       useSafeArea: useSafeArea,
@@ -77,7 +77,7 @@ Future<T?> showAdaptiveSheet<T>({
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxDialogWidth),
             child: Material(
-              color: backgroundColor,
+              color: surface,
               borderRadius: BorderRadius.circular(12),
               clipBehavior: Clip.antiAlias,
               child: builder(dialogContext),
@@ -140,7 +140,7 @@ Future<void> showAdaptiveDrawer({
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxDialogWidth),
             child: Material(
-              color: Colors.transparent,
+              color: shad.Theme.of(dialogContext).colorScheme.background,
               borderRadius: BorderRadius.circular(12),
               clipBehavior: Clip.antiAlias,
               child: builder(dialogContext),

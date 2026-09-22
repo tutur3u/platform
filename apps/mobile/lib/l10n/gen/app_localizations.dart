@@ -15534,6 +15534,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last 12 weeks'**
   String get profileRecentActivity;
+
+  /// No description provided for @assistantReplyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira could not finish this reply. Your message is saved here; try again.'**
+  String get assistantReplyFailed;
+
+  /// No description provided for @assistantCreditsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your credit sources. Please try again.'**
+  String get assistantCreditsUnavailable;
+
+  /// No description provided for @assistantMicrophoneUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone unavailable. Check microphone access or reconnect your headset, then try again.'**
+  String get assistantMicrophoneUnavailable;
+
+  /// No description provided for @assistantAudioUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio was interrupted. Reconnect to continue this conversation.'**
+  String get assistantAudioUnavailable;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

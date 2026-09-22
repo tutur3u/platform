@@ -110,7 +110,12 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
             
             // Set the AVAudioSession category based on the string value
             NSError *error = nil;
-            [[AVAudioSession sharedInstance] setCategory:category error:&error];
+            // Live capture owns route options (Bluetooth/speaker/voice processing).
+            // Reinitializing playback after an interruption must preserve them.
+            AVAudioSession *session = [AVAudioSession sharedInstance];
+            if (![session.category isEqualToString:category]) {
+                [session setCategory:category error:&error];
+            }
             if (error) {
                 NSLog(@"Error setting AVAudioSession category: %@", error);
                 result([FlutterError errorWithCode:@"AVAudioSessionError" 

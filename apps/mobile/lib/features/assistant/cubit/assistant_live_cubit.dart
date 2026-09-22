@@ -19,6 +19,7 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 
 part 'assistant_live_state.dart';
 part 'assistant_live_microphone.dart';
+part 'assistant_live_recovery.dart';
 
 class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   AssistantLiveCubit({
@@ -38,7 +39,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
        _onHistoryUpdated = onHistoryUpdated,
        super(const AssistantLiveState()) {
     _socketSubscription = _socket.events.listen(
-      (event) => unawaited(_handleSocketEvent(event)),
+      (event) => unawaited(_dispatchSocketEvent(event)),
     );
   }
 
@@ -636,22 +637,6 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     _socket.sendVideoFrame(jpegBytes);
   }
 
-  Future<void> _stopInputs() async {
-    _microphoneVersion++;
-    _startupAudio.clear();
-    await _recorder.stop();
-    await _cameraService.stopStreaming();
-    emit(
-      state.copyWith(
-        isMicrophoneActive: false,
-        isCameraActive: false,
-        audioLevel: 0,
-        assistantAudioLevel: 0,
-        isAssistantSpeaking: false,
-      ),
-    );
-  }
-
   Future<void> _waitForReady() async {
     final completer = _readyCompleter;
     if (state.status == AssistantLiveConnectionStatus.connected ||
@@ -788,7 +773,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     if (!preserveDrafts) {
       _microphoneVersion++;
       _startupAudio.clear();
-      unawaited(_recorder.stop());
+      unawaited(_stopRecorderSafely());
       emit(state.copyWith(isMicrophoneActive: false, audioLevel: 0));
       _clearDrafts();
     }

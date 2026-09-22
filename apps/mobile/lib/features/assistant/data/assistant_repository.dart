@@ -1,5 +1,4 @@
-// Assistant feature parity module: targeted lint suppressions keep the API and
-// restore logic manageable.
+// Relative imports retain the existing Assistant API module layout.
 // ignore_for_file: always_use_package_imports, lines_longer_than_80_chars
 
 import 'dart:async';
@@ -19,6 +18,7 @@ import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
 import '../models/assistant_models.dart';
+import 'assistant_calendar_insight.dart';
 import 'assistant_stream_parser.dart';
 
 class AssistantRepository {
@@ -252,7 +252,7 @@ class AssistantRepository {
   }) async {
     final result = await CacheStore.instance.prefetch<AssistantCalendarInsight>(
       key: _assistantMetadataCacheKey(
-        namespace: 'assistant.calendar_insight',
+        namespace: 'assistant.calendar_insight.v2',
         wsId: wsId,
       ),
       policy: _assistantInsightCachePolicy,
@@ -260,11 +260,7 @@ class AssistantRepository {
       forceRefresh: forceRefresh,
       tags: [_assistantMetadataCacheTag, 'workspace:$wsId', 'module:assistant'],
       fetch: () async {
-        final query = Uri(queryParameters: {'wsId': wsId}).query;
-        final response = await _apiClient.getJson(
-          '/api/v1/mira/calendar?$query',
-        );
-        return AssistantCalendarInsight.fromJson(response).toJson();
+        return (await loadAssistantCalendarInsight(_apiClient, wsId)).toJson();
       },
     );
     return result.data ?? const AssistantCalendarInsight();
@@ -354,7 +350,10 @@ class AssistantRepository {
         );
         final nativeChats = page.conversations
             .where(
-              (conversation) => conversation.type == ChatConversationType.ai,
+              (conversation) =>
+                  conversation.type == ChatConversationType.ai &&
+                  !conversation.isReadOnlyAgent &&
+                  !conversation.id.startsWith('ai-agent-thread-'),
             )
             .map(_assistantChatRecordFromConversation)
             .toList(growable: false);
@@ -400,6 +399,7 @@ class AssistantRepository {
     required String chatId,
     bool forceRefresh = false,
   }) async {
+    if (chatId.startsWith('ai-agent-thread-')) return null;
     final cacheKey = _assistantChatCacheKey(wsId: wsId, chatId: chatId);
 
     if (!forceRefresh) {
