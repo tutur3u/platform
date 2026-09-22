@@ -192,6 +192,9 @@ function readHeader(
 function getSessionSubjectKey(
   headers: Headers | Map<string, string> | Record<string, string | null>
 ) {
+  const authorization = readHeader(headers, 'authorization');
+  const bearer = authorization?.match(/^Bearer ([^\s]+)$/i)?.[1];
+  if (bearer) return `session:${hashStableSubject(`bearer:${bearer}`)}`;
   const cookies = parseCookieHeader(readHeader(headers, 'cookie'));
   const authCookie = cookies.find(
     (cookie) =>
@@ -304,7 +307,7 @@ export function buildAbuseRiskSubjects({
     subjects.push({ subject_type: 'user', subject_key: `user:${userId}` });
   }
 
-  if (sessionKey) {
+  if (sessionKey && userId && !apiKeyId) {
     subjects.push({ subject_type: 'session', subject_key: sessionKey });
   }
 
@@ -362,6 +365,34 @@ async function loadServerTrustDecision({
     );
   } catch {
     return null;
+  }
+}
+
+async function hasRecentSessionChallenge(
+  userId: string | null | undefined,
+  subjects: AbuseRiskSubject[]
+) {
+  const session = subjects.find(
+    (subject) => subject.subject_type === 'session'
+  );
+  if (!userId || !session) return false;
+  const supabase = await getSupabaseAdmin();
+  if (!supabase) return false;
+  try {
+    const now = new Date();
+    const { data, error } = await supabase
+      .from('abuse_step_up_challenges')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('subject_key', session.subject_key)
+      .eq('status', 'passed')
+      .gt('expires_at', now.toISOString())
+      .gte('completed_at', new Date(now.getTime() - 15 * 60_000).toISOString())
+      .order('completed_at', { ascending: false })
+      .limit(1);
+    return !error && Boolean(data?.length);
+  } catch {
+    return false;
   }
 }
 
@@ -432,11 +463,19 @@ export async function resolveAbuseRiskDecision(
     (!likelyBrowser || userAgentClassification.riskLevel === 'block');
 
   if (suspiciousBrowserMutation && tier !== 'restricted') {
-    tier = 'challenge_required';
+    // A completed session-bound challenge satisfies the browser-shape
+    // heuristic only. Server restrictions and explicit challenges still win.
+    const cleared =
+      serverDecision?.tier !== 'challenge_required' &&
+      (input.authKind === 'session' || input.authKind === 'app-session') &&
+      (await hasRecentSessionChallenge(input.userId, subjects));
+    tier = cleared ? 'standard' : 'challenge_required';
     trustMultiplier = 1;
     decisionSource = 'heuristic';
     subjectKey ??= subjects[0]?.subject_key ?? null;
-    reasons.push('suspicious_browser_mutation');
+    reasons.push(
+      cleared ? 'session_challenge_passed' : 'suspicious_browser_mutation'
+    );
   } else if (
     tier === 'trusted' &&
     userAgentClassification.riskLevel === 'block'
