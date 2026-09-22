@@ -53,87 +53,95 @@ class AssistantTranscriptBubble extends StatelessWidget {
         constraints: BoxConstraints(
           maxWidth: MediaQuery.sizeOf(context).width < 420 ? 320 : 620,
         ),
-        child: GestureDetector(
+        child: Semantics(
+          label: label,
           onLongPress: copyPayload.isEmpty
               ? null
               : () => _showMessageActions(context, copyPayload),
-          onSecondaryTap: copyPayload.isEmpty
-              ? null
-              : () => _showMessageActions(context, copyPayload),
-          child: Column(
-            crossAxisAlignment: alignEnd
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: bubbleColor,
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (text.trim().isNotEmpty)
-                      _AssistantMessageMarkdownBody(
-                        data: text.trim(),
-                        collapsible: alignEnd && !isDraft,
-                      ),
-                    if (inlineImageParts.isNotEmpty) ...[
-                      if (text.trim().isNotEmpty) const SizedBox(height: 12),
-                      AssistantInlineToolImages(parts: inlineImageParts),
-                    ],
-                    if (transcript.trim().isNotEmpty) ...[
-                      if (text.trim().isNotEmpty || inlineImageParts.isNotEmpty)
-                        const SizedBox(height: 10),
-                      AssistantMarkdownBody(
-                        data: transcript.trim(),
-                        subdued: true,
-                        selectable: false,
-                      ),
-                    ],
-                    if (attachments.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: attachments
-                            .map(
-                              (attachment) => Chip(
-                                avatar: Icon(
-                                  attachment.isImage
-                                      ? Icons.image_outlined
-                                      : Icons.attach_file_rounded,
-                                  size: 16,
+          child: GestureDetector(
+            excludeFromSemantics: true,
+            onLongPress: copyPayload.isEmpty
+                ? null
+                : () => _showMessageActions(context, copyPayload),
+            onSecondaryTap: copyPayload.isEmpty
+                ? null
+                : () => _showMessageActions(context, copyPayload),
+            child: Column(
+              crossAxisAlignment: alignEnd
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: bubbleColor,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (text.trim().isNotEmpty)
+                        _AssistantMessageMarkdownBody(
+                          data: text.trim(),
+                          collapsible: alignEnd && !isDraft,
+                        ),
+                      if (inlineImageParts.isNotEmpty) ...[
+                        if (text.trim().isNotEmpty) const SizedBox(height: 12),
+                        AssistantInlineToolImages(parts: inlineImageParts),
+                      ],
+                      if (transcript.trim().isNotEmpty) ...[
+                        if (text.trim().isNotEmpty ||
+                            inlineImageParts.isNotEmpty)
+                          const SizedBox(height: 10),
+                        AssistantMarkdownBody(
+                          data: transcript.trim(),
+                          subdued: true,
+                          selectable: false,
+                        ),
+                      ],
+                      if (attachments.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: attachments
+                              .map(
+                                (attachment) => Chip(
+                                  avatar: Icon(
+                                    attachment.isImage
+                                        ? Icons.image_outlined
+                                        : Icons.attach_file_rounded,
+                                    size: 16,
+                                  ),
+                                  label: Text(attachment.name),
                                 ),
-                                label: Text(attachment.name),
-                              ),
-                            )
-                            .toList(growable: false),
-                      ),
+                              )
+                              .toList(growable: false),
+                        ),
+                      ],
+                      if (toolParts.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        AssistantToolResultsSection(parts: toolParts),
+                      ],
+                      if (toolNames.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _AssistantToolCallsCollapsible(toolNames: toolNames),
+                      ],
                     ],
-                    if (toolParts.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      AssistantToolResultsSection(parts: toolParts),
-                    ],
-                    if (toolNames.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _AssistantToolCallsCollapsible(toolNames: toolNames),
-                    ],
-                  ],
-                ),
-              ),
-              if (timestampLabel != null && !isDraft)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    timestampLabel,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
                   ),
                 ),
-            ],
+                if (timestampLabel != null && !isDraft)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      timestampLabel,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -145,7 +153,7 @@ Future<void> _showMessageActions(BuildContext context, String text) async {
   final copy = await showAdaptiveSheet<bool>(
     context: context,
     builder: (sheetContext) => AppDialogScaffold(
-      title: MaterialLocalizations.of(context).showMenuTooltip,
+      title: context.l10n.assistantMessageActionsTitle,
       child: Material(
         color: Colors.transparent,
         child: ListTile(

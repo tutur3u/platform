@@ -77,9 +77,14 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
           : '',
     );
     if (!mounted || value == null) return;
+    final nextLabelId = value.startsWith('label:') ? value.substring(6) : null;
+    final nextFolderId = value.startsWith('folder:')
+        ? value.substring(7)
+        : null;
+    if (nextLabelId == _labelId && nextFolderId == _folderId) return;
     _updateState(() {
-      _labelId = value.startsWith('label:') ? value.substring(6) : null;
-      _folderId = value.startsWith('folder:') ? value.substring(7) : null;
+      _labelId = nextLabelId;
+      _folderId = nextFolderId;
       _selected.clear();
     });
     unawaited(_load(forceRefresh: false));

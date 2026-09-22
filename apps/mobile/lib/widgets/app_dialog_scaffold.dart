@@ -52,7 +52,6 @@ class AppDialogScaffold extends StatelessWidget {
         ),
         child: Align(
           heightFactor: 1,
-          widthFactor: 1,
           alignment: isCompact ? Alignment.bottomCenter : Alignment.center,
           child: ConstrainedBox(
             constraints: BoxConstraints(

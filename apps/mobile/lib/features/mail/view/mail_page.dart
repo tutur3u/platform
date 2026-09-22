@@ -480,9 +480,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         ).showSnackBar(SnackBar(content: Text(context.l10n.mailActionFailed)));
       }
     } finally {
-      if (mounted && generation == _generation) {
+      if (mounted) {
         setState(() => _mutating = false);
-        unawaited(_load());
+        if (generation == _generation) unawaited(_load());
       }
     }
   }

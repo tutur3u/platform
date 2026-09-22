@@ -110,7 +110,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                         onPressed: _mutating ? null : _markAllRead,
                         icon: const Icon(Icons.mark_email_read_outlined),
                       ),
-                    if (['owner', 'admin'].contains(_mailbox['role']))
+                    if (_mailboxId != null)
                       IconButton(
                         tooltip: l10n.mailSettings,
                         onPressed: _mutating ? null : _manage,

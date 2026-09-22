@@ -1663,6 +1663,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantMermaidZoomReset => 'Reset zoom';
 
   @override
+  String get assistantMessageActionsTitle => 'Message actions';
+
+  @override
   String get assistantCopyMessageAction => 'Copy message';
 
   @override

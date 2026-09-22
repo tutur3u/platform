@@ -129,8 +129,11 @@ class _MailReaderState extends State<MailReader> {
         if (mounted) Navigator.of(context).pop();
         return;
       }
+      if (action == 'mark_read') return;
       if (mounted) {
-        setState(() => _starred = previousStarred);
+        if (action == 'star' || action == 'unstar') {
+          setState(() => _starred = previousStarred);
+        }
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(context.l10n.mailActionFailed)));

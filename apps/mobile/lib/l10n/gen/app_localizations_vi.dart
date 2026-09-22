@@ -1663,6 +1663,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantMermaidZoomReset => 'Đặt lại thu phóng';
 
   @override
+  String get assistantMessageActionsTitle => 'Thao tác tin nhắn';
+
+  @override
   String get assistantCopyMessageAction => 'Sao chép tin nhắn';
 
   @override
