@@ -19,6 +19,7 @@ import 'package:mobile/features/mail/view/mail_swipe_tile.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -397,6 +398,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           repository: _repository,
           workspaceId: widget.workspaceId,
           mailboxId: _mailboxId!,
+          swipePreferences: _swipePreferences,
+          canManage: ['owner', 'admin'].contains(_mailbox['role']),
         ),
       ),
     );
@@ -448,22 +451,39 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   Future<void> _markAllRead() async {
-    setState(() => _mutating = true);
+    if (_mutating || _mailboxId == null) return;
+    final previous = _items;
+    final generation = ++_generation;
+    setState(() {
+      _mutating = true;
+      _loading = false;
+      _items = optimisticMailItems(
+        _items,
+        _items.map((item) => item['id'] as String).toSet(),
+        action: 'mark_read',
+        folder: _folder,
+        query: _search.text,
+      );
+    });
     try {
       await _repository.markFolderRead(
         widget.workspaceId,
         _mailboxId!,
         _folder,
       );
+      _saveView();
     } on Object {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.commonSomethingWentWrong)),
-        );
+      if (mounted && generation == _generation) {
+        setState(() => _items = previous);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.mailActionFailed)));
       }
     } finally {
-      if (mounted) await _load();
-      if (mounted) setState(() => _mutating = false);
+      if (mounted && generation == _generation) {
+        setState(() => _mutating = false);
+        unawaited(_load());
+      }
     }
   }
 
@@ -493,6 +513,16 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         await _compose(detail);
         return;
       }
+      final beforeRead = _items;
+      setState(
+        () => _items = optimisticMailItems(
+          _items,
+          {item['id'] as String},
+          action: 'mark_read',
+          folder: _folder,
+          query: _search.text,
+        ),
+      );
       await _pushChild(
         MaterialPageRoute(
           builder: (_) => MailReader(
@@ -501,6 +531,11 @@ class _MailWorkspaceState extends State<MailWorkspace> {
             mailboxId: box,
             detail: detail,
             refreshOnOpen: cached != null,
+            onReadFailed: () {
+              if (mounted && generation == _generation && box == _mailboxId) {
+                setState(() => _items = beforeRead);
+              }
+            },
             thread: _threads,
             canSend: _canSend,
             fromAddress: _mailbox['address'] as String,

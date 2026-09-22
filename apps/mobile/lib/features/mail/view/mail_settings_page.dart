@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_organization_page.dart';
+import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
@@ -11,11 +12,15 @@ class MailSettingsPage extends StatefulWidget {
     required this.repository,
     required this.workspaceId,
     required this.mailboxId,
+    this.swipePreferences,
+    this.canManage = true,
     super.key,
   });
   final MailRepository repository;
   final String workspaceId;
   final String mailboxId;
+  final MailSwipePreferences? swipePreferences;
+  final bool canManage;
   @override
   State<MailSettingsPage> createState() => _MailSettingsPageState();
 }
@@ -37,7 +42,11 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
   @override
   void initState() {
     super.initState();
-    unawaited(_load());
+    if (widget.canManage) {
+      unawaited(_load());
+    } else {
+      _busy = false;
+    }
   }
 
   @override
@@ -124,11 +133,12 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
       appBar: AppBar(
         title: Text(l10n.mailSettings),
         actions: [
-          IconButton(
-            tooltip: l10n.commonSave,
-            onPressed: _busy || _failed ? null : _save,
-            icon: const Icon(Icons.save_outlined),
-          ),
+          if (widget.canManage)
+            IconButton(
+              tooltip: l10n.commonSave,
+              onPressed: _busy || _failed ? null : _save,
+              icon: const Icon(Icons.save_outlined),
+            ),
         ],
       ),
       body: _busy
@@ -141,108 +151,88 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                16 + MediaQuery.paddingOf(context).bottom,
+              ),
               children: [
-                TextField(
-                  controller: _sender,
-                  maxLength: 160,
-                  decoration: InputDecoration(labelText: l10n.mailSenderName),
-                ),
-                TextField(
-                  controller: _signature,
-                  minLines: 3,
-                  maxLines: 8,
-                  decoration: InputDecoration(labelText: l10n.mailSignature),
-                ),
-                TextField(
-                  controller: _instructions,
-                  minLines: 3,
-                  maxLines: 8,
-                  decoration: InputDecoration(
-                    labelText: l10n.mailAiInstructions,
+                if (widget.swipePreferences != null)
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.swipe_outlined),
+                    title: Text(l10n.mailSwipeActions),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => showMailSwipeSettings(
+                      context,
+                      widget.swipePreferences!,
+                    ),
                   ),
-                ),
-                SwitchListTile(
-                  title: Text(l10n.mailAutoDraft),
-                  value: _autoDraft,
-                  onChanged: (v) => setState(() => _autoDraft = v),
-                ),
-                DropdownButtonFormField<String>(
-                  initialValue: _provider ?? 'default',
-                  decoration: InputDecoration(
-                    labelText: l10n.mailDeliveryProvider,
+                if (widget.canManage) ...[
+                  TextField(
+                    controller: _sender,
+                    maxLength: 160,
+                    decoration: InputDecoration(labelText: l10n.mailSenderName),
                   ),
-                  items: ['default', 'cloudflare', 'ses']
-                      .map(
-                        (v) => DropdownMenuItem(
-                          value: v,
-                          child: Text(
-                            v == 'default'
-                                ? l10n.mailDomainDefault
-                                : v == 'ses'
-                                ? 'Amazon SES'
-                                : 'Cloudflare',
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (v) =>
-                      setState(() => _provider = v == 'default' ? null : v),
-                ),
-                if (_group == null) ...[
+                  TextField(
+                    controller: _signature,
+                    minLines: 3,
+                    maxLines: 8,
+                    decoration: InputDecoration(labelText: l10n.mailSignature),
+                  ),
+                  TextField(
+                    controller: _instructions,
+                    minLines: 3,
+                    maxLines: 8,
+                    decoration: InputDecoration(
+                      labelText: l10n.mailAiInstructions,
+                    ),
+                  ),
                   SwitchListTile(
-                    title: Text(l10n.mailSmartLabels),
-                    value: _smartLabels,
-                    onChanged: (v) => setState(() => _smartLabels = v),
+                    title: Text(l10n.mailAutoDraft),
+                    value: _autoDraft,
+                    onChanged: (v) => setState(() => _autoDraft = v),
                   ),
                   DropdownButtonFormField<String>(
-                    initialValue: _forwarding,
-                    decoration: InputDecoration(labelText: l10n.mailForwarding),
-                    items:
-                        {
-                              'off': l10n.mailForwardingOff,
-                              'catch_all': l10n.mailCatchAll,
-                              'mailbox': l10n.mailMailbox,
-                            }.entries
-                            .map(
-                              (e) => DropdownMenuItem(
-                                value: e.key,
-                                child: Text(e.value),
-                              ),
-                            )
-                            .toList(),
-                    onChanged: (v) => setState(() => _forwarding = v!),
-                  ),
-                  if (_forwarding == 'mailbox')
-                    TextField(
-                      controller: _forwardTo,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: l10n.mailForwardTo,
-                      ),
+                    initialValue: _provider ?? 'default',
+                    decoration: InputDecoration(
+                      labelText: l10n.mailDeliveryProvider,
                     ),
-                ],
-                if (_group != null) ...[
-                  for (final field in {
-                    'posting': l10n.mailGroupPosting,
-                    'attachments': l10n.mailGroupAttachments,
-                    'sendAs': l10n.mailGroupSendAs,
-                  }.entries)
+                    items: ['default', 'cloudflare', 'ses']
+                        .map(
+                          (v) => DropdownMenuItem(
+                            value: v,
+                            child: Text(
+                              v == 'default'
+                                  ? l10n.mailDomainDefault
+                                  : v == 'ses'
+                                  ? 'Amazon SES'
+                                  : 'Cloudflare',
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) =>
+                        setState(() => _provider = v == 'default' ? null : v),
+                  ),
+                  if (_group == null) ...[
+                    SwitchListTile(
+                      title: Text(l10n.mailSmartLabels),
+                      value: _smartLabels,
+                      onChanged: (v) => setState(() => _smartLabels = v),
+                    ),
                     DropdownButtonFormField<String>(
-                      initialValue: _group![field.key] as String,
-                      decoration: InputDecoration(labelText: field.value),
+                      initialValue: _forwarding,
+                      decoration: InputDecoration(
+                        labelText: l10n.mailForwarding,
+                      ),
                       items:
                           {
-                                'anyone': l10n.mailAnyone,
-                                'organization': l10n.mailOrganization,
-                                'members': l10n.mailMembers,
-                                'managers': l10n.mailManagers,
+                                'off': l10n.mailForwardingOff,
+                                'catch_all': l10n.mailCatchAll,
+                                'mailbox': l10n.mailMailbox,
                               }.entries
-                              .where(
-                                (e) =>
-                                    field.key != 'sendAs' ||
-                                    ['members', 'managers'].contains(e.key),
-                              )
                               .map(
                                 (e) => DropdownMenuItem(
                                   value: e.key,
@@ -250,29 +240,70 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                                 ),
                               )
                               .toList(),
-                      onChanged: (v) => setState(() => _group![field.key] = v),
+                      onChanged: (v) => setState(() => _forwarding = v!),
                     ),
-                ],
-                const Divider(),
-                for (final section in {
-                  'labels': l10n.mailLabels,
-                  'folders': l10n.mailFolders,
-                  'members': l10n.mailMembers,
-                }.entries)
-                  ListTile(
-                    title: Text(section.value),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push<void>(
-                      MaterialPageRoute(
-                        builder: (_) => MailOrganizationPage(
-                          repository: widget.repository,
-                          workspaceId: widget.workspaceId,
-                          mailboxId: widget.mailboxId,
-                          kind: section.key,
+                    if (_forwarding == 'mailbox')
+                      TextField(
+                        controller: _forwardTo,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: l10n.mailForwardTo,
+                        ),
+                      ),
+                  ],
+                  if (_group != null) ...[
+                    for (final field in {
+                      'posting': l10n.mailGroupPosting,
+                      'attachments': l10n.mailGroupAttachments,
+                      'sendAs': l10n.mailGroupSendAs,
+                    }.entries)
+                      DropdownButtonFormField<String>(
+                        initialValue: _group![field.key] as String,
+                        decoration: InputDecoration(labelText: field.value),
+                        items:
+                            {
+                                  'anyone': l10n.mailAnyone,
+                                  'organization': l10n.mailOrganization,
+                                  'members': l10n.mailMembers,
+                                  'managers': l10n.mailManagers,
+                                }.entries
+                                .where(
+                                  (e) =>
+                                      field.key != 'sendAs' ||
+                                      ['members', 'managers'].contains(e.key),
+                                )
+                                .map(
+                                  (e) => DropdownMenuItem(
+                                    value: e.key,
+                                    child: Text(e.value),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (v) =>
+                            setState(() => _group![field.key] = v),
+                      ),
+                  ],
+                  const Divider(),
+                  for (final section in {
+                    'labels': l10n.mailLabels,
+                    'folders': l10n.mailFolders,
+                    'members': l10n.mailMembers,
+                  }.entries)
+                    ListTile(
+                      title: Text(section.value),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => MailOrganizationPage(
+                            repository: widget.repository,
+                            workspaceId: widget.workspaceId,
+                            mailboxId: widget.mailboxId,
+                            kind: section.key,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                ],
               ],
             ),
     );

@@ -1,16 +1,26 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:mobile/data/sources/api_client.dart';
 
+import 'package:flutter/material.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
+import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:share_plus/share_plus.dart';
+
+part 'mail_reader_chrome.dart';
 
 class MailReader extends StatefulWidget {
   const MailReader({
@@ -22,6 +32,7 @@ class MailReader extends StatefulWidget {
     required this.canSend,
     required this.fromAddress,
     this.refreshOnOpen = false,
+    this.onReadFailed,
     this.signatureText,
     this.signatureHtml,
     super.key,
@@ -34,6 +45,7 @@ class MailReader extends StatefulWidget {
   final String? signatureHtml;
   final Map<String, dynamic> detail;
   final bool refreshOnOpen;
+  final VoidCallback? onReadFailed;
   final bool thread;
   final bool canSend;
 
@@ -42,7 +54,10 @@ class MailReader extends StatefulWidget {
 }
 
 class _MailReaderState extends State<MailReader> {
+  void _updateState(VoidCallback update) => setState(update);
   bool _busy = false;
+  bool _showImages = false;
+  bool _childRouteOpen = false;
   late Map<String, dynamic> _detail = widget.detail;
   late bool _starred;
   List<Map<String, dynamic>> get _messages =>
@@ -87,7 +102,12 @@ class _MailReaderState extends State<MailReader> {
   }
 
   Future<void> _action(String action, {bool close = false}) async {
-    setState(() => _busy = true);
+    if (_busy && action != 'mark_read') return;
+    final previousStarred = _starred;
+    setState(() {
+      if (action != 'mark_read') _busy = true;
+      if (action == 'star' || action == 'unstar') _starred = action == 'star';
+    });
     try {
       await widget.repository.changeState(
         widget.workspaceId,
@@ -101,17 +121,22 @@ class _MailReaderState extends State<MailReader> {
         Navigator.of(context).pop();
         return;
       }
-      if (action == 'star' || action == 'unstar') {
-        setState(() => _starred = action == 'star');
+    } on Object catch (error) {
+      if (action == 'mark_read') widget.onReadFailed?.call();
+      if (error is ApiException &&
+          (error.statusCode == 401 || error.statusCode == 403)) {
+        await widget.repository.denyAccess(widget.workspaceId);
+        if (mounted) Navigator.of(context).pop();
+        return;
       }
-    } on Object {
       if (mounted) {
+        setState(() => _starred = previousStarred);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(context.l10n.mailActionFailed)));
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted && action != 'mark_read') setState(() => _busy = false);
     }
   }
 
@@ -119,9 +144,9 @@ class _MailReaderState extends State<MailReader> {
     Map<String, dynamic> message, {
     bool all = false,
     bool forward = false,
-  }) => Navigator.of(context).push<void>(
-    MaterialPageRoute(
-      builder: (_) => MailComposer(
+  }) async {
+    await _openChild(
+      MailComposer(
         repository: widget.repository,
         workspaceId: widget.workspaceId,
         mailboxId: widget.mailboxId,
@@ -132,8 +157,20 @@ class _MailReaderState extends State<MailReader> {
         replyAll: all,
         forward: forward,
       ),
-    ),
-  );
+    );
+  }
+
+  Future<void> _openChild(Widget child) async {
+    if (_childRouteOpen) return;
+    setState(() => _childRouteOpen = true);
+    try {
+      await Navigator.of(
+        context,
+      ).push<void>(MaterialPageRoute(builder: (_) => child));
+    } finally {
+      if (mounted) setState(() => _childRouteOpen = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -147,117 +184,167 @@ class _MailReaderState extends State<MailReader> {
     final subject = widget.thread
         ? (_detail['thread'] as Map<String, dynamic>)['subject'] as String?
         : _detail['subject'] as String?;
-    return Scaffold(
-      backgroundColor: shad.Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        backgroundColor: shad.Theme.of(context).colorScheme.background,
-        surfaceTintColor: Colors.transparent,
-        title: Text(subject ?? l10n.mailNoSubject),
-        actions: [
-          IconButton(
-            tooltip: _starred ? l10n.mailUnstar : l10n.mailStar,
-            onPressed: _busy
-                ? null
-                : () => _action(_starred ? 'unstar' : 'star'),
-            icon: Icon(_starred ? Icons.star : Icons.star_border),
-          ),
-          PopupMenuButton<String>(
-            enabled: !_busy,
-            onSelected: (action) => _action(action, close: true),
-            itemBuilder: (_) => actions.entries
-                .map((a) => PopupMenuItem(value: a.key, child: Text(a.value)))
-                .toList(),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: EdgeInsets.only(
-          bottom: 16 + MediaQuery.paddingOf(context).bottom,
-        ),
-        children: [
-          if (_busy) const NovaLoadingIndicator(size: 20),
-          for (final message in _messages)
-            Card(
-              color: Colors.transparent,
-              surfaceTintColor: Colors.transparent,
-              margin: const EdgeInsets.only(bottom: 12),
-              elevation: 0,
-              shape: const RoundedRectangleBorder(),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SelectableText(
-                      message['fromName'] as String? ??
-                          message['fromAddress'] as String,
+    final sharedShell = lookupShellTitleOverrideCubit(context) != null;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (sharedShell && !_childRouteOpen)
+          _readerChrome(subject ?? l10n.mailNoSubject, actions),
+        Scaffold(
+          backgroundColor: shad.Theme.of(context).colorScheme.background,
+          appBar: sharedShell
+              ? null
+              : AppBar(
+                  backgroundColor: shad.Theme.of(
+                    context,
+                  ).colorScheme.background,
+                  surfaceTintColor: Colors.transparent,
+                  title: Text(subject ?? l10n.mailNoSubject),
+                  actions: [
+                    IconButton(
+                      tooltip: _starred ? l10n.mailUnstar : l10n.mailStar,
+                      onPressed: _busy
+                          ? null
+                          : () => _action(_starred ? 'unstar' : 'star'),
+                      icon: Icon(_starred ? Icons.star : Icons.star_border),
                     ),
-                    SelectableText(message['fromAddress'] as String),
-                    if (mailMessageDate(message) case final date?)
-                      Text(formatMailMessageDate(context, date)),
-                    Text(
-                      mailRows(message['recipients'])
-                          .where((r) => r['kind'] == 'to' || r['kind'] == 'cc')
-                          .map((r) => r['address'] as String)
-                          .join(', '),
+                    PopupMenuButton<String>(
+                      enabled: !_busy,
+                      onSelected: (action) => _action(action, close: true),
+                      itemBuilder: (_) => actions.entries
+                          .map(
+                            (a) => PopupMenuItem(
+                              value: a.key,
+                              child: Text(a.value),
+                            ),
+                          )
+                          .toList(),
                     ),
-                    const Divider(),
-                    MailMessageContent(
-                      key: ValueKey(message['id']),
-                      repository: widget.repository,
-                      workspaceId: widget.workspaceId,
-                      mailboxId: widget.mailboxId,
-                      message: message,
-                    ),
-                    for (final file in mailRows(message['attachments']))
-                      ListTile(
-                        leading: const Icon(Icons.attach_file),
-                        title: Text(file['filename'] as String),
-                        onTap: _busy || !canPreviewMailAttachment(file)
-                            ? null
-                            : () => Navigator.of(context).push<void>(
-                                MaterialPageRoute(
-                                  builder: (_) => MailAttachmentPreview(
-                                    repository: widget.repository,
-                                    workspaceId: widget.workspaceId,
-                                    mailboxId: widget.mailboxId,
-                                    messageId: message['id'] as String,
-                                    file: file,
-                                  ),
-                                ),
-                              ),
-                        trailing: IconButton(
-                          tooltip: l10n.mailDownload,
-                          onPressed: _busy
-                              ? null
-                              : () => _download(message, file),
-                          icon: const Icon(Icons.download_outlined),
-                        ),
-                      ),
-                    if (widget.canSend)
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          TextButton(
-                            onPressed: () => _reply(message),
-                            child: Text(l10n.mailReply),
-                          ),
-                          TextButton(
-                            onPressed: () => _reply(message, all: true),
-                            child: Text(l10n.mailReplyAll),
-                          ),
-                          TextButton(
-                            onPressed: () => _reply(message, forward: true),
-                            child: Text(l10n.mailForward),
-                          ),
-                        ],
-                      ),
                   ],
                 ),
-              ),
+          body: ListView(
+            padding: EdgeInsets.only(
+              bottom: 16 + MediaQuery.paddingOf(context).bottom,
             ),
-        ],
-      ),
+            children: [
+              for (final message in _messages)
+                Card(
+                  color: Colors.transparent,
+                  surfaceTintColor: Colors.transparent,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  elevation: 0,
+                  shape: const RoundedRectangleBorder(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ExpansionTile(
+                          tilePadding: EdgeInsets.zero,
+                          dense: true,
+                          title: Text(
+                            message['fromName'] as String? ??
+                                message['fromAddress'] as String,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            mailRows(message['recipients'])
+                                .where((r) => r['kind'] == 'to')
+                                .map((r) => r['address'] as String)
+                                .join(', '),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          children: [
+                            ListTile(
+                              dense: true,
+                              title: SelectableText(
+                                message['fromAddress'] as String,
+                              ),
+                              subtitle: mailMessageDate(message) == null
+                                  ? null
+                                  : Text(
+                                      formatMailMessageDate(
+                                        context,
+                                        mailMessageDate(message)!,
+                                      ),
+                                    ),
+                            ),
+                            for (final recipient in mailRows(
+                              message['recipients'],
+                            ))
+                              ListTile(
+                                dense: true,
+                                leading: Text(
+                                  (recipient['kind'] as String? ?? 'to')
+                                      .toUpperCase(),
+                                ),
+                                title: SelectableText(
+                                  recipient['address'] as String,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const Divider(),
+                        MailMessageContent(
+                          key: ValueKey(message['id']),
+                          repository: widget.repository,
+                          workspaceId: widget.workspaceId,
+                          mailboxId: widget.mailboxId,
+                          message: message,
+                          showControls: !sharedShell,
+                          imagesVisible: sharedShell ? _showImages : null,
+                        ),
+                        for (final file in mailRows(message['attachments']))
+                          ListTile(
+                            leading: const Icon(Icons.attach_file),
+                            title: Text(file['filename'] as String),
+                            onTap: _busy || !canPreviewMailAttachment(file)
+                                ? null
+                                : () => _openChild(
+                                    MailAttachmentPreview(
+                                      repository: widget.repository,
+                                      workspaceId: widget.workspaceId,
+                                      mailboxId: widget.mailboxId,
+                                      messageId: message['id'] as String,
+                                      file: file,
+                                    ),
+                                  ),
+                            trailing: IconButton(
+                              tooltip: l10n.mailDownload,
+                              onPressed: _busy
+                                  ? null
+                                  : () => _download(message, file),
+                              icon: const Icon(Icons.download_outlined),
+                            ),
+                          ),
+                        if (widget.canSend && !sharedShell)
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              TextButton(
+                                onPressed: () => _reply(message),
+                                child: Text(l10n.mailReply),
+                              ),
+                              TextButton(
+                                onPressed: () => _reply(message, all: true),
+                                child: Text(l10n.mailReplyAll),
+                              ),
+                              TextButton(
+                                onPressed: () => _reply(message, forward: true),
+                                child: Text(l10n.mailForward),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

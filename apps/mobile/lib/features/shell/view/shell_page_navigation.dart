@@ -61,16 +61,27 @@ extension _ShellPageNavigation on _ShellPageState {
     required String semanticLabel,
     required int itemIndex,
     Widget? image,
+    bool dropdown = false,
   }) => Tooltip(
+    triggerMode: TooltipTriggerMode.manual,
     message: semanticLabel,
     excludeFromSemantics: true,
     child: Semantics(
       label: semanticLabel,
       button: true,
       child: ExcludeSemantics(
-        child: SizedBox.square(
-          dimension: 24,
-          child: image ?? Icon(icon, size: 24),
+        child: SizedBox(
+          width: dropdown ? 36 : 24,
+          height: 24,
+          child: dropdown
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 22),
+                    const Icon(Icons.expand_more, size: 14),
+                  ],
+                )
+              : image ?? Icon(icon, size: 24),
         ),
       ),
     ),
@@ -161,6 +172,7 @@ extension _ShellPageNavigation on _ShellPageState {
                 : null,
             child: _buildCompactNavIcon(
               icon: item.icon,
+              dropdown: item.dropdown,
               semanticLabel: item.label,
               itemIndex: entry.$1,
             ),

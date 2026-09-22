@@ -35,7 +35,13 @@ void main() {
       },
     );
 
+    expect(repository.peekOverview('ws-cache'), isNull);
     final first = await repository.getOverview('ws-cache');
+    expect(
+      repository.peekOverview('ws-cache')?.totals.inventorySalesRevenue,
+      150,
+    );
+    expect(repository.peekOverview('another-workspace'), isNull);
     final second = await repository.getOverview('ws-cache');
 
     expect(first, second);

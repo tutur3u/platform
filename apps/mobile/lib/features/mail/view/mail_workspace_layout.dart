@@ -13,6 +13,22 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
       'trash': l10n.mailTrash,
     };
     final sharedShell = lookupShellTitleOverrideCubit(context) != null;
+    Future<void> chooseFolder() async {
+      final folder = await _chooseMailOption(
+        l10n.mailFolders,
+        folders,
+        _folder,
+      );
+      if (!mounted || folder == null || folder == _folder) return;
+      _updateState(() {
+        _folder = folder;
+        _labelId = null;
+        _folderId = null;
+        _selected.clear();
+      });
+      unawaited(_load(forceRefresh: false));
+    }
+
     final folderPicker = _pickerButton(
       label: folders[_folder] ?? l10n.mailFolders,
       icon: switch (_folder) {
@@ -24,26 +40,62 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
         'trash' => Icons.delete_outline,
         _ => Icons.inbox_outlined,
       },
-      onPressed: () async {
-        final folder = await _chooseMailOption(
-          l10n.mailFolders,
-          folders,
-          _folder,
-        );
-        if (!mounted || folder == null || folder == _folder) return;
-        _updateState(() {
-          _folder = folder;
-          _labelId = null;
-          _folderId = null;
-          _selected.clear();
-        });
-        unawaited(_load(forceRefresh: false));
-      },
+      onPressed: chooseFolder,
     );
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (sharedShell && !_childRouteOpen) _buildMailShellActions(),
+        if (sharedShell && !_childRouteOpen) ...[
+          _buildMailShellActions(),
+          ShellMiniNav(
+            ownerId: 'mail-navigation',
+            locations: const {Routes.mail},
+            deepLinkBackRoute: Routes.apps,
+            items: [
+              ShellMiniNavItemSpec(
+                id: 'back',
+                icon: Icons.chevron_left,
+                label: l10n.navBack,
+              ),
+              ShellMiniNavItemSpec(
+                id: 'folder',
+                icon: switch (_folder) {
+                  'starred' => Icons.star_outline,
+                  'drafts' => Icons.drafts_outlined,
+                  'sent' => Icons.send_outlined,
+                  'archive' => Icons.archive_outlined,
+                  'spam' => Icons.report_outlined,
+                  'trash' => Icons.delete_outline,
+                  _ => Icons.inbox_outlined,
+                },
+                label: folders[_folder] ?? l10n.mailFolders,
+                selected: true,
+                dropdown: true,
+                callbackToken: _folder,
+                onPressed: chooseFolder,
+              ),
+              ShellMiniNavItemSpec(
+                id: 'mailbox',
+                icon: Icons.alternate_email,
+                label: _mailbox['address'] as String? ?? l10n.mailMailbox,
+                dropdown: true,
+                enabled: _mailboxes.isNotEmpty,
+                callbackToken: _mailboxId,
+                onPressed: _chooseMailbox,
+              ),
+              ShellMiniNavItemSpec(
+                id: 'filter',
+                icon: _labelId != null || _folderId != null
+                    ? Icons.filter_alt
+                    : Icons.filter_alt_outlined,
+                label: l10n.mailLabels,
+                dropdown: true,
+                callbackToken: (_labelId, _folderId),
+                onPressed: _chooseFilter,
+              ),
+            ],
+          ),
+        ],
         Scaffold(
           backgroundColor: shad.Theme.of(context).colorScheme.background,
           appBar: sharedShell
@@ -92,8 +144,6 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                         child: _buildMailControls(folderPicker, sharedShell),
                       ),
-                      if (_loading) const NovaLoadingIndicator(size: 20),
-                      if (_mutating) const NovaLoadingIndicator(size: 20),
                       if (_selected.isNotEmpty)
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -50,6 +51,8 @@ class AppDialogScaffold extends StatelessWidget {
           math.max(isCompact ? 12 : 20, viewInsets.bottom + 12),
         ),
         child: Align(
+          heightFactor: 1,
+          widthFactor: 1,
           alignment: isCompact ? Alignment.bottomCenter : Alignment.center,
           child: ConstrainedBox(
             constraints: BoxConstraints(
@@ -58,7 +61,7 @@ class AppDialogScaffold extends StatelessWidget {
             ),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: theme.colorScheme.background,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(isCompact ? 28 : 24),
                 border: Border.all(
                   color: theme.colorScheme.border.withValues(alpha: 0.7),
@@ -73,104 +76,116 @@ class AppDialogScaffold extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(isCompact ? 28 : 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (isCompact) ...[
-                      const shad.Gap(10),
-                      Container(
-                        width: 52,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.mutedForeground.withValues(
-                            alpha: 0.24,
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ],
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        20,
-                        isCompact ? 18 : 20,
-                        20,
-                        0,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (icon != null) ...[
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary.withValues(
-                                  alpha: 0.10,
-                                ),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Icon(
-                                icon,
-                                color: theme.colorScheme.primary,
-                                size: 20,
-                              ),
-                            ),
-                            const shad.Gap(12),
-                          ],
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  style: theme.typography.h4.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                if (description?.trim().isNotEmpty ??
-                                    false) ...[
-                                  const shad.Gap(6),
-                                  Text(
-                                    description!,
-                                    style: theme.typography.textSmall.copyWith(
-                                      color: theme.colorScheme.mutedForeground,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          if (headerTrailing != null) ...[
-                            const shad.Gap(12),
-                            headerTrailing!,
-                          ],
-                        ],
-                      ),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: ColoredBox(
+                    color: theme.colorScheme.background.withValues(
+                      alpha: mediaQuery.highContrast ? 1 : 0.88,
                     ),
-                    const shad.Gap(18),
-                    Flexible(child: body),
-                    if (actions.isNotEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.card.withValues(alpha: 0.78),
-                          border: Border(
-                            top: BorderSide(
-                              color: theme.colorScheme.border.withValues(
-                                alpha: 0.8,
-                              ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isCompact) ...[
+                          const shad.Gap(10),
+                          Container(
+                            width: 52,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.mutedForeground
+                                  .withValues(alpha: 0.24),
+                              borderRadius: BorderRadius.circular(999),
                             ),
                           ),
+                        ],
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            20,
+                            isCompact ? 18 : 20,
+                            20,
+                            0,
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (icon != null) ...[
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary.withValues(
+                                      alpha: 0.10,
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(
+                                    icon,
+                                    color: theme.colorScheme.primary,
+                                    size: 20,
+                                  ),
+                                ),
+                                const shad.Gap(12),
+                              ],
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      title,
+                                      style: theme.typography.h4.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    if (description?.trim().isNotEmpty ??
+                                        false) ...[
+                                      const shad.Gap(6),
+                                      Text(
+                                        description!,
+                                        style: theme.typography.textSmall
+                                            .copyWith(
+                                              color: theme
+                                                  .colorScheme
+                                                  .mutedForeground,
+                                            ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              if (headerTrailing != null) ...[
+                                const shad.Gap(12),
+                                headerTrailing!,
+                              ],
+                            ],
+                          ),
                         ),
-                        child: Wrap(
-                          alignment: WrapAlignment.end,
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: actions,
-                        ),
-                      ),
-                  ],
+                        const shad.Gap(18),
+                        Flexible(child: body),
+                        if (actions.isNotEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.card.withValues(
+                                alpha: 0.78,
+                              ),
+                              border: Border(
+                                top: BorderSide(
+                                  color: theme.colorScheme.border.withValues(
+                                    alpha: 0.8,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            child: Wrap(
+                              alignment: WrapAlignment.end,
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: actions,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),

@@ -13,6 +13,7 @@ class ShellActionSpec extends Equatable {
     this.isLoading = false,
     this.highlighted = false,
     this.inDock = false,
+    this.segmentGroup,
   });
 
   final String id;
@@ -24,6 +25,7 @@ class ShellActionSpec extends Equatable {
   final bool isLoading;
   final bool highlighted;
   final bool inDock;
+  final String? segmentGroup;
 
   @override
   List<Object?> get props => [
@@ -39,6 +41,7 @@ class ShellActionSpec extends Equatable {
     isLoading,
     highlighted,
     inDock,
+    segmentGroup,
   ];
 }
 
@@ -64,6 +67,11 @@ class ShellChromeActionsState extends Equatable {
     return resolved;
   }
 
+  bool immersiveForLocation(String location) => registrations.values.any(
+    (registration) =>
+        registration.immersive && registration.locations.contains(location),
+  );
+
   ShellChromeActionsState copyWith({
     Map<String, ShellChromeActionRegistration>? registrations,
   }) {
@@ -81,8 +89,10 @@ class ShellChromeActionRegistration extends Equatable {
     required this.ownerId,
     required this.locations,
     required this.actions,
+    this.immersive = false,
   });
 
+  final bool immersive;
   final String ownerId;
   final Set<String> locations;
   final List<ShellActionSpec> actions;
@@ -92,20 +102,30 @@ class ShellChromeActionRegistration extends Equatable {
     ownerId,
     locations.toList(growable: false)..sort(),
     actions,
+    immersive,
   ];
 }
 
 class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
   ShellChromeActionsCubit() : super(const ShellChromeActionsState());
 
+  // Presentation only: callbacks and permission state are never cached.
+  final Map<String, List<ShellActionSpec>> _dockPreviews = {};
+
+  List<ShellActionSpec> dockPreviewForLocation(String location) =>
+      _dockPreviews[location] ?? const [];
+
   void register({
     required String registrationId,
     required String ownerId,
     required Set<String> locations,
     required List<ShellActionSpec> actions,
+    bool immersive = false,
   }) {
+    if (isClosed) return;
     final nextRegistration = ShellChromeActionRegistration(
       ownerId: ownerId,
+      immersive: immersive,
       locations: Set<String>.from(locations),
       actions: List<ShellActionSpec>.from(actions),
     );
@@ -114,6 +134,18 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
       return;
     }
 
+    for (final location in locations) {
+      _dockPreviews[location] = [
+        for (final action in actions.where((item) => item.inDock))
+          ShellActionSpec(
+            id: action.id,
+            icon: action.icon,
+            tooltip: action.tooltip,
+            inDock: true,
+            enabled: false,
+          ),
+      ];
+    }
     emit(
       state.copyWith(
         registrations: <String, ShellChromeActionRegistration>{
@@ -125,7 +157,7 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
   }
 
   void unregister(String registrationId) {
-    if (!state.registrations.containsKey(registrationId)) {
+    if (isClosed || !state.registrations.containsKey(registrationId)) {
       return;
     }
 

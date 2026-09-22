@@ -127,10 +127,44 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   }
 }
 
-class _DockActions extends StatelessWidget {
+class _DockActions extends StatefulWidget {
   const _DockActions({required this.location, required this.navigation});
   final String location;
   final Widget navigation;
+
+  @override
+  State<_DockActions> createState() => _DockActionsState();
+}
+
+class _DockActionsState extends State<_DockActions> {
+  Timer? _handoffTimer;
+  bool _allowPreview = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _startHandoff();
+  }
+
+  void _startHandoff() {
+    _handoffTimer?.cancel();
+    _allowPreview = true;
+    _handoffTimer = Timer(const Duration(milliseconds: 320), () {
+      if (mounted) setState(() => _allowPreview = false);
+    });
+  }
+
+  @override
+  void didUpdateWidget(_DockActions oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.location != widget.location) _startHandoff();
+  }
+
+  @override
+  void dispose() {
+    _handoffTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,25 +172,30 @@ class _DockActions extends StatelessWidget {
     try {
       cubit = context.read<ShellChromeActionsCubit>();
     } on ProviderNotFoundException {
-      return navigation;
+      return widget.navigation;
     }
     return BlocBuilder<ShellChromeActionsCubit, ShellChromeActionsState>(
       bloc: cubit,
       builder: (context, state) {
-        final actions = state
-            .resolveForLocation(location)
-            .where((a) => a.inDock)
-            .toList();
+        final registered = state.registrations.values.any(
+          (item) => item.locations.contains(widget.location),
+        );
+        final actions = !registered && _allowPreview
+            ? cubit!.dockPreviewForLocation(widget.location)
+            : state
+                  .resolveForLocation(widget.location)
+                  .where((a) => a.inDock)
+                  .toList();
         final visibleCount = MediaQuery.sizeOf(context).width >= 840 ? 2 : 1;
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Flexible(child: navigation),
+            Flexible(child: widget.navigation),
             DockActionTransition(
               identity: Object.hashAll([
                 visibleCount,
                 MediaQuery.sizeOf(context).shortestSide >= 600,
-                for (final action in actions) ...[action.id, action.tooltip],
+                actions.length,
               ]),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -186,10 +225,14 @@ class _DockActions extends StatelessWidget {
                               if (action.isLoading)
                                 const NovaLoadingIndicator(size: 24)
                               else
-                                Icon(
-                                  action.icon,
-                                  size: 24,
-                                  semanticLabel: action.tooltip,
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 220),
+                                  child: Icon(
+                                    action.icon,
+                                    key: ValueKey((action.id, action.icon)),
+                                    size: 24,
+                                    semanticLabel: action.tooltip,
+                                  ),
                                 ),
                               if (MediaQuery.sizeOf(context).shortestSide >=
                                   600) ...[

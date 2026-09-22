@@ -46,7 +46,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   for (final width in [390.0, 1032.0]) {
-    testWidgets('sheet has an opaque surface at width $width', (tester) async {
+    testWidgets('sheet is translucent at width $width', (tester) async {
       tester.view.physicalSize = Size(width, 1376);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -71,7 +71,11 @@ void main() {
           matching: find.byType(Material),
         ),
       );
-      expect(materials.first.color?.a, 1);
+      expect(materials.first.color?.a, closeTo(0.88, 0.01));
+      expect(find.byType(BackdropFilter), findsWidgets);
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+      expect(find.text('Task form'), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }

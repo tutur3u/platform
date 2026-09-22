@@ -12,6 +12,8 @@ class MailMessageContent extends StatefulWidget {
     required this.workspaceId,
     required this.mailboxId,
     required this.message,
+    this.imagesVisible,
+    this.showControls = true,
     super.key,
   });
 
@@ -19,6 +21,8 @@ class MailMessageContent extends StatefulWidget {
   final String workspaceId;
   final String mailboxId;
   final Map<String, dynamic> message;
+  final bool? imagesVisible;
+  final bool showControls;
 
   @override
   State<MailMessageContent> createState() => _MailMessageContentState();
@@ -106,6 +110,12 @@ class _MailMessageContentState extends State<MailMessageContent> {
         widget.message['snippet'] as String? ??
         '';
     if (_html.isEmpty) return SelectableText(text);
-    return MailHtmlBody(html: _html, inlineImages: _images, fallbackText: text);
+    return MailHtmlBody(
+      html: _html,
+      inlineImages: _images,
+      fallbackText: text,
+      imagesVisible: widget.imagesVisible,
+      showControls: widget.showControls,
+    );
   }
 }

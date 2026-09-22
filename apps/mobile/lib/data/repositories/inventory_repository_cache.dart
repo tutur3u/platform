@@ -2,6 +2,46 @@ part of 'inventory_repository.dart';
 
 const _inventoryModuleTag = 'module:inventory';
 
+extension InventoryCacheSnapshot on InventoryRepository {
+  InventoryOverview? peekOverview(String wsId) =>
+      _peekInventory('overview', wsId, InventoryOverview.fromJson);
+
+  ({List<InventoryProduct> data, int count})? peekProducts(
+    String wsId, {
+    String query = '',
+    int pageSize = 20,
+  }) => _peekInventory(
+    'products',
+    wsId,
+    (json) => (
+      data: (json['data'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(InventoryProduct.fromJson)
+          .toList(),
+      count: (json['count'] as num?)?.toInt() ?? 0,
+    ),
+    params: {
+      'query': query.trim(),
+      'status': 'active',
+      'page': '1',
+      'pageSize': '$pageSize',
+    },
+  );
+
+  T? _peekInventory<T>(
+    String namespace,
+    String wsId,
+    T Function(Map<String, dynamic>) decode, {
+    Map<String, String> params = const {},
+  }) {
+    final cached = CacheStore.instance.peek<T>(
+      key: _inventoryCacheKey(namespace, wsId, params: params),
+      decode: (json) => decode(Map<String, dynamic>.from(json! as Map)),
+    );
+    return cached.isExpired ? null : cached.data;
+  }
+}
+
 extension _InventoryRepositoryCache on InventoryRepository {
   CacheKey _inventoryCacheKey(
     String namespace,

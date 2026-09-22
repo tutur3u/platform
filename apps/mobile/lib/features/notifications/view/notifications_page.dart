@@ -146,6 +146,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                           for (final tab in NotificationsTab.values)
                             ShellActionSpec(
                               id: 'notifications-tab-${tab.name}',
+                              segmentGroup: 'notifications-tabs',
                               icon: tab == NotificationsTab.inbox
                                   ? Icons.inbox_outlined
                                   : Icons.archive_outlined,

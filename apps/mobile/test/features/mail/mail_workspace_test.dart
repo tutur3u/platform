@@ -206,7 +206,15 @@ void main() {
     await tester.tap(find.text('First'));
     await tester.pumpAndSettle();
     expect(find.byType(MailReader), findsOneWidget);
-    expect(actions.state.resolveForLocation(Routes.mail), isEmpty);
+    expect(
+      actions.state.resolveForLocation(Routes.mail).map((action) => action.id),
+      contains('mail-star'),
+    );
+    expect(
+      actions.state.resolveForLocation(Routes.mail).map((action) => action.id),
+      isNot(contains('mail-search')),
+    );
+    expect(titles.state.resolveForLocation(Routes.mail), 'First');
     navigator.currentState!.pop();
     await tester.pumpAndSettle();
     expect(actions.state.resolveForLocation(Routes.mail), isNotEmpty);
