@@ -1,5 +1,4 @@
-// Assistant feature parity module: targeted lint suppressions keep the
-// streaming/state port readable while the feature settles.
+// Relative imports preserve the existing Assistant module layout.
 // ignore_for_file: always_use_package_imports, lines_longer_than_80_chars, avoid_positional_boolean_parameters, inference_failure_on_collection_literal, avoid_single_cascade_in_expression_statements, unnecessary_breaks
 
 import 'dart:async';
@@ -465,6 +464,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
             onDone: () async {
               _streamSubscription = null;
               _finalizeToolParts();
+              if (isClosed || state.status == AssistantChatStatus.error) return;
               emit(state.copyWith(status: AssistantChatStatus.idle));
               _persistAssistantChatCache();
             },
@@ -523,6 +523,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   }
 
   void _handleStreamEvent(AssistantStreamEvent event) {
+    if (isClosed || state.status == AssistantChatStatus.error) return;
     if (event is AssistantDoneStreamEvent) {
       emit(state.copyWith(status: AssistantChatStatus.idle));
       _persistAssistantChatCache();
@@ -535,7 +536,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
 
     switch (type) {
       case 'start':
-        // Generate a message ID if not provided by the backend
         _activeAssistantMessageId =
             payload['messageId'] as String? ?? _repository.generateUuid();
         _activeTextBlockId = null;

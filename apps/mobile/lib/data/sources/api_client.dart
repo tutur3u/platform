@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:typed_data';
+
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/data/sources/api_verification.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -132,6 +134,8 @@ class ApiClient {
       if (contentType != null) 'Content-Type': contentType,
       'Accept': accept,
       if (token != null) 'Authorization': 'Bearer $token',
+      if (requiresAuth && ApiVerification.token != null)
+        'x-tuturuuu-turnstile-token': ApiVerification.token!,
     };
   }
 
@@ -308,7 +312,7 @@ class ApiClient {
         ..headers.addAll(
           await _getHeaders(accept: accept, requiresAuth: requiresAuth),
         );
-      return await request.send();
+      return await _client.send(request);
     }, requiresAuth: requiresAuth);
   }
 
@@ -331,7 +335,7 @@ class ApiClient {
           ),
         )
         ..body = jsonEncode(body);
-      return await request.send();
+      return await _client.send(request);
     }, requiresAuth: requiresAuth);
   }
 
@@ -370,7 +374,7 @@ class ApiClient {
         );
       }
 
-      return await request.send();
+      return await _client.send(request);
     }, requiresAuth: requiresAuth);
 
     final response = await http.Response.fromStream(streamedResponse);
@@ -392,14 +396,26 @@ class ApiClient {
   }) async {
     try {
       final userId = requiresAuth ? _auth.currentUser?.id : null;
-      final response = await request().timeout(const Duration(seconds: 30));
+      var response = await request().timeout(const Duration(seconds: 30));
       if (requiresAuth) _checkRequestUser(userId);
       if (requiresAuth && response.statusCode == 401) {
         await _ensureValidSession(forceRefresh: true);
         _checkRequestUser(userId);
-        final retried = await request().timeout(const Duration(seconds: 30));
+        response = await request().timeout(const Duration(seconds: 30));
         _checkRequestUser(userId);
-        return retried;
+      }
+      if (requiresAuth &&
+          response.statusCode == 403 &&
+          response.headers['x-abuse-challenge'] == 'turnstile') {
+        final token = await ApiVerification.requestToken?.call();
+        _checkRequestUser(userId);
+        if (token != null && token.isNotEmpty) {
+          response = await ApiVerification.retry(
+            token,
+            () => request().timeout(const Duration(seconds: 30)),
+          );
+          _checkRequestUser(userId);
+        }
       }
       return response;
     } on ApiException {
@@ -417,14 +433,28 @@ class ApiClient {
   }) async {
     try {
       final userId = requiresAuth ? _auth.currentUser?.id : null;
-      final response = await request().timeout(const Duration(seconds: 30));
+      var response = await request().timeout(const Duration(seconds: 30));
       if (requiresAuth) _checkRequestUser(userId);
       if (requiresAuth && response.statusCode == 401) {
+        await response.stream.listen(null).cancel();
         await _ensureValidSession(forceRefresh: true);
         _checkRequestUser(userId);
-        final retried = await request().timeout(const Duration(seconds: 30));
+        response = await request().timeout(const Duration(seconds: 30));
         _checkRequestUser(userId);
-        return retried;
+      }
+      if (requiresAuth &&
+          response.statusCode == 403 &&
+          response.headers['x-abuse-challenge'] == 'turnstile') {
+        final token = await ApiVerification.requestToken?.call();
+        _checkRequestUser(userId);
+        if (token != null && token.isNotEmpty) {
+          await response.stream.listen(null).cancel();
+          response = await ApiVerification.retry(
+            token,
+            () => request().timeout(const Duration(seconds: 30)),
+          );
+          _checkRequestUser(userId);
+        }
       }
       return response;
     } on ApiException {
@@ -451,8 +481,8 @@ class ApiClient {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final errorMessage =
-          parsed?['error'] as String? ??
           parsed?['message'] as String? ??
+          parsed?['error'] as String? ??
           'Request failed';
       final validationErrors =
           (parsed?['errors'] as List<dynamic>? ?? const <dynamic>[])
@@ -465,19 +495,15 @@ class ApiClient {
               validationErrors.first.toLowerCase() != errorMessage.toLowerCase()
           ? '$errorMessage: ${validationErrors.first}'
           : errorMessage;
-      // Log the full response for debugging
-      final truncatedBody = response.body.length > 500
-          ? response.body.substring(0, 500)
-          : response.body;
-      // ignore: avoid_print, debug logging for API errors
-      print(
-        '[ApiClient] HTTP ${response.statusCode} '
-        '| $effectiveMessage | body: $truncatedBody',
+      developer.log(
+        'HTTP ${response.statusCode}; code=${parsed?['code'] ?? 'unknown'}',
+        name: 'ApiClient',
       );
       throw ApiException(
         message: effectiveMessage,
         statusCode: response.statusCode,
         retryAfter: parsed?['retryAfter'] as int?,
+        code: parsed?['code'] as String?,
       );
     }
 
@@ -515,11 +541,13 @@ class ApiException implements Exception {
     required this.message,
     required this.statusCode,
     this.retryAfter,
+    this.code,
   });
 
   final String message;
   final int statusCode;
   final int? retryAfter;
+  final String? code;
 
   @override
   String toString() => 'ApiException($statusCode): $message';

@@ -28,9 +28,10 @@ import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
-import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
@@ -905,20 +906,9 @@ class _AssistantPageState extends State<AssistantPage> {
   }) async {
     await showAdaptiveSheet<void>(
       context: context,
-      builder: (sheetContext) => AssistantCreditSourceSheetBody(
-        shellState: shellState,
+      builder: (sheetContext) => AssistantCreditSourceSheet(
+        cubit: _shellCubit,
         isPersonalWorkspace: isPersonalWorkspace,
-        onClose: () => Navigator.of(sheetContext).maybePop(),
-        onSelect: (source) async {
-          if (!shellState.workspaceCreditLocked ||
-              source == AssistantCreditSource.personal) {
-            await _shellCubit.setCreditSource(source);
-          }
-          if (!sheetContext.mounted) {
-            return;
-          }
-          await Navigator.of(sheetContext).maybePop();
-        },
       ),
     );
   }
@@ -997,6 +987,7 @@ class _AssistantPageState extends State<AssistantPage> {
       chatState: chatState,
       liveState: liveState,
       assistantName: shellState.soul.name,
+      onRetry: () => retryAssistantChat(_chatCubit, shellState),
     );
   }
 

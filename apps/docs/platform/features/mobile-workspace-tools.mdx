@@ -403,3 +403,45 @@ It checks viewer membership before privileged reads and subject membership and
 consent before and after aggregation. Shared activity is never stored in the
 mobile persistent cache. Test private defaults, confirmation cancellation,
 revocation, former members, and account/workspace changes before release.
+
+## Assistant and task verification recovery
+
+A task write returning HTTP 403 with `X-Abuse-Challenge: turnstile` requires
+verification, not broader workspace permissions. Mobile opens the existing
+security dialog and retries the same request once using the returned token.
+Cancellation sends no retry; an account change aborts the request. Other 403
+responses remain permission failures. Never bypass the server authorization or
+abuse check to repair this flow. Log status and error codes, not response bodies
+or verification tokens.
+
+Every satellite enforcing this challenge needs its own production
+`TURNSTILE_SECRET_KEY` configuration matching the mobile `TURNSTILE_SITE_KEY`.
+The mobile release vault also supplies `TURNSTILE_BASE_URL`. A successful client
+challenge followed by another 403 requires checking the server challenge audit:
+`not_configured` means the satellite secret is missing. Configure the existing
+matching secret through the provider vault and redeploy the current production
+source; never disable verification. Check names and readiness without logging
+secret values.
+
+Assistant credits must load independently of optional task, Calendar, soul, and
+model-catalog insights. Calendar insights use the authenticated workspace
+`/api/v1/workspaces/:wsId/calendar/events` gateway. A failed credit read offers a
+retry in the credit-source sheet rather than displaying a fabricated Free tier.
+Chat errors remain visible after stream completion, with the user's message
+retained for retry. Older Assistant UUIDs are not native Chat conversation IDs:
+the specific `Conversation is not an AI chat` settings rejection must use the
+legacy Assistant stream through the shared authenticated API client, including
+challenge and refresh handling. Other malformed-settings errors stay errors. Read-only `ai-agent-thread-` mirrors belong in Chat, not Mira's
+editable history. Do not restore them as Assistant conversations or send their
+synthetic identifiers to Live's UUID-backed chat endpoint; Live starts a new
+owned session when no resumable UUID is available.
+
+Live initializes PCM playback before starting microphone capture on iOS. Its
+serialized audio queue preserves chunk order and discards queued chunks when
+playback is interrupted or disposed. The vendored PCM plugin preserves existing
+`AVAudioSession` category options when the category is already correct; resetting
+those options can disturb an active microphone route. Native microphone failures
+are recoverable UI states. A simulator without a valid input format cannot prove
+physical-device audio quality; verify recording, playback, interruption, and
+headset reconnection on hardware before claiming that a reported device crash or
+stutter is resolved.

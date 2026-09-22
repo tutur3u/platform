@@ -63,7 +63,11 @@ class AssistantLiveUiState extends Equatable {
     if ((kind == AssistantLiveUiKind.error ||
             kind == AssistantLiveUiKind.reconnecting) &&
         error?.isNotEmpty == true) {
-      return error!;
+      return switch (error) {
+        'microphone_unavailable' => l10n.assistantMicrophoneUnavailable,
+        'live_audio_unavailable' => l10n.assistantAudioUnavailable,
+        _ => error!,
+      };
     }
     if (kind == AssistantLiveUiKind.permissionDenied) {
       return l10n.assistantLivePermissionDenied;

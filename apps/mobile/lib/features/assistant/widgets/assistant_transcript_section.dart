@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_bubble.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -10,12 +11,14 @@ class AssistantTranscriptSection extends StatelessWidget {
     required this.chatState,
     required this.liveState,
     required this.assistantName,
+    this.onRetry,
     super.key,
   });
 
   final AssistantChatState chatState;
   final AssistantLiveState liveState;
   final String assistantName;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +52,7 @@ class AssistantTranscriptSection extends StatelessWidget {
             ),
           );
         }),
+        AssistantChatFeedback(state: chatState, onRetry: onRetry),
         if (liveState.userDraft.isNotEmpty ||
             liveState.userTranscript.isNotEmpty)
           Padding(

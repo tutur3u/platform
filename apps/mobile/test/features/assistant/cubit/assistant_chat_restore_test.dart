@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -66,6 +67,46 @@ void main() {
     addTearDown(cubit.close);
   });
 
+  test('stream error survives finish events and connection closure', () async {
+    await cubit.loadWorkspace('ws');
+    when(
+      () => repository.streamChat(
+        chatId: 'cached',
+        wsId: 'ws',
+        workspaceContextId: 'ws',
+        modelId: 'model',
+        messages: any(named: 'messages'),
+        thinkingMode: AssistantThinkingMode.fast,
+        creditSource: AssistantCreditSource.workspace,
+        timezone: 'UTC',
+        attachments: any(named: 'attachments'),
+        creditWsId: 'ws',
+      ),
+    ).thenAnswer(
+      (_) => Stream.fromIterable([
+        const AssistantJsonStreamEvent({
+          'type': 'error',
+          'errorText': 'Service unavailable',
+        }),
+        const AssistantJsonStreamEvent({'type': 'finish'}),
+        const AssistantDoneStreamEvent(),
+      ]),
+    );
+    await cubit.submit(
+      wsId: 'ws',
+      message: 'Hello',
+      modelId: 'model',
+      thinkingMode: AssistantThinkingMode.fast,
+      creditSource: AssistantCreditSource.workspace,
+      workspaceContextId: 'ws',
+      timezone: 'UTC',
+      creditWsId: 'ws',
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    expect(cubit.state.status, AssistantChatStatus.error);
+    expect(cubit.state.error, 'Service unavailable');
+    expect(cubit.state.messages.single.role, 'user');
+  });
   test('cached conversation renders before delayed history', () async {
     final history = Completer<List<AssistantChatRecord>>();
     when(

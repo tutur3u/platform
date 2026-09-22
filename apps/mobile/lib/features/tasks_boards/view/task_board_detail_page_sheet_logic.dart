@@ -646,7 +646,9 @@ Future<void> _saveTaskEditorTask(
       await state._closeEditor();
     }
   } on Object catch (error) {
-    final message = error.toString().trim();
+    final message = error is ApiException
+        ? error.message.trim()
+        : fallbackErrorMessage;
     if (!state.mounted || !toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
@@ -727,14 +729,12 @@ Future<void> _moveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
         ),
       ),
     );
-  } on Object catch (error) {
-    final message = error.toString().trim();
+  } on Object {
     if (!state.mounted || !toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
-      builder: (context, overlay) => shad.Alert.destructive(
-        content: Text(message.isEmpty ? fallbackErrorMessage : message),
-      ),
+      builder: (context, overlay) =>
+          shad.Alert.destructive(content: Text(fallbackErrorMessage)),
     );
   } finally {
     if (state.mounted) {
@@ -846,16 +846,7 @@ Future<void> _pickTaskDate(
 }
 
 Future<void> _closeTaskEditor(_TaskBoardTaskEditorSheetState state) async {
-  try {
-    await shad.closeOverlay<void>(state.context);
-    return;
-  } on Exception {
-    if (!state.mounted) return;
-    final navigator = Navigator.of(state.context);
-    if (navigator.canPop()) {
-      navigator.pop();
-    }
-  }
+  await dismissAdaptiveDrawerOverlay(state.context);
 }
 
 String _normalizeTaskPriority(String? value, List<String> priorityOptions) {
