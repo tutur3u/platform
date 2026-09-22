@@ -428,7 +428,10 @@ model-catalog insights. Calendar insights use the authenticated workspace
 `/api/v1/workspaces/:wsId/calendar/events` gateway. A failed credit read offers a
 retry in the credit-source sheet rather than displaying a fabricated Free tier.
 Chat errors remain visible after stream completion, with the user's message
-retained for retry. Read-only `ai-agent-thread-` mirrors belong in Chat, not Mira's
+retained for retry. Older Assistant UUIDs are not native Chat conversation IDs:
+the specific `Conversation is not an AI chat` settings rejection must use the
+legacy Assistant stream through the shared authenticated API client, including
+challenge and refresh handling. Other malformed-settings errors stay errors. Read-only `ai-agent-thread-` mirrors belong in Chat, not Mira's
 editable history. Do not restore them as Assistant conversations or send their
 synthetic identifiers to Live's UUID-backed chat endpoint; Live starts a new
 owned session when no resumable UUID is available.

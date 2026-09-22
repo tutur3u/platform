@@ -2,7 +2,6 @@
 // ignore_for_file: always_use_package_imports, lines_longer_than_80_chars
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
@@ -12,7 +11,6 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
@@ -675,7 +673,12 @@ class AssistantRepository {
       }
       return;
     } on ApiException catch (error) {
-      if (error.statusCode != 404 && error.statusCode != 403) {
+      final legacyConversation =
+          error.statusCode == 400 &&
+          error.message == 'Conversation is not an AI chat';
+      if (!legacyConversation &&
+          error.statusCode != 404 &&
+          error.statusCode != 403) {
         rethrow;
       }
     }
@@ -704,17 +707,7 @@ class AssistantRepository {
     required String timezone,
     String? creditWsId,
   }) async* {
-    final token = await _ensureAccessToken();
-    final request = http.Request(
-      'POST',
-      Uri.parse('${ApiConfig.baseUrl}/api/ai/chat'),
-    );
-    request.headers.addAll({
-      'Accept': 'text/event-stream',
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    });
-    request.body = jsonEncode({
+    final response = await _apiClient.sendJsonStream('POST', '/api/ai/chat', {
       'id': chatId,
       'wsId': wsId,
       'workspaceContextId': workspaceContextId,
@@ -725,9 +718,7 @@ class AssistantRepository {
       'thinkingMode': thinkingMode.name,
       'creditSource': creditSource.name,
       if (creditWsId != null) 'creditWsId': creditWsId,
-    });
-
-    final response = await _httpClient.send(request);
+    }, accept: 'text/event-stream');
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = await response.stream.bytesToString();
       throw ApiException(
@@ -1101,21 +1092,6 @@ class AssistantRepository {
   String _normalizeRole(String? role) {
     if (role == null) return 'assistant';
     return role.toLowerCase() == 'user' ? 'user' : 'assistant';
-  }
-
-  Future<String> _ensureAccessToken() async {
-    var token = supabase.auth.currentSession?.accessToken;
-    if (token != null && token.isNotEmpty) {
-      return token;
-    }
-
-    final refreshed = await supabase.auth.refreshSession();
-    token = refreshed.session?.accessToken;
-    if (token == null || token.isEmpty) {
-      throw const ApiException(message: 'Unauthorized', statusCode: 401);
-    }
-
-    return token;
   }
 
   String _uploadContentType(String mimeType) {
