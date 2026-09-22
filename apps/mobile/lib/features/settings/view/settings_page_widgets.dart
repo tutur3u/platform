@@ -104,6 +104,16 @@ class _InfrastructureSection extends StatelessWidget {
       description: l10n.settingsInfrastructureSectionDescription,
       children: [
         SettingsTile(
+          icon: Icons.admin_panel_settings_outlined,
+          title: l10n.adminAccountsTitle,
+          subtitle: l10n.adminAccountsDescription,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const InternalAccountsPage(),
+            ),
+          ),
+        ),
+        SettingsTile(
           icon: Icons.system_update_alt_rounded,
           title: l10n.settingsMobileVersions,
           subtitle: l10n.settingsMobileVersionsTileDescription,

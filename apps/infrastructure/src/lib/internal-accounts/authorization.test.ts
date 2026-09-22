@@ -3,8 +3,19 @@ import { authorizeInternalAccountRequest } from './authorization';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  getAppSessionUserFromRequest: vi.fn(),
+  getUserById: vi.fn(),
+  resolveSupabaseSessionRequest: vi.fn(),
   getSatelliteAppSessionUser: vi.fn(),
   getPermissions: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/auth/app-session', () => ({
+  getAppSessionUserFromRequest: mocks.getAppSessionUserFromRequest,
+}));
+
+vi.mock('@tuturuuu/auth/supabase-session-user', () => ({
+  resolveSupabaseSessionRequest: mocks.resolveSupabaseSessionRequest,
 }));
 
 vi.mock('@tuturuuu/satellite/auth', () => ({
@@ -20,9 +31,126 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 describe('internal account authorization', () => {
+  it('accepts a verified native bearer with the same permission boundary', async () => {
+    mocks.resolveSupabaseSessionRequest.mockResolvedValue({
+      user: { id: 'operator-1', email: 'operator@tuturuuu.com' },
+    });
+    const request = new Request('https://infra.test/api', {
+      headers: { authorization: 'Bearer native-test-credential' },
+    });
+    expect((await authorizeInternalAccountRequest(request)).ok).toBe(true);
+    expect(mocks.resolveSupabaseSessionRequest).toHaveBeenCalledWith(request);
+    expect(mocks.getSatelliteAppSessionUser).not.toHaveBeenCalled();
+  });
+
+  it('verifies an explicit satellite token without ambient cookie fallback', async () => {
+    mocks.getAppSessionUserFromRequest.mockReturnValue({
+      id: 'operator-1',
+      email: 'operator@tuturuuu.com',
+    });
+    const request = new Request('https://infra.test/api', {
+      headers: {
+        authorization: 'Bearer ttr_app_test',
+        cookie: 'other-user=credential',
+      },
+    });
+    expect((await authorizeInternalAccountRequest(request)).ok).toBe(true);
+    const [forwarded, options] =
+      mocks.getAppSessionUserFromRequest.mock.calls[0]!;
+    expect(forwarded.headers.get('cookie')).toBeNull();
+    expect(forwarded.headers.get('authorization')).toBe('Bearer ttr_app_test');
+    expect(options).toEqual({ targetApp: 'infra' });
+    expect(mocks.getSatelliteAppSessionUser).not.toHaveBeenCalled();
+  });
+
+  it.each(['Bearer expired', 'Basic malformed', 'Bearer ttr_app_invalid'])(
+    'never falls back from invalid explicit credentials: %s',
+    async (credential) => {
+      const result = await authorizeInternalAccountRequest(
+        new Request('https://infra.test/api', {
+          headers: { authorization: credential },
+        })
+      );
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.response.status).toBe(401);
+      expect(mocks.getSatelliteAppSessionUser).not.toHaveBeenCalled();
+      expect(mocks.getPermissions).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    { email: 'operator@example.com' },
+    { email: 'operator@tuturuuu.com.evil.test' },
+    { email_confirmed_at: null },
+    { banned_until: '2999-01-01' },
+    { id: 'different-user' },
+  ])('denies stale or invalid administrative identity: %j', async (changes) => {
+    mocks.getUserById.mockResolvedValue({
+      data: {
+        user: {
+          id: 'operator-1',
+          email: 'operator@tuturuuu.com',
+          email_confirmed_at: '2026-01-01',
+          ...changes,
+        },
+      },
+      error: null,
+    });
+    const result = await authorizeInternalAccountRequest(
+      new Request('https://infra.test/api')
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.response.status).toBe(403);
+  });
+
+  it('fails closed when the authoritative identity cannot be loaded', async () => {
+    mocks.getUserById.mockResolvedValue({
+      data: { user: null },
+      error: { message: 'private provider detail' },
+    });
+    const result = await authorizeInternalAccountRequest(
+      new Request('https://infra.test/api')
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.response.status).toBe(503);
+      expect(await result.response.text()).not.toContain(
+        'private provider detail'
+      );
+    }
+  });
+
+  it('fails closed on an identity provider network exception', async () => {
+    mocks.getUserById.mockRejectedValue(new Error('private network detail'));
+    const result = await authorizeInternalAccountRequest(
+      new Request('https://infra.test/api')
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.response.status).toBe(503);
+      expect(await result.response.text()).not.toContain(
+        'private network detail'
+      );
+    }
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.createAdminClient.mockResolvedValue({ auth: { admin: {} } });
+    mocks.createAdminClient.mockResolvedValue({
+      auth: { admin: { getUserById: mocks.getUserById } },
+    });
+    mocks.getUserById.mockResolvedValue({
+      data: {
+        user: {
+          id: 'operator-1',
+          email: 'operator@tuturuuu.com',
+          email_confirmed_at: '2026-01-01',
+        },
+      },
+      error: null,
+    });
+    mocks.resolveSupabaseSessionRequest.mockResolvedValue({ user: null });
+    mocks.getAppSessionUserFromRequest.mockReturnValue(null);
     mocks.getSatelliteAppSessionUser.mockResolvedValue({
       email: 'operator@tuturuuu.com',
       id: 'operator-1',

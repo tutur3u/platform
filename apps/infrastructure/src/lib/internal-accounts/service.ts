@@ -9,6 +9,7 @@ import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { InternalAccountAdminError } from './errors';
+import { resetInternalAccountAuthenticators } from './mfa-service';
 import { updateInternalAccountProfile } from './profile-service';
 
 export { InternalAccountAdminError } from './errors';
@@ -439,6 +440,16 @@ export async function mutateInternalAccount({
       'A password between 12 and 72 characters is required',
       400
     );
+  }
+
+  if (action === 'reset_mfa') {
+    await resetInternalAccountAuthenticators({
+      actorUserId,
+      confirmationEmail: confirmationEmail!,
+      sbAdmin,
+      targetUserId,
+    });
+    return account;
   }
 
   const attributes =

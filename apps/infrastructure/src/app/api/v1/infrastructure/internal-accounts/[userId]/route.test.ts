@@ -97,6 +97,25 @@ describe('internal account mutation route', () => {
     );
   });
 
+  it('accepts authenticator reset only with explicit target confirmation', async () => {
+    const denied = await PATCH(request({ action: 'reset_mfa' }), params());
+    expect(denied.status).toBe(400);
+    expect(mocks.mutateInternalAccount).not.toHaveBeenCalled();
+    const response = await PATCH(
+      request({ action: 'reset_mfa', confirmationEmail: 'local@tuturuuu.com' }),
+      params()
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.mutateInternalAccount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'reset_mfa',
+        actorUserId: 'operator-1',
+        confirmationEmail: 'local@tuturuuu.com',
+        targetUserId,
+      })
+    );
+  });
+
   it('accepts a valid profile update without email confirmation', async () => {
     const response = await PATCH(
       request({

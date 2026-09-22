@@ -15606,6 +15606,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Undo'**
   String get mailSwipeUndo;
+
+  /// No description provided for @adminAccountsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Internal accounts'**
+  String get adminAccountsTitle;
+
+  /// No description provided for @adminAccountsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Tuturuuu accounts and account security.'**
+  String get adminAccountsDescription;
+
+  /// No description provided for @adminAccountsSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search accounts'**
+  String get adminAccountsSearch;
+
+  /// No description provided for @adminAccountsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load accounts. Check your administrator access and try again.'**
+  String get adminAccountsUnavailable;
+
+  /// No description provided for @adminAccountsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No accounts found'**
+  String get adminAccountsEmpty;
+
+  /// No description provided for @adminAccountsMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get adminAccountsMore;
+
+  /// No description provided for @adminAccountsDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Access disabled'**
+  String get adminAccountsDisabled;
+
+  /// No description provided for @adminAccountsActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Access enabled'**
+  String get adminAccountsActive;
+
+  /// No description provided for @adminAccountsResetPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get adminAccountsResetPassword;
+
+  /// No description provided for @adminAccountsEnableAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable access'**
+  String get adminAccountsEnableAccess;
+
+  /// No description provided for @adminAccountsDisableAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable access'**
+  String get adminAccountsDisableAccess;
+
+  /// No description provided for @adminAccountsConfirmEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the account email to confirm'**
+  String get adminAccountsConfirmEmail;
+
+  /// No description provided for @adminAccountsNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'New password (12–72 characters)'**
+  String get adminAccountsNewPassword;
+
+  /// No description provided for @adminAccountsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get adminAccountsSave;
+
+  /// No description provided for @adminAccountsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The change could not be saved. Try again.'**
+  String get adminAccountsFailed;
+
+  /// No description provided for @adminAccountsEditProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get adminAccountsEditProfile;
+
+  /// No description provided for @adminAccountsDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get adminAccountsDisplayName;
+
+  /// No description provided for @adminAccountsUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get adminAccountsUsername;
+
+  /// No description provided for @adminAccountsResetMfa.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset authenticators'**
+  String get adminAccountsResetMfa;
+
+  /// No description provided for @adminAccountsResetMfaDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.'**
+  String get adminAccountsResetMfaDescription;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

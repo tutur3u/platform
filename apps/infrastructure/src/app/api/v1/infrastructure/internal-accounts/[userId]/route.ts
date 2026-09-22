@@ -17,7 +17,7 @@ const ParamsSchema = z.object({
 
 const UpdateInternalAccountSchema = z.discriminatedUnion('action', [
   z.object({
-    action: z.enum(['disable_access', 'enable_access']),
+    action: z.enum(['disable_access', 'enable_access', 'reset_mfa']),
     confirmationEmail: z.string().trim().email().max(MAX_EMAIL_LENGTH),
   }),
   z.object({
@@ -46,6 +46,7 @@ const actionMessages = {
   disable_access: 'Internal account access disabled',
   enable_access: 'Internal account access restored',
   reset_password: 'Internal account password updated',
+  reset_mfa: 'Internal account authenticators reset',
   update_profile: 'Internal account profile updated',
 } as const;
 

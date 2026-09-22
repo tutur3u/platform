@@ -2,6 +2,7 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
 import { describe, expect, it, vi } from 'vitest';
+import { resetInternalAccountAuthenticators } from './mfa-service';
 import {
   type InternalAccountAdminError,
   listInternalAccountUsers,
@@ -9,6 +10,11 @@ import {
   resetAccountPasswordByEmail,
   toInternalAccount,
 } from './service';
+
+vi.mock('server-only', () => ({}));
+vi.mock('./mfa-service', () => ({
+  resetInternalAccountAuthenticators: vi.fn(),
+}));
 
 function authUser(overrides: Partial<SupabaseUser> = {}): SupabaseUser {
   return {
@@ -376,5 +382,39 @@ describe('internal account service', () => {
     ).rejects.toEqual(expect.objectContaining({ status: 404 }));
 
     expect(updateUserById).not.toHaveBeenCalled();
+  });
+});
+
+describe('authenticator action dispatch', () => {
+  it('does not accidentally re-enable a disabled account when resetting MFA', async () => {
+    const updateUserById = vi.fn();
+    const sbAdmin = adminClient({
+      getUserById: vi.fn().mockResolvedValue({
+        data: {
+          user: authUser({
+            id: 'target',
+            email: 'target@tuturuuu.com',
+            banned_until: '2099-01-01T00:00:00Z',
+          }),
+        },
+        error: null,
+      }),
+      updateUserById,
+    });
+    const result = await mutateInternalAccount({
+      action: 'reset_mfa',
+      actorUserId: 'operator',
+      targetUserId: 'target',
+      confirmationEmail: 'target@tuturuuu.com',
+      sbAdmin,
+    });
+    expect(resetInternalAccountAuthenticators).toHaveBeenCalledWith({
+      actorUserId: 'operator',
+      targetUserId: 'target',
+      confirmationEmail: 'target@tuturuuu.com',
+      sbAdmin,
+    });
+    expect(updateUserById).not.toHaveBeenCalled();
+    expect(result.isDisabled).toBe(true);
   });
 });

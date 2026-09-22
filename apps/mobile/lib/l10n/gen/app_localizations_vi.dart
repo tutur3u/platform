@@ -8130,4 +8130,64 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailSwipeUndo => 'Hoàn tác';
+
+  @override
+  String get adminAccountsTitle => 'Tài khoản nội bộ';
+
+  @override
+  String get adminAccountsDescription => 'Quản lý tài khoản Tuturuuu và bảo mật tài khoản.';
+
+  @override
+  String get adminAccountsSearch => 'Tìm tài khoản';
+
+  @override
+  String get adminAccountsUnavailable => 'Không thể tải tài khoản. Kiểm tra quyền quản trị rồi thử lại.';
+
+  @override
+  String get adminAccountsEmpty => 'Không tìm thấy tài khoản';
+
+  @override
+  String get adminAccountsMore => 'Tải thêm';
+
+  @override
+  String get adminAccountsDisabled => 'Đã vô hiệu hóa truy cập';
+
+  @override
+  String get adminAccountsActive => 'Đã cho phép truy cập';
+
+  @override
+  String get adminAccountsResetPassword => 'Đặt lại mật khẩu';
+
+  @override
+  String get adminAccountsEnableAccess => 'Cho phép truy cập';
+
+  @override
+  String get adminAccountsDisableAccess => 'Vô hiệu hóa truy cập';
+
+  @override
+  String get adminAccountsConfirmEmail => 'Nhập email tài khoản để xác nhận';
+
+  @override
+  String get adminAccountsNewPassword => 'Mật khẩu mới (12–72 ký tự)';
+
+  @override
+  String get adminAccountsSave => 'Lưu thay đổi';
+
+  @override
+  String get adminAccountsFailed => 'Không thể lưu thay đổi. Vui lòng thử lại.';
+
+  @override
+  String get adminAccountsEditProfile => 'Chỉnh sửa hồ sơ';
+
+  @override
+  String get adminAccountsDisplayName => 'Tên hiển thị';
+
+  @override
+  String get adminAccountsUsername => 'Tên người dùng';
+
+  @override
+  String get adminAccountsResetMfa => 'Đặt lại trình xác thực';
+
+  @override
+  String get adminAccountsResetMfaDescription => 'Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy. Người dùng cần đăng ký lại trình xác thực.';
 }
