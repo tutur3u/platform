@@ -178,6 +178,8 @@ class _MailReaderState extends State<MailReader> {
           if (_busy) const NovaLoadingIndicator(size: 20),
           for (final message in _messages)
             Card(
+              color: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
               margin: const EdgeInsets.only(bottom: 12),
               elevation: 0,
               shape: const RoundedRectangleBorder(),
