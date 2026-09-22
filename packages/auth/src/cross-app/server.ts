@@ -118,6 +118,7 @@ async function validateCrossAppTokenWithCentralVerifier({
     cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
+      'User-Agent': 'Tuturuuu-Cross-App/1.0',
     },
     method: 'POST',
   });
@@ -185,6 +186,7 @@ async function refreshAppSessionWithCentralVerifier({
     cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
+      'User-Agent': 'Tuturuuu-Cross-App/1.0',
     },
     method: 'POST',
   });
