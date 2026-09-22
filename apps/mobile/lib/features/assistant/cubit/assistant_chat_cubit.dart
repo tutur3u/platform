@@ -63,7 +63,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       _openChat(wsId, chat);
 
   Future<void> openChatById(String wsId, String chatId) =>
-      _openChatById(wsId, chatId);
+      _openChatById(wsId, chatId, forceRefresh: true);
 
   Future<void> refreshHistory() => _refreshHistory();
 
