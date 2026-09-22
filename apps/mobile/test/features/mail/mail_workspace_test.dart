@@ -213,6 +213,42 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  for (final status in [401, 403, 404]) {
+    testWidgets('reader refresh $status closes only the affected scope', (
+      tester,
+    ) async {
+      respond((_) async => inbox('Cached thread'));
+      when(
+        () => repository.cachedThread('ws', 'box', 'Cached thread'),
+      ).thenAnswer(
+        (_) async => {
+          'thread': {'id': 'Cached thread', 'subject': 'Cached subject'},
+          'messages': <dynamic>[],
+        },
+      );
+      final refresh = Completer<Map<String, dynamic>>();
+      when(
+        () => repository.refreshThread('ws', 'box', 'Cached thread'),
+      ).thenAnswer((_) => refresh.future);
+      await mount(tester);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cached thread'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MailReader), findsOneWidget);
+      refresh.completeError(
+        ApiException(message: 'Unavailable', statusCode: status),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MailReader), findsNothing);
+      if (status == 404) {
+        verifyNever(() => repository.denyAccess('ws'));
+      } else {
+        verify(() => repository.denyAccess('ws')).called(1);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('cached reader opens while its network refresh is pending', (
     tester,
   ) async {

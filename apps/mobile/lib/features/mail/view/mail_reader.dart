@@ -75,11 +75,11 @@ class _MailReaderState extends State<MailReader> {
         });
       }
     } on ApiException catch (error) {
-      if (error.statusCode == 401 ||
-          error.statusCode == 403 ||
-          error.statusCode == 404) {
+      if (error.statusCode == 401 || error.statusCode == 403) {
         await widget.repository.denyAccess(widget.workspaceId);
         if (mounted) Navigator.of(context).pop();
+      } else if (error.statusCode == 404 && mounted) {
+        Navigator.of(context).pop();
       }
     } on Object {
       // Keep the encrypted cached message readable during a network outage.

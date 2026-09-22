@@ -138,7 +138,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       final showArchiveAll = state.unreadCount > 0;
                       return ShellChromeActions(
                         ownerId: 'notifications-root',
-                        locations: const {Routes.notifications},
+                        locations: const {
+                          Routes.notifications,
+                          Routes.notificationsArchive,
+                        },
                         actions: [
                           for (final tab in NotificationsTab.values)
                             ShellActionSpec(
