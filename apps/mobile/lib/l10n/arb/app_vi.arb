@@ -3321,5 +3321,13 @@
     "profileNoSharedActivity": "Chưa có ai chia sẻ hoạt động tại đây.",
     "profileMoreActivity": "Xem thêm",
     "profileSharedActivityUnavailable": "Hoạt động này không còn khả dụng.",
-    "profileRecentActivity": "12 tuần gần đây"
+    "profileRecentActivity": "12 tuần gần đây",
+    "mailSwipeActions": "Thao tác vuốt",
+    "mailSwipeLeft": "Vuốt sang trái",
+    "mailSwipeRight": "Vuốt sang phải",
+    "mailSwipeRead": "Đã đọc / chưa đọc",
+    "mailSwipeStar": "Gắn sao / bỏ sao",
+    "mailSwipeMove": "Chuyển vào thư mục",
+    "mailSwipeNone": "Không có",
+    "mailSwipeUndo": "Hoàn tác"
 }

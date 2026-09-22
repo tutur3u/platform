@@ -73,6 +73,30 @@ class MailRepository {
     return _cache.read(wsId, path, () => _api.getJson(path));
   }
 
+  Future<Map<String, dynamic>?> cachedThread(
+    String wsId,
+    String mailboxId,
+    String id,
+  ) => _cache.snapshot(
+    wsId,
+    '${mailboxPath(wsId, mailboxId)}/threads/${Uri.encodeComponent(id)}',
+  );
+
+  Future<Map<String, dynamic>> refreshThread(
+    String wsId,
+    String mailboxId,
+    String id,
+  ) {
+    final path =
+        '${mailboxPath(wsId, mailboxId)}/threads/${Uri.encodeComponent(id)}';
+    return _cache.read(
+      wsId,
+      path,
+      () => _api.getJson(path),
+      forceRefresh: true,
+    );
+  }
+
   Future<void> changeState(
     String wsId,
     String mailboxId,

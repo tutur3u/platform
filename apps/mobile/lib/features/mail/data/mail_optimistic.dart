@@ -16,6 +16,9 @@ List<Map<String, dynamic>> optimisticMailItems(
     'archive' =>
       hasFilter('unread') || (folder == 'inbox' && !hasFilter('archived')),
     'mark_read' => hasFilter('unread'),
+    'mark_unread' => hasFilter('read'),
+    'unstar' => folder == 'starred' || hasFilter('starred'),
+    'restore' => ['archive', 'trash'].contains(folder),
     _ => false,
   };
   return [
@@ -25,6 +28,10 @@ List<Map<String, dynamic>> optimisticMailItems(
       else if (!remove)
         if (action == 'mark_read' || action == 'archive')
           {...item, 'unread': false, 'unreadCount': 0}
+        else if (action == 'mark_unread')
+          {...item, 'unread': true, 'unreadCount': 1}
+        else if (action == 'star' || action == 'unstar')
+          {...item, 'starred': action == 'star'}
         else
           item,
   ];

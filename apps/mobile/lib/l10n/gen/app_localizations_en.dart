@@ -8124,4 +8124,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileRecentActivity => 'Last 12 weeks';
+
+  @override
+  String get mailSwipeActions => 'Swipe actions';
+
+  @override
+  String get mailSwipeLeft => 'Swipe left';
+
+  @override
+  String get mailSwipeRight => 'Swipe right';
+
+  @override
+  String get mailSwipeRead => 'Read / unread';
+
+  @override
+  String get mailSwipeStar => 'Star / unstar';
+
+  @override
+  String get mailSwipeMove => 'Move to folder';
+
+  @override
+  String get mailSwipeNone => 'None';
+
+  @override
+  String get mailSwipeUndo => 'Undo';
 }

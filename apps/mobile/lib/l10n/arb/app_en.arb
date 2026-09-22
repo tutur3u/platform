@@ -3317,5 +3317,13 @@
     "profileNoSharedActivity": "No one has shared activity here yet.",
     "profileMoreActivity": "Show more",
     "profileSharedActivityUnavailable": "This activity is no longer available.",
-    "profileRecentActivity": "Last 12 weeks"
+    "profileRecentActivity": "Last 12 weeks",
+    "mailSwipeActions": "Swipe actions",
+    "mailSwipeLeft": "Swipe left",
+    "mailSwipeRight": "Swipe right",
+    "mailSwipeRead": "Read / unread",
+    "mailSwipeStar": "Star / unstar",
+    "mailSwipeMove": "Move to folder",
+    "mailSwipeNone": "None",
+    "mailSwipeUndo": "Undo"
 }

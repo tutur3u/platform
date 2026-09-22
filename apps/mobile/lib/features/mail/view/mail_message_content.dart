@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_html_body.dart';
-import 'package:mobile/features/mail/view/mail_html_view.dart';
 
 /// Inline attachments use the authenticated API, never WebView credentials.
 class MailMessageContent extends StatefulWidget {
@@ -107,15 +106,6 @@ class _MailMessageContentState extends State<MailMessageContent> {
         widget.message['snippet'] as String? ??
         '';
     if (_html.isEmpty) return SelectableText(text);
-    return MailHtmlBody(
-      html: _html,
-      inlineImages: _images,
-      fallbackText: text,
-      onViewOriginal: () => Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (_) => MailHtmlView(html: _html, inlineImages: _images),
-        ),
-      ),
-    );
+    return MailHtmlBody(html: _html, inlineImages: _images, fallbackText: text);
   }
 }

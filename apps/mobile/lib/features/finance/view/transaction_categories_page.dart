@@ -23,13 +23,13 @@ import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
-import 'package:mobile/widgets/fab/fab_action.dart';
-import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/platform_icon_picker.dart';
 
@@ -59,7 +59,6 @@ class _TransactionCategoriesView extends StatefulWidget {
 
 class _TransactionCategoriesViewState
     extends State<_TransactionCategoriesView> {
-  static const double _fabContentBottomPadding = 96;
   static const _tabCategories = 0;
   static const _tabTags = 1;
   static const CachePolicy _cachePolicy = CachePolicies.moduleData;
@@ -198,8 +197,7 @@ class _TransactionCategoriesViewState
     final showAmounts = context.select<FinancePreferencesCubit, bool>(
       (cubit) => cubit.state.showAmounts,
     );
-    final listBottomPadding =
-        _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
+    final listBottomPadding = 16.0 + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -253,20 +251,21 @@ class _TransactionCategoriesViewState
                     )
                   : _buildTagsContent(l10n, listBottomPadding, showAmounts),
             ),
-            SpeedDialFab(
-              label: l10n.financeCreateCategory,
-              icon: Icons.add,
-              includeBottomSafeArea: false,
+            ShellChromeActions(
+              ownerId: 'finance-manage-create',
+              locations: const {Routes.categories},
               actions: [
-                FabAction(
-                  icon: Icons.category_outlined,
-                  label: l10n.financeCreateCategory,
-                  onPressed: _onCreateCategory,
-                ),
-                FabAction(
-                  icon: Icons.label_outline,
-                  label: l10n.financeCreateTag,
-                  onPressed: _onCreateTag,
+                ShellActionSpec(
+                  id: 'finance-manage-create',
+                  icon: Icons.add,
+                  inDock: true,
+                  tooltip: _activeTab == _tabCategories
+                      ? l10n.financeCreateCategory
+                      : l10n.financeCreateTag,
+                  callbackToken: _activeTab,
+                  onPressed: _activeTab == _tabCategories
+                      ? _onCreateCategory
+                      : _onCreateTag,
                 ),
               ],
             ),

@@ -103,6 +103,59 @@ class _ShellChromeActionsHarnessState
 }
 
 void main() {
+  for (final count in [1, 2, 3, 4, 5]) {
+    testWidgets('$count header actions respect the three-button limit', (
+      tester,
+    ) async {
+      var selected = -1;
+      final cubit = ShellChromeActionsCubit();
+      addTearDown(cubit.close);
+      await tester.pumpApp(
+        BlocProvider.value(
+          value: cubit,
+          child: Material(
+            child: Column(
+              children: [
+                ShellChromeActions(
+                  ownerId: 'limit',
+                  locations: const {'/limit'},
+                  actions: [
+                    for (var i = 0; i < count; i++)
+                      ShellActionSpec(
+                        id: 'action-$i',
+                        icon: Icons.star,
+                        tooltip: 'Action $i',
+                        onPressed: () => selected = i,
+                      ),
+                  ],
+                ),
+                const ShellInjectedActionsHost(matchedLocation: '/limit'),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('shell-actions-overflow')),
+        count > 3 ? findsOneWidget : findsNothing,
+      );
+      for (var i = 0; i < (count > 3 ? 2 : count); i++) {
+        expect(
+          find.byKey(ValueKey('shell-action-button-action-$i')),
+          findsOneWidget,
+        );
+      }
+      if (count > 3) {
+        await tester.tap(find.byKey(const ValueKey('shell-actions-overflow')));
+        await tester.pumpAndSettle();
+        expect(find.text('Action 2'), findsOneWidget);
+        await tester.tap(find.text('Action 2'));
+        await tester.pumpAndSettle();
+        expect(selected, 2);
+      }
+    });
+  }
   group('ShellChromeActions', () {
     testWidgets('renders route actions immediately and enables in place', (
       tester,
@@ -197,15 +250,12 @@ void main() {
       await tester.tap(find.text('show-second-action'));
       await _pumpFrames(tester);
 
-      expect(find.byKey(const ValueKey('shell-actions-overflow')), findsOne);
+      expect(
+        find.byKey(const ValueKey('shell-actions-overflow')),
+        findsNothing,
+      );
       expect(find.byIcon(Icons.filter_alt_outlined), findsOneWidget);
-      expect(find.byIcon(Icons.search_rounded), findsNothing);
-
-      await tester.tap(find.byKey(const ValueKey('shell-actions-overflow')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Filter requests'), findsNothing);
-      expect(find.text('Search requests'), findsOneWidget);
+      expect(find.byIcon(Icons.search_rounded), findsOneWidget);
     });
 
     testWidgets(

@@ -12,6 +12,10 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../helpers/pump_app.dart';
 
 class _Repository extends Mock implements MailRepository {}
 
@@ -25,7 +29,11 @@ Map<String, dynamic> inbox(String subject) => {
 void main() {
   late _Repository repository;
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     repository = _Repository();
+    when(
+      () => repository.cachedThread(any(), any(), any()),
+    ).thenAnswer((_) async => null);
     when(() => repository.savedView(any())).thenAnswer((_) async => null);
     when(() => repository.saveView(any(), any())).thenAnswer((_) async {});
     when(() => repository.denyAccess(any())).thenAnswer((_) async {});
@@ -41,13 +49,8 @@ void main() {
     ).thenAnswer((_) async => <String, dynamic>{});
   });
 
-  Future<void> mount(WidgetTester tester) => tester.pumpWidget(
-    MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: MailWorkspace(workspaceId: 'ws', repository: repository),
-    ),
-  );
+  Future<void> mount(WidgetTester tester) =>
+      tester.pumpApp(MailWorkspace(workspaceId: 'ws', repository: repository));
 
   void respond(Future<Map<String, dynamic>> Function(String query) callback) {
     when(
@@ -186,10 +189,15 @@ void main() {
           BlocProvider.value(value: titles),
         ],
         child: MaterialApp(
+          builder: (context, child) =>
+              shad.Theme(data: const shad.ThemeData(), child: child!),
           navigatorKey: navigator,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: MailWorkspace(workspaceId: 'ws', repository: repository),
+          home: shad.Theme(
+            data: const shad.ThemeData(),
+            child: MailWorkspace(workspaceId: 'ws', repository: repository),
+          ),
         ),
       ),
     );
@@ -203,6 +211,35 @@ void main() {
     await tester.pumpAndSettle();
     expect(actions.state.resolveForLocation(Routes.mail), isNotEmpty);
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('cached reader opens while its network refresh is pending', (
+    tester,
+  ) async {
+    respond((_) async => inbox('Cached thread'));
+    final refresh = Completer<Map<String, dynamic>>();
+    when(
+      () => repository.cachedThread('ws', 'box', 'Cached thread'),
+    ).thenAnswer(
+      (_) async => {
+        'thread': {'id': 'Cached thread', 'subject': 'Cached subject'},
+        'messages': <dynamic>[],
+      },
+    );
+    when(
+      () => repository.refreshThread('ws', 'box', 'Cached thread'),
+    ).thenAnswer((_) => refresh.future);
+    await mount(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cached thread'));
+    await tester.pumpAndSettle();
+    expect(find.text('Cached subject'), findsOneWidget);
+    refresh.complete({
+      'thread': {'id': 'Cached thread', 'subject': 'Current subject'},
+      'messages': <dynamic>[],
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('Current subject'), findsOneWidget);
   });
 
   testWidgets('archive updates immediately and rolls back a failed request', (
@@ -246,6 +283,9 @@ void main() {
       },
     );
     await mount(tester);
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(find.byTooltip('Search mail'));
     await tester.pumpAndSettle();
     expect(find.byType(TextField).hitTestable(), findsOneWidget);
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -650));
@@ -313,7 +353,7 @@ void main() {
       ],
     });
     await tester.pumpAndSettle();
-    expect(find.text('All labels and folders'), findsOneWidget);
+    expect(find.byTooltip('Labels'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -353,7 +393,7 @@ void main() {
       });
       await mount(tester);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('All labels and folders'));
+      await tester.tap(find.byTooltip('Labels'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Chosen').last);
       await tester.pumpAndSettle();
@@ -366,7 +406,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(filters.last, isNull);
       expect(find.text('Unfiltered inbox'), findsOneWidget);
-      expect(find.text('All labels and folders'), findsOneWidget);
+      expect(find.byTooltip('Labels'), findsOneWidget);
     });
   }
 
@@ -382,6 +422,8 @@ void main() {
           : Future.value(inbox(query.isEmpty ? 'Inbox message' : query));
     });
     await mount(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Search mail'));
     await tester.pumpAndSettle();
     final search = find.byType(TextField);
     await tester.enterText(search, 'o');

@@ -33,27 +33,11 @@ class _TaskQuickCreateFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final safeAreaPadding = MediaQuery.paddingOf(context);
-
-    return Positioned(
-      right: 16 + safeAreaPadding.right,
-      bottom: 16,
-      child: Tooltip(
-        message: label,
-        child: Semantics(
-          label: label,
-          button: true,
-          child: SizedBox.square(
-            dimension: 56,
-            child: shad.PrimaryButton(
-              onPressed: onPressed,
-              shape: shad.ButtonShape.circle,
-              density: shad.ButtonDensity.icon,
-              child: const Center(child: Icon(Icons.add, size: 24)),
-            ),
-          ),
-        ),
-      ),
+    return ExtendedFab(
+      icon: Icons.add,
+      label: label,
+      onPressed: onPressed,
+      includeBottomSafeArea: false,
     );
   }
 }

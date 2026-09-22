@@ -38,6 +38,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     ownsApiClient: true,
   );
   late final NotificationsCubit _cubit;
+  late NotificationsTab _selectedTab = widget.initialTab;
   StreamSubscription<PushNotificationEvent>? _pushEventsSubscription;
 
   String? _lastWorkspaceId;
@@ -129,38 +130,50 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   NotificationsView(
                     parentContext: context,
                     pageMode: true,
-                    initialTab: widget.initialTab,
+                    initialTab: _selectedTab,
                   ),
-                  if (widget.initialTab == NotificationsTab.inbox)
-                    BlocBuilder<NotificationsCubit, NotificationsState>(
-                      bloc: _cubit,
-                      builder: (context, state) {
-                        final showArchiveAll = state.unreadCount > 0;
-                        return ShellChromeActions(
-                          ownerId: 'notifications-root',
-                          locations: const {Routes.notifications},
-                          actions: showArchiveAll
-                              ? [
-                                  ShellActionSpec(
-                                    id: 'notifications-archive-all',
-                                    icon: Icons.archive_outlined,
-                                    callbackToken:
-                                        'notifications-archive-all:'
-                                        '${state.unreadCount}:'
-                                        '${state.isArchivingAll}',
-                                    tooltip:
-                                        context.l10n.notificationsArchiveAll,
-                                    isLoading: state.isArchivingAll,
-                                    enabled: !state.isArchivingAll,
-                                    onPressed: () {
-                                      unawaited(_archiveAll(context));
-                                    },
-                                  ),
-                                ]
-                              : const [],
-                        );
-                      },
-                    ),
+                  BlocBuilder<NotificationsCubit, NotificationsState>(
+                    bloc: _cubit,
+                    builder: (context, state) {
+                      final showArchiveAll = state.unreadCount > 0;
+                      return ShellChromeActions(
+                        ownerId: 'notifications-root',
+                        locations: const {Routes.notifications},
+                        actions: [
+                          for (final tab in NotificationsTab.values)
+                            ShellActionSpec(
+                              id: 'notifications-tab-${tab.name}',
+                              icon: tab == NotificationsTab.inbox
+                                  ? Icons.inbox_outlined
+                                  : Icons.archive_outlined,
+                              tooltip: tab == NotificationsTab.inbox
+                                  ? context.l10n.notificationsInbox
+                                  : context.l10n.notificationsArchive,
+                              highlighted: _selectedTab == tab,
+                              callbackToken: _selectedTab,
+                              onPressed: () =>
+                                  setState(() => _selectedTab = tab),
+                            ),
+                          if (showArchiveAll &&
+                              _selectedTab == NotificationsTab.inbox)
+                            ShellActionSpec(
+                              id: 'notifications-archive-all',
+                              icon: Icons.archive_outlined,
+                              callbackToken:
+                                  'notifications-archive-all:'
+                                  '${state.unreadCount}:'
+                                  '${state.isArchivingAll}',
+                              tooltip: context.l10n.notificationsArchiveAll,
+                              isLoading: state.isArchivingAll,
+                              enabled: !state.isArchivingAll,
+                              onPressed: () {
+                                unawaited(_archiveAll(context));
+                              },
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 ],
               ),
             ),

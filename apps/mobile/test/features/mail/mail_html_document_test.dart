@@ -25,6 +25,44 @@ Hello<script>steal()</script><iframe src="https://evil.test"></iframe>
     );
   });
 
+  test('forced appearance overrides sender important colors and gradients', () {
+    for (final mode in [
+      MailMessageAppearance.dark,
+      MailMessageAppearance.light,
+    ]) {
+      final document = parse(
+        buildMailHtmlDocument(
+          '''
+<style>#offer {background:white!important;color:white!important}</style>
+<table bgcolor="white"><tr><td id="offer"
+style="background:linear-gradient(white,white)!important;color:white!important">
+<a href="https://example.com">Offer</a>
+<img src="https://example.com/logo.png"></td></tr></table>
+''',
+          loadImages: false,
+          appearance: mode,
+        ),
+      );
+      final cell = document.querySelector('#offer')!;
+      final style = cell.attributes['style']!;
+      expect(style, endsWith('background:transparent!important;'));
+      expect(
+        style,
+        contains(
+          mode == MailMessageAppearance.dark
+              ? 'color:#e7e7e7!important'
+              : 'color:#171717!important',
+        ),
+      );
+      expect(document.querySelector('table')!.attributes['bgcolor'], isNull);
+      expect(document.querySelector('img')!.attributes['style'], isNull);
+      expect(
+        document.querySelector('a')!.attributes['style'],
+        contains('color:'),
+      );
+    }
+  });
+
   test('inline images accept only authenticated raster replacements', () {
     final result = sanitizeIsolatedMailHtml(
       '<img src="cid:logo"><img src="data:image/svg+xml,bad"> '

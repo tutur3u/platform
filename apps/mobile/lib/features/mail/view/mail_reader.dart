@@ -1,6 +1,7 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:mobile/data/sources/api_client.dart';
+
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
@@ -8,6 +9,7 @@ import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:share_plus/share_plus.dart';
 
 class MailReader extends StatefulWidget {
@@ -19,6 +21,7 @@ class MailReader extends StatefulWidget {
     required this.thread,
     required this.canSend,
     required this.fromAddress,
+    this.refreshOnOpen = false,
     this.signatureText,
     this.signatureHtml,
     super.key,
@@ -30,6 +33,7 @@ class MailReader extends StatefulWidget {
   final String? signatureText;
   final String? signatureHtml;
   final Map<String, dynamic> detail;
+  final bool refreshOnOpen;
   final bool thread;
   final bool canSend;
 
@@ -39,19 +43,46 @@ class MailReader extends StatefulWidget {
 
 class _MailReaderState extends State<MailReader> {
   bool _busy = false;
+  late Map<String, dynamic> _detail = widget.detail;
   late bool _starred;
   List<Map<String, dynamic>> get _messages =>
-      widget.thread ? mailRows(widget.detail['messages']) : [widget.detail];
+      widget.thread ? mailRows(_detail['messages']) : [_detail];
   String get _id => widget.thread
-      ? (widget.detail['thread'] as Map<String, dynamic>)['id'] as String
-      : widget.detail['id'] as String;
+      ? (_detail['thread'] as Map<String, dynamic>)['id'] as String
+      : _detail['id'] as String;
 
   @override
   void initState() {
     super.initState();
     _starred = _messages.any((m) => m['starred'] == true);
+    if (widget.refreshOnOpen) unawaited(_refresh());
     if (_messages.any((message) => message['unread'] == true)) {
       unawaited(_action('mark_read'));
+    }
+  }
+
+  Future<void> _refresh() async {
+    try {
+      final detail = await widget.repository.refreshThread(
+        widget.workspaceId,
+        widget.mailboxId,
+        _id,
+      );
+      if (mounted) {
+        setState(() {
+          _detail = detail;
+          _starred = _messages.any((message) => message['starred'] == true);
+        });
+      }
+    } on ApiException catch (error) {
+      if (error.statusCode == 401 ||
+          error.statusCode == 403 ||
+          error.statusCode == 404) {
+        await widget.repository.denyAccess(widget.workspaceId);
+        if (mounted) Navigator.of(context).pop();
+      }
+    } on Object {
+      // Keep the encrypted cached message readable during a network outage.
     }
   }
 
@@ -114,11 +145,13 @@ class _MailReaderState extends State<MailReader> {
       'trash': l10n.mailTrash,
     };
     final subject = widget.thread
-        ? (widget.detail['thread'] as Map<String, dynamic>)['subject']
-              as String?
-        : widget.detail['subject'] as String?;
+        ? (_detail['thread'] as Map<String, dynamic>)['subject'] as String?
+        : _detail['subject'] as String?;
     return Scaffold(
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
       appBar: AppBar(
+        backgroundColor: shad.Theme.of(context).colorScheme.background,
+        surfaceTintColor: Colors.transparent,
         title: Text(subject ?? l10n.mailNoSubject),
         actions: [
           IconButton(
