@@ -883,11 +883,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/assistant/live/turns:apps/web/src/legacy-api-routes/v1/assistant/live/turns/route.ts",
+      "id": "api:/api/v1/assistant/live/turns:apps/web/src/app/api/v1/assistant/live/turns/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/assistant/live/turns",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/assistant/live/turns/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/assistant/live/turns/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },

@@ -2448,6 +2448,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Private-by-default profile activity; viewer and subject membership, explicit workspace consent, no personal aggregates, bounded pagination, and no-store responses. Next-owned pending Rust parity."
+    },
+    "api:/api/v1/assistant/live/turns:apps/web/src/app/api/v1/assistant/live/turns/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Mobile Live turn persistence checks authenticated workspace membership, Pro entitlement and chat ownership before server-only message access. Preserve bounded batches, caller-bound metadata and no privileged access on failed ownership checks. Rust parity pending."
     }
   }
 }
