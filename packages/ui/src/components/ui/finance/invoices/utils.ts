@@ -1,3 +1,18 @@
+import {
+  getSubscriptionCoverageInvoiceForGroup,
+  isSubscriptionMonthPaidForGroup,
+  type SubscriptionCoverageInvoice,
+} from './subscription-coverage';
+
+export {
+  getSubscriptionCoverageInvoiceForGroup,
+  isSubscriptionMonthCoveredByInvoice,
+  isSubscriptionMonthPaidForGroup,
+  isSubscriptionRangeFullyPaidForGroups,
+  isSubscriptionRangePaidForGroup,
+  type SubscriptionCoverageInvoice,
+} from './subscription-coverage';
+
 import type { Database } from '@tuturuuu/types';
 import {
   formatMonthLabel,
@@ -46,12 +61,6 @@ export type WorkspaceUserGroup =
 
 export type UserGroup = {
   workspace_user_groups: WorkspaceUserGroup | null;
-};
-
-export type SubscriptionCoverageInvoice = {
-  created_at?: string | null;
-  group_id?: string;
-  valid_until?: string | null;
 };
 
 export type BillableSession = {
@@ -114,99 +123,6 @@ export const resolveSubscriptionInvoiceCategoryId = ({
   return defaultCategoryId ?? '';
 };
 
-const getComparableTimestamp = (value: string | null | undefined): number => {
-  if (!value) return 0;
-  const timestamp = new Date(value).getTime();
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-};
-
-const getComparableValidUntilTimestamp = (
-  invoice: SubscriptionCoverageInvoice
-): number => {
-  const validUntil = parseLocalCalendarDate(invoice.valid_until);
-  return Number.isNaN(validUntil.getTime()) ? 0 : validUntil.getTime();
-};
-
-export const getSubscriptionCoverageInvoiceForGroup = (
-  latestInvoices: SubscriptionCoverageInvoice[],
-  groupId: string
-): SubscriptionCoverageInvoice | undefined =>
-  latestInvoices
-    .filter((invoice) => invoice.group_id === groupId)
-    .filter((invoice) => getComparableValidUntilTimestamp(invoice) > 0)
-    .sort((a, b) => {
-      const validUntilDiff =
-        getComparableValidUntilTimestamp(b) -
-        getComparableValidUntilTimestamp(a);
-      if (validUntilDiff !== 0) return validUntilDiff;
-
-      return (
-        getComparableTimestamp(b.created_at) -
-        getComparableTimestamp(a.created_at)
-      );
-    })[0];
-
-export const isSubscriptionMonthCoveredByInvoice = (
-  selectedMonth: string,
-  invoice: SubscriptionCoverageInvoice | null | undefined
-): boolean => {
-  if (!invoice?.valid_until) return false;
-
-  const selectedMonthStart = getMonthStartDate(selectedMonth);
-  const validUntilMonthStart = getMonthStartDate(invoice.valid_until);
-
-  if (
-    Number.isNaN(selectedMonthStart.getTime()) ||
-    Number.isNaN(validUntilMonthStart.getTime())
-  ) {
-    return false;
-  }
-
-  return selectedMonthStart < validUntilMonthStart;
-};
-
-export const isSubscriptionMonthPaidForGroup = (
-  groupId: string,
-  selectedMonth: string,
-  latestInvoices: SubscriptionCoverageInvoice[]
-): boolean =>
-  isSubscriptionMonthCoveredByInvoice(
-    selectedMonth,
-    getSubscriptionCoverageInvoiceForGroup(latestInvoices, groupId)
-  );
-
-export const isSubscriptionRangePaidForGroup = (
-  groupId: string,
-  selectedMonth: string,
-  prepaidMonthCount: number,
-  latestInvoices: SubscriptionCoverageInvoice[]
-): boolean => {
-  const coverageMonths = getCoverageMonths(selectedMonth, prepaidMonthCount);
-  if (coverageMonths.length === 0) return false;
-
-  return coverageMonths.every((month) =>
-    isSubscriptionMonthPaidForGroup(groupId, month, latestInvoices)
-  );
-};
-
-export const isSubscriptionRangeFullyPaidForGroups = (
-  groupIds: string[],
-  selectedMonth: string,
-  prepaidMonthCount: number,
-  latestInvoices: SubscriptionCoverageInvoice[]
-): boolean => {
-  if (groupIds.length === 0) return false;
-
-  return groupIds.every((groupId) =>
-    isSubscriptionRangePaidForGroup(
-      groupId,
-      selectedMonth,
-      prepaidMonthCount,
-      latestInvoices
-    )
-  );
-};
-
 export const getAttendanceStats = (
   attendance: AttendanceRecord[]
 ): AttendanceStats => {
@@ -251,7 +167,7 @@ const getGroupValidUntilDate = (
   groupId: string
 ): Date | null => {
   const latestInvoice = getSubscriptionCoverageInvoiceForGroup(
-    latestInvoices,
+    latestInvoices.filter((invoice) => invoice.covered_months == null),
     groupId
   );
   if (!latestInvoice?.valid_until) return null;
@@ -285,7 +201,11 @@ export const getBillableSessionsForGroups = (
       (candidate) => candidate.workspace_user_groups?.id === groupId
     )?.workspace_user_groups;
 
-    if (!group?.sessions?.length) return [];
+    if (
+      !group?.sessions?.length ||
+      isSubscriptionMonthPaidForGroup(groupId, selectedMonth, latestInvoices)
+    )
+      return [];
 
     const validUntil = getGroupValidUntilDate(latestInvoices, groupId);
 
@@ -330,7 +250,12 @@ export const getBillableAttendanceRecords = (
 
   return attendance.filter((record) => {
     const groupId = record.group_id;
-    if (!groupId || !groupIds.includes(groupId)) return false;
+    if (
+      !groupId ||
+      !groupIds.includes(groupId) ||
+      isSubscriptionMonthPaidForGroup(groupId, selectedMonth, latestInvoices)
+    )
+      return false;
 
     const attendanceDate = parseLocalCalendarDate(record.date);
     if (!isDateInMonth(attendanceDate, selectedMonth)) return false;
@@ -668,9 +593,10 @@ const EXPIRING_SOON_DAYS = 14;
 export type GroupPaymentStatus = 'active' | 'expiringSoon' | 'expired';
 export function getGroupPaymentStatus(
   group: WorkspaceUserGroup | null,
-  latestInvoice:
-    | { valid_until?: string | null; created_at?: string | null }
-    | undefined
+  latestInvoice: SubscriptionCoverageInvoice | undefined,
+  coverageInvoices: SubscriptionCoverageInvoice[] = latestInvoice
+    ? [latestInvoice]
+    : []
 ): GroupPaymentStatus {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -685,9 +611,25 @@ export function getGroupPaymentStatus(
     if (today > endDate) return 'expired';
   }
 
-  const validUntil = latestInvoice?.valid_until
+  let validUntil = latestInvoice?.valid_until
     ? parseLocalCalendarDate(latestInvoice.valid_until)
     : null;
+  if (coverageInvoices.some((invoice) => invoice.covered_months != null)) {
+    const cursor = new Date(today.getFullYear(), today.getMonth(), 1);
+    const month = () =>
+      `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+    if (!isSubscriptionMonthPaidForGroup(group.id, month(), coverageInvoices))
+      return 'expired';
+    // Walk contiguous paid months so a later payment cannot conceal a gap.
+    for (
+      let i = 0;
+      i < 1200 &&
+      isSubscriptionMonthPaidForGroup(group.id, month(), coverageInvoices);
+      i++
+    )
+      cursor.setMonth(cursor.getMonth() + 1);
+    validUntil = cursor;
+  }
   if (validUntil) {
     validUntil.setHours(0, 0, 0, 0);
     const daysUntilExpiry = Math.ceil(

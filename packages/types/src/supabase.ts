@@ -18915,6 +18915,10 @@ export type Database = {
         Args: { p_table_name: string };
         Returns: string;
       };
+      valid_subscription_months: {
+        Args: { months: string[] };
+        Returns: boolean;
+      };
       wallet_interest_calculation_result: {
         Args: {
           _config_id: string;
@@ -22101,6 +22105,7 @@ export type Database = {
           paid_amount: number;
           platform_creator_id: string | null;
           price: number;
+          subscription_months: string[] | null;
           total_diff: number;
           transaction_id: string | null;
           valid_until: string | null;
@@ -22119,6 +22124,7 @@ export type Database = {
           paid_amount?: number;
           platform_creator_id?: string | null;
           price: number;
+          subscription_months?: string[] | null;
           total_diff?: number;
           transaction_id?: string | null;
           valid_until?: string | null;
@@ -22137,6 +22143,7 @@ export type Database = {
           paid_amount?: number;
           platform_creator_id?: string | null;
           price?: number;
+          subscription_months?: string[] | null;
           total_diff?: number;
           transaction_id?: string | null;
           valid_until?: string | null;
