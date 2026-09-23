@@ -15,6 +15,14 @@ Use this checklist when changing CI, validators, docs, or repo automation.
   triggered by the production deployment planner and prerequisite-gated on the
   production platform deployment marker plus same-SHA staging success. Database
   migration paths must select the platform deployment so that marker exists.
+- The production planner deploys app code before the production migration runs.
+  Any app change that reads or writes a new column must remain compatible with
+  the old production schema during that interval. A green staging migration or
+  successful Vercel deployment is not proof that the production migration job
+  ran: inspect the `Migrate production database` job and applied migration log.
+  If an incompatible build reaches production first, roll back only the affected
+  app, then test its new deployment against the migrated database before
+  promoting it again. Do not roll back an applied migration file.
 - Keep `vercel-preview-platform.yaml` on a protected `main` push trigger because
   `supabase-staging.yaml` depends on its completed workflow-run event; other
   preview Vercel workflows remain trusted manual-dispatch only.
