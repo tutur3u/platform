@@ -213,7 +213,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                         ),
                       if (_failed && _items.isNotEmpty)
                         TextButton.icon(
-                          onPressed: _mailboxId == null ? _bootstrap : _load,
+                          onPressed: !_accessVerified ? _bootstrap : _load,
                           icon: const Icon(Icons.refresh),
                           label: Text(l10n.commonSomethingWentWrong),
                         ),
@@ -249,7 +249,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                             ),
                             if (_failed)
                               TextButton.icon(
-                                onPressed: _mailboxId == null
+                                onPressed: !_accessVerified
                                     ? _bootstrap
                                     : _load,
                                 icon: const Icon(Icons.refresh),

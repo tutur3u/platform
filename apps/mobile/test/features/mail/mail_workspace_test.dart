@@ -104,6 +104,38 @@ void main() {
     expect(find.text('No messages here'), findsOneWidget);
   });
 
+  testWidgets('retry verifies mailbox access before enabling Inbox actions', (
+    tester,
+  ) async {
+    final saved = savedInbox()..['items'] = <Map<String, dynamic>>[];
+    when(() => repository.savedView('ws')).thenAnswer((_) async => saved);
+    var bootstrapCalls = 0;
+    when(() => repository.bootstrap('ws')).thenAnswer((_) async {
+      bootstrapCalls++;
+      if (bootstrapCalls == 1) throw StateError('Offline');
+      return {
+        'mailboxes': [
+          {'id': 'box', 'address': 'me@tuturuuu.com'},
+        ],
+      };
+    });
+    respond((_) async => inbox('Recovered message'));
+    await mount(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    expect(bootstrapCalls, 2);
+    expect(find.text('Recovered message'), findsOneWidget);
+    expect(
+      tester
+          .widget<Dismissible>(
+            find.byKey(const ValueKey('mail-swipe-Recovered message')),
+          )
+          .direction,
+      DismissDirection.horizontal,
+    );
+  });
+
   testWidgets('saved Snoozed inbox appears before bootstrap completes', (
     tester,
   ) async {
@@ -525,6 +557,19 @@ void main() {
     );
     await mount(tester);
     await tester.pumpAndSettle();
+    ScaffoldMessenger.of(tester.element(find.byType(MailWorkspace)))
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Old feedback'),
+          duration: Duration(minutes: 1),
+        ),
+      )
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Queued feedback'),
+          duration: Duration(minutes: 1),
+        ),
+      );
     await tester
         .widget<Dismissible>(find.byKey(const ValueKey('mail-swipe-First')))
         .confirmDismiss!(DismissDirection.endToStart);
@@ -533,6 +578,8 @@ void main() {
       () => repository.bulk('ws', 'box', any(), 'archive', threads: true),
     ).called(1);
     expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text('Old feedback'), findsNothing);
+    expect(find.text('Queued feedback'), findsNothing);
     await tester.tap(find.text('Second'));
     await tester.pumpAndSettle();
     expect(find.byType(MailReader), findsOneWidget);

@@ -81,16 +81,18 @@ class _MailNavigatorState extends State<_MailNavigator> {
     context: context,
     // The shared shell already reserves the status bar above its app header.
     removeTop: true,
-    child: NavigatorPopHandler<Object?>(
-      onPopWithResult: (result) {
-        unawaited(_navigator.currentState?.maybePop(result));
-      },
-      child: Navigator(
-        key: _navigator,
-        onGenerateRoute: (_) => MaterialPageRoute<void>(
-          builder: (_) => MailWorkspace(
-            workspaceId: widget.workspaceId,
-            destination: widget.destination,
+    child: ScaffoldMessenger(
+      child: NavigatorPopHandler<Object?>(
+        onPopWithResult: (result) {
+          unawaited(_navigator.currentState?.maybePop(result));
+        },
+        child: Navigator(
+          key: _navigator,
+          onGenerateRoute: (_) => MaterialPageRoute<void>(
+            builder: (_) => MailWorkspace(
+              workspaceId: widget.workspaceId,
+              destination: widget.destination,
+            ),
           ),
         ),
       ),

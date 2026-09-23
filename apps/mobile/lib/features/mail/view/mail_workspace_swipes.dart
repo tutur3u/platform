@@ -90,10 +90,13 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
       _dismissSwipeFeedback();
       final width = MediaQuery.sizeOf(context).width;
       final sideInset = width > 320 ? (width - 288) / 2 : 16.0;
-      final messenger = ScaffoldMessenger.of(context)..removeCurrentSnackBar();
+      final messenger = ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..removeCurrentSnackBar();
       final feedback = messenger.showSnackBar(
         SnackBar(
           duration: const Duration(seconds: 5),
+          persist: false,
           margin: EdgeInsets.fromLTRB(
             sideInset,
             0,
