@@ -149,6 +149,8 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       }),
     queryKey: threadQueryKey,
     staleTime: 30_000,
+    refetchInterval:
+      folder === 'inbox' || folder === 'snoozed' ? 60_000 : false,
   });
   const selectionScope = JSON.stringify([
     activeMailboxId,

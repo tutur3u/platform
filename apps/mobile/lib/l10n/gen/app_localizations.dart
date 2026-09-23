@@ -15732,6 +15732,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.'**
   String get adminAccountsResetMfaDescription;
+
+  /// No description provided for @mailSnooze.
+  ///
+  /// In en, this message translates to:
+  /// **'Snooze'**
+  String get mailSnooze;
+
+  /// No description provided for @mailUnsnooze.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Inbox now'**
+  String get mailUnsnooze;
+
+  /// No description provided for @mailMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute thread'**
+  String get mailMute;
+
+  /// No description provided for @mailUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute thread'**
+  String get mailUnmute;
+
+  /// No description provided for @mailSnoozed.
+  ///
+  /// In en, this message translates to:
+  /// **'Snoozed'**
+  String get mailSnoozed;
+
+  /// No description provided for @mailMuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get mailMuted;
+
+  /// No description provided for @mailSnoozeHour.
+  ///
+  /// In en, this message translates to:
+  /// **'In one hour'**
+  String get mailSnoozeHour;
+
+  /// No description provided for @mailSnoozeDay.
+  ///
+  /// In en, this message translates to:
+  /// **'In 24 hours'**
+  String get mailSnoozeDay;
+
+  /// No description provided for @mailSnoozeWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'In one week'**
+  String get mailSnoozeWeek;
+
+  /// No description provided for @mailSnoozeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose date and time'**
+  String get mailSnoozeCustom;
+
+  /// No description provided for @mailSnoozeFuture.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a time in the future.'**
+  String get mailSnoozeFuture;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

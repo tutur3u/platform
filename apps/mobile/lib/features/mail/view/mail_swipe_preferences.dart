@@ -4,7 +4,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum MailSwipeAction { archive, trash, read, star, move, none }
+enum MailSwipeAction { archive, trash, read, star, move, snooze, mute, none }
 
 extension MailSwipePresentation on MailSwipeAction {
   IconData get icon => switch (this) {
@@ -13,6 +13,8 @@ extension MailSwipePresentation on MailSwipeAction {
     MailSwipeAction.read => Icons.mark_email_read_outlined,
     MailSwipeAction.star => Icons.star_outline,
     MailSwipeAction.move => Icons.drive_file_move_outlined,
+    MailSwipeAction.snooze => Icons.snooze_outlined,
+    MailSwipeAction.mute => Icons.volume_off_outlined,
     MailSwipeAction.none => Icons.block,
   };
 
@@ -22,6 +24,8 @@ extension MailSwipePresentation on MailSwipeAction {
     MailSwipeAction.read => context.l10n.mailSwipeRead,
     MailSwipeAction.star => context.l10n.mailSwipeStar,
     MailSwipeAction.move => context.l10n.mailSwipeMove,
+    MailSwipeAction.snooze => context.l10n.mailSnooze,
+    MailSwipeAction.mute => context.l10n.mailMute,
     MailSwipeAction.none => context.l10n.mailSwipeNone,
   };
 }
@@ -150,3 +154,61 @@ Future<void> showMailSwipeSettings(
     ),
   ),
 );
+
+Future<DateTime?> chooseMailSnoozeTime(BuildContext context) async {
+  final l10n = context.l10n;
+  final hours = await showAdaptiveSheet<int>(
+    context: context,
+    useRootNavigator: true,
+    builder: (sheetContext) => AppDialogScaffold(
+      title: l10n.mailSnooze,
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final option in {
+              1: l10n.mailSnoozeHour,
+              24: l10n.mailSnoozeDay,
+              168: l10n.mailSnoozeWeek,
+              0: l10n.mailSnoozeCustom,
+            }.entries)
+              ListTile(
+                title: Text(option.value),
+                onTap: () => Navigator.of(sheetContext).pop(option.key),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+  if (hours == null || !context.mounted) return null;
+  final now = DateTime.now();
+  if (hours > 0) return now.add(Duration(hours: hours));
+  final date = await showDatePicker(
+    context: context,
+    initialDate: now.add(const Duration(days: 1)),
+    firstDate: now,
+    lastDate: now.add(const Duration(days: 364)),
+  );
+  if (date == null || !context.mounted) return null;
+  final time = await showTimePicker(
+    context: context,
+    initialTime: const TimeOfDay(hour: 9, minute: 0),
+  );
+  if (time == null || !context.mounted) return null;
+  final selected = DateTime(
+    date.year,
+    date.month,
+    date.day,
+    time.hour,
+    time.minute,
+  );
+  if (!selected.isAfter(DateTime.now())) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.mailSnoozeFuture)));
+    return null;
+  }
+  return selected;
+}

@@ -13,6 +13,34 @@ void main() {
     repository = MailRepository(apiClient: api);
   });
 
+  test(
+    'snooze sends the deadline in UTC with thread-scoped bulk action',
+    () async {
+      when(
+        () => api.postJson(any(), any()),
+      ).thenAnswer((_) async => <String, dynamic>{});
+      final deadline = DateTime.utc(2026, 10, 1, 9);
+      await repository.bulk(
+        'ws',
+        'box',
+        ['thread'],
+        'snooze',
+        threads: true,
+        snoozedUntil: deadline,
+      );
+      verify(
+        () => api.postJson(
+          '/api/v1/workspaces/ws/mail/mailboxes/box/threads/bulk',
+          {
+            'action': 'snooze',
+            'threadIds': ['thread'],
+            'snoozedUntil': deadline.toIso8601String(),
+          },
+        ),
+      ).called(1);
+    },
+  );
+
   test('encodes workspace and mailbox segments independently', () async {
     when(() => api.getJson(any())).thenAnswer((_) async => <String, dynamic>{});
     await repository.list(

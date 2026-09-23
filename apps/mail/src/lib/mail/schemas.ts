@@ -49,17 +49,24 @@ export const updateMailMailboxSettingsSchema = z.object({
   signatureText: z.string().max(50_000).nullable().optional(),
 });
 
-export const updateMailStatePayloadSchema = z.object({
-  action: z.enum([
-    'archive',
-    'mark_read',
-    'mark_unread',
-    'restore',
-    'star',
-    'trash',
-    'unstar',
-  ]),
-});
+export const updateMailStatePayloadSchema = z
+  .object({
+    snoozedUntil: z.iso.datetime().optional(),
+    action: z.enum([
+      'archive',
+      'mark_read',
+      'mark_unread',
+      'restore',
+      'star',
+      'trash',
+      'unstar',
+      'snooze',
+      'unsnooze',
+      'mute',
+      'unmute',
+    ]),
+  })
+  .superRefine(validateSnooze);
 
 export const upsertMailboxMemberPayloadSchema = z
   .object({
@@ -85,12 +92,18 @@ export const mailBulkPayloadSchema = z
       'star',
       'trash',
       'unstar',
+      'snooze',
+      'unsnooze',
+      'mute',
+      'unmute',
     ]),
     folderId: z.string().uuid().optional(),
+    snoozedUntil: z.iso.datetime().optional(),
     labelId: z.string().uuid().optional(),
     messageIds: z.array(z.string().uuid()).min(1).max(100),
   })
   .superRefine((value, ctx) => {
+    validateSnooze(value, ctx);
     if (
       (value.action === 'add_label' || value.action === 'remove_label') &&
       !value.labelId
@@ -122,11 +135,17 @@ export const mailThreadBulkPayloadSchema = z
       'star',
       'trash',
       'unstar',
+      'snooze',
+      'unsnooze',
+      'mute',
+      'unmute',
     ]),
+    snoozedUntil: z.iso.datetime().optional(),
     labelId: z.string().uuid().optional(),
     threadIds: z.array(z.string().uuid()).min(1).max(100),
   })
   .superRefine((value, ctx) => {
+    validateSnooze(value, ctx);
     if (
       (value.action === 'add_label' || value.action === 'remove_label') &&
       !value.labelId
@@ -187,3 +206,21 @@ export const suggestMailLabelsSchema = z
       path: ['threadIds'],
     }
   );
+
+function validateSnooze(
+  value: { action: string; snoozedUntil?: string },
+  ctx: z.RefinementCtx
+) {
+  if (
+    value.action === 'snooze' &&
+    (!value.snoozedUntil ||
+      Date.parse(value.snoozedUntil) <= Date.now() ||
+      Date.parse(value.snoozedUntil) > Date.now() + 365 * 86400000)
+  ) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['snoozedUntil'],
+      message: 'Choose a future snooze time within one year',
+    });
+  }
+}

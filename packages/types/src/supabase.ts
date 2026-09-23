@@ -9732,6 +9732,62 @@ export type Database = {
           },
         ];
       };
+      mail_thread_user_state: {
+        Row: {
+          mailbox_id: string;
+          muted_at: string | null;
+          snoozed_until: string | null;
+          thread_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          mailbox_id: string;
+          muted_at?: string | null;
+          snoozed_until?: string | null;
+          thread_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          mailbox_id?: string;
+          muted_at?: string | null;
+          snoozed_until?: string | null;
+          thread_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_thread_user_state_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_thread_user_state_thread_id_fkey';
+            columns: ['thread_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_threads';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_thread_user_state_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_thread_user_state_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       mail_threads: {
         Row: {
           created_at: string;
@@ -18153,6 +18209,10 @@ export type Database = {
           ws_id: string;
         }[];
       };
+      mail_thread_push_allowed: {
+        Args: { p_message_id: string; p_user_id: string };
+        Returns: boolean;
+      };
       managed_cron_claim_due_jobs: {
         Args: {
           p_limit?: number;
@@ -18587,6 +18647,16 @@ export type Database = {
           pending_count: number;
           rejected_count: number;
         }[];
+      };
+      set_mail_thread_preference: {
+        Args: {
+          p_action: string;
+          p_mailbox_id: string;
+          p_snoozed_until?: string;
+          p_thread_ids: string[];
+          p_user_id: string;
+        };
+        Returns: undefined;
       };
       set_workspace_invitation_roles: {
         Args: {

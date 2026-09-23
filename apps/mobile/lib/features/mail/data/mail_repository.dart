@@ -103,12 +103,17 @@ class MailRepository {
     String id,
     String action, {
     required bool thread,
+    DateTime? snoozedUntil,
   }) async {
     final path =
         '${mailboxPath(wsId, mailboxId)}/${thread ? 'threads' : 'messages'}/${Uri.encodeComponent(id)}';
     await _cache.mutate(
       wsId,
-      () => _api.patchJson(thread ? path : '$path/state', {'action': action}),
+      () => _api.patchJson(thread ? path : '$path/state', {
+        'action': action,
+        if (snoozedUntil != null)
+          'snoozedUntil': snoozedUntil.toUtc().toIso8601String(),
+      }),
     );
   }
 
@@ -213,6 +218,7 @@ class MailRepository {
     List<String> ids,
     String action, {
     required bool threads,
+    DateTime? snoozedUntil,
     String? labelId,
     String? folderId,
   }) async {
@@ -220,6 +226,8 @@ class MailRepository {
       final end = start + 100 < ids.length ? start + 100 : ids.length;
       final body = <String, dynamic>{
         'action': action,
+        if (snoozedUntil != null)
+          'snoozedUntil': snoozedUntil.toUtc().toIso8601String(),
         threads ? 'threadIds' : 'messageIds': ids.sublist(start, end),
         if (labelId != null) 'labelId': labelId,
         if (folderId != null) 'folderId': folderId,
