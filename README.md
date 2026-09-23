@@ -21,12 +21,12 @@ CLI, documentation, local services, and deployment tooling behind that system.
 <!-- tanstack-rust-migration-progress:start -->
 _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with `bun migration:tanstack:readme` after route ownership changes._
 
-![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=27.76%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=13.17%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=d29922&label=TanStack+Start&message=66.67%25+terminal&style=flat-square)
+![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=27.72%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=13.14%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=d29922&label=TanStack+Start&message=66.67%25+terminal&style=flat-square)
 
 | Track | Progress | Terminal | Migrated | Removed | Remaining |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Overall | `[######--------------]` 27.76% | 229 / 825 | 215 | 14 | 596 |
-| Rust backend | `[###-----------------]` 13.17% | 79 / 600 | 67 | 12 | 521 |
+| Overall | `[######--------------]` 27.72% | 229 / 826 | 215 | 14 | 597 |
+| Rust backend | `[###-----------------]` 13.14% | 79 / 601 | 67 | 12 | 522 |
 | TanStack Start | `[#############-------]` 66.67% | 150 / 225 | 148 | 2 | 75 |
 
 <details>
@@ -37,7 +37,7 @@ _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with 
 | api | `[##--------------]` 12.61% | 74 / 587 | 513 |
 | page | `[##########------]` 65.58% | 101 / 154 | 53 |
 | layout | `[###########-----]` 70.15% | 47 / 67 | 20 |
-| cron | `[####------------]` 25% | 2 / 8 | 6 |
+| cron | `[####------------]` 22.22% | 2 / 9 | 7 |
 | route-handler | `[############----]` 75% | 3 / 4 | 1 |
 | error | `[########--------]` 50% | 1 / 2 | 1 |
 | loading | `[----------------]` 0% | 0 / 1 | 1 |

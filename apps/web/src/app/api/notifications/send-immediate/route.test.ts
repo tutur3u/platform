@@ -44,6 +44,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
         }
 
         return {
+          rpc: mocks.rpcMock,
           from: mocks.fromMock,
         };
       }),
@@ -105,7 +106,7 @@ describe('send-immediate route', () => {
     notifications: {
       code: null;
       created_at: string;
-      data: { board_id?: string; workspace_id: string };
+      data: Record<string, string>;
       description: string;
       entity_id: string;
       entity_type: string;
@@ -114,7 +115,7 @@ describe('send-immediate route', () => {
       title: string;
       type: string;
       user_id: string;
-      ws_id: string;
+      ws_id: string | null;
     };
   }>;
   let workspaceMembership: { type: 'MEMBER' } | null;
@@ -209,7 +210,7 @@ describe('send-immediate route', () => {
               createResolvedChain({ data: batches, error: null })
             ),
             update: vi.fn(() =>
-              createResolvedChain({ data: null, error: null })
+              createResolvedChain({ data: [{ id: 'claimed' }], error: null })
             ),
           };
         case 'notification_delivery_log':
@@ -380,7 +381,7 @@ describe('send-immediate route', () => {
               createResolvedChain({ data: batches, error: null })
             ),
             update: vi.fn(() =>
-              createResolvedChain({ data: null, error: null })
+              createResolvedChain({ data: [{ id: 'claimed' }], error: null })
             ),
           };
         case 'notification_delivery_log':
@@ -624,4 +625,44 @@ describe('send-immediate route', () => {
       processed: 21,
     });
   });
+  it.each([true, false])(
+    'delivers personal Mail only with current access (%s)',
+    async (allowed) => {
+      batches[0]!.ws_id = null;
+      Object.assign(deliveryLogs[0]!.notifications, {
+        type: 'mail_received',
+        scope: 'user',
+        ws_id: null,
+        entity_type: 'mail_message',
+        entity_id: 'message-1',
+        data: {
+          userId: 'user-1',
+          messageId: 'message-1',
+          mailboxId: 'mailbox-1',
+          threadId: 'thread-1',
+        },
+      });
+      const previous = mocks.rpcMock.getMockImplementation()!;
+      mocks.rpcMock.mockImplementation((name, args) =>
+        name === 'can_deliver_mail_notification'
+          ? Promise.resolve({ data: allowed, error: null })
+          : previous(name, args)
+      );
+      const response = await POST(
+        new Request('http://localhost/api/notifications/send-immediate', {
+          method: 'POST',
+          headers: { authorization: 'Bearer cron-secret' },
+        }) as any
+      );
+      expect(response.status).toBe(200);
+      expect(mocks.sendPushNotificationBatchMock).toHaveBeenCalledTimes(
+        allowed ? 1 : 0
+      );
+      expect(mocks.sendSystemEmailMock).not.toHaveBeenCalled();
+      await expect(response.json()).resolves.toMatchObject({
+        processed: 1,
+        failed: 0,
+      });
+    }
+  );
 });

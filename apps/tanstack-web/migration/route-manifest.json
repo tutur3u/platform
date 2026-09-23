@@ -42,12 +42,12 @@
         "acceptedRemoval": 0,
         "key": "cron",
         "label": "cron",
-        "legacyNext": 6,
+        "legacyNext": 7,
         "migrated": 2,
-        "percentComplete": 25,
-        "remaining": 6,
+        "percentComplete": 22.22,
+        "remaining": 7,
         "terminal": 2,
-        "total": 8,
+        "total": 9,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 521,
+        "legacyNext": 522,
         "migrated": 67,
-        "percentComplete": 13.17,
-        "remaining": 521,
+        "percentComplete": 13.14,
+        "remaining": 522,
         "terminal": 79,
-        "total": 600,
+        "total": 601,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 596,
+      "legacyNext": 597,
       "migrated": 215,
-      "percentComplete": 27.76,
-      "remaining": 596,
+      "percentComplete": 27.72,
+      "remaining": 597,
       "terminal": 229,
-      "total": 825,
+      "total": 826,
       "unknownStatus": 0
     }
   },
@@ -721,11 +721,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/notifications/send-immediate:apps/web/src/legacy-api-routes/notifications/send-immediate/route.ts",
+      "id": "api:/api/notifications/send-immediate:apps/web/src/app/api/notifications/send-immediate/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/notifications/send-immediate",
-      "sourceFile": "apps/web/src/legacy-api-routes/notifications/send-immediate/route.ts",
+      "sourceFile": "apps/web/src/app/api/notifications/send-immediate/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5761,6 +5761,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "cron:/api/cron/process-immediate-notifications:apps/web/src/app/api/cron/process-immediate-notifications/route.ts",
+      "kind": "cron",
+      "methods": ["GET"],
+      "routePath": "/api/cron/process-immediate-notifications",
+      "sourceFile": "apps/web/src/app/api/cron/process-immediate-notifications/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "cron:/api/cron/process-notification-batches:apps/web/src/legacy-api-routes/cron/process-notification-batches/route.ts",
       "kind": "cron",
       "methods": ["GET"],
@@ -7869,12 +7878,12 @@
   ],
   "summary": {
     "apiRoutes": 587,
-    "cronRoutes": 8,
+    "cronRoutes": 9,
     "layouts": 67,
     "pages": 154,
-    "routeHandlers": 600,
+    "routeHandlers": 601,
     "methodCounts": {
-      "GET": 300,
+      "GET": 301,
       "HEAD": 4,
       "POST": 296,
       "PUT": 54,
@@ -7882,6 +7891,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 825
+    "total": 826
   }
 }

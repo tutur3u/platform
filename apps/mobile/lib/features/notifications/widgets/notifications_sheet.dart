@@ -6,10 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
+import 'package:mobile/features/notifications/widgets/notification_destination.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -134,7 +134,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                     notification.actionTaken == null
                 ? () => unawaited(_declineInvite(context, notification))
                 : null,
-            onOpen: _canOpenNotification(notification)
+            onOpen: notificationDestination(notification) != null
                 ? () => unawaited(_openNotification(context, notification))
                 : null,
           ),
@@ -278,43 +278,11 @@ class _NotificationsViewState extends State<NotificationsView> {
     );
   }
 
-  bool _canOpenNotification(AppNotification notification) {
-    final entityId = notification.entityId;
-    if (entityId == null || entityId.isEmpty) {
-      return false;
-    }
-
-    return switch (notification.entityType) {
-      'task' => notification.boardId?.isNotEmpty ?? false,
-      'time_tracking_request' => true,
-      _ => false,
-    };
-  }
-
   String? _openActionLabel(BuildContext context, AppNotification notification) {
     return switch (notification.entityType) {
       'task' => context.l10n.notificationsOpenTaskAction,
+      'mail_message' => context.l10n.commonOpen,
       'time_tracking_request' => context.l10n.notificationsOpenRequestAction,
-      _ => null,
-    };
-  }
-
-  String? _routeForNotification(AppNotification notification) {
-    final entityId = notification.entityId;
-    if (entityId == null || entityId.isEmpty) {
-      return null;
-    }
-
-    return switch (notification.entityType) {
-      'task' =>
-        notification.boardId == null || notification.boardId!.isEmpty
-            ? null
-            : '${Routes.taskBoardDetailPath(notification.boardId!)}'
-                  '?taskId=$entityId',
-      'time_tracking_request' => Routes.timerRequestsPath(
-        requestId: entityId,
-        status: 'all',
-      ),
       _ => null,
     };
   }
@@ -383,7 +351,7 @@ class _NotificationsViewState extends State<NotificationsView> {
     BuildContext context,
     AppNotification notification,
   ) async {
-    final route = _routeForNotification(notification);
+    final route = notificationDestination(notification);
     if (route == null) {
       return;
     }
@@ -1023,7 +991,7 @@ Color _accentColor(BuildContext context, String type) {
 
 IconData _iconForType(String type) {
   return switch (type) {
-    'workspace_invite' => Icons.mail_outline_rounded,
+    'workspace_invite' || 'mail_received' => Icons.mail_outline_rounded,
     'security_alert' => Icons.shield_outlined,
     'system_announcement' => Icons.campaign_outlined,
     'task_completed' => Icons.check_circle_outline_rounded,
