@@ -27,7 +27,8 @@ export type MailTableName =
   | 'mail_raw_messages'
   | 'mail_recipients'
   | 'mail_stored_objects'
-  | 'mail_threads';
+  | 'mail_threads'
+  | 'mail_thread_user_state';
 
 export const SYSTEM_LABELS = [
   { kind: 'system', name: 'Inbox', slug: 'inbox' },

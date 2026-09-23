@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.1](https://github.com/tutur3u/platform/compare/mind-v0.21.0...mind-v0.21.1) (2026-09-23)
+
+
+### Bug Fixes
+
+* **auth:** reuse completed session-bound challenges ([b63d510](https://github.com/tutur3u/platform/commit/b63d51046b427350d959137cf37058223e544788))
+* **mobile:** repair Live persistence and reuse session verification ([#5436](https://github.com/tutur3u/platform/issues/5436)) ([cb452e1](https://github.com/tutur3u/platform/commit/cb452e1908eab3db2dce9dfd1d57d721284a2e49))
+
 ## [0.21.0](https://github.com/tutur3u/platform/compare/mind-v0.20.0...mind-v0.21.0) (2026-09-20)
 
 

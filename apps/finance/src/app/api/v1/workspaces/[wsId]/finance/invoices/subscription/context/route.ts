@@ -1,6 +1,7 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
+import { readSubscriptionPages } from './read-pages';
 
 interface Params {
   params: Promise<{
@@ -78,6 +79,7 @@ function resolveMonthDateRange(month: string, monthCount: number) {
 }
 
 export async function GET(req: Request, { params }: Params) {
+  await connection();
   const { wsId } = await params;
   const access = await getFinanceRouteContext(
     req,
@@ -165,26 +167,33 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const [attendanceResponse, latestInvoicesResponse] = await Promise.all([
-    sbAdmin
-      .from('user_group_attendance')
-      .select('date, status, group_id')
-      .in('group_id', validGroupIds)
-      .eq('user_id', userId)
-      .gte('date', monthDateRange.startDate)
-      .lt('date', monthDateRange.endDate)
-      .order('date', { ascending: true }),
-    sbAdmin
-      .from('finance_invoice_user_groups')
-      .select(
-        'user_group_id, finance_invoices!inner(valid_until, created_at, completed_at)'
-      )
-      .in('user_group_id', validGroupIds)
-      .eq('finance_invoices.customer_id', userId)
-      .not('finance_invoices.completed_at', 'is', null)
-      .order('created_at', {
-        referencedTable: 'finance_invoices',
-        ascending: false,
-      }),
+    readSubscriptionPages((offset, limit) =>
+      sbAdmin
+        .from('user_group_attendance')
+        .select('date, status, group_id', { count: 'exact' })
+        .in('group_id', validGroupIds)
+        .eq('user_id', userId)
+        .gte('date', monthDateRange.startDate)
+        .lt('date', monthDateRange.endDate)
+        .order('date')
+        .order('group_id')
+        .range(offset, offset + limit - 1)
+    ),
+    readSubscriptionPages((offset, limit) =>
+      sbAdmin
+        .from('finance_invoice_user_groups')
+        .select(
+          'user_group_id, finance_invoices!inner(valid_until, created_at, completed_at, subscription_months)',
+          { count: 'exact' }
+        )
+        .in('user_group_id', validGroupIds)
+        .eq('finance_invoices.customer_id', userId)
+        .eq('finance_invoices.ws_id', normalizedWsId)
+        .not('finance_invoices.completed_at', 'is', null)
+        .order('invoice_id')
+        .order('user_group_id')
+        .range(offset, offset + limit - 1)
+    ),
   ]);
 
   if (attendanceResponse.error) {
@@ -213,6 +222,7 @@ export async function GET(req: Request, { params }: Params) {
     .filter(
       (row) =>
         row.finance_invoices?.completed_at &&
+        row.finance_invoices.subscription_months == null &&
         getComparableTimestamp(row.finance_invoices?.valid_until) > 0
     )
     .slice()
@@ -251,6 +261,20 @@ export async function GET(req: Request, { params }: Params) {
 
   return NextResponse.json({
     attendance: attendanceResponse.data ?? [],
-    latestInvoices: Array.from(latestInvoicesMap.values()),
+    latestInvoices: [
+      ...Array.from(latestInvoicesMap.values()),
+      ...(latestInvoicesResponse.data ?? [])
+        .filter(
+          (row) =>
+            row.finance_invoices?.completed_at &&
+            row.finance_invoices.subscription_months != null
+        )
+        .map((row) => ({
+          group_id: row.user_group_id,
+          valid_until: row.finance_invoices.valid_until,
+          created_at: row.finance_invoices.created_at,
+          covered_months: row.finance_invoices.subscription_months,
+        })),
+    ],
   });
 }

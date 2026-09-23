@@ -8249,4 +8249,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopUpdateManual => 'Download manually';
+
+  @override
+  String get mailSnooze => 'Snooze';
+
+  @override
+  String get mailUnsnooze => 'Move to Inbox now';
+
+  @override
+  String get mailMute => 'Mute thread';
+
+  @override
+  String get mailUnmute => 'Unmute thread';
+
+  @override
+  String get mailSnoozed => 'Snoozed';
+
+  @override
+  String get mailMuted => 'Muted';
+
+  @override
+  String get mailSnoozeHour => 'In one hour';
+
+  @override
+  String get mailSnoozeDay => 'In 24 hours';
+
+  @override
+  String get mailSnoozeWeek => 'In one week';
+
+  @override
+  String get mailSnoozeCustom => 'Choose date and time';
+
+  @override
+  String get mailSnoozeFuture => 'Choose a time in the future.';
 }

@@ -76,7 +76,14 @@ fn recorded_header<'a>(request: &'a RecordedOutboundRequest, name: &str) -> Opti
 fn outbound_response(status: u16, body_text: &'static str) -> OutboundResponse {
     OutboundResponse {
         body_text: body_text.to_owned(),
-        headers: Vec::new(),
+        headers: serde_json::from_str::<serde_json::Value>(body_text)
+            .ok()
+            .and_then(|value| {
+                value
+                    .as_array()
+                    .map(|rows| vec![("content-range".to_owned(), format!("*/{}", rows.len()))])
+            })
+            .unwrap_or_default(),
         status,
     }
 }
@@ -381,4 +388,104 @@ async fn finance_subscription_context_preserves_failure_body() {
         response.body,
         json!({ "message": "Error fetching subscription invoice context" })
     );
+}
+
+#[tokio::test]
+async fn finance_subscription_context_preserves_exact_months_and_legacy_cutoff() {
+    let outbound = RecordingOutboundClient::with_responses(successful_browser_responses(
+        r#"[{"group_id":"group-1"}]"#,
+        "[]",
+        r#"[
+          {"user_group_id":"group-1","finance_invoices":{"completed_at":"2026-01-01","created_at":"2026-01-01","valid_until":"2026-02-01"}},
+          {"user_group_id":"group-1","finance_invoices":{"completed_at":"2026-03-01","created_at":"2026-03-01","valid_until":"2026-04-01","subscription_months":["2026-03-01"]}},
+          {"user_group_id":"group-1","finance_invoices":{"completed_at":"2026-05-01","created_at":"2026-05-01","valid_until":"2026-06-01","subscription_months":["2026-05-01"]}},
+          {"user_group_id":"group-1","finance_invoices":{"completed_at":null,"valid_until":"2026-07-01","subscription_months":["2026-06-01"]}}
+        ]"#,
+    ));
+    let response = handle_backend_request(
+        &backend_config_with_contact_data(),
+        request_with_bearer(SUBSCRIPTION_CONTEXT_URL),
+        &outbound,
+    )
+    .await;
+    assert_eq!(response.status, 200);
+    assert_eq!(
+        response.body["latestInvoices"],
+        json!([
+          {"group_id":"group-1","created_at":"2026-01-01","valid_until":"2026-02-01"},
+          {"group_id":"group-1","created_at":"2026-03-01","valid_until":"2026-04-01","covered_months":["2026-03-01"]},
+          {"group_id":"group-1","created_at":"2026-05-01","valid_until":"2026-06-01","covered_months":["2026-05-01"]}
+        ])
+    );
+    assert!(
+        outbound.calls()[5]
+            .url
+            .contains("finance_invoices.ws_id=eq.resolved-ws")
+    );
+}
+
+fn coverage_page(length: usize, total: usize) -> OutboundResponse {
+    let rows = vec![
+        json!({"user_group_id":"group-1","finance_invoices":{"completed_at":"2026-03-01","valid_until":"2026-04-01","subscription_months":["2026-03-01"]}});
+        length
+    ];
+    OutboundResponse {
+        status: 200,
+        body_text: serde_json::to_string(&rows).unwrap(),
+        headers: vec![("content-range".to_owned(), format!("*/{total}"))],
+    }
+}
+
+#[tokio::test]
+async fn finance_subscription_context_reads_all_coverage_pages() {
+    let mut responses = successful_browser_responses(r#"[{"group_id":"group-1"}]"#, "[]", "[]");
+    responses.pop();
+    responses.push(coverage_page(500, 501));
+    responses.push(coverage_page(1, 501));
+    let outbound = RecordingOutboundClient::with_responses(responses);
+    let response = handle_backend_request(
+        &backend_config_with_contact_data(),
+        request_with_bearer(SUBSCRIPTION_CONTEXT_URL),
+        &outbound,
+    )
+    .await;
+    assert_eq!(response.status, 200);
+    assert_eq!(
+        response.body["latestInvoices"].as_array().unwrap().len(),
+        501
+    );
+    assert!(outbound.calls()[6].url.contains("offset=500"));
+}
+
+#[tokio::test]
+async fn finance_subscription_context_rejects_truncated_or_changing_pages() {
+    for second_page in [coverage_page(0, 501), coverage_page(2, 502)] {
+        let mut responses = successful_browser_responses(r#"[{"group_id":"group-1"}]"#, "[]", "[]");
+        responses.pop();
+        responses.push(coverage_page(500, 501));
+        responses.push(second_page);
+        let outbound = RecordingOutboundClient::with_responses(responses);
+        let response = handle_backend_request(
+            &backend_config_with_contact_data(),
+            request_with_bearer(SUBSCRIPTION_CONTEXT_URL),
+            &outbound,
+        )
+        .await;
+        assert_eq!(response.status, 500);
+        assert!(response.body.get("latestInvoices").is_none());
+    }
+}
+
+#[tokio::test]
+async fn finance_subscription_context_rejects_missing_counts() {
+    let mut responses = successful_browser_responses(r#"[{"group_id":"group-1"}]"#, "[]", "[]");
+    responses[4].headers.clear();
+    let outbound = RecordingOutboundClient::with_responses(responses);
+    let response = handle_backend_request(
+        &backend_config_with_contact_data(),
+        request_with_bearer(SUBSCRIPTION_CONTEXT_URL),
+        &outbound,
+    )
+    .await;
+    assert_eq!(response.status, 500);
 }

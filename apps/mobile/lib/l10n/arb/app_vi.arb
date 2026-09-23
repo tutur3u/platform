@@ -3369,5 +3369,16 @@
             }
         }
     },
-    "desktopUpdateManual": "Tải xuống thủ công"
+    "desktopUpdateManual": "Tải xuống thủ công",
+    "mailSnooze": "Tạm ẩn",
+    "mailUnsnooze": "Đưa về hộp thư đến ngay",
+    "mailMute": "Tắt thông báo chuỗi thư",
+    "mailUnmute": "Bật lại thông báo",
+    "mailSnoozed": "Đã tạm ẩn",
+    "mailMuted": "Đã tắt thông báo",
+    "mailSnoozeHour": "Sau một giờ",
+    "mailSnoozeDay": "Sau 24 giờ",
+    "mailSnoozeWeek": "Sau một tuần",
+    "mailSnoozeCustom": "Chọn ngày và giờ",
+    "mailSnoozeFuture": "Vui lòng chọn thời gian trong tương lai."
 }

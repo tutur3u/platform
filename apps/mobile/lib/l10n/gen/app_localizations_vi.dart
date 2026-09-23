@@ -8219,4 +8219,37 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get desktopUpdateManual => 'Tải xuống thủ công';
+
+  @override
+  String get mailSnooze => 'Tạm ẩn';
+
+  @override
+  String get mailUnsnooze => 'Đưa về hộp thư đến ngay';
+
+  @override
+  String get mailMute => 'Tắt thông báo chuỗi thư';
+
+  @override
+  String get mailUnmute => 'Bật lại thông báo';
+
+  @override
+  String get mailSnoozed => 'Đã tạm ẩn';
+
+  @override
+  String get mailMuted => 'Đã tắt thông báo';
+
+  @override
+  String get mailSnoozeHour => 'Sau một giờ';
+
+  @override
+  String get mailSnoozeDay => 'Sau 24 giờ';
+
+  @override
+  String get mailSnoozeWeek => 'Sau một tuần';
+
+  @override
+  String get mailSnoozeCustom => 'Chọn ngày và giờ';
+
+  @override
+  String get mailSnoozeFuture => 'Vui lòng chọn thời gian trong tương lai.';
 }

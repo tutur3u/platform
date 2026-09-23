@@ -1,15 +1,19 @@
 import {
   Archive,
+  Clock,
   Inbox,
   PenLine,
   Send,
   Star,
   Trash2,
   TriangleAlert,
+  VolumeX,
 } from '@tuturuuu/icons';
 
 export const MAIL_FOLDERS = [
   'inbox',
+  'snoozed',
+  'muted',
   'starred',
   'sent',
   'drafts',
@@ -24,6 +28,8 @@ export const DEFAULT_MAIL_FOLDER = 'inbox' satisfies MailFolder;
 
 export const mailFolderIcons = {
   archive: Archive,
+  snoozed: Clock,
+  muted: VolumeX,
   drafts: PenLine,
   inbox: Inbox,
   sent: Send,

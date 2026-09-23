@@ -7853,6 +7853,8 @@
     "error_creating_subscription_invoice": "Lỗi tạo hóa đơn đăng ký: {error}",
     "error_loading": "Lỗi khi tải hóa đơn chờ xử lý. Vui lòng thử lại.",
     "error_loading_attendance": "Lỗi khi tải dữ liệu điểm danh. Vui lòng thử lại.",
+    "export_incomplete": "Danh sách hóa đơn đã thay đổi hoặc chưa tải đủ dữ liệu. Chưa tải xuống tệp nào. Vui lòng xuất lại.",
+    "export_pending_scope": "Xuất tất cả các dòng công nợ trên mọi trang theo nội dung tìm kiếm và bộ lọc học viên hiện tại. Công nợ phụ thuộc vào kỳ đã thanh toán và lịch học hoặc dữ liệu điểm danh. Các nhóm bị chặn và học viên thuộc các nhóm đó không được tính.",
     "failed_delete_invoice": "Không xóa được hóa đơn",
     "failed_to_create_invoice": "Không thể tạo hóa đơn",
     "failed_to_create_subscription_invoice": "Không thể tạo hóa đơn đăng ký",

@@ -129,4 +129,78 @@ describe('GET pending invoices', () => {
     expect(response.status).toBe(403);
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
+
+  it.each([false, true])(
+    'keeps export filters and offsets consistent for grouped=%s',
+    async (grouped) => {
+      mocks.rpc
+        .mockResolvedValueOnce({ data: [], error: null })
+        .mockResolvedValueOnce({ data: 2050, error: null });
+      const { GET } = await import('./route');
+      const response = await GET(
+        new Request(
+          `https://finance.test/api/pending?page=3&pageSize=1000&groupByUser=${grouped}&q=Math&userIds=a&userIds=b`
+        ),
+        { params: Promise.resolve({ wsId: 'ws-1' }) }
+      );
+      expect(response.status).toBe(200);
+      const rpc = grouped
+        ? 'get_pending_invoices_grouped_by_user'
+        : 'get_pending_invoices';
+      expect(mocks.rpc).toHaveBeenNthCalledWith(1, rpc, {
+        p_ws_id: 'ws-1',
+        p_limit: 1000,
+        p_offset: 2000,
+        p_query: 'Math',
+        p_user_ids: ['a', 'b'],
+      });
+      expect(mocks.rpc).toHaveBeenNthCalledWith(2, `${rpc}_count`, {
+        p_ws_id: 'ws-1',
+        p_query: 'Math',
+        p_user_ids: ['a', 'b'],
+      });
+      // Expose the actual count, even on a short response, for client validation.
+      expect(await response.json()).toEqual({ data: [], count: 2050 });
+    }
+  );
+
+  it.each(['page=0', 'pageSize=0', 'page=1.5', 'groupByUser=invalid'])(
+    'rejects invalid pagination: %s',
+    async (query) => {
+      const { GET } = await import('./route');
+      const response = await GET(
+        new Request(`https://finance.test/api/pending?${query}`),
+        { params: Promise.resolve({ wsId: 'ws-1' }) }
+      );
+      expect(response.status).toBe(400);
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    ['rows', '57014', 504],
+    ['rows', 'other', 500],
+    ['count', '57014', 504],
+    ['count', 'other', 500],
+  ] as const)(
+    'does not disguise a %s error %s as an empty export',
+    async (stage, code, status) => {
+      if (stage === 'count')
+        mocks.rpc.mockResolvedValueOnce({
+          data: [{ user_id: 'student', group_id: 'class' }],
+          error: null,
+        });
+      mocks.rpc.mockResolvedValueOnce({
+        data: null,
+        error: { code, message: 'Database failure' },
+      });
+      const { GET } = await import('./route');
+      const response = await GET(
+        new Request('https://finance.test/api/pending'),
+        { params: Promise.resolve({ wsId: 'ws-1' }) }
+      );
+      expect(response.status).toBe(status);
+      expect(await response.json()).not.toHaveProperty('data');
+    }
+  );
 });

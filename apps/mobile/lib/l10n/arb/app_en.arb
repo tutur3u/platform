@@ -3365,5 +3365,16 @@
             }
         }
     },
-    "desktopUpdateManual": "Download manually"
+    "desktopUpdateManual": "Download manually",
+    "mailSnooze": "Snooze",
+    "mailUnsnooze": "Move to Inbox now",
+    "mailMute": "Mute thread",
+    "mailUnmute": "Unmute thread",
+    "mailSnoozed": "Snoozed",
+    "mailMuted": "Muted",
+    "mailSnoozeHour": "In one hour",
+    "mailSnoozeDay": "In 24 hours",
+    "mailSnoozeWeek": "In one week",
+    "mailSnoozeCustom": "Choose date and time",
+    "mailSnoozeFuture": "Choose a time in the future."
 }
