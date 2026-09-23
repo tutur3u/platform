@@ -17,6 +17,22 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
           children: [
             for (final option in options.entries)
               ListTile(
+                leading: Icon(switch (option.key) {
+                  'inbox' || '__inbox' => Icons.inbox_outlined,
+                  'archive' || '__archive' => Icons.archive_outlined,
+                  'trash' || '__trash' => Icons.delete_outline,
+                  'snoozed' => Icons.snooze_outlined,
+                  'muted' => Icons.volume_off_outlined,
+                  'sent' => Icons.send_outlined,
+                  'drafts' => Icons.drafts_outlined,
+                  'starred' => Icons.star_outline,
+                  'spam' => Icons.report_outlined,
+                  '' => Icons.all_inbox_outlined,
+                  _ when option.key.startsWith('label:') => Icons.label_outline,
+                  _ when option.key.startsWith('folder:') =>
+                    Icons.folder_outlined,
+                  _ => Icons.mail_outline,
+                }),
                 title: Text(option.value),
                 selected: selected == option.key,
                 trailing: selected == option.key
@@ -50,6 +66,7 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
         box['id'] as String: box['address'] as String,
     }, _mailboxId);
     if (!mounted || value == null || value == _mailboxId) return;
+    _dismissSwipeFeedback();
     _updateState(() {
       _mailboxId = value;
       _labelId = null;
@@ -82,6 +99,7 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
         ? value.substring(7)
         : null;
     if (nextLabelId == _labelId && nextFolderId == _folderId) return;
+    _dismissSwipeFeedback();
     _updateState(() {
       _labelId = nextLabelId;
       _folderId = nextFolderId;
