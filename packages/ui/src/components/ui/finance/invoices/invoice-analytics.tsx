@@ -4,12 +4,14 @@ import { useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '../../card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
 import {
   InvoiceTotalsChart,
   type InvoiceTotalsChartProps,
   InvoiceTotalsChartSkeleton,
 } from './charts/invoice-totals-chart';
 import { useInvoiceAnalytics } from './hooks/use-invoice-analytics';
+import { SubscriptionPaymentAnalytics } from './subscription-payment-analytics';
 
 /**
  * weekStartsOn values (JavaScript convention, matching useCalendarPreferences):
@@ -31,7 +33,7 @@ interface InvoiceAnalyticsProps {
   currency?: string;
 }
 
-export function InvoiceAnalytics({
+function InvoiceOverviewAnalytics({
   wsId,
   className,
   weekStartsOn = 1,
@@ -164,4 +166,25 @@ export function InvoiceAnalytics({
       };
 
   return <InvoiceTotalsChart {...chartProps} />;
+}
+
+export function InvoiceAnalytics(props: InvoiceAnalyticsProps) {
+  const t = useTranslations('invoice-subscriptions');
+  return (
+    <Tabs defaultValue="overview" className={props.className}>
+      <TabsList className="mb-3">
+        <TabsTrigger value="overview">{t('overview')}</TabsTrigger>
+        <TabsTrigger value="subscriptions">{t('title')}</TabsTrigger>
+      </TabsList>
+      <TabsContent value="subscriptions">
+        <SubscriptionPaymentAnalytics
+          wsId={props.wsId}
+          currency={props.currency}
+        />
+      </TabsContent>
+      <TabsContent value="overview">
+        <InvoiceOverviewAnalytics {...props} className={undefined} />
+      </TabsContent>
+    </Tabs>
+  );
 }

@@ -480,6 +480,7 @@ describe('subscription invoice create route', () => {
     });
     expect(invoiceBuilder.insert).toHaveBeenCalledWith(
       expect.objectContaining({
+        subscription_months: ['2026-04-01', '2026-05-01', '2026-06-01'],
         valid_until: '2026-07-01T00:00:00.000Z',
       })
     );

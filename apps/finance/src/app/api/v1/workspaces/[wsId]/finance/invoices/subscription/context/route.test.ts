@@ -27,14 +27,21 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn(),
+}));
+
 const subscriptionContextRoutePath = resolve(
   process.cwd(),
   'src/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/context/route.ts'
 );
 
 function createThenableQuery<T>(response: T) {
-  const promise = Promise.resolve(response);
+  const data = (response as { data?: unknown[] }).data;
+  const promise = Promise.resolve({ ...response, count: data?.length ?? null });
   const query = {
+    range: vi.fn(() => query),
     eq: vi.fn(() => query),
     gte: vi.fn(() => query),
     in: vi.fn(() => query),
@@ -72,7 +79,7 @@ describe('subscription invoice context route', () => {
       'workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(ws_id)'
     );
     expect(source).toContain(
-      'finance_invoices!inner(valid_until, created_at, completed_at)'
+      'finance_invoices!inner(valid_until, created_at, completed_at, subscription_months)'
     );
     expect(source).toContain(
       ".not('finance_invoices.completed_at', 'is', null)"
@@ -178,6 +185,93 @@ describe('subscription invoice context route', () => {
     expect(validGroupsQuery.select).toHaveBeenCalledWith(
       'group_id, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(ws_id)'
     );
+  });
+
+  it('preserves separate exact coverage records alongside a legacy cutoff', async () => {
+    const validGroups = createThenableQuery({
+      data: [{ group_id: 'g1' }],
+      error: null,
+    });
+    const attendance = createThenableQuery({ data: [], error: null });
+    const history = createThenableQuery({
+      data: [
+        {
+          user_group_id: 'g1',
+          finance_invoices: {
+            completed_at: '2026-01-01',
+            created_at: '2026-01-01',
+            valid_until: '2026-02-01',
+            subscription_months: null,
+          },
+        },
+        {
+          user_group_id: 'g1',
+          finance_invoices: {
+            completed_at: '2026-03-01',
+            created_at: '2026-03-01',
+            valid_until: '2026-04-01',
+            subscription_months: ['2026-03-01'],
+          },
+        },
+        {
+          user_group_id: 'g1',
+          finance_invoices: {
+            completed_at: '2026-05-01',
+            created_at: '2026-05-01',
+            valid_until: '2026-06-01',
+            subscription_months: ['2026-05-01'],
+          },
+        },
+        {
+          user_group_id: 'g1',
+          finance_invoices: {
+            completed_at: null,
+            created_at: '2026-06-01',
+            valid_until: '2026-07-01',
+            subscription_months: ['2026-06-01'],
+          },
+        },
+      ],
+      error: null,
+    });
+    const sbAdmin = {
+      from: vi.fn((table: string) =>
+        table === 'workspace_user_groups_users'
+          ? validGroups
+          : table === 'user_group_attendance'
+            ? attendance
+            : history
+      ),
+    };
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: withPermissions(['create_invoices']),
+        sbAdmin,
+      },
+    });
+    const { GET } = await import('./route');
+    const response = await GET(
+      new Request('http://localhost/api?userId=u1&month=2026-02&groupIds=g1'),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).latestInvoices).toEqual([
+      { group_id: 'g1', created_at: '2026-01-01', valid_until: '2026-02-01' },
+      {
+        group_id: 'g1',
+        created_at: '2026-03-01',
+        valid_until: '2026-04-01',
+        covered_months: ['2026-03-01'],
+      },
+      {
+        group_id: 'g1',
+        created_at: '2026-05-01',
+        valid_until: '2026-06-01',
+        covered_months: ['2026-05-01'],
+      },
+    ]);
+    expect(history.eq).toHaveBeenCalledWith('finance_invoices.ws_id', 'ws-1');
   });
 
   it('rejects invalid monthCount before querying subscription context tables', async () => {

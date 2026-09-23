@@ -1,12 +1,16 @@
+mod coverage;
+mod pages;
+use coverage::latest_invoice_context;
+use pages::{fetch_complete_rows, fetch_service_role_rows};
+
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use std::collections::BTreeSet;
 
 use crate::{
-    APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact,
+    BackendConfig, BackendRequest, BackendResponse, contact,
     finance_auth::{FinanceAuthorizationError, authorize_finance_permission},
     json_response, method_not_allowed, no_store_response,
-    outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
+    outbound::OutboundHttpClient,
 };
 
 const CREATE_INVOICES_PERMISSION: &str = "create_invoices";
@@ -37,6 +41,7 @@ struct LatestInvoiceRow {
 
 #[derive(Deserialize)]
 struct LatestInvoice {
+    subscription_months: Option<Vec<String>>,
     completed_at: Option<String>,
     created_at: Option<String>,
     valid_until: Option<String>,
@@ -51,6 +56,8 @@ struct SubscriptionContextResponse {
 
 #[derive(Serialize)]
 struct LatestInvoiceContext {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    covered_months: Option<Vec<String>>,
     group_id: String,
     valid_until: Option<String>,
     created_at: String,
@@ -152,7 +159,7 @@ async fn fetch_subscription_context(
     )
     .await?;
     let latest_invoice_rows =
-        fetch_latest_invoice_rows(contact_data, outbound, user_id, &valid_groups).await?;
+        fetch_latest_invoice_rows(contact_data, outbound, ws_id, user_id, &valid_groups).await?;
 
     Ok(SubscriptionContextResponse {
         attendance,
@@ -200,7 +207,7 @@ async fn fetch_attendance_context(
     start_date: &str,
     next_month_date: &str,
 ) -> Result<Value, ()> {
-    let rows = fetch_service_role_value(
+    let rows = fetch_complete_rows::<Value>(
         contact_data,
         outbound,
         "user_group_attendance",
@@ -210,73 +217,39 @@ async fn fetch_attendance_context(
             ("user_id", format!("eq.{user_id}")),
             ("date", format!("gte.{start_date}")),
             ("date", format!("lt.{next_month_date}")),
-            ("order", "date.asc".to_owned()),
+            ("order", "date.asc,group_id.asc".to_owned()),
         ],
     )
     .await?;
 
-    if rows.is_array() { Ok(rows) } else { Err(()) }
+    Ok(Value::Array(rows))
 }
 
 async fn fetch_latest_invoice_rows(
     contact_data: &contact::ContactDataConfig,
     outbound: &impl OutboundHttpClient,
+    ws_id: &str,
     user_id: &str,
     valid_group_ids: &[String],
 ) -> Result<Vec<LatestInvoiceRow>, ()> {
-    fetch_service_role_rows(
+    fetch_complete_rows(
         contact_data,
         outbound,
         "finance_invoice_user_groups",
         &[
             (
                 "select",
-                "user_group_id,finance_invoices!inner(valid_until,created_at,completed_at)"
+                "user_group_id,finance_invoices!inner(valid_until,created_at,completed_at,subscription_months)"
                     .to_owned(),
             ),
             ("user_group_id", postgrest_in_filter(valid_group_ids)),
             ("finance_invoices.customer_id", format!("eq.{user_id}")),
+            ("finance_invoices.ws_id", format!("eq.{ws_id}")),
             ("finance_invoices.completed_at", "not.is.null".to_owned()),
-            ("finance_invoices.order", "created_at.desc".to_owned()),
+            ("order", "invoice_id.asc,user_group_id.asc".to_owned()),
         ],
     )
     .await
-}
-
-async fn fetch_service_role_rows<T: for<'de> Deserialize<'de>>(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    table: &str,
-    params: &[(&str, String)],
-) -> Result<Vec<T>, ()> {
-    let value = fetch_service_role_value(contact_data, outbound, table, params).await?;
-    serde_json::from_value::<Vec<T>>(value).map_err(|_| ())
-}
-
-async fn fetch_service_role_value(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    table: &str,
-    params: &[(&str, String)],
-) -> Result<Value, ()> {
-    let url = contact_data.rest_url(table, params).ok_or(())?;
-    let service_role_key = contact_data.service_role_key().ok_or(())?;
-    let authorization = format!("Bearer {service_role_key}");
-    let response = outbound
-        .send(
-            OutboundRequest::new(OutboundMethod::Get, &url)
-                .with_header("Accept", APPLICATION_JSON)
-                .with_header("Authorization", &authorization)
-                .with_header("apikey", service_role_key),
-        )
-        .await
-        .map_err(|_| ())?;
-
-    if !(200..300).contains(&response.status) {
-        return Err(());
-    }
-
-    response.json::<Value>().map_err(|_| ())
 }
 
 fn subscription_context_query_from_url(request_url: Option<&str>) -> SubscriptionContextQuery {
@@ -373,88 +346,6 @@ fn postgrest_in_filter(values: &[String]) -> String {
         .join(",");
 
     format!("in.({values})")
-}
-
-fn latest_invoice_context(mut rows: Vec<LatestInvoiceRow>) -> Vec<LatestInvoiceContext> {
-    rows.retain(|row| {
-        row.finance_invoices
-            .as_ref()
-            .and_then(|invoice| {
-                invoice.completed_at.as_deref()?;
-                comparable_timestamp_key(invoice.valid_until.as_deref())
-            })
-            .is_some()
-    });
-    rows.sort_by(|a, b| {
-        let a_invoice = a.finance_invoices.as_ref();
-        let b_invoice = b.finance_invoices.as_ref();
-        let a_valid_until =
-            comparable_timestamp_key(a_invoice.and_then(|invoice| invoice.valid_until.as_deref()));
-        let b_valid_until =
-            comparable_timestamp_key(b_invoice.and_then(|invoice| invoice.valid_until.as_deref()));
-        let a_created_at =
-            comparable_timestamp_key(a_invoice.and_then(|invoice| invoice.created_at.as_deref()));
-        let b_created_at =
-            comparable_timestamp_key(b_invoice.and_then(|invoice| invoice.created_at.as_deref()));
-
-        b_valid_until
-            .cmp(&a_valid_until)
-            .then_with(|| b_created_at.cmp(&a_created_at))
-    });
-
-    let mut seen_group_ids = BTreeSet::new();
-    let mut latest_invoices = Vec::new();
-
-    for row in rows {
-        let Some(group_id) = row.user_group_id.filter(|group_id| !group_id.is_empty()) else {
-            continue;
-        };
-
-        if !seen_group_ids.insert(group_id.clone()) {
-            continue;
-        }
-
-        let Some(invoice) = row.finance_invoices else {
-            continue;
-        };
-
-        latest_invoices.push(LatestInvoiceContext {
-            group_id,
-            valid_until: invoice.valid_until,
-            created_at: invoice.created_at.unwrap_or_default(),
-        });
-    }
-
-    latest_invoices
-}
-
-fn comparable_timestamp_key(value: Option<&str>) -> Option<(i32, u32, u32, u32, u32, u32)> {
-    let value = value?.trim();
-    let (date, time) = value.split_once('T').unwrap_or((value, ""));
-    let mut date_parts = date.split('-');
-    let year = date_parts.next()?.parse::<i32>().ok()?;
-    let month = date_parts.next()?.parse::<u32>().ok()?;
-    let day = date_parts.next()?.parse::<u32>().ok()?;
-
-    if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
-        return None;
-    }
-
-    let mut time_parts = time.split([':', '.', '+', '-', 'Z']);
-    let hour = time_parts
-        .next()
-        .and_then(|part| part.parse::<u32>().ok())
-        .unwrap_or(0);
-    let minute = time_parts
-        .next()
-        .and_then(|part| part.parse::<u32>().ok())
-        .unwrap_or(0);
-    let second = time_parts
-        .next()
-        .and_then(|part| part.parse::<u32>().ok())
-        .unwrap_or(0);
-
-    Some((year, month, day, hour, minute, second))
 }
 
 fn subscription_context_ws_id(path: &str) -> Option<&str> {
