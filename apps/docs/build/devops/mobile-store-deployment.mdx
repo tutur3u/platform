@@ -139,12 +139,30 @@ distribution signing. Export uses the profile UUID and App Store Connect export
 method. Local development keeps its existing signing settings when that file
 does not exist.
 
-Create or reuse an internal TestFlight group with automatic distribution enabled.
-After upload, verification waits up to 30 minutes for the exact build to become
-valid and available for internal beta testing. An accepted upload alone does
-not pass verification. Missing export compliance, processing failures, and
-missing internal distribution must be resolved in App Store Connect; rerunning
-verification cannot resolve those account requirements.
+Create an internal TestFlight group with automatic distribution enabled. After
+upload, CI waits up to 30 minutes for the exact build to become valid and
+available for internal testing. It then assigns the build to all existing
+TestFlight groups, including external groups, and reads the assignments back.
+An accepted upload alone does not pass verification. New groups are discovered
+on each run, so future groups are included by default.
+
+The `mobile-store-beta` GitHub environment accepts two optional variables:
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `TESTFLIGHT_BETA_ENABLED` | `true` | Set `false` to skip automatic group assignment. The internal group's own automatic distribution setting still applies. |
+| `TESTFLIGHT_BETA_GROUPS` | `all` | Comma-separated exact group names or App Store Connect group IDs to limit assignment. Unknown names fail the run. |
+| `TESTFLIGHT_BETA_WHATS_NEW` | Generic test note | English (U.S.) instructions shown to external testers when a new build is submitted for beta review. Set this to specific test areas for a release. |
+
+External groups require TestFlight beta review before testers can install a new
+build. If an external group is selected, CI creates a missing English (U.S.)
+What to Test localization, enables automatic tester notification, and submits
+the build for beta review. A workflow success with `WAITING_FOR_REVIEW` or
+`IN_REVIEW` confirms submission, not external tester availability. Confirm
+Apple's approval and external testing status in App Store Connect. Keep the
+app's beta review contact and app description current there. Missing export
+compliance, processing failures, and internal distribution must also be
+resolved in App Store Connect.
 
 Run focused release checks with `node --test scripts/mobile-deployment/*.test.mjs
 scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun check`

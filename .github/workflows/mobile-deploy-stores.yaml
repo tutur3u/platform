@@ -367,8 +367,12 @@ jobs:
             --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
             --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
 
-      - name: Verify TestFlight processing and internal beta availability
+      - name: Verify TestFlight and distribute to beta groups
         timeout-minutes: 35
+        env:
+          TESTFLIGHT_BETA_ENABLED: ${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}
+          TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}
+          TESTFLIGHT_BETA_WHATS_NEW: ${{ vars.TESTFLIGHT_BETA_WHATS_NEW }}
         run: node ../../scripts/mobile-deployment/verify-store.mjs ios "${{ needs.mobile-credentials-preflight.outputs.build_number }}"
 
       - name: Cleanup iOS release files

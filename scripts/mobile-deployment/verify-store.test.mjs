@@ -6,10 +6,101 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import {
+  distributeTestFlightBuild,
   playReleaseReady,
+  selectBetaGroups,
+  submitExternalBetaReview,
   testFlightReady,
   verifyPlay,
 } from './verify-store.mjs';
+
+test('TestFlight beta distribution defaults to all existing groups and can be limited', () => {
+  const groups = [
+    { id: 'internal', attributes: { name: 'Team' } },
+    { id: 'external', attributes: { name: 'RMIT University' } },
+  ];
+  assert.deepEqual(selectBetaGroups(groups, 'true', 'all'), groups);
+  assert.deepEqual(selectBetaGroups(groups, 'true', 'RMIT University'), [
+    groups[1],
+  ]);
+  assert.deepEqual(selectBetaGroups(groups, 'true', 'internal'), [groups[0]]);
+  assert.deepEqual(selectBetaGroups(groups, 'false', 'all'), []);
+  assert.throws(
+    () => selectBetaGroups(groups, 'true', 'missing'),
+    /Unknown TestFlight beta group/
+  );
+});
+
+test('TestFlight distribution assigns missing groups and reads back exact build membership', async () => {
+  const groups = [
+    { id: 'internal', attributes: { name: 'Team' } },
+    { id: 'external', attributes: { name: 'RMIT University' } },
+  ];
+  const assigned = new Set(['internal']);
+  const calls = [];
+  const apple = async (path, options = {}) => {
+    calls.push({ path, options });
+    if (path.includes('/apps/')) return { data: groups };
+    if (options.method === 'POST') {
+      const body = JSON.parse(options.body);
+      for (const entry of body.data) assigned.add(entry.id);
+      return null;
+    }
+    return { data: groups.filter((group) => assigned.has(group.id)) };
+  };
+  assert.deepEqual(
+    await distributeTestFlightBuild(apple, 'app', 'build', {
+      enabled: 'true',
+      groups: 'all',
+    }),
+    groups
+  );
+  assert.equal(
+    calls.filter((call) => call.options.method === 'POST').length,
+    1
+  );
+  assert.deepEqual(assigned, new Set(['internal', 'external']));
+});
+
+test('external beta review creates test notes, enables notification, and submits once', async () => {
+  const calls = [];
+  let submitted = false;
+  const apple = async (path, options = {}) => {
+    calls.push({ path, options });
+    if (path.startsWith('/v1/betaAppReviewSubmissions?')) {
+      return {
+        data: submitted
+          ? [{ attributes: { betaReviewState: 'WAITING_FOR_REVIEW' } }]
+          : [],
+      };
+    }
+    if (path.includes('/betaBuildLocalizations?')) return { data: [] };
+    if (path.endsWith('/buildBetaDetail')) return { data: { id: 'detail' } };
+    if (path === '/v1/betaAppReviewSubmissions') submitted = true;
+    return { data: {} };
+  };
+  await submitExternalBetaReview(apple, 'build', 'Test this release');
+  assert.equal(
+    calls.filter((call) => call.path === '/v1/betaAppReviewSubmissions').length,
+    1
+  );
+  assert.match(
+    calls.find((call) => call.path === '/v1/betaBuildLocalizations').options
+      .body,
+    /Test this release/
+  );
+  assert.match(
+    calls.find((call) => call.path === '/v1/buildBetaDetails/detail').options
+      .body,
+    /"autoNotifyEnabled":true/
+  );
+  calls.length = 0;
+  await submitExternalBetaReview(apple, 'build', 'Test this release');
+  assert.equal(
+    calls.some((call) => call.options.method === 'POST'),
+    false
+  );
+});
 
 test('Play verification cleans up its temporary edit even when track lookup fails', async (t) => {
   const root = mkdtempSync(join(tmpdir(), 'mobile-store-api-test-'));

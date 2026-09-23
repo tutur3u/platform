@@ -54,6 +54,151 @@ export function testFlightReady(build, betaDetail) {
   );
 }
 
+export function selectBetaGroups(groups, enabled, configuredGroups) {
+  if (enabled === 'false') return [];
+  if (enabled !== 'true') {
+    throw new Error('TESTFLIGHT_BETA_ENABLED must be true or false');
+  }
+  const names = configuredGroups.trim();
+  if (!names || names === 'all') return groups;
+  const selected = new Set(
+    names
+      .split(',')
+      .map((name) => name.trim())
+      .filter(Boolean)
+  );
+  const matches = groups.filter(
+    (group) => selected.has(group.id) || selected.has(group.attributes?.name)
+  );
+  for (const name of selected) {
+    if (
+      !matches.some(
+        (group) => group.id === name || group.attributes?.name === name
+      )
+    ) {
+      throw new Error(`Unknown TestFlight beta group: ${name}`);
+    }
+  }
+  return matches;
+}
+
+async function listAppleResources(apple, path) {
+  const resources = [];
+  let next = path;
+  while (next) {
+    const page = await apple(next);
+    resources.push(...(page.data ?? []));
+    const nextUrl = page.links?.next;
+    if (nextUrl && new URL(nextUrl).origin !== APPLE_ORIGIN) {
+      throw new Error('Unexpected App Store Connect pagination origin');
+    }
+    next = nextUrl ? new URL(nextUrl).pathname + new URL(nextUrl).search : null;
+  }
+  return resources;
+}
+
+export async function distributeTestFlightBuild(apple, appId, buildId, config) {
+  if (config.enabled === 'false') {
+    console.log('Automatic TestFlight group distribution is disabled.');
+    return [];
+  }
+  const groups = await listAppleResources(
+    apple,
+    `/v1/apps/${appId}/betaGroups?limit=200`
+  );
+  const selected = selectBetaGroups(groups, config.enabled, config.groups);
+  if (selected.length === 0) {
+    throw new Error('No TestFlight beta groups are available for this app');
+  }
+  const assigned = await listAppleResources(
+    apple,
+    `/v1/builds/${buildId}/betaGroups?limit=200`
+  );
+  const assignedIds = new Set(assigned.map((group) => group.id));
+  for (const group of selected) {
+    if (assignedIds.has(group.id)) continue;
+    await apple(`/v1/builds/${buildId}/relationships/betaGroups`, {
+      method: 'POST',
+      body: JSON.stringify({ data: [{ type: 'betaGroups', id: group.id }] }),
+    });
+  }
+  const verified = await listAppleResources(
+    apple,
+    `/v1/builds/${buildId}/betaGroups?limit=200`
+  );
+  const verifiedIds = new Set(verified.map((group) => group.id));
+  if (selected.some((group) => !verifiedIds.has(group.id))) {
+    throw new Error(
+      'TestFlight group assignment was not confirmed by App Store Connect'
+    );
+  }
+  if (selected.some((group) => group.attributes?.isInternalGroup === false)) {
+    await submitExternalBetaReview(apple, buildId, config.whatsNew);
+  }
+  console.log(
+    `Verified TestFlight build ${buildId} in ${selected.length} beta group(s): ${selected.map((group) => group.attributes?.name ?? group.id).join(', ')}.`
+  );
+  return selected;
+}
+
+export async function submitExternalBetaReview(apple, buildId, whatsNew) {
+  const query = new URLSearchParams({ 'filter[build]': buildId, limit: '2' });
+  const path = `/v1/betaAppReviewSubmissions?${query}`;
+  const existing = await apple(path);
+  if ((existing.data?.length ?? 0) > 1) {
+    throw new Error(
+      'Multiple TestFlight beta review submissions found for the build'
+    );
+  }
+  if (!existing.data?.length) {
+    const localizations = await listAppleResources(
+      apple,
+      `/v1/builds/${buildId}/betaBuildLocalizations?limit=200`
+    );
+    if (!localizations.some((item) => item.attributes?.locale === 'en-US')) {
+      await apple('/v1/betaBuildLocalizations', {
+        method: 'POST',
+        body: JSON.stringify({
+          data: {
+            type: 'betaBuildLocalizations',
+            attributes: { locale: 'en-US', whatsNew },
+            relationships: { build: { data: { type: 'builds', id: buildId } } },
+          },
+        }),
+      });
+    }
+    const detail = await apple(`/v1/builds/${buildId}/buildBetaDetail`);
+    if (!detail.data?.id) throw new Error('TestFlight beta detail is missing');
+    await apple(`/v1/buildBetaDetails/${detail.data.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        data: {
+          type: 'buildBetaDetails',
+          id: detail.data.id,
+          attributes: { autoNotifyEnabled: true },
+        },
+      }),
+    });
+    await apple('/v1/betaAppReviewSubmissions', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          type: 'betaAppReviewSubmissions',
+          relationships: { build: { data: { type: 'builds', id: buildId } } },
+        },
+      }),
+    });
+  }
+  const confirmed = await apple(path);
+  const state = confirmed.data?.[0]?.attributes?.betaReviewState;
+  if (!['WAITING_FOR_REVIEW', 'IN_REVIEW', 'APPROVED'].includes(state)) {
+    throw new Error(
+      `External TestFlight beta review is not active: ${state ?? 'MISSING'}`
+    );
+  }
+  console.log(`External TestFlight beta review: ${state}.`);
+}
+
 export async function verifyPlay(buildNumber) {
   const account = JSON.parse(
     await readFile(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH, 'utf8')
@@ -105,7 +250,7 @@ export async function verifyTestFlight(buildNumber) {
     process.env.APP_STORE_CONNECT_PRIVATE_KEY_PATH,
     'utf8'
   );
-  const apple = (path) => {
+  const apple = (path, options = {}) => {
     const now = Math.floor(Date.now() / 1000);
     const token = jwt(
       {
@@ -122,7 +267,11 @@ export async function verifyTestFlight(buildNumber) {
       key
     );
     return json(`${APPLE_ORIGIN}${path}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      ...options,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
     });
   };
   const apps = await apple(
@@ -153,8 +302,15 @@ export async function verifyTestFlight(buildNumber) {
       (item) => item.type === 'buildBetaDetails' && item.id === detailId
     );
     if (testFlightReady(build, detail)) {
+      await distributeTestFlightBuild(apple, appId, build.id, {
+        enabled: process.env.TESTFLIGHT_BETA_ENABLED ?? 'true',
+        groups: process.env.TESTFLIGHT_BETA_GROUPS ?? 'all',
+        whatsNew:
+          process.env.TESTFLIGHT_BETA_WHATS_NEW?.trim() ||
+          'Please test the latest improvements and share any issues or feedback.',
+      });
       console.log(
-        `Verified TestFlight internal testing for build ${buildNumber} (${build.id}).`
+        `Verified TestFlight processing and internal testing for build ${buildNumber} (${build.id}).`
       );
       return;
     }

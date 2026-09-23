@@ -114,9 +114,24 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     /xcrun altool --upload-app/
   );
   assert.match(
-    step(ios, 'Verify TestFlight processing and internal beta availability')
-      .run,
+    step(ios, 'Verify TestFlight and distribute to beta groups').run,
     /verify-store\.mjs ios/
+  );
+  const betaStep = step(ios, 'Verify TestFlight and distribute to beta groups');
+  assert.equal(
+    betaStep.env.TESTFLIGHT_BETA_ENABLED,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    "${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}"
+  );
+  assert.equal(
+    betaStep.env.TESTFLIGHT_BETA_GROUPS,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    "${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}"
+  );
+  assert.equal(
+    betaStep.env.TESTFLIGHT_BETA_WHATS_NEW,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    '${{ vars.TESTFLIGHT_BETA_WHATS_NEW }}'
   );
   assert.equal(
     step(ios, 'Upload iOS IPA artifact').with.path,
