@@ -56,11 +56,12 @@ async function rpc(db: AdminClient, name: string, args: Record<string, Json>) {
   };
   const { data, error } = await client.rpc(name, args);
   if (error) {
+    const conflict = error.code === '40001' || error.code === '40P01';
     throw new MobileDeploymentStoreError(
-      error.code === '40001'
+      conflict
         ? 'Vault changed during inheritance. Refresh and retry.'
         : 'Vault inheritance is unavailable. Check the database migration and retry.',
-      error.code === '40001' ? 409 : 503,
+      conflict ? 409 : 503,
       'vault_inheritance_unavailable'
     );
   }
@@ -162,6 +163,12 @@ export async function prepareInheritance(
             upsert: false,
           }
         );
+        if (uploaded.provider !== 'r2' && uploaded.provider !== 'supabase') {
+          throw new MobileDeploymentStoreError(
+            'Vault storage provider is invalid',
+            502
+          );
+        }
         files.push({
           ...row,
           storage_path: uploaded.path,

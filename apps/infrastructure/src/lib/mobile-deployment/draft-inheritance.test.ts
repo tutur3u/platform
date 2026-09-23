@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { deleteWorkspaceStorageObjectByPath } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
@@ -142,6 +143,7 @@ describe('vault draft inheritance preparation', () => {
     await expect(
       prepareInheritance(snapshot, dependencies as never)
     ).rejects.toThrow('storage unavailable');
+    expect(deleteWorkspaceStorageObjectByPath).toHaveBeenCalledTimes(2);
     const failedPath = dependencies.upload.mock.calls[0]![1];
     const result = await prepareInheritance(snapshot, dependencies as never);
     expect(result.files).toHaveLength(2);

@@ -187,8 +187,10 @@ proof of a working Live session.
 
 ### Updating one credential and repairing an older draft
 
-Apply `20260923020000_mobile_vault_draft_inheritance.sql` before deploying the
-vault update. Production migration application is an operator step. New drafts
+The production sync workflow applies
+`20260923020000_mobile_vault_draft_inheritance.sql`. Verify that migration and
+the updated application deployment have completed before repairing or activating
+a draft; do not run a separate direct production SQL push. New drafts
 inherit the active version's credentials under a fresh envelope key before edits
 are accepted. An interrupted initialization can be retried; it cannot be used as
 an editable partial draft.
@@ -204,8 +206,10 @@ one-time operation per active source, not a fallback on every read.
 
 Inheritance decrypts only inside the server, checks plaintext and ciphertext
 hashes, and re-encrypts under the draft key. Files receive separate immutable
-attempt paths. Database metadata is committed atomically with a draft revision
-check; concurrent edits cause a conflict rather than replacement of new values.
+attempt paths, and ordinary credential uploads also use unique encrypted paths
+so concurrent uploads cannot overwrite one another's file bytes. Database
+metadata is committed atomically with a draft revision check; concurrent edits
+cause a conflict rather than replacement of new values.
 After a conflict, refresh and retry. Verify readiness, then activate the draft
 before triggering the store workflow.
 

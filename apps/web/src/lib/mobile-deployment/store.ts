@@ -703,7 +703,7 @@ export async function uploadMobileDeploymentFile({
   const ciphertext = encryptBytes(buffer, dataKey);
   const storagePath = buildMobileDeploymentVaultStoragePath(
     draft.id,
-    `${kind}.ciphertext.json`
+    `${kind}-${randomBytes(16).toString('hex')}.ciphertext.json`
   );
   const upload = await uploadWorkspaceStorageFileDirect(
     ROOT_WORKSPACE_ID,
@@ -712,7 +712,7 @@ export async function uploadMobileDeploymentFile({
     {
       allowReservedMobileDeploymentVault: true,
       contentType: 'application/json',
-      upsert: true,
+      upsert: false,
     }
   );
 
