@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import type { SelectedProductItem, UserGroupProducts } from '../types';
-import type { UserGroup } from '../utils';
+import type { SubscriptionCoverageInvoice, UserGroup } from '../utils';
 import {
   formatCoverageRangeLabel,
   formatMonthLabel,
@@ -10,7 +10,6 @@ import {
   getBillableSessionsForGroupsInRange,
   getCoverageEndMonthValue,
   getCoverageMonths,
-  getSubscriptionCoverageInvoiceForGroup,
   isSubscriptionMonthPaidForGroup,
 } from '../utils';
 
@@ -22,10 +21,7 @@ interface UseSubscriptionInvoiceContentProps {
   groupProducts: UserGroupProducts[];
   subscriptionSelectedProducts: SelectedProductItem[];
   userAttendance: { status: string; date: string; group_id?: string }[];
-  latestSubscriptionInvoices: {
-    group_id?: string;
-    valid_until?: string | null;
-  }[];
+  latestSubscriptionInvoices: SubscriptionCoverageInvoice[];
   isSelectedMonthPaid: boolean;
   locale: string;
   onContentChange: (content: string) => void;
@@ -90,10 +86,6 @@ export function useSubscriptionInvoiceContent({
       if (!group) return;
 
       const groupName = group.workspace_user_groups?.name || 'Unknown Group';
-      const latestInvoice = getSubscriptionCoverageInvoiceForGroup(
-        latestSubscriptionInvoices,
-        groupId
-      );
       const unpaidMonths = coverageMonths.filter(
         (month) =>
           !isSubscriptionMonthPaidForGroup(
@@ -103,15 +95,19 @@ export function useSubscriptionInvoiceContent({
           )
       );
 
-      const startMonth =
-        unpaidMonths[0] ??
-        latestInvoice?.valid_until?.slice(0, 7) ??
-        selectedMonth;
+      const startMonth = unpaidMonths[0] ?? selectedMonth;
       const endMonth =
         unpaidMonths[unpaidMonths.length - 1] ?? coverageEndMonth;
 
       let rangeLabel = '';
-      if (startMonth && startMonth < endMonth) {
+      const hasGaps = unpaidMonths.some(
+        (month, index) =>
+          index > 0 &&
+          getCoverageMonths(unpaidMonths[index - 1]!, 2)[1] !== month
+      );
+      if (hasGaps) {
+        rangeLabel = unpaidMonths.map(formatMonth).join(', ');
+      } else if (startMonth && startMonth < endMonth) {
         // Range from startMonth to endMonth
         rangeLabel = `${formatMonth(startMonth)} - ${formatMonth(endMonth)}`;
       } else {

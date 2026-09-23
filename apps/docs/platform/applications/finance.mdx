@@ -1,7 +1,7 @@
 ---
 title: "Finance"
 description: "Shared Finance product surface across apps/web and apps/finance."
-updatedAt: "2026-08-10"
+updatedAt: "2026-09-23"
 ---
 
 ## Overview
@@ -254,3 +254,51 @@ An event with an actor ID but no display name shows the recorded user ID. Events
 written before actor propagation, or by actorless maintenance processes, may have
 no actor. Do not infer an update/delete actor from the invoice creator or rewrite
 historical audit records to fill that gap.
+
+
+## Subscription coverage and tuition reporting
+
+New subscription invoices persist their paid tuition months in
+`finance_invoices.subscription_months`. This nullable array is the canonical
+coverage record: only its listed months are covered. A payment for March does
+not settle an unpaid February. The database validates one to twelve distinct
+month-start dates and derives `valid_until` from the latest covered month for
+compatibility with older readers.
+
+Invoices whose month array is null retain the legacy `valid_until` cutoff.
+Historical start dates cannot be recovered reliably from the cutoff alone, so
+there is no automatic backfill. Any future historical repair must use verified
+invoice records. Invoice recovery snapshots preserve the explicit month array.
+
+Apply migration `20260923040000_subscription_invoice_coverage_months.sql` before
+releasing the updated Finance API. Local verification uses
+`supabase/tests/subscription-coverage.sql`; production schema changes remain a
+separate operator action. Generate database types from the migrated local
+schema. Do not deploy API code that writes the new column before the migration.
+
+The invoice analytics Tuition coverage tab groups completed positive payments
+by their recorded tuition months, independent of when payment was received.
+Payment value is allocated equally across those months. User, group and
+user–group pair totals are distinct across the full selected period, not sums
+of monthly counts. The yearly view covers five years ending in the selected
+year. Each wallet currency has its own report; no currency conversion occurs.
+User and wallet filters apply, while coverage year controls replace the invoice
+list's payment-date filters. Old invoices with a coverage cutoff in the selected
+period but no exact months are counted as unallocated and excluded from totals.
+This is allocated payment reporting, not a ledger revenue-recognition report.
+
+Analytics requires `view_invoices` and reads invoices and wallet currencies in
+the authorized workspace. It rejects truncated, duplicated or changing-count
+pages rather than presenting partial totals. Reports are limited to 100,000
+invoices. The existing Rust subscription-context port mirrors the exact-month response,
+workspace scope and pagination rules; it remains a future migration target, not
+the production runtime. Subscription context also reads every coverage and attendance page,
+with a 50,000-row limit. A failed context read must be retried before calculating
+new charges.
+
+Unpaid-invoice spreadsheet exports verify page lengths, stable totals and unique
+student/class identities before producing a file. A failed completeness check
+shows an error and produces no partial download. This catches incomplete reads;
+it cannot reconstruct a historical omission without the original export or
+its date and filters. Pending eligibility still depends on configured group
+exclusions, class schedules and attendance calculation settings.

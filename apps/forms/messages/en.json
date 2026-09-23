@@ -7853,6 +7853,8 @@
     "error_creating_subscription_invoice": "Error creating subscription invoice: {error}",
     "error_loading": "Error loading pending invoices. Please try again.",
     "error_loading_attendance": "Error loading attendance data. Please try again.",
+    "export_incomplete": "The invoice list changed or some rows could not be loaded. No file was downloaded. Please retry the export.",
+    "export_pending_scope": "Exports all matching pending rows, across all pages, using the current search and student filters. Pending debt depends on payment coverage and scheduled sessions or recorded attendance. Blocked groups and their members are excluded.",
     "failed_delete_invoice": "Failed to delete invoice",
     "failed_to_create_invoice": "Failed to create invoice",
     "failed_to_create_subscription_invoice": "Failed to create subscription invoice",

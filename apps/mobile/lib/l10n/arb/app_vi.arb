@@ -3354,5 +3354,16 @@
     "adminAccountsDisplayName": "Tên hiển thị",
     "adminAccountsUsername": "Tên người dùng",
   "adminAccountsResetMfa": "Đặt lại trình xác thực",
-  "adminAccountsResetMfaDescription": "Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy. Người dùng cần đăng ký lại trình xác thực."
+  "adminAccountsResetMfaDescription": "Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy. Người dùng cần đăng ký lại trình xác thực.",
+    "mailSnooze": "Tạm ẩn",
+    "mailUnsnooze": "Đưa về hộp thư đến ngay",
+    "mailMute": "Tắt thông báo chuỗi thư",
+    "mailUnmute": "Bật lại thông báo",
+    "mailSnoozed": "Đã tạm ẩn",
+    "mailMuted": "Đã tắt thông báo",
+    "mailSnoozeHour": "Sau một giờ",
+    "mailSnoozeDay": "Sau 24 giờ",
+    "mailSnoozeWeek": "Sau một tuần",
+    "mailSnoozeCustom": "Chọn ngày và giờ",
+    "mailSnoozeFuture": "Vui lòng chọn thời gian trong tương lai."
 }

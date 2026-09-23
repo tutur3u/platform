@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
@@ -143,6 +144,72 @@ void main() {
       },
     );
   }
+
+  testWidgets('push waits for mailbox access before opening its thread', (
+    tester,
+  ) async {
+    final bootstrap = Completer<Map<String, dynamic>>();
+    when(() => repository.bootstrap('ws')).thenAnswer((_) => bootstrap.future);
+    respond((_) async => inbox('Inbox'));
+    when(
+      () => repository.detail('ws', 'box', 'target', thread: true),
+    ).thenAnswer(
+      (_) async => {
+        'thread': {'id': 'target', 'subject': 'Pushed message'},
+        'messages': <dynamic>[],
+      },
+    );
+    await tester.pumpApp(
+      MailWorkspace(
+        workspaceId: 'ws',
+        repository: repository,
+        destination: const MailPushDestination(
+          userId: 'user',
+          mailboxId: 'box',
+          threadId: 'target',
+          notificationId: 'push',
+        ),
+      ),
+    );
+    await tester.pump();
+    verifyNever(() => repository.detail('ws', 'box', 'target', thread: true));
+    bootstrap.complete({
+      'mailboxes': [
+        {'id': 'box', 'address': 'me@tuturuuu.com', 'status': 'active'},
+      ],
+    });
+    await tester.pumpAndSettle();
+    verify(
+      () => repository.detail('ws', 'box', 'target', thread: true),
+    ).called(1);
+    expect(find.byType(MailReader), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('push cannot open a mailbox missing from authorized bootstrap', (
+    tester,
+  ) async {
+    respond((_) async => inbox('Allowed inbox'));
+    await tester.pumpApp(
+      MailWorkspace(
+        workspaceId: 'ws',
+        repository: repository,
+        destination: const MailPushDestination(
+          userId: 'user',
+          mailboxId: 'other-box',
+          threadId: 'target',
+          notificationId: 'push',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    verifyNever(
+      () => repository.detail('ws', 'other-box', 'target', thread: true),
+    );
+    expect(find.byType(MailReader), findsNothing);
+    expect(find.text('Allowed inbox'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('access denial removes cached messages immediately', (
     tester,

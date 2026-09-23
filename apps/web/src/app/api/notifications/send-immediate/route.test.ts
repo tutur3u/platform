@@ -1,32 +1,21 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const MINUTE_MS = 60 * 1000;
-const HOUR_MS = 60 * MINUTE_MS;
-const DAY_MS = 24 * HOUR_MS;
-
-function createRecentNotificationWindow() {
-  const createdAt = new Date(Date.now() - HOUR_MS);
-  const windowEnd = new Date(createdAt.getTime() + 5 * MINUTE_MS);
-
-  return {
-    created_at: createdAt.toISOString(),
-    window_end: windowEnd.toISOString(),
-  };
-}
-
-function getStaleCreatedAt(): string {
-  return new Date(Date.now() - (DAY_MS + HOUR_MS)).toISOString();
-}
+import {
+  createRecentNotificationWindow,
+  getStaleCreatedAt,
+} from './test-window';
 
 const mocks = vi.hoisted(() => {
   const fromMock = vi.fn();
   const rpcMock = vi.fn();
   const sendPushNotificationBatchMock = vi.fn();
   const sendSystemEmailMock = vi.fn();
+  const statusError = vi.fn((): Error | null => null);
 
   return {
     fromMock,
+    statusError,
     rpcMock,
     sendPushNotificationBatchMock,
     sendSystemEmailMock,
@@ -44,6 +33,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
         }
 
         return {
+          rpc: mocks.rpcMock,
           from: mocks.fromMock,
         };
       }),
@@ -105,7 +95,7 @@ describe('send-immediate route', () => {
     notifications: {
       code: null;
       created_at: string;
-      data: { board_id?: string; workspace_id: string };
+      data: Record<string, string>;
       description: string;
       entity_id: string;
       entity_type: string;
@@ -114,7 +104,7 @@ describe('send-immediate route', () => {
       title: string;
       type: string;
       user_id: string;
-      ws_id: string;
+      ws_id: string | null;
     };
   }>;
   let workspaceMembership: { type: 'MEMBER' } | null;
@@ -126,6 +116,7 @@ describe('send-immediate route', () => {
   }>;
 
   beforeEach(() => {
+    mocks.statusError.mockReturnValue(null);
     vi.clearAllMocks();
     vi.stubEnv('CRON_SECRET', 'cron-secret');
     const recentWindow = createRecentNotificationWindow();
@@ -209,7 +200,7 @@ describe('send-immediate route', () => {
               createResolvedChain({ data: batches, error: null })
             ),
             update: vi.fn(() =>
-              createResolvedChain({ data: null, error: null })
+              createResolvedChain({ data: [{ id: 'claimed' }], error: null })
             ),
           };
         case 'notification_delivery_log':
@@ -221,7 +212,7 @@ describe('send-immediate route', () => {
               })
             ),
             update: vi.fn(() =>
-              createResolvedChain({ data: null, error: null })
+              createResolvedChain({ data: null, error: mocks.statusError() })
             ),
           };
         case 'notifications':
@@ -380,7 +371,7 @@ describe('send-immediate route', () => {
               createResolvedChain({ data: batches, error: null })
             ),
             update: vi.fn(() =>
-              createResolvedChain({ data: null, error: null })
+              createResolvedChain({ data: [{ id: 'claimed' }], error: null })
             ),
           };
         case 'notification_delivery_log':
@@ -392,7 +383,7 @@ describe('send-immediate route', () => {
               })
             ),
             update: vi.fn(() =>
-              createResolvedChain({ data: null, error: null })
+              createResolvedChain({ data: null, error: mocks.statusError() })
             ),
           };
         case 'notifications':
@@ -624,4 +615,84 @@ describe('send-immediate route', () => {
       processed: 21,
     });
   });
+  it.each([true, false])(
+    'delivers personal Mail only with current access (%s)',
+    async (allowed) => {
+      batches[0]!.ws_id = null;
+      Object.assign(deliveryLogs[0]!.notifications, {
+        type: 'mail_received',
+        scope: 'user',
+        ws_id: null,
+        entity_type: 'mail_message',
+        entity_id: 'message-1',
+        data: {
+          userId: 'user-1',
+          messageId: 'message-1',
+          mailboxId: 'mailbox-1',
+          threadId: 'thread-1',
+        },
+      });
+      const previous = mocks.rpcMock.getMockImplementation()!;
+      mocks.rpcMock.mockImplementation((name, args) =>
+        name === 'can_deliver_mail_notification'
+          ? Promise.resolve({ data: allowed, error: null })
+          : previous(name, args)
+      );
+      const response = await POST(
+        new Request('http://localhost/api/notifications/send-immediate', {
+          method: 'POST',
+          headers: { authorization: 'Bearer cron-secret' },
+        }) as any
+      );
+      expect(response.status).toBe(200);
+      expect(mocks.sendPushNotificationBatchMock).toHaveBeenCalledTimes(
+        allowed ? 1 : 0
+      );
+      expect(mocks.sendSystemEmailMock).not.toHaveBeenCalled();
+      await expect(response.json()).resolves.toMatchObject({
+        processed: 1,
+        failed: 0,
+      });
+    }
+  );
+  it('does not retry a delivered push when persistence fails', async () => {
+    mocks.statusError.mockReturnValue(new Error('write unavailable'));
+    const response = await POST(
+      new Request('http://localhost/api/notifications/send-immediate', {
+        method: 'POST',
+        headers: { authorization: 'Bearer cron-secret' },
+      }) as Parameters<typeof POST>[0]
+    );
+    const body = await response.json();
+    expect(mocks.sendPushNotificationBatchMock).toHaveBeenCalledOnce();
+    expect(body.failed).toBe(1);
+    expect(body.results[0].status).toBe('reconciliation_required');
+  });
+  it.each(['email', 'push'])(
+    'does not replay an ambiguous %s provider result',
+    async (channel) => {
+      batches[0] = { ...batches[0]!, channel };
+      mocks.sendPushNotificationBatchMock.mockResolvedValueOnce({
+        deliveredCount: 0,
+        invalidTokens: [],
+      });
+      mocks.sendSystemEmailMock.mockResolvedValueOnce({
+        success: false,
+        error: 'Request timed out',
+      });
+      const response = await POST(
+        new Request('http://localhost/api/notifications/send-immediate', {
+          method: 'POST',
+          headers: { authorization: 'Bearer cron-secret' },
+        }) as Parameters<typeof POST>[0]
+      );
+      const body = await response.json();
+      expect(
+        channel === 'email'
+          ? mocks.sendSystemEmailMock
+          : mocks.sendPushNotificationBatchMock
+      ).toHaveBeenCalledOnce();
+      expect(body.results[0].status).toBe('reconciliation_required');
+    }
+  );
 });

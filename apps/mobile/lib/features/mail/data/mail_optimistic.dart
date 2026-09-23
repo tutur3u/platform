@@ -12,6 +12,9 @@ List<Map<String, dynamic>> optimisticMailItems(
   ).hasMatch(query);
 
   final remove = switch (action) {
+    'snooze' || 'mute' => folder == 'inbox',
+    'unsnooze' => folder == 'snoozed',
+    'unmute' => folder == 'muted',
     'trash' => folder != 'trash',
     'archive' =>
       hasFilter('unread') || (folder == 'inbox' && !hasFilter('archived')),

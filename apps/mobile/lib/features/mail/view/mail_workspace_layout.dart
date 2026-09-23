@@ -5,6 +5,8 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
     final l10n = context.l10n;
     final folders = {
       'inbox': l10n.mailInbox,
+      'snoozed': l10n.mailSnoozed,
+      'muted': l10n.mailMuted,
       'sent': l10n.mailSent,
       'drafts': l10n.mailDrafts,
       'starred': l10n.mailStarred,
