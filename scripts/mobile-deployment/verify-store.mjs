@@ -97,6 +97,15 @@ async function listAppleResources(apple, path) {
   return resources;
 }
 
+async function assignedBetaGroupIds(apple, buildId) {
+  const build = await apple(`/v1/builds/${buildId}?include=betaGroups`);
+  const relationships = build.data?.relationships?.betaGroups?.data;
+  if (!Array.isArray(relationships)) {
+    throw new Error('App Store Connect omitted build beta group relationships');
+  }
+  return new Set(relationships.map((group) => group.id));
+}
+
 export async function distributeTestFlightBuild(apple, appId, buildId, config) {
   if (config.enabled === 'false') {
     console.log('Automatic TestFlight group distribution is disabled.');
@@ -110,11 +119,7 @@ export async function distributeTestFlightBuild(apple, appId, buildId, config) {
   if (selected.length === 0) {
     throw new Error('No TestFlight beta groups are available for this app');
   }
-  const assigned = await listAppleResources(
-    apple,
-    `/v1/builds/${buildId}/betaGroups?limit=200`
-  );
-  const assignedIds = new Set(assigned.map((group) => group.id));
+  const assignedIds = await assignedBetaGroupIds(apple, buildId);
   for (const group of selected) {
     if (assignedIds.has(group.id)) continue;
     await apple(`/v1/builds/${buildId}/relationships/betaGroups`, {
@@ -122,11 +127,7 @@ export async function distributeTestFlightBuild(apple, appId, buildId, config) {
       body: JSON.stringify({ data: [{ type: 'betaGroups', id: group.id }] }),
     });
   }
-  const verified = await listAppleResources(
-    apple,
-    `/v1/builds/${buildId}/betaGroups?limit=200`
-  );
-  const verifiedIds = new Set(verified.map((group) => group.id));
+  const verifiedIds = await assignedBetaGroupIds(apple, buildId);
   if (selected.some((group) => !verifiedIds.has(group.id))) {
     throw new Error(
       'TestFlight group assignment was not confirmed by App Store Connect'
