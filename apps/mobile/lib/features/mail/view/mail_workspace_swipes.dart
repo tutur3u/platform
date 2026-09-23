@@ -88,6 +88,16 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
       };
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(
+            16,
+            0,
+            16,
+            lookupShellTitleOverrideCubit(context) != null &&
+                    MediaQuery.sizeOf(context).width < 600
+                ? 96
+                : 16,
+          ),
           content: Text(swipe.label(context)),
           action: inverse == null
               ? null

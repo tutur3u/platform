@@ -253,7 +253,6 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                             _folder != 'drafts',
                         onAction: (action) => _swipeMessage(item, action),
                         child: MailMessageTile(
-                          loading: _openingId == item['id'],
                           item: item,
                           thread: _threads,
                           selected: _selected.contains(item['id']),

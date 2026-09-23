@@ -81,6 +81,13 @@ abstract final class AppTheme {
       ),
     ),
     dividerTheme: const DividerThemeData(color: AppColors.borderLight),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: _lightScheme.surfaceContainerHigh,
+      contentTextStyle: TextStyle(color: _lightScheme.onSurface),
+      actionTextColor: _lightScheme.primary,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.surfaceLight,
       indicatorColor: AppColors.primary.withValues(alpha: 0.12),
@@ -108,6 +115,13 @@ abstract final class AppTheme {
       ),
     ),
     dividerTheme: const DividerThemeData(color: AppColors.borderDark),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: _darkScheme.surfaceContainerHigh,
+      contentTextStyle: TextStyle(color: _darkScheme.onSurface),
+      actionTextColor: _darkScheme.primary,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.surfaceDark,
       indicatorColor: AppColors.primaryDark.withValues(alpha: 0.12),

@@ -3182,6 +3182,7 @@
     "mailAppearanceOriginal": "Nguyên bản",
     "mailDownload": "Tải xuống hoặc chia sẻ tệp",
     "mailLoadImages": "Hiển thị ảnh từ bên ngoài",
+    "mailLoadImagesDescription": "Mặc định hiển thị ảnh. Người gửi có thể biết khi bạn mở thư.",
     "mailSettings": "Cài đặt thư",
     "mailSenderName": "Tên người gửi",
     "mailSignature": "Chữ ký",

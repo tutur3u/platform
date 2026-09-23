@@ -543,7 +543,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   Future<void> _open(Map<String, dynamic> item) async {
-    if (_openingId != null) return;
+    if (_openingId != null || _childRouteOpen) return;
     setState(() => _openingId = item['id'] as String);
     final box = _mailboxId!;
     final generation = _generation;
@@ -578,7 +578,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           query: _search.text,
         ),
       );
-      await _pushChild(
+      final navigation = _pushChild(
         MaterialPageRoute(
           builder: (_) => MailReader(
             repository: _repository,
@@ -599,7 +599,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           ),
         ),
       );
-      if (mounted && generation == _generation) await _load();
+      if (mounted) setState(() => _openingId = null);
+      await navigation;
+      if (mounted && generation == _generation) unawaited(_load());
     } on Object {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

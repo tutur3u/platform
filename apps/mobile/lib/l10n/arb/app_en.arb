@@ -3178,6 +3178,7 @@
     "mailAppearanceOriginal": "Original",
     "mailDownload": "Download or share attachment",
     "mailLoadImages": "Load remote images",
+    "mailLoadImagesDescription": "Show images by default. Senders may know when you open a message.",
     "mailSettings": "Mail settings",
     "mailSenderName": "Sender name",
     "mailSignature": "Signature",
