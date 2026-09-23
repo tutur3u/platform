@@ -56,7 +56,9 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.tap(find.text('Rotation meeting'));
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit meeting'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 

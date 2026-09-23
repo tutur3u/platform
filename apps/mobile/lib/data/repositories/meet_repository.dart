@@ -73,6 +73,13 @@ class MeetRepository {
     await _cache.invalidate(wsId);
   }
 
+  Future<Map<String, dynamic>> createRealtimeSession(
+    String wsId,
+    String meetingId,
+  ) => _api.postJson(MeetEndpoints.realtimeToken(wsId, meetingId), {
+    'mode': 'call',
+  });
+
   void dispose() {
     _api.dispose();
   }

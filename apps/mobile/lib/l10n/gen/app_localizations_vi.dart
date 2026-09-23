@@ -7544,6 +7544,63 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetUpdated => 'Đã lưu cuộc họp.';
 
   @override
+  String get meetJoin => 'Tham gia cuộc gọi';
+
+  @override
+  String get meetLeave => 'Rời cuộc gọi';
+
+  @override
+  String get meetEndForEveryone => 'Kết thúc cho mọi người';
+
+  @override
+  String get meetMicrophone => 'Micrô';
+
+  @override
+  String get meetCamera => 'Máy ảnh';
+
+  @override
+  String get meetSwitchCamera => 'Đổi máy ảnh';
+
+  @override
+  String get meetChat => 'Trò chuyện';
+
+  @override
+  String get meetMessageHint => 'Nhắn cho mọi người';
+
+  @override
+  String get meetSend => 'Gửi';
+
+  @override
+  String get meetWaitingForHost => 'Đang chờ người chủ trì cho phép tham gia';
+
+  @override
+  String get meetConnecting => 'Đang kết nối cuộc họp…';
+
+  @override
+  String get meetReconnecting => 'Đang kết nối lại…';
+
+  @override
+  String get meetCallEnded => 'Cuộc họp đã kết thúc';
+
+  @override
+  String get meetAccessDenied => 'Bạn không thể tham gia cuộc họp này';
+
+  @override
+  String get meetNoParticipants => 'Đang chờ người khác tham gia';
+
+  @override
+  String get meetAdmit => 'Cho phép';
+
+  @override
+  String get meetDecline => 'Từ chối';
+
+  @override
+  String get meetParticipants => 'Người tham gia';
+
+  @override
+  String get meetYou => 'Bạn';
+
+  @override
   String get connectedOnboardingEcosystemTitle => 'Kết nối mọi mục tiêu của bạn';
 
   @override

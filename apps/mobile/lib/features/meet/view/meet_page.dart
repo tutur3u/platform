@@ -11,6 +11,7 @@ import 'package:mobile/data/models/meet/meet_meeting.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/meet/data/meet_room_code.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -417,7 +418,13 @@ class _MeetPageState extends State<MeetPage> {
                                   width: width,
                                   child: _MeetingTile(
                                     meeting: meeting,
-                                    onTap: () => _showMeetingEditor(meeting),
+                                    onJoin: () {
+                                      final code = encodeMeetRoomCode(
+                                        meeting.id,
+                                      );
+                                      context.go('${Routes.meet}?room=$code');
+                                    },
+                                    onEdit: () => _showMeetingEditor(meeting),
                                     onDelete: () => _deleteMeeting(meeting),
                                   ),
                                 ),
@@ -454,12 +461,14 @@ class _MeetPageState extends State<MeetPage> {
 class _MeetingTile extends StatelessWidget {
   const _MeetingTile({
     required this.meeting,
-    required this.onTap,
+    required this.onJoin,
+    required this.onEdit,
     required this.onDelete,
   });
 
   final MeetMeeting meeting;
-  final VoidCallback onTap;
+  final VoidCallback onJoin;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
@@ -469,7 +478,7 @@ class _MeetingTile extends StatelessWidget {
       meeting.time.toLocal(),
     );
     return FinancePanel(
-      onTap: onTap,
+      onTap: onJoin,
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
@@ -517,8 +526,34 @@ class _MeetingTile extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline_rounded),
+            tooltip: context.l10n.meetJoin,
+            onPressed: onJoin,
+            icon: const Icon(Icons.video_call_outlined),
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) => value == 'edit' ? onEdit() : onDelete(),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    const Icon(Icons.edit_outlined),
+                    const SizedBox(width: 10),
+                    Text(context.l10n.meetEditMeeting),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    const Icon(Icons.delete_outline),
+                    const SizedBox(width: 10),
+                    Text(context.l10n.meetDelete),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

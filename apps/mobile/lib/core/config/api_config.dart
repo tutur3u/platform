@@ -498,6 +498,9 @@ abstract final class MeetEndpoints {
 
   static String meeting(String wsId, String meetingId) =>
       '/api/v1/workspaces/$wsId/meetings/$meetingId';
+
+  static String realtimeToken(String wsId, String meetingId) =>
+      '${meeting(wsId, meetingId)}/realtime-token';
 }
 
 /// CMS / external project endpoint paths.
