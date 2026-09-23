@@ -7574,6 +7574,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetUpdated => 'Meeting saved.';
 
   @override
+  String get meetJoin => 'Join call';
+
+  @override
+  String get meetLeave => 'Leave call';
+
+  @override
+  String get meetEndForEveryone => 'End for everyone';
+
+  @override
+  String get meetMicrophone => 'Microphone';
+
+  @override
+  String get meetCamera => 'Camera';
+
+  @override
+  String get meetSwitchCamera => 'Switch camera';
+
+  @override
+  String get meetChat => 'Chat';
+
+  @override
+  String get meetMessageHint => 'Message everyone';
+
+  @override
+  String get meetSend => 'Send';
+
+  @override
+  String get meetWaitingForHost => 'Waiting for the host to admit you';
+
+  @override
+  String get meetConnecting => 'Connecting to the meeting…';
+
+  @override
+  String get meetReconnecting => 'Reconnecting…';
+
+  @override
+  String get meetCallEnded => 'This meeting has ended';
+
+  @override
+  String get meetAccessDenied => 'You cannot join this meeting';
+
+  @override
+  String get meetNoParticipants => 'Waiting for others to join';
+
+  @override
+  String get meetAdmit => 'Admit';
+
+  @override
+  String get meetDecline => 'Decline';
+
+  @override
+  String get meetParticipants => 'Participants';
+
+  @override
+  String get meetYou => 'You';
+
+  @override
   String get connectedOnboardingEcosystemTitle => 'Your goals, connected';
 
   @override

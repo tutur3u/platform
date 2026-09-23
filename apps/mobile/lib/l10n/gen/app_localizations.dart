@@ -14443,6 +14443,120 @@ abstract class AppLocalizations {
   /// **'Meeting saved.'**
   String get meetUpdated;
 
+  /// No description provided for @meetJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join call'**
+  String get meetJoin;
+
+  /// No description provided for @meetLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave call'**
+  String get meetLeave;
+
+  /// No description provided for @meetEndForEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'End for everyone'**
+  String get meetEndForEveryone;
+
+  /// No description provided for @meetMicrophone.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone'**
+  String get meetMicrophone;
+
+  /// No description provided for @meetCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get meetCamera;
+
+  /// No description provided for @meetSwitchCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch camera'**
+  String get meetSwitchCamera;
+
+  /// No description provided for @meetChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get meetChat;
+
+  /// No description provided for @meetMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message everyone'**
+  String get meetMessageHint;
+
+  /// No description provided for @meetSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get meetSend;
+
+  /// No description provided for @meetWaitingForHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the host to admit you'**
+  String get meetWaitingForHost;
+
+  /// No description provided for @meetConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to the meeting…'**
+  String get meetConnecting;
+
+  /// No description provided for @meetReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting…'**
+  String get meetReconnecting;
+
+  /// No description provided for @meetCallEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'This meeting has ended'**
+  String get meetCallEnded;
+
+  /// No description provided for @meetAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot join this meeting'**
+  String get meetAccessDenied;
+
+  /// No description provided for @meetNoParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for others to join'**
+  String get meetNoParticipants;
+
+  /// No description provided for @meetAdmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Admit'**
+  String get meetAdmit;
+
+  /// No description provided for @meetDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get meetDecline;
+
+  /// No description provided for @meetParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'Participants'**
+  String get meetParticipants;
+
+  /// No description provided for @meetYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get meetYou;
+
   /// No description provided for @connectedOnboardingEcosystemTitle.
   ///
   /// In en, this message translates to:
