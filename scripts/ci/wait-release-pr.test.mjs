@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { releasePrReady } from './wait-release-pr.mjs';
 
 const now = Date.parse('2026-09-20T12:00:00Z');
-const old = '2026-09-20T10:00:00Z';
+const old = '2026-09-20T11:55:00Z';
 const fresh = '2026-09-20T11:59:00Z';
 const pr = {
   headRefOid: 'head',
@@ -17,6 +17,10 @@ const pr = {
 const counts = { active_unresolved: 0 };
 test('requires a quiet checked generated head and no active review threads', () => {
   assert.equal(releasePrReady(pr, counts, 'head', old, now), true);
+  assert.equal(
+    releasePrReady(pr, counts, 'head', '2026-09-20T11:55:01Z', now),
+    false
+  );
   assert.equal(releasePrReady(pr, counts, 'head', fresh, now), false);
   assert.equal(
     releasePrReady({ ...pr, updatedAt: fresh }, counts, 'head', old, now),

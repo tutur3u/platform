@@ -570,7 +570,7 @@ detection, `bun check`, and fast-forward safety — and are covered by
 `scripts/git-release-please.test.js` and `scripts/git-sync.test.js`.
 
 The generated PR must have passing checks, no unresolved active review threads,
-and a 30-minute quiet period after its latest update or generated commit. This
+and a 5-minute quiet period after its latest update or generated commit. This
 is checked before dependency setup and again immediately before merging the
 pinned generated head. Failed PR checks stop the daily run for investigation.
 After local validation, it pushes the release merge to `main` and waits for all

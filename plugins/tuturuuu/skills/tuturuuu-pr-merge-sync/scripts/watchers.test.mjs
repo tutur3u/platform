@@ -7,12 +7,21 @@ import {
   summarizeRuns,
 } from './watch_branch_runs.mjs';
 import {
+  DEFAULT_QUIET_MINUTES,
   evaluatePrState,
   failedChecks,
   latestCommentTime,
   parseArgs as parsePrArgs,
   summarizeChecks,
 } from './watch_pr_ready.mjs';
+
+test('PR watcher defaults to a five-minute quiet window', () => {
+  assert.equal(DEFAULT_QUIET_MINUTES, 5);
+  assert.equal(
+    parsePrArgs(['--repo', 'tutur3u/platform', '--pr', '123']).quietMinutes,
+    5
+  );
+});
 
 test('PR watcher finds latest review or comment activity', () => {
   const latest = latestCommentTime({
