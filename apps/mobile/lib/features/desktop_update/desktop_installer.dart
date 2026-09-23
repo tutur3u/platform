@@ -20,11 +20,11 @@ class DesktopInstaller {
     } else if (Platform.isWindows) {
       await _installWindows(file, release.digest);
     } else if (Platform.isLinux) {
-      // Polkit owns elevation and cancellation; only dpkg runs elevated.
+      // The root-owned helper stages and rechecks bytes after authorization.
       final result = await Process.run('/usr/bin/pkexec', [
-        '/usr/bin/dpkg',
-        '--install',
-        file.path,
+        '/usr/lib/tuturuuu/install-update',
+        file.absolute.path,
+        release.digest,
       ]);
       if (result.exitCode != 0) {
         throw const FileSystemException('Install cancelled');
@@ -88,8 +88,7 @@ function Verify-Update {
       !$current.SignerCertificate -or !$update.SignerCertificate -or
       $current.SignerCertificate.Subject -ne $update.SignerCertificate.Subject) { throw 'Publisher mismatch' }
 }
-Verify-Update
-if ($ParentProcess -eq 0) { exit 0 }
+if ($ParentProcess -eq 0) { Verify-Update; exit 0 }
 Wait-Process -Id $ParentProcess -ErrorAction SilentlyContinue
 try {
 Verify-Update

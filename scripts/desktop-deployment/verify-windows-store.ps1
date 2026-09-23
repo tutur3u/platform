@@ -31,7 +31,20 @@ try {
     $app = Get-Process tuturuuu -ErrorAction SilentlyContinue | Where-Object { $_.Path.StartsWith($installed.InstallLocation) -and $_.MainWindowHandle -ne 0 } | Select-Object -First 1
   } while (!$app -and (Get-Date) -lt $deadline)
   if (!$app) { throw 'Installed Store package did not show its first-frame window' }
+  $receiptPaths = @(
+    (Join-Path $env:LOCALAPPDATA 'Tuturuuu/desktop-smoke.txt'),
+    (Join-Path $env:LOCALAPPDATA "Packages/$($installed.PackageFamilyName)/LocalCache/Local/Tuturuuu/desktop-smoke.txt")
+  )
+  $receiptPaths | ForEach-Object { Remove-Item -LiteralPath $_ -ErrorAction SilentlyContinue }
   Start-Process 'com.tuturuuu.app.mobile://login-callback?desktop_smoke=1'
+  $receipt = $null
+  $receiptDeadline = (Get-Date).AddSeconds(30)
+  do {
+    Start-Sleep -Milliseconds 500
+    $receipt = $receiptPaths | Where-Object { (Test-Path -LiteralPath $_) -and (Get-Content -LiteralPath $_ -Raw) -eq 'desktop_smoke=1' } | Select-Object -First 1
+  } while (!$receipt -and (Get-Date) -lt $receiptDeadline)
+  if (!$receipt) { throw 'App did not acknowledge desktop_smoke=1 through its platform link handler' }
+  Copy-Item -LiteralPath $receipt -Destination (Join-Path $ReportDirectory 'uri-receipt.txt')
   Start-Sleep -Seconds 3
   $app.Refresh()
   if ($app.HasExited -or $app.MainWindowHandle -eq 0) { throw 'Installed app failed URI activation' }

@@ -178,6 +178,52 @@ void main() {
       expect(requests, 1);
     });
 
+    test('finds desktop updates beyond the first 100 releases', () async {
+      var requests = 0;
+      final repository = DesktopUpdateRepository(
+        directory: directory,
+        client: MockClient((request) async {
+          requests++;
+          expect(request.url.queryParameters['page'], '$requests');
+          return http.Response(
+            jsonEncode(
+              requests <= 11
+                  ? List.generate(
+                      10,
+                      (_) => {'draft': false, 'prerelease': false},
+                    )
+                  : [fixture()],
+            ),
+            200,
+          );
+        }),
+      );
+      addTearDown(repository.close);
+      expect((await repository.latest('linux'))?.tag, 'desktop-v0.10.1-200');
+      expect(requests, 12);
+    });
+
+    test('rejects truncated or oversized chunked bodies', () async {
+      for (final bytes in [
+        [1],
+        [1, 2, 3, 4],
+      ]) {
+        final repository = DesktopUpdateRepository(
+          directory: directory,
+          client: MockClient.streaming(
+            (_, _) async => http.StreamedResponse(Stream.value(bytes), 200),
+          ),
+        );
+        addTearDown(repository.close);
+        final release = DesktopRelease.parse(fixture(), 'linux')!;
+        await expectLater(repository.download(release), throwsFormatException);
+        expect(
+          File('${repository.package(release).path}.part').existsSync(),
+          isFalse,
+        );
+      }
+    });
+
     test('rejects truncated or oversized download bodies', () async {
       for (final bytes in [
         [1],

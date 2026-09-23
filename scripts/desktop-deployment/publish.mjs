@@ -27,7 +27,7 @@ const tag = `desktop-v${version}-${process.env.GITHUB_RUN_ID}`;
 const notes = join(process.env.RUNNER_TEMP, 'desktop-release-notes.md');
 await writeFile(
   notes,
-  `Early-access desktop beta for the platforms attached to this release. These builds may not be production-ready.\n\nSource: ${process.env.GITHUB_SHA}\n\nWindows packages have timestamped Authenticode signatures. macOS packages are Developer ID signed, notarized, and stapled. All packages have GitHub build provenance.\n\n## SHA-256\n\n${files.map(({ name, sha256 }) => `- \`${name}\`: \`${sha256}\``).join('\n')}\n`
+  `Early-access desktop beta for the platforms attached to this release. These builds may not be production-ready.\n\nSource: ${process.env.GITHUB_SHA}\n\n${files.map(({ name }) => (name.endsWith('.exe') ? 'Windows packages have timestamped Authenticode signatures.' : name.endsWith('.dmg') ? 'macOS packages are Developer ID signed, notarized, and stapled.' : 'Linux packages are unsigned Debian archives with CI installation and launch checks.')).join(' ')} All packages have GitHub build provenance.\n\n## SHA-256\n\n${files.map(({ name, sha256 }) => `- \`${name}\`: \`${sha256}\``).join('\n')}\n`
 );
 // Publish as a draft first. No partially uploaded release appears on /download.
 // No --clobber: immutable release tags cannot silently replace an installed build.

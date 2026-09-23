@@ -194,12 +194,14 @@ class _DesktopUpdateGateState extends State<DesktopUpdateGate> {
                       ),
                       child: Text(l10n.desktopUpdateManual),
                     ),
-                  IconButton(
-                    tooltip: l10n.desktopUpdateDismiss,
-                    onPressed: _busy
-                        ? null
-                        : () => setState(() => _dismissed = release.tag),
-                    icon: const Icon(Icons.close),
+                  Semantics(
+                    label: l10n.desktopUpdateDismiss,
+                    child: IconButton(
+                      onPressed: _busy
+                          ? null
+                          : () => setState(() => _dismissed = release.tag),
+                      icon: const Icon(Icons.close),
+                    ),
                   ),
                 ],
               ),

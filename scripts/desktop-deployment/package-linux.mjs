@@ -37,6 +37,13 @@ Description: Tuturuuu workspace (early-access beta)
  This beta may not be ready for production use.
 `
   );
+  const helpers = join(root, 'usr/lib/tuturuuu');
+  await mkdir(helpers, { recursive: true });
+  await copyFile(
+    resolve('scripts/desktop-deployment/install-linux-update.sh'),
+    join(helpers, 'install-update')
+  );
+  await chmod(join(helpers, 'install-update'), 0o755);
   const applications = join(root, 'usr/share/applications');
   await mkdir(applications, { recursive: true });
   await writeFile(

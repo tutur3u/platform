@@ -172,3 +172,13 @@ installation, and Store upgrades. Complete truthful listing screenshots, privacy
 and data declarations, age rating, restricted `runFullTrust` justification, and
 reviewer access instructions. The current product is a draft and its Store link
 must not be advertised as an available download until Microsoft approves it.
+
+### Linux update trust
+
+Linux beta packages trust the protected GitHub release and its asset digest; they
+do not carry a separate publisher signature. Compromise of that release authority
+can compromise an accepted Linux update. Polkit asks for installation consent. The
+root-owned packaged helper copies the selected archive into a private root-owned
+staging directory, rechecks its digest and package identity there, and installs it
+with apt so dependencies are resolved. It never installs the user-writable cache
+path directly. macOS and Windows additionally require OS publisher signatures.

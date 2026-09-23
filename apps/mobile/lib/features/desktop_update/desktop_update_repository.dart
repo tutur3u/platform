@@ -13,29 +13,40 @@ class DesktopUpdateRepository {
   final http.Client _client;
 
   Future<DesktopRelease?> latest(String platform) async {
-    final response = await _client
-        .get(
-          Uri.https(
-            'api.github.com',
-            '/repos/$desktopReleaseRepository/releases',
-            {'per_page': '100'},
-          ),
-          headers: {'Accept': 'application/vnd.github+json'},
-        )
-        .timeout(const Duration(seconds: 20));
-    if (response.statusCode != 200 ||
-        response.bodyBytes.length > 4 * 1024 * 1024) {
-      throw const HttpException('Desktop release metadata unavailable');
+    const pageSize = 10;
+    for (var page = 1; page <= 100; page++) {
+      final response = await _client
+          .get(
+            Uri.https(
+              'api.github.com',
+              '/repos/$desktopReleaseRepository/releases',
+              {'per_page': '$pageSize', 'page': '$page'},
+            ),
+            headers: {'Accept': 'application/vnd.github+json'},
+          )
+          .timeout(const Duration(seconds: 20));
+      if (response.statusCode != 200) {
+        throw const HttpException('Desktop release metadata unavailable');
+      }
+      if (response.bodyBytes.length > 4 * 1024 * 1024) {
+        throw const HttpException(
+          'Desktop release metadata exceeds size limit',
+        );
+      }
+      final data = jsonDecode(response.body);
+      if (data is! List<dynamic>) {
+        throw const FormatException('Invalid releases');
+      }
+      final releases =
+          data
+              .map((value) => DesktopRelease.parse(value, platform))
+              .whereType<DesktopRelease>()
+              .toList()
+            ..sort((a, b) => b.run.compareTo(a.run));
+      if (releases.isNotEmpty) return releases.first;
+      if (data.length < pageSize) return null;
     }
-    final data = jsonDecode(response.body);
-    if (data is! List<dynamic>) throw const FormatException('Invalid releases');
-    final releases =
-        data
-            .map((value) => DesktopRelease.parse(value, platform))
-            .whereType<DesktopRelease>()
-            .toList()
-          ..sort((a, b) => b.run.compareTo(a.run));
-    return releases.firstOrNull;
+    throw const HttpException('Desktop release search exceeded page limit');
   }
 
   File package(DesktopRelease release) =>
@@ -94,8 +105,16 @@ class DesktopUpdateRepository {
             return bytes;
           }),
         );
-      } finally {
         await sink.close();
+      } on Object {
+        // addStream can close the sink when the stream fails. Keep the original
+        // integrity error if closing it again reports a closed file.
+        try {
+          await sink.close();
+        } on Object {
+          // The outer handler removes the partial file.
+        }
+        rethrow;
       }
       if (received != release.size ||
           (await sha256.bind(partial.openRead()).first).toString() !=
