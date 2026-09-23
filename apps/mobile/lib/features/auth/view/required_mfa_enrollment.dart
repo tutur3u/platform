@@ -86,6 +86,7 @@ class _RequiredMfaEnrollmentState extends State<RequiredMfaEnrollment> {
         ) ??
         false;
     final l10n = context.l10n;
+    if (widget.user == null) return widget.child;
     if (requiresFreshPrimaryForMfa(supabase.auth.currentSession)) {
       return Center(
         child: Padding(
