@@ -17,6 +17,7 @@ import {
   decryptSecretValue,
   encryptBytes,
   encryptSecretValue,
+  sha256Base64Url,
   sha256Hex,
 } from './crypto';
 import { MobileDeploymentStoreError } from './store-error';
@@ -113,7 +114,7 @@ export async function prepareInheritance(
       })
       .map((row) => {
         const plaintext = decryptSecretValue(row.encrypted_value, sourceKey);
-        if (sha256Hex(plaintext) !== row.plaintext_sha256) {
+        if (sha256Base64Url(plaintext) !== row.plaintext_sha256) {
           throw new MobileDeploymentStoreError(
             'Vault secret integrity check failed',
             409
