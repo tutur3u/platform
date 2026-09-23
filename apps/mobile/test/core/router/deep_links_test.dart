@@ -4,6 +4,24 @@ import 'package:mobile/core/router/routes.dart';
 
 void main() {
   group('resolveMobileDeepLink', () {
+    test('preserves meeting room links and rejects other origins', () {
+      expect(
+        resolveMobileDeepLink(
+          Uri.parse('https://meet.tuturuuu.com/vi/r/abc123-def456'),
+        )?.location,
+        '/meet?room=abc123-def456',
+      );
+      expect(
+        resolveMobileDeepLink(
+          Uri.parse('https://meet.tuturuuu.com.evil.test/r/abc123-def456'),
+        ),
+        isNull,
+      );
+      expect(
+        resolveMobileDeepLink(Uri.parse('https://meet.tuturuuu.com/r/%2Fbad')),
+        isNull,
+      );
+    });
     test('maps canonical web task links to mobile task detail route', () {
       final link = resolveMobileDeepLink(
         Uri.parse(

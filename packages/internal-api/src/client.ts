@@ -1,4 +1,5 @@
 import { parseInternalApiError } from './internal-api-error';
+import { mergeHeaders } from './request-headers';
 
 export type InternalApiQueryValue =
   | string
@@ -524,26 +525,6 @@ export function resolveInternalApiUrl(path: string, baseUrl?: string) {
   }
 
   return new URL(normalizedPath, resolvedBaseUrl).toString();
-}
-
-function mergeHeaders(
-  defaultHeaders?: HeadersInit,
-  requestHeaders?: HeadersInit
-): Headers {
-  const headers = new Headers(defaultHeaders);
-
-  if (requestHeaders) {
-    const nextHeaders = new Headers(requestHeaders);
-    nextHeaders.forEach((value, key) => {
-      headers.set(key, value);
-    });
-  }
-
-  if (!headers.has('Accept')) {
-    headers.set('Accept', 'application/json');
-  }
-
-  return headers;
 }
 
 function getCookieName(cookiePart: string) {

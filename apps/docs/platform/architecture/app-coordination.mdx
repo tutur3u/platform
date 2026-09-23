@@ -249,6 +249,15 @@ to the generic login form.
 
 ## Operational notes
 
+Server-side internal API calls identify themselves with
+`User-Agent: Tuturuuu-Internal-API/1.0` unless a caller supplies an agent.
+Cloudflare Workers do not supply Node's default fetch agent; a missing agent can
+produce a middleware `400 Bad Request` before route authentication runs. If an
+SSO handoff succeeds but a satellite workspace page fails with an internal API
+400, inspect the outgoing request headers as well as the token exchange.
+Browser calls keep their native agent. This header does not grant access or
+replace authentication, authorization, or abuse-policy checks.
+
 App-session and external app bearer tokens are signed with
 `TUTURUUU_APP_COORDINATION_SECRET`.
 

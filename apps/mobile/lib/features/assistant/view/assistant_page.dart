@@ -24,6 +24,7 @@ import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/models/assistant_chat_identity.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -102,9 +103,10 @@ class _AssistantPageState extends State<AssistantPage> {
     audioPlayer: AssistantLiveAudioPlayer(),
     recorder: AssistantLiveRecorder(),
     cameraService: AssistantLiveCameraService(),
-    onChatBound: (wsId, chatId) => _chatCubit.openChatById(wsId, chatId),
+    onChatBound: (wsId, chatId) =>
+        _chatCubit.openChatById(wsId, assistantLiveConversationId(chatId)),
     onHistoryUpdated: (wsId, chatId) async {
-      await _chatCubit.openChatById(wsId, chatId);
+      await _chatCubit.openChatById(wsId, assistantLiveConversationId(chatId));
       await _chatCubit.refreshHistory();
     },
   );
@@ -1232,7 +1234,7 @@ class _AssistantPageState extends State<AssistantPage> {
     AssistantLiveState liveState,
   ) {
     final activeChatId = chatState.chat?.id ?? chatState.storedChatId;
-    return activeChatId != null && activeChatId == liveState.chatId;
+    return isSameAssistantLiveChat(activeChatId, liveState.chatId);
   }
 
   bool _isVisibleLiveSession(
@@ -1245,13 +1247,9 @@ class _AssistantPageState extends State<AssistantPage> {
         liveState.workspaceId != chatState.workspaceId) {
       return false;
     }
-    if (liveState.chatId == null) {
-      return false;
-    }
-    if (activeChatId == null) {
-      return true;
-    }
-    return activeChatId == liveState.chatId ||
+    if (liveState.chatId == null) return false;
+    if (activeChatId == null) return true;
+    return isSameAssistantLiveChat(activeChatId, liveState.chatId) ||
         liveState.status != AssistantLiveConnectionStatus.disconnected;
   }
 

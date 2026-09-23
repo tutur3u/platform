@@ -102,12 +102,21 @@ extension _AssistantChatRestore on AssistantChatCubit {
   Future<void> _openChat(String wsId, AssistantChatRecord chat) =>
       _openChatById(wsId, chat.id);
 
-  Future<void> _openChatById(String wsId, String chatId) async {
+  Future<void> _openChatById(
+    String wsId,
+    String chatId, {
+    bool forceRefresh = false,
+  }) async {
     final version = ++_workspaceVersion;
     _emitIfOpen(
       state.copyWith(
         workspaceId: wsId,
-        status: AssistantChatStatus.restoring,
+        status:
+            forceRefresh &&
+                state.chat?.id == chatId &&
+                state.workspaceId == wsId
+            ? state.status
+            : AssistantChatStatus.restoring,
         clearError: true,
       ),
     );
@@ -116,6 +125,7 @@ extension _AssistantChatRestore on AssistantChatCubit {
       final restored = await _repository.restoreChat(
         wsId: wsId,
         chatId: chatId,
+        forceRefresh: forceRefresh,
       );
       if (isClosed || version != _workspaceVersion) return;
       if (restored == null) {

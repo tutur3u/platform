@@ -655,6 +655,7 @@
     "assistantMermaidZoomIn": "Zoom in",
     "assistantMermaidZoomOut": "Zoom out",
     "assistantMermaidZoomReset": "Reset zoom",
+    "assistantMessageActionsTitle": "Message actions",
     "assistantCopyMessageAction": "Copy message",
     "assistantCopiedMessageAction": "Copied",
     "assistantScrollToBottomAction": "Scroll to bottom",

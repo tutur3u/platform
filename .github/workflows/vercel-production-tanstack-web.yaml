@@ -43,7 +43,7 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Install Vercel CLI
-        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@latest
+        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0
 
       - name: Check Vercel project configuration
         id: vercel_config

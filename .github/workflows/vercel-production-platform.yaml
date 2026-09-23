@@ -57,7 +57,7 @@ jobs:
 
       - name: Install Vercel CLI
         if: steps.package_release_gate.outputs.packages_ready == 'true'
-        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@latest
+        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0
 
       - name: Pull Vercel Environment Information
         if: steps.package_release_gate.outputs.packages_ready == 'true'

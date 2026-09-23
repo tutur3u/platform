@@ -184,7 +184,9 @@ void main() {
     );
   });
 
-  testWidgets('shows inline error details in the live header', (tester) async {
+  testWidgets('shows localized recovery without raw provider details', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1179, 2556);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.resetPhysicalSize);
@@ -227,7 +229,13 @@ void main() {
     );
 
     expect(find.text('Needs attention'), findsNWidgets(2));
-    expect(find.text('Socket closed unexpectedly.'), findsOneWidget);
+    expect(find.text('Socket closed unexpectedly.'), findsNothing);
+    expect(
+      find.text(
+        'The live session hit an error. Retry or start a fresh session.',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Retry live session'), findsOneWidget);
   });
 }

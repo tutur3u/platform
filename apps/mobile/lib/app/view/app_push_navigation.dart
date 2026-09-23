@@ -16,6 +16,14 @@ extension _AppPushNavigation on _AppState {
       }
       return;
     }
+    if (request.openTarget == 'mail') {
+      final destination = request.mailDestination;
+      if (destination != null &&
+          destination.userId == _authCubit.state.user?.id) {
+        _router.go(destination.location);
+      }
+      return;
+    }
     final targetWorkspaceId = request.wsId;
     if (targetWorkspaceId != null &&
         targetWorkspaceId.isNotEmpty &&

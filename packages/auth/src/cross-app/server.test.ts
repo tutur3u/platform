@@ -115,6 +115,9 @@ describe('cross-app server verification', () => {
     expect(String(url)).toBe(
       'https://tuturuuu.localhost/api/v1/auth/cross-app-token/verify'
     );
+    expect(new Headers(init.headers).get('user-agent')).toBe(
+      'Tuturuuu-Cross-App/1.0'
+    );
     expect(JSON.parse(init.body as string)).toEqual({
       targetApp: 'learn',
       token: 'learn-token',
@@ -239,6 +242,9 @@ describe('cross-app server verification', () => {
         'https://tuturuuu.localhost'
       ),
       expect.objectContaining({
+        headers: expect.objectContaining({
+          'User-Agent': 'Tuturuuu-Cross-App/1.0',
+        }),
         body: JSON.stringify({
           refreshToken: 'ttr_app_existing-refresh',
           targetApp: 'chat',

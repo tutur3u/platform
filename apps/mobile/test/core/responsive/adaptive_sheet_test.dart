@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
 import '../../helpers/helpers.dart';
 
@@ -46,7 +47,42 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   for (final width in [390.0, 1032.0]) {
-    testWidgets('sheet has an opaque surface at width $width', (tester) async {
+    testWidgets(
+      'short dialog keeps its width and outside dismissal at $width',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 1376);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpApp(
+          Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showAdaptiveSheet<void>(
+                context: context,
+                builder: (_) => const AppDialogScaffold(
+                  title: 'Title',
+                  child: Text('Short'),
+                ),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+        expect(
+          tester.getSize(find.byType(BackdropFilter)).width,
+          width == 390 ? 366 : 520,
+        );
+        await tester.tapAt(const Offset(5, 5));
+        await tester.pumpAndSettle();
+        expect(find.text('Short'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+  for (final width in [390.0, 1032.0]) {
+    testWidgets('sheet is translucent at width $width', (tester) async {
       tester.view.physicalSize = Size(width, 1376);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -71,7 +107,11 @@ void main() {
           matching: find.byType(Material),
         ),
       );
-      expect(materials.first.color?.a, 1);
+      expect(materials.first.color?.a, closeTo(0.88, 0.01));
+      expect(find.byType(BackdropFilter), findsWidgets);
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+      expect(find.text('Task form'), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }

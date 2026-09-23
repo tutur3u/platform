@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
@@ -144,6 +145,72 @@ void main() {
     );
   }
 
+  testWidgets('push waits for mailbox access before opening its thread', (
+    tester,
+  ) async {
+    final bootstrap = Completer<Map<String, dynamic>>();
+    when(() => repository.bootstrap('ws')).thenAnswer((_) => bootstrap.future);
+    respond((_) async => inbox('Inbox'));
+    when(
+      () => repository.detail('ws', 'box', 'target', thread: true),
+    ).thenAnswer(
+      (_) async => {
+        'thread': {'id': 'target', 'subject': 'Pushed message'},
+        'messages': <dynamic>[],
+      },
+    );
+    await tester.pumpApp(
+      MailWorkspace(
+        workspaceId: 'ws',
+        repository: repository,
+        destination: const MailPushDestination(
+          userId: 'user',
+          mailboxId: 'box',
+          threadId: 'target',
+          notificationId: 'push',
+        ),
+      ),
+    );
+    await tester.pump();
+    verifyNever(() => repository.detail('ws', 'box', 'target', thread: true));
+    bootstrap.complete({
+      'mailboxes': [
+        {'id': 'box', 'address': 'me@tuturuuu.com', 'status': 'active'},
+      ],
+    });
+    await tester.pumpAndSettle();
+    verify(
+      () => repository.detail('ws', 'box', 'target', thread: true),
+    ).called(1);
+    expect(find.byType(MailReader), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('push cannot open a mailbox missing from authorized bootstrap', (
+    tester,
+  ) async {
+    respond((_) async => inbox('Allowed inbox'));
+    await tester.pumpApp(
+      MailWorkspace(
+        workspaceId: 'ws',
+        repository: repository,
+        destination: const MailPushDestination(
+          userId: 'user',
+          mailboxId: 'other-box',
+          threadId: 'target',
+          notificationId: 'push',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    verifyNever(
+      () => repository.detail('ws', 'other-box', 'target', thread: true),
+    );
+    expect(find.byType(MailReader), findsNothing);
+    expect(find.text('Allowed inbox'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('access denial removes cached messages immediately', (
     tester,
   ) async {
@@ -206,7 +273,15 @@ void main() {
     await tester.tap(find.text('First'));
     await tester.pumpAndSettle();
     expect(find.byType(MailReader), findsOneWidget);
-    expect(actions.state.resolveForLocation(Routes.mail), isEmpty);
+    expect(
+      actions.state.resolveForLocation(Routes.mail).map((action) => action.id),
+      contains('mail-star'),
+    );
+    expect(
+      actions.state.resolveForLocation(Routes.mail).map((action) => action.id),
+      isNot(contains('mail-search')),
+    );
+    expect(titles.state.resolveForLocation(Routes.mail), 'First');
     navigator.currentState!.pop();
     await tester.pumpAndSettle();
     expect(actions.state.resolveForLocation(Routes.mail), isNotEmpty);
@@ -445,6 +520,82 @@ void main() {
       expect(find.byTooltip('Labels'), findsOneWidget);
     });
   }
+
+  testWidgets('mark-all-read unlocks actions after pagination', (tester) async {
+    final pending = Completer<void>();
+    when(
+      () => repository.markFolderRead('ws', 'box', 'inbox'),
+    ).thenAnswer((_) => pending.future);
+    respond(
+      (_) async => {
+        ...inbox('Message'),
+        'pagination': {'hasMore': true},
+      },
+    );
+    await mount(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Mark all read'));
+    await tester.pump();
+    await tester.tap(find.text('Load more'));
+    await tester.pumpAndSettle();
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is IconButton && widget.tooltip == 'Mark all read',
+            ),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    expect(find.text('Message'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('choosing the active filter keeps selection and avoids reload', (
+    tester,
+  ) async {
+    var requests = 0;
+    respond((_) async {
+      requests++;
+      return inbox('Selected message');
+    });
+    await mount(tester);
+    await tester.pumpAndSettle();
+    await tester.longPress(find.text('Selected message'));
+    await tester.pumpAndSettle();
+    final before = requests;
+    await tester.tap(find.byTooltip('Labels'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All labels and folders'));
+    await tester.pumpAndSettle();
+    expect(requests, before);
+    expect(find.byTooltip('Archive'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('mailbox members can open personal Mail settings', (
+    tester,
+  ) async {
+    respond((_) async => inbox('Message'));
+    await mount(tester);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Mail settings'), findsOneWidget);
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is IconButton && widget.tooltip == 'Mail settings',
+            ),
+          )
+          .onPressed,
+      isNotNull,
+    );
+  });
 
   testWidgets('search debounces typing and ignores older responses', (
     tester,

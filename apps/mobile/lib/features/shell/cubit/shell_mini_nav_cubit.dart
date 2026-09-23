@@ -11,6 +11,7 @@ class ShellMiniNavItemSpec extends Equatable {
     this.callbackToken,
     this.selected = false,
     this.enabled = true,
+    this.dropdown = false,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class ShellMiniNavItemSpec extends Equatable {
   final Object? callbackToken;
   final bool selected;
   final bool enabled;
+  final bool dropdown;
 
   @override
   List<Object?> get props => [
@@ -29,7 +31,9 @@ class ShellMiniNavItemSpec extends Equatable {
     icon.fontPackage,
     icon.matchTextDirection,
     label,
+    onPressed,
     callbackToken,
+    dropdown,
     selected,
     enabled,
   ];

@@ -7,7 +7,13 @@ class _Api extends Mock implements ApiClient {}
 
 void main() {
   const id = 'dbdee3eb-3b6e-4422-93b4-829b825a8608';
-  for (final chatId in [null, id, 'ai-agent-thread-$id']) {
+  for (final chatId in [
+    null,
+    id,
+    'ai-chat-$id',
+    'legacy-ai-$id',
+    'ai-agent-thread-$id',
+  ]) {
     test('Live accepts only resumable UUIDs: $chatId', () async {
       final api = _Api();
       when(
@@ -15,7 +21,10 @@ void main() {
       ).thenAnswer((invocation) async {
         final body = invocation.positionalArguments[1] as Map;
         expect(body['wsId'], 'workspace');
-        expect(body['chatId'], chatId == id ? id : null);
+        expect(
+          body['chatId'],
+          chatId != null && !chatId.startsWith('ai-agent-thread-') ? id : null,
+        );
         return {
           'token': 'test-token',
           'chatId': id,

@@ -67,6 +67,38 @@ void main() {
     addTearDown(cubit.close);
   });
 
+  test(
+    'Live history reload bypasses cache without hiding current messages',
+    () async {
+      await cubit.loadWorkspace('ws');
+      final fresh = Completer<AssistantRestoredChat?>();
+      when(
+        () => repository.restoreChat(
+          wsId: 'ws',
+          chatId: 'cached',
+          forceRefresh: true,
+        ),
+      ).thenAnswer((_) => fresh.future);
+      final loading = cubit.openChatById('ws', 'cached');
+      expect(cubit.state.status, AssistantChatStatus.idle);
+      fresh.complete(
+        const AssistantRestoredChat(
+          chat: AssistantChatRecord(id: 'cached'),
+          messages: [
+            AssistantMessage(
+              id: 'new-live-turn',
+              role: 'assistant',
+              parts: [AssistantMessagePart(type: 'text', text: 'Live saved')],
+            ),
+          ],
+          attachmentsByMessageId: {},
+        ),
+      );
+      await loading;
+      expect(cubit.state.messages.single.id, 'new-live-turn');
+    },
+  );
+
   test('stream error survives finish events and connection closure', () async {
     await cubit.loadWorkspace('ws');
     when(
@@ -193,7 +225,11 @@ void main() {
       await cubit.loadWorkspace('ws');
       final pending = Completer<AssistantRestoredChat?>();
       when(
-        () => repository.restoreChat(wsId: 'ws', chatId: 'next'),
+        () => repository.restoreChat(
+          wsId: 'ws',
+          chatId: 'next',
+          forceRefresh: true,
+        ),
       ).thenAnswer((_) => pending.future);
       final opening = cubit.openChatById('ws', 'next');
       await cubit.submit(

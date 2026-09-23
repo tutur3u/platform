@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_config.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -74,6 +76,28 @@ class _ShellTopBarTitleContent extends StatelessWidget {
       return Align(
         alignment: Alignment.centerLeft,
         child: AppsDropdownPicker(title: title),
+      );
+    }
+    if (!showLeadingBrand && onTitleSubmitted == null) {
+      return TextButton(
+        style: TextButton.styleFrom(
+          alignment: Alignment.centerLeft,
+          padding: EdgeInsets.zero,
+          foregroundColor: shad.Theme.of(context).colorScheme.foreground,
+        ),
+        onPressed: () => showAdaptiveSheet<void>(
+          context: context,
+          builder: (_) => AppDialogScaffold(
+            title: context.l10n.chatDetails,
+            child: SelectableText(title),
+          ),
+        ),
+        child: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
       );
     }
     return SizedBox(

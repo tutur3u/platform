@@ -1,12 +1,12 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_tool_results_section.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
 class AssistantTranscriptBubble extends StatelessWidget {
   const AssistantTranscriptBubble({
@@ -53,167 +53,124 @@ class AssistantTranscriptBubble extends StatelessWidget {
         constraints: BoxConstraints(
           maxWidth: MediaQuery.sizeOf(context).width < 420 ? 320 : 620,
         ),
-        child: Column(
-          crossAxisAlignment: alignEnd
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: bubbleColor,
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (text.trim().isNotEmpty)
-                    _AssistantMessageMarkdownBody(
-                      data: text.trim(),
-                      collapsible: alignEnd && !isDraft,
-                    ),
-                  if (inlineImageParts.isNotEmpty) ...[
-                    if (text.trim().isNotEmpty) const SizedBox(height: 12),
-                    AssistantInlineToolImages(parts: inlineImageParts),
-                  ],
-                  if (transcript.trim().isNotEmpty) ...[
-                    if (text.trim().isNotEmpty || inlineImageParts.isNotEmpty)
-                      const SizedBox(height: 10),
-                    AssistantMarkdownBody(
-                      data: transcript.trim(),
-                      subdued: true,
-                    ),
-                  ],
-                  if (attachments.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: attachments
-                          .map(
-                            (attachment) => Chip(
-                              avatar: Icon(
-                                attachment.isImage
-                                    ? Icons.image_outlined
-                                    : Icons.attach_file_rounded,
-                                size: 16,
-                              ),
-                              label: Text(attachment.name),
-                            ),
-                          )
-                          .toList(growable: false),
-                    ),
-                  ],
-                  if (toolParts.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    AssistantToolResultsSection(parts: toolParts),
-                  ],
-                  if (toolNames.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    _AssistantToolCallsCollapsible(toolNames: toolNames),
-                  ],
-                ],
-              ),
-            ),
-            if (copyPayload.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: _AssistantCopyMessageButton(
-                  alignEnd: alignEnd,
-                  text: copyPayload,
-                ),
-              ),
-            if (timestampLabel != null || isDraft)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  isDraft
-                      ? context.l10n.assistantThinkingStatus
-                      : timestampLabel ?? '',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+        child: Semantics(
+          label: label,
+          onLongPress: copyPayload.isEmpty
+              ? null
+              : () => _showMessageActions(context, copyPayload),
+          child: GestureDetector(
+            excludeFromSemantics: true,
+            onLongPress: copyPayload.isEmpty
+                ? null
+                : () => _showMessageActions(context, copyPayload),
+            onSecondaryTap: copyPayload.isEmpty
+                ? null
+                : () => _showMessageActions(context, copyPayload),
+            child: Column(
+              crossAxisAlignment: alignEnd
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: bubbleColor,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (text.trim().isNotEmpty)
+                        _AssistantMessageMarkdownBody(
+                          data: text.trim(),
+                          collapsible: alignEnd && !isDraft,
+                        ),
+                      if (inlineImageParts.isNotEmpty) ...[
+                        if (text.trim().isNotEmpty) const SizedBox(height: 12),
+                        AssistantInlineToolImages(parts: inlineImageParts),
+                      ],
+                      if (transcript.trim().isNotEmpty) ...[
+                        if (text.trim().isNotEmpty ||
+                            inlineImageParts.isNotEmpty)
+                          const SizedBox(height: 10),
+                        AssistantMarkdownBody(
+                          data: transcript.trim(),
+                          subdued: true,
+                          selectable: false,
+                        ),
+                      ],
+                      if (attachments.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: attachments
+                              .map(
+                                (attachment) => Chip(
+                                  avatar: Icon(
+                                    attachment.isImage
+                                        ? Icons.image_outlined
+                                        : Icons.attach_file_rounded,
+                                    size: 16,
+                                  ),
+                                  label: Text(attachment.name),
+                                ),
+                              )
+                              .toList(growable: false),
+                        ),
+                      ],
+                      if (toolParts.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        AssistantToolResultsSection(parts: toolParts),
+                      ],
+                      if (toolNames.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _AssistantToolCallsCollapsible(toolNames: toolNames),
+                      ],
+                    ],
                   ),
                 ),
-              ),
-          ],
+                if (timestampLabel != null && !isDraft)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      timestampLabel,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _AssistantCopyMessageButton extends StatefulWidget {
-  const _AssistantCopyMessageButton({
-    required this.alignEnd,
-    required this.text,
-  });
-
-  final bool alignEnd;
-  final String text;
-
-  @override
-  State<_AssistantCopyMessageButton> createState() =>
-      _AssistantCopyMessageButtonState();
-}
-
-class _AssistantCopyMessageButtonState
-    extends State<_AssistantCopyMessageButton> {
-  bool _copied = false;
-  Timer? _resetTimer;
-
-  @override
-  void dispose() {
-    _resetTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: widget.alignEnd ? Alignment.centerRight : Alignment.centerLeft,
-      child: TextButton.icon(
-        onPressed: _handleCopy,
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          minimumSize: Size.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          visualDensity: VisualDensity.compact,
-        ),
-        icon: Icon(
-          _copied ? Icons.check_rounded : Icons.content_copy_rounded,
-          size: 16,
-        ),
-        label: Text(
-          _copied
-              ? context.l10n.assistantCopiedMessageAction
-              : context.l10n.assistantCopyMessageAction,
+Future<void> _showMessageActions(BuildContext context, String text) async {
+  final copy = await showAdaptiveSheet<bool>(
+    context: context,
+    builder: (sheetContext) => AppDialogScaffold(
+      title: context.l10n.assistantMessageActionsTitle,
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          dense: true,
+          leading: const Icon(Icons.content_copy_rounded),
+          title: Text(context.l10n.assistantCopyMessageAction),
+          onTap: () => Navigator.of(sheetContext).pop(true),
         ),
       ),
-    );
-  }
-
-  Future<void> _handleCopy() async {
-    await Clipboard.setData(ClipboardData(text: widget.text));
-    if (!mounted) {
-      return;
-    }
-    _resetTimer?.cancel();
-    setState(() => _copied = true);
-    _resetTimer = Timer(const Duration(seconds: 2), () {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _copied = false);
-    });
-  }
+    ),
+  );
+  if (copy != true) return;
+  await Clipboard.setData(ClipboardData(text: text));
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(context.l10n.assistantCopiedMessageAction)),
+  );
 }
 
 class _AssistantMessageMarkdownBody extends StatefulWidget {
@@ -247,7 +204,7 @@ class _AssistantMessageMarkdownBodyState
   @override
   Widget build(BuildContext context) {
     if (!widget.collapsible) {
-      return AssistantMarkdownBody(data: widget.data);
+      return AssistantMarkdownBody(data: widget.data, selectable: false);
     }
 
     final theme = Theme.of(context);
@@ -262,7 +219,7 @@ class _AssistantMessageMarkdownBodyState
       builder: (context, constraints) {
         final plainText = _markdownPlainText(widget.data);
         if (plainText.isEmpty) {
-          return AssistantMarkdownBody(data: widget.data);
+          return AssistantMarkdownBody(data: widget.data, selectable: false);
         }
         final painter = TextPainter(
           text: TextSpan(text: plainText, style: baseStyle),
@@ -272,14 +229,14 @@ class _AssistantMessageMarkdownBodyState
         final shouldCollapse = painter.didExceedMaxLines;
 
         if (!shouldCollapse) {
-          return AssistantMarkdownBody(data: widget.data);
+          return AssistantMarkdownBody(data: widget.data, selectable: false);
         }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (_expanded)
-              AssistantMarkdownBody(data: widget.data)
+              AssistantMarkdownBody(data: widget.data, selectable: false)
             else
               Text(
                 plainText,

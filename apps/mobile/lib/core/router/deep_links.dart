@@ -31,6 +31,18 @@ MobileDeepLink? resolveMobileDeepLink(Uri uri) {
   final segments = _withoutLocale(_cleanPathSegments(normalizedUri));
   final openExternally = _shouldOpenExternally(normalizedUri);
 
+  if (host == 'meet.tuturuuu.com') {
+    if (segments.length == 2 &&
+        segments.first == 'r' &&
+        RegExp(r'^[a-z0-9-]{6,80}$').hasMatch(segments[1])) {
+      return _link(
+        '${Routes.meet}?room=${Uri.encodeQueryComponent(segments[1])}',
+        openExternally: openExternally,
+      );
+    }
+    return null;
+  }
+
   if (_tasksHosts.contains(host)) {
     return _resolveTasksHostLink(
       normalizedUri,

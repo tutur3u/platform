@@ -655,6 +655,7 @@
     "assistantMermaidZoomIn": "Phóng to",
     "assistantMermaidZoomOut": "Thu nhỏ",
     "assistantMermaidZoomReset": "Đặt lại thu phóng",
+    "assistantMessageActionsTitle": "Thao tác tin nhắn",
     "assistantCopyMessageAction": "Sao chép tin nhắn",
     "assistantCopiedMessageAction": "Đã sao chép",
     "assistantScrollToBottomAction": "Cuộn xuống cuối",

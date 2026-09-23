@@ -277,11 +277,17 @@ extension _ShellPageLayout on _ShellPageState {
         ? _buildMiniAppNavItems(context, activeModule, activeMiniNavItems)
         : const <shad.NavigationItem>[];
     final assistantChrome = context.watch<AssistantChromeCubit>().state;
+    final immersive =
+        context.watch<ShellChromeActionsCubit?>()?.state.immersiveForLocation(
+          widget.matchedLocation,
+        ) ??
+        false;
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final showBottomNav =
         (!widget.matchedLocation.startsWith(Routes.assistant) ||
             !assistantChrome.isFullscreen) &&
-        !keyboardVisible;
+        !keyboardVisible &&
+        !immersive;
     final navContent = MorphingNavigationBar(
       selectedKey: selectedKey,
       onSelected: (key) => useInjectedMiniNav
@@ -297,19 +303,7 @@ extension _ShellPageLayout on _ShellPageState {
       child: _buildFloatingNavigationBar(
         context: context,
         isCompact: isCompact,
-        child: Builder(
-          builder: (navContext) => Listener(
-            behavior: HitTestBehavior.translucent,
-            onPointerDown: isMiniAppRoute
-                ? null
-                : (event) => _startLongPressTimer(event, navContext),
-            onPointerUp: isMiniAppRoute
-                ? null
-                : (event) => _handlePointerUp(event, navContext),
-            onPointerCancel: isMiniAppRoute ? null : _stopLongPressTimer,
-            child: navContent,
-          ),
-        ),
+        child: navContent,
       ),
     );
     final globalBody = _buildGlobalBody();
@@ -319,11 +313,12 @@ extension _ShellPageLayout on _ShellPageState {
 
     return shad.Scaffold(
       headers: [
-        _buildAppBar(
-          context,
-          activeModule: activeModule,
-          injectedMiniNavRegistration: injectedMiniNavRegistration,
-        ),
+        if (!immersive)
+          _buildAppBar(
+            context,
+            activeModule: activeModule,
+            injectedMiniNavRegistration: injectedMiniNavRegistration,
+          ),
       ],
       footers: showBottomNav && isCompact
           ? [

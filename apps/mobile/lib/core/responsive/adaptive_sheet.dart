@@ -1,6 +1,9 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
 /// Shows a bottom sheet on compact screens and a centered dialog on
 /// medium / expanded screens.
@@ -33,7 +36,7 @@ Future<T?> showAdaptiveSheet<T>({
     return showModalBottomSheet<T>(
       context: context,
       useRootNavigator: useRootNavigator,
-      backgroundColor: surface,
+      backgroundColor: Colors.transparent,
       barrierColor: barrierColor,
       isScrollControlled: isScrollControlled,
       useSafeArea: useSafeArea,
@@ -50,7 +53,7 @@ Future<T?> showAdaptiveSheet<T>({
           }
           return true;
         },
-        child: builder(sheetContext),
+        child: _sheetSurface(sheetContext, builder(sheetContext), surface),
       ),
     );
   }
@@ -76,14 +79,29 @@ Future<T?> showAdaptiveSheet<T>({
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxDialogWidth),
-            child: Material(
-              color: surface,
-              borderRadius: BorderRadius.circular(12),
-              clipBehavior: Clip.antiAlias,
-              child: builder(dialogContext),
+            child: _sheetSurface(
+              dialogContext,
+              builder(dialogContext),
+              surface,
             ),
           ),
         ),
+      ),
+    ),
+  );
+}
+
+Widget _sheetSurface(BuildContext context, Widget child, Color surface) {
+  if (child is AppDialogScaffold || surface.a == 0) return child;
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(24),
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+      child: Material(
+        color: surface.withValues(
+          alpha: MediaQuery.highContrastOf(context) ? 1 : 0.88,
+        ),
+        child: child,
       ),
     ),
   );

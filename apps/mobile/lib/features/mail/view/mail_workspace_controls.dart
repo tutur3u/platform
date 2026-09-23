@@ -7,6 +7,7 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
     String? selected,
   ) => showAdaptiveSheet<String>(
     context: context,
+    useRootNavigator: true,
     builder: (sheetContext) => AppDialogScaffold(
       title: title,
       child: Material(
@@ -42,84 +43,79 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
     ),
   );
 
+  Future<void> _chooseMailbox() async {
+    final l10n = context.l10n;
+    final value = await _chooseMailOption(l10n.mailMailbox, {
+      for (final box in _mailboxes)
+        box['id'] as String: box['address'] as String,
+    }, _mailboxId);
+    if (!mounted || value == null || value == _mailboxId) return;
+    _updateState(() {
+      _mailboxId = value;
+      _labelId = null;
+      _folderId = null;
+      _selected.clear();
+    });
+    unawaited(_load(forceRefresh: false));
+  }
+
+  Future<void> _chooseFilter() async {
+    final l10n = context.l10n;
+    final value = await _chooseMailOption(
+      l10n.mailLabels,
+      {
+        '': l10n.mailAllLabels,
+        for (final label in _labels)
+          'label:${label['id']}': label['name'] as String,
+        for (final folder in _folders)
+          'folder:${folder['id']}': folder['name'] as String,
+      },
+      _labelId != null
+          ? 'label:$_labelId'
+          : _folderId != null
+          ? 'folder:$_folderId'
+          : '',
+    );
+    if (!mounted || value == null) return;
+    final nextLabelId = value.startsWith('label:') ? value.substring(6) : null;
+    final nextFolderId = value.startsWith('folder:')
+        ? value.substring(7)
+        : null;
+    if (nextLabelId == _labelId && nextFolderId == _folderId) return;
+    _updateState(() {
+      _labelId = nextLabelId;
+      _folderId = nextFolderId;
+      _selected.clear();
+    });
+    unawaited(_load(forceRefresh: false));
+  }
+
   Widget _buildMailControls(Widget folderPicker, bool sharedShell) {
     final l10n = context.l10n;
     return Column(
       children: [
-        Row(
-          children: [
-            folderPicker,
-            if (_mailboxes.isNotEmpty)
+        if (!sharedShell)
+          Row(
+            children: [
+              folderPicker,
               _pickerButton(
-                label: _mailbox['address'] as String? ?? l10n.mailMailbox,
+                label: l10n.mailMailbox,
                 icon: Icons.alternate_email,
-                onPressed: () async {
-                  final value = await _chooseMailOption(l10n.mailMailbox, {
-                    for (final box in _mailboxes)
-                      box['id'] as String: box['address'] as String,
-                  }, _mailboxId);
-                  if (!mounted || value == null || value == _mailboxId) return;
-                  _updateState(() {
-                    _mailboxId = value;
-                    _labelId = null;
-                    _folderId = null;
-                    _selected.clear();
-                  });
-                  unawaited(_load(forceRefresh: false));
-                },
+                onPressed: _chooseMailbox,
               ),
-            Expanded(
-              child: Text(
-                _mailbox['address'] as String? ?? '',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-            if (_labels.isNotEmpty || _folders.isNotEmpty)
               _pickerButton(
                 label: l10n.mailLabels,
-                icon: _labelId != null || _folderId != null
-                    ? Icons.filter_alt
-                    : Icons.filter_alt_outlined,
-                onPressed: () async {
-                  final value = await _chooseMailOption(
-                    l10n.mailLabels,
-                    {
-                      '': l10n.mailAllLabels,
-                      for (final label in _labels)
-                        'label:${label['id']}': label['name'] as String,
-                      for (final folder in _folders)
-                        'folder:${folder['id']}': folder['name'] as String,
-                    },
-                    _labelId != null
-                        ? 'label:$_labelId'
-                        : _folderId != null
-                        ? 'folder:$_folderId'
-                        : '',
-                  );
-                  if (!mounted || value == null) return;
-                  _updateState(() {
-                    _labelId = value.startsWith('label:')
-                        ? value.substring(6)
-                        : null;
-                    _folderId = value.startsWith('folder:')
-                        ? value.substring(7)
-                        : null;
-                    _selected.clear();
-                  });
-                  unawaited(_load(forceRefresh: false));
-                },
+                icon: Icons.filter_alt_outlined,
+                onPressed: _chooseFilter,
               ),
-            if (!sharedShell)
               IconButton(
                 tooltip: l10n.mailSearch,
                 onPressed: () =>
                     _updateState(() => _searchVisible = !_searchVisible),
                 icon: const Icon(Icons.search),
               ),
-          ],
-        ),
+            ],
+          ),
         AnimatedSize(
           duration: const Duration(milliseconds: 220),
           reverseDuration: const Duration(milliseconds: 220),

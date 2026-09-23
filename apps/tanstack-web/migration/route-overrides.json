@@ -2488,6 +2488,21 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class Next.js handoff generation carries signed MFA proof bound to target and actor; enforce fresh account policy before minting. Rust parity pending."
+    },
+    "api:/api/v1/assistant/live/turns:apps/web/src/app/api/v1/assistant/live/turns/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Mobile Live turn persistence checks authenticated workspace membership, Pro entitlement and chat ownership before server-only message access. Preserve bounded batches, caller-bound metadata and no privileged access on failed ownership checks. Rust parity pending."
+    },
+    "api:/api/notifications/send-immediate:apps/web/src/app/api/notifications/send-immediate/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class immediate dispatcher allows personal Mail push after durable receipt, current mailbox membership, internal identity and preferences are verified. Other notification types retain root-workspace restriction. Rust parity pending."
+    },
+    "cron:/api/cron/process-immediate-notifications:apps/web/src/app/api/cron/process-immediate-notifications/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Authenticated scheduled recovery of missed immediate webhooks and bounded personal Mail push retries, reusing immediate dispatcher current access checks. Rust parity pending."
     }
   }
 }

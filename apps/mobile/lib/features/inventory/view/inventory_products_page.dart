@@ -80,7 +80,15 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
     }
     final requestToken = ++_requestToken;
 
+    final cached = _inventoryRepository.peekProducts(
+      wsId,
+      query: _searchController.text,
+      pageSize: _pageSize,
+    );
     setState(() {
+      _products = cached?.data ?? [];
+      _count = cached?.count ?? 0;
+      _canManageCatalog = false;
       _isLoadingInitial = true;
       _isLoadingMore = false;
       _error = null;
@@ -120,6 +128,11 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
         return;
       }
       setState(() {
+        if (error.statusCode == 401 || error.statusCode == 403) {
+          _products = [];
+          _count = 0;
+          _canManageCatalog = false;
+        }
         _error = error.message.isNotEmpty
             ? error.message
             : context.l10n.commonSomethingWentWrong;

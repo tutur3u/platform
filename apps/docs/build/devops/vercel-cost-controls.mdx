@@ -201,3 +201,15 @@ and *By Product*. Read it *By Product* first: that tells you which meter is
 moving. Only then switch to *By Project* to find the owner. Reading it the other
 way around leads to optimizing a project that is merely large rather than a meter
 that is actually expensive.
+
+## Reproducible CLI Installation
+
+Preview, production and external-package build workflows pin Vercel CLI to
+`59.25.0`. Keep these installation steps aligned when upgrading; do not use
+`vercel@latest` in release jobs. A newly published CLI can reference builder
+packages whose tarballs are not yet available, causing every deployment retry
+to fail before the application build starts.
+
+Before changing the pin, install the exact candidate in a temporary directory,
+run `vercel --version`, and verify a preview build. Then update the workflow
+family together and check both preview and production deployment jobs.

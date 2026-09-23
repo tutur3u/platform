@@ -103,6 +103,88 @@ class _ShellChromeActionsHarnessState
 }
 
 void main() {
+  test(
+    'immersive registrations apply only while their route is active',
+    () async {
+      final cubit = ShellChromeActionsCubit()
+        ..register(
+          registrationId: 'meet-session',
+          ownerId: 'meet',
+          locations: {'/apps/meet'},
+          actions: const [],
+          immersive: true,
+        );
+      expect(cubit.state.immersiveForLocation('/apps/meet'), isTrue);
+      expect(cubit.state.immersiveForLocation('/home'), isFalse);
+      cubit.unregister('meet-session');
+      expect(cubit.state.immersiveForLocation('/apps/meet'), isFalse);
+      await cubit.close();
+    },
+  );
+
+  testWidgets('Inbox and Archive form one selectable segmented control', (
+    tester,
+  ) async {
+    final cubit = ShellChromeActionsCubit();
+    addTearDown(cubit.close);
+    var archived = false;
+    await tester.pumpApp(
+      BlocProvider.value(
+        value: cubit,
+        child: StatefulBuilder(
+          builder: (context, update) => Material(
+            child: Column(
+              children: [
+                ShellChromeActions(
+                  ownerId: 'notifications',
+                  locations: const {'/notifications'},
+                  actions: [
+                    ShellActionSpec(
+                      id: 'inbox',
+                      icon: Icons.inbox_outlined,
+                      tooltip: 'Inbox',
+                      segmentGroup: 'notification-tabs',
+                      highlighted: !archived,
+                      onPressed: () => update(() => archived = false),
+                    ),
+                    ShellActionSpec(
+                      id: 'archive',
+                      icon: Icons.archive_outlined,
+                      tooltip: 'Archive',
+                      segmentGroup: 'notification-tabs',
+                      highlighted: archived,
+                      onPressed: () => update(() => archived = true),
+                    ),
+                  ],
+                ),
+                const ShellInjectedActionsHost(
+                  matchedLocation: '/notifications',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('notification-tabs')), findsOneWidget);
+    Semantics selected(String label) => tester
+        .widgetList<Semantics>(find.byType(Semantics))
+        .singleWhere((widget) => widget.properties.label == label);
+    expect(selected('Inbox').properties.selected, isTrue);
+    expect(selected('Archive').properties.selected, isFalse);
+    await tester.tap(find.byIcon(Icons.archive_outlined));
+    await tester.pumpAndSettle();
+    expect(archived, isTrue);
+    expect(selected('Archive').properties.selected, isTrue);
+    expect(selected('Inbox').properties.selected, isFalse);
+    await tester.tap(find.byIcon(Icons.inbox_outlined));
+    await tester.pumpAndSettle();
+    expect(archived, isFalse);
+    expect(selected('Inbox').properties.selected, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final count in [1, 2, 3, 4, 5]) {
     testWidgets('$count header actions respect the three-button limit', (
       tester,

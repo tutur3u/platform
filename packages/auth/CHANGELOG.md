@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/tutur3u/platform/compare/auth-v0.4.0...auth-v0.4.1) (2026-09-23)
+
+
+### Bug Fixes
+
+* **auth:** identify cross-app verification requests ([4165eda](https://github.com/tutur3u/platform/commit/4165edaf6460b0f884d8b0984a1f5ac6dd213e34)) ([#5435](https://github.com/tutur3u/platform/issues/5435)) ([570c849](https://github.com/tutur3u/platform/commit/570c84905a02f9b17d7df1255357c554c921395f))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/auth-v0.3.4...auth-v0.4.0) (2026-09-20)
 
 

@@ -9454,6 +9454,46 @@ export type Database = {
           },
         ];
       };
+      mail_notification_receipts: {
+        Row: {
+          message_id: string;
+          notification_id: string | null;
+          user_id: string;
+        };
+        Insert: {
+          message_id: string;
+          notification_id?: string | null;
+          user_id: string;
+        };
+        Update: {
+          message_id?: string;
+          notification_id?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_notification_receipts_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_notification_receipts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_notification_receipts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       mail_outbound_jobs: {
         Row: {
           attempts: number;
@@ -15784,6 +15824,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      can_deliver_mail_notification: {
+        Args: { p_notification_id: string };
+        Returns: boolean;
+      };
       can_join_form_realtime_topic: {
         Args: { p_topic: string; p_user_id: string };
         Returns: boolean;
@@ -18441,6 +18485,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      requeue_mail_push_batches: { Args: never; Returns: number };
       resolve_user_groups_table_timezone: {
         Args: { p_ws_id: string };
         Returns: string;
