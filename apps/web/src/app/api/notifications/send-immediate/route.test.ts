@@ -1,23 +1,10 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const MINUTE_MS = 60 * 1000;
-const HOUR_MS = 60 * MINUTE_MS;
-const DAY_MS = 24 * HOUR_MS;
-
-function createRecentNotificationWindow() {
-  const createdAt = new Date(Date.now() - HOUR_MS);
-  const windowEnd = new Date(createdAt.getTime() + 5 * MINUTE_MS);
-
-  return {
-    created_at: createdAt.toISOString(),
-    window_end: windowEnd.toISOString(),
-  };
-}
-
-function getStaleCreatedAt(): string {
-  return new Date(Date.now() - (DAY_MS + HOUR_MS)).toISOString();
-}
+import {
+  createRecentNotificationWindow,
+  getStaleCreatedAt,
+} from './test-window';
 
 const mocks = vi.hoisted(() => {
   const fromMock = vi.fn();
@@ -681,4 +668,31 @@ describe('send-immediate route', () => {
     expect(body.failed).toBe(1);
     expect(body.results[0].status).toBe('reconciliation_required');
   });
+  it.each(['email', 'push'])(
+    'does not replay an ambiguous %s provider result',
+    async (channel) => {
+      batches[0] = { ...batches[0]!, channel };
+      mocks.sendPushNotificationBatchMock.mockResolvedValueOnce({
+        deliveredCount: 0,
+        invalidTokens: [],
+      });
+      mocks.sendSystemEmailMock.mockResolvedValueOnce({
+        success: false,
+        error: 'Request timed out',
+      });
+      const response = await POST(
+        new Request('http://localhost/api/notifications/send-immediate', {
+          method: 'POST',
+          headers: { authorization: 'Bearer cron-secret' },
+        }) as Parameters<typeof POST>[0]
+      );
+      const body = await response.json();
+      expect(
+        channel === 'email'
+          ? mocks.sendSystemEmailMock
+          : mocks.sendPushNotificationBatchMock
+      ).toHaveBeenCalledOnce();
+      expect(body.results[0].status).toBe('reconciliation_required');
+    }
+  );
 });

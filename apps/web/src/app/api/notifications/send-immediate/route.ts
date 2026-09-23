@@ -288,7 +288,11 @@ export async function POST(req: NextRequest) {
           });
 
           if (pushResult.deliveredCount === 0) {
-            deliveryMayHaveSucceeded = false;
+            // A transport error can be returned for an individual FCM request.
+            // Only rejection of every device as invalid proves none were sent.
+            deliveryMayHaveSucceeded =
+              pushResult.invalidTokens.length !== devices.length;
+            await cleanupInvalidPushTokens(sbAdmin, pushResult.invalidTokens);
             throw new Error('Failed to deliver push notification');
           }
 
@@ -421,7 +425,8 @@ export async function POST(req: NextRequest) {
           });
 
           if (!result.success) {
-            deliveryMayHaveSucceeded = false;
+            // Email providers also represent transport timeouts as success:false.
+            // That is not proof the provider rejected the original request.
             const sendSkipReason = await getNotificationSkipReason(sbAdmin, {
               blockedEmailCache,
               errorMessage: result.error,
