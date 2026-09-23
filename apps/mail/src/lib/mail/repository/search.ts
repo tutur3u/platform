@@ -1,6 +1,7 @@
 import { escapeMailLike, parseMailSearch } from '../search';
 import type { ListMailMessagesParams } from '../types';
 import { type AnyRecord, privateTable } from './shared';
+import { loadThreadPreferences, threadIsVisible } from './thread-preferences';
 
 type SearchResult = {
   hasMore?: boolean;
@@ -176,6 +177,11 @@ export async function queryMailMessageRows({
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(Math.max(1, params.pageSize ?? 40), 100);
   const parsed = parseMailSearch(params.query);
+  const threadPreferences = ['inbox', 'snoozed', 'muted'].includes(
+    params.folder ?? 'inbox'
+  )
+    ? await loadThreadPreferences(admin, mailboxId, userId)
+    : new Map<string, AnyRecord>();
   const states = await loadAllRows(
     () =>
       privateTable(admin, 'mail_message_user_state')
@@ -247,6 +253,8 @@ export async function queryMailMessageRows({
 
   const needsLocalFiltering =
     threadScan ||
+    threadPreferences.size > 0 ||
+    ['snoozed', 'muted'].includes(params.folder ?? '') ||
     (includedIds?.size ?? 0) > MAX_INLINE_FILTER_IDS ||
     excludedIds.size > MAX_INLINE_FILTER_IDS;
   const buildQuery = ({ count = false }: { count?: boolean } = {}) => {
@@ -307,6 +315,8 @@ export async function queryMailMessageRows({
     const trashedIdSet = new Set(trashedIds);
     const includeRow = (row: AnyRecord) => {
       const id = row.id as string;
+      if (!threadIsVisible(threadPreferences.get(row.thread_id), params.folder))
+        return false;
       if (includedIds && !includedIds.has(id)) return false;
       if (excludedIds.has(id)) return false;
       if (params.folder === 'trash') {

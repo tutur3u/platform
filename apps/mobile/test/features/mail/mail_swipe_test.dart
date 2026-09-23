@@ -28,6 +28,48 @@ void main() {
     },
   );
 
+  test('snooze and mute persist as configurable swipe actions', () async {
+    final preferences = MailSwipePreferences();
+    await preferences.select(swipeLeft: true, action: MailSwipeAction.snooze);
+    await preferences.select(swipeLeft: false, action: MailSwipeAction.mute);
+    final restored = MailSwipePreferences();
+    await restored.load();
+    expect(restored.left, MailSwipeAction.snooze);
+    expect(restored.right, MailSwipeAction.mute);
+    preferences.dispose();
+    restored.dispose();
+  });
+
+  testWidgets('snooze picker returns a future deadline and supports cancel', (
+    tester,
+  ) async {
+    DateTime? result;
+    await tester.pumpApp(
+      Material(
+        child: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async => result = await chooseMailSnoozeTime(context),
+            child: const Text('Choose snooze'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Choose snooze'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('In one hour'));
+    await tester.pumpAndSettle();
+    expect(result, isNotNull);
+    expect(
+      result!.difference(DateTime.now()).inMinutes,
+      inInclusiveRange(59, 60),
+    );
+    await tester.tap(find.text('Choose snooze'));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(result, isNull);
+  });
+
   testWidgets(
     'both physical swipe directions execute their configured action',
     (tester) async {

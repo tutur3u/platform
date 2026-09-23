@@ -11,6 +11,7 @@ import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
+import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -103,6 +104,11 @@ class _MailReaderState extends State<MailReader> {
 
   Future<void> _action(String action, {bool close = false}) async {
     if (_busy && action != 'mark_read') return;
+    DateTime? snoozedUntil;
+    if (action == 'snooze') {
+      snoozedUntil = await chooseMailSnoozeTime(context);
+      if (!mounted || snoozedUntil == null) return;
+    }
     final previousStarred = _starred;
     setState(() {
       if (action != 'mark_read') _busy = true;
@@ -115,6 +121,7 @@ class _MailReaderState extends State<MailReader> {
         _id,
         action,
         thread: widget.thread,
+        snoozedUntil: snoozedUntil,
       );
       if (!mounted) return;
       if (close) {
@@ -179,6 +186,10 @@ class _MailReaderState extends State<MailReader> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final actions = {
+      'snooze': l10n.mailSnooze,
+      'unsnooze': l10n.mailUnsnooze,
+      'mute': l10n.mailMute,
+      'unmute': l10n.mailUnmute,
       'archive': l10n.mailArchive,
       'mark_unread': l10n.mailMarkUnread,
       'restore': l10n.mailRestore,

@@ -45,6 +45,7 @@ export type MailFolderDefinition = {
   slug: string;
 };
 export type BulkUpdateMailPayload = {
+  snoozedUntil?: string;
   action:
     | import('@tuturuuu/internal-api').UpdateMailMessageStatePayload['action']
     | 'add_label'
@@ -56,6 +57,8 @@ export type BulkUpdateMailPayload = {
   messageIds: string[];
 };
 export type MailThread = {
+  snoozedUntil?: string | null;
+  muted?: boolean;
   id: string;
   lastMessageAt: string | null;
   mailboxId: string;
