@@ -32,7 +32,10 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   ) => mocks.hasWebAppSessionTokenFromRequest(...args),
 }));
 
-vi.mock('@tuturuuu/auth/proxy', () => ({
+vi.mock('@tuturuuu/auth/proxy', async () => ({
+  ...(await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
+    '@tuturuuu/auth/proxy'
+  )),
   consumeVerifyTokenRequest: (
     ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
   ) => mocks.consumeVerifyTokenRequest(...args),
@@ -85,6 +88,25 @@ describe('Infra proxy', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('returns MFA_REQUIRED while retaining the provider recovery session', async () => {
+    const rotated = NextResponse.next();
+    rotated.cookies.set('sb-project-auth-token', 'rotated');
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      ok: false,
+      error: 'MFA required',
+      response: rotated,
+    });
+    const response = await proxy(
+      new NextRequest('https://example.com/api/v1/users/me/profile')
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ code: 'MFA_REQUIRED' });
+    expect(response.headers.get('set-cookie')).toContain(
+      'sb-project-auth-token=rotated'
+    );
+    expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
   });
 
   it('accepts a trusted scheduler without requiring a browser session', async () => {

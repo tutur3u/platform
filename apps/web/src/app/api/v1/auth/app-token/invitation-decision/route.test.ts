@@ -148,6 +148,7 @@ function createAdminMock() {
               display_name: 'Victim User',
               id: userId,
               user_private_details: {
+                id: userId,
                 email: 'victim@example.com',
                 full_name: 'Victim Full Name',
               },
@@ -212,6 +213,7 @@ function createAdminMock() {
           getUserById: vi.fn().mockResolvedValue({
             data: {
               user: {
+                id: userId,
                 email: 'victim@example.com',
                 user_metadata: {
                   avatar_url: 'https://example.com/auth-avatar.png',

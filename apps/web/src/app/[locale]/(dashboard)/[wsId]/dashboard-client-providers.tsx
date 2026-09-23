@@ -1,6 +1,7 @@
 'use client';
 
 import type { WorkspaceProductTier } from '@tuturuuu/types';
+import { AccountAssuranceRefresh } from '@tuturuuu/ui/custom/account-assurance-refresh';
 import type { ComponentType, ReactNode } from 'react';
 import { useLazyClientComponent } from '@/hooks/use-lazy-client-component';
 
@@ -77,6 +78,7 @@ export function DashboardClientProviders({
 
   return (
     <>
+      <AccountAssuranceRefresh />
       {FadeSettingInitializer && <FadeSettingInitializer />}
       {TaskSoundEffectsInitializer && <TaskSoundEffectsInitializer />}
       {content}

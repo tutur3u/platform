@@ -1,3 +1,4 @@
+import './required-mfa-test-fixture';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -21,19 +22,15 @@ import {
   resolveCanonicalRequestOrigin,
 } from './index';
 
-function getMiddlewareRequestHeader(
+const getMiddlewareRequestHeader = (
   response: NextResponse,
   headerName: string
-) {
-  return response.headers.get(`x-middleware-request-${headerName}`);
-}
-
+) => response.headers.get(`x-middleware-request-${headerName}`);
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
   updateSession: vi.fn(),
 }));
-
 vi.mock('@tuturuuu/supabase/next/proxy', () => ({
   updateSession: (...args: Parameters<typeof mocks.updateSession>) =>
     mocks.updateSession(...args),
@@ -112,7 +109,6 @@ describe('auth proxy redirect helpers', () => {
     const target = NextResponse.next();
 
     propagateAuthCookies(source, target);
-
     expect(target.headers.getSetCookie?.()).toEqual([
       'sb-test-auth-token.0=chunk; Path=/; Domain=.tuturuuu.com; SameSite=lax',
       'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
@@ -134,7 +130,6 @@ describe('auth proxy redirect helpers', () => {
     });
 
     const headers = getRequestHeadersWithResponseCookies(request, response);
-
     expect(headers.get('authorization')).toBe('Bearer app-session-token');
     expect(headers.get('cookie')).toBe('theme=dark');
   });
@@ -155,7 +150,6 @@ describe('auth proxy redirect helpers', () => {
     response.headers.append('set-cookie', 'theme=light; Path=/');
 
     const headers = getRequestHeadersWithResponseCookies(request, response);
-
     expect(headers.get('authorization')).toBe('Bearer app-session-token');
     expect(headers.get('cookie')).toBe('theme=light');
   });
@@ -167,7 +161,6 @@ describe('auth proxy redirect helpers', () => {
         'x-forwarded-proto': 'https',
       },
     });
-
     expect(resolveCanonicalRequestOrigin(request, 'https://tuturuuu.com')).toBe(
       'https://tuturuuu.com'
     );
@@ -183,7 +176,6 @@ describe('auth proxy redirect helpers', () => {
         },
       }
     );
-
     expect(
       resolveCanonicalRequestOrigin(request, 'http://localhost:7803')
     ).toBe('http://localhost:7809');
@@ -851,7 +843,7 @@ describe('auth proxy redirect helpers', () => {
       targetApp: 'mail',
     });
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       error: 'MFA required',
       ok: false,
     });

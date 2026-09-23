@@ -11,6 +11,8 @@ class InternalAccount {
     this.displayName,
     this.username,
     this.lastSignInAt,
+    this.mfaRequired = false,
+    this.mfaPolicyAvailable = false,
   });
 
   factory InternalAccount.fromJson(Map<String, dynamic> json) =>
@@ -19,6 +21,8 @@ class InternalAccount {
         email: json['email'] as String,
         isDisabled: json['isDisabled'] as bool,
         isSelf: json['isSelf'] as bool,
+        mfaRequired: json['mfaRequired'] as bool? ?? false,
+        mfaPolicyAvailable: json['mfaPolicyAvailable'] as bool? ?? false,
         displayName: json['displayName'] as String?,
         username: json['username'] as String?,
         lastSignInAt: DateTime.tryParse(json['lastSignInAt'] as String? ?? ''),
@@ -28,6 +32,8 @@ class InternalAccount {
   final String email;
   final bool isDisabled;
   final bool isSelf;
+  final bool mfaRequired;
+  final bool mfaPolicyAvailable;
   final String? displayName;
   final String? username;
   final DateTime? lastSignInAt;
@@ -101,6 +107,15 @@ class InternalAccountRepository {
     required String confirmationEmail,
   }) => _update(account.id, {
     'action': 'reset_mfa',
+    'confirmationEmail': confirmationEmail.trim(),
+  });
+
+  Future<InternalAccount> setMfaPolicy(
+    InternalAccount account, {
+    required bool required,
+    required String confirmationEmail,
+  }) => _update(account.id, {
+    'action': required ? 'require_mfa' : 'optional_mfa',
     'confirmationEmail': confirmationEmail.trim(),
   });
 

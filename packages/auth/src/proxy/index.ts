@@ -1,3 +1,10 @@
+import { appSessionFailureResponse } from './mfa-failure';
+
+export {
+  appSessionFailureResponse,
+  preserveMfaRecoveryCookies,
+} from './mfa-failure';
+
 import {
   decodeURIComponentSafely,
   normalizeAuthRedirectPath,
@@ -17,11 +24,13 @@ import type {
 import type { Database } from '@tuturuuu/types/db';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
+import { isRequiredMfaAppSessionAllowed } from '@tuturuuu/utils/required-mfa-app-session';
+import { discardAppCookiesForVerifiedProvider } from '@tuturuuu/utils/required-mfa-credentials';
+import { enforceRequiredMfaRequest } from '@tuturuuu/utils/required-mfa-runtime';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { AppCoordinationTokenClaims } from '../app-coordination';
 import {
-  APP_SESSION_SCOPE,
   clearAppSessionCookie,
   clearSupabaseAuthCookies,
   createAppSessionToken,
@@ -39,6 +48,7 @@ import {
   MFA_MOBILE_APPROVAL_KIND,
   parseMfaMobileApprovalCookie,
 } from '../mfa-mobile-approval';
+import { createAppSessionClaimsFromSupabaseClaims } from './supabase-app-claims';
 
 const INTERNAL_HOSTNAME_PATTERN =
   /^(?:0\.0\.0\.0|127(?:\.\d+){0,3}|localhost|::1|\[::1\]|host\.docker\.internal)$/u;
@@ -52,7 +62,6 @@ function extractForwardedHeaderValue(value: string | null): string | null {
     .split(',')
     .map((entry) => entry.trim())
     .filter(Boolean);
-
   return firstValue || null;
 }
 
@@ -127,7 +136,6 @@ export function resolveCanonicalRequestOrigin(
   ) {
     return req.nextUrl.origin;
   }
-
   return fallbackOrigin;
 }
 
@@ -203,7 +211,6 @@ function parseCookieHeader(cookieHeader: string | null) {
       cookies.set(rawName, rawValueParts.join('='));
     }
   }
-
   return cookies;
 }
 
@@ -235,7 +242,6 @@ function updateCookieHeaderFromSetCookies(
 
     cookies.set(rawName, rawValueParts.join('='));
   }
-
   return [...cookies.entries()]
     .map(([name, value]) => `${name}=${value}`)
     .join('; ');
@@ -280,7 +286,6 @@ export function getRequestHeadersWithResponseCookies(
   } else {
     headers.delete('cookie');
   }
-
   return headers;
 }
 
@@ -307,7 +312,6 @@ function getAppSessionAuthorizationHeader(headers: Headers) {
   const token =
     getWebAppSessionTokenFromRequest({ headers }) ??
     getAppSessionTokenFromRequest({ headers });
-
   return token ? `Bearer ${token}` : null;
 }
 
@@ -317,8 +321,8 @@ function getRequestHeadersWithAppSessionAuthorization(req: NextRequest) {
 
   if (authorization) {
     headers.set('authorization', authorization);
+    req.headers.set('authorization', authorization);
   }
-
   return headers;
 }
 
@@ -369,7 +373,6 @@ function getLocalPortlessAuthApiUrl(req: NextRequest, apiPath: string) {
   ) {
     return null;
   }
-
   return new URL(apiPath, `http://127.0.0.1:${port}`);
 }
 
@@ -403,7 +406,6 @@ function matchesVerifyTokenPath(
 
   const segments = pathname.split('/').filter(Boolean);
   const verifySegment = verifyPath.replace(/^\/+/u, '');
-
   return (
     segments.length === 2 &&
     segments[1] === verifySegment &&
@@ -494,7 +496,6 @@ export async function consumeVerifyTokenRequest(
     getSetCookieHeaders(verifyResponse.headers),
     redirectResponse
   );
-
   return clearSupabaseAuthCookies(req, redirectResponse);
 }
 
@@ -509,42 +510,8 @@ type AppSessionRefreshState =
   | {
       error: string;
       ok: false;
+      response?: Response;
     };
-
-function createAppSessionClaimsFromSupabaseClaims(
-  claims: unknown,
-  options: {
-    now: Date;
-    targetApp: AppName | string;
-  }
-): AppCoordinationTokenClaims | null {
-  const record = asRecord(claims);
-  const sub = typeof record.sub === 'string' ? record.sub : null;
-
-  if (!sub) {
-    return null;
-  }
-
-  const nowSeconds = Math.floor(options.now.getTime() / 1000);
-  const exp = typeof record.exp === 'number' ? record.exp : nowSeconds + 3600;
-  const iat = typeof record.iat === 'number' ? record.iat : nowSeconds;
-  const sessionId =
-    typeof record.session_id === 'string' ? record.session_id : null;
-
-  return {
-    aud: 'tuturuuu-api',
-    email: typeof record.email === 'string' ? record.email : null,
-    exp,
-    iat,
-    iss: 'tuturuuu',
-    jti: sessionId ?? `supabase:${sub}:${iat}`,
-    origin_app: 'web',
-    scopes: [APP_SESSION_SCOPE],
-    sub,
-    target_app: options.targetApp,
-    typ: 'app_coordination',
-  };
-}
 
 function createSupabaseBackedAppSessionResponse(
   req: NextRequest,
@@ -560,6 +527,7 @@ function createSupabaseBackedAppSessionResponse(
   const { token } = createAppSessionToken(
     {
       email: claims.email ?? undefined,
+      mfa: claims.mfa,
       expiresInSeconds: Math.max(1, secondsUntilExpiry),
       scopes: claims.scopes,
       targetApp: options.targetApp,
@@ -569,14 +537,25 @@ function createSupabaseBackedAppSessionResponse(
   );
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('authorization', `Bearer ${token}`);
+  req.headers.set('authorization', `Bearer ${token}`);
   const response = createNextResponseWithRequestHeaders(requestHeaders);
   copySetCookieHeaders(getSetCookieHeaders(res.headers), response);
   clearAppSessionCookie(response);
-
   return { requestHeaders, response };
 }
 
 export async function refreshAppSessionForRequest(
+  request: NextRequest,
+  options: Parameters<typeof resolveAppSessionForRequest>[1]
+): Promise<AppSessionRefreshState> {
+  try {
+    return await resolveAppSessionForRequest(request, options);
+  } catch {
+    return { ok: false, error: 'Account assurance unavailable' };
+  }
+}
+
+async function resolveAppSessionForRequest(
   req: NextRequest,
   options: {
     now?: Date;
@@ -593,11 +572,18 @@ export async function refreshAppSessionForRequest(
     hasSupportedSupabaseAuthCookie(req)
   ) {
     const { res, claims } = await updateSession(req);
-    const appSessionClaims = createAppSessionClaimsFromSupabaseClaims(claims, {
-      now,
-      targetApp: options.targetApp,
-    });
+    if (claims && !req.headers.has('authorization'))
+      discardAppCookiesForVerifiedProvider(req);
+    const appSessionClaims = await createAppSessionClaimsFromSupabaseClaims(
+      claims,
+      {
+        now,
+        targetApp: options.targetApp,
+      }
+    );
 
+    if (claims && !appSessionClaims)
+      return { error: 'MFA required', ok: false, response: res };
     if (appSessionClaims) {
       if (
         await requiresMfaVerification(
@@ -610,6 +596,7 @@ export async function refreshAppSessionForRequest(
         return {
           error: 'MFA required',
           ok: false,
+          response: res,
         };
       }
 
@@ -641,6 +628,12 @@ export async function refreshAppSessionForRequest(
   const shouldRefreshMissingWebSession =
     options.requireWebAppSession && !webAccessToken && Boolean(refreshToken);
 
+  if (
+    verification.ok &&
+    !(await isRequiredMfaAppSessionAllowed(verification.claims))
+  ) {
+    return { error: 'MFA required', ok: false };
+  }
   if (verification.ok) {
     const earlySeconds = getAppSessionRefreshEarlySeconds(verification.claims);
     const secondsUntilExpiry =
@@ -729,16 +722,18 @@ export async function refreshAppSessionForRequest(
     }
   );
 
-  if (!refreshedVerification.ok) {
-    return refreshedVerification;
+  if (!refreshedVerification.ok) return refreshedVerification;
+  if (!(await isRequiredMfaAppSessionAllowed(refreshedVerification.claims))) {
+    return { error: 'MFA required', ok: false, response: refreshResponse };
   }
 
+  // Bind subsequent API guards to the same verified refreshed credential.
+  if (authorization) req.headers.set('authorization', authorization);
   const response = clearSupabaseAuthCookies(
     req,
     createNextResponseWithRequestHeaders(requestHeaders)
   );
   copySetCookieHeaders(setCookieHeaders, response);
-
   return {
     claims: refreshedVerification.claims,
     ok: true,
@@ -836,6 +831,10 @@ async function requiresMfaVerification(
   userId: string | null | undefined,
   sessionId: string | null | undefined
 ) {
+  const assurance = await enforceRequiredMfaRequest(req);
+  if (assurance?.status === 503)
+    throw new Error('Account assurance unavailable');
+  if (assurance) return true;
   const supabase = await createClient();
 
   const { data: factors } = await supabase.auth.mfa.listFactors();
@@ -849,9 +848,6 @@ async function requiresMfaVerification(
   return !(await hasValidMobileMfaApproval(req, userId, sessionId));
 }
 
-/**
- * Handles MFA verification checks for authenticated users
- */
 async function handleMFACheck(
   req: NextRequest,
   aal: AuthenticatorAssuranceLevels | null,
@@ -864,12 +860,10 @@ async function handleMFACheck(
 ): Promise<NextResponse | null> {
   const pathname = req.nextUrl.pathname;
 
-  // Skip if path is excluded
   if (excludedPaths.some((path) => pathname.startsWith(path))) {
     return null;
   }
 
-  // Check if this path requires MFA
   const needsMFA =
     enforceForAll || protectedPaths.some((path) => pathname.startsWith(path));
 
@@ -882,12 +876,9 @@ async function handleMFACheck(
       const publicOrigin = resolveCanonicalRequestOrigin(req, webAppUrl);
       const centralOrigin = new URL(webAppUrl).origin;
 
-      // Check if this is the central web app handling MFA
       const isCentralWebApp = publicOrigin === centralOrigin;
 
       if (isCentralWebApp) {
-        // Handle MFA verification in the login page
-        // Preserve existing nextUrl if it exists, otherwise use current path
         const nextUrl = normalizeAuthRedirectPath(
           req.nextUrl.searchParams.get('nextUrl') ??
             `${req.nextUrl.pathname}${req.nextUrl.search}`,
@@ -903,8 +894,6 @@ async function handleMFACheck(
         clearMfaMobileApprovalCookie(redirectResponse);
         return redirectResponse;
       } else {
-        // All other apps redirect to central web app for MFA verification
-        // Route through /verify-token so cross-app tokens are properly consumed
         const existingReturnUrl = req.nextUrl.searchParams.get('returnUrl');
         const returnUrl =
           existingReturnUrl &&
@@ -942,7 +931,10 @@ async function handleMFACheck(
     return null;
   } catch (error) {
     console.error('Error checking MFA:', error);
-    return null;
+    return NextResponse.json(
+      { error: 'Unable to verify account security' },
+      { status: 503 }
+    );
   }
 }
 
@@ -1012,9 +1004,6 @@ interface CentralizedAuthOptions {
   };
 }
 
-/**
- * Creates a middleware handler that redirects unauthenticated users to the central web app login page
- */
 export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
   const {
     webAppUrl,
@@ -1060,6 +1049,8 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
           const { res, claims } = await updateSession(req);
 
           if (claims) {
+            if (!req.headers.has('authorization'))
+              discardAppCookiesForVerifiedProvider(req);
             const claimsRecord = asRecord(claims);
             const userId =
               typeof claimsRecord.sub === 'string' ? claimsRecord.sub : null;
@@ -1081,13 +1072,11 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
             }
 
             const now = appSession.now ?? new Date();
-            const appSessionClaims = createAppSessionClaimsFromSupabaseClaims(
-              claims,
-              {
+            const appSessionClaims =
+              await createAppSessionClaimsFromSupabaseClaims(claims, {
                 now,
                 targetApp: appSession.targetApp,
-              }
-            );
+              });
 
             if (appSessionClaims) {
               return createSupabaseBackedAppSessionResponse(
@@ -1101,8 +1090,11 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
               ).response;
             }
 
-            clearAppSessionCookie(res);
-            return res;
+            const required = NextResponse.redirect(
+              new URL('/login?mfa=required', webAppUrl)
+            );
+            propagateAuthCookies(res, required);
+            return required;
           }
         }
 
@@ -1113,10 +1105,14 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
         });
 
         if (!appSessionVerification.ok && !isPublic) {
-          if (req.nextUrl.pathname.startsWith('/api')) {
-            return clearSupabaseAuthCookies(
+          if (
+            req.nextUrl.pathname.startsWith('/api') ||
+            appSessionVerification.error === 'Account assurance unavailable'
+          ) {
+            return appSessionFailureResponse(
               req,
-              NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+              appSessionVerification.error,
+              appSessionVerification.response
             );
           }
 
@@ -1127,6 +1123,14 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
           );
 
           const redirectResponse = NextResponse.redirect(loginUrl);
+          if (appSessionVerification.error === 'MFA required') {
+            loginUrl.searchParams.set('mfa', 'required');
+            const required = NextResponse.redirect(loginUrl);
+            for (const cookie of appSessionVerification.response?.headers.getSetCookie() ??
+              [])
+              required.headers.append('set-cookie', cookie);
+            return required;
+          }
           return shouldPreserveCentralLoopbackCookies(req, webAppUrl)
             ? redirectResponse
             : clearSupabaseAuthCookies(req, redirectResponse);
@@ -1141,18 +1145,16 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
         return NextResponse.next();
       }
 
-      // Make sure user session is always refreshed
       const { res, claims } = await updateSession(req);
-
-      // If we should skip API routes and the current path starts with /api, return without redirecting
-      if (skipApiRoutes && req.nextUrl.pathname.startsWith('/api')) {
-        // console.log('Skipping API route:', req.nextUrl.pathname);
-        return res;
-      } else {
-        // console.log('Not skipping API route:', req.nextUrl.pathname);
+      if (claims && !req.headers.has('authorization')) {
+        discardAppCookiesForVerifiedProvider(req);
+        res.headers.set('x-middleware-override-headers', 'cookie');
+        res.headers.set(
+          'x-middleware-request-cookie',
+          req.headers.get('cookie') ?? ''
+        );
       }
 
-      // If the user is not authenticated and the path is not public, redirect to the central login page
       if (!claims && !isPublic) {
         const loginUrl = new URL('/login', webAppUrl);
         loginUrl.searchParams.set(
@@ -1166,7 +1168,6 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
         return redirectResponse;
       }
 
-      // If user is authenticated and MFA is enabled, check MFA requirements
       if (claims && mfaEnabled) {
         const mfaRedirect = await handleMFACheck(
           req,
@@ -1188,7 +1189,7 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
       return res;
     } catch (error) {
       console.error('Error updating session:', error);
-      return NextResponse.redirect(new URL('/', req.nextUrl));
+      return appSessionFailureResponse(req, 'Account assurance unavailable');
     }
   };
 }
@@ -1210,10 +1211,7 @@ export function createReturnUrlHandler(
         const decodedUrl = decodeURIComponent(returnUrl);
         const url = new URL(decodedUrl);
 
-        // Redirect to the returnUrl
-        const redirectResponse = NextResponse.redirect(url);
-
-        return redirectResponse;
+        return NextResponse.redirect(url);
       } catch (error) {
         console.error('Invalid returnUrl:', error);
       }

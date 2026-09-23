@@ -86,3 +86,23 @@ it('does not expose unsafe avatar URLs and tolerates a missing public profile', 
   });
   expect((await POST(request())).status).toBe(200);
 });
+
+it('rejects a required account handoff without server-signed assurance', async () => {
+  mocks.getUserById.mockResolvedValue({
+    data: {
+      user: {
+        id: 'user',
+        email: 'real@example.com',
+        email_confirmed_at: '2026-01-01',
+        app_metadata: {
+          tuturuuu_required_mfa: { required: true, verifiedAfter: 1 },
+        },
+      },
+    },
+    error: null,
+  });
+  const response = await POST(request());
+  expect(response.status).toBe(403);
+  expect(await response.json()).toMatchObject({ code: 'MFA_REQUIRED' });
+  expect(mocks.profile).not.toHaveBeenCalled();
+});

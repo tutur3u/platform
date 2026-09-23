@@ -12,6 +12,13 @@ import {
 } from './service';
 
 vi.mock('server-only', () => ({}));
+vi.mock('./recovery-service', () => ({
+  recoverAccountPassword: (
+    admin: SupabaseClient<Database>,
+    id: string,
+    password: string
+  ) => admin.auth.admin.updateUserById(id, { password }),
+}));
 vi.mock('./mfa-service', () => ({
   resetInternalAccountAuthenticators: vi.fn(),
 }));

@@ -12,7 +12,10 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   hasSupportedSupabaseAuthCookie: () => true,
   hasWebAppSessionTokenFromRequest: () => true,
 }));
-vi.mock('@tuturuuu/auth/proxy', () => ({
+vi.mock('@tuturuuu/auth/proxy', async () => ({
+  ...(await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
+    '@tuturuuu/auth/proxy'
+  )),
   refreshAppSessionForRequest: mocks.refresh,
   consumeVerifyTokenRequest: async () => null,
   propagateAuthCookies: vi.fn(),
@@ -66,5 +69,5 @@ it('denies protected API access when MFA is required', async () => {
         )
       )
     ).status
-  ).toBe(401);
+  ).toBe(403);
 });

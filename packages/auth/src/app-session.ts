@@ -15,6 +15,15 @@ import {
   type ResolvedInternalAppSessionPolicy,
 } from './app-session-policy';
 
+import {
+  createAppSessionUser,
+  getSupabaseAuthClaimsForUser,
+} from './app-session-user';
+
+export { createAppSessionUser } from './app-session-user';
+
+import type { MfaSessionProof } from './required-mfa-policy';
+
 export const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
 export const WEB_APP_SESSION_COOKIE_NAME = 'tuturuuu_web_app_session';
 export const APP_SESSION_REFRESH_COOKIE_NAME = 'tuturuuu_app_session_refresh';
@@ -32,6 +41,7 @@ export type AppSessionTargetApp = AppName | string;
 export type AppSessionTokenPayload = {
   email?: string | null;
   expiresInSeconds?: number;
+  mfa?: MfaSessionProof;
   originApp?: AppSessionTargetApp;
   scopes?: string[];
   targetApp: AppSessionTargetApp;
@@ -88,6 +98,7 @@ export function createAppSessionToken(
     {
       email: payload.email ?? null,
       expiresInSeconds: payload.expiresInSeconds,
+      mfa: payload.mfa,
       originApp: payload.originApp ?? 'web',
       scopes: normalizeAppSessionScopes(payload.scopes),
       targetApp: payload.targetApp,
@@ -108,6 +119,7 @@ export function createAppSessionRefreshToken(
     {
       email: payload.email ?? null,
       expiresInSeconds: payload.expiresInSeconds,
+      mfa: payload.mfa,
       originApp: payload.originApp ?? 'web',
       scopes: normalizeAppSessionRefreshScopes(payload.scopes),
       targetApp: payload.targetApp,
@@ -672,46 +684,6 @@ export function hasSupportedSupabaseAuthCookie(request: RequestLike) {
       isSupabaseAuthCookieName(name) &&
       shouldPreserveSupabaseAuthCookie(request, name)
   );
-}
-
-export function createAppSessionUser(
-  claims: AppCoordinationTokenClaims
-): SupabaseUser {
-  const timestamp = new Date(claims.iat * 1000).toISOString();
-
-  return {
-    app_metadata: {},
-    aud: 'authenticated',
-    confirmed_at: timestamp,
-    created_at: timestamp,
-    email: claims.email ?? undefined,
-    id: claims.sub,
-    identities: [],
-    role: 'authenticated',
-    updated_at: timestamp,
-    user_metadata: {
-      origin_app: claims.origin_app,
-      target_app: claims.target_app,
-    },
-  } as SupabaseUser;
-}
-
-function getSupabaseAuthClaimsForUser(user: SupabaseUser) {
-  const sessionUser = user as SupabaseUser & {
-    app_metadata?: Record<string, unknown>;
-    aud?: string | null;
-    role?: string | null;
-    user_metadata?: Record<string, unknown>;
-  };
-
-  return {
-    app_metadata: sessionUser.app_metadata ?? {},
-    aud: sessionUser.aud ?? 'authenticated',
-    email: user.email ?? null,
-    role: sessionUser.role ?? 'authenticated',
-    sub: user.id,
-    user_metadata: sessionUser.user_metadata ?? {},
-  };
 }
 
 export function attachSupabaseAuthUser<T extends TypedSupabaseClient>(

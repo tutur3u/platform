@@ -10,7 +10,9 @@ import {
   WEB_APP_SESSION_REFRESH_COOKIE_NAME,
 } from '@tuturuuu/auth/app-session';
 import {
+  appSessionFailureResponse,
   consumeVerifyTokenRequest,
+  preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
@@ -223,9 +225,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       : null;
 
     if (appSessionRefresh && !appSessionRefresh.ok && !isPublicSharedFormApi) {
-      return clearSupabaseAuthCookies(
+      return appSessionFailureResponse(
         request,
-        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        appSessionRefresh.error,
+        appSessionRefresh.response
       );
     }
 
@@ -236,7 +239,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       if (appSessionRefresh?.ok) {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }
-      return clearSupabaseAuthCookies(request, guardResponse);
+      return preserveMfaRecoveryCookies(request, guardResponse);
     }
 
     return appSessionRefresh?.ok

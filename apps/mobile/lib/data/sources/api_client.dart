@@ -8,6 +8,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_verification.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/auth/required_mfa_policy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Lightweight HTTP client for calling mobile API endpoints.
@@ -480,6 +481,9 @@ class ApiClient {
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (parsed?['code'] == 'MFA_REQUIRED') {
+        unawaited(refreshRequiredMfa(_auth));
+      }
       final errorMessage =
           parsed?['message'] as String? ??
           parsed?['error'] as String? ??

@@ -17,6 +17,7 @@ import 'package:mobile/data/sources/apple_identity_client.dart';
 import 'package:mobile/data/sources/google_identity_client.dart';
 import 'package:mobile/data/sources/oauth_url_launcher.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/auth/required_mfa_policy.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -281,6 +282,7 @@ class AuthRepository {
 
   /// Returns `true` if user has verified TOTP factors but session is at aal1.
   bool checkMfaRequired() {
+    if (requiresAccountMfa(_client.auth.currentSession)) return true;
     try {
       final aal = _client.auth.mfa.getAuthenticatorAssuranceLevel();
       return aal.currentLevel == AuthenticatorAssuranceLevels.aal1 &&

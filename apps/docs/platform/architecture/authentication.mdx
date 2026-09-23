@@ -1029,3 +1029,100 @@ export async function linkIdentity(provider: "google" | "github") {
 
 - [Supabase Auth Documentation](https://supabase.com/docs/guides/auth)
 - [Next.js Authentication](https://nextjs.org/docs/app/building-your-application/authentication)
+
+## Required MFA for internal accounts
+
+Infrastructure administrators can require MFA or make it optional from Internal
+Accounts. Requiring MFA creates a new verification boundary: existing AAL2 tokens,
+app sessions, and mobile approvals from before that boundary cannot satisfy the
+policy. Users without a factor enroll on the web or mobile sign-in screen before
+continuing. Making MFA optional retains enrolled authenticators; Reset
+authenticators removes them and requires enrollment again when policy remains
+required. Administrators cannot change their own policy through this interface.
+
+The policy lives in server-owned `auth.users.raw_app_meta_data` under
+`tuturuuu_required_mfa`. User metadata and caller-supplied cross-app session data
+are never authorities. Cross-app handoff uses a separately signed, short-lived
+proof bound to the user and target. Refresh preserves the original verification
+time and mobile-approval expiry. Administrative authenticator recovery advances
+the boundary before deleting factors so partial recovery cannot retain old proof.
+Administrative password recovery also advances the boundary. AI cached identity
+tokens are disabled for required accounts; those requests use normal verified
+session authentication. Existing cached AI tokens are rechecked against fresh
+policy before use.
+
+### Rollout gate
+
+Keep `REQUIRED_MFA_POLICY_ENABLED` unset until the migration and all application
+changes are deployed and verified. Infrastructure also requires the database
+`required_mfa_enforcement_version()` capability to return `1` before exposing
+policy changes. The environment gate is an operational release acknowledgement;
+the database version alone does not prove application readiness. Production
+migration application remains user-operated.
+
+1. Apply `20260923010000_required_account_mfa.sql` locally and run
+   `apps/database/supabase/tests/required-account-mfa.sql`.
+2. Verify web login, factorless enrollment, native enrollment, existing AAL1/AAL2
+   sessions, mobile approval expiry, authenticator recovery, and making MFA optional.
+3. Verify API guards in custom satellite proxies (including Mail, Infra and
+   Calendar), privileged API reads/writes, browser/CLI/external token exchange,
+   refresh, and invitation decisions. Mixed credentials must not borrow assurance
+   from another session or account.
+4. Verify direct PostgREST RPC/table access, Storage and Realtime authorization.
+   Existing open Realtime connections require explicit runtime verification during
+   rollout; checking a reconnect alone is not evidence of immediate revocation.
+5. Deploy and verify the exact web/satellite source and mobile beta builds, apply
+   the production migration through the authorized operator, then set
+   `REQUIRED_MFA_POLICY_ENABLED=true` on Infrastructure.
+
+A denied interactive API request returns `403` with `MFA_REQUIRED`. Mobile refreshes
+its provider session so its auth router can show verification/enrollment. Policy
+lookup failures return `503`; they never grant access. Recovery routes stay
+reachable but retain their own authentication and challenge checks. Machine and
+webhook credentials retain their independent authentication contracts.
+
+The migration adds restrictive policies to existing application, Storage and
+Realtime authorization tables. New RLS tables added after this migration must
+also include the `account_required_mfa` restrictive policy; do not assume the
+PostgREST hook protects Storage or Realtime traffic.
+
+### Cached clients and reconnect
+
+Optional accounts keep instant cached startup and offline access. Native startup
+and resume revalidate the session in the background; a known required policy with
+missing, stale, or expired proof routes immediately to the MFA screen. Web and
+satellite clients perform a background profile check on focus/reconnect; a
+`MFA_REQUIRED` response reloads through the server auth proxy into the challenge.
+Rotated provider cookies are retained on MFA responses so recovery does not become
+a password-login loop.
+
+An offline device cannot learn that an administrator has newly required MFA or
+advanced a recovery boundary. Previously accessible cached content remains bounded
+by the policy last known to that client until it reconnects. This feature does not
+remotely erase cached files or revoke previously issued public/signed download URLs.
+Do not describe it as immediate offline revocation.
+
+Administrator recovery blocks required accounts while factors or passwords are
+being changed. After recovery, both primary sign-in and MFA must happen after the
+new boundary. Existing web and native sessions show **Sign in again** before
+allowing enrollment. Signed app-session and mobile-approval proofs also retain
+the current verified factor identity; deleting that factor invalidates those
+proofs even if an in-flight verification finishes late. A newly enrolled factor
+cannot restore a proof tied to the removed factor.
+
+The rollout flag controls policy mutations only. It is not an enforcement bypass:
+existing required policy remains authoritative when the flag is off. Server
+requests fail with `503 AUTH_UNAVAILABLE` if fresh account policy cannot be read,
+including requests from previously optional accounts. Optional accounts still
+retain instant cached startup and offline UI; this does not grant offline server
+access.
+
+Supabase private Broadcast/Presence authorization is cached for an open channel.
+The restrictive policy applies on a new join or fresh JWT; an existing connection
+can retain access until token refresh, reconnect, or JWT expiry. Postgres Changes
+uses table RLS separately, and public channels are not protected by private-channel
+policies. Do not claim immediate revocation of already-open broadcasts or signed
+URLs. See [Supabase Realtime authorization](https://supabase.com/docs/guides/realtime/authorization)
+and [private channel settings](https://supabase.com/docs/guides/realtime/settings).
+
+Administrative policy/recovery metadata transitions use a row-locked database compare-and-swap with a unique generation. A delayed completion cannot overwrite a newer recovery marker, even after the application coordination lease expires. Provider password changes remain GoTrue operations; optional-account password reset does not promise immediate revocation of every previously issued JWT, including when an administrator concurrently enables required MFA. Fresh required-policy and factor checks still apply to every protected request.

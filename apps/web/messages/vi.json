@@ -9689,6 +9689,19 @@
     "qr_unavailable_description": "Hãy làm mới mã hoặc dùng phương thức đăng nhập khác.",
     "qr_unavailable_title": "Không thể đăng nhập bằng QR",
     "rate_limited_social_auth_hint": "Để tiếp tục tạm thời, hãy chọn nhà cung cấp đăng nhập mạng xã hội bằng {email}. Hãy dùng cùng email với tài khoản Tuturuuu của bạn để chúng tôi kết nối đúng hồ sơ.",
+    "required_mfa_authenticator": "Ứng dụng xác thực",
+    "required_mfa_enroll_description": "Quản trị viên yêu cầu xác minh hai bước. Thêm tài khoản này vào ứng dụng xác thực để tiếp tục.",
+    "required_mfa_enroll_title": "Bảo vệ tài khoản của bạn",
+    "required_mfa_error": "Không thể hoàn tất xác minh. Vui lòng thử lại.",
+    "required_mfa_loading": "Đang kiểm tra phương thức xác thực…",
+    "required_mfa_recovery_description": "Quản trị viên đã đặt lại bảo mật tài khoản. Hãy đăng nhập lại trước khi thiết lập hoặc xác minh ứng dụng xác thực.",
+    "required_mfa_recovery_title": "Đăng nhập lại để bảo vệ tài khoản",
+    "required_mfa_retry": "Thử lại",
+    "required_mfa_secret_label": "Nhập khóa thiết lập này vào ứng dụng xác thực. Không chia sẻ khóa này.",
+    "required_mfa_sign_in_again": "Đăng nhập lại",
+    "required_mfa_sign_out": "Đăng xuất",
+    "required_mfa_start": "Thiết lập ứng dụng xác thực",
+    "required_mfa_verify": "Xác minh và tiếp tục",
     "resend": "Gửi lại",
     "resend_available_in": "Có thể gửi lại sau {seconds} giây",
     "retry_profile_load": "Tải lại hồ sơ",
@@ -11511,7 +11524,12 @@
     "estimate": "Tạm tính minh họa · USD · chưa gồm thuế và tiện ích bổ sung",
     "exitFullscreen": "Thoát toàn màn hình",
     "explore": "Khám phá Tuturuuu",
-    "families": ["Tổ chức", "Cộng tác", "Vận hành", "Học và sáng tạo"],
+    "families": [
+      "Tổ chức",
+      "Cộng tác",
+      "Vận hành",
+      "Học và sáng tạo"
+    ],
     "feedback": "Góp ý",
     "free": "Miễn phí",
     "friction": [
@@ -11535,10 +11553,20 @@
     "next": "Trang tiếp",
     "noClaims": "Định hướng sản phẩm, không cam kết phát hành hoặc hiệu suất.",
     "notes": "Ghi chú thuyết trình",
-    "orbitLabels": ["Công việc", "AI", "Tệp", "Học tập"],
+    "orbitLabels": [
+      "Công việc",
+      "AI",
+      "Tệp",
+      "Học tập"
+    ],
     "overview": "Tất cả trang",
     "pause": "Tạm dừng",
-    "people": ["Cá nhân", "Đội nhóm nhỏ", "Nhà giáo dục", "Nhà vận hành"],
+    "people": [
+      "Cá nhân",
+      "Đội nhóm nhỏ",
+      "Nhà giáo dục",
+      "Nhà vận hành"
+    ],
     "perMonth": "mỗi tháng",
     "perYear": "mỗi năm",
     "planDetails": [
@@ -11649,7 +11677,12 @@
         "title": "Từ ý tưởng hay\nđến một ngày hiệu quả."
       }
     },
-    "stages": ["Lập kế hoạch", "Kết nối", "Hoàn thành", "Nhìn lại"],
+    "stages": [
+      "Lập kế hoạch",
+      "Kết nối",
+      "Hoàn thành",
+      "Nhìn lại"
+    ],
     "title": "Tuturuuu — không gian làm việc kết nối"
   },
   "platform-role-data-table": {

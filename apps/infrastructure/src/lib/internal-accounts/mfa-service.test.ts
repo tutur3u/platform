@@ -14,7 +14,10 @@ function fixture() {
     data: { user: { id: 'target', email: 'target@tuturuuu.com' } },
     error: null,
   });
-  const updateUserById = vi.fn().mockResolvedValue({ data: {}, error: null });
+  const rpc = vi.fn().mockImplementation(async (_name, args) => ({
+    data: args.p_next,
+    error: null,
+  }));
   const listFactors = vi
     .fn()
     .mockResolvedValueOnce({
@@ -28,16 +31,16 @@ function fixture() {
     targetUserId: 'target',
     confirmationEmail: 'target@tuturuuu.com',
     sbAdmin: {
+      rpc,
       auth: {
         admin: {
           getUserById,
-          updateUserById,
           mfa: { listFactors, deleteFactor },
         },
       },
     } as unknown as TypedSupabaseClient,
   };
-  return { input, getUserById, updateUserById, listFactors, deleteFactor };
+  return { input, getUserById, rpc, listFactors, deleteFactor };
 }
 
 describe('administrative authenticator reset', () => {
@@ -52,6 +55,47 @@ describe('administrative authenticator reset', () => {
               ? 'owned'
               : 'released',
       })
+    );
+  });
+
+  it('invalidates existing assurance before deleting factors during recovery', async () => {
+    const f = fixture();
+    f.getUserById.mockResolvedValue({
+      data: {
+        user: {
+          id: 'target',
+          email: 'target@tuturuuu.com',
+          app_metadata: {
+            tuturuuu_required_mfa: { required: true, verifiedAfter: 1 },
+          },
+        },
+      },
+      error: null,
+    });
+    await resetInternalAccountAuthenticators(f.input);
+    expect(f.rpc).toHaveBeenLastCalledWith(
+      'transition_account_mfa_policy',
+      expect.objectContaining({
+        p_next: expect.objectContaining({
+          recoveryInProgress: false,
+          primaryVerifiedAfter: expect.any(Number),
+        }),
+        p_expected: expect.objectContaining({ recoveryInProgress: true }),
+      })
+    );
+    expect(f.rpc).toHaveBeenNthCalledWith(
+      1,
+      'transition_account_mfa_policy',
+      expect.objectContaining({
+        p_clear_devices: true,
+        p_next: expect.objectContaining({
+          required: true,
+          recoveryInProgress: true,
+        }),
+      })
+    );
+    expect(f.rpc.mock.invocationCallOrder[0]).toBeLessThan(
+      f.deleteFactor.mock.invocationCallOrder[0]!
     );
   });
 
@@ -75,7 +119,7 @@ describe('administrative authenticator reset', () => {
       await expect(
         resetInternalAccountAuthenticators(f.input)
       ).rejects.toMatchObject({ status: 404 });
-      expect(f.updateUserById).not.toHaveBeenCalled();
+      expect(f.rpc).not.toHaveBeenCalled();
       expect(mocks.coordinate).toHaveBeenLastCalledWith(
         expect.objectContaining({ action: 'release' })
       );
@@ -91,7 +135,7 @@ describe('administrative authenticator reset', () => {
     await expect(
       resetInternalAccountAuthenticators(f.input)
     ).rejects.toMatchObject({ status: 404 });
-    expect(f.updateUserById).not.toHaveBeenCalled();
+    expect(f.rpc).not.toHaveBeenCalled();
   });
 
   it('requires exact target email confirmation', async () => {
@@ -115,16 +159,11 @@ describe('administrative authenticator reset', () => {
         key: 'hashed:target',
       })
     );
-    expect(f.updateUserById).toHaveBeenCalledWith('target', {
-      app_metadata: {
-        tuturuuu_device_authenticators: {
-          version: 1,
-          locked: false,
-          devices: [],
-        },
-      },
-    });
-    expect(f.updateUserById.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(f.rpc).toHaveBeenCalledWith(
+      'transition_account_mfa_policy',
+      expect.objectContaining({ p_user_id: 'target', p_clear_devices: true })
+    );
+    expect(f.rpc.mock.invocationCallOrder[0]).toBeLessThan(
       f.deleteFactor.mock.invocationCallOrder[0]!
     );
     expect(f.deleteFactor).toHaveBeenNthCalledWith(1, {
@@ -158,7 +197,7 @@ describe('administrative authenticator reset', () => {
       message: 'Unable to reset authenticators. Try again.',
     });
     expect(f.getUserById).not.toHaveBeenCalled();
-    expect(f.updateUserById).not.toHaveBeenCalled();
+    expect(f.rpc).not.toHaveBeenCalled();
   });
 
   it('stops an operation that exceeds its mutation deadline', async () => {
@@ -172,7 +211,7 @@ describe('administrative authenticator reset', () => {
       await expect(
         resetInternalAccountAuthenticators(f.input)
       ).rejects.toMatchObject({ status: 503 });
-      expect(f.updateUserById).not.toHaveBeenCalled();
+      expect(f.rpc).not.toHaveBeenCalled();
       expect(f.deleteFactor).not.toHaveBeenCalled();
     } finally {
       now.mockRestore();
@@ -187,7 +226,7 @@ describe('administrative authenticator reset', () => {
     await expect(
       resetInternalAccountAuthenticators(f.input)
     ).rejects.toMatchObject({ status: 503 });
-    expect(f.updateUserById).not.toHaveBeenCalled();
+    expect(f.rpc).not.toHaveBeenCalled();
     expect(f.deleteFactor).not.toHaveBeenCalled();
   });
 
@@ -201,13 +240,13 @@ describe('administrative authenticator reset', () => {
     await expect(
       resetInternalAccountAuthenticators(f.input)
     ).rejects.toMatchObject({ status: 503 });
-    expect(f.updateUserById).not.toHaveBeenCalled();
+    expect(f.rpc).not.toHaveBeenCalled();
     expect(f.deleteFactor).not.toHaveBeenCalled();
   });
 
   it('never deletes factors when device proofs could not be cleared', async () => {
     const f = fixture();
-    f.updateUserById.mockResolvedValue({
+    f.rpc.mockResolvedValue({
       error: { message: 'private detail' },
     });
     await expect(

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getRedis: vi.fn(),
+  assurance: vi.fn(),
   redis: {
     decr: vi.fn(),
     del: vi.fn(),
@@ -13,6 +14,10 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
+vi.mock('../required-mfa-app-session', () => ({
+  isRequiredMfaProofAllowed: (...args: unknown[]) => mocks.assurance(...args),
+}));
+
 vi.mock('../upstash-rest.js', () => ({
   getUpstashRestRedisClient: () => mocks.getRedis(),
 }));
@@ -20,6 +25,7 @@ vi.mock('../upstash-rest.js', () => ({
 describe('ai temp auth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.assurance.mockResolvedValue(true);
     mocks.getRedis.mockResolvedValue(mocks.redis);
     mocks.redis.get.mockResolvedValue('0');
     mocks.redis.set.mockResolvedValue('OK');
@@ -27,6 +33,31 @@ describe('ai temp auth', () => {
     mocks.redis.decr.mockResolvedValue(0);
     mocks.redis.expire.mockResolvedValue(1);
     mocks.redis.del.mockResolvedValue(1);
+  });
+
+  it('uses normal session auth instead of cached tokens for required accounts', async () => {
+    const { mintAiTempAuthToken } = await import('../ai-temp-auth.js');
+    mocks.assurance.mockResolvedValue(false);
+    expect(await mintAiTempAuthToken({ user: { id: 'required' } })).toBeNull();
+    expect(mocks.redis.set).not.toHaveBeenCalled();
+  });
+
+  it('invalidates an existing cached identity immediately after policy changes', async () => {
+    const { mintAiTempAuthToken, validateAiTempAuthRequest } = await import(
+      '../ai-temp-auth.js'
+    );
+    const minted = await mintAiTempAuthToken({ user: { id: 'actor' } });
+    const payload = mocks.redis.set.mock.calls[0]![1];
+    mocks.redis.get.mockImplementation(async (key: string) =>
+      key.startsWith('ai:temp-auth:token:') ? payload : '0'
+    );
+    mocks.assurance.mockResolvedValue(false);
+    const request = { headers: new Headers() };
+    const { AI_TEMP_AUTH_HEADER } = await import('../ai-temp-auth.js');
+    request.headers.set(AI_TEMP_AUTH_HEADER, minted!.token);
+    expect(await validateAiTempAuthRequest(request)).toEqual({
+      status: 'revoked',
+    });
   });
 
   it('mints a 60-second token and stores only its digest in Redis', async () => {
@@ -159,6 +190,7 @@ describe('ai temp auth', () => {
 describe('ai credit snapshots', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.assurance.mockResolvedValue(true);
     mocks.getRedis.mockResolvedValue(mocks.redis);
     mocks.redis.get.mockResolvedValue(null);
     mocks.redis.set.mockResolvedValue('OK');

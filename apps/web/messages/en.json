@@ -9689,6 +9689,19 @@
     "qr_unavailable_description": "Try refreshing the code or use another sign-in method.",
     "qr_unavailable_title": "QR sign-in is unavailable",
     "rate_limited_social_auth_hint": "To continue for now, choose a social sign-in provider using {email}. Use the same email as your Tuturuuu account so we can connect you to the right profile.",
+    "required_mfa_authenticator": "Authenticator",
+    "required_mfa_enroll_description": "Your administrator requires two-step verification. Add this account to an authenticator app to continue.",
+    "required_mfa_enroll_title": "Secure your account",
+    "required_mfa_error": "Unable to complete verification. Please try again.",
+    "required_mfa_loading": "Checking authenticators…",
+    "required_mfa_recovery_description": "Your administrator reset account security. Sign in again before setting up or verifying an authenticator.",
+    "required_mfa_recovery_title": "Sign in again to secure your account",
+    "required_mfa_retry": "Try again",
+    "required_mfa_secret_label": "Enter this setup key in your authenticator app. Keep it private.",
+    "required_mfa_sign_in_again": "Sign in again",
+    "required_mfa_sign_out": "Sign out",
+    "required_mfa_start": "Set up authenticator",
+    "required_mfa_verify": "Verify and continue",
     "resend": "Resend code",
     "resend_available_in": "Resend available in {seconds}s",
     "retry_profile_load": "Retry profile load",
@@ -11511,7 +11524,12 @@
     "estimate": "Illustrative subscription subtotal · USD · excludes tax and add-ons",
     "exitFullscreen": "Exit fullscreen",
     "explore": "Explore Tuturuuu",
-    "families": ["Organize", "Collaborate", "Operate", "Learn & create"],
+    "families": [
+      "Organize",
+      "Collaborate",
+      "Operate",
+      "Learn & create"
+    ],
     "feedback": "Share feedback",
     "free": "Free",
     "friction": [
@@ -11535,10 +11553,20 @@
     "next": "Next slide",
     "noClaims": "Product direction, not a launch or performance guarantee.",
     "notes": "Presenter notes",
-    "orbitLabels": ["Tasks", "AI", "Drive", "Learn"],
+    "orbitLabels": [
+      "Tasks",
+      "AI",
+      "Drive",
+      "Learn"
+    ],
     "overview": "All slides",
     "pause": "Pause",
-    "people": ["Individuals", "Small teams", "Educators", "Operators"],
+    "people": [
+      "Individuals",
+      "Small teams",
+      "Educators",
+      "Operators"
+    ],
     "perMonth": "per month",
     "perYear": "per year",
     "planDetails": [
@@ -11649,7 +11677,12 @@
         "title": "From a good idea\nto a finished day."
       }
     },
-    "stages": ["Plan", "Connect", "Deliver", "Reflect"],
+    "stages": [
+      "Plan",
+      "Connect",
+      "Deliver",
+      "Reflect"
+    ],
     "title": "Tuturuuu — a connected workspace"
   },
   "platform-role-data-table": {

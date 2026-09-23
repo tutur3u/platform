@@ -3349,5 +3349,17 @@
     "adminAccountsDisplayName": "Display name",
     "adminAccountsUsername": "Username",
   "adminAccountsResetMfa": "Reset authenticators",
-  "adminAccountsResetMfaDescription": "Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again."
+  "adminAccountsResetMfaDescription": "Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.",
+    "requiredMfaEnrollTitle": "Secure your account",
+    "requiredMfaEnrollDescription": "Your administrator requires two-step verification. Add this account to an authenticator app to continue.",
+    "requiredMfaSecretLabel": "Enter this setup key in your authenticator app. Keep it private.",
+    "requiredMfaError": "Unable to complete verification. Please try again.",
+    "requiredMfaVerify": "Verify and continue",
+    "requiredMfaStart": "Set up authenticator",
+    "adminAccountsRequireMfa": "Require MFA",
+    "adminAccountsOptionalMfa": "Make MFA optional",
+    "adminAccountsMfaPolicyDescription": "Requiring MFA invalidates previous verification. Making MFA optional keeps existing authenticators; reset them separately to remove them.",
+    "requiredMfaRecoveryTitle": "Sign in again to secure your account",
+    "requiredMfaRecoveryDescription": "Your administrator reset account security. Sign in again before setting up or verifying an authenticator.",
+    "requiredMfaSignInAgain": "Sign in again"
 }

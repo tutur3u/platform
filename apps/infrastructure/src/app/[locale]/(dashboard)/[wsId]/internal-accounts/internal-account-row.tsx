@@ -163,6 +163,19 @@ export function InternalAccountRow({
               <ShieldOff className="size-4" />
               {t('actions.reset_mfa')}
             </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={account.isSelf || !account.mfaPolicyAvailable}
+              onSelect={() =>
+                setAction(account.mfaRequired ? 'optional_mfa' : 'require_mfa')
+              }
+            >
+              <ShieldOff className="size-4" />
+              {t(
+                account.mfaRequired
+                  ? 'actions.optional_mfa'
+                  : 'actions.require_mfa'
+              )}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             {account.isDisabled ? (
               <DropdownMenuItem

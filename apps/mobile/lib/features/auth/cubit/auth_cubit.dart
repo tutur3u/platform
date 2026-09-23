@@ -6,17 +6,11 @@ import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/data/models/auth_session.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_feature_cache.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
-import 'package:mobile/features/finance/cubit/finance_cubit.dart';
-import 'package:mobile/features/finance/view/transaction_categories_page.dart';
-import 'package:mobile/features/finance/view/wallets_page.dart';
-import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 /// Manages authentication state across the app.
-///
-/// Ported from apps/native/lib/stores/auth-store.ts (Zustand → Cubit).
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit({
     required AuthRepository authRepository,
@@ -26,18 +20,14 @@ class AuthCubit extends Cubit<AuthState> {
        super(_resolveInitialState(authRepository)) {
     unawaited(_hydrateMultiAccountStore());
     _setupAuthListener();
+    unawaited(refreshAccountAssurance());
   }
 
   final AuthRepository _repo;
   final Future<void> Function()? _onBeforeSignOut;
   StreamSubscription<supa.AuthState>? _authSub;
 
-  // Instance-level guard for the add-account flow.
-  //
-  // Supabase auth events (signedIn, tokenRefreshed, signedOut) are dispatched
-  // asynchronously and can arrive while beginAddAccountFlow() is in progress,
-  // potentially resetting isAddAccountFlow to false before the flow completes.
-  // This flag lets the listener detect that case and preserve the flag.
+  // Keep account switching stable across asynchronous provider auth events.
   bool _isInAddAccountFlow = false;
 
   Future<void> _hydrateMultiAccountStore() async {
@@ -60,11 +50,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(accounts: accounts, activeAccountId: activeAccountId));
   }
 
-  /// Resolves auth state synchronously from the cached Supabase session.
-  ///
-  /// `supabase.auth.currentUser` is populated during `Supabase.initialize()`
-  /// which completes in `main()` before `runApp()`, so the cached user is
-  /// always available by the time this cubit is created.
+  /// Resolve cached assurance immediately, then revalidate in the background.
   static AuthState _resolveInitialState(AuthRepository repo) {
     final user = repo.getCurrentUserSync();
     if (user == null) return const AuthState.unauthenticated();
@@ -439,7 +425,7 @@ class AuthCubit extends Cubit<AuthState> {
     _isInAddAccountFlow = false;
     emit(state.copyWith(isLoading: true));
     await CacheStore.instance.clearScope(userId: state.user?.id);
-    await _clearInMemoryFeatureCaches(userId: state.user?.id);
+    await clearAuthFeatureCaches(userId: state.user?.id);
     await _onBeforeSignOut?.call();
     if (isClosed) return;
     await _repo.signOut();
@@ -625,7 +611,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<bool> switchAccount(String accountId) async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final previousUserId = state.user?.id;
-    await _clearInMemoryFeatureCaches(userId: previousUserId);
+    await clearAuthFeatureCaches(userId: previousUserId);
     await _onBeforeSignOut?.call();
     if (isClosed) return false;
     final result = await _repo.switchToStoredAccount(accountId);
@@ -685,7 +671,7 @@ class AuthCubit extends Cubit<AuthState> {
     final previousUserId = state.user?.id;
     final removingActiveAccount = previousUserId == accountId;
     if (removingActiveAccount) {
-      await _clearInMemoryFeatureCaches(userId: previousUserId);
+      await clearAuthFeatureCaches(userId: previousUserId);
       await _onBeforeSignOut?.call();
     }
     if (isClosed) return false;
@@ -735,7 +721,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<bool> signOutCurrentAccount() async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final previousUserId = state.user?.id;
-    await _clearInMemoryFeatureCaches(userId: previousUserId);
+    await clearAuthFeatureCaches(userId: previousUserId);
     await _onBeforeSignOut?.call();
     if (isClosed) return false;
     final result = await _repo.signOutCurrentAccount();
@@ -794,7 +780,7 @@ class AuthCubit extends Cubit<AuthState> {
     _isInAddAccountFlow = false;
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     await CacheStore.instance.clearScope(userId: state.user?.id);
-    await _clearInMemoryFeatureCaches(userId: state.user?.id);
+    await clearAuthFeatureCaches(userId: state.user?.id);
     await _onBeforeSignOut?.call();
     if (isClosed) return false;
     final result = await _repo.signOutAllAccounts();
@@ -824,15 +810,28 @@ class AuthCubit extends Cubit<AuthState> {
     await _reloadStoredAccounts();
   }
 
-  Future<void> _clearInMemoryFeatureCaches({String? userId}) async {
-    FinanceCubit.clearUserCache(userId);
-    if (userId?.isEmpty ?? false) {
-      FinanceCubit.clearUserCache(null);
+  /// Optional accounts keep cached/offline access; fresh policy routes on reconnect.
+  Future<void> refreshAccountAssurance() async {
+    if (state.user == null || isClosed) return;
+    if (_repo.checkMfaRequired()) {
+      emit(state.copyWith(status: AuthStatus.mfaRequired));
     }
-    WalletsPage.clearCache();
-    TransactionCategoriesPage.clearCaches();
-    HabitsCubit.clearCache();
-    CalendarCubit.clearCache();
+    try {
+      await _repo.refreshSession();
+      if (isClosed) return;
+      final user = _repo.getCurrentUserSync();
+      if (user == null) return;
+      emit(
+        state.copyWith(
+          user: user,
+          status: _repo.checkMfaRequired()
+              ? AuthStatus.mfaRequired
+              : AuthStatus.authenticated,
+        ),
+      );
+    } on Object {
+      // Offline retains the last known policy until reconnect.
+    }
   }
 
   void clearError() => emit(state.copyWith(error: null, errorCode: null));

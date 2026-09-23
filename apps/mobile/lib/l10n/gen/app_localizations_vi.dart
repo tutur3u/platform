@@ -8190,4 +8190,40 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get adminAccountsResetMfaDescription => 'Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy. Người dùng cần đăng ký lại trình xác thực.';
+
+  @override
+  String get requiredMfaEnrollTitle => 'Bảo vệ tài khoản của bạn';
+
+  @override
+  String get requiredMfaEnrollDescription => 'Quản trị viên yêu cầu xác minh hai bước. Thêm tài khoản này vào ứng dụng xác thực để tiếp tục.';
+
+  @override
+  String get requiredMfaSecretLabel => 'Nhập khóa thiết lập này vào ứng dụng xác thực. Không chia sẻ khóa này.';
+
+  @override
+  String get requiredMfaError => 'Không thể hoàn tất xác minh. Vui lòng thử lại.';
+
+  @override
+  String get requiredMfaVerify => 'Xác minh và tiếp tục';
+
+  @override
+  String get requiredMfaStart => 'Thiết lập ứng dụng xác thực';
+
+  @override
+  String get adminAccountsRequireMfa => 'Bắt buộc xác thực hai bước';
+
+  @override
+  String get adminAccountsOptionalMfa => 'Không bắt buộc xác thực hai bước';
+
+  @override
+  String get adminAccountsMfaPolicyDescription => 'Bắt buộc xác thực hai bước sẽ yêu cầu xác minh lại. Khi không bắt buộc, các phương thức hiện có vẫn được giữ; hãy đặt lại riêng nếu muốn xóa.';
+
+  @override
+  String get requiredMfaRecoveryTitle => 'Đăng nhập lại để bảo vệ tài khoản';
+
+  @override
+  String get requiredMfaRecoveryDescription => 'Quản trị viên đã đặt lại bảo mật tài khoản. Hãy đăng nhập lại trước khi thiết lập hoặc xác minh ứng dụng xác thực.';
+
+  @override
+  String get requiredMfaSignInAgain => 'Đăng nhập lại';
 }

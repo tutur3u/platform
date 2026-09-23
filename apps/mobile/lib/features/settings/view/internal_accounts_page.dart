@@ -186,6 +186,21 @@ class _InternalAccountsPageState extends State<InternalAccountsPage> {
                                 ),
                               ),
                               ListTile(
+                                leading: const Icon(
+                                  Icons.verified_user_outlined,
+                                ),
+                                title: Text(
+                                  account.mfaRequired
+                                      ? l10n.adminAccountsOptionalMfa
+                                      : l10n.adminAccountsRequireMfa,
+                                ),
+                                enabled: account.mfaPolicyAvailable,
+                                onTap: () => _edit(
+                                  account,
+                                  InternalAccountEdit.mfaPolicy,
+                                ),
+                              ),
+                              ListTile(
                                 leading: Icon(
                                   account.isDisabled
                                       ? Icons.lock_open_outlined

@@ -1,3 +1,4 @@
+import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
 import {
   type AppCoordinationTokenClaims,
   createAppCoordinationToken,
@@ -16,6 +17,7 @@ export const CLI_APP_ACCESS_TTL_SECONDS = 8 * 60 * 60;
 export const CLI_APP_REFRESH_TTL_SECONDS = 90 * 24 * 60 * 60;
 
 export type CliAppSessionPayload = {
+  mfa?: MfaSessionProof;
   accessExpiresInSeconds?: number;
   email?: string | null;
   refreshExpiresInSeconds?: number;
@@ -53,6 +55,7 @@ export function createCliAppSession(
   const access = createAppSessionToken(
     {
       email: payload.email ?? null,
+      mfa: payload.mfa,
       expiresInSeconds:
         payload.accessExpiresInSeconds ?? CLI_APP_ACCESS_TTL_SECONDS,
       originApp: 'cli',
@@ -65,6 +68,7 @@ export function createCliAppSession(
   const refresh = createAppCoordinationToken(
     {
       email: payload.email ?? null,
+      mfa: payload.mfa,
       expiresInSeconds:
         payload.refreshExpiresInSeconds ?? CLI_APP_REFRESH_TTL_SECONDS,
       originApp: 'cli',

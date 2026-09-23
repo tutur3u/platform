@@ -41280,6 +41280,25 @@ export type Database = {
         Args: { p_target_table: string };
         Returns: undefined;
       };
+      account_mfa_verified_factor: {
+        Args: {
+          p_primary_verified_at?: number;
+          p_session_id: string;
+          p_user_id: string;
+          p_verified_at: number;
+        };
+        Returns: string;
+      };
+      transition_account_mfa_policy: {
+        Args: {
+          p_clear_devices?: boolean;
+          p_expected: Json;
+          p_next: Json;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
+      account_required_mfa_satisfied: { Args: never; Returns: boolean };
       add_platform_entity_creation_limit_table: {
         Args: {
           p_notes?: string;
@@ -41643,6 +41662,7 @@ export type Database = {
         Args: { p_user_id?: string; p_ws_id: string };
         Returns: boolean;
       };
+      check_account_request: { Args: never; Returns: undefined };
       check_ai_credit_allowance: {
         Args: {
           p_estimated_input_tokens?: number;
@@ -44751,6 +44771,7 @@ export type Database = {
         };
         Returns: string[];
       };
+      required_mfa_enforcement_version: { Args: never; Returns: number };
       reserve_fixed_ai_credits: {
         Args: {
           p_amount: number;

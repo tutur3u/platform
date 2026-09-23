@@ -6,6 +6,7 @@ import { MFA_MOBILE_APPROVAL_KIND } from '@tuturuuu/auth/mfa-mobile-approval';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  assurance: vi.fn(),
   adminClient: {
     from: vi.fn(),
   },
@@ -25,6 +26,10 @@ const mocks = vi.hoisted(() => ({
       },
     },
   },
+}));
+
+vi.mock('@tuturuuu/utils/required-mfa-supabase-session', () => ({
+  resolveVerifiedSupabaseMfa: mocks.assurance,
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -74,6 +79,7 @@ function createChallengeRow(overrides: Record<string, unknown> = {}) {
 describe('mobile MFA approval helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.assurance.mockResolvedValue({ status: 'allowed', proof: null });
 
     mocks.createAdminClient.mockResolvedValue(mocks.adminClient);
     mocks.createClient.mockResolvedValue(mocks.userClient);
@@ -208,6 +214,7 @@ const context = {
 describe('number matching and request lifecycle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.assurance.mockResolvedValue({ status: 'allowed', proof: null });
     mocks.createAdminClient.mockResolvedValue(mocks.adminClient);
     mocks.createClient.mockResolvedValue(mocks.userClient);
     mocks.checkRateLimit.mockResolvedValue({ allowed: true });
@@ -216,7 +223,7 @@ describe('number matching and request lifecycle', () => {
       error: null,
     });
     mocks.userClient.auth.getClaims.mockResolvedValue({
-      data: { claims: { session_id: 'mobile-session' } },
+      data: { claims: { sub: 'user-1', session_id: 'mobile-session' } },
       error: null,
     });
     mocks.userClient.auth.mfa.getAuthenticatorAssuranceLevel.mockResolvedValue({
@@ -225,6 +232,43 @@ describe('number matching and request lifecycle', () => {
     });
     mocks.adminClient.from.mockReset();
   });
+  it('cannot use pre-recovery AAL2 to approve a fresh browser challenge', async () => {
+    const { approveMfaMobileApprovalChallenge } = await import(
+      './mfa-mobile-approval'
+    );
+    mocks.assurance.mockResolvedValue({ status: 'required', userId: 'user-1' });
+    const now = Math.floor(Date.now() / 1000);
+    mocks.userClient.auth.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-1',
+          app_metadata: {
+            tuturuuu_required_mfa: { required: true, verifiedAfter: now - 5 },
+          },
+        },
+      },
+      error: null,
+    });
+    mocks.userClient.auth.getClaims.mockResolvedValue({
+      data: {
+        claims: {
+          sub: 'user-1',
+          session_id: 'mobile-session',
+          aal: 'aal2',
+          amr: [{ method: 'totp', timestamp: now - 30 }],
+        },
+      },
+      error: null,
+    });
+    const result = await approveMfaMobileApprovalChallenge(
+      { challengeId: 'challenge-1', pairCode: '123456' },
+      context
+    );
+    expect(result.status).toBe(403);
+    expect(result.body.code).toBe('MFA_REQUIRED');
+    expect(mocks.adminClient.from).not.toHaveBeenCalled();
+  });
+
   it.each([undefined, '', '999999'])(
     'refuses missing or incorrect number %s',
     async (pairCode) => {

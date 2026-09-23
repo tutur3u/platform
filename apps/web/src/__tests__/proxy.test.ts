@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AUTH_COOKIE_HEADER } from './required-mfa-proxy-fixture';
 
 const mocks = vi.hoisted(() => ({
   authProxy: vi.fn(),
@@ -119,9 +120,6 @@ vi.mock('@tuturuuu/utils/email/client', () => ({
 }));
 
 describe('web proxy api handling', () => {
-  const AUTH_COOKIE_HEADER =
-    'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue';
-
   function createAuthenticatedSupabaseClient(
     user: { email?: string; id: string } = {
       email: 'member@example.com',

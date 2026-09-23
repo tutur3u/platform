@@ -1,6 +1,7 @@
 'use client';
 
 import { QueryClientProvider } from '@tanstack/react-query';
+import { AccountAssuranceRefresh } from '@tuturuuu/ui/custom/account-assurance-refresh';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import type { LaunchableAppSlug } from '@tuturuuu/utils/launchable-apps';
 import { type ReactNode, Suspense } from 'react';
@@ -18,6 +19,7 @@ export function ClientProviders({
 }) {
   return (
     <QueryClientProvider client={queryClient}>
+      <AccountAssuranceRefresh />
       <TooltipProvider>
         {children}
         {currentApp && (

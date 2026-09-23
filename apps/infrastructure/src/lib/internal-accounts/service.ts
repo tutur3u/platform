@@ -8,9 +8,15 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { readRequiredMfaPolicy } from '@tuturuuu/utils/required-mfa-policy';
 import { InternalAccountAdminError } from './errors';
+import {
+  isRequiredMfaPolicyAvailable,
+  setInternalAccountMfaPolicy,
+} from './mfa-policy-service';
 import { resetInternalAccountAuthenticators } from './mfa-service';
 import { updateInternalAccountProfile } from './profile-service';
+import { recoverAccountPassword } from './recovery-service';
 
 export { InternalAccountAdminError } from './errors';
 
@@ -58,6 +64,8 @@ export function toInternalAccount(
     id: user.id,
     isDisabled: isAccountDisabled(user.banned_until),
     isSelf: user.id === actorUserId,
+    mfaRequired: readRequiredMfaPolicy(user.app_metadata).required,
+    mfaPolicyAvailable: false,
     lastSignInAt: user.last_sign_in_at ?? null,
     personalWorkspaceId: null,
     storageLimitBytes: null,
@@ -290,6 +298,7 @@ export async function listInternalAccountUsers({
   verifiedOnly?: boolean;
 }) {
   const authUsers = await loadAuthUsers(sbAdmin);
+  const mfaPolicyAvailable = await isRequiredMfaPolicyAvailable(sbAdmin);
   const internalAccounts = authUsers
     .map((user) => toInternalAccount(user, actorUserId))
     .filter((account): account is InternalAccount => account !== null);
@@ -315,7 +324,10 @@ export async function listInternalAccountUsers({
   const nextOffset = safeOffset + page.length;
 
   return {
-    accounts: await enrichStorage(page, sbAdmin),
+    accounts: (await enrichStorage(page, sbAdmin)).map((account) => ({
+      ...account,
+      mfaPolicyAvailable,
+    })),
     count: filteredAccounts.length,
     nextCursor:
       nextOffset < filteredAccounts.length ? String(nextOffset) : null,
@@ -352,9 +364,12 @@ export async function resetAccountPasswordByEmail({
     );
   }
 
-  const { data, error } = await sbAdmin.auth.admin.updateUserById(target.id, {
-    password: newPassword,
-  });
+  const { data, error } = await recoverAccountPassword(
+    sbAdmin,
+    target.id,
+    newPassword,
+    normalizedEmail
+  );
   if (error || !data.user) {
     console.error('Failed to reset account password', {
       code: error?.code,
@@ -442,6 +457,21 @@ export async function mutateInternalAccount({
     );
   }
 
+  if (action === 'require_mfa' || action === 'optional_mfa') {
+    const updated = await setInternalAccountMfaPolicy({
+      actorUserId,
+      targetUserId,
+      confirmationEmail: confirmationEmail!,
+      required: action === 'require_mfa',
+      sbAdmin,
+    });
+    return {
+      ...account,
+      mfaRequired: readRequiredMfaPolicy(updated.app_metadata).required,
+      mfaPolicyAvailable: true,
+    };
+  }
+
   if (action === 'reset_mfa') {
     await resetInternalAccountAuthenticators({
       actorUserId,
@@ -452,15 +482,17 @@ export async function mutateInternalAccount({
     return account;
   }
 
-  const attributes =
-    action === 'reset_password'
-      ? { password: newPassword }
-      : {
-          ban_duration: action === 'disable_access' ? DISABLE_DURATION : 'none',
-        };
-
   const { data: updateData, error: updateError } =
-    await sbAdmin.auth.admin.updateUserById(targetUserId, attributes);
+    action === 'reset_password'
+      ? await recoverAccountPassword(
+          sbAdmin,
+          targetUserId,
+          newPassword!,
+          account.email
+        )
+      : await sbAdmin.auth.admin.updateUserById(targetUserId, {
+          ban_duration: action === 'disable_access' ? DISABLE_DURATION : 'none',
+        });
 
   if (updateError || !updateData.user) {
     console.error('Failed to update internal account', {

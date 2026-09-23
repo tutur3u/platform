@@ -8464,7 +8464,9 @@
       "enable_access": "Enable access",
       "load_more": "Load more",
       "open_menu": "Open account actions",
+      "optional_mfa": "Make MFA optional",
       "refresh": "Refresh accounts",
+      "require_mfa": "Require MFA",
       "reset_mfa": "Reset authenticators",
       "reset_password": "Reset password",
       "retry": "Try again",
@@ -8495,7 +8497,17 @@
       "generate_password": "Generate",
       "hide_password": "Hide password",
       "new_password": "New temporary password",
+      "optional_mfa": {
+        "confirm": "Make MFA optional",
+        "description": "Make MFA optional for {email}. Existing authenticators remain enrolled; use Reset authenticators to remove them.",
+        "title": "Make MFA optional"
+      },
       "password_help": "Use at least {count} characters and share it through an approved secure channel.",
+      "require_mfa": {
+        "confirm": "Require MFA",
+        "description": "Require a new second-factor verification for {email}. Accounts without an authenticator must enroll before continuing.",
+        "title": "Require MFA"
+      },
       "reset_mfa": {
         "confirm": "Reset authenticators",
         "description": "Remove all MFA factors and trusted device registrations for {email}. The user will need to register their authenticators again.",

@@ -8,7 +8,10 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   hasSupportedSupabaseAuthCookie: vi.fn(),
   hasWebAppSessionTokenFromRequest: vi.fn(),
 }));
-vi.mock('@tuturuuu/auth/proxy', () => ({
+vi.mock('@tuturuuu/auth/proxy', async () => ({
+  ...(await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
+    '@tuturuuu/auth/proxy'
+  )),
   consumeVerifyTokenRequest: vi.fn(),
   propagateAuthCookies: vi.fn(),
   refreshAppSessionForRequest: mocks.refresh,

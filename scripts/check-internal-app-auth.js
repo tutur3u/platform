@@ -293,7 +293,7 @@ const cliVerifySource = fs.readFileSync(
   'utf8'
 );
 const cliRefreshSource = fs.readFileSync(
-  path.join(ROOT, 'apps/web/src/legacy-api-routes/cli/auth/refresh/route.ts'),
+  path.join(ROOT, 'apps/web/src/app/api/cli/auth/refresh/route.ts'),
   'utf8'
 );
 const hiveSharedPath = 'apps/hive/src/app/api/v1/hive/_shared.ts';
@@ -336,7 +336,7 @@ if (/sessionKind:\s*['"]supabase['"]/u.test(cliVerifySource)) {
 
 if (/createDetachedClient|auth\.refreshSession/u.test(cliRefreshSource)) {
   failures.push(
-    'apps/web/src/legacy-api-routes/cli/auth/refresh/route.ts: CLI refresh must rotate Tuturuuu-managed JWTs instead of calling Supabase Auth refresh.'
+    'apps/web/src/app/api/cli/auth/refresh/route.ts: CLI refresh must rotate Tuturuuu-managed JWTs instead of calling Supabase Auth refresh.'
   );
 }
 

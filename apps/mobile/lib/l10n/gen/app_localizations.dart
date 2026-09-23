@@ -15726,6 +15726,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.'**
   String get adminAccountsResetMfaDescription;
+
+  /// No description provided for @requiredMfaEnrollTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure your account'**
+  String get requiredMfaEnrollTitle;
+
+  /// No description provided for @requiredMfaEnrollDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your administrator requires two-step verification. Add this account to an authenticator app to continue.'**
+  String get requiredMfaEnrollDescription;
+
+  /// No description provided for @requiredMfaSecretLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter this setup key in your authenticator app. Keep it private.'**
+  String get requiredMfaSecretLabel;
+
+  /// No description provided for @requiredMfaError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to complete verification. Please try again.'**
+  String get requiredMfaError;
+
+  /// No description provided for @requiredMfaVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify and continue'**
+  String get requiredMfaVerify;
+
+  /// No description provided for @requiredMfaStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up authenticator'**
+  String get requiredMfaStart;
+
+  /// No description provided for @adminAccountsRequireMfa.
+  ///
+  /// In en, this message translates to:
+  /// **'Require MFA'**
+  String get adminAccountsRequireMfa;
+
+  /// No description provided for @adminAccountsOptionalMfa.
+  ///
+  /// In en, this message translates to:
+  /// **'Make MFA optional'**
+  String get adminAccountsOptionalMfa;
+
+  /// No description provided for @adminAccountsMfaPolicyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Requiring MFA invalidates previous verification. Making MFA optional keeps existing authenticators; reset them separately to remove them.'**
+  String get adminAccountsMfaPolicyDescription;
+
+  /// No description provided for @requiredMfaRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to secure your account'**
+  String get requiredMfaRecoveryTitle;
+
+  /// No description provided for @requiredMfaRecoveryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your administrator reset account security. Sign in again before setting up or verifying an authenticator.'**
+  String get requiredMfaRecoveryDescription;
+
+  /// No description provided for @requiredMfaSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again'**
+  String get requiredMfaSignInAgain;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -6,10 +6,12 @@ import {
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
+  appSessionFailureResponse,
   consumeVerifyTokenRequest,
   createCentralizedAuthProxy,
   getRequestHeadersWithResponseCookies,
   normalizeAuthRedirectPath,
+  preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
@@ -190,9 +192,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return withTaskApiCors(
         req,
-        clearSupabaseAuthCookies(
+        appSessionFailureResponse(
           req,
-          NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+          appSessionRefresh.error,
+          appSessionRefresh.response
         )
       );
     }
@@ -204,7 +207,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       if (appSessionRefresh) {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }
-      return withTaskApiCors(req, clearSupabaseAuthCookies(req, guardResponse));
+      return withTaskApiCors(
+        req,
+        preserveMfaRecoveryCookies(req, guardResponse)
+      );
     }
 
     return withTaskApiCors(
