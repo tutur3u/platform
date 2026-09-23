@@ -1,7 +1,7 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-09-15"
+updatedAt: "2026-09-23"
 ---
 
 This page explains how Tuturuuu moves from code to running environments.
@@ -205,13 +205,25 @@ lives in
 1. Merge the change set with green CI.
 2. If Docker behavior changed, make sure `docker-setup-check.yaml` is green.
 3. If database migrations changed, confirm the `main`-driven staging path first.
+   Check that app code remains usable against the old production schema: the
+   production Vercel planner deploys apps before the production migration job
+   runs, and the job may wait in the Actions queue.
 4. Promote to `production` only after preview and staging behavior is understood.
-5. Confirm the follow-up Supabase workflow after production deployment.
-6. For self-hosted rollout, deploy from the intended commit and prefer `bun serve:web:docker:bg`.
+5. Confirm that the follow-up Supabase workflow's **Migrate production database**
+   job actually ran and applied the expected migration. A successful prerequisite
+   job can leave the migration job skipped.
+6. For schema-dependent app releases, test the new deployment's authenticated
+   read path against production after the migration and confirm the public alias
+   points to that tested deployment.
+7. For self-hosted rollout, deploy from the intended commit and prefer `bun serve:web:docker:bg`.
 
 ## Rollback Guidance
 
 - Vercel-hosted rollback: for satellite apps, redeploy the previous known-good commit or use Vercel rollback tooling.
+- If an app reads a production column that has not migrated yet, roll back only
+  that app to a tested deployment. Keep the migration workflow running, then
+  test the newer deployment directly against the migrated database before
+  promoting its alias again. Verify the public URL after both changes.
 - Supabase rollback: use a corrective migration instead of editing applied migration history.
 - Self-hosted Docker rollback: checkout the previous known-good commit and rerun `bun serve:web:docker:bg`.
 
