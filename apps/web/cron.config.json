@@ -8,6 +8,13 @@
       "schedule": "*/15 * * * *"
     },
     {
+      "description": "Recover and deliver immediate notifications, including personal Mail push.",
+      "enabled": true,
+      "id": "process-immediate-notifications",
+      "path": "/api/cron/process-immediate-notifications",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "description": "Drain the post-email queue.",
       "enabled": true,
       "id": "process-post-email-queue",

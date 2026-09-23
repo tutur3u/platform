@@ -9,6 +9,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_optimistic.dart';
+import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_message_tile.dart';
@@ -34,7 +35,8 @@ part 'mail_workspace_cache.dart';
 part 'mail_workspace_swipes.dart';
 
 class MailPage extends StatelessWidget {
-  const MailPage({super.key});
+  const MailPage({super.key, this.destination});
+  final MailPushDestination? destination;
 
   @override
   Widget build(BuildContext context) {
@@ -48,13 +50,23 @@ class MailPage extends StatelessWidget {
     if (!canDiscoverMail(user.email)) {
       return Center(child: Text(context.l10n.mailAccessRequired));
     }
-    return _MailNavigator(key: ValueKey('${user.id}:$wsId'), workspaceId: wsId);
+    final target = destination?.userId == user.id ? destination : null;
+    return _MailNavigator(
+      key: ValueKey('${user.id}:$wsId:${target?.notificationId}'),
+      workspaceId: wsId,
+      destination: target,
+    );
   }
 }
 
 class _MailNavigator extends StatefulWidget {
-  const _MailNavigator({required this.workspaceId, super.key});
+  const _MailNavigator({
+    required this.workspaceId,
+    super.key,
+    this.destination,
+  });
   final String workspaceId;
+  final MailPushDestination? destination;
   @override
   State<_MailNavigator> createState() => _MailNavigatorState();
 }
@@ -73,7 +85,10 @@ class _MailNavigatorState extends State<_MailNavigator> {
       child: Navigator(
         key: _navigator,
         onGenerateRoute: (_) => MaterialPageRoute<void>(
-          builder: (_) => MailWorkspace(workspaceId: widget.workspaceId),
+          builder: (_) => MailWorkspace(
+            workspaceId: widget.workspaceId,
+            destination: widget.destination,
+          ),
         ),
       ),
     ),
@@ -81,7 +96,13 @@ class _MailNavigatorState extends State<_MailNavigator> {
 }
 
 class MailWorkspace extends StatefulWidget {
-  const MailWorkspace({required this.workspaceId, super.key, this.repository});
+  const MailWorkspace({
+    required this.workspaceId,
+    super.key,
+    this.repository,
+    this.destination,
+  });
+  final MailPushDestination? destination;
   final String workspaceId;
   final MailRepository? repository;
 
@@ -92,6 +113,7 @@ class MailWorkspace extends StatefulWidget {
 class _MailWorkspaceState extends State<MailWorkspace> {
   void _updateState(VoidCallback update) => setState(update);
   bool _childRouteOpen = false;
+  bool _pushDestinationHandled = false;
 
   Future<void> _pushChild(Route<void> route) async {
     setState(() => _childRouteOpen = true);
@@ -160,8 +182,10 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     _mailPushSubscription = PushNotificationService.instance.events.listen((
       event,
     ) {
-      if (event.request.openTarget == 'mail' &&
-          event.request.wsId == widget.workspaceId) {
+      if (mounted &&
+          event.request.openTarget == 'mail' &&
+          event.request.userId == context.read<AuthCubit>().state.user?.id &&
+          event.request.mailboxId == _mailboxId) {
         _refreshVisibleMailbox();
       }
     });
@@ -225,7 +249,28 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           'items': <Map<String, dynamic>>[],
         });
       }
+      final destination = _pushDestinationHandled ? null : widget.destination;
+      final canOpenDestination =
+          destination != null &&
+          _mailboxes.any((box) => box['id'] == destination.mailboxId);
+      if (canOpenDestination) {
+        setState(() {
+          _mailboxId = destination.mailboxId;
+          _folder = 'inbox';
+          _labelId = null;
+          _folderId = null;
+          _search.clear();
+          _items = [];
+        });
+      }
       await _load();
+      if (mounted &&
+          generation == _bootstrapGeneration &&
+          _accessVerified &&
+          canOpenDestination) {
+        _pushDestinationHandled = true;
+        await _open({'id': destination.threadId});
+      }
     } on Object catch (error) {
       if (!mounted || generation != _bootstrapGeneration) return;
       if (error is ApiException &&

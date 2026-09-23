@@ -45,7 +45,15 @@ function asOptionalString(value: unknown): string | null {
 
 export function buildPushOpenTarget(
   notification: PushNotificationRecord
-): 'task' | 'chat' | 'inbox' {
+): 'task' | 'chat' | 'mail' | 'inbox' {
+  if (
+    notification.type === 'mail_received' &&
+    asOptionalString(notification.data?.mailboxId) &&
+    asOptionalString(notification.data?.threadId) &&
+    asOptionalString(notification.data?.messageId) &&
+    asOptionalString(notification.data?.userId)
+  )
+    return 'mail';
   const boardId = asOptionalString(notification.data?.board_id);
   const conversationId =
     asOptionalString(notification.data?.conversation_id) ??
@@ -93,6 +101,13 @@ export function buildPushData(
     boardId: boardId ?? '',
     conversationId: conversationId ?? '',
     messageId: messageId ?? '',
+    ...(notification.type === 'mail_received'
+      ? {
+          mailboxId: asOptionalString(notification.data?.mailboxId) ?? '',
+          threadId: asOptionalString(notification.data?.threadId) ?? '',
+          userId: asOptionalString(notification.data?.userId) ?? '',
+        }
+      : {}),
     openTarget: buildPushOpenTarget(notification),
     createdAt: notification.created_at,
   };
