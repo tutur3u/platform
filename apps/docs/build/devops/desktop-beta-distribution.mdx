@@ -123,13 +123,16 @@ usable and retry on the next check.
 - macOS verifies the signed/notarized disk image, validates the replacement app's
   signature and matching Apple team, and stages it on the destination volume
   before exiting. The helper swaps bundles after exit and keeps the previous
-  app in one updater-owned recovery directory. An unwritable installation directory or running directly
-  from a mounted disk image blocks installation while keeping the app open.
-- Linux asks the operating system's Polkit agent to authorize `dpkg --install`,
-  then hands off to a detached helper that waits for the previous process to exit
-  before relaunching `/opt/tuturuuu/tuturuuu`. The Flutter process never runs as
-  root. A cancelled elevation prompt leaves the current app open. Linux beta
-  installations require Ubuntu 24.04+ amd64, `pkexec`, and a desktop Polkit agent.
+  app in one updater-owned recovery directory. An unwritable installation
+  directory or running directly from a mounted disk image blocks installation
+  while keeping the app open.
+- Linux asks the operating system's Polkit agent to authorize a packaged,
+  root-owned helper. It stages and verifies the archive in a root-owned directory,
+  then uses `apt-get install` to resolve dependencies. An unprivileged detached
+  helper waits for the previous process to exit before relaunching
+  `/opt/tuturuuu/tuturuuu`. The Flutter process never runs as root. A cancelled
+  elevation prompt leaves the current app open. Linux beta installations require
+  Ubuntu 24.04+ amd64, `pkexec`, and a desktop Polkit agent.
 
 Before enabling publication, exercise installation and at least one subsequent
 update on each actual supported OS, including cancelled elevation, damaged
