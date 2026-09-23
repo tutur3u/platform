@@ -108,7 +108,7 @@ class MeetSignaling {
 
   void _scheduleRetry() {
     if (_closed) return;
-    onStatus('reconnecting');
+    onStatus(_attempt >= 2 ? 'error' : 'reconnecting');
     final seconds = (1 << _attempt.clamp(0, 4)).clamp(1, 16);
     _attempt++;
     _retryTimer?.cancel();

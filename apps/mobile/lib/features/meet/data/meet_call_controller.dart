@@ -76,11 +76,14 @@ class MeetCallController extends ChangeNotifier {
     if (_disposed) return;
     status = next;
     if (next == 'open') {
+      if (error == 'connection') error = null;
       if (_connectedBefore) {
         unawaited(media.resetPeers());
         _sendPresence(join: true);
       }
       _connectedBefore = true;
+    } else if (next == 'error') {
+      error = 'connection';
     }
     notifyListeners();
   }
