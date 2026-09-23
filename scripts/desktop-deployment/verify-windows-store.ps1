@@ -35,6 +35,32 @@ try {
   Start-Sleep -Seconds 3
   $app.Refresh()
   if ($app.HasExited -or $app.MainWindowHandle -eq 0) { throw 'Installed app failed URI activation' }
+  # Capture only this fresh, signed-out app window for visual validation/listing review.
+  Add-Type -AssemblyName System.Drawing
+  Add-Type @'
+using System;
+using System.Runtime.InteropServices;
+public static class TuturuuuWindowCapture {
+  [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
+  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr window, out Rect rect);
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+}
+'@
+  [TuturuuuWindowCapture]::SetForegroundWindow($app.MainWindowHandle) | Out-Null
+  Start-Sleep -Seconds 2
+  if ([TuturuuuWindowCapture]::GetForegroundWindow() -ne $app.MainWindowHandle) { throw 'App is not foreground; refusing to capture another window' }
+  $rect = New-Object TuturuuuWindowCapture+Rect
+  if (![TuturuuuWindowCapture]::GetWindowRect($app.MainWindowHandle, [ref]$rect)) { throw 'Cannot locate app window for visual validation' }
+  $bitmap = New-Object Drawing.Bitmap ($rect.Right - $rect.Left), ($rect.Bottom - $rect.Top)
+  $graphics = [Drawing.Graphics]::FromImage($bitmap)
+  try {
+    $graphics.CopyFromScreen($rect.Left, $rect.Top, 0, 0, $bitmap.Size)
+    $bitmap.Save((Join-Path $ReportDirectory 'windows-first-frame.png'), [Drawing.Imaging.ImageFormat]::Png)
+  } finally {
+    $graphics.Dispose()
+    $bitmap.Dispose()
+  }
   'Installed identity, first-frame window, and harmless URI activation passed. Authentication and Store upgrade still need device testing.' | Set-Content (Join-Path $ReportDirectory 'runtime.txt')
   Stop-Process -Id $app.Id
   $wack = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\App Certification Kit\appcert.exe'
