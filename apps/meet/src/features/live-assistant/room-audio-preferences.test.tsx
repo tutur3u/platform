@@ -76,11 +76,13 @@ it('controls mic input and local playback independently, and preserves playback 
       screen.getByRole('button', { name: messages.meet.live.deafen_mira })
     ).toBeTruthy()
   );
-  expect(setAssistantAudio).toHaveBeenLastCalledWith({
-    sessionId: 'live',
-    microphoneEnabled: false,
-    speakerEnabled: true,
-  });
+  await waitFor(() =>
+    expect(setAssistantAudio).toHaveBeenLastCalledWith({
+      sessionId: 'live',
+      microphoneEnabled: false,
+      speakerEnabled: true,
+    })
+  );
   fireEvent.click(
     screen.getByRole('button', { name: messages.meet.live.unmute_to_mira })
   );
@@ -159,11 +161,13 @@ it('offers a manual listen fallback when automatic playback is blocked', async (
     screen.getByRole('button', { name: messages.meet.live.room_audio_enable })
   );
   await screen.findByRole('button', { name: messages.meet.live.deafen_mira });
-  expect(setAssistantAudio).toHaveBeenLastCalledWith({
-    sessionId: 'blocked',
-    microphoneEnabled: false,
-    speakerEnabled: true,
-  });
+  await waitFor(() =>
+    expect(setAssistantAudio).toHaveBeenLastCalledWith({
+      sessionId: 'blocked',
+      microphoneEnabled: false,
+      speakerEnabled: true,
+    })
+  );
 });
 
 it.each([false, true])(
