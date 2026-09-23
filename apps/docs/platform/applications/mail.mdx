@@ -749,7 +749,12 @@ membership, internal identity, message availability, and preferences before send
 Delivery uses the existing immediate notification queue and Firebase device
 registry. Personal Mail is the explicit exception to the processor's root-workspace
 rollout restriction; other notification types retain that restriction. Dedicated
-batches preserve each message's mailbox/thread target. The native payload contains
+batches preserve each message's mailbox/thread target. Stale immediate email and push claims recover with bounded retries. Before contacting a provider,
+the dispatcher persists a delivery-in-flight marker. A lost response or acknowledgement
+is flagged as `delivery_outcome_unknown` for operator reconciliation instead of being
+replayed automatically; confirm provider delivery evidence before any manual retry.
+Exhausted or expired batches terminate as failed. Status-write failures are reported,
+not counted as successful delivery. The native payload contains
 `openTarget: mail`, `mailboxId`, `threadId`, `messageId`, and `userId`; opening it
 requires the same signed-in recipient and fresh authorized mailbox access.
 

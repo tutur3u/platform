@@ -24,9 +24,11 @@ const mocks = vi.hoisted(() => {
   const rpcMock = vi.fn();
   const sendPushNotificationBatchMock = vi.fn();
   const sendSystemEmailMock = vi.fn();
+  const statusError = vi.fn((): Error | null => null);
 
   return {
     fromMock,
+    statusError,
     rpcMock,
     sendPushNotificationBatchMock,
     sendSystemEmailMock,
@@ -127,6 +129,7 @@ describe('send-immediate route', () => {
   }>;
 
   beforeEach(() => {
+    mocks.statusError.mockReturnValue(null);
     vi.clearAllMocks();
     vi.stubEnv('CRON_SECRET', 'cron-secret');
     const recentWindow = createRecentNotificationWindow();
@@ -222,7 +225,7 @@ describe('send-immediate route', () => {
               })
             ),
             update: vi.fn(() =>
-              createResolvedChain({ data: null, error: null })
+              createResolvedChain({ data: null, error: mocks.statusError() })
             ),
           };
         case 'notifications':
@@ -393,7 +396,7 @@ describe('send-immediate route', () => {
               })
             ),
             update: vi.fn(() =>
-              createResolvedChain({ data: null, error: null })
+              createResolvedChain({ data: null, error: mocks.statusError() })
             ),
           };
         case 'notifications':
@@ -665,4 +668,17 @@ describe('send-immediate route', () => {
       });
     }
   );
+  it('does not retry a delivered push when persistence fails', async () => {
+    mocks.statusError.mockReturnValue(new Error('write unavailable'));
+    const response = await POST(
+      new Request('http://localhost/api/notifications/send-immediate', {
+        method: 'POST',
+        headers: { authorization: 'Bearer cron-secret' },
+      }) as Parameters<typeof POST>[0]
+    );
+    const body = await response.json();
+    expect(mocks.sendPushNotificationBatchMock).toHaveBeenCalledOnce();
+    expect(body.failed).toBe(1);
+    expect(body.results[0].status).toBe('reconciliation_required');
+  });
 });

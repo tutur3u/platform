@@ -1,7 +1,7 @@
 import { render } from '@react-email/render';
 import DeadlineReminderEmail from '@tuturuuu/transactional/emails/deadline-reminder';
 import WorkspaceInviteEmail from '@tuturuuu/transactional/emails/workspace-invite';
-import { MAX_NAME_LENGTH, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { z } from 'zod';
 import {
   chunkValues,
@@ -12,7 +12,11 @@ import type { PushDeviceRegistration } from '@/lib/notifications/push-delivery';
 
 import { isPersonalMailPush } from './mail-push';
 export const PROCESSING_DEADLINE_MS = 165_000;
-const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
+
+import {
+  isRootScopedNotification,
+  RESTRICT_TO_ROOT_WORKSPACE_ONLY,
+} from './rollout';
 
 export function getPrivateNotificationClient(sbAdmin: any) {
   return sbAdmin.schema('private');
@@ -185,11 +189,12 @@ export async function markDeliveryLogsSent(sbAdmin: any, logIds: string[]) {
   };
 
   for (const idChunk of chunkValues([...new Set(logIds)])) {
-    await getPrivateNotificationClient(sbAdmin)
+    const { error } = await getPrivateNotificationClient(sbAdmin)
       .from('notification_delivery_log')
       .update(patch)
       .in('id', idChunk)
       .eq('status', 'pending');
+    if (error) throw error;
   }
 }
 
@@ -211,11 +216,12 @@ export async function markDeliveryLogsSkipped(
   };
 
   for (const idChunk of chunkValues([...new Set(logIds)])) {
-    await getPrivateNotificationClient(sbAdmin)
+    const { error } = await getPrivateNotificationClient(sbAdmin)
       .from('notification_delivery_log')
       .update(patch)
       .in('id', idChunk)
       .eq('status', 'pending');
+    if (error) throw error;
   }
 }
 
@@ -224,15 +230,17 @@ export async function markBatchSent(
   batchId: string,
   notificationCount: number
 ) {
-  await getPrivateNotificationClient(sbAdmin)
+  const { error } = await getPrivateNotificationClient(sbAdmin)
     .from('notification_batches')
     .update({
       status: 'sent',
       sent_at: new Date().toISOString(),
       notification_count: notificationCount,
+      error_message: null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', batchId);
+  if (error) throw error;
 }
 
 export async function fetchPendingDeliveryLogRetries(
@@ -255,7 +263,7 @@ export async function markBatchFailed(
   batchId: string,
   message: string
 ) {
-  await getPrivateNotificationClient(sbAdmin)
+  const { error } = await getPrivateNotificationClient(sbAdmin)
     .from('notification_batches')
     .update({
       status: 'failed',
@@ -263,11 +271,12 @@ export async function markBatchFailed(
       updated_at: new Date().toISOString(),
     })
     .eq('id', batchId);
+  if (error) throw error;
 
   const pendingLogs = await fetchPendingDeliveryLogRetries(sbAdmin, batchId);
 
   for (const log of pendingLogs) {
-    await getPrivateNotificationClient(sbAdmin)
+    const { error } = await getPrivateNotificationClient(sbAdmin)
       .from('notification_delivery_log')
       .update({
         status: 'failed',
@@ -276,6 +285,7 @@ export async function markBatchFailed(
         updated_at: new Date().toISOString(),
       })
       .eq('id', log.id);
+    if (error) throw error;
   }
 }
 
@@ -396,8 +406,8 @@ export async function filterRootScopedBatches(
   }
 
   const batchesWithWsId = batches.filter((batch) => batch.ws_id !== null);
-  const validBatchesWithWsId = batchesWithWsId.filter(
-    (batch) => batch.ws_id === ROOT_WORKSPACE_ID
+  const validBatchesWithWsId = batchesWithWsId.filter((batch) =>
+    isRootScopedNotification(batch)
   );
   const batchesWithNullWsId = batches.filter((batch) => batch.ws_id === null);
 
@@ -433,12 +443,8 @@ export async function filterRootScopedBatches(
       continue;
     }
 
-    const workspaceId =
-      notification.entity_id ||
-      (notification.data?.workspace_id as string | undefined);
-
     if (
-      workspaceId === ROOT_WORKSPACE_ID ||
+      isRootScopedNotification(notification) ||
       isPersonalMailPush(
         notification,
         batches.find((batch) => batch.id === log.batch_id)

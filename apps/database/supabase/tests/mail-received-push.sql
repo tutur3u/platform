@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(19);
+select plan(25);
 
 insert into auth.users(id, aud, role, email, email_confirmed_at, created_at, updated_at)
 values
@@ -32,6 +32,25 @@ update private.notification_batches set status = 'failed' where id in (
   select l.batch_id from private.notification_delivery_log l join public.notifications n on n.id = l.notification_id where n.entity_id = 'e1230000-0000-0000-0000-000000000001');
 update private.notification_delivery_log set status = 'failed', retry_count = 3 where notification_id in (select id from public.notifications where entity_id = 'e1230000-0000-0000-0000-000000000001');
 select is(private.requeue_mail_push_batches(), 0, 'exhausted Mail attempts remain failed');
+create temporary table recovery_batch as
+select l.batch_id as id from private.notification_delivery_log l join public.notifications n on n.id = l.notification_id
+where n.entity_id = 'e1230000-0000-0000-0000-000000000001';
+-- Override the timestamp trigger only within this rolled-back fixture.
+alter table private.notification_batches disable trigger update_notification_batches_updated_at;
+update private.notification_batches set status = 'processing', error_message = null, updated_at = now() - interval '11 minutes'
+where id in (select id from recovery_batch);
+select is(private.requeue_mail_push_batches(), 0, 'exhausted interrupted attempt is not replayed');
+select is((select status from private.notification_batches where id in (select id from recovery_batch)), 'failed', 'exhausted processing batch reaches terminal state');
+update private.notification_batches set status = 'processing', error_message = 'delivery_in_flight', updated_at = now() - interval '11 minutes'
+where id in (select id from recovery_batch);
+update private.notification_delivery_log set retry_count = 0 where batch_id in (select id from recovery_batch);
+select is(private.requeue_mail_push_batches(), 0, 'ambiguous provider outcome is never automatically replayed');
+select is((select error_message from private.notification_batches where id in (select id from recovery_batch)), 'delivery_outcome_unknown', 'ambiguous delivery is flagged for reconciliation');
+update private.notification_batches set status = 'processing', channel = 'email', ws_id = '00000000-0000-0000-0000-000000000000', error_message = null, updated_at = now() - interval '11 minutes'
+where id in (select id from recovery_batch);
+select is(private.requeue_mail_push_batches(), 1, 'stale root email batches recover before provider submission');
+select is((select status from private.notification_batches where id in (select id from recovery_batch)), 'pending', 'email recovery leaves a runnable batch');
+alter table private.notification_batches enable trigger update_notification_batches_updated_at;
 delete from private.mail_mailbox_members where user_id = 'a1230000-0000-0000-0000-000000000001';
 select ok(not (select private.can_deliver_mail_notification(id) from public.notifications where entity_id = 'e1230000-0000-0000-0000-000000000001'), 'revoked member cannot receive queued push');
 insert into private.mail_mailbox_members(mailbox_id, user_id) values ('b1230000-0000-0000-0000-000000000001', 'a1230000-0000-0000-0000-000000000001');

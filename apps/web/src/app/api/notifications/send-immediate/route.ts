@@ -9,6 +9,7 @@ import {
   getNotificationSkipReason,
   NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON,
 } from '@/lib/notifications/cron-helpers';
+import { beginDeliveryAttempt } from '@/lib/notifications/delivery-attempt';
 import {
   cleanupInvalidPushTokens,
   type DeliveryLogWithNotification,
@@ -165,6 +166,7 @@ export async function POST(req: NextRequest) {
         break;
       }
 
+      let deliveryMayHaveSucceeded = false;
       try {
         const { data: claimed, error: claimError } =
           await getPrivateNotificationClient(sbAdmin)
@@ -278,14 +280,15 @@ export async function POST(req: NextRequest) {
             continue;
           }
 
+          await beginDeliveryAttempt(sbAdmin, batch.id);
+          deliveryMayHaveSucceeded = true;
           const pushResult = await sendPushNotificationBatch({
             notification: deliverableLogs[0]!.notifications as NotificationData,
             devices,
           });
 
-          await cleanupInvalidPushTokens(sbAdmin, pushResult.invalidTokens);
-
           if (pushResult.deliveredCount === 0) {
+            deliveryMayHaveSucceeded = false;
             throw new Error('Failed to deliver push notification');
           }
 
@@ -299,6 +302,7 @@ export async function POST(req: NextRequest) {
             deliverableLogs.length + skippedCount
           );
 
+          await cleanupInvalidPushTokens(sbAdmin, pushResult.invalidTokens);
           results.push({
             batch_id: batch.id,
             channel: 'push',
@@ -397,6 +401,8 @@ export async function POST(req: NextRequest) {
           }
 
           const templateType = config?.email_template || 'notification-digest';
+          await beginDeliveryAttempt(sbAdmin, batch.id);
+          deliveryMayHaveSucceeded = true;
           const result = await sendSystemEmail({
             recipients: { to: [userEmail] },
             content: {
@@ -415,6 +421,7 @@ export async function POST(req: NextRequest) {
           });
 
           if (!result.success) {
+            deliveryMayHaveSucceeded = false;
             const sendSkipReason = await getNotificationSkipReason(sbAdmin, {
               blockedEmailCache,
               errorMessage: result.error,
@@ -473,13 +480,19 @@ export async function POST(req: NextRequest) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
 
-        await markBatchFailed(sbAdmin, batch.id, errorMessage);
+        // The durable marker keeps recovery from replaying an ambiguous send or
+        // successful delivery whose acknowledgement could not be persisted.
+        if (!deliveryMayHaveSucceeded) {
+          await markBatchFailed(sbAdmin, batch.id, errorMessage);
+        }
 
         results.push({
           batch_id: batch.id,
           channel: batch.channel,
           error: errorMessage,
-          status: 'failed',
+          status: deliveryMayHaveSucceeded
+            ? 'reconciliation_required'
+            : 'failed',
         });
         failedCount++;
       }

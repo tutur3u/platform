@@ -1,4 +1,4 @@
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isRootScopedNotification } from './rollout';
 
 interface MailNotification {
   id: string;
@@ -49,11 +49,9 @@ export async function getMailPushSkipReason(
 ): Promise<string | null> {
   if (notification.type !== 'mail_received') {
     // A mixed personal batch must not bypass the root-only rollout restriction.
-    const workspaceId =
-      notification.ws_id ??
-      notification.entity_id ??
-      notification.data?.workspace_id;
-    return workspaceId === ROOT_WORKSPACE_ID ? null : 'restricted_workspace';
+    return isRootScopedNotification(notification)
+      ? null
+      : 'restricted_workspace';
   }
   if (!isPersonalMailPush(notification, batch))
     return 'invalid_mail_push_target';

@@ -154,16 +154,41 @@ declare
   v_count integer := 0;
 begin
   for v_batch in
-    select b.id, b.status from private.notification_batches b
-    where b.channel = 'push' and b.delivery_mode = 'immediate'
-      and b.ws_id is null
+    select b.id, b.status, b.error_message, b.created_at from private.notification_batches b
+    where b.channel in ('push', 'email') and b.delivery_mode = 'immediate'
+      and (b.ws_id = '00000000-0000-0000-0000-000000000000'::uuid
+        or (b.ws_id is null and exists (
+          select 1 from private.notification_delivery_log l
+          join public.notifications n on n.id = l.notification_id
+          where l.batch_id = b.id and (
+            coalesce(n.ws_id::text, n.entity_id::text, n.data->>'workspace_id') = '00000000-0000-0000-0000-000000000000'
+            or (b.channel = 'push' and exists (select 1 from private.mail_notification_receipts r
+              where r.notification_id = n.id))
+          )
+        )))
       and (b.status = 'failed' or (b.status = 'processing' and b.updated_at < now() - interval '10 minutes'))
-      and b.created_at > now() - interval '1 day'
-      and exists (select 1 from private.notification_delivery_log l
-        join private.mail_notification_receipts r on r.notification_id = l.notification_id
-        where l.batch_id = b.id and l.status <> 'sent' and coalesce(l.retry_count, 0) < 3)
+      and coalesce(b.error_message, '') not in ('delivery_outcome_unknown', 'retry_limit_exhausted', 'delivery_expired')
+    order by b.updated_at limit 100
     for update skip locked
   loop
+    if not exists (select 1 from private.notification_delivery_log l
+      where l.batch_id = v_batch.id and l.status <> 'sent') then
+      update private.notification_batches set status = 'sent', sent_at = now(), updated_at = now(), error_message = null
+      where id = v_batch.id;
+      continue;
+    end if;
+    if v_batch.error_message = 'delivery_in_flight'
+      or v_batch.created_at <= now() - interval '1 day'
+      or not exists (select 1 from private.notification_delivery_log l
+        where l.batch_id = v_batch.id and l.status <> 'sent' and coalesce(l.retry_count, 0) < 3) then
+      update private.notification_batches set status = 'failed', updated_at = now(),
+        error_message = case
+          when v_batch.error_message = 'delivery_in_flight' then 'delivery_outcome_unknown'
+          when v_batch.created_at <= now() - interval '1 day' then 'delivery_expired'
+          else 'retry_limit_exhausted' end
+      where id = v_batch.id;
+      continue;
+    end if;
     update private.notification_delivery_log set status = 'pending', updated_at = now(),
       retry_count = coalesce(retry_count, 0) + case when v_batch.status = 'processing' then 1 else 0 end
     where batch_id = v_batch.id and status <> 'sent' and coalesce(retry_count, 0) < 3;
