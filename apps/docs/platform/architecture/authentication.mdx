@@ -1060,7 +1060,7 @@ policy changes. The environment gate is an operational release acknowledgement;
 the database version alone does not prove application readiness. Production
 migration application remains user-operated.
 
-1. Apply `20260923010000_required_account_mfa.sql` locally and run
+1. Apply `20260923130000_required_account_mfa.sql` locally and run
    `apps/database/supabase/tests/required-account-mfa.sql`.
 2. Verify web login, factorless enrollment, native enrollment, existing AAL1/AAL2
    sessions, mobile approval expiry, authenticator recovery, and making MFA optional.
