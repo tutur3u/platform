@@ -14,7 +14,7 @@ const QuerySchema = z.object({
     .transform((value) => value === 'true')
     .optional(),
   cursor: z.string().regex(/^\d+$/).optional(),
-  limit: z.coerce.number().int().min(1).max(48).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
   q: z.string().trim().max(MAX_SEARCH_LENGTH).optional(),
   sortBy: z
     .enum(['createdAt', 'displayName', 'email', 'lastSignInAt'])
