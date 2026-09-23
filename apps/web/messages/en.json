@@ -11558,12 +11558,7 @@
     "estimate": "Illustrative subscription subtotal · USD · excludes tax and add-ons",
     "exitFullscreen": "Exit fullscreen",
     "explore": "Explore Tuturuuu",
-    "families": [
-      "Organize",
-      "Collaborate",
-      "Operate",
-      "Learn & create"
-    ],
+    "families": ["Organize", "Collaborate", "Operate", "Learn & create"],
     "feedback": "Share feedback",
     "free": "Free",
     "friction": [
@@ -11587,20 +11582,10 @@
     "next": "Next slide",
     "noClaims": "Product direction, not a launch or performance guarantee.",
     "notes": "Presenter notes",
-    "orbitLabels": [
-      "Tasks",
-      "AI",
-      "Drive",
-      "Learn"
-    ],
+    "orbitLabels": ["Tasks", "AI", "Drive", "Learn"],
     "overview": "All slides",
     "pause": "Pause",
-    "people": [
-      "Individuals",
-      "Small teams",
-      "Educators",
-      "Operators"
-    ],
+    "people": ["Individuals", "Small teams", "Educators", "Operators"],
     "perMonth": "per month",
     "perYear": "per year",
     "planDetails": [
@@ -11711,12 +11696,7 @@
         "title": "From a good idea\nto a finished day."
       }
     },
-    "stages": [
-      "Plan",
-      "Connect",
-      "Deliver",
-      "Reflect"
-    ],
+    "stages": ["Plan", "Connect", "Deliver", "Reflect"],
     "title": "Tuturuuu — a connected workspace"
   },
   "platform-role-data-table": {
