@@ -14,7 +14,7 @@ failure recovery when preparing a merge or sync. For a stack, inspect its stack
 gate before merging: parents first; base-chained parents use merge commits and
 children must retarget. A non-main base alone does not prove a stack.
 
-Use the requested quiet duration (30 minutes if unspecified). New comments or
+Use the requested quiet duration (5 minutes if unspecified). New comments or
 review activity or pushed commits restart it; with no comments, start at PR
 creation. Fresh commits require checks/review against the new head. Recheck the PR number, head, unresolved threads, activity, and terminal
 checks immediately before merging; use `--match-head-commit <head-sha>`.

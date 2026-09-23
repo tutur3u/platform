@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import {
+  DEFAULT_QUIET_MINUTES,
   evaluatePrState,
   getPr,
   getThreadCounts,
@@ -9,7 +10,8 @@ import {
 export function releasePrReady(pr, counts, head, committedAt, now) {
   if (pr.headRefOid !== head || pr.state !== 'OPEN')
     throw new Error('Generated release PR changed; retry with a fresh plan');
-  const state = evaluatePrState(pr, counts, now, 30 * 60_000);
+  const quietWindowMs = DEFAULT_QUIET_MINUTES * 60_000;
+  const state = evaluatePrState(pr, counts, now, quietWindowMs);
   if (state.failures.length || state.activeThreads)
     throw new Error(
       'Release PR has failed checks or unresolved review threads'
@@ -22,7 +24,7 @@ export function releasePrReady(pr, counts, head, committedAt, now) {
     state.ready &&
     pr.statusCheckRollup?.length > 0 &&
     pr.mergeable === 'MERGEABLE' &&
-    now - lastActivity >= 30 * 60_000
+    now - lastActivity >= quietWindowMs
   );
 }
 
@@ -69,7 +71,9 @@ async function main() {
       )
     )
       return;
-    console.log('Waiting for release PR checks and a 30-minute quiet window');
+    console.log(
+      `Waiting for release PR checks and a ${DEFAULT_QUIET_MINUTES}-minute quiet window`
+    );
     await new Promise((resolve) => setTimeout(resolve, 60_000));
   }
   throw new Error('Release PR readiness timed out; nothing was merged');

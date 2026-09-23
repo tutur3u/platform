@@ -77,6 +77,7 @@ merge, or production evidence only when that delivery is authorized.
   separate branches. Merge stacks bottom-up. For base-chained stacks, merge parents
   with `--merge` so ancestry is retained, verify child retargeting, and rerun gates.
   Use `$tuturuuu-pr-merge-sync` for the exact stack and quiet-window procedure.
+  Use a five-minute review quiet window unless the user requests another duration.
 - Before production sync, fetch and inspect the exact promotion range. If main
   advanced with unrelated work, use the authorized pinned SHA when supported or
   obtain approval for the broader range; green CI alone does not authorize it.
