@@ -5,6 +5,7 @@ import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_activity_blob.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_screen_control.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_status_panel.dart';
 import 'package:mobile/features/assistant/widgets/assistant_status_badge.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
@@ -130,6 +131,7 @@ class AssistantLiveModeView extends StatelessWidget {
               },
             ),
           ),
+          AssistantLiveScreenControl(state: liveState),
           Padding(
             padding: EdgeInsets.fromLTRB(16, 12, 16, safeArea.bottom + 16),
             child: Center(

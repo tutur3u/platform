@@ -15732,6 +15732,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.'**
   String get adminAccountsResetMfaDescription;
+
+  /// No description provided for @assistantLiveShareScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Share screen'**
+  String get assistantLiveShareScreen;
+
+  /// No description provided for @assistantLiveStopScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing'**
+  String get assistantLiveStopScreen;
+
+  /// No description provided for @assistantLiveScreenActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Your screen is shared with Live'**
+  String get assistantLiveScreenActive;
+
+  /// No description provided for @assistantLiveScreenPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for screen-sharing permission'**
+  String get assistantLiveScreenPending;
+
+  /// No description provided for @assistantLiveScreenStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen sharing ended.'**
+  String get assistantLiveScreenStopped;
+
+  /// No description provided for @assistantLiveScreenUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen sharing could not start. Please try again.'**
+  String get assistantLiveScreenUnavailable;
+
+  /// No description provided for @assistantLiveScreenMicrophoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on the microphone before sharing your screen. Live needs the voice session to continue while you switch apps.'**
+  String get assistantLiveScreenMicrophoneRequired;
+
+  /// No description provided for @assistantLiveScreenConnectionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to Live before sharing your screen.'**
+  String get assistantLiveScreenConnectionRequired;
+
+  /// No description provided for @assistantLiveScreenPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Anything visible on your screen may be shared with Live. Hide private information before continuing.'**
+  String get assistantLiveScreenPrivacy;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

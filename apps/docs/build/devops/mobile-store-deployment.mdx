@@ -184,3 +184,50 @@ the chat. Test denied ownership and failed ownership lookup before any privilege
 message access. The seed includes at most the latest 200 messages in stable
 chronological order. Deploy the API fix before treating a mobile-only build as
 proof of a working Live session.
+
+## Live screen-sharing extension
+
+Live screen sharing uses Android MediaProjection and an iOS ReplayKit Broadcast
+Upload Extension, rather than camera capture or an app-only screenshot. The
+operating system asks the user to choose and authorize the capture session. Live
+shows a stop control; Android also exposes a persistent stop notification and
+iOS retains its system broadcast indicator. Android adds the microphone foreground
+service type only while the existing, user-authorized Live microphone is active,
+and removes that type when muted; screen sharing itself can continue muted.
+
+On iOS, an active Live microphone session is required before screen sharing. The
+real voice session keeps the host's audio transport running while the user opens
+other apps; muting it stops screen sharing. No silent background-audio workaround
+is used. The extension stores only the latest bounded JPEG in a protected App
+Group directory, with a short host heartbeat and random capture-session ID. No
+account token, Live token, history, or capture archive crosses into the group.
+Frames are removed after delivery and capture stops if the host stops responding.
+
+Production signing requires App Group
+`group.com.tuturuuu.app.mobile.live` on both the Runner identifier
+`com.tuturuuu.app.mobile` and extension identifier
+`com.tuturuuu.app.mobile.LiveScreenBroadcast`. Regenerate the Runner App Store
+profile in the encrypted Infrastructure vault with that entitlement, and put the
+separate extension App Store profile into the `mobile-store-beta` environment's
+`APPLE_BROADCAST_PROVISIONING_PROFILE_B64` encrypted secret. The CI workflow
+validates team, exact identifier, distribution mode, expiration and App Group on
+both profiles before building. It separately verifies the embedded extension and
+its build number before TestFlight upload. Never weaken mobile OIDC to export a
+signing key or reuse a Runner profile for the extension.
+
+The project membership helper uses Swift and XcodeProj:
+
+```sh
+swift run --package-path scripts/mobile-live-project mobile-live-project apps/mobile/ios
+```
+
+Run it through the shared resource queue after changing native membership. The
+extension has its own build configuration and does not link Runner's Flutter or
+CocoaPods libraries. Development/staging identifiers use their own corresponding
+App Groups and signing profiles.
+
+Before marking screen sharing validated, check physical Android and iPhone/iPad devices: grant and
+cancel system consent, switch apps, rotate, stop from system UI, mute on iOS,
+change account/workspace, reconnect Live, and lock/unlock the device. Confirm the
+assistant receives the selected screen and that no frames continue after stop.
+Simulator tests and passing Dart tests do not prove background broadcast delivery.

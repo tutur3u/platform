@@ -23,10 +23,18 @@ do {
     try require((profile["ProvisionsAllDevices"] as? Bool) != true, "Enterprise profiles cannot be used for TestFlight")
     try require((entitlements["get-task-allow"] as? Bool) != true, "Distribution profiles cannot allow debugging")
     try require((profile["TeamIdentifier"] as? [String])?.contains(team) == true, "Profile team does not match the vault")
-    try require(entitlements["application-identifier"] as? String == "\(team).\(bundle)", "Profile application id does not match the vault")
-    try require(entitlements["aps-environment"] as? String == "production", "Production push notification entitlement is missing")
+    let broadcast = environment["APPLE_PROFILE_KIND"] == "broadcast"
+    let identifier = broadcast ? "\(bundle).LiveScreenBroadcast" : bundle
+    try require(entitlements["application-identifier"] as? String == "\(team).\(identifier)", "Profile application id does not match the vault")
+    if !broadcast {
+        try require(entitlements["aps-environment"] as? String == "production", "Production push notification entitlement is missing")
+    }
+    if broadcast || environment["APPLE_LIVE_SCREEN_GROUP_REQUIRED"] == "true" {
+        try require((entitlements["com.apple.security.application-groups"] as? [String])?.contains("group.\(bundle).live") == true,
+                    "Live screen-sharing App Group is missing from the provisioning profile")
+    }
     try require(UUID(uuidString: profile["UUID"] as? String ?? "") != nil, "Profile UUID is invalid")
-    print("Verified App Store provisioning profile and production push entitlement.")
+    print("Verified App Store provisioning profile and required entitlements.")
 } catch {
     FileHandle.standardError.write(Data("\(error.localizedDescription)\n".utf8))
     exit(1)

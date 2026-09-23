@@ -3350,5 +3350,14 @@
     "adminAccountsDisplayName": "Display name",
     "adminAccountsUsername": "Username",
   "adminAccountsResetMfa": "Reset authenticators",
-  "adminAccountsResetMfaDescription": "Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again."
+  "adminAccountsResetMfaDescription": "Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.",
+  "assistantLiveShareScreen": "Share screen",
+  "assistantLiveStopScreen": "Stop sharing",
+  "assistantLiveScreenActive": "Your screen is shared with Live",
+  "assistantLiveScreenPending": "Waiting for screen-sharing permission",
+  "assistantLiveScreenStopped": "Screen sharing ended.",
+  "assistantLiveScreenUnavailable": "Screen sharing could not start. Please try again.",
+  "assistantLiveScreenMicrophoneRequired": "Turn on the microphone before sharing your screen. Live needs the voice session to continue while you switch apps.",
+  "assistantLiveScreenConnectionRequired": "Connect to Live before sharing your screen.",
+  "assistantLiveScreenPrivacy": "Anything visible on your screen may be shared with Live. Hide private information before continuing."
 }

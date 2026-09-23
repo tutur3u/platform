@@ -8223,4 +8223,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminAccountsResetMfaDescription => 'Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.';
+
+  @override
+  String get assistantLiveShareScreen => 'Share screen';
+
+  @override
+  String get assistantLiveStopScreen => 'Stop sharing';
+
+  @override
+  String get assistantLiveScreenActive => 'Your screen is shared with Live';
+
+  @override
+  String get assistantLiveScreenPending => 'Waiting for screen-sharing permission';
+
+  @override
+  String get assistantLiveScreenStopped => 'Screen sharing ended.';
+
+  @override
+  String get assistantLiveScreenUnavailable => 'Screen sharing could not start. Please try again.';
+
+  @override
+  String get assistantLiveScreenMicrophoneRequired => 'Turn on the microphone before sharing your screen. Live needs the voice session to continue while you switch apps.';
+
+  @override
+  String get assistantLiveScreenConnectionRequired => 'Connect to Live before sharing your screen.';
+
+  @override
+  String get assistantLiveScreenPrivacy => 'Anything visible on your screen may be shared with Live. Hide private information before continuing.';
 }

@@ -69,6 +69,7 @@
 		<string>The application requires access to photo library to allow instant captures to be used inside the app.</string>
 		<key>UIBackgroundModes</key>
 		<array>
+			<string>audio</string>
 			<string>remote-notification</string>
 		</array>
 		<key>UIApplicationSceneManifest</key>

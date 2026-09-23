@@ -244,6 +244,8 @@ jobs:
 
       - name: Import Apple signing assets
         shell: bash
+        env:
+          APPLE_BROADCAST_PROVISIONING_PROFILE_B64: ${{ secrets.APPLE_BROADCAST_PROVISIONING_PROFILE_B64 }}
         run: |
           set -euo pipefail
 
@@ -265,7 +267,7 @@ jobs:
 
           profile_plist="$RUNNER_TEMP/mobile-deployment/profile.plist"
           security cms -D -i "$APPLE_PROVISIONING_PROFILE_PATH" > "$profile_plist"
-          swift ../../scripts/mobile-deployment/verify-profile.swift "$profile_plist"
+          APPLE_LIVE_SCREEN_GROUP_REQUIRED=true swift ../../scripts/mobile-deployment/verify-profile.swift "$profile_plist"
           profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print UUID' "$profile_plist")"
           profile_team="$(/usr/libexec/PlistBuddy -c 'Print TeamIdentifier:0' "$profile_plist")"
           app_identifier="$(/usr/libexec/PlistBuddy -c 'Print Entitlements:application-identifier' "$profile_plist")"
@@ -275,11 +277,20 @@ jobs:
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
           cp "$APPLE_PROVISIONING_PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/${profile_uuid}.mobileprovision"
           echo "MOBILE_PROFILE_UUID=$profile_uuid" >> "$GITHUB_ENV"
+          node -e 'const fs=require("node:fs");const value=process.env.APPLE_BROADCAST_PROVISIONING_PROFILE_B64;if(!value)throw new Error("Live broadcast App Store profile is required");fs.writeFileSync(process.env.RUNNER_TEMP+"/mobile-deployment/broadcast.mobileprovision",Buffer.from(value,"base64"),{mode:0o600})'
+          broadcast_profile="$RUNNER_TEMP/mobile-deployment/broadcast.mobileprovision"
+          broadcast_plist="$RUNNER_TEMP/mobile-deployment/broadcast-profile.plist"
+          security cms -D -i "$broadcast_profile" > "$broadcast_plist"
+          APPLE_PROFILE_KIND=broadcast swift ../../scripts/mobile-deployment/verify-profile.swift "$broadcast_plist"
+          broadcast_uuid="$(/usr/libexec/PlistBuddy -c 'Print UUID' "$broadcast_plist")"
+          cp "$broadcast_profile" "$HOME/Library/MobileDevice/Provisioning Profiles/${broadcast_uuid}.mobileprovision"
+          echo "MOBILE_BROADCAST_PROFILE_UUID=$broadcast_uuid" >> "$GITHUB_ENV"
           cat > ios/Flutter/StoreSigning.xcconfig <<EOF
           CODE_SIGN_STYLE = Manual
           CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Distribution
           DEVELOPMENT_TEAM = ${APPLE_TEAM_ID}
           PROVISIONING_PROFILE_SPECIFIER = ${profile_uuid}
+          LIVE_BROADCAST_PROFILE_UUID = ${broadcast_uuid}
           EOF
 
           cat > ios/ExportOptions.plist <<EOF
@@ -297,6 +308,8 @@ jobs:
             <dict>
               <key>${APPLE_BUNDLE_ID}</key>
               <string>${profile_uuid}</string>
+              <key>${APPLE_BUNDLE_ID}.LiveScreenBroadcast</key>
+              <string>${broadcast_uuid}</string>
             </dict>
             <key>stripSwiftSymbols</key>
             <true/>
@@ -344,8 +357,20 @@ jobs:
           codesign -d --entitlements :- "$app_path" > "$verify_dir/entitlements.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print application-identifier' "$verify_dir/entitlements.plist")" = "$APPLE_TEAM_ID.$APPLE_BUNDLE_ID"
           test "$(/usr/libexec/PlistBuddy -c 'Print get-task-allow' "$verify_dir/entitlements.plist")" = false
+          test "$(/usr/libexec/PlistBuddy -c 'Print com.apple.security.application-groups:0' "$verify_dir/entitlements.plist")" = "group.$APPLE_BUNDLE_ID.live"
           security cms -D -i "$app_path/embedded.mobileprovision" > "$verify_dir/profile.plist"
-          swift ../../scripts/mobile-deployment/verify-profile.swift "$verify_dir/profile.plist"
+          APPLE_LIVE_SCREEN_GROUP_REQUIRED=true swift ../../scripts/mobile-deployment/verify-profile.swift "$verify_dir/profile.plist"
+          broadcast_path="$app_path/PlugIns/LiveScreenBroadcast.appex"
+          test -d "$broadcast_path"
+          codesign --verify --strict "$broadcast_path"
+          codesign -d --entitlements :- "$broadcast_path" > "$verify_dir/broadcast-entitlements.plist" 2>/dev/null
+          test "$(/usr/libexec/PlistBuddy -c 'Print application-identifier' "$verify_dir/broadcast-entitlements.plist")" = "$APPLE_TEAM_ID.$APPLE_BUNDLE_ID.LiveScreenBroadcast"
+          test "$(/usr/libexec/PlistBuddy -c 'Print get-task-allow' "$verify_dir/broadcast-entitlements.plist")" = false
+          test "$(/usr/libexec/PlistBuddy -c 'Print com.apple.security.application-groups:0' "$verify_dir/broadcast-entitlements.plist")" = "group.$APPLE_BUNDLE_ID.live"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$broadcast_path/Info.plist")" = "$APPLE_BUNDLE_ID.LiveScreenBroadcast"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$broadcast_path/Info.plist")" = "$EXPECTED_BUILD_NUMBER"
+          security cms -D -i "$broadcast_path/embedded.mobileprovision" > "$verify_dir/broadcast-profile.plist"
+          APPLE_PROFILE_KIND=broadcast swift ../../scripts/mobile-deployment/verify-profile.swift "$verify_dir/broadcast-profile.plist"
 
       - name: Upload iOS IPA artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -378,6 +403,9 @@ jobs:
           security delete-keychain "$RUNNER_TEMP/mobile-deployment/mobile-deployment.keychain-db" || true
           if [ -n "${MOBILE_PROFILE_UUID:-}" ]; then
             rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/${MOBILE_PROFILE_UUID}.mobileprovision"
+          fi
+          if [ -n "${MOBILE_BROADCAST_PROFILE_UUID:-}" ]; then
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/${MOBILE_BROADCAST_PROFILE_UUID}.mobileprovision"
           fi
           if [ -n "${APP_STORE_CONNECT_PRIVATE_KEY_PATH:-}" ]; then
             rm -f "$APP_STORE_CONNECT_PRIVATE_KEY_PATH"
