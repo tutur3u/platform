@@ -41,12 +41,23 @@ test('TestFlight distribution assigns missing groups and reads back exact build 
   const apple = async (path, options = {}) => {
     calls.push({ path, options });
     if (path.includes('/apps/')) return { data: groups };
+    if (path === '/v1/builds/build?include=betaGroups') {
+      return {
+        data: {
+          relationships: {
+            betaGroups: {
+              data: [...assigned].map((id) => ({ id, type: 'betaGroups' })),
+            },
+          },
+        },
+      };
+    }
     if (options.method === 'POST') {
       const body = JSON.parse(options.body);
       for (const entry of body.data) assigned.add(entry.id);
       return null;
     }
-    return { data: groups.filter((group) => assigned.has(group.id)) };
+    throw new Error(`Unexpected App Store Connect request: ${path}`);
   };
   assert.deepEqual(
     await distributeTestFlightBuild(apple, 'app', 'build', {
@@ -60,6 +71,11 @@ test('TestFlight distribution assigns missing groups and reads back exact build 
     1
   );
   assert.deepEqual(assigned, new Set(['internal', 'external']));
+  assert.equal(
+    calls.filter((call) => call.path === '/v1/builds/build?include=betaGroups')
+      .length,
+    2
+  );
 });
 
 test('external beta review creates test notes, enables notification, and submits once', async () => {
