@@ -56,9 +56,10 @@ export function useLiveAssistant(
   roomAudioRef.current = roomAudio;
   const send = useCallback((message: LiveClientCommand) => {
     const current = active.current;
-    if (!current) return;
+    if (!current) return false;
+    if (message.type === 'text' && !current.ready) return false;
     if (message.type === 'pause') {
-      if (!message.paused && roomAudioRef.current.suppressed) return;
+      if (!message.paused && roomAudioRef.current.suppressed) return false;
       current.paused = message.paused;
       current.microphone?.getTracks().forEach((track) => {
         track.enabled = !message.paused;
@@ -72,10 +73,12 @@ export function useLiveAssistant(
         current.paused ||
         (current.mode === 'personal' && roomAudioRef.current.microphoneEnabled))
     )
-      return;
+      return false;
     const socket = current.socket;
-    if (socket?.readyState === WebSocket.OPEN && socket.bufferedAmount < 64000)
-      socket.send(JSON.stringify(message));
+    if (socket?.readyState !== WebSocket.OPEN || socket.bufferedAmount >= 64000)
+      return false;
+    socket.send(JSON.stringify(message));
+    return true;
   }, []);
   const stop = async (remote = true) => {
     ++startGeneration.current;
@@ -250,6 +253,7 @@ export function useLiveAssistant(
       if (cancelled()) throw new Error('Cancelled');
       const session = await controlMeetLive(meetingId, {
         action: 'start',
+        audioPolicy: 'participant-opt-in',
         mode: audience,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         workspaceId,

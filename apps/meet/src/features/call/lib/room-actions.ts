@@ -9,8 +9,30 @@ import type { MeetSignaling } from './signaling';
 export function createRoomActions(signaling: {
   current: MeetSignaling | null;
 }) {
+  let assistantAudio:
+    | {
+        microphoneEnabled: boolean;
+        speakerEnabled: boolean;
+        sessionId?: string;
+      }
+    | undefined;
   const pendingChat = new Map<string, string>();
   return {
+    replayAssistantAudio: () => {
+      if (assistantAudio)
+        signaling.current?.send({
+          type: 'assistant.preferences',
+          audio: assistantAudio,
+        });
+    },
+    setAssistantAudio: (audio: {
+      sessionId?: string;
+      microphoneEnabled: boolean;
+      speakerEnabled: boolean;
+    }) => {
+      assistantAudio = audio;
+      signaling.current?.send({ type: 'assistant.preferences', audio });
+    },
     reportUsage: (reportId: string, bytesReceived: number) =>
       signaling.current?.send({
         type: 'usage.report',

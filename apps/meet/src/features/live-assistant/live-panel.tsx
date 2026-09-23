@@ -32,12 +32,14 @@ import {
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AssistantWorkspacePicker } from '../call/components/assistant-workspace-picker';
 import { MiraAvatar } from '../call/components/mira-profile';
 import type { MeetRoomController } from '../call/lib/room-controller';
 import { liveVoiceSchema } from './contracts';
+import { miraInputTracks } from './input-sources';
 import { LiveReviewCard } from './live-review-card';
+import { MiraMentionRelay } from './mention-relay';
 import { useLiveAssistant } from './use-live-assistant';
 
 export function MeetLivePanel({
@@ -46,18 +48,32 @@ export function MeetLivePanel({
   outputDeviceId,
   canManage,
   audioSuppressed = false,
+  onOpenChat,
 }: {
   room: MeetRoomController;
   meetingId: string;
   outputDeviceId: string;
   canManage: boolean;
   audioSuppressed?: boolean;
+  onOpenChat: () => void;
 }) {
   const t = useTranslations('meet.live');
-  const streams = [
+  const streams = useMemo(() => {
+    const tracks = miraInputTracks(
+      room.state.participants,
+      room.state.selfUserId,
+      room.localStream,
+      room.remoteMedia,
+      room.state.liveAssistant?.sessionId
+    );
+    return tracks.length ? [new MediaStream(tracks)] : [];
+  }, [
+    room.state.participants,
+    room.state.selfUserId,
     room.localStream,
-    ...Object.values(room.remoteStreams),
-  ].filter((stream): stream is MediaStream => !!stream);
+    room.remoteMedia,
+    room.state.liveAssistant?.sessionId,
+  ]);
   const live = useLiveAssistant(
     meetingId,
     outputDeviceId,
@@ -68,6 +84,7 @@ export function MeetLivePanel({
     },
     room.getSelectedDevices().audio
   );
+  const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [workspace, setWorkspace] = useState('personal');
   const [voice, setVoice] = useState<MeetLiveVoice>('Aoede');
@@ -78,6 +95,16 @@ export function MeetLivePanel({
     if (active && live.mode === 'personal' && room.media.audioEnabled)
       live.send({ type: 'pause', paused: true });
   }, [active, live.mode, room.media.audioEnabled, live.send]);
+  const relay = useRef(new MiraMentionRelay());
+  useEffect(() => {
+    relay.current.observe(room.state.chat, active && live.mode === 'room');
+    if (!ready || live.mode !== 'room') return;
+    const flush = () =>
+      relay.current.flush((text) => live.send({ type: 'text', text }));
+    flush();
+    const timer = setInterval(flush, 1000);
+    return () => clearInterval(timer);
+  }, [room.state.chat, active, ready, live.mode, live.send]);
   const currentRoom = useRef(room);
   currentRoom.current = room;
   const start = async (mode: 'personal' | 'room') => {
@@ -102,7 +129,7 @@ export function MeetLivePanel({
       await currentRoom.current.toggleMicrophone();
   };
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           variant={active ? 'secondary' : 'outline'}
@@ -170,8 +197,8 @@ export function MeetLivePanel({
               {canManage && (
                 <button
                   type="button"
-                  className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                  disabled={audioSuppressed}
+                  className="order-first space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                  disabled={audioSuppressed || !!room.state.liveAssistant}
                   onClick={() => void start('room')}
                 >
                   <Users className="size-6" />
@@ -212,21 +239,23 @@ export function MeetLivePanel({
                     : 'room_consent_hint'
                 )}
               </p>
-              <div className="space-y-3" aria-live="polite">
-                {live.transcript.map((turn, index) => (
-                  <div
-                    key={`${index}-${turn.role}`}
-                    className="rounded-lg bg-muted/30 p-3"
-                  >
-                    <span className="font-medium text-xs">
-                      {turn.role === 'assistant' ? 'Mira' : t('you')}
-                    </span>
-                    <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">
-                      {turn.text}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              {live.mode === 'personal' && (
+                <div className="space-y-3" aria-live="polite">
+                  {live.transcript.map((turn, index) => (
+                    <div
+                      key={`${index}-${turn.role}`}
+                      className="rounded-lg bg-muted/30 p-3"
+                    >
+                      <span className="font-medium text-xs">
+                        {turn.role === 'assistant' ? 'Mira' : t('you')}
+                      </span>
+                      <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">
+                        {turn.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
               {live.reviews.map((review) => (
                 <LiveReviewCard
                   key={review.id}
@@ -235,25 +264,37 @@ export function MeetLivePanel({
                   decide={live.decide}
                 />
               ))}
-              <div className="flex items-end gap-2">
-                <Textarea
-                  aria-label={t('message')}
-                  placeholder={t('message')}
-                  value={draft}
-                  maxLength={4000}
-                  onChange={(event) => setDraft(event.target.value)}
-                />
+              {live.mode === 'room' ? (
                 <Button
-                  disabled={!draft.trim() || !ready}
+                  variant="outline"
                   onClick={() => {
-                    live.send({ type: 'text', text: draft });
-                    setDraft('');
+                    setOpen(false);
+                    onOpenChat();
                   }}
                 >
-                  <Play className="size-4" />
-                  {t('send')}
+                  {t('open_room_chat')}
                 </Button>
-              </div>
+              ) : (
+                <div className="flex items-end gap-2">
+                  <Textarea
+                    aria-label={t('message')}
+                    placeholder={t('message')}
+                    value={draft}
+                    maxLength={4000}
+                    onChange={(event) => setDraft(event.target.value)}
+                  />
+                  <Button
+                    disabled={!draft.trim() || !ready}
+                    onClick={() => {
+                      live.send({ type: 'text', text: draft });
+                      setDraft('');
+                    }}
+                  >
+                    <Play className="size-4" />
+                    {t('send')}
+                  </Button>
+                </div>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
                 <Button
                   variant="outline"

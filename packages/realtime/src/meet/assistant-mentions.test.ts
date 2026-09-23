@@ -5,6 +5,8 @@ import {
 } from './assistant-mentions';
 
 it.each([
+  '@Mira',
+  'Hello, @mira!',
   '@Tuturuuu',
   '@ttr',
   'Hello @TTR!',
@@ -18,6 +20,9 @@ it.each([
   expect(hasMeetAssistantMention(body)).toBe(true);
 });
 it.each([
+  'person@mira.com',
+  '@miracle',
+  '@mira-user',
   'person@Tuturuuu.com',
   'person.name@Tuturuuu.com',
   '@TuturuuuExtra',

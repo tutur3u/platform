@@ -287,7 +287,7 @@ export function ConnectedCallShell({
           canManage={canManage}
           onSaved={room.renameMeeting}
         />
-        {participants.length === 1 && (
+        {participants.length === 1 && !state.liveAssistant && (
           <span
             role="status"
             className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-1 text-muted-foreground text-xs"
@@ -327,15 +327,19 @@ export function ConnectedCallShell({
             {t('reconnecting')}
           </span>
         )}
-        {!sharedAudio.shared && (
-          <RoomAssistantAudio
-            canManage={canManage}
-            meetingId={meetingId}
-            outputDeviceId={outputDeviceId}
-          />
-        )}
+        <RoomAssistantAudio
+          room={room}
+          audioSuppressed={sharedAudio.shared}
+          canManage={canManage}
+          meetingId={meetingId}
+          outputDeviceId={outputDeviceId}
+        />
         <MeetLivePanel
           key="live-assistant"
+          onOpenChat={() => {
+            setPanel('chat');
+            setShowAi(false);
+          }}
           room={room}
           meetingId={meetingId}
           outputDeviceId={outputDeviceId}
@@ -393,6 +397,10 @@ export function ConnectedCallShell({
             </div>
           )}
           <CallStage
+            onChat={() => {
+              setPanel('chat');
+              setShowAi(false);
+            }}
             audioSuppressed={sharedAudio.shared}
             outputDeviceId={outputDeviceId}
             room={room}
@@ -421,6 +429,7 @@ export function ConnectedCallShell({
         {panel && (
           <SidePanel
             meetingId={meetingId}
+            miraActive={!!state.liveAssistant}
             canManage={canManage}
             chat={state.chat}
             onClose={() => setPanel(null)}
@@ -449,7 +458,7 @@ export function ConnectedCallShell({
           state.selfUserId ? isHandRaised(state, state.selfUserId) : false
         }
         busyDevices={busyDevices}
-        participantCount={participants.length}
+        participantCount={participants.length + (state.liveAssistant ? 1 : 0)}
         recordingBusy={recording.isBusy}
         recordingOn={state.recording.state === 'recording'}
         unreadChat={

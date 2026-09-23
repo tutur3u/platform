@@ -36,6 +36,7 @@ export function updateMeetPrivateMemory(
 export type MeetLiveVoice = 'Aoede' | 'Kore' | 'Puck' | 'Charon' | 'Fenrir';
 type LiveStart = {
   action: 'start';
+  audioPolicy?: 'participant-opt-in';
   mode: 'personal' | 'room';
   timezone: string;
   workspaceId?: string;

@@ -57,6 +57,7 @@ export const MEET_PRESENCE_TTL_MS = 30_000;
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
 export interface MeetRoomSnapshot {
+  liveAssistant?: import('./room-live').RoomLiveState;
   budget?: RoomBudget;
   attachments?: Record<string, RoomAttachment>;
   usage?: RoomUsage;
@@ -273,6 +274,28 @@ export function applyMeetRoomCommand(
   const control = applyRoomControl(state, message, token, now);
   if (control) return control;
   switch (message.type) {
+    case 'assistant.preferences': {
+      if (
+        message.audio.microphoneEnabled &&
+        (!state.liveAssistant ||
+          message.audio.sessionId !== state.liveAssistant.sessionId)
+      )
+        return denied(state, 'assistant_session_changed');
+      const existing = state.presence[userId];
+      if (!existing) return denied(state, 'awaiting_admission');
+      const next = {
+        ...state,
+        presence: {
+          ...state.presence,
+          [userId]: {
+            ...existing,
+            assistantAudio: message.audio,
+            lastSeenAt: now,
+          },
+        },
+      };
+      return outcome(next, { broadcast: [meetPresenceMessage(next, roomId)] });
+    }
     case 'presence.join': {
       const capacityError = roomCapacityError(state, token);
       if (capacityError) return denied(state, capacityError);
@@ -292,6 +315,7 @@ export function applyMeetRoomCommand(
               message.media
             ),
             joinedAt: state.presence[userId]?.joinedAt ?? now,
+            assistantAudio: state.presence[userId]?.assistantAudio,
           },
         },
       };

@@ -58,7 +58,13 @@ it.each(['camera', 'screen'] as const)(
     } as unknown as MeetRoomController;
     const view = (layout: CallLayout) => (
       <NextIntlClientProvider locale="en" messages={messages}>
-        <CallStage room={room} layout={layout} focus={null} onFocus={vi.fn()} />
+        <CallStage
+          room={room}
+          layout={layout}
+          focus={null}
+          onFocus={vi.fn()}
+          onChat={vi.fn()}
+        />
       </NextIntlClientProvider>
     );
     const { rerender } = render(view('grid'));

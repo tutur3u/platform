@@ -23,8 +23,11 @@ import {
   useStreamReadiness,
 } from './media-receiving-status';
 
+import { MiraAudioStatus } from './mira-audio-status';
+
 function ParticipantTileImpl({
   className,
+  miraActive = false,
   outputDeviceId,
   audioSuppressed = false,
   silenced: controlledSilence,
@@ -43,6 +46,7 @@ function ParticipantTileImpl({
   focusKey,
 }: {
   className?: string;
+  miraActive?: boolean;
   outputDeviceId?: string;
   audioSuppressed?: boolean;
   silenced?: boolean;
@@ -245,6 +249,9 @@ function ParticipantTileImpl({
                 : participant.media.screenEnabled
             }
           />
+        )}
+        {miraActive && kind === 'camera' && (
+          <MiraAudioStatus participant={participant} />
         )}
         {!participant.media.audioEnabled && kind === 'camera' && (
           <MicOff aria-label={t('muted')} className="size-3.5 shrink-0" />
