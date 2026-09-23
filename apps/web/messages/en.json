@@ -8596,6 +8596,40 @@
     "total_diff": "Price difference",
     "wallet": "Wallet"
   },
+  "invoice-subscriptions": {
+    "amount": "Allocated payment value",
+    "chart_label": "{metric} by tuition coverage period",
+    "coverage_months": "Paid tuition months",
+    "currency": "Currency",
+    "description": "See who paid for each tuition month, how many groups they paid for, and the payment value allocated to that coverage.",
+    "distribution": "How many groups did each user pay for?",
+    "distribution_help": "Distinct groups per paying user across the selected coverage period and currency.",
+    "distribution_value": "{userCount, plural, one {# user} other {# users}} paid for {groupCount, plural, one {# group} other {# groups}}",
+    "empty": "No allocated tuition payments",
+    "empty_help": "Completed payments with recorded tuition months will appear here. Try another year or adjust the user and wallet filters.",
+    "ending_year": "Five years ending in",
+    "error": "The complete coverage report could not be loaded. Please retry.",
+    "filters": "Uses the selected user and wallet filters. Coverage dates are selected here.",
+    "granularity": "Coverage breakdown",
+    "groups_count": "{count, plural, one {# group} other {# groups}}",
+    "hidden": "Show amounts to view the payment value chart.",
+    "hide": "Hide amounts",
+    "memberships": "User–group pairs",
+    "method": "Payment value is split equally across the tuition months recorded on each completed invoice. Totals count distinct users, groups and user–group pairs across the whole period; they are not sums of monthly counts. Currencies are reported separately.",
+    "monthly": "Monthly",
+    "overview": "Invoice overview",
+    "paidGroups": "Paid groups",
+    "paidUsers": "Paying users",
+    "period": "Tuition period",
+    "refresh": "Refresh tuition coverage",
+    "retry": "Retry",
+    "show": "Show amounts",
+    "table": "View period details",
+    "title": "Tuition coverage",
+    "unallocated": "{count, plural, one {# older paid invoice has} other {# older paid invoices have}} a coverage end date in this period but no exact tuition months. They are excluded from these totals.",
+    "year": "Year",
+    "yearly": "Yearly"
+  },
   "invoices": {
     "add_promotion": "Add promotion",
     "add-note": "Add note",
@@ -11524,7 +11558,12 @@
     "estimate": "Illustrative subscription subtotal · USD · excludes tax and add-ons",
     "exitFullscreen": "Exit fullscreen",
     "explore": "Explore Tuturuuu",
-    "families": ["Organize", "Collaborate", "Operate", "Learn & create"],
+    "families": [
+      "Organize",
+      "Collaborate",
+      "Operate",
+      "Learn & create"
+    ],
     "feedback": "Share feedback",
     "free": "Free",
     "friction": [
@@ -11548,10 +11587,20 @@
     "next": "Next slide",
     "noClaims": "Product direction, not a launch or performance guarantee.",
     "notes": "Presenter notes",
-    "orbitLabels": ["Tasks", "AI", "Drive", "Learn"],
+    "orbitLabels": [
+      "Tasks",
+      "AI",
+      "Drive",
+      "Learn"
+    ],
     "overview": "All slides",
     "pause": "Pause",
-    "people": ["Individuals", "Small teams", "Educators", "Operators"],
+    "people": [
+      "Individuals",
+      "Small teams",
+      "Educators",
+      "Operators"
+    ],
     "perMonth": "per month",
     "perYear": "per year",
     "planDetails": [
@@ -11662,7 +11711,12 @@
         "title": "From a good idea\nto a finished day."
       }
     },
-    "stages": ["Plan", "Connect", "Deliver", "Reflect"],
+    "stages": [
+      "Plan",
+      "Connect",
+      "Deliver",
+      "Reflect"
+    ],
     "title": "Tuturuuu — a connected workspace"
   },
   "platform-role-data-table": {
@@ -20922,6 +20976,8 @@
     "error_creating_subscription_invoice": "Error creating subscription invoice: {error}",
     "error_loading": "Error loading pending invoices. Please try again.",
     "error_loading_attendance": "Error loading attendance data. Please try again.",
+    "export_incomplete": "The invoice list changed or some rows could not be loaded. No file was downloaded. Please retry the export.",
+    "export_pending_scope": "Exports all matching pending rows, across all pages, using the current search and student filters. Pending debt depends on payment coverage and scheduled sessions or recorded attendance. Blocked groups and their members are excluded.",
     "failed_delete_invoice": "Failed to delete invoice",
     "failed_to_create_invoice": "Failed to create invoice",
     "failed_to_create_subscription_invoice": "Failed to create subscription invoice",

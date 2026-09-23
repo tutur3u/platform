@@ -35,6 +35,7 @@ type LatestInvoice = {
   group_id?: string;
   valid_until?: string | null;
   created_at?: string | null;
+  covered_months?: string[] | null;
 };
 
 type UserGroupItem = {
@@ -77,6 +78,7 @@ function GroupRow({
   isSelected,
   isMonthPaid,
   latestInvoice,
+  coverageInvoices,
   locale,
   isLoadingSubscriptionData,
   onToggle,
@@ -86,12 +88,17 @@ function GroupRow({
   isSelected: boolean;
   isMonthPaid: boolean;
   latestInvoice: LatestInvoice | undefined;
+  coverageInvoices: LatestInvoice[];
   locale: string;
   isLoadingSubscriptionData: boolean;
   onToggle: () => void;
   t: (key: string) => string;
 }) {
-  const paymentStatus = getGroupPaymentStatus(group, latestInvoice);
+  const paymentStatus = getGroupPaymentStatus(
+    group,
+    latestInvoice,
+    coverageInvoices
+  );
   return (
     <button
       type="button"
@@ -151,13 +158,23 @@ function GroupRow({
                 {new Date(latestInvoice.created_at).toLocaleDateString(locale)}
               </span>
             )}
-            {latestInvoice?.valid_until && (
+            {latestInvoice?.covered_months != null ? (
               <span>
-                {t('ws-invoices.valid_until')}{' '}
-                {parseLocalCalendarDate(
-                  latestInvoice.valid_until
-                ).toLocaleDateString(locale)}
+                {t('invoice-subscriptions.coverage_months')}:{' '}
+                {latestInvoice.covered_months
+                  .map((month) => month.slice(0, 7))
+                  .sort()
+                  .join(', ')}
               </span>
+            ) : (
+              latestInvoice?.valid_until && (
+                <span>
+                  {t('ws-invoices.valid_until')}{' '}
+                  {parseLocalCalendarDate(
+                    latestInvoice.valid_until
+                  ).toLocaleDateString(locale)}
+                </span>
+              )
             )}
           </p>
         )}
@@ -270,6 +287,9 @@ export function SubscriptionGroupSelector({
                     isSelected={isSelected}
                     isMonthPaid={isMonthPaid}
                     latestInvoice={latestInvoice}
+                    coverageInvoices={latestSubscriptionInvoices.filter(
+                      (invoice) => invoice.group_id === group.id
+                    )}
                     locale={locale}
                     isLoadingSubscriptionData={isLoadingSubscriptionData}
                     onToggle={() => onGroupSelect(group.id)}
@@ -317,6 +337,9 @@ export function SubscriptionGroupSelector({
                           isSelected={isSelected}
                           isMonthPaid={isMonthPaid}
                           latestInvoice={latestInvoice}
+                          coverageInvoices={latestSubscriptionInvoices.filter(
+                            (invoice) => invoice.group_id === group.id
+                          )}
                           locale={locale}
                           isLoadingSubscriptionData={isLoadingSubscriptionData}
                           onToggle={() => onGroupSelect(group.id)}

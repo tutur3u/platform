@@ -15733,6 +15733,120 @@ abstract class AppLocalizations {
   /// **'Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.'**
   String get adminAccountsResetMfaDescription;
 
+  /// No description provided for @desktopUpdateReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuturuuu {version} is ready to install.'**
+  String desktopUpdateReady(String version);
+
+  /// No description provided for @desktopUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Update could not be installed. Your current version is still available.'**
+  String get desktopUpdateFailed;
+
+  /// No description provided for @desktopUpdateScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'This update will install the next time you open Tuturuuu.'**
+  String get desktopUpdateScheduled;
+
+  /// No description provided for @desktopUpdateInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Install and restart'**
+  String get desktopUpdateInstall;
+
+  /// No description provided for @desktopUpdateCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel scheduled update'**
+  String get desktopUpdateCancel;
+
+  /// No description provided for @desktopUpdateNextLaunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Install on next launch'**
+  String get desktopUpdateNextLaunch;
+
+  /// No description provided for @desktopUpdateDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss update'**
+  String get desktopUpdateDismiss;
+
+  /// No description provided for @desktopUpdateManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Download manually'**
+  String get desktopUpdateManual;
+
+  /// No description provided for @mailSnooze.
+  ///
+  /// In en, this message translates to:
+  /// **'Snooze'**
+  String get mailSnooze;
+
+  /// No description provided for @mailUnsnooze.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Inbox now'**
+  String get mailUnsnooze;
+
+  /// No description provided for @mailMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute thread'**
+  String get mailMute;
+
+  /// No description provided for @mailUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute thread'**
+  String get mailUnmute;
+
+  /// No description provided for @mailSnoozed.
+  ///
+  /// In en, this message translates to:
+  /// **'Snoozed'**
+  String get mailSnoozed;
+
+  /// No description provided for @mailMuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get mailMuted;
+
+  /// No description provided for @mailSnoozeHour.
+  ///
+  /// In en, this message translates to:
+  /// **'In one hour'**
+  String get mailSnoozeHour;
+
+  /// No description provided for @mailSnoozeDay.
+  ///
+  /// In en, this message translates to:
+  /// **'In 24 hours'**
+  String get mailSnoozeDay;
+
+  /// No description provided for @mailSnoozeWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'In one week'**
+  String get mailSnoozeWeek;
+
+  /// No description provided for @mailSnoozeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose date and time'**
+  String get mailSnoozeCustom;
+
+  /// No description provided for @mailSnoozeFuture.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a time in the future.'**
+  String get mailSnoozeFuture;
+
   /// No description provided for @requiredMfaEnrollTitle.
   ///
   /// In en, this message translates to:

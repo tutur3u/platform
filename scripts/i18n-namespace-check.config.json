@@ -2,12 +2,14 @@
   "$comment": "Namespaces from shared packages that specific apps intentionally do not use. Remove entries as apps add the missing translations.",
   "apps/web": ["certificates", "inventory-finance-reconciliation"],
   "apps/tasks": [
+    "invoice-subscriptions",
     "certificates",
     "finance-command-center",
     "inventory-finance-reconciliation",
     "wallet-checkpoints"
   ],
   "apps/calendar": [
+    "invoice-subscriptions",
     "certificates",
     "finance-command-center",
     "inventory-finance-reconciliation",
@@ -15,14 +17,20 @@
     "ws-board-templates"
   ],
   "apps/cms": [
+    "invoice-subscriptions",
     "certificates",
     "finance-command-center",
     "inventory-finance-reconciliation",
     "wallet-checkpoints"
   ],
   "apps/contacts": ["certificates", "inventory-finance-reconciliation"],
-  "apps/forms": ["certificates", "inventory-finance-reconciliation"],
+  "apps/forms": [
+    "invoice-subscriptions",
+    "certificates",
+    "inventory-finance-reconciliation"
+  ],
   "apps/drive": [
+    "invoice-subscriptions",
     "certificates",
     "finance-command-center",
     "inventory-finance-reconciliation",
@@ -30,6 +38,7 @@
   ],
   "apps/finance": ["certificates", "ws-board-templates"],
   "apps/meet": [
+    "invoice-subscriptions",
     "certificates",
     "finance-command-center",
     "finance-analytics",
@@ -51,6 +60,7 @@
     "ws-tasks-labels"
   ],
   "apps/track": [
+    "invoice-subscriptions",
     "certificates",
     "finance-command-center",
     "inventory-finance-reconciliation",
@@ -58,6 +68,7 @@
     "ws-board-templates"
   ],
   "apps/nova": [
+    "invoice-subscriptions",
     "certificates",
     "dashboard",
     "finance-command-center",
@@ -83,6 +94,7 @@
     "ws-tasks-labels"
   ],
   "apps/rewise": [
+    "invoice-subscriptions",
     "certificates",
     "finance-command-center",
     "inventory-finance-reconciliation",
@@ -158,6 +170,7 @@
     ]
   },
   "apps/lettin": [
+    "invoice-subscriptions",
     "account_switcher",
     "calendar",
     "certificates",

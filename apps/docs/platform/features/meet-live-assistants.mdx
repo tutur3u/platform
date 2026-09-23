@@ -1,6 +1,6 @@
 ---
 title: Meet Live assistants
-updated: '2026-09-10'
+updated: '2026-09-23'
 description: Operate personal and room-wide Mira voice sessions with private context, explicit approvals, and metered usage.
 ---
 
@@ -19,7 +19,7 @@ speaker audio can otherwise be picked up by an open physical microphone.
 
 Only a room admin can invite the room assistant. One room assistant can be
 active at a time. Its initiating device captures the meeting audio available to
-that device, including remote participants. Audio unavailable to that device
+that device, limited to microphone tracks of participants who explicitly enable **Talk to Mira**. Screen-share audio is excluded. Audio unavailable to that device
 cannot be transcribed or understood. Participants see the assistant's presence
 and may need to enable playback once because of browser autoplay restrictions.
 Room output is published through server-authenticated events. Browser tokens
@@ -33,6 +33,35 @@ approval before execution. Membership, current permissions, and arguments are
 validated again at execution time. Room sessions never receive these tools.
 A room admin can stop the shared assistant even when another admin invited it.
 The room presence expires automatically if its initiating session disappears.
+
+## Mira in the meeting
+
+Room chat is the default, including solo meetings. Mention **@mira**, **@ttr**,
+or **@tuturuuu** to request a text answer. While room Live is active, its
+initiating device also forwards new mentions to Live for a spoken answer.
+Mira Live posts its completed spoken answers in room chat using the room's
+existing retention setting. Private turns never enter room chat automatically.
+
+Mira has its own tile, AI badge, speaking animation, pin control, and participant
+list entry. **Talk to Mira / Mute to Mira** controls only whether your microphone
+enters the Live mix; it does not mute you for other people. **Listen to Mira /
+Deafen Mira** independently controls local assistant playback. Listening starts automatically;
+microphones start excluded for every new Live session. Browser autoplay
+restrictions may require one click on **Listen to Mira**. Explicitly deafening
+Mira stays respected when playback reconnects.
+Participant badges expose both directions and distinguish an allowed input
+with a muted meeting microphone from an input excluded from Mira.
+
+The initiating browser must remain connected and receiving participants' audio.
+During recovery, new chat mentions are queued in that browser; replayed room
+history does not retrigger Live. Acoustic spill from another opted-in person's
+microphone cannot be separated from their voice, so use headphones where needed.
+
+Deploy the realtime protocol changes and Meet Worker together. Older clients
+without explicit microphone preferences are excluded from the new input mix.
+Older initiating clients must refresh before starting room Live; the Worker
+rejects microphone input from legacy sessions without the opt-in audio policy.
+Restart any room Live session created before this release to use voice input.
 
 ## Explicit approvals
 

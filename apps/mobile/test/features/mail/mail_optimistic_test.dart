@@ -7,6 +7,20 @@ void main() {
     {'id': 'b', 'unread': true, 'unreadCount': 1},
   ];
 
+  test('snooze and mute hide only the selected Inbox thread', () {
+    for (final action in ['snooze', 'mute']) {
+      final result = optimisticMailItems(
+        items,
+        {'a'},
+        action: action,
+        folder: 'inbox',
+        query: '',
+      );
+      expect(result.map((item) => item['id']), ['b']);
+      expect(items, hasLength(2));
+    }
+  });
+
   test(
     'archiving removes selected inbox threads without mutating rollback data',
     () {

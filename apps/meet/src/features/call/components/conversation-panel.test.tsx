@@ -23,7 +23,7 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
-it('keeps a solo conversation private when another device joins and shares only reviewed text', async () => {
+it('defaults to room chat and keeps an explicitly chosen conversation private when another device joins and shares only reviewed text', async () => {
   const onSendChat = vi.fn(async () => ({ id: 'shared' }));
   const client = new QueryClient({
     defaultOptions: { mutations: { retry: false } },
@@ -42,6 +42,15 @@ it('keeps a solo conversation private when another device joins and shares only 
     </QueryClientProvider>
   );
   const { rerender } = render(content(true));
+  expect(
+    screen
+      .getByRole('tab', { name: messages.meet.call.room_chat })
+      .getAttribute('aria-selected')
+  ).toBe('true');
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Private Mira' }), {
+    button: 0,
+    ctrlKey: false,
+  });
   expect(
     screen
       .getByRole('tab', { name: 'Private Mira' })

@@ -11,10 +11,7 @@ import {
 import type { CreditCheckResult } from '@tuturuuu/ai/credits/types';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   isTaskPriority,
   type TaskPriority,
@@ -698,10 +695,10 @@ export async function POST(
 ) {
   try {
     const { wsId: rawWsId } = await params;
-    const supabase = await createClient(req);
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+    const { user, authError, supabase } =
+      await resolveAuthenticatedSessionUser(req);
 
-    if (authError || !user) {
+    if (authError || !user || !supabase) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

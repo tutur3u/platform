@@ -88,6 +88,14 @@ export default async function DownloadPage() {
                       size: Math.ceil(download.size / 1024 / 1024),
                     })}
                   </p>
+                  <a
+                    className="mt-2 inline-block rounded text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+                    href={download.releaseUrl}
+                  >
+                    {t('release_notes', {
+                      version: download.tag.replace('desktop-v', ''),
+                    })}
+                  </a>
                   <details className="mt-4 text-muted-foreground text-xs">
                     <summary className="cursor-pointer rounded py-1 focus-visible:outline-2 focus-visible:outline-ring">
                       {t('checksum')}
@@ -110,16 +118,6 @@ export default async function DownloadPage() {
         <ShieldCheck className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
         <div>
           <p>{t('security')}</p>
-          {release && (
-            <a
-              className="mt-2 inline-block rounded underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
-              href={release.url}
-            >
-              {t('release_notes', {
-                version: release.tag.replace('desktop-v', ''),
-              })}
-            </a>
-          )}
         </div>
       </div>
     </main>

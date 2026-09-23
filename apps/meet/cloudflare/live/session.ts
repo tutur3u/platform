@@ -5,6 +5,7 @@ import {
   needsLiveCheckpoint,
 } from '../../src/features/live-assistant/context';
 import {
+  acceptsLiveAudio,
   type LiveAssistantEvent,
   liveClientCommandSchema,
 } from '../../src/features/live-assistant/contracts';
@@ -18,6 +19,7 @@ import {
   settlePublicBillings,
 } from './finalize-billing';
 import { connectLiveProvider, drainLiveProvider } from './provider';
+import { LiveTranscriptPublisher } from './publish-transcript';
 import { LiveRegistryQueue } from './registry';
 import { maintainLiveRegistry } from './registry-heartbeat';
 import {
@@ -40,6 +42,7 @@ import {
 } from './workspace-review';
 
 export class MeetLiveDurableObject {
+  private publish = new LiveTranscriptPublisher();
   private saved?: SavedSession;
   private socket?: WebSocket;
   private provider?: Session;
@@ -350,7 +353,7 @@ export class MeetLiveDurableObject {
     if (message.type === 'text')
       this.provider.sendRealtimeInput({ text: message.text });
     if (message.type === 'audio') {
-      if (this.paused) return;
+      if (this.paused || !acceptsLiveAudio(this.saved.claims)) return;
       if (!/^[A-Za-z0-9+/]*={0,2}$/.test(message.data)) return;
       if (Date.now() - this.inputWindow.start >= 1000)
         this.inputWindow = { start: Date.now(), bytes: 0 };
@@ -431,6 +434,7 @@ export class MeetLiveDurableObject {
       ] as const) {
         if (!text.trim()) continue;
         const turn = { role, text, at: new Date().toISOString() };
+        this.state.waitUntil(this.publish.turn(this.env, saved, role, text));
         const sequence = await this.archive.append(turn);
         saved.journal = appendLiveTurn(saved.journal, { ...turn, sequence });
         this.emit({ type: 'transcript', role, text: '', finished: true });

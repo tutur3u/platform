@@ -61,6 +61,7 @@ import { useSubscriptionInvoiceContent } from './hooks/use-subscription-invoice-
 import { createSubscriptionInvoiceWithInternalApi } from './internal-api';
 import { formatInvoiceRecalculationDescription } from './invoice-visibility-format';
 import { ProductSelection } from './product-selection';
+import { invalidateInvoiceMutationQueries } from './query-invalidation';
 import type { SubscriptionInvoiceProps } from './subscription-invoice-props';
 import type { SelectedProductItem } from './types';
 import {
@@ -800,7 +801,7 @@ export function SubscriptionInvoice({
 
     setIsCreating(true);
     try {
-      const requestPayload = {
+      const result = await createSubscriptionInvoiceWithInternalApi(wsId, {
         customer_id: selectedUserId,
         group_ids: selectedGroupIdsForCreate,
         selected_month: effectiveSelectedMonth,
@@ -815,12 +816,8 @@ export function SubscriptionInvoice({
         frontend_discount_amount: discountAmount,
         frontend_total: subscriptionRoundedTotal,
         prepaid_month_count: prepaidMonthCount,
-      };
-
-      const result = await createSubscriptionInvoiceWithInternalApi(wsId, {
-        ...requestPayload,
-        customer_id: selectedUserId,
       });
+      void invalidateInvoiceMutationQueries(queryClient, wsId);
 
       if (result.data?.values_recalculated) {
         const { calculated_values, frontend_values } = result.data;

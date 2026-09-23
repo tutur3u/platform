@@ -8,6 +8,8 @@ export const DESKTOP_ASSETS = {
 export type DesktopPlatform = keyof typeof DESKTOP_ASSETS;
 export type DesktopDownload = {
   platform: DesktopPlatform;
+  tag: string;
+  releaseUrl: string;
   url: string;
   size: number;
   sha256: string;
@@ -25,11 +27,12 @@ const object = (value: unknown): Record<string, unknown> | null =>
     : null;
 
 // Never turn arbitrary provider data into a redirect or download link. The
-// release workflow publishes this exact asset set only after every OS passes.
+// release workflow publishes its selected asset set only after all selected OSes pass.
 export function parseDesktopRelease(value: unknown): DesktopRelease | null {
   const release = object(value);
   if (
     release?.draft !== false ||
+    release.prerelease !== true ||
     typeof release.tag_name !== 'string' ||
     !tagPattern.test(release.tag_name) ||
     !Array.isArray(release.assets)
@@ -43,6 +46,7 @@ export function parseDesktopRelease(value: unknown): DesktopRelease | null {
     const matches = release.assets
       .map(object)
       .filter((asset) => asset?.name === name);
+    if (matches.length === 0) continue;
     if (matches.length !== 1) return null;
     const asset = matches[0];
     const url = `${base}/download/${tag}/${name}`;
@@ -58,17 +62,31 @@ export function parseDesktopRelease(value: unknown): DesktopRelease | null {
       return null;
     downloads.push({
       platform: platform as DesktopPlatform,
+      tag,
+      releaseUrl: `${base}/tag/${tag}`,
       url,
       size: asset.size,
       sha256: asset.digest.slice(7),
     });
   }
+  if (downloads.length === 0 || release.assets.length !== downloads.length)
+    return null;
   return { tag, url: `${base}/tag/${tag}`, downloads };
 }
 
 export function findDesktopRelease(value: unknown): DesktopRelease | null {
   if (!Array.isArray(value)) return null;
-  return (
-    value.map(parseDesktopRelease).find((release) => release !== null) ?? null
-  );
+  const releases = value
+    .map(parseDesktopRelease)
+    .filter((release) => release !== null);
+  const latest = releases[0];
+  if (!latest) return null;
+  const platforms = new Map<DesktopPlatform, DesktopDownload>();
+  for (const release of releases) {
+    for (const download of release.downloads) {
+      if (!platforms.has(download.platform))
+        platforms.set(download.platform, download);
+    }
+  }
+  return { ...latest, downloads: [...platforms.values()] };
 }

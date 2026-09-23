@@ -41,6 +41,9 @@ describe('mobile deployment crypto', () => {
     expect(decryptSecretValue(encryptedSecret, decryptedDataKey)).toBe(
       'secret-value'
     );
+    expect(() => decryptSecretValue(encryptedSecret, Buffer.alloc(32))).toThrow(
+      'authentication failed'
+    );
 
     const encryptedBytes = encryptBytes(
       new TextEncoder().encode('file-bytes'),

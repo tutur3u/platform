@@ -10846,6 +10846,8 @@
       "setupGuide": "Setup guide"
     },
     "hideSecretValue": "Hide secret value",
+    "inheritMissing": "Inherit missing credentials",
+    "inheritMissingDescription": "Repair a draft created without its active credentials. Existing draft values and deliberately removed secrets stay unchanged.",
     "issueToken": "Issue token",
     "lastFour": "Last 4: {value}",
     "missing": "Missing",
@@ -10865,8 +10867,8 @@
     "saved": "Saved.",
     "searchSecrets": "Search secrets",
     "secretNamePlaceholder": "SECRET_NAME",
-    "secretsTitle": "Secrets",
     "secretValuePlaceholder": "Enter secret value",
+    "secretsTitle": "Secrets",
     "selectValue": "Select a value",
     "showSecretValue": "Show secret value",
     "sizeBytes": "{count, plural, one {# byte} other {# bytes}}",

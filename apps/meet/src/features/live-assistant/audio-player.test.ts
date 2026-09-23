@@ -103,3 +103,46 @@ it('bounds the scheduled end without stopping the sentence already queued', asyn
   player.play(chunk, 0);
   expect(sources).toHaveLength(119);
 });
+
+it('lets a listen gesture resume audio while an autoplay attempt is pending', async () => {
+  const { context } = audioHarness();
+  context.state = 'suspended';
+  let unblockAutoplay: () => void = () => {};
+  context.resume
+    .mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          unblockAutoplay = resolve;
+        })
+    )
+    .mockImplementationOnce(async () => {
+      context.state = 'running';
+      unblockAutoplay();
+    });
+  const player = new LiveAudioPlayer();
+  const automatic = player.unlock();
+  await vi.waitFor(() => expect(context.resume).toHaveBeenCalledTimes(1));
+  const manual = player.unlock();
+  await vi.waitFor(() => expect(context.resume).toHaveBeenCalledTimes(2));
+  await Promise.all([automatic, manual]);
+});
+
+it('waits for the chosen output before playing queued audio', async () => {
+  const { context, sources, chunk } = audioHarness();
+  let finishOutput: () => void = () => {};
+  const setSinkId = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finishOutput = resolve;
+      })
+  );
+  Object.assign(context, { setSinkId });
+  const player = new LiveAudioPlayer();
+  const opening = player.unlock('headphones');
+  await vi.waitFor(() => expect(setSinkId).toHaveBeenCalledWith('headphones'));
+  player.play(chunk);
+  expect(sources).toHaveLength(0);
+  finishOutput();
+  await opening;
+  expect(sources).toHaveLength(1);
+});

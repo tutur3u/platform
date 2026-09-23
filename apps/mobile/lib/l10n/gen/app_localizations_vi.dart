@@ -8195,6 +8195,65 @@ class AppLocalizationsVi extends AppLocalizations {
   String get adminAccountsResetMfaDescription => 'Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy. Người dùng cần đăng ký lại trình xác thực.';
 
   @override
+  String desktopUpdateReady(String version) {
+    return 'Tuturuuu $version đã sẵn sàng để cài đặt.';
+  }
+
+  @override
+  String get desktopUpdateFailed => 'Không thể cài đặt bản cập nhật. Bạn vẫn có thể dùng phiên bản hiện tại.';
+
+  @override
+  String get desktopUpdateScheduled => 'Bản cập nhật sẽ được cài đặt vào lần mở Tuturuuu tiếp theo.';
+
+  @override
+  String get desktopUpdateInstall => 'Cài đặt và khởi động lại';
+
+  @override
+  String get desktopUpdateCancel => 'Hủy lịch cập nhật';
+
+  @override
+  String get desktopUpdateNextLaunch => 'Cài đặt vào lần mở tiếp theo';
+
+  @override
+  String get desktopUpdateDismiss => 'Ẩn thông báo cập nhật';
+
+  @override
+  String get desktopUpdateManual => 'Tải xuống thủ công';
+
+  @override
+  String get mailSnooze => 'Tạm ẩn';
+
+  @override
+  String get mailUnsnooze => 'Đưa về hộp thư đến ngay';
+
+  @override
+  String get mailMute => 'Tắt thông báo chuỗi thư';
+
+  @override
+  String get mailUnmute => 'Bật lại thông báo';
+
+  @override
+  String get mailSnoozed => 'Đã tạm ẩn';
+
+  @override
+  String get mailMuted => 'Đã tắt thông báo';
+
+  @override
+  String get mailSnoozeHour => 'Sau một giờ';
+
+  @override
+  String get mailSnoozeDay => 'Sau 24 giờ';
+
+  @override
+  String get mailSnoozeWeek => 'Sau một tuần';
+
+  @override
+  String get mailSnoozeCustom => 'Chọn ngày và giờ';
+
+  @override
+  String get mailSnoozeFuture => 'Vui lòng chọn thời gian trong tương lai.';
+
+  @override
   String get requiredMfaEnrollTitle => 'Bảo vệ tài khoản của bạn';
 
   @override

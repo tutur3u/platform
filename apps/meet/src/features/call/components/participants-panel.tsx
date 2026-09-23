@@ -24,9 +24,12 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useTranslations } from 'next-intl';
+import { MiraAudioStatus } from './mira-audio-status';
+import { MiraAvatar } from './mira-profile';
 import { RoomHostControls } from './room-host-controls';
 export function ParticipantsPanel({
   approved,
+  miraActive = false,
   onForget,
   shareNotes,
   onShareNotes,
@@ -40,6 +43,7 @@ export function ParticipantsPanel({
   waiting,
 }: {
   approved: MeetApprovedParticipant[];
+  miraActive?: boolean;
   onForget: (userId: string) => void;
   shareNotes: boolean;
   onShareNotes: (enabled: boolean) => void;
@@ -114,9 +118,18 @@ export function ParticipantsPanel({
       <div className="flex items-center gap-2 px-4 pt-4 pb-2 font-medium text-sm">
         <Users className="size-4" />
         <span className="flex-1">{t('in_call')}</span>
-        <Badge variant="outline">{participants.length}</Badge>
+        <Badge variant="outline">
+          {participants.length + (miraActive ? 1 : 0)}
+        </Badge>
       </div>
       <ul className="divide-y">
+        {miraActive && (
+          <li className="flex items-center gap-2 bg-primary/5 px-4 py-3">
+            <MiraAvatar size={32} />
+            <span className="flex-1 text-sm">Mira</span>
+            <Badge variant="secondary">{t('official_assistant')}</Badge>
+          </li>
+        )}
         {participants.map((participant) => {
           const isSelf = participant.userId === selfUserId;
           return (
@@ -138,6 +151,7 @@ export function ParticipantsPanel({
                   </span>
                 ) : null}
               </span>
+              {miraActive && <MiraAudioStatus participant={participant} />}
               {raisedHandUserIds.includes(participant.userId) ? (
                 <Hand className="size-3.5 shrink-0 text-dynamic-orange" />
               ) : null}

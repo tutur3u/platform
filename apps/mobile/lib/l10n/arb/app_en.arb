@@ -3351,6 +3351,32 @@
     "adminAccountsUsername": "Username",
   "adminAccountsResetMfa": "Reset authenticators",
   "adminAccountsResetMfaDescription": "Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.",
+    "desktopUpdateReady": "Tuturuuu {version} is ready to install.",
+    "desktopUpdateFailed": "Update could not be installed. Your current version is still available.",
+    "desktopUpdateScheduled": "This update will install the next time you open Tuturuuu.",
+    "desktopUpdateInstall": "Install and restart",
+    "desktopUpdateCancel": "Cancel scheduled update",
+    "desktopUpdateNextLaunch": "Install on next launch",
+    "desktopUpdateDismiss": "Dismiss update",
+    "@desktopUpdateReady": {
+        "placeholders": {
+            "version": {
+                "type": "String"
+            }
+        }
+    },
+    "desktopUpdateManual": "Download manually",
+    "mailSnooze": "Snooze",
+    "mailUnsnooze": "Move to Inbox now",
+    "mailMute": "Mute thread",
+    "mailUnmute": "Unmute thread",
+    "mailSnoozed": "Snoozed",
+    "mailMuted": "Muted",
+    "mailSnoozeHour": "In one hour",
+    "mailSnoozeDay": "In 24 hours",
+    "mailSnoozeWeek": "In one week",
+    "mailSnoozeCustom": "Choose date and time",
+    "mailSnoozeFuture": "Choose a time in the future.",
     "requiredMfaEnrollTitle": "Secure your account",
     "requiredMfaEnrollDescription": "Your administrator requires two-step verification. Add this account to an authenticator app to continue.",
     "requiredMfaSecretLabel": "Enter this setup key in your authenticator app. Keep it private.",

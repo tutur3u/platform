@@ -3355,6 +3355,32 @@
     "adminAccountsUsername": "Tên người dùng",
   "adminAccountsResetMfa": "Đặt lại trình xác thực",
   "adminAccountsResetMfaDescription": "Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy. Người dùng cần đăng ký lại trình xác thực.",
+    "desktopUpdateReady": "Tuturuuu {version} đã sẵn sàng để cài đặt.",
+    "desktopUpdateFailed": "Không thể cài đặt bản cập nhật. Bạn vẫn có thể dùng phiên bản hiện tại.",
+    "desktopUpdateScheduled": "Bản cập nhật sẽ được cài đặt vào lần mở Tuturuuu tiếp theo.",
+    "desktopUpdateInstall": "Cài đặt và khởi động lại",
+    "desktopUpdateCancel": "Hủy lịch cập nhật",
+    "desktopUpdateNextLaunch": "Cài đặt vào lần mở tiếp theo",
+    "desktopUpdateDismiss": "Ẩn thông báo cập nhật",
+    "@desktopUpdateReady": {
+        "placeholders": {
+            "version": {
+                "type": "String"
+            }
+        }
+    },
+    "desktopUpdateManual": "Tải xuống thủ công",
+    "mailSnooze": "Tạm ẩn",
+    "mailUnsnooze": "Đưa về hộp thư đến ngay",
+    "mailMute": "Tắt thông báo chuỗi thư",
+    "mailUnmute": "Bật lại thông báo",
+    "mailSnoozed": "Đã tạm ẩn",
+    "mailMuted": "Đã tắt thông báo",
+    "mailSnoozeHour": "Sau một giờ",
+    "mailSnoozeDay": "Sau 24 giờ",
+    "mailSnoozeWeek": "Sau một tuần",
+    "mailSnoozeCustom": "Chọn ngày và giờ",
+    "mailSnoozeFuture": "Vui lòng chọn thời gian trong tương lai.",
     "requiredMfaEnrollTitle": "Bảo vệ tài khoản của bạn",
     "requiredMfaEnrollDescription": "Quản trị viên yêu cầu xác minh hai bước. Thêm tài khoản này vào ứng dụng xác thực để tiếp tục.",
     "requiredMfaSecretLabel": "Nhập khóa thiết lập này vào ứng dụng xác thực. Không chia sẻ khóa này.",

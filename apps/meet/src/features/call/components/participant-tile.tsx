@@ -23,8 +23,11 @@ import {
   useStreamReadiness,
 } from './media-receiving-status';
 
+import { MiraAudioStatus } from './mira-audio-status';
+
 function ParticipantTileImpl({
   className,
+  miraActive = false,
   outputDeviceId,
   audioSuppressed = false,
   silenced: controlledSilence,
@@ -43,6 +46,7 @@ function ParticipantTileImpl({
   focusKey,
 }: {
   className?: string;
+  miraActive?: boolean;
   outputDeviceId?: string;
   audioSuppressed?: boolean;
   silenced?: boolean;
@@ -246,6 +250,9 @@ function ParticipantTileImpl({
             }
           />
         )}
+        {miraActive && kind === 'camera' && (
+          <MiraAudioStatus participant={participant} />
+        )}
         {!participant.media.audioEnabled && kind === 'camera' && (
           <MicOff aria-label={t('muted')} className="size-3.5 shrink-0" />
         )}
@@ -343,6 +350,11 @@ function ParticipantTileImpl({
 export const ParticipantTile = memo(
   ParticipantTileImpl,
   (a, b) =>
+    a.miraActive === b.miraActive &&
+    a.participant.assistantAudio?.microphoneEnabled ===
+      b.participant.assistantAudio?.microphoneEnabled &&
+    a.participant.assistantAudio?.speakerEnabled ===
+      b.participant.assistantAudio?.speakerEnabled &&
     a.participant.userId === b.participant.userId &&
     a.participant.displayName === b.participant.displayName &&
     a.participant.avatarUrl === b.participant.avatarUrl &&

@@ -8225,6 +8225,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminAccountsResetMfaDescription => 'Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.';
 
   @override
+  String desktopUpdateReady(String version) {
+    return 'Tuturuuu $version is ready to install.';
+  }
+
+  @override
+  String get desktopUpdateFailed => 'Update could not be installed. Your current version is still available.';
+
+  @override
+  String get desktopUpdateScheduled => 'This update will install the next time you open Tuturuuu.';
+
+  @override
+  String get desktopUpdateInstall => 'Install and restart';
+
+  @override
+  String get desktopUpdateCancel => 'Cancel scheduled update';
+
+  @override
+  String get desktopUpdateNextLaunch => 'Install on next launch';
+
+  @override
+  String get desktopUpdateDismiss => 'Dismiss update';
+
+  @override
+  String get desktopUpdateManual => 'Download manually';
+
+  @override
+  String get mailSnooze => 'Snooze';
+
+  @override
+  String get mailUnsnooze => 'Move to Inbox now';
+
+  @override
+  String get mailMute => 'Mute thread';
+
+  @override
+  String get mailUnmute => 'Unmute thread';
+
+  @override
+  String get mailSnoozed => 'Snoozed';
+
+  @override
+  String get mailMuted => 'Muted';
+
+  @override
+  String get mailSnoozeHour => 'In one hour';
+
+  @override
+  String get mailSnoozeDay => 'In 24 hours';
+
+  @override
+  String get mailSnoozeWeek => 'In one week';
+
+  @override
+  String get mailSnoozeCustom => 'Choose date and time';
+
+  @override
+  String get mailSnoozeFuture => 'Choose a time in the future.';
+
+  @override
   String get requiredMfaEnrollTitle => 'Secure your account';
 
   @override

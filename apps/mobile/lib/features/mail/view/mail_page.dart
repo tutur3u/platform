@@ -155,6 +155,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   String? _visibleListKey;
   String? _openingId;
   Timer? _searchDebounce;
+  Timer? _snoozeRefreshTimer;
   StreamSubscription<PushNotificationEvent>? _mailPushSubscription;
   AppLifecycleListener? _lifecycle;
 
@@ -191,6 +192,12 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     });
     _lifecycle = AppLifecycleListener(onResume: _refreshVisibleMailbox);
     unawaited(_swipePreferences.load());
+    _snoozeRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed &&
+          ['inbox', 'snoozed'].contains(_folder)) {
+        _refreshVisibleMailbox();
+      }
+    });
     unawaited(_bootstrap());
   }
 
@@ -208,6 +215,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
 
   @override
   void dispose() {
+    _snoozeRefreshTimer?.cancel();
     _generation++;
     _bootstrapGeneration++;
     _organizationGeneration++;

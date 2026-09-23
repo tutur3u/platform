@@ -769,6 +769,23 @@ The `process-immediate-notifications` cron runs every five minutes through both
 the platform cron configuration and Vercel. It drains pending immediate batches
 when a database webhook is missed, and recovers failed or abandoned Mail batches
 with at most three retries. A processing lease is considered abandoned after ten
-minutes. Every attempt repeats the same access and preference checks. As with
-other push providers, a process crash after Firebase accepts a notification but
-before its database acknowledgement can cause a repeated device delivery.
+minutes. Every attempt repeats the same access and preference checks. A persisted
+`delivery_in_flight` marker makes ambiguous crash or provider outcomes terminal
+for manual reconciliation, with no automatic replay.
+
+## Snooze and mute
+
+Snooze and mute are personal thread preferences. They do not change another
+member's shared mailbox. Snooze hides a thread from your Inbox until its stored
+UTC deadline, including newly arriving replies. Inbox and Snoozed views refresh
+while open and on returning to the app; expired threads reappear without a cron
+write. Snoozing from Archive restores that user's message state so the thread
+can return to Inbox. Muted threads remain in the Muted view until unmuted.
+
+Both states suppress incoming Mail notification creation and delivery for that
+recipient. Other mailbox members are unaffected. Unmuting does not replay old
+muted notifications. Apply `20260923110000_mail_thread_snooze_mute.sql` after
+`20260923100000_mail_received_push.sql` before enabling these actions in production.
+The native swipe settings include Snooze and Mute. Swipe and web actions offer
+Undo; reader and web menus support rescheduling, unmuting, and returning snoozed
+mail to Inbox.

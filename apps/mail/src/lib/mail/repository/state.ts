@@ -3,6 +3,10 @@ import type { MailRouteContext } from '../types';
 import { requireMailboxAccess } from './bootstrap';
 import { getMailMessage } from './messages';
 import { type AnyRecord, privateTable } from './shared';
+import {
+  isThreadPreferenceAction,
+  updateThreadPreferences,
+} from './thread-preferences';
 
 export async function updateMailMessageState({
   ctx,
@@ -18,6 +22,18 @@ export async function updateMailMessageState({
   const access = await requireMailboxAccess(ctx, mailboxId);
   if (!access) return null;
 
+  if (isThreadPreferenceAction(payload.action)) {
+    const message = await getMailMessage({ ctx, mailboxId, messageId });
+    if (!message?.threadId) return null;
+    await updateThreadPreferences({
+      admin: access.admin,
+      mailboxId,
+      userId: ctx.user.id,
+      threadIds: [message.threadId],
+      payload: { action: payload.action, snoozedUntil: payload.snoozedUntil },
+    });
+    return getMailMessage({ ctx, mailboxId, messageId });
+  }
   const now = new Date().toISOString();
   const statePatch: AnyRecord = {
     mailbox_id: mailboxId,

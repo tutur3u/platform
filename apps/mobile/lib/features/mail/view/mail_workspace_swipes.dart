@@ -22,8 +22,15 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
       MailSwipeAction.read => unread ? 'mark_read' : 'mark_unread',
       MailSwipeAction.star => starred ? 'unstar' : 'star',
       MailSwipeAction.move => 'move_to_folder',
+      MailSwipeAction.snooze => _folder == 'snoozed' ? 'unsnooze' : 'snooze',
+      MailSwipeAction.mute => _folder == 'muted' ? 'unmute' : 'mute',
       MailSwipeAction.none => '',
     };
+    DateTime? snoozedUntil;
+    if (action == 'snooze') {
+      snoozedUntil = await chooseMailSnoozeTime(context);
+      if (!mounted || snoozedUntil == null || box != _mailboxId) return;
+    }
     String? folderId;
     if (swipe == MailSwipeAction.move) {
       folderId = await _chooseMailOption(context.l10n.mailSwipeMove, {
@@ -65,10 +72,13 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
         action,
         threads: threads,
         folderId: folderId,
+        snoozedUntil: snoozedUntil,
       );
       if (!mounted || generation != _generation || box != _mailboxId) return;
       _saveView();
       final inverse = switch (action) {
+        'snooze' => 'unsnooze',
+        'mute' => 'unmute',
         'mark_read' => 'mark_unread',
         'mark_unread' => 'mark_read',
         'star' => 'unstar',

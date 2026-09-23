@@ -10846,6 +10846,8 @@
       "setupGuide": "Hướng dẫn thiết lập"
     },
     "hideSecretValue": "Ẩn giá trị bí mật",
+    "inheritMissing": "Kế thừa thông tin xác thực còn thiếu",
+    "inheritMissingDescription": "Khôi phục bản nháp chưa kế thừa thông tin xác thực đang hoạt động. Giữ nguyên giá trị trong bản nháp và các bí mật đã chủ động xóa.",
     "issueToken": "Cấp token",
     "lastFour": "4 ký tự cuối: {value}",
     "missing": "Thiếu",
@@ -10865,8 +10867,8 @@
     "saved": "Đã lưu.",
     "searchSecrets": "Tìm bí mật",
     "secretNamePlaceholder": "SECRET_NAME",
-    "secretsTitle": "Bí mật",
     "secretValuePlaceholder": "Nhập giá trị bí mật",
+    "secretsTitle": "Bí mật",
     "selectValue": "Chọn một giá trị",
     "showSecretValue": "Hiển thị giá trị bí mật",
     "sizeBytes": "{count, plural, one {# byte} other {# byte}}",

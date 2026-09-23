@@ -13,6 +13,10 @@ import {
   privateTable,
   toLabel,
 } from './shared';
+import {
+  isThreadPreferenceAction,
+  updateThreadPreferences,
+} from './thread-preferences';
 
 function slugify(value: string) {
   return value
@@ -295,7 +299,7 @@ export async function bulkUpdateMail({
     access,
     ctx
   )
-    .select('id')
+    .select('id,thread_id')
     .eq('mailbox_id', mailboxId)
     .in('id', payload.messageIds);
   if (messageError)
@@ -304,6 +308,25 @@ export async function bulkUpdateMail({
     (row: AnyRecord) => row.id as string
   );
   if (messageIds.length !== new Set(payload.messageIds).size) return null;
+
+  if (isThreadPreferenceAction(payload.action)) {
+    const threadIds = [
+      ...new Set(
+        (messages ?? [])
+          .map((row: AnyRecord) => row.thread_id as string)
+          .filter(Boolean)
+      ),
+    ] as string[];
+    if (!threadIds.length) return null;
+    await updateThreadPreferences({
+      admin: access.admin,
+      mailboxId,
+      userId: ctx.user.id,
+      threadIds,
+      payload: { action: payload.action, snoozedUntil: payload.snoozedUntil },
+    });
+    return { updated: messageIds.length };
+  }
 
   if (payload.action === 'add_label' || payload.action === 'remove_label') {
     const { data: label } = await privateTable(access.admin, 'mail_labels')

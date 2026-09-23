@@ -19,7 +19,7 @@ export function findMeetAssistantMentions(
   const prefix = precedingCharacter.slice(-1);
   return [
     ...(prefix + text + followingCharacter.slice(0, 1)).matchAll(
-      /(^|[\s([{"'“‘,:;!?])(@(?:tuturuuu|ttr))(?![\p{L}\p{N}_-])/giu
+      /(^|[\s([{"'“‘,:;!?])(@(?:tuturuuu|ttr|mira))(?![\p{L}\p{N}_-])/giu
     ),
   ]
     .map((match) => ({

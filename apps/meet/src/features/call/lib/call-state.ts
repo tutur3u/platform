@@ -31,6 +31,7 @@ export interface CallChatMessage {
 }
 
 export interface CallState {
+  liveAssistant?: { sessionId: string; ownerId: string };
   title?: string;
   roomExpiresAt?: string;
   ended: boolean;
@@ -94,10 +95,23 @@ export function reduceCallState(
   message: MeetRealtimeServerMessage
 ): CallState {
   switch (message.type) {
+    case 'assistant.live':
+      return {
+        ...state,
+        liveAssistant: message.active
+          ? { sessionId: message.sessionId, ownerId: message.ownerId }
+          : undefined,
+      };
     case 'room.title.changed':
       return { ...state, title: message.title };
     case 'room.ended':
-      return { ...state, ended: true, participants: {}, remoteTracks: {} };
+      return {
+        ...state,
+        ended: true,
+        liveAssistant: undefined,
+        participants: {},
+        remoteTracks: {},
+      };
     case 'room.settings':
       return { ...state, settings: message.settings };
     case 'admission.approved':
@@ -107,6 +121,7 @@ export function reduceCallState(
     case 'ready':
       return {
         ...state,
+        liveAssistant: undefined,
         admission: message.admission === 'waiting' ? 'waiting' : 'admitted',
         roomExpiresAt: message.roomExpiresAt,
         error: null,

@@ -22,6 +22,7 @@ export interface SubscriptionInvoiceContextResponse {
     created_at?: string | null;
     group_id?: string;
     valid_until?: string | null;
+    covered_months?: string[] | null;
   }>;
 }
 

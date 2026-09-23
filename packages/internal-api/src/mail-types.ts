@@ -171,6 +171,8 @@ export interface MailMessageDetail extends MailMessageSummary {
 }
 
 export interface MailThread {
+  snoozedUntil?: string | null;
+  muted?: boolean;
   inboundCount?: number;
   inboxInboundCount?: number;
   inboxUnreadCount?: number;
@@ -210,6 +212,8 @@ export interface ListMailMessagesParams {
     | 'archive'
     | 'drafts'
     | 'inbox'
+    | 'snoozed'
+    | 'muted'
     | 'sent'
     | 'spam'
     | 'starred'
@@ -262,6 +266,7 @@ export interface MailMutationResponse {
 }
 
 export interface UpdateMailMessageStatePayload {
+  snoozedUntil?: string;
   action:
     | 'archive'
     | 'mark_read'
@@ -269,7 +274,11 @@ export interface UpdateMailMessageStatePayload {
     | 'restore'
     | 'star'
     | 'trash'
-    | 'unstar';
+    | 'unstar'
+    | 'snooze'
+    | 'unsnooze'
+    | 'mute'
+    | 'unmute';
 }
 
 export type MailBulkAction =
@@ -280,6 +289,7 @@ export type MailBulkAction =
   | 'remove_label';
 
 export interface BulkUpdateMailPayload {
+  snoozedUntil?: string;
   action: MailBulkAction;
   folderId?: string;
   labelId?: string;
@@ -287,6 +297,7 @@ export interface BulkUpdateMailPayload {
 }
 
 export interface BulkUpdateMailThreadsPayload {
+  snoozedUntil?: string;
   action: Exclude<MailBulkAction, 'clear_folder' | 'move_to_folder'>;
   labelId?: string;
   threadIds: string[];

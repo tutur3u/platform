@@ -3,7 +3,6 @@ import 'server-only';
 import { randomBytes } from 'node:crypto';
 import { hashApiKey, validateApiKeyHash } from '@tuturuuu/auth/api-keys';
 import type { InfrastructureJsonValue } from '@tuturuuu/internal-api/infrastructure/types';
-import { buildMobileDeploymentVaultStoragePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
 import {
   downloadWorkspaceStorageObjectForProvider,
   uploadWorkspaceStorageFileDirect,
@@ -30,7 +29,6 @@ import {
   type MobileDeploymentScalarName,
 } from './constants';
 import {
-  createEncryptedDataKey,
   decryptBytes,
   decryptDataKey,
   decryptSecretValue,
@@ -40,6 +38,16 @@ import {
   sha256Base64Url,
   sha256Hex,
 } from './crypto';
+import {
+  excludeDraftInheritance,
+  getOrCreateDraftVersion,
+  inheritDraft,
+} from './draft-inheritance';
+import { MobileDeploymentStoreError } from './store-error';
+
+export { MobileDeploymentStoreError } from './store-error';
+
+import { buildMobileDeploymentVaultStoragePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
 import type { MobileDeploymentGitHubOidcClaims } from './oidc';
 import type {
   MobileDeploymentAuditEventRow,
@@ -101,17 +109,6 @@ function toInfrastructureMetadata(
     string,
     InfrastructureJsonValue
   >;
-}
-
-export class MobileDeploymentStoreError extends Error {
-  constructor(
-    message: string,
-    public readonly status = 400,
-    public readonly code = 'mobile_deployment_error'
-  ) {
-    super(message);
-    this.name = 'MobileDeploymentStoreError';
-  }
 }
 
 function privateDb(db: AdminClient) {
@@ -291,56 +288,6 @@ async function getVersionById(db: AdminClient, versionId: string | null) {
 
   assertNoError(error, 'Failed to load mobile deployment version');
   return (data as MobileDeploymentVersionRow | null) ?? null;
-}
-
-async function createDraftVersion(
-  db: AdminClient,
-  environmentId: string,
-  userId: string | null
-) {
-  const { data: latest, error: latestError } = await privateDb(db)
-    .from('mobile_deployment_versions')
-    .select('version')
-    .eq('environment_id', environmentId)
-    .order('version', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  assertNoError(latestError, 'Failed to inspect mobile deployment versions');
-
-  const { encryptedDataKey } = await createEncryptedDataKey();
-  const { data, error } = await privateDb(db)
-    .from('mobile_deployment_versions')
-    .insert({
-      created_by: userId,
-      data_key_ciphertext: encryptedDataKey,
-      environment_id: environmentId,
-      status: 'draft',
-      version:
-        Number((latest as { version?: number } | null)?.version ?? 0) + 1,
-    })
-    .select('*')
-    .single();
-  assertNoError(error, 'Failed to create mobile deployment draft');
-
-  await recordAudit(db, {
-    actorType: 'user',
-    actorUserId: userId,
-    environmentId,
-    eventType: 'version.draft_created',
-    metadata: { version: (data as MobileDeploymentVersionRow).version },
-    versionId: (data as MobileDeploymentVersionRow).id,
-  });
-
-  return data as MobileDeploymentVersionRow;
-}
-
-async function getOrCreateDraftVersion(
-  db: AdminClient,
-  environmentId: string,
-  userId: string | null
-) {
-  const draft = await getLatestVersionByStatus(db, environmentId, 'draft');
-  return draft ?? createDraftVersion(db, environmentId, userId);
 }
 
 async function listSecretsForVersion(db: AdminClient, versionId: string) {
@@ -528,6 +475,7 @@ export async function saveMobileDeploymentEnvFile({
   );
 
   const schema = privateDb(db);
+  await excludeDraftInheritance(db, draft.id, 'env:*');
   const { error: deleteError } = await schema
     .from('mobile_deployment_secret_values')
     .delete()
@@ -591,6 +539,7 @@ export async function saveMobileDeploymentEnvKey({
   assertNoError(error, 'Failed to save mobile deployment env value');
 
   if (previousKey && previousKey !== normalized.key) {
+    await excludeDraftInheritance(db, draft.id, `env:${previousKey}`);
     const { error: deleteError } = await schema
       .from('mobile_deployment_secret_values')
       .delete()
@@ -628,6 +577,8 @@ export async function clearMobileDeploymentEnvKey({
   const key = assertMobileDeploymentEnvKey(name);
   const environment = await getProductionEnvironment(db);
   const draft = await getOrCreateDraftVersion(db, environment.id, userId);
+
+  await excludeDraftInheritance(db, draft.id, `env:${key}`);
 
   const { error } = await privateDb(db)
     .from('mobile_deployment_secret_values')
@@ -706,6 +657,8 @@ export async function clearMobileDeploymentScalar({
   const environment = await getProductionEnvironment(db);
   const draft = await getOrCreateDraftVersion(db, environment.id, userId);
 
+  await excludeDraftInheritance(db, draft.id, `scalar:${name}`);
+
   const { error } = await privateDb(db)
     .from('mobile_deployment_secret_values')
     .delete()
@@ -750,7 +703,7 @@ export async function uploadMobileDeploymentFile({
   const ciphertext = encryptBytes(buffer, dataKey);
   const storagePath = buildMobileDeploymentVaultStoragePath(
     draft.id,
-    `${kind}.ciphertext.json`
+    `${kind}-${randomBytes(16).toString('hex')}.ciphertext.json`
   );
   const upload = await uploadWorkspaceStorageFileDirect(
     ROOT_WORKSPACE_ID,
@@ -759,7 +712,7 @@ export async function uploadMobileDeploymentFile({
     {
       allowReservedMobileDeploymentVault: true,
       contentType: 'application/json',
-      upsert: true,
+      upsert: false,
     }
   );
 
@@ -796,6 +749,21 @@ export async function uploadMobileDeploymentFile({
     versionId: draft.id,
   });
 
+  return listMobileDeploymentState(db);
+}
+
+export async function repairMobileDeploymentDraft({
+  db,
+  userId,
+}: {
+  db: AdminClient;
+  userId: string;
+}) {
+  const environment = await getProductionEnvironment(db);
+  const draft = await getLatestVersionByStatus(db, environment.id, 'draft');
+  if (!draft)
+    throw new MobileDeploymentStoreError('No draft version to repair', 400);
+  await inheritDraft(db, draft.id, userId);
   return listMobileDeploymentState(db);
 }
 
