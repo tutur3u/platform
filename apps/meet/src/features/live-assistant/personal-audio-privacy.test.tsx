@@ -4,6 +4,8 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { useLiveAssistant } from './use-live-assistant';
 
 const calls = vi.hoisted(() => ({
+  volume: 1,
+  setVolume: vi.fn(),
   play: vi.fn(),
   interrupt: vi.fn(),
   close: vi.fn(),
@@ -14,9 +16,13 @@ vi.mock('@tuturuuu/internal-api', () => ({
   controlMeetLive: calls.control,
   reviewMeetLiveTool: vi.fn(),
 }));
+vi.mock('../call/components/playback-volume', () => ({
+  MIRA_VOLUME_ID: 'mira',
+  usePlaybackVolume: () => calls.volume,
+}));
 vi.mock('./audio', () => ({
   LiveAudioPlayer: class {
-    setVolume = vi.fn();
+    setVolume = calls.setVolume;
     unlock = async () => {};
     play = calls.play;
     interrupt = calls.interrupt;
@@ -43,6 +49,7 @@ class Socket {
 }
 afterEach(() => {
   cleanup();
+  calls.volume = 1;
   vi.unstubAllGlobals();
   vi.useRealTimers();
   vi.clearAllMocks();
@@ -192,4 +199,33 @@ it('pauses same-room audio while retaining the session and transcript until expl
   act(() => result.current.send({ type: 'pause', paused: false }));
   expect(microphone.enabled).toBe(true);
   expect(Socket.current).toBe(socket);
+});
+
+it('uses the latest playback volume when startup finishes', async () => {
+  vi.stubGlobal('WebSocket', Socket);
+  vi.stubGlobal('navigator', {
+    mediaDevices: { getUserMedia: async () => ({ getTracks: () => [] }) },
+  });
+  let finish!: (value: { sessionId: string; token: string }) => void;
+  calls.control.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      })
+  );
+  const { result, rerender } = renderHook(() =>
+    useLiveAssistant('meeting', '', { streams: [], microphoneEnabled: false })
+  );
+  let starting!: Promise<boolean>;
+  await act(async () => {
+    starting = result.current.start('personal', [], '');
+    await Promise.resolve();
+  });
+  calls.volume = 0.25;
+  rerender();
+  await act(async () => {
+    finish({ sessionId: 'session', token: 'test' });
+    await starting;
+  });
+  expect(calls.setVolume).toHaveBeenLastCalledWith(0.25);
 });

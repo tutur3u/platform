@@ -304,6 +304,7 @@ export function useLiveAssistant(
         };
       });
       active.current = current;
+      player.setVolume(volumeRef.current);
       await connect(session.token);
       const capture = await captureLiveAudio(
         microphone ? [microphone] : streams,

@@ -205,15 +205,16 @@ export function RoomAssistantAudio({
         toast.error(t('session_error'));
       });
   }, [enabled, outputDeviceId, t]);
+  const audible = volume > 0;
   useEffect(() => {
     room.setAssistantAudio({
       sessionId: currentSessionId,
       microphoneEnabled,
-      speakerEnabled: enabled && volume > 0,
+      speakerEnabled: enabled && audible,
     });
   }, [
     enabled,
-    volume,
+    audible,
     microphoneEnabled,
     currentSessionId,
     room.setAssistantAudio,
