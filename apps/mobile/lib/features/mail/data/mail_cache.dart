@@ -114,7 +114,7 @@ class MailCache {
           policy: _policy,
           decode: _decode,
           forceRefresh: true,
-          tags: const ['mail'],
+          tags: const ['mail.view'],
           fetch: () async {
             if (!_usable) throw StateError('Mail snapshot invalidated');
             return payload;

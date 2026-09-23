@@ -63,6 +63,26 @@ void main() {
     },
   );
 
+  test('mail mutations invalidate lists but preserve the saved view', () async {
+    final store = await createStore();
+    final mail = MailCache(store: store, currentUserId: () => 'a');
+    await mail.saveSnapshot('ws', 'view-state', {
+      'mailboxId': 'box',
+      'items': <Map<String, dynamic>>[],
+    });
+    await mail.read('ws', 'inbox', () async => {'threads': <dynamic>[]});
+
+    await mail.mutate('ws', () async {});
+
+    var refreshes = 0;
+    await mail.read('ws', 'inbox', () async {
+      refreshes++;
+      return {'threads': <dynamic>[]};
+    });
+    expect(refreshes, 1);
+    expect((await mail.snapshot('ws', 'view-state'))?['mailboxId'], 'box');
+  });
+
   test(
     'denied access clears snapshots and suppresses queued late writes',
     () async {

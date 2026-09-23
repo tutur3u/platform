@@ -245,7 +245,13 @@ class _MailReaderState extends State<MailReader> {
                           .map(
                             (a) => PopupMenuItem(
                               value: a.key,
-                              child: Text(a.value),
+                              child: Row(
+                                children: [
+                                  Icon(_mailMessageActionIcon(a.key)),
+                                  const SizedBox(width: 12),
+                                  Text(a.value),
+                                ],
+                              ),
                             ),
                           )
                           .toList(),
