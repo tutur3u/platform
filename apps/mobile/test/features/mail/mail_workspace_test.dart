@@ -186,6 +186,40 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('push opens its thread while the inbox refresh is still pending', (
+    tester,
+  ) async {
+    final inboxRefresh = Completer<Map<String, dynamic>>();
+    respond((_) => inboxRefresh.future);
+    when(
+      () => repository.detail('ws', 'box', 'target', thread: true),
+    ).thenAnswer(
+      (_) async => {
+        'thread': {'id': 'target', 'subject': 'Pushed message'},
+        'messages': <dynamic>[],
+      },
+    );
+    await tester.pumpApp(
+      MailWorkspace(
+        workspaceId: 'ws',
+        repository: repository,
+        destination: const MailPushDestination(
+          userId: 'user',
+          mailboxId: 'box',
+          threadId: 'target',
+          notificationId: 'push',
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    expect(find.byType(MailReader), findsOneWidget);
+    inboxRefresh.complete(inbox('Inbox'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('push cannot open a mailbox missing from authorized bootstrap', (
     tester,
   ) async {

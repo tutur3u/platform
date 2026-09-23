@@ -46,7 +46,10 @@ class MailPage extends StatelessWidget {
     final wsId = context.select<WorkspaceCubit, String?>(
       (cubit) => cubit.state.currentWorkspace?.id,
     );
-    if (user == null || wsId == null) return const SizedBox.shrink();
+    if (user == null) return const SizedBox.shrink();
+    if (wsId == null) {
+      return const Center(child: NovaLoadingIndicator(size: 20));
+    }
     if (!canDiscoverMail(user.email)) {
       return Center(child: Text(context.l10n.mailAccessRequired));
     }
@@ -271,13 +274,12 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           _items = [];
         });
       }
-      await _load();
-      if (mounted &&
-          generation == _bootstrapGeneration &&
-          _accessVerified &&
-          canOpenDestination) {
+      if (canOpenDestination) {
+        unawaited(_load());
         _pushDestinationHandled = true;
         await _open({'id': destination.threadId});
+      } else {
+        await _load();
       }
     } on Object catch (error) {
       if (!mounted || generation != _bootstrapGeneration) return;
