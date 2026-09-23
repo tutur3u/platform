@@ -30,7 +30,17 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       enabled: ${{ steps.status.outputs.enabled }}
+      platforms: ${{ steps.platforms.outputs.platforms }}
+      matrix: ${{ steps.platforms.outputs.matrix }}
     steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - id: platforms
+        env:
+          DESKTOP_BETA_PLATFORMS: ${{ vars.DESKTOP_BETA_PLATFORMS }}
+        run: node scripts/desktop-deployment/platforms.mjs
       - id: status
         env:
           ENABLED: ${{ vars.DESKTOP_BETA_ENABLED == 'true' }}
@@ -48,14 +58,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - platform: windows
-            runner: windows-latest
-          - platform: macos
-            runner: macos-latest
-          - platform: linux
-            runner: ubuntu-24.04
+      matrix: ${{ fromJSON(needs.release-status.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -88,7 +91,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libasound2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libasound2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev xvfb dbus-x11 xdotool desktop-file-utils
       - name: Prepare macOS Firebase inputs
         if: matrix.platform == 'macos'
         run: node scripts/desktop-deployment/prepare-macos.mjs
@@ -98,21 +101,27 @@ jobs:
       - name: Build Windows beta
         if: matrix.platform == 'windows'
         working-directory: apps/mobile
-        run: flutter build windows --release --target lib/main_production.dart --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
+        run: flutter build windows --release --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
       - name: Build macOS beta
         if: matrix.platform == 'macos'
         working-directory: apps/mobile
-        run: flutter build macos --release --flavor production --target lib/main_production.dart --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
+        run: flutter build macos --release --flavor production --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
       - name: Build Linux beta
         if: matrix.platform == 'linux'
         working-directory: apps/mobile
-        run: flutter build linux --release --target lib/main_production.dart --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
+        run: flutter build linux --release --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
       - name: Audit and package beta
         if: matrix.platform == 'linux'
         shell: bash
         env:
           DESKTOP_PLATFORM: ${{ matrix.platform }}
         run: node scripts/desktop-deployment/package-ci.mjs
+      - name: Validate installed Linux launch and URI activation
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get install -y "$RUNNER_TEMP/desktop-artifacts/Tuturuuu-linux-x64.deb"
+          sudo update-desktop-database
+          xvfb-run -a dbus-run-session -- node scripts/desktop-deployment/smoke-linux.mjs
       - name: Sign and package Windows beta
         if: matrix.platform == 'windows'
         env:
@@ -147,7 +156,9 @@ jobs:
 
   publish:
     name: Publish verified desktop beta
-    needs: build
+    needs: [build, release-status]
+    env:
+      DESKTOP_BETA_PLATFORMS: ${{ needs.release-status.outputs.platforms }}
     if: github.ref == 'refs/heads/production'
     environment: desktop-beta
     runs-on: macos-latest

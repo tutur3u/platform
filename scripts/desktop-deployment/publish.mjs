@@ -1,3 +1,4 @@
+/* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: standalone CI-only scripts never run in Turbo or cache release inputs */
 import { execFileSync } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -15,7 +16,8 @@ const directory = join(process.env.RUNNER_TEMP, 'desktop-artifacts');
 const files = await verifyPublication(
   directory,
   process.env.GITHUB_SHA,
-  process.env.GITHUB_RUN_ID
+  process.env.GITHUB_RUN_ID,
+  process.env.DESKTOP_BETA_PLATFORMS
 );
 const version = (await readFile('apps/mobile/pubspec.yaml', 'utf8')).match(
   /^version: (\d+\.\d+\.\d+)\+/m
@@ -25,7 +27,7 @@ const tag = `desktop-v${version}-${process.env.GITHUB_RUN_ID}`;
 const notes = join(process.env.RUNNER_TEMP, 'desktop-release-notes.md');
 await writeFile(
   notes,
-  `Early-access beta for Windows, macOS, and Linux. These builds may not be production-ready.\n\nSource: ${process.env.GITHUB_SHA}\n\nWindows packages have timestamped Authenticode signatures. macOS packages are Developer ID signed, notarized, and stapled. All packages have GitHub build provenance.\n\n## SHA-256\n\n${files.map(({ name, sha256 }) => `- \`${name}\`: \`${sha256}\``).join('\n')}\n`
+  `Early-access desktop beta for the platforms attached to this release. These builds may not be production-ready.\n\nSource: ${process.env.GITHUB_SHA}\n\nWindows packages have timestamped Authenticode signatures. macOS packages are Developer ID signed, notarized, and stapled. All packages have GitHub build provenance.\n\n## SHA-256\n\n${files.map(({ name, sha256 }) => `- \`${name}\`: \`${sha256}\``).join('\n')}\n`
 );
 // Publish as a draft first. No partially uploaded release appears on /download.
 // No --clobber: immutable release tags cannot silently replace an installed build.

@@ -15732,6 +15732,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.'**
   String get adminAccountsResetMfaDescription;
+
+  /// No description provided for @desktopUpdateReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuturuuu {version} is ready to install.'**
+  String desktopUpdateReady(String version);
+
+  /// No description provided for @desktopUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Update could not be installed. Your current version is still available.'**
+  String get desktopUpdateFailed;
+
+  /// No description provided for @desktopUpdateScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'This update will install the next time you open Tuturuuu.'**
+  String get desktopUpdateScheduled;
+
+  /// No description provided for @desktopUpdateInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Install and restart'**
+  String get desktopUpdateInstall;
+
+  /// No description provided for @desktopUpdateCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel scheduled update'**
+  String get desktopUpdateCancel;
+
+  /// No description provided for @desktopUpdateNextLaunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Install on next launch'**
+  String get desktopUpdateNextLaunch;
+
+  /// No description provided for @desktopUpdateDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss update'**
+  String get desktopUpdateDismiss;
+
+  /// No description provided for @desktopUpdateManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Download manually'**
+  String get desktopUpdateManual;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -8223,4 +8223,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminAccountsResetMfaDescription => 'Remove all MFA factors and trusted device registrations. The user will need to register their authenticators again.';
+
+  @override
+  String desktopUpdateReady(String version) {
+    return 'Tuturuuu $version is ready to install.';
+  }
+
+  @override
+  String get desktopUpdateFailed => 'Update could not be installed. Your current version is still available.';
+
+  @override
+  String get desktopUpdateScheduled => 'This update will install the next time you open Tuturuuu.';
+
+  @override
+  String get desktopUpdateInstall => 'Install and restart';
+
+  @override
+  String get desktopUpdateCancel => 'Cancel scheduled update';
+
+  @override
+  String get desktopUpdateNextLaunch => 'Install on next launch';
+
+  @override
+  String get desktopUpdateDismiss => 'Dismiss update';
+
+  @override
+  String get desktopUpdateManual => 'Download manually';
 }

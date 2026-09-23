@@ -1,7 +1,9 @@
+/* biome-ignore-all lint/suspicious/noUndeclaredEnvVars: standalone CI-only scripts never run in Turbo or cache release inputs */
 import { createHash } from 'node:crypto';
 import { lstat, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { DESKTOP_PLATFORMS, parsePlatforms } from './platforms.mjs';
 
 export const RELEASE_FILES = [
   'Tuturuuu-windows-x64-setup.exe',
@@ -9,6 +11,7 @@ export const RELEASE_FILES = [
   'Tuturuuu-linux-x64.deb',
 ];
 const RECEIPTS = {
+  linux: { name: RELEASE_FILES[2], verification: 'deb-package-verified' },
   windows: { name: RELEASE_FILES[0], verification: 'authenticode-timestamped' },
   macos: {
     name: RELEASE_FILES[1],
@@ -16,13 +19,18 @@ const RECEIPTS = {
   },
 };
 
-export async function verifyPublication(directory, source, run) {
+export async function verifyPublication(directory, source, run, selected) {
+  const platforms = parsePlatforms(selected);
+  const releaseFiles = platforms.map(
+    (platform) => DESKTOP_PLATFORMS[platform].name
+  );
   if (!/^[a-f0-9]{40}$/.test(source ?? '') || !/^\d+$/.test(run ?? ''))
     throw new Error('Invalid release identity');
   const expected = [
-    ...RELEASE_FILES,
-    'verified-windows.json',
-    'verified-macos.json',
+    ...releaseFiles,
+    ...platforms
+      .filter((platform) => platform in RECEIPTS)
+      .map((platform) => `verified-${platform}.json`),
   ];
   const files = await readdir(directory);
   if (
@@ -43,7 +51,8 @@ export async function verifyPublication(directory, source, run) {
       .update(await readFile(file))
       .digest('hex');
   }
-  for (const [platform, requirement] of Object.entries(RECEIPTS)) {
+  for (const platform of platforms.filter((item) => item in RECEIPTS)) {
+    const requirement = RECEIPTS[platform];
     const receipt = JSON.parse(
       await readFile(join(directory, `verified-${platform}.json`), 'utf8')
     );
@@ -60,7 +69,7 @@ export async function verifyPublication(directory, source, run) {
       );
     }
   }
-  return RELEASE_FILES.map((name) => ({ name, sha256: hashes[name] }));
+  return releaseFiles.map((name) => ({ name, sha256: hashes[name] }));
 }
 
 if (
@@ -71,7 +80,8 @@ if (
     await verifyPublication(
       join(process.env.RUNNER_TEMP, 'desktop-artifacts'),
       process.env.GITHUB_SHA,
-      process.env.GITHUB_RUN_ID
+      process.env.GITHUB_RUN_ID,
+      process.env.DESKTOP_BETA_PLATFORMS
     );
     process.stdout.write('All desktop beta publication gates passed.\n');
   } catch {

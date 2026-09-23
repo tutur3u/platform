@@ -15,6 +15,7 @@ async function fixture(callback) {
     for (const [platform, name, verification] of [
       ['windows', RELEASE_FILES[0], 'authenticode-timestamped'],
       ['macos', RELEASE_FILES[1], 'developer-id-notarized-stapled'],
+      ['linux', RELEASE_FILES[2], 'deb-package-verified'],
     ]) {
       await writeFile(
         join(root, `verified-${platform}.json`),
@@ -67,5 +68,38 @@ test('rejects absent verification and missing platforms', async () =>
     await assert.rejects(
       verifyPublication(root, source, '123'),
       /approved package set/
+    );
+  }));
+
+test('selected Linux publication still requires its exact receipt and asset set', async () =>
+  fixture(async (root) => {
+    for (const name of [
+      RELEASE_FILES[0],
+      RELEASE_FILES[1],
+      'verified-windows.json',
+      'verified-macos.json',
+    ])
+      await rm(join(root, name));
+    assert.deepEqual(
+      (await verifyPublication(root, source, '123', 'linux')).map(
+        (file) => file.name
+      ),
+      [RELEASE_FILES[2]]
+    );
+    await assert.rejects(
+      verifyPublication(root, source, '123', 'linux,macos'),
+      /approved package set/
+    );
+    await assert.rejects(
+      verifyPublication(root, source, '123', 'linux,linux'),
+      /unique/
+    );
+    await assert.rejects(
+      verifyPublication(root, source, '123', 'untrusted'),
+      /allowlisted/
+    );
+    await assert.rejects(
+      verifyPublication(root, 'b'.repeat(40), '123', 'linux'),
+      /does not match/
     );
   }));

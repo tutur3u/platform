@@ -16,9 +16,11 @@ repository variable `DESKTOP_BETA_ENABLED` unset until signing and platform
 verification are ready. While disabled, the workflow reports **coming soon** and
 does not publish; this is a deferred release, not a successful desktop rollout.
 Set it to `true` only after completing the prerequisites below.
-Windows, macOS, and Linux then build concurrently.
+Set repository variable `DESKTOP_BETA_PLATFORMS` to a comma-separated subset of
+`windows,macos,linux` (default: all three). Selected platforms build concurrently.
+Linux can ship while another platform completes signing setup.
 The `desktop-beta` GitHub environment owns the release configuration. Publication
-requires all three jobs to succeed; a missing certificate is a blocked release,
+requires every selected platform job to succeed; a missing certificate is a blocked release,
 not permission to publish unsigned packages.
 
 Build inputs contain only allowlisted public URLs, publishable Supabase keys,
@@ -58,13 +60,13 @@ rotation, and identity verification remain prerequisites for a real release.
 private-key/token markers, service-role JWTs, and links escaping the bundle.
 This is an additional check, not a substitute for keeping secrets out of builds.
 Signing receipts bind the Windows and macOS verification to the package hash,
-source SHA, and workflow run. Publication rejects extra files, missing platforms,
+source SHA, and workflow run. Publication rejects extra files, missing selected platforms,
 or mismatched receipts.
 
 Actions artifacts expire after seven days and are intended for CI inspection.
 Public downloads use persistent GitHub Release assets, which do not require a
 repository token in the browser. The workflow attests the packages, uploads a
-draft `desktop-v<version>-<run-id>` prerelease, then makes the complete prerelease
+draft `desktop-v<version>-<run-id>` prerelease, then makes the complete selected-platform prerelease
 visible. It never marks the desktop beta as the repository's latest stable
 release or overwrites an existing release tag. A failed draft needs inspection
 before rerunning; do not replace assets of a published tag.
@@ -72,7 +74,7 @@ before rerunning; do not replace assets of a published tag.
 The download page caches public release metadata for five minutes and sends
 package downloads directly to GitHub's CDN. It validates the exact repository,
 tag format, filenames, uploaded state, positive sizes, and GitHub SHA-256 digests.
-Incomplete/unavailable releases show an honest unavailable state with a web-app
+Each platform uses its latest verified release independently. Unavailable platforms show an honest unavailable state with a web-app
 alternative; they never produce guessed download URLs.
 
 ## Verification
@@ -87,5 +89,86 @@ bun check
 Also run the actual web production build and native release builds. Before
 publishing, verify installation, browser sign-in callbacks, workspace isolation,
 resizing, and core app flows on each supported OS. A passing macOS build does
-not prove Windows/Linux runtime compatibility. Never label missing platform
+not prove Windows/Linux runtime compatibility. Linux CI installs the generated package,
+waits for a visible first-frame window under Xvfb, and checks that a harmless
+browser callback activation leaves the app running. This smoke check does not
+prove authenticated sign-in or interactive Polkit updates. Never label missing platform
 runtime or signing verification as complete.
+
+## Automatic desktop updates
+
+Published desktop builds include `DESKTOP_RELEASE_RUN_ID`, supplied directly by
+`desktop-beta.yaml`. Development builds and mobile store builds do not run the
+desktop updater. The version and run ID together distinguish successive beta
+builds without manually changing Release Please versions.
+
+On startup and every six hours, the app checks the public GitHub release list and
+automatically downloads a newer desktop beta for its platform. Downloads use no account
+session or repository token. Exact repository URLs, prerelease tags, every present
+platform asset, byte counts, and GitHub SHA-256 digests are required. Redirects
+are limited to GitHub's HTTPS asset hosts. Incomplete downloads never become
+installable, and cached packages are rehashed before use. After verification, older
+updater-owned release cache directories are pruned; unrelated files are preserved.
+
+When ready, a compact banner offers **Install and restart** or **Install on next
+launch**. Next-launch consent applies only to that exact release and can be
+cancelled. A failed installation clears the saved choice so startup cannot get
+stuck retrying it. Offline checks and download failures leave the current app
+usable and retry on the next check.
+
+- Windows verifies Authenticode on both the running executable and installer,
+  requires matching certificate subjects, waits for the old process to exit,
+  and runs the per-user Inno installer. A successful installation relaunches the
+  app. The helper rechecks the digest and signatures immediately before running.
+- macOS verifies the signed/notarized disk image, validates the replacement app's
+  signature and matching Apple team, and stages it on the destination volume
+  before exiting. The helper swaps bundles after exit and keeps the previous
+  app in one updater-owned recovery directory. An unwritable installation directory or running directly
+  from a mounted disk image blocks installation while keeping the app open.
+- Linux asks the operating system's Polkit agent to authorize `dpkg --install`,
+  then hands off to a detached helper that waits for the previous process to exit
+  before relaunching `/opt/tuturuuu/tuturuuu`. The Flutter process never runs as
+  root. A cancelled elevation prompt leaves the current app open. Linux beta
+  installations require Ubuntu 24.04+ amd64, `pkexec`, and a desktop Polkit agent.
+
+Before enabling publication, exercise installation and at least one subsequent
+update on each actual supported OS, including cancelled elevation, damaged
+packages, next-launch consent, and relaunch. Unit tests for the metadata and
+transport boundary do not establish native installer success.
+
+### Current provisioning prerequisites
+
+The existing Infrastructure mobile vault supports Android/iOS bundles and binds
+its OIDC audience to the mobile store workflow. Its App Store distribution P12
+is **not** a macOS Developer ID certificate, and the desktop workflow cannot use
+that bundle endpoint under the mobile workflow's identity. Provision the desktop
+credentials listed above from an approved vault path; do not copy a mobile CI
+token into desktop jobs or weaken that OIDC policy. A Microsoft Store developer
+account alone does not supply the Authenticode certificate used by this workflow.
+
+## Windows Store draft channel
+
+`desktop-store-draft.yaml` is a manual, production-only build. It produces an
+unsigned MSIX artifact for the reserved **Tuturuuu** product (`9N7B6VC7RR7W`),
+using the exact Partner Center package name and publisher from
+`windows-store-manifest.xml`. Microsoft signs packages distributed through the
+Store. This job does not upload or submit an app for certification. It signs a separate
+temporary copy with a runner-local certificate, installs it, verifies the package
+identity and visible first frame, and exercises a harmless browser callback. The
+unsigned submission artifact is unchanged; the test package and certificate are
+removed afterward. WACK runs when the kit and an interactive session are present.
+A missing kit/session produces an explicit submission-blocked report, not a
+certification pass. Inspect the attached validation reports before submission.
+
+Store builds omit `DESKTOP_RELEASE_RUN_ID`: the Store manages their updates,
+while the direct EXE installer remains a separate certificate-backed channel.
+The MSIX package version uses major/minor plus the dedicated workflow run number,
+with a zero revision required by Store submissions; app display versions remain
+managed by Release Please. The run number must fit the MSIX 16-bit component.
+
+Before submission, validate on Windows with Windows App Certification Kit and
+verify packaged browser sign-in callbacks, media permissions, file selection,
+installation, and Store upgrades. Complete truthful listing screenshots, privacy
+and data declarations, age rating, restricted `runFullTrust` justification, and
+reviewer access instructions. The current product is a draft and its Store link
+must not be advertised as an available download until Microsoft approves it.
