@@ -1,6 +1,12 @@
 /** PCM playback is local. This stream is never attached to the meeting publisher. */
 export class LiveAudioPlayer {
   private context?: AudioContext;
+  private gain?: GainNode;
+  private volume = 1;
+  setVolume(value: number) {
+    this.volume = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 1;
+    if (this.gain) this.gain.gain.value = this.volume;
+  }
   private nextTime = 0;
   private closed = false;
   private ready = false;
@@ -15,6 +21,11 @@ export class LiveAudioPlayer {
     this.ready = false;
     this.context ??= new AudioContext({ sampleRate: 24000 });
     const context = this.context;
+    if (!this.gain) {
+      this.gain = context.createGain();
+      this.gain.gain.value = this.volume;
+      this.gain.connect(context.destination);
+    }
     // Resume within the gesture, even if a previous autoplay request is pending.
     const resumed = context.resume();
     const opening = this.opening
@@ -69,7 +80,7 @@ export class LiveAudioPlayer {
       channel[i] = pcm.getInt16(i * 2, true) / 32768;
     const source = context.createBufferSource();
     source.buffer = buffer;
-    source.connect(context.destination);
+    source.connect(this.gain!);
     // Provider bursts can contain a complete sentence. Preserve its queue.
     this.nextTime = startTime;
     this.sources.add(source);
@@ -97,12 +108,14 @@ export class LiveAudioPlayer {
     this.interrupt();
     void this.context?.close();
     this.context = undefined;
+    this.gain = undefined;
   }
 }
 export async function captureLiveAudio(
   streams: MediaStream[],
   onAudio: (data: string) => void,
-  onInputEnded?: () => void
+  onInputEnded?: () => void,
+  onInputIdle?: () => void
 ) {
   const context = new AudioContext({ sampleRate: 16000 });
   try {
@@ -121,7 +134,9 @@ export async function captureLiveAudio(
       );
       if (!sources.size) onInputEnded?.();
     };
+    let idleFlush = false;
     const update = (next: MediaStream[]) => {
+      const hadSources = sources.size > 0;
       const tracks = new Set(next.flatMap((stream) => stream.getAudioTracks()));
       for (const [track, source] of sources) {
         if (!tracks.has(track) || track.readyState === 'ended') {
@@ -139,12 +154,20 @@ export async function captureLiveAudio(
         sources.set(track, source);
         track.addEventListener('ended', ended);
       }
+      if (hadSources && !sources.size) {
+        idleFlush = true;
+        processor.port.postMessage('flush');
+      }
     };
     update(streams);
     processor.connect(mute).connect(context.destination);
     let acknowledge: (() => void) | undefined;
     processor.port.onmessage = (event: MessageEvent<ArrayBuffer | string>) => {
       if (event.data === 'flushed') {
+        if (idleFlush) {
+          idleFlush = false;
+          if (!sources.size) onInputIdle?.();
+        }
         acknowledge?.();
         return;
       }

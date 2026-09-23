@@ -12,6 +12,7 @@ import {
 import { verifyLiveSession } from '../../src/features/live-assistant/token';
 import { LiveActions } from './actions';
 import type { LiveAudioBatcher } from './audio-batcher';
+import { LiveAudioInput } from './audio-input';
 import { beginLiveBilling, settleLiveBilling } from './billing';
 import { executeLiveDecision } from './decision';
 import {
@@ -58,7 +59,7 @@ export class MeetLiveDurableObject {
   private audioBatcher?: LiveAudioBatcher;
   private lastPersistAt = 0;
   private lastCheckpointRequestAt = 0;
-  private inputWindow = { start: 0, bytes: 0 };
+  private audioInput = new LiveAudioInput();
   private actions = new LiveActions();
   private incoming = new LiveActions();
   private registryQueue: LiveRegistryQueue;
@@ -303,6 +304,7 @@ export class MeetLiveDurableObject {
       }
       replayLiveToolResponses(saved, provider);
       this.provider = provider;
+      this.audioInput = new LiveAudioInput();
       this.retry = 0;
       this.emit({ type: 'state', state: this.paused ? 'paused' : 'listening' });
       await this.state.storage.setAlarm(Date.now() + 20_000);
@@ -342,26 +344,17 @@ export class MeetLiveDurableObject {
     }
     if (message.type === 'pause') {
       this.paused = message.paused;
-      if (this.paused) {
-        this.provider?.sendRealtimeInput({ audioStreamEnd: true });
-        await this.interruptAudio();
-      }
+      if (this.paused) this.audioInput.end(this.provider);
       this.emit({ type: 'state', state: this.paused ? 'paused' : 'listening' });
       return;
     }
     if (!this.provider) return;
+    if (message.type === 'audio.end') this.audioInput.end(this.provider);
     if (message.type === 'text')
       this.provider.sendRealtimeInput({ text: message.text });
     if (message.type === 'audio') {
       if (this.paused || !acceptsLiveAudio(this.saved.claims)) return;
-      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(message.data)) return;
-      if (Date.now() - this.inputWindow.start >= 1000)
-        this.inputWindow = { start: Date.now(), bytes: 0 };
-      this.inputWindow.bytes += message.data.length;
-      if (this.inputWindow.bytes > 90000) return;
-      this.provider.sendRealtimeInput({
-        audio: { data: message.data, mimeType: 'audio/pcm;rate=16000' },
-      });
+      this.audioInput.send(this.provider, message.data);
     }
   }
   private async message(message: LiveServerMessage) {
@@ -406,7 +399,6 @@ export class MeetLiveDurableObject {
     }
     for (const part of content?.modelTurn?.parts ?? []) {
       if (
-        !this.paused &&
         part.inlineData?.data &&
         part.inlineData.mimeType?.startsWith('audio/pcm')
       ) {

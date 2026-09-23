@@ -26,6 +26,7 @@ vi.mock('../call/components/mira-profile', () => ({
 }));
 vi.mock('./room-players', () => ({
   RoomAudioPlayers: class {
+    setVolume = vi.fn();
     mute = audio.mute;
     unlock = audio.unlock;
     clear = audio.clear;

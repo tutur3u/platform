@@ -30,6 +30,7 @@ function audioHarness() {
     state: 'running',
     currentTime: 0,
     destination: {},
+    createGain: vi.fn(() => ({ gain: { value: 1 }, connect: vi.fn() })),
     resume: vi.fn(async () => {}),
     close: vi.fn(async () => {}),
     createBuffer: (_channels: number, length: number, rate: number) => ({
@@ -145,4 +146,20 @@ it('waits for the chosen output before playing queued audio', async () => {
   finishOutput();
   await opening;
   expect(sources).toHaveLength(1);
+});
+
+it('changes queued speech gain without interrupting and keeps volume when reopening', async () => {
+  const { context, sources, chunk } = audioHarness();
+  const player = new LiveAudioPlayer();
+  player.setVolume(0.25);
+  await player.unlock();
+  const gain = context.createGain.mock.results[0]!.value;
+  expect(gain.gain.value).toBe(0.25);
+  player.play(chunk);
+  player.setVolume(0);
+  expect(gain.gain.value).toBe(0);
+  expect(sources[0]!.stop).not.toHaveBeenCalled();
+  player.close();
+  await player.unlock();
+  expect(context.createGain.mock.results[1]!.value.gain.value).toBe(0);
 });

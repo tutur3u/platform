@@ -15,6 +15,8 @@ import { ParticipantsPanel } from './participants-panel';
 import { ResizableCallPanel } from './resizable-call-panel';
 
 export function SidePanel({
+  mentionRequest,
+  onMentionHandled,
   meetingId,
   miraActive = false,
   approved,
@@ -34,6 +36,8 @@ export function SidePanel({
   selfUserId,
   waiting,
 }: {
+  mentionRequest?: number;
+  onMentionHandled?: () => void;
   meetingId: string;
   miraActive?: boolean;
   approved: MeetApprovedParticipant[];
@@ -83,6 +87,8 @@ export function SidePanel({
 
       {panel === 'chat' ? (
         <ConversationPanel
+          mentionRequest={mentionRequest}
+          onMentionHandled={onMentionHandled}
           solo={participants.length === 1}
           meetingId={meetingId}
           chat={chat}

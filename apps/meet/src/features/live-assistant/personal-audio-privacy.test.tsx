@@ -16,6 +16,7 @@ vi.mock('@tuturuuu/internal-api', () => ({
 }));
 vi.mock('./audio', () => ({
   LiveAudioPlayer: class {
+    setVolume = vi.fn();
     unlock = async () => {};
     play = calls.play;
     interrupt = calls.interrupt;
@@ -46,7 +47,7 @@ afterEach(() => {
   vi.useRealTimers();
   vi.clearAllMocks();
 });
-it('stops queued personal speech on pause and blocks new speech while the room microphone is on', async () => {
+it('finishes input on pause while allowing the answer, and blocks private speech when the room microphone is on', async () => {
   vi.stubGlobal('WebSocket', Socket);
   vi.stubGlobal('navigator', {
     mediaDevices: { getUserMedia: async () => ({ getTracks: () => [] }) },
@@ -63,17 +64,17 @@ it('stops queued personal speech on pause and blocks new speech while the room m
   });
   expect(calls.play).toHaveBeenCalledOnce();
   act(() => result.current.send({ type: 'pause', paused: true }));
-  expect(calls.interrupt).toHaveBeenCalledOnce();
+  expect(calls.interrupt).not.toHaveBeenCalled();
   act(() =>
     Socket.current.receive({ type: 'audio', data: 'AAAA', sampleRate: 24000 })
   );
-  expect(calls.play).toHaveBeenCalledOnce();
+  expect(calls.play).toHaveBeenCalledTimes(2);
   rerender({ microphoneEnabled: true });
   act(() => {
     result.current.send({ type: 'pause', paused: false });
     Socket.current.receive({ type: 'audio', data: 'AAAA', sampleRate: 24000 });
   });
-  expect(calls.play).toHaveBeenCalledOnce();
+  expect(calls.play).toHaveBeenCalledTimes(2);
 });
 
 it('retries a temporary resume API failure and stops reconnecting after leaving', async () => {

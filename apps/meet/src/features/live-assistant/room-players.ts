@@ -3,6 +3,11 @@ import { LiveAudioPlayer } from './audio';
 /** Each assistant owns its queue; interruption never drains another speaker. */
 export class RoomAudioPlayers {
   private players = new Map<string, LiveAudioPlayer>();
+  private volume = 1;
+  setVolume(value: number) {
+    this.volume = value;
+    for (const player of this.players.values()) player.setVolume(value);
+  }
   private enabled = false;
   private muted = false;
   private outputDeviceId = '';
@@ -11,6 +16,7 @@ export class RoomAudioPlayers {
   activate(id: string) {
     if (this.players.has(id)) return;
     const player = new LiveAudioPlayer();
+    player.setVolume(this.volume);
     this.players.set(id, player);
     if (this.muted) player.close();
     else if (this.enabled)

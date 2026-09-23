@@ -84,6 +84,7 @@ export function MeetLivePanel({
     },
     room.getSelectedDevices().audio
   );
+  const openingChat = useRef(false);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [workspace, setWorkspace] = useState('personal');
@@ -141,7 +142,15 @@ export function MeetLivePanel({
           {active && <Radio className="size-3.5 motion-safe:animate-pulse" />}
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex max-h-[85dvh] flex-col overflow-hidden sm:max-w-xl">
+      <DialogContent
+        className="flex max-h-[85dvh] flex-col overflow-hidden sm:max-w-xl"
+        onCloseAutoFocus={(event) => {
+          if (!openingChat.current) return;
+          event.preventDefault();
+          openingChat.current = false;
+          onOpenChat();
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MiraAvatar />
@@ -268,8 +277,8 @@ export function MeetLivePanel({
                 <Button
                   variant="outline"
                   onClick={() => {
+                    openingChat.current = true;
                     setOpen(false);
-                    onOpenChat();
                   }}
                 >
                   {t('open_room_chat')}
