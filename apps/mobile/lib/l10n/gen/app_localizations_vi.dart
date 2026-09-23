@@ -7733,6 +7733,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailLoadImages => 'Hiển thị ảnh từ bên ngoài';
 
   @override
+  String get mailLoadImagesDescription => 'Mặc định hiển thị ảnh. Người gửi có thể biết khi bạn mở thư.';
+
+  @override
   String get mailSettings => 'Cài đặt thư';
 
   @override

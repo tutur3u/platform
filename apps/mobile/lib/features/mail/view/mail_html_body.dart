@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
+import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -36,7 +37,7 @@ class MailHtmlBody extends StatefulWidget {
 }
 
 class _MailHtmlBodyState extends State<MailHtmlBody> {
-  bool _images = false;
+  bool _images = MailImagePreference.instance.value;
   bool _failed = false;
   double _height = 320;
   int _generation = 0;
@@ -53,7 +54,9 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
   @override
   void initState() {
     super.initState();
-    _images = widget.imagesVisible ?? false;
+    _images = widget.imagesVisible ?? MailImagePreference.instance.value;
+    MailImagePreference.instance.addListener(_imagePreferenceChanged);
+    unawaited(MailImagePreference.instance.load());
     MailAppearancePreference.instance.addListener(_appearanceChanged);
     unawaited(MailAppearancePreference.instance.load());
   }
@@ -72,9 +75,18 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
     unawaited(_prepare());
   }
 
+  void _imagePreferenceChanged() {
+    if (!mounted || widget.imagesVisible != null) return;
+    final next = MailImagePreference.instance.value;
+    if (_images == next) return;
+    setState(() => _images = next);
+    unawaited(_prepare());
+  }
+
   @override
   void dispose() {
     MailAppearancePreference.instance.removeListener(_appearanceChanged);
+    MailImagePreference.instance.removeListener(_imagePreferenceChanged);
     super.dispose();
   }
 
@@ -82,11 +94,11 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
   void didUpdateWidget(covariant MailHtmlBody oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.html != widget.html) {
-      _images = widget.imagesVisible ?? false;
+      _images = widget.imagesVisible ?? MailImagePreference.instance.value;
       _height = 320;
     }
     if (oldWidget.imagesVisible != widget.imagesVisible) {
-      _images = widget.imagesVisible ?? false;
+      _images = widget.imagesVisible ?? MailImagePreference.instance.value;
     }
     if (oldWidget.imagesVisible != widget.imagesVisible ||
         oldWidget.html != widget.html ||
@@ -233,10 +245,9 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
               ),
               IconButton(
                 tooltip: context.l10n.mailLoadImages,
-                onPressed: () {
-                  setState(() => _images = !_images);
-                  unawaited(_prepare());
-                },
+                onPressed: () => unawaited(
+                  MailImagePreference.instance.select(enabled: !_images),
+                ),
                 icon: Icon(
                   _images ? Icons.image : Icons.image_not_supported_outlined,
                 ),

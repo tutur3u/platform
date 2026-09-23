@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/features/mail/view/mail_organization_page.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -42,6 +43,8 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
   @override
   void initState() {
     super.initState();
+    MailImagePreference.instance.addListener(_imagePreferenceChanged);
+    unawaited(MailImagePreference.instance.load());
     if (widget.canManage) {
       unawaited(_load());
     } else {
@@ -49,8 +52,13 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     }
   }
 
+  void _imagePreferenceChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    MailImagePreference.instance.removeListener(_imagePreferenceChanged);
     for (final c in [_sender, _signature, _instructions, _forwardTo]) {
       c.dispose();
     }
@@ -158,6 +166,14 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                 16 + MediaQuery.paddingOf(context).bottom,
               ),
               children: [
+                SwitchListTile(
+                  title: Text(l10n.mailLoadImages),
+                  subtitle: Text(l10n.mailLoadImagesDescription),
+                  value: MailImagePreference.instance.value,
+                  onChanged: (enabled) => unawaited(
+                    MailImagePreference.instance.select(enabled: enabled),
+                  ),
+                ),
                 if (widget.swipePreferences != null)
                   ListTile(
                     dense: true,

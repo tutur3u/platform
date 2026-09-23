@@ -14821,6 +14821,12 @@ abstract class AppLocalizations {
   /// **'Load remote images'**
   String get mailLoadImages;
 
+  /// No description provided for @mailLoadImagesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show images by default. Senders may know when you open a message.'**
+  String get mailLoadImagesDescription;
+
   /// No description provided for @mailSettings.
   ///
   /// In en, this message translates to:

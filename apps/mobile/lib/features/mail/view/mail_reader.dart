@@ -9,6 +9,7 @@ import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
+import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
@@ -55,9 +56,8 @@ class MailReader extends StatefulWidget {
 }
 
 class _MailReaderState extends State<MailReader> {
-  void _updateState(VoidCallback update) => setState(update);
   bool _busy = false;
-  bool _showImages = false;
+  bool _showImages = MailImagePreference.instance.value;
   bool _childRouteOpen = false;
   late Map<String, dynamic> _detail = widget.detail;
   late bool _starred;
@@ -70,11 +70,25 @@ class _MailReaderState extends State<MailReader> {
   @override
   void initState() {
     super.initState();
+    MailImagePreference.instance.addListener(_imagePreferenceChanged);
+    unawaited(MailImagePreference.instance.load());
     _starred = _messages.any((m) => m['starred'] == true);
     if (widget.refreshOnOpen) unawaited(_refresh());
     if (_messages.any((message) => message['unread'] == true)) {
       unawaited(_action('mark_read'));
     }
+  }
+
+  void _imagePreferenceChanged() {
+    if (mounted) {
+      setState(() => _showImages = MailImagePreference.instance.value);
+    }
+  }
+
+  @override
+  void dispose() {
+    MailImagePreference.instance.removeListener(_imagePreferenceChanged);
+    super.dispose();
   }
 
   Future<void> _refresh() async {
@@ -110,10 +124,12 @@ class _MailReaderState extends State<MailReader> {
       if (!mounted || snoozedUntil == null) return;
     }
     final previousStarred = _starred;
-    setState(() {
-      if (action != 'mark_read') _busy = true;
-      if (action == 'star' || action == 'unstar') _starred = action == 'star';
-    });
+    if (action != 'mark_read') {
+      setState(() {
+        _busy = true;
+        if (action == 'star' || action == 'unstar') _starred = action == 'star';
+      });
+    }
     try {
       await widget.repository.changeState(
         widget.workspaceId,

@@ -388,6 +388,54 @@ void main() {
     expect(find.text('Current subject'), findsOneWidget);
   });
 
+  testWidgets('another message opens while the previous read is pending', (
+    tester,
+  ) async {
+    final read = Completer<void>();
+    respond(
+      (_) async => {
+        'threads': [
+          {'id': 'First', 'subject': 'First', 'participants': <dynamic>[]},
+          {'id': 'Second', 'subject': 'Second', 'participants': <dynamic>[]},
+        ],
+        'pagination': {'hasMore': false},
+      },
+    );
+    for (final id in ['First', 'Second']) {
+      when(() => repository.detail('ws', 'box', id, thread: true)).thenAnswer(
+        (_) async => {
+          'thread': {'id': id, 'subject': id},
+          'messages': [
+            {
+              'id': '$id-message',
+              'subject': id,
+              'unread': true,
+              'bodyText': id,
+              'fromAddress': 'sender@example.com',
+            },
+          ],
+        },
+      );
+      when(
+        () =>
+            repository.changeState('ws', 'box', id, 'mark_read', thread: true),
+      ).thenAnswer((_) => id == 'First' ? read.future : Future.value());
+    }
+    await mount(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('First'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MailReader), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Second'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MailReader), findsOneWidget);
+    expect(find.text('Second'), findsWidgets);
+    read.complete();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('archive updates immediately and rolls back a failed request', (
     tester,
   ) async {
