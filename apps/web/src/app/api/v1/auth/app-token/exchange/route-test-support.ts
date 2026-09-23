@@ -10,7 +10,6 @@ const mocks = vi.hoisted(() => ({
   getAppDomainMap: vi.fn(),
   redisGet: vi.fn(),
   redisSet: vi.fn(),
-  serverLoggerWarn: vi.fn(),
   verifyExternalAppSecret: vi.fn(),
 }));
 
@@ -45,10 +44,6 @@ vi.mock('@/lib/app-coordination/external-apps', async (importOriginal) => {
 });
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
-  serverLogger: {
-    warn: (...args: Parameters<typeof mocks.serverLoggerWarn>) =>
-      mocks.serverLoggerWarn(...args),
-  },
   withRequestLogDrain: (_metadata: unknown, handler: () => Promise<Response>) =>
     handler(),
 }));

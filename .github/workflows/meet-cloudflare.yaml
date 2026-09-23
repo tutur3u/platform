@@ -66,6 +66,7 @@ jobs:
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
+      - run: bun run --cwd packages/supabase build
       - run: bun run test
         working-directory: packages/realtime
       - run: node --experimental-strip-types --test apps/meet-realtime/src/check-endpoint.test.ts apps/meet-realtime/src/turn-credentials.test.ts
