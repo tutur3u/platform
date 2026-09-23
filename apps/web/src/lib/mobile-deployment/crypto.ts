@@ -7,7 +7,6 @@ import {
   randomBytes,
 } from 'node:crypto';
 import {
-  decryptField,
   decryptWorkspaceKey,
   encryptField,
   encryptWorkspaceKey,
@@ -72,7 +71,30 @@ export function encryptSecretValue(value: string, dataKey: Buffer) {
 
 export function decryptSecretValue(ciphertext: string, dataKey: Buffer) {
   requireDataKey(dataKey);
-  return decryptField(ciphertext, dataKey);
+  if (!ciphertext) return '';
+  const payload = Buffer.from(ciphertext, 'base64');
+  if (payload.length < IV_BYTES + TAG_BYTES) {
+    throw new MobileDeploymentEncryptionError(
+      'Encrypted mobile deployment secret payload is invalid'
+    );
+  }
+  try {
+    const iv = payload.subarray(0, IV_BYTES);
+    const tag = payload.subarray(payload.length - TAG_BYTES);
+    const encrypted = payload.subarray(IV_BYTES, payload.length - TAG_BYTES);
+    const decipher = createDecipheriv(ALGORITHM, dataKey, iv, {
+      authTagLength: TAG_BYTES,
+    });
+    decipher.setAuthTag(tag);
+    return Buffer.concat([
+      decipher.update(encrypted),
+      decipher.final(),
+    ]).toString('utf8');
+  } catch {
+    throw new MobileDeploymentEncryptionError(
+      'Encrypted mobile deployment secret authentication failed'
+    );
+  }
 }
 
 export function encryptBytes(plaintext: Uint8Array, dataKey: Buffer) {

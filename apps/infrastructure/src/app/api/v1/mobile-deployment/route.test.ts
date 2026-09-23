@@ -6,6 +6,7 @@ const {
   clearMobileDeploymentEnvKeyMock,
   clearMobileDeploymentScalarMock,
   listMobileDeploymentStateMock,
+  repairMobileDeploymentDraftMock,
   MobileDeploymentStoreErrorMock,
   saveMobileDeploymentEnvFileMock,
   saveMobileDeploymentEnvKeyMock,
@@ -16,6 +17,7 @@ const {
   clearMobileDeploymentEnvKeyMock: vi.fn(),
   clearMobileDeploymentScalarMock: vi.fn(),
   listMobileDeploymentStateMock: vi.fn(),
+  repairMobileDeploymentDraftMock: vi.fn(),
   MobileDeploymentStoreErrorMock: class MobileDeploymentStoreError extends Error {
     constructor(
       message: string,
@@ -41,6 +43,7 @@ vi.mock('@/lib/mobile-deployment/store', () => ({
   clearMobileDeploymentEnvKey: clearMobileDeploymentEnvKeyMock,
   clearMobileDeploymentScalar: clearMobileDeploymentScalarMock,
   listMobileDeploymentState: listMobileDeploymentStateMock,
+  repairMobileDeploymentDraft: repairMobileDeploymentDraftMock,
   MobileDeploymentStoreError: MobileDeploymentStoreErrorMock,
   saveMobileDeploymentEnvFile: saveMobileDeploymentEnvFileMock,
   saveMobileDeploymentEnvKey: saveMobileDeploymentEnvKeyMock,
@@ -78,11 +81,30 @@ describe('mobile deployment route', () => {
     });
     validateJsonMutationMock.mockReturnValue(null);
     listMobileDeploymentStateMock.mockResolvedValue(state);
+    repairMobileDeploymentDraftMock.mockResolvedValue(state);
     saveMobileDeploymentEnvFileMock.mockResolvedValue(state);
     saveMobileDeploymentEnvKeyMock.mockResolvedValue(state);
     saveMobileDeploymentScalarMock.mockResolvedValue(state);
     clearMobileDeploymentEnvKeyMock.mockResolvedValue(state);
     clearMobileDeploymentScalarMock.mockResolvedValue(state);
+  });
+
+  it('repairs only through the authorized administrator mutation boundary', async () => {
+    const response = await PUT(request({ action: 'inherit_missing' }));
+    expect(response.status).toBe(200);
+    expect(repairMobileDeploymentDraftMock).toHaveBeenCalledWith({
+      db,
+      userId: 'user-1',
+    });
+    authorizeMobileDeploymentAdminMock.mockResolvedValue({
+      ok: false,
+      response: new Response(null, { status: 403 }),
+    });
+    repairMobileDeploymentDraftMock.mockClear();
+    expect((await PUT(request({ action: 'inherit_missing' }))).status).toBe(
+      403
+    );
+    expect(repairMobileDeploymentDraftMock).not.toHaveBeenCalled();
   });
 
   it('returns mobile deployment state', async () => {
