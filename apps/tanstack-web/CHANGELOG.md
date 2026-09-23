@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.30.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.29.1...tanstack-web-v0.30.0) (2026-09-23)
+
+
+### Features
+
+* **mobile:** add private profile activity and workspace sharing ([38b5d1b](https://github.com/tutur3u/platform/commit/38b5d1bec3a0296fbbcaf128c2c4f3bdd685b108))
+* **mobile:** add private Profile activity and workspace sharing ([#5429](https://github.com/tutur3u/platform/issues/5429)) ([4285508](https://github.com/tutur3u/platform/commit/4285508854d8f602656b86551c0940ec67ef29c0))
+
+
+### Bug Fixes
+
+* **assistant:** persist live turns after ownership validation ([66c1747](https://github.com/tutur3u/platform/commit/66c174754ba83676616979017edb2ed212fe0230))
+* **mobile:** recover Live history and invalid microphone input ([2bcb6c2](https://github.com/tutur3u/platform/commit/2bcb6c23a2baa5659930183a10aa42f5790515c0))
+* **mobile:** repair Live persistence and reuse session verification ([#5436](https://github.com/tutur3u/platform/issues/5436)) ([cb452e1](https://github.com/tutur3u/platform/commit/cb452e1908eab3db2dce9dfd1d57d721284a2e49))
+* **mobile:** repair Live transport and Pro workspace access ([#5428](https://github.com/tutur3u/platform/issues/5428)) ([ce02703](https://github.com/tutur3u/platform/commit/ce02703ac5073af869f276cffd95087817bb3267))
+
 ## [0.29.1](https://github.com/tutur3u/platform/compare/tanstack-web-v0.29.0...tanstack-web-v0.29.1) (2026-09-20)
 
 
