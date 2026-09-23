@@ -174,7 +174,25 @@ addition to the Next.js start-session route and provider-only tests.
 
 Live output is scheduled consecutively on the browser audio clock with an 80 ms
 startup/underrun buffer. Provider bursts longer than three seconds do not interrupt
-speech. Explicit pause, interruption, mute, and session teardown still clear the
-queue. Room transport preserves generation and sequence fences, stamps freshness
+speech. Interruption, playback mute, privacy suppression, and session teardown
+still clear the queue; pausing input lets the current answer finish. Room transport
+preserves generation and sequence fences, stamps freshness
 at dispatch, and bounds queued PCM to 120 seconds. Test slow delivery and a burst
 of at least twelve seconds before releasing playback changes.
+
+## Local playback volume and finishing a turn
+
+Use **Playback volume** in the meeting header to adjust master volume, Mira voice,
+and each participant. Master volume scales the individual settings, including
+screen-share audio and notification sounds. These settings affect only your local
+playback for the current call; they do not change anyone else's microphone,
+recording, or audio sent to Mira. Deafen and per-feed mute remain independent.
+
+**Ask @mira in chat** opens Everyone, adds a mention without replacing your draft,
+and focuses the composer. Private drafts stay private.
+
+When the last microphone included in Mira's room input is muted or excluded,
+the final buffered audio is flushed and Mira receives an end-of-input signal.
+Other included microphones can continue the shared turn. Pausing personal input
+also ends the input turn while allowing Mira's answer to play; privacy suppression
+still prevents private playback while your meeting microphone is on.

@@ -7,6 +7,10 @@ import messages from '../../../../messages/en.json';
 import type { MeetRoomController } from '../lib/room-controller';
 import { type CallLayout, CallStage } from './call-stage';
 import { ParticipantTile } from './participant-tile';
+import {
+  PlaybackVolumeControl,
+  PlaybackVolumeProvider,
+} from './playback-volume';
 
 vi.mock('./media-receiving-status', () => ({
   useStreamReadiness: () => ({}),
@@ -150,4 +154,45 @@ it('supports local mute in direct tile consumers without a stage handler', () =>
   expect(audio.muted).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: 'Unmute Peer for me' }));
   expect(audio.muted).toBe(false);
+});
+
+it('applies master and participant gains to playback without muting the source track', () => {
+  const track = { kind: 'audio', enabled: true };
+  class Stream {
+    getAudioTracks() {
+      return [track];
+    }
+    getVideoTracks() {
+      return [];
+    }
+  }
+  vi.stubGlobal('MediaStream', Stream);
+  const participant = {
+    userId: 'peer',
+    displayName: 'Peer',
+    media: { audioEnabled: true },
+  } as MeetRealtimePresence;
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <PlaybackVolumeProvider>
+        <PlaybackVolumeControl participants={[participant]} selfUserId="self" />
+        <ParticipantTile
+          participant={participant}
+          stream={new Stream() as unknown as MediaStream}
+          resumePlaybackLabel="Play"
+        />
+      </PlaybackVolumeProvider>
+    </NextIntlClientProvider>
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Playback volume' }));
+  fireEvent.change(screen.getByRole('slider', { name: 'Master volume' }), {
+    target: { value: '50' },
+  });
+  fireEvent.change(screen.getByRole('slider', { name: 'Peer volume' }), {
+    target: { value: '40' },
+  });
+  expect(
+    screen.getByTestId('participant-peer-camera').querySelector('audio')!.volume
+  ).toBe(0.2);
+  expect(track.enabled).toBe(true);
 });

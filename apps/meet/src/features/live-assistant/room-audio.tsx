@@ -7,6 +7,10 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { MiraAvatar } from '../call/components/mira-profile';
+import {
+  MIRA_VOLUME_ID,
+  usePlaybackVolume,
+} from '../call/components/playback-volume';
 import type { MeetRoomController } from '../call/lib/room-controller';
 import { RoomAudioPlayers } from './room-players';
 
@@ -61,6 +65,9 @@ export function RoomAssistantAudio({
   room: MeetRoomController;
   audioSuppressed?: boolean;
 }) {
+  const volume = usePlaybackVolume(MIRA_VOLUME_ID);
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
   const t = useTranslations('meet.live');
   const currentSessionId = room.state.liveAssistant?.sessionId;
   const [microphoneChoice, setMicrophoneChoice] = useState<{
@@ -86,6 +93,7 @@ export function RoomAssistantAudio({
       setEnabled(false);
       toast.error(t('session_error'));
     });
+    audio.setVolume(volumeRef.current);
     player.current = audio;
     setEnabled(false);
     let disposed = false;
@@ -197,19 +205,29 @@ export function RoomAssistantAudio({
         toast.error(t('session_error'));
       });
   }, [enabled, outputDeviceId, t]);
+  const audible = volume > 0;
   useEffect(() => {
     room.setAssistantAudio({
       sessionId: currentSessionId,
       microphoneEnabled,
-      speakerEnabled: enabled,
+      speakerEnabled: enabled && audible,
     });
-  }, [enabled, microphoneEnabled, currentSessionId, room.setAssistantAudio]);
+  }, [
+    enabled,
+    audible,
+    microphoneEnabled,
+    currentSessionId,
+    room.setAssistantAudio,
+  ]);
   useEffect(() => {
     if (audioSuppressed) {
       player.current?.mute();
       setEnabled(false);
     } else resumeListening.current();
   }, [audioSuppressed]);
+  useEffect(() => {
+    player.current?.setVolume(volume);
+  }, [volume]);
   if (!available) return null;
   return (
     <div className="flex flex-wrap items-center gap-1">
