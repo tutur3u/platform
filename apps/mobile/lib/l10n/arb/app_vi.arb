@@ -3355,6 +3355,21 @@
     "adminAccountsUsername": "Tên người dùng",
   "adminAccountsResetMfa": "Đặt lại trình xác thực",
   "adminAccountsResetMfaDescription": "Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy. Người dùng cần đăng ký lại trình xác thực.",
+    "desktopUpdateReady": "Tuturuuu {version} đã sẵn sàng để cài đặt.",
+    "desktopUpdateFailed": "Không thể cài đặt bản cập nhật. Bạn vẫn có thể dùng phiên bản hiện tại.",
+    "desktopUpdateScheduled": "Bản cập nhật sẽ được cài đặt vào lần mở Tuturuuu tiếp theo.",
+    "desktopUpdateInstall": "Cài đặt và khởi động lại",
+    "desktopUpdateCancel": "Hủy lịch cập nhật",
+    "desktopUpdateNextLaunch": "Cài đặt vào lần mở tiếp theo",
+    "desktopUpdateDismiss": "Ẩn thông báo cập nhật",
+    "@desktopUpdateReady": {
+        "placeholders": {
+            "version": {
+                "type": "String"
+            }
+        }
+    },
+    "desktopUpdateManual": "Tải xuống thủ công",
     "mailSnooze": "Tạm ẩn",
     "mailUnsnooze": "Đưa về hộp thư đến ngay",
     "mailMute": "Tắt thông báo chuỗi thư",

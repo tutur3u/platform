@@ -1,0 +1,87 @@
+name: Windows Store Draft Package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: read
+
+concurrency:
+  group: desktop-store-draft-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: desktop-store-draft.yaml
+  package:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production'
+    runs-on: windows-latest
+    environment: desktop-beta
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+          cache: true
+          pub-cache: true
+      - name: Validate public configuration and packaging helpers
+        env:
+          DESKTOP_PUBLIC_CONFIG: ${{ vars.DESKTOP_PUBLIC_CONFIG }}
+        run: |
+          node scripts/desktop-deployment/write-ci-config.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --test scripts/desktop-deployment/*.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $tokens=$null; $errors=$null
+          foreach ($script in @('package-windows-store.ps1','verify-windows-store.ps1')) {
+            [System.Management.Automation.Language.Parser]::ParseFile("$pwd/scripts/desktop-deployment/$script",[ref]$tokens,[ref]$errors) > $null
+            if ($errors.Count -gt 0) { throw 'Invalid Store packaging helper' }
+          }
+      - name: Build Store channel without the direct-download updater
+        working-directory: apps/mobile
+        run: |
+          flutter pub get --enforce-lockfile
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          flutter build windows --release --target lib/main_production.dart --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Audit and create unsigned Store submission package
+        env:
+          DESKTOP_STORE_RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          node scripts/desktop-deployment/audit-bundle.mjs apps/mobile/build/windows/x64/runner/Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $versionText = Get-Content apps/mobile/pubspec.yaml -Raw
+          if ($versionText -notmatch '(?m)^version: (\d+)\.(\d+)\.\d+\+') { throw 'Invalid app version' }
+          $version = "$($Matches[1]).$($Matches[2]).$env:DESKTOP_STORE_RUN_NUMBER.0"
+          ./scripts/desktop-deployment/package-windows-store.ps1 -Bundle apps/mobile/build/windows/x64/runner/Release -Output "$env:RUNNER_TEMP/store-draft" -Version $version
+      - name: Validate installed Store package and certification report
+        run: ./scripts/desktop-deployment/verify-windows-store.ps1 -Package "$env:RUNNER_TEMP/store-draft/Tuturuuu-windows-store-x64.msix" -ReportDirectory "$env:RUNNER_TEMP/store-validation"
+      - name: Upload Windows validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: windows-store-validation-${{ github.run_id }}
+          path: ${{ runner.temp }}/store-validation/*
+          if-no-files-found: warn
+          retention-days: 7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: windows-store-draft-${{ github.run_id }}
+          path: ${{ runner.temp }}/store-draft/*.msix
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+      - name: Remove public build input
+        if: always()
+        run: Remove-Item "$env:RUNNER_TEMP/desktop-public.json" -ErrorAction SilentlyContinue
