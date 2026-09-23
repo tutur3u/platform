@@ -86,18 +86,24 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
         'archive' || 'trash' when _folder == 'inbox' => 'restore',
         _ => null,
       };
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (_childRouteOpen) return;
+      _dismissSwipeFeedback();
+      final width = MediaQuery.sizeOf(context).width;
+      final sideInset = width > 320 ? (width - 288) / 2 : 16.0;
+      final messenger = ScaffoldMessenger.of(context)..removeCurrentSnackBar();
+      final feedback = messenger.showSnackBar(
         SnackBar(
-          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
           margin: EdgeInsets.fromLTRB(
-            16,
+            sideInset,
             0,
-            16,
+            sideInset,
             lookupShellTitleOverrideCubit(context) != null &&
                     MediaQuery.sizeOf(context).width < 600
                 ? 96
                 : 16,
           ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           content: Text(swipe.label(context)),
           action: inverse == null
               ? null
@@ -138,6 +144,12 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
                   },
                 ),
         ),
+      );
+      _swipeFeedback = feedback;
+      unawaited(
+        feedback.closed.then((_) {
+          if (identical(_swipeFeedback, feedback)) _swipeFeedback = null;
+        }),
       );
     } on Object {
       if (!mounted || generation != _generation) return;

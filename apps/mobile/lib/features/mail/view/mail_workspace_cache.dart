@@ -49,6 +49,8 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
           ) ||
           !const {
             'inbox',
+            'snoozed',
+            'muted',
             'sent',
             'drafts',
             'starred',

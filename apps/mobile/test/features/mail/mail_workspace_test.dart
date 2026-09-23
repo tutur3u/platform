@@ -81,6 +81,49 @@ void main() {
     'folders': <Map<String, dynamic>>[],
   };
 
+  testWidgets('cold inbox shows loading and then an empty state', (
+    tester,
+  ) async {
+    final bootstrap = Completer<Map<String, dynamic>>();
+    when(() => repository.bootstrap('ws')).thenAnswer((_) => bootstrap.future);
+    respond(
+      (_) async => {
+        'threads': <dynamic>[],
+        'pagination': {'hasMore': false},
+      },
+    );
+    await mount(tester);
+    await tester.pump();
+    expect(find.text('Loading'), findsOneWidget);
+    bootstrap.complete({
+      'mailboxes': [
+        {'id': 'box', 'address': 'me@tuturuuu.com'},
+      ],
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('No messages here'), findsOneWidget);
+  });
+
+  testWidgets('saved Snoozed inbox appears before bootstrap completes', (
+    tester,
+  ) async {
+    final saved = savedInbox()..['folder'] = 'snoozed';
+    final bootstrap = Completer<Map<String, dynamic>>();
+    when(() => repository.savedView('ws')).thenAnswer((_) async => saved);
+    when(() => repository.bootstrap('ws')).thenAnswer((_) => bootstrap.future);
+    respond((_) async => inbox('Fresh message'));
+    await mount(tester);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Cached message'), findsOneWidget);
+    bootstrap.complete({
+      'mailboxes': [
+        {'id': 'box', 'address': 'me@tuturuuu.com'},
+      ],
+    });
+    await tester.pumpAndSettle();
+  });
+
   for (final size in [
     const Size(390, 844),
     const Size(844, 390),
@@ -455,6 +498,45 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('First'), findsOneWidget);
     await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('swipe feedback closes when another message opens', (
+    tester,
+  ) async {
+    respond(
+      (_) async => {
+        'threads': [
+          {'id': 'First', 'subject': 'First', 'participants': <dynamic>[]},
+          {'id': 'Second', 'subject': 'Second', 'participants': <dynamic>[]},
+        ],
+        'pagination': {'hasMore': false},
+      },
+    );
+    when(
+      () => repository.bulk('ws', 'box', any(), 'archive', threads: true),
+    ).thenAnswer((_) async {});
+    when(
+      () => repository.detail('ws', 'box', 'Second', thread: true),
+    ).thenAnswer(
+      (_) async => {
+        'thread': {'id': 'Second', 'subject': 'Second'},
+        'messages': <dynamic>[],
+      },
+    );
+    await mount(tester);
+    await tester.pumpAndSettle();
+    await tester
+        .widget<Dismissible>(find.byKey(const ValueKey('mail-swipe-First')))
+        .confirmDismiss!(DismissDirection.endToStart);
+    await tester.pump();
+    verify(
+      () => repository.bulk('ws', 'box', any(), 'archive', threads: true),
+    ).called(1);
+    expect(find.byType(SnackBar), findsOneWidget);
+    await tester.tap(find.text('Second'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MailReader), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
   });
 
   testWidgets('tablet Mail controls scroll away with the message list', (

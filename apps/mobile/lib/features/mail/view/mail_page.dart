@@ -117,8 +117,15 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   void _updateState(VoidCallback update) => setState(update);
   bool _childRouteOpen = false;
   bool _pushDestinationHandled = false;
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _swipeFeedback;
+
+  void _dismissSwipeFeedback() {
+    _swipeFeedback?.close();
+    _swipeFeedback = null;
+  }
 
   Future<void> _pushChild(Route<void> route) async {
+    _dismissSwipeFeedback();
     setState(() => _childRouteOpen = true);
     // Unregister inbox actions before its route becomes offstage.
     await WidgetsBinding.instance.endOfFrame;
@@ -218,6 +225,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
 
   @override
   void dispose() {
+    _dismissSwipeFeedback();
     _snoozeRefreshTimer?.cancel();
     _generation++;
     _bootstrapGeneration++;
@@ -544,6 +552,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
 
   Future<void> _open(Map<String, dynamic> item) async {
     if (_openingId != null || _childRouteOpen) return;
+    _dismissSwipeFeedback();
     setState(() => _openingId = item['id'] as String);
     final box = _mailboxId!;
     final generation = _generation;

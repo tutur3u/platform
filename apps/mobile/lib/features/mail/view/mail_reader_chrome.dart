@@ -1,5 +1,17 @@
 part of 'mail_reader.dart';
 
+IconData _mailMessageActionIcon(String action) => switch (action) {
+  'snooze' => Icons.snooze_outlined,
+  'unsnooze' => Icons.alarm_off_outlined,
+  'mute' => Icons.volume_off_outlined,
+  'unmute' => Icons.volume_up_outlined,
+  'archive' => Icons.archive_outlined,
+  'mark_unread' => Icons.mark_email_unread_outlined,
+  'restore' => Icons.inbox_outlined,
+  'trash' => Icons.delete_outline,
+  _ => Icons.more_horiz,
+};
+
 extension _MailReaderChrome on _MailReaderState {
   Widget _readerChrome(String subject, Map<String, String> actions) {
     final l10n = context.l10n;
@@ -103,6 +115,12 @@ extension _MailReaderChrome on _MailReaderState {
               for (final mode in modes.entries)
                 ListTile(
                   dense: true,
+                  leading: Icon(switch (mode.key) {
+                    MailMessageAppearance.original =>
+                      Icons.auto_awesome_outlined,
+                    MailMessageAppearance.light => Icons.light_mode_outlined,
+                    MailMessageAppearance.dark => Icons.dark_mode_outlined,
+                  }),
                   title: Text(mode.value),
                   selected: MailAppearancePreference.instance.value == mode.key,
                   onTap: () => Navigator.of(sheetContext).pop(mode.key),
@@ -143,6 +161,7 @@ extension _MailReaderChrome on _MailReaderState {
               for (final action in actions.entries)
                 ListTile(
                   dense: true,
+                  leading: Icon(_mailMessageActionIcon(action.key)),
                   title: Text(action.value),
                   onTap: () => Navigator.of(sheetContext).pop(action.key),
                 ),
