@@ -79,6 +79,7 @@ export function RoomAssistantAudio({
   const [sessionId, setSessionId] = useState<string>();
   const [stopping, setStopping] = useState(false);
   const player = useRef<RoomAudioPlayers | null>(null);
+  const resumeListening = useRef(() => {});
   useEffect(() => {
     const audio = new RoomAudioPlayers(() => {
       audio.mute();
@@ -110,6 +111,9 @@ export function RoomAssistantAudio({
     const clockOffsets = new Map<string, number>();
     const initial = [...(announcements.get(meetingId)?.values() ?? [])];
     const liveSessions = new Set(initial.map((item) => item.sessionId));
+    resumeListening.current = () => {
+      if (liveSessions.size) autoListen();
+    };
     for (const id of liveSessions) audio.activate(id);
     if (liveSessions.size) autoListen();
     setAvailable(liveSessions.size > 0);
@@ -181,6 +185,7 @@ export function RoomAssistantAudio({
     window.addEventListener(EVENT, listener);
     return () => {
       disposed = true;
+      resumeListening.current = () => {};
       window.removeEventListener(EVENT, listener);
       audio.clear();
     };
@@ -203,7 +208,7 @@ export function RoomAssistantAudio({
     if (audioSuppressed) {
       player.current?.mute();
       setEnabled(false);
-    }
+    } else resumeListening.current();
   }, [audioSuppressed]);
   if (!available) return null;
   return (

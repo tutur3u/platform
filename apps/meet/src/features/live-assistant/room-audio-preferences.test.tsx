@@ -164,3 +164,56 @@ it('offers a manual listen fallback when automatic playback is blocked', async (
     speakerEnabled: true,
   });
 });
+
+it.each([false, true])(
+  'restores playback after shared audio ends, respecting deafen=%s',
+  async (deafened) => {
+    const room = {
+      state: {
+        participants: {},
+        liveAssistant: { sessionId: 'shared', ownerId: 'owner' },
+      },
+      setAssistantAudio: vi.fn(),
+    } as unknown as MeetRoomController;
+    const meetingId = `shared-${deafened}`;
+    const view = (audioSuppressed: boolean) => (
+      <NextIntlClientProvider locale="en" timeZone="UTC" messages={messages}>
+        <RoomAssistantAudio
+          room={room}
+          meetingId={meetingId}
+          outputDeviceId=""
+          audioSuppressed={audioSuppressed}
+        />
+      </NextIntlClientProvider>
+    );
+    const { rerender } = render(view(false));
+    await act(async () => {
+      deliverRoomAssistantAudio(meetingId, {
+        type: 'assistant.live',
+        sessionId: 'shared',
+        ownerId: 'owner',
+        active: true,
+      });
+    });
+    const button = screen.getByRole('button', {
+      name: messages.meet.live.deafen_mira,
+    });
+    if (deafened) fireEvent.click(button);
+    rerender(view(true));
+    const unlocks = audio.unlock.mock.calls.length;
+    rerender(view(false));
+    if (deafened) {
+      expect(audio.unlock).toHaveBeenCalledTimes(unlocks);
+      expect(
+        screen.getByRole('button', {
+          name: messages.meet.live.room_audio_enable,
+        })
+      ).toBeTruthy();
+    } else {
+      await screen.findByRole('button', {
+        name: messages.meet.live.deafen_mira,
+      });
+      expect(audio.unlock.mock.calls.length).toBeGreaterThan(unlocks);
+    }
+  }
+);

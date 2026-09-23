@@ -3,6 +3,7 @@ export class LiveAudioPlayer {
   private context?: AudioContext;
   private nextTime = 0;
   private closed = false;
+  private ready = false;
   private generation = 0;
   private opening: Promise<void> = Promise.resolve();
   private sources = new Set<AudioBufferSourceNode>();
@@ -11,8 +12,11 @@ export class LiveAudioPlayer {
   async unlock(outputDeviceId?: string) {
     const generation = ++this.generation;
     this.closed = false;
+    this.ready = false;
     this.context ??= new AudioContext({ sampleRate: 24000 });
     const context = this.context;
+    // Resume within the gesture, even if a previous autoplay request is pending.
+    const resumed = context.resume();
     const opening = this.opening
       .catch(() => {})
       .then(async () => {
@@ -23,23 +27,21 @@ export class LiveAudioPlayer {
               setSinkId: (id: string) => Promise<void>;
             }
           ).setSinkId(outputDeviceId || '');
-        if (generation !== this.generation || this.closed) return;
-        await context.resume();
-        if (generation !== this.generation || this.closed) return;
-        const pending = this.pending;
-        this.pending = [];
-        this.pendingBytes = 0;
-        for (const item of pending)
-          if (Date.now() - item.at < 3000)
-            this.play(item.data, item.sampleRate);
       });
     this.opening = opening;
-    return opening;
+    await Promise.all([opening, resumed]);
+    if (generation !== this.generation || this.closed) return;
+    this.ready = true;
+    const pending = this.pending;
+    this.pending = [];
+    this.pendingBytes = 0;
+    for (const item of pending)
+      if (Date.now() - item.at < 3000) this.play(item.data, item.sampleRate);
   }
   play(data: string, sampleRate = 24000) {
     if (this.closed) return;
     const context = this.context;
-    if (context?.state !== 'running') {
+    if (!this.ready || context?.state !== 'running') {
       if (data.length > 128000) return;
       this.pending.push({ data, sampleRate, at: Date.now() });
       this.pendingBytes += data.length;

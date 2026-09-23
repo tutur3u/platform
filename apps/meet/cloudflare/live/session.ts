@@ -19,7 +19,7 @@ import {
   settlePublicBillings,
 } from './finalize-billing';
 import { connectLiveProvider, drainLiveProvider } from './provider';
-import { publishLiveTranscript } from './publish-transcript';
+import { LiveTranscriptPublisher } from './publish-transcript';
 import { LiveRegistryQueue } from './registry';
 import { maintainLiveRegistry } from './registry-heartbeat';
 import {
@@ -42,6 +42,7 @@ import {
 } from './workspace-review';
 
 export class MeetLiveDurableObject {
+  private publish = new LiveTranscriptPublisher();
   private saved?: SavedSession;
   private socket?: WebSocket;
   private provider?: Session;
@@ -433,7 +434,7 @@ export class MeetLiveDurableObject {
       ] as const) {
         if (!text.trim()) continue;
         const turn = { role, text, at: new Date().toISOString() };
-        await publishLiveTranscript(this.env, saved, role, text);
+        this.state.waitUntil(this.publish.turn(this.env, saved, role, text));
         const sequence = await this.archive.append(turn);
         saved.journal = appendLiveTurn(saved.journal, { ...turn, sequence });
         this.emit({ type: 'transcript', role, text: '', finished: true });

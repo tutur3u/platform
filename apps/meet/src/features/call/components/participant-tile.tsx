@@ -350,6 +350,11 @@ function ParticipantTileImpl({
 export const ParticipantTile = memo(
   ParticipantTileImpl,
   (a, b) =>
+    a.miraActive === b.miraActive &&
+    a.participant.assistantAudio?.microphoneEnabled ===
+      b.participant.assistantAudio?.microphoneEnabled &&
+    a.participant.assistantAudio?.speakerEnabled ===
+      b.participant.assistantAudio?.speakerEnabled &&
     a.participant.userId === b.participant.userId &&
     a.participant.displayName === b.participant.displayName &&
     a.participant.avatarUrl === b.participant.avatarUrl &&

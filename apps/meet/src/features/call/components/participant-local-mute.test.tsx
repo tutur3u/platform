@@ -22,6 +22,40 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
+it('refreshes Mira badges when only Live presence or assistant preferences change', () => {
+  const participant = {
+    userId: 'peer',
+    displayName: 'Peer',
+    media: { audioEnabled: true, videoEnabled: false, screenEnabled: false },
+  } as MeetRealtimePresence;
+  const view = (
+    miraActive: boolean,
+    audio?: MeetRealtimePresence['assistantAudio']
+  ) => (
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ParticipantTile
+        resumePlaybackLabel="Play"
+        miraActive={miraActive}
+        participant={{ ...participant, assistantAudio: audio }}
+      />
+    </NextIntlClientProvider>
+  );
+  const label = new RegExp(messages.meet.live.title);
+  const { rerender } = render(view(false));
+  expect(screen.queryByRole('img', { name: label })).toBeNull();
+  rerender(view(true));
+  expect(
+    screen.getByRole('img', { name: label }).getAttribute('aria-label')
+  ).toContain(messages.meet.live.mic_excluded);
+  rerender(view(true, { microphoneEnabled: true, speakerEnabled: true }));
+  const status = screen
+    .getByRole('img', { name: label })
+    .getAttribute('aria-label');
+  expect(status).toContain(messages.meet.live.mic_included);
+  expect(status).toContain(messages.meet.live.hearing_mira);
+  rerender(view(false));
+  expect(screen.queryByRole('img', { name: label })).toBeNull();
+});
 it.each(['camera', 'screen'] as const)(
   'silences only the local %s playback and can restore it',
   (kind) => {
