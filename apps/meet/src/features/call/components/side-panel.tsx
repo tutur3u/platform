@@ -16,6 +16,7 @@ import { ResizableCallPanel } from './resizable-call-panel';
 
 export function SidePanel({
   meetingId,
+  miraActive = false,
   approved,
   onForget,
   shareNotes,
@@ -34,6 +35,7 @@ export function SidePanel({
   waiting,
 }: {
   meetingId: string;
+  miraActive?: boolean;
   approved: MeetApprovedParticipant[];
   onForget: (userId: string) => void;
   shareNotes: boolean;
@@ -89,6 +91,7 @@ export function SidePanel({
         />
       ) : (
         <ParticipantsPanel
+          miraActive={miraActive}
           approved={approved}
           onForget={onForget}
           shareNotes={shareNotes}

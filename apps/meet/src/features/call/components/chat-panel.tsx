@@ -212,6 +212,11 @@ export function ChatPanel({
                   {isMeetAssistant(message) ? (
                     <span className="text-xs">
                       <MiraProfile />
+                      {message.displayName === 'Mira Live' && (
+                        <span className="ml-1 rounded bg-primary/10 px-1 py-0.5 text-primary">
+                          Live
+                        </span>
+                      )}
                     </span>
                   ) : (
                     <span className="truncate font-medium text-xs">
@@ -336,6 +341,21 @@ export function ChatPanel({
             ))}
           </ul>
         )}
+        <div className="flex flex-wrap gap-1">
+          {(['summarize', 'decisions', 'actions'] as const).map((action) => (
+            <Button
+              key={action}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 rounded-full text-xs"
+              disabled={busy || !!draft.trim()}
+              onClick={() => setDraft(`@mira ${t(`${action}_prompt`)}`)}
+            >
+              {t(`${action}_action`)}
+            </Button>
+          ))}
+        </div>
         <Textarea
           value={draft}
           onChange={(event) => setDraft(event.target.value)}

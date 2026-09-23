@@ -477,3 +477,22 @@ it('clears a corrected resource error and receives the lobby admission deadline'
   expect(admitted.error).toBeNull();
   expect(admitted.roomExpiresAt).toBe('2026-09-13T02:00:00Z');
 });
+
+it('tracks Mira separately from human presence and removes it on stop', () => {
+  const live = reduceCallState(INITIAL_CALL_STATE, {
+    type: 'assistant.live',
+    active: true,
+    sessionId: 'live',
+    ownerId: SELF,
+  });
+  expect(live.liveAssistant?.sessionId).toBe('live');
+  expect(Object.keys(live.participants)).toHaveLength(0);
+  expect(
+    reduceCallState(live, {
+      type: 'assistant.live',
+      active: false,
+      sessionId: 'live',
+      ownerId: SELF,
+    }).liveAssistant
+  ).toBeUndefined();
+});

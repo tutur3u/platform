@@ -202,3 +202,51 @@ it('acknowledges cleanup after expiry, departure, or room end without affecting 
       .liveAssistant
   ).toEqual(newer.state.liveAssistant);
 });
+
+it('publishes Live responses as Mira in room chat with scope checks and idempotency', () => {
+  const reserved = roomService(initial(), token, {
+    action: 'live.reserve',
+    sessionId,
+  });
+  const command = {
+    action: 'live.transcript',
+    sessionId,
+    id: crypto.randomUUID(),
+    text: 'Here is the summary.',
+  };
+  expect(roomService(reserved.state, token, command).status).toBe(403);
+  const service = { ...token, scopes: ['meet:server', 'meet:live-server'] };
+  const reply = roomService(reserved.state, service, command);
+  expect(reply.messages?.[0]).toMatchObject({
+    type: 'chat.message',
+    assistant: true,
+    body: command.text,
+  });
+  expect(roomService(reply.state, service, command).state.chat).toHaveLength(1);
+  expect(
+    roomService(reserved.state, service, {
+      ...command,
+      sessionId: crypto.randomUUID(),
+    }).status
+  ).toBe(409);
+});
+
+it('resets everyone to microphone-excluded when a new Live assistant joins', () => {
+  const state = initial();
+  state.presence[ownerId]!.assistantAudio = {
+    microphoneEnabled: true,
+    speakerEnabled: true,
+    sessionId: crypto.randomUUID(),
+  };
+  const joined = roomService(state, token, {
+    action: 'live.reserve',
+    sessionId,
+  });
+  expect(joined.state.presence[ownerId]?.assistantAudio).toMatchObject({
+    microphoneEnabled: false,
+    sessionId,
+  });
+  expect(joined.messages?.some((message) => message.type === 'presence')).toBe(
+    true
+  );
+});

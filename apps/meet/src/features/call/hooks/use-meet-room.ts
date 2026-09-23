@@ -69,7 +69,6 @@ import {
 } from '../lib/remote-streams';
 import type { SfuTracksResponse } from '../lib/sfu-response';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
-/** One signaling socket and separate publishing/subscribing SFU connections. */
 /** Coordinate room signaling, local capture, and recoverable media transport. */
 export function useMeetRoom({
   meetingId,
@@ -97,6 +96,7 @@ export function useMeetRoom({
     videoEnabled: false,
   });
   const signalingRef = useRef<MeetSignaling | null>(null);
+  const actions = useMemo(() => createRoomActions(signalingRef), []);
   const publishPcRef = useRef<RTCPeerConnection | null>(null);
   const subscribePcRef = useRef<RTCPeerConnection | null>(null);
   const publishSessionRef = useRef<string | null>(null);
@@ -151,7 +151,7 @@ export function useMeetRoom({
     };
     const signaling = new MeetSignaling({
       onMessage: (message) => {
-        if (deliverRoomAssistantAudio(meetingId, message)) return;
+        deliverRoomAssistantAudio(meetingId, message);
         if (
           message.type === 'ready' &&
           message.admission === 'admitted' &&
@@ -205,6 +205,7 @@ export function useMeetRoom({
           media: mediaRef.current,
           type: 'presence.join',
         });
+        actions.replayAssistantAudio();
       },
       onStatusChange: setConnectionStatus,
       resolveUrl,
@@ -244,6 +245,7 @@ export function useMeetRoom({
     resetSubscriber,
     token,
     deviceId,
+    actions.replayAssistantAudio,
   ]);
   const publishPresence = useCallback((next: MeetMediaState) => {
     signalingRef.current?.send({ media: next, type: 'presence.update' });
@@ -638,7 +640,6 @@ export function useMeetRoom({
     [buildRemoteStreams, remoteMedia, sharingUsers]
   );
 
-  const actions = useMemo(() => createRoomActions(signalingRef), []);
   const leave = useCallback(() => {
     activeRef.current = false;
     signalingRef.current?.close();

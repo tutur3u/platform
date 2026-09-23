@@ -8,12 +8,12 @@ import { ChatPanel } from './chat-panel';
 import { PersonalChat } from './personal-chat';
 
 export function ConversationPanel({
-  solo,
+  solo: _solo,
   ...props
 }: ComponentProps<typeof ChatPanel> & { solo: boolean }) {
   const t = useTranslations('meet.call');
   // A room gaining participants never switches or publishes a private draft.
-  const [mode, setMode] = useState(solo ? 'personal' : 'room');
+  const [mode, setMode] = useState('room');
   return (
     <Tabs
       value={mode}

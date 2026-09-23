@@ -1,8 +1,16 @@
 import { z } from 'zod';
 import type { MeetRealtimeTokenPayload } from './primitives';
+import { meetPresenceMessage } from './room';
+import { appendRoomLiveTranscript } from './room-live-transcript';
 import type { RoomServiceState } from './room-service';
 
 export const roomLiveCommand = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('live.transcript'),
+    sessionId: z.uuid(),
+    id: z.uuid(),
+    text: z.string().trim().min(1).max(8000),
+  }),
   z.object({ action: z.literal('live.reserve'), sessionId: z.uuid() }),
   z.object({ action: z.literal('live.stop'), sessionId: z.uuid() }),
   z.object({ action: z.literal('live.heartbeat'), sessionId: z.uuid() }),
@@ -93,8 +101,24 @@ export function applyRoomLive(
       expiresAt: now + 90_000,
       sequence: -1,
     };
+    const presence =
+      current?.sessionId === message.sessionId
+        ? snapshot.presence
+        : Object.fromEntries(
+            Object.entries(snapshot.presence).map(([id, participant]) => [
+              id,
+              {
+                ...participant,
+                assistantAudio: {
+                  sessionId: message.sessionId,
+                  microphoneEnabled: false,
+                  speakerEnabled: false,
+                },
+              },
+            ])
+          );
     return {
-      state: { ...snapshot, liveAssistant },
+      state: { ...snapshot, liveAssistant, presence },
       body: { ok: true },
       messages: [
         {
@@ -103,6 +127,7 @@ export function applyRoomLive(
           ownerId,
           active: true,
         },
+        meetPresenceMessage({ ...snapshot, presence }, token.roomId),
       ],
     };
   }
@@ -116,6 +141,8 @@ export function applyRoomLive(
   // A browser token, including a host token, never has this scope.
   if (!token.scopes.includes('meet:live-server') || ownerId !== current.ownerId)
     return fail('Forbidden');
+  if (message.action === 'live.transcript')
+    return appendRoomLiveTranscript(snapshot, message.id, message.text, now);
   if (message.action === 'live.interrupt')
     return {
       state: {
