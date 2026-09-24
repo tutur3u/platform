@@ -96,20 +96,56 @@ class MeetRepository {
     required String timezone,
     required List<Map<String, dynamic>> history,
   }) async {
-    final response = await _api
-        .postJson(MeetEndpoints.personalAssistant(wsId, meetingId), {
-          'requestId': requestId,
-          'startedAt': startedAt,
-          'question': question,
-          'timezone': timezone,
-          'history': history,
-        }, timeout: const Duration(seconds: 125));
+    final response = await _api.postJson(
+      MeetEndpoints.personalAssistant(wsId, meetingId),
+      {
+        'requestId': requestId,
+        'startedAt': startedAt,
+        'question': question,
+        'timezone': timezone,
+        'history': history,
+      },
+      timeout: const Duration(seconds: 125),
+    );
     final text = response['text'] as String?;
     if (text == null || text.trim().isEmpty) {
       throw StateError('Meet private answer unavailable');
     }
     return text;
   }
+
+  Future<Map<String, dynamic>> askRoomMira(
+    String wsId,
+    String meetingId, {
+    required String messageId,
+    required String timezone,
+  }) => _api.postJson(MeetEndpoints.roomAssistant(wsId, meetingId), {
+    'messageId': messageId,
+    'timezone': timezone,
+  }, timeout: const Duration(seconds: 125));
+
+  Future<List<dynamic>> listMiraReviews(String wsId, String meetingId) =>
+      _api.getJsonList(MeetEndpoints.assistantReviews(wsId, meetingId));
+
+  Future<Map<String, dynamic>> getMiraReview(
+    String wsId,
+    String meetingId,
+    String messageId,
+  ) => _api.getJson(
+    MeetEndpoints.assistantReviews(wsId, meetingId, messageId: messageId),
+  );
+
+  Future<Map<String, dynamic>> decideMiraReview(
+    String wsId,
+    String meetingId, {
+    required String messageId,
+    required int revision,
+    required String action,
+  }) => _api.postJson(MeetEndpoints.assistantReviews(wsId, meetingId), {
+    'messageId': messageId,
+    'revision': revision,
+    'action': action,
+  }, timeout: const Duration(seconds: 125));
 
   void dispose() {
     _api.dispose();

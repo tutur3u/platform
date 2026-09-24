@@ -34,4 +34,15 @@ abstract final class MeetEndpoints {
 
   static String personalAssistant(String wsId, String meetingId) =>
       '${meeting(wsId, meetingId)}/assistant/personal';
+
+  static String roomAssistant(String wsId, String meetingId) =>
+      '${meeting(wsId, meetingId)}/assistant';
+
+  static String assistantReviews(
+    String wsId,
+    String meetingId, {
+    String? messageId,
+  }) =>
+      '${roomAssistant(wsId, meetingId)}/review'
+      '${messageId == null ? '' : '?${Uri(queryParameters: {'messageId': messageId}).query}'}';
 }

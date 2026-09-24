@@ -7730,6 +7730,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetShareConfirm => 'Post to room chat';
 
   @override
+  String get meetMiraThinking => 'Mira is preparing a reply…';
+
+  @override
+  String get meetMiraReplyFailed => 'Mira couldn\'t reply to the room message.';
+
+  @override
+  String get meetMiraRetry => 'Retry Mira';
+
+  @override
+  String get meetMiraReviews => 'Private action reviews';
+
+  @override
+  String get meetMiraReviewsHint => 'Only you can see these drafts and requests. Review the workspace actions before approving them.';
+
+  @override
+  String get meetMiraReviewFailed => 'Couldn\'t load Mira\'s private reviews.';
+
+  @override
+  String get meetMiraReviewRefresh => 'Refresh reviews';
+
+  @override
+  String get meetMiraApprove => 'Approve actions';
+
+  @override
+  String get meetMiraDeny => 'Deny actions';
+
+  @override
+  String get meetMiraDiscard => 'Discard draft';
+
+  @override
+  String get meetMiraApprovalTitle => 'Approve workspace actions?';
+
+  @override
+  String get meetMiraApprovalHint => 'Mira will run the listed actions in this workspace. Check every input before approving.';
+
+  @override
+  String get meetMiraActionFailed => 'Couldn\'t update Mira\'s review. Please try again.';
+
+  @override
   String get meetMessageHint => 'Message everyone';
 
   @override

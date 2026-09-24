@@ -7700,6 +7700,45 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetShareConfirm => 'Đăng vào trò chuyện phòng họp';
 
   @override
+  String get meetMiraThinking => 'Mira đang chuẩn bị câu trả lời…';
+
+  @override
+  String get meetMiraReplyFailed => 'Mira không thể trả lời tin nhắn trong phòng.';
+
+  @override
+  String get meetMiraRetry => 'Thử lại với Mira';
+
+  @override
+  String get meetMiraReviews => 'Duyệt hành động riêng tư';
+
+  @override
+  String get meetMiraReviewsHint => 'Chỉ bạn thấy các bản nháp và yêu cầu này. Hãy kiểm tra hành động trong không gian làm việc trước khi duyệt.';
+
+  @override
+  String get meetMiraReviewFailed => 'Không thể tải các mục duyệt riêng tư của Mira.';
+
+  @override
+  String get meetMiraReviewRefresh => 'Tải lại mục duyệt';
+
+  @override
+  String get meetMiraApprove => 'Duyệt hành động';
+
+  @override
+  String get meetMiraDeny => 'Từ chối hành động';
+
+  @override
+  String get meetMiraDiscard => 'Bỏ bản nháp';
+
+  @override
+  String get meetMiraApprovalTitle => 'Duyệt hành động trong không gian làm việc?';
+
+  @override
+  String get meetMiraApprovalHint => 'Mira sẽ thực hiện các hành động được liệt kê. Hãy kiểm tra từng nội dung trước khi duyệt.';
+
+  @override
+  String get meetMiraActionFailed => 'Không thể cập nhật mục duyệt của Mira. Vui lòng thử lại.';
+
+  @override
   String get meetMessageHint => 'Nhắn cho mọi người';
 
   @override
