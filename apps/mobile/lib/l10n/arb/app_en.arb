@@ -3167,6 +3167,7 @@
     "meetShareWithEveryone": "Share with everyone",
     "meetShareHint": "Review or edit this answer before posting it to room chat.",
     "meetShareConfirm": "Post to room chat",
+    "meetOpenLink": "Open link",
     "meetMessageHint": "Message everyone",
     "meetSend": "Send",
     "meetWaitingForHost": "Waiting for the host to admit you",

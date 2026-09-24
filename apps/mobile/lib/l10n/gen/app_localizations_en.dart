@@ -7730,6 +7730,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetShareConfirm => 'Post to room chat';
 
   @override
+  String get meetOpenLink => 'Open link';
+
+  @override
   String get meetMessageHint => 'Message everyone';
 
   @override

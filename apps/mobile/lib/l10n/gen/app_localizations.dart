@@ -14755,6 +14755,12 @@ abstract class AppLocalizations {
   /// **'Post to room chat'**
   String get meetShareConfirm;
 
+  /// No description provided for @meetOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Open link'**
+  String get meetOpenLink;
+
   /// No description provided for @meetMessageHint.
   ///
   /// In en, this message translates to:

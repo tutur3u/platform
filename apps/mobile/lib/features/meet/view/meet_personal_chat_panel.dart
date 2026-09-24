@@ -31,39 +31,11 @@ class _MeetPersonalChatPanelState extends State<MeetPersonalChatPanel> {
   }
 
   Future<void> _share(String answer) async {
-    final draft = TextEditingController(
-      text: answer.length > 2000 ? answer.substring(0, 2000) : answer,
-    );
     try {
       final approved = await showDialog<String>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(dialogContext.l10n.meetShareWithEveryone),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(dialogContext.l10n.meetShareHint),
-              const SizedBox(height: 12),
-              TextField(
-                controller: draft,
-                maxLength: 2000,
-                maxLines: 5,
-                minLines: 3,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton.icon(
-              onPressed: () => Navigator.pop(dialogContext),
-              icon: const Icon(Icons.close),
-              label: Text(dialogContext.l10n.commonCancel),
-            ),
-            FilledButton.icon(
-              onPressed: () => Navigator.pop(dialogContext, draft.text.trim()),
-              icon: const Icon(Icons.share_outlined),
-              label: Text(dialogContext.l10n.meetShareConfirm),
-            ),
-          ],
+        builder: (_) => _ShareDraftDialog(
+          initial: answer.length > 2000 ? answer.substring(0, 2000) : answer,
         ),
       );
       if (approved == null || approved.isEmpty) return;
@@ -73,8 +45,6 @@ class _MeetPersonalChatPanelState extends State<MeetPersonalChatPanel> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.commonSomethingWentWrong)),
       );
-    } finally {
-      draft.dispose();
     }
   }
 
@@ -165,5 +135,54 @@ class _MeetPersonalChatPanelState extends State<MeetPersonalChatPanel> {
         ],
       );
     },
+  );
+}
+
+class _ShareDraftDialog extends StatefulWidget {
+  const _ShareDraftDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_ShareDraftDialog> createState() => _ShareDraftDialogState();
+}
+
+class _ShareDraftDialogState extends State<_ShareDraftDialog> {
+  late final _draft = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _draft.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(context.l10n.meetShareWithEveryone),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(context.l10n.meetShareHint),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _draft,
+          maxLength: 2000,
+          maxLines: 5,
+          minLines: 3,
+        ),
+      ],
+    ),
+    actions: [
+      TextButton.icon(
+        onPressed: () => Navigator.pop(context),
+        icon: const Icon(Icons.close),
+        label: Text(context.l10n.commonCancel),
+      ),
+      FilledButton.icon(
+        onPressed: () => Navigator.pop(context, _draft.text.trim()),
+        icon: const Icon(Icons.share_outlined),
+        label: Text(context.l10n.meetShareConfirm),
+      ),
+    ],
   );
 }

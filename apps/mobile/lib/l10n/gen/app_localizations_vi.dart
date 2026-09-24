@@ -7700,6 +7700,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetShareConfirm => 'Đăng vào trò chuyện phòng họp';
 
   @override
+  String get meetOpenLink => 'Mở liên kết';
+
+  @override
   String get meetMessageHint => 'Nhắn cho mọi người';
 
   @override

@@ -22,7 +22,10 @@ vi.mock('@/lib/api-auth', () => ({
   }),
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  normalizeWorkspaceId: async () => WS_ID,
+  normalizeWorkspaceId: vi.fn(async () => WS_ID),
+  WorkspaceAuthError: class WorkspaceAuthError extends Error {},
+  WorkspaceNotFoundError: class WorkspaceNotFoundError extends Error {},
+  WorkspaceResolutionError: class WorkspaceResolutionError extends Error {},
 }));
 vi.mock('@tuturuuu/auth/app-session', () => ({
   createAppSessionToken: sign,
@@ -38,6 +41,19 @@ beforeEach(() => {
     data: { id: MEETING_ID },
     error: null,
   });
+});
+
+it.each([
+  ['WorkspaceAuthError', 401],
+  ['WorkspaceNotFoundError', 404],
+  ['WorkspaceResolutionError', 500],
+] as const)('maps %s to %i before minting a session', async (name, status) => {
+  const helpers = await import('@tuturuuu/utils/workspace-helper');
+  const error = new helpers[name]();
+  vi.mocked(helpers.normalizeWorkspaceId).mockRejectedValueOnce(error);
+
+  expect((await send('{}')).status).toBe(status);
+  expect(sign).not.toHaveBeenCalled();
 });
 
 async function send(body: string, headers?: HeadersInit) {
