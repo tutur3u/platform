@@ -25,8 +25,8 @@ _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with 
 
 | Track | Progress | Terminal | Migrated | Removed | Remaining |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Overall | `[######--------------]` 27.66% | 229 / 828 | 215 | 14 | 599 |
-| Rust backend | `[###-----------------]` 13.1% | 79 / 603 | 67 | 12 | 524 |
+| Overall | `[######--------------]` 27.62% | 229 / 829 | 215 | 14 | 600 |
+| Rust backend | `[###-----------------]` 13.08% | 79 / 604 | 67 | 12 | 525 |
 | TanStack Start | `[#############-------]` 66.67% | 150 / 225 | 148 | 2 | 75 |
 
 <details>

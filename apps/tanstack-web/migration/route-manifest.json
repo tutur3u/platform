@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 515,
+        "legacyNext": 516,
         "migrated": 62,
-        "percentComplete": 12.56,
-        "remaining": 515,
+        "percentComplete": 12.54,
+        "remaining": 516,
         "terminal": 74,
-        "total": 589,
+        "total": 590,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 524,
+        "legacyNext": 525,
         "migrated": 67,
-        "percentComplete": 13.1,
-        "remaining": 524,
+        "percentComplete": 13.08,
+        "remaining": 525,
         "terminal": 79,
-        "total": 603,
+        "total": 604,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 599,
+      "legacyNext": 600,
       "migrated": 215,
-      "percentComplete": 27.66,
-      "remaining": 599,
+      "percentComplete": 27.62,
+      "remaining": 600,
       "terminal": 229,
-      "total": 828,
+      "total": 829,
       "unknownStatus": 0
     }
   },
@@ -7904,20 +7904,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 589,
+    "apiRoutes": 590,
     "cronRoutes": 9,
     "layouts": 67,
     "pages": 154,
-    "routeHandlers": 603,
+    "routeHandlers": 604,
     "methodCounts": {
       "GET": 302,
       "HEAD": 4,
-      "POST": 297,
+      "POST": 298,
       "PUT": 54,
       "PATCH": 63,
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 828
+    "total": 829
   }
 }
