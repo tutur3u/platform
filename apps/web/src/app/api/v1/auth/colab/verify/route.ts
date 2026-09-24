@@ -1,4 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  readRequiredMfaPolicy,
+  satisfiesRequiredMfaPolicy,
+} from '@tuturuuu/utils/required-mfa-policy';
+import { readMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
 import { NextResponse } from 'next/server';
 
 /** Consume a Colab-only one-time handoff and resolve email from auth.users.
@@ -28,6 +33,7 @@ export async function POST(request: Request) {
   );
   const row = (Array.isArray(data) ? data[0] : data) as {
     user_id?: string;
+    session_data?: { mfaTransfer?: unknown };
   } | null;
   if (error || !row?.user_id) {
     return NextResponse.json(
@@ -41,11 +47,23 @@ export async function POST(request: Request) {
   if (
     authError ||
     !user?.email ||
+    user.id !== row.user_id ||
     !user.email_confirmed_at ||
     (user.banned_until && Date.parse(user.banned_until) > Date.now())
   ) {
     return NextResponse.json(
       { error: 'verified_account_required' },
+      { status: 403, headers }
+    );
+  }
+  if (
+    !satisfiesRequiredMfaPolicy(
+      readRequiredMfaPolicy(user.app_metadata),
+      readMfaTransfer(row.session_data?.mfaTransfer, user.id, 'colab')
+    )
+  ) {
+    return NextResponse.json(
+      { code: 'MFA_REQUIRED', error: 'MFA verification required' },
       { status: 403, headers }
     );
   }

@@ -8546,4 +8546,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailSnoozeFuture => 'Choose a time in the future.';
+
+  @override
+  String get requiredMfaEnrollTitle => 'Secure your account';
+
+  @override
+  String get requiredMfaEnrollDescription => 'Your administrator requires two-step verification. Add this account to an authenticator app to continue.';
+
+  @override
+  String get requiredMfaSecretLabel => 'Enter this setup key in your authenticator app. Keep it private.';
+
+  @override
+  String get requiredMfaError => 'Unable to complete verification. Please try again.';
+
+  @override
+  String get requiredMfaVerify => 'Verify and continue';
+
+  @override
+  String get requiredMfaStart => 'Set up authenticator';
+
+  @override
+  String get adminAccountsRequireMfa => 'Require MFA';
+
+  @override
+  String get adminAccountsOptionalMfa => 'Make MFA optional';
+
+  @override
+  String get adminAccountsMfaPolicyDescription => 'Requiring MFA invalidates previous verification. Making MFA optional keeps existing authenticators; reset them separately to remove them.';
+
+  @override
+  String get requiredMfaRecoveryTitle => 'Sign in again to secure your account';
+
+  @override
+  String get requiredMfaRecoveryDescription => 'Your administrator reset account security. Sign in again before setting up or verifying an authenticator.';
+
+  @override
+  String get requiredMfaSignInAgain => 'Sign in again';
 }

@@ -242,6 +242,13 @@ publishes only the `next` image bundle. Maintained Next.js Playwright coverage
 continues to run; the retained TanStack dual-stack and comparison matrix is a
 manual source reference until migration work resumes.
 
+### Meet and Lettin Cloudflare validation
+
+The standalone Meet and Lettin Cloudflare validation jobs build
+`@tuturuuu/supabase` before running Vitest. Their proxy tests load the shared
+auth proxy, whose Supabase subpath exports resolve to `dist` under Node. A
+clean CI checkout has no package build output until that step runs.
+
 ### TanStack/Rust Cloudflare deployment
 
 `rust-backend.yml` is also the manually dispatched Cloudflare preview deployment

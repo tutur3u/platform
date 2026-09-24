@@ -1,3 +1,7 @@
+vi.mock('@tuturuuu/utils/required-mfa-app-session', () => ({
+  isRequiredMfaProofAllowed: async () => true,
+}));
+
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPOST, createRefreshPOST } from './server';

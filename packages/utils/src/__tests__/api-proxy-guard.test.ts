@@ -1,3 +1,7 @@
+vi.mock('../required-mfa-runtime', () => ({
+  enforceRequiredMfaRequest: async () => null,
+}));
+
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -134,7 +138,6 @@ describe('guardApiProxyRequest', () => {
       }),
       { prefixBase: 'proxy:test:api' }
     );
-
     expect(response?.status).toBe(413);
     expect(mocks.extractIp).not.toHaveBeenCalled();
   });
@@ -147,13 +150,11 @@ describe('guardApiProxyRequest', () => {
       { 'content-type': 'application/json' },
       JSON.stringify({ value: 'x'.repeat(1024 * 1024) })
     );
-
     expect(request.headers.get('content-length')).toBeNull();
 
     const response = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:test:api',
     });
-
     expect(response?.status).toBe(413);
     expect(mocks.extractIp).not.toHaveBeenCalled();
     expect(mocks.validateEmoji).not.toHaveBeenCalled();
@@ -172,7 +173,6 @@ describe('guardApiProxyRequest', () => {
         skipContentValidation: true,
       }
     );
-
     expect(response).toBeNull();
     expect(mocks.validateEmoji).not.toHaveBeenCalled();
 
@@ -207,7 +207,6 @@ describe('guardApiProxyRequest', () => {
         prefixBase: 'proxy:test:api',
       }
     );
-
     expect(response?.status).toBe(429);
     expect(response?.headers.get('X-Proxy-Block-Reason')).toBe(
       'ip-already-blocked'

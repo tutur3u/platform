@@ -13,6 +13,7 @@ import {
 } from './abuse-protection/edge-trust';
 import { DEV_MODE, MAX_PAYLOAD_SIZE } from './constants';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
+import { enforceRequiredMfaRequest } from './required-mfa-runtime';
 import {
   getUpstashRatelimitRedisClient,
   type UpstashRatelimitRedisClient,
@@ -20,10 +21,6 @@ import {
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-// Quantized trust tiers — the cached multiplier is floored to one of these
-// before scaling read limits, so the limiter prefix (and therefore the Redis
-// sliding-window buckets) stays bounded and stable even as a subject's exact
-// multiplier drifts.
 const TRUST_MULTIPLIER_TIERS = [1, 1.5, 2, 3, 5, 10, 25, 100] as const;
 
 function isEnvFlagEnabled(name: string, defaultOn = true): boolean {
@@ -46,8 +43,7 @@ function edgeTrustEnabled(): boolean {
 }
 
 /**
- * Floors a raw trust multiplier to the nearest quantized tier. Never reduces
- * below 1 — trust uplift only ever raises read limits.
+ * Quantize uplift without ever reducing the base limit.
  */
 function quantizeTrustMultiplier(multiplier: number): number {
   let tier = 1;
@@ -1169,6 +1165,10 @@ export async function guardApiProxyRequest(
   req: NextRequest,
   options: GuardOptions
 ): Promise<NextResponse | null> {
+  if (!isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers)) {
+    const assurance = await enforceRequiredMfaRequest(req);
+    if (assurance) return assurance;
+  }
   const contentLength = req.headers.get('content-length');
   if (contentLength) {
     const size = Number.parseInt(contentLength, 10);

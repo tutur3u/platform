@@ -16,6 +16,8 @@ import {
   extractIPFromHeaders,
   extractUserAgentFromHeaders,
 } from '@tuturuuu/utils/abuse-protection';
+import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
+import { resolveVerifiedSupabaseMfa } from '@tuturuuu/utils/required-mfa-supabase-session';
 import type { z } from 'zod';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { isTrustedAuthenticator } from './device-mfa/registry';
@@ -428,6 +430,29 @@ export async function approveMfaMobileApprovalChallenge(
     };
   }
 
+  let requiredMfaProof: MfaSessionProof | null = null;
+  if (input.decision !== 'reject') {
+    const claims = await authContext.supabase.auth.getClaims();
+    if (claims.error || claims.data?.claims.sub !== authContext.user.id)
+      return {
+        body: {
+          code: 'MFA_REQUIRED',
+          error: MFA_MOBILE_APPROVAL_REQUIRES_MOBILE_MFA_ERROR,
+        },
+        status: 403,
+      };
+    const assurance = await resolveVerifiedSupabaseMfa(claims.data.claims);
+    if (assurance.status !== 'allowed')
+      return {
+        body: {
+          code: 'MFA_REQUIRED',
+          error: MFA_MOBILE_APPROVAL_REQUIRES_MOBILE_MFA_ERROR,
+        },
+        status: 403,
+      };
+    requiredMfaProof = assurance.proof;
+  }
+
   if (
     input.decision !== 'reject' &&
     !(await isTrustedAuthenticator(authContext.user.id, input))
@@ -521,6 +546,7 @@ export async function approveMfaMobileApprovalChallenge(
         endpoint: context.endpoint,
         ipAddress,
         pairCodeConfirmed: Boolean(input.pairCode),
+        ...(requiredMfaProof ? { requiredMfaProof } : {}),
         userAgent,
       }),
       approved_at: approvedAt,

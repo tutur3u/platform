@@ -90,6 +90,33 @@ void main() {
     ).called(1);
   });
 
+  for (final required in [true, false]) {
+    test('sets the confirmed MFA policy to required=$required', () async {
+      when(() => api.patchJson(any(), any())).thenAnswer(
+        (_) async => {
+          'account': {
+            ...payload,
+            'mfaRequired': required,
+            'mfaPolicyAvailable': true,
+          },
+        },
+      );
+      final updated = await repository.setMfaPolicy(
+        account,
+        required: required,
+        confirmationEmail: ' target@tuturuuu.com ',
+      );
+      verify(
+        () => api.patchJson('${InternalAccountRepository.endpoint}/target', {
+          'action': required ? 'require_mfa' : 'optional_mfa',
+          'confirmationEmail': account.email,
+        }),
+      ).called(1);
+      expect(updated.mfaRequired, required);
+      expect(updated.mfaPolicyAvailable, isTrue);
+    });
+  }
+
   for (final enabled in [true, false]) {
     test('uses the correct access action for enabled=$enabled', () async {
       when(

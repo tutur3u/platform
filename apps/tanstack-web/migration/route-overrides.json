@@ -13,7 +13,7 @@
     "api:/api/v1/auth/colab/verify:apps/web/src/app/api/v1/auth/colab/verify/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Colab one-time handoff resolves confirmed, non-banned auth.users identity. Never trust caller-controlled cross-app session_data.email for hosting or invitations. Display name and HTTPS avatar are resolved from the verified user profile; display metadata never grants permissions. Rust parity pending."
+      "note": "Colab one-time handoff resolves confirmed, non-banned auth.users identity. Never trust caller-controlled cross-app session_data.email for hosting or invitations. Display name and HTTPS avatar are resolved from the verified user profile; display metadata never grants permissions. Enforce fresh account MFA policy against a signed actor-and-target-bound transfer proof before accepting the handoff. Rust parity pending."
     },
     "api:/api/v1/users/me/avatar/upload-url:apps/web/src/legacy-api-routes/v1/users/me/avatar/upload-url/route.ts": {
       "status": "legacy-next",
@@ -23,7 +23,7 @@
     "api:/api/v1/auth/app-token/invitation-decision:apps/web/src/app/api/v1/auth/app-token/invitation-decision/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live external-app invitation decision route applies any optional workspace-scoped role before clearing an accepted invite, including idempotent existing-member and duplicate-insert paths, and rolls back newly created membership and seat state if role assignment fails. The Rust port is pending."
+      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live external-app invitation decision route applies any optional workspace-scoped role before clearing an accepted invite, including idempotent existing-member and duplicate-insert paths, and rolls back newly created membership and seat state if role assignment fails. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
     },
     "api:/api/v1/live/token:apps/web/src/app/api/v1/live/token/route.ts": {
       "status": "legacy-next",
@@ -77,7 +77,7 @@
     "api:/api/v1/workspaces/:wsId/roles/options:apps/web/src/app/api/v1/workspaces/[wsId]/roles/options/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "The live lightweight role-options endpoint returns only paginated role ids and names for pre-join invitation assignment, avoiding full permission and member graph transfer. The Rust port is pending."
+      "note": "The live lightweight role-options endpoint returns only paginated role ids and names for pre-join invitation assignment, avoiding full permission and member graph transfer. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
     },
     "api:/api/v1/workspaces/:wsId/external-projects/setup:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.ts": {
       "status": "legacy-next",
@@ -127,14 +127,14 @@
         "POST": {
           "status": "legacy-next",
           "targetOwner": "rust-backend",
-          "note": "The live POST creates profile-completion request links. It resolves registered satellite app-session actors through resolveWorkspaceRouteAccess before authorizing manage_user_profile_links and recording the authenticated creator. The Rust port is pending."
+          "note": "The live POST creates profile-completion request links. It resolves registered satellite app-session actors through resolveWorkspaceRouteAccess before authorizing manage_user_profile_links and recording the authenticated creator. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
         }
       }
     },
     "api:/api/v1/workspaces/:wsId/user-profile-links/:linkId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-profile-links/[linkId]/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "The live PATCH and DELETE mutations resolve registered satellite app-session actors through resolveWorkspaceRouteAccess before authorizing manage_user_profile_links. The Rust port is pending."
+      "note": "The live PATCH and DELETE mutations resolve registered satellite app-session actors through resolveWorkspaceRouteAccess before authorizing manage_user_profile_links. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
     },
     "api:/api/workspaces/:wsId:apps/web/src/legacy-api-routes/workspaces/[wsId]/route.ts": {
       "methods": {
@@ -148,12 +148,12 @@
     "api:/api/workspaces/:wsId/accept-invite:apps/web/src/app/api/workspaces/[wsId]/accept-invite/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live invitation acceptance flow assigns any optional, workspace-scoped role recorded on the pending invite and rolls back membership and seat state if that assignment fails. The Rust port is pending."
+      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live invitation acceptance flow assigns any optional, workspace-scoped role recorded on the pending invite and rolls back membership and seat state if that assignment fails. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
     },
     "api:/api/workspaces/:wsId/members/invite:apps/web/src/app/api/workspaces/[wsId]/members/invite/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). POST resolves current-user satellite app sessions before inviting members and supports an optional workspace-scoped role or confirmed POS Operator setup. GET exposes stored roles for pending email and registered-user invitations, while PATCH lets workspace role managers change or clear that assignment before acceptance. The Rust port is pending."
+      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). POST resolves current-user satellite app sessions before inviting members and supports an optional workspace-scoped role or confirmed POS Operator setup. GET exposes stored roles for pending email and registered-user invitations, while PATCH lets workspace role managers change or clear that assignment before acceptance. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
     },
     "api:/api/v1/workspaces/:wsId/members:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/members/route.ts": {
       "status": "legacy-next",
@@ -168,7 +168,7 @@
     "api:/api/workspaces/:wsId/members/profile:apps/web/src/legacy-api-routes/workspaces/[wsId]/members/profile/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "The live PUT resolves current-user satellite app sessions before authorizing manage_workspace_members, then performs the scoped workspace_users profile link and display-name update with an admin client. The Rust port is pending."
+      "note": "The live PUT resolves current-user satellite app sessions before authorizing manage_workspace_members, then performs the scoped workspace_users profile link and display-name update with an admin client. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
     },
     "api:/api/billing/:wsId/invoice:apps/web/src/legacy-api-routes/billing/[wsId]/invoice/route.ts": {
       "status": "accepted-removal",
@@ -708,6 +708,11 @@
           "status": "migrated",
           "targetOwner": "rust-backend",
           "note": "Rust backend route_request handles the legacy MFA mobile challenge approval bare 204 preflight. POST remains legacy-owned until mobile approval completion moves behind the Rust backend."
+        },
+        "POST": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "Preserve number matching, trusted authenticator proof, and fresh required-account MFA policy. An AAL2 proof older than the latest policy or recovery boundary cannot approve a new browser challenge. Rust parity pending."
         }
       }
     },
@@ -2350,22 +2355,22 @@
     "api:/api/v1/meet/plans/:planId:apps/web/src/app/api/v1/meet/plans/[planId]/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class Tuturuuu Meet plan detail, update, and delete API. GET returns plan data, participants, polls, availability, finalized alternatives, viewer context, and a reconciliation revision; creator mutations preserve legacy timeblock adjustment behavior. The Rust port is pending."
+      "note": "First-class Tuturuuu Meet plan detail, update, and delete API. GET returns plan data, participants, polls, availability, finalized alternatives, viewer context, and a reconciliation revision; creator mutations preserve legacy timeblock adjustment behavior. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
     },
     "api:/api/v1/meet/plans:apps/web/src/app/api/v1/meet/plans/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class authenticated Tuturuuu Meet plan creation endpoint with timezone and duration validation. The Rust port is pending."
+      "note": "First-class authenticated Tuturuuu Meet plan creation endpoint with timezone and duration validation. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
     },
     "api:/api/v1/meet/plans/:planId/availability:apps/web/src/app/api/v1/meet/plans/[planId]/availability/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Atomic authenticated-user or validated-guest availability replacement for Tuturuuu Meet. The Rust port is pending."
+      "note": "Atomic authenticated-user or validated-guest availability replacement for Tuturuuu Meet. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
     },
     "api:/api/v1/meet/plans/:planId/finalization:apps/web/src/app/api/v1/meet/plans/[planId]/finalization/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Creator-only atomic finalize and reopen operations for persisted Tuturuuu Meet alternatives. The Rust port is pending."
+      "note": "Creator-only atomic finalize and reopen operations for persisted Tuturuuu Meet alternatives. The Rust port is pending. Preserve required-MFA assurance on invitation tokens and refresh pairs, and recheck fresh policy before accepting an invitation."
     },
     "api:/api/v1/workspaces/:wsId/meetings:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/route.ts": {
       "status": "legacy-next",
@@ -2473,6 +2478,41 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Private-by-default profile activity; viewer and subject membership, explicit workspace consent, no personal aggregates, bounded pagination, and no-store responses. Next-owned pending Rust parity."
+    },
+    "api:/api/v1/auth/cross-app-return:apps/web/src/app/api/v1/auth/cross-app-return/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Required account MFA: preserve fresh server-owned policy, original proof timestamp/expiry, signed user/target-bound transfer and fail-closed refresh. First-class Next handler; Rust parity pending."
+    },
+    "api:/api/v1/auth/cross-app-token/verify:apps/web/src/app/api/v1/auth/cross-app-token/verify/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Required account MFA: preserve fresh server-owned policy, original proof timestamp/expiry, signed user/target-bound transfer and fail-closed refresh. First-class Next handler; Rust parity pending."
+    },
+    "api:/api/v1/auth/cross-app-session/refresh:apps/web/src/app/api/v1/auth/cross-app-session/refresh/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Required account MFA: preserve fresh server-owned policy, original proof timestamp/expiry, signed user/target-bound transfer and fail-closed refresh. First-class Next handler; Rust parity pending."
+    },
+    "api:/api/v1/auth/app-token/exchange:apps/web/src/app/api/v1/auth/app-token/exchange/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Preserve fresh required-MFA policy checks and original signed proof/expiry on exchange and refresh. Rust parity pending."
+    },
+    "api:/api/cli/auth/refresh:apps/web/src/app/api/cli/auth/refresh/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Preserve fresh required-MFA policy checks and original signed proof/expiry on exchange and refresh. Rust parity pending."
+    },
+    "api:/api/auth/generate-app-tokens:apps/web/src/app/api/auth/generate-app-tokens/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Next.js handoff generation carries signed MFA proof bound to target and actor; enforce fresh account policy before minting. Rust parity pending."
+    },
+    "api:/api/cli/auth/start:apps/web/src/app/api/cli/auth/start/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Next.js handoff generation carries signed MFA proof bound to target and actor; enforce fresh account policy before minting. Rust parity pending."
     },
     "api:/api/v1/assistant/live/turns:apps/web/src/app/api/v1/assistant/live/turns/route.ts": {
       "status": "legacy-next",

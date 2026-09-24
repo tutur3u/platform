@@ -79,6 +79,8 @@ class AuthState extends Equatable {
   List<Object?> get props => [
     status,
     user?.id,
+    user?.appMetadata,
+    user?.factors,
     error,
     errorCode,
     isLoading,

@@ -4,7 +4,13 @@ import { randomUUID } from 'node:crypto';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { coordinate, coordinationKey } from '@tuturuuu/utils/coordination';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import {
+  REQUIRED_MFA_POLICY_KEY,
+  readRequiredMfaPolicy,
+} from '@tuturuuu/utils/required-mfa-policy';
 import { InternalAccountAdminError } from './errors';
+import { transitionAccountMfaPolicy } from './policy-transition';
+import { accountRecoveryPolicy } from './recovery-service';
 
 const unavailable = () =>
   new InternalAccountAdminError(
@@ -83,16 +89,16 @@ export async function resetInternalAccountAuthenticators({
     });
     if (factors.error || !factors.data) throw unavailable();
     await assertOwned();
-    const cleared = await sbAdmin.auth.admin.updateUserById(targetUserId, {
-      app_metadata: {
-        tuturuuu_device_authenticators: {
-          version: 1,
-          locked: false,
-          devices: [],
-        },
-      },
-    });
-    if (cleared.error) throw unavailable();
+    const originalPolicy = user.app_metadata?.[REQUIRED_MFA_POLICY_KEY];
+    const appliedPolicy = await transitionAccountMfaPolicy(
+      sbAdmin,
+      targetUserId,
+      originalPolicy,
+      readRequiredMfaPolicy(user.app_metadata).required
+        ? accountRecoveryPolicy(true)[REQUIRED_MFA_POLICY_KEY]
+        : originalPolicy,
+      true
+    );
     for (const factor of factors.data.factors) {
       await assertOwned();
       const deleted = await sbAdmin.auth.admin.mfa.deleteFactor({
@@ -107,6 +113,15 @@ export async function resetInternalAccountAuthenticators({
     });
     if (remaining.error || !remaining.data || remaining.data.factors.length) {
       throw unavailable();
+    }
+    if (readRequiredMfaPolicy(user.app_metadata).required) {
+      await assertOwned();
+      await transitionAccountMfaPolicy(
+        sbAdmin,
+        targetUserId,
+        appliedPolicy,
+        accountRecoveryPolicy(false)[REQUIRED_MFA_POLICY_KEY]
+      );
     }
     console.info('Internal account authenticators reset', {
       actorUserId,

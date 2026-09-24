@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:mobile/data/repositories/internal_account_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-enum InternalAccountEdit { profile, password, access, authenticators }
+enum InternalAccountEdit {
+  profile,
+  password,
+  access,
+  authenticators,
+  mfaPolicy,
+}
 
 class InternalAccountEditor extends StatefulWidget {
   const InternalAccountEditor({
@@ -46,6 +52,11 @@ class _InternalAccountEditorState extends State<InternalAccountEditor> {
     });
     try {
       final updated = switch (widget.action) {
+        InternalAccountEdit.mfaPolicy => await widget.repository.setMfaPolicy(
+          widget.account,
+          required: !widget.account.mfaRequired,
+          confirmationEmail: _confirmation.text,
+        ),
         InternalAccountEdit.profile => await widget.repository.updateProfile(
           widget.account,
           displayName: _name.text,
@@ -80,6 +91,10 @@ class _InternalAccountEditorState extends State<InternalAccountEditor> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final title = switch (widget.action) {
+      InternalAccountEdit.mfaPolicy =>
+        widget.account.mfaRequired
+            ? l10n.adminAccountsOptionalMfa
+            : l10n.adminAccountsRequireMfa,
       InternalAccountEdit.profile => l10n.adminAccountsEditProfile,
       InternalAccountEdit.password => l10n.adminAccountsResetPassword,
       InternalAccountEdit.authenticators => l10n.adminAccountsResetMfa,
@@ -102,6 +117,10 @@ class _InternalAccountEditorState extends State<InternalAccountEditor> {
                 children: [
                   Text(widget.account.email),
                   const SizedBox(height: 20),
+                  if (widget.action == InternalAccountEdit.mfaPolicy) ...[
+                    Text(l10n.adminAccountsMfaPolicyDescription),
+                    const SizedBox(height: 16),
+                  ],
                   if (widget.action == InternalAccountEdit.authenticators) ...[
                     Text(l10n.adminAccountsResetMfaDescription),
                     const SizedBox(height: 16),

@@ -3468,5 +3468,17 @@
     "mailSnoozeDay": "Sau 24 giờ",
     "mailSnoozeWeek": "Sau một tuần",
     "mailSnoozeCustom": "Chọn ngày và giờ",
-    "mailSnoozeFuture": "Vui lòng chọn thời gian trong tương lai."
+    "mailSnoozeFuture": "Vui lòng chọn thời gian trong tương lai.",
+    "requiredMfaEnrollTitle": "Bảo vệ tài khoản của bạn",
+    "requiredMfaEnrollDescription": "Quản trị viên yêu cầu xác minh hai bước. Thêm tài khoản này vào ứng dụng xác thực để tiếp tục.",
+    "requiredMfaSecretLabel": "Nhập khóa thiết lập này vào ứng dụng xác thực. Không chia sẻ khóa này.",
+    "requiredMfaError": "Không thể hoàn tất xác minh. Vui lòng thử lại.",
+    "requiredMfaVerify": "Xác minh và tiếp tục",
+    "requiredMfaStart": "Thiết lập ứng dụng xác thực",
+    "adminAccountsRequireMfa": "Bắt buộc xác thực hai bước",
+    "adminAccountsOptionalMfa": "Không bắt buộc xác thực hai bước",
+    "adminAccountsMfaPolicyDescription": "Bắt buộc xác thực hai bước sẽ yêu cầu xác minh lại. Khi không bắt buộc, các phương thức hiện có vẫn được giữ; hãy đặt lại riêng nếu muốn xóa.",
+    "requiredMfaRecoveryTitle": "Đăng nhập lại để bảo vệ tài khoản",
+    "requiredMfaRecoveryDescription": "Quản trị viên đã đặt lại bảo mật tài khoản. Hãy đăng nhập lại trước khi thiết lập hoặc xác minh ứng dụng xác thực.",
+    "requiredMfaSignInAgain": "Đăng nhập lại"
 }

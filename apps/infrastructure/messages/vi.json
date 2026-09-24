@@ -8464,7 +8464,9 @@
       "enable_access": "Khôi phục truy cập",
       "load_more": "Tải thêm",
       "open_menu": "Mở thao tác tài khoản",
+      "optional_mfa": "Không bắt buộc xác thực hai bước",
       "refresh": "Làm mới tài khoản",
+      "require_mfa": "Bắt buộc xác thực hai bước",
       "reset_mfa": "Đặt lại trình xác thực",
       "reset_password": "Đặt lại mật khẩu",
       "retry": "Thử lại",
@@ -8495,7 +8497,17 @@
       "generate_password": "Tạo mật khẩu",
       "hide_password": "Ẩn mật khẩu",
       "new_password": "Mật khẩu tạm thời mới",
+      "optional_mfa": {
+        "confirm": "Không bắt buộc xác thực hai bước",
+        "description": "Không bắt buộc {email} dùng xác thực hai bước. Các phương thức đã đăng ký vẫn được giữ; dùng Đặt lại phương thức xác thực để xóa.",
+        "title": "Không bắt buộc xác thực hai bước"
+      },
       "password_help": "Sử dụng ít nhất {count} ký tự và chỉ chia sẻ qua kênh bảo mật được phê duyệt.",
+      "require_mfa": {
+        "confirm": "Bắt buộc xác thực hai bước",
+        "description": "Yêu cầu {email} xác minh lại bằng yếu tố thứ hai. Tài khoản chưa có phương thức xác thực phải thiết lập trước khi tiếp tục.",
+        "title": "Bắt buộc xác thực hai bước"
+      },
       "reset_mfa": {
         "confirm": "Đặt lại trình xác thực",
         "description": "Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy của {email}. Người dùng cần đăng ký lại trình xác thực.",

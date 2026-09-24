@@ -1,6 +1,14 @@
+export { generateAssuredCrossAppToken } from './generate-server';
+
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
+import { isRequiredMfaProofAllowed } from '@tuturuuu/utils/required-mfa-app-session';
+import {
+  isMfaSessionProof,
+  type MfaSessionProof,
+} from '@tuturuuu/utils/required-mfa-policy';
+import { readMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   createAppSessionTokenPair,
@@ -21,11 +29,13 @@ import {
 type CrossAppTokenRow = {
   session_data?: {
     email?: string;
+    mfaTransfer?: string;
   } | null;
   user_id?: string | null;
 };
 
 type CrossAppTokenValidation = {
+  mfa?: MfaSessionProof | null;
   appSessionExpiresAt?: string | null;
   appSessionRefreshEarlySeconds?: number | null;
   appSessionRefreshExpiresAt?: string | null;
@@ -94,7 +104,14 @@ export async function validateCrossAppTokenWithClient({
     return null;
   }
 
+  const mfa = readMfaTransfer(
+    firstRow.session_data?.mfaTransfer,
+    userId,
+    targetApp
+  );
+  if (!(await isRequiredMfaProofAllowed(userId, mfa))) return null;
   return {
+    mfa,
     sessionData: firstRow.session_data ?? null,
     userId,
   };
@@ -128,6 +145,7 @@ async function validateCrossAppTokenWithCentralVerifier({
   }
 
   const body = (await response.json().catch(() => null)) as {
+    mfa?: unknown;
     appSessionExpiresAt?: unknown;
     appSessionRefreshEarlySeconds?: unknown;
     appSessionRefreshExpiresAt?: unknown;
@@ -143,6 +161,7 @@ async function validateCrossAppTokenWithCentralVerifier({
   }
 
   return {
+    mfa: isMfaSessionProof(body.mfa) ? body.mfa : null,
     appSessionExpiresAt:
       typeof body.appSessionExpiresAt === 'string'
         ? body.appSessionExpiresAt
@@ -196,6 +215,7 @@ async function refreshAppSessionWithCentralVerifier({
   }
 
   const body = (await response.json().catch(() => null)) as {
+    mfa?: unknown;
     appSessionExpiresAt?: unknown;
     appSessionRefreshEarlySeconds?: unknown;
     appSessionRefreshExpiresAt?: unknown;
@@ -211,6 +231,7 @@ async function refreshAppSessionWithCentralVerifier({
   }
 
   return {
+    mfa: isMfaSessionProof(body.mfa) ? body.mfa : null,
     appSessionExpiresAt:
       typeof body.appSessionExpiresAt === 'string'
         ? body.appSessionExpiresAt
@@ -263,6 +284,7 @@ function createAppSessionResponse(
   const localAppSession = createAppSessionTokenPair(
     {
       email: validation.sessionData?.email ?? null,
+      mfa: validation.mfa ?? undefined,
       originApp: 'web',
       scopes: options.appSessionScopes,
       targetApp: appName,
@@ -330,6 +352,7 @@ async function createCliAppSessionResponse(
   const cliSession = createCliAppSession({
     accessExpiresInSeconds: policy?.cliAccessTtlSeconds,
     email: validation.sessionData?.email ?? null,
+    mfa: validation.mfa ?? undefined,
     refreshExpiresInSeconds: policy?.cliRefreshTtlSeconds,
     userId: validation.userId,
   });

@@ -1,11 +1,7 @@
 'use client';
 
-import {
-  generateCrossAppToken,
-  mapUrlToApp,
-  normalizeClientRedirectPath,
-} from '@tuturuuu/auth/cross-app';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { normalizeClientRedirectPath } from '@tuturuuu/auth/cross-app';
+import { createCrossAppReturnUrlWithInternalApi } from '@tuturuuu/internal-api/auth';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -63,8 +59,6 @@ export default function OnboardingFlow({
 }: OnboardingFlowProps) {
   const t = useTranslations('onboarding');
   const router = useRouter();
-
-  const supabase = createClient();
 
   // State management - determine initial flow type based on context
   // Priority: 1) Internal app users get team flow, 2) Users with existing workspaces get team flow, 3) Use saved progress or default to personal
@@ -463,27 +457,12 @@ export default function OnboardingFlow({
 
       // Handle redirect based on where user came from
       if (returnUrl) {
-        // User came from external app - generate cross-app token and redirect back
-        const targetApp = mapUrlToApp(returnUrl);
-
-        if (targetApp && targetApp !== 'platform') {
-          // Generate cross-app token for the external app
-          const token = await generateCrossAppToken(
-            supabase,
-            targetApp,
-            'platform'
-          );
-
-          if (token) {
-            const redirectUrl = new URL(decodeURIComponent(returnUrl));
-            redirectUrl.searchParams.set('token', token);
-            redirectUrl.searchParams.set('originApp', 'platform');
-            redirectUrl.searchParams.set('targetApp', targetApp);
-
-            // Use window.location for cross-origin redirect
-            window.location.assign(redirectUrl.toString());
-            return;
-          }
+        const handoff = await createCrossAppReturnUrlWithInternalApi({
+          returnUrl,
+        });
+        if (handoff.returnUrl) {
+          window.location.assign(handoff.returnUrl);
+          return;
         }
 
         // Fallback: try to redirect to returnUrl directly (same origin)

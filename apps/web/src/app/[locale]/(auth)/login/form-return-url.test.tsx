@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
     id: string;
   } | null,
   getOtpSettings: vi.fn(),
+  getClaims: vi.fn(),
   getUser: vi.fn(),
   mfaAssuranceLevel: vi.fn(),
   mfaChallenge: vi.fn(),
@@ -118,6 +119,16 @@ vi.mock('@tuturuuu/supabase/next/auth-browser', () => ({
   }),
 }));
 
+vi.mock('@tuturuuu/supabase/next/client', () => ({
+  createClient: () => ({
+    auth: {
+      getClaims: mocks.getClaims,
+      getUser: mocks.getUser,
+      mfa: { listFactors: mocks.mfaListFactors },
+    },
+  }),
+}));
+
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: {
     error: vi.fn(),
@@ -198,6 +209,8 @@ function setWindowLocation(search = '', origin = 'https://tuturuuu.com') {
   });
 }
 
+const queryClients = new Set<QueryClient>();
+
 function renderLoginFormSearch(
   search = '',
   options: {
@@ -211,6 +224,7 @@ function renderLoginFormSearch(
       queries: { retry: false },
     },
   });
+  queryClients.add(queryClient);
 
   mocks.searchParams = new URLSearchParams(search);
   setWindowLocation(search, options.origin);
@@ -242,6 +256,21 @@ function renderLoginForm(
   });
 }
 
+function mockPrimarySignInSession(method: 'password' | 'otp') {
+  mocks.getUser.mockResolvedValue({ data: { user: null }, error: null });
+  const signIn =
+    method === 'password'
+      ? mocks.passwordLoginWithInternalApi
+      : mocks.verifyOtpWithInternalApi;
+  signIn.mockImplementation(async () => {
+    mocks.getUser.mockResolvedValue({
+      data: { user: { email: 'person@example.com', id: 'user-1' } },
+      error: null,
+    });
+    return method === 'password' ? { success: true } : {};
+  });
+}
+
 const platformVerifyTokenReturnUrl =
   'http://tuturuuu.com/verify-token?nextUrl=%2F';
 const localPortlessPlatformVerifyTokenReturnUrl =
@@ -265,6 +294,10 @@ describe('LoginForm returnUrl navigation', () => {
           id: 'user-1',
         },
       },
+    });
+    mocks.getClaims.mockResolvedValue({
+      data: { claims: { sub: 'user-1' } },
+      error: null,
     });
     mocks.mfaAssuranceLevel.mockResolvedValue({
       data: {
@@ -313,19 +346,20 @@ describe('LoginForm returnUrl navigation', () => {
   });
 
   afterEach(() => {
+    for (const queryClient of queryClients) queryClient.clear();
+    queryClients.clear();
     vi.useRealTimers();
     vi.unstubAllEnvs();
   });
 
   it('keeps a single-slash returnUrl inside the web app', async () => {
-    const queryClient = renderLoginForm('/workspace?tab=1');
+    renderLoginForm('/workspace?tab=1');
 
     await waitFor(() => {
       expect(mocks.routerPush).toHaveBeenCalledWith('/workspace?tab=1');
     });
 
     expect(mocks.assign).not.toHaveBeenCalled();
-    queryClient.clear();
   });
 
   it('does not expose authenticated QR handoff on the public login form', async () => {
@@ -335,7 +369,7 @@ describe('LoginForm returnUrl navigation', () => {
       error: null,
     });
 
-    const queryClient = renderLoginForm('/');
+    renderLoginForm('/');
 
     await screen.findByRole('button', {
       name: 'login.continue_with_email',
@@ -344,14 +378,13 @@ describe('LoginForm returnUrl navigation', () => {
     expect(
       screen.queryByRole('button', { name: 'login.qr_title' })
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('renders the public auth controls while Supabase user bootstrap is pending', async () => {
     mocks.currentUserProfile = null;
     mocks.getUser.mockReturnValue(new Promise(() => undefined));
 
-    const queryClient = renderLoginForm('/');
+    renderLoginForm('/');
 
     await screen.findByRole('button', {
       name: 'login.continue_with_email',
@@ -359,14 +392,13 @@ describe('LoginForm returnUrl navigation', () => {
     expect(
       screen.getByPlaceholderText('login.email_username_placeholder')
     ).toBeEnabled();
-    queryClient.clear();
   });
 
   it('fails open to social login when deferred internal app bootstrap stalls', async () => {
     vi.useFakeTimers();
     mocks.currentUserProfile = null;
     mocks.getUser.mockReturnValue(new Promise(() => undefined));
-    const queryClient = renderLoginForm(
+    renderLoginForm(
       'https://contacts.tuturuuu.com/verify-token?nextUrl=%2Fpersonal',
       { deferAuthSurfaceUntilSessionCheck: true }
     );
@@ -374,11 +406,10 @@ describe('LoginForm returnUrl navigation', () => {
     expect(screen.queryByText('login.continue_with_google')).toBeNull();
     await act(() => vi.advanceTimersByTimeAsync(3000));
     expect(screen.getByText('login.continue_with_google')).toBeVisible();
-    queryClient.clear();
   });
 
   it('shows redirecting instead of the public form for authenticated login hard loads', async () => {
-    const queryClient = renderLoginFormSearch();
+    renderLoginFormSearch();
 
     await screen.findByText('account_switcher.redirecting');
 
@@ -388,11 +419,10 @@ describe('LoginForm returnUrl navigation', () => {
         name: 'login.continue_with_email',
       })
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('hard redirects authenticated bootstrap for platform verify-token returnUrls', async () => {
-    const queryClient = renderLoginForm(platformVerifyTokenReturnUrl);
+    renderLoginForm(platformVerifyTokenReturnUrl);
 
     await screen.findByText('account_switcher.redirecting');
 
@@ -408,11 +438,10 @@ describe('LoginForm returnUrl navigation', () => {
         name: 'login.continue_with_email',
       })
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('falls back for platform verify-token nextUrl values with control characters', async () => {
-    const queryClient = renderLoginForm(
+    renderLoginForm(
       'http://tuturuuu.com/verify-token?nextUrl=%2F%09%2Fevil.test%2Fphish'
     );
 
@@ -423,13 +452,10 @@ describe('LoginForm returnUrl navigation', () => {
     });
     expect(mocks.replace).not.toHaveBeenCalledWith('//evil.test/phish');
     expect(mocks.assign).not.toHaveBeenCalled();
-    queryClient.clear();
   });
 
   it('hard redirects authenticated bootstrap for local Portless platform verify-token returnUrls', async () => {
-    const queryClient = renderLoginForm(
-      localPortlessPlatformVerifyTokenReturnUrl
-    );
+    renderLoginForm(localPortlessPlatformVerifyTokenReturnUrl);
 
     await screen.findByText('account_switcher.redirecting');
 
@@ -443,7 +469,6 @@ describe('LoginForm returnUrl navigation', () => {
     expect(
       screen.queryByText('login.invalid_return_url_title')
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('does not use a wildcard browser origin for social OAuth callbacks', async () => {
@@ -456,7 +481,7 @@ describe('LoginForm returnUrl navigation', () => {
     mocks.currentUserProfile = null;
     mocks.getUser.mockReturnValue(new Promise(() => undefined));
 
-    const queryClient = renderLoginForm('/', {
+    renderLoginForm('/', {
       origin: 'http://0.0.0.0:7803',
     });
 
@@ -476,7 +501,6 @@ describe('LoginForm returnUrl navigation', () => {
         })
       );
     });
-    queryClient.clear();
   });
 
   it('uses the managed platform callback while preserving a managed subdomain returnUrl for social OAuth', async () => {
@@ -484,12 +508,9 @@ describe('LoginForm returnUrl navigation', () => {
     mocks.currentUserProfile = null;
     mocks.getUser.mockReturnValue(new Promise(() => undefined));
 
-    const queryClient = renderLoginFormSearch(
-      '?nextUrl=%2Fworkspace%2Fpersonal%2Fplans',
-      {
-        origin: 'https://vc.tuturuuu.com',
-      }
-    );
+    renderLoginFormSearch('?nextUrl=%2Fworkspace%2Fpersonal%2Fplans', {
+      origin: 'https://vc.tuturuuu.com',
+    });
 
     fireEvent.click(
       await screen.findByRole('button', {
@@ -508,21 +529,19 @@ describe('LoginForm returnUrl navigation', () => {
         })
       );
     });
-    queryClient.clear();
   });
 
   it('offers Microsoft OAuth on the login form', async () => {
     mocks.currentUserProfile = null;
     mocks.getUser.mockReturnValue(new Promise(() => undefined));
 
-    const queryClient = renderLoginFormSearch('');
+    renderLoginFormSearch('');
 
     expect(
       await screen.findByRole('button', {
         name: /login\.continue_with_microsoft/u,
       })
     ).toBeInTheDocument();
-    queryClient.clear();
   });
 
   // `?provider=azure` is how another app hands a Microsoft sign-in over to us,
@@ -531,7 +550,7 @@ describe('LoginForm returnUrl navigation', () => {
     mocks.currentUserProfile = null;
     mocks.getUser.mockResolvedValue({ data: { user: null } });
 
-    const queryClient = renderLoginFormSearch('?provider=azure');
+    renderLoginFormSearch('?provider=azure');
 
     await waitFor(() => {
       expect(mocks.signInWithOAuth).toHaveBeenCalledWith(
@@ -541,17 +560,13 @@ describe('LoginForm returnUrl navigation', () => {
         })
       );
     });
-    queryClient.clear();
   });
 
   it('navigates home after password login without a returnUrl', async () => {
     mocks.currentUserProfile = null;
-    mocks.getUser.mockResolvedValue({
-      data: { user: null },
-      error: null,
-    });
+    mockPrimarySignInSession('password');
 
-    const queryClient = renderLoginFormSearch();
+    renderLoginFormSearch();
 
     fireEvent.click(
       await screen.findByRole('button', {
@@ -587,17 +602,13 @@ describe('LoginForm returnUrl navigation', () => {
         name: 'login.continue_with_email',
       })
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('hard redirects password sign-in for platform verify-token returnUrls', async () => {
     mocks.currentUserProfile = null;
-    mocks.getUser.mockResolvedValue({
-      data: { user: null },
-      error: null,
-    });
+    mockPrimarySignInSession('password');
 
-    const queryClient = renderLoginForm(platformVerifyTokenReturnUrl);
+    renderLoginForm(platformVerifyTokenReturnUrl);
 
     fireEvent.click(
       await screen.findByRole('button', {
@@ -634,17 +645,13 @@ describe('LoginForm returnUrl navigation', () => {
         name: 'login.continue_with_email',
       })
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('shows redirecting after OTP login succeeds without a returnUrl', async () => {
     mocks.currentUserProfile = null;
-    mocks.getUser.mockResolvedValue({
-      data: { user: null },
-      error: null,
-    });
+    mockPrimarySignInSession('otp');
 
-    const queryClient = renderLoginFormSearch();
+    renderLoginFormSearch();
 
     const sendOtpButton = await screen.findByRole('button', {
       name: 'login.continue_with_email',
@@ -681,7 +688,6 @@ describe('LoginForm returnUrl navigation', () => {
         name: 'login.continue_with_email',
       })
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('shows redirecting after TOTP MFA succeeds without a returnUrl', async () => {
@@ -692,7 +698,7 @@ describe('LoginForm returnUrl navigation', () => {
       },
     });
 
-    const queryClient = renderLoginFormSearch();
+    renderLoginFormSearch();
 
     await screen.findByText('login.two_factor_authentication');
     fireEvent.change(await screen.findByLabelText('otp-input'), {
@@ -716,7 +722,6 @@ describe('LoginForm returnUrl navigation', () => {
         name: 'login.continue_with_email',
       })
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('hard redirects after TOTP MFA succeeds for platform verify-token returnUrls', async () => {
@@ -727,7 +732,7 @@ describe('LoginForm returnUrl navigation', () => {
       },
     });
 
-    const queryClient = renderLoginForm(platformVerifyTokenReturnUrl);
+    renderLoginForm(platformVerifyTokenReturnUrl);
 
     await screen.findByText('login.two_factor_authentication');
     fireEvent.change(await screen.findByLabelText('otp-input'), {
@@ -756,7 +761,6 @@ describe('LoginForm returnUrl navigation', () => {
         name: 'login.continue_with_email',
       })
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('shows redirecting after mobile MFA approval succeeds without a returnUrl', async () => {
@@ -771,7 +775,7 @@ describe('LoginForm returnUrl navigation', () => {
       status: 'approved',
     });
 
-    const queryClient = renderLoginFormSearch();
+    renderLoginFormSearch();
 
     fireEvent.click(
       await screen.findByRole('button', {
@@ -796,7 +800,6 @@ describe('LoginForm returnUrl navigation', () => {
         name: 'login.continue_with_email',
       })
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('hard redirects after mobile MFA approval for platform verify-token returnUrls', async () => {
@@ -811,7 +814,7 @@ describe('LoginForm returnUrl navigation', () => {
       status: 'approved',
     });
 
-    const queryClient = renderLoginForm(platformVerifyTokenReturnUrl);
+    renderLoginForm(platformVerifyTokenReturnUrl);
 
     fireEvent.click(
       await screen.findByRole('button', {
@@ -841,11 +844,10 @@ describe('LoginForm returnUrl navigation', () => {
         name: 'login.continue_with_email',
       })
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('rejects a protocol-relative returnUrl instead of assigning external navigation', async () => {
-    const queryClient = renderLoginForm('//evil.test/phish');
+    renderLoginForm('//evil.test/phish');
 
     await screen.findByText('login.invalid_return_url_title');
 
@@ -853,11 +855,10 @@ describe('LoginForm returnUrl navigation', () => {
     expect(mocks.routerPush).not.toHaveBeenCalledWith(
       expect.stringContaining('evil.test')
     );
-    queryClient.clear();
   });
 
   it('rejects a backslash-prefixed returnUrl instead of normalizing it as local', async () => {
-    const queryClient = renderLoginForm('/\\evil.test/phish');
+    renderLoginForm('/\\evil.test/phish');
 
     await screen.findByText('login.invalid_return_url_title');
 
@@ -865,7 +866,6 @@ describe('LoginForm returnUrl navigation', () => {
     expect(mocks.routerPush).not.toHaveBeenCalledWith(
       expect.stringContaining('evil.test')
     );
-    queryClient.clear();
   });
 
   it('creates a tokenized Chat verifier return URL for authenticated Chat returns', async () => {
@@ -878,7 +878,7 @@ describe('LoginForm returnUrl navigation', () => {
       targetApp: 'chat',
     });
 
-    const queryClient = renderLoginForm(chatReturnUrl);
+    renderLoginForm(chatReturnUrl);
 
     await waitFor(() => {
       expect(mocks.createCrossAppReturnUrlWithInternalApi).toHaveBeenCalledWith(
@@ -893,7 +893,6 @@ describe('LoginForm returnUrl navigation', () => {
     ).not.toHaveBeenCalled();
     expect(mocks.refreshSession).toHaveBeenCalled();
     expect(mocks.assign).toHaveBeenCalledWith(tokenizedChatReturnUrl);
-    queryClient.clear();
   });
 
   it('redirects authenticated managed wildcard returns without account confirmation', async () => {
@@ -902,7 +901,7 @@ describe('LoginForm returnUrl navigation', () => {
     const directManagedReturnUrl =
       'https://vc.tuturuuu.com/workspace/personal/plans';
 
-    const queryClient = renderLoginForm(managedReturnUrl);
+    renderLoginForm(managedReturnUrl);
 
     await waitFor(() => {
       expect(mocks.assign).toHaveBeenCalledWith(directManagedReturnUrl);
@@ -916,11 +915,10 @@ describe('LoginForm returnUrl navigation', () => {
     expect(
       screen.queryByText('login.confirm_internal_app_account_title')
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('treats unregistered Tuturuuu subdomains as verified managed return URLs', async () => {
-    const queryClient = renderLoginForm('https://vercel.tuturuuu.com');
+    renderLoginForm('https://vercel.tuturuuu.com');
 
     await waitFor(() => {
       expect(mocks.assign).toHaveBeenCalledWith('https://vercel.tuturuuu.com/');
@@ -934,7 +932,6 @@ describe('LoginForm returnUrl navigation', () => {
     expect(
       screen.queryByText('login.invalid_return_url_title')
     ).not.toBeInTheDocument();
-    queryClient.clear();
   });
 
   it('requires confirmation for configured external app returnUrls', async () => {
@@ -952,7 +949,7 @@ describe('LoginForm returnUrl navigation', () => {
         targetApp: 'partner',
       });
 
-      const queryClient = renderLoginForm('https://partner.example/launch');
+      renderLoginForm('https://partner.example/launch');
 
       await screen.findByText('login.confirm_internal_app_account_title');
 
@@ -968,7 +965,6 @@ describe('LoginForm returnUrl navigation', () => {
       expect(
         screen.queryByText('account_switcher.redirecting')
       ).not.toBeInTheDocument();
-      queryClient.clear();
     } finally {
       if (originalPublicExternalDomains === undefined) {
         delete process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS;

@@ -1,5 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { AI_TEMP_AUTH_HEADER } from './ai-temp-auth-constants';
+import { isRequiredMfaProofAllowed } from './required-mfa-app-session';
 import { getUpstashRestRedisClient } from './upstash-rest';
 
 export { AI_TEMP_AUTH_HEADER } from './ai-temp-auth-constants';
@@ -96,6 +97,10 @@ export async function mintAiTempAuthToken({
   token: string;
   expiresAt: number;
 } | null> {
+  // These cached optimization tokens do not carry a second-factor proof.
+  // Required accounts use the normal verified session authentication path.
+  if (!(await isRequiredMfaProofAllowed(user.id, null).catch(() => false)))
+    return null;
   const redis = await getUpstashRestRedisClient().catch(() => null);
   if (!redis) return null;
 
@@ -154,6 +159,12 @@ export async function validateAiTempAuthRequest(
       await redis.get<string>(userVersionKey(payload.user.id)).catch(() => null)
     )?.toString() ?? '0';
   if (currentVersion !== payload.authVersion) {
+    return { status: 'revoked' };
+  }
+
+  if (
+    !(await isRequiredMfaProofAllowed(payload.user.id, null).catch(() => false))
+  ) {
     return { status: 'revoked' };
   }
 

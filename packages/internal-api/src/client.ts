@@ -1,3 +1,4 @@
+import { parseInternalApiError } from './internal-api-error';
 import { mergeHeaders } from './request-headers';
 
 export type InternalApiQueryValue =
@@ -77,16 +78,7 @@ const KNOWN_NON_PLATFORM_LOCALHOST_PORTS = new Set([
   '7833',
 ]);
 
-export class InternalApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-    public readonly code?: string
-  ) {
-    super(message);
-    this.name = 'InternalApiError';
-  }
-}
+export { InternalApiError } from './internal-api-error';
 
 function tryParseAbsoluteUrl(value: string): URL | null {
   try {
@@ -656,36 +648,7 @@ export function createInternalApiClient(
     async json<T>(path: string, init: InternalApiFetchInit = {}): Promise<T> {
       const response = await doFetch(path, init);
 
-      if (!response.ok) {
-        const fallbackMessage = `Internal API request failed: ${response.status}`;
-        let code: string | undefined;
-        let message: string;
-
-        try {
-          const data = (await response.json()) as {
-            code?: string;
-            error?: string;
-            message?: string;
-          };
-          code = data.code;
-          const challenge = response.headers?.get?.('x-abuse-challenge');
-
-          if (data.code === 'ABUSE_CHALLENGE_REQUIRED' || challenge) {
-            message = [
-              data.message ||
-                'Additional verification is required before retrying.',
-              'This API request needs a browser verification challenge that the CLI cannot complete automatically.',
-              'Open Tuturuuu in a browser to complete verification, then retry the CLI command.',
-            ].join(' ');
-          } else {
-            message = data.message || data.error || fallbackMessage;
-          }
-        } catch {
-          message = fallbackMessage;
-        }
-
-        throw new InternalApiError(message, response.status, code);
-      }
+      if (!response.ok) throw await parseInternalApiError(response);
 
       if (response.status === 204) {
         return undefined as T;

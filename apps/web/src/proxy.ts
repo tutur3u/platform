@@ -30,6 +30,7 @@ import {
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { guardBrowserApiSession } from '@tuturuuu/utils/required-mfa-api-session';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import {
   isPersonalWorkspace,
@@ -571,7 +572,6 @@ async function resolveRateLimitDebugIdentity(req: NextRequest): Promise<{
     if (!user) {
       return null;
     }
-
     const userEmail = user.email ?? null;
     return {
       isStaff: isExactTuturuuuDotComEmail(userEmail),
@@ -992,7 +992,6 @@ async function guardGuestWorkspaceRoute({
     if (!user) {
       return null;
     }
-
     const resolvedWorkspaceId = await normalizeWorkspaceId(
       workspaceSlug,
       supabase
@@ -1001,7 +1000,6 @@ async function guardGuestWorkspaceRoute({
     if (await isPersonalWorkspace(resolvedWorkspaceId)) {
       return null;
     }
-
     const membership = await verifyWorkspaceMembershipType({
       wsId: resolvedWorkspaceId,
       userId: user.id,
@@ -1012,7 +1010,6 @@ async function guardGuestWorkspaceRoute({
     if (!membership.ok || membership.membershipType !== 'GUEST') {
       return null;
     }
-
     const requiredPermissions = getWorkspaceRoutePermissionRequirements(
       pathSegments.slice(workspaceIndex + 1)
     );
@@ -1020,7 +1017,6 @@ async function guardGuestWorkspaceRoute({
     if (!requiredPermissions) {
       return buildGuestRouteDeniedResponse(req, authRes);
     }
-
     const sbAdmin = await createAdminClient({ noCookie: true });
     const { data, error } = await sbAdmin
       .from('workspace_default_permissions')
@@ -1032,7 +1028,6 @@ async function guardGuestWorkspaceRoute({
     if (error) {
       return buildGuestRouteDeniedResponse(req, authRes);
     }
-
     const grantedPermissions = (data ?? []).map((row) => row.permission);
 
     if (
@@ -1073,20 +1068,22 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       ? [EMAIL_RATE_LIMIT_OVERRIDE_ROUTE_POLICY]
       : undefined;
 
-    const guardResponse = await guardApiProxyRequest(req, {
-      additionalRoutePolicies,
-      prefixBase: 'proxy:web:api',
-      trustedBypassRules: [
-        {
-          matches: isTrustedCliTuturuuuRateLimitBypass,
-        },
-      ],
-    });
-    if (guardResponse) {
-      return handleProxyGuardResponse(req, guardResponse);
-    }
+    return guardBrowserApiSession(req, async () => {
+      const guardResponse = await guardApiProxyRequest(req, {
+        additionalRoutePolicies,
+        prefixBase: 'proxy:web:api',
+        trustedBypassRules: [
+          {
+            matches: isTrustedCliTuturuuuRateLimitBypass,
+          },
+        ],
+      });
+      if (guardResponse) {
+        return handleProxyGuardResponse(req, guardResponse);
+      }
 
-    return NextResponse.next();
+      return null;
+    });
   }
 
   const cacheableAuthShellResponse = handleCacheableAuthShellRoute(req);

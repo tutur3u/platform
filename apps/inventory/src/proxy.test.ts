@@ -44,7 +44,10 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   ) => mocks.hasAuthenticatedBearerToken(...args),
 }));
 
-vi.mock('@tuturuuu/auth/proxy', () => ({
+vi.mock('@tuturuuu/auth/proxy', async () => ({
+  ...(await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
+    '@tuturuuu/auth/proxy'
+  )),
   consumeVerifyTokenRequest: (
     ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
   ) => mocks.consumeVerifyTokenRequest(...args),

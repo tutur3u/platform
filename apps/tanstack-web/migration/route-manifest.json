@@ -559,11 +559,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/auth/generate-app-tokens:apps/web/src/legacy-api-routes/auth/generate-app-tokens/route.ts",
+      "id": "api:/api/auth/generate-app-tokens:apps/web/src/app/api/auth/generate-app-tokens/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/auth/generate-app-tokens",
-      "sourceFile": "apps/web/src/legacy-api-routes/auth/generate-app-tokens/route.ts",
+      "sourceFile": "apps/web/src/app/api/auth/generate-app-tokens/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -667,20 +667,20 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/cli/auth/refresh:apps/web/src/legacy-api-routes/cli/auth/refresh/route.ts",
+      "id": "api:/api/cli/auth/refresh:apps/web/src/app/api/cli/auth/refresh/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/cli/auth/refresh",
-      "sourceFile": "apps/web/src/legacy-api-routes/cli/auth/refresh/route.ts",
+      "sourceFile": "apps/web/src/app/api/cli/auth/refresh/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/cli/auth/start:apps/web/src/legacy-api-routes/cli/auth/start/route.ts",
+      "id": "api:/api/cli/auth/start:apps/web/src/app/api/cli/auth/start/route.ts",
       "kind": "api",
       "methods": ["GET"],
       "routePath": "/api/cli/auth/start",
-      "sourceFile": "apps/web/src/legacy-api-routes/cli/auth/start/route.ts",
+      "sourceFile": "apps/web/src/app/api/cli/auth/start/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -1021,11 +1021,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/auth/app-token/exchange:apps/web/src/legacy-api-routes/v1/auth/app-token/exchange/route.ts",
+      "id": "api:/api/v1/auth/app-token/exchange:apps/web/src/app/api/v1/auth/app-token/exchange/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/auth/app-token/exchange",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/auth/app-token/exchange/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/auth/app-token/exchange/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -1048,29 +1048,29 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/auth/cross-app-return:apps/web/src/legacy-api-routes/v1/auth/cross-app-return/route.ts",
+      "id": "api:/api/v1/auth/cross-app-return:apps/web/src/app/api/v1/auth/cross-app-return/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/auth/cross-app-return",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/auth/cross-app-return/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/auth/cross-app-return/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/auth/cross-app-session/refresh:apps/web/src/legacy-api-routes/v1/auth/cross-app-session/refresh/route.ts",
+      "id": "api:/api/v1/auth/cross-app-session/refresh:apps/web/src/app/api/v1/auth/cross-app-session/refresh/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/auth/cross-app-session/refresh",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/auth/cross-app-session/refresh/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/auth/cross-app-session/refresh/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/auth/cross-app-token/verify:apps/web/src/legacy-api-routes/v1/auth/cross-app-token/verify/route.ts",
+      "id": "api:/api/v1/auth/cross-app-token/verify:apps/web/src/app/api/v1/auth/cross-app-token/verify/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/auth/cross-app-token/verify",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/auth/cross-app-token/verify/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/auth/cross-app-token/verify/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },

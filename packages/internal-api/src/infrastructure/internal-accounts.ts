@@ -5,6 +5,8 @@ export type InternalAccountAction =
   | 'enable_access'
   | 'reset_password'
   | 'reset_mfa'
+  | 'require_mfa'
+  | 'optional_mfa'
   | 'update_profile';
 
 export type InternalAccountSortBy =
@@ -24,6 +26,8 @@ export interface InternalAccount {
   id: string;
   isDisabled: boolean;
   isSelf: boolean;
+  mfaRequired?: boolean;
+  mfaPolicyAvailable?: boolean;
   lastSignInAt: string | null;
   personalWorkspaceId: string | null;
   storageLimitBytes: number | null;
@@ -49,7 +53,12 @@ export interface ListInternalAccountsResponse {
 
 export type UpdateInternalAccountPayload =
   | {
-      action: 'disable_access' | 'enable_access' | 'reset_mfa';
+      action:
+        | 'disable_access'
+        | 'enable_access'
+        | 'reset_mfa'
+        | 'require_mfa'
+        | 'optional_mfa';
       confirmationEmail: string;
     }
   | {

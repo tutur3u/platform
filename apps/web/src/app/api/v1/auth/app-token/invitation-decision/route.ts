@@ -1,11 +1,10 @@
 import {
   type AppCoordinationTokenClaims,
-  createAppCoordinationToken,
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
-import type { AppCoordinationSessionPolicy } from '@tuturuuu/auth/app-session-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { isRequiredMfaAppSessionAllowed } from '@tuturuuu/utils/required-mfa-app-session';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -17,6 +16,10 @@ import {
   invitationWorkspaceScope,
 } from '@/lib/app-coordination/invitation-action-token';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
+import {
+  createExchangeTokenBody,
+  type ExchangeUserProfile,
+} from '@/lib/auth/external-app-exchange-response';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import {
   acceptAppTokenInvitation,
@@ -25,7 +28,6 @@ import {
 } from '@/lib/workspace-invitations/app-token-decision';
 import { getWorkspaceInviteStatus } from '@/lib/workspace-invitations/status';
 
-const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
 const INVITATION_ACTION_REPLAY_TABLE = 'app_token_invitation_action_replays';
 const WORKSPACE_SESSION_SCOPE = 'workspace:session';
 
@@ -102,18 +104,6 @@ type UserProfileRow = {
   display_name?: string | null;
   id?: string | null;
   user_private_details?: UserPrivateDetailsRow | UserPrivateDetailsRow[] | null;
-};
-
-type ExchangeUserProfile = {
-  avatarUrl: string | null;
-  avatar_url: string | null;
-  displayName: string | null;
-  display_name: string | null;
-  email: string | null;
-  fullName: string | null;
-  full_name: string | null;
-  id: string;
-  name: string | null;
 };
 
 function cleanString(value: unknown) {
@@ -287,58 +277,6 @@ async function getExchangeUserProfile({
   };
 }
 
-function createExchangeTokenBody({
-  email,
-  normalizedWorkspaceId,
-  policy,
-  scopes,
-  targetApp,
-  userProfile,
-  userId,
-}: {
-  email: string | null;
-  normalizedWorkspaceId: string;
-  policy: AppCoordinationSessionPolicy;
-  scopes: string[];
-  targetApp: string;
-  userProfile: ExchangeUserProfile;
-  userId: string;
-}) {
-  const accessToken = createAppCoordinationToken({
-    email,
-    expiresInSeconds: policy.externalAppBearerTtlSeconds,
-    originApp: 'web',
-    scopes,
-    targetApp,
-    userId,
-  });
-  const refreshToken = createAppCoordinationToken({
-    email,
-    expiresInSeconds: policy.internalAppRefreshTtlSeconds,
-    originApp: 'web',
-    scopes: [APP_TOKEN_REFRESH_SCOPE],
-    targetApp,
-    userId,
-  });
-
-  return {
-    accessToken: accessToken.token,
-    app: {
-      name: accessToken.claims.target_app,
-    },
-    expiresAt: accessToken.expiresAt,
-    expiresIn: accessToken.claims.exp - accessToken.claims.iat,
-    refreshEarlySeconds: policy.internalAppRefreshEarlySeconds,
-    refreshExpiresAt: refreshToken.expiresAt,
-    refreshExpiresIn: refreshToken.claims.exp - refreshToken.claims.iat,
-    refreshToken: refreshToken.token,
-    scopes,
-    tokenType: 'Bearer',
-    user: userProfile,
-    workspaceId: normalizedWorkspaceId,
-  };
-}
-
 function verifyInvitationActionToken({
   appId,
   invitationActionToken,
@@ -493,6 +431,7 @@ async function createAcceptedInvitationSessionResponse({
 
   return NextResponse.json(
     createExchangeTokenBody({
+      mfa: claims.mfa ?? null,
       email: userProfile.email ?? authIdentity.email,
       normalizedWorkspaceId: workspaceId,
       policy,
@@ -552,6 +491,12 @@ async function invitationDecision(request: NextRequest) {
       error: 'Invalid or expired invitation action token',
       status: 401,
     });
+  }
+  if (!(await isRequiredMfaAppSessionAllowed(claims))) {
+    return NextResponse.json(
+      { code: 'MFA_REQUIRED', error: 'MFA verification required' },
+      { status: 403 }
+    );
   }
 
   let admin: AdminDb;
