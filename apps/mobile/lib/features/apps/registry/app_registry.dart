@@ -17,7 +17,6 @@ import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/inventory/view/inventory_page.dart';
 import 'package:mobile/features/mail/mail_module.dart';
 import 'package:mobile/features/meet/view/meet_portal_page.dart';
-import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/tasks/view/task_list_page.dart';
@@ -46,7 +45,6 @@ class AppRegistry {
     'education',
     'crm',
     'inventory',
-    'notifications',
     'timer',
   };
 
@@ -161,15 +159,6 @@ class AppRegistry {
       miniAppNavItems: _inventoryMiniNav,
       isPinned: true,
       isVisible: _showInventoryModule,
-    ),
-    AppModule(
-      id: 'notifications',
-      route: Routes.notifications,
-      icon: Icons.notifications_none_rounded,
-      labelBuilder: _labelNotifications,
-      pageBuilder: _pageNotifications,
-      miniAppNavItems: _notificationsMiniNav,
-      isVisible: _showNotificationsModule,
     ),
     AppModule(
       id: 'timer',
@@ -421,21 +410,6 @@ class AppRegistry {
     ),
   ];
 
-  static const List<MiniAppNavItem> _notificationsMiniNav = [
-    MiniAppNavItem(
-      id: 'notifications_inbox',
-      route: Routes.notifications,
-      icon: Icons.inbox_outlined,
-      labelBuilder: _labelNotificationsInbox,
-    ),
-    MiniAppNavItem(
-      id: 'notifications_archive',
-      route: Routes.notificationsArchive,
-      icon: Icons.archive_outlined,
-      labelBuilder: _labelNotificationsArchive,
-    ),
-  ];
-
   static bool _showTimerRequestsMiniNav(BuildContext context) {
     final isPersonalWorkspace = context.select<WorkspaceCubit, bool>(
       (cubit) => cubit.state.currentWorkspace?.personal ?? false,
@@ -507,9 +481,6 @@ class AppRegistry {
     return accessState.status == HabitsAccessStatus.loaded &&
         accessState.enabled;
   }
-
-  static bool _showNotificationsModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'notifications');
 
   static bool _showTimerModule(BuildContext context) =>
       _isExperimentalModuleAvailable(context, 'timer');
@@ -636,12 +607,6 @@ class AppRegistry {
       l10n.financeManageLabel;
   static String _labelWallets(AppLocalizations l10n) => l10n.financeWallets;
   static String _labelTimer(AppLocalizations l10n) => l10n.navTimer;
-  static String _labelNotifications(AppLocalizations l10n) =>
-      l10n.notificationsTitle;
-  static String _labelNotificationsInbox(AppLocalizations l10n) =>
-      l10n.notificationsInbox;
-  static String _labelNotificationsArchive(AppLocalizations l10n) =>
-      l10n.notificationsArchive;
   static String _labelTimerHistory(AppLocalizations l10n) => l10n.timerHistory;
   static String _labelTimerStats(AppLocalizations l10n) => l10n.timerStatsTitle;
   static String _timerRequestsTitle(AppLocalizations l10n) =>
@@ -659,8 +624,6 @@ class AppRegistry {
   static Widget _pageMeet(BuildContext context) => const MeetPortalPage();
   static Widget _pageFinance(BuildContext context) => const FinancePage();
   static Widget _pageInventory(BuildContext context) => const InventoryPage();
-  static Widget _pageNotifications(BuildContext context) =>
-      const NotificationsPage();
   static Widget _pageTimer(BuildContext context) => const TimeTrackerPage();
   static Widget _pageSettings(BuildContext context) => const SettingsPage();
 

@@ -135,7 +135,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   BlocBuilder<NotificationsCubit, NotificationsState>(
                     bloc: _cubit,
                     builder: (context, state) {
-                      final showArchiveAll = state.unreadCount > 0;
                       return ShellChromeActions(
                         ownerId: 'notifications-root',
                         locations: const {
@@ -143,6 +142,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
                           Routes.notificationsArchive,
                         },
                         actions: [
+                          ShellActionSpec(
+                            id: 'notifications-archive-all',
+                            icon: Icons.archive_outlined,
+                            callbackToken:
+                                'notifications-archive-all:'
+                                '${state.unreadCount}:'
+                                '${state.isArchivingAll}',
+                            tooltip: context.l10n.notificationsArchiveAll,
+                            isLoading: state.isArchivingAll,
+                            enabled:
+                                _selectedTab == NotificationsTab.inbox &&
+                                state.unreadCount > 0 &&
+                                !state.isArchivingAll,
+                            onPressed: () => unawaited(_archiveAll(context)),
+                          ),
                           for (final tab in NotificationsTab.values)
                             ShellActionSpec(
                               id: 'notifications-tab-${tab.name}',
@@ -157,22 +171,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                               callbackToken: _selectedTab,
                               onPressed: () =>
                                   setState(() => _selectedTab = tab),
-                            ),
-                          if (showArchiveAll &&
-                              _selectedTab == NotificationsTab.inbox)
-                            ShellActionSpec(
-                              id: 'notifications-archive-all',
-                              icon: Icons.archive_outlined,
-                              callbackToken:
-                                  'notifications-archive-all:'
-                                  '${state.unreadCount}:'
-                                  '${state.isArchivingAll}',
-                              tooltip: context.l10n.notificationsArchiveAll,
-                              isLoading: state.isArchivingAll,
-                              enabled: !state.isArchivingAll,
-                              onPressed: () {
-                                unawaited(_archiveAll(context));
-                              },
                             ),
                         ],
                       );
