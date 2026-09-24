@@ -10,15 +10,19 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/responsive/sliver_responsive_cards.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/data/models/meet/meet_meeting.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
+import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
-import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/mail/data/mail_access.dart';
+import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_suggestion.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
@@ -33,6 +37,7 @@ import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'dashboard_summary_cards.dart';
+part 'dashboard_communication_cards.dart';
 
 part 'dashboard_sections.dart';
 
@@ -196,6 +201,8 @@ class _DashboardView extends StatelessWidget {
                 builder: (context, calendarState) {
                   final focusTasks = _focusTasks(taskState);
                   final upcomingEvents = _upcomingEvents(calendarState.events);
+                  final user = context.read<AuthCubit>().state.user;
+                  final visibleModules = AppRegistry.modules(context);
                   final showInitialLoading =
                       !taskState.hasLoadedOnce &&
                       taskState.status == TaskListStatus.loading &&
@@ -252,11 +259,25 @@ class _DashboardView extends StatelessWidget {
                                         nextEvents: upcomingEvents.length,
                                       ),
                                     ),
-                                    StaggeredEntrance(
-                                      replayKey: replayToken,
-                                      delay: const Duration(milliseconds: 140),
-                                      child: const _DashboardQuickLaunchCard(),
-                                    ),
+                                    if (visibleModules.any(
+                                          (module) => module.id == 'mail',
+                                        ) &&
+                                        canDiscoverMail(user?.email))
+                                      _DashboardMailCard(
+                                        key: ValueKey(
+                                          'mail:${user?.id}:${workspace.id}',
+                                        ),
+                                        workspaceId: workspace.id,
+                                      ),
+                                    if (visibleModules.any(
+                                      (module) => module.id == 'meet',
+                                    ))
+                                      _DashboardMeetCard(
+                                        key: ValueKey(
+                                          'meet:${user?.id}:${workspace.id}',
+                                        ),
+                                        workspaceId: workspace.id,
+                                      ),
                                     StaggeredEntrance(
                                       replayKey: replayToken,
                                       delay: const Duration(milliseconds: 210),

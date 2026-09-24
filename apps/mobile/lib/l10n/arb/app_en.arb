@@ -684,6 +684,8 @@
     "dashboardQuickLaunch": "Quick launch",
     "dashboardAssignedToMe": "My tasks",
     "dashboardUpcomingEvents": "Upcoming events",
+    "dashboardUpcomingMeetings": "Upcoming meetings",
+    "dashboardNoUpcomingMeetings": "No meetings coming up",
     "dashboardOpenTasks": "Open",
     "dashboardOpenCalendar": "Open",
     "dashboardNoAssignedTasks": "No active tasks assigned to you.",

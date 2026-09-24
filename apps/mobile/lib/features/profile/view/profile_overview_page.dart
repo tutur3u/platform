@@ -13,7 +13,6 @@ import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
-import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -41,6 +40,7 @@ class ProfileOverviewPage extends StatelessWidget {
               actions: [
                 ShellActionSpec(
                   id: 'profile-settings',
+                  inDock: true,
                   icon: Icons.settings_outlined,
                   tooltip: l10n.navSettings,
                   onPressed: () => context.go(Routes.settings),
@@ -111,18 +111,6 @@ class ProfileOverviewPage extends StatelessWidget {
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 24),
-                    Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.workspaces_outline),
-                        title: Text(
-                          displayWorkspaceNameOrFallback(context, workspace),
-                        ),
-                        subtitle: Text(l10n.workspaceSelectTitle),
-                        trailing: const Icon(Icons.swap_horiz_rounded),
-                        onTap: () => showWorkspacePickerSheet(context),
-                      ),
                     ),
                     const SizedBox(height: 24),
                     ProfileActivitySection(replayToken: replayToken),

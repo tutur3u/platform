@@ -8,6 +8,7 @@ void main() {
   Future<void> mount(
     WidgetTester tester, {
     Size size = const Size(390, 844),
+    ValueChanged<bool>? onVisibilityChanged,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -19,6 +20,7 @@ void main() {
           body: FloatingShellDock(
             location: '/settings',
             bottomInset: 68,
+            onVisibilityChanged: onVisibilityChanged,
             navigation: const Align(
               heightFactor: 1,
               child: SizedBox(
@@ -87,7 +89,8 @@ void main() {
   testWidgets('down scroll hides and idle restores without moving list', (
     tester,
   ) async {
-    await mount(tester);
+    final visibility = <bool>[];
+    await mount(tester, onVisibilityChanged: visibility.add);
     final before = tester.getRect(find.byType(ListView));
     await tester.drag(find.byType(ListView), const Offset(0, -160));
     await tester.pump(const Duration(milliseconds: 250));
@@ -95,6 +98,7 @@ void main() {
       tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity,
       0,
     );
+    expect(visibility.last, isFalse);
     expect(tester.getRect(find.byType(ListView)), before);
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
@@ -102,6 +106,7 @@ void main() {
       tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity,
       1,
     );
+    expect(visibility.last, isTrue);
   });
 
   testWidgets('route handoff previews never retain old action callbacks', (
