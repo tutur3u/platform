@@ -8030,6 +8030,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailSettings => 'Mail settings';
 
   @override
+  String get mailDefaultAction => 'Default email action';
+
+  @override
   String get mailSenderName => 'Sender name';
 
   @override

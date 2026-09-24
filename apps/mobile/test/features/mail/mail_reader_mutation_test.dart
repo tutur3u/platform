@@ -12,6 +12,70 @@ import '../../helpers/helpers.dart';
 class _Repository extends Mock implements MailRepository {}
 
 void main() {
+  testWidgets('archive closes the reader before the network request finishes', (
+    tester,
+  ) async {
+    final repository = _Repository();
+    final archive = Completer<void>();
+    final optimistic = <String>[];
+    final settled = <bool>[];
+    when(
+      () => repository.changeState(
+        'ws',
+        'box',
+        'message',
+        'archive',
+        thread: false,
+      ),
+    ).thenAnswer((_) => archive.future);
+
+    await tester.pumpApp(
+      Builder(
+        builder: (context) => TextButton(
+          onPressed: () => Navigator.of(context).push<void>(
+            MaterialPageRoute(
+              builder: (_) => MailReader(
+                repository: repository,
+                workspaceId: 'ws',
+                mailboxId: 'box',
+                detail: const {
+                  'id': 'message',
+                  'subject': 'Test message',
+                  'unread': false,
+                  'starred': false,
+                  'bodyText': 'Message body',
+                  'fromAddress': 'sender@example.com',
+                },
+                thread: false,
+                canSend: false,
+                fromAddress: 'test@tuturuuu.com',
+                onOptimisticAction: (action, id) =>
+                    optimistic.add('$action:$id'),
+                onActionSettled:
+                    ({required action, required id, required success}) {
+                      settled.add(success);
+                    },
+              ),
+            ),
+          ),
+          child: const Text('Open message'),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open message'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Archive'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MailReader), findsNothing);
+    expect(optimistic, ['archive:message']);
+    expect(settled, isEmpty);
+
+    archive.complete();
+    await tester.pump();
+    expect(settled, [true]);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final status in [500, 403]) {
     testWidgets('read failure $status preserves a concurrent star', (
       tester,

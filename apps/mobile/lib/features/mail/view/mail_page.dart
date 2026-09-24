@@ -152,6 +152,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   List<Map<String, dynamic>> _labels = [];
   List<Map<String, dynamic>> _folders = [];
   final Set<String> _selected = {};
+  final Set<String> _pendingSwipeIds = {};
+  final Set<String> _pendingReaderIds = {};
   String? _labelId;
   String? _folderId;
   bool _mutating = false;
@@ -609,6 +611,32 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                 setState(() => _items = beforeRead);
               }
             },
+            onOptimisticAction: (action, id) {
+              if (!mounted || box != _mailboxId) return;
+              _pendingReaderIds.add(id);
+              ++_generation;
+              setState(() {
+                _items = optimisticMailItems(
+                  _items,
+                  {id},
+                  action: action,
+                  folder: _folder,
+                  query: _search.text,
+                );
+              });
+              _saveView();
+            },
+            onActionSettled:
+                ({required action, required id, required success}) {
+                  _pendingReaderIds.remove(id);
+                  if (!mounted || box != _mailboxId) return;
+                  if (!success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(context.l10n.mailActionFailed)),
+                    );
+                  }
+                  if (_pendingReaderIds.isEmpty) unawaited(_load());
+                },
             thread: _threads,
             canSend: _canSend,
             fromAddress: _mailbox['address'] as String,

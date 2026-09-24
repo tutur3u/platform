@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/features/mail/view/mail_organization_page.dart';
+import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -44,7 +45,9 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
   void initState() {
     super.initState();
     MailImagePreference.instance.addListener(_imagePreferenceChanged);
+    MailPrimaryActionPreference.instance.addListener(_imagePreferenceChanged);
     unawaited(MailImagePreference.instance.load());
+    unawaited(MailPrimaryActionPreference.instance.load());
     if (widget.canManage) {
       unawaited(_load());
     } else {
@@ -59,6 +62,9 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
   @override
   void dispose() {
     MailImagePreference.instance.removeListener(_imagePreferenceChanged);
+    MailPrimaryActionPreference.instance.removeListener(
+      _imagePreferenceChanged,
+    );
     for (final c in [_sender, _signature, _instructions, _forwardTo]) {
       c.dispose();
     }
@@ -173,6 +179,45 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
                   onChanged: (enabled) => unawaited(
                     MailImagePreference.instance.select(enabled: enabled),
                   ),
+                ),
+                ListTile(
+                  leading: Icon(
+                    MailPrimaryActionPreference.instance.value.icon,
+                  ),
+                  title: Text(l10n.mailDefaultAction),
+                  subtitle: Text(
+                    MailPrimaryActionPreference.instance.value.label(context),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    final action =
+                        await showModalBottomSheet<MailPrimaryAction>(
+                          context: context,
+                          useSafeArea: true,
+                          builder: (sheetContext) => Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (final option in MailPrimaryAction.values)
+                                ListTile(
+                                  leading: Icon(option.icon),
+                                  title: Text(option.label(context)),
+                                  trailing:
+                                      option ==
+                                          MailPrimaryActionPreference
+                                              .instance
+                                              .value
+                                      ? const Icon(Icons.check_rounded)
+                                      : null,
+                                  onTap: () =>
+                                      Navigator.of(sheetContext).pop(option),
+                                ),
+                            ],
+                          ),
+                        );
+                    if (action != null) {
+                      await MailPrimaryActionPreference.instance.select(action);
+                    }
+                  },
                 ),
                 if (widget.swipePreferences != null)
                   ListTile(

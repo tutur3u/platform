@@ -3271,6 +3271,7 @@
     "mailLoadImages": "Hiển thị ảnh từ bên ngoài",
     "mailLoadImagesDescription": "Mặc định hiển thị ảnh. Người gửi có thể biết khi bạn mở thư.",
     "mailSettings": "Cài đặt thư",
+    "mailDefaultAction": "Thao tác email mặc định",
     "mailSenderName": "Tên người gửi",
     "mailSignature": "Chữ ký",
     "mailAutoDraft": "Tự động soạn thư trả lời",
