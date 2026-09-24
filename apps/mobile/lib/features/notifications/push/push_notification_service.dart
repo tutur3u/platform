@@ -5,10 +5,13 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/utils/device_info.dart';
+import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/repositories/notification_push_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/notifications/push/login_notification_actions.dart';
+import 'package:timezone/data/latest.dart' as timezone_data;
+import 'package:timezone/timezone.dart' as timezone;
 
 enum PushNotificationEventType { received, opened, archived }
 
@@ -185,8 +188,10 @@ class PushNotificationService {
   String? _currentUserId;
   PushNavigationRequest? _pendingApproval;
   PushNavigationRequest? _pendingMail;
+  PushNavigationRequest? _pendingReminder;
   String? _cachedDeviceId;
   bool _initialized = false;
+  Future<void>? _reminderTimezoneSetup;
   bool _isDisposed = false;
 
   FirebaseMessaging get _messaging => FirebaseMessaging.instance;
@@ -203,6 +208,62 @@ class PushNotificationService {
 
   Future<void> initialize() => _ensureInitialized();
 
+  Future<void> scheduleLocalReminder({
+    required int id,
+    required DateTime scheduledAt,
+    required String title,
+    required String body,
+    required PushNavigationRequest request,
+  }) async {
+    await _ensureInitialized();
+    await (_reminderTimezoneSetup ??= _configureReminderTimezone());
+    await _localNotifications.zonedSchedule(
+      id: id,
+      scheduledDate: timezone.TZDateTime.from(scheduledAt, timezone.local),
+      title: title,
+      body: body,
+      payload: payloadFromPushRequest(request),
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'tuturuuu_reminders',
+          'Reminders',
+          channelDescription: 'Task and calendar reminders',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+    );
+  }
+
+  Future<void> _configureReminderTimezone() async {
+    timezone_data.initializeTimeZones();
+    try {
+      timezone.setLocalLocation(
+        timezone.getLocation(await getCurrentTimezoneIdentifier()),
+      );
+    } on Exception {
+      timezone.setLocalLocation(timezone.UTC);
+    }
+  }
+
+  Future<void> cancelLocalReminder(int id) async {
+    await _ensureInitialized();
+    await _localNotifications.cancel(id: id);
+  }
+
+  Future<Set<int>> pendingLocalReminderIds() async {
+    await _ensureInitialized();
+    final pending = await _localNotifications.pendingNotificationRequests();
+    return pending.map((request) => request.id).toSet();
+  }
+
+  Future<bool> get notificationsEnabled async {
+    final settings = await _messaging.getNotificationSettings();
+    return _isAuthorized(settings);
+  }
+
   Future<void> startSession(String userId) async {
     _currentUserId = userId;
     await _ensureInitialized();
@@ -212,12 +273,16 @@ class PushNotificationService {
     final pendingMail = _pendingMail;
     _pendingMail = null;
     if (pendingMail != null) await _openRequest(pendingMail);
+    final pendingReminder = _pendingReminder;
+    _pendingReminder = null;
+    if (pendingReminder != null) await _openRequest(pendingReminder);
   }
 
   Future<void> stopSession() async {
     final userId = _currentUserId;
     _currentUserId = null;
     _pendingMail = null;
+    _pendingReminder = null;
 
     if (userId == null || _appFlavor == null) {
       return;
@@ -300,6 +365,22 @@ class PushNotificationService {
       },
     );
 
+    final launchDetails = await _localNotifications
+        .getNotificationAppLaunchDetails();
+    final launchPayload = launchDetails?.notificationResponse?.payload;
+    if (launchDetails?.didNotificationLaunchApp == true &&
+        launchPayload != null &&
+        launchPayload.isNotEmpty) {
+      final request = requestFromLocalNotificationPayload(launchPayload);
+      if (request != null) {
+        if (request.openTarget == 'task' || request.openTarget == 'calendar') {
+          _pendingReminder = request;
+        } else {
+          unawaited(_handleLocalNotificationPayload(launchPayload));
+        }
+      }
+    }
+
     await _createAndroidChannel();
 
     _messageSubscription = FirebaseMessaging.onMessage.listen((message) {
@@ -364,6 +445,15 @@ class PushNotificationService {
   }
 
   Future<void> _openRequest(PushNavigationRequest request) async {
+    if (request.openTarget == 'task' || request.openTarget == 'calendar') {
+      if (request.userId == null) return;
+      if (_currentUserId == null) {
+        _pendingReminder = request;
+        return;
+      }
+      if (request.userId != _currentUserId) return;
+      _pendingReminder = null;
+    }
     if (request.openTarget == 'mail') {
       if (request.mailDestination == null) return;
       if (_currentUserId == null) {

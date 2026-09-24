@@ -8416,6 +8416,78 @@ class AppLocalizationsVi extends AppLocalizations {
   String get voiceRecordingError => 'Không thể ghi âm. Vui lòng thử lại.';
 
   @override
+  String get remindersTitle => 'Nhắc nhở';
+
+  @override
+  String get remindersDescription => 'Hạn công việc và sự kiện lịch được chuẩn bị trên thiết bị này.';
+
+  @override
+  String get remindersTaskTitle => 'Hạn công việc';
+
+  @override
+  String get remindersEventTitle => 'Sự kiện lịch';
+
+  @override
+  String get remindersTiming => 'Nhắc tôi';
+
+  @override
+  String get reminders3d => 'Trước 3 ngày';
+
+  @override
+  String get reminders1d => 'Trước 1 ngày';
+
+  @override
+  String get reminders12h => 'Trước 12 giờ';
+
+  @override
+  String get reminders3h => 'Trước 3 giờ';
+
+  @override
+  String get reminders1h => 'Trước 1 giờ';
+
+  @override
+  String get remindersStatusTitle => 'Trạng thái nhắc nhở';
+
+  @override
+  String get remindersPermissionOn => 'Đã bật thông báo trên thiết bị';
+
+  @override
+  String get remindersPermissionOff => 'Đã tắt thông báo trên thiết bị';
+
+  @override
+  String remindersScheduledCount(int count) {
+    return 'Đã lên lịch $count lời nhắc';
+  }
+
+  @override
+  String remindersLastChecked(String time) {
+    return 'Kiểm tra lần cuối: $time';
+  }
+
+  @override
+  String remindersNext(String time) {
+    return 'Lời nhắc tiếp theo: $time';
+  }
+
+  @override
+  String get remindersNeverChecked => 'Đang chờ cập nhật lần đầu';
+
+  @override
+  String get remindersRefresh => 'Cập nhật ngay';
+
+  @override
+  String get remindersEnableNotifications => 'Bật thông báo';
+
+  @override
+  String get remindersRefreshing => 'Đang kiểm tra công việc và sự kiện…';
+
+  @override
+  String get remindersRefreshFailed => 'Không thể cập nhật lời nhắc. Các lời nhắc đã lên lịch vẫn được giữ.';
+
+  @override
+  String get remindersSystemNote => 'Thông báo đã lên lịch có thể xuất hiện khi ứng dụng đóng. Mục mới hoặc thay đổi được kiểm tra khi mở hay quay lại ứng dụng; thời điểm cập nhật nền tùy thuộc thiết bị.';
+
+  @override
   String get settingsGeneralGroup => 'Cá nhân hóa';
 
   @override

@@ -41,6 +41,7 @@ import 'package:mobile/features/mobile_versions/view/mobile_version_settings_pag
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
+import 'package:mobile/features/reminders/reminder_settings_page.dart';
 import 'package:mobile/features/security/account/account_security_page.dart';
 import 'package:mobile/features/security/mfa_approval/view/mfa_request_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_scanner_page.dart';
@@ -555,6 +556,10 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.settingsWhatsNew,
             builder: (context, state) => const ReleaseNotesPage(),
+          ),
+          GoRoute(
+            path: Routes.settingsReminders,
+            builder: (context, state) => const ReminderSettingsPage(),
           ),
           GoRoute(
             path: Routes.settingsSession,
