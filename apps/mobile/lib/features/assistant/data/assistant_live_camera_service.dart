@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 class AssistantLiveCameraService {
   CameraController? _controller;
   bool _processingFrame = false;
+  int _streamVersion = 0;
   DateTime _lastFrameSentAt = DateTime.fromMillisecondsSinceEpoch(0);
   Uint8List? _latestFrame;
 
@@ -24,7 +25,9 @@ class AssistantLiveCameraService {
   Future<void> initialize() async {
     if (_controller?.value.isInitialized ?? false) return;
 
+    final version = _streamVersion;
     final cameras = await availableCameras();
+    if (version != _streamVersion) return;
     final selected = cameras.where(
       (camera) => camera.lensDirection == CameraLensDirection.front,
     );
@@ -40,17 +43,24 @@ class AssistantLiveCameraService {
     );
 
     await controller.initialize();
+    if (version != _streamVersion) {
+      await controller.dispose();
+      return;
+    }
     _controller = controller;
   }
 
   Future<void> startStreaming(
     void Function(Uint8List jpegBytes) onFrame,
   ) async {
+    final version = ++_streamVersion;
     await initialize();
+    if (version != _streamVersion) return;
     final controller = _controller;
     if (controller == null || controller.value.isStreamingImages) return;
 
     await controller.startImageStream((image) async {
+      if (version != _streamVersion) return;
       final elapsed = DateTime.now().difference(_lastFrameSentAt);
       if (_processingFrame || elapsed < const Duration(milliseconds: 600)) {
         return;
@@ -71,10 +81,17 @@ class AssistantLiveCameraService {
   }
 
   Future<void> stopStreaming() async {
+    _streamVersion++;
     final controller = _controller;
+    _controller = null;
+    _latestFrame = null;
     if (controller == null) return;
-    if (controller.value.isStreamingImages) {
-      await controller.stopImageStream();
+    try {
+      if (controller.value.isStreamingImages) {
+        await controller.stopImageStream();
+      }
+    } finally {
+      await controller.dispose();
     }
   }
 

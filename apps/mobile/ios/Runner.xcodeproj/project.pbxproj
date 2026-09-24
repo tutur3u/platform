@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
+		1E3FC0D9F09D51E98AFEEC0C /* LiveScreenSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E106669B9E6A865BCC11EA /* LiveScreenSession.swift */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		39AE61A18D656F4404178AEC /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 973D65262FA52DB98BD0FC63 /* GoogleService-Info.plist */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
@@ -16,8 +17,13 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		99DA17CBA963E86DDBD22F85 /* SampleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9102F808D710857DD2B01A6 /* SampleHandler.swift */; };
 		A1B2C3D4E5F6000F007C1180 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000F007C117D /* InfoPlist.strings */; };
 		BFF989FEA8BC6D083EAC560A /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51D520EFFEBFB4B98150DD26 /* Pods_Runner.framework */; };
+		C55CDB213877C51DA2BBA38E /* LiveScreenSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E106669B9E6A865BCC11EA /* LiveScreenSession.swift */; };
+		CD49B4F9E05A6EC559DEC45F /* LiveScreenBroadcast.appex in Embed Live Broadcast Extension */ = {isa = PBXBuildFile; fileRef = 7EEC2E263407FF8E44517594 /* LiveScreenBroadcast.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E6E79E6687FB6C866E0BC4D6 /* LiveScreenCapturePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C73A09E54185340E167D49B3 /* LiveScreenCapturePlugin.swift */; };
+		EB5303CF837D875CD804AAF7 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = BF8F1777CC86A04CCD67BADC /* Localizable.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -28,9 +34,27 @@
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
 		};
+		AD4AB1B48DAC70C90A369810 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A19C66805954405385732FBE;
+			remoteInfo = LiveScreenBroadcast;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		824060ABAB12F1E4B3F14B3B /* Embed Live Broadcast Extension */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CD49B4F9E05A6EC559DEC45F /* LiveScreenBroadcast.appex in Embed Live Broadcast Extension */,
+			);
+			name = "Embed Live Broadcast Extension";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9705A1C41CF9048500538489 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -62,9 +86,12 @@
 		6E937BBA9EA777121265F740 /* Pods-Runner.profile-development.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile-development.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile-development.xcconfig"; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		74E106669B9E6A865BCC11EA /* LiveScreenSession.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = LiveScreenSession.swift; path = LiveScreenSession.swift; sourceTree = "<group>"; };
 		7A687DC06484B01F02098713 /* Pods-RunnerTests.release-development.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release-development.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release-development.xcconfig"; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
+		7EEC2E263407FF8E44517594 /* LiveScreenBroadcast.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; path = LiveScreenBroadcast.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B8FED07F0B21EC492A22A2E /* Pods-Runner.debug-production.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-production.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-production.xcconfig"; sourceTree = "<group>"; };
+		965988A130DE9801D9A31E1B /* Build.xcconfig */ = {isa = PBXFileReference; explicitFileType = text.xcconfig; lastKnownFileType = text.xcconfig; name = Build.xcconfig; path = Build.xcconfig; sourceTree = "<group>"; };
 		973D65262FA52DB98BD0FC63 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
@@ -73,11 +100,15 @@
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A0471880DCA4D9FAB40B23BB /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F6000F007C117E /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A1B2C3D4E5F6000F007C117F /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		AC945B35E1A8D556B65E5C3B /* Pods-Runner.profile-production.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile-production.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile-production.xcconfig"; sourceTree = "<group>"; };
 		AE20919566879215181712FC /* Pods-RunnerTests.release-production.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release-production.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release-production.xcconfig"; sourceTree = "<group>"; };
 		B1C6298825328F0979CA5512 /* Pods-Runner.release-development.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-development.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-development.xcconfig"; sourceTree = "<group>"; };
+		C6693A43C03DD2083A932770 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
+		C73A09E54185340E167D49B3 /* LiveScreenCapturePlugin.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = LiveScreenCapturePlugin.swift; path = LiveScreenCapturePlugin.swift; sourceTree = "<group>"; };
+		C9102F808D710857DD2B01A6 /* SampleHandler.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = SampleHandler.swift; path = SampleHandler.swift; sourceTree = "<group>"; };
 		DA7107FF798637B85D5571EB /* Pods-RunnerTests.profile-staging.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile-staging.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile-staging.xcconfig"; sourceTree = "<group>"; };
 		E25DF6C1641881881FD4D928 /* Pods-RunnerTests.debug-production.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug-production.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug-production.xcconfig"; sourceTree = "<group>"; };
 		EF78764FB0D9F4B5176102D3 /* Pods-Runner.release-production.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-production.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-production.xcconfig"; sourceTree = "<group>"; };
@@ -85,6 +116,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		36FDFC6325B3091320E36D1B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		71EE9FBCE5FBE6FFB981B3FC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -104,6 +142,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0511706EB5F8088D3641FBDB /* LiveScreenBroadcast */ = {
+			isa = PBXGroup;
+			children = (
+				965988A130DE9801D9A31E1B /* Build.xcconfig */,
+				C9102F808D710857DD2B01A6 /* SampleHandler.swift */,
+				BF8F1777CC86A04CCD67BADC /* Localizable.strings */,
+			);
+			name = LiveScreenBroadcast;
+			path = LiveScreenBroadcast;
+			sourceTree = "<group>";
+		};
 		27BD780C632AC73374468FF9 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -158,6 +207,8 @@
 				27BD780C632AC73374468FF9 /* Pods */,
 				C4C67DCFE205E253627E6A0C /* Frameworks */,
 				973D65262FA52DB98BD0FC63 /* GoogleService-Info.plist */,
+				F68E757E8BFC60757A3597C8 /* LiveScreenShared */,
+				0511706EB5F8088D3641FBDB /* LiveScreenBroadcast */,
 			);
 			sourceTree = "<group>";
 		};
@@ -166,6 +217,7 @@
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
+				7EEC2E263407FF8E44517594 /* LiveScreenBroadcast.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -182,6 +234,7 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+				C73A09E54185340E167D49B3 /* LiveScreenCapturePlugin.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -193,6 +246,15 @@
 				6B0188D565BA3F6376391959 /* Pods_RunnerTests.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		F68E757E8BFC60757A3597C8 /* LiveScreenShared */ = {
+			isa = PBXGroup;
+			children = (
+				74E106669B9E6A865BCC11EA /* LiveScreenSession.swift */,
+			);
+			name = LiveScreenShared;
+			path = LiveScreenShared;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -221,6 +283,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
+				824060ABAB12F1E4B3F14B3B /* Embed Live Broadcast Extension */,
 				845192D4B704CDF3C8795531 /* [CP] Check Pods Manifest.lock */,
 				9740EEB61CF901F6004384FC /* Run Script */,
 				97C146EA1CF9000F007C117D /* Sources */,
@@ -237,11 +300,31 @@
 			buildRules = (
 			);
 			dependencies = (
+				EECB2BD339C5C44A211914BA /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A19C66805954405385732FBE /* LiveScreenBroadcast */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 02226F612A82C2B9F43A06D2 /* Build configuration list for PBXNativeTarget "LiveScreenBroadcast" */;
+			buildPhases = (
+				AD51EF8F407E8220A2AC4439 /* Sources */,
+				475F0255855609A3D297EEF0 /* Resources */,
+				36FDFC6325B3091320E36D1B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LiveScreenBroadcast;
+			packageProductDependencies = (
+			);
+			productName = LiveScreenBroadcast;
+			productReference = 7EEC2E263407FF8E44517594 /* LiveScreenBroadcast.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -279,6 +362,7 @@
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
+				A19C66805954405385732FBE /* LiveScreenBroadcast */,
 			);
 		};
 /* End PBXProject section */
@@ -288,6 +372,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		475F0255855609A3D297EEF0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EB5303CF837D875CD804AAF7 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -315,9 +407,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -427,9 +523,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -487,6 +587,17 @@
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
+				E6E79E6687FB6C866E0BC4D6 /* LiveScreenCapturePlugin.swift in Sources */,
+				1E3FC0D9F09D51E98AFEEC0C /* LiveScreenSession.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AD51EF8F407E8220A2AC4439 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				99DA17CBA963E86DDBD22F85 /* SampleHandler.swift in Sources */,
+				C55CDB213877C51DA2BBA38E /* LiveScreenSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -497,6 +608,12 @@
 			isa = PBXTargetDependency;
 			target = 97C146ED1CF9000F007C117D /* Runner */;
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
+		};
+		EECB2BD339C5C44A211914BA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = LiveScreenBroadcast;
+			target = A19C66805954405385732FBE /* LiveScreenBroadcast */;
+			targetProxy = AD4AB1B48DAC70C90A369810 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -526,9 +643,39 @@
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
+		BF8F1777CC86A04CCD67BADC /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A0471880DCA4D9FAB40B23BB /* en */,
+				C6693A43C03DD2083A932770 /* vi */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		22721E4B8B3B7AB63013A07E /* Profile-development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 965988A130DE9801D9A31E1B /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LiveScreenBroadcast/LiveScreenBroadcast.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LiveScreenBroadcast/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				LIVE_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev.LiveScreenBroadcast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(LIVE_BROADCAST_PROFILE_UUID)";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Profile-development";
+		};
 		3C9C55192B07AC99000E5FCD /* Debug-production */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1470,9 +1617,193 @@
 			};
 			name = "Profile-staging";
 		};
+		6ADF855D8CC61357191BC4DC /* Release-staging */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 965988A130DE9801D9A31E1B /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LiveScreenBroadcast/LiveScreenBroadcast.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LiveScreenBroadcast/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				LIVE_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.stg;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg.LiveScreenBroadcast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(LIVE_BROADCAST_PROFILE_UUID)";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Release-staging";
+		};
+		9D9C147A6DE471E084C345DC /* Debug-development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 965988A130DE9801D9A31E1B /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LiveScreenBroadcast/LiveScreenBroadcast.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LiveScreenBroadcast/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				LIVE_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev.LiveScreenBroadcast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(LIVE_BROADCAST_PROFILE_UUID)";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-development";
+		};
+		B64B549E7C77A6B63FCEFE50 /* Debug-production */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 965988A130DE9801D9A31E1B /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LiveScreenBroadcast/LiveScreenBroadcast.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LiveScreenBroadcast/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				LIVE_HOST_BUNDLE_ID = com.tuturuuu.app.mobile;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.LiveScreenBroadcast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(LIVE_BROADCAST_PROFILE_UUID)";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-production";
+		};
+		C3A502C91EDEF4863387707E /* Release-development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 965988A130DE9801D9A31E1B /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LiveScreenBroadcast/LiveScreenBroadcast.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LiveScreenBroadcast/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				LIVE_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev.LiveScreenBroadcast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(LIVE_BROADCAST_PROFILE_UUID)";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Release-development";
+		};
+		C9BADD67B0BAD6CA48E26DB2 /* Profile-staging */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 965988A130DE9801D9A31E1B /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LiveScreenBroadcast/LiveScreenBroadcast.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LiveScreenBroadcast/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				LIVE_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.stg;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg.LiveScreenBroadcast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(LIVE_BROADCAST_PROFILE_UUID)";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Profile-staging";
+		};
+		E33743B067CD35B0A8F78195 /* Profile-production */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 965988A130DE9801D9A31E1B /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LiveScreenBroadcast/LiveScreenBroadcast.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LiveScreenBroadcast/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				LIVE_HOST_BUNDLE_ID = com.tuturuuu.app.mobile;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.LiveScreenBroadcast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(LIVE_BROADCAST_PROFILE_UUID)";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Profile-production";
+		};
+		E653F2BED0568DA45F458C6E /* Debug-staging */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 965988A130DE9801D9A31E1B /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LiveScreenBroadcast/LiveScreenBroadcast.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LiveScreenBroadcast/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				LIVE_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.stg;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg.LiveScreenBroadcast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(LIVE_BROADCAST_PROFILE_UUID)";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-staging";
+		};
+		EC13D804359005CC4D82E05B /* Release-production */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 965988A130DE9801D9A31E1B /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LiveScreenBroadcast/LiveScreenBroadcast.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LiveScreenBroadcast/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				LIVE_HOST_BUNDLE_ID = com.tuturuuu.app.mobile;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.LiveScreenBroadcast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(LIVE_BROADCAST_PROFILE_UUID)";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Release-production";
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		02226F612A82C2B9F43A06D2 /* Build configuration list for PBXNativeTarget "LiveScreenBroadcast" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B64B549E7C77A6B63FCEFE50 /* Debug-production */,
+				E653F2BED0568DA45F458C6E /* Debug-staging */,
+				9D9C147A6DE471E084C345DC /* Debug-development */,
+				EC13D804359005CC4D82E05B /* Release-production */,
+				6ADF855D8CC61357191BC4DC /* Release-staging */,
+				C3A502C91EDEF4863387707E /* Release-development */,
+				E33743B067CD35B0A8F78195 /* Profile-production */,
+				C9BADD67B0BAD6CA48E26DB2 /* Profile-staging */,
+				22721E4B8B3B7AB63013A07E /* Profile-development */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = "Release-production";
+		};
 		331C8087294A63A400263BE5 /* Build configuration list for PBXNativeTarget "RunnerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

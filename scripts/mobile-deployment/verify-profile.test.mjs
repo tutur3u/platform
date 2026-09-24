@@ -69,4 +69,39 @@ test('App Store profile validation rejects incompatible or expired signing asset
     const result = spawnSync(executable, [path], { env, encoding: 'utf8' });
     assert.equal(result.status, status, `fixture ${index}: ${result.stderr}`);
   }
+  const sharedGroup =
+    '<key>com.apple.security.application-groups</key><array><string>group.com.tuturuuu.app.mobile.live</string></array>';
+  const liveProfile = base.replace(
+    '<key>get-task-allow</key>',
+    `${sharedGroup}<key>get-task-allow</key>`
+  );
+  const broadcast = liveProfile
+    .replace(
+      'TESTTEAM01.com.tuturuuu.app.mobile</string>',
+      'TESTTEAM01.com.tuturuuu.app.mobile.LiveScreenBroadcast</string>'
+    )
+    .replace('<key>aps-environment</key><string>production</string>', '');
+  for (const [index, [profile, extraEnv, status]] of [
+    [base, { APPLE_LIVE_SCREEN_GROUP_REQUIRED: 'true' }, 1],
+    [liveProfile, { APPLE_LIVE_SCREEN_GROUP_REQUIRED: 'true' }, 0],
+    [broadcast, { APPLE_PROFILE_KIND: 'broadcast' }, 0],
+    [liveProfile, { APPLE_PROFILE_KIND: 'broadcast' }, 1],
+    [
+      broadcast.replace(sharedGroup, ''),
+      { APPLE_PROFILE_KIND: 'broadcast' },
+      1,
+    ],
+  ].entries()) {
+    const path = join(root, `live-${index}.plist`);
+    writeFileSync(path, profile);
+    const result = spawnSync(executable, [path], {
+      env: { ...env, ...extraEnv },
+      encoding: 'utf8',
+    });
+    assert.equal(
+      result.status,
+      status,
+      `live fixture ${index}: ${result.stderr}`
+    );
+  }
 });

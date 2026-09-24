@@ -13,13 +13,17 @@ import 'package:mobile/features/assistant/data/assistant_live_camera_service.dar
 import 'package:mobile/features/assistant/data/assistant_live_config.dart';
 import 'package:mobile/features/assistant/data/assistant_live_recorder.dart';
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_live_screen_service.dart';
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 
-part 'assistant_live_state.dart';
+part 'assistant_live_camera.dart';
 part 'assistant_live_microphone.dart';
 part 'assistant_live_recovery.dart';
+part 'assistant_live_screen.dart';
+part 'assistant_live_socket_events.dart';
+part 'assistant_live_state.dart';
 
 class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   AssistantLiveCubit({
@@ -30,11 +34,13 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     required AssistantLiveCameraService cameraService,
     required Future<void> Function(String wsId, String chatId) onChatBound,
     required Future<void> Function(String wsId, String chatId) onHistoryUpdated,
+    AssistantLiveScreenService? screenService,
   }) : _repository = repository,
        _socket = socket,
        _audioPlayer = audioPlayer,
        _recorder = recorder,
        _cameraService = cameraService,
+       _screenService = screenService ?? AssistantLiveScreenService(),
        _onChatBound = onChatBound,
        _onHistoryUpdated = onHistoryUpdated,
        super(const AssistantLiveState()) {
@@ -48,6 +54,10 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   final AssistantLiveAudioPlayer _audioPlayer;
   final AssistantLiveRecorder _recorder;
   final AssistantLiveCameraService _cameraService;
+  final AssistantLiveScreenService _screenService;
+  StreamSubscription<Map<Object?, Object?>>? _screenSubscription;
+  int _screenVersion = 0;
+  bool get screenSharingAvailable => _screenService.isSupported;
   final Future<void> Function(String wsId, String chatId) _onChatBound;
   final Future<void> Function(String wsId, String chatId) _onHistoryUpdated;
 
@@ -82,6 +92,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     bool forceFresh = false,
     bool reconnect = false,
   }) async {
+    if (state.isScreenSharing || state.isScreenSharingPending) {
+      await stopScreenSharing();
+    }
     final requestVersion = ++_requestVersion;
     _manualDisconnect = false;
     _readyCompleter = Completer<void>();
@@ -217,59 +230,6 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     }
   }
 
-  Future<void> toggleCamera() async {
-    if (state.isCameraActive) {
-      await _cameraService.stopStreaming();
-      emit(state.copyWith(isCameraActive: false));
-      return;
-    }
-
-    final granted = await _cameraService.ensurePermission();
-    emit(
-      state.copyWith(
-        cameraPermission: granted
-            ? AssistantLivePermissionState.granted
-            : AssistantLivePermissionState.denied,
-      ),
-    );
-    if (!granted) {
-      _emitError('Camera permission was denied.');
-      return;
-    }
-
-    final wsId = state.workspaceId;
-    if (wsId == null) {
-      _emitError('No workspace is selected.');
-      return;
-    }
-
-    if (state.status != AssistantLiveConnectionStatus.connected) {
-      await prepareSession(wsId: wsId, chatId: state.chatId);
-    }
-
-    await _cameraService.startStreaming((jpegBytes) {
-      _ensureActiveTurn();
-      _socket.sendVideoFrame(jpegBytes);
-      if (isClosed) {
-        return;
-      }
-      emit(
-        state.copyWith(
-          latestCameraFrame: jpegBytes,
-          cameraPermission: AssistantLivePermissionState.granted,
-        ),
-      );
-    });
-
-    emit(
-      state.copyWith(
-        isCameraActive: true,
-        latestCameraFrame: _cameraService.latestFrame,
-        cameraPermission: AssistantLivePermissionState.granted,
-      ),
-    );
-  }
-
   Future<void> disconnect({bool clearSession = false}) async {
     _manualDisconnect = true;
     _requestVersion++;
@@ -329,109 +289,6 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       chatId: state.chatId,
       reconnect: state.chatId != null,
     );
-  }
-
-  Future<void> _handleSocketEvent(AssistantLiveSocketEvent event) async {
-    switch (event) {
-      case AssistantLiveSocketConnected():
-        emit(
-          state.copyWith(
-            status: AssistantLiveConnectionStatus.connecting,
-            clearError: true,
-          ),
-        );
-      case AssistantLiveSocketReady():
-        if (!(_readyCompleter?.isCompleted ?? true)) {
-          _readyCompleter?.complete();
-        }
-        emit(
-          state.copyWith(
-            status: AssistantLiveConnectionStatus.connected,
-            clearError: true,
-          ),
-        );
-        unawaited(_drainStartupAudio());
-      case AssistantLiveSocketClosed(:final reason):
-        if (_manualDisconnect) {
-          emit(
-            state.copyWith(
-              status: AssistantLiveConnectionStatus.disconnected,
-              audioLevel: 0,
-            ),
-          );
-          return;
-        }
-        emit(
-          state.copyWith(
-            status: AssistantLiveConnectionStatus.reconnecting,
-            error: reason.isEmpty ? state.error : reason,
-          ),
-        );
-        _scheduleReconnect();
-      case AssistantLiveSocketError(:final message):
-        emit(
-          state.copyWith(
-            status: AssistantLiveConnectionStatus.error,
-            error: message,
-          ),
-        );
-        _scheduleReconnect();
-      case AssistantLiveSocketTextDelta(:final text):
-        _ensureActiveTurn();
-        _markAssistantActivity(textOnly: true);
-        _currentAssistantText = _mergeProgressiveText(
-          _currentAssistantText,
-          text,
-        );
-        emit(
-          state.copyWith(
-            assistantDraft: _currentAssistantText,
-            isInterrupted: false,
-          ),
-        );
-      case AssistantLiveSocketTranscriptDelta(:final text, :final isUserInput):
-        _ensureActiveTurn();
-        if (isUserInput) {
-          _currentUserTranscript = _mergeProgressiveText(
-            _currentUserTranscript,
-            text,
-          );
-          emit(state.copyWith(userTranscript: _currentUserTranscript));
-        } else {
-          _currentAssistantTranscript = _mergeProgressiveText(
-            _currentAssistantTranscript,
-            text,
-          );
-          emit(
-            state.copyWith(assistantTranscript: _currentAssistantTranscript),
-          );
-        }
-      case AssistantLiveSocketAudioChunk(:final bytes):
-        _markAssistantActivity(chunkBytes: bytes);
-        await _audioPlayer.play(bytes);
-      case AssistantLiveSocketInterrupted():
-        await _audioPlayer.clear();
-        _clearAssistantActivity();
-        emit(state.copyWith(isInterrupted: true));
-      case AssistantLiveSocketTurnCompleted():
-        _clearAssistantActivity();
-        await _finalizeTurn();
-      case AssistantLiveSocketGoAway(:final timeLeft):
-        emit(
-          state.copyWith(
-            status: AssistantLiveConnectionStatus.reconnecting,
-            goAwayTimeLeft: timeLeft,
-          ),
-        );
-        _scheduleReconnect();
-      case AssistantLiveSocketSessionHandleUpdated(
-        :final resumable,
-        :final newHandle,
-      ):
-        await _persistSessionHandle(resumable, newHandle);
-      case AssistantLiveSocketToolCall(:final calls):
-        await _executeToolCalls(calls);
-    }
   }
 
   void _emitSessionHandle(String? handle) {
@@ -757,6 +614,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         isAssistantSpeaking: false,
       ),
     );
+    unawaited(stopScreenSharing());
     if (!preserveDrafts) {
       _microphoneVersion++;
       _startupAudio.clear();
@@ -772,6 +630,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     _manualDisconnect = true;
     _assistantSpeakingTimer?.cancel();
     await _socketSubscription?.cancel();
+    await _screenSubscription?.cancel();
+    _screenSubscription = null;
     await _stopInputs();
     await _socket.disconnect();
     await _audioPlayer.dispose();

@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
@@ -38,6 +39,12 @@ class AssistantLiveStageCard extends StatelessWidget {
       ),
       child: Row(
         children: [
+          if (liveState.isScreenSharing || liveState.isScreenSharingPending)
+            _CompactLiveAction(
+              tooltip: context.l10n.assistantLiveStopScreen,
+              icon: Icons.stop_screen_share_outlined,
+              onPressed: context.read<AssistantLiveCubit>().stopScreenSharing,
+            ),
           Container(
             width: 34,
             height: 34,

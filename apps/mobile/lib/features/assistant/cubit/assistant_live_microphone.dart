@@ -25,9 +25,11 @@ extension _AssistantLiveMicrophone on AssistantLiveCubit {
 extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
   Future<void> toggleMicrophone() async {
     if (state.isMicrophoneActive || _startingMicrophone) {
+      if (_screenService.requiresMicrophone) await stopScreenSharing();
       _microphoneVersion++;
       _startupAudio.clear();
       await _stopRecorderSafely();
+      await _syncScreenMicrophone(false);
       _socket.endAudioStream();
       if (!isClosed) {
         _emitMicrophoneState(
@@ -86,6 +88,7 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
         return;
       }
       _emitMicrophoneState(state.copyWith(isMicrophoneActive: true));
+      await _syncScreenMicrophone(true);
       if (state.isBusy) {
         await _waitForReady();
       } else if (state.status != AssistantLiveConnectionStatus.connected) {

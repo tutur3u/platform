@@ -16,6 +16,9 @@ class AssistantLiveState extends Equatable {
     this.cameraPermission = AssistantLivePermissionState.unknown,
     this.isMicrophoneActive = false,
     this.isCameraActive = false,
+    this.isScreenSharing = false,
+    this.isScreenSharingPending = false,
+    this.screenSharingError,
     this.isInterrupted = false,
     this.isPersisting = false,
     this.audioLevel = 0,
@@ -41,6 +44,9 @@ class AssistantLiveState extends Equatable {
   final AssistantLivePermissionState cameraPermission;
   final bool isMicrophoneActive;
   final bool isCameraActive;
+  final bool isScreenSharing;
+  final bool isScreenSharingPending;
+  final String? screenSharingError;
   final bool isInterrupted;
   final bool isPersisting;
   final double audioLevel;
@@ -77,6 +83,9 @@ class AssistantLiveState extends Equatable {
     AssistantLivePermissionState? cameraPermission,
     bool? isMicrophoneActive,
     bool? isCameraActive,
+    bool? isScreenSharing,
+    bool? isScreenSharingPending,
+    Object? screenSharingError = _assistantLiveSentinel,
     bool? isInterrupted,
     bool? isPersisting,
     double? audioLevel,
@@ -111,6 +120,12 @@ class AssistantLiveState extends Equatable {
       cameraPermission: cameraPermission ?? this.cameraPermission,
       isMicrophoneActive: isMicrophoneActive ?? this.isMicrophoneActive,
       isCameraActive: isCameraActive ?? this.isCameraActive,
+      isScreenSharing: isScreenSharing ?? this.isScreenSharing,
+      isScreenSharingPending:
+          isScreenSharingPending ?? this.isScreenSharingPending,
+      screenSharingError: screenSharingError == _assistantLiveSentinel
+          ? this.screenSharingError
+          : screenSharingError as String?,
       isInterrupted: isInterrupted ?? this.isInterrupted,
       isPersisting: isPersisting ?? this.isPersisting,
       audioLevel: audioLevel ?? this.audioLevel,
@@ -147,6 +162,9 @@ class AssistantLiveState extends Equatable {
     cameraPermission,
     isMicrophoneActive,
     isCameraActive,
+    isScreenSharing,
+    isScreenSharingPending,
+    screenSharingError,
     isInterrupted,
     isPersisting,
     audioLevel,

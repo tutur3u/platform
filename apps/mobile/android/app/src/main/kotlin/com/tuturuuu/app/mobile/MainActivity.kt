@@ -36,6 +36,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        flutterEngine.plugins.add(com.tuturuuu.app.mobile.live.LiveScreenCapturePlugin())
 
         // Safety-net registration for video_player. Auto-registration should
         // already handle this, but explicit registration avoids runtime

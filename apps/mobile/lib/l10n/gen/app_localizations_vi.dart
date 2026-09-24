@@ -8459,6 +8459,33 @@ class AppLocalizationsVi extends AppLocalizations {
   String get adminAccountsResetMfaDescription => 'Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy. Người dùng cần đăng ký lại trình xác thực.';
 
   @override
+  String get assistantLiveShareScreen => 'Chia sẻ màn hình';
+
+  @override
+  String get assistantLiveStopScreen => 'Dừng chia sẻ';
+
+  @override
+  String get assistantLiveScreenActive => 'Bạn đang chia sẻ màn hình với Live';
+
+  @override
+  String get assistantLiveScreenPending => 'Đang chờ quyền chia sẻ màn hình';
+
+  @override
+  String get assistantLiveScreenStopped => 'Đã kết thúc chia sẻ màn hình.';
+
+  @override
+  String get assistantLiveScreenUnavailable => 'Không thể bắt đầu chia sẻ màn hình. Vui lòng thử lại.';
+
+  @override
+  String get assistantLiveScreenMicrophoneRequired => 'Bật micrô trước khi chia sẻ màn hình. Live cần phiên thoại để tiếp tục khi bạn chuyển ứng dụng.';
+
+  @override
+  String get assistantLiveScreenConnectionRequired => 'Kết nối với Live trước khi chia sẻ màn hình.';
+
+  @override
+  String get assistantLiveScreenPrivacy => 'Nội dung hiển thị trên màn hình có thể được chia sẻ với Live. Hãy ẩn thông tin riêng tư trước khi tiếp tục.';
+
+  @override
   String desktopUpdateReady(String version) {
     return 'Tuturuuu $version đã sẵn sàng để cài đặt.';
   }
