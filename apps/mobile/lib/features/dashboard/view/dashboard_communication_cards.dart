@@ -76,7 +76,7 @@ class _DashboardMailCardState extends State<_DashboardMailCard> {
   @override
   Widget build(BuildContext context) => _SectionCard(
     accentModuleId: 'mail',
-    title: context.l10n.mailInbox,
+    title: context.l10n.dashboardMailInbox,
     icon: Icons.mail_outline_rounded,
     actionLabel: context.l10n.dashboardOpenTasks,
     onTap: () => context.go(Routes.mail),
@@ -87,22 +87,34 @@ class _DashboardMailCardState extends State<_DashboardMailCard> {
         : Column(
             children: [
               for (final item in _items)
-                ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    Icons.circle,
-                    size: 8,
-                    color: item['unread'] == true
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.outline,
-                  ),
-                  title: Text(
-                    (item['subject'] as String?) ?? context.l10n.mailNoSubject,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                InkWell(
                   onTap: () => context.go(Routes.mail),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.circle,
+                          size: 7,
+                          color: item['unread'] == true
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outline,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            (item['subject'] as String?) ??
+                                context.l10n.mailNoSubject,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.chevron_right_rounded, size: 18),
+                      ],
+                    ),
+                  ),
                 ),
             ],
           ),

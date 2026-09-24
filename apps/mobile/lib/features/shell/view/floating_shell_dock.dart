@@ -15,6 +15,7 @@ class FloatingShellDock extends StatefulWidget {
     required this.bottomInset,
     required this.navigation,
     required this.child,
+    this.header,
     this.onVisibilityChanged,
     super.key,
   });
@@ -23,6 +24,7 @@ class FloatingShellDock extends StatefulWidget {
   final double bottomInset;
   final Widget navigation;
   final Widget child;
+  final Widget? header;
   final ValueChanged<bool>? onVisibilityChanged;
 
   @override
@@ -37,7 +39,8 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   @override
   void didUpdateWidget(covariant FloatingShellDock oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.location != widget.location || widget.bottomInset == 0) {
+    if (oldWidget.location != widget.location ||
+        (widget.bottomInset == 0 && widget.header == null)) {
       _returnTimer?.cancel();
       _hidden = false;
       _travel = 0;
@@ -64,7 +67,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   bool _onScroll(ScrollNotification notification) {
     if (notification.depth != 0 ||
         notification.metrics.axis != Axis.vertical ||
-        widget.bottomInset == 0 ||
+        (widget.bottomInset == 0 && widget.header == null) ||
         MediaQuery.of(context).accessibleNavigation) {
       return false;
     }
@@ -92,19 +95,53 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     final media = MediaQuery.of(context);
     final active = widget.bottomInset > 0;
     final clearance = active ? widget.bottomInset + media.padding.bottom : 0.0;
+    final headerClearance = widget.header == null
+        ? 0.0
+        : media.padding.top + 62;
     return NotificationListener<ScrollNotification>(
       onNotification: _onScroll,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          MediaQuery(
-            data: active
-                ? media.copyWith(
-                    padding: media.padding.copyWith(bottom: clearance),
-                  )
-                : media,
-            child: widget.child,
+          Padding(
+            // Reserve this once so revealing the header never resizes the page.
+            padding: EdgeInsets.only(top: headerClearance),
+            child: MediaQuery(
+              data: active
+                  ? media.copyWith(
+                      padding: media.padding.copyWith(bottom: clearance),
+                    )
+                  : media,
+              child: widget.child,
+            ),
           ),
+          if (widget.header != null)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                bottom: false,
+                child: IgnorePointer(
+                  ignoring: _hidden,
+                  child: AnimatedSlide(
+                    duration: media.disableAnimations
+                        ? Duration.zero
+                        : const Duration(milliseconds: 240),
+                    curve: Curves.easeOutCubic,
+                    offset: _hidden ? const Offset(0, -1.3) : Offset.zero,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 180),
+                      opacity: _hidden ? 0 : 1,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                        child: widget.header,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           if (active)
             Positioned(
               left: 0,

@@ -230,7 +230,9 @@ class _DashboardViewState extends State<_DashboardView> {
                         top: false,
                         bottom: false,
                         child: ResponsiveWrapper(
-                          maxWidth: context.isCompact ? null : 1440,
+                          maxWidth: ResponsivePadding.maxContentWidth(
+                            context.deviceClass,
+                          ),
                           child: CustomScrollView(
                             physics: const AlwaysScrollableScrollPhysics(
                               parent: BouncingScrollPhysics(),
@@ -259,12 +261,45 @@ class _DashboardViewState extends State<_DashboardView> {
                                   children: [
                                     StaggeredEntrance(
                                       replayKey: widget.replayToken,
-                                      delay: const Duration(milliseconds: 70),
-                                      child: _TodaySummaryCard(
-                                        activeTasks: taskState.totalActiveTasks,
-                                        overdueTasks:
-                                            taskState.overdueTasks.length,
-                                        nextEvents: upcomingEvents.length,
+                                      child: _SectionCard(
+                                        accentModuleId: _dashboardModuleId(3),
+                                        title:
+                                            context.l10n.dashboardAssignedToMe,
+                                        icon: Icons.checklist_rounded,
+                                        actionLabel:
+                                            context.l10n.dashboardOpenTasks,
+                                        onTap: () => context.go(Routes.tasks),
+                                        child: _AssignedTasksBlock(
+                                          state: taskState,
+                                          tasks: focusTasks,
+                                          paletteModuleId: _dashboardModuleId(
+                                            3,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    StaggeredEntrance(
+                                      replayKey: widget.replayToken,
+                                      child: _SectionCard(
+                                        accentModuleId: _dashboardModuleId(4),
+                                        title: context
+                                            .l10n
+                                            .dashboardUpcomingEvents,
+                                        icon: Icons.event_rounded,
+                                        actionLabel:
+                                            context.l10n.dashboardOpenCalendar,
+                                        onTap: () =>
+                                            context.go(Routes.calendar),
+                                        child: _UpcomingEventsBlock(
+                                          status: calendarState.status,
+                                          hasLoadedOnce:
+                                              calendarState.hasLoadedOnce,
+                                          error: calendarState.error,
+                                          events: upcomingEvents,
+                                          paletteModuleId: _dashboardModuleId(
+                                            4,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                     if (visibleModules.any(
@@ -286,47 +321,11 @@ class _DashboardViewState extends State<_DashboardView> {
                                       ),
                                     StaggeredEntrance(
                                       replayKey: widget.replayToken,
-                                      delay: const Duration(milliseconds: 210),
-                                      child: _SectionCard(
-                                        accentModuleId: _dashboardModuleId(3),
-                                        title:
-                                            context.l10n.dashboardAssignedToMe,
-                                        icon: Icons.checklist_rounded,
-                                        actionLabel:
-                                            context.l10n.dashboardOpenTasks,
-                                        onTap: () => context.go(Routes.tasks),
-                                        child: _AssignedTasksBlock(
-                                          state: taskState,
-                                          tasks: focusTasks,
-                                          paletteModuleId: _dashboardModuleId(
-                                            3,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    StaggeredEntrance(
-                                      replayKey: widget.replayToken,
-                                      delay: const Duration(milliseconds: 280),
-                                      child: _SectionCard(
-                                        accentModuleId: _dashboardModuleId(4),
-                                        title: context
-                                            .l10n
-                                            .dashboardUpcomingEvents,
-                                        icon: Icons.event_rounded,
-                                        actionLabel:
-                                            context.l10n.dashboardOpenCalendar,
-                                        onTap: () =>
-                                            context.go(Routes.calendar),
-                                        child: _UpcomingEventsBlock(
-                                          status: calendarState.status,
-                                          hasLoadedOnce:
-                                              calendarState.hasLoadedOnce,
-                                          error: calendarState.error,
-                                          events: upcomingEvents,
-                                          paletteModuleId: _dashboardModuleId(
-                                            4,
-                                          ),
-                                        ),
+                                      child: _TodaySummaryCard(
+                                        activeTasks: taskState.totalActiveTasks,
+                                        overdueTasks:
+                                            taskState.overdueTasks.length,
+                                        nextEvents: upcomingEvents.length,
                                       ),
                                     ),
                                   ],

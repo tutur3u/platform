@@ -1728,6 +1728,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboardUpcomingMeetings => 'Cuộc họp sắp tới';
 
   @override
+  String get dashboardMailInbox => 'Hộp thư Mail';
+
+  @override
   String get dashboardNoUpcomingMeetings => 'Chưa có cuộc họp sắp tới';
 
   @override

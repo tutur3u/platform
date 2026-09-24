@@ -14,6 +14,10 @@ class ShellActionSpec extends Equatable {
     this.highlighted = false,
     this.inDock = false,
     this.segmentGroup,
+    this.searchController,
+    this.searchHint,
+    this.onSearchChanged,
+    this.onCloseSearch,
   });
 
   final String id;
@@ -26,6 +30,10 @@ class ShellActionSpec extends Equatable {
   final bool highlighted;
   final bool inDock;
   final String? segmentGroup;
+  final TextEditingController? searchController;
+  final String? searchHint;
+  final ValueChanged<String>? onSearchChanged;
+  final VoidCallback? onCloseSearch;
 
   @override
   List<Object?> get props => [
@@ -42,6 +50,10 @@ class ShellActionSpec extends Equatable {
     highlighted,
     inDock,
     segmentGroup,
+    searchController,
+    searchHint,
+    onSearchChanged,
+    onCloseSearch,
   ];
 }
 

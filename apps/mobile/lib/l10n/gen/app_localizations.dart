@@ -3445,6 +3445,12 @@ abstract class AppLocalizations {
   /// **'Upcoming meetings'**
   String get dashboardUpcomingMeetings;
 
+  /// No description provided for @dashboardMailInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail Inbox'**
+  String get dashboardMailInbox;
+
   /// No description provided for @dashboardNoUpcomingMeetings.
   ///
   /// In en, this message translates to:

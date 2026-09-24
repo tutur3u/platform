@@ -151,6 +151,7 @@ class _MeetPageState extends State<MeetPage> {
   Future<void> _showNewMeetingOptions() async {
     final choice = await showModalBottomSheet<String>(
       context: context,
+      useRootNavigator: true,
       useSafeArea: true,
       builder: (sheetContext) => Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -218,6 +219,7 @@ class _MeetPageState extends State<MeetPage> {
 
     final saved = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (context) => StatefulBuilder(
@@ -445,6 +447,16 @@ class _MeetPageState extends State<MeetPage> {
                       : Icons.search_rounded,
                   tooltip: context.l10n.meetSearchHint,
                   callbackToken: _showSearch,
+                  searchController: _showSearch ? _searchController : null,
+                  searchHint: context.l10n.meetSearchHint,
+                  onSearchChanged: _onSearchChanged,
+                  onCloseSearch: () {
+                    setState(() => _showSearch = false);
+                    if (_searchController.text.isNotEmpty) {
+                      _searchController.clear();
+                      unawaited(_reload(forceRefresh: false));
+                    }
+                  },
                   onPressed: () {
                     setState(() => _showSearch = !_showSearch);
                     if (!_showSearch && _searchController.text.isNotEmpty) {
@@ -484,18 +496,6 @@ class _MeetPageState extends State<MeetPage> {
                     40 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: [
-                    if (_showSearch) ...[
-                      TextField(
-                        controller: _searchController,
-                        autofocus: true,
-                        onChanged: _onSearchChanged,
-                        decoration: InputDecoration(
-                          hintText: context.l10n.meetSearchHint,
-                          prefixIcon: const Icon(Icons.search_rounded),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
                     if (_isLoading && _meetings.isEmpty)
                       const SizedBox(
                         height: 240,

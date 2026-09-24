@@ -1728,6 +1728,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardUpcomingMeetings => 'Upcoming meetings';
 
   @override
+  String get dashboardMailInbox => 'Mail Inbox';
+
+  @override
   String get dashboardNoUpcomingMeetings => 'No meetings coming up';
 
   @override

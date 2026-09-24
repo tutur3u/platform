@@ -27,7 +27,7 @@ class _SectionCard extends StatelessWidget {
     );
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: palette.background,
         borderRadius: BorderRadius.circular(20),
@@ -46,16 +46,16 @@ class _SectionCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 46,
-                height: 46,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: palette.iconBackground,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: palette.border.withValues(alpha: 0.42),
                   ),
                 ),
-                child: Icon(icon, size: 22, color: palette.iconColor),
+                child: Icon(icon, size: 20, color: palette.iconColor),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -74,7 +74,7 @@ class _SectionCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           child,
         ],
       ),
@@ -103,7 +103,7 @@ class _SectionActionChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             color: palette.iconBackground.withValues(alpha: 0.86),

@@ -57,11 +57,18 @@ void main() {
       expect(searchAction.inDock, isTrue);
       searchAction.onPressed!();
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField), 'calendar');
+      final activeSearch = chrome.state
+          .resolveForLocation(Routes.apps)
+          .firstWhere((action) => action.id == 'apps-search');
+      expect(activeSearch.searchController, isNotNull);
+      expect(find.byType(TextField), findsNothing);
+      activeSearch.searchController!.text = 'calendar';
+      activeSearch.onSearchChanged!('calendar');
       await tester.pumpAndSettle();
       expect(find.text('Calendar'), findsOneWidget);
       expect(find.text('Tasks'), findsNothing);
-      await tester.enterText(find.byType(TextField), 'no-such-app');
+      activeSearch.searchController!.text = 'no-such-app';
+      activeSearch.onSearchChanged!('no-such-app');
       await tester.pumpAndSettle();
       expect(find.text('No matching apps'), findsOneWidget);
       expect(tester.takeException(), isNull);
