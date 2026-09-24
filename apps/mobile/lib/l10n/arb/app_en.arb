@@ -3180,6 +3180,7 @@
     "meetMiraApprovalTitle": "Approve workspace actions?",
     "meetMiraApprovalHint": "Mira will run the listed actions in this workspace. Check every input before approving.",
     "meetMiraActionFailed": "Couldn't update Mira's review. Please try again.",
+    "meetOpenLink": "Open link",
     "meetMessageHint": "Message everyone",
     "meetSend": "Send",
     "meetWaitingForHost": "Waiting for the host to admit you",

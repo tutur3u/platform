@@ -1,5 +1,10 @@
 import { createAppSessionToken } from '@tuturuuu/auth/app-session';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  WorkspaceAuthError,
+  WorkspaceNotFoundError,
+  WorkspaceResolutionError,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { getMeetAppOrigin } from '@/lib/meet-app-url';
@@ -25,7 +30,30 @@ export async function POST(request: Request, { params }: Params) {
       allowAppSessionAuth: { targetApp: 'meet' },
     });
     if (!auth.ok) return auth.response;
-    const wsId = await normalizeWorkspaceId(rawWsId, auth.supabase);
+    let wsId: string;
+    try {
+      wsId = await normalizeWorkspaceId(rawWsId, auth.supabase);
+    } catch (error) {
+      if (error instanceof WorkspaceAuthError) {
+        return NextResponse.json(
+          { error: 'Workspace lookup failed' },
+          { status: 401, headers: noStore }
+        );
+      }
+      if (error instanceof WorkspaceNotFoundError) {
+        return NextResponse.json(
+          { error: 'Meeting not found' },
+          { status: 404, headers: noStore }
+        );
+      }
+      if (error instanceof WorkspaceResolutionError) {
+        return NextResponse.json(
+          { error: 'Workspace lookup failed' },
+          { status: 500, headers: noStore }
+        );
+      }
+      throw error;
+    }
     const { data: meeting, error } = await auth.supabase
       .from('workspace_meetings')
       .select('id')

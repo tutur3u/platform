@@ -7739,6 +7739,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetMiraActionFailed => 'Không thể cập nhật mục duyệt của Mira. Vui lòng thử lại.';
 
   @override
+  String get meetOpenLink => 'Mở liên kết';
+
+  @override
   String get meetMessageHint => 'Nhắn cho mọi người';
 
   @override

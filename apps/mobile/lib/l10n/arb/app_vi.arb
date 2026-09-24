@@ -3184,6 +3184,7 @@
     "meetMiraApprovalTitle": "Duyệt hành động trong không gian làm việc?",
     "meetMiraApprovalHint": "Mira sẽ thực hiện các hành động được liệt kê. Hãy kiểm tra từng nội dung trước khi duyệt.",
     "meetMiraActionFailed": "Không thể cập nhật mục duyệt của Mira. Vui lòng thử lại.",
+    "meetOpenLink": "Mở liên kết",
     "meetMessageHint": "Nhắn cho mọi người",
     "meetSend": "Gửi",
     "meetWaitingForHost": "Đang chờ người chủ trì cho phép tham gia",

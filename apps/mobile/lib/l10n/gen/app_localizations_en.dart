@@ -7769,6 +7769,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetMiraActionFailed => 'Couldn\'t update Mira\'s review. Please try again.';
 
   @override
+  String get meetOpenLink => 'Open link';
+
+  @override
   String get meetMessageHint => 'Message everyone';
 
   @override

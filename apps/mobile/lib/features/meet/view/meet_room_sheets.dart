@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
 import 'package:mobile/features/meet/view/meet_assistant_review_card.dart';
 import 'package:mobile/features/meet/view/meet_personal_chat_panel.dart';
+import 'package:mobile/features/meet/view/meet_room_message_body.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
@@ -69,7 +69,7 @@ Widget _roomChatPanel(MeetCallController call, TextEditingController input) =>
                 for (final message in call.messages)
                   ListTile(
                     title: Text(message['displayName'] as String? ?? ''),
-                    subtitle: AssistantMarkdownBody(
+                    subtitle: MeetRoomMessageBody(
                       data: message['body'] as String? ?? '',
                     ),
                     dense: true,

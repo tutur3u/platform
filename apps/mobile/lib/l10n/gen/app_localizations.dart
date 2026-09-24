@@ -14833,6 +14833,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t update Mira\'s review. Please try again.'**
   String get meetMiraActionFailed;
 
+  /// No description provided for @meetOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Open link'**
+  String get meetOpenLink;
+
   /// No description provided for @meetMessageHint.
   ///
   /// In en, this message translates to:
