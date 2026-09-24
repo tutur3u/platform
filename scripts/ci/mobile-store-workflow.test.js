@@ -50,7 +50,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.equal(
     preflight.outputs.build_name,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
-    '${{ steps.credentials.outputs.build_name }}'
+    '${{ steps.version_name.outputs.build_name }}'
   );
   assert.equal(
     preflight.steps[0].run,

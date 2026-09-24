@@ -36,7 +36,7 @@ jobs:
     outputs:
       has_ci_token: ${{ steps.credentials.outputs.has_ci_token }}
       build_number: ${{ steps.credentials.outputs.build_number }}
-      build_name: ${{ steps.credentials.outputs.build_name }}
+      build_name: ${{ steps.version_name.outputs.build_name }}
     steps:
       - name: Require production branch
         run: test "$GITHUB_REF" = refs/heads/production
@@ -61,8 +61,44 @@ jobs:
           test "$GITHUB_RUN_ATTEMPT" -lt 1000
           test "$build_number" -le 2100000000
           echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
-          build_name="$(node scripts/mobile-deployment/build-name.mjs "$build_number")"
+
+      - name: Resolve next mobile app version
+        shell: bash
+        env:
+          MOBILE_DEPLOYMENT_CI_TOKEN: ${{ secrets.MOBILE_DEPLOYMENT_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 077
+          bundle_path="$RUNNER_TEMP/mobile-version-bundle.json"
+          oidc_response="$RUNNER_TEMP/mobile-version-oidc.json"
+          oidc_url="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=tuturuuu-mobile-deployment"
+          curl -fsSL \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "$oidc_url" -o "$oidc_response"
+          oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
+          curl -fsSL \
+            -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
+            -H "X-GitHub-OIDC-Token: ${oidc_token}" \
+            "https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=ios" \
+            -o "$bundle_path"
+          node scripts/mobile-deployment/hydrate-bundle.mjs \
+            --platform ios --bundle "$bundle_path" \
+            --mobile-root "$RUNNER_TEMP/mobile-version"
+
+      - name: Calculate next mobile app version
+        id: version_name
+        shell: bash
+        run: |
+          set -euo pipefail
+          build_name="$(node scripts/mobile-deployment/build-name.mjs)"
           echo "build_name=$build_name" >> "$GITHUB_OUTPUT"
+
+      - name: Cleanup version lookup credentials
+        if: always()
+        shell: bash
+        run: |
+          rm -rf "$RUNNER_TEMP/mobile-deployment" "$RUNNER_TEMP/mobile-version"
+          rm -f "$RUNNER_TEMP/mobile-version-bundle.json" "$RUNNER_TEMP/mobile-version-oidc.json"
 
   publish-android-internal:
     name: Publish Android to Google Play internal

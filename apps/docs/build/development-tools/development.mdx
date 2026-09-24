@@ -598,10 +598,11 @@ compilation when signing is absent and verifies the resulting AAB with
 `jarsigner`. The Mobile Store Deployment workflow hydrates these credentials in
 its protected runner and executes this exact command. Each store upload derives
 its app version from the major and minor values in `apps/mobile/pubspec.yaml`
-and the unique CI build number (for example, `0.11.203001`). Android and iOS
-receive the same version and build number without committing a version bump;
-Release Please still owns the source version. Development builds remain
-available through `bun build:android:dev`.
+and the highest existing TestFlight prerelease version for that series. For
+example, `0.11.0` advances to `0.11.1`, then `0.11.2`. Android and iOS receive
+the same version, while the unique CI build number remains separate. This does
+not commit a version bump; Release Please still owns the source version.
+Development builds remain available through `bun build:android:dev`.
 
 To hydrate or validate a native Firebase configuration without compiling, run:
 
