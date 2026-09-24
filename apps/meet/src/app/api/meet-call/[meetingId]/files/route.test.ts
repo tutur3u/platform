@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   ),
   remove: vi.fn(async () => ({})),
 }));
-vi.mock('@/features/call/lib/call-access', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
     constructor(
       public status: number,
@@ -28,7 +28,7 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   deleteWorkspaceStorageObjectByPath: mocks.remove,
   createWorkspaceStorageSignedReadUrl: vi.fn(),
 }));
-vi.mock('@/features/call/server/room-service', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
   personalWorkspace: mocks.personal,
   callRoomService: mocks.service,
   roomRoute: async (
@@ -41,7 +41,7 @@ vi.mock('@/features/call/server/room-service', () => ({
     ),
 }));
 
-import { MeetCallAccessError } from '@/features/call/lib/call-access';
+import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import { DELETE, POST } from './route';
 
 const params = { params: Promise.resolve({ meetingId: 'room' }) };

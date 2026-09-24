@@ -326,6 +326,14 @@
     "apps/lettin": {
       "component": "lettin",
       "package-name": "@tuturuuu/lettin"
+    },
+    "apps/parley": {
+      "component": "parley",
+      "package-name": "@tuturuuu/parley"
+    },
+    "packages/meet-core": {
+      "component": "meet-core",
+      "package-name": "@tuturuuu/meet-core"
     }
   }
 }

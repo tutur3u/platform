@@ -61,7 +61,7 @@ export async function getAiStudioConsumptionBreakdown({
         // user-triggered, and nothing on it ran unmetered.
         execution_mode: 'interactive',
         latency_sample_count: row.request_count,
-        search_units: 0,
+        search_units: resolveLegacySearchCount(run.metadata),
         unmetered_credits: 0,
       })
     ) ?? [];
@@ -192,7 +192,7 @@ export async function listAiStudioConsumptionEvents({
         provider_cost_usd: run.provider_cost_usd,
         reasoning_tokens: run.reasoning_tokens,
         request_id: run.request_id,
-        search_units: 0,
+        search_units: resolveLegacySearchCount(run.metadata),
         source_id: resolveLegacySourceId(
           run.api_key_id,
           run.actor_id,
@@ -252,10 +252,23 @@ function resolveLegacySourceId(
   actorId: string | null,
   metadata: unknown
 ) {
-  return externalAppIdOf(metadata) ?? apiKeyId ?? actorId ?? 'session';
+  const app = metadataRecord(metadata)?.app;
+  return (
+    externalAppIdOf(metadata) ??
+    apiKeyId ??
+    (app === 'meet' || app === 'parley' ? `app:${app}` : actorId) ??
+    'session'
+  );
 }
 
 function resolveLegacyExecutionMode(metadata: unknown) {
   const mode = metadataRecord(metadata)?.execution_mode;
   return mode === 'background' ? 'background' : 'interactive';
+}
+
+function resolveLegacySearchCount(metadata: unknown) {
+  const count = metadataRecord(metadata)?.search_count;
+  return typeof count === 'number' && Number.isFinite(count)
+    ? Math.min(2147483647, Math.max(0, Math.floor(count)))
+    : 0;
 }

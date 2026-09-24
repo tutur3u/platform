@@ -41,6 +41,7 @@ const nextConfig = createTuturuuuNextConfig({
     '@tuturuuu/internal-api',
     '@tuturuuu/payment',
     '@tuturuuu/realtime',
+    '@tuturuuu/meet-core',
     '@tuturuuu/satellite',
     '@tuturuuu/supabase',
     '@tuturuuu/transactional',

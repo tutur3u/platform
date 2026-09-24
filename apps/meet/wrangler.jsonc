@@ -50,7 +50,8 @@
   "vars": {
     "NEXT_PUBLIC_APP_URL": "https://meet.tuturuuu.com",
     "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
-    "MEET_REALTIME_URL": "wss://meet-realtime.tuturuuu.com/realtime"
+    "MEET_REALTIME_URL": "wss://meet-realtime.tuturuuu.com/realtime",
+    "PARLEY_APP_URL": "https://parley.tuturuuu.com"
   },
   "durable_objects": {
     "bindings": [

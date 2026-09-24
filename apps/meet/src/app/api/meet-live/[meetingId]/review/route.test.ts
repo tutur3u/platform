@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 vi.mock('server-only', () => ({}));
-vi.mock('@/features/call/lib/call-access', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
     constructor(
       public status: number,
@@ -28,7 +28,7 @@ vi.mock('@opennextjs/cloudflare', () => ({
     },
   }),
 }));
-vi.mock('@/features/call/server/room-service', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
   callRoomService: vi.fn(async () => ({})),
   roomRoute: async (
     _request: Request,
@@ -36,7 +36,7 @@ vi.mock('@/features/call/server/room-service', () => ({
     action: (access: unknown) => unknown
   ) => action({ user: { id: 'authenticated-owner' } }),
 }));
-vi.mock('@/features/live-assistant/workspace-tools', () => ({
+vi.mock('@tuturuuu/meet-core/features/live-assistant/workspace-tools', () => ({
   liveWorkspaceTools: f.tools,
 }));
 

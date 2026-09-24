@@ -273,7 +273,8 @@
                   "platform/applications/mind",
                   "platform/applications/hive-world-event-troubleshooting"
                 ]
-              }
+              },
+              "platform/apps/parley"
             ]
           },
           {

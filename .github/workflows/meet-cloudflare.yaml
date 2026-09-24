@@ -71,6 +71,9 @@ jobs:
       - run: bun run test
         working-directory: packages/realtime
       - run: node --experimental-strip-types --test apps/meet-realtime/src/check-endpoint.test.ts apps/meet-realtime/src/turn-credentials.test.ts
+      - run: bun x --no-install turbo run build --filter='@tuturuuu/meet-core^...' --concurrency=2
+      - run: bun run test
+        working-directory: packages/meet-core
       - run: bun run test
         working-directory: apps/meet
       - name: Verify React prerender resume survives Worker bundling
@@ -123,6 +126,11 @@ jobs:
         with:
           name: meet-worker-${{ github.sha }}
           path: apps/meet/.open-next
+      - name: Wait for shared meeting billing schema
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
+        run: bun packages/meet-core/scripts/verify-schema.ts
       - name: Verify required production secret names
         env:
           MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}

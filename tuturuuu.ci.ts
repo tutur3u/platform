@@ -20,6 +20,7 @@ export const ci = {
   'i18n-check.yaml': true,
   'lettin-cloudflare.yaml': true,
   'meet-cloudflare.yaml': true,
+  'parley-cloudflare.yaml': true,
   'mobile.yaml': true,
   'release-ai-package.yaml': true,
   'release-apis-package.yaml': true,

@@ -32,7 +32,7 @@ vi.mock('next/navigation', () => ({
   redirect: mocks.redirect,
 }));
 
-vi.mock('@/constants/common', () => ({
+vi.mock('@tuturuuu/meet-core/constants/common', () => ({
   BASE_URL: 'https://meet.tuturuuu.com',
   TTR_URL: 'https://tuturuuu.com',
 }));

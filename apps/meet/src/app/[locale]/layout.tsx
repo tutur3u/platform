@@ -1,3 +1,4 @@
+import '@tuturuuu/meet-core/styles.css';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';

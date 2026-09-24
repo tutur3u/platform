@@ -1,5 +1,5 @@
+import { encodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { encodeRoomCode } from '@/features/call/lib/room-code';
 
 const mocks = vi.hoisted(() => ({
   access: vi.fn(),
@@ -7,16 +7,19 @@ const mocks = vi.hoisted(() => ({
   session: vi.fn(),
   policy: vi.fn(),
 }));
-vi.mock('@/features/call/lib/meeting-public-info', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/lib/meeting-public-info', () => ({
   getMeetingPublicInfo: mocks.publicInfo,
 }));
-vi.mock('@/features/call/components/meeting-public-invite', () => ({
-  MeetingPublicInvite: () => null,
-}));
-vi.mock('@/features/meeting-ai/server/room-access', () => ({
+vi.mock(
+  '@tuturuuu/meet-core/features/call/components/meeting-public-invite',
+  () => ({
+    MeetingPublicInvite: () => null,
+  })
+);
+vi.mock('@tuturuuu/meet-core/features/meeting-ai/server/room-access', () => ({
   readMeetingRoomPolicy: mocks.policy,
 }));
-vi.mock('@/features/call/components/call-ended', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/components/call-ended', () => ({
   CallEnded: () => null,
 }));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
@@ -31,16 +34,22 @@ vi.mock('next/navigation', () => ({
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,
 }));
-vi.mock('@/features/call/components/participant-name-form', () => ({
-  ParticipantNameForm: () => null,
-}));
-vi.mock('@/features/call/components/device-session-gate', () => ({
-  CallShell: () => null,
-}));
-vi.mock('@/features/call/lib/call-session', () => ({
+vi.mock(
+  '@tuturuuu/meet-core/features/call/components/participant-name-form',
+  () => ({
+    ParticipantNameForm: () => null,
+  })
+);
+vi.mock(
+  '@tuturuuu/meet-core/features/call/components/device-session-gate',
+  () => ({
+    CallShell: () => null,
+  })
+);
+vi.mock('@tuturuuu/meet-core/features/call/lib/call-session', () => ({
   getMeetCallSession: mocks.session,
 }));
-vi.mock('@/features/call/lib/call-access', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   getMeetCallAccess: mocks.access,
   MeetCallAccessError: class extends Error {
     constructor(
@@ -52,7 +61,7 @@ vi.mock('@/features/call/lib/call-access', () => ({
   },
 }));
 
-import { MeetCallAccessError } from '@/features/call/lib/call-access';
+import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import RoomPage from './page';
 
 const id = '00000000-0000-4000-8000-000000000001';

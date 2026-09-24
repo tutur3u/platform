@@ -212,7 +212,7 @@ function ledgerRowToEvent(row: LedgerRow): LedgerEvent {
     reasoning_tokens: nonNegative(row.reasoning_tokens),
     request_id: `credit:${row.id}`,
     search_units: nonNegative(row.search_count),
-    source_id: row.user_id ?? 'workspace',
+    source_id: meetingAppSource(row.metadata) ?? row.user_id ?? 'workspace',
     source_type: 'workspace_credit',
     status: 'succeeded',
     // A ledger deduction is a real charge, so it has no unmetered allocation.
@@ -265,4 +265,12 @@ function getStudioRunReference(metadata: LedgerRow['metadata']) {
 
 function nonNegative(value: number | null) {
   return Math.max(Number(value ?? 0), 0);
+}
+
+function meetingAppSource(metadata: LedgerRow['metadata']) {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata))
+    return null;
+  return metadata.app === 'meet' || metadata.app === 'parley'
+    ? `app:${metadata.app}`
+    : null;
 }

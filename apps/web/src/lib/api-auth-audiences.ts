@@ -17,6 +17,7 @@ const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'learn',
   'mail',
   'meet',
+  'parley',
   'mind',
   'mira',
   'nova',

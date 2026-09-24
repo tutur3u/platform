@@ -412,6 +412,18 @@ export const LAUNCHABLE_APPS = [
     title: '(Tu)lettin',
     workspacePathResolver: workspaceRootPath,
   },
+  {
+    aliases: ['Scenario training', 'Roleplay'],
+    appRoot: 'apps/parley',
+    category: 'ai',
+    defaultPath: '/',
+    localhostOrigin: 'http://localhost:7834',
+    packageName: '@tuturuuu/parley',
+    portlessApp: 'parley',
+    productionUrl: 'https://parley.tuturuuu.com',
+    slug: 'parley',
+    title: 'Parley',
+  },
 ] as const satisfies readonly LaunchableApp[];
 
 export type LaunchableAppSlug = (typeof LAUNCHABLE_APPS)[number]['slug'];

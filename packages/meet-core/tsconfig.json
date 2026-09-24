@@ -1,0 +1,10 @@
+{
+  "extends": "@tuturuuu/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "paths": {
+      "@tuturuuu/meet-core/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["**/*.test.*", "src/cloudflare"]
+}

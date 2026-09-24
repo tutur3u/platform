@@ -1,0 +1,130 @@
+import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
+import { hasParleyAccess } from '@tuturuuu/meet-core/parley-access';
+import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
+import 'server-only';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
+import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { z } from 'zod';
+
+export class MeetCallAccessError extends Error {
+  constructor(
+    public status: number,
+    message: string
+  ) {
+    super(message);
+  }
+}
+
+/** Invite possession permits this call only, never workspace or archive access. */
+export async function getMeetCallAccess(
+  meetingId: string,
+  fallbackName: string
+) {
+  if (!z.uuid().safeParse(meetingId).success)
+    throw new MeetCallAccessError(404, 'Meeting not found');
+  const user = await getSatelliteAppSessionUser(MEETING_APP);
+  if (!user?.id) throw new MeetCallAccessError(401, 'Sign in to join');
+  if (MEETING_APP === 'parley' && !(await hasParleyAccess(user.id)))
+    throw new MeetCallAccessError(403, 'Parley access required');
+  const db = await createAdminClient({ noCookie: true });
+  const { data: meeting, error } = await db
+    .from('workspace_meetings')
+    .select('id, name, creator_id, ws_id, workspaces(personal)')
+    .eq('id', meetingId)
+    .maybeSingle();
+  if (error) throw new MeetCallAccessError(500, 'Meeting lookup failed');
+  if (!meeting?.creator_id)
+    throw new MeetCallAccessError(404, 'Meeting not found');
+  const parleySession = await isParleySession(
+    meetingId,
+    MEETING_APP === 'parley'
+  );
+  if (MEETING_APP === 'parley' && !parleySession)
+    throw new MeetCallAccessError(404, 'Scenario session not found');
+  if (parleySession && MEETING_APP !== 'parley')
+    throw new MeetCallAccessError(403, 'Open this scenario in Parley');
+  const membership = await verifyWorkspaceMembershipType({
+    supabase: db,
+    userId: user.id,
+    wsId: meeting.ws_id,
+    requiredType: 'ANY',
+  });
+  if (membership.error === 'membership_lookup_failed')
+    throw new MeetCallAccessError(500, 'Membership lookup failed');
+  const isHost = meeting.creator_id === user.id;
+  if (isHost && (!membership.ok || membership.membershipType !== 'MEMBER'))
+    throw new MeetCallAccessError(403, 'Workspace access denied');
+  if (!membership.ok) {
+    const { data: identity, error: identityError } =
+      await db.auth.admin.getUserById(meeting.creator_id);
+    if (identityError)
+      throw new MeetCallAccessError(500, 'Meeting host lookup failed');
+    const canHost = parleySession
+      ? await hasParleyAccess(meeting.creator_id)
+      : await canVerifiedAccountHostMeeting(
+          meeting.creator_id,
+          identity.user
+        ).catch(() => {
+          throw new MeetCallAccessError(
+            503,
+            'Meeting host entitlement unavailable'
+          );
+        });
+    if (!canHost)
+      throw new MeetCallAccessError(403, 'Guest access is unavailable');
+  }
+  const { data: profile, error: profileError } = await Promise.resolve(
+    db
+      .from('users')
+      .select('display_name, avatar_url, user_private_details(full_name)')
+      .eq('id', user.id)
+      .maybeSingle()
+  ).catch(() => ({ data: null, error: { code: 'PROFILE_LOOKUP_REJECTED' } }));
+  if (profileError)
+    console.warn(
+      'Meet participant profile lookup failed; using account identity',
+      {
+        code: profileError.code,
+      }
+    );
+  const savedDisplayName =
+    typeof profile?.display_name === 'string'
+      ? profile.display_name.trim()
+      : '';
+  const displayName = [
+    savedDisplayName,
+    profile?.user_private_details?.full_name,
+    user.user_metadata?.display_name,
+    user.user_metadata?.full_name,
+  ].find(
+    (value): value is string => typeof value === 'string' && !!value.trim()
+  );
+  return {
+    user,
+    meeting,
+    isHost,
+    displayName: (displayName || user.email || fallbackName)
+      .trim()
+      .slice(0, 120),
+    avatarUrl: [
+      profile?.avatar_url,
+      user.user_metadata?.avatar_url,
+      user.user_metadata?.picture,
+    ].find(
+      (value): value is string =>
+        typeof value === 'string' &&
+        value.startsWith('https://') &&
+        value.length <= 2048
+    ),
+    needsDisplayName: !savedDisplayName && !profileError,
+    suggestedDisplayName: displayName?.trim() ?? '',
+    admission: membership.ok ? ('open' as const) : ('lobby' as const),
+    canReadWorkspace: membership.ok && membership.membershipType === 'MEMBER',
+    workspaceSlug: toWorkspaceSlug(meeting.ws_id, {
+      personal: !!meeting.workspaces?.personal,
+    }),
+  };
+}

@@ -15948,6 +15948,7 @@ export type Database = {
           success: boolean;
         }[];
       };
+      parley_runtime_ready: { Args: never; Returns: boolean };
       begin_ai_live_session: {
         Args: {
           p_access_ws_id: string;

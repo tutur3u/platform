@@ -1,0 +1,696 @@
+'use client';
+import { createMeetCallRealtimeToken } from '@tuturuuu/internal-api';
+import { deliverRoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
+import type {
+  CloudflareSfuTrack,
+  MeetMediaState,
+} from '@tuturuuu/realtime/meet';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { encodingBudget } from '../lib/bandwidth';
+import {
+  type CallState,
+  INITIAL_CALL_STATE,
+  reduceCallState,
+  remoteTrackKey,
+} from '../lib/call-state';
+import { CameraEffects } from '../lib/camera-effects';
+import { createLocalMediaControls } from '../lib/local-media-controls';
+import { createMediaDiagnosticsReader } from '../lib/media-diagnostics';
+import { openPeerSession } from '../lib/open-peer-session';
+import { recoverMediaState } from '../lib/recover-media-state';
+import { createRoomActions } from '../lib/room-actions';
+import type {
+  MeetRoomController,
+  UseMeetRoomOptions,
+} from '../lib/room-controller';
+import {
+  applySubscribeResponse,
+  pruneObsoleteReceivers,
+} from '../lib/subscribe-response';
+import { useCameraControls } from './use-camera-controls';
+import { usePublishSession } from './use-publish-session';
+import { useSenderBandwidth } from './use-sender-bandwidth';
+import { useSoloTransport } from './use-solo-transport';
+
+export type {
+  MeetRoomController,
+  UseMeetRoomOptions,
+} from '../lib/room-controller';
+
+import { applyForcedMute } from '../lib/forced-media';
+import {
+  diffLocalTracks,
+  type LocalTrackPlan,
+  localTrackSource,
+  planLocalTracks,
+  planRemoteSubscriptions,
+} from '../lib/negotiation';
+import {
+  PEER_CONFIG,
+  preparePeerSession,
+  waitForPeerConnection,
+} from '../lib/peer-connection';
+import { watchPeerRecovery } from '../lib/peer-recovery';
+import { assertPublishedResponse } from '../lib/publish-response';
+import {
+  closePublishedTrack,
+  syncPublishedSenders,
+} from '../lib/published-senders';
+import { watchReceiverHealth } from '../lib/receiver-health';
+import {
+  listenRemotePlayback,
+  type RemoteTrackOwner,
+  reconcileRemotePlayback,
+  releaseClosedSubscriptions,
+} from '../lib/remote-playback';
+import {
+  createRemoteStreamCache,
+  type RemoteMedia,
+} from '../lib/remote-streams';
+import type { SfuTracksResponse } from '../lib/sfu-response';
+import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
+/** Coordinate room signaling, local capture, and recoverable media transport. */
+export function useMeetRoom({
+  meetingId,
+  realtimeUrl,
+  token,
+  deviceId,
+}: UseMeetRoomOptions): MeetRoomController {
+  const diagnostics = useMemo(() => createMediaDiagnosticsReader(), []);
+  const effects = useMemo(() => new CameraEffects(), []);
+  const activeRef = useRef(true);
+  const [state, setState] = useState<CallState>(INITIAL_CALL_STATE);
+  const [connectionStatus, setConnectionStatus] =
+    useState<MeetSignalingStatus>('connecting');
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
+  const [remoteMedia, setRemoteMedia] = useState<RemoteMedia>({});
+  const [connectionGeneration, setConnectionGeneration] = useState(0);
+  const publishQueue = useRef(Promise.resolve());
+  const subscribeQueue = useRef(Promise.resolve());
+  const sendersRef = useRef(new Map<string, RTCRtpSender>());
+  const [media, setMedia] = useState<MeetMediaState>({
+    audioEnabled: false,
+    screenEnabled: false,
+    videoEnabled: false,
+  });
+  const signalingRef = useRef<MeetSignaling | null>(null);
+  const actions = useMemo(() => createRoomActions(signalingRef), []);
+  const publishPcRef = useRef<RTCPeerConnection | null>(null);
+  const subscribePcRef = useRef<RTCPeerConnection | null>(null);
+  const publishSessionRef = useRef<string | null>(null);
+  const subscribeSessionRef = useRef<string | null>(null);
+  const publishedRef = useRef<LocalTrackPlan[]>([]);
+  const pendingSubscriptionsRef = useRef(new Set<string>());
+  const subscribedRef = useRef<Set<string>>(new Set());
+  const screenStreamRef = useRef<MediaStream | null>(null);
+  const trackOwnersRef = useRef<Map<string, RemoteTrackOwner>>(new Map());
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const mediaRef = useRef(media);
+  mediaRef.current = media;
+  const syncForcedMediaRef = useRef<
+    (next: MeetMediaState, muteAudio: boolean) => void
+  >(() => {});
+  const publishEpoch = useRef(0);
+  const resetPublisher = useCallback((recover = false) => {
+    publishEpoch.current++;
+    publishPcRef.current?.close();
+    publishPcRef.current = null;
+    publishSessionRef.current = null;
+    sendersRef.current.clear();
+    publishedRef.current = [];
+    if (recover) setConnectionGeneration((value) => value + 1);
+  }, []);
+  const lastReceiveRecovery = useRef(0);
+  const resetSubscriber = useCallback(() => {
+    subscribePcRef.current?.close();
+    subscribePcRef.current = null;
+    subscribeSessionRef.current = null;
+    trackOwnersRef.current.clear();
+    subscribedRef.current.clear();
+    setRemoteMedia({});
+  }, []);
+  useEffect(() => {
+    activeRef.current = true;
+    let usedInitialToken = false;
+    const resolveUrl = async () => {
+      if (!usedInitialToken) {
+        usedInitialToken = true;
+        return `${realtimeUrl}?token=${encodeURIComponent(token)}`;
+      }
+      const refreshed = await createMeetCallRealtimeToken(
+        meetingId,
+        undefined,
+        deviceId ? { deviceId, joinMode: 'additional' } : undefined
+      );
+      if (refreshed.requiresDeviceChoice)
+        throw new Error('Device confirmation required');
+      return `${refreshed.realtimeUrl}?token=${encodeURIComponent(refreshed.token)}`;
+    };
+    const signaling = new MeetSignaling({
+      onMessage: (message) => {
+        deliverRoomAssistantAudio(meetingId, message);
+        if (
+          message.type === 'ready' &&
+          message.admission === 'admitted' &&
+          !message.resumed
+        ) {
+          resetSubscriber();
+          resetPublisher();
+          setConnectionGeneration((value) => value + 1);
+        }
+        if (
+          message.type === 'track.closed' &&
+          releaseClosedSubscriptions(
+            new Set(message.tracks.map(remoteTrackKey)),
+            trackOwnersRef.current,
+            subscribedRef.current,
+            pendingSubscriptionsRef.current,
+            setRemoteMedia
+          )
+        )
+          resetSubscriber();
+        if (message.type === 'participant.removed') {
+          setRemoteMedia((current) => {
+            const next = { ...current };
+            delete next[message.userId];
+            return next;
+          });
+        }
+        if (
+          message.type === 'participant.muted' &&
+          message.userId === stateRef.current.selfUserId
+        ) {
+          const next = applyForcedMute(
+            mediaRef.current,
+            message.kinds,
+            localStreamRef.current,
+            screenStreamRef.current,
+            () => effects.setEnabled(false)
+          );
+          if (message.kinds.includes('screen')) {
+            setScreenStream(null);
+            screenStreamRef.current = null;
+          }
+          mediaRef.current = next;
+          setMedia(next);
+          syncForcedMediaRef.current(next, message.kinds.includes('audio'));
+        }
+        setState((current) => reduceCallState(current, message));
+      },
+      onReconnected: () => {
+        signalingRef.current?.send({
+          media: mediaRef.current,
+          type: 'presence.join',
+        });
+        actions.replayAssistantAudio();
+      },
+      onStatusChange: setConnectionStatus,
+      resolveUrl,
+    });
+    signalingRef.current = signaling;
+    signaling.connect();
+    return () => {
+      activeRef.current = false;
+      effects.dispose();
+      signaling.close();
+      for (const track of localStreamRef.current?.getTracks() ?? [])
+        track.stop();
+      for (const track of screenStreamRef.current?.getTracks() ?? [])
+        track.stop();
+      localStreamRef.current = null;
+      screenStreamRef.current = null;
+      setLocalStream(null);
+      setScreenStream(null);
+      mediaRef.current = {
+        audioEnabled: false,
+        screenEnabled: false,
+        videoEnabled: false,
+      };
+      setMedia(mediaRef.current);
+      signalingRef.current = null;
+      resetPublisher();
+      subscribePcRef.current?.close();
+      subscribePcRef.current = null;
+      subscribeSessionRef.current = null;
+      subscribedRef.current = new Set();
+    };
+  }, [
+    effects,
+    meetingId,
+    realtimeUrl,
+    resetPublisher,
+    resetSubscriber,
+    token,
+    deviceId,
+    actions.replayAssistantAudio,
+  ]);
+  const publishPresence = useCallback((next: MeetMediaState) => {
+    signalingRef.current?.send({ media: next, type: 'presence.update' });
+  }, []);
+  const ensurePublishSession = usePublishSession(
+    publishPcRef,
+    publishSessionRef,
+    signalingRef,
+    resetPublisher
+  );
+  const ensureSubscribeSession = useCallback(async () => {
+    if (subscribeSessionRef.current && subscribePcRef.current) {
+      return {
+        pc: subscribePcRef.current,
+        sessionId: subscribeSessionRef.current,
+      };
+    }
+    const pc = new RTCPeerConnection(PEER_CONFIG);
+    subscribePcRef.current = pc;
+    watchPeerRecovery(pc, () => subscribePcRef.current === pc, resetSubscriber);
+    watchReceiverHealth(
+      pc,
+      trackOwnersRef.current,
+      () => stateRef.current.participants,
+      () => subscribePcRef.current === pc,
+      () => {
+        // A persistent network failure must not create a tight session churn loop.
+        if (Date.now() - lastReceiveRecovery.current < 60_000) return;
+        lastReceiveRecovery.current = Date.now();
+        console.warn('Meet receiving media stalled; rebuilding subscriber');
+        resetSubscriber();
+      }
+    );
+    listenRemotePlayback(
+      pc,
+      trackOwnersRef.current,
+      subscribedRef.current,
+      () => subscribePcRef.current === pc,
+      setRemoteMedia
+    );
+    return openPeerSession(
+      pc,
+      subscribePcRef,
+      subscribeSessionRef,
+      signalingRef,
+      resetSubscriber
+    );
+  }, [resetSubscriber]);
+  /** Pushes newly enabled local tracks to the SFU. */
+  const syncLocalTracks = useCallback(
+    async (stream: MediaStream, next: MeetMediaState) => {
+      if (
+        !activeRef.current ||
+        Object.keys(stateRef.current.participants).length < 2
+      )
+        return;
+      const selfUserId = stateRef.current.selfUserId;
+      if (!selfUserId) return;
+      const desired = planLocalTracks(
+        selfUserId,
+        next,
+        screenStreamRef.current
+          ?.getAudioTracks()
+          .some((track) => track.readyState === 'live')
+      );
+      const previousPc = publishPcRef.current,
+        epoch = publishEpoch.current;
+      const published = await syncPublishedSenders({
+        published: publishedRef.current,
+        desired,
+        senders: sendersRef.current,
+        pc: publishPcRef.current,
+        sessionId: publishSessionRef.current,
+        stream,
+        screenStream: screenStreamRef.current,
+        isCurrent: () => publishPcRef.current === previousPc,
+        reset: () => resetPublisher(true),
+        closeTrack: (sessionId, track) =>
+          closePublishedTrack(signalingRef.current, sessionId, track),
+      });
+      if (publishPcRef.current !== previousPc || publishEpoch.current !== epoch)
+        return;
+      publishedRef.current = published;
+      const { publish } = diffLocalTracks(published, desired);
+      if (publish.length) {
+        const { pc, sessionId } = await ensurePublishSession();
+        await preparePeerSession(
+          pc,
+          () => publishPcRef.current === pc,
+          () => resetPublisher(true)
+        );
+        if (publishPcRef.current !== pc) return;
+        const added: Array<{
+          plan: LocalTrackPlan;
+          transceiver: RTCRtpTransceiver;
+        }> = [];
+        for (const plan of publish) {
+          const source = localTrackSource(
+            plan.kind,
+            stream,
+            screenStreamRef.current
+          );
+          if (!source || source.readyState === 'ended') continue;
+
+          source.contentHint =
+            source.kind === 'audio'
+              ? 'speech'
+              : plan.kind === 'screen'
+                ? 'detail'
+                : 'motion';
+          const transceiver = pc.addTransceiver(source, {
+            direction: 'sendonly',
+            sendEncodings: [encodingBudget(plan.kind, 'auto', null, null)],
+          });
+          sendersRef.current.set(plan.trackName, transceiver.sender);
+          added.push({ plan, transceiver });
+        }
+
+        if (added.length) {
+          const offer = await pc.createOffer();
+          if (publishPcRef.current !== pc) return;
+          // Apply the offer before reading the assigned transceiver MIDs.
+          await pc.setLocalDescription(offer);
+          if (publishPcRef.current !== pc) return;
+
+          const tracks: CloudflareSfuTrack[] = added.map(
+            ({ plan: added_plan, transceiver }) => ({
+              location: 'local',
+              mid: transceiver.mid ?? undefined,
+              trackName: added_plan.trackName,
+            })
+          );
+
+          const answer = await signalingRef.current?.request<SfuTracksResponse>(
+            {
+              sessionDescription: {
+                sdp: offer.sdp ?? '',
+                type: 'offer',
+              },
+              sessionId,
+              tracks,
+              type: 'sfu.tracks.publish',
+            }
+          );
+
+          if (publishPcRef.current !== pc) return;
+          assertPublishedResponse(answer);
+          await pc.setRemoteDescription(answer.sessionDescription);
+          await waitForPeerConnection(pc);
+          if (publishPcRef.current !== pc) return;
+          publishedRef.current = [
+            ...publishedRef.current,
+            ...added.map(({ plan }) => plan),
+          ];
+        }
+      }
+    },
+    [ensurePublishSession, resetPublisher]
+  );
+
+  const queueLocalTracks = useCallback(
+    (stream: MediaStream, next: MeetMediaState) => {
+      const task = publishQueue.current.then(() =>
+        syncLocalTracks(stream, next)
+      );
+      publishQueue.current = task.catch(() => undefined);
+      return task;
+    },
+    [syncLocalTracks]
+  );
+
+  const resumeLocalMedia = useCallback(() => {
+    void queueLocalTracks(
+      localStreamRef.current ?? new MediaStream(),
+      mediaRef.current
+    ).catch(() => undefined);
+  }, [queueLocalTracks]);
+  useSoloTransport(
+    Math.max(0, Object.keys(state.participants).length - 1),
+    state.admission === 'admitted',
+    connectionStatus,
+    {
+      session: publishSessionRef,
+      signaling: signalingRef,
+    },
+    resetPublisher,
+    resetSubscriber,
+    resumeLocalMedia
+  );
+
+  syncForcedMediaRef.current = (next, muteAudio) => {
+    if (muteAudio) localControls.cancelPendingMicrophone();
+    publishPresence(next);
+    void queueLocalTracks(
+      localStreamRef.current ?? new MediaStream(),
+      next
+    ).catch(() => undefined);
+  };
+
+  useEffect(() => {
+    if (!connectionGeneration || state.admission !== 'admitted') return;
+    void queueLocalTracks(
+      localStreamRef.current ?? new MediaStream(),
+      mediaRef.current
+    ).catch(() => undefined);
+  }, [connectionGeneration, queueLocalTracks, state.admission]);
+
+  useEffect(() => {
+    if (state.admission !== 'admitted') return;
+    const pull = async () => {
+      if (
+        !activeRef.current ||
+        Object.keys(stateRef.current.participants).length < 2
+      )
+        return;
+      pruneObsoleteReceivers(
+        stateRef.current.remoteTracks,
+        trackOwnersRef.current,
+        subscribedRef.current,
+        setRemoteMedia
+      );
+      const pending = planRemoteSubscriptions(
+        stateRef.current.remoteTracks,
+        subscribedRef.current,
+        stateRef.current.selfUserId
+      );
+      if (!pending.length) return;
+      pendingSubscriptionsRef.current = new Set(
+        pending.map(
+          (track) =>
+            `${encodeURIComponent(track.sessionId ?? '')}:${encodeURIComponent(track.trackName ?? '')}`
+        )
+      );
+      let requestedPeer: RTCPeerConnection | null = null;
+      try {
+        const { pc, sessionId } = await ensureSubscribeSession();
+        requestedPeer = pc;
+        await preparePeerSession(
+          pc,
+          () => subscribePcRef.current === pc,
+          resetSubscriber
+        );
+        if (subscribePcRef.current !== pc) return;
+        const answer = await signalingRef.current?.request<SfuTracksResponse>({
+          sessionId,
+          tracks: pending,
+          type: 'sfu.tracks.subscribe',
+        });
+        if (subscribePcRef.current !== pc) return;
+        applySubscribeResponse(
+          answer,
+          pending,
+          stateRef.current.remoteTracks,
+          trackOwnersRef.current,
+          subscribedRef.current,
+          setRemoteMedia
+        );
+        if (answer?.sessionDescription) {
+          await pc.setRemoteDescription(answer.sessionDescription);
+          if (subscribePcRef.current !== pc) return;
+          const localAnswer = await pc.createAnswer();
+          if (subscribePcRef.current !== pc) return;
+          await pc.setLocalDescription(localAnswer);
+          if (subscribePcRef.current !== pc) return;
+          await signalingRef.current?.request({
+            sessionDescription: { sdp: localAnswer.sdp ?? '', type: 'answer' },
+            sessionId,
+            type: 'sfu.renegotiate',
+          });
+        }
+        if (subscribePcRef.current !== pc) return;
+        reconcileRemotePlayback(
+          pc,
+          trackOwnersRef.current,
+          subscribedRef.current,
+          () => subscribePcRef.current === pc,
+          setRemoteMedia
+        );
+      } catch (error) {
+        if (requestedPeer && subscribePcRef.current === requestedPeer)
+          resetSubscriber();
+        throw error;
+      } finally {
+        pendingSubscriptionsRef.current.clear();
+      }
+    };
+    let active = true;
+    let scheduled = false,
+      failures = 0,
+      retryAfter = 0;
+    const schedule = () => {
+      if (scheduled || Date.now() < retryAfter) return;
+      scheduled = true;
+      subscribeQueue.current = subscribeQueue.current
+        .then(async () => {
+          if (active) await pull();
+          failures = 0;
+        })
+        .catch((error) => {
+          retryAfter =
+            Date.now() + Math.min(15000, 1500 * 2 ** Math.min(failures++, 4));
+          console.warn('Meet track subscription failed', error);
+        })
+        .finally(() => {
+          scheduled = false;
+        });
+    };
+    schedule();
+    const retry = setInterval(schedule, 1500);
+    return () => {
+      active = false;
+      clearInterval(retry);
+      if (stateRef.current.admission !== 'admitted') {
+        subscribePcRef.current?.close();
+        subscribePcRef.current = null;
+        subscribeSessionRef.current = null;
+        subscribedRef.current.clear();
+      }
+    };
+  }, [ensureSubscribeSession, resetSubscriber, state.admission]);
+
+  const applyMedia = useCallback(
+    async (next: MeetMediaState, stream: MediaStream | null) => {
+      const previous = mediaRef.current;
+      mediaRef.current = next;
+      setMedia(next);
+      publishPresence(next);
+      try {
+        await queueLocalTracks(stream ?? new MediaStream(), next);
+      } catch (error) {
+        if (activeRef.current) {
+          const restored = recoverMediaState(
+            previous,
+            next,
+            mediaRef.current,
+            !!localStreamRef.current
+              ?.getAudioTracks()
+              .some((track) => track.enabled)
+          );
+          restored.screenEnabled &&=
+            screenStreamRef.current
+              ?.getVideoTracks()
+              .some((track) => track.readyState === 'live') ?? false;
+          if (!restored.screenEnabled) {
+            for (const track of screenStreamRef.current?.getTracks() ?? [])
+              track.stop();
+            screenStreamRef.current = null;
+            setScreenStream(null);
+          }
+          mediaRef.current = restored;
+          setMedia(restored);
+          for (const track of localStreamRef.current?.getAudioTracks() ?? [])
+            track.enabled = restored.audioEnabled;
+          effects.setEnabled(restored.videoEnabled);
+          publishPresence(restored);
+          resetPublisher(true);
+        }
+        throw error;
+      }
+    },
+    [effects, publishPresence, queueLocalTracks, resetPublisher]
+  );
+
+  const localControls = useMemo(
+    () =>
+      createLocalMediaControls({
+        activeRef,
+        effects,
+        localStreamRef,
+        screenStreamRef,
+        mediaRef,
+        setLocalStream,
+        setScreenStream,
+        applyMedia,
+      }),
+    [applyMedia, effects]
+  );
+
+  const { setBandwidthMode, getBandwidthMode } = useSenderBandwidth(
+    publishPcRef,
+    sendersRef,
+    Object.keys(state.participants).length
+  );
+  const sharingUsers = Object.values(state.participants)
+    .filter((entry) => entry.media.screenEnabled)
+    .map((entry) => entry.userId)
+    .sort()
+    .join(',');
+  const buildRemoteStreams = useMemo(() => createRemoteStreamCache(), []);
+  const remoteStreams = useMemo(
+    () => buildRemoteStreams(remoteMedia, sharingUsers),
+    [buildRemoteStreams, remoteMedia, sharingUsers]
+  );
+
+  const leave = useCallback(() => {
+    activeRef.current = false;
+    signalingRef.current?.close();
+    resetPublisher();
+    resetSubscriber();
+    effects.dispose();
+    for (const track of localStreamRef.current?.getTracks() ?? []) track.stop();
+    for (const track of screenStreamRef.current?.getTracks() ?? [])
+      track.stop();
+    localStreamRef.current = null;
+    screenStreamRef.current = null;
+    setLocalStream(null);
+    setScreenStream(null);
+    setConnectionStatus('closed');
+  }, [effects, resetPublisher, resetSubscriber]);
+  const { cameraLook, setCameraLook, adoptPreview } = useCameraControls(
+    effects,
+    activeRef,
+    localStreamRef,
+    mediaRef,
+    setLocalStream,
+    queueLocalTracks
+  );
+  return {
+    ...actions,
+    setBandwidthMode,
+    getBandwidthMode,
+    adoptPreview,
+    leave,
+    cameraLook,
+    setCameraLook,
+    remoteMedia,
+    screenStream,
+    getMediaDiagnostics: () =>
+      diagnostics(
+        connectionStatus,
+        Object.keys(remoteMedia).length,
+        publishPcRef.current,
+        subscribePcRef.current
+      ),
+    reconnectReceivingMedia: resetSubscriber,
+    reconnectMedia: () => {
+      resetSubscriber();
+      resetPublisher(true);
+    },
+    connectionStatus,
+    localStream,
+    localPreview: screenStream ?? localStream,
+    media,
+    remoteStreams,
+    state,
+    ...localControls,
+  };
+}

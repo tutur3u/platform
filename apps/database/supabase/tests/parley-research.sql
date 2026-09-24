@@ -25,5 +25,14 @@ select is((select source_id from private.collect_ai_studio_consumption_events('3
 select lives_ok($$select * from private.settle_ai_live_session((select live_session_id from started), '34000000-0000-4000-8000-000000001001', 1, '{"inputTextTokens":1000,"inputAudioTokens":0,"inputImageTokens":0,"inputVideoTokens":0,"outputTextTokens":0,"outputAudioTokens":0,"thinkingTokens":0,"searchQueries":0}', true)$$, 'Settlement replay is accepted idempotently');
 select is((select count(*) from public.ai_credit_transactions where metadata->>'live_session_id' = (select live_session_id::text from started)), 1::bigint, 'Settlement retry never double charges');
 select throws_ok($$select * from private.begin_meeting_ai_live_session('34000000-0000-4000-8000-000000001001', '34000000-0000-4000-8000-000000001010', '34000000-0000-4000-8000-000000001010', 'gemini-3.1-flash-live-preview', now(), 'other', '34000000-0000-4000-8000-000000001011')$$, 'P0001', 'Invalid meeting app', 'Unknown application provenance is rejected');
+-- Chat must settle from its own reservation even when no spare credits remain.
+update public.workspace_ai_credit_balances set total_allocated = total_used + 30, bonus_credits = 0 where id = (select balance_id from private.ai_credit_reservations where id = (select reservation_id from started));
+create temporary table chat_started as select * from private.begin_ai_studio_run('meeting-chat-test', '34000000-0000-4000-8000-000000001010', '34000000-0000-4000-8000-000000001001', null, 'google/gemini-3.1-flash-lite', 'chat', 30, 'meeting-chat-test', '{"app":"meet","source":"meet_mira_personal"}');
+select is((select success from chat_started), true, 'Meet chat reserves the last available credits');
+create temporary table chat_settled as select * from private.settle_ai_studio_run(p_run_id => (select run_id from chat_started), p_status => 'succeeded', p_actual_credits => 20, p_provider_cost_usd => 0.001, p_input_tokens => 100, p_output_tokens => 20, p_metadata => '{"search_count":3}');
+select is((select success from chat_settled), true, 'Chat settles against its own hold without a second deduction');
+select is((select remaining_credits from chat_settled), 10::numeric, 'Chat refunds exactly the unused reservation');
+select is((select source_id from private.collect_ai_studio_consumption_events('34000000-0000-4000-8000-000000001010', '34000000-0000-4000-8000-000000001001', now() - interval '1 day', now() + interval '1 day') where event_id = (select run_id from chat_started)), 'app:meet', 'AI Hub attributes the chat run to Meet without duplicate ledger consumption');
+select is((select search_units from private.collect_ai_studio_consumption_events('34000000-0000-4000-8000-000000001010', '34000000-0000-4000-8000-000000001001', now() - interval '1 day', now() + interval '1 day') where event_id = (select run_id from chat_started)), 3::bigint, 'AI Hub retains measured search usage from the chat run');
 select * from finish();
 rollback;

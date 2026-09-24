@@ -1,0 +1,95 @@
+name: Parley Cloudflare
+on:
+  pull_request:
+    paths: ['apps/parley/**', 'packages/**', 'bun.lock', '.github/workflows/parley-cloudflare.yaml', 'tuturuuu.ci.ts']
+  push:
+    branches: [main, production]
+    paths: ['apps/parley/**', 'packages/**', 'bun.lock', '.github/workflows/parley-cloudflare.yaml', 'tuturuuu.ci.ts']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: parley-cloudflare-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: parley-cloudflare.yaml
+  validate:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - run: bun x --no-install turbo run build --filter='@tuturuuu/parley^...' --concurrency=2
+      - run: bun run --cwd packages/meet-core test
+      - run: bun run --cwd apps/parley test
+      - name: Build Parley for Workers
+        working-directory: apps/parley
+        env:
+          NEXT_PUBLIC_MEETING_APP: parley
+          NEXT_PUBLIC_APP_URL: https://parley.tuturuuu.com
+          NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+          NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'pull_request' && 'https://parley-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.event_name == 'pull_request' && 'sb_publishable_parley_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+        run: bun run build:cloudflare
+      - run: bun run --cwd apps/parley cf:typecheck
+      - run: bun x --no-install wrangler deploy --dry-run -c apps/parley/wrangler.jsonc
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: parley-worker-${{ github.sha }}
+          path: apps/parley/.open-next
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+  deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    environment: meet-production
+    timeout-minutes: 50
+    env:
+      CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+      CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: parley-worker-${{ github.sha }}
+          path: apps/parley/.open-next
+      - name: Wait for production Parley schema
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
+        run: bun packages/meet-core/scripts/verify-schema.ts
+      - name: Configure shared realtime signing identity
+        env:
+          MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
+        run: bun apps/parley/scripts/configure-realtime.ts
+      - name: Verify required runtime secret names
+        run: |
+          bun x --no-install wrangler secret list --name tuturuuu-parley --format json > "$RUNNER_TEMP/parley-secrets.json"
+          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/parley-secrets.json" > /dev/null
+      - name: Wait for shared provider runtime
+        run: bun apps/parley/scripts/verify-provider.ts
+      - name: Deploy verified Worker
+        run: bun x --no-install wrangler deploy -c apps/parley/wrangler.jsonc --message "$GITHUB_SHA"

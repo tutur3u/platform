@@ -1,14 +1,1 @@
-/** Browser hints; the chooser and operating system decide available audio sources. */
-export const SCREEN_CAPTURE_OPTIONS = {
-  video: true,
-  audio: {
-    echoCancellation: false,
-    noiseSuppression: false,
-    autoGainControl: false,
-    restrictOwnAudio: true,
-  },
-  systemAudio: 'exclude',
-  windowAudio: 'window',
-  selfBrowserSurface: 'exclude',
-  surfaceSwitching: 'include',
-} as const;
+export * from '@tuturuuu/meet-core/features/call/lib/screen-capture.ts';
