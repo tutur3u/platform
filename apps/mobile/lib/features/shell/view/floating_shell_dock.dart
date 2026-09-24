@@ -42,7 +42,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
       _hidden = false;
       _travel = 0;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) widget.onVisibilityChanged?.call(true);
+        if (mounted && !_hidden) widget.onVisibilityChanged?.call(true);
       });
     }
   }

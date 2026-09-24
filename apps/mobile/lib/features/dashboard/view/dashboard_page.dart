@@ -124,10 +124,18 @@ AppCardPalette _dashboardPalette(BuildContext context, int index) =>
       moduleId: _dashboardModuleId(index),
     );
 
-class _DashboardView extends StatelessWidget {
+class _DashboardView extends StatefulWidget {
   const _DashboardView({required this.replayToken});
 
   final int replayToken;
+
+  @override
+  State<_DashboardView> createState() => _DashboardViewState();
+}
+
+class _DashboardViewState extends State<_DashboardView> {
+  final _mailCardKey = GlobalKey<_DashboardMailCardState>();
+  final _meetCardKey = GlobalKey<_DashboardMeetCardState>();
 
   @override
   Widget build(BuildContext context) {
@@ -244,13 +252,13 @@ class _DashboardView extends StatelessWidget {
                                 ),
                                 sliver: SliverResponsiveCards(
                                   leading: StaggeredEntrance(
-                                    replayKey: replayToken,
+                                    replayKey: widget.replayToken,
                                     child:
                                         const _DashboardWorkspacePickerCard(),
                                   ),
                                   children: [
                                     StaggeredEntrance(
-                                      replayKey: replayToken,
+                                      replayKey: widget.replayToken,
                                       delay: const Duration(milliseconds: 70),
                                       child: _TodaySummaryCard(
                                         activeTasks: taskState.totalActiveTasks,
@@ -264,22 +272,20 @@ class _DashboardView extends StatelessWidget {
                                         ) &&
                                         canDiscoverMail(user?.email))
                                       _DashboardMailCard(
-                                        key: ValueKey(
-                                          'mail:${user?.id}:${workspace.id}',
-                                        ),
+                                        key: _mailCardKey,
                                         workspaceId: workspace.id,
+                                        userId: user?.id,
                                       ),
                                     if (visibleModules.any(
                                       (module) => module.id == 'meet',
                                     ))
                                       _DashboardMeetCard(
-                                        key: ValueKey(
-                                          'meet:${user?.id}:${workspace.id}',
-                                        ),
+                                        key: _meetCardKey,
                                         workspaceId: workspace.id,
+                                        userId: user?.id,
                                       ),
                                     StaggeredEntrance(
-                                      replayKey: replayToken,
+                                      replayKey: widget.replayToken,
                                       delay: const Duration(milliseconds: 210),
                                       child: _SectionCard(
                                         accentModuleId: _dashboardModuleId(3),
@@ -299,7 +305,7 @@ class _DashboardView extends StatelessWidget {
                                       ),
                                     ),
                                     StaggeredEntrance(
-                                      replayKey: replayToken,
+                                      replayKey: widget.replayToken,
                                       delay: const Duration(milliseconds: 280),
                                       child: _SectionCard(
                                         accentModuleId: _dashboardModuleId(4),
@@ -353,6 +359,10 @@ class _DashboardView extends StatelessWidget {
         workspace.id,
         forceRefresh: true,
       ),
+      if (_mailCardKey.currentState != null)
+        _mailCardKey.currentState!._load(forceRefresh: true),
+      if (_meetCardKey.currentState != null)
+        _meetCardKey.currentState!._load(forceRefresh: true),
     ]);
   }
 

@@ -1,8 +1,13 @@
 part of 'dashboard_page.dart';
 
 class _DashboardMailCard extends StatefulWidget {
-  const _DashboardMailCard({required this.workspaceId, super.key});
+  const _DashboardMailCard({
+    required this.workspaceId,
+    required this.userId,
+    super.key,
+  });
   final String workspaceId;
+  final String? userId;
 
   @override
   State<_DashboardMailCard> createState() => _DashboardMailCardState();
@@ -12,6 +17,7 @@ class _DashboardMailCardState extends State<_DashboardMailCard> {
   final MailRepository _repository = MailRepository();
   List<Map<String, dynamic>> _items = const [];
   bool _loaded = false;
+  int _loadVersion = 0;
 
   @override
   void initState() {
@@ -19,29 +25,45 @@ class _DashboardMailCardState extends State<_DashboardMailCard> {
     unawaited(_load());
   }
 
-  Future<void> _load() async {
+  @override
+  void didUpdateWidget(covariant _DashboardMailCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.workspaceId != widget.workspaceId ||
+        oldWidget.userId != widget.userId) {
+      _items = const [];
+      _loaded = false;
+      unawaited(_load());
+    }
+  }
+
+  Future<void> _load({bool forceRefresh = false}) async {
+    final version = ++_loadVersion;
+    final wsId = widget.workspaceId;
     try {
-      final saved = await _repository.savedView(widget.workspaceId);
-      if (mounted && saved?['folder'] == 'inbox') {
+      final saved = await _repository.savedView(wsId);
+      if (mounted && version == _loadVersion && saved?['folder'] == 'inbox') {
         setState(() => _items = mailRows(saved?['items']).take(2).toList());
       }
-      final bootstrap = await _repository.bootstrap(widget.workspaceId);
+      final bootstrap = await _repository.bootstrap(wsId);
       final mailboxId =
           (saved?['mailboxId'] as String?) ??
           (mailRows(bootstrap['mailboxes']).firstOrNull?['id'] as String?);
       if (mailboxId == null) return;
       final result = await _repository.list(
-        widget.workspaceId,
+        wsId,
         mailboxId,
         folder: 'inbox',
+        forceRefresh: forceRefresh,
       );
-      if (mounted) {
+      if (mounted && version == _loadVersion) {
         setState(() => _items = mailRows(result['threads']).take(2).toList());
       }
     } on Object {
       // A Home preview must not interrupt navigation or clear cached mail.
     } finally {
-      if (mounted) setState(() => _loaded = true);
+      if (mounted && version == _loadVersion) {
+        setState(() => _loaded = true);
+      }
     }
   }
 
@@ -88,8 +110,13 @@ class _DashboardMailCardState extends State<_DashboardMailCard> {
 }
 
 class _DashboardMeetCard extends StatefulWidget {
-  const _DashboardMeetCard({required this.workspaceId, super.key});
+  const _DashboardMeetCard({
+    required this.workspaceId,
+    required this.userId,
+    super.key,
+  });
   final String workspaceId;
+  final String? userId;
 
   @override
   State<_DashboardMeetCard> createState() => _DashboardMeetCardState();
@@ -99,6 +126,7 @@ class _DashboardMeetCardState extends State<_DashboardMeetCard> {
   final MeetRepository _repository = MeetRepository();
   List<MeetMeeting> _meetings = const [];
   bool _loaded = false;
+  int _loadVersion = 0;
 
   @override
   void initState() {
@@ -108,23 +136,58 @@ class _DashboardMeetCardState extends State<_DashboardMeetCard> {
     unawaited(_load());
   }
 
+  @override
+  void didUpdateWidget(covariant _DashboardMeetCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.workspaceId != widget.workspaceId ||
+        oldWidget.userId != widget.userId) {
+      _meetings = const [];
+      _loaded = false;
+      unawaited(_load());
+    }
+  }
+
   List<MeetMeeting> _upcoming(List<MeetMeeting> meetings) {
     final now = DateTime.now();
     return meetings.where((meeting) => meeting.time.isAfter(now)).toList()
       ..sort((a, b) => a.time.compareTo(b.time));
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool forceRefresh = false}) async {
+    final version = ++_loadVersion;
+    final wsId = widget.workspaceId;
     try {
-      final page = await _repository.listMeetings(
-        widget.workspaceId,
-        pageSize: 100,
-      );
-      if (mounted) setState(() => _meetings = _upcoming(page.meetings));
+      const pageSize = 100;
+      final upcoming = <MeetMeeting>[];
+      var pageNumber = 1;
+      while (true) {
+        final page = await _repository.listMeetings(
+          wsId,
+          page: pageNumber,
+          pageSize: pageSize,
+          forceRefresh: forceRefresh,
+        );
+        upcoming.addAll(_upcoming(page.meetings));
+        // The endpoint sorts newest first. Once a page reaches the past,
+        // every earlier meeting is past as well.
+        if (page.meetings.any(
+              (meeting) => !meeting.time.isAfter(DateTime.now()),
+            ) ||
+            pageNumber * pageSize >= page.totalCount ||
+            page.meetings.isEmpty) {
+          break;
+        }
+        pageNumber++;
+      }
+      if (mounted && version == _loadVersion) {
+        setState(() => _meetings = _upcoming(upcoming));
+      }
     } on Object {
       // Keep a cached preview if Meet is temporarily unavailable.
     } finally {
-      if (mounted) setState(() => _loaded = true);
+      if (mounted && version == _loadVersion) {
+        setState(() => _loaded = true);
+      }
     }
   }
 
