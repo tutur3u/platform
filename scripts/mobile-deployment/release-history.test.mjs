@@ -77,9 +77,57 @@ describe('mobile beta release history', () => {
         { version: '0.11.2', date: '2026-09-24', changes: ['second patch'] },
       ]);
       expect(paths[2]).toContain('/v1/preReleaseVersions/v1/builds');
-      expect(paths[3]).toContain('branch=production');
+      expect(paths[3]).toContain(
+        '/actions/workflows/mobile-deploy-stores.yaml/runs'
+      );
     } finally {
       globalThis.fetch = originalFetch;
+    }
+  });
+
+  test('keeps a historical manual build without blocking the current beta', async () => {
+    const originalFetch = globalThis.fetch;
+    const originalWarn = console.warn;
+    const responses = [
+      { data: [{ id: 'app' }] },
+      { data: [{ id: 'v1', attributes: { version: '0.11.1' } }], links: {} },
+      {
+        data: [
+          {
+            attributes: {
+              version: '1',
+              uploadedDate: '2026-09-23T12:00:00Z',
+            },
+          },
+        ],
+      },
+    ];
+    globalThis.fetch = async () => ({
+      ok: true,
+      json: async () => responses.shift(),
+    });
+    const warnings = [];
+    console.warn = (message) => warnings.push(message);
+    const { privateKey } = generateKeyPairSync('ec', {
+      namedCurve: 'prime256v1',
+    });
+    try {
+      const releases = await releaseHistory({
+        credentials: { privateKey, keyId: 'key', issuerId: 'issuer' },
+        githubToken: 'test-token',
+        version: '0.11.2',
+        sha: 'current',
+        date: '2026-09-24',
+        git: () => 'fix(mobile): current patch (#2)',
+      });
+      expect(releases).toEqual([
+        { version: '0.11.1', date: '2026-09-23', changes: [] },
+        { version: '0.11.2', date: '2026-09-24', changes: ['current patch'] },
+      ]);
+      expect(warnings[0]).toContain('0.11.1 (build 1)');
+    } finally {
+      globalThis.fetch = originalFetch;
+      console.warn = originalWarn;
     }
   });
 });

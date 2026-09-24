@@ -110,12 +110,14 @@ listed on the Overview tab before activating.
 Mobile **Settings → What's new** reads bundled release history when the user
 opens that screen. Release Please owns `apps/mobile/CHANGELOG.md` for tagged
 releases. Before building an iOS beta, CI looks up earlier TestFlight patch
-versions and their production workflow commits, then bundles the mobile commit
-summaries for each patch version into `assets/release_history.json`. The current
-build is included before upload. Android downloads the same generated asset
-from the iOS job. This lookup must succeed for the build to continue; both
-apps read the bundled result offline without a changelog API or extra database
-table. The installed version and build number remain visible.
+versions and their source workflow commits, then bundles the mobile commit
+summaries for each mapped patch version into `assets/release_history.json`.
+Older manual builds without a matching workflow remain listed with localized
+"details unavailable" copy instead of blocking the next beta. CI logs their
+version and build number for follow-up. The current build is included before
+upload. Android downloads the same generated asset from the iOS job. Both apps
+read the bundled result offline without a changelog API or extra database table.
+The installed version and build number remain visible.
 
 The workflow runs after relevant pushes to `production`. Retry the latest push
 run for recovery; vault OIDC validation permits production push events only.
