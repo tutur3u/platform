@@ -747,8 +747,9 @@ push preferences, the general account push switch, and quiet hours apply. The di
 membership, internal identity, message availability, and preferences before sending.
 
 Delivery uses the existing immediate notification queue and Firebase device
-registry. Personal Mail is the explicit exception to the processor's root-workspace
-rollout restriction; other notification types retain that restriction. Dedicated
+registry. Mobile push batches can reach registered recipients in every workspace;
+the dispatcher still checks current workspace membership before sending. The
+root-workspace rollout restriction remains for notification email batches. Dedicated
 batches preserve each message's mailbox/thread target. Stale immediate email and push claims recover with bounded retries. Before contacting a provider,
 the dispatcher persists a delivery-in-flight marker. A lost response or acknowledgement
 is flagged as `delivery_outcome_unknown` for operator reconciliation instead of being

@@ -406,13 +406,21 @@ export async function filterRootScopedBatches(
   }
 
   const batchesWithWsId = batches.filter((batch) => batch.ws_id !== null);
-  const validBatchesWithWsId = batchesWithWsId.filter((batch) =>
-    isRootScopedNotification(batch)
+  const validBatchesWithWsId = batchesWithWsId.filter(
+    (batch) => batch.channel === 'push' || isRootScopedNotification(batch)
   );
-  const batchesWithNullWsId = batches.filter((batch) => batch.ws_id === null);
+  const batchesWithNullWsId = batches.filter(
+    (batch) => batch.ws_id === null && batch.channel !== 'push'
+  );
+  const validBatchIds = new Set([
+    ...validBatchesWithWsId.map((batch) => batch.id),
+    ...batches
+      .filter((batch) => batch.channel === 'push' && batch.ws_id === null)
+      .map((batch) => batch.id),
+  ]);
 
   if (batchesWithNullWsId.length === 0) {
-    return validBatchesWithWsId;
+    return batches.filter((batch) => validBatchIds.has(batch.id));
   }
 
   const deliveryLogsForCheck = await fetchAllChunkedPaginatedRows<
@@ -436,7 +444,6 @@ export async function filterRootScopedBatches(
     deliveryLogsForCheck.map((log) => log.notification_id)
   );
 
-  const validBatchIds = new Set(validBatchesWithWsId.map((batch) => batch.id));
   for (const log of deliveryLogsForCheck) {
     const notification = notificationsById.get(log.notification_id);
     if (!log.batch_id || !notification) {

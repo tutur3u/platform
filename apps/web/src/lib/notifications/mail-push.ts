@@ -48,8 +48,9 @@ export async function getMailPushSkipReason(
   batch: MailBatch
 ): Promise<string | null> {
   if (notification.type !== 'mail_received') {
-    // A mixed personal batch must not bypass the root-only rollout restriction.
-    return isRootScopedNotification(notification)
+    // Workspace push is available to every member. Email remains on the
+    // existing workspace rollout while the recipient checks run below.
+    return batch.channel === 'push' || isRootScopedNotification(notification)
       ? null
       : 'restricted_workspace';
   }
