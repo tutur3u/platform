@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
+import 'package:mobile/features/meet/view/meet_personal_chat_panel.dart';
+import 'package:mobile/features/meet/view/meet_room_message_body.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
@@ -15,47 +17,33 @@ Future<void> showMeetChatSheet(
     await showAdaptiveSheet<void>(
       context: context,
       useRootNavigator: true,
-      builder: (sheetContext) => AppDialogScaffold(
-        title: sheetContext.l10n.meetChat,
-        child: SizedBox(
-          height: 420,
-          child: AnimatedBuilder(
-            animation: call,
-            builder: (context, _) => Column(
+      builder: (sheetContext) => DefaultTabController(
+        length: 2,
+        child: AppDialogScaffold(
+          title: sheetContext.l10n.meetChat,
+          child: SizedBox(
+            height: 480,
+            child: Column(
               children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: call.messages.length,
-                    itemBuilder: (context, index) {
-                      final message = call.messages[index];
-                      return ListTile(
-                        title: Text(message['displayName'] as String? ?? ''),
-                        subtitle: Text(message['body'] as String? ?? ''),
-                        dense: true,
-                      );
-                    },
-                  ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: input,
-                        maxLength: 2000,
-                        decoration: InputDecoration(
-                          hintText: context.l10n.meetMessageHint,
-                          counterText: '',
-                        ),
-                        onSubmitted: (_) =>
-                            unawaited(_send(context, input, call)),
-                      ),
+                TabBar(
+                  tabs: [
+                    Tab(
+                      icon: const Icon(Icons.groups_outlined),
+                      text: sheetContext.l10n.meetEveryone,
                     ),
-                    IconButton(
-                      tooltip: context.l10n.meetSend,
-                      onPressed: () => unawaited(_send(context, input, call)),
-                      icon: const Icon(Icons.send_outlined),
+                    Tab(
+                      icon: const Icon(Icons.lock_outline),
+                      text: sheetContext.l10n.meetPrivateMira,
                     ),
                   ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _roomChatPanel(call, input),
+                      MeetPersonalChatPanel(call: call),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -67,6 +55,50 @@ Future<void> showMeetChatSheet(
     input.dispose();
   }
 }
+
+Widget _roomChatPanel(MeetCallController call, TextEditingController input) =>
+    AnimatedBuilder(
+      animation: call,
+      builder: (context, _) => Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: call.messages.length,
+              itemBuilder: (context, index) {
+                final message = call.messages[index];
+                return ListTile(
+                  title: Text(message['displayName'] as String? ?? ''),
+                  subtitle: MeetRoomMessageBody(
+                    data: message['body'] as String? ?? '',
+                  ),
+                  dense: true,
+                );
+              },
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: input,
+                  maxLength: 2000,
+                  decoration: InputDecoration(
+                    hintText: context.l10n.meetMessageHint,
+                    counterText: '',
+                  ),
+                  onSubmitted: (_) => unawaited(_send(context, input, call)),
+                ),
+              ),
+              IconButton(
+                tooltip: context.l10n.meetSend,
+                onPressed: () => unawaited(_send(context, input, call)),
+                icon: const Icon(Icons.send_outlined),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
 
 Future<void> _send(
   BuildContext context,

@@ -87,6 +87,30 @@ class MeetRepository {
   Future<Map<String, dynamic>> getRoomCosts(String wsId, String meetingId) =>
       _api.getJson(MeetEndpoints.costs(wsId, meetingId));
 
+  Future<String> askPersonalMira(
+    String wsId,
+    String meetingId, {
+    required String requestId,
+    required int startedAt,
+    required String question,
+    required String timezone,
+    required List<Map<String, dynamic>> history,
+  }) async {
+    final response = await _api
+        .postJson(MeetEndpoints.personalAssistant(wsId, meetingId), {
+          'requestId': requestId,
+          'startedAt': startedAt,
+          'question': question,
+          'timezone': timezone,
+          'history': history,
+        }, timeout: const Duration(seconds: 125));
+    final text = response['text'] as String?;
+    if (text == null || text.trim().isEmpty) {
+      throw StateError('Meet private answer unavailable');
+    }
+    return text;
+  }
+
   void dispose() {
     _api.dispose();
   }

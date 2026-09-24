@@ -3758,6 +3758,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/meetings/:meetingId/assistant/personal:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/personal/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/meetings/:meetingId/assistant/personal",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/personal/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/meetings/:meetingId/costs:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/costs/route.ts",
       "kind": "api",
       "methods": ["GET"],
