@@ -14701,6 +14701,66 @@ abstract class AppLocalizations {
   /// **'Chat'**
   String get meetChat;
 
+  /// No description provided for @meetEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone'**
+  String get meetEveryone;
+
+  /// No description provided for @meetPrivateMira.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Mira'**
+  String get meetPrivateMira;
+
+  /// No description provided for @meetPrivateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see this conversation. Review an answer before sharing it with everyone.'**
+  String get meetPrivateHint;
+
+  /// No description provided for @meetPrivateEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Mira privately about this meeting.'**
+  String get meetPrivateEmpty;
+
+  /// No description provided for @meetAskMira.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Mira privately'**
+  String get meetAskMira;
+
+  /// No description provided for @meetPrivateRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira couldn\'t answer. Retry your message.'**
+  String get meetPrivateRequestFailed;
+
+  /// No description provided for @meetShareWithEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'Share with everyone'**
+  String get meetShareWithEveryone;
+
+  /// No description provided for @meetShareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Review or edit this answer before posting it to room chat.'**
+  String get meetShareHint;
+
+  /// No description provided for @meetShareConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Post to room chat'**
+  String get meetShareConfirm;
+
+  /// No description provided for @meetOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Open link'**
+  String get meetOpenLink;
+
   /// No description provided for @meetMessageHint.
   ///
   /// In en, this message translates to:

@@ -7703,6 +7703,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetChat => 'Chat';
 
   @override
+  String get meetEveryone => 'Everyone';
+
+  @override
+  String get meetPrivateMira => 'Private Mira';
+
+  @override
+  String get meetPrivateHint => 'Only you can see this conversation. Review an answer before sharing it with everyone.';
+
+  @override
+  String get meetPrivateEmpty => 'Ask Mira privately about this meeting.';
+
+  @override
+  String get meetAskMira => 'Ask Mira privately';
+
+  @override
+  String get meetPrivateRequestFailed => 'Mira couldn\'t answer. Retry your message.';
+
+  @override
+  String get meetShareWithEveryone => 'Share with everyone';
+
+  @override
+  String get meetShareHint => 'Review or edit this answer before posting it to room chat.';
+
+  @override
+  String get meetShareConfirm => 'Post to room chat';
+
+  @override
+  String get meetOpenLink => 'Open link';
+
+  @override
   String get meetMessageHint => 'Message everyone';
 
   @override

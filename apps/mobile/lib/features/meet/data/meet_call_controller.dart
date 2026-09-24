@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/meet/data/meet_native_media.dart';
+import 'package:mobile/features/meet/data/meet_personal_chat.dart';
 import 'package:mobile/features/meet/data/meet_signaling.dart';
 
 class MeetCallController extends ChangeNotifier {
@@ -19,6 +20,11 @@ class MeetCallController extends ChangeNotifier {
       onStatus: _onStatus,
     );
     media = MeetNativeMedia(_signaling)..addListener(_notify);
+    personalChat = MeetPersonalChat(
+      workspaceId: workspaceId,
+      meetingId: meetingId,
+      repository: _repository,
+    );
   }
 
   final String workspaceId;
@@ -27,6 +33,7 @@ class MeetCallController extends ChangeNotifier {
   final bool _ownsRepository;
   late final MeetSignaling _signaling;
   late final MeetNativeMedia media;
+  late final MeetPersonalChat personalChat;
 
   String status = 'connecting';
   String admission = 'connecting';
@@ -390,6 +397,7 @@ class MeetCallController extends ChangeNotifier {
     media
       ..removeListener(_notify)
       ..dispose();
+    personalChat.dispose();
     unawaited(_signaling.close());
     if (_ownsRepository) _repository.dispose();
     super.dispose();
