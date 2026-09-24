@@ -85,6 +85,8 @@ services:
       - platform-web-node_modules:/workspace/node_modules
       - platform-web-ai-node_modules:/workspace/packages/ai/node_modules
       - platform-web-ai-dist:/workspace/packages/ai/dist
+      - platform-web-meet-core-node_modules:/workspace/packages/meet-core/node_modules
+      - platform-web-meet-core-dist:/workspace/packages/meet-core/dist
       - platform-web-apis-node_modules:/workspace/packages/apis/node_modules
       - platform-web-apis-dist:/workspace/packages/apis/dist
       - platform-web-auth-node_modules:/workspace/packages/auth/node_modules
@@ -476,6 +478,8 @@ volumes:
   platform-web-app-node_modules:
   platform-web-ai-node_modules:
   platform-web-ai-dist:
+  platform-web-meet-core-node_modules:
+  platform-web-meet-core-dist:
   platform-web-apis-node_modules:
   platform-web-apis-dist:
   platform-web-auth-node_modules:

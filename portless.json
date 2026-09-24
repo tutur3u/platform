@@ -76,6 +76,10 @@
       "name": "nova.tuturuuu",
       "script": "dev:app"
     },
+    "apps/parley": {
+      "name": "parley.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/pay": {
       "name": "pay.tuturuuu",
       "script": "dev:app"

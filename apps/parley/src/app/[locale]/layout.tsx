@@ -3,11 +3,12 @@ import '@tuturuuu/ui/globals.css';
 import { Providers } from '@tuturuuu/satellite/providers';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
+import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { locale as getRootLocale } from 'next/root-params';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
+import { supportedLocales } from '@/i18n/routing';
 
 export async function generateMetadata({
   params,
@@ -33,14 +34,14 @@ export function generateStaticParams() {
 }
 export default async function Layout({
   children,
-  params,
 }: {
   children: ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
-  if (!['en', 'vi'].includes(locale)) notFound();
-  setRequestLocale(locale);
+  const locale = await resolveRootLocale(
+    supportedLocales,
+    await getRootLocale()
+  );
   return (
     <html lang={locale} suppressHydrationWarning>
       <body

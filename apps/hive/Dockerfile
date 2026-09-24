@@ -27,6 +27,7 @@ COPY apps/infrastructure/package.json ./apps/infrastructure/package.json
 COPY apps/inventory/package.json ./apps/inventory/package.json
 COPY apps/mail/package.json ./apps/mail/package.json
 COPY apps/meet/package.json ./apps/meet/package.json
+COPY apps/parley/package.json ./apps/parley/package.json
 COPY apps/mind/package.json ./apps/mind/package.json
 COPY apps/mobile/package.json ./apps/mobile/package.json
 COPY apps/nova/package.json ./apps/nova/package.json
@@ -51,6 +52,7 @@ COPY apps/learn/package.json ./apps/learn/package.json
 COPY apps/lettin/package.json ./apps/lettin/package.json
 COPY apps/web/package.json ./apps/web/package.json
 COPY packages/ai/package.json ./packages/ai/package.json
+COPY packages/meet-core/package.json ./packages/meet-core/package.json
 COPY packages/apis/package.json ./packages/apis/package.json
 COPY packages/auth/package.json ./packages/auth/package.json
 COPY packages/devbox/package.json ./packages/devbox/package.json

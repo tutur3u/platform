@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node ../../scripts/portless-safe-dev.js",
-    "dev:app": "next dev -p ${PORT:-7834} --turbopack",
+    "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7834} --turbopack",
     "build": "next build --turbopack",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
