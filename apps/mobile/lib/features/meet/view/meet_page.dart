@@ -151,6 +151,7 @@ class _MeetPageState extends State<MeetPage> {
   Future<void> _showNewMeetingOptions() async {
     final choice = await showModalBottomSheet<String>(
       context: context,
+      useRootNavigator: true,
       useSafeArea: true,
       builder: (sheetContext) => Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -218,6 +219,7 @@ class _MeetPageState extends State<MeetPage> {
 
     final saved = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (context) => StatefulBuilder(
