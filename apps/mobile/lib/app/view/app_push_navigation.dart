@@ -1,7 +1,47 @@
 part of 'app.dart';
 
 extension _AppPushNavigation on _AppState {
+  Future<void> _loadWorkspacesWithReminders() async {
+    await _workspaceCubit.loadWorkspaces();
+    final userId = _authCubit.state.user?.id;
+    if (userId != null) {
+      await ReminderService.instance.startSession(
+        userId,
+        _workspaceCubit.state.workspaces,
+      );
+    }
+  }
+
+  void _handleLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      _backgroundedAt ??= DateTime.now();
+      return;
+    }
+    if (state != AppLifecycleState.resumed) return;
+
+    final backgroundedAt = _backgroundedAt;
+    _backgroundedAt = null;
+    if (backgroundedAt != null &&
+        DateTime.now().difference(backgroundedAt) >=
+            const Duration(seconds: 30) &&
+        _authCubit.state.status == AuthStatus.authenticated &&
+        !isAppLockExcludedRoute(_currentMatchedLocation())) {
+      _appLockCubit.lock();
+    }
+
+    unawaited(_authCubit.refreshAccountAssurance());
+    unawaited(_appVersionCubit.checkVersion(background: true));
+    unawaited(CacheWarmupCoordinator.instance.prewarmHome());
+    unawaited(_shellProfileCubit.refreshIfStale(_authCubit.state.user));
+    unawaited(ReminderService.instance.refreshIfStale());
+  }
+
   Future<void> _handlePushNavigation(PushNavigationRequest request) async {
+    if (request.userId != null && request.userId != _authCubit.state.user?.id) {
+      return;
+    }
     if (request.opensMfaApproval) {
       if (request.userId == _authCubit.state.user?.id) {
         _router.go(
@@ -52,6 +92,13 @@ extension _AppPushNavigation on _AppState {
           taskId: request.entityId!,
         ),
       );
+      unawaited(archiveOpenedNotification(request.notificationId));
+      return;
+    }
+    if (request.openTarget == 'calendar' &&
+        request.entityId != null &&
+        request.entityId!.isNotEmpty) {
+      _router.go('/calendar/${Uri.encodeComponent(request.entityId!)}');
       unawaited(archiveOpenedNotification(request.notificationId));
       return;
     }

@@ -262,6 +262,12 @@ class _PreferencesSection extends StatelessWidget {
           onTap: onChangeFirstDayOfWeek,
         ),
         SettingsTile(
+          icon: Icons.notifications_active_outlined,
+          title: l10n.remindersTitle,
+          subtitle: l10n.remindersDescription,
+          onTap: () => context.push(Routes.settingsReminders),
+        ),
+        SettingsTile(
           icon: Icons.view_kanban_outlined,
           title: l10n.settingsDefaultTaskBoardNavigation,
           subtitle: l10n.settingsDefaultTaskBoardNavigationDescription,

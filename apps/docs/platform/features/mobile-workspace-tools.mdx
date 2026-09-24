@@ -74,6 +74,27 @@ Other standalone markdown views remain selectable.
 
 ## Responsive Loading And Cache Verification
 
+### Device task and calendar reminders
+
+Settings → Preferences → Reminders controls task and calendar alerts separately.
+Both default on, with selectable 3-day, 1-day, 12-hour, 3-hour, and 1-hour
+lead times. The app refreshes the existing user/workspace-scoped task and
+calendar caches after sign-in and when it resumes after 15 minutes. It then
+schedules the nearest 60 future device alerts, replacing outdated entries and
+cancelling them on sign-out. An all-day event uses 9 a.m. local time as its
+reminder anchor. Android boot/package-replacement receivers restore pending
+alarms after a restart or update.
+
+The Reminders page shows the last successful fetch, the number of alerts still
+pending in the operating system, the next scheduled alert, notification
+permission, and a manual refresh action. A scheduled count is local state,
+not proof that the device displayed an alert. If the app remains suspended,
+new items created on another device cannot enter the local schedule until the
+next app refresh; server push is required for immediate updates in that case.
+Verify this flow on physical iOS and Android devices with the app closed,
+notifications enabled and disabled, account switching, changed due dates, and
+completed tasks.
+
 Root tabs initialize on their first visit and retain their state afterward. Hidden
 tabs stop ticking animations. Page content and navigation no longer wait for
 staggered entrance animations. Opening Apps does not prefetch every product.

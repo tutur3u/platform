@@ -8428,6 +8428,78 @@ class AppLocalizationsEn extends AppLocalizations {
   String get voiceRecordingError => 'Could not record audio. Please try again.';
 
   @override
+  String get remindersTitle => 'Reminders';
+
+  @override
+  String get remindersDescription => 'Task deadlines and calendar events, kept ready on this device.';
+
+  @override
+  String get remindersTaskTitle => 'Task deadlines';
+
+  @override
+  String get remindersEventTitle => 'Calendar events';
+
+  @override
+  String get remindersTiming => 'Remind me';
+
+  @override
+  String get reminders3d => '3 days before';
+
+  @override
+  String get reminders1d => '1 day before';
+
+  @override
+  String get reminders12h => '12 hours before';
+
+  @override
+  String get reminders3h => '3 hours before';
+
+  @override
+  String get reminders1h => '1 hour before';
+
+  @override
+  String get remindersStatusTitle => 'Reminder status';
+
+  @override
+  String get remindersPermissionOn => 'Device notifications enabled';
+
+  @override
+  String get remindersPermissionOff => 'Device notifications disabled';
+
+  @override
+  String remindersScheduledCount(int count) {
+    return '$count scheduled';
+  }
+
+  @override
+  String remindersLastChecked(String time) {
+    return 'Last checked: $time';
+  }
+
+  @override
+  String remindersNext(String time) {
+    return 'Next reminder: $time';
+  }
+
+  @override
+  String get remindersNeverChecked => 'Waiting for the first refresh';
+
+  @override
+  String get remindersRefresh => 'Refresh now';
+
+  @override
+  String get remindersEnableNotifications => 'Enable notifications';
+
+  @override
+  String get remindersRefreshing => 'Checking tasks and events…';
+
+  @override
+  String get remindersRefreshFailed => 'Could not refresh reminders. Scheduled reminders are retained.';
+
+  @override
+  String get remindersSystemNote => 'Scheduled alerts can arrive while the app is closed. New or changed items are checked when the app opens or resumes; background refresh timing depends on the device.';
+
+  @override
   String get settingsGeneralGroup => 'Personalize';
 
   @override

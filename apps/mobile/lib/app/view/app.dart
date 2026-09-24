@@ -45,6 +45,7 @@ import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
+import 'package:mobile/features/reminders/reminder_service.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/security/data/app_lock_settings_store.dart';
 import 'package:mobile/features/security/data/local_auth_service.dart';
@@ -159,7 +160,10 @@ class _AppState extends State<App> {
     unawaited(PushNotificationService.instance.initialize());
     _authCubit = AuthCubit(
       authRepository: _authRepo,
-      onBeforeSignOut: PushNotificationService.instance.stopSession,
+      onBeforeSignOut: () async {
+        await ReminderService.instance.stopSession();
+        await PushNotificationService.instance.stopSession();
+      },
     );
     _appVersionCubit = AppVersionCubit(
       versionCheckRepository: _versionCheckRepository,
@@ -232,37 +236,8 @@ class _AppState extends State<App> {
       unawaited(
         _shellProfileCubit.loadFromAuthenticatedUser(_authCubit.state.user!),
       );
-      unawaited(_workspaceCubit.loadWorkspaces());
+      unawaited(_loadWorkspacesWithReminders());
     }
-  }
-
-  void _handleLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.hidden) {
-      _backgroundedAt ??= DateTime.now();
-      return;
-    }
-
-    if (state != AppLifecycleState.resumed) {
-      return;
-    }
-
-    final backgroundedAt = _backgroundedAt;
-    _backgroundedAt = null;
-
-    if (backgroundedAt != null &&
-        DateTime.now().difference(backgroundedAt) >=
-            const Duration(seconds: 30) &&
-        _authCubit.state.status == AuthStatus.authenticated &&
-        !isAppLockExcludedRoute(_currentMatchedLocation())) {
-      _appLockCubit.lock();
-    }
-
-    unawaited(_authCubit.refreshAccountAssurance());
-    unawaited(_appVersionCubit.checkVersion(background: true));
-    unawaited(CacheWarmupCoordinator.instance.prewarmHome());
-    unawaited(_shellProfileCubit.refreshIfStale(_authCubit.state.user));
   }
 
   String _currentMatchedLocation() {
@@ -613,9 +588,10 @@ class _AppState extends State<App> {
                 unawaited(
                   context.read<AppLockCubit>().load(lockIfEnabled: true),
                 );
-                unawaited(context.read<WorkspaceCubit>().loadWorkspaces());
+                unawaited(_loadWorkspacesWithReminders());
                 unawaited(_openPendingDeepLinkIfReady());
               } else if (state.status == AuthStatus.unauthenticated) {
+                unawaited(ReminderService.instance.stopSession());
                 context.read<AppLockCubit>().resetLockState();
                 unawaited(context.read<ShellProfileCubit>().clear());
                 unawaited(context.read<WorkspaceCubit>().clearWorkspaces());
@@ -643,6 +619,15 @@ class _AppState extends State<App> {
               );
               if (state.currentWorkspace == null) {
                 return;
+              }
+              final userId = context.read<AuthCubit>().state.user?.id;
+              if (userId != null) {
+                unawaited(
+                  ReminderService.instance.startSession(
+                    userId,
+                    state.workspaces,
+                  ),
+                );
               }
               unawaited(
                 context.read<AuthCubit>().updateActiveAccountWorkspaceContext(

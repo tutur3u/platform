@@ -16147,6 +16147,138 @@ abstract class AppLocalizations {
   /// **'Could not record audio. Please try again.'**
   String get voiceRecordingError;
 
+  /// No description provided for @remindersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders'**
+  String get remindersTitle;
+
+  /// No description provided for @remindersDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Task deadlines and calendar events, kept ready on this device.'**
+  String get remindersDescription;
+
+  /// No description provided for @remindersTaskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Task deadlines'**
+  String get remindersTaskTitle;
+
+  /// No description provided for @remindersEventTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar events'**
+  String get remindersEventTitle;
+
+  /// No description provided for @remindersTiming.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind me'**
+  String get remindersTiming;
+
+  /// No description provided for @reminders3d.
+  ///
+  /// In en, this message translates to:
+  /// **'3 days before'**
+  String get reminders3d;
+
+  /// No description provided for @reminders1d.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day before'**
+  String get reminders1d;
+
+  /// No description provided for @reminders12h.
+  ///
+  /// In en, this message translates to:
+  /// **'12 hours before'**
+  String get reminders12h;
+
+  /// No description provided for @reminders3h.
+  ///
+  /// In en, this message translates to:
+  /// **'3 hours before'**
+  String get reminders3h;
+
+  /// No description provided for @reminders1h.
+  ///
+  /// In en, this message translates to:
+  /// **'1 hour before'**
+  String get reminders1h;
+
+  /// No description provided for @remindersStatusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder status'**
+  String get remindersStatusTitle;
+
+  /// No description provided for @remindersPermissionOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Device notifications enabled'**
+  String get remindersPermissionOn;
+
+  /// No description provided for @remindersPermissionOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Device notifications disabled'**
+  String get remindersPermissionOff;
+
+  /// No description provided for @remindersScheduledCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} scheduled'**
+  String remindersScheduledCount(int count);
+
+  /// No description provided for @remindersLastChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Last checked: {time}'**
+  String remindersLastChecked(String time);
+
+  /// No description provided for @remindersNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next reminder: {time}'**
+  String remindersNext(String time);
+
+  /// No description provided for @remindersNeverChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the first refresh'**
+  String get remindersNeverChecked;
+
+  /// No description provided for @remindersRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh now'**
+  String get remindersRefresh;
+
+  /// No description provided for @remindersEnableNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable notifications'**
+  String get remindersEnableNotifications;
+
+  /// No description provided for @remindersRefreshing.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking tasks and events…'**
+  String get remindersRefreshing;
+
+  /// No description provided for @remindersRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh reminders. Scheduled reminders are retained.'**
+  String get remindersRefreshFailed;
+
+  /// No description provided for @remindersSystemNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled alerts can arrive while the app is closed. New or changed items are checked when the app opens or resumes; background refresh timing depends on the device.'**
+  String get remindersSystemNote;
+
   /// No description provided for @settingsGeneralGroup.
   ///
   /// In en, this message translates to:
