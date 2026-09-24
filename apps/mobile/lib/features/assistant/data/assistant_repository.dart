@@ -607,11 +607,16 @@ class AssistantRepository {
 
       var assistantStarted = false;
       final nativeAttachments = _chatAttachmentDrafts(chatId, attachments);
+      final requestId = messages.reversed
+          .where((message) => message.role == 'user')
+          .firstOrNull
+          ?.id;
       await for (final event in _chatRepository.sendMessageStream(
         wsId,
         chatId,
         content: _latestUserText(messages),
         attachments: nativeAttachments,
+        clientRequestId: requestId,
       )) {
         if (event is ChatStreamAssistantDeltaEvent) {
           if (!assistantStarted) {

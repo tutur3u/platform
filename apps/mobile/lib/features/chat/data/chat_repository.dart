@@ -122,6 +122,7 @@ class ChatRepository {
     ChatMessageKind kind = ChatMessageKind.user,
     List<ChatAttachmentDraft> attachments = const [],
     String? replyToMessageId,
+    String? clientRequestId,
   }) async* {
     final response = await _apiClient.sendJsonStream(
       'POST',
@@ -133,6 +134,7 @@ class ChatRepository {
             .map((attachment) => attachment.toJson())
             .toList(growable: false),
         if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
+        if (clientRequestId != null) 'clientRequestId': clientRequestId,
       },
       accept: 'application/x-ndjson',
     );

@@ -12,6 +12,46 @@ import 'package:mocktail/mocktail.dart';
 class _Api extends Mock implements ApiClient {}
 
 void main() {
+  test('native retry sends the saved user message request ID', () async {
+    final api = _Api();
+    final chats = ChatRepository(apiClient: api);
+    when(
+      () => api.sendJsonStream(
+        'POST',
+        '/api/v1/workspaces/ws/chat/conversations/chat/messages',
+        any(),
+        accept: 'application/x-ndjson',
+      ),
+    ).thenAnswer(
+      (_) async => http.StreamedResponse(
+        Stream.value(utf8.encode('{"type":"done"}\n')),
+        201,
+        headers: {'content-type': 'application/x-ndjson'},
+      ),
+    );
+
+    await chats
+        .sendMessageStream(
+          'ws',
+          'chat',
+          content: 'Hello',
+          clientRequestId: '11111111-1111-4111-8111-111111111111',
+        )
+        .toList();
+
+    final payload =
+        verify(
+              () => api.sendJsonStream(
+                'POST',
+                '/api/v1/workspaces/ws/chat/conversations/chat/messages',
+                captureAny(),
+                accept: 'application/x-ndjson',
+              ),
+            ).captured.single
+            as Map<String, dynamic>;
+    expect(payload['clientRequestId'], '11111111-1111-4111-8111-111111111111');
+  });
+
   for (final legacy in [true, false]) {
     test(
       legacy
