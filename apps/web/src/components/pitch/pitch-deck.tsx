@@ -19,6 +19,20 @@ import { pitchBrandColors, pitchBrandStyle, pitchTone } from './pitch-brand';
 import { type PitchCopy, SLIDE_IDS, slideFromHash } from './pitch-model';
 import { PitchVisual } from './pitch-visual';
 
+const getPalette = (id: string) =>
+  [
+    'opening',
+    'shift',
+    'vision',
+    'ai',
+    'workforce',
+    'trust',
+    'horizon',
+    'closing',
+  ].includes(id)
+    ? 'dark'
+    : 'light';
+
 export function PitchDeck({ copy }: { copy: PitchCopy }) {
   const locale = useLocale();
   const [index, setIndex] = useState(0);
@@ -68,7 +82,7 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
 
       if (
         target.closest(
-          'input, textarea, select, button, a, [contenteditable="true"]'
+          'input, textarea, select, button, a, summary, [contenteditable="true"]'
         )
       )
         return;
@@ -144,7 +158,12 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
   }
   const id = SLIDE_IDS[index] ?? 'opening';
   return (
-    <div className={styles.deck} ref={root} style={pitchBrandStyle}>
+    <div
+      className={styles.deck}
+      data-palette={getPalette(id)}
+      ref={root}
+      style={pitchBrandStyle}
+    >
       <span className="sr-only" aria-live="polite" aria-atomic="true">
         {copy.slide} {index + 1} / {SLIDE_IDS.length}: {copy.slides[id].title}
       </span>
@@ -159,6 +178,7 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
           Tuturuuu
         </a>
         <span className={styles.edition}>{copy.edition}</span>
+        <span className={styles.chapter}>{copy.slides[id].chapter}</span>
         <div className={styles.tools}>
           <button
             ref={overviewButton}
@@ -228,13 +248,15 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
           ))}
         </nav>
       )}
-      <main className={styles.main}>
+      <main className={styles.main} onInput={() => setPlaying(false)}>
         {SLIDE_IDS.map((slideId, i) => {
           const slide = copy.slides[slideId];
           return (
             <section
               key={slideId}
               style={pitchTone(i)}
+              data-palette={getPalette(slideId)}
+              data-slide={slideId}
               className={`${styles.slide} ${i === index ? styles.active : ''}`}
               aria-hidden={i !== index}
               aria-label={`${copy.slide} ${i + 1}: ${slide.kicker}`}
@@ -247,22 +269,40 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
                   {slide.title}
                 </h1>
                 <p className={styles.body}>{slide.body}</p>
-                {['pricing', 'calculator', 'ai'].includes(slideId) && (
+                {(slide.status ||
+                  ['pricing', 'calculator'].includes(slideId)) && (
                   <span className={styles.badge}>
-                    {slideId === 'pricing' || slideId === 'calculator'
+                    <i aria-hidden="true" />
+                    {['pricing', 'calculator'].includes(slideId)
                       ? copy.livePricingProposal
-                      : copy.proposal}
+                      : slide.status}
                   </span>
                 )}
-                {['platform', 'workflow', 'roadmap', 'business'].includes(
-                  slideId
-                ) && (
-                  <small className={styles.disclaimer}>{copy.noClaims}</small>
+                {slideId === 'opening' && (
+                  <div className={styles.links}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPlaying(false);
+                        go(1, true);
+                      }}
+                    >
+                      {copy.explore} <ArrowRight size={18} />
+                    </button>
+                  </div>
+                )}
+                {slideId === 'team' && (
+                  <div className={styles.links}>
+                    <a href={`/${locale}/about`}>
+                      {copy.company}
+                      <ArrowRight size={18} />
+                    </a>
+                  </div>
                 )}
                 {slideId === 'closing' && (
                   <div className={styles.links}>
-                    <a href={`/${locale}`}>
-                      {copy.explore} <ArrowRight size={18} />
+                    <a href="mailto:contact@tuturuuu.com">
+                      {copy.contact} <ArrowRight size={18} />
                     </a>
                     <button type="button" onClick={celebrate}>
                       <Sparkles size={18} />

@@ -11542,6 +11542,8 @@
     "annual": "Annual billing",
     "capacity": "More capacity",
     "celebrate": "Celebrate",
+    "company": "Meet the company",
+    "contact": "Build with us",
     "contract": "Contracted scope",
     "core": "Core work included",
     "credits": "AI credits / month",
@@ -11551,8 +11553,8 @@
       "30,000 / paid seat"
     ],
     "custom": "Custom",
-    "description": "An evolving product and business pitch for Tuturuuu.",
-    "edition": "Living deck / September 2026",
+    "description": "A connected ecosystem for work, learning, and human potential. Explore our workforce AI direction and long-term vision.",
+    "edition": "THE AGE OF PARTNERS",
     "enterprise": "Enterprise",
     "equivalent": "monthly equivalent",
     "estimate": "Illustrative subscription subtotal · USD · excludes tax and add-ons",
@@ -11582,7 +11584,7 @@
     "next": "Next slide",
     "noClaims": "Product direction, not a launch or performance guarantee.",
     "notes": "Presenter notes",
-    "orbitLabels": ["Tasks", "AI", "Drive", "Learn"],
+    "orbitLabels": ["Work", "People", "Knowledge", "Learning"],
     "overview": "All slides",
     "pause": "Pause",
     "people": ["Individuals", "Small teams", "Educators", "Operators"],
@@ -11613,7 +11615,7 @@
       "Finance · Contacts · Inventory",
       "Learn · Teach · CMS · AI"
     ],
-    "proposal": "Proposed · subject to review",
+    "proposal": "Product direction",
     "roadmap": [
       "Unify pricing & policy",
       "Verify every boundary",
@@ -11621,83 +11623,644 @@
       "Expand with evidence"
     ],
     "seat": "per member",
+    "simulation": {
+      "baseline": "Compare with baseline",
+      "baselineDetail": "Baseline: 6 people × 24 hours = 144 hours; 180 hours of work leaves a 36-hour gap.",
+      "capacity": "Available capacity",
+      "caveat": "Synthetic illustration. Capacity = people × available hours. Ignores skill fit, dependencies, leave, and individual preferences; not a staffing recommendation.",
+      "demand": "Estimated work / week",
+      "gap": "Uncovered work",
+      "headroom": "Remaining capacity",
+      "hours": "Available hours / person",
+      "people": "Team members",
+      "title": "Weekly capacity sandbox",
+      "unit": "h"
+    },
     "slide": "Slide",
     "slides": {
       "ai": {
-        "body": "AI should help move work forward—with clear usage, predictable limits, and control over spending.",
-        "kicker": "Responsible economics",
-        "note": "Paid proposals retain the source per-seat AI defaults. The Free proposal is 1,000 credits per person across all their Free workspaces. Production allocation overrides, costs and balance scopes require verification before activation.",
-        "title": "Intelligence with\na visible budget."
+        "body": "Mira is our conversational AI surface. The ambition is to make it the approachable front door to an entire ecosystem: ask a question, explore a plan, and understand what happens next.",
+        "chapter": "02 / THE ECOSYSTEM",
+        "kicker": "Meet Mira",
+        "note": "Mira is our conversational AI surface. The ambition is to make it the approachable front door to an entire ecosystem: ask a question, explore a plan, and understand what happens next. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Ask naturally",
+            "detail": "Bring a question, a document, or an idea."
+          },
+          {
+            "label": "Explore together",
+            "detail": "Compare options and inspect the reasoning and sources."
+          },
+          {
+            "label": "Keep control",
+            "detail": "Cross-app orchestration is a development direction, with approval at consequential steps."
+          }
+        ],
+        "status": "Existing AI surface → expanding vision",
+        "title": "One conversation.\nA wider horizon."
+      },
+      "architecture": {
+        "body": "Adapt existing workspace and AI foundations into a bounded prototype. Separate permissioned data, reproducible calculations, generated explanations, and human approval.",
+        "chapter": "04 / BUILT TO EARN TRUST",
+        "kicker": "A practical architecture",
+        "note": "Adapt existing workspace and AI foundations into a bounded prototype. Separate permissioned data, reproducible calculations, generated explanations, and human approval. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Permissioned inputs",
+            "detail": "Approved imports or connectors → validation → workspace-scoped storage."
+          },
+          {
+            "label": "Decision-support layer",
+            "detail": "Deterministic metrics + grounded AI explanations + configurable scenarios."
+          },
+          {
+            "label": "Human review & evaluation",
+            "detail": "Dashboard or Mira interaction → approval and feedback → versioned evaluation records."
+          }
+        ],
+        "status": "Proposed technical design",
+        "title": "Connect. Understand.\nSimulate. Review."
       },
       "audience": {
-        "body": "A personal workspace can become the foundation for a team, a classroom, or an operating business.",
-        "kicker": "Who it serves",
-        "note": "Position small teams as the initial audience. Learning and business operations are adjacent workflows. No customer count or traction claim is implied.",
-        "title": "Start focused.\nGrow together."
+        "body": "Begin with small teams and learning communities in Vietnam. Develop repeatable workflows with local partners, then adapt them to the languages and operating realities of Southeast Asia.",
+        "chapter": "05 / THE GROWTH ENGINE",
+        "kicker": "A focused way into a broad market",
+        "note": "Begin with small teams and learning communities in Vietnam. Develop repeatable workflows with local partners, then adapt them to the languages and operating realities of Southeast Asia. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Initial focus",
+            "detail": "Service businesses, education teams, and knowledge-intensive MSMEs."
+          },
+          {
+            "label": "Distribution",
+            "detail": "Product-led adoption, implementation partners, and learning communities."
+          },
+          {
+            "label": "Expansion gate",
+            "detail": "Repeatable activation, retained use, support capacity, and locally validated workflows."
+          }
+        ],
+        "status": "Market-entry strategy",
+        "title": "Built close to home.\nDesigned to travel."
       },
       "business": {
-        "body": "Help teams reach a useful outcome, expand through collaboration, and retain them through dependable daily work.",
-        "kicker": "Business hypothesis",
-        "note": "No revenue, retention, market size or growth figures are asserted. Validate activation, paid conversion, retained seats, cost to serve and contribution margin.",
-        "title": "Grow through value.\nMeasure the economics."
+        "body": "Start with a useful everyday product. Grow into team adoption, paid capacity, and repeatable solutions. Each expansion should earn its place through customer value and sustainable delivery costs.",
+        "chapter": "05 / THE GROWTH ENGINE",
+        "kicker": "A business designed to compound",
+        "note": "Start with a useful everyday product. Grow into team adoption, paid capacity, and repeatable solutions. Each expansion should earn its place through customer value and sustainable delivery costs. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Adoption",
+            "detail": "Accessible core workflows help individuals and small teams get started."
+          },
+          {
+            "label": "Expansion",
+            "detail": "Paid workspace capacity and advanced capabilities support growing teams."
+          },
+          {
+            "label": "Partnerships",
+            "detail": "Scoped implementation and support can turn validated pilots into repeatable offerings."
+          }
+        ],
+        "status": "Commercial strategy",
+        "title": "Win one workflow.\nEarn the ecosystem."
       },
       "calculator": {
-        "body": "Explore team subscription costs at current catalog prices. This illustration excludes add-ons and taxes.",
-        "kicker": "Interactive model",
-        "note": "Move the team size slider. Annual totals are actual annual charges; monthly equivalents are explanatory. This is a proposal calculator, not a checkout quote.",
-        "title": "Make the cost\nconcrete."
+        "body": "Explore the team subscription subtotal at current catalog prices. Custom development, pilot evaluation, taxes, and add-ons are outside this illustration.",
+        "chapter": "05 / THE GROWTH ENGINE",
+        "kicker": "Explore the subscription",
+        "note": "Explore the team subscription subtotal at current catalog prices. Custom development, pilot evaluation, taxes, and add-ons are outside this illustration. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [],
+        "status": "Current prices · capacity changes awaiting rollout",
+        "title": "Make the next step\ntangible."
+      },
+      "capacity": {
+        "body": "Combine agreed availability, task estimates, and deadlines to make workload visible. Let managers compare plans before asking a team to take on more.",
+        "chapter": "03 / THE FIRST PROOF",
+        "kicker": "Use case 01 / Workload planning",
+        "note": "Combine agreed availability, task estimates, and deadlines to make workload visible. Let managers compare plans before asking a team to take on more. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Inputs",
+            "detail": "Task estimates, due dates, working calendars, and declared availability."
+          },
+          {
+            "label": "Configurable outputs",
+            "detail": "Team capacity views, scheduling conflicts, and alternative allocations."
+          },
+          {
+            "label": "Evaluation",
+            "detail": "Planning time, missed commitments, and staff feedback against a baseline."
+          }
+        ],
+        "status": "Proposed pilot module",
+        "title": "See the pressure.\nExplore the options."
       },
       "closing": {
-        "body": "Explore the product. Challenge the proposal. Help shape what comes next.",
-        "kicker": "The next chapter",
-        "note": "Invite feedback on the product and commercial model. Celebrate the direction without presenting proposed prices as approved commitments.",
-        "title": "Let’s build a better\nway to work."
+        "body": "Bring us a real workflow, a difficult question, or a team ready to explore a better way. Together, we can turn an ambitious vision into useful, measurable progress.",
+        "chapter": "06 / THE LONG HORIZON",
+        "kicker": "Build the next era with us",
+        "note": "Bring us a real workflow, a difficult question, or a team ready to explore a better way. Together, we can turn an ambitious vision into useful, measurable progress. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "For people",
+            "detail": "More space to create."
+          },
+          {
+            "label": "For teams",
+            "detail": "More confidence to grow."
+          },
+          {
+            "label": "For partners",
+            "detail": "A foundation to build on."
+          }
+        ],
+        "status": "Let’s start with one meaningful problem",
+        "title": "Give humanity\nits focus back."
+      },
+      "context": {
+        "body": "A task alone is a checkbox. Add a deadline, the right skills, available time, and a customer commitment, and it becomes a decision worth helping with.",
+        "chapter": "02 / THE ECOSYSTEM",
+        "kicker": "Why an ecosystem matters",
+        "note": "A task alone is a checkbox. Add a deadline, the right skills, available time, and a customer commitment, and it becomes a decision worth helping with. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Shared context",
+            "detail": "People, projects, knowledge, and workspace permissions."
+          },
+          {
+            "label": "Useful decisions",
+            "detail": "Relate commitments to capacity and learning needs."
+          },
+          {
+            "label": "Compounding value",
+            "detail": "Each useful workflow makes the next connection more valuable."
+          }
+        ],
+        "status": "Connected-context strategy",
+        "title": "Intelligence needs\na world to understand."
+      },
+      "engagement": {
+        "body": "Begin with a discovery conversation and a written technical proposal. Define the work, the cost drivers, and the acceptance criteria before either side commits to the build.",
+        "chapter": "04 / BUILT TO EARN TRUST",
+        "kicker": "Scope before scale",
+        "note": "A named technical contact, final scope, schedule, and budget are agreed in the written proposal. Subscription prices do not cover a custom pilot.",
+        "panels": [
+          {
+            "label": "Scope & outputs",
+            "detail": "Choose 1–3 issues, agreed data sources, configurable reports, simulation, and evaluation deliverables."
+          },
+          {
+            "label": "Budget & cost controls",
+            "detail": "Separate discovery, adaptation, testing, and support. Set model/hosting limits and milestone payments."
+          },
+          {
+            "label": "Handover & next decision",
+            "detail": "Provide documentation, limitations, evaluation results, and an explicit support or exit plan."
+          }
+        ],
+        "status": "Proposed engagement structure · quotation after discovery",
+        "title": "A clear scope.\nA credible commitment."
+      },
+      "evidence": {
+        "body": "Agree on a baseline and success criteria before the pilot. Measure usefulness, reliability, and adoption alongside the cost of operating the system.",
+        "chapter": "03 / THE FIRST PROOF",
+        "kicker": "Make the proof measurable",
+        "note": "Agree on a baseline and success criteria before the pilot. Measure usefulness, reliability, and adoption alongside the cost of operating the system. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Decision quality",
+            "detail": "Compare recommendations with expert review; inspect errors and unsupported answers."
+          },
+          {
+            "label": "Workflow value",
+            "detail": "Measure task completion time and user feedback against the current process."
+          },
+          {
+            "label": "Responsible adoption",
+            "detail": "Track accepted, edited, and rejected suggestions with consent and minimal telemetry."
+          }
+        ],
+        "status": "Proposed evaluation framework",
+        "title": "A great demo opens\na door. Evidence\nearns the next one."
+      },
+      "horizon": {
+        "body": "Work is the starting point. Learning, scientific discovery, and eventually embodied assistance are the wider horizon. The dream is technology that helps humanity become more capable.",
+        "chapter": "06 / THE LONG HORIZON",
+        "kicker": "Beyond the screen",
+        "note": "Work is the starting point. Learning, scientific discovery, and eventually embodied assistance are the wider horizon. The dream is technology that helps humanity become more capable. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Mira / The relationship",
+            "detail": "An approachable partner across the ecosystem."
+          },
+          {
+            "label": "Connected intelligence / The foundation",
+            "detail": "Context, knowledge, evaluation, and orchestration working together."
+          },
+          {
+            "label": "Beyond software / The horizon",
+            "detail": "Explore physical-world assistance only as safety and research maturity allow."
+          }
+        ],
+        "status": "Long-term research vision",
+        "title": "What if human\npotential had\nno interface limit?"
+      },
+      "intelligence": {
+        "body": "Our original vision names the pieces of a greater whole. Their value comes from working together around a person’s goals, with context and safeguards connecting every layer.",
+        "chapter": "06 / THE LONG HORIZON",
+        "kicker": "The long-term intelligence architecture",
+        "note": "Mira, Rewise, and Nova have product surfaces in the codebase. The roles here express the longer-term architecture; Aurora coordination and Crystal embodied assistance are vision concepts, not delivery commitments.",
+        "panels": [
+          {
+            "label": "Mira / The relationship",
+            "detail": "A natural way to think and work with intelligence."
+          },
+          {
+            "label": "Aurora / The coordination",
+            "detail": "Context and permissioned action across the ecosystem."
+          },
+          {
+            "label": "Rewise / The knowledge",
+            "detail": "Bring relevant knowledge into the right moment."
+          },
+          {
+            "label": "Nova / The refinement",
+            "detail": "Explore how intelligence is instructed, evaluated, and improved."
+          },
+          {
+            "label": "Crystal / The physical horizon",
+            "detail": "Research a future where assistance reaches beyond the screen."
+          }
+        ],
+        "status": "Conceptual architecture · not a claim of five completed systems",
+        "title": "Five ideas.\nOne intelligent\npartnership."
+      },
+      "onboarding": {
+        "body": "A new teammate should spend less time searching for answers and more time building confidence. Bring role guidance, trusted knowledge, and a clear onboarding plan into reach.",
+        "chapter": "03 / THE FIRST PROOF",
+        "kicker": "Use case 03 / Knowledge transfer",
+        "note": "A new teammate should spend less time searching for answers and more time building confidence. Bring role guidance, trusted knowledge, and a clear onboarding plan into reach. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Inputs",
+            "detail": "Approved policies, role guides, and onboarding tasks."
+          },
+          {
+            "label": "Configurable outputs",
+            "detail": "Source-linked answers, role checklists, and escalation to a human mentor."
+          },
+          {
+            "label": "Evaluation",
+            "detail": "Time to find an answer, answer correctness, and new-starter feedback."
+          }
+        ],
+        "status": "Proposed pilot module",
+        "title": "Make the first month\nfeel less like a maze."
       },
       "opening": {
-        "body": "A connected home for work, learning, and the people who make it happen.",
-        "kicker": "Product & business vision",
-        "note": "Start with the outcome: a team can organize its day without stitching together a different identity and workspace for every tool.",
-        "title": "One workspace.\nMore possibility."
+        "body": "We are building the connected world behind an intelligent partner. One that understands your work, helps your team grow, and gives your best ideas room to become real.",
+        "chapter": "01 / THE POSSIBILITY",
+        "kicker": "An ecosystem for human potential",
+        "note": "We are building the connected world behind an intelligent partner. One that understands your work, helps your team grow, and gives your best ideas room to become real. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Work",
+            "detail": "Make meaningful progress."
+          },
+          {
+            "label": "Life",
+            "detail": "Protect what matters."
+          },
+          {
+            "label": "Intelligence",
+            "detail": "Bring it all together."
+          }
+        ],
+        "status": "The Tuturuuu vision",
+        "title": "Your ambition.\nAn unfair advantage."
+      },
+      "origin": {
+        "body": "Tuturuuu began with a familiar feeling: too many tools, too many unfinished thoughts, too little room to create. The mission grew from organizing a day to expanding what a person can do.",
+        "chapter": "01 / THE POSSIBILITY",
+        "kicker": "A very human beginning",
+        "note": "Tuturuuu began with a familiar feeling: too many tools, too many unfinished thoughts, too little room to create. The mission grew from organizing a day to expanding what a person can do. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "A personal problem",
+            "detail": "Digital complexity was consuming the energy meant for building."
+          },
+          {
+            "label": "A shared purpose",
+            "detail": "Help people turn intention into progress, together."
+          },
+          {
+            "label": "A bigger question",
+            "detail": "What could we achieve with a partner that understands our world?"
+          }
+        ],
+        "status": "Our founding purpose",
+        "title": "We wanted our\nfocus back."
+      },
+      "pilot": {
+        "body": "An indicative 12-week engagement, subject to data readiness and agreed scope. Begin with one workforce issue; add up to two more only when the first earns its place.",
+        "chapter": "04 / BUILT TO EARN TRUST",
+        "kicker": "A bounded path to proof",
+        "note": "An indicative 12-week engagement, subject to data readiness and agreed scope. Begin with one workforce issue; add up to two more only when the first earns its place. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results. Budget structure: separately scope discovery, adaptation, evaluation, and support; cap model and hosting usage; agree milestones and a written quotation after data discovery. The timeline is indicative, not a delivery commitment.",
+        "panels": [
+          {
+            "label": "Weeks 01–03 / Define",
+            "detail": "Choose the use case, appoint a technical lead and domain owner, agree data access and evaluation."
+          },
+          {
+            "label": "Weeks 04–08 / Adapt",
+            "detail": "Build the bounded prototype, configure outputs, test scenarios, and review safety and usability."
+          },
+          {
+            "label": "Weeks 09–12 / Evaluate",
+            "detail": "Run a supervised pilot, report results and limitations, and recommend a scale-or-stop decision."
+          }
+        ],
+        "status": "Illustrative delivery plan · subject to scoping",
+        "title": "Start small.\nLearn in the real world."
       },
       "platform": {
-        "body": "Focused apps. Shared context. One place to bring the work together.",
-        "kicker": "The platform",
-        "note": "These are product families present in the repository. Availability varies by app; this is not a guarantee that every surface is publicly launched.",
-        "title": "A suite built around\nyour workspace."
+        "body": "Work, communication, operations, and learning belong together. Tuturuuu brings these domains into a growing ecosystem—the foundation for intelligence that understands how work connects.",
+        "chapter": "02 / THE ECOSYSTEM",
+        "kicker": "The foundation exists",
+        "note": "Work, communication, operations, and learning belong together. Our product codebase already spans these domains—the foundation for intelligence that can see how work connects. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Work & collaboration",
+            "detail": "Tasks · Calendar · Track · Meet · Mail · Chat · Drive · Colab"
+          },
+          {
+            "label": "Business & people",
+            "detail": "Contacts · Finance · Pay · Inventory · Forms · CMS"
+          },
+          {
+            "label": "Learning & intelligence",
+            "detail": "Learn · Teach · Mira · Rewise · Nova"
+          }
+        ],
+        "status": "Existing product foundations · availability varies",
+        "title": "Many focused apps.\nOne bigger picture."
       },
       "pricing": {
-        "body": "One workspace subscription across the suite. Pay for capacity and advanced workflows as your needs grow.",
-        "kicker": "Plans and allowances",
-        "note": "Approved new-purchase prices: Plus $9 monthly or $90 annually; Pro $19 monthly or $190 annually per full member. The slide reads the current catalog until deployment and Polar reconciliation finish. Existing subscriptions are unchanged.",
-        "title": "Simple plans.\nRoom to grow."
+        "body": "Workspace subscriptions support the everyday product. A tailored analytics pilot has a separate scope, delivery plan, and budget; it is not included in a subscription estimate.",
+        "chapter": "05 / THE GROWTH ENGINE",
+        "kicker": "Workspace economics",
+        "note": "Workspace subscriptions support the everyday product. A tailored analytics pilot has a separate scope, delivery plan, and budget; it is not included in a subscription estimate. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [],
+        "status": "Current prices · capacity changes awaiting rollout",
+        "title": "Start with utility.\nGrow with value."
       },
       "problem": {
-        "body": "Projects, conversations, schedules, files, and decisions belong in the same context.",
-        "kicker": "The problem",
-        "note": "Describe a familiar handoff: a meeting becomes a task, needs a document, and eventually affects a budget. Do not claim measured time savings.",
-        "title": "Work is connected.\nOur tools should be."
+        "body": "A customer promise lives in an email. Capacity lives in a spreadsheet. A decision disappears into a meeting. Someone has to hold the whole business in their head.",
+        "chapter": "01 / THE POSSIBILITY",
+        "kicker": "The invisible work",
+        "note": "A customer promise lives in an email. Capacity lives in a spreadsheet. A decision disappears into a meeting. Someone has to hold the whole business in their head. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "09:00 / The promise",
+            "detail": "A new project arrives. Who has the time and skills?"
+          },
+          {
+            "label": "13:00 / The scramble",
+            "detail": "Plans change. The schedule and the task board disagree."
+          },
+          {
+            "label": "18:00 / The cost",
+            "detail": "The team worked all day. The most important work is still waiting."
+          }
+        ],
+        "status": "A familiar operating challenge",
+        "title": "Brilliant people.\nDisconnected worlds."
+      },
+      "readiness": {
+        "body": "The ecosystem gives us a starting point for adaptation. A workforce analytics prototype remains a scoped development and validation effort.",
+        "chapter": "04 / BUILT TO EARN TRUST",
+        "kicker": "Ambition with a clear starting point",
+        "note": "The ecosystem gives us a starting point for adaptation. A workforce analytics prototype remains a scoped development and validation effort. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Existing foundations",
+            "detail": "Workspace products, task and calendar tools, learning surfaces, and conversational AI."
+          },
+          {
+            "label": "To adapt and validate",
+            "detail": "Workforce data mapping, analytics, scenario testing, interaction tracking, and pilot-specific governance."
+          },
+          {
+            "label": "Long-term research",
+            "detail": "Proactive cross-domain coordination and physical-world assistance."
+          }
+        ],
+        "status": "Capability and delivery boundaries",
+        "title": "Built foundations.\nFocused next steps."
       },
       "roadmap": {
-        "body": "Unify the catalog, verify enforcement, and expand access only when reliability and economics are ready.",
-        "kicker": "Evolving roadmap",
-        "note": "There are no promised delivery dates. Meet hosting remains restricted in the current source. Sponsored AI and expensive workloads need explicit budgets.",
-        "title": "Build the foundation.\nEarn the expansion."
+        "body": "Our roadmap is a sequence of capabilities and evidence gates. Each stage must justify the next through reliability, usefulness, trust, and viable operating costs.",
+        "chapter": "06 / THE LONG HORIZON",
+        "kicker": "Progress through evidence",
+        "note": "Our roadmap is a sequence of capabilities and evidence gates. Each stage must justify the next through reliability, usefulness, trust, and viable operating costs. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Now / Strengthen the foundation",
+            "detail": "Improve connected workflows, product reliability, and access boundaries."
+          },
+          {
+            "label": "Next / Prove focused intelligence",
+            "detail": "Validate workforce use cases and supervised coordination with partners."
+          },
+          {
+            "label": "Beyond / Expand the partnership",
+            "detail": "Broaden context-aware assistance and research more proactive, permissioned action."
+          }
+        ],
+        "status": "Strategic roadmap · no fixed launch promises",
+        "title": "An ambitious horizon.\nEarned in stages."
+      },
+      "shift": {
+        "body": "The next leap is an AI that can work with the context of your business: what matters, what is possible, and what requires your judgment.",
+        "chapter": "01 / THE POSSIBILITY",
+        "kicker": "The next era of work",
+        "note": "The next leap is an AI that can work with the context of your business: what matters, what is possible, and what requires your judgment. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "01 / Tools",
+            "detail": "You operate each feature."
+          },
+          {
+            "label": "02 / Platforms",
+            "detail": "You connect the work."
+          },
+          {
+            "label": "03 / Partners",
+            "detail": "You set direction. Intelligence helps coordinate the next step."
+          }
+        ],
+        "status": "Our strategic thesis",
+        "title": "From using tools.\nTo having a partner."
+      },
+      "simulation": {
+        "body": "A useful decision-support system makes assumptions visible. This simple capacity sandbox shows the principle: change the inputs, compare the gap, then discuss the human trade-offs.",
+        "chapter": "03 / THE FIRST PROOF",
+        "kicker": "Explore before you commit",
+        "note": "A useful decision-support system makes assumptions visible. This simple capacity sandbox shows the principle: change the inputs, compare the gap, then discuss the human trade-offs. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Demand",
+            "detail": "Estimated work for one week."
+          },
+          {
+            "label": "Capacity",
+            "detail": "Agreed time available for that work."
+          },
+          {
+            "label": "Judgment",
+            "detail": "Numbers inform the discussion. People make the decision."
+          }
+        ],
+        "status": "Interactive illustration · synthetic data",
+        "title": "What if we changed\nthe plan first?"
+      },
+      "skills": {
+        "body": "Connect the skills a project needs with skills people choose to share. Turn gaps into learning pathways, mentoring opportunities, and practical assignments.",
+        "chapter": "03 / THE FIRST PROOF",
+        "kicker": "Use case 02 / Workforce development",
+        "note": "Connect the skills a project needs with skills people choose to share. Turn gaps into learning pathways, mentoring opportunities, and practical assignments. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Inputs",
+            "detail": "Role requirements, self-declared skills, and agreed learning goals."
+          },
+          {
+            "label": "Configurable outputs",
+            "detail": "Skills maps and learning suggestions with evidence and uncertainty."
+          },
+          {
+            "label": "Evaluation",
+            "detail": "Learning completion, practical assessments, and employee usefulness ratings."
+          }
+        ],
+        "status": "Proposed pilot module",
+        "title": "The next opportunity\nstarts with learning."
+      },
+      "team": {
+        "body": "Founded by Võ Hoàng Phúc, Tuturuuu brings product and engineering foundations. Domain partners bring the real questions, operational knowledge, and people who will use the result.",
+        "chapter": "04 / BUILT TO EARN TRUST",
+        "kicker": "A partner that builds with you",
+        "note": "Tuturuuu brings product and engineering foundations. Domain partners bring the real questions, operational knowledge, and people who will use the result. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Tuturuuu technical lead",
+            "detail": "Architecture, adaptation, technical testing, documentation, and a named contact agreed at kickoff."
+          },
+          {
+            "label": "Domain & research partners",
+            "detail": "Use-case selection, expert evaluation, participant engagement, and interpretation."
+          },
+          {
+            "label": "Joint delivery ownership",
+            "detail": "Regular demos, milestone acceptance, a risk register, and agreed data/IP responsibilities."
+          }
+        ],
+        "status": "Proposed collaboration model",
+        "title": "Shared expertise.\nClear ownership."
       },
       "trust": {
-        "body": "Workspace permissions, access to your existing data, and export should never become upgrade traps.",
-        "kicker": "Product principles",
-        "note": "These are proposed packaging principles. Do not imply certifications, contracted SLAs or enterprise security features that have not been verified.",
-        "title": "Trust belongs\nin every tier."
+        "body": "Workforce AI should help people develop and make better plans. Our proposed pilot puts transparency, proportional data use, and meaningful human review at the center.",
+        "chapter": "04 / BUILT TO EARN TRUST",
+        "kicker": "Human agency is the design principle",
+        "note": "Workforce AI should help people develop and make better plans. Our proposed pilot puts transparency, proportional data use, and meaningful human review at the center. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Use only what is needed",
+            "detail": "Agree purpose, access, retention, deletion, and consent or another appropriate basis before ingestion."
+          },
+          {
+            "label": "Make outputs contestable",
+            "detail": "Show sources and assumptions, test errors and bias, and support correction and escalation."
+          },
+          {
+            "label": "Keep people accountable",
+            "detail": "No autonomous hiring, firing, pay, or disciplinary decisions. No covert monitoring or inferred emotion scoring."
+          }
+        ],
+        "status": "Pilot governance requirements",
+        "title": "More intelligence.\nMore human control."
+      },
+      "vision": {
+        "body": "Imagine an intelligent partner that remembers the right context, tests the options, and helps carry out the plan—with your permission. Tuturuuu is building toward that future.",
+        "chapter": "01 / THE POSSIBILITY",
+        "kicker": "Our north star",
+        "note": "Imagine an intelligent partner that remembers the right context, tests the options, and helps carry out the plan—with your permission. Tuturuuu is building toward that future. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Understand",
+            "detail": "Ground assistance in the context you choose to share."
+          },
+          {
+            "label": "Anticipate",
+            "detail": "Surface opportunities and constraints before they become urgent."
+          },
+          {
+            "label": "Act with you",
+            "detail": "Propose, explain, ask for approval, and learn from outcomes."
+          }
+        ],
+        "status": "Long-term vision",
+        "title": "A JARVIS-like future.\nBuilt one useful\ncapability at a time."
       },
       "workflow": {
-        "body": "Plan the work, bring the team together, track progress, and learn what to improve.",
-        "kicker": "The experience",
-        "note": "Walk through the stages as a product scenario. Cross-app automation shown here is a direction, not a claim that every handoff is automated today.",
-        "title": "From a good idea\nto a finished day."
+        "body": "Imagine a small business owner asking Mira one question. The answer connects delivery commitments, team capacity, and learning opportunities into a plan the team can review.",
+        "chapter": "02 / THE ECOSYSTEM",
+        "kicker": "A day in the future",
+        "note": "Imagine a small business owner asking Mira one question. The answer connects delivery commitments, team capacity, and learning opportunities into a plan the team can review. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "Understand the commitment",
+            "detail": "Bring together the brief, deadlines, and agreed requirements."
+          },
+          {
+            "label": "Compare the options",
+            "detail": "Explore workload, skills gaps, and schedule trade-offs."
+          },
+          {
+            "label": "Turn a decision into progress",
+            "detail": "Approve a plan, coordinate the work, and review what actually happened."
+          }
+        ],
+        "status": "Illustrative future workflow",
+        "title": "“Can we take on\nthis project?”"
+      },
+      "workforce": {
+        "body": "Micro, small, and medium enterprises need practical support without a large analytics department. We propose starting with three workforce decisions that connect directly to daily work.",
+        "chapter": "03 / THE FIRST PROOF",
+        "kicker": "Start where the stakes are real",
+        "note": "Micro, small, and medium enterprises need practical support without a large analytics department. We propose starting with three workforce decisions that connect directly to daily work. Use the maturity label to distinguish existing foundations, proposed development, and long-term vision. Do not present illustrative outputs as measured results.",
+        "panels": [
+          {
+            "label": "01 / Capacity",
+            "detail": "Where is work at risk, and how could we rebalance it?"
+          },
+          {
+            "label": "02 / Skills",
+            "detail": "What should the team learn to deliver the next opportunity?"
+          },
+          {
+            "label": "03 / Onboarding",
+            "detail": "How can a new teammate become confident and effective sooner?"
+          }
+        ],
+        "status": "Proposed workforce decision-support prototype",
+        "title": "Small teams deserve\nserious intelligence."
       }
     },
     "stages": ["Plan", "Connect", "Deliver", "Reflect"],
-    "title": "Tuturuuu — a connected workspace"
+    "title": "Tuturuuu — the age of intelligent partners"
   },
   "platform-role-data-table": {
     "allow_challenge_management": "Challenge",
