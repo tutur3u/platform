@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { DEV_MODE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -19,6 +19,7 @@ const INTERVAL_TO_MS: Record<string, number> = {
   '30m': 30 * 60 * 1000,
   '1h': 60 * 60 * 1000,
   '2h': 2 * 60 * 60 * 1000,
+  '3h': 3 * 60 * 60 * 1000,
   '6h': 6 * 60 * 60 * 1000,
   '12h': 12 * 60 * 60 * 1000,
   '24h': 24 * 60 * 60 * 1000,
@@ -33,6 +34,7 @@ const INTERVAL_NAMES: Record<string, string> = {
   '30m': '30 minutes',
   '1h': '1 hour',
   '2h': '2 hours',
+  '3h': '3 hours',
   '6h': '6 hours',
   '12h': '12 hours',
   '24h': '24 hours',
@@ -42,8 +44,8 @@ const INTERVAL_NAMES: Record<string, string> = {
   '7d': '1 week',
 };
 
-// Feature flag: When true, only process reminders for the root workspace
-const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
+const DEFAULT_INTERVALS = ['3d', '1d', '12h', '3h', '1h'];
+const PAGE_SIZE = 500;
 
 interface TaskWithDetails {
   id: string;
@@ -113,42 +115,38 @@ async function handleGET(req: NextRequest) {
     const sbAdmin = await createAdminClient();
     const now = new Date();
 
-    // Get all workspaces with reminder settings
-    // Note: Types for new tables will be available after running bun sb:typegen
-    let settingsQuery = (sbAdmin as any)
-      .from('workspace_task_reminder_settings')
-      .select('ws_id, reminder_intervals, enabled')
-      .eq('enabled', true);
-
-    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
-      settingsQuery = settingsQuery.eq('ws_id', ROOT_WORKSPACE_ID);
-    }
-
-    const { data: allSettings, error: settingsError } =
-      (await settingsQuery) as {
+    // Workspace settings override the defaults, including when reminders are disabled.
+    const allSettings: ReminderSettings[] = [];
+    for (let offset = 0; ; offset += PAGE_SIZE) {
+      const { data, error } = (await (sbAdmin as any)
+        .from('workspace_task_reminder_settings')
+        .select('ws_id, reminder_intervals, enabled')
+        .order('ws_id')
+        .range(offset, offset + PAGE_SIZE - 1)) as {
         data: ReminderSettings[] | null;
         error: Error | null;
       };
-
-    if (settingsError) {
-      console.error('Error fetching reminder settings:', settingsError);
-      return NextResponse.json(
-        { error: 'Error fetching settings' },
-        { status: 500 }
-      );
+      if (error) {
+        console.error('Error fetching reminder settings:', error);
+        return NextResponse.json(
+          { error: 'Error fetching settings' },
+          { status: 500 }
+        );
+      }
+      allSettings.push(...(data ?? []));
+      if (!data || data.length < PAGE_SIZE) break;
     }
 
     // Build a map of workspace settings for quick lookup
     const settingsMap = new Map<string, ReminderSettings>();
-    for (const setting of allSettings || []) {
+    for (const setting of allSettings) {
       settingsMap.set(setting.ws_id, setting as ReminderSettings);
     }
 
     // Calculate the maximum window we need to check
-    // Default intervals are 24h and 1h if no settings
-    const defaultIntervals = ['24h', '1h'];
-    const allIntervals = new Set<string>(defaultIntervals);
-    for (const setting of allSettings || []) {
+    const allIntervals = new Set<string>(DEFAULT_INTERVALS);
+    for (const setting of allSettings) {
+      if (!setting.enabled) continue;
       const intervals = setting.reminder_intervals as string[];
       if (intervals) {
         for (const interval of intervals) {
@@ -162,12 +160,13 @@ async function handleGET(req: NextRequest) {
     );
     const windowEnd = new Date(now.getTime() + maxIntervalMs + 5 * 60 * 1000); // +5min buffer
 
-    // Get tasks with due dates in the window
-    // Note: task_watchers relation will be available after running migrations
-    let tasksQuery = (sbAdmin as any)
-      .from('tasks')
-      .select(
-        `
+    // Only due-soon active tasks enter the reminder scan.
+    const tasks: TaskWithDetails[] = [];
+    for (let offset = 0; ; offset += PAGE_SIZE) {
+      const { data, error } = (await (sbAdmin as any)
+        .from('tasks')
+        .select(
+          `
         id,
         name,
         end_date,
@@ -186,35 +185,31 @@ async function handleGET(req: NextRequest) {
           user_id
         )
       `
-      )
-      .not('end_date', 'is', null)
-      .is('completed_at', null)
-      .is('closed_at', null)
-      .is('deleted_at', null)
-      .gte('end_date', now.toISOString())
-      .lte('end_date', windowEnd.toISOString());
-
-    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
-      tasksQuery = tasksQuery.eq(
-        'task_lists.workspace_boards.ws_id',
-        ROOT_WORKSPACE_ID
-      );
+        )
+        .not('end_date', 'is', null)
+        .is('completed_at', null)
+        .is('closed_at', null)
+        .is('deleted_at', null)
+        .gte('end_date', now.toISOString())
+        .lte('end_date', windowEnd.toISOString())
+        .order('end_date')
+        .order('id')
+        .range(offset, offset + PAGE_SIZE - 1)) as {
+        data: TaskWithDetails[] | null;
+        error: Error | null;
+      };
+      if (error) {
+        console.error('Error fetching tasks:', error);
+        return NextResponse.json(
+          { error: 'Error fetching tasks' },
+          { status: 500 }
+        );
+      }
+      tasks.push(...(data ?? []));
+      if (!data || data.length < PAGE_SIZE) break;
     }
 
-    const { data: tasks, error: tasksError } = (await tasksQuery) as {
-      data: TaskWithDetails[] | null;
-      error: Error | null;
-    };
-
-    if (tasksError) {
-      console.error('Error fetching tasks:', tasksError);
-      return NextResponse.json(
-        { error: 'Error fetching tasks' },
-        { status: 500 }
-      );
-    }
-
-    if (!tasks || tasks.length === 0) {
+    if (tasks.length === 0) {
       return NextResponse.json({
         message: 'No tasks with approaching deadlines',
         processed: 0,
@@ -243,8 +238,9 @@ async function handleGET(req: NextRequest) {
 
       // Get workspace-specific intervals or use defaults
       const settings = settingsMap.get(wsId);
+      if (settings?.enabled === false) continue;
       const intervals: string[] =
-        settings?.reminder_intervals || defaultIntervals;
+        settings?.reminder_intervals || DEFAULT_INTERVALS;
 
       let taskNotifications = 0;
 
@@ -260,11 +256,13 @@ async function handleGET(req: NextRequest) {
         if (timeUntilDue >= windowStart && timeUntilDue <= windowEnd) {
           // Send reminder to each watcher
           for (const watcher of watchers) {
+            // A changed due date should receive a fresh reminder at its new time.
+            const receiptKey = `${interval}:${task.end_date}`;
             const { data: reminderAlreadySent, error: reminderCheckError } =
               await sbAdmin.rpc('task_reminder_already_sent', {
                 p_task_id: task.id,
                 p_user_id: watcher.user_id,
-                p_reminder_interval: interval,
+                p_reminder_interval: receiptKey,
               });
 
             if (reminderCheckError) {
@@ -276,20 +274,6 @@ async function handleGET(req: NextRequest) {
             }
 
             if (reminderAlreadySent) continue;
-
-            // Check notification preferences
-            const { data: shouldSend } = await sbAdmin.rpc(
-              'should_send_notification',
-              {
-                p_user_id: watcher.user_id,
-                p_event_type: 'deadline_reminder',
-                p_channel: 'email',
-                p_scope: 'workspace',
-                p_ws_id: wsId,
-              }
-            );
-
-            if (!shouldSend) continue;
 
             // Build task URL
             const baseUrl =
@@ -327,12 +311,14 @@ async function handleGET(req: NextRequest) {
               continue;
             }
 
+            if (!notificationId) continue;
+
             const { error: trackError } = await sbAdmin.rpc(
               'record_task_reminder_sent',
               {
                 p_task_id: task.id,
                 p_user_id: watcher.user_id,
-                p_reminder_interval: interval,
+                p_reminder_interval: receiptKey,
                 p_notification_id: notificationId,
               }
             );

@@ -32,7 +32,7 @@
     },
     {
       "path": "/api/cron/tasks/deadline-reminders",
-      "schedule": "0 */4 * * *"
+      "schedule": "*/5 * * * *"
     }
   ]
 }

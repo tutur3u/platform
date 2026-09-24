@@ -42,12 +42,12 @@
         "acceptedRemoval": 0,
         "key": "cron",
         "label": "cron",
-        "legacyNext": 7,
+        "legacyNext": 8,
         "migrated": 2,
-        "percentComplete": 22.22,
-        "remaining": 7,
+        "percentComplete": 20,
+        "remaining": 8,
         "terminal": 2,
-        "total": 9,
+        "total": 10,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 528,
+        "legacyNext": 529,
         "migrated": 67,
-        "percentComplete": 13.01,
-        "remaining": 528,
+        "percentComplete": 12.99,
+        "remaining": 529,
         "terminal": 79,
-        "total": 607,
+        "total": 608,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 603,
+      "legacyNext": 604,
       "migrated": 215,
-      "percentComplete": 27.52,
-      "remaining": 603,
+      "percentComplete": 27.49,
+      "remaining": 604,
       "terminal": 229,
-      "total": 832,
+      "total": 833,
       "unknownStatus": 0
     }
   },
@@ -5860,6 +5860,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "cron:/api/cron/tasks/deadline-reminders:apps/web/src/app/api/cron/tasks/deadline-reminders/route.ts",
+      "kind": "cron",
+      "methods": ["GET"],
+      "routePath": "/api/cron/tasks/deadline-reminders",
+      "sourceFile": "apps/web/src/app/api/cron/tasks/deadline-reminders/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "error:/:locale:apps/web/src/app/[locale]/error.tsx",
       "kind": "error",
       "methods": [],
@@ -7932,12 +7941,12 @@
   ],
   "summary": {
     "apiRoutes": 593,
-    "cronRoutes": 9,
+    "cronRoutes": 10,
     "layouts": 67,
     "pages": 154,
-    "routeHandlers": 607,
+    "routeHandlers": 608,
     "methodCounts": {
-      "GET": 304,
+      "GET": 305,
       "HEAD": 4,
       "POST": 300,
       "PUT": 54,
@@ -7945,6 +7954,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 832
+    "total": 833
   }
 }
