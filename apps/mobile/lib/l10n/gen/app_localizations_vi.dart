@@ -7673,6 +7673,33 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetChat => 'Trò chuyện';
 
   @override
+  String get meetEveryone => 'Mọi người';
+
+  @override
+  String get meetPrivateMira => 'Trò chuyện riêng với Mira';
+
+  @override
+  String get meetPrivateHint => 'Chỉ bạn thấy cuộc trò chuyện này. Hãy xem lại câu trả lời trước khi chia sẻ với mọi người.';
+
+  @override
+  String get meetPrivateEmpty => 'Hỏi riêng Mira về cuộc họp này.';
+
+  @override
+  String get meetAskMira => 'Hỏi riêng Mira';
+
+  @override
+  String get meetPrivateRequestFailed => 'Mira chưa thể trả lời. Hãy thử gửi lại tin nhắn.';
+
+  @override
+  String get meetShareWithEveryone => 'Chia sẻ với mọi người';
+
+  @override
+  String get meetShareHint => 'Xem lại hoặc chỉnh sửa câu trả lời trước khi đăng vào trò chuyện phòng họp.';
+
+  @override
+  String get meetShareConfirm => 'Đăng vào trò chuyện phòng họp';
+
+  @override
   String get meetMessageHint => 'Nhắn cho mọi người';
 
   @override
