@@ -2412,7 +2412,7 @@
     "api:/api/v1/workspaces/:wsId/meetings/:meetingId/review:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/review/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Mobile ended-room preflight and permission-scoped native review. Preserve workspace membership, room-state checks before media permission, notes sharing policy, host-only cost data, and no-store responses."
+      "note": "Mobile ended-room preflight and permission-scoped native review. Preserve workspace membership, room-state checks before media permission, notes sharing policy, speaker and segment metadata, host-only cost data, and no-store responses."
     },
     "api:/api/v1/workspaces/:wsId/meetings/:meetingId/realtime-token:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts": {
       "status": "legacy-next",

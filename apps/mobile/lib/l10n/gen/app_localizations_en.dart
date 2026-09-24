@@ -7903,6 +7903,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetReviewNoTranscript => 'No transcript is available yet.';
 
   @override
+  String get meetReviewUnknownSpeaker => 'Unknown speaker';
+
+  @override
+  String get meetReviewMicrophone => 'Microphone';
+
+  @override
+  String get meetReviewSharedAudio => 'Shared audio';
+
+  @override
   String get meetReviewTranscriptionCost => 'Transcription';
 
   @override

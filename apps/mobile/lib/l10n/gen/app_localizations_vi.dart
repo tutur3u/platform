@@ -7873,6 +7873,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetReviewNoTranscript => 'Chưa có bản ghi lời nói.';
 
   @override
+  String get meetReviewUnknownSpeaker => 'Người nói chưa xác định';
+
+  @override
+  String get meetReviewMicrophone => 'Micrô';
+
+  @override
+  String get meetReviewSharedAudio => 'Âm thanh chia sẻ';
+
+  @override
   String get meetReviewTranscriptionCost => 'Chuyển giọng nói thành văn bản';
 
   @override
