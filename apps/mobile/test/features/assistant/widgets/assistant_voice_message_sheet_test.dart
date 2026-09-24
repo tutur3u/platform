@@ -34,7 +34,7 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.text('Record'));
+    await tester.pump();
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     permission.complete(true);
     await tester.pumpAndSettle();
@@ -85,7 +85,6 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.text('Record'));
       await tester.pump();
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
       // Returning to the app must not revive the canceled native operation.
@@ -134,7 +133,6 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.text('Record'));
     await tester.pumpAndSettle();
     expect(find.text('Record'), findsOneWidget);
     expect(find.text('Attach recording'), findsNothing);

@@ -257,6 +257,8 @@ function extensionToMime(filename: string) {
       return 'video/mp4';
     case 'mov':
       return 'video/quicktime';
+    case 'm4a':
+      return 'audio/m4a';
     case 'pdf':
       return 'application/pdf';
     case 'txt':

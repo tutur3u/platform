@@ -82,6 +82,30 @@ describe('processMessagesWithFiles', () => {
     expect(result).toHaveLength(1);
     expect(Array.isArray(result[0]?.content)).toBe(true);
   });
+
+  it('passes an M4A recording to the model as audio', async () => {
+    mocks.adminList.mockResolvedValue({
+      data: [{ name: 'voice-message.m4a', metadata: {} }],
+      error: null,
+    });
+    mocks.adminDownload.mockResolvedValue({
+      data: new Blob([new Uint8Array([1, 2, 3])]),
+      error: null,
+    });
+    const { processMessagesWithFiles } = await import(
+      './message-file-processing'
+    );
+    const result = await processMessagesWithFiles(
+      [{ role: 'user', content: 'Summarize my recording' }],
+      'ws-1',
+      'chat-1'
+    );
+    const parts = result[0]?.content;
+    expect(Array.isArray(parts)).toBe(true);
+    expect(parts).toContainEqual(
+      expect.objectContaining({ type: 'file', mediaType: 'audio/m4a' })
+    );
+  });
 });
 
 describe('resolveAttachmentMediaType', () => {
@@ -105,6 +129,9 @@ describe('resolveAttachmentMediaType', () => {
     ).toBe('image/png');
     expect(resolveAttachmentMediaType('clip.mp3', undefined)).toBe(
       'audio/mpeg'
+    );
+    expect(resolveAttachmentMediaType('voice-message.m4a', undefined)).toBe(
+      'audio/m4a'
     );
     expect(resolveAttachmentMediaType('scan.PDF', null)).toBe(
       'application/pdf'

@@ -14,8 +14,9 @@ import '../data/assistant_stream_parser.dart';
 import '../models/assistant_models.dart';
 import 'assistant_tool_output.dart';
 
-part 'assistant_chat_state.dart';
+part 'assistant_chat_attachments.dart';
 part 'assistant_chat_restore.dart';
+part 'assistant_chat_state.dart';
 
 class AssistantChatCubit extends Cubit<AssistantChatState> {
   AssistantChatCubit({
@@ -50,6 +51,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   String? _activeAssistantMessageId;
   String? _activeTextBlockId;
   String? _activeReasoningBlockId;
+  Future<String>? _pendingAttachmentChatId;
+  String? _pendingAttachmentWorkspaceId;
+  int? _pendingAttachmentWorkspaceVersion;
 
   void _emitIfOpen(AssistantChatState nextState) {
     if (isClosed) {
@@ -84,89 +88,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       ),
     );
     return uploaded;
-  }
-
-  Future<void> addComposerAttachments({
-    required String wsId,
-    required List<PlatformFile> files,
-  }) async {
-    for (final file in files) {
-      final id = _repository.generateUuid();
-      final picked = await AssistantFilePickerResult.fromPlatformFile(file, id);
-      final pendingAttachment = AssistantAttachment(
-        id: id,
-        name: picked.name,
-        size: picked.size,
-        type: picked.mimeType,
-        localPath: picked.path,
-        uploadState: AssistantAttachmentUploadState.uploading,
-      );
-
-      emit(
-        state.copyWith(
-          composerAttachments: [
-            ...state.composerAttachments,
-            pendingAttachment,
-          ],
-        ),
-      );
-
-      try {
-        final uploaded = await _repository.uploadAttachment(
-          wsId: wsId,
-          chatId: state.chat?.id,
-          file: picked,
-        );
-        emit(
-          state.copyWith(
-            composerAttachments: state.composerAttachments
-                .map(
-                  (attachment) => attachment.id == id ? uploaded : attachment,
-                )
-                .toList(),
-          ),
-        );
-      } on Exception {
-        emit(
-          state.copyWith(
-            composerAttachments: state.composerAttachments
-                .map(
-                  (attachment) => attachment.id == id
-                      ? attachment.copyWith(
-                          uploadState: AssistantAttachmentUploadState.error,
-                        )
-                      : attachment,
-                )
-                .toList(),
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> removeComposerAttachment({
-    required String wsId,
-    required String attachmentId,
-  }) async {
-    AssistantAttachment? target;
-    for (final attachment in state.composerAttachments) {
-      if (attachment.id == attachmentId) {
-        target = attachment;
-        break;
-      }
-    }
-
-    emit(
-      state.copyWith(
-        composerAttachments: state.composerAttachments
-            .where((attachment) => attachment.id != attachmentId)
-            .toList(),
-      ),
-    );
-
-    if (target?.storagePath case final storagePath?) {
-      unawaited(_repository.deleteAttachment(wsId: wsId, path: storagePath));
-    }
   }
 
   Future<void> submit({

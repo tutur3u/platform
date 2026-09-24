@@ -6,7 +6,7 @@ import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:mime/mime.dart';
+import 'package:mobile/features/assistant/models/assistant_file_mime.dart';
 
 enum AssistantCreditSource { workspace, personal }
 
@@ -856,7 +856,7 @@ class AssistantFilePickerResult extends Equatable {
     String id,
   ) async {
     final extension = file.name.split('.').last.toLowerCase();
-    final mimeType = _mimeTypeFromExtension(extension);
+    final mimeType = assistantMimeTypeFromExtension(extension);
     return AssistantFilePickerResult(
       id: id,
       file: file,
@@ -905,6 +905,3 @@ List<AssistantTaskInsight> _decodeTaskList(dynamic raw) {
       .map(AssistantTaskInsight.fromJson)
       .toList();
 }
-
-String _mimeTypeFromExtension(String extension) =>
-    lookupMimeType('attachment.$extension') ?? 'application/octet-stream';
