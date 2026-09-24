@@ -7,7 +7,7 @@ create function private.begin_meeting_ai_live_session(
 language plpgsql security definer set search_path = '' as $$
 declare result record;
 begin
-  if p_app not in ('meet', 'parley') then raise exception 'Invalid meeting app'; end if;
+  if p_app is null or p_app not in ('meet', 'parley') then raise exception 'Invalid meeting app'; end if;
   if not exists (select 1 from public.workspace_meetings
     where id = p_meeting_id and ws_id = p_access_ws_id) then
     raise exception 'Invalid meeting workspace';
