@@ -29,46 +29,51 @@ class _ChatFilters extends StatelessWidget {
           onSelectionChanged: (value) => cubit.setScope(value.first),
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            _TypeChip(
-              type: ChatConversationType.channel,
-              label: l10n.chatChannels,
-            ),
-            _TypeChip(
-              type: ChatConversationType.direct,
-              label: l10n.chatDirect,
-            ),
-            _TypeChip(type: ChatConversationType.group, label: l10n.chatGroups),
-            _TypeChip(type: ChatConversationType.ai, label: l10n.chatAi),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          children: [
-            ChoiceChip(
-              label: Text(l10n.chatActive),
-              selected: state.archivedFilter == ChatArchivedFilter.active,
-              onSelected: (_) =>
-                  unawaited(cubit.setArchivedFilter(ChatArchivedFilter.active)),
-            ),
-            ChoiceChip(
-              label: Text(l10n.chatArchived),
-              selected: state.archivedFilter == ChatArchivedFilter.archived,
-              onSelected: (_) => unawaited(
-                cubit.setArchivedFilter(ChatArchivedFilter.archived),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _TypeChip(
+                type: ChatConversationType.channel,
+                label: l10n.chatChannels,
               ),
-            ),
-            ChoiceChip(
-              label: Text(l10n.chatAll),
-              selected: state.archivedFilter == ChatArchivedFilter.all,
-              onSelected: (_) =>
-                  unawaited(cubit.setArchivedFilter(ChatArchivedFilter.all)),
-            ),
-          ],
+              const SizedBox(width: 6),
+              _TypeChip(
+                type: ChatConversationType.direct,
+                label: l10n.chatDirect,
+              ),
+              const SizedBox(width: 6),
+              _TypeChip(
+                type: ChatConversationType.group,
+                label: l10n.chatGroups,
+              ),
+              const SizedBox(width: 6),
+              _TypeChip(type: ChatConversationType.ai, label: l10n.chatAi),
+              const SizedBox(width: 10),
+              ChoiceChip(
+                label: Text(l10n.chatActive),
+                selected: state.archivedFilter == ChatArchivedFilter.active,
+                onSelected: (_) => unawaited(
+                  cubit.setArchivedFilter(ChatArchivedFilter.active),
+                ),
+              ),
+              const SizedBox(width: 6),
+              ChoiceChip(
+                label: Text(l10n.chatArchived),
+                selected: state.archivedFilter == ChatArchivedFilter.archived,
+                onSelected: (_) => unawaited(
+                  cubit.setArchivedFilter(ChatArchivedFilter.archived),
+                ),
+              ),
+              const SizedBox(width: 6),
+              ChoiceChip(
+                label: Text(l10n.chatAll),
+                selected: state.archivedFilter == ChatArchivedFilter.all,
+                onSelected: (_) =>
+                    unawaited(cubit.setArchivedFilter(ChatArchivedFilter.all)),
+              ),
+            ],
+          ),
         ),
       ],
     );

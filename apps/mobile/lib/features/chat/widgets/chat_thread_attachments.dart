@@ -36,25 +36,6 @@ class _AttachmentChip extends StatelessWidget {
   }
 }
 
-class _ReactionButton extends StatelessWidget {
-  const _ReactionButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: onTap,
-      style: TextButton.styleFrom(
-        minimumSize: const Size(34, 28),
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-      ),
-      child: Text(label),
-    );
-  }
-}
-
 class _NoConversationSelected extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

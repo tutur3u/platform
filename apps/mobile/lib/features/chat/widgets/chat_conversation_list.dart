@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -35,10 +36,14 @@ class ChatConversationList extends StatelessWidget {
           SliverFillRemaining(hasScrollBody: false, child: _ChatEmptyList())
         else
           SliverPadding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.only(bottom: 8),
             sliver: SliverList.separated(
               itemCount: conversations.length + (hasMore ? 1 : 0),
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => Divider(
+                height: 1,
+                indent: 64,
+                color: shad.Theme.of(context).colorScheme.border,
+              ),
               itemBuilder: (context, index) {
                 if (index >= conversations.length) {
                   return Center(
