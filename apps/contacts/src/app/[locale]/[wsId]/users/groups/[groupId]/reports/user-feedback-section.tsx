@@ -37,6 +37,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -82,6 +83,7 @@ export default function UserFeedbackSection({
   const t = useTranslations();
   const tFeedback = useTranslations('ws-user-group-feedback');
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const [isOpen, setIsOpen] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -165,6 +167,7 @@ export default function UserFeedbackSection({
       queryClient.invalidateQueries({
         queryKey: ['user-feedbacks', user?.id, groupId],
       });
+      router.refresh();
     },
     onError: (error) => {
       console.error('Error creating feedback:', error);
@@ -204,6 +207,7 @@ export default function UserFeedbackSection({
       queryClient.invalidateQueries({
         queryKey: ['user-feedbacks', user?.id, groupId],
       });
+      router.refresh();
     },
     onError: (error) => {
       console.error('Error updating feedback:', error);
@@ -235,6 +239,7 @@ export default function UserFeedbackSection({
       queryClient.invalidateQueries({
         queryKey: ['user-feedbacks', user?.id, groupId],
       });
+      router.refresh();
     },
     onError: (error) => {
       console.error('Error deleting feedback:', error);

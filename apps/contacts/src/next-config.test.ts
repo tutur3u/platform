@@ -5,18 +5,22 @@ vi.mock('next-intl/plugin', () => ({
 }));
 
 describe('Contacts next config rewrites', () => {
-  it('proxies workspace feedbacks before the local user-id mutation route', async () => {
+  it('keeps workspace feedbacks on the local app-session route', async () => {
     vi.stubEnv('WEB_APP_URL', 'https://web.example.com');
 
     const { default: nextConfig } = await import('../next.config');
     const rewrites = await nextConfig.rewrites?.();
 
     expect(rewrites).toMatchObject({
-      beforeFiles: expect.arrayContaining([
-        {
-          destination:
-            'https://web.example.com/api/v1/workspaces/:wsId/users/feedbacks',
+      beforeFiles: expect.not.arrayContaining([
+        expect.objectContaining({
           source: '/api/v1/workspaces/:wsId/users/feedbacks',
+        }),
+      ]),
+      fallback: expect.arrayContaining([
+        {
+          source: '/api/:path*',
+          destination: 'https://web.example.com/api/:path*',
         },
       ]),
     });
