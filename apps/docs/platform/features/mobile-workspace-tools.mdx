@@ -90,7 +90,14 @@ pending in the operating system, the next scheduled alert, notification
 permission, and a manual refresh action. A scheduled count is local state,
 not proof that the device displayed an alert. If the app remains suspended,
 new items created on another device cannot enter the local schedule until the
-next app refresh; server push is required for immediate updates in that case.
+next app refresh. The deployed web cron checks watched task deadlines every five
+minutes across workspaces, queries only the active reminder windows, and creates
+notifications through each user's channel preferences, including mobile push.
+Workspace task reminder settings can change or disable the lead times; without
+an override, the server uses the five device
+defaults. Its receipt includes the due date, so a rescheduled task is eligible
+again. Calendar event reminders still depend on the device schedule until the
+server calendar reminder flow is shipped.
 Verify this flow on physical iOS and Android devices with the app closed,
 notifications enabled and disabled, account switching, changed due dates, and
 completed tasks.
