@@ -48,6 +48,11 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   const preflight = parsed.jobs['mobile-credentials-preflight'];
   assert.equal(preflight.environment, 'mobile-store-beta');
   assert.equal(
+    preflight.outputs.build_name,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    '${{ steps.credentials.outputs.build_name }}'
+  );
+  assert.equal(
     preflight.steps[0].run,
     'test "$GITHUB_REF" = refs/heads/production'
   );
@@ -193,6 +198,11 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.match(workflow, /verify-store\.mjs ios/);
   assert.match(workflow, /verify-profile\.swift/);
   assert.match(workflow, /--build-number=/);
+  assert.match(
+    workflow,
+    /--build-name=\$\{\{ needs\.mobile-credentials-preflight\.outputs\.build_name \}\}/
+  );
+  assert.match(workflow, /CFBundleShortVersionString/);
   assert.doesNotMatch(workflow, /tracks?:\s*production/i);
   assert.doesNotMatch(workflow, /MOBILE_ENV_PRODUCTION_B64/);
   assert.doesNotMatch(workflow, /MOBILE_ANDROID_GOOGLE_SERVICES_JSON_B64/);
