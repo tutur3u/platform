@@ -144,6 +144,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         actions: [
                           ShellActionSpec(
                             id: 'notifications-archive-all',
+                            inDock: true,
                             icon: Icons.archive_outlined,
                             callbackToken:
                                 'notifications-archive-all:'

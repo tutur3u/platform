@@ -223,6 +223,7 @@ extension _ShellPageLayout on _ShellPageState {
       location: widget.matchedLocation,
       bottomInset: bodyBottomInset,
       navigation: navigationBar,
+      onVisibilityChanged: (visible) => _chromeVisible.value = visible,
       child: body,
     );
   }
@@ -314,10 +315,22 @@ extension _ShellPageLayout on _ShellPageState {
     return shad.Scaffold(
       headers: [
         if (!immersive)
-          _buildAppBar(
-            context,
-            activeModule: activeModule,
-            injectedMiniNavRegistration: injectedMiniNavRegistration,
+          ValueListenableBuilder<bool>(
+            valueListenable: _chromeVisible,
+            builder: (context, visible, _) => AnimatedSize(
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 240),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: visible
+                  ? _buildAppBar(
+                      context,
+                      activeModule: activeModule,
+                      injectedMiniNavRegistration: injectedMiniNavRegistration,
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ),
       ],
       footers: showBottomNav && isCompact

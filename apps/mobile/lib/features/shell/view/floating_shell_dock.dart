@@ -15,6 +15,7 @@ class FloatingShellDock extends StatefulWidget {
     required this.bottomInset,
     required this.navigation,
     required this.child,
+    this.onVisibilityChanged,
     super.key,
   });
 
@@ -22,6 +23,7 @@ class FloatingShellDock extends StatefulWidget {
   final double bottomInset;
   final Widget navigation;
   final Widget child;
+  final ValueChanged<bool>? onVisibilityChanged;
 
   @override
   State<FloatingShellDock> createState() => _FloatingShellDockState();
@@ -39,6 +41,9 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
       _returnTimer?.cancel();
       _hidden = false;
       _travel = 0;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_hidden) widget.onVisibilityChanged?.call(true);
+      });
     }
   }
 
@@ -49,7 +54,10 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   }
 
   void _reveal() {
-    if (mounted && _hidden) setState(() => _hidden = false);
+    if (mounted && _hidden) {
+      setState(() => _hidden = false);
+      widget.onVisibilityChanged?.call(true);
+    }
     _travel = 0;
   }
 
@@ -68,7 +76,10 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
         _reveal();
       } else if (delta > 0) {
         _travel += delta;
-        if (_travel > 24 && !_hidden) setState(() => _hidden = true);
+        if (_travel > 24 && !_hidden) {
+          setState(() => _hidden = true);
+          widget.onVisibilityChanged?.call(false);
+        }
       }
       _returnTimer?.cancel();
       _returnTimer = Timer(const Duration(milliseconds: 1600), _reveal);

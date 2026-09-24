@@ -684,6 +684,8 @@
     "dashboardQuickLaunch": "Mở nhanh",
     "dashboardAssignedToMe": "Việc của tôi",
     "dashboardUpcomingEvents": "Sự kiện sắp tới",
+    "dashboardUpcomingMeetings": "Cuộc họp sắp tới",
+    "dashboardNoUpcomingMeetings": "Chưa có cuộc họp sắp tới",
     "dashboardOpenTasks": "Mở",
     "dashboardOpenCalendar": "Mở",
     "dashboardNoAssignedTasks": "Không có công việc đang hoạt động nào được giao cho bạn.",

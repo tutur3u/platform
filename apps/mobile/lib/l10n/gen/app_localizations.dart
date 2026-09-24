@@ -3427,6 +3427,18 @@ abstract class AppLocalizations {
   /// **'Upcoming events'**
   String get dashboardUpcomingEvents;
 
+  /// No description provided for @dashboardUpcomingMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming meetings'**
+  String get dashboardUpcomingMeetings;
+
+  /// No description provided for @dashboardNoUpcomingMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'No meetings coming up'**
+  String get dashboardNoUpcomingMeetings;
+
   /// No description provided for @dashboardOpenTasks.
   ///
   /// In en, this message translates to:

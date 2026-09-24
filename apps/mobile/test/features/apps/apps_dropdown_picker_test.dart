@@ -51,7 +51,11 @@ void main() {
       expect(find.byType(TextField), findsNothing);
       expect(find.byType(Dialog), findsNothing);
       expect(find.byKey(const ValueKey('apps-screen')), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.search_rounded));
+      final searchAction = chrome.state
+          .resolveForLocation(Routes.apps)
+          .firstWhere((action) => action.id == 'apps-search');
+      expect(searchAction.inDock, isTrue);
+      searchAction.onPressed!();
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'calendar');
       await tester.pumpAndSettle();

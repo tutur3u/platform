@@ -10,15 +10,19 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/responsive/sliver_responsive_cards.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/data/models/meet/meet_meeting.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
+import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
-import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/mail/data/mail_access.dart';
+import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_suggestion.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
@@ -33,6 +37,7 @@ import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'dashboard_summary_cards.dart';
+part 'dashboard_communication_cards.dart';
 
 part 'dashboard_sections.dart';
 
@@ -119,10 +124,18 @@ AppCardPalette _dashboardPalette(BuildContext context, int index) =>
       moduleId: _dashboardModuleId(index),
     );
 
-class _DashboardView extends StatelessWidget {
+class _DashboardView extends StatefulWidget {
   const _DashboardView({required this.replayToken});
 
   final int replayToken;
+
+  @override
+  State<_DashboardView> createState() => _DashboardViewState();
+}
+
+class _DashboardViewState extends State<_DashboardView> {
+  final _mailCardKey = GlobalKey<_DashboardMailCardState>();
+  final _meetCardKey = GlobalKey<_DashboardMeetCardState>();
 
   @override
   Widget build(BuildContext context) {
@@ -196,6 +209,8 @@ class _DashboardView extends StatelessWidget {
                 builder: (context, calendarState) {
                   final focusTasks = _focusTasks(taskState);
                   final upcomingEvents = _upcomingEvents(calendarState.events);
+                  final user = context.read<AuthCubit>().state.user;
+                  final visibleModules = AppRegistry.modules(context);
                   final showInitialLoading =
                       !taskState.hasLoadedOnce &&
                       taskState.status == TaskListStatus.loading &&
@@ -237,13 +252,13 @@ class _DashboardView extends StatelessWidget {
                                 ),
                                 sliver: SliverResponsiveCards(
                                   leading: StaggeredEntrance(
-                                    replayKey: replayToken,
+                                    replayKey: widget.replayToken,
                                     child:
                                         const _DashboardWorkspacePickerCard(),
                                   ),
                                   children: [
                                     StaggeredEntrance(
-                                      replayKey: replayToken,
+                                      replayKey: widget.replayToken,
                                       delay: const Duration(milliseconds: 70),
                                       child: _TodaySummaryCard(
                                         activeTasks: taskState.totalActiveTasks,
@@ -252,13 +267,25 @@ class _DashboardView extends StatelessWidget {
                                         nextEvents: upcomingEvents.length,
                                       ),
                                     ),
+                                    if (visibleModules.any(
+                                          (module) => module.id == 'mail',
+                                        ) &&
+                                        canDiscoverMail(user?.email))
+                                      _DashboardMailCard(
+                                        key: _mailCardKey,
+                                        workspaceId: workspace.id,
+                                        userId: user?.id,
+                                      ),
+                                    if (visibleModules.any(
+                                      (module) => module.id == 'meet',
+                                    ))
+                                      _DashboardMeetCard(
+                                        key: _meetCardKey,
+                                        workspaceId: workspace.id,
+                                        userId: user?.id,
+                                      ),
                                     StaggeredEntrance(
-                                      replayKey: replayToken,
-                                      delay: const Duration(milliseconds: 140),
-                                      child: const _DashboardQuickLaunchCard(),
-                                    ),
-                                    StaggeredEntrance(
-                                      replayKey: replayToken,
+                                      replayKey: widget.replayToken,
                                       delay: const Duration(milliseconds: 210),
                                       child: _SectionCard(
                                         accentModuleId: _dashboardModuleId(3),
@@ -278,7 +305,7 @@ class _DashboardView extends StatelessWidget {
                                       ),
                                     ),
                                     StaggeredEntrance(
-                                      replayKey: replayToken,
+                                      replayKey: widget.replayToken,
                                       delay: const Duration(milliseconds: 280),
                                       child: _SectionCard(
                                         accentModuleId: _dashboardModuleId(4),
@@ -332,6 +359,10 @@ class _DashboardView extends StatelessWidget {
         workspace.id,
         forceRefresh: true,
       ),
+      if (_mailCardKey.currentState != null)
+        _mailCardKey.currentState!._load(forceRefresh: true),
+      if (_meetCardKey.currentState != null)
+        _meetCardKey.currentState!._load(forceRefresh: true),
     ]);
   }
 

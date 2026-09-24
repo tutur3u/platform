@@ -119,6 +119,7 @@ class _AppsScreenState extends State<AppsScreen> {
           actions: [
             ShellActionSpec(
               id: 'apps-search',
+              inDock: true,
               icon: _searching
                   ? Icons.search_off_rounded
                   : Icons.search_rounded,
