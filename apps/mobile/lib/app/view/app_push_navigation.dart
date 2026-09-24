@@ -13,6 +13,7 @@ extension _AppPushNavigation on _AppState {
             },
           ).toString(),
         );
+        unawaited(archiveOpenedNotification(request.notificationId));
       }
       return;
     }
@@ -51,6 +52,7 @@ extension _AppPushNavigation on _AppState {
           taskId: request.entityId!,
         ),
       );
+      unawaited(archiveOpenedNotification(request.notificationId));
       return;
     }
     if (request.opensChat) {
@@ -59,6 +61,7 @@ extension _AppPushNavigation on _AppState {
             ? Routes.chat
             : Routes.chatConversationPath(request.conversationId!),
       );
+      unawaited(archiveOpenedNotification(request.notificationId));
       return;
     }
     _router.go(Routes.notifications);
