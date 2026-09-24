@@ -70,7 +70,7 @@ html,body{background:$background!important}
 body a{color:${dark ? '#8ab4ff' : '#2458b8'}!important}
 ''';
   const responsiveStyles = '''
-#mail-content>div{max-width:100%!important;margin-inline:auto}
+#mail-content>div{margin-inline:auto}
 #mail-content table{max-width:100%!important}
 #mail-content img,#mail-content video,#mail-content svg{max-width:100%!important}
 ''';

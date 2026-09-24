@@ -16,8 +16,24 @@ void main() {
       contains('#mail-scroll{width:100%;max-width:100%;overflow-x:auto'),
     );
     expect(document, contains('#mail-content>table{margin-inline:auto}'));
+    expect(document, contains('#mail-content>div{margin-inline:auto}'));
     expect(document, contains('#mail-content table{max-width:100%!important}'));
     expect(parsed.querySelector('table')?.attributes['width'], '900');
+  });
+
+  test('keeps the sender width of clipped containers available to scroll', () {
+    final document = buildMailHtmlDocument(
+      '<div style="width:900px;overflow:hidden"><div style="width:900px">Content</div></div>',
+      loadImages: false,
+    );
+    final parsed = parse(document);
+    expect(
+      parsed
+          .querySelector('#mail-scroll #mail-content div')
+          ?.attributes['style'],
+      contains('width:900px'),
+    );
+    expect(document, isNot(contains('#mail-content>div{max-width:100%')));
   });
 
   test('preserves newsletter CSS while removing executable content', () {
