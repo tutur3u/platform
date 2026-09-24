@@ -316,6 +316,12 @@ class MeetCallController extends ChangeNotifier {
             admitted: true,
             tracks: tracks.values.toList(),
           )
+          .then((_) {
+            if (!_disposed && error == 'media') {
+              error = null;
+              notifyListeners();
+            }
+          })
           .catchError((Object _) {
             if (!_disposed) {
               error = 'media';
@@ -323,6 +329,19 @@ class MeetCallController extends ChangeNotifier {
             }
           }),
     );
+  }
+
+  Future<void> retryMedia() async {
+    try {
+      await media.resetPeers();
+      if (_disposed) return;
+      if (error == 'media') error = null;
+      notifyListeners();
+    } on Object {
+      if (_disposed) return;
+      error = 'media';
+      notifyListeners();
+    }
   }
 
   void _sendPresence({bool join = false}) {
@@ -337,13 +356,25 @@ class MeetCallController extends ChangeNotifier {
   }
 
   Future<void> setMicrophone({required bool enabled}) async {
-    await media.setAudioEnabled(enabled: enabled);
-    _sendPresence();
+    try {
+      await media.setAudioEnabled(enabled: enabled);
+      _sendPresence();
+    } on Object {
+      error = 'media';
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> setCamera({required bool enabled}) async {
-    await media.setVideoEnabled(enabled: enabled);
-    _sendPresence();
+    try {
+      await media.setVideoEnabled(enabled: enabled);
+      _sendPresence();
+    } on Object {
+      error = 'media';
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<String> sendMessage(String body) async {
@@ -375,6 +406,25 @@ class MeetCallController extends ChangeNotifier {
   bool isHandRaised(String userId) =>
       (stage['raisedHandUserIds'] as List? ?? []).contains(userId);
 
+  bool get hasRecentReaction {
+    if (reactions.isEmpty) return false;
+    final at = DateTime.tryParse(reactions.last['createdAt'] as String? ?? '');
+    return at != null &&
+        at.isAfter(DateTime.now().subtract(const Duration(seconds: 5)));
+  }
+
+  String? recentReaction(String? userId) {
+    if (userId == null) return null;
+    final cutoff = DateTime.now().subtract(const Duration(seconds: 5));
+    for (final reaction in reactions.reversed) {
+      if (reaction['userId'] != userId) continue;
+      final at = DateTime.tryParse(reaction['createdAt'] as String? ?? '');
+      if (at == null || at.isBefore(cutoff)) return null;
+      return reaction['reaction'] as String?;
+    }
+    return null;
+  }
+
   void setHandRaised({required bool raised}) =>
       _signaling.send({'type': 'hand.raise', 'raised': raised});
 
@@ -402,9 +452,8 @@ class MeetCallController extends ChangeNotifier {
       _signaling.send({'type': 'admission.forget', 'userId': userId});
 
   Future<void> endRoom() async {
-    if (role == 'host') {
-      await _signaling.request({'type': 'room.end'});
-    }
+    if (role != 'host') throw StateError('Only the room host can end the call');
+    await _signaling.request({'type': 'room.end'});
   }
 
   Future<Map<String, dynamic>> getRoomCosts() =>

@@ -1,47 +1,59 @@
 ---
 title: Living pitch deck
-description: Maintain the public product presentation and its proposed commercial model.
-updatedAt: "2026-09-13"
+description: Maintain the ecosystem vision, workforce prototype narrative, and public presentation.
+updatedAt: "2026-09-24"
 ---
 
-The localized `/pitch` page is a twelve-slide product and business presentation.
-It is intentionally excluded from search indexing while its commercial rollout remains under review.
-It does not change billing or grant product access.
+The localized `/pitch` page is a 29-slide presentation about Tuturuuu's ecosystem,
+workforce decision support, and long-term intelligent-partner vision. It is excluded
+from search indexing. Existing product foundations, proposed pilot work, and
+long-term research are explicitly distinguished; product availability varies.
 
 ## Present
 
-Use the arrow keys or previous/next controls to navigate. Home and End jump to the
-first and final slides. Space toggles twelve-second autoplay. Playback pauses when
-the browser tab is hidden, notes are opened, or the presenter navigates manually.
-The overview lists every slide. Fullscreen uses the browser Fullscreen API and
-shows a translated error when unavailable. The last slide includes an optional
-confetti action. Motion and confetti respect reduced-motion preferences.
+Use arrows or previous/next controls to navigate. Home and End jump to the first
+and final slides. Space toggles twelve-second autoplay. Playback pauses when the
+browser tab is hidden, notes open, or the presenter navigates manually. The overview
+lists every slide. Fullscreen shows a translated error when unavailable. Motion
+and optional closing-slide confetti respect reduced-motion preferences.
 
-Each slide has a stable hash, such as `/pitch#pricing` or `/vi/pitch#calculator`.
-Copy the current browser URL to share it. Print renders the whole deck using
-landscape page breaks. Presenter notes are local presentation aids, not a private
-channel: all notes are included in the public page payload. Never put confidential
-information in them.
+Stable hashes such as `/pitch#workforce`, `/pitch#simulation`, and
+`/vi/pitch#pricing` support sharing. Existing slide hashes remain valid after
+reordering. Print renders every slide with landscape page breaks. Presenter notes
+are included in the public payload: they are not a private channel. Never include
+confidential opportunities, private partner briefs, or unpublished commitments.
+
+The capacity sandbox is a deterministic, synthetic illustration. It multiplies
+team size by available hours and compares that result with estimated weekly work.
+It does not run an AI model, persist inputs, collect telemetry, or recommend staff
+allocation. Its limitations and baseline are visible. Interaction tracking in the
+pilot narrative describes proposed development, not tracking performed by this page.
 
 ## Evolve
 
-Edit narrative and presenter notes under `pitch` in `apps/web/messages/en.json`
-and `vi.json`, then run `bun i18n:sort`. Structured arrays are read from server-side `getMessages`;
-keep both locale shapes aligned with `PitchCopy`. Slide identifiers live in `apps/web/src/components/pitch/pitch-model.ts`; the pricing slide and calculator read the same public catalog API as the pricing page.
-They refresh every five minutes and show an unavailable state instead of a fallback price. Keep stable slide IDs when
-reordering so shared links continue to work. Add specialized visualizations in
-`pitch-visual.tsx`, with ordinary text labels and reduced-motion support.
+Edit the `pitch` namespace in `apps/web/messages/en.json` and `vi.json`, then run
+`bun i18n:sort` and format the owned locale files. Keep locale shapes aligned with
+`PitchCopy`. Each slide has a chapter, headline, narrative, public presenter note,
+maturity label, and visual panels. Stable identifiers live in `pitch-model.ts`.
+The presentation uses official branding tokens through `pitch-brand.ts`; specialized
+art and the synthetic simulation live in the adjacent components and CSS modules.
 
-Financial illustrations must state USD and billing interval, identify proposed
-allowances separately from current catalog prices, and distinguish annual charges from monthly equivalents. Do not add
-traction figures, customer logos, savings claims, certifications, launch dates or
-contractual benefits without evidence and approval. Current pricing proposals
-require commercial review and do not override the live pricing or Polar catalog.
+The pricing slide and subscription calculator use the same public catalog API as
+the pricing page. They refresh every five minutes and show an unavailable state
+instead of a fabricated fallback. Distinguish current prices from proposed
+allowances, annual charges from monthly equivalents, and subscriptions from custom
+prototype scope. The engagement slide presents a budget structure, not a quote.
+
+Do not republish legacy traction, fundraising amounts, partner endorsements,
+certifications, savings, or delivery dates without current supporting evidence.
+Pilot timelines are indicative, require scoping, and are not delivery commitments.
+Workforce decision support must retain transparent assumptions and human review;
+it is not a promise of autonomous employment decisions.
 
 ## Verify
 
-Run the focused pitch model tests, `bun check`, and the real web build through
-`ttr resources run`. Inspect desktop/mobile layouts, both locales, keyboard and
-focus behavior, deep links, reduced motion, notes, autoplay, fullscreen, confetti
-and print preview. Keep `apps/tanstack-web/migration/route-manifest.json` accurate when route ownership
-changes, and retain `/pitch` in `apps/web/src/constants/public_paths.ts`.
+Run focused pitch tests, `bun check`, and the real web build through
+`ttr resources run`. Inspect both locales at desktop and mobile sizes, keyboard
+navigation, deep links, overview, notes, simulation, reduced motion, and print.
+Keep `/pitch` public in `apps/web/src/constants/public_paths.ts`. Route ownership
+changes also require updating the TanStack migration manifest.

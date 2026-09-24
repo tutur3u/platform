@@ -7,7 +7,9 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
 import 'package:mobile/features/meet/view/meet_ended_review.dart';
+import 'package:mobile/features/meet/view/meet_media_status_banner.dart';
 import 'package:mobile/features/meet/view/meet_participant_tile.dart';
+import 'package:mobile/features/meet/view/meet_room_exit_actions.dart';
 import 'package:mobile/features/meet/view/meet_room_sheets.dart';
 import 'package:mobile/features/meet/view/meet_time_format.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -48,6 +50,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
   Map<String, dynamic>? _endedReview;
   String? _reviewError;
   Timer? _countdownTimer;
+  bool _hadRecentReaction = false;
 
   @override
   void initState() {
@@ -55,7 +58,14 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
     _call.addListener(_onCallUpdated);
     unawaited(_checkRoomBeforeMedia());
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && _call.roomExpiresAt != null) setState(() {});
+      if (!mounted) return;
+      final hasRecentReaction = _call.hasRecentReaction;
+      if (_call.roomExpiresAt != null ||
+          hasRecentReaction ||
+          _hadRecentReaction) {
+        setState(() {});
+      }
+      _hadRecentReaction = hasRecentReaction;
     });
   }
 
@@ -118,7 +128,16 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
     }
   }
 
-  void _leave() => context.go(Routes.meet);
+  Future<void> _leave() async {
+    if (_call.role != 'host' || _call.admission != 'admitted' || _call.ended) {
+      context.go(Routes.meet);
+      return;
+    }
+    final choice = await showMeetExitChoice(context);
+    if (!mounted) return;
+    if (choice == MeetExitChoice.leave) context.go(Routes.meet);
+    if (choice == MeetExitChoice.end) await _end();
+  }
 
   Future<void> _join() async {
     if (_joinRequested) return;
@@ -361,7 +380,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
               ),
               leading: IconButton(
                 tooltip: l10n.meetLeave,
-                onPressed: _leave,
+                onPressed: () => unawaited(_leave()),
                 icon: const Icon(Icons.arrow_back),
               ),
               actions: [
@@ -387,48 +406,12 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                     icon: const Icon(Icons.people_outline),
                   ),
                 if (_joinRequested && !_call.ended && _call.role == 'host')
-                  PopupMenuButton<String>(
-                    onSelected: (action) {
-                      if (action == 'end') unawaited(_end());
-                      if (action == 'costs') {
-                        unawaited(showMeetCostsSheet(context, _call));
-                      }
-                      if (action == 'settings') {
-                        unawaited(showMeetSettingsSheet(context, _call));
-                      }
-                    },
-                    itemBuilder: (_) => [
-                      PopupMenuItem(
-                        value: 'settings',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.tune_outlined),
-                            const SizedBox(width: 10),
-                            Text(l10n.meetSettings),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'costs',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.paid_outlined),
-                            const SizedBox(width: 10),
-                            Text(l10n.meetEstimatedCosts),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'end',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.call_end),
-                            const SizedBox(width: 10),
-                            Text(l10n.meetEndForEveryone),
-                          ],
-                        ),
-                      ),
-                    ],
+                  MeetHostActionsMenu(
+                    onLeaveOrEnd: () => unawaited(_leave()),
+                    onCosts: () =>
+                        unawaited(showMeetCostsSheet(context, _call)),
+                    onSettings: () =>
+                        unawaited(showMeetSettingsSheet(context, _call)),
                   ),
               ],
             ),
@@ -543,6 +526,10 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                                       return MeetParticipantTile(
                                         name: localName,
                                         local: true,
+                                        handRaised: _call.handRaised,
+                                        reaction: _call.recentReaction(
+                                          _call.selfUserId,
+                                        ),
                                         microphoneOn: _call.media.audioEnabled,
                                         renderer: _call.media.videoEnabled
                                             ? _call.media.localRenderer
@@ -558,6 +545,12 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                                           l10n.meetParticipants,
                                       microphoneOn:
                                           media?['audioEnabled'] == true,
+                                      handRaised: _call.isHandRaised(
+                                        person.key,
+                                      ),
+                                      reaction: _call.recentReaction(
+                                        person.key,
+                                      ),
                                       renderer: _call
                                           .media
                                           .remoteRenderers[person.key],
@@ -568,6 +561,10 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                             ),
                           },
                   ),
+                  if (joined && _call.error == 'media')
+                    MeetMediaStatusBanner(
+                      onRetry: () => unawaited(_call.retryMedia()),
+                    ),
                   if (joined && !_call.ended)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
@@ -676,7 +673,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                           ),
                           IconButton.filled(
                             tooltip: l10n.meetLeave,
-                            onPressed: _leave,
+                            onPressed: () => unawaited(_leave()),
                             icon: const Icon(Icons.call_end),
                           ),
                         ],

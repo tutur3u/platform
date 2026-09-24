@@ -40,7 +40,7 @@ describe('pitch presentation controls', () => {
     expect(window.location.hash).toBe('#calculator');
     expect(visibleSlide().textContent).toContain('$80');
     fireEvent.keyDown(document.body, { key: 'ArrowRight' });
-    expect(window.location.hash).toBe('#trust');
+    expect(window.location.hash).toBe('#roadmap');
   });
 
   it('navigates from the overview and exposes the selected presenter notes', () => {
@@ -80,5 +80,25 @@ describe('pitch presentation controls', () => {
 it('labels printed slides independently of the selected slide', () => {
   render(<PitchDeck copy={copy} />);
   expect(screen.getAllByText(copy.livePricingProposal)).toHaveLength(2);
-  expect(screen.getAllByText(copy.proposal)).toHaveLength(1);
+  expect(screen.getAllByText(copy.slides.vision.status).length).toBeGreaterThan(
+    0
+  );
+});
+
+it('changes the synthetic scenario without navigating or invoking AI', () => {
+  window.history.replaceState(null, '', '#simulation');
+  render(<PitchDeck copy={copy} />);
+  const input = screen.getByRole('slider', {
+    name: new RegExp(copy.simulation.people),
+  });
+  fireEvent.change(input, { target: { value: '10' } });
+  fireEvent.keyDown(input, { key: 'ArrowRight' });
+  expect(window.location.hash).toBe('#simulation');
+  expect(visibleSlide().textContent).toContain('240');
+  expect(visibleSlide().textContent).toContain(copy.simulation.headroom);
+  fireEvent.keyDown(screen.getByText(copy.simulation.baseline), {
+    key: ' ',
+    code: 'Space',
+  });
+  expect(screen.getByRole('button', { name: copy.play })).toBeDefined();
 });

@@ -189,24 +189,45 @@ class MeetNativeMedia extends ChangeNotifier {
     if (pending.isEmpty) return;
     final (pc, sessionId) = await _openSession(publish: true);
     try {
-      final transceivers = <(String, RTCRtpTransceiver)>[];
+      final transceivers = <(String, MediaStreamTrack, RTCRtpTransceiver)>[];
       for (final (name, track) in pending) {
         final transceiver = await pc.addTransceiver(
           track: track,
           init: RTCRtpTransceiverInit(direction: TransceiverDirection.SendOnly),
         );
-        transceivers.add((name, transceiver));
+        transceivers.add((name, track, transceiver));
       }
       final offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      // flutter_webrtc snapshots MID when addTransceiver returns. Read the
+      // negotiated transceivers again after setLocalDescription. The iOS
+      // transceiver ID itself changes with MID, so match stable sender IDs.
+      final negotiated = {
+        for (final transceiver in await pc.getTransceivers())
+          transceiver.sender.senderId: transceiver.mid,
+      };
+      final publications = <Map<String, String>>[];
+      for (final (name, track, transceiver) in transceivers) {
+        final mid = negotiated[transceiver.sender.senderId];
+        final kind = track.kind;
+        if (mid == null || mid.isEmpty) {
+          throw StateError('SFU track has no negotiated MID: $name');
+        }
+        if (kind == null || kind.isEmpty) {
+          throw StateError('SFU track has no media kind: $name');
+        }
+        publications.add({
+          'location': 'local',
+          'mid': mid,
+          'trackName': name,
+          'kind': kind,
+        });
+      }
       final response = await signaling.request({
         'type': 'sfu.tracks.publish',
         'sessionId': sessionId,
         'sessionDescription': {'type': 'offer', 'sdp': offer.sdp},
-        'tracks': [
-          for (final (name, transceiver) in transceivers)
-            {'location': 'local', 'mid': transceiver.mid, 'trackName': name},
-        ],
+        'tracks': publications,
       });
       if (response['errorCode'] != null) throw StateError('SFU publish failed');
       final answer = Map<String, dynamic>.from(
@@ -255,6 +276,7 @@ class MeetNativeMedia extends ChangeNotifier {
       if (response['errorCode'] != null) {
         throw StateError('SFU subscribe failed');
       }
+      var accepted = 0;
       for (final value in response['tracks'] as List? ?? []) {
         if (value is! Map || value['errorCode'] != null) continue;
         final mid = value['mid'] as String?;
@@ -266,7 +288,9 @@ class MeetNativeMedia extends ChangeNotifier {
         if (owner == null) continue;
         _midOwners[mid] = owner['userId'] as String;
         _subscribed.add('${owner['sessionId']}:$name');
+        accepted++;
       }
+      if (accepted == 0) throw StateError('SFU accepted no remote tracks');
       final offer = Map<String, dynamic>.from(
         response['sessionDescription'] as Map? ?? {},
       );
@@ -276,11 +300,16 @@ class MeetNativeMedia extends ChangeNotifier {
         );
         final answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        await signaling.request({
+        final answerResponse = await signaling.request({
           'type': 'sfu.renegotiate',
           'sessionId': sessionId,
           'sessionDescription': {'type': 'answer', 'sdp': answer.sdp},
         });
+        if (answerResponse['errorCode'] != null) {
+          throw StateError('SFU negotiation failed');
+        }
+      } else {
+        throw StateError('SFU remote offer missing');
       }
     } on Object {
       await _resetSubscriber();
@@ -289,13 +318,28 @@ class MeetNativeMedia extends ChangeNotifier {
   }
 
   void _receiveTrack(RTCTrackEvent event) {
-    final owner = _midOwners[event.transceiver?.mid];
-    if (owner == null) return;
     final generation = _receiveGeneration;
     unawaited(
-      _serialize(() => _showRemoteTrack(owner, event, generation)).catchError((
-        Object error,
-      ) {
+      _serialize(() async {
+        var mid = event.transceiver?.mid;
+        if (mid == null || mid.isEmpty || !_midOwners.containsKey(mid)) {
+          final id = event.receiver?.receiverId;
+          if (id != null && _subscriber != null) {
+            for (final transceiver in await _subscriber!.getTransceivers()) {
+              if (transceiver.receiver.receiverId == id) {
+                mid = transceiver.mid;
+                break;
+              }
+            }
+          }
+        }
+        final owner = _midOwners[mid];
+        if (owner == null) {
+          debugPrint('Meet remote track has no participant for MID $mid');
+          return;
+        }
+        await _showRemoteTrack(owner, event, generation);
+      }).catchError((Object error) {
         debugPrint('Meet remote track render failed: $error');
       }),
     );
@@ -329,6 +373,13 @@ class MeetNativeMedia extends ChangeNotifier {
     }
     renderer.srcObject = stream;
     remoteRenderers[owner] = renderer;
+    if (event.track.kind == 'audio') {
+      try {
+        await Helper.setSpeakerphoneOn(true);
+      } on Object {
+        // Playback still follows the current OS route if speaker routing fails.
+      }
+    }
     notifyListeners();
   }
 

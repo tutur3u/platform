@@ -1,19 +1,51 @@
 export const SLIDE_IDS = [
   'opening',
+  'origin',
   'problem',
+  'shift',
+  'vision',
   'platform',
-  'workflow',
-  'audience',
+  'context',
   'ai',
+  'workflow',
+  'workforce',
+  'capacity',
+  'skills',
+  'onboarding',
+  'simulation',
+  'evidence',
+  'trust',
+  'architecture',
+  'readiness',
+  'pilot',
+  'team',
+  'engagement',
+  'business',
+  'audience',
   'pricing',
   'calculator',
-  'trust',
   'roadmap',
-  'business',
+  'intelligence',
+  'horizon',
   'closing',
 ] as const;
 export type SlideId = (typeof SLIDE_IDS)[number];
 export interface PitchCopy {
+  contact: string;
+  company: string;
+  simulation: {
+    title: string;
+    people: string;
+    hours: string;
+    demand: string;
+    capacity: string;
+    gap: string;
+    headroom: string;
+    unit: string;
+    caveat: string;
+    baseline: string;
+    baselineDetail: string;
+  };
   title: string;
   description: string;
   edition: string;
@@ -68,7 +100,15 @@ export interface PitchCopy {
   orbitLabels: string[];
   slides: Record<
     SlideId,
-    { title: string; body: string; kicker: string; note: string }
+    {
+      title: string;
+      body: string;
+      kicker: string;
+      note: string;
+      chapter: string;
+      status: string;
+      panels: { label: string; detail: string }[];
+    }
   >;
 }
 export function slideFromHash(hash: string): number {

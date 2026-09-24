@@ -7762,10 +7762,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetLeave => 'Leave call';
 
   @override
+  String get meetLeaveOrEnd => 'Leave or end meeting?';
+
+  @override
   String get meetEndForEveryone => 'End for everyone';
 
   @override
   String get meetMicrophone => 'Microphone';
+
+  @override
+  String get meetMediaUnavailable => 'Call audio or video could not connect.';
 
   @override
   String get meetCamera => 'Camera';
