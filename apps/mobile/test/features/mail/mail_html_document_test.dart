@@ -4,6 +4,93 @@ import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_html_sanitizer.dart';
 
 void main() {
+  test('fits a wide newsletter table and oversized spacing on mobile', () {
+    final document = parse(
+      buildMailHtmlDocument('''
+<table width="640" style="width:640px;max-width:640px;margin:0 80px">
+<tr><td style="padding:48px 72px">
+<h1 style="font-size:48px">Meetings Hub, Clone ZoomInfo MCP</h1>
+<img src="https://example.com/banner.png" width="640">
+</td></tr></table>
+''', loadImages: true),
+    );
+    final table = document.querySelector('table')!;
+    expect(table.attributes['width'], isNull);
+    expect(table.classes, contains('mail-fluid-table'));
+    expect(table.attributes['style'], contains('width:100%!important'));
+    expect(table.attributes['style'], contains('margin:0 16px'));
+    expect(
+      document.querySelector('td')!.attributes['style'],
+      contains('padding:16px 16px'),
+    );
+    expect(
+      document.querySelector('h1')!.attributes['style'],
+      contains('clamp(20px,7vw,28px)'),
+    );
+    expect(
+      document.querySelectorAll('style').last.text,
+      contains('table-layout:fixed'),
+    );
+    expect(document.querySelector('#mail-scroll'), isNotNull);
+  });
+
+  test('keeps compact newsletter spacing and button tables intact', () {
+    final document = parse(
+      buildMailHtmlDocument('''
+<table width="320" style="width:320px"><tr><td style="padding:12px 16px">
+<table width="160" style="width:160px"><tr><td>Open</td></tr></table>
+</td></tr></table>
+''', loadImages: false),
+    );
+    final tables = document.querySelectorAll('table');
+    expect(
+      tables.every((table) => !table.classes.contains('mail-fluid-table')),
+      isTrue,
+    );
+    expect(tables.first.attributes['width'], '320');
+    expect(tables.last.attributes['style'], 'width:160px');
+  });
+
+  test('fits wide newsletter content with horizontal fallback', () {
+    final document = buildMailHtmlDocument(
+      '<table width="900"><tr><td>Wide newsletter</td></tr></table>',
+      loadImages: true,
+    );
+    final parsed = parse(document);
+    expect(parsed.querySelector('#mail-scroll #mail-content table'), isNotNull);
+    expect(
+      document,
+      contains('#mail-scroll{width:100%;max-width:100%;overflow-x:auto'),
+    );
+    expect(document, contains('#mail-content>table{margin-inline:auto}'));
+    expect(document, contains('#mail-content>div{margin-inline:auto}'));
+    expect(document, contains('#mail-content table{max-width:100%!important}'));
+    expect(parsed.querySelector('table')?.attributes['width'], isNull);
+    expect(
+      parsed.querySelector('table')?.classes,
+      contains('mail-fluid-table'),
+    );
+  });
+
+  test('reflows clipped fixed-width containers', () {
+    final document = buildMailHtmlDocument(
+      '<div style="width:900px;overflow:hidden"><div style="width:900px">Content</div></div>',
+      loadImages: false,
+    );
+    final parsed = parse(document);
+    expect(
+      parsed
+          .querySelector('#mail-scroll #mail-content div')
+          ?.attributes['style'],
+      contains('width:100%!important'),
+    );
+    expect(
+      parsed.querySelector('#mail-scroll #mail-content div')?.classes,
+      contains('mail-fluid-container'),
+    );
+    expect(document, contains('overflow:visible!important'));
+  });
+
   test('preserves newsletter CSS while removing executable content', () {
     final result = sanitizeIsolatedMailHtml('''
 <html><head><style>.newsletter { padding: 24px }</style></head><body>

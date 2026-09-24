@@ -2,6 +2,7 @@
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { usePlaybackVolume } from '../components/playback-volume';
 import { collectCallNotices } from '../lib/call-notifications';
 import type { CallState } from '../lib/call-state';
 
@@ -13,6 +14,7 @@ export function useCallNotifications(
   activePanel: 'chat' | 'participants' | null,
   audioSuppressed = false
 ) {
+  const volume = usePlaybackVolume();
   const t = useTranslations('meet.call');
   const previous = useRef(state);
   const wasConnected = useRef(false);
@@ -78,6 +80,7 @@ export function useCallNotifications(
     if (
       !notices.length ||
       !sound ||
+      volume === 0 ||
       audioSuppressed ||
       context?.state !== 'running' ||
       Date.now() - lastSound.current < 1200
@@ -95,8 +98,8 @@ export function useCallNotifications(
     );
     oscillator.frequency.setValueAtTime(780, start + 0.09);
     gain.gain.setValueAtTime(0, start);
-    gain.gain.linearRampToValueAtTime(0.06, start + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+    gain.gain.linearRampToValueAtTime(0.06 * volume, start + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001 * volume, start + 0.25);
     oscillator.start(start);
     oscillator.stop(start + 0.26);
     oscillator.onended = () => {
@@ -108,6 +111,7 @@ export function useCallNotifications(
     enabled,
     connected,
     sound,
+    volume,
     audioSuppressed,
     openPanel,
     activePanel,

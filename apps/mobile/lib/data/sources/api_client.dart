@@ -208,6 +208,7 @@ class ApiClient {
     String path,
     Object? body, {
     bool requiresAuth = true,
+    Duration timeout = const Duration(seconds: 30),
   }) async {
     final url = _url(path);
 
@@ -221,6 +222,7 @@ class ApiClient {
         body: jsonEncode(body),
       ),
       requiresAuth: requiresAuth,
+      timeout: timeout,
     );
 
     return _handleResponse(response);
@@ -394,15 +396,16 @@ class ApiClient {
   Future<http.Response> _performRequest(
     Future<http.Response> Function() request, {
     bool requiresAuth = true,
+    Duration timeout = const Duration(seconds: 30),
   }) async {
     try {
       final userId = requiresAuth ? _auth.currentUser?.id : null;
-      var response = await request().timeout(const Duration(seconds: 30));
+      var response = await request().timeout(timeout);
       if (requiresAuth) _checkRequestUser(userId);
       if (requiresAuth && response.statusCode == 401) {
         await _ensureValidSession(forceRefresh: true);
         _checkRequestUser(userId);
-        response = await request().timeout(const Duration(seconds: 30));
+        response = await request().timeout(timeout);
         _checkRequestUser(userId);
       }
       if (requiresAuth &&
@@ -413,7 +416,7 @@ class ApiClient {
         if (token != null && token.isNotEmpty) {
           response = await ApiVerification.retry(
             token,
-            () => request().timeout(const Duration(seconds: 30)),
+            () => request().timeout(timeout),
           );
           _checkRequestUser(userId);
         }

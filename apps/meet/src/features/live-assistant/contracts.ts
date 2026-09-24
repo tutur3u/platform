@@ -34,6 +34,7 @@ export const liveClientCommandSchema = z.discriminatedUnion('type', [
     type: z.literal('text'),
     text: z.string().trim().min(1).max(4000),
   }),
+  z.object({ type: z.literal('audio.end') }),
   z.object({ type: z.literal('pause'), paused: z.boolean() }),
   z.object({
     type: z.literal('decision'),

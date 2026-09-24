@@ -174,6 +174,12 @@ Future<DateTime?> chooseMailSnoozeTime(BuildContext context) async {
               0: l10n.mailSnoozeCustom,
             }.entries)
               ListTile(
+                leading: Icon(switch (option.key) {
+                  1 => Icons.schedule_outlined,
+                  24 => Icons.today_outlined,
+                  168 => Icons.date_range_outlined,
+                  _ => Icons.edit_calendar_outlined,
+                }),
                 title: Text(option.value),
                 onTap: () => Navigator.of(sheetContext).pop(option.key),
               ),

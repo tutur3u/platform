@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { randomBytes } from 'node:crypto';
 import { deleteWorkspaceStorageObjectByPath } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { describe, expect, it, vi } from 'vitest';
@@ -14,6 +15,7 @@ import {
   decryptSecretValue,
   encryptBytes,
   encryptSecretValue,
+  sha256Base64Url,
   sha256Hex,
 } from './crypto';
 import {
@@ -38,7 +40,7 @@ function fixture() {
         kind: 'scalar',
         name: 'ANDROID_KEYSTORE_PASSWORD',
         encrypted_value: encryptSecretValue('fixture-password', sourceKey),
-        plaintext_sha256: sha256Hex('fixture-password'),
+        plaintext_sha256: sha256Base64Url('fixture-password'),
       },
     ],
     files: [

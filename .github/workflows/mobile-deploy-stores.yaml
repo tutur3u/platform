@@ -15,6 +15,7 @@ on:
       - "scripts/mobile-deployment/**"
       - "tuturuuu.ci.ts"
       - "tuturuuu.ts"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -30,15 +31,17 @@ jobs:
   mobile-credentials-preflight:
     name: Check mobile deployment credentials
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     environment: mobile-store-beta
     outputs:
-      has_ci_token: ${{ steps.credentials.outputs.has_ci_token }}
       build_number: ${{ steps.credentials.outputs.build_number }}
     steps:
       - name: Require production branch
         run: test "$GITHUB_REF" = refs/heads/production
+
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
       - name: Check mobile deployment CI token
         id: credentials
@@ -47,12 +50,10 @@ jobs:
           MOBILE_DEPLOYMENT_CI_TOKEN: ${{ secrets.MOBILE_DEPLOYMENT_CI_TOKEN }}
         run: |
           if [ -z "${MOBILE_DEPLOYMENT_CI_TOKEN:-}" ]; then
-            echo "has_ci_token=false" >> "$GITHUB_OUTPUT"
             echo "::error title=Mobile store deployment blocked::MOBILE_DEPLOYMENT_CI_TOKEN is not configured in the mobile-store-beta environment."
             exit 1
           fi
 
-          echo "has_ci_token=true" >> "$GITHUB_OUTPUT"
           build_number=$((100000 + GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT))
           test "$GITHUB_RUN_ATTEMPT" -lt 1000
           test "$build_number" -le 2100000000
@@ -60,8 +61,8 @@ jobs:
 
   publish-android-internal:
     name: Publish Android to Google Play internal
-    needs: [check-ci, mobile-credentials-preflight]
-    if: needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'
+    needs: [check-ci, mobile-credentials-preflight, publish-ios-testflight]
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success' && needs.publish-ios-testflight.outputs.build_name != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: mobile-store-beta
@@ -143,7 +144,7 @@ jobs:
         env:
           MOBILE_DART_DEFINE_FILE: .env.github
         with:
-          command: bun build:android --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }}
+          command: bun build:android --build-name=${{ needs.publish-ios-testflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }}
 
       - name: Upload Android App Bundle artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -179,10 +180,12 @@ jobs:
   publish-ios-testflight:
     name: Upload iOS to TestFlight
     needs: [check-ci, mobile-credentials-preflight]
-    if: needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'
+    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
     runs-on: macos-latest
     timeout-minutes: 120
     environment: mobile-store-beta
+    outputs:
+      build_name: ${{ steps.version_name.outputs.build_name }}
     defaults:
       run:
         working-directory: apps/mobile
@@ -235,6 +238,15 @@ jobs:
             --platform ios \
             --bundle "$bundle_path" \
             --mobile-root "$PWD"
+
+      - name: Calculate next mobile app version
+        id: version_name
+        shell: bash
+        run: |
+          set -euo pipefail
+          build_name="$(node ../../scripts/mobile-deployment/build-name.mjs)"
+          test -n "$build_name"
+          echo "build_name=$build_name" >> "$GITHUB_OUTPUT"
 
       - name: Disable Flutter Swift Package Manager
         run: flutter config --no-enable-swift-package-manager
@@ -307,7 +319,7 @@ jobs:
           EOF
 
       - name: Build iOS IPA
-        run: flutter build ipa --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }} --export-options-plist=ios/ExportOptions.plist
+        run: flutter build ipa --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github --build-name=${{ steps.version_name.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }} --export-options-plist=ios/ExportOptions.plist
 
       - name: Resolve iOS IPA path
         id: ios-ipa
@@ -328,6 +340,7 @@ jobs:
         shell: bash
         env:
           EXPECTED_BUILD_NUMBER: ${{ needs.mobile-credentials-preflight.outputs.build_number }}
+          EXPECTED_BUILD_NAME: ${{ steps.version_name.outputs.build_name }}
           IPA_PATH: ${{ steps.ios-ipa.outputs.local_path }}
         run: |
           set -euo pipefail
@@ -341,6 +354,7 @@ jobs:
           codesign --verify --deep --strict "$app_path"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app_path/Info.plist")" = "$APPLE_BUNDLE_ID"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app_path/Info.plist")" = "$EXPECTED_BUILD_NUMBER"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app_path/Info.plist")" = "$EXPECTED_BUILD_NAME"
           codesign -d --entitlements :- "$app_path" > "$verify_dir/entitlements.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print application-identifier' "$verify_dir/entitlements.plist")" = "$APPLE_TEAM_ID.$APPLE_BUNDLE_ID"
           test "$(/usr/libexec/PlistBuddy -c 'Print get-task-allow' "$verify_dir/entitlements.plist")" = false
@@ -367,8 +381,12 @@ jobs:
             --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
             --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
 
-      - name: Verify TestFlight processing and internal beta availability
+      - name: Verify TestFlight and distribute to beta groups
         timeout-minutes: 35
+        env:
+          TESTFLIGHT_BETA_ENABLED: ${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}
+          TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}
+          TESTFLIGHT_BETA_WHATS_NEW: ${{ vars.TESTFLIGHT_BETA_WHATS_NEW }}
         run: node ../../scripts/mobile-deployment/verify-store.mjs ios "${{ needs.mobile-credentials-preflight.outputs.build_number }}"
 
       - name: Cleanup iOS release files
@@ -390,3 +408,52 @@ jobs:
           rm -rf "$RUNNER_TEMP/mobile-deployment"
           rm -f "$RUNNER_TEMP/mobile-deployment-ios.json"
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-oidc.json"
+
+  retry-ios-testflight-review:
+    name: Retry latest eligible TestFlight review
+    needs: [check-ci]
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    environment: mobile-store-beta
+    timeout-minutes: 15
+    steps:
+      - name: Checkout production code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Fetch iOS deployment credentials
+        shell: bash
+        env:
+          MOBILE_DEPLOYMENT_CI_TOKEN: ${{ secrets.MOBILE_DEPLOYMENT_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 077
+          test -n "${MOBILE_DEPLOYMENT_CI_TOKEN:-}"
+          bundle_path="$RUNNER_TEMP/mobile-review-bundle.json"
+          oidc_response="$RUNNER_TEMP/mobile-review-oidc.json"
+          oidc_url="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=tuturuuu-mobile-deployment"
+          curl -fsSL \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "$oidc_url" -o "$oidc_response"
+          oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
+          curl -fsSL \
+            -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
+            -H "X-GitHub-OIDC-Token: ${oidc_token}" \
+            "https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=ios" \
+            -o "$bundle_path"
+          node scripts/mobile-deployment/hydrate-bundle.mjs \
+            --platform ios --bundle "$bundle_path" \
+            --mobile-root "$RUNNER_TEMP/mobile-review"
+
+      - name: Retry newest eligible build
+        env:
+          TESTFLIGHT_BETA_ENABLED: ${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}
+          TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}
+          TESTFLIGHT_BETA_WHATS_NEW: ${{ vars.TESTFLIGHT_BETA_WHATS_NEW }}
+        run: node scripts/mobile-deployment/verify-store.mjs ios-pending
+
+      - name: Cleanup iOS release files
+        if: always()
+        shell: bash
+        run: |
+          rm -rf "$RUNNER_TEMP/mobile-deployment" "$RUNNER_TEMP/mobile-review"
+          rm -f "$RUNNER_TEMP/mobile-review-bundle.json" "$RUNNER_TEMP/mobile-review-oidc.json"

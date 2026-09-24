@@ -14443,6 +14443,528 @@ abstract class AppLocalizations {
   /// **'Meeting saved.'**
   String get meetUpdated;
 
+  /// No description provided for @meetJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join call'**
+  String get meetJoin;
+
+  /// No description provided for @meetReadyToJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to join?'**
+  String get meetReadyToJoin;
+
+  /// No description provided for @meetPreviewPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Your camera preview is private until you join.'**
+  String get meetPreviewPrivate;
+
+  /// No description provided for @meetMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute microphone'**
+  String get meetMute;
+
+  /// No description provided for @meetUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute microphone'**
+  String get meetUnmute;
+
+  /// No description provided for @meetCameraOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn camera on'**
+  String get meetCameraOn;
+
+  /// No description provided for @meetCameraOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn camera off'**
+  String get meetCameraOff;
+
+  /// No description provided for @meetDeviceAlreadyJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re already in this meeting'**
+  String get meetDeviceAlreadyJoined;
+
+  /// No description provided for @meetDeviceChoiceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how to join from this device.'**
+  String get meetDeviceChoiceHint;
+
+  /// No description provided for @meetSwitchDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to this device'**
+  String get meetSwitchDevice;
+
+  /// No description provided for @meetJoinAnotherDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Join on another device'**
+  String get meetJoinAnotherDevice;
+
+  /// No description provided for @meetDeviceEchoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute one device to avoid audio echo.'**
+  String get meetDeviceEchoHint;
+
+  /// No description provided for @meetTimeRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting time remaining'**
+  String get meetTimeRemaining;
+
+  /// No description provided for @meetRaiseHand.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise hand'**
+  String get meetRaiseHand;
+
+  /// No description provided for @meetLowerHand.
+  ///
+  /// In en, this message translates to:
+  /// **'Lower hand'**
+  String get meetLowerHand;
+
+  /// No description provided for @meetReactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactions'**
+  String get meetReactions;
+
+  /// No description provided for @meetReactionLike.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get meetReactionLike;
+
+  /// No description provided for @meetReactionHeart.
+  ///
+  /// In en, this message translates to:
+  /// **'Love'**
+  String get meetReactionHeart;
+
+  /// No description provided for @meetReactionClap.
+  ///
+  /// In en, this message translates to:
+  /// **'Clap'**
+  String get meetReactionClap;
+
+  /// No description provided for @meetReactionLaugh.
+  ///
+  /// In en, this message translates to:
+  /// **'Laugh'**
+  String get meetReactionLaugh;
+
+  /// No description provided for @meetReactionWow.
+  ///
+  /// In en, this message translates to:
+  /// **'Wow'**
+  String get meetReactionWow;
+
+  /// No description provided for @meetReactionCelebrate.
+  ///
+  /// In en, this message translates to:
+  /// **'Celebrate'**
+  String get meetReactionCelebrate;
+
+  /// No description provided for @meetParticipantActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Participant actions'**
+  String get meetParticipantActions;
+
+  /// No description provided for @meetMuteParticipant.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute participant'**
+  String get meetMuteParticipant;
+
+  /// No description provided for @meetRemoveParticipant.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove participant'**
+  String get meetRemoveParticipant;
+
+  /// No description provided for @meetShareNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Share meeting notes'**
+  String get meetShareNotes;
+
+  /// No description provided for @meetApprovedParticipant.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved participant'**
+  String get meetApprovedParticipant;
+
+  /// No description provided for @meetForgetApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget approval'**
+  String get meetForgetApproval;
+
+  /// No description provided for @meetEstimatedCosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated costs'**
+  String get meetEstimatedCosts;
+
+  /// No description provided for @meetCostsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost estimate is unavailable.'**
+  String get meetCostsUnavailable;
+
+  /// No description provided for @meetPartialEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial estimate. Some provider costs are not included.'**
+  String get meetPartialEstimate;
+
+  /// No description provided for @meetSfuEgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Video and audio delivery'**
+  String get meetSfuEgress;
+
+  /// No description provided for @meetDurableRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Room requests'**
+  String get meetDurableRequests;
+
+  /// No description provided for @meetMiraCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira'**
+  String get meetMiraCost;
+
+  /// No description provided for @meetLiveCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira Live'**
+  String get meetLiveCost;
+
+  /// No description provided for @meetLockRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock room'**
+  String get meetLockRoom;
+
+  /// No description provided for @meetSaveChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Save room chat'**
+  String get meetSaveChat;
+
+  /// No description provided for @meetSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting settings'**
+  String get meetSettings;
+
+  /// No description provided for @meetRecordings.
+  ///
+  /// In en, this message translates to:
+  /// **'Recordings'**
+  String get meetRecordings;
+
+  /// No description provided for @meetRecordingAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Share recordings with participants'**
+  String get meetRecordingAccess;
+
+  /// No description provided for @meetRecordingAccessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Participants can access saved meeting recordings.'**
+  String get meetRecordingAccessHint;
+
+  /// No description provided for @meetParticipantRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow participant recording'**
+  String get meetParticipantRecording;
+
+  /// No description provided for @meetParticipantRecordingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Participants can start a recording when their device supports it.'**
+  String get meetParticipantRecordingHint;
+
+  /// No description provided for @meetLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave call'**
+  String get meetLeave;
+
+  /// No description provided for @meetEndForEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'End for everyone'**
+  String get meetEndForEveryone;
+
+  /// No description provided for @meetMicrophone.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone'**
+  String get meetMicrophone;
+
+  /// No description provided for @meetCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get meetCamera;
+
+  /// No description provided for @meetSwitchCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch camera'**
+  String get meetSwitchCamera;
+
+  /// No description provided for @meetChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get meetChat;
+
+  /// No description provided for @meetEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone'**
+  String get meetEveryone;
+
+  /// No description provided for @meetPrivateMira.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Mira'**
+  String get meetPrivateMira;
+
+  /// No description provided for @meetPrivateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see this conversation. Review an answer before sharing it with everyone.'**
+  String get meetPrivateHint;
+
+  /// No description provided for @meetPrivateEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Mira privately about this meeting.'**
+  String get meetPrivateEmpty;
+
+  /// No description provided for @meetAskMira.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Mira privately'**
+  String get meetAskMira;
+
+  /// No description provided for @meetPrivateRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira couldn\'t answer. Retry your message.'**
+  String get meetPrivateRequestFailed;
+
+  /// No description provided for @meetShareWithEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'Share with everyone'**
+  String get meetShareWithEveryone;
+
+  /// No description provided for @meetShareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Review or edit this answer before posting it to room chat.'**
+  String get meetShareHint;
+
+  /// No description provided for @meetShareConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Post to room chat'**
+  String get meetShareConfirm;
+
+  /// No description provided for @meetMiraThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira is preparing a reply…'**
+  String get meetMiraThinking;
+
+  /// No description provided for @meetMiraReplyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira couldn\'t reply to the room message.'**
+  String get meetMiraReplyFailed;
+
+  /// No description provided for @meetMiraRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Mira'**
+  String get meetMiraRetry;
+
+  /// No description provided for @meetMiraReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Private action reviews'**
+  String get meetMiraReviews;
+
+  /// No description provided for @meetMiraReviewsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see these drafts and requests. Review the workspace actions before approving them.'**
+  String get meetMiraReviewsHint;
+
+  /// No description provided for @meetMiraAudioMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute Mira Live audio'**
+  String get meetMiraAudioMute;
+
+  /// No description provided for @meetMiraAudioUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute Mira Live audio'**
+  String get meetMiraAudioUnmute;
+
+  /// No description provided for @meetMiraAudioRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Mira Live audio'**
+  String get meetMiraAudioRetry;
+
+  /// No description provided for @meetMiraReviewFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load Mira\'s private reviews.'**
+  String get meetMiraReviewFailed;
+
+  /// No description provided for @meetMiraReviewRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh reviews'**
+  String get meetMiraReviewRefresh;
+
+  /// No description provided for @meetMiraApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve actions'**
+  String get meetMiraApprove;
+
+  /// No description provided for @meetMiraDeny.
+  ///
+  /// In en, this message translates to:
+  /// **'Deny actions'**
+  String get meetMiraDeny;
+
+  /// No description provided for @meetMiraDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard draft'**
+  String get meetMiraDiscard;
+
+  /// No description provided for @meetMiraApprovalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve workspace actions?'**
+  String get meetMiraApprovalTitle;
+
+  /// No description provided for @meetMiraApprovalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira will run the listed actions in this workspace. Check every input before approving.'**
+  String get meetMiraApprovalHint;
+
+  /// No description provided for @meetMiraActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update Mira\'s review. Please try again.'**
+  String get meetMiraActionFailed;
+
+  /// No description provided for @meetOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Open link'**
+  String get meetOpenLink;
+
+  /// No description provided for @meetMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message everyone'**
+  String get meetMessageHint;
+
+  /// No description provided for @meetSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get meetSend;
+
+  /// No description provided for @meetWaitingForHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the host to admit you'**
+  String get meetWaitingForHost;
+
+  /// No description provided for @meetConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to the meeting…'**
+  String get meetConnecting;
+
+  /// No description provided for @meetReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting…'**
+  String get meetReconnecting;
+
+  /// No description provided for @meetCallEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'This meeting has ended'**
+  String get meetCallEnded;
+
+  /// No description provided for @meetAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot join this meeting'**
+  String get meetAccessDenied;
+
+  /// No description provided for @meetNoParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for others to join'**
+  String get meetNoParticipants;
+
+  /// No description provided for @meetAdmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Admit'**
+  String get meetAdmit;
+
+  /// No description provided for @meetDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get meetDecline;
+
+  /// No description provided for @meetParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'Participants'**
+  String get meetParticipants;
+
+  /// No description provided for @meetYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get meetYou;
+
   /// No description provided for @connectedOnboardingEcosystemTitle.
   ///
   /// In en, this message translates to:
@@ -14820,6 +15342,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Load remote images'**
   String get mailLoadImages;
+
+  /// No description provided for @mailLoadImagesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show images by default. Senders may know when you open a message.'**
+  String get mailLoadImagesDescription;
 
   /// No description provided for @mailSettings.
   ///

@@ -10,7 +10,7 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/notifications/push/login_notification_actions.dart';
 
-enum PushNotificationEventType { received, opened }
+enum PushNotificationEventType { received, opened, archived }
 
 const _pushNotificationChannelId = 'tuturuuu_notifications';
 const _pushNotificationChannelName = 'Notifications';
@@ -165,6 +165,16 @@ class PushNotificationService {
       StreamController<PushNotificationEvent>.broadcast();
 
   Stream<PushNotificationEvent> get events => _eventsController.stream;
+
+  void notifyArchiveChanged() {
+    if (_isDisposed) return;
+    _emitEvent(
+      const PushNotificationEvent(
+        type: PushNotificationEventType.archived,
+        request: PushNavigationRequest(notificationId: '', openTarget: 'inbox'),
+      ),
+    );
+  }
 
   AppFlavor? _appFlavor;
   SettingsRepository? _settingsRepository;
