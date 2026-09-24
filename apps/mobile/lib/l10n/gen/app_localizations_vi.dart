@@ -7732,10 +7732,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetLeave => 'Rời cuộc gọi';
 
   @override
+  String get meetLeaveOrEnd => 'Rời hoặc kết thúc cuộc họp?';
+
+  @override
   String get meetEndForEveryone => 'Kết thúc cho mọi người';
 
   @override
   String get meetMicrophone => 'Micrô';
+
+  @override
+  String get meetMediaUnavailable => 'Âm thanh hoặc video của cuộc gọi chưa kết nối được.';
 
   @override
   String get meetCamera => 'Máy ảnh';

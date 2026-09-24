@@ -14815,6 +14815,12 @@ abstract class AppLocalizations {
   /// **'Leave call'**
   String get meetLeave;
 
+  /// No description provided for @meetLeaveOrEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave or end meeting?'**
+  String get meetLeaveOrEnd;
+
   /// No description provided for @meetEndForEveryone.
   ///
   /// In en, this message translates to:
@@ -14826,6 +14832,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Microphone'**
   String get meetMicrophone;
+
+  /// No description provided for @meetMediaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Call audio or video could not connect.'**
+  String get meetMediaUnavailable;
 
   /// No description provided for @meetCamera.
   ///
