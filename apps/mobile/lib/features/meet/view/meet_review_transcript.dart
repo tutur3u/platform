@@ -19,10 +19,12 @@ class MeetReviewTranscript extends StatelessWidget {
     final hours = seconds ~/ 3600;
     final minutes = (seconds ~/ 60) % 60;
     final remainder = seconds % 60;
+    final paddedSeconds = remainder.toString().padLeft(2, '0');
     if (hours > 0) {
-      return '$hours:${minutes.toString().padLeft(2, '0')}:${remainder.toString().padLeft(2, '0')}';
+      final paddedMinutes = minutes.toString().padLeft(2, '0');
+      return '$hours:$paddedMinutes:$paddedSeconds';
     }
-    return '$minutes:${remainder.toString().padLeft(2, '0')}';
+    return '$minutes:$paddedSeconds';
   }
 
   Iterable<Map<String, dynamic>> get _entries sync* {
@@ -84,7 +86,7 @@ class MeetReviewTranscript extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if ((entry['kind'] ?? _map(entry['speaker'])?['kind'])
+                    if (entry['kind'] ?? _map(entry['speaker'])?['kind']
                         case final String kind) ...[
                       const SizedBox(height: 2),
                       Text(
