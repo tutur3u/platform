@@ -784,9 +784,12 @@ from a build log and reproduce the native build failure on that toolchain.
   `always()` cleanup steps.
 - The workflow rejects any Google Play track other than `internal`, uploads only
   the AAB/IPA build artifacts, and uses TestFlight-only iOS upload.
-- Each beta upload increments the app version suffix from App Store Connect
-  history (`0.11.0`, `0.11.1`, `0.11.2`, etc.). The workflow calculates a separate
-  build number from its run number; both stores receive the same version name.
+- The workflow sets the app version one patch above the greater of the
+  `apps/mobile/pubspec.yaml` patch and matching iOS pre-release versions in App
+  Store Connect. With `0.11.0+84` and no matching history, the first upload is
+  `0.11.1`, followed by `0.11.2`, and so on. It calculates a separate build
+  number from `GITHUB_RUN_NUMBER` and `GITHUB_RUN_ATTEMPT`; both stores receive
+  the same version name.
 
 The workflow is bound to the `mobile-store-beta` GitHub Environment. Keep that
 environment restricted to the `production` branch and store only
