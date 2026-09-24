@@ -8,6 +8,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
+import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/notifications/widgets/notification_destination.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -99,7 +100,6 @@ class _NotificationsViewState extends State<NotificationsView> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final theme = shad.Theme.of(context);
     final maxHeight =
         MediaQuery.sizeOf(context).height * (context.isCompact ? 0.82 : 0.76);
 
@@ -179,31 +179,49 @@ class _NotificationsViewState extends State<NotificationsView> {
                         ? '${context.l10n.notificationsInbox} '
                               '(${state.unreadCount})'
                         : context.l10n.notificationsInbox;
-                    return SegmentedButton<NotificationsTab>(
-                      showSelectedIcon: false,
-                      segments: [
-                        ButtonSegment(
-                          value: NotificationsTab.inbox,
-                          label: Text(inboxLabel),
+                    return Row(
+                      children: [
+                        SizedBox.square(
+                          dimension: 44,
+                          child: IconButton(
+                            tooltip: context.l10n.notificationsArchiveAll,
+                            onPressed:
+                                _selectedTab == NotificationsTab.inbox &&
+                                    state.unreadCount > 0 &&
+                                    !state.isArchivingAll
+                                ? () => unawaited(_archiveAll(context))
+                                : null,
+                            icon: state.isArchivingAll
+                                ? const NovaLoadingIndicator(size: 20)
+                                : const Icon(Icons.archive_outlined),
+                          ),
                         ),
-                        ButtonSegment(
-                          value: NotificationsTab.archive,
-                          label: Text(context.l10n.notificationsArchive),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SegmentedButton<NotificationsTab>(
+                            showSelectedIcon: false,
+                            segments: [
+                              ButtonSegment(
+                                value: NotificationsTab.inbox,
+                                label: Text(inboxLabel),
+                              ),
+                              ButtonSegment(
+                                value: NotificationsTab.archive,
+                                label: Text(context.l10n.notificationsArchive),
+                              ),
+                            ],
+                            selected: {_selectedTab},
+                            onSelectionChanged: (selection) {
+                              final tab = selection.firstOrNull;
+                              if (tab == null) return;
+                              setState(() => _selectedTab = tab);
+                              unawaited(
+                                context.read<NotificationsCubit>().loadTab(tab),
+                              );
+                            },
+                          ),
                         ),
                       ],
-                      selected: {_selectedTab},
-                      onSelectionChanged: (selection) {
-                        final tab = selection.firstOrNull;
-                        if (tab == null) {
-                          return;
-                        }
-                        setState(() {
-                          _selectedTab = tab;
-                        });
-                        unawaited(
-                          context.read<NotificationsCubit>().loadTab(tab),
-                        );
-                      },
                     );
                   },
                 ),
@@ -218,29 +236,6 @@ class _NotificationsViewState extends State<NotificationsView> {
                   title: _selectedTab == NotificationsTab.inbox
                       ? context.l10n.notificationsInbox
                       : context.l10n.notificationsArchive,
-                  action:
-                      _selectedTab == NotificationsTab.inbox &&
-                          state.unreadCount > 0
-                      ? state.isArchivingAll
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: NovaLoadingIndicator(size: 20),
-                              )
-                            : Text(
-                                context.l10n.notificationsArchiveAll,
-                                style: theme.typography.small.copyWith(
-                                  color: colorScheme.primary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              )
-                      : null,
-                  onAction:
-                      _selectedTab == NotificationsTab.inbox &&
-                          state.unreadCount > 0 &&
-                          !state.isArchivingAll
-                      ? () => unawaited(_archiveAll(context))
-                      : null,
                 ),
               ),
               const shad.Gap(10),
@@ -382,6 +377,9 @@ class _NotificationsViewState extends State<NotificationsView> {
     }
 
     widget.parentContext.go(route);
+    if (notification.isUnread && notification.entityType != 'mail_message') {
+      unawaited(archiveOpenedNotification(notification.id));
+    }
   }
 
   void _showToast(
@@ -820,15 +818,9 @@ class _NotificationTile extends StatelessWidget {
 }
 
 class _NotificationsSectionHeader extends StatelessWidget {
-  const _NotificationsSectionHeader({
-    required this.title,
-    this.action,
-    this.onAction,
-  });
+  const _NotificationsSectionHeader({required this.title});
 
   final String title;
-  final Widget? action;
-  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -850,7 +842,6 @@ class _NotificationsSectionHeader extends StatelessWidget {
             ),
           ),
         ),
-        if (action != null) TextButton(onPressed: onAction, child: action!),
       ],
     );
   }

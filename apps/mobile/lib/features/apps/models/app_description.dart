@@ -16,7 +16,6 @@ String appDescription(BuildContext context, String moduleId) {
     'crm' => context.l10n.appsHubCrmDescription,
     'meet' => context.l10n.appsHubMeetDescription,
     'inventory' => context.l10n.appsHubInventoryDescription,
-    'notifications' => context.l10n.appsHubNotificationsDescription,
     'settings' => context.l10n.appsHubSettingsDescription,
     'timer' => context.l10n.appsHubTimerDescription,
     _ => '',

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/repositories/notifications_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -140,6 +141,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   late final MailRepository _repository;
+  late final NotificationsRepository _notificationsRepository =
+      NotificationsRepository(ownsApiClient: true);
   final _swipePreferences = MailSwipePreferences();
   bool _searchVisible = false;
   final _search = TextEditingController();
@@ -241,6 +244,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     _search.dispose();
     _swipePreferences.dispose();
     if (widget.repository == null) _repository.dispose();
+    _notificationsRepository.dispose();
     super.dispose();
   }
 
@@ -579,6 +583,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         await _compose(detail);
         return;
       }
+      if (_threads) {
+        unawaited(_archiveViewedMailThread(box, item['id'] as String));
+      }
       final beforeRead = _items;
       setState(
         () => _items = optimisticMailItems(
@@ -621,6 +628,21 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       }
     } finally {
       if (mounted) setState(() => _openingId = null);
+    }
+  }
+
+  Future<void> _archiveViewedMailThread(
+    String mailboxId,
+    String threadId,
+  ) async {
+    try {
+      final archived = await _notificationsRepository.archiveViewedMailThread(
+        mailboxId: mailboxId,
+        threadId: threadId,
+      );
+      if (archived > 0) PushNotificationService.instance.notifyArchiveChanged();
+    } on Object {
+      // Reading Mail stays immediate if notification sync is unavailable.
     }
   }
 
