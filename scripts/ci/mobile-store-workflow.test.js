@@ -48,10 +48,11 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   const preflight = parsed.jobs['mobile-credentials-preflight'];
   assert.equal(preflight.environment, 'mobile-store-beta');
   assert.equal(preflight.outputs.has_ci_token, undefined);
-  assert.equal(
-    preflight.outputs.build_name,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
-    '${{ steps.version_name.outputs.build_name }}'
+  assert.equal(preflight.outputs.build_name, undefined);
+  assert.equal(preflight.steps.length, 3);
+  assert.doesNotMatch(
+    preflight.steps.map((entry) => entry.run ?? '').join('\n'),
+    /mobile-deployment\/bundle/
   );
   assert.equal(
     preflight.steps[0].run,
@@ -67,11 +68,6 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     ['ios', 'publish-ios-testflight'],
   ]) {
     const job = parsed.jobs[jobId];
-    assert.deepEqual(job.needs, ['check-ci', 'mobile-credentials-preflight']);
-    assert.equal(
-      job.if,
-      "github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'"
-    );
     assert.equal(job.environment, 'mobile-store-beta');
     assert.equal(job.defaults.run['working-directory'], 'apps/mobile');
     assert.equal(
@@ -100,6 +96,39 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     );
   }
   const android = parsed.jobs['publish-android-internal'];
+  const ios = parsed.jobs['publish-ios-testflight'];
+  assert.deepEqual(android.needs, [
+    'check-ci',
+    'mobile-credentials-preflight',
+    'publish-ios-testflight',
+  ]);
+  assert.match(android.if, /^\$\{\{ !cancelled\(\) && /);
+  assert.match(
+    android.if,
+    /needs\.publish-ios-testflight\.outputs\.build_name != ''/
+  );
+  assert.deepEqual(ios.needs, ['check-ci', 'mobile-credentials-preflight']);
+  assert.equal(
+    ios.if,
+    "github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'"
+  );
+  assert.equal(
+    ios.outputs.build_name,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    '${{ steps.version_name.outputs.build_name }}'
+  );
+  assert.ok(
+    ios.steps.findIndex(
+      (entry) => entry.name === 'Fetch iOS deployment bundle from Tuturuuu'
+    ) <
+      ios.steps.findIndex(
+        (entry) => entry.name === 'Calculate next mobile app version'
+      )
+  );
+  assert.match(
+    step(ios, 'Calculate next mobile app version').run,
+    /build-name\.mjs/
+  );
   const publish = step(
     android,
     'Publish Android App Bundle to Google Play internal'
@@ -114,7 +143,6 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     step(android, 'Verify committed Google Play internal release').run,
     /verify-store\.mjs android/
   );
-  const ios = parsed.jobs['publish-ios-testflight'];
   assert.match(
     step(ios, 'Upload iOS IPA to TestFlight').run,
     /xcrun altool --upload-app/
@@ -172,14 +200,6 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     workflow,
     /::error title=Mobile store deployment blocked::MOBILE_DEPLOYMENT_CI_TOKEN is not configured/
   );
-  assert.match(
-    workflow,
-    /publish-android-internal:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: github\.event_name == 'push' && needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.result == 'success'/
-  );
-  assert.match(
-    workflow,
-    /publish-ios-testflight:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: github\.event_name == 'push' && needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.result == 'success'/
-  );
   assert.match(workflow, /MOBILE_DEPLOYMENT_CI_TOKEN/);
   assert.match(workflow, /audience=tuturuuu-mobile-deployment/);
   assert.match(
@@ -211,7 +231,11 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.match(workflow, /--build-number=/);
   assert.match(
     workflow,
-    /--build-name=\$\{\{ needs\.mobile-credentials-preflight\.outputs\.build_name \}\}/
+    /--build-name=\$\{\{ steps\.version_name\.outputs\.build_name \}\}/
+  );
+  assert.match(
+    workflow,
+    /--build-name=\$\{\{ needs\.publish-ios-testflight\.outputs\.build_name \}\}/
   );
   assert.match(workflow, /CFBundleShortVersionString/);
   assert.doesNotMatch(workflow, /tracks?:\s*production/i);

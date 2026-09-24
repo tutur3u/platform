@@ -789,7 +789,10 @@ from a build log and reproduce the native build failure on that toolchain.
   Store Connect. With `0.11.0+84` and no matching history, the first upload is
   `0.11.1`, followed by `0.11.2`, and so on. It calculates a separate build
   number from `GITHUB_RUN_NUMBER` and `GITHUB_RUN_ATTEMPT`; both stores receive
-  the same version name.
+  the same version name. The iOS publish job resolves that version after its
+  single vault bundle fetch; Android waits for the nonsecret version output.
+  Do not fetch the iOS bundle in preflight as well: the vault rejects a second
+  fetch for the same run attempt as a replay.
 
 The workflow is bound to the `mobile-store-beta` GitHub Environment. Keep that
 environment restricted to the `production` branch and store only

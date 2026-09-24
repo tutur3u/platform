@@ -36,7 +36,6 @@ jobs:
     environment: mobile-store-beta
     outputs:
       build_number: ${{ steps.credentials.outputs.build_number }}
-      build_name: ${{ steps.version_name.outputs.build_name }}
     steps:
       - name: Require production branch
         run: test "$GITHUB_REF" = refs/heads/production
@@ -60,48 +59,10 @@ jobs:
           test "$build_number" -le 2100000000
           echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
 
-      - name: Resolve next mobile app version
-        shell: bash
-        env:
-          MOBILE_DEPLOYMENT_CI_TOKEN: ${{ secrets.MOBILE_DEPLOYMENT_CI_TOKEN }}
-        run: |
-          set -euo pipefail
-          umask 077
-          bundle_path="$RUNNER_TEMP/mobile-version-bundle.json"
-          oidc_response="$RUNNER_TEMP/mobile-version-oidc.json"
-          oidc_url="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=tuturuuu-mobile-deployment"
-          curl -fsSL \
-            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
-            "$oidc_url" -o "$oidc_response"
-          oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
-          curl -fsSL \
-            -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
-            -H "X-GitHub-OIDC-Token: ${oidc_token}" \
-            "https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=ios" \
-            -o "$bundle_path"
-          node scripts/mobile-deployment/hydrate-bundle.mjs \
-            --platform ios --bundle "$bundle_path" \
-            --mobile-root "$RUNNER_TEMP/mobile-version"
-
-      - name: Calculate next mobile app version
-        id: version_name
-        shell: bash
-        run: |
-          set -euo pipefail
-          build_name="$(node scripts/mobile-deployment/build-name.mjs)"
-          echo "build_name=$build_name" >> "$GITHUB_OUTPUT"
-
-      - name: Cleanup version lookup credentials
-        if: always()
-        shell: bash
-        run: |
-          rm -rf "$RUNNER_TEMP/mobile-deployment" "$RUNNER_TEMP/mobile-version"
-          rm -f "$RUNNER_TEMP/mobile-version-bundle.json" "$RUNNER_TEMP/mobile-version-oidc.json"
-
   publish-android-internal:
     name: Publish Android to Google Play internal
-    needs: [check-ci, mobile-credentials-preflight]
-    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
+    needs: [check-ci, mobile-credentials-preflight, publish-ios-testflight]
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success' && needs.publish-ios-testflight.outputs.build_name != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: mobile-store-beta
@@ -183,7 +144,7 @@ jobs:
         env:
           MOBILE_DART_DEFINE_FILE: .env.github
         with:
-          command: bun build:android --build-name=${{ needs.mobile-credentials-preflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }}
+          command: bun build:android --build-name=${{ needs.publish-ios-testflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }}
 
       - name: Upload Android App Bundle artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -223,6 +184,8 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 120
     environment: mobile-store-beta
+    outputs:
+      build_name: ${{ steps.version_name.outputs.build_name }}
     defaults:
       run:
         working-directory: apps/mobile
@@ -275,6 +238,15 @@ jobs:
             --platform ios \
             --bundle "$bundle_path" \
             --mobile-root "$PWD"
+
+      - name: Calculate next mobile app version
+        id: version_name
+        shell: bash
+        run: |
+          set -euo pipefail
+          build_name="$(node ../../scripts/mobile-deployment/build-name.mjs)"
+          test -n "$build_name"
+          echo "build_name=$build_name" >> "$GITHUB_OUTPUT"
 
       - name: Disable Flutter Swift Package Manager
         run: flutter config --no-enable-swift-package-manager
@@ -347,7 +319,7 @@ jobs:
           EOF
 
       - name: Build iOS IPA
-        run: flutter build ipa --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github --build-name=${{ needs.mobile-credentials-preflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }} --export-options-plist=ios/ExportOptions.plist
+        run: flutter build ipa --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github --build-name=${{ steps.version_name.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }} --export-options-plist=ios/ExportOptions.plist
 
       - name: Resolve iOS IPA path
         id: ios-ipa
@@ -368,7 +340,7 @@ jobs:
         shell: bash
         env:
           EXPECTED_BUILD_NUMBER: ${{ needs.mobile-credentials-preflight.outputs.build_number }}
-          EXPECTED_BUILD_NAME: ${{ needs.mobile-credentials-preflight.outputs.build_name }}
+          EXPECTED_BUILD_NAME: ${{ steps.version_name.outputs.build_name }}
           IPA_PATH: ${{ steps.ios-ipa.outputs.local_path }}
         run: |
           set -euo pipefail
