@@ -309,7 +309,7 @@ class _AssistantPageState extends State<AssistantPage> {
                             top: false,
                             bottom: false,
                             child: ResponsiveWrapper(
-                              maxWidth: ResponsivePadding.maxContentWidth(
+                              maxWidth: ResponsivePadding.rootContentWidth(
                                 context.deviceClass,
                               ),
                               child: GestureDetector(

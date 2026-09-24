@@ -34,6 +34,8 @@ class FloatingShellDock extends StatefulWidget {
 class _FloatingShellDockState extends State<FloatingShellDock> {
   Timer? _returnTimer;
   bool _hidden = false;
+  bool _headerClearanceConsumed = false;
+  bool _atTopWhileHidden = false;
   double _travel = 0;
 
   @override
@@ -43,6 +45,8 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
         (widget.bottomInset == 0 && widget.header == null)) {
       _returnTimer?.cancel();
       _hidden = false;
+      _headerClearanceConsumed = false;
+      _atTopWhileHidden = false;
       _travel = 0;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_hidden) widget.onVisibilityChanged?.call(true);
@@ -58,9 +62,13 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
 
   void _reveal() {
     if (mounted && _hidden) {
-      setState(() => _hidden = false);
+      setState(() {
+        _hidden = false;
+        if (_atTopWhileHidden) _headerClearanceConsumed = false;
+      });
       widget.onVisibilityChanged?.call(true);
     }
+    _atTopWhileHidden = false;
     _travel = 0;
   }
 
@@ -71,6 +79,16 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
         MediaQuery.of(context).accessibleNavigation) {
       return false;
     }
+    if (_hidden) {
+      _atTopWhileHidden = notification.metrics.pixels <= 0;
+    }
+    if (_headerClearanceConsumed &&
+        notification is ScrollEndNotification &&
+        notification.metrics.pixels <= 0 &&
+        !_hidden &&
+        _travel == 0) {
+      setState(() => _headerClearanceConsumed = false);
+    }
     if (notification is ScrollUpdateNotification &&
         notification.dragDetails != null &&
         !notification.metrics.outOfRange) {
@@ -80,7 +98,10 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
       } else if (delta > 0) {
         _travel += delta;
         if (_travel > 24 && !_hidden) {
-          setState(() => _hidden = true);
+          setState(() {
+            _hidden = true;
+            _headerClearanceConsumed = true;
+          });
           widget.onVisibilityChanged?.call(false);
         }
       }
@@ -103,9 +124,16 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Padding(
-            // Reserve this once so revealing the header never resizes the page.
-            padding: EdgeInsets.only(top: headerClearance),
+          AnimatedPadding(
+            // The initial clearance scrolls away with the header. Keep it
+            // consumed when the header returns mid-scroll so content stays put.
+            duration: media.disableAnimations
+                ? Duration.zero
+                : const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            padding: EdgeInsets.only(
+              top: _headerClearanceConsumed ? 0 : headerClearance,
+            ),
             child: MediaQuery(
               data: active
                   ? media.copyWith(

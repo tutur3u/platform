@@ -6,7 +6,7 @@ class SliverResponsiveCards extends StatelessWidget {
   const SliverResponsiveCards({
     required this.children,
     this.leading,
-    this.minColumnWidth = 360,
+    this.minColumnWidth = 270,
     this.maxColumns = 3,
     this.spacing = 14,
     super.key,

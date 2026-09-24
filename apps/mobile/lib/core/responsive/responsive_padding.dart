@@ -21,6 +21,15 @@ class ResponsivePadding {
         DeviceClass.expanded => 720,
       };
 
+  /// Shared canvas width for the five root destinations. Detail and form
+  /// screens keep their narrower reading widths above.
+  static double? rootContentWidth(DeviceClass deviceClass) =>
+      switch (deviceClass) {
+        DeviceClass.compact => null,
+        DeviceClass.medium => 1120,
+        DeviceClass.expanded => 1440,
+      };
+
   /// Maximum width for form layouts (auth pages, settings).
   static double maxFormWidth(DeviceClass deviceClass) => switch (deviceClass) {
     DeviceClass.compact => double.infinity,

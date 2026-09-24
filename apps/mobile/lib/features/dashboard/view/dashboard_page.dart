@@ -230,7 +230,7 @@ class _DashboardViewState extends State<_DashboardView> {
                         top: false,
                         bottom: false,
                         child: ResponsiveWrapper(
-                          maxWidth: ResponsivePadding.maxContentWidth(
+                          maxWidth: ResponsivePadding.rootContentWidth(
                             context.deviceClass,
                           ),
                           child: CustomScrollView(
