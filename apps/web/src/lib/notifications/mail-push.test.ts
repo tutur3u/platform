@@ -34,19 +34,22 @@ describe('personal Mail delivery boundary', () => {
     rpc.mockResolvedValue({ data: true, error: null });
     expect(await getMailPushSkipReason(admin, notification, batch)).toBeNull();
   });
-  it('fails closed on lookup errors and keeps unrelated personal types restricted', async () => {
+  it('fails closed on Mail lookup errors and allows other push types', async () => {
     const admin = {
       schema: () => ({ rpc: async () => ({ error: new Error('offline') }) }),
     };
     await expect(
       getMailPushSkipReason(admin, notification, batch)
     ).rejects.toThrow('offline');
+    const taskNotification = { ...notification, type: 'task_assigned' };
     expect(
-      await getMailPushSkipReason(
-        admin,
-        { ...notification, type: 'task_assigned' },
-        batch
-      )
+      await getMailPushSkipReason(admin, taskNotification, batch)
+    ).toBeNull();
+    expect(
+      await getMailPushSkipReason(admin, taskNotification, {
+        ...batch,
+        channel: 'email',
+      })
     ).toBe('restricted_workspace');
   });
 });
