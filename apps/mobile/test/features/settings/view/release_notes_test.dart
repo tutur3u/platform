@@ -24,4 +24,23 @@ void main() {
       expect(releases.last.changes, ['restore sessions']);
     },
   );
+
+  test('shows bundled beta patches above the published changelog', () {
+    const changelog = '''
+## [0.11.0](https://example.com/compare) (2026-09-23)
+* **mobile:** baseline release
+''';
+    const patchHistory = '''
+{"releases":[{"version":"0.11.4","date":"2026-09-24","changes":["Restore sessions","Improve settings"]},{"version":"0.11.1","date":"2026-09-23","changes":["Improve Mail"]}]}
+''';
+
+    final releases = MobileReleaseNotes.combine(changelog, patchHistory);
+
+    expect(releases.map((release) => release.version), [
+      '0.11.4',
+      '0.11.1',
+      '0.11.0',
+    ]);
+    expect(releases.first.changes, ['Restore sessions', 'Improve settings']);
+  });
 }

@@ -42,7 +42,7 @@ function appleToken(privateKey, keyId, issuerId) {
   return `${input}.${signature.toString('base64url')}`;
 }
 
-async function appleGet(path, credentials) {
+export async function appleGet(path, credentials) {
   const response = await fetch(`${appleOrigin}${path}`, {
     headers: {
       Authorization: `Bearer ${appleToken(
@@ -60,7 +60,7 @@ async function appleGet(path, credentials) {
   return response.json();
 }
 
-export async function listIosPrereleaseVersions(credentials) {
+export async function listIosPrereleaseVersionRecords(credentials) {
   const apps = await appleGet(
     `/v1/apps?${new URLSearchParams({ 'filter[bundleId]': bundleId, limit: '2' })}`,
     credentials
@@ -76,7 +76,7 @@ export async function listIosPrereleaseVersions(credentials) {
   })}`;
   while (path) {
     const page = await appleGet(path, credentials);
-    versions.push(...(page.data ?? []).map((item) => item.attributes?.version));
+    versions.push(...(page.data ?? []));
     const next = page.links?.next;
     if (!next) break;
     const nextUrl = new URL(next);
@@ -86,6 +86,11 @@ export async function listIosPrereleaseVersions(credentials) {
     path = nextUrl.pathname + nextUrl.search;
   }
   return versions;
+}
+
+export async function listIosPrereleaseVersions(credentials) {
+  const records = await listIosPrereleaseVersionRecords(credentials);
+  return records.map((item) => item.attributes?.version);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
