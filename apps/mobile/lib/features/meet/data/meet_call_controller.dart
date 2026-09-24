@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/meet/data/meet_native_media.dart';
 import 'package:mobile/features/meet/data/meet_personal_chat.dart';
+import 'package:mobile/features/meet/data/meet_room_assistant.dart';
 import 'package:mobile/features/meet/data/meet_signaling.dart';
 
 class MeetCallController extends ChangeNotifier {
@@ -25,6 +26,11 @@ class MeetCallController extends ChangeNotifier {
       meetingId: meetingId,
       repository: _repository,
     );
+    roomAssistant = MeetRoomAssistant(
+      workspaceId: workspaceId,
+      meetingId: meetingId,
+      repository: _repository,
+    );
   }
 
   final String workspaceId;
@@ -34,6 +40,7 @@ class MeetCallController extends ChangeNotifier {
   late final MeetSignaling _signaling;
   late final MeetNativeMedia media;
   late final MeetPersonalChat personalChat;
+  late final MeetRoomAssistant roomAssistant;
 
   String status = 'connecting';
   String admission = 'connecting';
@@ -332,10 +339,19 @@ class MeetCallController extends ChangeNotifier {
     _sendPresence();
   }
 
-  Future<void> sendMessage(String body) async {
+  Future<String> sendMessage(String body) async {
     final text = body.trim();
-    if (text.isEmpty) return;
-    await _signaling.request({'type': 'chat.message', 'body': text});
+    if (text.isEmpty) throw ArgumentError.value(body, 'body');
+    final reply = await _signaling.request({
+      'type': 'chat.message',
+      'body': text,
+    });
+    final id = reply['id'] as String?;
+    if (id == null) throw StateError('Meet chat receipt missing');
+    if (MeetRoomAssistant.hasMention(text)) {
+      unawaited(roomAssistant.ask(id));
+    }
+    return id;
   }
 
   void decideAdmission(String userId, {required bool admit}) {
@@ -398,6 +414,7 @@ class MeetCallController extends ChangeNotifier {
       ..removeListener(_notify)
       ..dispose();
     personalChat.dispose();
+    roomAssistant.dispose();
     unawaited(_signaling.close());
     if (_ownsRepository) _repository.dispose();
     super.dispose();

@@ -111,6 +111,39 @@ class MeetRepository {
     return text;
   }
 
+  Future<Map<String, dynamic>> askRoomMira(
+    String wsId,
+    String meetingId, {
+    required String messageId,
+    required String timezone,
+  }) => _api.postJson(MeetEndpoints.roomAssistant(wsId, meetingId), {
+    'messageId': messageId,
+    'timezone': timezone,
+  }, timeout: const Duration(seconds: 125));
+
+  Future<List<dynamic>> listMiraReviews(String wsId, String meetingId) =>
+      _api.getJsonList(MeetEndpoints.assistantReviews(wsId, meetingId));
+
+  Future<Map<String, dynamic>> getMiraReview(
+    String wsId,
+    String meetingId,
+    String messageId,
+  ) => _api.getJson(
+    MeetEndpoints.assistantReviews(wsId, meetingId, messageId: messageId),
+  );
+
+  Future<Map<String, dynamic>> decideMiraReview(
+    String wsId,
+    String meetingId, {
+    required String messageId,
+    required int revision,
+    required String action,
+  }) => _api.postJson(MeetEndpoints.assistantReviews(wsId, meetingId), {
+    'messageId': messageId,
+    'revision': revision,
+    'action': action,
+  }, timeout: const Duration(seconds: 125));
+
   void dispose() {
     _api.dispose();
   }

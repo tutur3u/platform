@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
+import 'package:mobile/features/meet/view/meet_assistant_review_card.dart';
 import 'package:mobile/features/meet/view/meet_personal_chat_panel.dart';
 import 'package:mobile/features/meet/view/meet_room_message_body.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -14,6 +15,7 @@ Future<void> showMeetChatSheet(
 ) async {
   final input = TextEditingController();
   try {
+    unawaited(call.roomAssistant.refreshReviews());
     await showAdaptiveSheet<void>(
       context: context,
       useRootNavigator: true,
@@ -58,24 +60,80 @@ Future<void> showMeetChatSheet(
 
 Widget _roomChatPanel(MeetCallController call, TextEditingController input) =>
     AnimatedBuilder(
-      animation: call,
+      animation: Listenable.merge([call, call.roomAssistant]),
       builder: (context, _) => Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              itemCount: call.messages.length,
-              itemBuilder: (context, index) {
-                final message = call.messages[index];
-                return ListTile(
-                  title: Text(message['displayName'] as String? ?? ''),
-                  subtitle: MeetRoomMessageBody(
-                    data: message['body'] as String? ?? '',
+            child: ListView(
+              children: [
+                for (final message in call.messages)
+                  ListTile(
+                    title: Text(message['displayName'] as String? ?? ''),
+                    subtitle: MeetRoomMessageBody(
+                      data: message['body'] as String? ?? '',
+                    ),
+                    dense: true,
                   ),
-                  dense: true,
-                );
-              },
+                if (call.roomAssistant.reviews.isNotEmpty) ...[
+                  ListTile(
+                    leading: const Icon(Icons.lock_outline),
+                    title: Text(context.l10n.meetMiraReviews),
+                    subtitle: Text(context.l10n.meetMiraReviewsHint),
+                  ),
+                  for (final review in call.roomAssistant.reviews)
+                    MeetAssistantReviewCard(
+                      key: ValueKey('${review['id']}:${review['revision']}'),
+                      assistant: call.roomAssistant,
+                      review: review,
+                    ),
+                ],
+              ],
             ),
           ),
+          if (call.roomAssistant.thinking)
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                children: [
+                  const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(context.l10n.meetMiraThinking),
+                ],
+              ),
+            ),
+          if (call.roomAssistant.error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      call.roomAssistant.error == 'reviews_failed'
+                          ? context.l10n.meetMiraReviewFailed
+                          : context.l10n.meetMiraReplyFailed,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => unawaited(
+                      call.roomAssistant.retryMessageId == null
+                          ? call.roomAssistant.refreshReviews()
+                          : call.roomAssistant.ask(
+                              call.roomAssistant.retryMessageId!,
+                            ),
+                    ),
+                    icon: const Icon(Icons.refresh),
+                    label: Text(
+                      call.roomAssistant.retryMessageId == null
+                          ? context.l10n.meetMiraReviewRefresh
+                          : context.l10n.meetMiraRetry,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Row(
             children: [
               Expanded(
