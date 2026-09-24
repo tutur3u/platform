@@ -352,7 +352,9 @@ class ChatCubit extends Cubit<ChatState> {
         conversations.any((conversation) => conversation.id == preferredId)) {
       return preferredId;
     }
-    return conversations.isEmpty ? null : conversations.first.id;
+    // Opening Chat starts at the conversation list. Only an explicit deep
+    // link or a user selection opens a thread.
+    return null;
   }
 
   List<ChatConversation> _sortConversations(

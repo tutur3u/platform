@@ -137,7 +137,7 @@ class _ChatPageState extends State<ChatPage> {
       locations: const {Routes.chat},
       actions: [
         if (state.selectedConversationId != null &&
-            MediaQuery.sizeOf(context).width < 900)
+            MediaQuery.sizeOf(context).width < 700)
           ShellActionSpec(
             id: 'chat-back',
             icon: shad.LucideIcons.arrowLeft,
@@ -192,10 +192,15 @@ class _ChatPageState extends State<ChatPage> {
     final wsId = workspace?.id;
     if (wsId == null) return;
 
-    final requestedConversationId = GoRouterState.of(
-      context,
-    ).uri.queryParameters['conversationId'];
+    final requestedConversationId = GoRouterState.of(context)
+        .uri
+        .queryParameters['conversationId'];
     if (wsId == _loadedWorkspaceId) {
+      if (requestedConversationId == null &&
+          _openedInitialConversationId != null) {
+        _openedInitialConversationId = null;
+        _chatCubit.clearSelection();
+      }
       if (requestedConversationId != null &&
           requestedConversationId != _openedInitialConversationId) {
         _openedInitialConversationId = requestedConversationId;
