@@ -12,6 +12,7 @@ import '../data/assistant_preferences.dart';
 import '../data/assistant_repository.dart';
 import '../data/assistant_stream_parser.dart';
 import '../models/assistant_models.dart';
+import 'assistant_tool_output.dart';
 
 part 'assistant_chat_state.dart';
 part 'assistant_chat_restore.dart';
@@ -177,6 +178,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     required String workspaceContextId,
     required String timezone,
     String? creditWsId,
+    String? retryMessageId,
   }) async {
     final trimmed = message.trim();
     final uploadedAttachments = state.composerAttachments
@@ -253,6 +255,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
           workspaceContextId: workspaceContextId,
           timezone: timezone,
           creditWsId: creditWsId,
+          retryMessageId: retryMessageId,
         ),
       );
     });
@@ -285,6 +288,17 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         .join('\n');
     if (text.trim().isEmpty) return;
 
+    final retryIndex = state.messages.lastIndexWhere(
+      (message) => message.id == lastUserMessage.id,
+    );
+    if (retryIndex < 0) return;
+    emit(
+      state.copyWith(
+        messages: state.messages.take(retryIndex + 1).toList(growable: false),
+        clearError: true,
+      ),
+    );
+
     await submit(
       wsId: wsId,
       message: text,
@@ -294,6 +308,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       workspaceContextId: workspaceContextId,
       timezone: timezone,
       creditWsId: creditWsId,
+      retryMessageId: lastUserMessage.id,
     );
   }
 
@@ -361,6 +376,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     required String workspaceContextId,
     required String timezone,
     String? creditWsId,
+    String? retryMessageId,
   }) async {
     if (_queue.isEmpty) return;
 
@@ -401,10 +417,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         await refreshHistory();
       }
 
-      final shouldAppendUserMessage = !_matchesLatestQueuedMessage(
-        combined,
-        attachments,
-      );
+      final shouldAppendUserMessage =
+          retryMessageId == null &&
+          !_matchesLatestQueuedMessage(combined, attachments);
 
       var nextMessages = state.messages;
       final attachmentsByMessageId =
@@ -633,7 +648,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     final output = payload['output'];
 
     if (toolName == 'set_workspace_context') {
-      final contextId = _readWorkspaceContextId(output);
+      final contextId = readWorkspaceContextId(output);
       if (contextId != null && contextId.isNotEmpty) {
         await _onWorkspaceContextChanged(contextId);
       }
@@ -644,43 +659,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     }
 
     if (toolName == 'set_immersive_mode') {
-      final isImmersive = _readImmersiveFlag(output);
+      final isImmersive = readImmersiveFlag(output);
       _onImmersiveModeChanged(isImmersive);
     }
-  }
-
-  String? _readWorkspaceContextId(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      for (final key in const [
-        'workspaceContextId',
-        'workspace_context_id',
-        'wsId',
-        'workspaceId',
-      ]) {
-        final candidate = value[key];
-        if (candidate is String && candidate.isNotEmpty) {
-          return candidate;
-        }
-      }
-    }
-    return null;
-  }
-
-  bool _readImmersiveFlag(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      for (final key in const [
-        'immersiveMode',
-        'immersive',
-        'enabled',
-        'value',
-      ]) {
-        final candidate = value[key];
-        if (candidate is bool) {
-          return candidate;
-        }
-      }
-    }
-    return false;
   }
 
   void _ensureAssistantMessage(String messageId) {

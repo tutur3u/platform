@@ -16,17 +16,38 @@ class AssistantChatFeedback extends StatelessWidget {
     if (state.status == AssistantChatStatus.error) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(context.l10n.assistantReplyFailed),
-            if (onRetry != null)
-              TextButton.icon(
-                onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded),
-                label: Text(context.l10n.commonRetry),
-              ),
-          ],
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.errorContainer,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    context.l10n.assistantReplyFailed,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                  ),
+                ),
+                if (onRetry != null)
+                  IconButton(
+                    onPressed: onRetry,
+                    tooltip: context.l10n.commonRetry,
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    icon: const Icon(Icons.refresh_rounded),
+                  ),
+              ],
+            ),
+          ),
         ),
       );
     }

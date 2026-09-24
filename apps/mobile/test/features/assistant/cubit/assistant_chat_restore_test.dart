@@ -138,6 +138,37 @@ void main() {
     expect(cubit.state.status, AssistantChatStatus.error);
     expect(cubit.state.error, 'Service unavailable');
     expect(cubit.state.messages.single.role, 'user');
+    final originalMessageId = cubit.state.messages.single.id;
+
+    await cubit.retryLast(
+      wsId: 'ws',
+      modelId: 'model',
+      thinkingMode: AssistantThinkingMode.fast,
+      creditSource: AssistantCreditSource.workspace,
+      workspaceContextId: 'ws',
+      timezone: 'UTC',
+      creditWsId: 'ws',
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    expect(
+      cubit.state.messages.where((message) => message.role == 'user'),
+      hasLength(1),
+    );
+    expect(cubit.state.messages.single.id, originalMessageId);
+    verify(
+      () => repository.streamChat(
+        chatId: 'cached',
+        wsId: 'ws',
+        workspaceContextId: 'ws',
+        modelId: 'model',
+        messages: any(named: 'messages'),
+        thinkingMode: AssistantThinkingMode.fast,
+        creditSource: AssistantCreditSource.workspace,
+        timezone: 'UTC',
+        attachments: any(named: 'attachments'),
+        creditWsId: 'ws',
+      ),
+    ).called(2);
   });
   test('cached conversation renders before delayed history', () async {
     final history = Completer<List<AssistantChatRecord>>();
