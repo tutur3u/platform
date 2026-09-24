@@ -134,7 +134,7 @@ export async function distributeTestFlightBuild(apple, appId, buildId, config) {
     );
   }
   if (selected.some((group) => group.attributes?.isInternalGroup === false)) {
-    await submitExternalBetaReview(apple, buildId, config.whatsNew);
+    await submitExternalBetaReview(apple, appId, buildId, config.whatsNew);
   }
   console.log(
     `Verified TestFlight build ${buildId} in ${selected.length} beta group(s): ${selected.map((group) => group.attributes?.name ?? group.id).join(', ')}.`
@@ -142,7 +142,25 @@ export async function distributeTestFlightBuild(apple, appId, buildId, config) {
   return selected;
 }
 
-export async function submitExternalBetaReview(apple, buildId, whatsNew) {
+export async function pendingExternalBetaReview(apple, appId) {
+  for (const state of ['WAITING_FOR_REVIEW', 'IN_REVIEW']) {
+    const query = new URLSearchParams({
+      'filter[app]': appId,
+      'filter[betaAppReviewSubmission.betaReviewState]': state,
+      limit: '2',
+    });
+    const builds = await apple(`/v1/builds?${query}`);
+    if (builds.data?.length) return builds.data[0];
+  }
+  return null;
+}
+
+export async function submitExternalBetaReview(
+  apple,
+  appId,
+  buildId,
+  whatsNew
+) {
   const query = new URLSearchParams({ 'filter[build]': buildId, limit: '2' });
   const path = `/v1/betaAppReviewSubmissions?${query}`;
   const existing = await apple(path);
@@ -152,6 +170,13 @@ export async function submitExternalBetaReview(apple, buildId, whatsNew) {
     );
   }
   if (!existing.data?.length) {
+    const pending = await pendingExternalBetaReview(apple, appId);
+    if (pending && pending.id !== buildId) {
+      console.log(
+        `External TestFlight review deferred for build ${buildId}; build ${pending.id} is still in review.`
+      );
+      return 'deferred';
+    }
     const localizations = await listAppleResources(
       apple,
       `/v1/builds/${buildId}/betaBuildLocalizations?limit=200`
@@ -198,6 +223,67 @@ export async function submitExternalBetaReview(apple, buildId, whatsNew) {
     );
   }
   console.log(`External TestFlight beta review: ${state}.`);
+  return state;
+}
+
+export function latestReadyTestFlightBuild(page) {
+  for (const build of page.data ?? []) {
+    if (
+      build.attributes?.expired ||
+      !/^\d+$/.test(build.attributes?.version ?? '')
+    ) {
+      continue;
+    }
+    const detailId = build.relationships?.buildBetaDetail?.data?.id;
+    const detail = page.included?.find(
+      (item) => item.type === 'buildBetaDetails' && item.id === detailId
+    );
+    if (testFlightReady(build, detail)) return build;
+  }
+  return null;
+}
+
+export async function retryDeferredTestFlightReview(apple, appId, config) {
+  if (config.enabled === 'false') return 'disabled';
+  const groups = await listAppleResources(
+    apple,
+    `/v1/apps/${appId}/betaGroups?limit=200`
+  );
+  const selected = selectBetaGroups(groups, config.enabled, config.groups);
+  if (!selected.some((group) => group.attributes?.isInternalGroup === false)) {
+    return 'no-external-groups';
+  }
+  const pending = await pendingExternalBetaReview(apple, appId);
+  if (pending) {
+    console.log(
+      `External TestFlight review remains active for build ${pending.id}.`
+    );
+    return 'deferred';
+  }
+  const query = new URLSearchParams({
+    'filter[app]': appId,
+    'filter[processingState]': 'VALID',
+    sort: '-uploadedDate',
+    include: 'buildBetaDetail',
+    limit: '200',
+  });
+  const page = await apple(`/v1/builds?${query}`);
+  const build = latestReadyTestFlightBuild(page);
+  if (!build) {
+    console.log('No processed internal TestFlight build is ready for review.');
+    return 'no-ready-build';
+  }
+  const existing = await apple(
+    `/v1/betaAppReviewSubmissions?${new URLSearchParams({ 'filter[build]': build.id, limit: '2' })}`
+  );
+  if (existing.data?.[0]?.attributes?.betaReviewState === 'REJECTED') {
+    console.log(
+      `Latest TestFlight build ${build.id} was rejected; waiting for a newer build.`
+    );
+    return 'rejected';
+  }
+  await distributeTestFlightBuild(apple, appId, build.id, config);
+  return 'processed';
 }
 
 export async function verifyPlay(buildNumber) {
@@ -246,7 +332,7 @@ export async function verifyPlay(buildNumber) {
   );
 }
 
-export async function verifyTestFlight(buildNumber) {
+async function connectApple() {
   const key = await readFile(
     process.env.APP_STORE_CONNECT_PRIVATE_KEY_PATH,
     'utf8'
@@ -282,7 +368,21 @@ export async function verifyTestFlight(buildNumber) {
     throw new Error(
       'Expected exactly one App Store Connect app with the production bundle id'
     );
-  const appId = apps.data[0].id;
+  return { apple, appId: apps.data[0].id };
+}
+
+function betaDistributionConfig() {
+  return {
+    enabled: process.env.TESTFLIGHT_BETA_ENABLED ?? 'true',
+    groups: process.env.TESTFLIGHT_BETA_GROUPS ?? 'all',
+    whatsNew:
+      process.env.TESTFLIGHT_BETA_WHATS_NEW?.trim() ||
+      'Please test the latest improvements and share any issues or feedback.',
+  };
+}
+
+export async function verifyTestFlight(buildNumber) {
+  const { apple, appId } = await connectApple();
   const query = new URLSearchParams({
     'filter[app]': appId,
     'filter[version]': String(buildNumber),
@@ -303,13 +403,12 @@ export async function verifyTestFlight(buildNumber) {
       (item) => item.type === 'buildBetaDetails' && item.id === detailId
     );
     if (testFlightReady(build, detail)) {
-      await distributeTestFlightBuild(apple, appId, build.id, {
-        enabled: process.env.TESTFLIGHT_BETA_ENABLED ?? 'true',
-        groups: process.env.TESTFLIGHT_BETA_GROUPS ?? 'all',
-        whatsNew:
-          process.env.TESTFLIGHT_BETA_WHATS_NEW?.trim() ||
-          'Please test the latest improvements and share any issues or feedback.',
-      });
+      await distributeTestFlightBuild(
+        apple,
+        appId,
+        build.id,
+        betaDistributionConfig()
+      );
       console.log(
         `Verified TestFlight processing and internal testing for build ${buildNumber} (${build.id}).`
       );
@@ -325,17 +424,26 @@ export async function verifyTestFlight(buildNumber) {
   );
 }
 
+export async function retryLatestTestFlightReview() {
+  const { apple, appId } = await connectApple();
+  return retryDeferredTestFlightReview(apple, appId, betaDistributionConfig());
+}
+
 if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   try {
     const [platform, buildNumber] = process.argv.slice(2);
-    if (!/^[1-9]\d*$/.test(buildNumber ?? ''))
-      throw new Error('A numeric build number is required');
-    if (platform === 'android') await verifyPlay(buildNumber);
-    else if (platform === 'ios') await verifyTestFlight(buildNumber);
-    else throw new Error('Expected android or ios');
+    if (platform === 'ios-pending' && buildNumber === undefined) {
+      await retryLatestTestFlightReview();
+    } else {
+      if (!/^[1-9]\d*$/.test(buildNumber ?? ''))
+        throw new Error('A numeric build number is required');
+      if (platform === 'android') await verifyPlay(buildNumber);
+      else if (platform === 'ios') await verifyTestFlight(buildNumber);
+      else throw new Error('Expected android, ios, or ios-pending');
+    }
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

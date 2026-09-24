@@ -38,7 +38,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   );
 
   // Ruby's YAML 1.1 parser represents the unquoted `on` key as true.
-  assert.deepEqual(Object.keys(parsed.true), ['push']);
+  assert.deepEqual(Object.keys(parsed.true), ['push', 'workflow_dispatch']);
   assert.deepEqual(parsed.true.push.branches, ['production']);
   assert.deepEqual(parsed.permissions, {
     contents: 'read',
@@ -69,7 +69,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     assert.deepEqual(job.needs, ['check-ci', 'mobile-credentials-preflight']);
     assert.equal(
       job.if,
-      "needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'"
+      "github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'"
     );
     assert.equal(job.environment, 'mobile-store-beta');
     assert.equal(job.defaults.run['working-directory'], 'apps/mobile');
@@ -138,6 +138,21 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     '${{ vars.TESTFLIGHT_BETA_WHATS_NEW }}'
   );
+  const retry = parsed.jobs['retry-ios-testflight-review'];
+  assert.equal(retry.environment, 'mobile-store-beta');
+  assert.equal(
+    retry.if,
+    "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'"
+  );
+  assert.match(
+    step(retry, 'Retry newest eligible build').run,
+    /verify-store\.mjs ios-pending/
+  );
+  assert.match(
+    step(retry, 'Fetch iOS deployment credentials').run,
+    /audience=tuturuuu-mobile-deployment/
+  );
+  assert.equal(step(retry, 'Cleanup iOS release files').if, 'always()');
   assert.equal(
     step(ios, 'Upload iOS IPA artifact').with.path,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
@@ -145,7 +160,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   );
 
   assert.match(workflow, /^on:\n {2}push:\n/m);
-  assert.doesNotMatch(workflow, /^\s*workflow_dispatch:/m);
+  assert.match(workflow, /^ {2}workflow_dispatch:/m);
   assert.match(workflow, /branches:\n\s+- production/);
   assert.match(workflow, /environment: mobile-store-beta/);
   assert.match(workflow, /id-token:\s*write/);
@@ -163,11 +178,11 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.match(workflow, /echo "has_ci_token=true" >> "\$GITHUB_OUTPUT"/);
   assert.match(
     workflow,
-    /publish-android-internal:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.outputs\.has_ci_token == 'true'/
+    /publish-android-internal:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: github\.event_name == 'push' && needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.outputs\.has_ci_token == 'true'/
   );
   assert.match(
     workflow,
-    /publish-ios-testflight:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.outputs\.has_ci_token == 'true'/
+    /publish-ios-testflight:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: github\.event_name == 'push' && needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.outputs\.has_ci_token == 'true'/
   );
   assert.match(workflow, /MOBILE_DEPLOYMENT_CI_TOKEN/);
   assert.match(workflow, /audience=tuturuuu-mobile-deployment/);
@@ -236,4 +251,63 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   );
   assert.match(workflow, /path: \$\{\{ steps\.ios-ipa\.outputs\.path \}\}/);
   assert.doesNotMatch(workflow, /path: .*mobile-deployment/i);
+});
+
+test('TestFlight scheduler dispatches only promoted production retry code', () => {
+  const workflowName = 'mobile-testflight-review-queue.yaml';
+  const workflowPath = path.join(
+    repoRoot,
+    '.github',
+    'workflows',
+    workflowName
+  );
+  const workflow = fs.readFileSync(workflowPath, 'utf8');
+  assert.match(
+    ciConfig,
+    /["']mobile-testflight-review-queue\.yaml["']:\s*true/
+  );
+  const parsed = JSON.parse(
+    execFileSync(
+      'ruby',
+      [
+        '-e',
+        "require 'yaml'; require 'json'; puts JSON.generate(YAML.load_file(ARGV.fetch(0)))",
+        workflowPath,
+      ],
+      { cwd: repoRoot, stdio: 'pipe', encoding: 'utf8' }
+    )
+  );
+  assert.deepEqual(Object.keys(parsed.true), ['schedule', 'workflow_dispatch']);
+  assert.deepEqual(parsed.permissions, {
+    actions: 'write',
+    contents: 'read',
+    deployments: 'read',
+  });
+  assert.equal(parsed.jobs.dispatch.needs[0], 'check-ci');
+  const steps = parsed.jobs.dispatch.steps;
+  const promoted = steps.find(
+    (step) => step.name === 'Require promoted retry code'
+  );
+  assert.match(promoted.run, /git fetch origin production/);
+  assert.match(
+    promoted.run,
+    /git cat-file -e FETCH_HEAD:\.github\/workflows\/mobile-testflight-review-queue\.yaml/
+  );
+  const dispatch = steps.find(
+    (step) => step.name === 'Dispatch production review retry'
+  );
+  assert.equal(dispatch.if, "steps.promoted.outputs.enabled == 'true'");
+  assert.match(
+    dispatch.run,
+    /mobile-deploy-stores\.yaml\/dispatches -f ref=production/
+  );
+  assert.doesNotMatch(workflow, /MOBILE_DEPLOYMENT_CI_TOKEN/);
+  assert.doesNotMatch(workflow, /audience=tuturuuu-mobile-deployment/);
+  assert.doesNotMatch(workflow, /xcrun altool --upload-app/);
+  assert.doesNotMatch(workflow, /betaAppReviewSubmissions.*DELETE/);
+  for (const match of workflow.matchAll(/uses:\s*([^\s]+)/g)) {
+    const action = match[1];
+    if (!action || action.startsWith('./')) continue;
+    assert.match(action.split('@')[1] || '', /^[0-9a-f]{40}$/);
+  }
 });

@@ -78,7 +78,7 @@ export function validateGitHubOidcClaims(
   );
 
   const eventName = claimString(payload, 'event_name');
-  if (eventName && eventName !== 'push') {
+  if (eventName && !['push', 'workflow_dispatch'].includes(eventName)) {
     throw new MobileDeploymentOidcError('Unauthorized', 'invalid_event');
   }
 
