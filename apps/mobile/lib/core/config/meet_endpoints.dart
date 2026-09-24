@@ -42,7 +42,10 @@ abstract final class MeetEndpoints {
     String wsId,
     String meetingId, {
     String? messageId,
-  }) =>
-      '${roomAssistant(wsId, meetingId)}/review'
-      '${messageId == null ? '' : '?${Uri(queryParameters: {'messageId': messageId}).query}'}';
+  }) {
+    final path = '${roomAssistant(wsId, meetingId)}/review';
+    if (messageId == null) return path;
+    final query = Uri(queryParameters: {'messageId': messageId}).query;
+    return '$path?$query';
+  }
 }
