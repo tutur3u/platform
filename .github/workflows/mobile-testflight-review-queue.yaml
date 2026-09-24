@@ -2,7 +2,7 @@ name: Mobile TestFlight Review Queue
 
 on:
   schedule:
-    - cron: "7-57/5 * * * *"
+    - cron: "2-57/5 * * * *"
   workflow_dispatch:
 
 permissions:
