@@ -7,11 +7,11 @@ class _ChatSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.sizeOf(context).width >= 900;
+    final isWide = MediaQuery.sizeOf(context).width >= 700;
     final bottomPadding = MediaQuery.paddingOf(context).bottom + 16;
 
     return ResponsiveWrapper(
-      maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+      maxWidth: ResponsivePadding.rootContentWidth(context.deviceClass),
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           ResponsivePadding.horizontal(context.deviceClass),
@@ -22,7 +22,10 @@ class _ChatSurface extends StatelessWidget {
         child: isWide
             ? Row(
                 children: [
-                  SizedBox(width: 340, child: _ConversationPane(state: state)),
+                  SizedBox(
+                    width: MediaQuery.sizeOf(context).width < 900 ? 260 : 340,
+                    child: _ConversationPane(state: state),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(child: _ThreadPane(state: state)),
                 ],
