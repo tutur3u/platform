@@ -40,6 +40,7 @@ import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-atte
 import { useInfiniteWorkspaceUserGroups } from '@tuturuuu/users-ui/hooks/use-workspace-user-groups';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
@@ -99,6 +100,7 @@ export function UserFeedbackPanel({
   const tFeedback = useTranslations('ws-user-feedbacks');
   const commonT = useTranslations('common');
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const [page, setPage] = useState(1);
   const [groupQuery, setGroupQuery] = useState('');
@@ -171,6 +173,7 @@ export function UserFeedbackPanel({
         queryKey: ['workspace-users', wsId],
       }),
     ]);
+    router.refresh();
   };
 
   const createFeedbackMutation = useMutation({

@@ -11,7 +11,11 @@ const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 const nextConfig = createTuturuuuNextConfig({
   async rewrites() {
     return {
-      beforeFiles: createTuturuuuWebWorkspaceApiRewrites(WEB_APP_URL),
+      // Contacts owns feedback routes with satellite app-session auth. A
+      // beforeFiles rewrite would intercept the local route before Next sees it.
+      beforeFiles: createTuturuuuWebWorkspaceApiRewrites(WEB_APP_URL).filter(
+        ({ source }) => source !== '/api/v1/workspaces/:wsId/users/feedbacks'
+      ),
       afterFiles: [],
       // Fallback rewrites only apply when no local route matches,
       // so pay's own payment/billing API routes still win locally.

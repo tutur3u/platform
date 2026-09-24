@@ -25,6 +25,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -71,6 +72,7 @@ export default function UserFeedbackDialog({
   const t = useTranslations();
   const tFeedback = useTranslations('ws-user-group-feedback');
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const [activeTab, setActiveTab] = useState('add');
   const [formData, setFormData] = useState<FeedbackFormData>({
@@ -140,6 +142,7 @@ export default function UserFeedbackDialog({
       queryClient.invalidateQueries({
         queryKey: ['user-feedbacks', user?.id, groupId],
       });
+      router.refresh();
     },
     onError: (error) => {
       console.error('Error creating feedback:', error);
