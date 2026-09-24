@@ -11936,6 +11936,186 @@ export type Database = {
         };
         Relationships: [];
       };
+      parley_members: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          email: string;
+          enabled: boolean;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          email: string;
+          enabled?: boolean;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          email?: string;
+          enabled?: boolean;
+        };
+        Relationships: [];
+      };
+      parley_observations: {
+        Row: {
+          author_id: string;
+          content: string;
+          created_at: string;
+          id: string;
+          kind: string;
+          meeting_id: string;
+        };
+        Insert: {
+          author_id: string;
+          content: string;
+          created_at?: string;
+          id?: string;
+          kind: string;
+          meeting_id: string;
+        };
+        Update: {
+          author_id?: string;
+          content?: string;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          meeting_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'parley_observations_meeting_id_fkey';
+            columns: ['meeting_id'];
+            isOneToOne: false;
+            referencedRelation: 'parley_sessions';
+            referencedColumns: ['meeting_id'];
+          },
+        ];
+      };
+      parley_references: {
+        Row: {
+          content_base64: string;
+          created_at: string;
+          created_by: string;
+          extracted_text: string;
+          filename: string;
+          id: string;
+          media_type: string;
+          scenario_id: string | null;
+          sha256: string;
+        };
+        Insert: {
+          content_base64: string;
+          created_at?: string;
+          created_by: string;
+          extracted_text?: string;
+          filename: string;
+          id?: string;
+          media_type: string;
+          scenario_id?: string | null;
+          sha256: string;
+        };
+        Update: {
+          content_base64?: string;
+          created_at?: string;
+          created_by?: string;
+          extracted_text?: string;
+          filename?: string;
+          id?: string;
+          media_type?: string;
+          scenario_id?: string | null;
+          sha256?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'parley_references_scenario_id_fkey';
+            columns: ['scenario_id'];
+            isOneToOne: false;
+            referencedRelation: 'parley_scenarios';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      parley_scenarios: {
+        Row: {
+          briefing: string;
+          category: string;
+          created_at: string;
+          created_by: string;
+          enabled: boolean;
+          id: string;
+          instructions: string;
+          revision: number;
+          roles: Json;
+          rubric: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          briefing: string;
+          category: string;
+          created_at?: string;
+          created_by: string;
+          enabled?: boolean;
+          id?: string;
+          instructions: string;
+          revision?: number;
+          roles?: Json;
+          rubric?: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          briefing?: string;
+          category?: string;
+          created_at?: string;
+          created_by?: string;
+          enabled?: boolean;
+          id?: string;
+          instructions?: string;
+          revision?: number;
+          roles?: Json;
+          rubric?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      parley_sessions: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          meeting_id: string;
+          scenario_id: string;
+          scenario_revision: number;
+          snapshot: Json;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          meeting_id: string;
+          scenario_id: string;
+          scenario_revision: number;
+          snapshot: Json;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          meeting_id?: string;
+          scenario_id?: string;
+          scenario_revision?: number;
+          snapshot?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'parley_sessions_scenario_id_fkey';
+            columns: ['scenario_id'];
+            isOneToOne: false;
+            referencedRelation: 'parley_scenarios';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       payroll_run_items: {
         Row: {
           adjustments: Json | null;
@@ -15749,6 +15929,24 @@ export type Database = {
       backfill_inventory_finance_sales: {
         Args: { p_ws_id?: string };
         Returns: number;
+      };
+      begin_meeting_ai_live_session: {
+        Args: {
+          p_access_ws_id: string;
+          p_app: string;
+          p_billing_ws_id: string;
+          p_expires_at: string;
+          p_meeting_id: string;
+          p_model_id: string;
+          p_user_id: string;
+        };
+        Returns: {
+          error_code: string;
+          live_session_id: string;
+          reservation_id: string;
+          reserved_credits: number;
+          success: boolean;
+        }[];
       };
       begin_ai_live_session: {
         Args: {
@@ -41409,6 +41607,10 @@ export type Database = {
           p_user_id: string;
           p_verified_at: number;
         };
+        Returns: string;
+      };
+      create_parley_session: {
+        Args: { p_scenario_id: string; p_user_id: string; p_ws_id: string };
         Returns: string;
       };
       transition_account_mfa_policy: {
