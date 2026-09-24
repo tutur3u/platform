@@ -77,8 +77,9 @@ body a{color:${dark ? '#8ab4ff' : '#2458b8'}!important}
 #mail-content img,#mail-content video,#mail-content svg{max-width:100%!important}
 @media(max-width:600px){
 #mail-content *{min-width:0!important;box-sizing:border-box}
-#mail-content :is(p,div,span,td,th,h1,h2,h3){white-space:normal!important;overflow-wrap:anywhere!important}
-#mail-content .mail-compact-icon{display:block;max-width:min(100%,220px)!important;max-height:220px!important;width:auto!important;height:auto!important;margin-inline:auto!important}
+#mail-content :is(p,div,span,td,th,h1,h2,h3){overflow-wrap:anywhere!important}
+#mail-content :is([nowrap],[style*="nowrap" i]){white-space:normal!important}
+#mail-content .mail-compact-icon{display:block;max-width:min(100%,220px)!important;max-height:220px!important;margin-inline:auto!important}
 #mail-content .mail-fluid-table{width:100%!important;max-width:100%!important;table-layout:fixed;margin-inline:auto!important}
 #mail-content .mail-fluid-container{width:100%!important;max-width:100%!important;overflow:visible!important;margin-inline:auto!important}
 #mail-content .mail-fluid-table td,#mail-content .mail-fluid-table th{overflow-wrap:anywhere;word-break:break-word}

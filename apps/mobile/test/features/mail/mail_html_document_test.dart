@@ -100,6 +100,34 @@ void main() {
     );
   });
 
+  test('preserves intentional whitespace and compact icon dimensions', () {
+    final document = parse(
+      buildMailHtmlDocument('''
+<div style="white-space:pre-wrap">First line
+  Indented second line</div>
+<div style="white-space:nowrap">Long unbroken heading</div>
+<img src="https://example.com/icon.png" width="16" height="16">
+''', loadImages: true),
+    );
+    final styles = document.querySelectorAll('style').last.text;
+    expect(styles, contains('[style*="nowrap" i]'));
+    expect(
+      styles,
+      isNot(contains('div,span,td,th,h1,h2,h3){white-space:normal')),
+    );
+    expect(
+      document.querySelector('#mail-content div')!.text,
+      contains('\n  Indented'),
+    );
+    expect(
+      document.querySelector('#mail-content div')!.attributes['style'],
+      contains('white-space:pre-wrap'),
+    );
+    expect(styles, isNot(contains('width:auto!important;height:auto')));
+    expect(document.querySelector('img')!.attributes['width'], '16');
+    expect(document.querySelector('img')!.attributes['height'], '16');
+  });
+
   test('reflows clipped fixed-width containers', () {
     final document = buildMailHtmlDocument(
       '<div style="width:900px;overflow:hidden"><div style="width:900px">Content</div></div>',

@@ -44,8 +44,12 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final oldMessage = find.byKey(const ValueKey('mail-thread-message-old'));
-    final latestMessage = find.byKey(const ValueKey('mail-thread-message-new'));
+    final oldMessage = find.byKey(
+      const ValueKey('mail-thread-message-old-older'),
+    );
+    final latestMessage = find.byKey(
+      const ValueKey('mail-thread-message-new-latest'),
+    );
     expect(tester.widget<ExpansionTile>(oldMessage).initiallyExpanded, isFalse);
     expect(
       tester.widget<ExpansionTile>(latestMessage).initiallyExpanded,
@@ -54,6 +58,68 @@ void main() {
     await tester.tap(find.text('old@example.com').first);
     await tester.pumpAndSettle();
     expect(find.text('Old message body'), findsOneWidget);
+  });
+
+  testWidgets('a newly received reply collapses the previous newest mail', (
+    tester,
+  ) async {
+    final repository = _Repository();
+    final refresh = Completer<Map<String, dynamic>>();
+    when(
+      () => repository.refreshThread('ws', 'box', 'thread'),
+    ).thenAnswer((_) => refresh.future);
+    await tester.pumpApp(
+      MailReader(
+        repository: repository,
+        workspaceId: 'ws',
+        mailboxId: 'box',
+        detail: const {
+          'thread': {'id': 'thread', 'subject': 'Conversation'},
+          'messages': [
+            {
+              'id': 'previous',
+              'fromAddress': 'previous@example.com',
+              'bodyText': 'Previous body',
+              'unread': false,
+            },
+          ],
+        },
+        thread: true,
+        canSend: false,
+        fromAddress: 'test@tuturuuu.com',
+        refreshOnOpen: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Previous body'), findsOneWidget);
+    refresh.complete({
+      'thread': {'id': 'thread', 'subject': 'Conversation'},
+      'messages': [
+        {
+          'id': 'previous',
+          'fromAddress': 'previous@example.com',
+          'bodyText': 'Previous body',
+          'unread': false,
+        },
+        {
+          'id': 'latest',
+          'fromAddress': 'latest@example.com',
+          'bodyText': 'Latest body',
+          'unread': false,
+        },
+      ],
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('Previous body'), findsNothing);
+    expect(find.text('Latest body'), findsOneWidget);
+    expect(
+      tester
+          .widget<ExpansionTile>(
+            find.byKey(const ValueKey('mail-thread-message-previous-older')),
+          )
+          .initiallyExpanded,
+      isFalse,
+    );
   });
 
   testWidgets('archive closes the reader before the network request finishes', (

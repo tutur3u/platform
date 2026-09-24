@@ -69,6 +69,7 @@ class _MailReaderState extends State<MailReader> {
   bool _busy = false;
   bool _showImages = MailImagePreference.instance.value;
   bool _childRouteOpen = false;
+  final Map<String, bool> _expandedMessages = {};
   late Map<String, dynamic> _detail = widget.detail;
   late bool _starred;
   List<Map<String, dynamic>> get _messages =>
@@ -76,6 +77,11 @@ class _MailReaderState extends State<MailReader> {
   String get _id => widget.thread
       ? (_detail['thread'] as Map<String, dynamic>)['id'] as String
       : _detail['id'] as String;
+
+  ValueKey<String> _threadExpansionKey(Map<String, dynamic> message) {
+    final position = message['id'] == _messages.last['id'] ? 'latest' : 'older';
+    return ValueKey('mail-thread-message-${message['id']}-$position');
+  }
 
   @override
   void initState() {
@@ -116,9 +122,17 @@ class _MailReaderState extends State<MailReader> {
         _id,
       );
       if (mounted) {
+        final previousLatestId = _messages.lastOrNull?['id'] as String?;
         setState(() {
           _detail = detail;
           _starred = _messages.any((message) => message['starred'] == true);
+          final latestId = _messages.lastOrNull?['id'] as String?;
+          if (latestId != null && latestId != previousLatestId) {
+            if (previousLatestId != null) {
+              _expandedMessages[previousLatestId] = false;
+            }
+            _expandedMessages[latestId] = true;
+          }
         });
       }
     } on ApiException catch (error) {
@@ -337,10 +351,14 @@ class _MailReaderState extends State<MailReader> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ExpansionTile(
-                          key: ValueKey('mail-thread-message-${message['id']}'),
+                          key: _threadExpansionKey(message),
                           initiallyExpanded:
-                              !widget.thread ||
-                              message['id'] == _messages.last['id'],
+                              _expandedMessages[message['id']] ??
+                              (!widget.thread ||
+                                  message['id'] == _messages.last['id']),
+                          onExpansionChanged: (expanded) =>
+                              _expandedMessages[message['id'] as String] =
+                                  expanded,
                           tilePadding: EdgeInsets.zero,
                           dense: true,
                           title: Text(
