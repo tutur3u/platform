@@ -332,17 +332,17 @@ class _MultiDayEventCardSurface extends StatelessWidget {
 
 class _MultiDayAllDayRow extends StatelessWidget {
   const _MultiDayAllDayRow({
-    required this.dates,
-    required this.events,
+    required this.layout,
     required this.timeGutterWidth,
     required this.dayColumnWidth,
+    required this.maxVisibleRows,
     required this.onEventTap,
   });
 
-  final List<DateTime> dates;
-  final List<CalendarEvent> events;
+  final AllDayLayoutResult layout;
   final double timeGutterWidth;
   final double dayColumnWidth;
+  final int? maxVisibleRows;
   final ValueChanged<CalendarEvent> onEventTap;
 
   static const _rowHeight = 22.0;
@@ -350,14 +350,16 @@ class _MultiDayAllDayRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final layout = calculateAllDayLayout(visibleDates: dates, events: events);
     if (layout.spans.isEmpty) {
       return const SizedBox.shrink();
     }
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final rows = layout.maxRow + 1;
+    final rows = math.min(
+      layout.maxRow + 1,
+      maxVisibleRows ?? layout.maxRow + 1,
+    );
     final height = rows * _rowHeight + (math.max(rows - 1, 0) * _rowGap) + 14;
 
     return SizedBox(
@@ -377,7 +379,7 @@ class _MultiDayAllDayRow extends StatelessWidget {
               ),
             ),
           ),
-          for (final span in layout.spans)
+          for (final span in layout.spans.where((span) => span.row < rows))
             Positioned(
               left: timeGutterWidth + span.startIndex * dayColumnWidth + 4,
               top: span.row * (_rowHeight + _rowGap) + 6,
