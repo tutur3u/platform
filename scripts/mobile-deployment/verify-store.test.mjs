@@ -7,7 +7,9 @@ import { join } from 'node:path';
 import test from 'node:test';
 import {
   distributeTestFlightBuild,
+  latestReadyTestFlightBuild,
   playReleaseReady,
+  retryDeferredTestFlightReview,
   selectBetaGroups,
   submitExternalBetaReview,
   testFlightReady,
@@ -95,7 +97,7 @@ test('external beta review creates test notes, enables notification, and submits
     if (path === '/v1/betaAppReviewSubmissions') submitted = true;
     return { data: {} };
   };
-  await submitExternalBetaReview(apple, 'build', 'Test this release');
+  await submitExternalBetaReview(apple, 'app', 'build', 'Test this release');
   assert.equal(
     calls.filter((call) => call.path === '/v1/betaAppReviewSubmissions').length,
     1
@@ -111,10 +113,168 @@ test('external beta review creates test notes, enables notification, and submits
     /"autoNotifyEnabled":true/
   );
   calls.length = 0;
-  await submitExternalBetaReview(apple, 'build', 'Test this release');
+  await submitExternalBetaReview(apple, 'app', 'build', 'Test this release');
   assert.equal(
     calls.some((call) => call.options.method === 'POST'),
     false
+  );
+});
+
+test('external beta review waits for another build without withdrawing it', async () => {
+  const calls = [];
+  const apple = async (path, options = {}) => {
+    calls.push({ path, options });
+    if (path.startsWith('/v1/betaAppReviewSubmissions?')) return { data: [] };
+    if (
+      path.includes(
+        'filter%5BbetaAppReviewSubmission.betaReviewState%5D=WAITING_FOR_REVIEW'
+      )
+    ) {
+      return { data: [{ id: 'earlier-build' }] };
+    }
+    throw new Error(`Unexpected App Store Connect request: ${path}`);
+  };
+
+  assert.equal(
+    await submitExternalBetaReview(
+      apple,
+      'app',
+      'new-build',
+      'Test this release'
+    ),
+    'deferred'
+  );
+  assert.equal(
+    calls.some((call) => call.options.method === 'POST'),
+    false
+  );
+  assert.equal(
+    calls.some((call) => call.options.method === 'DELETE'),
+    false
+  );
+});
+
+test('latest ready build skips expired and non-internal TestFlight builds', () => {
+  const ready = {
+    id: 'latest-ready',
+    attributes: { version: '203001', processingState: 'VALID' },
+    relationships: { buildBetaDetail: { data: { id: 'ready-detail' } } },
+  };
+  assert.equal(
+    latestReadyTestFlightBuild({
+      data: [
+        { id: 'expired', attributes: { version: '204001', expired: true } },
+        {
+          id: 'unready',
+          attributes: { version: '203999', processingState: 'VALID' },
+        },
+        ready,
+      ],
+      included: [
+        {
+          id: 'ready-detail',
+          type: 'buildBetaDetails',
+          attributes: { internalBuildState: 'IN_BETA_TESTING' },
+        },
+      ],
+    }),
+    ready
+  );
+});
+
+test('review retry submits the newest ready build after the prior review ends', async () => {
+  const calls = [];
+  let submitted = false;
+  const apple = async (path, options = {}) => {
+    calls.push({ path, options });
+    const url = new URL(path, 'https://api.appstoreconnect.apple.com');
+    if (url.pathname === '/v1/apps/app/betaGroups') {
+      return {
+        data: [
+          {
+            id: 'internal',
+            attributes: { name: 'Team', isInternalGroup: true },
+          },
+          {
+            id: 'external',
+            attributes: { name: 'Public', isInternalGroup: false },
+          },
+        ],
+      };
+    }
+    if (
+      url.pathname === '/v1/builds' &&
+      url.searchParams.has('filter[betaAppReviewSubmission.betaReviewState]')
+    ) {
+      return { data: [] };
+    }
+    if (
+      url.pathname === '/v1/builds' &&
+      url.searchParams.get('sort') === '-uploadedDate'
+    ) {
+      return {
+        data: [
+          {
+            id: 'latest',
+            attributes: { version: '203001', processingState: 'VALID' },
+            relationships: {
+              buildBetaDetail: { data: { id: 'ready-detail' } },
+            },
+          },
+        ],
+        included: [
+          {
+            id: 'ready-detail',
+            type: 'buildBetaDetails',
+            attributes: { internalBuildState: 'IN_BETA_TESTING' },
+          },
+        ],
+      };
+    }
+    if (
+      url.pathname === '/v1/builds/latest' &&
+      url.searchParams.get('include') === 'betaGroups'
+    ) {
+      return {
+        data: {
+          relationships: {
+            betaGroups: { data: [{ id: 'internal' }, { id: 'external' }] },
+          },
+        },
+      };
+    }
+    if (
+      url.pathname === '/v1/betaAppReviewSubmissions' &&
+      options.method === 'POST'
+    ) {
+      submitted = true;
+      return { data: {} };
+    }
+    if (url.pathname === '/v1/betaAppReviewSubmissions') {
+      return {
+        data: submitted
+          ? [{ attributes: { betaReviewState: 'WAITING_FOR_REVIEW' } }]
+          : [],
+      };
+    }
+    if (url.pathname === '/v1/builds/latest/betaBuildLocalizations')
+      return { data: [] };
+    if (url.pathname === '/v1/builds/latest/buildBetaDetail')
+      return { data: { id: 'ready-detail' } };
+    return { data: {} };
+  };
+  assert.equal(
+    await retryDeferredTestFlightReview(apple, 'app', {
+      enabled: 'true',
+      groups: 'all',
+      whatsNew: 'Test latest',
+    }),
+    'processed'
+  );
+  assert.equal(submitted, true);
+  assert.equal(
+    calls.some(({ path }) => path.includes('sort=-uploadedDate')),
+    true
   );
 });
 

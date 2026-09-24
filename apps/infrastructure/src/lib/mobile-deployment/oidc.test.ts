@@ -25,6 +25,18 @@ const validClaims = {
 describe('mobile deployment OIDC claims', () => {
   it('accepts the production mobile deployment workflow claims', () => {
     expect(validateGitHubOidcClaims(validClaims).runId).toBe('123');
+    expect(
+      validateGitHubOidcClaims({
+        ...validClaims,
+        event_name: 'workflow_dispatch',
+      }).runId
+    ).toBe('123');
+  });
+
+  it('rejects other events even from the production workflow', () => {
+    expect(() =>
+      validateGitHubOidcClaims({ ...validClaims, event_name: 'schedule' })
+    ).toThrow(MobileDeploymentOidcError);
   });
 
   it.each([
