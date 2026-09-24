@@ -42,7 +42,10 @@ export async function GET(request: Request, { params }: Params) {
     if (!membership.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
-        { status: membership.error ? 500 : 403, headers }
+        {
+          status: membership.error === 'membership_lookup_failed' ? 500 : 403,
+          headers,
+        }
       );
     }
 
@@ -69,7 +72,10 @@ export async function GET(request: Request, { params }: Params) {
       wsId,
     });
     const endpoint = new URL(getMeetRealtimeUrl());
-    endpoint.protocol = endpoint.protocol === 'wss:' ? 'https:' : 'http:';
+    endpoint.protocol =
+      endpoint.protocol === 'wss:' || endpoint.protocol === 'https:'
+        ? 'https:'
+        : 'http:';
     endpoint.pathname = '/room-state';
     endpoint.search = '';
     const roomResponse = await fetch(endpoint, {
@@ -104,7 +110,7 @@ export async function GET(request: Request, { params }: Params) {
     const sessionIds = sessions.map((session) => session.id);
     const chunks = [];
     if (sessionIds.length) {
-      for (let offset = 0; offset < 20_000; offset += 1000) {
+      for (let offset = 0; offset <= 20_000; offset += 1000) {
         const page = await admin
           .from('meet_ai_chunks')
           .select(
@@ -115,14 +121,14 @@ export async function GET(request: Request, { params }: Params) {
           .order('id')
           .range(offset, offset + 999);
         if (page.error) throw new Error('meet_ai_chunks_unavailable');
-        chunks.push(...page.data);
-        if (page.data.length < 1000) break;
-        if (offset >= 19_000) {
+        if (offset === 20_000 && page.data.length > 0) {
           return NextResponse.json(
             { error: 'Transcript exceeds display limit' },
             { status: 413, headers }
           );
         }
+        chunks.push(...page.data);
+        if (page.data.length < 1000) break;
       }
     }
     const sessionOrder = new Map(

@@ -212,7 +212,8 @@ class _MeetPageState extends State<MeetPage> {
     if (wsId == null || wsId.isEmpty) return;
 
     final nameController = TextEditingController(text: meeting?.name ?? '');
-    var selectedTime = meeting?.time ?? DateTime.now();
+    var selectedTime =
+        meeting?.time ?? DateTime.now().add(const Duration(minutes: 30));
     var durationMinutes = 60;
 
     final saved = await showModalBottomSheet<bool>(
@@ -314,6 +315,10 @@ class _MeetPageState extends State<MeetPage> {
     final name = nameController.text.trim();
     nameController.dispose();
     if (saved != true || name.isEmpty) return;
+    if (meeting == null && !selectedTime.isAfter(DateTime.now())) {
+      _toast(context.l10n.meetFutureStartRequired, destructive: true);
+      return;
+    }
 
     try {
       if (meeting == null) {

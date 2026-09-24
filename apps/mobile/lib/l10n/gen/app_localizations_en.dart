@@ -7563,6 +7563,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetScheduleMeetingHint => 'Choose a name and time for your calendar';
 
   @override
+  String get meetFutureStartRequired => 'Choose a future start time.';
+
+  @override
   String get meetUntitledMeeting => 'Untitled meeting';
 
   @override

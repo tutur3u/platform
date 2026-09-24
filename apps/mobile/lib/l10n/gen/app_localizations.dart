@@ -14437,6 +14437,12 @@ abstract class AppLocalizations {
   /// **'Choose a name and time for your calendar'**
   String get meetScheduleMeetingHint;
 
+  /// No description provided for @meetFutureStartRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a future start time.'**
+  String get meetFutureStartRequired;
+
   /// No description provided for @meetUntitledMeeting.
   ///
   /// In en, this message translates to:

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const WS_ID = '0f1a64f7-780f-4d30-9d72-5530f204e95c';
@@ -6,6 +7,7 @@ const HOST_ID = '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691';
 const MEMBER_ID = '4b320da6-6c8a-43fe-b1bf-09fbe77303f9';
 
 const originalFetch = globalThis.fetch;
+const verifyMembership = vi.fn();
 const meetingQuery = {
   select: vi.fn(),
   eq: vi.fn(),
@@ -27,7 +29,7 @@ vi.mock('@/lib/api-auth', () => ({
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: async () => WS_ID,
-  verifyWorkspaceMembershipType: async () => ({ ok: true }),
+  verifyWorkspaceMembershipType: verifyMembership,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => {
@@ -36,12 +38,26 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 beforeEach(() => {
+  verifyMembership.mockResolvedValue({ ok: true });
   process.env.MEET_REALTIME_TOKEN_SECRET = 'test-meet-review-secret';
   meetingQuery.maybeSingle.mockResolvedValue({
     data: { creator_id: HOST_ID, id: MEETING_ID },
     error: null,
   });
   globalThis.fetch = originalFetch;
+});
+
+it.each([
+  { error: 'membership_missing', status: 403 },
+  { error: 'membership_type_mismatch', status: 403 },
+  { error: 'membership_lookup_failed', status: 500 },
+])('returns $status for $error', async ({ error, status }) => {
+  verifyMembership.mockResolvedValue({ ok: false, error });
+
+  const response = await readReview();
+
+  expect(response.status).toBe(status);
+  expect(globalThis.fetch).toBe(originalFetch);
 });
 
 afterEach(() => {

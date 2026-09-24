@@ -7533,6 +7533,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetScheduleMeetingHint => 'Chọn tên và thời gian cho lịch của bạn';
 
   @override
+  String get meetFutureStartRequired => 'Chọn thời gian bắt đầu trong tương lai.';
+
+  @override
   String get meetUntitledMeeting => 'Cuộc họp chưa đặt tên';
 
   @override

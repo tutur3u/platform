@@ -3109,6 +3109,7 @@
     "meetInstantMeetingHint": "Create an Untitled meeting and join now",
     "meetScheduleMeeting": "Schedule a meeting",
     "meetScheduleMeetingHint": "Choose a name and time for your calendar",
+    "meetFutureStartRequired": "Choose a future start time.",
     "meetUntitledMeeting": "Untitled meeting",
     "meetDuration": "Duration",
     "meetMinutes": "{count} minutes",

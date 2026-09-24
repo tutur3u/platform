@@ -1,3 +1,4 @@
+// biome-ignore-all lint/a11y/noNoninteractiveTabindex: long meeting details must be keyboard scrollable
 'use client';
 
 import {
@@ -168,8 +169,15 @@ export function Lobby({
         </div>
 
         <div className="flex max-h-full min-h-0 min-w-0 flex-col">
-          <div className="min-h-0 overflow-y-auto">
-            <h1 className="text-balance font-semibold text-2xl tracking-tight">
+          <section
+            aria-labelledby="meeting-details-title"
+            className="min-h-0 overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            tabIndex={0}
+          >
+            <h1
+              className="text-balance font-semibold text-2xl tracking-tight"
+              id="meeting-details-title"
+            >
               {meetingName}
             </h1>
             {transcriptionNotice ? (
@@ -193,7 +201,7 @@ export function Lobby({
                 {t('preview_private')}
               </p>
             </div>
-          </div>
+          </section>
 
           <Button
             className="mt-4 w-full shrink-0"
