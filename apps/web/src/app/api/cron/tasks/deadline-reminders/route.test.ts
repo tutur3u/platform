@@ -100,6 +100,7 @@ it('queues a reminder for a watched task in any workspace when push is the only 
       'is',
       'gte',
       'lte',
+      'or',
       'order',
       'range',
     ]) {
@@ -110,9 +111,15 @@ it('queues a reminder for a watched task in any workspace when push is the only 
       Promise.resolve({ data, error: null }).then(resolve);
     return query;
   };
-  mocks.from.mockImplementation((table: string) =>
-    chain(table === 'workspace_task_reminder_settings' ? [] : [task])
-  );
+  let workspaceSettings: unknown[] = [];
+  let taskQuery: Record<string, any>;
+  mocks.from.mockImplementation((table: string) => {
+    if (table === 'workspace_task_reminder_settings') {
+      return chain(workspaceSettings);
+    }
+    taskQuery = chain([task]);
+    return taskQuery;
+  });
   mocks.rpc.mockImplementation((name: string) => {
     if (name === 'task_reminder_already_sent') {
       return Promise.resolve({ data: false, error: null });
@@ -140,6 +147,40 @@ it('queues a reminder for a watched task in any workspace when push is the only 
   );
   expect(mocks.rpc).not.toHaveBeenCalledWith(
     'should_send_notification',
+    expect.anything()
+  );
+  expect(taskQuery!.or).toHaveBeenCalledWith(
+    expect.stringContaining('end_date.gte."')
+  );
+  const receiptKey = `1h:${task.end_date}`;
+  expect(mocks.rpc).toHaveBeenCalledWith(
+    'task_reminder_already_sent',
+    expect.objectContaining({ p_reminder_interval: receiptKey })
+  );
+  expect(mocks.rpc).toHaveBeenCalledWith(
+    'record_task_reminder_sent',
+    expect.objectContaining({
+      p_reminder_interval: receiptKey,
+      p_notification_id: 'notification-id',
+    })
+  );
+
+  mocks.rpc.mockClear();
+  workspaceSettings = [
+    {
+      ws_id: 'non-root-workspace',
+      reminder_intervals: ['1h'],
+      enabled: false,
+    },
+  ];
+  const disabledResponse = await GET(
+    new Request('http://localhost/api/cron/tasks/deadline-reminders', {
+      headers: { authorization: 'Bearer test-secret' },
+    }) as never
+  );
+  expect(disabledResponse.status).toBe(200);
+  expect(mocks.rpc).not.toHaveBeenCalledWith(
+    'create_notification',
     expect.anything()
   );
 });

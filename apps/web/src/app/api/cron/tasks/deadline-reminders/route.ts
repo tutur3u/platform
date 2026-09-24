@@ -155,12 +155,25 @@ async function handleGET(req: NextRequest) {
       }
     }
 
-    const maxIntervalMs = Math.max(
-      ...[...allIntervals].map((i) => INTERVAL_TO_MS[i] || 0)
-    );
-    const windowEnd = new Date(now.getTime() + maxIntervalMs + 5 * 60 * 1000); // +5min buffer
+    const windowFilter = [
+      ...new Set(
+        [...allIntervals]
+          .map((interval) => INTERVAL_TO_MS[interval])
+          .filter((duration): duration is number => Boolean(duration))
+      ),
+    ]
+      .map((duration) => {
+        const start = new Date(
+          now.getTime() + duration - 5 * 60 * 1000
+        ).toISOString();
+        const end = new Date(
+          now.getTime() + duration + 5 * 60 * 1000
+        ).toISOString();
+        return `and(end_date.gte."${start}",end_date.lte."${end}")`;
+      })
+      .join(',');
 
-    // Only due-soon active tasks enter the reminder scan.
+    // Query only the due-date windows that can produce a reminder now.
     const tasks: TaskWithDetails[] = [];
     for (let offset = 0; ; offset += PAGE_SIZE) {
       const { data, error } = (await (sbAdmin as any)
@@ -191,7 +204,7 @@ async function handleGET(req: NextRequest) {
         .is('closed_at', null)
         .is('deleted_at', null)
         .gte('end_date', now.toISOString())
-        .lte('end_date', windowEnd.toISOString())
+        .or(windowFilter)
         .order('end_date')
         .order('id')
         .range(offset, offset + PAGE_SIZE - 1)) as {
