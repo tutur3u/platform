@@ -12,6 +12,8 @@
 <key>NSExtension</key><dict>
 <key>NSExtensionPointIdentifier</key><string>com.apple.broadcast-services-upload</string>
 <key>NSExtensionPrincipalClass</key><string>$(PRODUCT_MODULE_NAME).SampleHandler</string>
+<!-- Keep the ReplayKit attribute and expose it directly for App Store validation. -->
+<key>RPBroadcastProcessMode</key><string>RPBroadcastProcessModeSampleBuffer</string>
 <key>NSExtensionAttributes</key><dict>
 <key>RPBroadcastProcessMode</key><string>RPBroadcastProcessModeSampleBuffer</string>
 </dict></dict>

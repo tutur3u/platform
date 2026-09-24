@@ -268,6 +268,14 @@ both profiles before building. It separately verifies the embedded extension and
 its build number before TestFlight upload. Never weaken mobile OIDC to export a
 signing key or reuse a Runner profile for the extension.
 
+App Store Connect can report error 90362 (`RPBroadcastProcessMode` missing)
+even when the signed IPA contains the ReplayKit attribute. Inspect
+`Payload/Runner.app/PlugIns/LiveScreenBroadcast.appex/Info.plist` inside the
+uploaded IPA before changing the source plist. The extension declares the
+sample-buffer mode both in `NSExtensionAttributes` for ReplayKit and directly
+under `NSExtension` for validator compatibility. Successful local packaging does
+not establish that Apple accepted the upload; check the exact TestFlight build.
+
 The project membership helper uses Swift and XcodeProj:
 
 ```sh
