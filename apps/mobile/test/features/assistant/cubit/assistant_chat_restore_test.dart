@@ -106,12 +106,12 @@ void main() {
       ).thenAnswer((invocation) async {
         final file =
             invocation.namedArguments[#file] as AssistantFilePickerResult;
-        expect(file.mimeType, 'audio/m4a');
+        expect(file.mimeType, 'audio/mp4');
         return const AssistantAttachment(
           id: 'audio',
           name: 'voice-message.m4a',
           size: 4,
-          type: 'audio/m4a',
+          type: 'audio/mp4',
           storagePath: 'chats/persisted/audio.m4a',
           uploadState: AssistantAttachmentUploadState.uploaded,
         );

@@ -246,7 +246,7 @@ class ChatRepository {
   }) async {
     final bytes = await file.readAsBytes();
     final contentType = file.name.toLowerCase().endsWith('.m4a')
-        ? 'audio/m4a'
+        ? 'audio/mp4'
         : lookupMimeType(file.name, headerBytes: bytes) ??
               'application/octet-stream';
 
