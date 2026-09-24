@@ -261,7 +261,6 @@ class _DashboardViewState extends State<_DashboardView> {
                                   children: [
                                     StaggeredEntrance(
                                       replayKey: widget.replayToken,
-                                      delay: Duration.zero,
                                       child: _SectionCard(
                                         accentModuleId: _dashboardModuleId(3),
                                         title:
@@ -281,7 +280,6 @@ class _DashboardViewState extends State<_DashboardView> {
                                     ),
                                     StaggeredEntrance(
                                       replayKey: widget.replayToken,
-                                      delay: Duration.zero,
                                       child: _SectionCard(
                                         accentModuleId: _dashboardModuleId(4),
                                         title: context
@@ -323,7 +321,6 @@ class _DashboardViewState extends State<_DashboardView> {
                                       ),
                                     StaggeredEntrance(
                                       replayKey: widget.replayToken,
-                                      delay: Duration.zero,
                                       child: _TodaySummaryCard(
                                         activeTasks: taskState.totalActiveTasks,
                                         overdueTasks:
