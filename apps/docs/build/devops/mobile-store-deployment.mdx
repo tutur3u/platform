@@ -164,6 +164,12 @@ app's beta review contact and app description current there. Missing export
 compliance, processing failures, and internal distribution must also be
 resolved in App Store Connect.
 
+Apple permits only one external beta build in review at a time. The review
+queue checks every five minutes and dispatches the production retry workflow;
+it leaves an existing review in place and submits the newest eligible build
+when that review ends. GitHub's scheduled runs can start late, so this is a
+best-effort interval rather than a guaranteed five-minute submission time.
+
 Run focused release checks with `node --test scripts/mobile-deployment/*.test.mjs
 scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun check`
 for repository validation and `ttr resources run -- bun check:mobile` for the
