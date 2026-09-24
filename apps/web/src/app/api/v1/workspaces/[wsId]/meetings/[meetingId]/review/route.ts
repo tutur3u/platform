@@ -1,3 +1,7 @@
+import {
+  readTranscriptSegments,
+  readTranscriptSpeaker,
+} from '@tuturuuu/ai/meetings/transcript';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
@@ -175,6 +179,8 @@ export async function GET(request: Request, { params }: Params) {
           sequence: chunk.sequence,
           startSeconds: chunk.start_seconds,
           transcript: chunk.transcript,
+          speaker: readTranscriptSpeaker(chunk.usage),
+          segments: readTranscriptSegments(chunk.usage),
           status: chunk.status,
         })),
         costs: canManage

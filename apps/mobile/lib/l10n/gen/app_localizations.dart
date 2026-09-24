@@ -15085,6 +15085,24 @@ abstract class AppLocalizations {
   /// **'No transcript is available yet.'**
   String get meetReviewNoTranscript;
 
+  /// No description provided for @meetReviewUnknownSpeaker.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown speaker'**
+  String get meetReviewUnknownSpeaker;
+
+  /// No description provided for @meetReviewMicrophone.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone'**
+  String get meetReviewMicrophone;
+
+  /// No description provided for @meetReviewSharedAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared audio'**
+  String get meetReviewSharedAudio;
+
   /// No description provided for @meetReviewTranscriptionCost.
   ///
   /// In en, this message translates to:

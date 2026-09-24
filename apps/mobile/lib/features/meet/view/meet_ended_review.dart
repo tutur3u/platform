@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/features/meet/view/meet_review_transcript.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class MeetEndedReview extends StatelessWidget {
@@ -25,9 +26,7 @@ class MeetEndedReview extends StatelessWidget {
     final l10n = context.l10n;
     final canReadNotes = review['canReadNotes'] == true;
     final sessions = _rows(review['sessions']);
-    final chunks = _rows(review['chunks'])
-        .where((chunk) => _text(chunk['transcript']) != null)
-        .toList(growable: false);
+    final chunks = _rows(review['chunks']);
     final costs = review['costs'] is Map<String, dynamic>
         ? review['costs'] as Map<String, dynamic>
         : null;
@@ -106,12 +105,7 @@ class MeetEndedReview extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          if (chunks.isEmpty) Text(l10n.meetReviewNoTranscript),
-          for (final chunk in chunks)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: SelectableText(_text(chunk['transcript'])!),
-            ),
+          MeetReviewTranscript(chunks: chunks),
         ],
         if (costs != null) ...[
           const SizedBox(height: 18),
