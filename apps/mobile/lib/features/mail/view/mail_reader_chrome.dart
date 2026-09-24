@@ -9,6 +9,8 @@ IconData _mailMessageActionIcon(String action) => switch (action) {
   'mark_unread' => Icons.mark_email_unread_outlined,
   'restore' => Icons.inbox_outlined,
   'trash' => Icons.delete_outline,
+  'star' => Icons.star_border,
+  'unstar' => Icons.star,
   _ => Icons.more_horiz,
 };
 
@@ -62,6 +64,12 @@ extension _MailReaderChrome on _MailReaderState {
                 MailImagePreference.instance.select(enabled: !_showImages),
               ),
             ),
+            ShellMiniNavItemSpec(
+              id: 'more',
+              icon: Icons.more_horiz,
+              label: MaterialLocalizations.of(context).showMenuTooltip,
+              onPressed: () => _chooseAction(actions),
+            ),
           ],
         ),
         ShellChromeActions(
@@ -82,22 +90,6 @@ extension _MailReaderChrome on _MailReaderState {
                   unawaited(_action(primary.stateAction!, close: true));
                 }
               },
-            ),
-            ShellActionSpec(
-              id: 'mail-star',
-              icon: _starred ? Icons.star : Icons.star_border,
-              tooltip: _starred ? l10n.mailUnstar : l10n.mailStar,
-              highlighted: _starred,
-              enabled: !_busy,
-              callbackToken: _starred,
-              onPressed: () => _action(_starred ? 'unstar' : 'star'),
-            ),
-            ShellActionSpec(
-              id: 'mail-message-actions',
-              icon: Icons.more_horiz,
-              tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-              enabled: !_busy,
-              onPressed: () => _chooseAction(actions),
             ),
             if (widget.canSend &&
                 _messages.isNotEmpty &&
@@ -155,6 +147,7 @@ extension _MailReaderChrome on _MailReaderState {
   }
 
   Future<void> _chooseAction(Map<String, String> actions) async {
+    if (_busy) return;
     final value = await showAdaptiveSheet<String>(
       context: context,
       useRootNavigator: true,
@@ -165,6 +158,18 @@ extension _MailReaderChrome on _MailReaderState {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              ListTile(
+                dense: true,
+                leading: Icon(
+                  _mailMessageActionIcon(_starred ? 'unstar' : 'star'),
+                ),
+                title: Text(
+                  _starred ? context.l10n.mailUnstar : context.l10n.mailStar,
+                ),
+                onTap: () => Navigator.of(
+                  sheetContext,
+                ).pop(_starred ? 'unstar' : 'star'),
+              ),
               if (widget.canSend && _messages.isNotEmpty) ...[
                 ListTile(
                   dense: true,
@@ -202,6 +207,6 @@ extension _MailReaderChrome on _MailReaderState {
       }
       return;
     }
-    await _action(value, close: true);
+    await _action(value, close: value != 'star' && value != 'unstar');
   }
 }

@@ -385,11 +385,15 @@ void main() {
     expect(find.byType(MailReader), findsOneWidget);
     expect(
       actions.state.resolveForLocation(Routes.mail).map((action) => action.id),
-      contains('mail-star'),
+      contains('mail-primary-action'),
     );
     expect(
       actions.state.resolveForLocation(Routes.mail).map((action) => action.id),
       isNot(contains('mail-search')),
+    );
+    expect(
+      actions.state.resolveForLocation(Routes.mail).map((action) => action.id),
+      isNot(contains('mail-star')),
     );
     expect(titles.state.resolveForLocation(Routes.mail), 'First');
     navigator.currentState!.pop();

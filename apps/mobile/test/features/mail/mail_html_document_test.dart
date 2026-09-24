@@ -72,6 +72,62 @@ void main() {
     );
   });
 
+  test('keeps brand images and fixed-width copy within the phone viewport', () {
+    final document = parse(
+      buildMailHtmlDocument('''
+<div style="min-width:820px;overflow:hidden">
+<img src="https://example.com/app-logo.png" width="800" height="800">
+<h1 style="white-space:nowrap">A very long release announcement</h1>
+<table><tr><td style="width:820px">Body copy</td></tr></table>
+</div>
+''', loadImages: true),
+    );
+    expect(
+      document.querySelector('div[style]')?.attributes['style'],
+      contains('min-width:0!important'),
+    );
+    expect(
+      document.querySelector('img')?.classes,
+      contains('mail-compact-icon'),
+    );
+    expect(
+      document.querySelector('td')?.attributes['style'],
+      contains('width:100%!important'),
+    );
+    expect(
+      document.querySelectorAll('style').last.text,
+      contains('white-space:normal!important'),
+    );
+  });
+
+  test('preserves intentional whitespace and compact icon dimensions', () {
+    final document = parse(
+      buildMailHtmlDocument('''
+<div style="white-space:pre-wrap">First line
+  Indented second line</div>
+<div style="white-space:nowrap">Long unbroken heading</div>
+<img src="https://example.com/icon.png" width="16" height="16">
+''', loadImages: true),
+    );
+    final styles = document.querySelectorAll('style').last.text;
+    expect(styles, contains('[style*="nowrap" i]'));
+    expect(
+      styles,
+      isNot(contains('div,span,td,th,h1,h2,h3){white-space:normal')),
+    );
+    expect(
+      document.querySelector('#mail-content div')!.text,
+      contains('\n  Indented'),
+    );
+    expect(
+      document.querySelector('#mail-content div')!.attributes['style'],
+      contains('white-space:pre-wrap'),
+    );
+    expect(styles, isNot(contains('width:auto!important;height:auto')));
+    expect(document.querySelector('img')!.attributes['width'], '16');
+    expect(document.querySelector('img')!.attributes['height'], '16');
+  });
+
   test('reflows clipped fixed-width containers', () {
     final document = buildMailHtmlDocument(
       '<div style="width:900px;overflow:hidden"><div style="width:900px">Content</div></div>',

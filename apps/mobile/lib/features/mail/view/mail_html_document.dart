@@ -76,6 +76,10 @@ body a{color:${dark ? '#8ab4ff' : '#2458b8'}!important}
 #mail-content table{max-width:100%!important}
 #mail-content img,#mail-content video,#mail-content svg{max-width:100%!important}
 @media(max-width:600px){
+#mail-content *{min-width:0!important;box-sizing:border-box}
+#mail-content :is(p,div,span,td,th,h1,h2,h3){overflow-wrap:anywhere!important}
+#mail-content :is([nowrap],[style*="nowrap" i]){white-space:normal!important}
+#mail-content .mail-compact-icon{display:block;max-width:min(100%,220px)!important;max-height:220px!important;margin-inline:auto!important}
 #mail-content .mail-fluid-table{width:100%!important;max-width:100%!important;table-layout:fixed;margin-inline:auto!important}
 #mail-content .mail-fluid-container{width:100%!important;max-width:100%!important;overflow:visible!important;margin-inline:auto!important}
 #mail-content .mail-fluid-table td,#mail-content .mail-fluid-table th{overflow-wrap:anywhere;word-break:break-word}
@@ -109,6 +113,14 @@ void _fitNewsletterForMobile(dom.DocumentFragment fragment) {
     if (element.localName == 'style') continue;
     final tag = element.localName;
     final width = element.attributes['width'];
+    if (tag == 'img') {
+      final alt = element.attributes['alt'] ?? '';
+      final src = element.attributes['src'] ?? '';
+      final description = '$alt $src'.toLowerCase();
+      if (description.contains('logo') || description.contains('icon')) {
+        element.classes.add('mail-compact-icon');
+      }
+    }
     final isWideTable =
         tag == 'table' &&
         width != null &&
@@ -122,7 +134,7 @@ void _fitNewsletterForMobile(dom.DocumentFragment fragment) {
     if (style == null) continue;
     final updated = style.replaceAllMapped(
       RegExp(
-        r'(^|;)(\s*)(width|max-width|padding(?:-(?:left|right))?|margin(?:-(?:left|right))?|font-size)\s*:\s*([^;]+)',
+        r'(^|;)(\s*)(width|min-width|max-width|padding(?:-(?:left|right))?|margin(?:-(?:left|right))?|font-size)\s*:\s*([^;]+)',
         caseSensitive: false,
       ),
       (match) {
@@ -137,19 +149,31 @@ void _fitNewsletterForMobile(dom.DocumentFragment fragment) {
             .map((m) => double.parse(m.group(1)!));
         final limit = property == 'font-size'
             ? 28.0
-            : property == 'width' || property == 'max-width'
+            : property == 'width' ||
+                  property == 'min-width' ||
+                  property == 'max-width'
             ? 420.0
             : 24.0;
         if (!numbers.any((number) => number > limit)) return match.group(0)!;
-        if (property == 'width' || property == 'max-width') {
+        if (property == 'width' ||
+            property == 'min-width' ||
+            property == 'max-width') {
           if (tag == 'table') {
             element.classes.add('mail-fluid-table');
-          } else if (const {'div', 'section', 'center'}.contains(tag)) {
+          } else if (const {
+            'div',
+            'section',
+            'center',
+            'td',
+            'th',
+          }.contains(tag)) {
             element.classes.add('mail-fluid-container');
           } else {
             return match.group(0)!;
           }
-          return '${match.group(1)}${match.group(2)}$property:100%!important';
+          final fitted = property == 'min-width' ? '0' : '100%';
+          return '${match.group(1)}${match.group(2)}'
+              '$property:$fitted!important';
         }
         if (property == 'font-size') {
           return '${match.group(1)}${match.group(2)}'
