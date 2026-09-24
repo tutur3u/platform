@@ -21,7 +21,7 @@ CLI, documentation, local services, and deployment tooling behind that system.
 <!-- tanstack-rust-migration-progress:start -->
 _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with `bun migration:tanstack:readme` after route ownership changes._
 
-![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=27.66%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=13.1%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=d29922&label=TanStack+Start&message=66.67%25+terminal&style=flat-square)
+![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=27.62%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=13.08%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=d29922&label=TanStack+Start&message=66.67%25+terminal&style=flat-square)
 
 | Track | Progress | Terminal | Migrated | Removed | Remaining |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -34,7 +34,7 @@ _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with 
 
 | Kind | Progress | Terminal | Remaining |
 | --- | --- | ---: | ---: |
-| api | `[##--------------]` 12.56% | 74 / 589 | 515 |
+| api | `[##--------------]` 12.54% | 74 / 590 | 516 |
 | page | `[##########------]` 65.58% | 101 / 154 | 53 |
 | layout | `[###########-----]` 70.15% | 47 / 67 | 20 |
 | cron | `[####------------]` 22.22% | 2 / 9 | 7 |

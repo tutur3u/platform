@@ -80,7 +80,6 @@ abstract final class NotificationEndpoints {
   static const base = '/api/v1/notifications';
   static const pushDevices = '$base/push-devices';
   static const viewedMailThread = '$base/mail-thread';
-
   static String notifications(Map<String, String> params) {
     if (params.isEmpty) {
       return base;
