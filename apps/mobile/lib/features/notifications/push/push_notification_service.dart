@@ -188,6 +188,7 @@ class PushNotificationService {
   String? _currentUserId;
   PushNavigationRequest? _pendingApproval;
   PushNavigationRequest? _pendingMail;
+  PushNavigationRequest? _pendingReminder;
   String? _cachedDeviceId;
   bool _initialized = false;
   Future<void>? _reminderTimezoneSetup;
@@ -272,12 +273,16 @@ class PushNotificationService {
     final pendingMail = _pendingMail;
     _pendingMail = null;
     if (pendingMail != null) await _openRequest(pendingMail);
+    final pendingReminder = _pendingReminder;
+    _pendingReminder = null;
+    if (pendingReminder != null) await _openRequest(pendingReminder);
   }
 
   Future<void> stopSession() async {
     final userId = _currentUserId;
     _currentUserId = null;
     _pendingMail = null;
+    _pendingReminder = null;
 
     if (userId == null || _appFlavor == null) {
       return;
@@ -360,6 +365,22 @@ class PushNotificationService {
       },
     );
 
+    final launchDetails = await _localNotifications
+        .getNotificationAppLaunchDetails();
+    final launchPayload = launchDetails?.notificationResponse?.payload;
+    if (launchDetails?.didNotificationLaunchApp == true &&
+        launchPayload != null &&
+        launchPayload.isNotEmpty) {
+      final request = requestFromLocalNotificationPayload(launchPayload);
+      if (request != null) {
+        if (request.openTarget == 'task' || request.openTarget == 'calendar') {
+          _pendingReminder = request;
+        } else {
+          unawaited(_handleLocalNotificationPayload(launchPayload));
+        }
+      }
+    }
+
     await _createAndroidChannel();
 
     _messageSubscription = FirebaseMessaging.onMessage.listen((message) {
@@ -424,6 +445,15 @@ class PushNotificationService {
   }
 
   Future<void> _openRequest(PushNavigationRequest request) async {
+    if (request.openTarget == 'task' || request.openTarget == 'calendar') {
+      if (request.userId == null) return;
+      if (_currentUserId == null) {
+        _pendingReminder = request;
+        return;
+      }
+      if (request.userId != _currentUserId) return;
+      _pendingReminder = null;
+    }
     if (request.openTarget == 'mail') {
       if (request.mailDestination == null) return;
       if (_currentUserId == null) {
