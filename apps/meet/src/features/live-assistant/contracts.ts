@@ -12,6 +12,7 @@ export const liveAudienceSchema = z.enum(['personal', 'room']);
 export type LiveAudience = z.infer<typeof liveAudienceSchema>;
 export const liveSessionClaimsSchema = z.object({
   audience: z.literal('meet-live'),
+  audioPolicy: z.literal('participant-opt-in').optional(),
   sessionId: z.uuid(),
   meetingId: z.uuid(),
   ownerId: z.uuid(),
@@ -33,6 +34,7 @@ export const liveClientCommandSchema = z.discriminatedUnion('type', [
     type: z.literal('text'),
     text: z.string().trim().min(1).max(4000),
   }),
+  z.object({ type: z.literal('audio.end') }),
   z.object({ type: z.literal('pause'), paused: z.boolean() }),
   z.object({
     type: z.literal('decision'),
@@ -84,3 +86,10 @@ export type LiveAssistantEvent =
     }
   | { type: 'usage'; costUsd: number; incomplete: boolean }
   | { type: 'interrupt' };
+
+/** Legacy room mixers cannot honor individual microphone exclusions. */
+export function acceptsLiveAudio(claims: LiveSessionClaims) {
+  return (
+    claims.mode === 'personal' || claims.audioPolicy === 'participant-opt-in'
+  );
+}

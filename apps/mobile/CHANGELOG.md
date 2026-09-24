@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/mobile-v0.10.1...mobile-v0.11.0) (2026-09-23)
+
+
+### Features
+
+* **infrastructure:** add web and mobile account recovery ([5e42191](https://github.com/tutur3u/platform/commit/5e42191a675b8edee62a62c58ae656e3a05d243f))
+* **infrastructure:** add web and mobile internal account recovery ([#5440](https://github.com/tutur3u/platform/issues/5440)) ([0694318](https://github.com/tutur3u/platform/commit/06943180c538f9f294586555d5d776c2cf1ea69e))
+* **mobile:** add persistent mail message appearance controls ([5fbc5a0](https://github.com/tutur3u/platform/commit/5fbc5a0eeec345a9c8ab5f30609d8b295ccd29f6))
+* **mobile:** add persistent Mail message appearance controls ([#5430](https://github.com/tutur3u/platform/issues/5430)) ([596acd9](https://github.com/tutur3u/platform/commit/596acd9b218c4e24cc981596c77e1d2499f70ec8))
+* **mobile:** add private profile activity and workspace sharing ([38b5d1b](https://github.com/tutur3u/platform/commit/38b5d1bec3a0296fbbcaf128c2c4f3bdd685b108))
+* **mobile:** add private Profile activity and workspace sharing ([#5429](https://github.com/tutur3u/platform/issues/5429)) ([4285508](https://github.com/tutur3u/platform/commit/4285508854d8f602656b86551c0940ec67ef29c0))
+
+
+### Bug Fixes
+
+* **mobile:** adapt calendar defaults and agenda layout ([44611ee](https://github.com/tutur3u/platform/commit/44611eeb6b8e0249a39c3d03c591d4fb75c7c342)) ([#5426](https://github.com/tutur3u/platform/issues/5426)) ([d4ed218](https://github.com/tutur3u/platform/commit/d4ed2181c1b9ec222c29e667360d15865b8abe8b))
+* **mobile:** avoid duplicate profile activity announcements ([b8102fe](https://github.com/tutur3u/platform/commit/b8102feb8362afcea54629c4ad1900f3ef78ec3e))
+* **mobile:** blend Mail message surfaces into app background ([2558e8d](https://github.com/tutur3u/platform/commit/2558e8d93e6d4586f46f9f580b619008dbfc8a5b))
+* **mobile:** cancel hidden capture and guard shared calendar cache ([d3daf7a](https://github.com/tutur3u/platform/commit/d3daf7a5a5db986421dc59bbbb11a3ea4ed7c306))
+* **mobile:** clean up failed native microphone starts ([44fb0f9](https://github.com/tutur3u/platform/commit/44fb0f9237c9197060101a297e67200aab39d9f1))
+* **mobile:** fit short calendar events and large text ([fae8055](https://github.com/tutur3u/platform/commit/fae8055c6391ad8bbe8b92ad0aad3e73ba556b8f))
+* **mobile:** float navigation over full-height content ([#5425](https://github.com/tutur3u/platform/issues/5425)) ([7c94df9](https://github.com/tutur3u/platform/commit/7c94df9d55a460b1636a8f1fac09ee3a53bfb2d3))
+* **mobile:** handle concurrent mail actions and accessible message menus ([5fdb562](https://github.com/tutur3u/platform/commit/5fdb5629e8df901edda046bb45c61eeca9c05189))
+* **mobile:** harden live recovery and credit sheet edge cases ([14f7a18](https://github.com/tutur3u/platform/commit/14f7a185f4236fd43d9c31a0d827eb40466dd7ed))
+* **mobile:** integrate dock actions and improve Mail navigation, caching, and swipes ([#5433](https://github.com/tutur3u/platform/issues/5433)) ([b9eef65](https://github.com/tutur3u/platform/commit/b9eef65e183dab4d5bec8ae8162bf438982cd21f))
+* **mobile:** integrate dock actions and streamline Mail navigation and swipes ([e2fb55a](https://github.com/tutur3u/platform/commit/e2fb55a8d234da025569900b9ddd4fe32517dd8b))
+* **mobile:** integrate floating navigation and primary actions ([#5424](https://github.com/tutur3u/platform/issues/5424)) ([afbbe68](https://github.com/tutur3u/platform/commit/afbbe68a36cf04ec244b07a4f1524f600ff7bc70))
+* **mobile:** localize Live recovery messages ([7066c3a](https://github.com/tutur3u/platform/commit/7066c3a4842ef265964702d9ce0646ca08339df7))
+* **mobile:** morph navigation items and island geometry together ([215458c](https://github.com/tutur3u/platform/commit/215458ccbf97fab055ceaa5bd4d985946fec9206)) ([#5427](https://github.com/tutur3u/platform/issues/5427)) ([949c417](https://github.com/tutur3u/platform/commit/949c417242466b8365e5906f82cdef46ed00aa5c))
+* **mobile:** preserve app origins and refine navigation and audio input ([#5420](https://github.com/tutur3u/platform/issues/5420)) ([71b04c0](https://github.com/tutur3u/platform/commit/71b04c04c7c1b773100c723f95d8fe440b83d6b1))
+* **mobile:** preserve calendar preferences per workspace ([9be2024](https://github.com/tutur3u/platform/commit/9be202452f150a8de2410dfa2a4f973811221410))
+* **mobile:** preserve live drafts and refresh saved conversations ([444b1fc](https://github.com/tutur3u/platform/commit/444b1fc92fee85a49bd377c1a47824decb0af531))
+* **mobile:** preserve mailbox access and archive header actions ([a525937](https://github.com/tutur3u/platform/commit/a525937baea07d78fd55a376c82fe4815dabd980))
+* **mobile:** read calendar viewport before provider creation ([e665be0](https://github.com/tutur3u/platform/commit/e665be0635414fd1c64440a5ac8af087f4518c7c))
+* **mobile:** reconcile recovery with compact Mail release ([dfbaeb1](https://github.com/tutur3u/platform/commit/dfbaeb12d478f0d3031c0dd323bd4b98535ede91))
+* **mobile:** recover Live history and invalid microphone input ([2bcb6c2](https://github.com/tutur3u/platform/commit/2bcb6c23a2baa5659930183a10aa42f5790515c0))
+* **mobile:** recover task verification and Assistant sessions ([2836363](https://github.com/tutur3u/platform/commit/283636386088a2fdf3994bd605b5c5b4c233bd4c)) ([#5434](https://github.com/tutur3u/platform/issues/5434)) ([c9f1f6e](https://github.com/tutur3u/platform/commit/c9f1f6e990b604e5ce119a80b303863a045b6ad3))
+* **mobile:** repair Live transport and Pro workspace access ([#5428](https://github.com/tutur3u/platform/issues/5428)) ([ce02703](https://github.com/tutur3u/platform/commit/ce02703ac5073af869f276cffd95087817bb3267))
+* **mobile:** resolve standalone recorder dependency in CI ([4ce1973](https://github.com/tutur3u/platform/commit/4ce1973d68e066f5fae77076914ac1e51de686a9))
+* **mobile:** restore Live turns using AI conversation identity ([a93f4b8](https://github.com/tutur3u/platform/commit/a93f4b8d8b521f6018a57bab2c74be7ec917c95c))
+* **mobile:** resume legacy Assistant conversations securely ([b74ae34](https://github.com/tutur3u/platform/commit/b74ae34893e0b48f9bd99edaf8a328a208cdf174))
+* **mobile:** unify dock actions, mail reader and meeting navigation ([0567ed7](https://github.com/tutur3u/platform/commit/0567ed7d391d9ae7fa8a43b3270b0cd342a34f7e))
+* **mobile:** unify dock actions, Mail reader and meeting navigation ([#5438](https://github.com/tutur3u/platform/issues/5438)) ([3d2aeaf](https://github.com/tutur3u/platform/commit/3d2aeaf23621e49613d9595c5bce4d1141fe7bf5))
+* **mobile:** update Gemini Live transport and workspace access ([8ea5889](https://github.com/tutur3u/platform/commit/8ea5889cfe55bf7e814f22eea4f4cc1fe41ca606))
+
 ## [0.10.1](https://github.com/tutur3u/platform/compare/mobile-v0.10.0...mobile-v0.10.1) (2026-09-20)
 
 

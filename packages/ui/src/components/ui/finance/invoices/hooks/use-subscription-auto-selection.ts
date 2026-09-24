@@ -14,7 +14,7 @@ import type {
   SelectedProductItem,
   UserGroupProducts,
 } from '../types';
-import type { UserGroup } from '../utils';
+import type { SubscriptionCoverageInvoice, UserGroup } from '../utils';
 import {
   getBillableQuantityMapForGroupsRange,
   getEffectiveDays,
@@ -31,11 +31,7 @@ interface UseSubscriptionAutoSelectionProps {
   userGroups: UserGroup[];
   useAttendanceBased: boolean;
   userAttendance: { status: string; date: string; group_id?: string }[];
-  latestSubscriptionInvoices: {
-    group_id?: string;
-    valid_until?: string | null;
-    created_at?: string | null;
-  }[];
+  latestSubscriptionInvoices: SubscriptionCoverageInvoice[];
   onSelectedProductsChange: Dispatch<SetStateAction<SelectedProductItem[]>>;
   prepaidMonthCount?: number;
   workspaceTimezone?: string | null;
@@ -129,7 +125,7 @@ const areSelectedProductsEqual = (
   if (current.length !== next.length) return false;
 
   const toKey = (item: SelectedProductItem) =>
-    `${item.product.id}|${item.inventory.unit_id}|${item.inventory.warehouse_id}|${item.quantity}`;
+    `${item.product.id}|${item.inventory.unit_id}|${item.inventory.warehouse_id}|${item.inventory.price}|${item.inventory.amount}|${item.quantity}`;
 
   const buildCounts = (items: SelectedProductItem[]) => {
     const counts = new Map<string, number>();
@@ -155,11 +151,7 @@ const areSelectedProductsEqual = (
 const computeGroupAttendanceDaysMap = (
   selectedGroupIds: string[],
   userGroups: UserGroup[],
-  latestSubscriptionInvoices: {
-    group_id?: string;
-    valid_until?: string | null;
-    created_at?: string | null;
-  }[],
+  latestSubscriptionInvoices: SubscriptionCoverageInvoice[],
   selectedMonth: string,
   userAttendance: { status: string; date: string; group_id?: string }[],
   useAttendanceBased: boolean,
@@ -192,11 +184,7 @@ const computeFallbackAttendanceDays = ({
   userGroups,
 }: {
   groupAttendanceDaysMap: Record<string, number>;
-  latestSubscriptionInvoices: {
-    group_id?: string;
-    valid_until?: string | null;
-    created_at?: string | null;
-  }[];
+  latestSubscriptionInvoices: SubscriptionCoverageInvoice[];
   prepaidMonthCount: number;
   selectedGroupIds: string[];
   selectedMonth: string;
@@ -313,9 +301,7 @@ export function useSubscriptionAutoSelection({
     const isGroupChanged = previousGroupIdRef.current !== currentGroupIdsKey;
     previousGroupIdRef.current = currentGroupIdsKey;
 
-    if (!isGroupChanged) return;
-
-    fallbackToastShownRef.current = false;
+    if (isGroupChanged) fallbackToastShownRef.current = false;
 
     const shouldUsePrefill =
       prepaidMonthCount === 1 &&
@@ -353,78 +339,6 @@ export function useSubscriptionAutoSelection({
     useAttendanceBased,
     latestSubscriptionInvoices,
     updateSelectedProducts,
-    groupAttendanceDaysMap,
-    prepaidMonthCount,
-  ]);
-
-  // Auto-add group products based on attendance when group is selected
-  useEffect(() => {
-    if (
-      !enabled ||
-      sortedSelectedGroupIds.length === 0 ||
-      groupProducts.length === 0
-    ) {
-      return;
-    }
-
-    if (
-      prepaidMonthCount === 1 &&
-      prefillAmount != null &&
-      !initialPrefillUsedRef.current
-    ) {
-      return;
-    }
-
-    const attendanceDays = computeFallbackAttendanceDays({
-      groupAttendanceDaysMap,
-      latestSubscriptionInvoices,
-      prepaidMonthCount,
-      selectedGroupIds: sortedSelectedGroupIds,
-      selectedMonth,
-      useAttendanceBased,
-      userAttendance,
-      userGroups,
-    });
-
-    if (attendanceDays === 0) return;
-
-    const { autoSelected, fallbackTriggered } =
-      buildAutoSelectedProductsForGroup(
-        groupProducts,
-        products,
-        attendanceDays,
-        groupAttendanceDaysMap
-      );
-
-    if (autoSelected.length === 0) return;
-
-    onSelectedProductsChange((prev) =>
-      areSelectedProductsEqual(prev, autoSelected) ? prev : autoSelected
-    );
-
-    if (fallbackTriggered && !fallbackToastShownRef.current) {
-      toast(
-        t('ws-invoices.inventory_fallback_used', {
-          default:
-            'Some items used fallback warehouses due to missing preference.',
-        })
-      );
-      fallbackToastShownRef.current = true;
-    }
-  }, [
-    enabled,
-    sortedSelectedGroupIds,
-    selectedMonth,
-    userAttendance?.length,
-    prefillAmount,
-    groupProducts,
-    userGroups,
-    useAttendanceBased,
-    t,
-    userAttendance,
-    latestSubscriptionInvoices,
-    onSelectedProductsChange,
-    products,
     groupAttendanceDaysMap,
     prepaidMonthCount,
   ]);

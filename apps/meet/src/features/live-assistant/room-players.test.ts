@@ -2,6 +2,7 @@ import { expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   players: [] as Array<{
+    setVolume: ReturnType<typeof vi.fn>;
     close: ReturnType<typeof vi.fn>;
     interrupt: ReturnType<typeof vi.fn>;
     play: ReturnType<typeof vi.fn>;
@@ -10,6 +11,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('./audio', () => ({
   LiveAudioPlayer: class {
+    setVolume = vi.fn();
     close = vi.fn();
     interrupt = vi.fn();
     play = vi.fn();
@@ -75,4 +77,16 @@ it('ignores a removed speaker failing during a pending unlock', async () => {
   reject(new Error('context closed'));
   expect(await unlocking).toBe(true);
   expect(remaining.close).not.toHaveBeenCalled();
+});
+
+it('applies volume to active and newly announced Mira sessions', () => {
+  const room = new RoomAudioPlayers(vi.fn());
+  room.setVolume(0.3);
+  room.activate('first');
+  const first = mocks.players.at(-1)!;
+  expect(first.setVolume).toHaveBeenLastCalledWith(0.3);
+  room.setVolume(0.1);
+  expect(first.setVolume).toHaveBeenLastCalledWith(0.1);
+  room.activate('second');
+  expect(mocks.players.at(-1)!.setVolume).toHaveBeenLastCalledWith(0.1);
 });

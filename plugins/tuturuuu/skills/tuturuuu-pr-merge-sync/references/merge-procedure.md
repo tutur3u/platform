@@ -30,7 +30,7 @@
    - `gh auth status`
    - `gh api rate_limit`
 3. Confirm the PR has zero active unresolved review threads.
-4. Wait for the requested quiet window, defaulting to 30 minutes after the
+4. Wait for the requested quiet window, defaulting to 5 minutes after the
    latest PR comment update, review submission, or pushed commit; use PR
    creation as the minimum start when no activity exists.
 5. Wait for PR checks to finish with only `success`, `skipped`, or `neutral`
@@ -68,7 +68,7 @@ review threads.
 node <skill-dir>/scripts/watch_pr_ready.mjs \
   --repo tutur3u/platform \
   --pr 123 \
-  --quiet-minutes 30
+  --quiet-minutes 5
 ```
 
 ```bash

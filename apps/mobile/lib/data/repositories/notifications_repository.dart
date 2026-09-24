@@ -45,6 +45,17 @@ class NotificationsRepository {
     });
   }
 
+  Future<int> archiveViewedMailThread({
+    required String mailboxId,
+    required String threadId,
+  }) async {
+    final result = await _apiClient.postJson(
+      NotificationEndpoints.viewedMailThread,
+      {'mailboxId': mailboxId, 'threadId': threadId},
+    );
+    return result['archived'] as int? ?? 0;
+  }
+
   Future<void> markAllRead({String? wsId}) async {
     await _apiClient.patchJson(NotificationEndpoints.base, {
       'action': 'mark_all_read',

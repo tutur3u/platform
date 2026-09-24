@@ -38,7 +38,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   );
 
   // Ruby's YAML 1.1 parser represents the unquoted `on` key as true.
-  assert.deepEqual(Object.keys(parsed.true), ['push']);
+  assert.deepEqual(Object.keys(parsed.true), ['push', 'workflow_dispatch']);
   assert.deepEqual(parsed.true.push.branches, ['production']);
   assert.deepEqual(parsed.permissions, {
     contents: 'read',
@@ -47,6 +47,13 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   });
   const preflight = parsed.jobs['mobile-credentials-preflight'];
   assert.equal(preflight.environment, 'mobile-store-beta');
+  assert.equal(preflight.outputs.has_ci_token, undefined);
+  assert.equal(preflight.outputs.build_name, undefined);
+  assert.equal(preflight.steps.length, 3);
+  assert.doesNotMatch(
+    preflight.steps.map((entry) => entry.run ?? '').join('\n'),
+    /mobile-deployment\/bundle/
+  );
   assert.equal(
     preflight.steps[0].run,
     'test "$GITHUB_REF" = refs/heads/production'
@@ -61,11 +68,6 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     ['ios', 'publish-ios-testflight'],
   ]) {
     const job = parsed.jobs[jobId];
-    assert.deepEqual(job.needs, ['check-ci', 'mobile-credentials-preflight']);
-    assert.equal(
-      job.if,
-      "needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'"
-    );
     assert.equal(job.environment, 'mobile-store-beta');
     assert.equal(job.defaults.run['working-directory'], 'apps/mobile');
     assert.equal(
@@ -94,6 +96,39 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     );
   }
   const android = parsed.jobs['publish-android-internal'];
+  const ios = parsed.jobs['publish-ios-testflight'];
+  assert.deepEqual(android.needs, [
+    'check-ci',
+    'mobile-credentials-preflight',
+    'publish-ios-testflight',
+  ]);
+  assert.match(android.if, /^\$\{\{ !cancelled\(\) && /);
+  assert.match(
+    android.if,
+    /needs\.publish-ios-testflight\.outputs\.build_name != ''/
+  );
+  assert.deepEqual(ios.needs, ['check-ci', 'mobile-credentials-preflight']);
+  assert.equal(
+    ios.if,
+    "github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'"
+  );
+  assert.equal(
+    ios.outputs.build_name,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    '${{ steps.version_name.outputs.build_name }}'
+  );
+  assert.ok(
+    ios.steps.findIndex(
+      (entry) => entry.name === 'Fetch iOS deployment bundle from Tuturuuu'
+    ) <
+      ios.steps.findIndex(
+        (entry) => entry.name === 'Calculate next mobile app version'
+      )
+  );
+  assert.match(
+    step(ios, 'Calculate next mobile app version').run,
+    /build-name\.mjs/
+  );
   const publish = step(
     android,
     'Publish Android App Bundle to Google Play internal'
@@ -108,16 +143,45 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     step(android, 'Verify committed Google Play internal release').run,
     /verify-store\.mjs android/
   );
-  const ios = parsed.jobs['publish-ios-testflight'];
   assert.match(
     step(ios, 'Upload iOS IPA to TestFlight').run,
     /xcrun altool --upload-app/
   );
   assert.match(
-    step(ios, 'Verify TestFlight processing and internal beta availability')
-      .run,
+    step(ios, 'Verify TestFlight and distribute to beta groups').run,
     /verify-store\.mjs ios/
   );
+  const betaStep = step(ios, 'Verify TestFlight and distribute to beta groups');
+  assert.equal(
+    betaStep.env.TESTFLIGHT_BETA_ENABLED,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    "${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}"
+  );
+  assert.equal(
+    betaStep.env.TESTFLIGHT_BETA_GROUPS,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    "${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}"
+  );
+  assert.equal(
+    betaStep.env.TESTFLIGHT_BETA_WHATS_NEW,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    '${{ vars.TESTFLIGHT_BETA_WHATS_NEW }}'
+  );
+  const retry = parsed.jobs['retry-ios-testflight-review'];
+  assert.equal(retry.environment, 'mobile-store-beta');
+  assert.equal(
+    retry.if,
+    "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'"
+  );
+  assert.match(
+    step(retry, 'Retry newest eligible build').run,
+    /verify-store\.mjs ios-pending/
+  );
+  assert.match(
+    step(retry, 'Fetch iOS deployment credentials').run,
+    /audience=tuturuuu-mobile-deployment/
+  );
+  assert.equal(step(retry, 'Cleanup iOS release files').if, 'always()');
   assert.equal(
     step(ios, 'Upload iOS IPA artifact').with.path,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
@@ -125,29 +189,16 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   );
 
   assert.match(workflow, /^on:\n {2}push:\n/m);
-  assert.doesNotMatch(workflow, /^\s*workflow_dispatch:/m);
+  assert.match(workflow, /^ {2}workflow_dispatch:/m);
   assert.match(workflow, /branches:\n\s+- production/);
   assert.match(workflow, /environment: mobile-store-beta/);
   assert.match(workflow, /id-token:\s*write/);
   assert.match(workflow, /mobile-credentials-preflight:/);
   assert.match(workflow, /name: Check mobile deployment credentials/);
-  assert.match(
-    workflow,
-    /has_ci_token: \$\{\{ steps\.credentials\.outputs\.has_ci_token \}\}/
-  );
-  assert.match(workflow, /echo "has_ci_token=false" >> "\$GITHUB_OUTPUT"/);
+  assert.doesNotMatch(workflow, /has_ci_token/);
   assert.match(
     workflow,
     /::error title=Mobile store deployment blocked::MOBILE_DEPLOYMENT_CI_TOKEN is not configured/
-  );
-  assert.match(workflow, /echo "has_ci_token=true" >> "\$GITHUB_OUTPUT"/);
-  assert.match(
-    workflow,
-    /publish-android-internal:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.outputs\.has_ci_token == 'true'/
-  );
-  assert.match(
-    workflow,
-    /publish-ios-testflight:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.outputs\.has_ci_token == 'true'/
   );
   assert.match(workflow, /MOBILE_DEPLOYMENT_CI_TOKEN/);
   assert.match(workflow, /audience=tuturuuu-mobile-deployment/);
@@ -178,6 +229,15 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.match(workflow, /verify-store\.mjs ios/);
   assert.match(workflow, /verify-profile\.swift/);
   assert.match(workflow, /--build-number=/);
+  assert.match(
+    workflow,
+    /--build-name=\$\{\{ steps\.version_name\.outputs\.build_name \}\}/
+  );
+  assert.match(
+    workflow,
+    /--build-name=\$\{\{ needs\.publish-ios-testflight\.outputs\.build_name \}\}/
+  );
+  assert.match(workflow, /CFBundleShortVersionString/);
   assert.doesNotMatch(workflow, /tracks?:\s*production/i);
   assert.doesNotMatch(workflow, /MOBILE_ENV_PRODUCTION_B64/);
   assert.doesNotMatch(workflow, /MOBILE_ANDROID_GOOGLE_SERVICES_JSON_B64/);
@@ -211,4 +271,63 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   );
   assert.match(workflow, /path: \$\{\{ steps\.ios-ipa\.outputs\.path \}\}/);
   assert.doesNotMatch(workflow, /path: .*mobile-deployment/i);
+});
+
+test('TestFlight scheduler dispatches only promoted production retry code', () => {
+  const workflowName = 'mobile-testflight-review-queue.yaml';
+  const workflowPath = path.join(
+    repoRoot,
+    '.github',
+    'workflows',
+    workflowName
+  );
+  const workflow = fs.readFileSync(workflowPath, 'utf8');
+  assert.match(
+    ciConfig,
+    /["']mobile-testflight-review-queue\.yaml["']:\s*true/
+  );
+  const parsed = JSON.parse(
+    execFileSync(
+      'ruby',
+      [
+        '-e',
+        "require 'yaml'; require 'json'; puts JSON.generate(YAML.load_file(ARGV.fetch(0)))",
+        workflowPath,
+      ],
+      { cwd: repoRoot, stdio: 'pipe', encoding: 'utf8' }
+    )
+  );
+  assert.deepEqual(Object.keys(parsed.true), ['schedule', 'workflow_dispatch']);
+  assert.deepEqual(parsed.permissions, {
+    actions: 'write',
+    contents: 'read',
+    deployments: 'read',
+  });
+  assert.equal(parsed.jobs.dispatch.needs[0], 'check-ci');
+  const steps = parsed.jobs.dispatch.steps;
+  const promoted = steps.find(
+    (step) => step.name === 'Require promoted retry code'
+  );
+  assert.match(promoted.run, /git fetch origin production/);
+  assert.match(
+    promoted.run,
+    /git cat-file -e FETCH_HEAD:\.github\/workflows\/mobile-testflight-review-queue\.yaml/
+  );
+  const dispatch = steps.find(
+    (step) => step.name === 'Dispatch production review retry'
+  );
+  assert.equal(dispatch.if, "steps.promoted.outputs.enabled == 'true'");
+  assert.match(
+    dispatch.run,
+    /mobile-deploy-stores\.yaml\/dispatches -f ref=production/
+  );
+  assert.doesNotMatch(workflow, /MOBILE_DEPLOYMENT_CI_TOKEN/);
+  assert.doesNotMatch(workflow, /audience=tuturuuu-mobile-deployment/);
+  assert.doesNotMatch(workflow, /xcrun altool --upload-app/);
+  assert.doesNotMatch(workflow, /betaAppReviewSubmissions.*DELETE/);
+  for (const match of workflow.matchAll(/uses:\s*([^\s]+)/g)) {
+    const action = match[1];
+    if (!action || action.startsWith('./')) continue;
+    assert.match(action.split('@')[1] || '', /^[0-9a-f]{40}$/);
+  }
 });

@@ -9,11 +9,13 @@ import {
   type MobileDeploymentFileKind,
   type MobileDeploymentSecretKind,
   type MobileDeploymentState,
+  repairMobileDeploymentDraft,
   revokeMobileDeploymentCiToken,
   rollbackMobileDeploymentVersion,
   saveMobileDeploymentSecret,
   uploadMobileDeploymentFileResource,
 } from '@tuturuuu/internal-api/infrastructure/mobile';
+import { Button } from '@tuturuuu/ui/button';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
@@ -143,6 +145,15 @@ export function MobileDeploymentClient({
     },
   });
 
+  const repairMutation = useMutation({
+    mutationFn: () => repairMobileDeploymentDraft(),
+    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
+    onSuccess: (state) => {
+      refresh(state);
+      toast({ title: t('saved') });
+    },
+  });
+
   const verify = async () => {
     const result = await refetch();
     if (result.data) {
@@ -162,6 +173,20 @@ export function MobileDeploymentClient({
       </TabsList>
 
       <TabsContent className="mt-0 space-y-4" value="overview">
+        {data.draftVersion && data.activeVersion && (
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border p-4">
+            <p className="flex-1 text-muted-foreground text-sm">
+              {t('inheritMissingDescription')}
+            </p>
+            <Button
+              variant="outline"
+              disabled={repairMutation.isPending}
+              onClick={() => repairMutation.mutate()}
+            >
+              {t('inheritMissing')}
+            </Button>
+          </div>
+        )}
         <MobileDeploymentOverviewPanel
           activeVersion={data.activeVersion}
           activateDisabled={

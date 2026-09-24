@@ -7574,6 +7574,267 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetUpdated => 'Meeting saved.';
 
   @override
+  String get meetJoin => 'Join call';
+
+  @override
+  String get meetReadyToJoin => 'Ready to join?';
+
+  @override
+  String get meetPreviewPrivate => 'Your camera preview is private until you join.';
+
+  @override
+  String get meetMute => 'Mute microphone';
+
+  @override
+  String get meetUnmute => 'Unmute microphone';
+
+  @override
+  String get meetCameraOn => 'Turn camera on';
+
+  @override
+  String get meetCameraOff => 'Turn camera off';
+
+  @override
+  String get meetDeviceAlreadyJoined => 'You\'re already in this meeting';
+
+  @override
+  String get meetDeviceChoiceHint => 'Choose how to join from this device.';
+
+  @override
+  String get meetSwitchDevice => 'Switch to this device';
+
+  @override
+  String get meetJoinAnotherDevice => 'Join on another device';
+
+  @override
+  String get meetDeviceEchoHint => 'Mute one device to avoid audio echo.';
+
+  @override
+  String get meetTimeRemaining => 'Meeting time remaining';
+
+  @override
+  String get meetRaiseHand => 'Raise hand';
+
+  @override
+  String get meetLowerHand => 'Lower hand';
+
+  @override
+  String get meetReactions => 'Reactions';
+
+  @override
+  String get meetReactionLike => 'Like';
+
+  @override
+  String get meetReactionHeart => 'Love';
+
+  @override
+  String get meetReactionClap => 'Clap';
+
+  @override
+  String get meetReactionLaugh => 'Laugh';
+
+  @override
+  String get meetReactionWow => 'Wow';
+
+  @override
+  String get meetReactionCelebrate => 'Celebrate';
+
+  @override
+  String get meetParticipantActions => 'Participant actions';
+
+  @override
+  String get meetMuteParticipant => 'Mute participant';
+
+  @override
+  String get meetRemoveParticipant => 'Remove participant';
+
+  @override
+  String get meetShareNotes => 'Share meeting notes';
+
+  @override
+  String get meetApprovedParticipant => 'Approved participant';
+
+  @override
+  String get meetForgetApproval => 'Forget approval';
+
+  @override
+  String get meetEstimatedCosts => 'Estimated costs';
+
+  @override
+  String get meetCostsUnavailable => 'Cost estimate is unavailable.';
+
+  @override
+  String get meetPartialEstimate => 'Partial estimate. Some provider costs are not included.';
+
+  @override
+  String get meetSfuEgress => 'Video and audio delivery';
+
+  @override
+  String get meetDurableRequests => 'Room requests';
+
+  @override
+  String get meetMiraCost => 'Mira';
+
+  @override
+  String get meetLiveCost => 'Mira Live';
+
+  @override
+  String get meetLockRoom => 'Lock room';
+
+  @override
+  String get meetSaveChat => 'Save room chat';
+
+  @override
+  String get meetSettings => 'Meeting settings';
+
+  @override
+  String get meetRecordings => 'Recordings';
+
+  @override
+  String get meetRecordingAccess => 'Share recordings with participants';
+
+  @override
+  String get meetRecordingAccessHint => 'Participants can access saved meeting recordings.';
+
+  @override
+  String get meetParticipantRecording => 'Allow participant recording';
+
+  @override
+  String get meetParticipantRecordingHint => 'Participants can start a recording when their device supports it.';
+
+  @override
+  String get meetLeave => 'Leave call';
+
+  @override
+  String get meetEndForEveryone => 'End for everyone';
+
+  @override
+  String get meetMicrophone => 'Microphone';
+
+  @override
+  String get meetCamera => 'Camera';
+
+  @override
+  String get meetSwitchCamera => 'Switch camera';
+
+  @override
+  String get meetChat => 'Chat';
+
+  @override
+  String get meetEveryone => 'Everyone';
+
+  @override
+  String get meetPrivateMira => 'Private Mira';
+
+  @override
+  String get meetPrivateHint => 'Only you can see this conversation. Review an answer before sharing it with everyone.';
+
+  @override
+  String get meetPrivateEmpty => 'Ask Mira privately about this meeting.';
+
+  @override
+  String get meetAskMira => 'Ask Mira privately';
+
+  @override
+  String get meetPrivateRequestFailed => 'Mira couldn\'t answer. Retry your message.';
+
+  @override
+  String get meetShareWithEveryone => 'Share with everyone';
+
+  @override
+  String get meetShareHint => 'Review or edit this answer before posting it to room chat.';
+
+  @override
+  String get meetShareConfirm => 'Post to room chat';
+
+  @override
+  String get meetMiraThinking => 'Mira is preparing a reply…';
+
+  @override
+  String get meetMiraReplyFailed => 'Mira couldn\'t reply to the room message.';
+
+  @override
+  String get meetMiraRetry => 'Retry Mira';
+
+  @override
+  String get meetMiraReviews => 'Private action reviews';
+
+  @override
+  String get meetMiraReviewsHint => 'Only you can see these drafts and requests. Review the workspace actions before approving them.';
+
+  @override
+  String get meetMiraAudioMute => 'Mute Mira Live audio';
+
+  @override
+  String get meetMiraAudioUnmute => 'Unmute Mira Live audio';
+
+  @override
+  String get meetMiraAudioRetry => 'Retry Mira Live audio';
+
+  @override
+  String get meetMiraReviewFailed => 'Couldn\'t load Mira\'s private reviews.';
+
+  @override
+  String get meetMiraReviewRefresh => 'Refresh reviews';
+
+  @override
+  String get meetMiraApprove => 'Approve actions';
+
+  @override
+  String get meetMiraDeny => 'Deny actions';
+
+  @override
+  String get meetMiraDiscard => 'Discard draft';
+
+  @override
+  String get meetMiraApprovalTitle => 'Approve workspace actions?';
+
+  @override
+  String get meetMiraApprovalHint => 'Mira will run the listed actions in this workspace. Check every input before approving.';
+
+  @override
+  String get meetMiraActionFailed => 'Couldn\'t update Mira\'s review. Please try again.';
+
+  @override
+  String get meetOpenLink => 'Open link';
+
+  @override
+  String get meetMessageHint => 'Message everyone';
+
+  @override
+  String get meetSend => 'Send';
+
+  @override
+  String get meetWaitingForHost => 'Waiting for the host to admit you';
+
+  @override
+  String get meetConnecting => 'Connecting to the meeting…';
+
+  @override
+  String get meetReconnecting => 'Reconnecting…';
+
+  @override
+  String get meetCallEnded => 'This meeting has ended';
+
+  @override
+  String get meetAccessDenied => 'You cannot join this meeting';
+
+  @override
+  String get meetNoParticipants => 'Waiting for others to join';
+
+  @override
+  String get meetAdmit => 'Admit';
+
+  @override
+  String get meetDecline => 'Decline';
+
+  @override
+  String get meetParticipants => 'Participants';
+
+  @override
+  String get meetYou => 'You';
+
+  @override
   String get connectedOnboardingEcosystemTitle => 'Your goals, connected';
 
   @override
@@ -7761,6 +8022,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailLoadImages => 'Load remote images';
+
+  @override
+  String get mailLoadImagesDescription => 'Show images by default. Senders may know when you open a message.';
 
   @override
   String get mailSettings => 'Mail settings';
@@ -8250,4 +8514,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantLiveScreenPrivacy => 'Anything visible on your screen may be shared with Live. Hide private information before continuing.';
+
+  @override
+  String desktopUpdateReady(String version) {
+    return 'Tuturuuu $version is ready to install.';
+  }
+
+  @override
+  String get desktopUpdateFailed => 'Update could not be installed. Your current version is still available.';
+
+  @override
+  String get desktopUpdateScheduled => 'This update will install the next time you open Tuturuuu.';
+
+  @override
+  String get desktopUpdateInstall => 'Install and restart';
+
+  @override
+  String get desktopUpdateCancel => 'Cancel scheduled update';
+
+  @override
+  String get desktopUpdateNextLaunch => 'Install on next launch';
+
+  @override
+  String get desktopUpdateDismiss => 'Dismiss update';
+
+  @override
+  String get desktopUpdateManual => 'Download manually';
+
+  @override
+  String get mailSnooze => 'Snooze';
+
+  @override
+  String get mailUnsnooze => 'Move to Inbox now';
+
+  @override
+  String get mailMute => 'Mute thread';
+
+  @override
+  String get mailUnmute => 'Unmute thread';
+
+  @override
+  String get mailSnoozed => 'Snoozed';
+
+  @override
+  String get mailMuted => 'Muted';
+
+  @override
+  String get mailSnoozeHour => 'In one hour';
+
+  @override
+  String get mailSnoozeDay => 'In 24 hours';
+
+  @override
+  String get mailSnoozeWeek => 'In one week';
+
+  @override
+  String get mailSnoozeCustom => 'Choose date and time';
+
+  @override
+  String get mailSnoozeFuture => 'Choose a time in the future.';
 }

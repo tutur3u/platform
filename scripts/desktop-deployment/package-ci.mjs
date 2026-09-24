@@ -50,6 +50,10 @@ if (platform === 'linux') {
     ],
     { stdio: 'inherit' }
   );
+  execFileSync('dpkg-deb', ['--info', join(output, 'Tuturuuu-linux-x64.deb')], {
+    stdio: 'ignore',
+  });
+  await receipt('Tuturuuu-linux-x64.deb', 'deb-package-verified');
 } else if (platform === 'windows') {
   const bundle = resolve('apps/mobile/build/windows/x64/runner/Release');
   await auditBundle(bundle);

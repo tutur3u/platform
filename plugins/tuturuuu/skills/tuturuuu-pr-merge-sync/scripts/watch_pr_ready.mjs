@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const DEFAULT_INTERVAL_SECONDS = 120;
-const DEFAULT_QUIET_MINUTES = 30;
+export const DEFAULT_QUIET_MINUTES = 5;
 const DEFAULT_TIMEOUT_SECONDS = 30;
 const SUCCESSFUL_CONCLUSIONS = new Set(['SUCCESS', 'SKIPPED', 'NEUTRAL']);
 

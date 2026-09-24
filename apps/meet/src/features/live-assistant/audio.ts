@@ -1,8 +1,15 @@
 /** PCM playback is local. This stream is never attached to the meeting publisher. */
 export class LiveAudioPlayer {
   private context?: AudioContext;
+  private gain?: GainNode;
+  private volume = 1;
+  setVolume(value: number) {
+    this.volume = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 1;
+    if (this.gain) this.gain.gain.value = this.volume;
+  }
   private nextTime = 0;
   private closed = false;
+  private ready = false;
   private generation = 0;
   private opening: Promise<void> = Promise.resolve();
   private sources = new Set<AudioBufferSourceNode>();
@@ -11,8 +18,16 @@ export class LiveAudioPlayer {
   async unlock(outputDeviceId?: string) {
     const generation = ++this.generation;
     this.closed = false;
+    this.ready = false;
     this.context ??= new AudioContext({ sampleRate: 24000 });
     const context = this.context;
+    if (!this.gain) {
+      this.gain = context.createGain();
+      this.gain.gain.value = this.volume;
+      this.gain.connect(context.destination);
+    }
+    // Resume within the gesture, even if a previous autoplay request is pending.
+    const resumed = context.resume();
     const opening = this.opening
       .catch(() => {})
       .then(async () => {
@@ -23,23 +38,21 @@ export class LiveAudioPlayer {
               setSinkId: (id: string) => Promise<void>;
             }
           ).setSinkId(outputDeviceId || '');
-        if (generation !== this.generation || this.closed) return;
-        await context.resume();
-        if (generation !== this.generation || this.closed) return;
-        const pending = this.pending;
-        this.pending = [];
-        this.pendingBytes = 0;
-        for (const item of pending)
-          if (Date.now() - item.at < 3000)
-            this.play(item.data, item.sampleRate);
       });
     this.opening = opening;
-    return opening;
+    await Promise.all([opening, resumed]);
+    if (generation !== this.generation || this.closed) return;
+    this.ready = true;
+    const pending = this.pending;
+    this.pending = [];
+    this.pendingBytes = 0;
+    for (const item of pending)
+      if (Date.now() - item.at < 3000) this.play(item.data, item.sampleRate);
   }
   play(data: string, sampleRate = 24000) {
     if (this.closed) return;
     const context = this.context;
-    if (context?.state !== 'running') {
+    if (!this.ready || context?.state !== 'running') {
       if (data.length > 128000) return;
       this.pending.push({ data, sampleRate, at: Date.now() });
       this.pendingBytes += data.length;
@@ -67,7 +80,7 @@ export class LiveAudioPlayer {
       channel[i] = pcm.getInt16(i * 2, true) / 32768;
     const source = context.createBufferSource();
     source.buffer = buffer;
-    source.connect(context.destination);
+    source.connect(this.gain!);
     // Provider bursts can contain a complete sentence. Preserve its queue.
     this.nextTime = startTime;
     this.sources.add(source);
@@ -95,12 +108,14 @@ export class LiveAudioPlayer {
     this.interrupt();
     void this.context?.close();
     this.context = undefined;
+    this.gain = undefined;
   }
 }
 export async function captureLiveAudio(
   streams: MediaStream[],
   onAudio: (data: string) => void,
-  onInputEnded?: () => void
+  onInputEnded?: () => void,
+  onInputIdle?: () => void
 ) {
   const context = new AudioContext({ sampleRate: 16000 });
   try {
@@ -119,7 +134,9 @@ export async function captureLiveAudio(
       );
       if (!sources.size) onInputEnded?.();
     };
+    let idleFlush = false;
     const update = (next: MediaStream[]) => {
+      const hadSources = sources.size > 0;
       const tracks = new Set(next.flatMap((stream) => stream.getAudioTracks()));
       for (const [track, source] of sources) {
         if (!tracks.has(track) || track.readyState === 'ended') {
@@ -137,12 +154,20 @@ export async function captureLiveAudio(
         sources.set(track, source);
         track.addEventListener('ended', ended);
       }
+      if (hadSources && !sources.size) {
+        idleFlush = true;
+        processor.port.postMessage('flush');
+      }
     };
     update(streams);
     processor.connect(mute).connect(context.destination);
     let acknowledge: (() => void) | undefined;
     processor.port.onmessage = (event: MessageEvent<ArrayBuffer | string>) => {
       if (event.data === 'flushed') {
+        if (idleFlush) {
+          idleFlush = false;
+          if (!sources.size) onInputIdle?.();
+        }
         acknowledge?.();
         return;
       }

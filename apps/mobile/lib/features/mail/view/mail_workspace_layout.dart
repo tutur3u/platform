@@ -5,6 +5,8 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
     final l10n = context.l10n;
     final folders = {
       'inbox': l10n.mailInbox,
+      'snoozed': l10n.mailSnoozed,
+      'muted': l10n.mailMuted,
       'sent': l10n.mailSent,
       'drafts': l10n.mailDrafts,
       'starred': l10n.mailStarred,
@@ -20,6 +22,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
         _folder,
       );
       if (!mounted || folder == null || folder == _folder) return;
+      _dismissSwipeFeedback();
       _updateState(() {
         _folder = folder;
         _labelId = null;
@@ -189,7 +192,13 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                                       .map(
                                         (l) => PopupMenuItem(
                                           value: l['id'] as String,
-                                          child: Text(l['name'] as String),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.label_outline),
+                                              const SizedBox(width: 12),
+                                              Text(l['name'] as String),
+                                            ],
+                                          ),
                                         ),
                                       )
                                       .toList(),
@@ -202,82 +211,116 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                             ],
                           ),
                         ),
-                      if (_failed)
+                      if (_failed && _items.isNotEmpty)
                         TextButton.icon(
-                          onPressed: _mailboxId == null ? _bootstrap : _load,
+                          onPressed: !_accessVerified ? _bootstrap : _load,
                           icon: const Icon(Icons.refresh),
                           label: Text(l10n.commonSomethingWentWrong),
                         ),
                     ],
                   ),
                 ),
-                SliverPadding(
-                  padding: EdgeInsets.only(
-                    bottom:
-                        (sharedShell ? 16 : 100) +
-                        MediaQuery.paddingOf(context).bottom,
-                  ),
-                  sliver: SliverList.separated(
-                    itemCount: _items.length + 1,
-                    separatorBuilder: (_, index) =>
-                        const Divider(height: 1, indent: 36),
-                    itemBuilder: (context, index) {
-                      if (index == _items.length) {
-                        if (_hasMore) {
-                          return TextButton(
-                            onPressed: _loading
-                                ? null
-                                : () => _load(more: true),
-                            child: Text(l10n.mailLoadMore),
-                          );
+                if (_items.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_loading)
+                              const NovaLoadingIndicator(size: 24)
+                            else
+                              Icon(
+                                _failed
+                                    ? Icons.error_outline
+                                    : Icons.inbox_outlined,
+                                size: 32,
+                              ),
+                            const SizedBox(height: 12),
+                            Text(
+                              _loading
+                                  ? l10n.commonLoading
+                                  : _failed
+                                  ? l10n.commonSomethingWentWrong
+                                  : l10n.mailEmpty,
+                              textAlign: TextAlign.center,
+                            ),
+                            if (_failed)
+                              TextButton.icon(
+                                onPressed: !_accessVerified
+                                    ? _bootstrap
+                                    : _load,
+                                icon: const Icon(Icons.refresh),
+                                label: Text(l10n.commonRetry),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: EdgeInsets.only(
+                      bottom:
+                          (sharedShell ? 16 : 100) +
+                          MediaQuery.paddingOf(context).bottom,
+                    ),
+                    sliver: SliverList.separated(
+                      itemCount: _items.length + 1,
+                      separatorBuilder: (_, index) =>
+                          const Divider(height: 1, indent: 36),
+                      itemBuilder: (context, index) {
+                        if (index == _items.length) {
+                          if (_hasMore) {
+                            return TextButton(
+                              onPressed: _loading
+                                  ? null
+                                  : () => _load(more: true),
+                              child: Text(l10n.mailLoadMore),
+                            );
+                          }
+                          return const SizedBox.shrink();
                         }
-                        if (!_loading && !_failed && _items.isEmpty) {
-                          return Padding(
-                            padding: const EdgeInsets.all(32),
-                            child: Center(child: Text(l10n.mailEmpty)),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      }
-                      final item = _items[index];
-                      return MailSwipeTile(
-                        key: ValueKey(item['id']),
-                        id: item['id'] as String,
-                        preferences: _swipePreferences,
-                        enabled:
-                            !_mutating &&
-                            _accessVerified &&
-                            _selected.isEmpty &&
-                            _folder != 'drafts',
-                        onAction: (action) => _swipeMessage(item, action),
-                        child: MailMessageTile(
-                          loading: _openingId == item['id'],
-                          item: item,
-                          thread: _threads,
-                          selected: _selected.contains(item['id']),
-                          onSelect: () {
-                            if (_mutating) return;
-                            _updateState(() {
-                              final id = item['id'] as String;
-                              if (!_selected.remove(id)) _selected.add(id);
-                            });
-                          },
-                          onTap: () {
-                            if (_mutating) return;
-                            if (_selected.isEmpty) {
-                              unawaited(_open(item));
-                            } else {
+                        final item = _items[index];
+                        return MailSwipeTile(
+                          key: ValueKey(item['id']),
+                          id: item['id'] as String,
+                          preferences: _swipePreferences,
+                          enabled:
+                              !_mutating &&
+                              _accessVerified &&
+                              _selected.isEmpty &&
+                              _folder != 'drafts',
+                          onAction: (action) => _swipeMessage(item, action),
+                          child: MailMessageTile(
+                            item: item,
+                            thread: _threads,
+                            selected: _selected.contains(item['id']),
+                            onSelect: () {
+                              if (_mutating) return;
                               _updateState(() {
                                 final id = item['id'] as String;
                                 if (!_selected.remove(id)) _selected.add(id);
                               });
-                            }
-                          },
-                        ),
-                      );
-                    },
+                            },
+                            onTap: () {
+                              if (_mutating) return;
+                              if (_selected.isEmpty) {
+                                unawaited(_open(item));
+                              } else {
+                                _updateState(() {
+                                  final id = item['id'] as String;
+                                  if (!_selected.remove(id)) _selected.add(id);
+                                });
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
               ],
             ),
           ),

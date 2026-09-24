@@ -11,6 +11,7 @@ import {
   type MeetRealtimeTokenPayload,
   type MeetRealtimeTrackKind,
   type MeetRealtimeWaitingParticipant,
+  meetAssistantAudioSchema,
   meetMediaStateSchema,
   meetRealtimeRecordingStateSchema,
   meetRealtimeStageStateSchema,
@@ -33,6 +34,10 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     type: z.literal('usage.report'),
     reportId: z.uuid(),
     bytesReceived: z.number().int().min(0).max(1_000_000_000_000),
+  }),
+  z.object({
+    type: z.literal('assistant.preferences'),
+    audio: meetAssistantAudioSchema,
   }),
   z.object({ type: z.literal('reaction.send'), reaction: meetReactionSchema }),
   z.object({

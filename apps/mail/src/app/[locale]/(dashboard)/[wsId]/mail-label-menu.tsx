@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { MailIconButton } from './mail-icon-button';
+import { MailThreadPreferenceMenu } from './mail-thread-preference-menu';
 
 export function MailLabelMenu({
   mailboxId,
@@ -65,84 +66,92 @@ export function MailLabelMenu({
   );
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <MailIconButton
-          aria-label={t('manage_labels')}
-          size="icon"
-          variant="ghost"
-        >
-          <Tag className="size-4" />
-        </MailIconButton>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-72 p-2">
-        <div className="px-2 py-1.5 font-medium text-sm">
-          {t('manage_labels')}
-        </div>
-        <div className="max-h-64 overflow-y-auto">
-          {labels.map((label) => (
-            <div
-              className="flex items-center gap-2 rounded-lg px-2 py-1"
-              key={label.id}
-            >
-              <span
-                className="size-2.5 shrink-0 rounded-full bg-foreground/30"
-                style={
-                  label.color ? { backgroundColor: label.color } : undefined
-                }
-              />
-              <span className="min-w-0 flex-1 truncate text-sm">
-                {label.name}
-              </span>
-              <MailIconButton
-                aria-label={t('add_label_name', { name: label.name })}
-                disabled={update.isPending}
-                onClick={() =>
-                  update.mutate({ action: 'add_label', labelId: label.id })
-                }
-                size="icon"
-                variant="ghost"
-              >
-                <Plus className="size-3.5" />
-              </MailIconButton>
-              <MailIconButton
-                aria-label={t('remove_label_name', { name: label.name })}
-                disabled={update.isPending}
-                onClick={() =>
-                  update.mutate({ action: 'remove_label', labelId: label.id })
-                }
-                size="icon"
-                variant="ghost"
-              >
-                <X className="size-3.5" />
-              </MailIconButton>
-            </div>
-          ))}
-          {!organization.isLoading && labels.length === 0 ? (
-            <p className="px-2 py-3 text-muted-foreground text-xs">
-              {t('no_custom_labels')}
-            </p>
-          ) : null}
-        </div>
-        <div className="mt-2 border-dynamic border-t pt-2">
-          <Button
-            className="w-full justify-start"
-            disabled={
-              smart.isPending || !labels.some((label) => label.aiEnabled)
-            }
-            onClick={() => smart.mutate()}
-            size="sm"
+    <>
+      <MailThreadPreferenceMenu
+        mailboxId={mailboxId}
+        workspaceId={workspaceId}
+        threadIds={threadIds}
+        onChanged={onChanged}
+      />
+      <Popover>
+        <PopoverTrigger asChild>
+          <MailIconButton
+            aria-label={t('manage_labels')}
+            size="icon"
             variant="ghost"
           >
-            {smart.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Bot className="size-4" />
-            )}
-            {t('apply_smart_labels')}
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+            <Tag className="size-4" />
+          </MailIconButton>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-72 p-2">
+          <div className="px-2 py-1.5 font-medium text-sm">
+            {t('manage_labels')}
+          </div>
+          <div className="max-h-64 overflow-y-auto">
+            {labels.map((label) => (
+              <div
+                className="flex items-center gap-2 rounded-lg px-2 py-1"
+                key={label.id}
+              >
+                <span
+                  className="size-2.5 shrink-0 rounded-full bg-foreground/30"
+                  style={
+                    label.color ? { backgroundColor: label.color } : undefined
+                  }
+                />
+                <span className="min-w-0 flex-1 truncate text-sm">
+                  {label.name}
+                </span>
+                <MailIconButton
+                  aria-label={t('add_label_name', { name: label.name })}
+                  disabled={update.isPending}
+                  onClick={() =>
+                    update.mutate({ action: 'add_label', labelId: label.id })
+                  }
+                  size="icon"
+                  variant="ghost"
+                >
+                  <Plus className="size-3.5" />
+                </MailIconButton>
+                <MailIconButton
+                  aria-label={t('remove_label_name', { name: label.name })}
+                  disabled={update.isPending}
+                  onClick={() =>
+                    update.mutate({ action: 'remove_label', labelId: label.id })
+                  }
+                  size="icon"
+                  variant="ghost"
+                >
+                  <X className="size-3.5" />
+                </MailIconButton>
+              </div>
+            ))}
+            {!organization.isLoading && labels.length === 0 ? (
+              <p className="px-2 py-3 text-muted-foreground text-xs">
+                {t('no_custom_labels')}
+              </p>
+            ) : null}
+          </div>
+          <div className="mt-2 border-dynamic border-t pt-2">
+            <Button
+              className="w-full justify-start"
+              disabled={
+                smart.isPending || !labels.some((label) => label.aiEnabled)
+              }
+              onClick={() => smart.mutate()}
+              size="sm"
+              variant="ghost"
+            >
+              {smart.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Bot className="size-4" />
+              )}
+              {t('apply_smart_labels')}
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </>
   );
 }

@@ -13,6 +13,7 @@ import {
   clearMobileDeploymentScalar,
   listMobileDeploymentState,
   MobileDeploymentStoreError,
+  repairMobileDeploymentDraft,
   saveMobileDeploymentEnvFile,
   saveMobileDeploymentEnvKey,
   saveMobileDeploymentScalar,
@@ -23,6 +24,7 @@ import {
 } from '@/lib/mobile-deployment/validation';
 
 const SavePayloadSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('inherit_missing') }),
   z.object({
     action: z.literal('replace_env'),
     envFile: z.string().max(512 * 1024),
@@ -128,6 +130,15 @@ export async function PUT(request: Request) {
   }
 
   try {
+    if (parsed.data.action === 'inherit_missing') {
+      return NextResponse.json(
+        await repairMobileDeploymentDraft({
+          db: access.db,
+          userId: access.userId,
+        })
+      );
+    }
+
     if (parsed.data.action === 'replace_env') {
       return NextResponse.json(
         await saveMobileDeploymentEnvFile({

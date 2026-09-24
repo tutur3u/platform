@@ -7544,6 +7544,267 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetUpdated => 'Đã lưu cuộc họp.';
 
   @override
+  String get meetJoin => 'Tham gia cuộc gọi';
+
+  @override
+  String get meetReadyToJoin => 'Sẵn sàng tham gia?';
+
+  @override
+  String get meetPreviewPrivate => 'Chỉ bạn thấy hình ảnh xem trước từ camera cho đến khi tham gia.';
+
+  @override
+  String get meetMute => 'Tắt micrô';
+
+  @override
+  String get meetUnmute => 'Bật micrô';
+
+  @override
+  String get meetCameraOn => 'Bật camera';
+
+  @override
+  String get meetCameraOff => 'Tắt camera';
+
+  @override
+  String get meetDeviceAlreadyJoined => 'Bạn đã ở trong cuộc họp này';
+
+  @override
+  String get meetDeviceChoiceHint => 'Chọn cách tham gia từ thiết bị này.';
+
+  @override
+  String get meetSwitchDevice => 'Chuyển sang thiết bị này';
+
+  @override
+  String get meetJoinAnotherDevice => 'Tham gia trên thiết bị khác';
+
+  @override
+  String get meetDeviceEchoHint => 'Tắt micrô trên một thiết bị để tránh tiếng vọng.';
+
+  @override
+  String get meetTimeRemaining => 'Thời gian họp còn lại';
+
+  @override
+  String get meetRaiseHand => 'Giơ tay';
+
+  @override
+  String get meetLowerHand => 'Hạ tay';
+
+  @override
+  String get meetReactions => 'Cảm xúc';
+
+  @override
+  String get meetReactionLike => 'Thích';
+
+  @override
+  String get meetReactionHeart => 'Yêu thích';
+
+  @override
+  String get meetReactionClap => 'Vỗ tay';
+
+  @override
+  String get meetReactionLaugh => 'Cười';
+
+  @override
+  String get meetReactionWow => 'Ngạc nhiên';
+
+  @override
+  String get meetReactionCelebrate => 'Chúc mừng';
+
+  @override
+  String get meetParticipantActions => 'Thao tác với người tham gia';
+
+  @override
+  String get meetMuteParticipant => 'Tắt micrô người tham gia';
+
+  @override
+  String get meetRemoveParticipant => 'Xóa người tham gia';
+
+  @override
+  String get meetShareNotes => 'Chia sẻ ghi chú cuộc họp';
+
+  @override
+  String get meetApprovedParticipant => 'Người tham gia đã được phê duyệt';
+
+  @override
+  String get meetForgetApproval => 'Quên phê duyệt';
+
+  @override
+  String get meetEstimatedCosts => 'Chi phí ước tính';
+
+  @override
+  String get meetCostsUnavailable => 'Chưa có ước tính chi phí.';
+
+  @override
+  String get meetPartialEstimate => 'Ước tính chưa đầy đủ. Một số chi phí nhà cung cấp chưa được tính.';
+
+  @override
+  String get meetSfuEgress => 'Truyền âm thanh và video';
+
+  @override
+  String get meetDurableRequests => 'Yêu cầu phòng họp';
+
+  @override
+  String get meetMiraCost => 'Mira';
+
+  @override
+  String get meetLiveCost => 'Mira Live';
+
+  @override
+  String get meetLockRoom => 'Khóa phòng họp';
+
+  @override
+  String get meetSaveChat => 'Lưu trò chuyện của phòng';
+
+  @override
+  String get meetSettings => 'Cài đặt cuộc họp';
+
+  @override
+  String get meetRecordings => 'Bản ghi';
+
+  @override
+  String get meetRecordingAccess => 'Chia sẻ bản ghi với người tham gia';
+
+  @override
+  String get meetRecordingAccessHint => 'Người tham gia có thể xem các bản ghi cuộc họp đã lưu.';
+
+  @override
+  String get meetParticipantRecording => 'Cho phép người tham gia ghi hình';
+
+  @override
+  String get meetParticipantRecordingHint => 'Người tham gia có thể bắt đầu ghi khi thiết bị của họ hỗ trợ.';
+
+  @override
+  String get meetLeave => 'Rời cuộc gọi';
+
+  @override
+  String get meetEndForEveryone => 'Kết thúc cho mọi người';
+
+  @override
+  String get meetMicrophone => 'Micrô';
+
+  @override
+  String get meetCamera => 'Máy ảnh';
+
+  @override
+  String get meetSwitchCamera => 'Đổi máy ảnh';
+
+  @override
+  String get meetChat => 'Trò chuyện';
+
+  @override
+  String get meetEveryone => 'Mọi người';
+
+  @override
+  String get meetPrivateMira => 'Trò chuyện riêng với Mira';
+
+  @override
+  String get meetPrivateHint => 'Chỉ bạn thấy cuộc trò chuyện này. Hãy xem lại câu trả lời trước khi chia sẻ với mọi người.';
+
+  @override
+  String get meetPrivateEmpty => 'Hỏi riêng Mira về cuộc họp này.';
+
+  @override
+  String get meetAskMira => 'Hỏi riêng Mira';
+
+  @override
+  String get meetPrivateRequestFailed => 'Mira chưa thể trả lời. Hãy thử gửi lại tin nhắn.';
+
+  @override
+  String get meetShareWithEveryone => 'Chia sẻ với mọi người';
+
+  @override
+  String get meetShareHint => 'Xem lại hoặc chỉnh sửa câu trả lời trước khi đăng vào trò chuyện phòng họp.';
+
+  @override
+  String get meetShareConfirm => 'Đăng vào trò chuyện phòng họp';
+
+  @override
+  String get meetMiraThinking => 'Mira đang chuẩn bị câu trả lời…';
+
+  @override
+  String get meetMiraReplyFailed => 'Mira không thể trả lời tin nhắn trong phòng.';
+
+  @override
+  String get meetMiraRetry => 'Thử lại với Mira';
+
+  @override
+  String get meetMiraReviews => 'Duyệt hành động riêng tư';
+
+  @override
+  String get meetMiraReviewsHint => 'Chỉ bạn thấy các bản nháp và yêu cầu này. Hãy kiểm tra hành động trong không gian làm việc trước khi duyệt.';
+
+  @override
+  String get meetMiraAudioMute => 'Tắt âm thanh Mira Live';
+
+  @override
+  String get meetMiraAudioUnmute => 'Bật âm thanh Mira Live';
+
+  @override
+  String get meetMiraAudioRetry => 'Thử lại âm thanh Mira Live';
+
+  @override
+  String get meetMiraReviewFailed => 'Không thể tải các mục duyệt riêng tư của Mira.';
+
+  @override
+  String get meetMiraReviewRefresh => 'Tải lại mục duyệt';
+
+  @override
+  String get meetMiraApprove => 'Duyệt hành động';
+
+  @override
+  String get meetMiraDeny => 'Từ chối hành động';
+
+  @override
+  String get meetMiraDiscard => 'Bỏ bản nháp';
+
+  @override
+  String get meetMiraApprovalTitle => 'Duyệt hành động trong không gian làm việc?';
+
+  @override
+  String get meetMiraApprovalHint => 'Mira sẽ thực hiện các hành động được liệt kê. Hãy kiểm tra từng nội dung trước khi duyệt.';
+
+  @override
+  String get meetMiraActionFailed => 'Không thể cập nhật mục duyệt của Mira. Vui lòng thử lại.';
+
+  @override
+  String get meetOpenLink => 'Mở liên kết';
+
+  @override
+  String get meetMessageHint => 'Nhắn cho mọi người';
+
+  @override
+  String get meetSend => 'Gửi';
+
+  @override
+  String get meetWaitingForHost => 'Đang chờ người chủ trì cho phép tham gia';
+
+  @override
+  String get meetConnecting => 'Đang kết nối cuộc họp…';
+
+  @override
+  String get meetReconnecting => 'Đang kết nối lại…';
+
+  @override
+  String get meetCallEnded => 'Cuộc họp đã kết thúc';
+
+  @override
+  String get meetAccessDenied => 'Bạn không thể tham gia cuộc họp này';
+
+  @override
+  String get meetNoParticipants => 'Đang chờ người khác tham gia';
+
+  @override
+  String get meetAdmit => 'Cho phép';
+
+  @override
+  String get meetDecline => 'Từ chối';
+
+  @override
+  String get meetParticipants => 'Người tham gia';
+
+  @override
+  String get meetYou => 'Bạn';
+
+  @override
   String get connectedOnboardingEcosystemTitle => 'Kết nối mọi mục tiêu của bạn';
 
   @override
@@ -7731,6 +7992,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailLoadImages => 'Hiển thị ảnh từ bên ngoài';
+
+  @override
+  String get mailLoadImagesDescription => 'Mặc định hiển thị ảnh. Người gửi có thể biết khi bạn mở thư.';
 
   @override
   String get mailSettings => 'Cài đặt thư';
@@ -8220,4 +8484,63 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantLiveScreenPrivacy => 'Nội dung hiển thị trên màn hình có thể được chia sẻ với Live. Hãy ẩn thông tin riêng tư trước khi tiếp tục.';
+
+  @override
+  String desktopUpdateReady(String version) {
+    return 'Tuturuuu $version đã sẵn sàng để cài đặt.';
+  }
+
+  @override
+  String get desktopUpdateFailed => 'Không thể cài đặt bản cập nhật. Bạn vẫn có thể dùng phiên bản hiện tại.';
+
+  @override
+  String get desktopUpdateScheduled => 'Bản cập nhật sẽ được cài đặt vào lần mở Tuturuuu tiếp theo.';
+
+  @override
+  String get desktopUpdateInstall => 'Cài đặt và khởi động lại';
+
+  @override
+  String get desktopUpdateCancel => 'Hủy lịch cập nhật';
+
+  @override
+  String get desktopUpdateNextLaunch => 'Cài đặt vào lần mở tiếp theo';
+
+  @override
+  String get desktopUpdateDismiss => 'Ẩn thông báo cập nhật';
+
+  @override
+  String get desktopUpdateManual => 'Tải xuống thủ công';
+
+  @override
+  String get mailSnooze => 'Tạm ẩn';
+
+  @override
+  String get mailUnsnooze => 'Đưa về hộp thư đến ngay';
+
+  @override
+  String get mailMute => 'Tắt thông báo chuỗi thư';
+
+  @override
+  String get mailUnmute => 'Bật lại thông báo';
+
+  @override
+  String get mailSnoozed => 'Đã tạm ẩn';
+
+  @override
+  String get mailMuted => 'Đã tắt thông báo';
+
+  @override
+  String get mailSnoozeHour => 'Sau một giờ';
+
+  @override
+  String get mailSnoozeDay => 'Sau 24 giờ';
+
+  @override
+  String get mailSnoozeWeek => 'Sau một tuần';
+
+  @override
+  String get mailSnoozeCustom => 'Chọn ngày và giờ';
+
+  @override
+  String get mailSnoozeFuture => 'Vui lòng chọn thời gian trong tương lai.';
 }

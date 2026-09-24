@@ -82,6 +82,20 @@ export async function getMobileDeploymentState(
   });
 }
 
+export async function repairMobileDeploymentDraft(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MobileDeploymentState>('/api/v1/mobile-deployment', {
+    body: JSON.stringify({ action: 'inherit_missing' }),
+    cache: 'no-store',
+    headers: mobileDeploymentMutationHeaders({
+      'Content-Type': 'application/json',
+    }),
+    method: 'PUT',
+  });
+}
+
 export async function replaceMobileDeploymentEnvFile(
   envFile: string,
   options?: InternalApiClientOptions

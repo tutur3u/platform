@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.40.0](https://github.com/tutur3u/platform/compare/internal-api-v0.39.0...internal-api-v0.40.0) (2026-09-23)
+
+
+### Features
+
+* **infrastructure:** add web and mobile account recovery ([5e42191](https://github.com/tutur3u/platform/commit/5e42191a675b8edee62a62c58ae656e3a05d243f))
+* **infrastructure:** add web and mobile internal account recovery ([#5440](https://github.com/tutur3u/platform/issues/5440)) ([0694318](https://github.com/tutur3u/platform/commit/06943180c538f9f294586555d5d776c2cf1ea69e))
+
+
+### Bug Fixes
+
+* **internal-api:** identify server requests across Worker runtimes ([428581a](https://github.com/tutur3u/platform/commit/428581a47a8a5ca45f52b0aa5d94c871075ff166)) ([#5439](https://github.com/tutur3u/platform/issues/5439)) ([e017856](https://github.com/tutur3u/platform/commit/e0178567d33f81f8d57de911735e0571d8be7f9e))
+
 ## [0.39.0](https://github.com/tutur3u/platform/compare/internal-api-v0.38.1...internal-api-v0.39.0) (2026-09-20)
 
 

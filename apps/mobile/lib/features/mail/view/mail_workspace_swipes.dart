@@ -22,8 +22,15 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
       MailSwipeAction.read => unread ? 'mark_read' : 'mark_unread',
       MailSwipeAction.star => starred ? 'unstar' : 'star',
       MailSwipeAction.move => 'move_to_folder',
+      MailSwipeAction.snooze => _folder == 'snoozed' ? 'unsnooze' : 'snooze',
+      MailSwipeAction.mute => _folder == 'muted' ? 'unmute' : 'mute',
       MailSwipeAction.none => '',
     };
+    DateTime? snoozedUntil;
+    if (action == 'snooze') {
+      snoozedUntil = await chooseMailSnoozeTime(context);
+      if (!mounted || snoozedUntil == null || box != _mailboxId) return;
+    }
     String? folderId;
     if (swipe == MailSwipeAction.move) {
       folderId = await _chooseMailOption(context.l10n.mailSwipeMove, {
@@ -65,10 +72,13 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
         action,
         threads: threads,
         folderId: folderId,
+        snoozedUntil: snoozedUntil,
       );
       if (!mounted || generation != _generation || box != _mailboxId) return;
       _saveView();
       final inverse = switch (action) {
+        'snooze' => 'unsnooze',
+        'mute' => 'unmute',
         'mark_read' => 'mark_unread',
         'mark_unread' => 'mark_read',
         'star' => 'unstar',
@@ -76,8 +86,27 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
         'archive' || 'trash' when _folder == 'inbox' => 'restore',
         _ => null,
       };
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (_childRouteOpen) return;
+      _dismissSwipeFeedback();
+      final width = MediaQuery.sizeOf(context).width;
+      final sideInset = width > 320 ? (width - 288) / 2 : 16.0;
+      final messenger = ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..removeCurrentSnackBar();
+      final feedback = messenger.showSnackBar(
         SnackBar(
+          duration: const Duration(seconds: 5),
+          persist: false,
+          margin: EdgeInsets.fromLTRB(
+            sideInset,
+            0,
+            sideInset,
+            lookupShellTitleOverrideCubit(context) != null &&
+                    MediaQuery.sizeOf(context).width < 600
+                ? 96
+                : 16,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           content: Text(swipe.label(context)),
           action: inverse == null
               ? null
@@ -118,6 +147,12 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
                   },
                 ),
         ),
+      );
+      _swipeFeedback = feedback;
+      unawaited(
+        feedback.closed.then((_) {
+          if (identical(_swipeFeedback, feedback)) _swipeFeedback = null;
+        }),
       );
     } on Object {
       if (!mounted || generation != _generation) return;

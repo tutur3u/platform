@@ -36,11 +36,13 @@ import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/desktop_update/desktop_uri_receipt.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
+import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
@@ -219,9 +221,7 @@ class _AppState extends State<App> {
       ),
     );
     unawaited(_appVersionCubit.checkVersion());
-    // If auth resolved synchronously to authenticated, load workspaces now.
-    // BlocListener only fires on state *changes*, so it won't trigger for
-    // the initial state set in the AuthCubit constructor.
+    // BlocListener misses initial auth; load synchronously resolved workspaces.
     if (_authCubit.state.status == AuthStatus.authenticated) {
       unawaited(
         PushNotificationService.instance.startSession(
@@ -298,6 +298,7 @@ class _AppState extends State<App> {
   }
 
   Future<void> _handleDeepLinkUri(Uri uri) async {
+    if (await recordDesktopSmokeUri(uri)) return;
     final deepLink = resolveMobileDeepLink(uri);
     if (deepLink == null) return;
 

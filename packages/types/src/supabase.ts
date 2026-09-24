@@ -9454,6 +9454,46 @@ export type Database = {
           },
         ];
       };
+      mail_notification_receipts: {
+        Row: {
+          message_id: string;
+          notification_id: string | null;
+          user_id: string;
+        };
+        Insert: {
+          message_id: string;
+          notification_id?: string | null;
+          user_id: string;
+        };
+        Update: {
+          message_id?: string;
+          notification_id?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_notification_receipts_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_notification_receipts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_notification_receipts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       mail_outbound_jobs: {
         Row: {
           attempts: number;
@@ -9689,6 +9729,62 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'mail_messages';
             referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_thread_user_state: {
+        Row: {
+          mailbox_id: string;
+          muted_at: string | null;
+          snoozed_until: string | null;
+          thread_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          mailbox_id: string;
+          muted_at?: string | null;
+          snoozed_until?: string | null;
+          thread_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          mailbox_id?: string;
+          muted_at?: string | null;
+          snoozed_until?: string | null;
+          thread_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_thread_user_state_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_thread_user_state_thread_id_fkey';
+            columns: ['thread_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_threads';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_thread_user_state_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_thread_user_state_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
         ];
       };
@@ -15784,6 +15880,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      can_deliver_mail_notification: {
+        Args: { p_notification_id: string };
+        Returns: boolean;
+      };
       can_join_form_realtime_topic: {
         Args: { p_topic: string; p_user_id: string };
         Returns: boolean;
@@ -18109,6 +18209,10 @@ export type Database = {
           ws_id: string;
         }[];
       };
+      mail_thread_push_allowed: {
+        Args: { p_message_id: string; p_user_id: string };
+        Returns: boolean;
+      };
       managed_cron_claim_due_jobs: {
         Args: {
           p_limit?: number;
@@ -18441,6 +18545,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      requeue_mail_push_batches: { Args: never; Returns: number };
       resolve_user_groups_table_timezone: {
         Args: { p_ws_id: string };
         Returns: string;
@@ -18542,6 +18647,16 @@ export type Database = {
           pending_count: number;
           rejected_count: number;
         }[];
+      };
+      set_mail_thread_preference: {
+        Args: {
+          p_action: string;
+          p_mailbox_id: string;
+          p_snoozed_until?: string;
+          p_thread_ids: string[];
+          p_user_id: string;
+        };
+        Returns: undefined;
       };
       set_workspace_invitation_roles: {
         Args: {
@@ -18869,6 +18984,10 @@ export type Database = {
       user_group_activity_resource_type: {
         Args: { p_table_name: string };
         Returns: string;
+      };
+      valid_subscription_months: {
+        Args: { months: string[] };
+        Returns: boolean;
       };
       wallet_interest_calculation_result: {
         Args: {
@@ -22056,6 +22175,7 @@ export type Database = {
           paid_amount: number;
           platform_creator_id: string | null;
           price: number;
+          subscription_months: string[] | null;
           total_diff: number;
           transaction_id: string | null;
           valid_until: string | null;
@@ -22074,6 +22194,7 @@ export type Database = {
           paid_amount?: number;
           platform_creator_id?: string | null;
           price: number;
+          subscription_months?: string[] | null;
           total_diff?: number;
           transaction_id?: string | null;
           valid_until?: string | null;
@@ -22092,6 +22213,7 @@ export type Database = {
           paid_amount?: number;
           platform_creator_id?: string | null;
           price?: number;
+          subscription_months?: string[] | null;
           total_diff?: number;
           transaction_id?: string | null;
           valid_until?: string | null;

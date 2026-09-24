@@ -30,6 +30,7 @@ function audioHarness() {
     state: 'running',
     currentTime: 0,
     destination: {},
+    createGain: vi.fn(() => ({ gain: { value: 1 }, connect: vi.fn() })),
     resume: vi.fn(async () => {}),
     close: vi.fn(async () => {}),
     createBuffer: (_channels: number, length: number, rate: number) => ({
@@ -102,4 +103,63 @@ it('bounds the scheduled end without stopping the sentence already queued', asyn
   player.play(chunk, Number.NaN);
   player.play(chunk, 0);
   expect(sources).toHaveLength(119);
+});
+
+it('lets a listen gesture resume audio while an autoplay attempt is pending', async () => {
+  const { context } = audioHarness();
+  context.state = 'suspended';
+  let unblockAutoplay: () => void = () => {};
+  context.resume
+    .mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          unblockAutoplay = resolve;
+        })
+    )
+    .mockImplementationOnce(async () => {
+      context.state = 'running';
+      unblockAutoplay();
+    });
+  const player = new LiveAudioPlayer();
+  const automatic = player.unlock();
+  await vi.waitFor(() => expect(context.resume).toHaveBeenCalledTimes(1));
+  const manual = player.unlock();
+  await vi.waitFor(() => expect(context.resume).toHaveBeenCalledTimes(2));
+  await Promise.all([automatic, manual]);
+});
+
+it('waits for the chosen output before playing queued audio', async () => {
+  const { context, sources, chunk } = audioHarness();
+  let finishOutput: () => void = () => {};
+  const setSinkId = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finishOutput = resolve;
+      })
+  );
+  Object.assign(context, { setSinkId });
+  const player = new LiveAudioPlayer();
+  const opening = player.unlock('headphones');
+  await vi.waitFor(() => expect(setSinkId).toHaveBeenCalledWith('headphones'));
+  player.play(chunk);
+  expect(sources).toHaveLength(0);
+  finishOutput();
+  await opening;
+  expect(sources).toHaveLength(1);
+});
+
+it('changes queued speech gain without interrupting and keeps volume when reopening', async () => {
+  const { context, sources, chunk } = audioHarness();
+  const player = new LiveAudioPlayer();
+  player.setVolume(0.25);
+  await player.unlock();
+  const gain = context.createGain.mock.results[0]!.value;
+  expect(gain.gain.value).toBe(0.25);
+  player.play(chunk);
+  player.setVolume(0);
+  expect(gain.gain.value).toBe(0);
+  expect(sources[0]!.stop).not.toHaveBeenCalled();
+  player.close();
+  await player.unlock();
+  expect(context.createGain.mock.results[1]!.value.gain.value).toBe(0);
 });

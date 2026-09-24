@@ -83,3 +83,28 @@ describe('push delivery helpers', () => {
     });
   });
 });
+
+it('builds personal Mail deep links without a workspace', () => {
+  const data = buildPushData({
+    id: 'n',
+    type: 'mail_received',
+    title: 'Sender',
+    description: 'Subject',
+    created_at: '2026-09-23',
+    ws_id: null,
+    data: {
+      mailboxId: 'box',
+      threadId: 'thread',
+      messageId: 'message',
+      userId: 'user',
+    },
+  });
+  expect(data).toMatchObject({
+    openTarget: 'mail',
+    mailboxId: 'box',
+    threadId: 'thread',
+    messageId: 'message',
+    userId: 'user',
+    wsId: '',
+  });
+});

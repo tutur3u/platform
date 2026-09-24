@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
@@ -80,6 +81,81 @@ void main() {
     'folders': <Map<String, dynamic>>[],
   };
 
+  testWidgets('cold inbox shows loading and then an empty state', (
+    tester,
+  ) async {
+    final bootstrap = Completer<Map<String, dynamic>>();
+    when(() => repository.bootstrap('ws')).thenAnswer((_) => bootstrap.future);
+    respond(
+      (_) async => {
+        'threads': <dynamic>[],
+        'pagination': {'hasMore': false},
+      },
+    );
+    await mount(tester);
+    await tester.pump();
+    expect(find.text('Loading'), findsOneWidget);
+    bootstrap.complete({
+      'mailboxes': [
+        {'id': 'box', 'address': 'me@tuturuuu.com'},
+      ],
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('No messages here'), findsOneWidget);
+  });
+
+  testWidgets('retry verifies mailbox access before enabling Inbox actions', (
+    tester,
+  ) async {
+    final saved = savedInbox()..['items'] = <Map<String, dynamic>>[];
+    when(() => repository.savedView('ws')).thenAnswer((_) async => saved);
+    var bootstrapCalls = 0;
+    when(() => repository.bootstrap('ws')).thenAnswer((_) async {
+      bootstrapCalls++;
+      if (bootstrapCalls == 1) throw StateError('Offline');
+      return {
+        'mailboxes': [
+          {'id': 'box', 'address': 'me@tuturuuu.com'},
+        ],
+      };
+    });
+    respond((_) async => inbox('Recovered message'));
+    await mount(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    expect(bootstrapCalls, 2);
+    expect(find.text('Recovered message'), findsOneWidget);
+    expect(
+      tester
+          .widget<Dismissible>(
+            find.byKey(const ValueKey('mail-swipe-Recovered message')),
+          )
+          .direction,
+      DismissDirection.horizontal,
+    );
+  });
+
+  testWidgets('saved Snoozed inbox appears before bootstrap completes', (
+    tester,
+  ) async {
+    final saved = savedInbox()..['folder'] = 'snoozed';
+    final bootstrap = Completer<Map<String, dynamic>>();
+    when(() => repository.savedView('ws')).thenAnswer((_) async => saved);
+    when(() => repository.bootstrap('ws')).thenAnswer((_) => bootstrap.future);
+    respond((_) async => inbox('Fresh message'));
+    await mount(tester);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Cached message'), findsOneWidget);
+    bootstrap.complete({
+      'mailboxes': [
+        {'id': 'box', 'address': 'me@tuturuuu.com'},
+      ],
+    });
+    await tester.pumpAndSettle();
+  });
+
   for (final size in [
     const Size(390, 844),
     const Size(844, 390),
@@ -143,6 +219,107 @@ void main() {
       },
     );
   }
+
+  testWidgets('push waits for mailbox access before opening its thread', (
+    tester,
+  ) async {
+    final bootstrap = Completer<Map<String, dynamic>>();
+    when(() => repository.bootstrap('ws')).thenAnswer((_) => bootstrap.future);
+    respond((_) async => inbox('Inbox'));
+    when(
+      () => repository.detail('ws', 'box', 'target', thread: true),
+    ).thenAnswer(
+      (_) async => {
+        'thread': {'id': 'target', 'subject': 'Pushed message'},
+        'messages': <dynamic>[],
+      },
+    );
+    await tester.pumpApp(
+      MailWorkspace(
+        workspaceId: 'ws',
+        repository: repository,
+        destination: const MailPushDestination(
+          userId: 'user',
+          mailboxId: 'box',
+          threadId: 'target',
+          notificationId: 'push',
+        ),
+      ),
+    );
+    await tester.pump();
+    verifyNever(() => repository.detail('ws', 'box', 'target', thread: true));
+    bootstrap.complete({
+      'mailboxes': [
+        {'id': 'box', 'address': 'me@tuturuuu.com', 'status': 'active'},
+      ],
+    });
+    await tester.pumpAndSettle();
+    verify(
+      () => repository.detail('ws', 'box', 'target', thread: true),
+    ).called(1);
+    expect(find.byType(MailReader), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'push opens its thread while the inbox refresh is still pending',
+    (tester) async {
+      final inboxRefresh = Completer<Map<String, dynamic>>();
+      respond((_) => inboxRefresh.future);
+      when(
+        () => repository.detail('ws', 'box', 'target', thread: true),
+      ).thenAnswer(
+        (_) async => {
+          'thread': {'id': 'target', 'subject': 'Pushed message'},
+          'messages': <dynamic>[],
+        },
+      );
+      await tester.pumpApp(
+        MailWorkspace(
+          workspaceId: 'ws',
+          repository: repository,
+          destination: const MailPushDestination(
+            userId: 'user',
+            mailboxId: 'box',
+            threadId: 'target',
+            notificationId: 'push',
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+      expect(find.byType(MailReader), findsOneWidget);
+      inboxRefresh.complete(inbox('Inbox'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('push cannot open a mailbox missing from authorized bootstrap', (
+    tester,
+  ) async {
+    respond((_) async => inbox('Allowed inbox'));
+    await tester.pumpApp(
+      MailWorkspace(
+        workspaceId: 'ws',
+        repository: repository,
+        destination: const MailPushDestination(
+          userId: 'user',
+          mailboxId: 'other-box',
+          threadId: 'target',
+          notificationId: 'push',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    verifyNever(
+      () => repository.detail('ws', 'other-box', 'target', thread: true),
+    );
+    expect(find.byType(MailReader), findsNothing);
+    expect(find.text('Allowed inbox'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('access denial removes cached messages immediately', (
     tester,
@@ -286,6 +463,54 @@ void main() {
     expect(find.text('Current subject'), findsOneWidget);
   });
 
+  testWidgets('another message opens while the previous read is pending', (
+    tester,
+  ) async {
+    final read = Completer<void>();
+    respond(
+      (_) async => {
+        'threads': [
+          {'id': 'First', 'subject': 'First', 'participants': <dynamic>[]},
+          {'id': 'Second', 'subject': 'Second', 'participants': <dynamic>[]},
+        ],
+        'pagination': {'hasMore': false},
+      },
+    );
+    for (final id in ['First', 'Second']) {
+      when(() => repository.detail('ws', 'box', id, thread: true)).thenAnswer(
+        (_) async => {
+          'thread': {'id': id, 'subject': id},
+          'messages': [
+            {
+              'id': '$id-message',
+              'subject': id,
+              'unread': true,
+              'bodyText': id,
+              'fromAddress': 'sender@example.com',
+            },
+          ],
+        },
+      );
+      when(
+        () =>
+            repository.changeState('ws', 'box', id, 'mark_read', thread: true),
+      ).thenAnswer((_) => id == 'First' ? read.future : Future.value());
+    }
+    await mount(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('First'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MailReader), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Second'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MailReader), findsOneWidget);
+    expect(find.text('Second'), findsWidgets);
+    read.complete();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('archive updates immediately and rolls back a failed request', (
     tester,
   ) async {
@@ -305,6 +530,60 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('First'), findsOneWidget);
     await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('swipe feedback closes when another message opens', (
+    tester,
+  ) async {
+    respond(
+      (_) async => {
+        'threads': [
+          {'id': 'First', 'subject': 'First', 'participants': <dynamic>[]},
+          {'id': 'Second', 'subject': 'Second', 'participants': <dynamic>[]},
+        ],
+        'pagination': {'hasMore': false},
+      },
+    );
+    when(
+      () => repository.bulk('ws', 'box', any(), 'archive', threads: true),
+    ).thenAnswer((_) async {});
+    when(
+      () => repository.detail('ws', 'box', 'Second', thread: true),
+    ).thenAnswer(
+      (_) async => {
+        'thread': {'id': 'Second', 'subject': 'Second'},
+        'messages': <dynamic>[],
+      },
+    );
+    await mount(tester);
+    await tester.pumpAndSettle();
+    ScaffoldMessenger.of(tester.element(find.byType(MailWorkspace)))
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Old feedback'),
+          duration: Duration(minutes: 1),
+        ),
+      )
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Queued feedback'),
+          duration: Duration(minutes: 1),
+        ),
+      );
+    await tester
+        .widget<Dismissible>(find.byKey(const ValueKey('mail-swipe-First')))
+        .confirmDismiss!(DismissDirection.endToStart);
+    await tester.pump();
+    verify(
+      () => repository.bulk('ws', 'box', any(), 'archive', threads: true),
+    ).called(1);
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text('Old feedback'), findsNothing);
+    expect(find.text('Queued feedback'), findsNothing);
+    await tester.tap(find.text('Second'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MailReader), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
   });
 
   testWidgets('tablet Mail controls scroll away with the message list', (

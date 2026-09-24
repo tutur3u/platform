@@ -596,8 +596,27 @@ protected upload keystore through all four `ANDROID_KEYSTORE_*` environment
 variables or `apps/mobile/android/key.properties`; the command fails before
 compilation when signing is absent and verifies the resulting AAB with
 `jarsigner`. The Mobile Store Deployment workflow hydrates these credentials in
-its protected runner and executes this exact command. Development builds remain
-available through `bun build:android:dev`.
+its protected runner and executes this exact command. Each store upload derives
+its app version from the major and minor values in `apps/mobile/pubspec.yaml`
+and the highest existing TestFlight prerelease version for that series. For
+example, `0.11.0` advances to `0.11.1`, then `0.11.2`. Android and iOS receive
+the same version, while the unique CI build number remains separate. This does
+not commit a version bump; Release Please still owns the source version.
+Development builds remain available through `bun build:android:dev`.
+
+TestFlight distribution defaults to all available beta groups. Configure
+`TESTFLIGHT_BETA_ENABLED=false` to disable automatic distribution, or set
+`TESTFLIGHT_BETA_GROUPS` to a comma-separated list of group names or IDs to
+limit it. If Apple is still reviewing an earlier external build, the new build
+remains available to internal testers and its external review is deferred.
+The Mobile TestFlight Review Queue workflow checks every four hours and can be
+run manually; after the earlier review ends, it submits the newest processed
+internal build to the selected external groups. It never withdraws the earlier
+submission. The retry workflow accesses App Store Connect only after its code
+has been promoted to `production`.
+
+Validate the store workflow and review queue locally with
+`node --test scripts/ci/mobile-store-workflow.test.js scripts/mobile-deployment/verify-store.test.mjs`.
 
 To hydrate or validate a native Firebase configuration without compiling, run:
 

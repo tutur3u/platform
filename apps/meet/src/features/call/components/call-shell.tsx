@@ -5,6 +5,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import type { ComponentProps } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MeetLivePanel } from '@/features/live-assistant/live-panel';
 import { RoomAssistantAudio } from '@/features/live-assistant/room-audio';
@@ -34,6 +35,10 @@ import { CopyInvite } from './copy-invite';
 import { LeaveDialog } from './leave-dialog';
 import { Lobby } from './lobby';
 import { MeetingTitle } from './meeting-title';
+import {
+  PlaybackVolumeControl,
+  PlaybackVolumeProvider,
+} from './playback-volume';
 import { ReactionOverlay } from './reaction-overlay';
 import { ResizableCallPanel } from './resizable-call-panel';
 import { RoomCountdown } from './room-countdown';
@@ -44,7 +49,7 @@ import { SidePanel } from './side-panel';
 type Device = 'microphone' | 'camera' | 'screen';
 
 /** Compose the active meeting, including protected audio and compact room controls. */
-export function ConnectedCallShell({
+function CallShellContent({
   accountId,
   defaultDisplayName,
   defaultAvatarUrl,
@@ -80,6 +85,13 @@ export function ConnectedCallShell({
   const [ending, setEnding] = useState(false);
   const [showAi, setShowAi] = useState(false);
   const [outputDeviceId, setOutputDeviceId] = useState('');
+  const [mentionRequest, setMentionRequest] = useState(0);
+  const onMentionHandled = useCallback(() => setMentionRequest(0), []);
+  const askMira = () => {
+    setMentionRequest((value) => value + 1);
+    setPanel('chat');
+    setShowAi(false);
+  };
   const [panel, setPanel] = useState<CallPanel>(null);
   const [layout, setLayout] = useState<CallLayout>('auto');
   const [focus, setFocus] = useState<string | null>(null);
@@ -287,7 +299,7 @@ export function ConnectedCallShell({
           canManage={canManage}
           onSaved={room.renameMeeting}
         />
-        {participants.length === 1 && (
+        {participants.length === 1 && !state.liveAssistant && (
           <span
             role="status"
             className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-1 text-muted-foreground text-xs"
@@ -327,20 +339,25 @@ export function ConnectedCallShell({
             {t('reconnecting')}
           </span>
         )}
-        {!sharedAudio.shared && (
-          <RoomAssistantAudio
-            canManage={canManage}
-            meetingId={meetingId}
-            outputDeviceId={outputDeviceId}
-          />
-        )}
+        <RoomAssistantAudio
+          room={room}
+          audioSuppressed={sharedAudio.shared}
+          canManage={canManage}
+          meetingId={meetingId}
+          outputDeviceId={outputDeviceId}
+        />
         <MeetLivePanel
           key="live-assistant"
+          onOpenChat={askMira}
           room={room}
           meetingId={meetingId}
           outputDeviceId={outputDeviceId}
           canManage={canManage}
           audioSuppressed={sharedAudio.microphonePaused}
+        />
+        <PlaybackVolumeControl
+          participants={participants}
+          selfUserId={state.selfUserId}
         />
         <SharedAudioControl
           audio={sharedAudio}
@@ -393,6 +410,7 @@ export function ConnectedCallShell({
             </div>
           )}
           <CallStage
+            onChat={askMira}
             audioSuppressed={sharedAudio.shared}
             outputDeviceId={outputDeviceId}
             room={room}
@@ -420,7 +438,10 @@ export function ConnectedCallShell({
         )}
         {panel && (
           <SidePanel
+            mentionRequest={mentionRequest}
+            onMentionHandled={onMentionHandled}
             meetingId={meetingId}
+            miraActive={!!state.liveAssistant}
             canManage={canManage}
             chat={state.chat}
             onClose={() => setPanel(null)}
@@ -449,7 +470,7 @@ export function ConnectedCallShell({
           state.selfUserId ? isHandRaised(state, state.selfUserId) : false
         }
         busyDevices={busyDevices}
-        participantCount={participants.length}
+        participantCount={participants.length + (state.liveAssistant ? 1 : 0)}
         recordingBusy={recording.isBusy}
         recordingOn={state.recording.state === 'recording'}
         unreadChat={
@@ -525,3 +546,13 @@ export function ConnectedCallShell({
 }
 
 export { CallShell } from './device-session-gate';
+
+export function ConnectedCallShell(
+  props: ComponentProps<typeof CallShellContent>
+) {
+  return (
+    <PlaybackVolumeProvider>
+      <CallShellContent {...props} />
+    </PlaybackVolumeProvider>
+  );
+}

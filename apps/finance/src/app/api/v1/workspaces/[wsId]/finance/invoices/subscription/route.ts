@@ -395,6 +395,14 @@ export async function POST(req: Request, { params }: Params) {
       wallet_id,
       category_id: resolvedCategoryId,
       completed_at: new Date().toISOString(),
+      subscription_months: Array.from(
+        { length: coverageRange.prepaidMonthCount },
+        (_, index) => {
+          const date = parseSelectedMonthStart(selected_month)!;
+          date.setUTCMonth(date.getUTCMonth() + index);
+          return date.toISOString().slice(0, 10);
+        }
+      ),
       valid_until: coverageRange.validUntil.toISOString(),
       paid_amount: storedTotal,
       platform_creator_id: user.id,

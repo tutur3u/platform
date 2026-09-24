@@ -570,7 +570,7 @@ detection, `bun check`, and fast-forward safety — and are covered by
 `scripts/git-release-please.test.js` and `scripts/git-sync.test.js`.
 
 The generated PR must have passing checks, no unresolved active review threads,
-and a 30-minute quiet period after its latest update or generated commit. This
+and a 5-minute quiet period after its latest update or generated commit. This
 is checked before dependency setup and again immediately before merging the
 pinned generated head. Failed PR checks stop the daily run for investigation.
 After local validation, it pushes the release merge to `main` and waits for all
@@ -768,12 +768,13 @@ from a build log and reproduce the native build failure on that toolchain.
   uploads it to TestFlight.
 - CI requests a signed GitHub OIDC token for the
   `tuturuuu-mobile-deployment` audience, then fetches an Android or iOS bundle
-  from `https://tuturuuu.com/api/v1/mobile-deployment/bundle` with the issued
+  from `https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle` with the issued
   `MOBILE_DEPLOYMENT_CI_TOKEN`.
 - If `MOBILE_DEPLOYMENT_CI_TOKEN` is not configured in the `mobile-store-beta`
-  GitHub Environment yet, the credentials preflight emits a notice and skips the
-  Android and iOS publish jobs instead of failing the workflow. A non-empty but
-  invalid token still fails during the bundle fetch.
+  GitHub Environment, the credentials preflight fails. Android and iOS publish
+  only after that preflight succeeds. Do not pass a credential-presence flag as a
+  job output: GitHub may redact it as secret-like, silently skipping both jobs.
+  An invalid token fails during the bundle fetch.
 - The apps/web mobile deployment vault verifies the CI token, GitHub OIDC
   issuer, audience, repository, `production` ref, workflow file, and
   `mobile-store-beta` environment before returning any plaintext.
@@ -783,8 +784,15 @@ from a build log and reproduce the native build failure on that toolchain.
   `always()` cleanup steps.
 - The workflow rejects any Google Play track other than `internal`, uploads only
   the AAB/IPA build artifacts, and uses TestFlight-only iOS upload.
-- Release Please owns mobile version and build-number bumps. Duplicate store
-  build numbers should fail in CI instead of being bumped by this workflow.
+- The workflow sets the app version one patch above the greater of the
+  `apps/mobile/pubspec.yaml` patch and matching iOS pre-release versions in App
+  Store Connect. With `0.11.0+84` and no matching history, the first upload is
+  `0.11.1`, followed by `0.11.2`, and so on. It calculates a separate build
+  number from `GITHUB_RUN_NUMBER` and `GITHUB_RUN_ATTEMPT`; both stores receive
+  the same version name. The iOS publish job resolves that version after its
+  single vault bundle fetch; Android waits for the nonsecret version output.
+  Do not fetch the iOS bundle in preflight as well: the vault rejects a second
+  fetch for the same run attempt as a replay.
 
 The workflow is bound to the `mobile-store-beta` GitHub Environment. Keep that
 environment restricted to the `production` branch and store only

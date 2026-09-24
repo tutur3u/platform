@@ -139,12 +139,30 @@ distribution signing. Export uses the profile UUID and App Store Connect export
 method. Local development keeps its existing signing settings when that file
 does not exist.
 
-Create or reuse an internal TestFlight group with automatic distribution enabled.
-After upload, verification waits up to 30 minutes for the exact build to become
-valid and available for internal beta testing. An accepted upload alone does
-not pass verification. Missing export compliance, processing failures, and
-missing internal distribution must be resolved in App Store Connect; rerunning
-verification cannot resolve those account requirements.
+Create an internal TestFlight group with automatic distribution enabled. After
+upload, CI waits up to 30 minutes for the exact build to become valid and
+available for internal testing. It then assigns the build to all existing
+TestFlight groups, including external groups, and reads the assignments back.
+An accepted upload alone does not pass verification. New groups are discovered
+on each run, so future groups are included by default.
+
+The `mobile-store-beta` GitHub environment accepts two optional variables:
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `TESTFLIGHT_BETA_ENABLED` | `true` | Set `false` to skip automatic group assignment. The internal group's own automatic distribution setting still applies. |
+| `TESTFLIGHT_BETA_GROUPS` | `all` | Comma-separated exact group names or App Store Connect group IDs to limit assignment. Unknown names fail the run. |
+| `TESTFLIGHT_BETA_WHATS_NEW` | Generic test note | English (U.S.) instructions shown to external testers when a new build is submitted for beta review. Set this to specific test areas for a release. |
+
+External groups require TestFlight beta review before testers can install a new
+build. If an external group is selected, CI creates a missing English (U.S.)
+What to Test localization, enables automatic tester notification, and submits
+the build for beta review. A workflow success with `WAITING_FOR_REVIEW` or
+`IN_REVIEW` confirms submission, not external tester availability. Confirm
+Apple's approval and external testing status in App Store Connect. Keep the
+app's beta review contact and app description current there. Missing export
+compliance, processing failures, and internal distribution must also be
+resolved in App Store Connect.
 
 Run focused release checks with `node --test scripts/mobile-deployment/*.test.mjs
 scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun check`
@@ -184,6 +202,41 @@ the chat. Test denied ownership and failed ownership lookup before any privilege
 message access. The seed includes at most the latest 200 messages in stable
 chronological order. Deploy the API fix before treating a mobile-only build as
 proof of a working Live session.
+
+### Updating one credential and repairing an older draft
+
+The production sync workflow applies
+`20260923120000_mobile_vault_draft_inheritance.sql`. Verify that migration and
+the updated application deployment have completed before repairing or activating
+a draft; do not run a separate direct production SQL push. New drafts
+inherit the active version's credentials under a fresh envelope key before edits
+are accepted. An interrupted initialization can be retried; it cannot be used as
+an editable partial draft.
+
+For a draft created by the previous implementation, open Infrastructure → Mobile
+Deployment → Overview and choose **Inherit missing credentials**. This is an
+explicit administrator mutation using the same permission and CSRF checks as
+other vault changes. It retains existing draft values, including an updated
+provisioning profile, and preserves recorded deletions and `.env` replacements.
+Legacy deletions are reconstructed from the old audit history; if that history
+is incomplete, review the missing-resource list before repair. Repair is a
+one-time operation per active source, not a fallback on every read.
+
+Inheritance decrypts only inside the server, checks plaintext and ciphertext
+hashes, and re-encrypts under the draft key. Files receive separate immutable
+attempt paths, and ordinary credential uploads also use unique encrypted paths
+so concurrent uploads cannot overwrite one another's file bytes. Database
+metadata is committed atomically with a draft revision check; concurrent edits
+cause a conflict rather than replacement of new values.
+After a conflict, refresh and retry. Verify readiness, then activate the draft
+before triggering the store workflow.
+
+Preparation failures clean up their own attempted uploads. An ambiguous network
+failure during the final database commit can leave unreferenced encrypted attempt
+files. Do not delete these merely because the HTTP request failed: first confirm
+whether metadata committed and ensure no inheritance request is still running.
+Only unreferenced `inherit-*` files in that draft's reserved vault directory may
+be reclaimed. Never remove active-version or currently referenced artifacts.
 
 ## Live screen-sharing extension
 

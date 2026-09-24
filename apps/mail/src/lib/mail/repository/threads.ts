@@ -26,6 +26,11 @@ import {
   getInboxReadCounts,
   loadThreadActionRows,
 } from './thread-action-rows';
+import {
+  isThreadPreferenceAction,
+  loadThreadPreferences,
+  updateThreadPreferences,
+} from './thread-preferences';
 
 const THREAD_PARTICIPANT_COLUMNS =
   'direction,from_address,from_name,has_attachments,id,raw_message_id,thread_id,status';
@@ -236,6 +241,11 @@ export async function listMailThreads({
     (threads ?? []).map((thread: AnyRecord) => [thread.id as string, thread])
   );
   const unreadByThread = getThreadUnreadCounts(visibleMessageRows, states);
+  const preferences = await loadThreadPreferences(
+    access.admin,
+    mailboxId,
+    ctx.user.id
+  );
   const summaries: MailThreadSummary[] = threadIds.flatMap((threadId) => {
     const thread = threadById.get(threadId);
     const message = latestByThread.get(threadId);
@@ -247,6 +257,8 @@ export async function listMailThreads({
     return [
       {
         ...toThread(thread),
+        snoozedUntil: preferences.get(threadId)?.snoozed_until ?? null,
+        muted: Boolean(preferences.get(threadId)?.muted_at),
         deliveryRecipient:
           message.delivery_route === 'catch_all' &&
           message.direction === 'inbound'
@@ -290,6 +302,18 @@ export async function bulkUpdateMailThreads({
     mailboxId,
     payload.threadIds
   );
+  if (isThreadPreferenceAction(payload.action)) {
+    await updateThreadPreferences({
+      admin: access.admin,
+      mailboxId,
+      userId: ctx.user.id,
+      threadIds: [
+        ...new Set(messages.map((row: AnyRecord) => row.thread_id as string)),
+      ],
+      payload: { action: payload.action, snoozedUntil: payload.snoozedUntil },
+    });
+    return { updated: messages.length };
+  }
   let updated = 0;
   for (let start = 0; start < messages.length; start += 250) {
     const result = await bulkUpdateMail({
@@ -339,7 +363,14 @@ export async function getMailThread({
     )
   );
   const newestSubject = hydratedMessages.at(-1)?.subject;
-  const hydratedThread = toThread(thread);
+  const threadPreferences = (
+    await loadThreadPreferences(access.admin, mailboxId, ctx.user.id)
+  ).get(threadId);
+  const hydratedThread = {
+    ...toThread(thread),
+    snoozedUntil: threadPreferences?.snoozed_until ?? null,
+    muted: Boolean(threadPreferences?.muted_at),
+  };
   const readState = await countThreadReadState(
     access.admin,
     ctx.user.id,
@@ -375,6 +406,18 @@ export async function updateMailThreadState({
   const messages = await loadThreadActionRows(access, ctx, mailboxId, [
     threadId,
   ]);
+
+  if (isThreadPreferenceAction(payload.action)) {
+    if (!messages.length) return null;
+    await updateThreadPreferences({
+      admin: access.admin,
+      mailboxId,
+      userId: ctx.user.id,
+      threadIds: [threadId],
+      payload: { action: payload.action, snoozedUntil: payload.snoozedUntil },
+    });
+    return getMailThread({ ctx, mailboxId, threadId });
+  }
 
   const now = new Date().toISOString();
   const statePatch: AnyRecord = {};

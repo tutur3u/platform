@@ -19,6 +19,7 @@ import { liveWorkspaceCatalog } from '@/features/live-assistant/workspace-tools'
 const schema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('start'),
+    audioPolicy: z.literal('participant-opt-in').optional(),
     mode: liveAudienceSchema,
     timezone: z.string().max(100),
     workspaceId: z.uuid().optional(),
@@ -97,7 +98,13 @@ export async function POST(
         403,
         'Only a room admin can invite the room assistant'
       );
+    if (command.mode === 'room' && command.audioPolicy !== 'participant-opt-in')
+      throw new MeetCallAccessError(
+        409,
+        'Refresh Meet before starting a room assistant'
+      );
     const claims: LiveSessionClaims = {
+      audioPolicy: command.audioPolicy,
       audience: 'meet-live',
       sessionId: crypto.randomUUID(),
       meetingId,

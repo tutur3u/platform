@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/internal-api",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -101,6 +101,11 @@
       "types": "./dist/finance.d.ts",
       "import": "./dist/finance.js",
       "require": "./dist/finance.js"
+    },
+    "./finance-subscription-analytics": {
+      "types": "./dist/finance-subscription-analytics.d.ts",
+      "import": "./dist/finance-subscription-analytics.js",
+      "require": "./dist/finance-subscription-analytics.js"
     },
     "./finance-reconciliation": {
       "types": "./dist/finance-reconciliation.d.ts",

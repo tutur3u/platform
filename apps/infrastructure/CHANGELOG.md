@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/infra-v0.24.0...infra-v0.25.0) (2026-09-23)
+
+
+### Features
+
+* **infrastructure:** add web and mobile account recovery ([5e42191](https://github.com/tutur3u/platform/commit/5e42191a675b8edee62a62c58ae656e3a05d243f))
+* **infrastructure:** add web and mobile internal account recovery ([#5440](https://github.com/tutur3u/platform/issues/5440)) ([0694318](https://github.com/tutur3u/platform/commit/06943180c538f9f294586555d5d776c2cf1ea69e))
+
+
+### Bug Fixes
+
+* **auth:** reuse completed session-bound challenges ([b63d510](https://github.com/tutur3u/platform/commit/b63d51046b427350d959137cf37058223e544788))
+* **infrastructure:** accept mobile account directory page size ([a1fd6b4](https://github.com/tutur3u/platform/commit/a1fd6b48bd7b2750b2e3b7da5cdbcb8d6663ef81)) ([#5441](https://github.com/tutur3u/platform/issues/5441)) ([8258a07](https://github.com/tutur3u/platform/commit/8258a07e87d5359c82e82a97a57b39240da421e4))
+* **mobile:** repair Live persistence and reuse session verification ([#5436](https://github.com/tutur3u/platform/issues/5436)) ([cb452e1](https://github.com/tutur3u/platform/commit/cb452e1908eab3db2dce9dfd1d57d721284a2e49))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/infra-v0.23.0...infra-v0.24.0) (2026-09-20)
 
 

@@ -30,11 +30,19 @@ describe('public desktop downloads', () => {
       findDesktopRelease([{ ...release(), draft: true }, release()])?.tag
     ).toBe(tag);
   });
-  it('rejects incomplete, draft, duplicate and unverified assets', () => {
-    expect(parseDesktopRelease({ ...release(), draft: true })).toBeNull();
+  it('preserves the latest available package per platform across independent releases', () => {
+    const linux = { ...release(), assets: release().assets.slice(2) };
     expect(
-      parseDesktopRelease({ ...release(), assets: release().assets.slice(1) })
-    ).toBeNull();
+      parseDesktopRelease(linux)?.downloads.map((download) => download.platform)
+    ).toEqual(['linux']);
+    const older = release();
+    const combined = findDesktopRelease([linux, older]);
+    expect(combined?.downloads).toHaveLength(3);
+    expect(combined?.downloads[0]?.platform).toBe('linux');
+  });
+  it('rejects empty, draft, duplicate and unverified assets', () => {
+    expect(parseDesktopRelease({ ...release(), draft: true })).toBeNull();
+    expect(parseDesktopRelease({ ...release(), assets: [] })).toBeNull();
     expect(
       parseDesktopRelease({
         ...release(),

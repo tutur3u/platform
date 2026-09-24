@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.3](https://github.com/tutur3u/platform/compare/inventory-core-v0.8.2...inventory-core-v0.8.3) (2026-09-23)
+
+
+### Bug Fixes
+
+* **auth:** reuse completed session-bound challenges ([b63d510](https://github.com/tutur3u/platform/commit/b63d51046b427350d959137cf37058223e544788))
+* **mobile:** repair Live persistence and reuse session verification ([#5436](https://github.com/tutur3u/platform/issues/5436)) ([cb452e1](https://github.com/tutur3u/platform/commit/cb452e1908eab3db2dce9dfd1d57d721284a2e49))
+
 ## [0.8.2](https://github.com/tutur3u/platform/compare/inventory-core-v0.8.1...inventory-core-v0.8.2) (2026-09-20)
 
 

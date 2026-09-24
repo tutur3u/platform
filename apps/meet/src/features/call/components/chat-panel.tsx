@@ -90,11 +90,15 @@ function ChatAttachment({ meetingId, id }: { meetingId: string; id: string }) {
   );
 }
 export function ChatPanel({
+  mentionRequest = 0,
+  onMentionHandled,
   chat,
   onSendChat,
   selfUserId,
   meetingId,
 }: {
+  mentionRequest?: number;
+  onMentionHandled?: () => void;
   chat: CallChatMessage[];
   onSendChat: (body: string, attachments?: string[]) => Promise<{ id: string }>;
   selfUserId: string | null;
@@ -114,6 +118,22 @@ export function ChatPanel({
     [files, setFiles] = useState<File[]>([]),
     [busy, setBusy] = useState(false),
     [thinking, setThinking] = useState(false);
+  const composer = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (!mentionRequest || busy) return;
+    const value = composer.current?.value ?? '';
+    if (!hasMeetAssistantMention(value)) {
+      if (value.length > 1994) toast.error(t('mention_draft_full'));
+      else setDraft(`@mira ${value}`);
+    }
+    const frame = requestAnimationFrame(() => {
+      composer.current?.focus();
+      const length = composer.current?.value.length ?? 0;
+      composer.current?.setSelectionRange(length, length);
+      onMentionHandled?.();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [mentionRequest, busy, onMentionHandled, t]);
   const uploaded = useRef(new Map<File, { id: string }>());
   const mounted = useRef(true);
   useEffect(() => {
@@ -212,6 +232,11 @@ export function ChatPanel({
                   {isMeetAssistant(message) ? (
                     <span className="text-xs">
                       <MiraProfile />
+                      {message.displayName === 'Mira Live' && (
+                        <span className="ml-1 rounded bg-primary/10 px-1 py-0.5 text-primary">
+                          Live
+                        </span>
+                      )}
                     </span>
                   ) : (
                     <span className="truncate font-medium text-xs">
@@ -336,7 +361,23 @@ export function ChatPanel({
             ))}
           </ul>
         )}
+        <div className="flex flex-wrap gap-1">
+          {(['summarize', 'decisions', 'actions'] as const).map((action) => (
+            <Button
+              key={action}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 rounded-full text-xs"
+              disabled={busy || !!draft.trim()}
+              onClick={() => setDraft(`@mira ${t(`${action}_prompt`)}`)}
+            >
+              {t(`${action}_action`)}
+            </Button>
+          ))}
+        </div>
         <Textarea
+          ref={composer}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           maxLength={2000}

@@ -122,7 +122,14 @@ export type MeetRealtimeTokenPayload = z.infer<
   typeof meetRealtimeTokenPayloadSchema
 >;
 
+export const meetAssistantAudioSchema = z.object({
+  sessionId: z.uuid().optional(),
+  microphoneEnabled: z.boolean(),
+  speakerEnabled: z.boolean(),
+});
+
 export const meetRealtimePresenceSchema = z.object({
+  assistantAudio: meetAssistantAudioSchema.optional(),
   accountId: z.uuid().optional(),
   avatarUrl: z
     .url()

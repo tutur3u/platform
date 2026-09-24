@@ -7,9 +7,10 @@ import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/utils/device_info.dart';
 import 'package:mobile/data/repositories/notification_push_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/notifications/push/login_notification_actions.dart';
 
-enum PushNotificationEventType { received, opened }
+enum PushNotificationEventType { received, opened, archived }
 
 const _pushNotificationChannelId = 'tuturuuu_notifications';
 const _pushNotificationChannelName = 'Notifications';
@@ -26,6 +27,8 @@ class PushNavigationRequest {
     this.boardId,
     this.conversationId,
     this.messageId,
+    this.mailboxId,
+    this.threadId,
     this.userId,
     this.expiresAt,
   });
@@ -37,8 +40,19 @@ class PushNavigationRequest {
   final String? boardId;
   final String? conversationId;
   final String? messageId;
+  final String? mailboxId;
+  final String? threadId;
   final String? userId;
   final DateTime? expiresAt;
+
+  MailPushDestination? get mailDestination => openTarget == 'mail'
+      ? MailPushDestination.parse({
+          'userId': userId,
+          'mailboxId': mailboxId,
+          'threadId': threadId,
+          'notificationId': notificationId,
+        })
+      : null;
 
   bool get opensMfaApproval =>
       openTarget == 'mfa_approval' && entityId != null && userId != null;
@@ -93,6 +107,8 @@ PushNavigationRequest requestFromPushData(Map<String, dynamic> data) {
         _stringFromPushData(data, 'conversationId') ??
         (openTarget == 'chat' ? entityId : null),
     messageId: _stringFromPushData(data, 'messageId'),
+    mailboxId: _stringFromPushData(data, 'mailboxId'),
+    threadId: _stringFromPushData(data, 'threadId'),
     userId: _stringFromPushData(data, 'userId'),
     expiresAt: DateTime.tryParse(_stringFromPushData(data, 'expiresAt') ?? ''),
   );
@@ -127,6 +143,8 @@ String? payloadFromPushRequest(PushNavigationRequest request) {
     'boardId': request.boardId,
     'conversationId': request.conversationId,
     'messageId': request.messageId,
+    if (request.mailboxId != null) 'mailboxId': request.mailboxId,
+    if (request.threadId != null) 'threadId': request.threadId,
     if (request.userId != null) 'userId': request.userId,
     if (request.expiresAt != null)
       'expiresAt': request.expiresAt!.toIso8601String(),
@@ -148,6 +166,16 @@ class PushNotificationService {
 
   Stream<PushNotificationEvent> get events => _eventsController.stream;
 
+  void notifyArchiveChanged() {
+    if (_isDisposed) return;
+    _emitEvent(
+      const PushNotificationEvent(
+        type: PushNotificationEventType.archived,
+        request: PushNavigationRequest(notificationId: '', openTarget: 'inbox'),
+      ),
+    );
+  }
+
   AppFlavor? _appFlavor;
   SettingsRepository? _settingsRepository;
   PushNavigationHandler? _navigationHandler;
@@ -156,6 +184,7 @@ class PushNotificationService {
   StreamSubscription<String>? _tokenRefreshSubscription;
   String? _currentUserId;
   PushNavigationRequest? _pendingApproval;
+  PushNavigationRequest? _pendingMail;
   String? _cachedDeviceId;
   bool _initialized = false;
   bool _isDisposed = false;
@@ -180,11 +209,15 @@ class PushNotificationService {
     await _syncRegistrationIfAuthorized();
     final pending = _pendingApproval;
     if (pending != null) await _openRequest(pending);
+    final pendingMail = _pendingMail;
+    _pendingMail = null;
+    if (pendingMail != null) await _openRequest(pendingMail);
   }
 
   Future<void> stopSession() async {
     final userId = _currentUserId;
     _currentUserId = null;
+    _pendingMail = null;
 
     if (userId == null || _appFlavor == null) {
       return;
@@ -314,6 +347,10 @@ class PushNotificationService {
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     final request = _requestFromData(message.data);
+    if (request.openTarget == 'mail' &&
+        (request.mailDestination == null || request.userId != _currentUserId)) {
+      return;
+    }
     await _showForegroundNotification(message, request);
     if (!request.hasNavigationMetadata) {
       return;
@@ -327,6 +364,15 @@ class PushNotificationService {
   }
 
   Future<void> _openRequest(PushNavigationRequest request) async {
+    if (request.openTarget == 'mail') {
+      if (request.mailDestination == null) return;
+      if (_currentUserId == null) {
+        _pendingMail = request;
+        return;
+      }
+      if (request.userId != _currentUserId) return;
+      _pendingMail = null;
+    }
     if (request.opensMfaApproval) {
       if (request.expiresAt == null ||
           !request.expiresAt!.isAfter(DateTime.now())) {

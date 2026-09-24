@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class MailMessageTile extends StatelessWidget {
   const MailMessageTile({
@@ -11,13 +10,11 @@ class MailMessageTile extends StatelessWidget {
     required this.selected,
     required this.onTap,
     required this.onSelect,
-    this.loading = false,
     super.key,
   });
   final Map<String, dynamic> item;
   final bool thread;
   final bool selected;
-  final bool loading;
   final VoidCallback onTap;
   final VoidCallback onSelect;
 
@@ -40,7 +37,7 @@ class MailMessageTile extends StatelessWidget {
             ? colors.primary.withValues(alpha: 0.08)
             : Colors.transparent,
         child: InkWell(
-          onTap: loading ? null : onTap,
+          onTap: onTap,
           onLongPress: onSelect,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
@@ -51,13 +48,7 @@ class MailMessageTile extends StatelessWidget {
                   width: 20,
                   child: Padding(
                     padding: const EdgeInsets.only(top: 5),
-                    child: loading
-                        ? const SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: NovaLoadingIndicator(size: 20),
-                          )
-                        : selected
+                    child: selected
                         ? Icon(
                             Icons.check_circle,
                             size: 16,

@@ -4,6 +4,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { MeetRoomController } from '../lib/room-controller';
+import { MiraParticipant } from './mira-participant';
 import { ParticipantTile } from './participant-tile';
 export type CallLayout = 'auto' | 'grid' | 'spotlight' | 'sidebar';
 type Tile = {
@@ -26,6 +27,7 @@ export function CallStage({
   layout,
   focus,
   onFocus,
+  onChat,
 }: {
   room: MeetRoomController;
   outputDeviceId?: string;
@@ -33,6 +35,7 @@ export function CallStage({
   layout: CallLayout;
   focus: string | null;
   onFocus: (key: string | null) => void;
+  onChat: () => void;
 }) {
   const t = useTranslations('meet.call');
   const [silenced, setSilenced] = useState<Set<string>>(() => new Set());
@@ -105,6 +108,18 @@ export function CallStage({
     room.localStream,
     room.screenStream,
   ]);
+  const mira = room.state.liveAssistant;
+  const renderMira = (className: string, compact = false) =>
+    mira ? (
+      <MiraParticipant
+        sessionId={mira.sessionId}
+        compact={compact}
+        className={className}
+        focused={focus === 'mira'}
+        onFocus={() => onFocus(focus === 'mira' ? null : 'mira')}
+        onChat={onChat}
+      />
+    ) : null;
   const explicitFocus = tiles.find((tile) => tile.key === focus);
   const focused =
     explicitFocus ??
@@ -112,12 +127,14 @@ export function CallStage({
     tiles.find((tile) => tile.participant.userId !== room.state.selfUserId) ??
     tiles[0];
   const spotlight =
-    (layout === 'spotlight' && (!focus || !!explicitFocus)) ||
+    (layout === 'spotlight' &&
+      (!focus || !!explicitFocus || (focus === 'mira' && !!mira))) ||
     layout === 'sidebar' ||
     (layout === 'auto' &&
       (explicitFocus || tiles.some((tile) => tile.kind === 'screen')));
   const render = (tile: Tile, className: string) => (
     <ParticipantTile
+      miraActive={!!mira}
       outputDeviceId={outputDeviceId}
       audioSuppressed={audioSuppressed}
       silenced={silenced.has(tile.key)}
@@ -147,8 +164,10 @@ export function CallStage({
           layout === 'sidebar' ? 'flex-col lg:flex-row' : 'flex-col'
         )}
       >
-        {render(focused, 'min-h-0 min-w-0 flex-1')}
-        {tiles.length > 1 && (
+        {focus === 'mira' && mira
+          ? renderMira('min-h-0 min-w-0 flex-1')
+          : render(focused, 'min-h-0 min-w-0 flex-1')}
+        {(tiles.length > 1 || mira) && (
           <div
             className={cn(
               'flex shrink-0 gap-2 overflow-auto p-1',
@@ -156,10 +175,12 @@ export function CallStage({
             )}
           >
             {tiles
-              .filter((tile) => tile.key !== focused.key)
+              .filter((tile) => focus === 'mira' || tile.key !== focused.key)
               .map((tile) =>
                 render(tile, 'aspect-video w-40 shrink-0 lg:w-48')
               )}
+            {focus !== 'mira' &&
+              renderMira('aspect-video w-40 shrink-0 lg:w-48', true)}
           </div>
         )}
       </div>
@@ -168,10 +189,11 @@ export function CallStage({
     <div
       className={cn(
         'grid h-full min-h-0 auto-rows-[minmax(8rem,1fr)] gap-3 overflow-auto p-1',
-        columns(tiles.length)
+        columns(tiles.length + (mira ? 1 : 0))
       )}
     >
       {tiles.map((tile) => render(tile, 'min-h-32'))}
+      {renderMira('min-h-32')}
     </div>
   );
 }

@@ -1,5 +1,10 @@
 {
   "routes": {
+    "api:/api/v1/notifications/mail-thread:apps/web/src/app/api/v1/notifications/mail-thread/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Authenticated mobile Mail reader archives only the current user's unread personal mail_received notifications matching the opened mailbox and thread. Rust parity pending."
+    },
     "api:/api/v1/admin/external-apps:apps/web/src/app/api/v1/admin/external-apps/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
@@ -2379,10 +2384,30 @@
         }
       }
     },
+    "api:/api/v1/workspaces/:wsId/meetings/:meetingId/assistant:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Mobile bearer-authenticated public Mira generation gateway uses a short-lived Meet-scoped server session. Preserve requester-only review and billing behavior when porting."
+    },
+    "api:/api/v1/workspaces/:wsId/meetings/:meetingId/assistant/personal:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/personal/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Mobile bearer-authenticated gateway mints a short-lived Meet-scoped app session server-side and forwards only private Mira chat to the Meet satellite, preserving its receipt, permission, and billing flow. The credential is never returned to the client."
+    },
+    "api:/api/v1/workspaces/:wsId/meetings/:meetingId/assistant/review:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/review/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Requester-only Mira workspace-action review gateway. Preserve meeting access, revision checks, private review redaction, and explicit approve/deny/share/discard actions."
+    },
+    "api:/api/v1/workspaces/:wsId/meetings/:meetingId/costs:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/costs/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Host-only bearer-authenticated mobile cost estimate from the realtime room service; preserve host authorization and no-store responses in the Rust port."
+    },
     "api:/api/v1/workspaces/:wsId/meetings/:meetingId/realtime-token:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Call reconnect preserves speaker role for workspace members; non-call modes remain viewer-only for non-hosts. Signed duration resolves the meeting creator personal subscription: Free 2h, Plus 10h, Pro/Enterprise 24h, consistently with Meet satellite tokens."
+      "note": "Call reconnect preserves speaker role for workspace members; non-call modes remain viewer-only for non-hosts. Native call tokens bind a distinct device identity to the authenticated account and check the realtime switch/additional policy. Signed duration resolves the meeting creator personal subscription: Free 2h, Plus 10h, Pro/Enterprise 24h, consistently with Meet satellite tokens."
     },
     "api:/api/v1/workspaces/:wsId/users/reports/schedules:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/schedules/route.ts": {
       "status": "legacy-next",
@@ -2453,6 +2478,16 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Mobile Live turn persistence checks authenticated workspace membership, Pro entitlement and chat ownership before server-only message access. Preserve bounded batches, caller-bound metadata and no privileged access on failed ownership checks. Rust parity pending."
+    },
+    "api:/api/notifications/send-immediate:apps/web/src/app/api/notifications/send-immediate/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class immediate dispatcher allows personal Mail push after durable receipt, current mailbox membership, internal identity and preferences are verified. Other notification types retain root-workspace restriction. Rust parity pending."
+    },
+    "cron:/api/cron/process-immediate-notifications:apps/web/src/app/api/cron/process-immediate-notifications/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Authenticated scheduled recovery of missed immediate webhooks and bounded personal Mail push retries, reusing immediate dispatcher current access checks. Rust parity pending."
     }
   }
 }

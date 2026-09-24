@@ -9,8 +9,10 @@ import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
+import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
+import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -54,9 +56,8 @@ class MailReader extends StatefulWidget {
 }
 
 class _MailReaderState extends State<MailReader> {
-  void _updateState(VoidCallback update) => setState(update);
   bool _busy = false;
-  bool _showImages = false;
+  bool _showImages = MailImagePreference.instance.value;
   bool _childRouteOpen = false;
   late Map<String, dynamic> _detail = widget.detail;
   late bool _starred;
@@ -69,11 +70,25 @@ class _MailReaderState extends State<MailReader> {
   @override
   void initState() {
     super.initState();
+    MailImagePreference.instance.addListener(_imagePreferenceChanged);
+    unawaited(MailImagePreference.instance.load());
     _starred = _messages.any((m) => m['starred'] == true);
     if (widget.refreshOnOpen) unawaited(_refresh());
     if (_messages.any((message) => message['unread'] == true)) {
       unawaited(_action('mark_read'));
     }
+  }
+
+  void _imagePreferenceChanged() {
+    if (mounted) {
+      setState(() => _showImages = MailImagePreference.instance.value);
+    }
+  }
+
+  @override
+  void dispose() {
+    MailImagePreference.instance.removeListener(_imagePreferenceChanged);
+    super.dispose();
   }
 
   Future<void> _refresh() async {
@@ -103,11 +118,18 @@ class _MailReaderState extends State<MailReader> {
 
   Future<void> _action(String action, {bool close = false}) async {
     if (_busy && action != 'mark_read') return;
+    DateTime? snoozedUntil;
+    if (action == 'snooze') {
+      snoozedUntil = await chooseMailSnoozeTime(context);
+      if (!mounted || snoozedUntil == null) return;
+    }
     final previousStarred = _starred;
-    setState(() {
-      if (action != 'mark_read') _busy = true;
-      if (action == 'star' || action == 'unstar') _starred = action == 'star';
-    });
+    if (action != 'mark_read') {
+      setState(() {
+        _busy = true;
+        if (action == 'star' || action == 'unstar') _starred = action == 'star';
+      });
+    }
     try {
       await widget.repository.changeState(
         widget.workspaceId,
@@ -115,6 +137,7 @@ class _MailReaderState extends State<MailReader> {
         _id,
         action,
         thread: widget.thread,
+        snoozedUntil: snoozedUntil,
       );
       if (!mounted) return;
       if (close) {
@@ -179,6 +202,10 @@ class _MailReaderState extends State<MailReader> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final actions = {
+      'snooze': l10n.mailSnooze,
+      'unsnooze': l10n.mailUnsnooze,
+      'mute': l10n.mailMute,
+      'unmute': l10n.mailUnmute,
       'archive': l10n.mailArchive,
       'mark_unread': l10n.mailMarkUnread,
       'restore': l10n.mailRestore,
@@ -218,7 +245,13 @@ class _MailReaderState extends State<MailReader> {
                           .map(
                             (a) => PopupMenuItem(
                               value: a.key,
-                              child: Text(a.value),
+                              child: Row(
+                                children: [
+                                  Icon(_mailMessageActionIcon(a.key)),
+                                  const SizedBox(width: 12),
+                                  Text(a.value),
+                                ],
+                              ),
                             ),
                           )
                           .toList(),

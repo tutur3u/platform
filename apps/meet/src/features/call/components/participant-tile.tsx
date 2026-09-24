@@ -22,9 +22,12 @@ import {
   MediaReceivingStatus,
   useStreamReadiness,
 } from './media-receiving-status';
+import { MiraAudioStatus } from './mira-audio-status';
+import { usePlaybackVolume } from './playback-volume';
 
 function ParticipantTileImpl({
   className,
+  miraActive = false,
   outputDeviceId,
   audioSuppressed = false,
   silenced: controlledSilence,
@@ -43,6 +46,7 @@ function ParticipantTileImpl({
   focusKey,
 }: {
   className?: string;
+  miraActive?: boolean;
   outputDeviceId?: string;
   audioSuppressed?: boolean;
   silenced?: boolean;
@@ -66,8 +70,12 @@ function ParticipantTileImpl({
   const silenced = controlledSilence ?? localSilence;
   const [fullscreen, setFullscreen] = useState(false);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
+  const volume = usePlaybackVolume(participant.userId);
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoTrack = stream?.getVideoTracks()[0];
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume;
+  }, [volume]);
   const audioTrack = !isSelf ? stream?.getAudioTracks()[0] : undefined;
   const videoStream = useMemo(
     () => (videoTrack ? new MediaStream([videoTrack]) : null),
@@ -246,6 +254,9 @@ function ParticipantTileImpl({
             }
           />
         )}
+        {miraActive && kind === 'camera' && (
+          <MiraAudioStatus participant={participant} />
+        )}
         {!participant.media.audioEnabled && kind === 'camera' && (
           <MicOff aria-label={t('muted')} className="size-3.5 shrink-0" />
         )}
@@ -343,6 +354,11 @@ function ParticipantTileImpl({
 export const ParticipantTile = memo(
   ParticipantTileImpl,
   (a, b) =>
+    a.miraActive === b.miraActive &&
+    a.participant.assistantAudio?.microphoneEnabled ===
+      b.participant.assistantAudio?.microphoneEnabled &&
+    a.participant.assistantAudio?.speakerEnabled ===
+      b.participant.assistantAudio?.speakerEnabled &&
     a.participant.userId === b.participant.userId &&
     a.participant.displayName === b.participant.displayName &&
     a.participant.avatarUrl === b.participant.avatarUrl &&

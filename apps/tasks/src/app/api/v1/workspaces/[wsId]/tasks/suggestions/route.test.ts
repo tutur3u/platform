@@ -7,6 +7,7 @@ const LABEL_ID = '00000000-0000-4000-8000-000000000004';
 const PROJECT_ID = '00000000-0000-4000-8000-000000000005';
 
 const mocks = vi.hoisted(() => ({
+  sessionClient: { session: 'authenticated-app-session' },
   board: {
     id: '00000000-0000-4000-8000-000000000001',
     name: 'Product',
@@ -237,6 +238,7 @@ describe('task suggestions route', () => {
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: 'user-1' },
       authError: null,
+      supabase: mocks.sessionClient,
     });
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({
       ok: true,
@@ -287,6 +289,18 @@ describe('task suggestions route', () => {
     });
 
     expect(response.status).toBe(200);
+    expect(mocks.resolveAuthenticatedSessionUser).toHaveBeenCalledWith(
+      expect.any(Request)
+    );
+    expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
+      'ws-1',
+      mocks.sessionClient
+    );
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledWith({
+      wsId: 'ws-1',
+      userId: 'user-1',
+      supabase: mocks.sessionClient,
+    });
     await expect(response.json()).resolves.toMatchObject({
       metadata: { generatedWithAI: true, totalTasks: 1 },
       tasks: [
@@ -344,6 +358,39 @@ describe('task suggestions route', () => {
         },
       ],
     });
+  });
+
+  it('requires a usable authenticated session before checking membership', async () => {
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValueOnce({
+      user: { id: 'user-1' },
+      authError: null,
+      supabase: null,
+    });
+    const response = await callRoute({
+      boardId: BOARD_ID,
+      prompt: 'prepare an agenda',
+    });
+    expect(response.status).toBe(401);
+    expect(mocks.verifyWorkspaceMembershipType).not.toHaveBeenCalled();
+    expect(mocks.generateObject).not.toHaveBeenCalled();
+  });
+
+  it('still denies a signed-in caller who is not a workspace member', async () => {
+    mocks.verifyWorkspaceMembershipType.mockResolvedValueOnce({ ok: false });
+    const response = await callRoute({
+      boardId: BOARD_ID,
+      prompt: 'prepare an agenda',
+    });
+    expect(response.status).toBe(403);
+    expect(mocks.resolvePlanModel).not.toHaveBeenCalled();
+    expect(mocks.generateObject).not.toHaveBeenCalled();
+  });
+
+  it('requires a non-empty prompt before calling AI', async () => {
+    const response = await callRoute({ boardId: BOARD_ID, prompt: '   ' });
+    expect(response.status).toBe(400);
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+    expect(mocks.generateObject).not.toHaveBeenCalled();
   });
 
   it('rejects invalid client timezones before generating suggestions', async () => {

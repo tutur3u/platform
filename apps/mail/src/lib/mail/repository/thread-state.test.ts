@@ -40,6 +40,8 @@ beforeEach(() => {
     maybeSingle: vi
       .fn()
       .mockResolvedValue({ data: { id: 'thread' }, error: null }),
+    or: vi.fn().mockReturnThis(),
+    range: vi.fn().mockResolvedValue({ data: [], error: null }),
     upsert: mocks.upsert,
   };
   mocks.table.mockReturnValue(query);

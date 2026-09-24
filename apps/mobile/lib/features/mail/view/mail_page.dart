@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/repositories/notifications_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_optimistic.dart';
+import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_message_tile.dart';
@@ -34,7 +36,8 @@ part 'mail_workspace_cache.dart';
 part 'mail_workspace_swipes.dart';
 
 class MailPage extends StatelessWidget {
-  const MailPage({super.key});
+  const MailPage({super.key, this.destination});
+  final MailPushDestination? destination;
 
   @override
   Widget build(BuildContext context) {
@@ -44,17 +47,30 @@ class MailPage extends StatelessWidget {
     final wsId = context.select<WorkspaceCubit, String?>(
       (cubit) => cubit.state.currentWorkspace?.id,
     );
-    if (user == null || wsId == null) return const SizedBox.shrink();
+    if (user == null) return const SizedBox.shrink();
+    if (wsId == null) {
+      return const Center(child: NovaLoadingIndicator(size: 20));
+    }
     if (!canDiscoverMail(user.email)) {
       return Center(child: Text(context.l10n.mailAccessRequired));
     }
-    return _MailNavigator(key: ValueKey('${user.id}:$wsId'), workspaceId: wsId);
+    final target = destination?.userId == user.id ? destination : null;
+    return _MailNavigator(
+      key: ValueKey('${user.id}:$wsId:${target?.notificationId}'),
+      workspaceId: wsId,
+      destination: target,
+    );
   }
 }
 
 class _MailNavigator extends StatefulWidget {
-  const _MailNavigator({required this.workspaceId, super.key});
+  const _MailNavigator({
+    required this.workspaceId,
+    super.key,
+    this.destination,
+  });
   final String workspaceId;
+  final MailPushDestination? destination;
   @override
   State<_MailNavigator> createState() => _MailNavigatorState();
 }
@@ -66,14 +82,19 @@ class _MailNavigatorState extends State<_MailNavigator> {
     context: context,
     // The shared shell already reserves the status bar above its app header.
     removeTop: true,
-    child: NavigatorPopHandler<Object?>(
-      onPopWithResult: (result) {
-        unawaited(_navigator.currentState?.maybePop(result));
-      },
-      child: Navigator(
-        key: _navigator,
-        onGenerateRoute: (_) => MaterialPageRoute<void>(
-          builder: (_) => MailWorkspace(workspaceId: widget.workspaceId),
+    child: ScaffoldMessenger(
+      child: NavigatorPopHandler<Object?>(
+        onPopWithResult: (result) {
+          unawaited(_navigator.currentState?.maybePop(result));
+        },
+        child: Navigator(
+          key: _navigator,
+          onGenerateRoute: (_) => MaterialPageRoute<void>(
+            builder: (_) => MailWorkspace(
+              workspaceId: widget.workspaceId,
+              destination: widget.destination,
+            ),
+          ),
         ),
       ),
     ),
@@ -81,7 +102,13 @@ class _MailNavigatorState extends State<_MailNavigator> {
 }
 
 class MailWorkspace extends StatefulWidget {
-  const MailWorkspace({required this.workspaceId, super.key, this.repository});
+  const MailWorkspace({
+    required this.workspaceId,
+    super.key,
+    this.repository,
+    this.destination,
+  });
+  final MailPushDestination? destination;
   final String workspaceId;
   final MailRepository? repository;
 
@@ -92,8 +119,16 @@ class MailWorkspace extends StatefulWidget {
 class _MailWorkspaceState extends State<MailWorkspace> {
   void _updateState(VoidCallback update) => setState(update);
   bool _childRouteOpen = false;
+  bool _pushDestinationHandled = false;
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _swipeFeedback;
+
+  void _dismissSwipeFeedback() {
+    _swipeFeedback?.close();
+    _swipeFeedback = null;
+  }
 
   Future<void> _pushChild(Route<void> route) async {
+    _dismissSwipeFeedback();
     setState(() => _childRouteOpen = true);
     // Unregister inbox actions before its route becomes offstage.
     await WidgetsBinding.instance.endOfFrame;
@@ -106,6 +141,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   late final MailRepository _repository;
+  late final NotificationsRepository _notificationsRepository =
+      NotificationsRepository(ownsApiClient: true);
   final _swipePreferences = MailSwipePreferences();
   bool _searchVisible = false;
   final _search = TextEditingController();
@@ -133,6 +170,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   String? _visibleListKey;
   String? _openingId;
   Timer? _searchDebounce;
+  Timer? _snoozeRefreshTimer;
   StreamSubscription<PushNotificationEvent>? _mailPushSubscription;
   AppLifecycleListener? _lifecycle;
 
@@ -160,13 +198,21 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     _mailPushSubscription = PushNotificationService.instance.events.listen((
       event,
     ) {
-      if (event.request.openTarget == 'mail' &&
-          event.request.wsId == widget.workspaceId) {
+      if (mounted &&
+          event.request.openTarget == 'mail' &&
+          event.request.userId == context.read<AuthCubit>().state.user?.id &&
+          event.request.mailboxId == _mailboxId) {
         _refreshVisibleMailbox();
       }
     });
     _lifecycle = AppLifecycleListener(onResume: _refreshVisibleMailbox);
     unawaited(_swipePreferences.load());
+    _snoozeRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed &&
+          ['inbox', 'snoozed'].contains(_folder)) {
+        _refreshVisibleMailbox();
+      }
+    });
     unawaited(_bootstrap());
   }
 
@@ -184,6 +230,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
 
   @override
   void dispose() {
+    _dismissSwipeFeedback();
+    _snoozeRefreshTimer?.cancel();
     _generation++;
     _bootstrapGeneration++;
     _organizationGeneration++;
@@ -196,6 +244,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     _search.dispose();
     _swipePreferences.dispose();
     if (widget.repository == null) _repository.dispose();
+    _notificationsRepository.dispose();
     super.dispose();
   }
 
@@ -225,7 +274,27 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           'items': <Map<String, dynamic>>[],
         });
       }
-      await _load();
+      final destination = _pushDestinationHandled ? null : widget.destination;
+      final canOpenDestination =
+          destination != null &&
+          _mailboxes.any((box) => box['id'] == destination.mailboxId);
+      if (canOpenDestination) {
+        setState(() {
+          _mailboxId = destination.mailboxId;
+          _folder = 'inbox';
+          _labelId = null;
+          _folderId = null;
+          _search.clear();
+          _items = [];
+        });
+      }
+      if (canOpenDestination) {
+        unawaited(_load());
+        _pushDestinationHandled = true;
+        await _open({'id': destination.threadId});
+      } else {
+        await _load();
+      }
     } on Object catch (error) {
       if (!mounted || generation != _bootstrapGeneration) return;
       if (error is ApiException &&
@@ -488,7 +557,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   Future<void> _open(Map<String, dynamic> item) async {
-    if (_openingId != null) return;
+    if (_openingId != null || _childRouteOpen) return;
+    _dismissSwipeFeedback();
     setState(() => _openingId = item['id'] as String);
     final box = _mailboxId!;
     final generation = _generation;
@@ -513,6 +583,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         await _compose(detail);
         return;
       }
+      if (_threads) {
+        unawaited(_archiveViewedMailThread(box, item['id'] as String));
+      }
       final beforeRead = _items;
       setState(
         () => _items = optimisticMailItems(
@@ -523,7 +596,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           query: _search.text,
         ),
       );
-      await _pushChild(
+      final navigation = _pushChild(
         MaterialPageRoute(
           builder: (_) => MailReader(
             repository: _repository,
@@ -544,7 +617,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           ),
         ),
       );
-      if (mounted && generation == _generation) await _load();
+      if (mounted) setState(() => _openingId = null);
+      await navigation;
+      if (mounted && generation == _generation) unawaited(_load());
     } on Object {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -553,6 +628,21 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       }
     } finally {
       if (mounted) setState(() => _openingId = null);
+    }
+  }
+
+  Future<void> _archiveViewedMailThread(
+    String mailboxId,
+    String threadId,
+  ) async {
+    try {
+      final archived = await _notificationsRepository.archiveViewedMailThread(
+        mailboxId: mailboxId,
+        threadId: threadId,
+      );
+      if (archived > 0) PushNotificationService.instance.notifyArchiveChanged();
+    } on Object {
+      // Reading Mail stays immediate if notification sync is unavailable.
     }
   }
 

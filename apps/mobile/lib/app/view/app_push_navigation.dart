@@ -13,6 +13,15 @@ extension _AppPushNavigation on _AppState {
             },
           ).toString(),
         );
+        unawaited(archiveOpenedNotification(request.notificationId));
+      }
+      return;
+    }
+    if (request.openTarget == 'mail') {
+      final destination = request.mailDestination;
+      if (destination != null &&
+          destination.userId == _authCubit.state.user?.id) {
+        _router.go(destination.location);
       }
       return;
     }
@@ -43,6 +52,7 @@ extension _AppPushNavigation on _AppState {
           taskId: request.entityId!,
         ),
       );
+      unawaited(archiveOpenedNotification(request.notificationId));
       return;
     }
     if (request.opensChat) {
@@ -51,6 +61,7 @@ extension _AppPushNavigation on _AppState {
             ? Routes.chat
             : Routes.chatConversationPath(request.conversationId!),
       );
+      unawaited(archiveOpenedNotification(request.notificationId));
       return;
     }
     _router.go(Routes.notifications);

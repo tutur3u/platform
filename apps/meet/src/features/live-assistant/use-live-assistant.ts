@@ -5,6 +5,10 @@ import {
   reviewMeetLiveTool,
 } from '@tuturuuu/internal-api';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  MIRA_VOLUME_ID,
+  usePlaybackVolume,
+} from '../call/components/playback-volume';
 import { captureLiveAudio, LiveAudioPlayer } from './audio';
 import type {
   LiveAssistantEvent,
@@ -40,6 +44,9 @@ export function useLiveAssistant(
   },
   inputDeviceId = ''
 ) {
+  const volume = usePlaybackVolume(MIRA_VOLUME_ID);
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
   const [status, setStatus] = useState('idle');
   const [mode, setMode] = useState<LiveAudience>('personal');
   const [transcript, setTranscript] = useState<
@@ -56,14 +63,27 @@ export function useLiveAssistant(
   roomAudioRef.current = roomAudio;
   const send = useCallback((message: LiveClientCommand) => {
     const current = active.current;
-    if (!current) return;
+    if (!current) return false;
+    if (message.type === 'text' && !current.ready) return false;
     if (message.type === 'pause') {
-      if (!message.paused && roomAudioRef.current.suppressed) return;
+      if (
+        !message.paused &&
+        (roomAudioRef.current.suppressed ||
+          (current.mode === 'personal' &&
+            roomAudioRef.current.microphoneEnabled))
+      )
+        return false;
       current.paused = message.paused;
       current.microphone?.getTracks().forEach((track) => {
         track.enabled = !message.paused;
       });
-      if (message.paused) current.player.interrupt();
+      if (
+        message.paused &&
+        (roomAudioRef.current.suppressed ||
+          (current.mode === 'personal' &&
+            roomAudioRef.current.microphoneEnabled))
+      )
+        current.player.interrupt();
     }
     if (
       message.type === 'audio' &&
@@ -72,10 +92,12 @@ export function useLiveAssistant(
         current.paused ||
         (current.mode === 'personal' && roomAudioRef.current.microphoneEnabled))
     )
-      return;
+      return false;
     const socket = current.socket;
-    if (socket?.readyState === WebSocket.OPEN && socket.bufferedAmount < 64000)
-      socket.send(JSON.stringify(message));
+    if (socket?.readyState !== WebSocket.OPEN || socket.bufferedAmount >= 64000)
+      return false;
+    socket.send(JSON.stringify(message));
+    return true;
   }, []);
   const stop = async (remote = true) => {
     ++startGeneration.current;
@@ -138,7 +160,6 @@ export function useLiveAssistant(
       if (
         message.type === 'audio' &&
         !roomAudioRef.current.suppressed &&
-        !current.paused &&
         !(current.mode === 'personal' && roomAudioRef.current.microphoneEnabled)
       )
         current.player.play(message.data, message.sampleRate);
@@ -235,6 +256,7 @@ export function useLiveAssistant(
     setUsage({ costUsd: 0, incomplete: true });
     setOrganized(false);
     const player = new LiveAudioPlayer();
+    player.setVolume(volumeRef.current);
     let microphone: MediaStream | undefined;
     try {
       await player.unlock(outputDeviceId);
@@ -250,6 +272,7 @@ export function useLiveAssistant(
       if (cancelled()) throw new Error('Cancelled');
       const session = await controlMeetLive(meetingId, {
         action: 'start',
+        audioPolicy: 'participant-opt-in',
         mode: audience,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         workspaceId,
@@ -281,6 +304,7 @@ export function useLiveAssistant(
         };
       });
       active.current = current;
+      player.setVolume(volumeRef.current);
       await connect(session.token);
       const capture = await captureLiveAudio(
         microphone ? [microphone] : streams,
@@ -297,6 +321,10 @@ export function useLiveAssistant(
             send({ type: 'pause', paused: true });
             setError('input_unavailable');
           }
+        },
+        () => {
+          if (active.current === current && !current.stopped)
+            send({ type: 'audio.end' });
         }
       );
       if (current.stopped) await capture.dispose();
@@ -370,6 +398,9 @@ export function useLiveAssistant(
   useEffect(() => {
     if (roomAudio.suppressed) send({ type: 'pause', paused: true });
   }, [roomAudio.suppressed, send]);
+  useEffect(() => {
+    active.current?.player.setVolume(volume);
+  }, [volume]);
   useEffect(() => {
     const player = active.current?.player;
     if (player)

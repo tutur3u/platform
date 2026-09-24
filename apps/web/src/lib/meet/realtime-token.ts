@@ -35,6 +35,8 @@ export function getMeetRealtimeUrl() {
 
 export function signMeetJoinToken(input: {
   admission?: MeetRealtimeAdmission;
+  accountId?: string;
+  service?: boolean;
   maxRoomDurationSeconds?: number;
   displayName?: string;
   meetingId: string;
@@ -61,10 +63,14 @@ export function signMeetJoinToken(input: {
       },
     },
     meetingId: input.meetingId,
+    accountId: input.accountId,
     mode: input.mode,
     role: input.role,
     roomId: `${input.wsId}:${input.meetingId}`,
-    scopes: getMeetRealtimeScopesForRole(input.role),
+    scopes: [
+      ...getMeetRealtimeScopesForRole(input.role),
+      ...(input.service ? ['meet:server'] : []),
+    ],
     userId: input.userId,
     wsId: input.wsId,
   });
@@ -74,4 +80,19 @@ export function signMeetJoinToken(input: {
     payload,
     token: signMeetRealtimeToken(payload, getMeetRealtimeTokenSecret()),
   };
+}
+
+/** Keep each device distinct while binding it to the authenticated account. */
+export async function meetDeviceIdentity(accountId: string, deviceId: string) {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(`${accountId}:${deviceId}`)
+  );
+  const bytes = new Uint8Array(digest).slice(0, 16);
+  bytes[6] = (bytes[6]! & 15) | 64;
+  bytes[8] = (bytes[8]! & 63) | 128;
+  const hex = Array.from(bytes, (byte) =>
+    byte.toString(16).padStart(2, '0')
+  ).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
