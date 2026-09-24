@@ -124,7 +124,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             top: false,
             bottom: false,
             child: ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+              maxWidth: ResponsivePadding.rootContentWidth(context.deviceClass),
               child: Stack(
                 children: [
                   NotificationsView(

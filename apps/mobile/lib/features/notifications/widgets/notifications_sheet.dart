@@ -603,43 +603,67 @@ class _NotificationsListState extends State<_NotificationsList> {
         ],
       );
     } else {
-      child = ListView.separated(
-        controller: _scrollController,
-        padding: widget.pageMode
-            ? const EdgeInsets.fromLTRB(0, 0, 0, 14)
-            : const EdgeInsets.fromLTRB(0, 8, 0, 14),
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemBuilder: (context, index) {
-          if (index >= feed.items.length) {
-            return Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 4),
-              child: Center(
-                child: Text(
-                  context.l10n.notificationsLoadingMore,
-                  style: shad.Theme.of(context).typography.small.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+      child = LayoutBuilder(
+        builder: (context, constraints) {
+          final columns = widget.pageMode
+              ? (constraints.maxWidth / 280).floor().clamp(1, 3)
+              : 1;
+          final rows = (feed.items.length / columns).ceil();
+          return ListView.separated(
+            controller: _scrollController,
+            padding: widget.pageMode
+                ? const EdgeInsets.fromLTRB(0, 0, 0, 14)
+                : const EdgeInsets.fromLTRB(0, 8, 0, 14),
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemBuilder: (context, row) {
+              if (row >= rows) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 4),
+                  child: Center(
+                    child: Text(
+                      context.l10n.notificationsLoadingMore,
+                      style: shad.Theme.of(context).typography.small.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            );
-          }
+                );
+              }
 
-          final notification = feed.items[index];
-          return StaggeredEntrance(
-            replayKey: '${widget.tab.name}-${notification.id}',
-            delay: Duration(milliseconds: index.clamp(0, 6) * 40),
-            child: widget.itemBuilder(notification),
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var column = 0; column < columns; column++) ...[
+                    if (column > 0) const SizedBox(width: 12),
+                    Expanded(
+                      child: row * columns + column < feed.items.length
+                          ? _buildNotificationItem(row * columns + column)
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ],
+              );
+            },
+            separatorBuilder: (context, index) =>
+                SizedBox(height: widget.pageMode ? 12 : 10),
+            itemCount: rows + (feed.isLoadingMore ? 1 : 0),
           );
         },
-        separatorBuilder: (context, index) =>
-            SizedBox(height: widget.pageMode ? 12 : 10),
-        itemCount: feed.items.length + (feed.isLoadingMore ? 1 : 0),
       );
     }
 
     return NovaRefreshIndicator(
       onRefresh: widget.onRefresh,
       child: widget.pageMode ? child : _NotificationsSurface(child: child),
+    );
+  }
+
+  Widget _buildNotificationItem(int index) {
+    final notification = widget.feed.items[index];
+    return StaggeredEntrance(
+      replayKey: '${widget.tab.name}-${notification.id}',
+      delay: Duration(milliseconds: index.clamp(0, 6) * 40),
+      child: widget.itemBuilder(notification),
     );
   }
 }
