@@ -19,6 +19,14 @@ vi.mock('@tuturuuu/utils/abuse-protection', () => ({
 }));
 
 vi.mock('@/lib/mobile-deployment/oidc', () => ({
+  MobileDeploymentOidcError: class MobileDeploymentOidcError extends Error {
+    constructor(
+      message: string,
+      public readonly code = 'invalid_oidc'
+    ) {
+      super(message);
+    }
+  },
   verifyGitHubOidcToken: (
     ...args: Parameters<typeof mocks.verifyGitHubOidcToken>
   ) => mocks.verifyGitHubOidcToken(...args),
@@ -125,7 +133,13 @@ describe('mobile deployment bundle route', () => {
   });
 
   it('uses generic auth failures for invalid OIDC tokens', async () => {
-    mocks.verifyGitHubOidcToken.mockRejectedValue(new Error('bad token'));
+    const { MobileDeploymentOidcError } = await import(
+      '@/lib/mobile-deployment/oidc'
+    );
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mocks.verifyGitHubOidcToken.mockRejectedValue(
+      new MobileDeploymentOidcError('bad token', 'invalid_signature')
+    );
 
     const { GET } = await import('./route');
 
@@ -139,6 +153,11 @@ describe('mobile deployment bundle route', () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({ message: 'Unauthorized' });
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(warning).toHaveBeenCalledWith(
+      'Mobile deployment bundle request denied',
+      { stage: 'oidc', code: 'invalid_signature' }
+    );
+    warning.mockRestore();
   });
 
   it('does not leak readiness details when the active bundle is unavailable', async () => {
