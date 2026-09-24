@@ -49,6 +49,11 @@ viseme synthesis or a full 3D avatar.
    Object namespace. The Gemini credential stays in Meet. Deploy Meet first,
    then Parley; CI waits for the shared runtime readiness endpoint. The common
    realtime signing secret is provisioned from the protected GitHub environment.
+   Deploy with `bun run deploy:cloudflare` from `apps/parley`, which populates
+   OpenNext's generated R2 cache before publishing the Worker. A direct
+   `wrangler deploy` skips that data and can make rendered routes hang even
+   though middleware redirects succeed. Verify `/en/access-denied` after each
+   deployment; checking only the root redirect does not test page rendering.
 6. Verify denied, internal-domain and allowlisted sign-in; revoke an external
    account and recheck access. Verify private reference upload/retrieval, scenario
    persistence after reload, room admission, two-participant audio, Mira response,

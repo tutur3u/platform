@@ -96,4 +96,11 @@ jobs:
       - name: Wait for shared provider runtime
         run: bun apps/parley/scripts/verify-provider.ts
       - name: Deploy verified Worker
-        run: bun x --no-install wrangler deploy -c apps/parley/wrangler.jsonc --message "$GITHUB_SHA"
+        working-directory: apps/parley
+        run: bun run deploy:cloudflare -- --message "$GITHUB_SHA"
+      - name: Verify rendered canonical route
+        run: |
+          route_status=$(curl --fail --retry 5 --retry-delay 5 --max-time 30 \
+            --write-out '%{http_code}' --output /dev/null \
+            https://parley.tuturuuu.com/en/access-denied)
+          test "$route_status" = 200
