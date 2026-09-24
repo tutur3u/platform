@@ -30,8 +30,9 @@ void main() {
       if (path.endsWith('/friend-requests')) return {};
       throw StateError('Unexpected API request: $path');
     });
-    when(() => realtime.connect('workspace'))
-        .thenAnswer((_) => const Stream.empty());
+    when(
+      () => realtime.connect('workspace'),
+    ).thenAnswer((_) => const Stream.empty());
     final cubit = ChatCubit(
       repository: ChatRepository(apiClient: api),
       realtimeClient: realtime,
@@ -68,8 +69,9 @@ void main() {
       if (path.endsWith('/friend-requests')) return {};
       throw StateError('Unexpected API request: $path');
     });
-    when(() => realtime.connect('workspace'))
-        .thenAnswer((_) => const Stream.empty());
+    when(
+      () => realtime.connect('workspace'),
+    ).thenAnswer((_) => const Stream.empty());
     final cubit = ChatCubit(
       repository: ChatRepository(apiClient: api),
       realtimeClient: realtime,
