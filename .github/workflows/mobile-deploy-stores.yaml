@@ -15,6 +15,7 @@ on:
       - "scripts/mobile-deployment/**"
       - "tuturuuu.ci.ts"
       - "tuturuuu.ts"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -30,7 +31,7 @@ jobs:
   mobile-credentials-preflight:
     name: Check mobile deployment credentials
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     environment: mobile-store-beta
     outputs:
@@ -103,7 +104,7 @@ jobs:
   publish-android-internal:
     name: Publish Android to Google Play internal
     needs: [check-ci, mobile-credentials-preflight]
-    if: needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'
+    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: mobile-store-beta
@@ -221,7 +222,7 @@ jobs:
   publish-ios-testflight:
     name: Upload iOS to TestFlight
     needs: [check-ci, mobile-credentials-preflight]
-    if: needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'
+    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'
     runs-on: macos-latest
     timeout-minutes: 120
     environment: mobile-store-beta
@@ -438,3 +439,52 @@ jobs:
           rm -rf "$RUNNER_TEMP/mobile-deployment"
           rm -f "$RUNNER_TEMP/mobile-deployment-ios.json"
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-oidc.json"
+
+  retry-ios-testflight-review:
+    name: Retry latest eligible TestFlight review
+    needs: [check-ci]
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    environment: mobile-store-beta
+    timeout-minutes: 15
+    steps:
+      - name: Checkout production code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Fetch iOS deployment credentials
+        shell: bash
+        env:
+          MOBILE_DEPLOYMENT_CI_TOKEN: ${{ secrets.MOBILE_DEPLOYMENT_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 077
+          test -n "${MOBILE_DEPLOYMENT_CI_TOKEN:-}"
+          bundle_path="$RUNNER_TEMP/mobile-review-bundle.json"
+          oidc_response="$RUNNER_TEMP/mobile-review-oidc.json"
+          oidc_url="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=tuturuuu-mobile-deployment"
+          curl -fsSL \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "$oidc_url" -o "$oidc_response"
+          oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
+          curl -fsSL \
+            -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
+            -H "X-GitHub-OIDC-Token: ${oidc_token}" \
+            "https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=ios" \
+            -o "$bundle_path"
+          node scripts/mobile-deployment/hydrate-bundle.mjs \
+            --platform ios --bundle "$bundle_path" \
+            --mobile-root "$RUNNER_TEMP/mobile-review"
+
+      - name: Retry newest eligible build
+        env:
+          TESTFLIGHT_BETA_ENABLED: ${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}
+          TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}
+          TESTFLIGHT_BETA_WHATS_NEW: ${{ vars.TESTFLIGHT_BETA_WHATS_NEW }}
+        run: node scripts/mobile-deployment/verify-store.mjs ios-pending
+
+      - name: Cleanup iOS release files
+        if: always()
+        shell: bash
+        run: |
+          rm -rf "$RUNNER_TEMP/mobile-deployment" "$RUNNER_TEMP/mobile-review"
+          rm -f "$RUNNER_TEMP/mobile-review-bundle.json" "$RUNNER_TEMP/mobile-review-oidc.json"

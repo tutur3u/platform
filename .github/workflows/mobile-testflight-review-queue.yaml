@@ -1,0 +1,47 @@
+name: Mobile TestFlight Review Queue
+
+on:
+  schedule:
+    - cron: "23 */4 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+  deployments: read
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: mobile-testflight-review-queue.yaml
+
+  dispatch:
+    name: Ask the production workflow to retry review
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out workflow source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 0
+
+      - name: Require promoted retry code
+        id: promoted
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin production
+          if git cat-file -e FETCH_HEAD:.github/workflows/mobile-testflight-review-queue.yaml; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Retry code is not on production; skipping dispatch."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Dispatch production review retry
+        if: steps.promoted.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST repos/tutur3u/platform/actions/workflows/mobile-deploy-stores.yaml/dispatches -f ref=production
