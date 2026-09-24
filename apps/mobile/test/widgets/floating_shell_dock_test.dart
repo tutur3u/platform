@@ -125,10 +125,10 @@ void main() {
       expect(before.top, greaterThan(0));
       final header = find.byKey(const Key('floating-header'));
       expect(header, findsOneWidget);
-    await tester.drag(find.byType(ListView), const Offset(0, -160));
-    await tester.pump(const Duration(milliseconds: 250));
-    await tester.pump(const Duration(milliseconds: 250));
-    final headerOpacity = find.ancestor(
+      await tester.drag(find.byType(ListView), const Offset(0, -160));
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 250));
+      final headerOpacity = find.ancestor(
         of: header,
         matching: find.byType(AnimatedOpacity),
       );
