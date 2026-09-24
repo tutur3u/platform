@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
+import 'package:mobile/features/assistant/data/assistant_live_screen_service.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class AssistantLiveScreenControl extends StatelessWidget {
@@ -11,7 +10,9 @@ class AssistantLiveScreenControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!Platform.isAndroid && !Platform.isIOS) return const SizedBox.shrink();
+    if (!AssistantLiveScreenService().isSupported) {
+      return const SizedBox.shrink();
+    }
     final l10n = context.l10n;
     final sharing = state.isScreenSharing || state.isScreenSharingPending;
     final detail = switch (state.screenSharingError) {

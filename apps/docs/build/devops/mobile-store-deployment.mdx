@@ -256,17 +256,28 @@ Group directory, with a short host heartbeat and random capture-session ID. No
 account token, Live token, history, or capture archive crosses into the group.
 Frames are removed after delivery and capture stops if the host stops responding.
 
-Production signing requires App Group
+Full iOS broadcast signing requires App Group
 `group.com.tuturuuu.app.mobile.live` on both the Runner identifier
 `com.tuturuuu.app.mobile` and extension identifier
 `com.tuturuuu.app.mobile.LiveScreenBroadcast`. Regenerate the Runner App Store
 profile in the encrypted Infrastructure vault with that entitlement, and put the
 separate extension App Store profile into the `mobile-store-beta` environment's
-`APPLE_BROADCAST_PROVISIONING_PROFILE_B64` encrypted secret. The CI workflow
-validates team, exact identifier, distribution mode, expiration and App Group on
-both profiles before building. It separately verifies the embedded extension and
-its build number before TestFlight upload. Never weaken mobile OIDC to export a
-signing key or reuse a Runner profile for the extension.
+`APPLE_BROADCAST_PROVISIONING_PROFILE_B64` encrypted secret. Keep that profile
+available for a later build with the extension. Never weaken mobile OIDC to
+export a signing key or reuse a Runner profile for the extension.
+
+App Store Connect rejected build 207001 with error 90362 even though the signed
+IPA contained `NSExtension.NSExtensionAttributes.RPBroadcastProcessMode` set to
+`RPBroadcastProcessModeSampleBuffer`. While Apple rejects the extension, the
+production TestFlight workflow removes Runner's extension dependency and embed
+phase only in its CI workspace with
+`scripts/mobile-deployment/omit-broadcast-extension.rb`. It builds with
+`IOS_LIVE_SCREEN_BROADCAST_ENABLED=false` so iOS Live does not offer an unusable
+screen-sharing control. The workflow verifies the exported IPA has no broadcast
+extension before uploading it. Android sharing and local iOS builds retain
+their source configuration. To restore iOS TestFlight broadcast, restore its
+profile mapping, extension signature checks, and Dart build flag together, then
+verify that Apple accepts the signed IPA and that a physical iPhone can stream.
 
 The project membership helper uses Swift and XcodeProj:
 
