@@ -90,7 +90,8 @@ class _MeetAssistantReviewCardState extends State<MeetAssistantReviewCard> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final review = widget.review;
-    final approvals = (review['approvals'] as List? ?? []).whereType<Map>();
+    final approvals = (review['approvals'] as List? ?? [])
+        .whereType<Map<dynamic, dynamic>>();
     final status = review['status'] as String?;
     final ready = status == 'ready';
     return Card.outlined(

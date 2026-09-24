@@ -20,9 +20,10 @@ class _FakeMeetRepository extends MeetRepository {
   }
 
   @override
-  Future<List<dynamic>> listMiraReviews(String wsId, String meetingId) async => [
-    {'id': 'message-1', 'status': 'ready'},
-  ];
+  Future<List<dynamic>> listMiraReviews(String wsId, String meetingId) async =>
+      [
+        {'id': 'message-1', 'status': 'ready'},
+      ];
 
   @override
   Future<Map<String, dynamic>> getMiraReview(
@@ -33,7 +34,10 @@ class _FakeMeetRepository extends MeetRepository {
     'revision': 2,
     'status': 'ready',
     'approvals': [
-      {'toolName': 'create_task', 'input': {'name': 'Review first'}},
+      {
+        'toolName': 'create_task',
+        'input': {'name': 'Review first'},
+      },
     ],
   };
 

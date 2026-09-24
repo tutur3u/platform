@@ -62,7 +62,7 @@ class MeetRoomAssistant extends ChangeNotifier {
       if (_disposed) return;
       final details = await Future.wait(
         listed
-            .whereType<Map>()
+            .whereType<Map<dynamic, dynamic>>()
             .take(20)
             .map((entry) => entry['id'])
             .whereType<String>()

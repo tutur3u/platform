@@ -96,17 +96,14 @@ class MeetRepository {
     required String timezone,
     required List<Map<String, dynamic>> history,
   }) async {
-    final response = await _api.postJson(
-      MeetEndpoints.personalAssistant(wsId, meetingId),
-      {
-        'requestId': requestId,
-        'startedAt': startedAt,
-        'question': question,
-        'timezone': timezone,
-        'history': history,
-      },
-      timeout: const Duration(seconds: 125),
-    );
+    final response = await _api
+        .postJson(MeetEndpoints.personalAssistant(wsId, meetingId), {
+          'requestId': requestId,
+          'startedAt': startedAt,
+          'question': question,
+          'timezone': timezone,
+          'history': history,
+        }, timeout: const Duration(seconds: 125));
     final text = response['text'] as String?;
     if (text == null || text.trim().isEmpty) {
       throw StateError('Meet private answer unavailable');
