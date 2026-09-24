@@ -24,6 +24,8 @@ class _NotificationsList extends StatefulWidget {
 
 class _NotificationsListState extends State<_NotificationsList> {
   final ScrollController _scrollController = ScrollController();
+  NotificationsTab? _lastAutoLoadTab;
+  int? _lastAutoLoadCount;
 
   @override
   void initState() {
@@ -53,6 +55,25 @@ class _NotificationsListState extends State<_NotificationsList> {
   @override
   Widget build(BuildContext context) {
     final feed = widget.feed;
+    if (feed.status != NotificationFeedStatus.loaded) {
+      _lastAutoLoadCount = null;
+    } else if (feed.hasMore && !feed.isLoadingMore) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        final currentFeed = widget.feed;
+        if (currentFeed.status != NotificationFeedStatus.loaded ||
+            !currentFeed.hasMore ||
+            currentFeed.isLoadingMore ||
+            _scrollController.position.maxScrollExtent > 220 ||
+            (_lastAutoLoadTab == widget.tab &&
+                _lastAutoLoadCount == currentFeed.items.length)) {
+          return;
+        }
+        _lastAutoLoadTab = widget.tab;
+        _lastAutoLoadCount = currentFeed.items.length;
+        unawaited(widget.onLoadMore());
+      });
+    }
     Widget child;
     if (feed.status == NotificationFeedStatus.loading && !feed.hasLoadedOnce) {
       child = ListView(
