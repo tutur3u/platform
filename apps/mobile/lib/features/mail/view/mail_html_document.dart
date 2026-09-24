@@ -77,6 +77,8 @@ body a{color:${dark ? '#8ab4ff' : '#2458b8'}!important}
 #mail-content img,#mail-content video,#mail-content svg{max-width:100%!important}
 @media(max-width:600px){
 #mail-content *{min-width:0!important;box-sizing:border-box}
+#mail-content>*,#mail-content :is(table,thead,tbody,tr,td,th){max-width:100%!important}
+#mail-content .mail-fluid-image{width:100%!important;height:auto!important;object-fit:contain}
 #mail-content :is(p,div,span,td,th,h1,h2,h3){overflow-wrap:anywhere!important}
 #mail-content :is([nowrap],[style*="nowrap" i]){white-space:normal!important}
 #mail-content .mail-compact-icon{display:block;max-width:min(100%,220px)!important;max-height:220px!important;margin-inline:auto!important}
@@ -120,6 +122,15 @@ void _fitNewsletterForMobile(dom.DocumentFragment fragment) {
       if (description.contains('logo') || description.contains('icon')) {
         element.classes.add('mail-compact-icon');
       }
+      final imageWidth = double.tryParse(
+        (width ?? '').replaceAll(RegExp(r'[^\d.]'), ''),
+      );
+      if (imageWidth != null && imageWidth > 420) {
+        element
+          ..attributes.remove('width')
+          ..attributes.remove('height')
+          ..classes.add('mail-fluid-image');
+      }
     }
     final isWideTable =
         tag == 'table' &&
@@ -129,6 +140,13 @@ void _fitNewsletterForMobile(dom.DocumentFragment fragment) {
     if (isWideTable) {
       element.attributes.remove('width');
       element.classes.add('mail-fluid-table');
+    }
+    if ({'td', 'th', 'div', 'section', 'center'}.contains(tag) &&
+        width != null &&
+        (double.tryParse(width.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0) > 420 &&
+        !width.contains('%')) {
+      element.attributes.remove('width');
+      element.classes.add('mail-fluid-container');
     }
     final style = element.attributes['style'];
     if (style == null) continue;
