@@ -8000,6 +8000,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailSettings => 'Cài đặt thư';
 
   @override
+  String get mailDefaultAction => 'Thao tác email mặc định';
+
+  @override
   String get mailSenderName => 'Tên người gửi';
 
   @override

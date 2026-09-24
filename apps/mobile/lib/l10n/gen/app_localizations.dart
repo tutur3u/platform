@@ -15355,6 +15355,12 @@ abstract class AppLocalizations {
   /// **'Mail settings'**
   String get mailSettings;
 
+  /// No description provided for @mailDefaultAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Default email action'**
+  String get mailDefaultAction;
+
   /// No description provided for @mailSenderName.
   ///
   /// In en, this message translates to:

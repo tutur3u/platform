@@ -13,6 +13,7 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
       return;
     }
     final id = item['id'] as String;
+    if (_pendingSwipeIds.contains(id)) return;
     final unread =
         item['unread'] == true || (item['unreadCount'] as int? ?? 0) > 0;
     final starred = item['starred'] == true;
@@ -53,8 +54,8 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
     final before = _items;
     final generation = ++_generation;
     final threads = _threads;
+    _pendingSwipeIds.add(id);
     _updateState(() {
-      _mutating = true;
       _loading = false;
       _items = optimisticMailItems(
         _items,
@@ -64,6 +65,7 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
         query: _search.text,
       );
     });
+    _saveView();
     try {
       await _repository.bulk(
         widget.workspaceId,
@@ -95,7 +97,7 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
         ..removeCurrentSnackBar();
       final feedback = messenger.showSnackBar(
         SnackBar(
-          duration: const Duration(seconds: 5),
+          duration: const Duration(seconds: 3),
           persist: false,
           margin: EdgeInsets.fromLTRB(
             sideInset,
@@ -113,7 +115,12 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
               : SnackBarAction(
                   label: context.l10n.mailSwipeUndo,
                   onPressed: () async {
-                    if (!mounted || _mailboxId != box || _mutating) return;
+                    if (!mounted ||
+                        _mailboxId != box ||
+                        _mutating ||
+                        _pendingSwipeIds.contains(id)) {
+                      return;
+                    }
                     _updateState(() => _mutating = true);
                     try {
                       await _repository.bulk(
@@ -142,7 +149,9 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
                         );
                       }
                     } finally {
-                      if (mounted) _updateState(() => _mutating = false);
+                      if (mounted) {
+                        _updateState(() => _mutating = false);
+                      }
                     }
                   },
                 ),
@@ -161,8 +170,8 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.mailActionFailed)));
     } finally {
-      if (mounted && generation == _generation) {
-        _updateState(() => _mutating = false);
+      _pendingSwipeIds.remove(id);
+      if (mounted && box == _mailboxId && _pendingSwipeIds.isEmpty) {
         unawaited(_load());
       }
     }

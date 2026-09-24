@@ -15,6 +15,10 @@ IconData _mailMessageActionIcon(String action) => switch (action) {
 extension _MailReaderChrome on _MailReaderState {
   Widget _readerChrome(String subject, Map<String, String> actions) {
     final l10n = context.l10n;
+    final preferred = MailPrimaryActionPreference.instance.value;
+    final primary = preferred == MailPrimaryAction.reply && !widget.canSend
+        ? MailPrimaryAction.archive
+        : preferred;
     return Stack(
       children: [
         ShellTitleOverride(
@@ -65,6 +69,21 @@ extension _MailReaderChrome on _MailReaderState {
           locations: const {Routes.mail},
           actions: [
             ShellActionSpec(
+              id: 'mail-primary-action',
+              icon: primary.icon,
+              tooltip: primary.label(context),
+              inDock: true,
+              enabled: !_busy,
+              callbackToken: primary.name,
+              onPressed: () {
+                if (primary == MailPrimaryAction.reply) {
+                  if (_messages.isNotEmpty) unawaited(_reply(_messages.last));
+                } else {
+                  unawaited(_action(primary.stateAction!, close: true));
+                }
+              },
+            ),
+            ShellActionSpec(
               id: 'mail-star',
               icon: _starred ? Icons.star : Icons.star_border,
               tooltip: _starred ? l10n.mailUnstar : l10n.mailStar,
@@ -80,7 +99,9 @@ extension _MailReaderChrome on _MailReaderState {
               enabled: !_busy,
               onPressed: () => _chooseAction(actions),
             ),
-            if (widget.canSend && _messages.isNotEmpty)
+            if (widget.canSend &&
+                _messages.isNotEmpty &&
+                primary != MailPrimaryAction.reply)
               ShellActionSpec(
                 id: 'mail-reply',
                 icon: Icons.reply,

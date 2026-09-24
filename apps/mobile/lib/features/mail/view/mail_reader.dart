@@ -12,6 +12,7 @@ import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
+import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -35,6 +36,8 @@ class MailReader extends StatefulWidget {
     required this.fromAddress,
     this.refreshOnOpen = false,
     this.onReadFailed,
+    this.onOptimisticAction,
+    this.onActionSettled,
     this.signatureText,
     this.signatureHtml,
     super.key,
@@ -48,6 +51,13 @@ class MailReader extends StatefulWidget {
   final Map<String, dynamic> detail;
   final bool refreshOnOpen;
   final VoidCallback? onReadFailed;
+  final void Function(String action, String id)? onOptimisticAction;
+  final void Function({
+    required String action,
+    required String id,
+    required bool success,
+  })?
+  onActionSettled;
   final bool thread;
   final bool canSend;
 
@@ -71,7 +81,9 @@ class _MailReaderState extends State<MailReader> {
   void initState() {
     super.initState();
     MailImagePreference.instance.addListener(_imagePreferenceChanged);
+    MailPrimaryActionPreference.instance.addListener(_primaryActionChanged);
     unawaited(MailImagePreference.instance.load());
+    unawaited(MailPrimaryActionPreference.instance.load());
     _starred = _messages.any((m) => m['starred'] == true);
     if (widget.refreshOnOpen) unawaited(_refresh());
     if (_messages.any((message) => message['unread'] == true)) {
@@ -85,9 +97,14 @@ class _MailReaderState extends State<MailReader> {
     }
   }
 
+  void _primaryActionChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     MailImagePreference.instance.removeListener(_imagePreferenceChanged);
+    MailPrimaryActionPreference.instance.removeListener(_primaryActionChanged);
     super.dispose();
   }
 
@@ -124,27 +141,43 @@ class _MailReaderState extends State<MailReader> {
       if (!mounted || snoozedUntil == null) return;
     }
     final previousStarred = _starred;
+    final id = _id;
+    final optimisticClose =
+        close &&
+        (action == 'archive' || action == 'trash' || action == 'restore');
+    final onActionSettled = widget.onActionSettled;
     if (action != 'mark_read') {
       setState(() {
         _busy = true;
         if (action == 'star' || action == 'unstar') _starred = action == 'star';
       });
     }
+    if (optimisticClose) {
+      widget.onOptimisticAction?.call(action, id);
+      Navigator.of(context).pop();
+    }
     try {
       await widget.repository.changeState(
         widget.workspaceId,
         widget.mailboxId,
-        _id,
+        id,
         action,
         thread: widget.thread,
         snoozedUntil: snoozedUntil,
       );
+      if (optimisticClose) {
+        onActionSettled?.call(action: action, id: id, success: true);
+      }
       if (!mounted) return;
-      if (close) {
+      if (close && !optimisticClose) {
         Navigator.of(context).pop();
         return;
       }
     } on Object catch (error) {
+      if (optimisticClose) {
+        onActionSettled?.call(action: action, id: id, success: false);
+        return;
+      }
       if (action == 'mark_read') widget.onReadFailed?.call();
       if (error is ApiException &&
           (error.statusCode == 401 || error.statusCode == 403)) {
@@ -215,6 +248,10 @@ class _MailReaderState extends State<MailReader> {
         ? (_detail['thread'] as Map<String, dynamic>)['subject'] as String?
         : _detail['subject'] as String?;
     final sharedShell = lookupShellTitleOverrideCubit(context) != null;
+    final preferred = MailPrimaryActionPreference.instance.value;
+    final primary = preferred == MailPrimaryAction.reply && !widget.canSend
+        ? MailPrimaryAction.archive
+        : preferred;
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -231,6 +268,23 @@ class _MailReaderState extends State<MailReader> {
                   surfaceTintColor: Colors.transparent,
                   title: Text(subject ?? l10n.mailNoSubject),
                   actions: [
+                    IconButton(
+                      tooltip: primary.label(context),
+                      onPressed: _busy
+                          ? null
+                          : () {
+                              if (primary == MailPrimaryAction.reply) {
+                                if (_messages.isNotEmpty) {
+                                  unawaited(_reply(_messages.last));
+                                }
+                              } else {
+                                unawaited(
+                                  _action(primary.stateAction!, close: true),
+                                );
+                              }
+                            },
+                      icon: Icon(primary.icon),
+                    ),
                     IconButton(
                       tooltip: _starred ? l10n.mailUnstar : l10n.mailStar,
                       onPressed: _busy
