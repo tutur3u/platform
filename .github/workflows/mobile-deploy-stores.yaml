@@ -35,7 +35,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: mobile-store-beta
     outputs:
-      has_ci_token: ${{ steps.credentials.outputs.has_ci_token }}
       build_number: ${{ steps.credentials.outputs.build_number }}
       build_name: ${{ steps.version_name.outputs.build_name }}
     steps:
@@ -52,12 +51,10 @@ jobs:
           MOBILE_DEPLOYMENT_CI_TOKEN: ${{ secrets.MOBILE_DEPLOYMENT_CI_TOKEN }}
         run: |
           if [ -z "${MOBILE_DEPLOYMENT_CI_TOKEN:-}" ]; then
-            echo "has_ci_token=false" >> "$GITHUB_OUTPUT"
             echo "::error title=Mobile store deployment blocked::MOBILE_DEPLOYMENT_CI_TOKEN is not configured in the mobile-store-beta environment."
             exit 1
           fi
 
-          echo "has_ci_token=true" >> "$GITHUB_OUTPUT"
           build_number=$((100000 + GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT))
           test "$GITHUB_RUN_ATTEMPT" -lt 1000
           test "$build_number" -le 2100000000
@@ -104,7 +101,7 @@ jobs:
   publish-android-internal:
     name: Publish Android to Google Play internal
     needs: [check-ci, mobile-credentials-preflight]
-    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'
+    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: mobile-store-beta
@@ -222,7 +219,7 @@ jobs:
   publish-ios-testflight:
     name: Upload iOS to TestFlight
     needs: [check-ci, mobile-credentials-preflight]
-    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'
+    if: github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
     runs-on: macos-latest
     timeout-minutes: 120
     environment: mobile-store-beta

@@ -47,6 +47,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   });
   const preflight = parsed.jobs['mobile-credentials-preflight'];
   assert.equal(preflight.environment, 'mobile-store-beta');
+  assert.equal(preflight.outputs.has_ci_token, undefined);
   assert.equal(
     preflight.outputs.build_name,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
@@ -69,7 +70,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     assert.deepEqual(job.needs, ['check-ci', 'mobile-credentials-preflight']);
     assert.equal(
       job.if,
-      "github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'"
+      "github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'"
     );
     assert.equal(job.environment, 'mobile-store-beta');
     assert.equal(job.defaults.run['working-directory'], 'apps/mobile');
@@ -166,23 +167,18 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.match(workflow, /id-token:\s*write/);
   assert.match(workflow, /mobile-credentials-preflight:/);
   assert.match(workflow, /name: Check mobile deployment credentials/);
-  assert.match(
-    workflow,
-    /has_ci_token: \$\{\{ steps\.credentials\.outputs\.has_ci_token \}\}/
-  );
-  assert.match(workflow, /echo "has_ci_token=false" >> "\$GITHUB_OUTPUT"/);
+  assert.doesNotMatch(workflow, /has_ci_token/);
   assert.match(
     workflow,
     /::error title=Mobile store deployment blocked::MOBILE_DEPLOYMENT_CI_TOKEN is not configured/
   );
-  assert.match(workflow, /echo "has_ci_token=true" >> "\$GITHUB_OUTPUT"/);
   assert.match(
     workflow,
-    /publish-android-internal:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: github\.event_name == 'push' && needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.outputs\.has_ci_token == 'true'/
+    /publish-android-internal:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: github\.event_name == 'push' && needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.result == 'success'/
   );
   assert.match(
     workflow,
-    /publish-ios-testflight:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: github\.event_name == 'push' && needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.outputs\.has_ci_token == 'true'/
+    /publish-ios-testflight:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: github\.event_name == 'push' && needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.result == 'success'/
   );
   assert.match(workflow, /MOBILE_DEPLOYMENT_CI_TOKEN/);
   assert.match(workflow, /audience=tuturuuu-mobile-deployment/);
