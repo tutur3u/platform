@@ -315,6 +315,7 @@ class _MeetPageState extends State<MeetPage> {
     final name = nameController.text.trim();
     nameController.dispose();
     if (saved != true || name.isEmpty) return;
+    if (!mounted) return;
     if (meeting == null && !selectedTime.isAfter(DateTime.now())) {
       _toast(context.l10n.meetFutureStartRequired, destructive: true);
       return;
