@@ -767,6 +767,13 @@ class _AssistantPageState extends State<AssistantPage> {
       _showInlineNotice(context.l10n.assistantAttachmentUploadPending);
       return;
     }
+    if (chatState.composerAttachments.any(
+      (attachment) =>
+          attachment.uploadState == AssistantAttachmentUploadState.error,
+    )) {
+      _showInlineNotice(context.l10n.assistantAttachmentUploadFailed);
+      return;
+    }
 
     final text = _inputController.text;
     final attachments = chatState.composerAttachments
@@ -815,14 +822,27 @@ class _AssistantPageState extends State<AssistantPage> {
   }
 
   Future<void> _recordVoiceMessage(String wsId) async {
-    final recording = await showAdaptiveSheet<PlatformFile>(
+    final recording = await showAdaptiveSheet<AssistantVoiceMessageResult>(
       context: context,
       useRootNavigator: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (_) => const AssistantVoiceMessageSheet(),
     );
     if (!mounted || recording == null) return;
-    await _chatCubit.addComposerAttachments(wsId: wsId, files: [recording]);
+    await _chatCubit.addComposerAttachments(
+      wsId: wsId,
+      files: [recording.file],
+      modelId: _shellCubit.state.selectedModel.value,
+      timezone: await getCurrentTimezoneIdentifier(),
+    );
+    if (mounted && recording.sendNow) {
+      await _handleSend(
+        wsId,
+        _shellCubit.state,
+        _chatCubit.state,
+        _liveCubit.state,
+      );
+    }
   }
 
   Future<void> _pickFiles(String wsId) async {
@@ -831,7 +851,12 @@ class _AssistantPageState extends State<AssistantPage> {
       return;
     }
 
-    await _chatCubit.addComposerAttachments(wsId: wsId, files: result);
+    await _chatCubit.addComposerAttachments(
+      wsId: wsId,
+      files: result,
+      modelId: _shellCubit.state.selectedModel.value,
+      timezone: await getCurrentTimezoneIdentifier(),
+    );
   }
 
   Future<void> _toggleFullscreen(bool value) async {

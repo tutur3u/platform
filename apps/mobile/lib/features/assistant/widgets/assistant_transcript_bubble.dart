@@ -108,7 +108,9 @@ class AssistantTranscriptBubble extends StatelessWidget {
                               .map(
                                 (attachment) => Chip(
                                   avatar: Icon(
-                                    attachment.isImage
+                                    attachment.type.startsWith('audio/')
+                                        ? Icons.graphic_eq_rounded
+                                        : attachment.isImage
                                         ? Icons.image_outlined
                                         : Icons.attach_file_rounded,
                                     size: 16,

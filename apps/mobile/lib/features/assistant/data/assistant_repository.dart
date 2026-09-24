@@ -766,7 +766,8 @@ class AssistantRepository {
           fallbackSize: file.size,
         );
       } on ApiException catch (error) {
-        if (error.statusCode != 404 && error.statusCode != 403) {
+        if (![404, 403].contains(error.statusCode) ||
+            file.mimeType.startsWith('audio/')) {
           rethrow;
         }
       }

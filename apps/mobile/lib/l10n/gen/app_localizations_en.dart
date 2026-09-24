@@ -1443,6 +1443,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantAttachmentUploadPending => 'Wait for attachment uploads to finish before sending.';
 
   @override
+  String get assistantAttachmentUploadFailed => 'An attachment failed to upload. Remove it and try again before sending.';
+
+  @override
+  String get assistantAttachmentFailedShort => 'Upload failed';
+
+  @override
   String get assistantContextUpdatedLabel => 'Workspace context updated';
 
   @override
@@ -8405,6 +8411,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voiceAttach => 'Attach recording';
+
+  @override
+  String get voiceRetake => 'Record again';
+
+  @override
+  String get voiceSendNow => 'Send now';
 
   @override
   String get voicePermission => 'Allow microphone access to record.';

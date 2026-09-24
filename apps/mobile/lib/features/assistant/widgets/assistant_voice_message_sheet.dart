@@ -8,6 +8,16 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:video_player/video_player.dart';
 
+class AssistantVoiceMessageResult {
+  const AssistantVoiceMessageResult({
+    required this.file,
+    required this.sendNow,
+  });
+
+  final AssistantMemoryFile file;
+  final bool sendNow;
+}
+
 /// A recording is uploaded only after explicit confirmation. Temporary audio
 /// is deleted on dismissal, cancellation, or after copying the confirmed bytes.
 class AssistantVoiceMessageSheet extends StatefulWidget {
@@ -43,6 +53,9 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_start());
+    });
   }
 
   @override
@@ -151,16 +164,45 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
     if (mounted) setState(() {});
   }
 
-  Future<void> _confirm() async {
+  Future<void> _retake() async {
+    if (_busy || _recording) return;
+    setState(() => _busy = true);
+    try {
+      final preview = _preview;
+      _preview = null;
+      preview?.removeListener(_updatePreview);
+      await preview?.dispose();
+      await _deleteRecording();
+      if (!mounted) return;
+      setState(() {
+        _hasRecording = false;
+        _seconds = 0;
+        _busy = false;
+      });
+      await _start();
+    } on Exception {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _error = context.l10n.voiceRecordingError;
+        });
+      }
+    }
+  }
+
+  Future<void> _confirm({required bool sendNow}) async {
     final path = _path;
     if (_busy || _recording || !_hasRecording || path == null) return;
     setState(() => _busy = true);
     try {
       final bytes = await File(path).readAsBytes();
       if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pop(AssistantMemoryFile(name: 'voice-message.m4a', bytes: bytes));
+      Navigator.of(context).pop(
+        AssistantVoiceMessageResult(
+          file: AssistantMemoryFile(name: 'voice-message.m4a', bytes: bytes),
+          sendNow: sendNow,
+        ),
+      );
     } on Exception {
       if (mounted) {
         setState(() {
@@ -246,8 +288,11 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            runAlignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               if (_path == null || _recording)
                 FilledButton.icon(
@@ -274,9 +319,19 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
                     ),
                   ),
                 const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: _busy ? null : _confirm,
+                IconButton(
+                  tooltip: l10n.voiceRetake,
+                  onPressed: _busy ? null : _retake,
+                  icon: const Icon(Icons.restart_alt_rounded),
+                ),
+                TextButton(
+                  onPressed: _busy ? null : () => _confirm(sendNow: false),
                   child: Text(l10n.voiceAttach),
+                ),
+                FilledButton.icon(
+                  onPressed: _busy ? null : () => _confirm(sendNow: true),
+                  icon: const Icon(Icons.send_rounded),
+                  label: Text(l10n.voiceSendNow),
                 ),
               ],
             ],

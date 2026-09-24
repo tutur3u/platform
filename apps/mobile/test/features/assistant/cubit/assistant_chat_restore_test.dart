@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
+import 'package:mobile/features/assistant/data/assistant_memory_file.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
@@ -21,6 +23,20 @@ void main() {
     messages: [],
     attachmentsByMessageId: {},
   );
+
+  setUpAll(() {
+    registerFallbackValue(restored);
+    registerFallbackValue(
+      AssistantFilePickerResult(
+        id: 'fallback',
+        file: AssistantMemoryFile(name: 'voice.m4a', bytes: Uint8List(0)),
+        name: 'voice.m4a',
+        size: 0,
+        path: '',
+        mimeType: 'audio/m4a',
+      ),
+    );
+  });
 
   setUp(() {
     repository = _Repository();
@@ -66,6 +82,115 @@ void main() {
     );
     addTearDown(cubit.close);
   });
+
+  test(
+    'voice attachment creates its chat before uploading and keeps its type',
+    () async {
+      when(() => preferences.loadChatId('ws')).thenAnswer((_) async => null);
+      await cubit.loadWorkspace('ws');
+      when(
+        () => repository.createChat(
+          id: any(named: 'id'),
+          wsId: 'ws',
+          modelId: 'model',
+          message: 'New chat',
+          timezone: 'UTC',
+        ),
+      ).thenAnswer((_) async => const AssistantChatRecord(id: 'persisted'));
+      when(
+        () => repository.uploadAttachment(
+          wsId: 'ws',
+          chatId: 'persisted',
+          file: any(named: 'file'),
+        ),
+      ).thenAnswer((invocation) async {
+        final file =
+            invocation.namedArguments[#file] as AssistantFilePickerResult;
+        expect(file.mimeType, 'audio/m4a');
+        return const AssistantAttachment(
+          id: 'audio',
+          name: 'voice-message.m4a',
+          size: 4,
+          type: 'audio/m4a',
+          storagePath: 'chats/persisted/audio.m4a',
+          uploadState: AssistantAttachmentUploadState.uploaded,
+        );
+      });
+
+      await cubit.addComposerAttachments(
+        wsId: 'ws',
+        files: [
+          AssistantMemoryFile(
+            name: 'voice-message.m4a',
+            bytes: Uint8List.fromList([0, 1, 2, 3]),
+          ),
+        ],
+        modelId: 'model',
+        timezone: 'UTC',
+      );
+
+      expect(cubit.state.chat?.id, 'persisted');
+      expect(cubit.state.composerAttachments.single.isUploaded, isTrue);
+      when(
+        () => repository.streamChat(
+          chatId: 'persisted',
+          wsId: 'ws',
+          workspaceContextId: 'ws',
+          modelId: 'model',
+          messages: any(named: 'messages'),
+          thinkingMode: AssistantThinkingMode.fast,
+          creditSource: AssistantCreditSource.workspace,
+          timezone: 'UTC',
+          attachments: any(named: 'attachments'),
+          creditWsId: 'ws',
+        ),
+      ).thenAnswer((_) => Stream.value(const AssistantDoneStreamEvent()));
+      when(
+        () => repository.writeAssistantChatCache(
+          wsId: 'ws',
+          chatId: 'persisted',
+          restored: any(named: 'restored'),
+        ),
+      ).thenAnswer((_) async {});
+      await cubit.submit(
+        wsId: 'ws',
+        message: 'What did I say?',
+        modelId: 'model',
+        thinkingMode: AssistantThinkingMode.fast,
+        creditSource: AssistantCreditSource.workspace,
+        workspaceContextId: 'ws',
+        timezone: 'UTC',
+        creditWsId: 'ws',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      final message = cubit.state.messages.single;
+      expect(
+        cubit.state.attachmentsByMessageId[message.id]?.single.id,
+        'audio',
+      );
+      verify(
+        () => repository.streamChat(
+          chatId: 'persisted',
+          wsId: 'ws',
+          workspaceContextId: 'ws',
+          modelId: 'model',
+          messages: any(named: 'messages'),
+          thinkingMode: AssistantThinkingMode.fast,
+          creditSource: AssistantCreditSource.workspace,
+          timezone: 'UTC',
+          attachments: any(named: 'attachments'),
+          creditWsId: 'ws',
+        ),
+      ).called(1);
+      verify(
+        () => repository.uploadAttachment(
+          wsId: 'ws',
+          chatId: 'persisted',
+          file: any(named: 'file'),
+        ),
+      ).called(1);
+    },
+  );
 
   test(
     'Live history reload bypasses cache without hiding current messages',

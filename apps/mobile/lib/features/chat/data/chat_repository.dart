@@ -245,9 +245,10 @@ class ChatRepository {
     required PlatformFile file,
   }) async {
     final bytes = await file.readAsBytes();
-    final contentType =
-        lookupMimeType(file.name, headerBytes: bytes) ??
-        'application/octet-stream';
+    final contentType = file.name.toLowerCase().endsWith('.m4a')
+        ? 'audio/m4a'
+        : lookupMimeType(file.name, headerBytes: bytes) ??
+              'application/octet-stream';
 
     final uploadPayload = await _apiClient.postJson(
       '${_conversationPath(wsId, conversationId)}/attachments/upload-url',

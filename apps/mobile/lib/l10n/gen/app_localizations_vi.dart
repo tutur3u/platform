@@ -1443,6 +1443,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantAttachmentUploadPending => 'Hãy đợi tải tệp lên xong rồi gửi.';
 
   @override
+  String get assistantAttachmentUploadFailed => 'Không tải được tệp đính kèm. Hãy xóa tệp và thử lại trước khi gửi.';
+
+  @override
+  String get assistantAttachmentFailedShort => 'Tải lên thất bại';
+
+  @override
   String get assistantContextUpdatedLabel => 'Đã cập nhật ngữ cảnh không gian làm việc';
 
   @override
@@ -8375,6 +8381,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get voiceAttach => 'Đính kèm bản ghi';
+
+  @override
+  String get voiceRetake => 'Ghi âm lại';
+
+  @override
+  String get voiceSendNow => 'Gửi ngay';
 
   @override
   String get voicePermission => 'Cho phép truy cập micrô để ghi âm.';

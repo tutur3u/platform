@@ -176,12 +176,28 @@ class _AttachmentStrip extends StatelessWidget {
                 child: InputChip(
                   visualDensity: VisualDensity.compact,
                   avatar: Icon(
-                    attachment.isImage
+                    attachment.uploadState ==
+                            AssistantAttachmentUploadState.error
+                        ? Icons.error_outline_rounded
+                        : attachment.type.startsWith('audio/')
+                        ? Icons.graphic_eq_rounded
+                        : attachment.isImage
                         ? Icons.image_outlined
                         : Icons.attach_file_rounded,
                     size: 14,
+                    color:
+                        attachment.uploadState ==
+                            AssistantAttachmentUploadState.error
+                        ? Theme.of(context).colorScheme.error
+                        : null,
                   ),
-                  label: Text(attachment.name),
+                  label: Text(
+                    attachment.uploadState ==
+                            AssistantAttachmentUploadState.error
+                        ? '${attachment.name} · '
+                              '${context.l10n.assistantAttachmentFailedShort}'
+                        : attachment.name,
+                  ),
                   onDeleted: () => onRemoveAttachment(attachment.id),
                 ),
               ),

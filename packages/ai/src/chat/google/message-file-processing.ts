@@ -31,7 +31,7 @@ const MEDIA_TYPE_BY_EXTENSION: Record<string, string> = {
   jpeg: 'image/jpeg',
   jpg: 'image/jpeg',
   json: 'application/json',
-  m4a: 'audio/mp4',
+  m4a: 'audio/m4a',
   md: 'text/markdown',
   mov: 'video/quicktime',
   mp3: 'audio/mpeg',
@@ -223,6 +223,7 @@ function addFilesToContent(
     // reached the model only as a "cannot be passed directly" note.
     'audio/aac',
     'audio/flac',
+    'audio/m4a',
     'audio/mp4',
     'audio/mpeg',
     'audio/ogg',

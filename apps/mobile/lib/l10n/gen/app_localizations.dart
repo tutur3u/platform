@@ -2899,6 +2899,18 @@ abstract class AppLocalizations {
   /// **'Wait for attachment uploads to finish before sending.'**
   String get assistantAttachmentUploadPending;
 
+  /// No description provided for @assistantAttachmentUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'An attachment failed to upload. Remove it and try again before sending.'**
+  String get assistantAttachmentUploadFailed;
+
+  /// No description provided for @assistantAttachmentFailedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed'**
+  String get assistantAttachmentFailedShort;
+
   /// No description provided for @assistantContextUpdatedLabel.
   ///
   /// In en, this message translates to:
@@ -16104,6 +16116,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Attach recording'**
   String get voiceAttach;
+
+  /// No description provided for @voiceRetake.
+  ///
+  /// In en, this message translates to:
+  /// **'Record again'**
+  String get voiceRetake;
+
+  /// No description provided for @voiceSendNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Send now'**
+  String get voiceSendNow;
 
   /// No description provided for @voicePermission.
   ///
