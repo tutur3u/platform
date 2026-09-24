@@ -24,6 +24,7 @@ describe('shared app-session API audiences', () => {
         'learn',
         'mail',
         'meet',
+        'parley',
         'mind',
         'mira',
         'nova',

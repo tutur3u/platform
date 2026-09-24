@@ -61,7 +61,7 @@ export async function getAiStudioConsumptionBreakdown({
         // user-triggered, and nothing on it ran unmetered.
         execution_mode: 'interactive',
         latency_sample_count: row.request_count,
-        search_units: resolveLegacySearchCount(run.metadata),
+        search_units: 0,
         unmetered_credits: 0,
       })
     ) ?? [];
