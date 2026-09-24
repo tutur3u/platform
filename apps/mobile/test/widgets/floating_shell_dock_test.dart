@@ -117,26 +117,30 @@ void main() {
     expect(visibility.last, isTrue);
   });
 
-  testWidgets('floating header and dock move together without layout shift', (
-    tester,
-  ) async {
-    await mount(tester, showHeader: true);
-    final before = tester.getRect(find.byType(ListView));
-    final header = find.byKey(const Key('floating-header'));
-    expect(header, findsOneWidget);
+  testWidgets(
+    'hidden header gives the page its full height without shifting back on idle',
+    (tester) async {
+      await mount(tester, showHeader: true);
+      final before = tester.getRect(find.byType(ListView));
+      expect(before.top, greaterThan(0));
+      final header = find.byKey(const Key('floating-header'));
+      expect(header, findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -160));
     await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(milliseconds: 250));
     final headerOpacity = find.ancestor(
-      of: header,
-      matching: find.byType(AnimatedOpacity),
-    );
-    expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 0);
-    expect(tester.getRect(find.byType(ListView)), before);
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
-    expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 1);
-    expect(tester.getRect(find.byType(ListView)), before);
-  });
+        of: header,
+        matching: find.byType(AnimatedOpacity),
+      );
+      expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 0);
+      final expanded = tester.getRect(find.byType(ListView));
+      expect(expanded.top, 0);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 1);
+      expect(tester.getRect(find.byType(ListView)), expanded);
+    },
+  );
 
   testWidgets('route handoff previews never retain old action callbacks', (
     tester,

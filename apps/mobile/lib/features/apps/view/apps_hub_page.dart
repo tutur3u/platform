@@ -50,7 +50,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
       top: false,
       bottom: false,
       child: ResponsiveWrapper(
-        maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+        maxWidth: ResponsivePadding.rootContentWidth(context.deviceClass),
         child: IgnorePointer(
           ignoring: false,
           child: CustomScrollView(
@@ -72,9 +72,9 @@ class _AppsHubPageState extends State<AppsHubPage> {
                 ),
                 sliver: SliverLayoutBuilder(
                   builder: (context, constraints) {
-                    final columns = (constraints.crossAxisExtent / 360)
+                    final columns = (constraints.crossAxisExtent / 280)
                         .floor()
-                        .clamp(1, 4);
+                        .clamp(1, 3);
                     return SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         return Padding(
