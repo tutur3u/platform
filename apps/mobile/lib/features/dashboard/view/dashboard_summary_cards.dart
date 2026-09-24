@@ -246,6 +246,24 @@ class _TodaySummaryCard extends StatelessWidget {
               );
             },
           ),
+          if (activeTasks > 0) ...[
+            const SizedBox(height: 12),
+            Semantics(
+              label:
+                  '${context.l10n.dashboardTaskOverdue}: $overdueTasks / $activeTasks',
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  minHeight: 7,
+                  value: (overdueTasks / activeTasks).clamp(0.0, 1.0),
+                  backgroundColor: summaryPalette.iconBackground,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    theme.colorScheme.error,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

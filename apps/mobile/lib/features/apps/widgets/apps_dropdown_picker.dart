@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/cubit/app_tab_state.dart';
@@ -125,6 +123,13 @@ class _AppsScreenState extends State<AppsScreen> {
                   : Icons.search_rounded,
               tooltip: context.l10n.appsHubSearchHint,
               callbackToken: 'search-$_searching',
+              searchController: _searching ? _search : null,
+              searchHint: context.l10n.appsHubSearchHint,
+              onSearchChanged: (_) => setState(() {}),
+              onCloseSearch: () => setState(() {
+                _searching = false;
+                _search.clear();
+              }),
               onPressed: () => setState(() {
                 _searching = !_searching;
                 if (!_searching) _search.clear();
@@ -139,23 +144,6 @@ class _AppsScreenState extends State<AppsScreen> {
             ),
           ],
         ),
-        if (_searching)
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: ResponsivePadding.horizontal(context.deviceClass),
-              vertical: 8,
-            ),
-            child: TextField(
-              controller: _search,
-              autofocus: true,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: context.l10n.appsHubSearchHint,
-                prefixIcon: const Icon(Icons.search_rounded),
-                isDense: true,
-              ),
-            ),
-          ),
         Expanded(
           child: _editing
               ? const AppsPickerEditor()

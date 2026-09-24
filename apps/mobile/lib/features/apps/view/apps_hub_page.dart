@@ -50,7 +50,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
       top: false,
       bottom: false,
       child: ResponsiveWrapper(
-        maxWidth: context.isCompact ? null : 1600,
+        maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
         child: IgnorePointer(
           ignoring: false,
           child: CustomScrollView(

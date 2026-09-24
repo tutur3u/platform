@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/responsive/responsive_padding.dart';
+import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/view/profile_account_actions.dart';
@@ -56,9 +58,15 @@ class ProfileOverviewPage extends StatelessWidget {
             ),
             LayoutBuilder(
               builder: (context, constraints) {
-                final horizontal = constraints.maxWidth > 960
-                    ? (constraints.maxWidth - 928) / 2
-                    : 16.0;
+                final maxWidth =
+                    ResponsivePadding.maxContentWidth(context.deviceClass) ??
+                    constraints.maxWidth;
+                final horizontal =
+                    ((constraints.maxWidth - maxWidth) / 2).clamp(
+                      0.0,
+                      double.infinity,
+                    ) +
+                    ResponsivePadding.horizontal(context.deviceClass);
                 return ListView(
                   padding: EdgeInsets.fromLTRB(
                     horizontal,
@@ -67,52 +75,68 @@ class ProfileOverviewPage extends StatelessWidget {
                     24 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: [
-                    Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: SizedBox.square(
-                            dimension: 88,
-                            child: state.avatarUrl == null
-                                ? const Icon(Icons.person_outline, size: 48)
-                                : Image.network(
-                                    state.avatarUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, error, stack) =>
-                                        const Icon(
-                                          Icons.person_outline,
-                                          size: 48,
-                                        ),
-                                  ),
-                          ),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
                         ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                name,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineSmall,
-                              ),
-                              if (profile?.email != null)
+                      ),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: SizedBox.square(
+                              dimension: 68,
+                              child: state.avatarUrl == null
+                                  ? const Icon(Icons.person_outline, size: 48)
+                                  : Image.network(
+                                      state.avatarUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, error, stack) =>
+                                          const Icon(
+                                            Icons.person_outline,
+                                            size: 48,
+                                          ),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 Text(
-                                  profile!.email!,
-                                  overflow: TextOverflow.ellipsis,
+                                  name,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineSmall,
                                 ),
-                              TextButton.icon(
-                                onPressed: () => context.go(Routes.profileEdit),
-                                icon: const Icon(Icons.edit_outlined, size: 18),
-                                label: Text(l10n.profileIdentitySectionTitle),
-                              ),
-                            ],
+                                if (profile?.email != null)
+                                  Text(
+                                    profile!.email!,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                TextButton.icon(
+                                  onPressed: () =>
+                                      context.go(Routes.profileEdit),
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    size: 18,
+                                  ),
+                                  label: Text(l10n.profileIdentitySectionTitle),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 14),
                     ProfileActivitySection(replayToken: replayToken),
                     if (workspace != null &&
                         !workspace.personal &&

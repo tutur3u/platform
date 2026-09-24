@@ -105,7 +105,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     Routes.apps: 0,
   };
   shad.ToastOverlay? _exitConfirmationToast;
-  final ValueNotifier<bool> _chromeVisible = ValueNotifier(true);
 
   void _markBackDispatch({required String source}) {
     _lastBackDispatchAt = DateTime.now();
@@ -554,7 +553,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     _dismissExitConfirmationToast();
     _suppressPointerTimer?.cancel();
     _layerController.dispose();
-    _chromeVisible.dispose();
     super.dispose();
   }
 

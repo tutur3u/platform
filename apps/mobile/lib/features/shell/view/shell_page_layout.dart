@@ -217,13 +217,14 @@ extension _ShellPageLayout on _ShellPageState {
   Widget _buildBodyWithFloatingNav({
     required Widget body,
     required Widget navigationBar,
+    Widget? header,
     double bodyBottomInset = 0,
   }) {
     return FloatingShellDock(
       location: widget.matchedLocation,
       bottomInset: bodyBottomInset,
       navigation: navigationBar,
-      onVisibilityChanged: (visible) => _chromeVisible.value = visible,
+      header: header,
       child: body,
     );
   }
@@ -313,26 +314,6 @@ extension _ShellPageLayout on _ShellPageState {
         : 0.0;
 
     return shad.Scaffold(
-      headers: [
-        if (!immersive)
-          ValueListenableBuilder<bool>(
-            valueListenable: _chromeVisible,
-            builder: (context, visible, _) => AnimatedSize(
-              duration: MediaQuery.disableAnimationsOf(context)
-                  ? Duration.zero
-                  : const Duration(milliseconds: 240),
-              curve: Curves.easeOutCubic,
-              alignment: Alignment.topCenter,
-              child: visible
-                  ? _buildAppBar(
-                      context,
-                      activeModule: activeModule,
-                      injectedMiniNavRegistration: injectedMiniNavRegistration,
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ),
-      ],
       footers: showBottomNav && isCompact
           ? [
               _buildCompactFooter(
@@ -344,6 +325,13 @@ extension _ShellPageLayout on _ShellPageState {
       // Preserve Assistant state when keyboard/fullscreen hides navigation.
       child: _buildBodyWithFloatingNav(
         body: globalBody,
+        header: immersive
+            ? null
+            : _buildFloatingHeader(
+                context,
+                activeModule: activeModule,
+                injectedMiniNavRegistration: injectedMiniNavRegistration,
+              ),
         navigationBar: showBottomNav && !isCompact
             ? navigationBar
             : const SizedBox.shrink(),
@@ -513,6 +501,38 @@ extension _ShellPageLayout on _ShellPageState {
     AppModule? activeModule,
     ShellMiniNavRegistration? injectedMiniNavRegistration,
   }) {
+    final searchAction = context
+        .watch<ShellChromeActionsCubit?>()
+        ?.state
+        .resolveForLocation(widget.matchedLocation)
+        .where((action) => action.searchController != null)
+        .firstOrNull;
+    if (searchAction != null) {
+      return shad.AppBar(
+        height: mobileSectionAppBarHeight,
+        padding: mobileSectionAppBarPadding,
+        trailing: [
+          IconButton(
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+            onPressed: searchAction.onCloseSearch,
+            icon: const Icon(Icons.close_rounded),
+          ),
+        ],
+        child: TextField(
+          key: const ValueKey('shell-search-query'),
+          controller: searchAction.searchController,
+          autofocus: true,
+          onChanged: searchAction.onSearchChanged,
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            hintText: searchAction.searchHint,
+            prefixIcon: const Icon(Icons.search_rounded),
+            border: InputBorder.none,
+            isDense: true,
+          ),
+        ),
+      );
+    }
     final selectedTitle = _selectedMiniNavTitle(
       context,
       activeModule: activeModule,
@@ -533,6 +553,26 @@ extension _ShellPageLayout on _ShellPageState {
             fallbackTitle: selectedTitle,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFloatingHeader(
+    BuildContext context, {
+    AppModule? activeModule,
+    ShellMiniNavRegistration? injectedMiniNavRegistration,
+  }) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surface,
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: 0.14),
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: _buildAppBar(
+        context,
+        activeModule: activeModule,
+        injectedMiniNavRegistration: injectedMiniNavRegistration,
       ),
     );
   }

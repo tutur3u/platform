@@ -132,7 +132,7 @@ class _AssistantPageState extends State<AssistantPage> {
     if (!TickerMode.valuesOf(context).enabled) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || TickerMode.valuesOf(context).enabled) return;
-        _inputFocusNode.unfocus();
+        _collapseComposerToFab();
         if (_liveCubit.state.status !=
             AssistantLiveConnectionStatus.disconnected) {
           unawaited(_liveCubit.disconnect());
