@@ -206,11 +206,12 @@ class ReminderService extends ChangeNotifier {
       }
       if (_userId != userId) return;
       allEntries.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-      final ids = <int>{};
+      final seenIds = <int>{};
       final entries = allEntries
-          .where((entry) => ids.add(entry.notificationId))
+          .where((entry) => seenIds.add(entry.notificationId))
           .take(60)
           .toList(growable: false);
+      final scheduledIds = entries.map((entry) => entry.notificationId).toSet();
       final language =
           await SettingsRepository().getLocale() ??
           PlatformDispatcher.instance.locale.languageCode;
@@ -242,10 +243,10 @@ class ReminderService extends ChangeNotifier {
           ),
         );
       }
-      for (final id in previousIds.difference(ids)) {
+      for (final id in previousIds.difference(scheduledIds)) {
         await PushNotificationService.instance.cancelLocalReminder(id);
       }
-      await store.setStringList(key, ids.map((id) => '$id').toList());
+      await store.setStringList(key, scheduledIds.map((id) => '$id').toList());
       final finishedAt = DateTime.now();
       await store.setInt(
         'reminders.$userId.lastSuccessAt',
