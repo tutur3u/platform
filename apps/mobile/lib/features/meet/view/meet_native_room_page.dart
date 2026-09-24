@@ -1,12 +1,15 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
+import 'package:mobile/features/meet/view/meet_ended_review.dart';
 import 'package:mobile/features/meet/view/meet_participant_tile.dart';
 import 'package:mobile/features/meet/view/meet_room_sheets.dart';
+import 'package:mobile/features/meet/view/meet_time_format.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -30,6 +33,7 @@ class MeetNativeRoomPage extends StatefulWidget {
 }
 
 class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
+  late final MeetRepository _repository = widget.repository ?? MeetRepository();
   late final MeetCallController _call = MeetCallController(
     workspaceId: widget.workspaceId,
     meetingId: widget.meetingId,
@@ -38,12 +42,18 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
   bool _joinRequested = false;
   bool _audioPreferred = true;
   bool _previewBusy = false;
+  bool _checkingRoom = true;
+  bool _reviewBusy = false;
+  bool _endedReviewRequested = false;
+  Map<String, dynamic>? _endedReview;
+  String? _reviewError;
   Timer? _countdownTimer;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_call.prepareMedia());
+    _call.addListener(_onCallUpdated);
+    unawaited(_checkRoomBeforeMedia());
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && _call.roomExpiresAt != null) setState(() {});
     });
@@ -52,25 +62,63 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _call.removeListener(_onCallUpdated);
     _call.dispose();
+    if (widget.repository == null) _repository.dispose();
     super.dispose();
   }
 
-  void _leave() => context.go(Routes.meet);
-
-  String? _remainingTime() {
-    final deadline = _call.roomExpiresAt;
-    if (deadline == null) return null;
-    final seconds = deadline
-        .difference(DateTime.now())
-        .inSeconds
-        .clamp(0, 86400);
-    final minutes = seconds ~/ 60;
-    final hours = (minutes ~/ 60).toString().padLeft(2, '0');
-    final mins = (minutes % 60).toString().padLeft(2, '0');
-    final secs = (seconds % 60).toString().padLeft(2, '0');
-    return '$hours:$mins:$secs';
+  void _onCallUpdated() {
+    if (_call.ended && !_endedReviewRequested) {
+      _endedReviewRequested = true;
+      unawaited(_loadEndedReview());
+    }
   }
+
+  Future<void> _checkRoomBeforeMedia() async {
+    setState(() {
+      _checkingRoom = true;
+      _reviewError = null;
+    });
+    try {
+      final review = await _repository.getMeetingReview(
+        widget.workspaceId,
+        widget.meetingId,
+      );
+      if (!mounted) return;
+      if (review['ended'] == true) {
+        setState(() => _endedReview = review);
+      } else {
+        await _call.prepareMedia();
+      }
+    } on Object {
+      if (mounted) {
+        setState(() => _reviewError = context.l10n.meetReviewCheckFailed);
+      }
+    } finally {
+      if (mounted) setState(() => _checkingRoom = false);
+    }
+  }
+
+  Future<void> _loadEndedReview() async {
+    if (_reviewBusy) return;
+    setState(() => _reviewBusy = true);
+    try {
+      final review = await _repository.getMeetingReview(
+        widget.workspaceId,
+        widget.meetingId,
+      );
+      if (mounted) setState(() => _endedReview = review);
+    } on Object {
+      if (mounted) {
+        setState(() => _reviewError = context.l10n.meetReviewUnavailable);
+      }
+    } finally {
+      if (mounted) setState(() => _reviewBusy = false);
+    }
+  }
+
+  void _leave() => context.go(Routes.meet);
 
   Future<void> _join() async {
     if (_joinRequested) return;
@@ -99,67 +147,109 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
 
   Widget _buildLobby(BuildContext context) {
     final l10n = context.l10n;
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
+    final actions = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          children: [
+            IconButton.filledTonal(
+              tooltip: _audioPreferred ? l10n.meetMute : l10n.meetUnmute,
+              onPressed: () =>
+                  setState(() => _audioPreferred = !_audioPreferred),
+              icon: Icon(
+                _audioPreferred ? Icons.mic_outlined : Icons.mic_off_outlined,
+              ),
+            ),
+            IconButton.filledTonal(
+              tooltip: _call.media.videoEnabled
+                  ? l10n.meetCameraOff
+                  : l10n.meetCameraOn,
+              onPressed: _previewBusy ? null : _togglePreviewVideo,
+              icon: Icon(
+                _call.media.videoEnabled
+                    ? Icons.videocam_outlined
+                    : Icons.videocam_off_outlined,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: _join,
+          icon: const Icon(Icons.login),
+          label: Text(l10n.meetJoin),
+        ),
+      ],
+    );
+    Widget preview(double width) => SizedBox(
+      width: width,
+      height: width * 9 / 16,
+      child: MeetParticipantTile(
+        name: l10n.meetYou,
+        local: true,
+        microphoneOn: _audioPreferred,
+        renderer: _call.media.videoEnabled ? _call.media.localRenderer : null,
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 600;
+        final previewWidth = math.min(
+          wide ? (constraints.maxWidth - 56) * 0.55 : constraints.maxWidth - 48,
+          constraints.maxHeight * (wide ? 0.72 : 0.34) * 16 / 9,
+        );
+        final intro = Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               l10n.meetReadyToJoin,
+              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 16),
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: MeetParticipantTile(
-                name: l10n.meetYou,
-                local: true,
-                microphoneOn: _audioPreferred,
-                renderer: _call.media.videoEnabled
-                    ? _call.media.localRenderer
-                    : null,
-              ),
             ),
             const SizedBox(height: 12),
             Text(l10n.meetPreviewPrivate, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 12,
+          ],
+        );
+        if (wide) {
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
               children: [
-                IconButton.filledTonal(
-                  tooltip: _audioPreferred ? l10n.meetMute : l10n.meetUnmute,
-                  onPressed: () =>
-                      setState(() => _audioPreferred = !_audioPreferred),
-                  icon: Icon(
-                    _audioPreferred
-                        ? Icons.mic_outlined
-                        : Icons.mic_off_outlined,
-                  ),
-                ),
-                IconButton.filledTonal(
-                  tooltip: _call.media.videoEnabled
-                      ? l10n.meetCameraOff
-                      : l10n.meetCameraOn,
-                  onPressed: _previewBusy ? null : _togglePreviewVideo,
-                  icon: Icon(
-                    _call.media.videoEnabled
-                        ? Icons.videocam_outlined
-                        : Icons.videocam_off_outlined,
+                Expanded(child: Center(child: preview(previewWidth))),
+                const SizedBox(width: 24),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(child: SingleChildScrollView(child: intro)),
+                      const SizedBox(height: 20),
+                      actions,
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: _join,
-              icon: const Icon(Icons.login),
-              label: Text(l10n.meetJoin),
+          );
+        }
+        return Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                intro,
+                const SizedBox(height: 16),
+                preview(previewWidth),
+                const SizedBox(height: 16),
+                actions,
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -213,7 +303,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
   Future<void> _end() async {
     try {
       await _call.endRoom();
-      if (mounted) _leave();
+      if (mounted) await _loadEndedReview();
     } on Object {
       _showError();
     }
@@ -275,24 +365,28 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                 icon: const Icon(Icons.arrow_back),
               ),
               actions: [
-                if (_joinRequested && _remainingTime() != null)
+                if (_joinRequested &&
+                    !_call.ended &&
+                    formatMeetRemainingTime(_call.roomExpiresAt) != null)
                   Center(
                     child: Semantics(
                       label: l10n.meetTimeRemaining,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(_remainingTime()!),
+                        child: Text(
+                          formatMeetRemainingTime(_call.roomExpiresAt)!,
+                        ),
                       ),
                     ),
                   ),
-                if (_joinRequested)
+                if (_joinRequested && !_call.ended)
                   IconButton(
                     tooltip: l10n.meetParticipants,
                     onPressed: () =>
                         unawaited(showMeetParticipantsSheet(context, _call)),
                     icon: const Icon(Icons.people_outline),
                   ),
-                if (_joinRequested && _call.role == 'host')
+                if (_joinRequested && !_call.ended && _call.role == 'host')
                   PopupMenuButton<String>(
                     onSelected: (action) {
                       if (action == 'end') unawaited(_end());
@@ -350,13 +444,38 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                           unawaited(showMeetParticipantsSheet(context, _call)),
                     ),
                   Expanded(
-                    child: !_joinRequested
+                    child: _checkingRoom
+                        ? const Center(child: NovaLoadingIndicator(size: 28))
+                        : _endedReview != null
+                        ? MeetEndedReview(
+                            review: _endedReview!,
+                            onRefresh: () => unawaited(_loadEndedReview()),
+                          )
+                        : _reviewError != null
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(_reviewError!),
+                                const SizedBox(height: 12),
+                                OutlinedButton.icon(
+                                  onPressed: _call.ended
+                                      ? () => unawaited(_loadEndedReview())
+                                      : () =>
+                                            unawaited(_checkRoomBeforeMedia()),
+                                  icon: const Icon(Icons.refresh_rounded),
+                                  label: Text(l10n.commonRetry),
+                                ),
+                              ],
+                            ),
+                          )
+                        : !_joinRequested
                         ? _buildLobby(context)
                         : _call.requiresDeviceChoice
                         ? _buildDeviceChoice(context)
                         : switch ((_call.ended, _call.admission)) {
-                            (true, _) => Center(
-                              child: Text(l10n.meetCallEnded),
+                            (true, _) => const Center(
+                              child: NovaLoadingIndicator(size: 28),
                             ),
                             _
                                 when _call.error != null &&

@@ -38,6 +38,7 @@ class _MeetPageState extends State<MeetPage> {
   List<MeetMeeting> _meetings = const <MeetMeeting>[];
   bool _isLoading = false;
   bool _isLoadingMore = false;
+  bool _showSearch = false;
   String? _error;
   int _page = 1;
   int _total = 0;
@@ -147,12 +148,72 @@ class _MeetPageState extends State<MeetPage> {
     await _reload(append: true);
   }
 
+  Future<void> _showNewMeetingOptions() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      useSafeArea: true,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
+              child: Text(
+                context.l10n.meetNewMeeting,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.video_call_outlined),
+              title: Text(context.l10n.meetInstantMeeting),
+              subtitle: Text(context.l10n.meetInstantMeetingHint),
+              onTap: () => Navigator.of(sheetContext).pop('instant'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_month_outlined),
+              title: Text(context.l10n.meetScheduleMeeting),
+              subtitle: Text(context.l10n.meetScheduleMeetingHint),
+              onTap: () => Navigator.of(sheetContext).pop('schedule'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (choice == 'schedule') {
+      await _showMeetingEditor();
+    } else if (choice == 'instant') {
+      final wsId = _wsId;
+      if (wsId == null || wsId.isEmpty) return;
+      try {
+        final meeting = await _repository.createMeeting(
+          wsId,
+          name: context.l10n.meetUntitledMeeting,
+          time: DateTime.now(),
+        );
+        if (!mounted) return;
+        await _reload();
+        if (!mounted) return;
+        context.go('${Routes.meet}?room=${encodeMeetRoomCode(meeting.id)}');
+      } on ApiException catch (error) {
+        if (mounted) _toast(error.message, destructive: true);
+      } on Object {
+        if (mounted) {
+          _toast(context.l10n.commonSomethingWentWrong, destructive: true);
+        }
+      }
+    }
+  }
+
   Future<void> _showMeetingEditor([MeetMeeting? meeting]) async {
     final wsId = _wsId;
     if (wsId == null || wsId.isEmpty) return;
 
     final nameController = TextEditingController(text: meeting?.name ?? '');
     var selectedTime = meeting?.time ?? DateTime.now();
+    var durationMinutes = 60;
 
     final saved = await showModalBottomSheet<bool>(
       context: context,
@@ -176,7 +237,7 @@ class _MeetPageState extends State<MeetPage> {
               children: [
                 Text(
                   meeting == null
-                      ? context.l10n.meetNewMeeting
+                      ? context.l10n.meetScheduleMeeting
                       : context.l10n.meetEditMeeting,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
@@ -216,6 +277,28 @@ class _MeetPageState extends State<MeetPage> {
                   icon: const Icon(Icons.schedule_rounded),
                   label: Text(formattedTime),
                 ),
+                if (meeting == null) ...[
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int>(
+                    initialValue: durationMinutes,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.meetDuration,
+                    ),
+                    items: [30, 60, 90, 120]
+                        .map(
+                          (minutes) => DropdownMenuItem(
+                            value: minutes,
+                            child: Text(context.l10n.meetMinutes(minutes)),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (minutes) {
+                      if (minutes != null) {
+                        setSheetState(() => durationMinutes = minutes);
+                      }
+                    },
+                  ),
+                ],
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(true),
@@ -234,7 +317,12 @@ class _MeetPageState extends State<MeetPage> {
 
     try {
       if (meeting == null) {
-        await _repository.createMeeting(wsId, name: name, time: selectedTime);
+        await _repository.createMeeting(
+          wsId,
+          name: name,
+          time: selectedTime,
+          scheduleEndTime: selectedTime.add(Duration(minutes: durationMinutes)),
+        );
         if (!mounted) return;
         _toast(context.l10n.meetCreated);
       } else {
@@ -345,13 +433,28 @@ class _MeetPageState extends State<MeetPage> {
               locations: const {Routes.meet},
               actions: [
                 ShellActionSpec(
+                  id: 'meet-search',
+                  icon: _showSearch
+                      ? Icons.close_rounded
+                      : Icons.search_rounded,
+                  tooltip: context.l10n.meetSearchHint,
+                  callbackToken: _showSearch,
+                  onPressed: () {
+                    setState(() => _showSearch = !_showSearch);
+                    if (!_showSearch && _searchController.text.isNotEmpty) {
+                      _searchController.clear();
+                      unawaited(_reload(forceRefresh: false));
+                    }
+                  },
+                ),
+                ShellActionSpec(
                   id: 'meet-create',
                   inDock: true,
                   icon: Icons.add_rounded,
                   tooltip: context.l10n.meetNewMeeting,
                   callbackToken: hasWorkspace,
                   enabled: hasWorkspace,
-                  onPressed: _showMeetingEditor,
+                  onPressed: _showNewMeetingOptions,
                 ),
                 ShellActionSpec(
                   id: 'meet-refresh',
@@ -375,20 +478,18 @@ class _MeetPageState extends State<MeetPage> {
                     40 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: [
-                    FinanceSectionHeader(
-                      title: context.l10n.meetTitle,
-                      subtitle: context.l10n.meetSubtitle,
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _searchController,
-                      onChanged: _onSearchChanged,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.meetSearchHint,
-                        prefixIcon: const Icon(Icons.search_rounded),
+                    if (_showSearch) ...[
+                      TextField(
+                        controller: _searchController,
+                        autofocus: true,
+                        onChanged: _onSearchChanged,
+                        decoration: InputDecoration(
+                          hintText: context.l10n.meetSearchHint,
+                          prefixIcon: const Icon(Icons.search_rounded),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 12),
+                    ],
                     if (_isLoading && _meetings.isEmpty)
                       const SizedBox(
                         height: 240,
@@ -490,7 +591,7 @@ class _MeetingTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
-              Icons.video_call_outlined,
+              Icons.meeting_room_outlined,
               color: theme.colorScheme.primary,
             ),
           ),
@@ -524,11 +625,6 @@ class _MeetingTile extends StatelessWidget {
                 ],
               ],
             ),
-          ),
-          IconButton(
-            tooltip: context.l10n.meetJoin,
-            onPressed: onJoin,
-            icon: const Icon(Icons.video_call_outlined),
           ),
           PopupMenuButton<String>(
             onSelected: (value) => value == 'edit' ? onEdit() : onDelete(),

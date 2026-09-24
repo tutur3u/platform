@@ -3105,6 +3105,18 @@
     "meetEmptyDescription": "No meetings yet. Schedule one to keep the team aligned.",
     "meetMeetingName": "Meeting name",
     "meetNewMeeting": "New meeting",
+    "meetInstantMeeting": "Start an instant meeting",
+    "meetInstantMeetingHint": "Create an Untitled meeting and join now",
+    "meetScheduleMeeting": "Schedule a meeting",
+    "meetScheduleMeetingHint": "Choose a name and time for your calendar",
+    "meetUntitledMeeting": "Untitled meeting",
+    "meetDuration": "Duration",
+    "meetMinutes": "{count} minutes",
+    "@meetMinutes": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
     "meetRecordingSessions": "{count, plural, =1{1 recording} other{{count} recordings}}",
     "@meetRecordingSessions": {
         "placeholders": {
@@ -3196,6 +3208,18 @@
     "meetConnecting": "Connecting to the meeting…",
     "meetReconnecting": "Reconnecting…",
     "meetCallEnded": "This meeting has ended",
+    "meetReviewCheckFailed": "Couldn't check the meeting status. Try again before enabling your microphone or camera.",
+    "meetReviewUnavailable": "Meeting details are temporarily unavailable.",
+    "meetReviewHint": "Review the transcript and notes from this meeting.",
+    "meetReviewPrivate": "The host has not shared this meeting's notes.",
+    "meetReviewNotes": "Meeting notes",
+    "meetReviewNoNotes": "No notes are available yet.",
+    "meetReviewTranscript": "Transcript",
+    "meetReviewNoTranscript": "No transcript is available yet.",
+    "meetReviewTranscriptionCost": "Transcription",
+    "meetReviewNotesCost": "Notes generation",
+    "meetReviewTotalCost": "Total",
+    "meetReviewUnpriced": "Some requests are not included in this estimate.",
     "meetAccessDenied": "You cannot join this meeting",
     "meetNoParticipants": "Waiting for others to join",
     "meetAdmit": "Admit",
