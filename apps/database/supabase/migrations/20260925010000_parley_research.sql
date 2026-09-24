@@ -58,6 +58,23 @@ alter table private.parley_observations enable row level security;
 revoke all on private.parley_members, private.parley_scenarios, private.parley_references, private.parley_sessions, private.parley_observations from public, anon, authenticated;
 grant all on private.parley_members, private.parley_scenarios, private.parley_references, private.parley_sessions, private.parley_observations to service_role;
 
+-- Retain the global MFA invariant even though these tables are service-only.
+create policy account_required_mfa on private.parley_members as restrictive for all to authenticated
+  using ((select public.account_required_mfa_satisfied()))
+  with check ((select public.account_required_mfa_satisfied()));
+create policy account_required_mfa on private.parley_scenarios as restrictive for all to authenticated
+  using ((select public.account_required_mfa_satisfied()))
+  with check ((select public.account_required_mfa_satisfied()));
+create policy account_required_mfa on private.parley_references as restrictive for all to authenticated
+  using ((select public.account_required_mfa_satisfied()))
+  with check ((select public.account_required_mfa_satisfied()));
+create policy account_required_mfa on private.parley_sessions as restrictive for all to authenticated
+  using ((select public.account_required_mfa_satisfied()))
+  with check ((select public.account_required_mfa_satisfied()));
+create policy account_required_mfa on private.parley_observations as restrictive for all to authenticated
+  using ((select public.account_required_mfa_satisfied()))
+  with check ((select public.account_required_mfa_satisfied()));
+
 -- Snapshot and meeting creation are atomic; clients cannot substitute private instructions.
 create function public.create_parley_session(p_scenario_id uuid, p_user_id uuid, p_ws_id uuid)
 returns uuid language plpgsql security definer set search_path = '' as $$
