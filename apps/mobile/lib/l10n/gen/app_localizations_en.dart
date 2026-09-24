@@ -7745,6 +7745,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetMiraReviewsHint => 'Only you can see these drafts and requests. Review the workspace actions before approving them.';
 
   @override
+  String get meetMiraAudioMute => 'Mute Mira Live audio';
+
+  @override
+  String get meetMiraAudioUnmute => 'Unmute Mira Live audio';
+
+  @override
+  String get meetMiraAudioRetry => 'Retry Mira Live audio';
+
+  @override
   String get meetMiraReviewFailed => 'Couldn\'t load Mira\'s private reviews.';
 
   @override

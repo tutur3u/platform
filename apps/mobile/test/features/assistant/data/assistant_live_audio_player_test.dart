@@ -62,4 +62,29 @@ void main() {
     expect(calls.last, 'release');
     expect(calls.where((call) => call == 'setup'), hasLength(1));
   });
+
+  test(
+    'pause releases the audio session until a later frame arrives',
+    () async {
+      final calls = <String>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call.method);
+        return true;
+      });
+      final player = AssistantLiveAudioPlayer();
+      await player.initialize();
+      await player.pause();
+      expect(calls, ['setup', 'setFeedThreshold', 'release']);
+      await player.play(Uint8List.fromList([1, 0]));
+      expect(calls, [
+        'setup',
+        'setFeedThreshold',
+        'release',
+        'setup',
+        'setFeedThreshold',
+        'feed',
+      ]);
+      await player.dispose();
+    },
+  );
 }

@@ -14785,6 +14785,24 @@ abstract class AppLocalizations {
   /// **'Only you can see these drafts and requests. Review the workspace actions before approving them.'**
   String get meetMiraReviewsHint;
 
+  /// No description provided for @meetMiraAudioMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute Mira Live audio'**
+  String get meetMiraAudioMute;
+
+  /// No description provided for @meetMiraAudioUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute Mira Live audio'**
+  String get meetMiraAudioUnmute;
+
+  /// No description provided for @meetMiraAudioRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Mira Live audio'**
+  String get meetMiraAudioRetry;
+
   /// No description provided for @meetMiraReviewFailed.
   ///
   /// In en, this message translates to:
