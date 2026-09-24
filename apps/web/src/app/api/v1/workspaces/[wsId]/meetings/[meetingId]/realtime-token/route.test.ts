@@ -1,6 +1,6 @@
 import { canMeetRealtimePublish } from '@tuturuuu/realtime/meet';
 import { verifyMeetRealtimeToken } from '@tuturuuu/realtime/meet/token';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const MEETING_ID = '5e5217de-9bb3-4e20-8d99-526ad3e7e34f';
 const WORKSPACE_ID = '0f1a64f7-780f-4d30-9d72-5530f204e95c';
@@ -11,6 +11,7 @@ const TOKEN_SECRET = 'test-meet-realtime-token-secret';
 type RouteMocks = ReturnType<typeof createRouteMocks>;
 
 let mocks: RouteMocks;
+const originalFetch = globalThis.fetch;
 
 function createRouteMocks() {
   return {
@@ -99,7 +100,11 @@ async function requestToken(body: unknown) {
 }
 
 describe('Meet realtime token route', () => {
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
   beforeEach(() => {
+    globalThis.fetch = originalFetch;
     vi.clearAllMocks();
     process.env.MEET_REALTIME_TOKEN_SECRET = TOKEN_SECRET;
     delete process.env.MEET_REALTIME_URL;
@@ -194,6 +199,57 @@ describe('Meet realtime token route', () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.realtimeUrl).toBe('wss://meet.example.com/realtime');
+  });
+
+  it('requires an explicit choice when the same account is active on another device', async () => {
+    const deviceId = 'b21a7f35-62d4-4e06-b6ea-2143ed2d21ea';
+    const deviceCheck = vi
+      .fn()
+      .mockResolvedValue(Response.json({ otherDeviceCount: 1 }));
+    globalThis.fetch = deviceCheck as unknown as typeof fetch;
+
+    const response = await requestToken({ mode: 'call', deviceId });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      requiresDeviceChoice: true,
+      otherDeviceCount: 1,
+    });
+    const [url, options] = deviceCheck.mock.calls[0]!;
+    expect(new URL(url).pathname).toBe('/room-device');
+    const payload = verifyMeetRealtimeToken(
+      options.headers.Authorization.replace('Bearer ', ''),
+      TOKEN_SECRET
+    );
+    expect(payload?.accountId).toBe(MEMBER_ID);
+    expect(payload?.userId).not.toBe(MEMBER_ID);
+  });
+
+  it('switches only after choice and can join as an additional device', async () => {
+    const deviceId = 'b21a7f35-62d4-4e06-b6ea-2143ed2d21ea';
+    const deviceCheck = vi
+      .fn()
+      .mockResolvedValue(Response.json({ otherDeviceCount: 1 }));
+    globalThis.fetch = deviceCheck as unknown as typeof fetch;
+
+    const additional = await requestToken({
+      mode: 'call',
+      deviceId,
+      joinMode: 'additional',
+    });
+    expect(additional.status).toBe(200);
+    expect((await additional.json()).requiresDeviceChoice).toBe(false);
+    expect(deviceCheck).not.toHaveBeenCalled();
+
+    const switched = await requestToken({
+      mode: 'call',
+      deviceId,
+      joinMode: 'switch',
+    });
+    expect(switched.status).toBe(200);
+    expect(JSON.parse(deviceCheck.mock.calls[0]![1].body)).toEqual({
+      mode: 'switch',
+    });
   });
 });
 

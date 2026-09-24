@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
@@ -33,8 +34,20 @@ class MeetCallController extends ChangeNotifier {
   String? selfUserId;
   String? title;
   String? error;
+  DateTime? roomExpiresAt;
+  final settings = <String, dynamic>{};
+  final stage = <String, dynamic>{};
+  final approved = <Map<String, dynamic>>[];
+  final reactions = <Map<String, dynamic>>[];
+  String? liveAssistantOwnerId;
+  String recordingState = 'idle';
   bool ended = false;
+  bool requiresDeviceChoice = false;
+  int otherDeviceCount = 0;
+  Map<String, dynamic>? _pendingSession;
+  final String _deviceId = _newDeviceId();
   bool _started = false;
+  Future<void>? _mediaPreparation;
   bool _disposed = false;
   bool _connectedBefore = false;
   final participants = <String, Map<String, dynamic>>{};
@@ -42,14 +55,55 @@ class MeetCallController extends ChangeNotifier {
   final messages = <Map<String, dynamic>>[];
   final tracks = <String, MeetRoomTrack>{};
 
+  Future<void> prepareMedia() => _mediaPreparation ??= media.initialize();
+
   Future<void> start() async {
     if (_started) return;
     _started = true;
     try {
-      await media.initialize();
-      if (!_disposed) await _signaling.connect();
+      await prepareMedia();
+      if (_disposed) return;
+      await _prepareSession();
     } on Object {
       if (!_disposed) {
+        _started = false;
+        error = 'connection';
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> _prepareSession({String? joinMode}) async {
+    status = 'connecting';
+    error = null;
+    notifyListeners();
+    final session = await _repository.createRealtimeSession(
+      workspaceId,
+      meetingId,
+      deviceId: _deviceId,
+      joinMode: joinMode,
+    );
+    if (_disposed) return;
+    requiresDeviceChoice = session['requiresDeviceChoice'] == true;
+    otherDeviceCount = session['otherDeviceCount'] as int? ?? 0;
+    if (requiresDeviceChoice) {
+      status = 'device-choice';
+      notifyListeners();
+      return;
+    }
+    _pendingSession = session;
+    await _signaling.connect();
+  }
+
+  Future<void> chooseDevice({required bool switchToThisDevice}) async {
+    if (!requiresDeviceChoice || status == 'connecting') return;
+    try {
+      await _prepareSession(
+        joinMode: switchToThisDevice ? 'switch' : 'additional',
+      );
+    } on Object {
+      if (!_disposed) {
+        status = 'device-choice';
         error = 'connection';
         notifyListeners();
       }
@@ -57,10 +111,15 @@ class MeetCallController extends ChangeNotifier {
   }
 
   Future<Uri> _resolveUrl() async {
-    final session = await _repository.createRealtimeSession(
-      workspaceId,
-      meetingId,
-    );
+    final session =
+        _pendingSession ??
+        await _repository.createRealtimeSession(
+          workspaceId,
+          meetingId,
+          deviceId: _deviceId,
+          joinMode: 'additional',
+        );
+    _pendingSession = null;
     final realtimeUrl = session['realtimeUrl'] as String?;
     final token = session['token'] as String?;
     if (realtimeUrl == null || token == null || token.isEmpty) {
@@ -79,7 +138,6 @@ class MeetCallController extends ChangeNotifier {
       if (error == 'connection') error = null;
       if (_connectedBefore) {
         unawaited(media.resetPeers());
-        _sendPresence(join: true);
       }
       _connectedBefore = true;
     } else if (next == 'error') {
@@ -96,6 +154,12 @@ class MeetCallController extends ChangeNotifier {
         selfUserId = message['userId'] as String?;
         role = message['role'] as String? ?? 'speaker';
         admission = message['admission'] as String? ?? 'admitted';
+        roomExpiresAt = DateTime.tryParse(
+          message['roomExpiresAt'] as String? ?? '',
+        );
+        stage
+          ..clear()
+          ..addAll(Map<String, dynamic>.from(message['stage'] as Map? ?? {}));
         if (message['resumed'] != true) {
           tracks.clear();
           for (final raw in message['tracks'] as List? ?? []) {
@@ -103,6 +167,7 @@ class MeetCallController extends ChangeNotifier {
           }
           unawaited(media.resetPeers());
         }
+        _sendPresence(join: true);
       case 'presence':
         participants.clear();
         for (final raw in message['presence'] as List? ?? []) {
@@ -132,7 +197,14 @@ class MeetCallController extends ChangeNotifier {
           );
       case 'admission.result':
         admission = message['admitted'] == true ? 'admitted' : 'denied';
-        if (admission == 'denied') unawaited(_signaling.close());
+        roomExpiresAt =
+            DateTime.tryParse(message['roomExpiresAt'] as String? ?? '') ??
+            roomExpiresAt;
+        if (admission == 'denied') {
+          unawaited(_signaling.close());
+        } else {
+          _sendPresence(join: true);
+        }
       case 'participant.removed':
         final id = message['userId'] as String?;
         if (id == selfUserId) {
@@ -159,6 +231,33 @@ class MeetCallController extends ChangeNotifier {
           messages.add(message);
           if (messages.length > 100) messages.removeAt(0);
         }
+      case 'room.settings':
+        settings
+          ..clear()
+          ..addAll(
+            Map<String, dynamic>.from(message['settings'] as Map? ?? {}),
+          );
+      case 'stage':
+        stage
+          ..clear()
+          ..addAll(Map<String, dynamic>.from(message['stage'] as Map? ?? {}));
+      case 'admission.approved':
+        approved
+          ..clear()
+          ..addAll(
+            (message['participants'] as List? ?? [])
+                .whereType<Map<String, dynamic>>()
+                .map(Map<String, dynamic>.from),
+          );
+      case 'reaction':
+        reactions.add(message);
+        if (reactions.length > 24) reactions.removeAt(0);
+      case 'assistant.live':
+        liveAssistantOwnerId = message['active'] == true
+            ? message['ownerId'] as String?
+            : null;
+      case 'recording.state':
+        recordingState = message['state'] as String? ?? 'idle';
       case 'room.title.changed':
         title = message['title'] as String?;
       case 'room.ended':
@@ -240,11 +339,46 @@ class MeetCallController extends ChangeNotifier {
     });
   }
 
+  bool get handRaised =>
+      (stage['raisedHandUserIds'] as List? ?? []).contains(selfUserId);
+
+  bool isHandRaised(String userId) =>
+      (stage['raisedHandUserIds'] as List? ?? []).contains(userId);
+
+  void setHandRaised({required bool raised}) =>
+      _signaling.send({'type': 'hand.raise', 'raised': raised});
+
+  void react(String reaction) =>
+      _signaling.send({'type': 'reaction.send', 'reaction': reaction});
+
+  void updateSettings(Map<String, dynamic> patch) =>
+      _signaling.send({'type': 'room.settings.update', 'settings': patch});
+
+  void setRoomLocked({required bool locked}) => _signaling.send({
+    'type': 'stage.update',
+    'stage': {...stage, 'locked': locked},
+  });
+
+  void muteParticipant(String userId) => _signaling.send({
+    'type': 'participant.mute',
+    'userId': userId,
+    'kinds': ['audio'],
+  });
+
+  void removeParticipant(String userId) =>
+      _signaling.send({'type': 'participant.remove', 'userId': userId});
+
+  void forgetApproval(String userId) =>
+      _signaling.send({'type': 'admission.forget', 'userId': userId});
+
   Future<void> endRoom() async {
     if (role == 'host') {
       await _signaling.request({'type': 'room.end'});
     }
   }
+
+  Future<Map<String, dynamic>> getRoomCosts() =>
+      _repository.getRoomCosts(workspaceId, meetingId);
 
   void _notify() {
     if (!_disposed) notifyListeners();
@@ -259,5 +393,18 @@ class MeetCallController extends ChangeNotifier {
     unawaited(_signaling.close());
     if (_ownsRepository) _repository.dispose();
     super.dispose();
+  }
+
+  static String _newDeviceId() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    final hex = bytes
+        .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+        .join();
+    return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-${hex.substring(16, 20)}-'
+        '${hex.substring(20)}';
   }
 }

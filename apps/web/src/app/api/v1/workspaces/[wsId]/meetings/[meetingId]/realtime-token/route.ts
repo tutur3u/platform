@@ -12,12 +12,15 @@ import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import {
   getMeetRealtimeUrl,
+  meetDeviceIdentity,
   signMeetJoinToken,
 } from '@/lib/meet/realtime-token';
 
 const requestSchema = z.object({
   mode: z.enum(['call', 'webinar', 'stream']).default('call'),
   role: z.enum(['host', 'speaker', 'viewer']).optional(),
+  deviceId: z.uuid().optional(),
+  joinMode: z.enum(['switch', 'additional']).optional(),
 });
 
 type Params = {
@@ -143,7 +146,11 @@ export async function POST(request: Request, { params }: Params) {
       requestedMode: body.mode,
     });
 
+    const deviceUserId = body.deviceId
+      ? await meetDeviceIdentity(auth.user.id, body.deviceId)
+      : auth.user.id;
     const signed = signMeetJoinToken({
+      accountId: body.deviceId ? auth.user.id : undefined,
       maxRoomDurationSeconds: await getHostMeetingDurationSeconds(
         meeting.creator_id
       ),
@@ -151,11 +158,46 @@ export async function POST(request: Request, { params }: Params) {
       meetingId,
       mode,
       role,
-      userId: auth.user.id,
+      userId: deviceUserId,
       wsId,
     });
 
+    if (body.deviceId && body.joinMode !== 'additional') {
+      const endpoint = new URL(getMeetRealtimeUrl());
+      endpoint.protocol = endpoint.protocol === 'wss:' ? 'https:' : 'http:';
+      endpoint.pathname = '/room-device';
+      endpoint.search = '';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${signed.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mode: body.joinMode }),
+        signal: AbortSignal.timeout(5000),
+      }).catch((error: unknown) => {
+        console.warn('Meet device connection check unavailable', {
+          kind: error instanceof Error ? error.name : 'unknown',
+        });
+        return null;
+      });
+      if (!response?.ok) {
+        return NextResponse.json(
+          { error: 'Meeting connection unavailable' },
+          { status: 503, headers: { 'Retry-After': '2' } }
+        );
+      }
+      const policy = (await response.json()) as { otherDeviceCount: number };
+      if (!body.joinMode && policy.otherDeviceCount) {
+        return NextResponse.json({
+          requiresDeviceChoice: true,
+          otherDeviceCount: policy.otherDeviceCount,
+        });
+      }
+    }
+
     return NextResponse.json({
+      requiresDeviceChoice: false,
       expiresAt: signed.expiresAt.toISOString(),
       limits: signed.payload.limits,
       mode: signed.payload.mode,

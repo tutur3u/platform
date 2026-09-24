@@ -14449,6 +14449,222 @@ abstract class AppLocalizations {
   /// **'Join call'**
   String get meetJoin;
 
+  /// No description provided for @meetReadyToJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to join?'**
+  String get meetReadyToJoin;
+
+  /// No description provided for @meetPreviewPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Your camera preview is private until you join.'**
+  String get meetPreviewPrivate;
+
+  /// No description provided for @meetMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute microphone'**
+  String get meetMute;
+
+  /// No description provided for @meetUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute microphone'**
+  String get meetUnmute;
+
+  /// No description provided for @meetCameraOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn camera on'**
+  String get meetCameraOn;
+
+  /// No description provided for @meetCameraOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn camera off'**
+  String get meetCameraOff;
+
+  /// No description provided for @meetDeviceAlreadyJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re already in this meeting'**
+  String get meetDeviceAlreadyJoined;
+
+  /// No description provided for @meetDeviceChoiceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how to join from this device.'**
+  String get meetDeviceChoiceHint;
+
+  /// No description provided for @meetSwitchDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to this device'**
+  String get meetSwitchDevice;
+
+  /// No description provided for @meetJoinAnotherDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Join on another device'**
+  String get meetJoinAnotherDevice;
+
+  /// No description provided for @meetDeviceEchoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute one device to avoid audio echo.'**
+  String get meetDeviceEchoHint;
+
+  /// No description provided for @meetTimeRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting time remaining'**
+  String get meetTimeRemaining;
+
+  /// No description provided for @meetRaiseHand.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise hand'**
+  String get meetRaiseHand;
+
+  /// No description provided for @meetLowerHand.
+  ///
+  /// In en, this message translates to:
+  /// **'Lower hand'**
+  String get meetLowerHand;
+
+  /// No description provided for @meetReactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactions'**
+  String get meetReactions;
+
+  /// No description provided for @meetReactionLike.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get meetReactionLike;
+
+  /// No description provided for @meetReactionHeart.
+  ///
+  /// In en, this message translates to:
+  /// **'Love'**
+  String get meetReactionHeart;
+
+  /// No description provided for @meetReactionClap.
+  ///
+  /// In en, this message translates to:
+  /// **'Clap'**
+  String get meetReactionClap;
+
+  /// No description provided for @meetReactionLaugh.
+  ///
+  /// In en, this message translates to:
+  /// **'Laugh'**
+  String get meetReactionLaugh;
+
+  /// No description provided for @meetReactionWow.
+  ///
+  /// In en, this message translates to:
+  /// **'Wow'**
+  String get meetReactionWow;
+
+  /// No description provided for @meetReactionCelebrate.
+  ///
+  /// In en, this message translates to:
+  /// **'Celebrate'**
+  String get meetReactionCelebrate;
+
+  /// No description provided for @meetParticipantActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Participant actions'**
+  String get meetParticipantActions;
+
+  /// No description provided for @meetMuteParticipant.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute participant'**
+  String get meetMuteParticipant;
+
+  /// No description provided for @meetRemoveParticipant.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove participant'**
+  String get meetRemoveParticipant;
+
+  /// No description provided for @meetShareNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Share meeting notes'**
+  String get meetShareNotes;
+
+  /// No description provided for @meetApprovedParticipant.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved participant'**
+  String get meetApprovedParticipant;
+
+  /// No description provided for @meetForgetApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget approval'**
+  String get meetForgetApproval;
+
+  /// No description provided for @meetEstimatedCosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated costs'**
+  String get meetEstimatedCosts;
+
+  /// No description provided for @meetCostsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost estimate is unavailable.'**
+  String get meetCostsUnavailable;
+
+  /// No description provided for @meetPartialEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial estimate. Some provider costs are not included.'**
+  String get meetPartialEstimate;
+
+  /// No description provided for @meetSfuEgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Video and audio delivery'**
+  String get meetSfuEgress;
+
+  /// No description provided for @meetDurableRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Room requests'**
+  String get meetDurableRequests;
+
+  /// No description provided for @meetMiraCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira'**
+  String get meetMiraCost;
+
+  /// No description provided for @meetLiveCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira Live'**
+  String get meetLiveCost;
+
+  /// No description provided for @meetLockRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock room'**
+  String get meetLockRoom;
+
+  /// No description provided for @meetSaveChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Save room chat'**
+  String get meetSaveChat;
+
   /// No description provided for @meetLeave.
   ///
   /// In en, this message translates to:

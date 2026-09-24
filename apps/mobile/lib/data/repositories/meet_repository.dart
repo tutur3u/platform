@@ -75,10 +75,17 @@ class MeetRepository {
 
   Future<Map<String, dynamic>> createRealtimeSession(
     String wsId,
-    String meetingId,
-  ) => _api.postJson(MeetEndpoints.realtimeToken(wsId, meetingId), {
+    String meetingId, {
+    String? deviceId,
+    String? joinMode,
+  }) => _api.postJson(MeetEndpoints.realtimeToken(wsId, meetingId), {
     'mode': 'call',
+    if (deviceId != null) 'deviceId': deviceId,
+    if (joinMode != null) 'joinMode': joinMode,
   });
+
+  Future<Map<String, dynamic>> getRoomCosts(String wsId, String meetingId) =>
+      _api.getJson(MeetEndpoints.costs(wsId, meetingId));
 
   void dispose() {
     _api.dispose();
