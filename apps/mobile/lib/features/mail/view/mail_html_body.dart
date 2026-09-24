@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mobile/features/mail/view/mail_appearance_control.dart';
@@ -192,6 +193,11 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
             ),
             child: InAppWebView(
               key: ValueKey(generation),
+              gestureRecognizers: const {
+                Factory<HorizontalDragGestureRecognizer>(
+                  HorizontalDragGestureRecognizer.new,
+                ),
+              },
               initialSettings: InAppWebViewSettings(
                 transparentBackground: true,
                 javaScriptEnabled: false,
