@@ -1,0 +1,70 @@
+---
+title: Parley
+description: Operate the private scenario training application and shared Meet runtime.
+---
+
+Parley runs at `parley.tuturuuu.com`. It uses Tuturuuu app-session authentication
+and the shared `@tuturuuu/meet-core` runtime. Verified `@tuturuuu.com` accounts
+have access; external accounts require an enabled entry managed in Infrastructure
+under **Platform administration → Parley**. Authorization checks the current
+confirmed account identity. Failed lookups deny access.
+
+## Private content
+
+Infrastructure administrators manage scenario briefs, private AI instructions,
+roles, debrief rubrics, publication state and reference uploads. Reference bytes
+are stored in `private.parley_references`, accessible only through authorized
+server operations. Source documents are never seeded or committed. Import real
+content through Infrastructure separately in each intended environment.
+
+Starting a session atomically creates a Meet room and an immutable scenario
+snapshot. Later edits do not change a running session's instructions. The
+facilitator can save observations, decisions and debrief notes; participants do
+not receive these private notes or raw source documents. Discuss consent before
+recording or collecting research observations. Notes describe observable actions,
+not validated personality or truthfulness assessments.
+
+Mira uses the stored scenario instructions for shared chat and live voice.
+Parley's lightweight avatar follows the local playback audio envelope. It does
+not analyze participant faces or microphones, and it is not phoneme-accurate
+viseme synthesis or a full 3D avatar.
+
+## Development and deployment
+
+1. Apply the additive Parley migration locally and regenerate database types.
+   Do not reset a shared development database to test this app.
+2. Run `bun --cwd apps/parley dev` with the same Supabase, app-session signing,
+   realtime and provider environment contracts as Meet. The app uses port 7834
+   and `parley.tuturuuu.localhost`.
+3. Validate the shared runtime and build Meet, Parley and Infrastructure through
+   `ttr resources run`. The extraction affects all three consumers.
+4. Sync the reviewed release to production through the authorized release
+   workflow. Verify that the production database migration job applies all
+   Parley migrations. Meet and Parley Worker deployments wait for the database
+   readiness marker; do not run a manual production schema push. Publish the
+   central auth registry and Infrastructure management surface before testing.
+5. Build Parley with `NEXT_PUBLIC_MEETING_APP=parley`. Its web Worker and cache
+   bucket are separate from Meet. A private `MEETING_AI_PROVIDER` service binding
+   calls Meet’s named provider entrypoint; `MEET_LIVE` references Meet’s Durable
+   Object namespace. The Gemini credential stays in Meet. Deploy Meet first,
+   then Parley; CI waits for the shared runtime readiness endpoint. The common
+   realtime signing secret is provisioned from the protected GitHub environment.
+6. Verify denied, internal-domain and allowlisted sign-in; revoke an external
+   account and recheck access. Verify private reference upload/retrieval, scenario
+   persistence after reload, room admission, two-participant audio, Mira response,
+   and audio-driven avatar motion in each environment.
+
+Existing live sockets use short-lived credentials. Revocation prevents new
+requests and tokens; it does not retroactively disconnect an already-open call.
+Close the session when immediate termination is needed. Do not describe a build
+or synthetic test as production or physical multi-device verification.
+
+## AI Hub and billing
+
+Meet and Parley use the same workspace credit system. Live voice reserves credits before connecting to the provider, settles cumulative modality usage, and refunds the unused reservation. App and room identifiers accompany the reservation and final ledger entry, without scenario text or private documents.
+
+Transcription and meeting notes reserve an AI Hub run before generation. They use the purchased output-token limit, settle measured provider cost with the plan markup, and reuse the same run for settlement retries. Missing provider accounting fails closed and leaves the reservation visible for reconciliation. These runs appear in AI Hub observability; chat also reserves and settles an AI Hub run, while live deductions appear in the combined credit ledger. Chat settlement consumes its own hold, including near the quota limit; optional public search is disabled when its additional reservation would exceed the available credits. The usage and credits links open the payer's personal workspace.
+
+Apply the research migration plus the meeting attribution and observability migrations before deploying either app's new billing code. A Gemini key marked sensitive in Vercel cannot be exported. Parley uses the private provider binding instead of duplicating that key. Native local development may configure its own development key; do not bind local testing to the production provider.
+
+Parley disables public Google Search during scenario roleplay. The scenario configuration is separate from the participant request, so reference text never becomes an explicit public search query.

@@ -19,6 +19,8 @@ export function ObservabilityBreakdowns({
 }) {
   const t = useTranslations('ai-studio.observability');
   const sourceLabel = (row: AiStudioUsageRow) => {
+    if (row.sourceId === 'app:parley') return 'Parley';
+    if (row.sourceId === 'app:meet') return 'Meet';
     switch (row.sourceType) {
       case 'api_key':
         return t('source_api_key');

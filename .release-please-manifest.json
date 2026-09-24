@@ -74,5 +74,7 @@
   "packages/utils": "0.29.1",
   "packages/vercel": "0.1.1",
   "packages/workflows": "0.0.2",
-  "apps/lettin": "1.0.0"
+  "apps/lettin": "1.0.0",
+  "apps/parley": "0.0.0",
+  "packages/meet-core": "0.0.0"
 }

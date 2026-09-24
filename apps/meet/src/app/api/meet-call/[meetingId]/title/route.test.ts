@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   select: vi.fn(),
   result: vi.fn(),
 }));
-vi.mock('@/features/call/lib/call-access', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   getMeetCallAccess: mocks.access,
   MeetCallAccessError: class extends Error {
     status = 401;

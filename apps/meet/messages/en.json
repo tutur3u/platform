@@ -1362,6 +1362,7 @@
       "meet": "Schedule meetings and find a time that works for everyone.",
       "mind": "Build mind maps and connect ideas with AI.",
       "nova": "Create and solve prompt-driven AI challenges.",
+      "parley": "Multiplayer AI scenarios and research",
       "pay": "Manage billing, subscriptions, and payment activity.",
       "platform": "Manage your workspace, settings, and the full Tuturuuu platform.",
       "rewise": "Practice, review, and retain knowledge with AI.",
@@ -1394,6 +1395,7 @@
       "meet": "Meet",
       "mind": "Mind",
       "nova": "Nova",
+      "parley": "Parley",
       "pay": "Pay",
       "platform": "Platform",
       "rewise": "Rewise",
@@ -3798,6 +3800,7 @@
     "ai": {
       "actions": "Action items",
       "active": "Transcription session active",
+      "ai_hub_usage": "Usage and credits in AI Hub",
       "audio_minutes": "Audio minutes submitted",
       "capturing": "Transcribing live",
       "cost": "Estimated Gemini cost",

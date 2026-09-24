@@ -40,20 +40,29 @@ export async function generateMeetArtifact(
   input:
     | { audio: Uint8Array }
     | { audioSegments: Uint8Array[] }
-    | { transcript: string; meetingStartedAt?: string; timezone?: string }
+    | { transcript: string; meetingStartedAt?: string; timezone?: string },
+  options?: {
+    maxOutputTokens?: number;
+    provider?: { apiKey?: string; fetch?: typeof fetch };
+  }
 ) {
   const outcome = await Effect.runPromise(
     Effect.either(
       Effect.tryPromise({
         try: async () => {
-          const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+          const apiKey =
+            options?.provider?.apiKey ??
+            process.env.GOOGLE_GENERATIVE_AI_API_KEY;
           if (!apiKey) throw new MeetAiGenerationError('missing_configuration');
-          const model = createGoogleGenerativeAI({ apiKey })(MEET_AI_MODEL);
+          const model = createGoogleGenerativeAI({
+            apiKey,
+            fetch: options?.provider?.fetch,
+          })(MEET_AI_MODEL);
           const common = {
             model,
             maxRetries: 0,
             abortSignal: AbortSignal.timeout(55_000),
-            maxOutputTokens: 8192,
+            maxOutputTokens: Math.min(8192, options?.maxOutputTokens ?? 8192),
           };
           const result =
             'audioSegments' in input

@@ -17,6 +17,9 @@ export async function answerMeetChat(
   model: MeetChatModel,
   context: MeetAssistantContext,
   options: {
+    provider?: { apiKey?: string; fetch?: typeof fetch };
+    scenarioInstructions?: string;
+    allowSearch?: boolean;
     workspaceTools?: ToolSet;
     messages?: ModelMessage[];
     audience?: 'private';
@@ -27,7 +30,9 @@ export async function answerMeetChat(
     Effect.either(
       Effect.tryPromise({
         try: async () => {
-          const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+          const apiKey =
+            options.provider?.apiKey ??
+            process.env.GOOGLE_GENERATIVE_AI_API_KEY;
           if (!apiKey) throw new Error('Meeting AI is not configured');
           const initialMessages: ModelMessage[] = options.messages ?? [
             {
@@ -55,12 +60,16 @@ export async function answerMeetChat(
               ([name]) =>
                 (options.audience !== 'private' ||
                   name !== 'get_meeting_context') &&
-                (!options.messages || name !== 'google_search')
+                ((!options.messages &&
+                  !options.scenarioInstructions &&
+                  options.allowSearch !== false) ||
+                  name !== 'google_search')
             )
           );
-          const languageModel = createGoogleGenerativeAI({ apiKey })(
-            model.providerModelId
-          );
+          const languageModel = createGoogleGenerativeAI({
+            apiKey,
+            fetch: options.provider?.fetch,
+          })(model.providerModelId);
           const signal = AbortSignal.timeout(45000);
           const stepBudget = Math.max(1, Math.floor(maxOutputTokens / 4));
           const search = publicMeetSearch(
@@ -76,7 +85,12 @@ export async function answerMeetChat(
                 ],
             options.beforeSearch
           );
-          if (!options.messages) publicTools.google_search = search.tool;
+          if (
+            !options.messages &&
+            !options.scenarioInstructions &&
+            options.allowSearch !== false
+          )
+            publicTools.google_search = search.tool;
           const hasWorkspaceTools =
             Object.keys(options.workspaceTools ?? {}).length > 0;
           const tools: ToolSet = {
@@ -113,6 +127,12 @@ export async function answerMeetChat(
             maxRetries: 0,
             abortSignal: signal,
             system: [
+              ...(options.scenarioInstructions
+                ? [
+                    options.scenarioInstructions,
+                    'External web search is disabled for private simulation material.',
+                  ]
+                : []),
               'You are Mira, Tuturuuu\u2019s meeting assistant. Answer the explicit question field, using recentChat as context even if it contains newer questions. You can answer general knowledge questions; you are not restricted to facts mentioned in chat. Respond in the question\u2019s language using concise Markdown. Use get_current_time for today, dates, weekdays and current time; ',
               options.audience === 'private'
                 ? 'live room details are unavailable in personal context;'

@@ -25,7 +25,17 @@ const mocks = vi.hoisted(() => ({
     costUsd: 0.001,
     usage: { available: true, inputTokens: 100, outputTokens: 20 },
   })),
-  deduct: vi.fn(async () => ({ success: true })),
+  settle: vi.fn(async (_input: Record<string, unknown>) => undefined),
+  begin: vi.fn(async () => ({ runId: 'run', reservationId: 'hold' })),
+}));
+vi.mock('@tuturuuu/ai/studio/metering', () => ({
+  beginAiStudioRun: mocks.begin,
+  settleAiStudioRun: mocks.settle,
+  recordAiStudioRunStep: async () => {},
+  calculateAiStudioUsageCost: async () => ({
+    billedCredits: 10,
+    providerCostUsd: 0.001,
+  }),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -35,10 +45,10 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('@tuturuuu/ai/meetings/workspace-tools', () => ({
   createMeetWorkspaceTools: () => ({}),
 }));
-vi.mock('@/features/call/server/chat-model', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/server/chat-model', () => ({
   getMeetChatModel: mocks.model,
 }));
-vi.mock('@/features/call/lib/call-access', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
     constructor(
       public status: number,
@@ -53,7 +63,6 @@ vi.mock('@tuturuuu/ai/credits/cap-output-tokens', () => ({
 }));
 vi.mock('@tuturuuu/ai/credits/check-credits', () => ({
   checkAiCredits: mocks.check,
-  deductAiCredits: mocks.deduct,
 }));
 vi.mock('@tuturuuu/ai/meetings/chat', () => ({ answerMeetChat: mocks.answer }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -65,7 +74,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     }),
   }),
 }));
-vi.mock('@/features/call/server/room-service', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
   personalWorkspace: mocks.personal,
   callRoomService: mocks.service,
   roomRoute: async (
@@ -108,11 +117,10 @@ it('charges the tagger personal quota and uses server-supplied recent chat', asy
     1024,
     100
   );
-  expect(mocks.deduct).toHaveBeenCalledWith(
+  expect(mocks.settle).toHaveBeenCalledWith(
     expect.objectContaining({
-      wsId: 'tagger-personal-workspace',
-      modelId: 'google/gemini-3.5-flash-lite',
-      userId: 'tagger',
+      runId: 'run',
+      actualCredits: 10,
       inputTokens: 100,
       outputTokens: 20,
     })
@@ -149,7 +157,10 @@ it('does not call Gemini when quota checks deny generation', async () => {
   expect(mocks.answer).not.toHaveBeenCalled();
 });
 it('records provider cost even if quota deduction fails', async () => {
-  mocks.deduct.mockResolvedValueOnce({ success: false });
+  mocks.settle
+    .mockRejectedValueOnce(new Error('accounting'))
+    .mockRejectedValueOnce(new Error('accounting'))
+    .mockRejectedValueOnce(new Error('accounting'));
   await expect(
     POST(request(), { params: Promise.resolve({ meetingId: 'room' }) })
   ).rejects.toMatchObject({ status: 503 });
@@ -168,7 +179,7 @@ it('retries settlement with the answer without charging or generating twice', as
   });
   expect(response.status).toBe(200);
   expect(mocks.answer).toHaveBeenCalledOnce();
-  expect(mocks.deduct).toHaveBeenCalledOnce();
+  expect(mocks.settle).toHaveBeenCalledOnce();
   expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
     action: 'ai.finish',
     messageId: 'message',
@@ -239,7 +250,7 @@ it.each(['invalid JSON', JSON.stringify({ messages: [], context: {} })])(
   'settles a claimed review when its saved continuation is malformed: %s',
   async (continuation) => {
     const { generateMeetAssistant } = await import(
-      '@/features/call/server/assistant-generation'
+      '@tuturuuu/meet-core/features/call/server/assistant-generation'
     );
     const review = {
       workspaceId: 'workspace',
@@ -278,7 +289,7 @@ it('settles usage but never publishes a blank model answer', async () => {
   await expect(
     POST(request(), { params: Promise.resolve({ meetingId: 'room' }) })
   ).rejects.toMatchObject({ status: 503 });
-  expect(mocks.deduct).toHaveBeenCalledOnce();
+  expect(mocks.settle).toHaveBeenCalledOnce();
   expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
     action: 'ai.finish',
     messageId: 'message',

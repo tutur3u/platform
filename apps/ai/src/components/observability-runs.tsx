@@ -97,7 +97,13 @@ export function ObservabilityRuns({
                 }
                 open={selectedRunId === run.id}
                 run={run}
-                sourceLabel={sourceLabel(run.sourceType)}
+                sourceLabel={
+                  run.sourceId === 'app:parley'
+                    ? 'Parley'
+                    : run.sourceId === 'app:meet'
+                      ? 'Meet'
+                      : sourceLabel(run.sourceType)
+                }
                 statusLabel={statusLabel(run.status)}
                 workspaceId={workspaceId}
               />

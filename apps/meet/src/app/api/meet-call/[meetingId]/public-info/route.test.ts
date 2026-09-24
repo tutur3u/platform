@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ host: true, policy: vi.fn() }));
 vi.mock('next/server', () => ({ connection: async () => {} }));
-vi.mock('@/features/call/lib/call-access', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
     constructor(
       public status: number,
@@ -12,7 +12,7 @@ vi.mock('@/features/call/lib/call-access', () => ({
     }
   },
 }));
-vi.mock('@/features/call/server/room-service', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
   roomRoute: async (
     request: Request,
     _meetingId: string,
@@ -38,7 +38,7 @@ vi.mock('@/features/call/server/room-service', () => ({
     }
   },
 }));
-vi.mock('@/features/meeting-ai/server/room-access', () => ({
+vi.mock('@tuturuuu/meet-core/features/meeting-ai/server/room-access', () => ({
   readMeetingRoomPolicy: mocks.policy,
 }));
 

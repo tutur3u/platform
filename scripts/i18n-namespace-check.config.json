@@ -167,6 +167,18 @@
       "ws-polls.*",
       "ws-task-boards.*",
       "ws-tasks.*"
+    ],
+    "apps/parley": [
+      "calendar.*",
+      "common.*",
+      "dashboard.*",
+      "notifications.*",
+      "transaction-data-table.*",
+      "wallet-data-table.*",
+      "workspace-finance-transactions.*",
+      "ws-polls.*",
+      "ws-task-boards.*",
+      "ws-tasks.*"
     ]
   },
   "apps/lettin": [
@@ -205,5 +217,27 @@
     "ws-members",
     "ws-polls",
     "ws-settings"
+  ],
+  "apps/parley": [
+    "invoice-subscriptions",
+    "certificates",
+    "finance-command-center",
+    "finance-analytics",
+    "finance-transactions",
+    "inventory-finance-reconciliation",
+    "invoice-analytics",
+    "settings",
+    "task_project_detail",
+    "task-drafts",
+    "task-estimates",
+    "task-projects",
+    "tasks-history",
+    "tasks-logs",
+    "wallet-checkpoints",
+    "wallet-interest",
+    "ws-board-templates",
+    "ws-debt-loan",
+    "ws-presence",
+    "ws-tasks-labels"
   ]
 }

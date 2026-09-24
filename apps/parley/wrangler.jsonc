@@ -1,0 +1,69 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tuturuuu-parley",
+  "account_id": "e8912e2867beecc673d171907bf09649",
+  "main": "cloudflare/worker.ts",
+  "compatibility_date": "2026-09-06",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "placement": {
+    "region": "aws:ap-southeast-1"
+  },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "tuturuuu-parley"
+    },
+    {
+      "binding": "MEETING_AI_PROVIDER",
+      "service": "tuturuuu-meet",
+      "entrypoint": "MeetingAIProvider"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "tuturuuu-parley-cache"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.05
+  },
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "parley.tuturuuu.com",
+      "custom_domain": true
+    }
+  ],
+  "secrets": {
+    "required": [
+      "MEET_REALTIME_TOKEN_SECRET",
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "SUPABASE_SECRET_KEY"
+    ]
+  },
+  "vars": {
+    "NEXT_PUBLIC_MEETING_APP": "parley",
+    "NEXT_PUBLIC_APP_URL": "https://parley.tuturuuu.com",
+    "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+    "MEET_REALTIME_URL": "wss://meet-realtime.tuturuuu.com/realtime"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MEET_LIVE",
+        "class_name": "MeetLiveDurableObject",
+        "script_name": "tuturuuu-meet"
+      }
+    ]
+  }
+}

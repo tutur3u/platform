@@ -2,10 +2,13 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ service: vi.fn(), generate: vi.fn() }));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
-vi.mock('@/features/call/server/assistant-generation', () => ({
-  generateMeetAssistant: mocks.generate,
-}));
-vi.mock('@/features/call/lib/call-access', () => ({
+vi.mock(
+  '@tuturuuu/meet-core/features/call/server/assistant-generation',
+  () => ({
+    generateMeetAssistant: mocks.generate,
+  })
+);
+vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
     constructor(
       public status: number,
@@ -15,7 +18,7 @@ vi.mock('@/features/call/lib/call-access', () => ({
     }
   },
 }));
-vi.mock('@/features/call/server/room-service', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
   callRoomService: mocks.service,
   roomRoute: async (
     _req: unknown,

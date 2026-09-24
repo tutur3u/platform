@@ -260,6 +260,11 @@ function getTopLevelNavigation({
         ...(canManageInternalAccounts
           ? [
               {
+                href: href(wsId, '/parley'),
+                icon: icon(Users),
+                title: t('infrastructure-tabs.parley'),
+              },
+              {
                 href: href(wsId, '/internal-accounts'),
                 icon: icon(ShieldCheck),
                 title: t('infrastructure-tabs.internal_accounts'),

@@ -1362,6 +1362,7 @@
       "meet": "Lên lịch họp và tìm thời gian phù hợp cho mọi người.",
       "mind": "Tạo sơ đồ tư duy và kết nối ý tưởng với AI.",
       "nova": "Tạo và giải các thử thách AI dựa trên câu lệnh.",
+      "parley": "Kịch bản AI nhiều người và nghiên cứu",
       "pay": "Quản lý thanh toán, gói đăng ký và hoạt động chi trả.",
       "platform": "Quản lý không gian làm việc, cài đặt và toàn bộ nền tảng Tuturuuu.",
       "rewise": "Luyện tập, ôn tập và ghi nhớ kiến thức với AI.",
@@ -1394,6 +1395,7 @@
       "meet": "Họp",
       "mind": "Mind",
       "nova": "Nova",
+      "parley": "Parley",
       "pay": "Thanh toán",
       "platform": "Nền tảng",
       "rewise": "Rewise",
@@ -3798,6 +3800,7 @@
     "ai": {
       "actions": "Việc cần làm",
       "active": "Phiên chép lời đang hoạt động",
+      "ai_hub_usage": "Mức sử dụng và tín dụng trong AI Hub",
       "audio_minutes": "Số phút âm thanh đã gửi",
       "capturing": "Đang chép lời trực tiếp",
       "cost": "Chi phí Gemini ước tính",

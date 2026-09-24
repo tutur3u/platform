@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   locale: vi.fn(),
   duration: vi.fn(),
 }));
-vi.mock('@/features/call/lib/meeting-duration', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/lib/meeting-duration', () => ({
   getHostMeetingDurationSeconds: mocks.duration,
 }));
 vi.mock('server-only', () => ({}));
@@ -22,7 +22,7 @@ vi.mock('next-intl/server', () => ({
     () =>
       locale === 'vi' ? 'Khách' : 'Guest',
 }));
-vi.mock('@/features/call/lib/call-access', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   getMeetCallAccess: mocks.access,
   MeetCallAccessError: class extends Error {
     constructor(
@@ -34,7 +34,7 @@ vi.mock('@/features/call/lib/call-access', () => ({
   },
 }));
 
-import { MeetCallAccessError } from '@/features/call/lib/call-access';
+import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import { POST } from './route';
 
 const id = '00000000-0000-4000-8000-000000000001';

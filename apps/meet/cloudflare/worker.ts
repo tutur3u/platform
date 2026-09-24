@@ -11,6 +11,7 @@ import { verifyLiveSession } from '../src/features/live-assistant/token';
 import type { LiveEnvironment } from './live/storage';
 
 export { MeetLiveDurableObject } from './live/session';
+export { MeetingAIProvider } from './provider';
 export default {
   async fetch(
     request: Request,
@@ -18,6 +19,11 @@ export default {
     ctx: ExecutionContext
   ) {
     const url = new URL(request.url);
+    if (url.pathname === '/.well-known/meeting-runtime')
+      return Response.json(
+        { version: 1 },
+        { headers: { 'Cache-Control': 'no-store' } }
+      );
     if (url.pathname === '/live-connect') {
       if (
         request.method !== 'GET' ||

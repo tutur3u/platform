@@ -1,0 +1,107 @@
+import type {
+  MeetReaction,
+  MeetRealtimeTrackKind,
+  MeetRoomSettings,
+} from '@tuturuuu/realtime/meet';
+import { sendRecoverableChat } from './chat-delivery';
+import type { MeetSignaling } from './signaling';
+
+export function createRoomActions(signaling: {
+  current: MeetSignaling | null;
+}) {
+  let assistantAudio:
+    | {
+        microphoneEnabled: boolean;
+        speakerEnabled: boolean;
+        sessionId?: string;
+      }
+    | undefined;
+  const pendingChat = new Map<string, string>();
+  return {
+    replayAssistantAudio: () => {
+      if (assistantAudio)
+        signaling.current?.send({
+          type: 'assistant.preferences',
+          audio: assistantAudio,
+        });
+    },
+    setAssistantAudio: (audio: {
+      sessionId?: string;
+      microphoneEnabled: boolean;
+      speakerEnabled: boolean;
+    }) => {
+      assistantAudio = audio;
+      signaling.current?.send({ type: 'assistant.preferences', audio });
+    },
+    reportUsage: (reportId: string, bytesReceived: number) =>
+      signaling.current?.send({
+        type: 'usage.report',
+        reportId,
+        bytesReceived,
+      }),
+    updateSettings: (settings: Partial<MeetRoomSettings>) =>
+      signaling.current?.send({ type: 'room.settings.update', settings }),
+    controlRecording: async (
+      state: 'starting' | 'recording' | 'stopping' | 'idle' | 'error',
+      sessionId?: string
+    ) => {
+      if (!signaling.current?.isOpen) throw new Error('signaling_closed');
+      await signaling.current.request({
+        type: 'recording.state',
+        state,
+        recordingSessionId: sessionId,
+      });
+    },
+    renameMeeting: (title: string) => signaling.current?.announceTitle(title),
+    sendChat: async (body: string, attachmentIds?: string[]) => {
+      const text = body.trim();
+      if (!text) throw new Error('empty_message');
+      if (!signaling.current) throw new Error('signaling_closed');
+      const key = JSON.stringify([text, attachmentIds ?? []]);
+      const id = pendingChat.get(key) ?? crypto.randomUUID();
+      // A failed attempt can be retried once; concurrent new sends stay distinct.
+      pendingChat.delete(key);
+      try {
+        return await sendRecoverableChat(
+          signaling.current,
+          text,
+          attachmentIds,
+          undefined,
+          id
+        );
+      } catch (error) {
+        pendingChat.set(key, id);
+        if (pendingChat.size > 20)
+          pendingChat.delete(pendingChat.keys().next().value!);
+        throw error;
+      }
+    },
+    raiseHand: (raised: boolean) =>
+      signaling.current?.send({ type: 'hand.raise', raised }),
+    decideAdmission: (userId: string, admit: boolean) =>
+      signaling.current?.send({ type: 'admission.decide', userId, admit }),
+    muteParticipant: (userId: string, kinds: MeetRealtimeTrackKind[]) =>
+      signaling.current?.send({ type: 'participant.mute', userId, kinds }),
+    removeParticipant: (userId: string) =>
+      signaling.current?.send({ type: 'participant.remove', userId }),
+    forgetParticipant: (userId: string) =>
+      signaling.current?.send({ type: 'admission.forget', userId }),
+    shareNotes: (shareNotes: boolean) =>
+      signaling.current?.send({
+        type: 'room.settings.update',
+        settings: { shareNotes },
+      }),
+    endMeeting: async () => {
+      if (!signaling.current?.isOpen) throw new Error('signaling_closed');
+      await signaling.current.request({ type: 'room.end' });
+    },
+    react: (reaction: MeetReaction) =>
+      signaling.current?.send({ type: 'reaction.send', reaction }),
+    setRecordingState: (state: 'recording' | 'idle', sessionId?: string) =>
+      signaling.current?.send({
+        type: 'recording.state',
+        state,
+        recordingSessionId: sessionId,
+      }),
+  };
+}

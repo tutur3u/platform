@@ -106,7 +106,7 @@ vi.mock('next-intl/navigation', () => ({
   }),
 }));
 
-vi.mock('@/i18n/routing', () => ({
+vi.mock('@tuturuuu/meet-core/i18n/routing', () => ({
   supportedLocales: ['en', 'vi'],
   defaultLocale: 'en',
 }));

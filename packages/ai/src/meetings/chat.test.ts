@@ -262,3 +262,26 @@ it('never substitutes a public search answer for a pending private approval', as
   expect(answer.approvals).toHaveLength(1);
   expect(answer.text).toBe('');
 });
+
+it.each([
+  { scenarioInstructions: 'Synthetic confidential role briefing' },
+  { allowSearch: false },
+])('disables external search for private simulations: %j', async (options) => {
+  vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'synthetic');
+  mocks.generate.mockResolvedValue(result());
+  await answerMeetChat(
+    [],
+    900,
+    'Practice a fictional conversation',
+    model,
+    context,
+    options
+  );
+  const input = mocks.generate.mock.calls[0]![0];
+  expect(input.tools).not.toHaveProperty('google_search');
+  expect(input.messages[0].content).not.toContain(
+    'Synthetic confidential role briefing'
+  );
+  if ('scenarioInstructions' in options)
+    expect(input.system).toContain(options.scenarioInstructions);
+});

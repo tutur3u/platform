@@ -1,26 +1,3 @@
 'use client';
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
-import {
-  isKnownEndedRoom,
-  rememberEndedRoom,
-  subscribeEndedRooms,
-} from '../lib/ended-room-cache';
 
-export function useEndedRoom(
-  accountId: string,
-  meetingId: string,
-  confirmedEnded = false
-) {
-  const cached = useSyncExternalStore(
-    useCallback(
-      (notify: () => void) => subscribeEndedRooms(accountId, notify),
-      [accountId]
-    ),
-    () => isKnownEndedRoom(accountId, meetingId),
-    () => false
-  );
-  useEffect(() => {
-    if (confirmedEnded) rememberEndedRoom(accountId, meetingId);
-  }, [accountId, meetingId, confirmedEnded]);
-  return confirmedEnded || cached;
-}
+export * from '@tuturuuu/meet-core/features/call/hooks/use-ended-room.ts';

@@ -8,7 +8,7 @@ vi.mock('next-intl/server', () => ({
     (key: string) =>
       `${locale}:${key}`,
 }));
-vi.mock('@/features/call/lib/meeting-public-info', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/lib/meeting-public-info', () => ({
   getMeetingPublicInfo: mocks.info,
 }));
 vi.mock('next/og', () => ({

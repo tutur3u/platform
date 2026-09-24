@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   upload: vi.fn(async () => ({ provider: 'r2', token: 'synthetic-test' })),
 }));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
-vi.mock('@/features/call/lib/call-access', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
     constructor(
       public status: number,
@@ -32,7 +32,7 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
     }
   },
 }));
-vi.mock('@/features/call/server/room-service', () => ({
+vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
   personalWorkspace: mocks.personal,
   callRoomService: mocks.service,
   roomRoute: async (

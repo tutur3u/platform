@@ -1,0 +1,180 @@
+'use client';
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
+import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { useTranslations } from 'next-intl';
+import { MeetingFollowups } from './meeting-followups';
+import { MeetingTranscript } from './meeting-transcript';
+import type { useMeetingAi } from './use-meeting-ai';
+
+export function MeetingAiPanel({
+  ai,
+  inCall = false,
+}: {
+  ai: ReturnType<typeof useMeetingAi>;
+  inCall?: boolean;
+}) {
+  const t = useTranslations('meet.ai');
+  const run = (work: () => Promise<unknown>) =>
+    void work().catch(() => toast.error(t('failed')));
+  const data = ai.data;
+  const active = data?.sessions.find((session) => !session.ended_at);
+  return (
+    <section className="flex min-h-0 flex-col gap-3 rounded-lg border bg-card p-4">
+      <h2 className="font-semibold">{t('title')}</h2>
+      {ai.isLoading ? <p role="status">{t('loading')}</p> : null}
+      {ai.error ? <p role="alert">{t('unavailable')}</p> : null}
+      {data ? (
+        <>
+          <p className="text-muted-foreground text-xs">
+            {t(inCall ? 'notice' : 'review_notice')}
+          </p>
+          {!data.configured ? <p>{t('not_configured')}</p> : null}
+          {active ? (
+            <p role="status" className="font-medium text-sm">
+              {t(ai.capturing ? 'capturing' : 'active')}
+            </p>
+          ) : null}
+          {ai.recovering ? (
+            <p role="status" className="rounded-lg border bg-muted p-3 text-sm">
+              {t('recovering', { count: ai.pendingChunks })}
+            </p>
+          ) : null}
+          {active && ai.captureError ? (
+            <p role="alert" className="text-destructive text-sm">
+              {t('partial')}
+            </p>
+          ) : null}
+          {ai.busy ? <p role="status">{t('processing')}</p> : null}
+          {data.canManage && data.configured ? (
+            <div className="flex flex-wrap gap-2">
+              {inCall && !active ? (
+                <Button disabled={ai.busy} onClick={() => run(ai.start)}>
+                  {t('start')}
+                </Button>
+              ) : null}
+              {active ? (
+                <Button
+                  disabled={ai.busy}
+                  variant="secondary"
+                  onClick={() => run(() => ai.finish(active.id))}
+                >
+                  {t('finish')}
+                </Button>
+              ) : null}
+              {data.sessions
+                .filter(
+                  (session) =>
+                    session.ended_at && session.notes_status !== 'completed'
+                )
+                .map((session) => (
+                  <Button
+                    key={session.id}
+                    disabled={
+                      ai.busy ||
+                      (session.notes_status === 'processing' &&
+                        (!session.notes_started_at ||
+                          Date.now() - Date.parse(session.notes_started_at) <
+                            120_000))
+                    }
+                    variant="secondary"
+                    onClick={() => run(() => ai.finish(session.id))}
+                  >
+                    {t('retry_notes')}
+                  </Button>
+                ))}
+            </div>
+          ) : null}
+          <Tabs
+            defaultValue={inCall ? 'transcript' : 'notes'}
+            className="min-h-0"
+          >
+            <TabsList className="w-full">
+              <TabsTrigger value="transcript" className="flex-1">
+                {t('transcript')}
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="flex-1">
+                {t('notes')}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="transcript">
+              <MeetingTranscript chunks={data.chunks} />
+            </TabsContent>
+            <TabsContent value="notes">
+              {!data.sessions.some((session) => session.notes) && (
+                <p className="py-4 text-muted-foreground text-sm">
+                  {t('notes_empty')}
+                </p>
+              )}
+              <Accordion
+                key={data.sessions
+                  .filter((session) => session.notes)
+                  .map((session) => session.id)
+                  .join(':')}
+                type="multiple"
+                defaultValue={data.sessions
+                  .filter((session) => session.notes)
+                  .slice(-1)
+                  .map((session) => session.id)}
+              >
+                {data.sessions.map((session) =>
+                  session.notes ? (
+                    <AccordionItem key={session.id} value={session.id}>
+                      <AccordionTrigger>
+                        {t('session_notes', {
+                          number: data.sessions.indexOf(session) + 1,
+                        })}
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-2 text-sm">
+                        {session.notes.incomplete ? (
+                          <p className="text-destructive">{t('partial')}</p>
+                        ) : null}
+                        <p className="whitespace-pre-wrap">
+                          {session.notes.summary}
+                        </p>
+                        <h4 className="font-medium">{t('decisions')}</h4>
+                        <ul className="list-inside list-disc">
+                          {session.notes.decisions.map((value, index) => (
+                            <li key={`${index}-${value}`}>{value}</li>
+                          ))}
+                        </ul>
+                        <h4 className="font-medium">{t('actions')}</h4>
+                        <ul className="list-inside list-disc">
+                          {session.notes.actionItems.map((item, index) => (
+                            <li key={`${index}-${item.task}`}>
+                              {item.task}
+                              {item.owner ? ` — ${item.owner}` : ''}
+                              {item.dueDate ? ` (${item.dueDate})` : ''}
+                            </li>
+                          ))}
+                        </ul>
+                        <MeetingFollowups
+                          session={session}
+                          meetingId={ai.meetingId}
+                          wsId={ai.wsId}
+                        />
+                        <h4 className="font-medium">{t('questions')}</h4>
+                        <ul className="list-inside list-disc">
+                          {session.notes.openQuestions.map((value, index) => (
+                            <li key={`${index}-${value}`}>{value}</li>
+                          ))}
+                        </ul>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ) : null
+                )}
+              </Accordion>
+            </TabsContent>
+          </Tabs>
+        </>
+      ) : null}
+    </section>
+  );
+}
