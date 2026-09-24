@@ -282,6 +282,29 @@ void main() {
       ],
     );
 
+    test(
+      'keeps a persisted session through a retryable refresh error',
+      () async {
+        final controller = StreamController<supa.AuthState>();
+        addTearDown(controller.close);
+        when(() => authRepository.getCurrentUserSync()).thenReturn(_user());
+        when(() => authRepository.refreshSession()).thenAnswer((_) async {});
+        when(
+          () => authRepository.onAuthStateChange(),
+        ).thenAnswer((_) => controller.stream);
+        final cubit = AuthCubit(authRepository: authRepository);
+        addTearDown(cubit.close);
+        await Future<void>.delayed(Duration.zero);
+
+        controller.addError(Exception('Bad file descriptor'));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(cubit.state.status, AuthStatus.authenticated);
+        expect(cubit.state.user?.id, _user().id);
+        expect(cubit.state.error, isNull);
+      },
+    );
+
     final addAccountFlowErrorControllerCompleter =
         Completer<StreamController<supa.AuthState>>();
     blocTest<AuthCubit, AuthState>(

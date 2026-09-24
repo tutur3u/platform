@@ -115,6 +115,17 @@ class AuthCubit extends Cubit<AuthState> {
         }
       },
       onError: (Object error, StackTrace stackTrace) {
+        // GoTrue keeps the local session and retries refresh after a transport
+        // failure. A stream error is not a sign-out event: routing to Login
+        // here strands the user until the app is restarted.
+        final currentUser = _repo.getCurrentUserSync();
+        if (currentUser != null &&
+            state.user?.id == currentUser.id &&
+            (state.status == AuthStatus.authenticated ||
+                state.status == AuthStatus.mfaRequired)) {
+          if (state.isLoading) emit(state.copyWith(isLoading: false));
+          return;
+        }
         final message = switch (error) {
           final supa.AuthException authError => authError.message,
           _ => error.toString(),
