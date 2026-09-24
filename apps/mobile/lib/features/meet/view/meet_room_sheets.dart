@@ -268,26 +268,6 @@ Future<void> showMeetParticipantsSheet(
                   ),
                 ),
             if (call.role == 'host') ...[
-              SwitchListTile(
-                secondary: const Icon(Icons.lock_outline),
-                title: Text(context.l10n.meetLockRoom),
-                value: call.stage['locked'] == true,
-                onChanged: (locked) => call.setRoomLocked(locked: locked),
-              ),
-              SwitchListTile(
-                secondary: const Icon(Icons.chat_bubble_outline),
-                title: Text(context.l10n.meetSaveChat),
-                value: call.settings['saveChat'] != false,
-                onChanged: (enabled) =>
-                    call.updateSettings({'saveChat': enabled}),
-              ),
-              SwitchListTile(
-                secondary: const Icon(Icons.description_outlined),
-                title: Text(context.l10n.meetShareNotes),
-                value: call.settings['shareNotes'] == true,
-                onChanged: (enabled) =>
-                    call.updateSettings({'shareNotes': enabled}),
-              ),
               for (final person in call.approved)
                 ListTile(
                   leading: const Icon(Icons.verified_user_outlined),
@@ -301,6 +281,68 @@ Future<void> showMeetParticipantsSheet(
                   ),
                 ),
             ],
+          ],
+        ),
+      ),
+    ),
+  ),
+);
+
+Future<void> showMeetSettingsSheet(
+  BuildContext context,
+  MeetCallController call,
+) => showAdaptiveSheet<void>(
+  context: context,
+  useRootNavigator: true,
+  builder: (sheetContext) => AppDialogScaffold(
+    title: sheetContext.l10n.meetSettings,
+    child: SizedBox(
+      height: 430,
+      child: AnimatedBuilder(
+        animation: call,
+        builder: (context, _) => ListView(
+          children: [
+            SwitchListTile(
+              secondary: const Icon(Icons.lock_outline),
+              title: Text(context.l10n.meetLockRoom),
+              value: call.stage['locked'] == true,
+              onChanged: (locked) => call.setRoomLocked(locked: locked),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.chat_bubble_outline),
+              title: Text(context.l10n.meetSaveChat),
+              value: call.settings['saveChat'] != false,
+              onChanged: (enabled) =>
+                  call.updateSettings({'saveChat': enabled}),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.description_outlined),
+              title: Text(context.l10n.meetShareNotes),
+              value: call.settings['shareNotes'] == true,
+              onChanged: (enabled) =>
+                  call.updateSettings({'shareNotes': enabled}),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.fiber_manual_record_outlined),
+              title: Text(context.l10n.meetRecordings),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.lock_open_outlined),
+              title: Text(context.l10n.meetRecordingAccess),
+              subtitle: Text(context.l10n.meetRecordingAccessHint),
+              value: call.settings['shareRecordings'] == true,
+              onChanged: (enabled) =>
+                  call.updateSettings({'shareRecordings': enabled}),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.people_outline),
+              title: Text(context.l10n.meetParticipantRecording),
+              subtitle: Text(context.l10n.meetParticipantRecordingHint),
+              value: call.settings['allowParticipantRecording'] == true,
+              onChanged: (enabled) =>
+                  call.updateSettings({'allowParticipantRecording': enabled}),
+            ),
           ],
         ),
       ),

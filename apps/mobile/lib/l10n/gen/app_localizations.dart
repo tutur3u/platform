@@ -14665,6 +14665,42 @@ abstract class AppLocalizations {
   /// **'Save room chat'**
   String get meetSaveChat;
 
+  /// No description provided for @meetSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting settings'**
+  String get meetSettings;
+
+  /// No description provided for @meetRecordings.
+  ///
+  /// In en, this message translates to:
+  /// **'Recordings'**
+  String get meetRecordings;
+
+  /// No description provided for @meetRecordingAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Share recordings with participants'**
+  String get meetRecordingAccess;
+
+  /// No description provided for @meetRecordingAccessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Participants can access saved meeting recordings.'**
+  String get meetRecordingAccessHint;
+
+  /// No description provided for @meetParticipantRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow participant recording'**
+  String get meetParticipantRecording;
+
+  /// No description provided for @meetParticipantRecordingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Participants can start a recording when their device supports it.'**
+  String get meetParticipantRecordingHint;
+
   /// No description provided for @meetLeave.
   ///
   /// In en, this message translates to:
