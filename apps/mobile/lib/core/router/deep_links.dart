@@ -319,6 +319,9 @@ String _timerLocation(Uri uri, List<String> segments) {
 }
 
 String _settingsLocation(List<String> segments) {
+  if (segments.length > 1 && segments[1] == 'whats-new') {
+    return Routes.settingsWhatsNew;
+  }
   if (segments.length > 1 && segments[1] == 'preferences') {
     return Routes.settingsPreferences;
   }

@@ -5758,6 +5758,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAboutSectionDescription => 'Release details and product information for this build.';
 
   @override
+  String get settingsWhatsNew => 'What\'s new';
+
+  @override
+  String get settingsWhatsNewDescription => 'Updates from every published app release.';
+
+  @override
+  String get settingsReleaseHistoryDescription => 'Explore the changes included in each published version, even when you\'re offline.';
+
+  @override
+  String get settingsReleaseHistoryUnavailable => 'Release history is unavailable right now.';
+
+  @override
+  String get settingsReleaseNoDetails => 'No detailed changes were recorded for this version.';
+
+  @override
   String get settingsVersionLabel => 'Version';
 
   @override

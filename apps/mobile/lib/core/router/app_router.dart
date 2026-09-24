@@ -45,6 +45,7 @@ import 'package:mobile/features/security/account/account_security_page.dart';
 import 'package:mobile/features/security/mfa_approval/view/mfa_request_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_scanner_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_sign_in_page.dart';
+import 'package:mobile/features/settings/view/release_notes_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_members_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
@@ -550,6 +551,10 @@ GoRouter createAppRouter(
             path: Routes.settingsAbout,
             builder: (context, state) =>
                 const SettingsPage(section: SettingsSectionDestination.about),
+          ),
+          GoRoute(
+            path: Routes.settingsWhatsNew,
+            builder: (context, state) => const ReleaseNotesPage(),
           ),
           GoRoute(
             path: Routes.settingsSession,
