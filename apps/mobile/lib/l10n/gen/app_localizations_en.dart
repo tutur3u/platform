@@ -7685,6 +7685,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetSaveChat => 'Save room chat';
 
   @override
+  String get meetSettings => 'Meeting settings';
+
+  @override
+  String get meetRecordings => 'Recordings';
+
+  @override
+  String get meetRecordingAccess => 'Share recordings with participants';
+
+  @override
+  String get meetRecordingAccessHint => 'Participants can access saved meeting recordings.';
+
+  @override
+  String get meetParticipantRecording => 'Allow participant recording';
+
+  @override
+  String get meetParticipantRecordingHint => 'Participants can start a recording when their device supports it.';
+
+  @override
   String get meetLeave => 'Leave call';
 
   @override

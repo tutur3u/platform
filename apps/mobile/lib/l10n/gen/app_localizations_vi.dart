@@ -7655,6 +7655,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetSaveChat => 'Lưu trò chuyện của phòng';
 
   @override
+  String get meetSettings => 'Cài đặt cuộc họp';
+
+  @override
+  String get meetRecordings => 'Bản ghi';
+
+  @override
+  String get meetRecordingAccess => 'Chia sẻ bản ghi với người tham gia';
+
+  @override
+  String get meetRecordingAccessHint => 'Người tham gia có thể xem các bản ghi cuộc họp đã lưu.';
+
+  @override
+  String get meetParticipantRecording => 'Cho phép người tham gia ghi hình';
+
+  @override
+  String get meetParticipantRecordingHint => 'Người tham gia có thể bắt đầu ghi khi thiết bị của họ hỗ trợ.';
+
+  @override
   String get meetLeave => 'Rời cuộc gọi';
 
   @override

@@ -299,8 +299,21 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                       if (action == 'costs') {
                         unawaited(showMeetCostsSheet(context, _call));
                       }
+                      if (action == 'settings') {
+                        unawaited(showMeetSettingsSheet(context, _call));
+                      }
                     },
                     itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'settings',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.tune_outlined),
+                            const SizedBox(width: 10),
+                            Text(l10n.meetSettings),
+                          ],
+                        ),
+                      ),
                       PopupMenuItem(
                         value: 'costs',
                         child: Row(
