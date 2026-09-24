@@ -67,7 +67,7 @@ async function productionRuns(requiredRunNumbers, token) {
   const runs = new Map();
   for (let page = 1; page <= 5 && runs.size < requiredRunNumbers.size; page++) {
     const result = await githubGet(
-      `/repos/tutur3u/platform/actions/workflows/mobile-deploy-stores.yaml/runs?branch=production&per_page=100&page=${page}`,
+      `/repos/tutur3u/platform/actions/workflows/mobile-deploy-stores.yaml/runs?per_page=100&page=${page}`,
       token
     );
     for (const run of result.workflow_runs ?? []) {
@@ -97,7 +97,8 @@ export async function releaseHistory({
       parts &&
       parts[0] === current[0] &&
       parts[1] === current[1] &&
-      parts[2] > 0
+      parts[2] > 0 &&
+      compareVersions(item.attributes.version, version) < 0
     );
   });
   const uploaded = [];
@@ -115,30 +116,34 @@ export async function releaseHistory({
     if (!build) continue;
     uploaded.push({
       version: record.attributes.version,
+      buildNumber: build.attributes.version,
       runNumber: Math.floor((Number(build.attributes.version) - 100000) / 1000),
       date: build.attributes.uploadedDate?.slice(0, 10),
     });
   }
-  const required = new Set(uploaded.map((item) => item.runNumber));
+  const required = new Set(
+    uploaded.map((item) => item.runNumber).filter((number) => number > 0)
+  );
   const runs = await productionRuns(required, githubToken);
-  if (runs.size !== required.size) {
-    throw new Error(
-      'Could not map every TestFlight patch build to its source run'
-    );
-  }
   const releases = uploaded
-    .filter((item) => runs.has(item.runNumber))
     .map((item) => ({
       version: item.version,
-      date: item.date ?? runs.get(item.runNumber).created_at.slice(0, 10),
-      sha: runs.get(item.runNumber).head_sha,
+      date:
+        item.date ?? runs.get(item.runNumber)?.created_at.slice(0, 10) ?? date,
+      sha: runs.get(item.runNumber)?.head_sha ?? null,
+      buildNumber: item.buildNumber,
     }))
-    .filter((item) => compareVersions(item.version, version) < 0)
     .sort((a, b) => compareVersions(a.version, b.version));
   releases.push({ version, date, sha });
 
   let previousSha = `mobile-v${current[0]}.${current[1]}.0`;
   return releases.map((item) => {
+    if (!item.sha) {
+      console.warn(
+        `No source workflow for TestFlight ${item.version} (build ${item.buildNumber}); keeping the version without inferred changes.`
+      );
+      return { version: item.version, date: item.date, changes: [] };
+    }
     const changes = changesBetween(previousSha, item.sha, git);
     previousSha = item.sha;
     return { version: item.version, date: item.date, changes };
