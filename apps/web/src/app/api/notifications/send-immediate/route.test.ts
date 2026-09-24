@@ -304,6 +304,47 @@ describe('send-immediate route', () => {
     });
   });
 
+  it('delivers push to a member outside the root workspace', async () => {
+    const otherWorkspaceId = '00000000-0000-4000-8000-000000000222';
+    batches[0]!.ws_id = otherWorkspaceId;
+    deliveryLogs[0]!.notifications.ws_id = otherWorkspaceId;
+    deliveryLogs[0]!.notifications.data.workspace_id = otherWorkspaceId;
+
+    const response = await POST(
+      new Request('http://localhost/api/notifications/send-immediate', {
+        body: JSON.stringify({ batch_id: 'batch-1' }),
+        headers: { authorization: 'Bearer cron-secret' },
+        method: 'POST',
+      }) as any
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      processed: 1,
+      results: [expect.objectContaining({ status: 'sent' })],
+    });
+    expect(mocks.sendPushNotificationBatchMock).toHaveBeenCalledOnce();
+  });
+
+  it('keeps non-root email batches out of the push rollout', async () => {
+    const otherWorkspaceId = '00000000-0000-4000-8000-000000000222';
+    batches[0]!.channel = 'email';
+    batches[0]!.ws_id = otherWorkspaceId;
+    deliveryLogs[0]!.notifications.ws_id = otherWorkspaceId;
+
+    const response = await POST(
+      new Request('http://localhost/api/notifications/send-immediate', {
+        body: JSON.stringify({ batch_id: 'batch-1' }),
+        headers: { authorization: 'Bearer cron-secret' },
+        method: 'POST',
+      }) as any
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ processed: 0 });
+    expect(mocks.sendSystemEmailMock).not.toHaveBeenCalled();
+  });
+
   it('skips notifications older than one day', async () => {
     deliveryLogs[0]!.notifications.created_at = getStaleCreatedAt();
 
@@ -334,6 +375,10 @@ describe('send-immediate route', () => {
   });
 
   it('skips workspace notifications for removed members', async () => {
+    const otherWorkspaceId = '00000000-0000-4000-8000-000000000222';
+    batches[0]!.ws_id = otherWorkspaceId;
+    deliveryLogs[0]!.notifications.ws_id = otherWorkspaceId;
+    deliveryLogs[0]!.notifications.data.workspace_id = otherWorkspaceId;
     workspaceMembership = null;
 
     const response = await POST(
