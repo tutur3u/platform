@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/services.dart';
 
 class MobileReleaseNote {
@@ -12,15 +14,52 @@ class MobileReleaseNote {
   final List<String> changes;
 }
 
-/// Release Please owns CHANGELOG.md; bundling it keeps history offline and
-/// avoids a request, a second store, or per-build hand-maintained copies.
+/// Release Please owns CHANGELOG.md. Store builds bundle patch history so the
+/// installed app can show its actual changes while offline.
 class MobileReleaseNotes {
   MobileReleaseNotes._();
 
   static Future<List<MobileReleaseNote>>? _cached;
 
-  static Future<List<MobileReleaseNote>> load() =>
-      _cached ??= rootBundle.loadString('CHANGELOG.md').then(parse);
+  static Future<List<MobileReleaseNote>> load() => _cached ??= Future.wait([
+    rootBundle.loadString('CHANGELOG.md'),
+    rootBundle.loadString('assets/release_history.json'),
+  ]).then((assets) => combine(assets[0], assets[1]));
+
+  static List<MobileReleaseNote> combine(String markdown, String json) {
+    final published = parse(markdown);
+    final patchReleases =
+        (jsonDecode(json) as Map<String, dynamic>)['releases'];
+    final byVersion = <String, MobileReleaseNote>{
+      for (final release in published) release.version: release,
+    };
+    if (patchReleases is List) {
+      for (final item in patchReleases) {
+        if (item is! Map<String, dynamic>) continue;
+        final version = item['version'];
+        final date = DateTime.tryParse(item['date']?.toString() ?? '');
+        final changes = item['changes'];
+        if (version is! String || date == null || changes is! List) continue;
+        byVersion[version] = MobileReleaseNote(
+          version: version,
+          date: date,
+          changes: List.unmodifiable(changes.whereType<String>()),
+        );
+      }
+    }
+    final versions = byVersion.keys.toList()
+      ..sort((a, b) {
+        final left = a.split('.').map(int.tryParse).toList();
+        final right = b.split('.').map(int.tryParse).toList();
+        for (var i = 0; i < 3; i++) {
+          final difference =
+              (right.elementAtOrNull(i) ?? 0) - (left.elementAtOrNull(i) ?? 0);
+          if (difference != 0) return difference;
+        }
+        return 0;
+      });
+    return List.unmodifiable(versions.map((version) => byVersion[version]!));
+  }
 
   static List<MobileReleaseNote> parse(String markdown) {
     final heading = RegExp(r'^## \[([^\]]+)\].*?\((\d{4}-\d{2}-\d{2})\)\s*$');
