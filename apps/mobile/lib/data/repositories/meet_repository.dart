@@ -41,10 +41,13 @@ class MeetRepository {
     String wsId, {
     required String name,
     required DateTime time,
+    DateTime? scheduleEndTime,
   }) async {
     final response = await _api.postJson(MeetEndpoints.meetings(wsId), {
       'name': name,
       'time': time.toUtc().toIso8601String(),
+      if (scheduleEndTime != null)
+        'schedule': {'endTime': scheduleEndTime.toUtc().toIso8601String()},
     });
     await _cache.invalidate(wsId);
     return MeetMeeting.fromJson(
@@ -86,6 +89,11 @@ class MeetRepository {
 
   Future<Map<String, dynamic>> getRoomCosts(String wsId, String meetingId) =>
       _api.getJson(MeetEndpoints.costs(wsId, meetingId));
+
+  Future<Map<String, dynamic>> getMeetingReview(
+    String wsId,
+    String meetingId,
+  ) => _api.getJson(MeetEndpoints.review(wsId, meetingId));
 
   Future<String> askPersonalMira(
     String wsId,

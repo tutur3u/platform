@@ -32,6 +32,9 @@ abstract final class MeetEndpoints {
   static String costs(String wsId, String meetingId) =>
       '${meeting(wsId, meetingId)}/costs';
 
+  static String review(String wsId, String meetingId) =>
+      '${meeting(wsId, meetingId)}/review';
+
   static String personalAssistant(String wsId, String meetingId) =>
       '${meeting(wsId, meetingId)}/assistant/personal';
 

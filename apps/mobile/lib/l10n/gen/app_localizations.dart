@@ -14413,6 +14413,54 @@ abstract class AppLocalizations {
   /// **'New meeting'**
   String get meetNewMeeting;
 
+  /// No description provided for @meetInstantMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Start an instant meeting'**
+  String get meetInstantMeeting;
+
+  /// No description provided for @meetInstantMeetingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an Untitled meeting and join now'**
+  String get meetInstantMeetingHint;
+
+  /// No description provided for @meetScheduleMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule a meeting'**
+  String get meetScheduleMeeting;
+
+  /// No description provided for @meetScheduleMeetingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a name and time for your calendar'**
+  String get meetScheduleMeetingHint;
+
+  /// No description provided for @meetFutureStartRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a future start time.'**
+  String get meetFutureStartRequired;
+
+  /// No description provided for @meetUntitledMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled meeting'**
+  String get meetUntitledMeeting;
+
+  /// No description provided for @meetDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get meetDuration;
+
+  /// No description provided for @meetMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} minutes'**
+  String meetMinutes(int count);
+
   /// No description provided for @meetRecordingSessions.
   ///
   /// In en, this message translates to:
@@ -14928,6 +14976,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This meeting has ended'**
   String get meetCallEnded;
+
+  /// No description provided for @meetReviewCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check the meeting status. Try again before enabling your microphone or camera.'**
+  String get meetReviewCheckFailed;
+
+  /// No description provided for @meetReviewUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting details are temporarily unavailable.'**
+  String get meetReviewUnavailable;
+
+  /// No description provided for @meetReviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the transcript and notes from this meeting.'**
+  String get meetReviewHint;
+
+  /// No description provided for @meetReviewPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'The host has not shared this meeting\'s notes.'**
+  String get meetReviewPrivate;
+
+  /// No description provided for @meetReviewNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting notes'**
+  String get meetReviewNotes;
+
+  /// No description provided for @meetReviewNoNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'No notes are available yet.'**
+  String get meetReviewNoNotes;
+
+  /// No description provided for @meetReviewTranscript.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcript'**
+  String get meetReviewTranscript;
+
+  /// No description provided for @meetReviewNoTranscript.
+  ///
+  /// In en, this message translates to:
+  /// **'No transcript is available yet.'**
+  String get meetReviewNoTranscript;
+
+  /// No description provided for @meetReviewTranscriptionCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription'**
+  String get meetReviewTranscriptionCost;
+
+  /// No description provided for @meetReviewNotesCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes generation'**
+  String get meetReviewNotesCost;
+
+  /// No description provided for @meetReviewTotalCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get meetReviewTotalCost;
+
+  /// No description provided for @meetReviewUnpriced.
+  ///
+  /// In en, this message translates to:
+  /// **'Some requests are not included in this estimate.'**
+  String get meetReviewUnpriced;
 
   /// No description provided for @meetAccessDenied.
   ///

@@ -7521,6 +7521,32 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetNewMeeting => 'Cuộc họp mới';
 
   @override
+  String get meetInstantMeeting => 'Bắt đầu cuộc họp ngay';
+
+  @override
+  String get meetInstantMeetingHint => 'Tạo cuộc họp chưa đặt tên và tham gia ngay';
+
+  @override
+  String get meetScheduleMeeting => 'Lên lịch cuộc họp';
+
+  @override
+  String get meetScheduleMeetingHint => 'Chọn tên và thời gian cho lịch của bạn';
+
+  @override
+  String get meetFutureStartRequired => 'Chọn thời gian bắt đầu trong tương lai.';
+
+  @override
+  String get meetUntitledMeeting => 'Cuộc họp chưa đặt tên';
+
+  @override
+  String get meetDuration => 'Thời lượng';
+
+  @override
+  String meetMinutes(int count) {
+    return '$count phút';
+  }
+
+  @override
   String meetRecordingSessions(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -7785,6 +7811,42 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get meetCallEnded => 'Cuộc họp đã kết thúc';
+
+  @override
+  String get meetReviewCheckFailed => 'Không thể kiểm tra trạng thái cuộc họp. Vui lòng thử lại trước khi bật micrô hoặc camera.';
+
+  @override
+  String get meetReviewUnavailable => 'Thông tin cuộc họp tạm thời không khả dụng.';
+
+  @override
+  String get meetReviewHint => 'Xem lại bản ghi lời nói và ghi chú của cuộc họp này.';
+
+  @override
+  String get meetReviewPrivate => 'Người chủ trì chưa chia sẻ ghi chú cuộc họp.';
+
+  @override
+  String get meetReviewNotes => 'Ghi chú cuộc họp';
+
+  @override
+  String get meetReviewNoNotes => 'Chưa có ghi chú.';
+
+  @override
+  String get meetReviewTranscript => 'Bản ghi lời nói';
+
+  @override
+  String get meetReviewNoTranscript => 'Chưa có bản ghi lời nói.';
+
+  @override
+  String get meetReviewTranscriptionCost => 'Chuyển giọng nói thành văn bản';
+
+  @override
+  String get meetReviewNotesCost => 'Tạo ghi chú';
+
+  @override
+  String get meetReviewTotalCost => 'Tổng cộng';
+
+  @override
+  String get meetReviewUnpriced => 'Một số yêu cầu chưa được tính trong ước tính này.';
 
   @override
   String get meetAccessDenied => 'Bạn không thể tham gia cuộc họp này';

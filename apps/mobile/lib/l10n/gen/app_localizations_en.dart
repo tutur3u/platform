@@ -7551,6 +7551,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetNewMeeting => 'New meeting';
 
   @override
+  String get meetInstantMeeting => 'Start an instant meeting';
+
+  @override
+  String get meetInstantMeetingHint => 'Create an Untitled meeting and join now';
+
+  @override
+  String get meetScheduleMeeting => 'Schedule a meeting';
+
+  @override
+  String get meetScheduleMeetingHint => 'Choose a name and time for your calendar';
+
+  @override
+  String get meetFutureStartRequired => 'Choose a future start time.';
+
+  @override
+  String get meetUntitledMeeting => 'Untitled meeting';
+
+  @override
+  String get meetDuration => 'Duration';
+
+  @override
+  String meetMinutes(int count) {
+    return '$count minutes';
+  }
+
+  @override
   String meetRecordingSessions(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -7815,6 +7841,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meetCallEnded => 'This meeting has ended';
+
+  @override
+  String get meetReviewCheckFailed => 'Couldn\'t check the meeting status. Try again before enabling your microphone or camera.';
+
+  @override
+  String get meetReviewUnavailable => 'Meeting details are temporarily unavailable.';
+
+  @override
+  String get meetReviewHint => 'Review the transcript and notes from this meeting.';
+
+  @override
+  String get meetReviewPrivate => 'The host has not shared this meeting\'s notes.';
+
+  @override
+  String get meetReviewNotes => 'Meeting notes';
+
+  @override
+  String get meetReviewNoNotes => 'No notes are available yet.';
+
+  @override
+  String get meetReviewTranscript => 'Transcript';
+
+  @override
+  String get meetReviewNoTranscript => 'No transcript is available yet.';
+
+  @override
+  String get meetReviewTranscriptionCost => 'Transcription';
+
+  @override
+  String get meetReviewNotesCost => 'Notes generation';
+
+  @override
+  String get meetReviewTotalCost => 'Total';
+
+  @override
+  String get meetReviewUnpriced => 'Some requests are not included in this estimate.';
 
   @override
   String get meetAccessDenied => 'You cannot join this meeting';

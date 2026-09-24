@@ -3109,6 +3109,19 @@
     "meetEmptyDescription": "Chưa có cuộc họp nào. Lên lịch một cuộc họp để giữ cả nhóm đồng bộ.",
     "meetMeetingName": "Tên cuộc họp",
     "meetNewMeeting": "Cuộc họp mới",
+    "meetInstantMeeting": "Bắt đầu cuộc họp ngay",
+    "meetInstantMeetingHint": "Tạo cuộc họp chưa đặt tên và tham gia ngay",
+    "meetScheduleMeeting": "Lên lịch cuộc họp",
+    "meetScheduleMeetingHint": "Chọn tên và thời gian cho lịch của bạn",
+    "meetFutureStartRequired": "Chọn thời gian bắt đầu trong tương lai.",
+    "meetUntitledMeeting": "Cuộc họp chưa đặt tên",
+    "meetDuration": "Thời lượng",
+    "meetMinutes": "{count} phút",
+    "@meetMinutes": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
     "meetRecordingSessions": "{count, plural, =1{1 bản ghi} other{{count} bản ghi}}",
     "@meetRecordingSessions": {
         "placeholders": {
@@ -3200,6 +3213,18 @@
     "meetConnecting": "Đang kết nối cuộc họp…",
     "meetReconnecting": "Đang kết nối lại…",
     "meetCallEnded": "Cuộc họp đã kết thúc",
+    "meetReviewCheckFailed": "Không thể kiểm tra trạng thái cuộc họp. Vui lòng thử lại trước khi bật micrô hoặc camera.",
+    "meetReviewUnavailable": "Thông tin cuộc họp tạm thời không khả dụng.",
+    "meetReviewHint": "Xem lại bản ghi lời nói và ghi chú của cuộc họp này.",
+    "meetReviewPrivate": "Người chủ trì chưa chia sẻ ghi chú cuộc họp.",
+    "meetReviewNotes": "Ghi chú cuộc họp",
+    "meetReviewNoNotes": "Chưa có ghi chú.",
+    "meetReviewTranscript": "Bản ghi lời nói",
+    "meetReviewNoTranscript": "Chưa có bản ghi lời nói.",
+    "meetReviewTranscriptionCost": "Chuyển giọng nói thành văn bản",
+    "meetReviewNotesCost": "Tạo ghi chú",
+    "meetReviewTotalCost": "Tổng cộng",
+    "meetReviewUnpriced": "Một số yêu cầu chưa được tính trong ước tính này.",
     "meetAccessDenied": "Bạn không thể tham gia cuộc họp này",
     "meetNoParticipants": "Đang chờ người khác tham gia",
     "meetAdmit": "Cho phép",
