@@ -107,11 +107,15 @@ listed on the Overview tab before activating.
 
 ## Automatic beta rollout
 
-Mobile **Settings → What's new** reads a bundled copy of
-`apps/mobile/CHANGELOG.md` only when the user opens that screen. Release Please
-updates this history for tagged mobile releases; the app needs no changelog API,
-extra database table, or network request. TestFlight-only build numbers are
-shown as the installed version but are not separate Release Please entries.
+Mobile **Settings → What's new** reads bundled release history when the user
+opens that screen. Release Please owns `apps/mobile/CHANGELOG.md` for tagged
+releases. Before building an iOS beta, CI looks up earlier TestFlight patch
+versions and their production workflow commits, then bundles the mobile commit
+summaries for each patch version into `assets/release_history.json`. The current
+build is included before upload. Android downloads the same generated asset
+from the iOS job. This lookup must succeed for the build to continue; both
+apps read the bundled result offline without a changelog API or extra database
+table. The installed version and build number remain visible.
 
 The workflow runs after relevant pushes to `production`. Retry the latest push
 run for recovery; vault OIDC validation permits production push events only.

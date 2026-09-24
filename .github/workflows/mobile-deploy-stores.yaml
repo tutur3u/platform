@@ -18,6 +18,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
   deployments: read
   id-token: write
@@ -72,6 +73,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Use the same beta release history as iOS
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: mobile-beta-release-history
+          path: apps/mobile/assets
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
@@ -192,6 +199,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 0
 
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
@@ -247,6 +256,20 @@ jobs:
           build_name="$(node ../../scripts/mobile-deployment/build-name.mjs)"
           test -n "$build_name"
           echo "build_name=$build_name" >> "$GITHUB_OUTPUT"
+
+      - name: Bundle mobile beta release history
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MOBILE_BUILD_NAME: ${{ steps.version_name.outputs.build_name }}
+        run: node ../../scripts/mobile-deployment/release-history.mjs
+
+      - name: Share beta release history with Android
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mobile-beta-release-history
+          path: apps/mobile/assets/release_history.json
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Disable Flutter Swift Package Manager
         run: flutter config --no-enable-swift-package-manager
