@@ -4,6 +4,38 @@ import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_html_sanitizer.dart';
 
 void main() {
+  test('keeps wide newsletter content horizontally reachable on mobile', () {
+    final document = buildMailHtmlDocument(
+      '<table width="900"><tr><td>Wide newsletter</td></tr></table>',
+      loadImages: true,
+    );
+    final parsed = parse(document);
+    expect(parsed.querySelector('#mail-scroll #mail-content table'), isNotNull);
+    expect(
+      document,
+      contains('#mail-scroll{width:100%;max-width:100%;overflow-x:auto'),
+    );
+    expect(document, contains('#mail-content>table{margin-inline:auto}'));
+    expect(document, contains('#mail-content>div{margin-inline:auto}'));
+    expect(document, contains('#mail-content table{max-width:100%!important}'));
+    expect(parsed.querySelector('table')?.attributes['width'], '900');
+  });
+
+  test('keeps the sender width of clipped containers available to scroll', () {
+    final document = buildMailHtmlDocument(
+      '<div style="width:900px;overflow:hidden"><div style="width:900px">Content</div></div>',
+      loadImages: false,
+    );
+    final parsed = parse(document);
+    expect(
+      parsed
+          .querySelector('#mail-scroll #mail-content div')
+          ?.attributes['style'],
+      contains('width:900px'),
+    );
+    expect(document, isNot(contains('#mail-content>div{max-width:100%')));
+  });
+
   test('preserves newsletter CSS while removing executable content', () {
     final result = sanitizeIsolatedMailHtml('''
 <html><head><style>.newsletter { padding: 24px }</style></head><body>

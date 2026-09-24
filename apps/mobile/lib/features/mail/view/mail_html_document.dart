@@ -69,6 +69,11 @@ body,body *:not(img):not(svg):not(path){color:$foreground!important;background-c
 html,body{background:$background!important}
 body a{color:${dark ? '#8ab4ff' : '#2458b8'}!important}
 ''';
+  const responsiveStyles = '''
+#mail-content>div{margin-inline:auto}
+#mail-content table{max-width:100%!important}
+#mail-content img,#mail-content video,#mail-content svg{max-width:100%!important}
+''';
   return '''
 <!doctype html><html><head>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src $images; font-src 'none'; connect-src 'none'; form-action 'none'; base-uri 'none'">
@@ -77,13 +82,16 @@ body a{color:${dark ? '#8ab4ff' : '#2458b8'}!important}
 <meta name="color-scheme" content="$scheme">
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;max-width:100%;overflow-x:auto;color-scheme:$scheme;background:$background;color:$foreground}
+html,body{margin:0;width:100%;min-width:0;color-scheme:$scheme;background:$background;color:$foreground}
 body{padding:12px;font:14px/1.6 ui-sans-serif,system-ui,sans-serif;overflow-wrap:anywhere;word-break:break-word}
+#mail-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+#mail-content{width:100%;min-width:0}
+#mail-content>table{margin-inline:auto}
 img,video,svg,canvas{max-width:100%;object-fit:contain}
-img:not([height]){height:auto}table{max-width:100%}
-td,th{word-break:normal;overflow-wrap:normal}
+img:not([height]){height:auto}table{max-width:100%!important}
+td,th{word-break:normal;overflow-wrap:anywhere}
 pre{max-width:100%;white-space:pre-wrap;word-break:break-word}
 blockquote{margin-inline:0;padding-inline-start:12px;border-inline-start:3px solid #737373}
 a[href^="mailto:"]{color:${dark ? '#8ab4ff' : '#2458b8'}!important;text-decoration:none!important}
-</style></head><body data-mail-preview="${appearance.name}">$body<style>$themeStyles</style></body></html>''';
+</style></head><body data-mail-preview="${appearance.name}"><div id="mail-scroll"><div id="mail-content">$body</div></div><style>$themeStyles$responsiveStyles</style></body></html>''';
 }
