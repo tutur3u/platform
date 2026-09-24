@@ -6,7 +6,10 @@ import {
   MOBILE_DEPLOYMENT_PLATFORMS,
   type MobileDeploymentPlatform,
 } from '@/lib/mobile-deployment/constants';
-import { verifyGitHubOidcToken } from '@/lib/mobile-deployment/oidc';
+import {
+  MobileDeploymentOidcError,
+  verifyGitHubOidcToken,
+} from '@/lib/mobile-deployment/oidc';
 import {
   fetchMobileDeploymentBundle,
   MobileDeploymentStoreError,
@@ -51,9 +54,12 @@ export async function GET(request: Request) {
     return noStoreJson({ message: 'Unauthorized' }, 401);
   }
 
+  let stage: 'oidc' | 'admin_client' | 'bundle' = 'oidc';
   try {
     const claims = await verifyGitHubOidcToken(oidcToken);
+    stage = 'admin_client';
     const db = await createAdminClient({ noCookie: true });
+    stage = 'bundle';
     const bundle = await fetchMobileDeploymentBundle({
       claims,
       db,
@@ -64,6 +70,12 @@ export async function GET(request: Request) {
 
     return noStoreJson(bundle);
   } catch (error) {
+    const code =
+      error instanceof MobileDeploymentOidcError ||
+      error instanceof MobileDeploymentStoreError
+        ? error.code
+        : 'unexpected_error';
+    console.warn('Mobile deployment bundle request denied', { stage, code });
     if (error instanceof MobileDeploymentStoreError && error.status !== 401) {
       return noStoreJson(
         { message: 'Mobile deployment bundle unavailable' },

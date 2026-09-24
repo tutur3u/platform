@@ -120,7 +120,8 @@ read the bundled result offline without a changelog API or extra database table.
 The installed version and build number remain visible.
 
 The workflow runs after relevant pushes to `production`. Retry the latest push
-run for recovery; vault OIDC validation permits production push events only.
+run for recovery; vault OIDC validation permits production pushes and the
+manually dispatched review retry.
 Other refs fail the preflight check.
 Configure the `mobile-store-beta` GitHub environment to allow only the
 `production` branch, and store the issued vault token as its
@@ -133,6 +134,15 @@ CI bearer token and GitHub OIDC attestation. Signing files, private keys, and
 build environment files are hydrated only into temporary runner paths and
 cleaned up afterward. Do not copy signing values into repository secrets or
 commit them to source. The App Store private key uses `API_PRIVATE_KEYS_DIR`.
+
+If a bundle fetch returns 401, first confirm that the request uses
+`environment=production`, a supported `platform`, and a bearer authorization
+header. Invalid inputs return before the route logs a denial. For valid inputs,
+check the infrastructure production request log for
+`Mobile deployment bundle request denied`. Its `stage` and `code` identify where
+validation stopped without recording credentials or the OIDC token. If that log
+is absent, inspect the proxy or deployment edge. Vault bundle-fetch rows appear
+only after OIDC validation and admin-client setup have succeeded.
 
 Each workflow run assigns both platforms the build number
 `100000 + GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT`. Retrying a job receives
