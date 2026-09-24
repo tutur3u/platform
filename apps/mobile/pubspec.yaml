@@ -100,6 +100,7 @@ flutter:
   generate: true
   uses-material-design: true
   assets:
+    - CHANGELOG.md
     - assets/logos/light.png
     - assets/mermaid/mermaid.min.js
     - assets/logos/nova-transparent.png

@@ -33,6 +33,44 @@ class SettingsPanel extends StatelessWidget {
   }
 }
 
+/// A single, quiet surface keeps navigation rows aligned without card clutter.
+class SettingsGroup extends StatelessWidget {
+  const SettingsGroup({required this.children, super.key});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(17),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.card,
+          border: Border.all(
+            color: theme.colorScheme.border.withValues(alpha: 0.75),
+          ),
+          borderRadius: BorderRadius.circular(17),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var index = 0; index < children.length; index++) ...[
+              if (index > 0)
+                Divider(
+                  height: 1,
+                  indent: 58,
+                  color: theme.colorScheme.border.withValues(alpha: 0.7),
+                ),
+              children[index],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class SettingsSection extends StatelessWidget {
   const SettingsSection({
     required this.title,
@@ -65,7 +103,7 @@ class SettingsSection extends StatelessWidget {
             ),
           ),
         ],
-        const shad.Gap(16),
+        const shad.Gap(12),
         ..._withSpacing(children),
       ],
     );
@@ -79,7 +117,7 @@ class SettingsSection extends StatelessWidget {
     final widgets = <Widget>[];
     for (var index = 0; index < children.length; index++) {
       if (index > 0) {
-        widgets.add(const shad.Gap(12));
+        widgets.add(const shad.Gap(8));
       }
       widgets.add(children[index]);
     }
@@ -97,6 +135,7 @@ class SettingsTile extends StatelessWidget {
     this.isDestructive = false,
     this.showChevron = true,
     this.trailing,
+    this.grouped = false,
     super.key,
   });
 
@@ -108,6 +147,7 @@ class SettingsTile extends StatelessWidget {
   final bool isDestructive;
   final bool showChevron;
   final Widget? trailing;
+  final bool grouped;
 
   @override
   Widget build(BuildContext context) {
@@ -120,30 +160,35 @@ class SettingsTile extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(grouped ? 0 : 14),
         onTap: onTap,
         child: Ink(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.card,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: theme.colorScheme.border.withValues(alpha: 0.72),
-            ),
+          padding: EdgeInsets.symmetric(
+            horizontal: grouped ? 14 : 13,
+            vertical: grouped ? 11 : 12,
           ),
+          decoration: grouped
+              ? null
+              : BoxDecoration(
+                  color: theme.colorScheme.card,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: theme.colorScheme.border.withValues(alpha: 0.72),
+                  ),
+                ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   color: accentColor.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(11),
                 ),
                 child: Icon(icon, size: 20, color: accentColor),
               ),
-              const shad.Gap(12),
+              const shad.Gap(11),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,10 +213,10 @@ class SettingsTile extends StatelessWidget {
                       ),
                     ],
                     if (subtitle?.trim().isNotEmpty ?? false) ...[
-                      const shad.Gap(4),
+                      const shad.Gap(2),
                       Text(
                         subtitle!,
-                        maxLines: onTap != null ? 2 : null,
+                        maxLines: onTap != null ? 1 : null,
                         overflow: onTap != null ? TextOverflow.ellipsis : null,
                         style: theme.typography.textSmall.copyWith(
                           color: theme.colorScheme.mutedForeground,
@@ -181,7 +226,7 @@ class SettingsTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const shad.Gap(12),
+              const shad.Gap(8),
               trailing ??
                   (showChevron
                       ? Icon(

@@ -10939,6 +10939,36 @@ abstract class AppLocalizations {
   /// **'Release details and product information for this build.'**
   String get settingsAboutSectionDescription;
 
+  /// No description provided for @settingsWhatsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s new'**
+  String get settingsWhatsNew;
+
+  /// No description provided for @settingsWhatsNewDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates from every published app release.'**
+  String get settingsWhatsNewDescription;
+
+  /// No description provided for @settingsReleaseHistoryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore the changes included in each published version, even when you\'re offline.'**
+  String get settingsReleaseHistoryDescription;
+
+  /// No description provided for @settingsReleaseHistoryUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Release history is unavailable right now.'**
+  String get settingsReleaseHistoryUnavailable;
+
+  /// No description provided for @settingsReleaseNoDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'No detailed changes were recorded for this version.'**
+  String get settingsReleaseNoDetails;
+
   /// No description provided for @settingsVersionLabel.
   ///
   /// In en, this message translates to:

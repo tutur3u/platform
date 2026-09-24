@@ -11,58 +11,81 @@ class _SettingsOverviewSection extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: _spacedSettingsTiles([
+      children: [
         Text(
           l10n.settingsGeneralGroup,
           style: Theme.of(context).textTheme.titleSmall,
         ),
-        SettingsTile(
-          icon: Icons.tune_rounded,
-          title: l10n.settingsPreferencesSectionTitle,
-          subtitle: l10n.settingsPreferencesSectionDescription,
-          onTap: () => context.push(Routes.settingsPreferences),
-        ),
-        SettingsTile(
-          icon: Icons.science_outlined,
-          title: l10n.settingsExperimentalAppsSectionTitle,
-          subtitle: l10n.settingsExperimentalAppsSectionDescription,
-          onTap: () => context.push(Routes.settingsExperiments),
-        ),
-        if (showInfrastructure)
-          SettingsTile(
-            icon: Icons.dns_outlined,
-            title: l10n.settingsInfrastructureSectionTitle,
-            subtitle: l10n.settingsInfrastructureSectionDescription,
-            onTap: () => context.push(Routes.settingsInfrastructure),
-          ),
         const shad.Gap(8),
+        SettingsGroup(
+          children: [
+            SettingsTile(
+              grouped: true,
+              icon: Icons.tune_rounded,
+              title: l10n.settingsPreferencesSectionTitle,
+              subtitle: l10n.settingsPreferencesSectionDescription,
+              onTap: () => context.push(Routes.settingsPreferences),
+            ),
+            SettingsTile(
+              grouped: true,
+              icon: Icons.science_outlined,
+              title: l10n.settingsExperimentalAppsSectionTitle,
+              subtitle: l10n.settingsExperimentalAppsSectionDescription,
+              onTap: () => context.push(Routes.settingsExperiments),
+            ),
+            if (showInfrastructure)
+              SettingsTile(
+                grouped: true,
+                icon: Icons.dns_outlined,
+                title: l10n.settingsInfrastructureSectionTitle,
+                subtitle: l10n.settingsInfrastructureSectionDescription,
+                onTap: () => context.push(Routes.settingsInfrastructure),
+              ),
+          ],
+        ),
+        const shad.Gap(20),
         Text(
           l10n.settingsSupportGroup,
           style: Theme.of(context).textTheme.titleSmall,
         ),
-        SettingsTile(
-          icon: Icons.explore_outlined,
-          title: l10n.connectedOnboardingSettingsTitle,
-          subtitle: l10n.connectedOnboardingSettingsDescription,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const OnboardingPage(replay: true),
+        const shad.Gap(8),
+        SettingsGroup(
+          children: [
+            SettingsTile(
+              grouped: true,
+              icon: Icons.auto_awesome_outlined,
+              title: l10n.settingsWhatsNew,
+              subtitle: l10n.settingsWhatsNewDescription,
+              onTap: () => context.push(Routes.settingsWhatsNew),
             ),
-          ),
+            SettingsTile(
+              grouped: true,
+              icon: Icons.explore_outlined,
+              title: l10n.connectedOnboardingSettingsTitle,
+              subtitle: l10n.connectedOnboardingSettingsDescription,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const OnboardingPage(replay: true),
+                ),
+              ),
+            ),
+            SettingsTile(
+              grouped: true,
+              icon: Icons.info_outline_rounded,
+              title: l10n.settingsAboutSectionTitle,
+              subtitle: l10n.settingsAboutSectionDescription,
+              onTap: () => context.push(Routes.settingsAbout),
+            ),
+            SettingsTile(
+              grouped: true,
+              icon: Icons.logout_rounded,
+              title: l10n.settingsDangerSectionTitle,
+              subtitle: l10n.settingsDangerSectionDescription,
+              onTap: () => context.push(Routes.settingsSession),
+            ),
+          ],
         ),
-        SettingsTile(
-          icon: Icons.info_outline_rounded,
-          title: l10n.settingsAboutSectionTitle,
-          subtitle: l10n.settingsAboutSectionDescription,
-          onTap: () => context.push(Routes.settingsAbout),
-        ),
-        SettingsTile(
-          icon: Icons.logout_rounded,
-          title: l10n.settingsDangerSectionTitle,
-          subtitle: l10n.settingsDangerSectionDescription,
-          onTap: () => context.push(Routes.settingsSession),
-        ),
-      ]),
+      ],
     );
   }
 }
@@ -80,6 +103,12 @@ class _AboutSection extends StatelessWidget {
       title: l10n.settingsAboutSectionTitle,
       description: l10n.settingsAboutSectionDescription,
       children: [
+        SettingsTile(
+          icon: Icons.auto_awesome_outlined,
+          title: l10n.settingsWhatsNew,
+          subtitle: l10n.settingsWhatsNewDescription,
+          onTap: () => context.push(Routes.settingsWhatsNew),
+        ),
         SettingsTile(
           icon: Icons.info_outline_rounded,
           title: l10n.settingsAppVersion,
@@ -261,99 +290,39 @@ class _SettingsHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final palette = AppCardPalette.resolve(
-      context,
-      index: 0,
-      moduleId: 'calendar',
-    );
     final l10n = context.l10n;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          colors: [
-            palette.background,
-            theme.colorScheme.card,
-            palette.iconBackground,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: palette.border),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.background.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: theme.colorScheme.border.withValues(alpha: 0.72),
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.tune_rounded,
-                  size: 22,
-                  color: theme.colorScheme.primary,
+              Text(
+                l10n.settingsTitle,
+                style: theme.typography.large.copyWith(
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              const shad.Gap(14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.settingsTitle,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const shad.Gap(6),
-                    Text(
-                      l10n.settingsHeroDescription,
-                      style: theme.typography.textSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                        height: 1.45,
-                      ),
-                    ),
-                  ],
+              const shad.Gap(3),
+              Text(
+                l10n.settingsHeroDescription,
+                style: theme.typography.textSmall.copyWith(
+                  color: theme.colorScheme.mutedForeground,
                 ),
               ),
-              if (isRefreshing)
-                const SizedBox.square(
-                  dimension: 16,
-                  child: NovaLoadingIndicator(size: 20),
-                ),
             ],
           ),
-        ],
-      ),
+        ),
+        if (isRefreshing)
+          const SizedBox.square(
+            dimension: 16,
+            child: NovaLoadingIndicator(size: 20),
+          ),
+      ],
     );
   }
-}
-
-List<Widget> _spacedSettingsTiles(List<Widget> children) {
-  if (children.isEmpty) {
-    return const [];
-  }
-
-  final widgets = <Widget>[];
-  for (var index = 0; index < children.length; index++) {
-    if (index > 0) {
-      widgets.add(const shad.Gap(12));
-    }
-    widgets.add(children[index]);
-  }
-  return widgets;
 }
 
 String _formatVersionLabel(PackageInfo? packageInfo) {

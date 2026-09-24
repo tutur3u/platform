@@ -5728,6 +5728,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsAboutSectionDescription => 'Thông tin bản phát hành và sản phẩm của bản dựng này.';
 
   @override
+  String get settingsWhatsNew => 'Có gì mới';
+
+  @override
+  String get settingsWhatsNewDescription => 'Các thay đổi trong từng phiên bản đã phát hành.';
+
+  @override
+  String get settingsReleaseHistoryDescription => 'Xem những thay đổi của từng phiên bản, kể cả khi không có mạng.';
+
+  @override
+  String get settingsReleaseHistoryUnavailable => 'Hiện không thể xem lịch sử phát hành.';
+
+  @override
+  String get settingsReleaseNoDetails => 'Phiên bản này không có ghi chú thay đổi chi tiết.';
+
+  @override
   String get settingsVersionLabel => 'Phiên bản';
 
   @override

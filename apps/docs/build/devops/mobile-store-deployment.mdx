@@ -107,6 +107,12 @@ listed on the Overview tab before activating.
 
 ## Automatic beta rollout
 
+Mobile **Settings → What's new** reads a bundled copy of
+`apps/mobile/CHANGELOG.md` only when the user opens that screen. Release Please
+updates this history for tagged mobile releases; the app needs no changelog API,
+extra database table, or network request. TestFlight-only build numbers are
+shown as the installed version but are not separate Release Please entries.
+
 The workflow runs after relevant pushes to `production`. Retry the latest push
 run for recovery; vault OIDC validation permits production push events only.
 Other refs fail the preflight check.

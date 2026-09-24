@@ -11,7 +11,6 @@ import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
-import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/onboarding/view/onboarding_page.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
@@ -56,6 +55,9 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (section != SettingsSectionDestination.overview) {
+      return _SettingsView(section: section);
+    }
     return BlocProvider(
       create: (_) {
         final cubit = ProfileCubit(
@@ -82,7 +84,7 @@ class _SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<_SettingsView> {
-  late final Future<PackageInfo> _packageInfoFuture;
+  Future<PackageInfo>? _packageInfoFuture;
   late final SettingsRepository _settingsRepository;
   late final WorkspacePermissionsRepository _workspacePermissionsRepository;
   String? _loadedWorkspaceId;
@@ -96,17 +98,24 @@ class _SettingsViewState extends State<_SettingsView> {
     super.initState();
     _settingsRepository = SettingsRepository();
     _workspacePermissionsRepository = WorkspacePermissionsRepository();
-    _packageInfoFuture = PackageInfo.fromPlatform();
+    if (widget.section == SettingsSectionDestination.about) {
+      _packageInfoFuture = PackageInfo.fromPlatform();
+    }
     final workspaceId = context
         .read<WorkspaceCubit>()
         .state
         .currentWorkspace
         ?.id;
-    if (workspaceId != null) {
+    if (widget.section == SettingsSectionDestination.preferences &&
+        workspaceId != null) {
       unawaited(_loadWorkspaceCalendarPreference(workspaceId));
     }
-    unawaited(_loadDefaultTaskBoardNavigationPreference());
-    unawaited(_loadMobileVersionsAccess(workspaceId, forceReload: true));
+    if (widget.section == SettingsSectionDestination.preferences) {
+      unawaited(_loadDefaultTaskBoardNavigationPreference());
+    }
+    if (widget.section == SettingsSectionDestination.overview) {
+      unawaited(_loadMobileVersionsAccess(workspaceId, forceReload: true));
+    }
   }
 
   @override
@@ -119,41 +128,49 @@ class _SettingsViewState extends State<_SettingsView> {
               previous.currentWorkspace?.id != current.currentWorkspace?.id,
           listener: (context, state) {
             final workspaceId = state.currentWorkspace?.id;
-            if (workspaceId != null) {
+            if (widget.section == SettingsSectionDestination.preferences &&
+                workspaceId != null) {
               unawaited(_loadWorkspaceCalendarPreference(workspaceId));
             }
-            unawaited(_loadMobileVersionsAccess(workspaceId));
-          },
-        ),
-        BlocListener<ProfileCubit, ProfileState>(
-          listenWhen: (previous, current) =>
-              previous.profile != current.profile ||
-              previous.lastUpdatedAt != current.lastUpdatedAt,
-          listener: (context, state) {
-            final profile = state.profile;
-            if (profile == null) {
-              return;
+            if (widget.section == SettingsSectionDestination.overview) {
+              unawaited(_loadMobileVersionsAccess(workspaceId));
             }
-            unawaited(
-              context.read<ShellProfileCubit>().applyExternalProfile(
-                profile,
-                lastUpdatedAt: state.lastUpdatedAt,
-                isFromCache: state.isFromCache,
-              ),
-            );
           },
         ),
+        if (widget.section == SettingsSectionDestination.overview)
+          BlocListener<ProfileCubit, ProfileState>(
+            listenWhen: (previous, current) =>
+                previous.profile != current.profile ||
+                previous.lastUpdatedAt != current.lastUpdatedAt,
+            listener: (context, state) {
+              final profile = state.profile;
+              if (profile == null) {
+                return;
+              }
+              unawaited(
+                context.read<ShellProfileCubit>().applyExternalProfile(
+                  profile,
+                  lastUpdatedAt: state.lastUpdatedAt,
+                  isFromCache: state.isFromCache,
+                ),
+              );
+            },
+          ),
       ],
       child: shad.Scaffold(
         child: FutureBuilder<PackageInfo>(
           future: _packageInfoFuture,
           builder: (context, snapshot) {
             final packageInfo = snapshot.data;
-            final financePreferencesCubit = context
-                .watch<FinancePreferencesCubit?>();
+            final financePreferencesCubit =
+                widget.section == SettingsSectionDestination.preferences
+                ? context.watch<FinancePreferencesCubit?>()
+                : null;
             final experimentalAppsState =
-                context.watch<ExperimentalAppsCubit?>()?.state ??
-                const ExperimentalAppsState();
+                widget.section == SettingsSectionDestination.experiments
+                ? context.watch<ExperimentalAppsCubit?>()?.state ??
+                      const ExperimentalAppsState()
+                : const ExperimentalAppsState();
 
             return NovaRefreshIndicator(
               onRefresh: () => _refresh(context),
@@ -415,12 +432,16 @@ class _SettingsViewState extends State<_SettingsView> {
     final currentWorkspaceId = workspaceCubit.state.currentWorkspace?.id;
 
     await Future.wait([
-      context.read<ProfileCubit>().loadProfile(forceRefresh: true),
+      if (widget.section == SettingsSectionDestination.overview)
+        context.read<ProfileCubit>().loadProfile(forceRefresh: true),
       workspaceCubit.loadWorkspaces(forceRefresh: true),
       workspaceCubit.refreshLimits(),
-      calendarCubit.loadUserPreference(),
-      _loadMobileVersionsAccess(currentWorkspaceId, forceReload: true),
-      if (currentWorkspaceId != null)
+      if (widget.section == SettingsSectionDestination.preferences)
+        calendarCubit.loadUserPreference(),
+      if (widget.section == SettingsSectionDestination.overview)
+        _loadMobileVersionsAccess(currentWorkspaceId, forceReload: true),
+      if (widget.section == SettingsSectionDestination.preferences &&
+          currentWorkspaceId != null)
         calendarCubit.loadWorkspacePreference(currentWorkspaceId),
     ]);
   }
