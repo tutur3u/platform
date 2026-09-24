@@ -62,8 +62,9 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
       final hasRecentReaction = _call.hasRecentReaction;
       if (_call.roomExpiresAt != null ||
           hasRecentReaction ||
-          _hadRecentReaction)
+          _hadRecentReaction) {
         setState(() {});
+      }
       _hadRecentReaction = hasRecentReaction;
     });
   }

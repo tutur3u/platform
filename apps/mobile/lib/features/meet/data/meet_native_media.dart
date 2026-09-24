@@ -209,14 +209,18 @@ class MeetNativeMedia extends ChangeNotifier {
       final publications = <Map<String, String>>[];
       for (final (name, track, transceiver) in transceivers) {
         final mid = negotiated[transceiver.sender.senderId];
+        final kind = track.kind;
         if (mid == null || mid.isEmpty) {
           throw StateError('SFU track has no negotiated MID: $name');
+        }
+        if (kind == null || kind.isEmpty) {
+          throw StateError('SFU track has no media kind: $name');
         }
         publications.add({
           'location': 'local',
           'mid': mid,
           'trackName': name,
-          'kind': track.kind,
+          'kind': kind,
         });
       }
       final response = await signaling.request({
@@ -319,8 +323,8 @@ class MeetNativeMedia extends ChangeNotifier {
       _serialize(() async {
         var mid = event.transceiver?.mid;
         if (mid == null || mid.isEmpty || !_midOwners.containsKey(mid)) {
-          final id = event.receiver.receiverId;
-          if (_subscriber != null) {
+          final id = event.receiver?.receiverId;
+          if (id != null && _subscriber != null) {
             for (final transceiver in await _subscriber!.getTransceivers()) {
               if (transceiver.receiver.receiverId == id) {
                 mid = transceiver.mid;
