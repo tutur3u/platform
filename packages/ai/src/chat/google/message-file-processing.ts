@@ -52,11 +52,16 @@ export function resolveAttachmentMediaType(
   fileName: string,
   metadataMediaType?: string | null
 ): string {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  // Storage accepts the MP4 container MIME for iOS recordings. Gemini's audio
+  // input contract identifies that same .m4a content as audio/m4a.
+  if (extension === 'm4a' && metadataMediaType === 'audio/mp4') {
+    return 'audio/m4a';
+  }
   if (metadataMediaType && metadataMediaType !== UNKNOWN_MEDIA_TYPE) {
     return metadataMediaType;
   }
 
-  const extension = fileName.split('.').pop()?.toLowerCase();
   if (extension && MEDIA_TYPE_BY_EXTENSION[extension]) {
     return MEDIA_TYPE_BY_EXTENSION[extension];
   }

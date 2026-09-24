@@ -327,12 +327,6 @@ export function createPOST(
       const chatId = resolvedChatId.chatId;
 
       const moveFilesError = await moveTempFilesToThread({
-        loadThread: () =>
-          sbAdmin
-            .from('ai_chat_messages')
-            .select('role, ai_chats!chat_id!inner(creator_id)')
-            .eq('chat_id', chatId)
-            .eq('ai_chats.creator_id', user.id),
         listFiles: (tempStoragePath) =>
           sbAdmin.storage.from('workspaces').list(tempStoragePath),
         moveFile: (fromPath, toPath) =>

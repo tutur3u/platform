@@ -63,11 +63,7 @@ describe('resolveChatIdForUser', () => {
 });
 
 describe('moveTempFilesToThread', () => {
-  it('moves every temp file into the chat folder when a thread exists', async () => {
-    const loadThread = vi.fn().mockResolvedValue({
-      data: [{ role: 'user' }],
-      error: null,
-    });
+  it('moves files before the first message exists in a new chat', async () => {
     const listFiles = vi.fn().mockResolvedValue({
       data: [{ name: 'one.pdf' }, { name: 'two.png' }],
       error: null,
@@ -75,7 +71,6 @@ describe('moveTempFilesToThread', () => {
     const moveFile = vi.fn().mockResolvedValue({ error: null });
 
     const response = await moveTempFilesToThread({
-      loadThread,
       listFiles,
       moveFile,
       wsId: '00000000-0000-0000-0000-000000000001',
@@ -101,12 +96,10 @@ describe('moveTempFilesToThread', () => {
   });
 
   it('skips storage listing when the workspace id is absent', async () => {
-    const loadThread = vi.fn();
     const listFiles = vi.fn();
     const moveFile = vi.fn();
 
     const response = await moveTempFilesToThread({
-      loadThread,
       listFiles,
       moveFile,
       wsId: undefined,
@@ -115,8 +108,28 @@ describe('moveTempFilesToThread', () => {
     });
 
     expect(response).toBeNull();
-    expect(loadThread).not.toHaveBeenCalled();
     expect(listFiles).not.toHaveBeenCalled();
     expect(moveFile).not.toHaveBeenCalled();
+  });
+
+  it('does not ask the model to answer when an attachment move fails', async () => {
+    const listFiles = vi.fn().mockResolvedValue({
+      data: [{ name: 'voice-message.m4a' }],
+      error: null,
+    });
+    const moveFile = vi.fn().mockResolvedValue({
+      error: { message: 'storage unavailable' },
+    });
+
+    const response = await moveTempFilesToThread({
+      listFiles,
+      moveFile,
+      wsId: '00000000-0000-0000-0000-000000000001',
+      chatId: '11111111-1111-1111-1111-111111111111',
+      userId: 'user-1',
+    });
+
+    expect(response?.status).toBe(502);
+    expect(await response?.text()).toContain('Please retry');
   });
 });
