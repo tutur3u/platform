@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { createRemoteJWKSet, type JWTPayload, jwtVerify } from 'jose';
+import { createRemoteJWKSet, errors, type JWTPayload, jwtVerify } from 'jose';
 import {
   MOBILE_DEPLOYMENT_GITHUB_ENVIRONMENT,
   MOBILE_DEPLOYMENT_OIDC_AUDIENCE,
@@ -11,7 +11,8 @@ import {
 
 const GITHUB_OIDC_ISSUER = 'https://token.actions.githubusercontent.com';
 const GITHUB_OIDC_JWKS = createRemoteJWKSet(
-  new URL(`${GITHUB_OIDC_ISSUER}/.well-known/jwks`)
+  new URL(`${GITHUB_OIDC_ISSUER}/.well-known/jwks`),
+  { timeoutDuration: 15000 }
 );
 
 export class MobileDeploymentOidcError extends Error {
@@ -112,7 +113,16 @@ export async function verifyGitHubOidcToken(token: string) {
       issuer: GITHUB_OIDC_ISSUER,
     });
     payload = verified.payload;
-  } catch {
+  } catch (error) {
+    if (error instanceof errors.JWKSTimeout) {
+      throw new MobileDeploymentOidcError('Unauthorized', 'jwks_timeout');
+    }
+    if (error instanceof errors.JWKSNoMatchingKey) {
+      throw new MobileDeploymentOidcError('Unauthorized', 'key_unavailable');
+    }
+    if (error instanceof errors.JWTExpired) {
+      throw new MobileDeploymentOidcError('Unauthorized', 'token_expired');
+    }
     throw new MobileDeploymentOidcError('Unauthorized', 'invalid_signature');
   }
 
