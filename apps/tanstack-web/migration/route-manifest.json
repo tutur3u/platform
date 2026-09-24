@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 515,
+        "legacyNext": 517,
         "migrated": 62,
-        "percentComplete": 12.56,
-        "remaining": 515,
+        "percentComplete": 12.52,
+        "remaining": 517,
         "terminal": 74,
-        "total": 589,
+        "total": 591,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 524,
+        "legacyNext": 526,
         "migrated": 67,
-        "percentComplete": 13.1,
-        "remaining": 524,
+        "percentComplete": 13.06,
+        "remaining": 526,
         "terminal": 79,
-        "total": 603,
+        "total": 605,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 599,
+      "legacyNext": 601,
       "migrated": 215,
-      "percentComplete": 27.66,
-      "remaining": 599,
+      "percentComplete": 27.59,
+      "remaining": 601,
       "terminal": 229,
-      "total": 828,
+      "total": 830,
       "unknownStatus": 0
     }
   },
@@ -3749,11 +3749,29 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/meetings/:meetingId/assistant:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/meetings/:meetingId/assistant",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/meetings/:meetingId/assistant/personal:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/personal/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/meetings/:meetingId/assistant/personal",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/personal/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/meetings/:meetingId/assistant/review:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/review/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/meetings/:meetingId/assistant/review",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/review/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7895,20 +7913,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 589,
+    "apiRoutes": 591,
     "cronRoutes": 9,
     "layouts": 67,
     "pages": 154,
-    "routeHandlers": 603,
+    "routeHandlers": 605,
     "methodCounts": {
-      "GET": 302,
+      "GET": 303,
       "HEAD": 4,
-      "POST": 297,
+      "POST": 299,
       "PUT": 54,
       "PATCH": 63,
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 828
+    "total": 830
   }
 }

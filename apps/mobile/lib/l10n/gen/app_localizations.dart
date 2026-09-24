@@ -14755,6 +14755,84 @@ abstract class AppLocalizations {
   /// **'Post to room chat'**
   String get meetShareConfirm;
 
+  /// No description provided for @meetMiraThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira is preparing a reply…'**
+  String get meetMiraThinking;
+
+  /// No description provided for @meetMiraReplyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira couldn\'t reply to the room message.'**
+  String get meetMiraReplyFailed;
+
+  /// No description provided for @meetMiraRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Mira'**
+  String get meetMiraRetry;
+
+  /// No description provided for @meetMiraReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Private action reviews'**
+  String get meetMiraReviews;
+
+  /// No description provided for @meetMiraReviewsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see these drafts and requests. Review the workspace actions before approving them.'**
+  String get meetMiraReviewsHint;
+
+  /// No description provided for @meetMiraReviewFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load Mira\'s private reviews.'**
+  String get meetMiraReviewFailed;
+
+  /// No description provided for @meetMiraReviewRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh reviews'**
+  String get meetMiraReviewRefresh;
+
+  /// No description provided for @meetMiraApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve actions'**
+  String get meetMiraApprove;
+
+  /// No description provided for @meetMiraDeny.
+  ///
+  /// In en, this message translates to:
+  /// **'Deny actions'**
+  String get meetMiraDeny;
+
+  /// No description provided for @meetMiraDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard draft'**
+  String get meetMiraDiscard;
+
+  /// No description provided for @meetMiraApprovalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve workspace actions?'**
+  String get meetMiraApprovalTitle;
+
+  /// No description provided for @meetMiraApprovalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira will run the listed actions in this workspace. Check every input before approving.'**
+  String get meetMiraApprovalHint;
+
+  /// No description provided for @meetMiraActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update Mira\'s review. Please try again.'**
+  String get meetMiraActionFailed;
+
   /// No description provided for @meetOpenLink.
   ///
   /// In en, this message translates to:
