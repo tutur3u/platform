@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { slideFromHash, subscriptionEstimate } from './pitch-model';
+import { SLIDE_IDS, slideFromHash, subscriptionEstimate } from './pitch-model';
 
 const prices = {
   plus: { monthly: 9, annual: 90 },
@@ -8,7 +8,7 @@ const prices = {
 
 describe('pitch share links and catalog billing illustration', () => {
   it('opens named slides and safely falls back for unknown fragments', () => {
-    expect(slideFromHash('#pricing')).toBe(6);
+    expect(slideFromHash('#pricing')).toBe(SLIDE_IDS.indexOf('pricing'));
     expect(slideFromHash('#unknown')).toBe(0);
     expect(slideFromHash('')).toBe(0);
   });

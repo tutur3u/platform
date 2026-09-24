@@ -1,5 +1,23 @@
+.deck,
+.slide {
+  --background: #f8f8f4;
+  --foreground: #181a1b;
+  --card: #ffffff;
+  --muted: #edede7;
+  --muted-foreground: #5a5e61;
+  --border: #181a1b20;
+  --ring: var(--pitch-innovation);
+}
+.deck[data-palette="dark"],
+.slide[data-palette="dark"] {
+  --background: #101214;
+  --foreground: #f6f6ef;
+  --card: #1b1e20;
+  --muted: #292d30;
+  --muted-foreground: #b5babd;
+  --border: #ffffff24;
+}
 .deck {
-  --pitch-accent: var(--pitch-innovation);
   position: relative;
   min-height: 100svh;
   display: flex;
@@ -8,65 +26,49 @@
   color: var(--foreground);
   overflow-x: clip;
   isolation: isolate;
-}
-.deck::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  background:
-    radial-gradient(
-      ellipse at 85% 20%,
-      color-mix(in srgb, var(--pitch-innovation) 14%, transparent),
-      transparent 50%
-    ),
-    radial-gradient(
-      ellipse at 15% 80%,
-      color-mix(in srgb, var(--pitch-growth) 9%, transparent),
-      transparent 45%
-    ),
-    radial-gradient(
-      ellipse at 65% 95%,
-      color-mix(in srgb, var(--pitch-impact) 8%, transparent),
-      transparent 45%
-    );
+  transition:
+    background 0.4s,
+    color 0.4s;
 }
 .header,
 .footer {
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  padding: 1.5rem 4vw;
+  padding: 1.1rem 3.5vw;
 }
 .header {
   border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 2;
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  font-weight: 850;
-  font-size: 1.6rem;
-  letter-spacing: -0.04em;
+  font-weight: 750;
+  font-size: 1.45rem;
+  letter-spacing: -0.055em;
   text-decoration: none;
-}
-.brand span {
-  font-size: 0.6rem;
-  vertical-align: super;
-  margin-left: 0.3rem;
 }
 .edition,
 .eyebrow,
-.label,
-.help {
+.help,
+.chapter {
   font-family: var(--font-mono, monospace);
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 .edition {
   color: var(--muted-foreground);
+  padding-left: 1.5rem;
+  border-left: 1px solid var(--border);
+}
+.chapter {
+  margin-left: auto;
+  color: var(--muted-foreground);
+  font-size: 0.55rem;
 }
 .tools,
 .controls {
@@ -74,16 +76,13 @@
   align-items: center;
   gap: 0.35rem;
 }
-.tools {
-  margin-left: auto;
-}
 .deck button {
   cursor: pointer;
   border: 1px solid var(--border);
-  border-radius: 0.6rem;
+  border-radius: 50%;
   padding: 0.7rem;
-  background: var(--background);
-  color: var(--foreground);
+  background: transparent;
+  color: inherit;
   transition:
     background 0.2s,
     transform 0.2s;
@@ -92,24 +91,24 @@
   background: var(--muted);
 }
 .deck button:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: default;
 }
 .deck button:focus-visible,
 .deck a:focus-visible,
-.deck input:focus-visible {
-  outline: 2px solid var(--ring);
+.deck input:focus-visible,
+.deck summary:focus-visible {
+  outline: 2px solid var(--pitch-innovation);
   outline-offset: 4px;
 }
 .deck button[aria-pressed="true"],
 .deck button[aria-current="step"] {
   background: color-mix(
     in srgb,
-    var(--pitch-innovation) 20%,
+    var(--pitch-innovation) 14%,
     var(--background)
   );
   border-color: var(--pitch-innovation);
-  color: var(--foreground);
 }
 .main {
   flex: 1;
@@ -117,14 +116,60 @@
   align-items: center;
 }
 .slide {
+  position: relative;
+  isolation: isolate;
   display: none;
-  grid-template-columns: 1.05fr 1fr;
+  grid-template-columns: 1.12fr 1fr;
   align-items: center;
-  gap: 5vw;
-  padding: 5vw 6vw;
-  min-height: 70svh;
-  --tone: var(--pitch-innovation);
+  gap: 6vw;
+  padding: 4.5vw 6vw;
+  min-height: calc(100svh - 155px);
+  color: var(--foreground);
+  background: var(--background);
 }
+.slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse at 100% 0%,
+      color-mix(in srgb, var(--pitch-energy) 9%, transparent),
+      transparent 45%
+    ),
+    radial-gradient(
+      ellipse at 0% 100%,
+      color-mix(in srgb, var(--pitch-growth) 7%, transparent),
+      transparent 50%
+    );
+}
+.slide[data-palette="dark"]::before {
+  background:
+    radial-gradient(
+      ellipse at 100% 0%,
+      color-mix(in srgb, var(--pitch-innovation) 15%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 0% 100%,
+      color-mix(in srgb, var(--pitch-impact) 13%, transparent),
+      transparent 55%
+    );
+}
+.slide[data-slide="opening"] {
+  grid-template-columns: 1.25fr 1fr;
+  gap: 1vw;
+}
+.slide[data-slide="opening"]::before {
+  background: radial-gradient(
+    ellipse at -10% 100%,
+    color-mix(in srgb, var(--pitch-energy) 22%, transparent),
+    transparent 45%
+  );
+}
+.story,
 .visual {
   min-width: 0;
 }
@@ -133,7 +178,7 @@
 }
 .active .story,
 .active .visual {
-  animation: enter 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: enter 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .active .visual {
   animation-delay: 0.08s;
@@ -142,65 +187,159 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 2.5rem;
-  color: var(--foreground);
+  margin-bottom: 2rem;
+  color: var(--muted-foreground);
 }
 .eyebrow span {
-  display: inline-grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
+  font-size: 0.55rem;
+  padding: 0.45rem 0.5rem;
   border: 1px solid var(--border);
-  border-radius: 0.6rem;
-  border-color: var(--tone);
-  background: color-mix(in srgb, var(--tone) 15%, transparent);
+  border-radius: 0.3rem;
 }
 .story h1 {
-  font-size: clamp(2.6rem, 4.4vw, 6rem);
-  font-weight: 750;
-  letter-spacing: -0.055em;
-  line-height: 1.03;
+  font-size: clamp(2.5rem, 4.35vw, 5.8rem);
+  font-weight: 580;
+  letter-spacing: -0.065em;
+  line-height: 1.05;
   white-space: pre-line;
   margin: 0;
   outline: none;
   text-wrap: balance;
 }
-.story h1::after {
-  content: "";
-  display: block;
-  width: 5rem;
-  height: 0.35rem;
-  margin-top: 1.5rem;
-  border-radius: 1rem;
-  background: linear-gradient(
-    90deg,
-    var(--pitch-innovation) 25%,
-    var(--pitch-growth) 25% 50%,
-    var(--pitch-energy) 50% 75%,
-    var(--pitch-impact) 75%
-  );
+.slide[data-slide="opening"] h1,
+.slide[data-slide="closing"] h1 {
+  font-size: clamp(3.5rem, 5.6vw, 7.7rem);
+  letter-spacing: -0.07em;
 }
 .body {
-  font-size: clamp(1rem, 1.25vw, 1.35rem);
-  line-height: 1.7;
+  font-size: clamp(0.95rem, 1.15vw, 1.2rem);
+  line-height: 1.75;
   color: var(--muted-foreground);
-  max-width: 34rem;
-  margin-top: 2rem;
+  max-width: 33rem;
+  margin: 1.7rem 0 0;
 }
 .badge {
-  display: inline-block;
-  margin-top: 1.5rem;
-  padding: 0.5rem 0.8rem;
-  border: 1px solid color-mix(in srgb, var(--tone) 45%, var(--border));
-  background: color-mix(in srgb, var(--tone) 9%, transparent);
-  border-radius: 2rem;
-  font-size: 0.75rem;
-}
-.disclaimer {
-  display: block;
-  margin-top: 1.5rem;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 1.7rem;
+  font-size: 0.62rem;
+  line-height: 1.6;
   color: var(--muted-foreground);
-  font-size: 0.7rem;
+}
+.badge i {
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--pitch-growth);
+  margin-top: 0.35rem;
+}
+.links {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+.links a,
+.deck .links button {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.9rem 1.3rem;
+  border-radius: 2rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+}
+.links a,
+.deck :where(.slide[data-slide="opening"]) .links button {
+  background: var(--foreground);
+  color: var(--background);
+}
+.footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--background) 94%, transparent);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.progress {
+  display: flex;
+  flex: 1;
+  max-width: 450px;
+  gap: 3px;
+}
+.deck .progress button {
+  flex: 1;
+  min-width: 8px;
+  height: 2.4rem;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  position: relative;
+  background: transparent;
+}
+.progress button::after {
+  content: "";
+  position: absolute;
+  height: 2px;
+  left: 0;
+  right: 0;
+  top: 50%;
+  background: var(--border);
+}
+.progress button[aria-current="step"]::after {
+  background: var(--tone);
+  height: 4px;
+}
+.help {
+  font-size: 0.48rem;
+  color: var(--muted-foreground);
+  letter-spacing: 0.02em;
+}
+.controls {
+  margin-left: auto;
+}
+.controls > span {
+  font-size: 0.65rem;
+  font-family: monospace;
+  margin-right: 0.65rem;
+  font-variant-numeric: tabular-nums;
+}
+.overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  padding: 1.5rem 4vw;
+  border-bottom: 1px solid var(--border);
+}
+.deck .overview button {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.75rem;
+  border-radius: 0.5rem;
+  padding: 0.85rem;
+}
+.overview button span {
+  opacity: 0.55;
+  font-family: monospace;
+}
+.notes {
+  margin: 0 4vw 1.5rem;
+  padding: 1rem 1.5rem;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+}
+.notes p {
+  line-height: 1.6;
+  margin-top: 0.5rem;
 }
 .plans {
   display: grid;
@@ -208,29 +347,17 @@
   gap: 0.7rem;
 }
 .plan {
-  background:
-    radial-gradient(
-      ellipse at top right,
-      color-mix(in srgb, var(--tone) 14%, transparent),
-      transparent
-    ),
-    var(--card);
-  border: 1px solid color-mix(in srgb, var(--tone) 40%, var(--border));
-  border-top: 3px solid var(--tone);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--tone);
   padding: 1.5rem;
-  border-radius: 1rem;
+  border-radius: 0.8rem;
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
 }
 .plan:nth-child(3) {
-  background: color-mix(
-    in srgb,
-    var(--pitch-innovation) 20%,
-    var(--background)
-  );
-  border-color: var(--pitch-innovation);
-  color: var(--foreground);
+  background: color-mix(in srgb, var(--pitch-innovation) 8%, var(--card));
 }
 .plan strong {
   font-size: clamp(1.5rem, 3vw, 3rem);
@@ -239,12 +366,16 @@
 .plan p,
 .plan small {
   font-size: 0.7rem;
-  opacity: 0.75;
+  color: var(--muted-foreground);
 }
 .calculator {
   border: 1px solid var(--border);
+  background: var(--card);
   border-radius: 1rem;
   padding: 2rem;
+}
+.deck .calculator button {
+  border-radius: 0.5rem;
 }
 .row {
   display: flex;
@@ -273,7 +404,7 @@
   padding: 2rem 0;
 }
 .track {
-  height: 0.85rem;
+  height: 0.5rem;
   background: var(--muted);
   border-radius: 1rem;
   margin: 0.65rem 0;
@@ -286,109 +417,6 @@
   border-radius: inherit;
   transition: width 0.35s ease;
 }
-.footer {
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-  background: color-mix(in srgb, var(--background) 92%, transparent);
-  backdrop-filter: blur(16px);
-  border-top: 1px solid var(--border);
-  flex-wrap: wrap;
-}
-.progress {
-  display: flex;
-  gap: 0.3rem;
-}
-.deck .progress button {
-  width: 1.6rem;
-  height: 2.75rem;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  position: relative;
-  background: transparent;
-}
-.progress button::after {
-  content: "";
-  position: absolute;
-  height: 3px;
-  left: 0;
-  right: 0;
-  top: 50%;
-  background: var(--border);
-}
-.progress button[aria-current="step"]::after {
-  background: var(--tone, var(--pitch-innovation));
-}
-.help {
-  font-size: 0.5rem;
-  color: var(--muted-foreground);
-  letter-spacing: 0.04em;
-}
-.controls {
-  margin-left: auto;
-}
-.controls > span {
-  font-size: 0.7rem;
-  font-family: monospace;
-  margin-right: 0.8rem;
-}
-.overview {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.6rem;
-  padding: 1.5rem 4vw;
-  border-bottom: 1px solid var(--border);
-}
-.deck .overview button {
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  font-size: 0.8rem;
-  border-top: 3px solid var(--tone);
-}
-.overview button span {
-  opacity: 0.5;
-  font-family: monospace;
-}
-.notes {
-  margin: 0 4vw 1.5rem;
-  padding: 1rem 1.5rem;
-  border: 1px solid var(--border);
-  background: var(--muted);
-  border-radius: 0.75rem;
-  font-size: 0.85rem;
-}
-.notes p {
-  line-height: 1.6;
-  margin-top: 0.5rem;
-}
-.links {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-top: 2rem;
-}
-.links a,
-.deck .links button {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.9rem 1.25rem;
-  border-radius: 0.6rem;
-  font-size: 0.85rem;
-}
-.links a {
-  background: color-mix(
-    in srgb,
-    var(--pitch-innovation) 20%,
-    var(--background)
-  );
-  border-color: var(--pitch-innovation);
-  color: var(--foreground);
-}
 .confetti {
   position: fixed;
   inset: 0;
@@ -400,57 +428,166 @@
 @keyframes enter {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-@keyframes float {
-  to {
-    transform: translateY(-12px);
+
+.slide:is(
+  [data-slide="workforce"],
+  [data-slide="readiness"],
+  [data-slide="business"],
+  [data-slide="evidence"]
+) {
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+}
+.slide:is(
+    [data-slide="workforce"],
+    [data-slide="readiness"],
+    [data-slide="business"],
+    [data-slide="evidence"]
+  )
+  .story {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  column-gap: 6vw;
+  align-items: center;
+}
+.slide:is(
+    [data-slide="workforce"],
+    [data-slide="readiness"],
+    [data-slide="business"],
+    [data-slide="evidence"]
+  )
+  .eyebrow {
+  grid-column: 1 / -1;
+}
+.slide:is(
+    [data-slide="workforce"],
+    [data-slide="readiness"],
+    [data-slide="business"],
+    [data-slide="evidence"]
+  )
+  .body {
+  margin-top: 0;
+}
+.slide:is(
+    [data-slide="workforce"],
+    [data-slide="readiness"],
+    [data-slide="business"],
+    [data-slide="evidence"]
+  )
+  .badge {
+  grid-column: 1 / -1;
+}
+@media (min-width: 1600px) {
+  .slide {
+    padding: 5vw 8vw;
+  }
+}
+@media (max-width: 1100px) {
+  .chapter,
+  .help {
+    display: none;
+  }
+  .tools {
+    margin-left: auto;
+  }
+  .slide {
+    gap: 4vw;
   }
 }
 @media (max-width: 800px) {
-  .slide {
+  .header {
+    padding: 1rem 5vw;
+    gap: 0.75rem;
+  }
+  .brand {
+    font-size: 1.2rem;
+  }
+  .brand img {
+    width: 28px;
+    height: 28px;
+  }
+  .slide,
+  .slide[data-slide="opening"] {
     grid-template-columns: 1fr;
     padding: 2.5rem 6vw;
     gap: 2rem;
   }
   .story h1 {
-    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-size: clamp(2.5rem, 7.8vw, 4.5rem);
+  }
+  .slide[data-slide="opening"] h1,
+  .slide[data-slide="closing"] h1 {
+    font-size: clamp(3rem, 9.7vw, 5rem);
   }
   .eyebrow {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
   }
   .body {
     margin-top: 1.25rem;
   }
-  .edition,
-  .help {
+  .slide:is(
+      [data-slide="workforce"],
+      [data-slide="readiness"],
+      [data-slide="business"],
+      [data-slide="evidence"]
+    )
+    .story {
+    display: block;
+  }
+  .slide:is(
+      [data-slide="workforce"],
+      [data-slide="readiness"],
+      [data-slide="business"],
+      [data-slide="evidence"]
+    )
+    .body {
+    margin-top: 1.25rem;
+  }
+
+  .edition {
     display: none;
   }
   .overview {
     grid-template-columns: 1fr 1fr;
   }
   .footer {
-    gap: 0.5rem;
+    gap: 0.3rem;
+    padding: 0.7rem 5vw;
   }
   .progress {
-    gap: 0.1rem;
+    max-width: none;
+    flex-basis: 100%;
   }
   .deck .progress button {
-    width: 1.5rem;
+    height: 1rem;
+    min-width: 6px;
+  }
+  .controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .controls > span {
+    margin-right: auto;
   }
   .calculator {
     padding: 1.2rem;
   }
   .tools {
-    gap: 0.2rem;
+    gap: 0.15rem;
+  }
+  .deck .tools button {
+    padding: 0.6rem;
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .deck,
   .deck .slide *,
   .deck button,
   .deck *::after {
@@ -460,24 +597,12 @@
 }
 @media print {
   @page {
-    size: landscape;
-    margin: 12mm;
+    size: A4 landscape;
+    margin: 8mm;
   }
   .deck {
-    --background: white;
-    --card: white;
-    --foreground: black;
-    --muted: #f0f0f0;
-    --muted-foreground: #444;
-    --border: #ccc;
     display: block;
     background: white;
-    color: black;
-  }
-  .plan:nth-child(3),
-  .deck button[aria-pressed="true"] {
-    background: transparent;
-    color: black;
   }
   .header,
   .footer,
@@ -490,24 +615,35 @@
   .main {
     display: block;
   }
-  .slide {
+  .slide,
+  .slide[data-slide="opening"] {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.1fr 1fr;
     break-after: page;
     min-height: 0;
-    height: 170mm;
-    padding: 8mm;
-    gap: 10mm;
+    height: 190mm;
+    padding: 10mm;
+    gap: 8mm;
   }
-  .story h1 {
-    font-size: 34pt;
+  .story h1,
+  .slide[data-slide="opening"] h1,
+  .slide[data-slide="closing"] h1 {
+    font-size: 32pt;
   }
   .body {
-    font-size: 12pt;
+    font-size: 11pt;
+  }
+  .badge {
+    font-size: 8pt;
   }
   .deck .slide * {
     animation: none;
     print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .slide {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
   .slide:last-child {
     break-after: auto;
