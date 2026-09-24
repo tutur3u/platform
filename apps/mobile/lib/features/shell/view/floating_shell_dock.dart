@@ -35,6 +35,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   Timer? _returnTimer;
   bool _hidden = false;
   bool _headerClearanceConsumed = false;
+  bool _atTopWhileHidden = false;
   double _travel = 0;
 
   @override
@@ -45,6 +46,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
       _returnTimer?.cancel();
       _hidden = false;
       _headerClearanceConsumed = false;
+      _atTopWhileHidden = false;
       _travel = 0;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_hidden) widget.onVisibilityChanged?.call(true);
@@ -60,9 +62,13 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
 
   void _reveal() {
     if (mounted && _hidden) {
-      setState(() => _hidden = false);
+      setState(() {
+        _hidden = false;
+        if (_atTopWhileHidden) _headerClearanceConsumed = false;
+      });
       widget.onVisibilityChanged?.call(true);
     }
+    _atTopWhileHidden = false;
     _travel = 0;
   }
 
@@ -72,6 +78,9 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
         (widget.bottomInset == 0 && widget.header == null) ||
         MediaQuery.of(context).accessibleNavigation) {
       return false;
+    }
+    if (_hidden) {
+      _atTopWhileHidden = notification.metrics.pixels <= 0;
     }
     if (_headerClearanceConsumed &&
         notification is ScrollEndNotification &&

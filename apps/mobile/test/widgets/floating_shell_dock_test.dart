@@ -9,6 +9,7 @@ void main() {
     WidgetTester tester, {
     Size size = const Size(390, 844),
     bool showHeader = false,
+    ScrollController? scrollController,
     ValueChanged<bool>? onVisibilityChanged,
   }) async {
     tester.view.physicalSize = size;
@@ -40,6 +41,7 @@ void main() {
             ),
             child: Builder(
               builder: (context) => ListView(
+                controller: scrollController,
                 padding: EdgeInsets.fromLTRB(
                   16,
                   16,
@@ -139,6 +141,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 1);
     expect(tester.getRect(find.byType(ListView)), expanded);
+  });
+
+  testWidgets('jumping to top restores clearance when header returns', (
+    tester,
+  ) async {
+    final scrollController = ScrollController();
+    addTearDown(scrollController.dispose);
+    await mount(tester, showHeader: true, scrollController: scrollController);
+    final initialTop = tester.getRect(find.byType(ListView)).top;
+    await tester.drag(find.byType(ListView), const Offset(0, -160));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(tester.getRect(find.byType(ListView)).top, 0);
+
+    scrollController.jumpTo(0);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(find.byType(ListView)).top, initialTop);
   });
 
   testWidgets('route handoff previews never retain old action callbacks', (
