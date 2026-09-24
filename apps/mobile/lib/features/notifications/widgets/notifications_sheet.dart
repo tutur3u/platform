@@ -377,7 +377,7 @@ class _NotificationsViewState extends State<NotificationsView> {
     }
 
     widget.parentContext.go(route);
-    if (notification.isUnread) {
+    if (notification.isUnread && notification.entityType != 'mail_message') {
       unawaited(archiveOpenedNotification(notification.id));
     }
   }

@@ -5,6 +5,7 @@ const mailboxId = '987b57f5-0d1b-4ca9-8824-d874af4d2db9';
 const threadId = '94bec149-0dfb-4a06-b324-8f9b44d393ad';
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
+  createAdminClient: vi.fn(),
   from: vi.fn(),
   update: vi.fn(),
   eq: vi.fn(),
@@ -18,7 +19,7 @@ vi.mock('@/lib/api-auth', () => ({
   resolveSessionAuthContext: mocks.auth,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: async () => ({ from: mocks.from }),
+  createAdminClient: mocks.createAdminClient,
 }));
 
 import { POST } from './route';
@@ -36,6 +37,7 @@ const request = (body: unknown, origin?: string) =>
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.auth.mockResolvedValue({ ok: true, user: { id: userId } });
+  mocks.createAdminClient.mockResolvedValue({ from: mocks.from });
   mocks.from.mockReturnValue(mocks);
   mocks.update.mockReturnValue(mocks);
   mocks.eq.mockReturnValue(mocks);
@@ -74,4 +76,22 @@ it('rejects unauthenticated or invalid requests without an admin mutation', asyn
     (await POST(request({ mailboxId, threadId }, 'https://evil.test'))).status
   ).toBe(403);
   expect(mocks.from).not.toHaveBeenCalled();
+});
+
+it('returns 500 when the notification update fails', async () => {
+  mocks.select.mockResolvedValueOnce({ data: null, error: { code: 'XX000' } });
+
+  const response = await POST(request({ mailboxId, threadId }));
+
+  expect(response.status).toBe(500);
+  expect(await response.json()).toEqual({ error: 'Archive failed' });
+});
+
+it('returns 503 when the admin client is unavailable', async () => {
+  mocks.createAdminClient.mockRejectedValueOnce(new Error('unavailable'));
+
+  const response = await POST(request({ mailboxId, threadId }));
+
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({ error: 'Archive unavailable' });
 });
