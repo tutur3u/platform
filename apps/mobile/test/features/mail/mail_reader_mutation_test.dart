@@ -12,6 +12,50 @@ import '../../helpers/helpers.dart';
 class _Repository extends Mock implements MailRepository {}
 
 void main() {
+  testWidgets('threads open the newest message and collapse older mail', (
+    tester,
+  ) async {
+    final repository = _Repository();
+    await tester.pumpApp(
+      MailReader(
+        repository: repository,
+        workspaceId: 'ws',
+        mailboxId: 'box',
+        detail: const {
+          'thread': {'id': 'thread', 'subject': 'Conversation'},
+          'messages': [
+            {
+              'id': 'old',
+              'fromAddress': 'old@example.com',
+              'bodyText': 'Old message body',
+              'unread': false,
+            },
+            {
+              'id': 'new',
+              'fromAddress': 'new@example.com',
+              'bodyText': 'Latest message body',
+              'unread': false,
+            },
+          ],
+        },
+        thread: true,
+        canSend: false,
+        fromAddress: 'test@tuturuuu.com',
+      ),
+    );
+    await tester.pumpAndSettle();
+    final oldMessage = find.byKey(const ValueKey('mail-thread-message-old'));
+    final latestMessage = find.byKey(const ValueKey('mail-thread-message-new'));
+    expect(tester.widget<ExpansionTile>(oldMessage).initiallyExpanded, isFalse);
+    expect(
+      tester.widget<ExpansionTile>(latestMessage).initiallyExpanded,
+      isTrue,
+    );
+    await tester.tap(find.text('old@example.com').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Old message body'), findsOneWidget);
+  });
+
   testWidgets('archive closes the reader before the network request finishes', (
     tester,
   ) async {

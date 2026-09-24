@@ -72,6 +72,34 @@ void main() {
     );
   });
 
+  test('keeps brand images and fixed-width copy within the phone viewport', () {
+    final document = parse(
+      buildMailHtmlDocument('''
+<div style="min-width:820px;overflow:hidden">
+<img src="https://example.com/app-logo.png" width="800" height="800">
+<h1 style="white-space:nowrap">A very long release announcement</h1>
+<table><tr><td style="width:820px">Body copy</td></tr></table>
+</div>
+''', loadImages: true),
+    );
+    expect(
+      document.querySelector('div[style]')?.attributes['style'],
+      contains('min-width:0!important'),
+    );
+    expect(
+      document.querySelector('img')?.classes,
+      contains('mail-compact-icon'),
+    );
+    expect(
+      document.querySelector('td')?.attributes['style'],
+      contains('width:100%!important'),
+    );
+    expect(
+      document.querySelectorAll('style').last.text,
+      contains('white-space:normal!important'),
+    );
+  });
+
   test('reflows clipped fixed-width containers', () {
     final document = buildMailHtmlDocument(
       '<div style="width:900px;overflow:hidden"><div style="width:900px">Content</div></div>',
