@@ -155,9 +155,9 @@ extension _MailReaderChrome on _MailReaderState {
                 title: Text(
                   _starred ? context.l10n.mailUnstar : context.l10n.mailStar,
                 ),
-                onTap: () =>
-                    Navigator.of(sheetContext)
-                        .pop(_starred ? 'unstar' : 'star'),
+                onTap: () => Navigator.of(
+                  sheetContext,
+                ).pop(_starred ? 'unstar' : 'star'),
               ),
               if (widget.canSend && _messages.isNotEmpty) ...[
                 ListTile(

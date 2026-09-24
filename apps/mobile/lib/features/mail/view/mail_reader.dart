@@ -242,8 +242,9 @@ class _MailReaderState extends State<MailReader> {
     if (_childRouteOpen) return;
     setState(() => _childRouteOpen = true);
     try {
-      await Navigator.of(context)
-          .push<void>(MaterialPageRoute(builder: (_) => child));
+      await Navigator.of(
+        context,
+      ).push<void>(MaterialPageRoute(builder: (_) => child));
     } finally {
       if (mounted) setState(() => _childRouteOpen = false);
     }
@@ -280,9 +281,9 @@ class _MailReaderState extends State<MailReader> {
           appBar: sharedShell
               ? null
               : AppBar(
-                  backgroundColor: shad.Theme.of(context)
-                      .colorScheme
-                      .background,
+                  backgroundColor: shad.Theme.of(
+                    context,
+                  ).colorScheme.background,
                   surfaceTintColor: Colors.transparent,
                   title: Text(subject ?? l10n.mailNoSubject),
                   actions: [
