@@ -7733,6 +7733,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetMiraReviewsHint => 'Chỉ bạn thấy các bản nháp và yêu cầu này. Hãy kiểm tra hành động trong không gian làm việc trước khi duyệt.';
 
   @override
+  String get meetMiraAudioMute => 'Tắt âm thanh Mira Live';
+
+  @override
+  String get meetMiraAudioUnmute => 'Bật âm thanh Mira Live';
+
+  @override
+  String get meetMiraAudioRetry => 'Thử lại âm thanh Mira Live';
+
+  @override
   String get meetMiraReviewFailed => 'Không thể tải các mục duyệt riêng tư của Mira.';
 
   @override

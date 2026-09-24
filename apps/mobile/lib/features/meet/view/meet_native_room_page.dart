@@ -474,6 +474,22 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                                   : Icons.videocam_off_outlined,
                             ),
                           ),
+                          if (_call.roomAudio.sessionId != null)
+                            IconButton.filledTonal(
+                              tooltip: _call.roomAudio.failed
+                                  ? l10n.meetMiraAudioRetry
+                                  : _call.roomAudio.enabled
+                                  ? l10n.meetMiraAudioMute
+                                  : l10n.meetMiraAudioUnmute,
+                              onPressed: () => _call.roomAudio.setEnabled(
+                                value: !_call.roomAudio.enabled,
+                              ),
+                              icon: Icon(
+                                _call.roomAudio.enabled
+                                    ? Icons.volume_up_outlined
+                                    : Icons.volume_off_outlined,
+                              ),
+                            ),
                           if (_call.media.videoEnabled)
                             IconButton.filledTonal(
                               tooltip: l10n.meetSwitchCamera,

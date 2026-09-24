@@ -53,6 +53,16 @@ class AssistantLiveAudioPlayer {
     });
   }
 
+  /// Release the audio session until the next frame needs playback.
+  Future<void> pause() {
+    _generation++;
+    return _enqueue(() async {
+      if (!_isInitialized || _disposed) return;
+      await FlutterPcmSound.release();
+      _isInitialized = false;
+    });
+  }
+
   Future<void> dispose() {
     _disposed = true;
     _generation++;
