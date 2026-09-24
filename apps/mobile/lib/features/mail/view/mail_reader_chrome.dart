@@ -91,17 +91,6 @@ extension _MailReaderChrome on _MailReaderState {
                 }
               },
             ),
-            if (widget.canSend &&
-                _messages.isNotEmpty &&
-                primary != MailPrimaryAction.reply)
-              ShellActionSpec(
-                id: 'mail-reply',
-                icon: Icons.reply,
-                tooltip: l10n.mailReply,
-                inDock: true,
-                enabled: !_busy,
-                onPressed: () => _reply(_messages.last),
-              ),
           ],
         ),
       ],
@@ -166,11 +155,17 @@ extension _MailReaderChrome on _MailReaderState {
                 title: Text(
                   _starred ? context.l10n.mailUnstar : context.l10n.mailStar,
                 ),
-                onTap: () => Navigator.of(
-                  sheetContext,
-                ).pop(_starred ? 'unstar' : 'star'),
+                onTap: () =>
+                    Navigator.of(sheetContext)
+                        .pop(_starred ? 'unstar' : 'star'),
               ),
               if (widget.canSend && _messages.isNotEmpty) ...[
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.reply),
+                  title: Text(context.l10n.mailReply),
+                  onTap: () => Navigator.of(sheetContext).pop('reply'),
+                ),
                 ListTile(
                   dense: true,
                   leading: const Icon(Icons.reply_all),
@@ -197,7 +192,7 @@ extension _MailReaderChrome on _MailReaderState {
       ),
     );
     if (!mounted || value == null) return;
-    if (value == 'reply_all' || value == 'forward') {
+    if (value == 'reply' || value == 'reply_all' || value == 'forward') {
       if (_messages.isNotEmpty) {
         await _reply(
           _messages.last,

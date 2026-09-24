@@ -167,9 +167,9 @@ class _MailReaderState extends State<MailReader> {
       });
     }
     if (optimisticClose) {
-      // Unregister reader actions before the closing route animates away.
+      // Keep the active dock action visually stable during the pop animation.
+      // Its callback is guarded by _busy until this reader is disposed.
       _busy = true;
-      setState(() => _childRouteOpen = true);
       widget.onOptimisticAction?.call(action, id);
       Navigator.of(context).pop();
     }
@@ -242,9 +242,8 @@ class _MailReaderState extends State<MailReader> {
     if (_childRouteOpen) return;
     setState(() => _childRouteOpen = true);
     try {
-      await Navigator.of(
-        context,
-      ).push<void>(MaterialPageRoute(builder: (_) => child));
+      await Navigator.of(context)
+          .push<void>(MaterialPageRoute(builder: (_) => child));
     } finally {
       if (mounted) setState(() => _childRouteOpen = false);
     }
@@ -281,9 +280,9 @@ class _MailReaderState extends State<MailReader> {
           appBar: sharedShell
               ? null
               : AppBar(
-                  backgroundColor: shad.Theme.of(
-                    context,
-                  ).colorScheme.background,
+                  backgroundColor: shad.Theme.of(context)
+                      .colorScheme
+                      .background,
                   surfaceTintColor: Colors.transparent,
                   title: Text(subject ?? l10n.mailNoSubject),
                   actions: [
@@ -369,8 +368,11 @@ class _MailReaderState extends State<MailReader> {
                           ),
                           subtitle: Text(
                             [
+                              if (message['fromName'] != null)
+                                message['fromAddress'] as String,
                               ...mailRows(message['recipients'])
                                   .where((r) => r['kind'] == 'to')
+                                  .take(1)
                                   .map((r) => r['address'] as String),
                               if (mailMessageDate(message) != null)
                                 formatMailMessageDate(
@@ -382,34 +384,6 @@ class _MailReaderState extends State<MailReader> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           children: [
-                            ListTile(
-                              dense: true,
-                              title: SelectableText(
-                                message['fromAddress'] as String,
-                              ),
-                              subtitle: mailMessageDate(message) == null
-                                  ? null
-                                  : Text(
-                                      formatMailMessageDate(
-                                        context,
-                                        mailMessageDate(message)!,
-                                      ),
-                                    ),
-                            ),
-                            for (final recipient in mailRows(
-                              message['recipients'],
-                            ))
-                              ListTile(
-                                dense: true,
-                                leading: Text(
-                                  (recipient['kind'] as String? ?? 'to')
-                                      .toUpperCase(),
-                                ),
-                                title: SelectableText(
-                                  recipient['address'] as String,
-                                ),
-                              ),
-                            const Divider(),
                             MailMessageContent(
                               key: ValueKey(message['id']),
                               repository: widget.repository,

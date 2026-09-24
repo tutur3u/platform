@@ -100,6 +100,27 @@ void main() {
     );
   });
 
+  test('fits wide image and cell attributes without clipping the reader', () {
+    final document = parse(
+      buildMailHtmlDocument('''
+<table width="800"><tr><td width="800">
+<img src="https://example.com/release-art.png" width="800" height="800">
+</td></tr></table>
+''', loadImages: true),
+    );
+    final cell = document.querySelector('td')!;
+    final image = document.querySelector('img')!;
+    expect(cell.attributes['width'], isNull);
+    expect(cell.classes, contains('mail-fluid-container'));
+    expect(image.attributes['width'], isNull);
+    expect(image.attributes['height'], isNull);
+    expect(image.classes, contains('mail-fluid-image'));
+    expect(
+      document.querySelectorAll('style').last.text,
+      contains('.mail-fluid-image{width:100%!important;height:auto!important'),
+    );
+  });
+
   test('preserves intentional whitespace and compact icon dimensions', () {
     final document = parse(
       buildMailHtmlDocument('''
