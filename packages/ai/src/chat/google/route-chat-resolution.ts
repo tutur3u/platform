@@ -59,10 +59,6 @@ export async function resolveChatIdForUser(
 }
 
 type MoveTempFilesToThreadParams = {
-  loadThread: () => PromiseLike<{
-    data: { role?: string }[] | null;
-    error: { message: string } | null;
-  }>;
   listFiles: (tempStoragePath: string) => PromiseLike<{
     data: { name: string }[] | null;
     error: AdminClientLike | null;
@@ -77,7 +73,6 @@ type MoveTempFilesToThreadParams = {
 };
 
 export async function moveTempFilesToThread({
-  loadThread,
   listFiles,
   moveFile,
   wsId,
@@ -88,30 +83,21 @@ export async function moveTempFilesToThread({
     return null;
   }
 
-  const { data: thread, error: threadError } = await loadThread();
-
-  if (threadError) {
-    console.error('Error getting thread:', threadError);
-    return new Response(threadError.message, { status: 500 });
-  }
-
-  if (!thread || thread.length === 0) {
-    return null;
-  }
-
   const tempStoragePath = `${wsId}/chats/ai/resources/temp/${userId}`;
   const { data: files, error: listError } = await listFiles(tempStoragePath);
 
   if (listError) {
     console.error('Error getting files:', listError);
-    return null;
+    return new Response('Could not load chat attachments. Please retry.', {
+      status: 502,
+    });
   }
 
   if (!files?.length) {
     return null;
   }
 
-  await Promise.all(
+  const moves = await Promise.all(
     files.map(async (file) => {
       const fileName = file.name;
       const { error: copyError } = await moveFile(
@@ -122,8 +108,15 @@ export async function moveTempFilesToThread({
       if (copyError) {
         console.error('File copy error:', { fileName, copyError });
       }
+      return copyError;
     })
   );
+
+  if (moves.some(Boolean)) {
+    return new Response('Could not attach every file. Please retry.', {
+      status: 502,
+    });
+  }
 
   return null;
 }

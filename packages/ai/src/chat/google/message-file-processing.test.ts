@@ -85,7 +85,9 @@ describe('processMessagesWithFiles', () => {
 
   it('passes an M4A recording to the model as audio', async () => {
     mocks.adminList.mockResolvedValue({
-      data: [{ name: 'voice-message.m4a', metadata: {} }],
+      data: [
+        { name: 'voice-message.m4a', metadata: { mimetype: 'audio/mp4' } },
+      ],
       error: null,
     });
     mocks.adminDownload.mockResolvedValue({
@@ -115,6 +117,9 @@ describe('resolveAttachmentMediaType', () => {
     );
     expect(resolveAttachmentMediaType('shot.png', 'image/png')).toBe(
       'image/png'
+    );
+    expect(resolveAttachmentMediaType('voice-message.m4a', 'audio/mp4')).toBe(
+      'audio/m4a'
     );
   });
 
