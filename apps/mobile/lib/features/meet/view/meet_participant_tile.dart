@@ -8,12 +8,26 @@ class MeetParticipantTile extends StatelessWidget {
     super.key,
     this.renderer,
     this.local = false,
+    this.handRaised = false,
+    this.reaction,
   });
 
   final String name;
   final bool microphoneOn;
   final RTCVideoRenderer? renderer;
   final bool local;
+  final bool handRaised;
+  final String? reaction;
+
+  IconData? get reactionIcon => switch (reaction) {
+    'like' => Icons.thumb_up,
+    'heart' => Icons.favorite,
+    'clap' => Icons.front_hand,
+    'laugh' => Icons.sentiment_very_satisfied,
+    'wow' => Icons.auto_awesome,
+    'celebrate' => Icons.celebration,
+    _ => null,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +55,39 @@ class MeetParticipantTile extends StatelessWidget {
                     style: TextStyle(
                       color: scheme.onPrimaryContainer,
                       fontSize: 28,
+                    ),
+                  ),
+                ),
+              ),
+            if (handRaised || reactionIcon != null)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: scheme.tertiaryContainer,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (handRaised)
+                          Icon(
+                            Icons.back_hand,
+                            size: 20,
+                            color: scheme.onTertiaryContainer,
+                          ),
+                        if (handRaised && reactionIcon != null)
+                          const SizedBox(width: 6),
+                        if (reactionIcon != null)
+                          Icon(
+                            reactionIcon,
+                            size: 20,
+                            color: scheme.onTertiaryContainer,
+                          ),
+                      ],
                     ),
                   ),
                 ),
