@@ -222,9 +222,10 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> {
                       ],
                     ),
                     if (!enabled)
-                      TextButton(
+                      TextButton.icon(
                         onPressed: () => unawaited(_enableNotifications()),
-                        child: Text(l10n.remindersEnableNotifications),
+                        icon: const Icon(Icons.settings_outlined),
+                        label: Text(l10n.remindersEnableNotifications),
                       ),
                   ],
                   Text(l10n.remindersScheduledCount(status.scheduledCount)),
