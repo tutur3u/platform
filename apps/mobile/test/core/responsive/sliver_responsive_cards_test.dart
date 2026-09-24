@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/core/responsive/sliver_responsive_cards.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
+import 'package:mobile/core/responsive/sliver_responsive_cards.dart';
 
 void main() {
   test('root destinations share tablet and desktop width limits', () {
