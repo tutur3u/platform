@@ -273,6 +273,15 @@ export async function retryDeferredTestFlightReview(apple, appId, config) {
     console.log('No processed internal TestFlight build is ready for review.');
     return 'no-ready-build';
   }
+  const existing = await apple(
+    `/v1/betaAppReviewSubmissions?${new URLSearchParams({ 'filter[build]': build.id, limit: '2' })}`
+  );
+  if (existing.data?.[0]?.attributes?.betaReviewState === 'REJECTED') {
+    console.log(
+      `Latest TestFlight build ${build.id} was rejected; waiting for a newer build.`
+    );
+    return 'rejected';
+  }
   await distributeTestFlightBuild(apple, appId, build.id, config);
   return 'processed';
 }

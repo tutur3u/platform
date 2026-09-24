@@ -278,6 +278,59 @@ test('review retry submits the newest ready build after the prior review ends', 
   );
 });
 
+test('review retry waits for a newer build after Apple rejects the latest one', async () => {
+  const calls = [];
+  const apple = async (path, options = {}) => {
+    calls.push({ path, options });
+    const url = new URL(path, 'https://api.appstoreconnect.apple.com');
+    if (url.pathname === '/v1/apps/app/betaGroups') {
+      return {
+        data: [{ id: 'external', attributes: { isInternalGroup: false } }],
+      };
+    }
+    if (
+      url.pathname === '/v1/builds' &&
+      url.searchParams.has('filter[betaAppReviewSubmission.betaReviewState]')
+    ) {
+      return { data: [] };
+    }
+    if (url.pathname === '/v1/builds') {
+      return {
+        data: [
+          {
+            id: 'rejected-build',
+            attributes: { version: '203001', processingState: 'VALID' },
+            relationships: { buildBetaDetail: { data: { id: 'detail' } } },
+          },
+        ],
+        included: [
+          {
+            id: 'detail',
+            type: 'buildBetaDetails',
+            attributes: { internalBuildState: 'IN_BETA_TESTING' },
+          },
+        ],
+      };
+    }
+    if (url.pathname === '/v1/betaAppReviewSubmissions') {
+      return { data: [{ attributes: { betaReviewState: 'REJECTED' } }] };
+    }
+    throw new Error(`Unexpected App Store Connect request: ${path}`);
+  };
+  assert.equal(
+    await retryDeferredTestFlightReview(apple, 'app', {
+      enabled: 'true',
+      groups: 'all',
+      whatsNew: 'Test latest',
+    }),
+    'rejected'
+  );
+  assert.equal(
+    calls.some(({ options }) => options.method === 'POST'),
+    false
+  );
+});
+
 test('Play verification cleans up its temporary edit even when track lookup fails', async (t) => {
   const root = mkdtempSync(join(tmpdir(), 'mobile-store-api-test-'));
   const file = join(root, 'service-account.json');
