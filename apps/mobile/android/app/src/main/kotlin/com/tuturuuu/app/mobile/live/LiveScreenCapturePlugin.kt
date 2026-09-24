@@ -90,6 +90,10 @@ class LiveScreenCapturePlugin : FlutterPlugin, ActivityAware,
             response.success(false)
             return true
         }
+        if (LiveScreenCaptureService.listener == null) {
+            response.error("capture_unavailable", "Screen capture listener is unavailable", null)
+            return true
+        }
         val intent = Intent(context, LiveScreenCaptureService::class.java)
             .putExtra("projectionData", data).putExtra("resultCode", resultCode)
             .putExtra("title", title).putExtra("stopLabel", stopLabel)

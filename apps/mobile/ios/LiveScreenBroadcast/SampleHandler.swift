@@ -50,11 +50,13 @@ final class SampleHandler: RPBroadcastSampleHandler {
 
   override func processSampleBuffer(_ sampleBuffer: CMSampleBuffer, with sampleBufferType: RPSampleBufferType) {
     lifecycle.lock(); defer { lifecycle.unlock() }
-    guard !stopped, sampleBufferType == .video, let directory, let session,
+    let now = Date().timeIntervalSince1970
+    guard !stopped, sampleBufferType == .video,
+      now - lastFrame >= 0.6,
+      let directory, let session,
       LiveScreenSession.current(in: directory)?.id == session.id,
-      Date().timeIntervalSince1970 - lastFrame >= 0.6,
       let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-    lastFrame = Date().timeIntervalSince1970
+    lastFrame = now
     autoreleasepool {
       var image = CIImage(cvPixelBuffer: pixelBuffer)
       if let orientation = CMGetAttachment(sampleBuffer, key: RPVideoSampleOrientationKey as CFString, attachmentModeOut: nil) as? NSNumber {

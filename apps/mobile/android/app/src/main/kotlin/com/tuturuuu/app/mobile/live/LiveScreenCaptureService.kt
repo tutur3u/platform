@@ -22,6 +22,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
 import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -49,13 +50,13 @@ class LiveScreenCaptureService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == stopAction || intent == null || listener == null) {
+        if (intent?.action == stopAction) {
             stopSelf(); return START_NOT_STICKY
         }
         if (active) return START_NOT_STICKY
         try {
-            val title = intent.getStringExtra("title") ?: error("No label")
-            val stopLabel = intent.getStringExtra("stopLabel") ?: error("No stop label")
+            val title = intent?.getStringExtra("title") ?: "Screen sharing"
+            val stopLabel = intent?.getStringExtra("stopLabel") ?: "Stop"
             val manager = getSystemService(NotificationManager::class.java)
             if (Build.VERSION.SDK_INT >= 26) {
                 manager.createNotificationChannel(NotificationChannel(channelId, title, NotificationManager.IMPORTANCE_LOW))
@@ -66,11 +67,12 @@ class LiveScreenCaptureService : Service() {
                 .setOngoing(true).setCategory(Notification.CATEGORY_SERVICE)
                 .addAction(Notification.Action.Builder(null, stopLabel, stop).build()).build()
             foregroundNotification = notification
-            updateForeground(intent.getBooleanExtra("microphoneActive", false))
+            updateForeground(intent?.getBooleanExtra("microphoneActive", false) == true)
+            check(listener != null) { "No screen capture listener" }
             @Suppress("DEPRECATION")
-            val data = intent.getParcelableExtra<Intent>("projectionData") ?: error("No consent")
+            val data = intent?.getParcelableExtra<Intent>("projectionData") ?: error("No consent")
             val captureManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-            val capture = captureManager.getMediaProjection(intent.getIntExtra("resultCode", 0), data) ?: error("No capture")
+            val capture = captureManager.getMediaProjection(intent?.getIntExtra("resultCode", 0) ?: 0, data) ?: error("No capture")
             projection = capture
             worker = HandlerThread("live-screen-frames").also { it.start() }
             handler = Handler(worker!!.looper)
@@ -101,8 +103,8 @@ class LiveScreenCaptureService : Service() {
         val notification = foregroundNotification ?: return
         if (Build.VERSION.SDK_INT >= 29) {
             var types = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-            if (microphoneActive && Build.VERSION.SDK_INT >= 30) {
-                check(checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+            if (microphoneActive && Build.VERSION.SDK_INT >= 30 &&
+                checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                 types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
             }
             startForeground(notificationId, notification, types)
@@ -130,7 +132,11 @@ class LiveScreenCaptureService : Service() {
                 val paddedWidth = plane.rowStride / plane.pixelStride
                 val padded = Bitmap.createBitmap(paddedWidth, image.height, Bitmap.Config.ARGB_8888)
                 try {
-                    padded.copyPixelsFromBuffer(plane.buffer)
+                    val pixels = plane.buffer.duplicate()
+                    val expectedBytes = plane.rowStride * image.height
+                    val source = if (pixels.remaining() >= expectedBytes) pixels else
+                        ByteBuffer.allocate(expectedBytes).apply { put(pixels); flip() }
+                    padded.copyPixelsFromBuffer(source)
                     val frame = Bitmap.createBitmap(padded, 0, 0, image.width, image.height)
                     try {
                         val bytes = ByteArrayOutputStream()
