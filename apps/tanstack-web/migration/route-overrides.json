@@ -2379,10 +2379,15 @@
         }
       }
     },
+    "api:/api/v1/workspaces/:wsId/meetings/:meetingId/costs:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/costs/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Host-only bearer-authenticated mobile cost estimate from the realtime room service; preserve host authorization and no-store responses in the Rust port."
+    },
     "api:/api/v1/workspaces/:wsId/meetings/:meetingId/realtime-token:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Call reconnect preserves speaker role for workspace members; non-call modes remain viewer-only for non-hosts. Signed duration resolves the meeting creator personal subscription: Free 2h, Plus 10h, Pro/Enterprise 24h, consistently with Meet satellite tokens."
+      "note": "Call reconnect preserves speaker role for workspace members; non-call modes remain viewer-only for non-hosts. Native call tokens bind a distinct device identity to the authenticated account and check the realtime switch/additional policy. Signed duration resolves the meeting creator personal subscription: Free 2h, Plus 10h, Pro/Enterprise 24h, consistently with Meet satellite tokens."
     },
     "api:/api/v1/workspaces/:wsId/users/reports/schedules:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/schedules/route.ts": {
       "status": "legacy-next",

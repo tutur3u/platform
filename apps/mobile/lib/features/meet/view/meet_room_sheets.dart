@@ -105,9 +105,50 @@ Future<void> showMeetParticipantsSheet(
               ListTile(
                 leading: const Icon(Icons.person_outline),
                 title: Text(person['displayName'] as String? ?? ''),
-                trailing: (person['media'] as Map?)?['audioEnabled'] == true
-                    ? const Icon(Icons.mic_outlined)
-                    : const Icon(Icons.mic_off_outlined),
+                subtitle: call.isHandRaised(person['userId'] as String? ?? '')
+                    ? Text(context.l10n.meetRaiseHand)
+                    : null,
+                trailing:
+                    person['userId'] == call.selfUserId || call.role != 'host'
+                    ? Icon(
+                        (person['media'] as Map?)?['audioEnabled'] == true
+                            ? Icons.mic_outlined
+                            : Icons.mic_off_outlined,
+                      )
+                    : PopupMenuButton<String>(
+                        tooltip: context.l10n.meetParticipantActions,
+                        onSelected: (action) {
+                          final userId = person['userId'] as String;
+                          if (action == 'mute') {
+                            call.muteParticipant(userId);
+                          }
+                          if (action == 'remove') {
+                            call.removeParticipant(userId);
+                          }
+                        },
+                        itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: 'mute',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.mic_off_outlined),
+                                const SizedBox(width: 8),
+                                Text(context.l10n.meetMuteParticipant),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'remove',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.person_remove_outlined),
+                                const SizedBox(width: 8),
+                                Text(context.l10n.meetRemoveParticipant),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
               ),
             if (call.role == 'host')
               for (final person in call.waiting)
@@ -136,9 +177,125 @@ Future<void> showMeetParticipantsSheet(
                     ],
                   ),
                 ),
+            if (call.role == 'host') ...[
+              SwitchListTile(
+                secondary: const Icon(Icons.lock_outline),
+                title: Text(context.l10n.meetLockRoom),
+                value: call.stage['locked'] == true,
+                onChanged: (locked) => call.setRoomLocked(locked: locked),
+              ),
+              SwitchListTile(
+                secondary: const Icon(Icons.chat_bubble_outline),
+                title: Text(context.l10n.meetSaveChat),
+                value: call.settings['saveChat'] != false,
+                onChanged: (enabled) =>
+                    call.updateSettings({'saveChat': enabled}),
+              ),
+              SwitchListTile(
+                secondary: const Icon(Icons.description_outlined),
+                title: Text(context.l10n.meetShareNotes),
+                value: call.settings['shareNotes'] == true,
+                onChanged: (enabled) =>
+                    call.updateSettings({'shareNotes': enabled}),
+              ),
+              for (final person in call.approved)
+                ListTile(
+                  leading: const Icon(Icons.verified_user_outlined),
+                  title: Text(person['displayName'] as String? ?? ''),
+                  subtitle: Text(context.l10n.meetApprovedParticipant),
+                  trailing: IconButton(
+                    tooltip: context.l10n.meetForgetApproval,
+                    onPressed: () =>
+                        call.forgetApproval(person['userId'] as String),
+                    icon: const Icon(Icons.person_remove_outlined),
+                  ),
+                ),
+            ],
           ],
         ),
       ),
     ),
   ),
 );
+
+Future<void> showMeetCostsSheet(
+  BuildContext context,
+  MeetCallController call,
+) async {
+  var request = call.getRoomCosts();
+  await showAdaptiveSheet<void>(
+    context: context,
+    useRootNavigator: true,
+    builder: (sheetContext) => StatefulBuilder(
+      builder: (context, setSheetState) => AppDialogScaffold(
+        title: context.l10n.meetEstimatedCosts,
+        child: SizedBox(
+          height: 350,
+          child: FutureBuilder<Map<String, dynamic>>(
+            future: request,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return Center(
+                  child: snapshot.hasError
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(context.l10n.meetCostsUnavailable),
+                            TextButton.icon(
+                              onPressed: () => setSheetState(
+                                () => request = call.getRoomCosts(),
+                              ),
+                              icon: const Icon(Icons.refresh),
+                              label: Text(context.l10n.commonRetry),
+                            ),
+                          ],
+                        )
+                      : const CircularProgressIndicator(),
+                );
+              }
+              final costs = snapshot.data!;
+              final cloudflare = costs['cloudflare'] as Map?;
+              final live = costs['live'] as Map?;
+              String usd(Object? value) =>
+                  value is num ? '\$${value.toStringAsFixed(6)}' : '—';
+              return ListView(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: Text(context.l10n.meetPartialEstimate),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.cloud_outlined),
+                    title: Text(context.l10n.meetSfuEgress),
+                    trailing: Text(usd(cloudflare?['sfuEgressUsd'])),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.data_usage_outlined),
+                    title: Text(context.l10n.meetDurableRequests),
+                    trailing: Text(usd(cloudflare?['durableRequestsUsd'])),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.auto_awesome_outlined),
+                    title: Text(context.l10n.meetMiraCost),
+                    trailing: Text(usd(costs['miraCostUsd'])),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.graphic_eq_outlined),
+                    title: Text(context.l10n.meetLiveCost),
+                    trailing: Text(usd(live?['costUsd'])),
+                  ),
+                  TextButton.icon(
+                    onPressed: () =>
+                        setSheetState(() => request = call.getRoomCosts()),
+                    icon: const Icon(Icons.refresh),
+                    label: Text(context.l10n.commonRefresh),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    ),
+  );
+}

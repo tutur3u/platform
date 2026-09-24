@@ -7547,6 +7547,114 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetJoin => 'Tham gia cuộc gọi';
 
   @override
+  String get meetReadyToJoin => 'Sẵn sàng tham gia?';
+
+  @override
+  String get meetPreviewPrivate => 'Chỉ bạn thấy hình ảnh xem trước từ camera cho đến khi tham gia.';
+
+  @override
+  String get meetMute => 'Tắt micrô';
+
+  @override
+  String get meetUnmute => 'Bật micrô';
+
+  @override
+  String get meetCameraOn => 'Bật camera';
+
+  @override
+  String get meetCameraOff => 'Tắt camera';
+
+  @override
+  String get meetDeviceAlreadyJoined => 'Bạn đã ở trong cuộc họp này';
+
+  @override
+  String get meetDeviceChoiceHint => 'Chọn cách tham gia từ thiết bị này.';
+
+  @override
+  String get meetSwitchDevice => 'Chuyển sang thiết bị này';
+
+  @override
+  String get meetJoinAnotherDevice => 'Tham gia trên thiết bị khác';
+
+  @override
+  String get meetDeviceEchoHint => 'Tắt micrô trên một thiết bị để tránh tiếng vọng.';
+
+  @override
+  String get meetTimeRemaining => 'Thời gian họp còn lại';
+
+  @override
+  String get meetRaiseHand => 'Giơ tay';
+
+  @override
+  String get meetLowerHand => 'Hạ tay';
+
+  @override
+  String get meetReactions => 'Cảm xúc';
+
+  @override
+  String get meetReactionLike => 'Thích';
+
+  @override
+  String get meetReactionHeart => 'Yêu thích';
+
+  @override
+  String get meetReactionClap => 'Vỗ tay';
+
+  @override
+  String get meetReactionLaugh => 'Cười';
+
+  @override
+  String get meetReactionWow => 'Ngạc nhiên';
+
+  @override
+  String get meetReactionCelebrate => 'Chúc mừng';
+
+  @override
+  String get meetParticipantActions => 'Thao tác với người tham gia';
+
+  @override
+  String get meetMuteParticipant => 'Tắt micrô người tham gia';
+
+  @override
+  String get meetRemoveParticipant => 'Xóa người tham gia';
+
+  @override
+  String get meetShareNotes => 'Chia sẻ ghi chú cuộc họp';
+
+  @override
+  String get meetApprovedParticipant => 'Người tham gia đã được phê duyệt';
+
+  @override
+  String get meetForgetApproval => 'Quên phê duyệt';
+
+  @override
+  String get meetEstimatedCosts => 'Chi phí ước tính';
+
+  @override
+  String get meetCostsUnavailable => 'Chưa có ước tính chi phí.';
+
+  @override
+  String get meetPartialEstimate => 'Ước tính chưa đầy đủ. Một số chi phí nhà cung cấp chưa được tính.';
+
+  @override
+  String get meetSfuEgress => 'Truyền âm thanh và video';
+
+  @override
+  String get meetDurableRequests => 'Yêu cầu phòng họp';
+
+  @override
+  String get meetMiraCost => 'Mira';
+
+  @override
+  String get meetLiveCost => 'Mira Live';
+
+  @override
+  String get meetLockRoom => 'Khóa phòng họp';
+
+  @override
+  String get meetSaveChat => 'Lưu trò chuyện của phòng';
+
+  @override
   String get meetLeave => 'Rời cuộc gọi';
 
   @override

@@ -7577,6 +7577,114 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetJoin => 'Join call';
 
   @override
+  String get meetReadyToJoin => 'Ready to join?';
+
+  @override
+  String get meetPreviewPrivate => 'Your camera preview is private until you join.';
+
+  @override
+  String get meetMute => 'Mute microphone';
+
+  @override
+  String get meetUnmute => 'Unmute microphone';
+
+  @override
+  String get meetCameraOn => 'Turn camera on';
+
+  @override
+  String get meetCameraOff => 'Turn camera off';
+
+  @override
+  String get meetDeviceAlreadyJoined => 'You\'re already in this meeting';
+
+  @override
+  String get meetDeviceChoiceHint => 'Choose how to join from this device.';
+
+  @override
+  String get meetSwitchDevice => 'Switch to this device';
+
+  @override
+  String get meetJoinAnotherDevice => 'Join on another device';
+
+  @override
+  String get meetDeviceEchoHint => 'Mute one device to avoid audio echo.';
+
+  @override
+  String get meetTimeRemaining => 'Meeting time remaining';
+
+  @override
+  String get meetRaiseHand => 'Raise hand';
+
+  @override
+  String get meetLowerHand => 'Lower hand';
+
+  @override
+  String get meetReactions => 'Reactions';
+
+  @override
+  String get meetReactionLike => 'Like';
+
+  @override
+  String get meetReactionHeart => 'Love';
+
+  @override
+  String get meetReactionClap => 'Clap';
+
+  @override
+  String get meetReactionLaugh => 'Laugh';
+
+  @override
+  String get meetReactionWow => 'Wow';
+
+  @override
+  String get meetReactionCelebrate => 'Celebrate';
+
+  @override
+  String get meetParticipantActions => 'Participant actions';
+
+  @override
+  String get meetMuteParticipant => 'Mute participant';
+
+  @override
+  String get meetRemoveParticipant => 'Remove participant';
+
+  @override
+  String get meetShareNotes => 'Share meeting notes';
+
+  @override
+  String get meetApprovedParticipant => 'Approved participant';
+
+  @override
+  String get meetForgetApproval => 'Forget approval';
+
+  @override
+  String get meetEstimatedCosts => 'Estimated costs';
+
+  @override
+  String get meetCostsUnavailable => 'Cost estimate is unavailable.';
+
+  @override
+  String get meetPartialEstimate => 'Partial estimate. Some provider costs are not included.';
+
+  @override
+  String get meetSfuEgress => 'Video and audio delivery';
+
+  @override
+  String get meetDurableRequests => 'Room requests';
+
+  @override
+  String get meetMiraCost => 'Mira';
+
+  @override
+  String get meetLiveCost => 'Mira Live';
+
+  @override
+  String get meetLockRoom => 'Lock room';
+
+  @override
+  String get meetSaveChat => 'Save room chat';
+
+  @override
   String get meetLeave => 'Leave call';
 
   @override

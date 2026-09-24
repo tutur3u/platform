@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 513,
+        "legacyNext": 514,
         "migrated": 62,
-        "percentComplete": 12.61,
-        "remaining": 513,
+        "percentComplete": 12.59,
+        "remaining": 514,
         "terminal": 74,
-        "total": 587,
+        "total": 588,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 522,
+        "legacyNext": 523,
         "migrated": 67,
-        "percentComplete": 13.14,
-        "remaining": 522,
+        "percentComplete": 13.12,
+        "remaining": 523,
         "terminal": 79,
-        "total": 601,
+        "total": 602,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 597,
+      "legacyNext": 598,
       "migrated": 215,
-      "percentComplete": 27.72,
-      "remaining": 597,
+      "percentComplete": 27.69,
+      "remaining": 598,
       "terminal": 229,
-      "total": 826,
+      "total": 827,
       "unknownStatus": 0
     }
   },
@@ -3745,6 +3745,15 @@
       "methods": ["PUT", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/meetings/:meetingId",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/meetings/:meetingId/costs:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/costs/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/meetings/:meetingId/costs",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/costs/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7877,13 +7886,13 @@
     }
   ],
   "summary": {
-    "apiRoutes": 587,
+    "apiRoutes": 588,
     "cronRoutes": 9,
     "layouts": 67,
     "pages": 154,
-    "routeHandlers": 601,
+    "routeHandlers": 602,
     "methodCounts": {
-      "GET": 301,
+      "GET": 302,
       "HEAD": 4,
       "POST": 296,
       "PUT": 54,
@@ -7891,6 +7900,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 826
+    "total": 827
   }
 }
