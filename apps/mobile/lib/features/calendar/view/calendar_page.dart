@@ -252,8 +252,6 @@ class _CalendarViewState extends State<_CalendarView> {
                     children: [
                       // Month strip for agenda and schedule-style views.
                       if (state.viewMode == CalendarViewMode.day ||
-                          state.viewMode == CalendarViewMode.threeDays ||
-                          state.viewMode == CalendarViewMode.week ||
                           state.viewMode == CalendarViewMode.agenda)
                         MonthStrip(
                           selectedDate: state.effectiveSelectedDate,

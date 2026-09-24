@@ -49,6 +49,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
 
   bool _didAutoScroll = false;
   bool _syncingHorizontalScroll = false;
+  bool _allDayExpanded = false;
 
   List<ScrollController> get _horizontalControllers => [
     _headerController,
@@ -79,8 +80,10 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedDate != widget.selectedDate ||
         oldWidget.visibleDayCount != widget.visibleDayCount ||
-        oldWidget.alignToWeekStart != widget.alignToWeekStart) {
+        oldWidget.alignToWeekStart != widget.alignToWeekStart ||
+        (oldWidget.events.isEmpty && widget.events.isNotEmpty)) {
       _didAutoScroll = false;
+      _allDayExpanded = false;
       WidgetsBinding.instance.addPostFrameCallback((_) => _autoScroll());
     }
   }
@@ -116,7 +119,18 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
     final hourHeight = _hourHeight(context);
     final hasTodayInRange = _visibleDates.any(_isToday);
     final now = DateTime.now();
-    final targetHour = hasTodayInRange ? (now.hour - 1).clamp(0, 20) : 8;
+    final earliestEventHour = _visibleDates
+        .expand(_timedEventsForDay)
+        .map((event) => event.startAt?.hour)
+        .whereType<int>()
+        .fold<int?>(
+          null,
+          (earliest, hour) =>
+              earliest == null || hour < earliest ? hour : earliest,
+        );
+    final targetHour = hasTodayInRange
+        ? (now.hour - 1).clamp(0, 20)
+        : ((earliestEventHour ?? 8) - 1).clamp(0, 20);
     final targetOffset = targetHour * hourHeight;
 
     unawaited(
@@ -192,6 +206,12 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final visibleDates = _visibleDates;
+    final allDayEvents = _allDayEvents;
+    final allDayLayout = calculateAllDayLayout(
+      visibleDates: visibleDates,
+      events: allDayEvents,
+    );
+    final hasCollapsedAllDayRows = allDayLayout.maxRow >= 2;
     final hourHeight = _hourHeight(context);
     final gutterWidth = _timeGutterWidth(context);
 
@@ -249,7 +269,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                   ),
                 ),
               ),
-              if (_allDayEvents.isNotEmpty)
+              if (allDayLayout.spans.isNotEmpty)
                 Container(
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerLow,
@@ -260,20 +280,42 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                       ),
                     ),
                   ),
-                  child: SingleChildScrollView(
-                    controller: _allDayController,
-                    scrollDirection: Axis.horizontal,
-                    physics: const ClampingScrollPhysics(),
-                    child: SizedBox(
-                      width: gutterWidth + dayAreaWidth,
-                      child: _MultiDayAllDayRow(
-                        dates: visibleDates,
-                        events: _allDayEvents,
-                        timeGutterWidth: gutterWidth,
-                        dayColumnWidth: dayColumnWidth,
-                        onEventTap: widget.onEventTap,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SingleChildScrollView(
+                        controller: _allDayController,
+                        scrollDirection: Axis.horizontal,
+                        physics: const ClampingScrollPhysics(),
+                        child: SizedBox(
+                          width: gutterWidth + dayAreaWidth,
+                          child: _MultiDayAllDayRow(
+                            layout: allDayLayout,
+                            timeGutterWidth: gutterWidth,
+                            dayColumnWidth: dayColumnWidth,
+                            maxVisibleRows: _allDayExpanded ? null : 2,
+                            onEventTap: widget.onEventTap,
+                          ),
+                        ),
                       ),
-                    ),
+                      if (hasCollapsedAllDayRows)
+                        TextButton.icon(
+                          onPressed: () => setState(
+                            () => _allDayExpanded = !_allDayExpanded,
+                          ),
+                          icon: Icon(
+                            _allDayExpanded
+                                ? Icons.expand_less_rounded
+                                : Icons.expand_more_rounded,
+                            size: 18,
+                          ),
+                          label: Text(
+                            _allDayExpanded
+                                ? context.l10n.commonShowLess
+                                : context.l10n.commonShowMore,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               Expanded(
