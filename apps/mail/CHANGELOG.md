@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.24.0](https://github.com/tutur3u/platform/compare/mail-v0.23.0...mail-v0.24.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **mail:** add personal thread snooze and mute ([50f7b88](https://github.com/tutur3u/platform/commit/50f7b884706c156cd9a10a2b5c38f3079615096e)) ([#5445](https://github.com/tutur3u/platform/issues/5445)) ([26e392c](https://github.com/tutur3u/platform/commit/26e392c283a31fab038f03294ced90f2e8174874))
+* **mail:** clarify message metadata and blacklist status ([#5366](https://github.com/tutur3u/platform/issues/5366)) ([c058be7](https://github.com/tutur3u/platform/commit/c058be743d6769726229f4ce08d833fa340b74f1))
+* **mail:** preview protected DOCX attachments ([#5365](https://github.com/tutur3u/platform/issues/5365)) ([0743e79](https://github.com/tutur3u/platform/commit/0743e79754ce4dbca7ea8e0ae6280e04d65416c6))
+* **mobile:** add workspace Mail client ([6b1054b](https://github.com/tutur3u/platform/commit/6b1054bf37479570118ee70c5301ca452a5d03ee)) ([#5388](https://github.com/tutur3u/platform/issues/5388)) ([ebfed37](https://github.com/tutur3u/platform/commit/ebfed377ce643a48c470553b40bff6ca8def5fd8))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
 ## [0.23.0](https://github.com/tutur3u/platform/compare/mail-v0.22.0...mail-v0.23.0) (2026-09-25)
 
 

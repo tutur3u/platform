@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.42.0](https://github.com/tutur3u/platform/compare/internal-api-v0.41.0...internal-api-v0.42.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** add trusted mobile authenticators and login approvals ([55e4d79](https://github.com/tutur3u/platform/commit/55e4d792bde2c543c3be8204a980fa99069527e4))
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **auth:** trusted mobile authenticators and desktop login approvals ([#5400](https://github.com/tutur3u/platform/issues/5400)) ([4e9e9d2](https://github.com/tutur3u/platform/commit/4e9e9d20fd6a65c07b9f83008ef5ccd7c4d60d7f))
+* **finance:** add granular invoice audit trail and recovery review ([#5376](https://github.com/tutur3u/platform/issues/5376)) ([b8df666](https://github.com/tutur3u/platform/commit/b8df666804848d96d35ba693d126fe611a3ebf2b))
+* **finance:** add invoice history and recoverable deletion ([3d6dea5](https://github.com/tutur3u/platform/commit/3d6dea5bdbb055073b9b5d5680e391d094874ad2))
+* **finance:** clarify category charts and add promotions management ([88f85ea](https://github.com/tutur3u/platform/commit/88f85eaadb722b42b99537be3c75fabb1715bf09)) ([#5384](https://github.com/tutur3u/platform/issues/5384)) ([b6fd666](https://github.com/tutur3u/platform/commit/b6fd666bccca6aa929166210fb1c6abdb91c1448))
+* **finance:** expand invoice audit review and filters ([c346cac](https://github.com/tutur3u/platform/commit/c346cac5a2dfcdcd944d1fcdfa72f40ec27aa720))
+* **finance:** track tuition coverage and harden invoice exports ([72e07be](https://github.com/tutur3u/platform/commit/72e07bebef58dfee398bcd0d896304d13a2d9aad)) ([#5447](https://github.com/tutur3u/platform/issues/5447)) ([6e822d8](https://github.com/tutur3u/platform/commit/6e822d89d079d9ea8b2677f208c16364cd70d586))
+* **infrastructure:** add web and mobile account recovery ([5e42191](https://github.com/tutur3u/platform/commit/5e42191a675b8edee62a62c58ae656e3a05d243f))
+* **infrastructure:** add web and mobile internal account recovery ([#5440](https://github.com/tutur3u/platform/issues/5440)) ([0694318](https://github.com/tutur3u/platform/commit/06943180c538f9f294586555d5d776c2cf1ea69e))
+* **mail:** add personal thread snooze and mute ([50f7b88](https://github.com/tutur3u/platform/commit/50f7b884706c156cd9a10a2b5c38f3079615096e)) ([#5445](https://github.com/tutur3u/platform/issues/5445)) ([26e392c](https://github.com/tutur3u/platform/commit/26e392c283a31fab038f03294ced90f2e8174874))
+* **mail:** clarify message metadata and blacklist status ([#5366](https://github.com/tutur3u/platform/issues/5366)) ([c058be7](https://github.com/tutur3u/platform/commit/c058be743d6769726229f4ce08d833fa340b74f1))
+* **mail:** preview protected DOCX attachments ([#5365](https://github.com/tutur3u/platform/issues/5365)) ([0743e79](https://github.com/tutur3u/platform/commit/0743e79754ce4dbca7ea8e0ae6280e04d65416c6))
+* **meet:** unify Mira participant chat and audio controls ([c8f9801](https://github.com/tutur3u/platform/commit/c8f9801a4a342bb8509c67202e26b8ca0ae5e22f)) ([#5450](https://github.com/tutur3u/platform/issues/5450)) ([aa044ef](https://github.com/tutur3u/platform/commit/aa044efcb869f06859be60d8aee137e24b0c7bca))
+* **mira:** add Gemini 3.8 Live Flash and Pro modes ([ae47967](https://github.com/tutur3u/platform/commit/ae479679fb85e8785a2012816d38e8bd2a1f8a76)) ([#5370](https://github.com/tutur3u/platform/issues/5370)) ([c3bf878](https://github.com/tutur3u/platform/commit/c3bf87887a70c30f419d1ee4c27e5a1653bc769b))
+
+
+### Bug Fixes
+
+* **finance:** speed up invoice audit history and improve pagination ([b6c165e](https://github.com/tutur3u/platform/commit/b6c165e88e8888facec7744ee16c1d9378bb90e5)) ([#5380](https://github.com/tutur3u/platform/issues/5380)) ([c829653](https://github.com/tutur3u/platform/commit/c8296532b5282324b28c09d3c06a64894694b46c))
+* **infrastructure:** inherit encrypted mobile vault drafts safely ([9dbaadd](https://github.com/tutur3u/platform/commit/9dbaaddc53fcac4c00f6a68f554d9f92febeac8f)) ([#5446](https://github.com/tutur3u/platform/issues/5446)) ([7ba7028](https://github.com/tutur3u/platform/commit/7ba7028d9f0b001de97ae34b721eeb75b51bca69))
+* **internal-api:** identify server requests across Worker runtimes ([428581a](https://github.com/tutur3u/platform/commit/428581a47a8a5ca45f52b0aa5d94c871075ff166)) ([#5439](https://github.com/tutur3u/platform/issues/5439)) ([e017856](https://github.com/tutur3u/platform/commit/e0178567d33f81f8d57de911735e0571d8be7f9e))
+* **mira:** share Chat personalization with Live ([9a7dc02](https://github.com/tutur3u/platform/commit/9a7dc02392126287889a5395c08bfeff217ad7e7)) ([#5374](https://github.com/tutur3u/platform/issues/5374)) ([93cd871](https://github.com/tutur3u/platform/commit/93cd871611b1a5dc56e07f1a56b6c8d55620a458))
+
 ## [0.41.0](https://github.com/tutur3u/platform/compare/internal-api-v0.40.0...internal-api-v0.41.0) (2026-09-25)
 
 

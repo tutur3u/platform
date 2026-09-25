@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/infra-v0.26.0...infra-v0.27.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **calendar:** deliver retry-safe invitations and authenticated responses ([2a097f3](https://github.com/tutur3u/platform/commit/2a097f39c8e293ce05e5bc0e3d487f686692bc38))
+* **calendar:** deliver retry-safe meeting invitations and RSVP ([#5410](https://github.com/tutur3u/platform/issues/5410)) ([40fa0cc](https://github.com/tutur3u/platform/commit/40fa0cccd4b068cb26787a7b7d7cd55eef86782e))
+* **finance:** clarify category charts and add promotions management ([88f85ea](https://github.com/tutur3u/platform/commit/88f85eaadb722b42b99537be3c75fabb1715bf09)) ([#5384](https://github.com/tutur3u/platform/issues/5384)) ([b6fd666](https://github.com/tutur3u/platform/commit/b6fd666bccca6aa929166210fb1c6abdb91c1448))
+* **infrastructure:** add web and mobile account recovery ([5e42191](https://github.com/tutur3u/platform/commit/5e42191a675b8edee62a62c58ae656e3a05d243f))
+* **infrastructure:** add web and mobile internal account recovery ([#5440](https://github.com/tutur3u/platform/issues/5440)) ([0694318](https://github.com/tutur3u/platform/commit/06943180c538f9f294586555d5d776c2cf1ea69e))
+* **infrastructure:** authenticate native Calendar gateway ([e225ec7](https://github.com/tutur3u/platform/commit/e225ec73f3f5dd958bbe7dacab986271e877728e))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
+
+### Bug Fixes
+
+* **auth:** reuse completed session-bound challenges ([b63d510](https://github.com/tutur3u/platform/commit/b63d51046b427350d959137cf37058223e544788))
+* **calendar:** admit authenticated scheduler requests through proxies ([ef00b7a](https://github.com/tutur3u/platform/commit/ef00b7ab2b2593888e05fb92010d613eeaa0614e))
+* **calendar:** admit authenticated schedulers through app proxies ([#5412](https://github.com/tutur3u/platform/issues/5412)) ([cc7c82a](https://github.com/tutur3u/platform/commit/cc7c82a913d9e59e73cf9e8be0b939b1f5d0435c))
+* **calendar:** restore background sync and mobile refresh ([#5402](https://github.com/tutur3u/platform/issues/5402)) ([98a6a29](https://github.com/tutur3u/platform/commit/98a6a2963f26eab0bf785829a76f04f892c05efd))
+* **calendar:** route scheduled jobs through the infrastructure vault ([f6a5287](https://github.com/tutur3u/platform/commit/f6a5287c674d39975a34c1caa4f9f654f5d75471))
+* **calendar:** schedule hosted sync through authenticated gateway ([522a494](https://github.com/tutur3u/platform/commit/522a49455f3d97bf9bec39c4a85727ab550abb3d)) ([#5408](https://github.com/tutur3u/platform/issues/5408)) ([96b09cd](https://github.com/tutur3u/platform/commit/96b09cd961de9cb9393b698df00a5d7428db4ffa))
+* **ci:** enable and verify signed mobile beta releases ([#5387](https://github.com/tutur3u/platform/issues/5387)) ([3b34df6](https://github.com/tutur3u/platform/commit/3b34df69b5565924180b18b3a41152a8bb80366e))
+* **finance:** restrict promotion forwarding and clarify chart labels ([30d3f05](https://github.com/tutur3u/platform/commit/30d3f053df12360beab94cbdcb0a9fd3a84d38f7))
+* **finance:** speed up invoice audit history and improve pagination ([b6c165e](https://github.com/tutur3u/platform/commit/b6c165e88e8888facec7744ee16c1d9378bb90e5)) ([#5380](https://github.com/tutur3u/platform/issues/5380)) ([c829653](https://github.com/tutur3u/platform/commit/c8296532b5282324b28c09d3c06a64894694b46c))
+* **infrastructure:** accept mobile account directory page size ([a1fd6b4](https://github.com/tutur3u/platform/commit/a1fd6b48bd7b2750b2e3b7da5cdbcb8d6663ef81)) ([#5441](https://github.com/tutur3u/platform/issues/5441)) ([8258a07](https://github.com/tutur3u/platform/commit/8258a07e87d5359c82e82a97a57b39240da421e4))
+* **infrastructure:** authorize vault app sessions ([e6d0ab9](https://github.com/tutur3u/platform/commit/e6d0ab9aefd75b11609f1e4fcc357092ed4b67dc))
+* **infrastructure:** distinguish Calendar auth outages ([7854d76](https://github.com/tutur3u/platform/commit/7854d764f99844cb803e7f76671095c77f8f2829))
+* **infrastructure:** harden vault draft inheritance ([466cbe6](https://github.com/tutur3u/platform/commit/466cbe67c7f87e1a638d96a369e800ac43746029))
+* **infrastructure:** inherit encrypted mobile vault drafts safely ([9dbaadd](https://github.com/tutur3u/platform/commit/9dbaaddc53fcac4c00f6a68f554d9f92febeac8f)) ([#5446](https://github.com/tutur3u/platform/issues/5446)) ([7ba7028](https://github.com/tutur3u/platform/commit/7ba7028d9f0b001de97ae34b721eeb75b51bca69))
+* **infrastructure:** log safe mobile bundle denial codes ([f09d985](https://github.com/tutur3u/platform/commit/f09d985b21f28e92490d24ba53bd3ba16d851eac)) ([#5491](https://github.com/tutur3u/platform/issues/5491)) ([58c806c](https://github.com/tutur3u/platform/commit/58c806c6cb9005badf6df4facb484f5096975b0c))
+* **infrastructure:** repair vault scalar inheritance hash check ([#5453](https://github.com/tutur3u/platform/issues/5453)) ([3bf24f3](https://github.com/tutur3u/platform/commit/3bf24f3b92875568f3b5d98ba3daa18136404c1a))
+* **infrastructure:** tolerate slow GitHub OIDC key fetches ([ffcd795](https://github.com/tutur3u/platform/commit/ffcd795f81b32827842ac709224e9f3d45e81061)) ([#5493](https://github.com/tutur3u/platform/issues/5493)) ([fa1e3e1](https://github.com/tutur3u/platform/commit/fa1e3e199d4ea82db16e5ec8e704d80af13f2248))
+* **infrastructure:** verify vault scalar hashes in stored format ([52c26db](https://github.com/tutur3u/platform/commit/52c26db8a86d0265b4653838e5fb1efb5d5f5cb0))
+* **mobile:** defer external TestFlight review while prior build is pending ([99c4cb4](https://github.com/tutur3u/platform/commit/99c4cb4e6aa413ea7df102b21c66f02aa2415291)) ([#5469](https://github.com/tutur3u/platform/issues/5469)) ([c617b62](https://github.com/tutur3u/platform/commit/c617b62a35ab7803639ac4d4309a3029f2c6a49d))
+* **mobile:** repair Live persistence and reuse session verification ([#5436](https://github.com/tutur3u/platform/issues/5436)) ([cb452e1](https://github.com/tutur3u/platform/commit/cb452e1908eab3db2dce9dfd1d57d721284a2e49))
+* **mobile:** restore v0.9.2 design, responsive loading, and app access ([#5390](https://github.com/tutur3u/platform/issues/5390)) ([30987f9](https://github.com/tutur3u/platform/commit/30987f9c1706445bafc24186129f4646d0363009))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/infra-v0.25.0...infra-v0.26.0) (2026-09-25)
 
 

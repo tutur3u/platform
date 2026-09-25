@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/tutur3u/platform/compare/trigger-v0.3.1...trigger-v0.3.2) (2026-09-25)
+
+
+### Bug Fixes
+
+* **calendar:** treat working locations as non-reminder events ([454e666](https://github.com/tutur3u/platform/commit/454e666a6465e3debd06260aedc1de7b96ab5d67)) ([#5511](https://github.com/tutur3u/platform/issues/5511)) ([6508ad6](https://github.com/tutur3u/platform/commit/6508ad681aaa174b186022fcbd526e20be682973))
+
 ## [0.3.1](https://github.com/tutur3u/platform/compare/trigger-v0.3.0...trigger-v0.3.1) (2026-09-25)
 
 

@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.32.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.31.0...tanstack-web-v0.32.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** add trusted mobile authenticators and login approvals ([55e4d79](https://github.com/tutur3u/platform/commit/55e4d792bde2c543c3be8204a980fa99069527e4))
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **auth:** trusted mobile authenticators and desktop login approvals ([#5400](https://github.com/tutur3u/platform/issues/5400)) ([4e9e9d2](https://github.com/tutur3u/platform/commit/4e9e9d20fd6a65c07b9f83008ef5ccd7c4d60d7f))
+* **desktop:** add secure beta distributions and download page ([b034081](https://github.com/tutur3u/platform/commit/b034081273ee5967924bc319c0c9f99b406148c1)) ([#5405](https://github.com/tutur3u/platform/issues/5405)) ([105af8a](https://github.com/tutur3u/platform/commit/105af8aa003a791034fe1a0719dc2663a4b83e56))
+* **mail:** deliver incoming email push notifications ([273003a](https://github.com/tutur3u/platform/commit/273003ac9b6b6f47729eb65c9a207a35d9764fed)) ([#5442](https://github.com/tutur3u/platform/issues/5442)) ([256ab93](https://github.com/tutur3u/platform/commit/256ab93d7e96273c0d351c26e48e87fb6496c3ba))
+* **meet:** improve mobile meeting entry and ended review ([a889bd1](https://github.com/tutur3u/platform/commit/a889bd13ecf417fdfb308e1fce8d09443d715329))
+* **meet:** improve tablet prejoin, listing, and ended review ([#5477](https://github.com/tutur3u/platform/issues/5477)) ([e507a8f](https://github.com/tutur3u/platform/commit/e507a8f5e45a6c308499090ab4ce0008369ac831))
+* **meet:** show speaker-attributed mobile transcripts ([f078fb4](https://github.com/tutur3u/platform/commit/f078fb422ef2461801054a87304948ac058e7a7d)) ([#5498](https://github.com/tutur3u/platform/issues/5498)) ([7c4dd5a](https://github.com/tutur3u/platform/commit/7c4dd5a44cd161ff30c7bf5b65b7cdcadea2dd96))
+* **mira:** add Gemini 3.8 Live Flash and Pro modes ([ae47967](https://github.com/tutur3u/platform/commit/ae479679fb85e8785a2012816d38e8bd2a1f8a76)) ([#5370](https://github.com/tutur3u/platform/issues/5370)) ([c3bf878](https://github.com/tutur3u/platform/commit/c3bf87887a70c30f419d1ee4c27e5a1653bc769b))
+* **mobile:** add Meet prejoin and device controls ([d443582](https://github.com/tutur3u/platform/commit/d443582c7b678d262bdd21e37003b42a9b764373))
+* **mobile:** add native Meet Mira reviews ([#5468](https://github.com/tutur3u/platform/issues/5468)) ([db3b60a](https://github.com/tutur3u/platform/commit/db3b60a374642342ff538c04965ad61537419e04))
+* **mobile:** add native Meet prejoin and device controls ([#5463](https://github.com/tutur3u/platform/issues/5463)) ([1e2b658](https://github.com/tutur3u/platform/commit/1e2b65897d3ebfc3593d677f60b37631d5f2d967))
+* **mobile:** add private Mira chat in Meet ([14af2d4](https://github.com/tutur3u/platform/commit/14af2d438c7f6d123a69cc1156f8994d888c1faa)) ([#5464](https://github.com/tutur3u/platform/issues/5464)) ([8cb0e82](https://github.com/tutur3u/platform/commit/8cb0e82da990e7842705e9ece159bc13dd74e528))
+* **mobile:** add private profile activity and workspace sharing ([38b5d1b](https://github.com/tutur3u/platform/commit/38b5d1bec3a0296fbbcaf128c2c4f3bdd685b108))
+* **mobile:** add private Profile activity and workspace sharing ([#5429](https://github.com/tutur3u/platform/issues/5429)) ([4285508](https://github.com/tutur3u/platform/commit/4285508854d8f602656b86551c0940ec67ef29c0))
+* **mobile:** archive opened notifications quietly ([9685b0d](https://github.com/tutur3u/platform/commit/9685b0dd80ff5ba2349c915f9672ab5f5ae5b3b3)) ([#5467](https://github.com/tutur3u/platform/issues/5467)) ([e31cae8](https://github.com/tutur3u/platform/commit/e31cae8c430e849d6eb3bc9109abbea8fe785848))
+* **mobile:** bring public Mira reviews into native Meet ([ea5fb63](https://github.com/tutur3u/platform/commit/ea5fb6377527b7357db63493e84560facd8f75d6))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **web:** tell the ecosystem story and showcase company capabilities ([652636f](https://github.com/tutur3u/platform/commit/652636fa1bde776b42c2e630fe4cbc8b26ffe8a1)) ([#5512](https://github.com/tutur3u/platform/issues/5512)) ([7385173](https://github.com/tutur3u/platform/commit/7385173b45022653336d1a7d10c2087ebb8f49eb))
+
+
+### Bug Fixes
+
+* **assistant:** persist live turns after ownership validation ([66c1747](https://github.com/tutur3u/platform/commit/66c174754ba83676616979017edb2ed212fe0230))
+* **auth:** repair mobile authenticator enrollment and setup sheet ([153321f](https://github.com/tutur3u/platform/commit/153321f1e9601126133c181f430fdb7bbedff9d4)) ([#5407](https://github.com/tutur3u/platform/issues/5407)) ([d0a95fd](https://github.com/tutur3u/platform/commit/d0a95fdd2a3768e5d185bfc135121b6c51834a6d))
+* **build:** include dependency patches in Docker installs ([bee5c8f](https://github.com/tutur3u/platform/commit/bee5c8fea7516fe96f708bbecd19492c2bb002d4))
+* **meet:** preserve prerender identity in Worker builds ([#5418](https://github.com/tutur3u/platform/issues/5418)) ([f3987be](https://github.com/tutur3u/platform/commit/f3987be14b05956823624b4b22bd2b652f77515a))
+* **mira:** scope Live token provisioning to validated context ([6ea6766](https://github.com/tutur3u/platform/commit/6ea6766c1cd8808bfe571a6c5360943ac8f8eeb8))
+* **mira:** share Chat personalization with Live ([9a7dc02](https://github.com/tutur3u/platform/commit/9a7dc02392126287889a5395c08bfeff217ad7e7)) ([#5374](https://github.com/tutur3u/platform/issues/5374)) ([93cd871](https://github.com/tutur3u/platform/commit/93cd871611b1a5dc56e07f1a56b6c8d55620a458))
+* **mobile:** recover Live history and invalid microphone input ([2bcb6c2](https://github.com/tutur3u/platform/commit/2bcb6c23a2baa5659930183a10aa42f5790515c0))
+* **mobile:** repair Live persistence and reuse session verification ([#5436](https://github.com/tutur3u/platform/issues/5436)) ([cb452e1](https://github.com/tutur3u/platform/commit/cb452e1908eab3db2dce9dfd1d57d721284a2e49))
+* **mobile:** repair Live transport and Pro workspace access ([#5428](https://github.com/tutur3u/platform/issues/5428)) ([ce02703](https://github.com/tutur3u/platform/commit/ce02703ac5073af869f276cffd95087817bb3267))
+* **notifications:** run task deadline reminders in web cron ([d07db6c](https://github.com/tutur3u/platform/commit/d07db6c81eb69291b53bf43eb2aeb23215205037)) ([#5489](https://github.com/tutur3u/platform/issues/5489)) ([e37f45c](https://github.com/tutur3u/platform/commit/e37f45c43a8bd3fc40dbe068ff333e76d6e22698))
+* **parley:** complete workspace and deployment setup ([52e979f](https://github.com/tutur3u/platform/commit/52e979fef43a447aadf42b7ccf09e9579e0eee37))
+
 ## [0.31.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.30.0...tanstack-web-v0.31.0) (2026-09-25)
 
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.12.0...hive-realtime-v0.13.0) (2026-09-25)
+
+
+### Features
+
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+
+
+### Bug Fixes
+
+* **build:** include dependency patches in Docker installs ([bee5c8f](https://github.com/tutur3u/platform/commit/bee5c8fea7516fe96f708bbecd19492c2bb002d4))
+* **meet:** preserve prerender identity in Worker builds ([#5418](https://github.com/tutur3u/platform/issues/5418)) ([f3987be](https://github.com/tutur3u/platform/commit/f3987be14b05956823624b4b22bd2b652f77515a))
+* **parley:** complete workspace and deployment setup ([52e979f](https://github.com/tutur3u/platform/commit/52e979fef43a447aadf42b7ccf09e9579e0eee37))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.11.1...hive-realtime-v0.12.0) (2026-09-25)
 
 
