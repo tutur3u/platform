@@ -53,3 +53,14 @@ it('opens a briefing before starting a session', () => {
   ).toBe('/scenarios/one');
   expect(screen.queryByRole('button', { name: 'Start session' })).toBeNull();
 });
+it('explains an unpublished library with localized copy', () => {
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ScenarioDiscovery scenarios={[]} />
+    </NextIntlClientProvider>
+  );
+  expect(screen.getByText('Your scenario library is ready')).toBeTruthy();
+  expect(
+    screen.getByText(/An Infrastructure administrator can publish/)
+  ).toBeTruthy();
+});

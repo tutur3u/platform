@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, FileText, Loader2, PhoneOff } from '@tuturuuu/icons';
 import { MeetingAiOverview } from '@tuturuuu/meet-core/features/meeting-ai/meeting-ai-overview';
 import { NotesSharingControl } from '@tuturuuu/meet-core/features/meeting-ai/notes-sharing-control';
-import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -39,7 +38,6 @@ export function CallEnded({
   useEndedRoom(accountId, meetingId, ended);
   const queryClient = useQueryClient();
   const t = useTranslations('meet.call');
-  const messages = useTranslations();
   const [showNotes, setShowNotes] = useState(initialShowNotes);
   return (
     <main className="grid min-h-dvh place-items-center bg-muted/25 px-4 py-10">
@@ -105,9 +103,7 @@ export function CallEnded({
                 }}
               >
                 <ArrowLeft className="size-4" />
-                {MEETING_APP === 'parley'
-                  ? messages('parley.library')
-                  : t('back_to_meet')}
+                {t('back_to_meet')}
               </Link>
             </Button>
           </div>
