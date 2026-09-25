@@ -25,6 +25,7 @@ export const PUBLIC_SEO_ROUTES = [
   { pathname: '/meet', changeFrequency: 'monthly', priority: 0.6 },
   { pathname: '/meet-together', changeFrequency: 'monthly', priority: 0.6 },
   { pathname: '/models', changeFrequency: 'weekly', priority: 0.7 },
+  { pathname: '/portfolio', changeFrequency: 'monthly', priority: 0.8 },
   { pathname: '/partners', changeFrequency: 'monthly', priority: 0.6 },
   { pathname: '/privacy', changeFrequency: 'yearly', priority: 0.4 },
   { pathname: '/products/ai', changeFrequency: 'monthly', priority: 0.8 },

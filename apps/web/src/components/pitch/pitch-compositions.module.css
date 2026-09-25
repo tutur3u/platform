@@ -1,0 +1,457 @@
+.composition[data-slide="origin"] {
+  grid-template-columns: 0.85fr 1.2fr;
+  gap: 8vw;
+}
+.composition[data-slide="problem"] {
+  grid-template-columns: 1fr 1.3fr;
+  background-image: linear-gradient(110deg, transparent 45%, #e9464608);
+}
+.composition[data-slide="shift"],
+.composition[data-slide="vision"],
+.composition[data-slide="platform"],
+.composition[data-slide="workforce"],
+.composition[data-slide="evidence"],
+.composition[data-slide="intelligence"],
+.composition[data-slide="closing"] {
+  grid-template-columns: 1fr;
+  gap: 24px;
+  padding-top: 3vw;
+  padding-bottom: 3vw;
+}
+.composition[data-slide="shift"] > div:first-child,
+.composition[data-slide="vision"] > div:first-child,
+.composition[data-slide="closing"] > div:first-child {
+  text-align: center;
+  max-width: 1100px;
+  margin: auto;
+}
+.composition:is(
+    [data-slide="shift"],
+    [data-slide="vision"],
+    [data-slide="closing"]
+  )
+  > div:first-child
+  > p {
+  margin-left: auto;
+  margin-right: auto;
+  justify-content: center;
+  max-width: 760px;
+}
+.composition:is(
+    [data-slide="shift"],
+    [data-slide="vision"],
+    [data-slide="closing"]
+  )
+  > :where(div:first-child)
+  > h1 {
+  font-size: clamp(2.8rem, 4.5vw, 5.8rem);
+  white-space: normal;
+}
+.composition:is(
+    [data-slide="shift"],
+    [data-slide="vision"],
+    [data-slide="closing"]
+  )
+  > div:last-child {
+  max-width: 900px;
+  width: 100%;
+  margin: auto;
+}
+.composition:is(
+    [data-slide="shift"],
+    [data-slide="vision"],
+    [data-slide="closing"]
+  )
+  svg {
+  max-height: 28vh;
+}
+.composition[data-slide="platform"] > div:first-child,
+.composition[data-slide="intelligence"] > div:first-child {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  column-gap: 6vw;
+  align-items: center;
+}
+.composition:is([data-slide="platform"], [data-slide="intelligence"])
+  > div:first-child
+  > p:first-child {
+  grid-column: 1 / -1;
+  margin-bottom: 14px;
+}
+.composition:is([data-slide="platform"], [data-slide="intelligence"])
+  > div:first-child
+  > span {
+  grid-column: 1 / -1;
+  margin-top: 16px;
+}
+.composition[data-slide="platform"] > div:last-child {
+  width: 100%;
+  max-width: 1100px;
+  margin: auto;
+}
+.composition[data-slide="platform"] figure {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 4vw;
+  align-items: center;
+}
+.composition[data-slide="platform"] figcaption {
+  grid-template-columns: 1fr;
+}
+.composition[data-slide="tasks"] {
+  grid-template-columns: 0.78fr 1.25fr;
+  gap: 5vw;
+}
+.composition[data-slide="meet"] {
+  grid-template-columns: 1.2fr 0.85fr;
+  gap: 6vw;
+}
+.composition[data-slide="meet"] > div:first-child {
+  grid-column: 2;
+  grid-row: 1;
+}
+.composition[data-slide="meet"] > div:last-child {
+  grid-column: 1;
+  grid-row: 1;
+}
+.composition[data-slide="context"] {
+  grid-template-columns: 0.9fr 1fr;
+}
+.composition[data-slide="ai"] h1 {
+  font-size: clamp(3rem, 5.4vw, 6.8rem);
+}
+.composition[data-slide="workflow"] {
+  grid-template-columns: 1fr 1.3fr;
+}
+.composition[data-slide="workforce"] > div:last-child {
+  max-width: 1100px;
+  width: 100%;
+  margin: auto;
+}
+.composition[data-slide="workforce"] svg {
+  max-height: 26vh;
+}
+.composition[data-slide="capacity"] {
+  grid-template-columns: 0.8fr 1.3fr;
+}
+.composition[data-slide="skills"] {
+  grid-template-columns: 1.2fr 0.85fr;
+}
+.composition[data-slide="skills"] > div:first-child {
+  grid-column: 2;
+  grid-row: 1;
+}
+.composition[data-slide="skills"] > div:last-child {
+  grid-column: 1;
+  grid-row: 1;
+}
+.composition[data-slide="onboarding"] h1 {
+  font-size: clamp(2.5rem, 4.6vw, 6rem);
+}
+.composition[data-slide="evidence"] svg {
+  max-height: 28vh;
+}
+.composition[data-slide="evidence"] > div:last-child {
+  max-width: 1100px;
+  width: 100%;
+  margin: auto;
+}
+.composition[data-slide="trust"] {
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+.composition[data-slide="trust"] > div:first-child {
+  max-width: 900px;
+}
+.composition[data-slide="trust"] > div:last-child {
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+}
+.composition[data-slide="architecture"] {
+  grid-template-columns: 0.85fr 1.2fr;
+}
+.composition[data-slide="pilot"] {
+  grid-template-columns: 0.75fr 1.35fr;
+}
+.composition[data-slide="team"] {
+  grid-template-columns: 1fr 1fr;
+}
+.composition[data-slide="engagement"] {
+  grid-template-columns: 0.9fr 1.1fr;
+}
+.composition[data-slide="business"] {
+  grid-template-columns: 1fr 1fr;
+}
+.composition[data-slide="audience"] {
+  grid-template-columns: 0.8fr 1.3fr;
+}
+.composition[data-slide="roadmap"] {
+  grid-template-columns: 1fr 1.2fr;
+}
+.composition[data-slide="intelligence"] svg {
+  max-height: 30vh;
+}
+.composition[data-slide="horizon"] h1 {
+  font-size: clamp(3rem, 5vw, 7rem);
+}
+.composition[data-slide="closing"] > div:first-child > div {
+  justify-content: center;
+}
+.composition[data-slide="chat"] {
+  grid-template-columns: 1.15fr 0.9fr;
+}
+.composition[data-slide="chat"] > div:first-child {
+  grid-column: 2;
+  grid-row: 1;
+}
+.composition[data-slide="chat"] > div:last-child {
+  grid-column: 1;
+  grid-row: 1;
+}
+.composition[data-slide="mail"] {
+  grid-template-columns: 0.8fr 1.3fr;
+}
+.composition[data-slide="calendar"] {
+  grid-template-columns: 0.85fr 1.2fr;
+}
+.composition[data-slide="collaboration"] {
+  grid-template-columns: 1fr 1.3fr;
+}
+.composition[data-slide="research"] {
+  grid-template-columns: 0.9fr 1.2fr;
+}
+.composition[data-slide="ownership"] {
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+.composition[data-slide="ownership"] > div:first-child {
+  max-width: 1000px;
+}
+.composition[data-slide="ownership"] figure {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 4vw;
+}
+.composition[data-slide="ownership"] figcaption {
+  grid-template-columns: 1fr;
+}
+.composition[data-slide="moment"],
+.composition[data-slide="references"] {
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+.composition[data-slide="moment"] > div:first-child,
+.composition[data-slide="references"] > div:first-child {
+  max-width: 1100px;
+}
+.composition[data-slide="moment"] > div:last-child {
+  width: 100%;
+  max-width: 1100px;
+  margin: auto;
+}
+.composition[data-slide="references"] > div:last-child {
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+}
+.composition[data-slide="references"] h1 {
+  font-size: clamp(2.8rem, 4vw, 5rem);
+}
+.composition[data-slide="openness"] {
+  grid-template-columns: 1fr 1.1fr;
+}
+.composition[data-slide="independence"] {
+  grid-template-columns: 0.9fr 1.2fr;
+}
+.composition.composition[data-slide="business"] > div:first-child {
+  display: block;
+  grid-column: auto;
+}
+.composition.composition[data-slide="business"] > div:last-child {
+  grid-column: auto;
+}
+
+@media screen and (min-width: 1001px) {
+  .composition:is(
+    [data-slide="moment"],
+    [data-slide="ownership"],
+    [data-slide="trust"],
+    [data-slide="references"],
+    [data-slide="readiness"],
+    [data-slide="platform"],
+    [data-slide="workforce"],
+    [data-slide="intelligence"],
+    [data-slide="shift"],
+    [data-slide="vision"],
+    [data-slide="closing"]
+  ) {
+    padding-top: 24px;
+    padding-bottom: 24px;
+    gap: 20px;
+  }
+  .composition:is(
+      [data-slide="moment"],
+      [data-slide="ownership"],
+      [data-slide="trust"],
+      [data-slide="references"]
+    )
+    > div:first-child {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    column-gap: 5vw;
+    align-items: center;
+    max-width: none;
+  }
+  .composition:is(
+      [data-slide="moment"],
+      [data-slide="ownership"],
+      [data-slide="trust"],
+      [data-slide="references"]
+    )
+    > div:first-child
+    > :is(p:first-child, p:nth-of-type(3), span) {
+    grid-column: 1 / -1;
+    margin: 12px 0;
+  }
+  .composition:is(
+      [data-slide="moment"],
+      [data-slide="ownership"],
+      [data-slide="trust"],
+      [data-slide="references"],
+      [data-slide="readiness"],
+      [data-slide="platform"],
+      [data-slide="workforce"],
+      [data-slide="intelligence"],
+      [data-slide="shift"],
+      [data-slide="vision"],
+      [data-slide="closing"]
+    )
+    h1 {
+    font-size: clamp(2.5rem, 3.5vw, 4.5rem);
+  }
+  .composition:is(
+      [data-slide="shift"],
+      [data-slide="vision"],
+      [data-slide="closing"]
+    )
+    svg {
+    max-height: 20vh;
+  }
+  .composition[data-slide="closing"] svg {
+    max-height: 16vh;
+  }
+  .composition[data-slide="readiness"] svg {
+    max-height: 24vh;
+  }
+  .composition[data-slide="platform"] > div:first-child > div {
+    grid-column: 2;
+    margin-top: 12px;
+  }
+  .composition[data-slide="platform"] figure {
+    grid-template-columns: 1fr 1fr;
+  }
+  .composition[data-slide="business"] > div:first-child > h1 + p {
+    margin-top: 1.7rem;
+  }
+}
+@media (max-width: 1000px) {
+  .composition[data-slide] {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 40px 6vw;
+  }
+  .composition[data-slide] > div:first-child,
+  .composition[data-slide] > div:last-child {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .composition:is([data-slide="platform"], [data-slide="intelligence"])
+    > div:first-child {
+    display: block;
+  }
+  .composition[data-slide="platform"] figure,
+  .composition[data-slide="ownership"] figure {
+    display: block;
+  }
+  .composition[data-slide] svg {
+    max-height: none;
+  }
+  .composition:is(
+      [data-slide="shift"],
+      [data-slide="vision"],
+      [data-slide="closing"]
+    )
+    > div:first-child {
+    text-align: left;
+  }
+  .composition:is(
+      [data-slide="shift"],
+      [data-slide="vision"],
+      [data-slide="closing"]
+    )
+    > div:first-child
+    > p {
+    justify-content: flex-start;
+  }
+  .composition[data-slide="closing"] > div:first-child > div {
+    justify-content: flex-start;
+  }
+}
+@media print {
+  .composition[data-slide] {
+    height: 190mm;
+    min-height: 0;
+    padding: 8mm;
+    gap: 5mm;
+  }
+  .composition.composition[data-slide] h1 {
+    font-size: 28pt;
+  }
+  .composition[data-slide] svg {
+    max-height: 70mm;
+  }
+  .composition:is(
+    [data-slide="shift"],
+    [data-slide="vision"],
+    [data-slide="closing"],
+    [data-slide="platform"],
+    [data-slide="intelligence"],
+    [data-slide="trust"]
+  ) {
+    grid-template-columns: 1fr;
+  }
+  .composition:is(
+      [data-slide="shift"],
+      [data-slide="vision"],
+      [data-slide="closing"],
+      [data-slide="platform"],
+      [data-slide="intelligence"],
+      [data-slide="trust"]
+    )
+    > div:first-child {
+    display: block;
+  }
+  .composition:is(
+      [data-slide="shift"],
+      [data-slide="vision"],
+      [data-slide="closing"],
+      [data-slide="platform"],
+      [data-slide="intelligence"],
+      [data-slide="trust"]
+    )
+    > div:first-child
+    > p {
+    margin: 3mm 0;
+  }
+  .composition:is(
+      [data-slide="shift"],
+      [data-slide="vision"],
+      [data-slide="closing"],
+      [data-slide="intelligence"]
+    )
+    svg {
+    max-height: 50mm;
+  }
+}

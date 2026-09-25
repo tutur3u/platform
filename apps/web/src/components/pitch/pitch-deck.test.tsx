@@ -20,7 +20,10 @@ vi.mock('@tuturuuu/ui/public-workspace-prices', () => ({
 
 vi.mock('next-intl', () => ({ useLocale: () => 'en' }));
 
-const copy = messages.pitch as PitchCopy;
+const copy = {
+  ...messages.pitch,
+  capabilities: messages.capabilities,
+} as PitchCopy;
 const visibleSlide = () =>
   document.querySelector('section[aria-hidden="false"]') as HTMLElement;
 
@@ -40,7 +43,7 @@ describe('pitch presentation controls', () => {
     expect(window.location.hash).toBe('#calculator');
     expect(visibleSlide().textContent).toContain('$80');
     fireEvent.keyDown(document.body, { key: 'ArrowRight' });
-    expect(window.location.hash).toBe('#roadmap');
+    expect(window.location.hash).toBe('#openness');
   });
 
   it('navigates from the overview and exposes the selected presenter notes', () => {

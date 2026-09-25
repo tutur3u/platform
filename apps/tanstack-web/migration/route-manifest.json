@@ -18,12 +18,12 @@
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 53,
+        "legacyNext": 54,
         "migrated": 99,
-        "percentComplete": 65.58,
-        "remaining": 53,
+        "percentComplete": 65.16,
+        "remaining": 54,
         "terminal": 101,
-        "total": 154,
+        "total": 155,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 75,
+        "legacyNext": 76,
         "migrated": 148,
-        "percentComplete": 66.67,
-        "remaining": 75,
+        "percentComplete": 66.37,
+        "remaining": 76,
         "terminal": 150,
-        "total": 225,
+        "total": 226,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 604,
+      "legacyNext": 605,
       "migrated": 215,
-      "percentComplete": 27.49,
-      "remaining": 604,
+      "percentComplete": 27.46,
+      "remaining": 605,
       "terminal": 229,
-      "total": 833,
+      "total": 834,
       "unknownStatus": 0
     }
   },
@@ -7435,6 +7435,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/portfolio:apps/web/src/app/[locale]/portfolio/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/portfolio",
+      "sourceFile": "apps/web/src/app/[locale]/portfolio/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/pricing:apps/web/src/app/[locale]/(marketing)/pricing/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7943,7 +7952,7 @@
     "apiRoutes": 593,
     "cronRoutes": 10,
     "layouts": 67,
-    "pages": 154,
+    "pages": 155,
     "routeHandlers": 608,
     "methodCounts": {
       "GET": 305,
@@ -7954,6 +7963,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 833
+    "total": 834
   }
 }

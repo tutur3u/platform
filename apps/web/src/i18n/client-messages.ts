@@ -49,6 +49,8 @@ export const RATE_LIMIT_COMMON_MESSAGE_KEYS = [
 ] as const;
 
 export const ROOT_CLIENT_MESSAGE_PATHS = [
+  'marketing-nav.portfolio',
+  'marketing-nav.portfolio_description',
   'desktop_download.badge',
   'desktop_download.navigation_description',
   'common.apps',

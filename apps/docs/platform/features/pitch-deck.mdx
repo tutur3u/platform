@@ -4,7 +4,7 @@ description: Maintain the ecosystem vision, workforce prototype narrative, and p
 updatedAt: "2026-09-24"
 ---
 
-The localized `/pitch` page is a 29-slide presentation about Tuturuuu's ecosystem,
+The localized `/pitch` page is a 42-slide presentation about Tuturuuu's ecosystem,
 workforce decision support, and long-term intelligent-partner vision. It is excluded
 from search indexing. Existing product foundations, proposed pilot work, and
 long-term research are explicitly distinguished; product availability varies.
@@ -57,3 +57,38 @@ Run focused pitch tests, `bun check`, and the real web build through
 navigation, deep links, overview, notes, simulation, reduced motion, and print.
 Keep `/pitch` public in `apps/web/src/constants/public_paths.ts`. Route ownership
 changes also require updating the TanStack migration manifest.
+
+## Product scenes and company portfolio
+
+The `/portfolio` route is the public company capability profile. It includes
+interactive product illustrations, the shared application registry, engineering
+capabilities, and open research collaboration directions. Both English and
+Vietnamese content live in the `portfolio` and `capabilities` message namespaces.
+
+Keep the app directory derived from `LAUNCHABLE_APPS`; every registered slug
+requires a translated description. The directory test catches missing descriptions.
+A registry entry does not imply every integration is complete or publicly accessible.
+
+Pitch slides use individual diagrams in `story-geometry.tsx` and
+`strategy-geometry.tsx`, with per-slide compositions. The Tasks and Meet scenes
+are shared with the portfolio. They are local, synthetic illustrations: they do
+not call AI, create tasks, join meetings, or process real participant data.
+
+Research and grant-funded collaboration can be described in general terms on
+the portfolio. Keep confidential opportunities and unpublished partner details
+out of both public pages and presenter notes. Do not claim awarded funding,
+validated outcomes, or institutional endorsements without published evidence.
+
+The portfolio and deck also cover smart Chat, Mail, Calendar, realtime whiteboards,
+collaborative documents, multi-agent simulation research, and Tuturuuu product
+ownership. Keep Mira mail action extraction labeled as a development direction
+until the underlying product supports that full workflow.
+
+The 42-slide story is organized into six chapters: why now, product foundations,
+connected intelligence, trust and validation, sustainable delivery, and user
+ownership. External statistics link to primary sources from Stanford HAI,
+Microsoft, WEF, and OECD, with dates and sample limitations on the reference
+slide. Update source details when changing a statistic. Full independence remains
+a roadmap; do not imply external infrastructure or model dependencies are gone.
+
+The ecosystem strategy slide explains the investment in shared architecture, ongoing engineering, and operations as AI-assisted app creation becomes more accessible. This is presented as a strategic thesis, with expansion tied to customer value and reuse rather than breadth alone.
