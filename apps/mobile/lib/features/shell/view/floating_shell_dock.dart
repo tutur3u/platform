@@ -6,15 +6,13 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/dock_action_transition.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-
-const _floatingHeaderPadding = EdgeInsets.fromLTRB(12, 4, 12, 8);
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// The floating header includes the system status bar and the section bar.
 double floatingShellHeaderInset(BuildContext context) =>
     MediaQuery.viewPaddingOf(context).top +
     mobileSectionAppBarHeight +
-    mobileSectionAppBarPadding.vertical +
-    _floatingHeaderPadding.vertical;
+    mobileSectionAppBarPadding.vertical;
 
 /// Overlays the dock without shortening the page viewport.
 /// Pages consume bottom MediaQuery padding inside their scrollable content.
@@ -113,6 +111,13 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
+    final headerColor =
+        context
+            .dependOnInheritedWidgetOfExactType<shad.Theme>()
+            ?.data
+            .colorScheme
+            .background ??
+        Theme.of(context).colorScheme.surface;
     final active = widget.bottomInset > 0;
     final clearance = active ? widget.bottomInset + media.padding.bottom : 0.0;
     final headerClearance = widget.header == null || widget.scrollableHeader
@@ -153,14 +158,8 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                     opacity: headerHidden ? 0 : 1,
                     child: ColoredBox(
                       key: const ValueKey('floating-shell-header-surface'),
-                      color: Theme.of(context).colorScheme.surface,
-                      child: SafeArea(
-                        bottom: false,
-                        child: Padding(
-                          padding: _floatingHeaderPadding,
-                          child: widget.header,
-                        ),
-                      ),
+                      color: headerColor,
+                      child: SafeArea(bottom: false, child: widget.header!),
                     ),
                   ),
                 ),

@@ -521,6 +521,7 @@ extension _ShellPageLayout on _ShellPageState {
       return shad.AppBar(
         height: mobileSectionAppBarHeight,
         padding: mobileSectionAppBarPadding,
+        backgroundColor: Colors.transparent,
         trailing: [
           IconButton(
             tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
@@ -551,6 +552,7 @@ extension _ShellPageLayout on _ShellPageState {
     return shad.AppBar(
       height: mobileSectionAppBarHeight,
       padding: mobileSectionAppBarPadding,
+      backgroundColor: Colors.transparent,
       trailingGap: 6,
       trailing: [
         _ShellTrailingActions(matchedLocation: widget.matchedLocation),
@@ -572,18 +574,10 @@ extension _ShellPageLayout on _ShellPageState {
     AppModule? activeModule,
     ShellMiniNavRegistration? injectedMiniNavRegistration,
   }) {
-    final theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.surface,
-      elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.14),
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: _buildAppBar(
-        context,
-        activeModule: activeModule,
-        injectedMiniNavRegistration: injectedMiniNavRegistration,
-      ),
+    return _buildAppBar(
+      context,
+      activeModule: activeModule,
+      injectedMiniNavRegistration: injectedMiniNavRegistration,
     );
   }
 

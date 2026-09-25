@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 
 void registerShellViewportChecks(
   Future<void> Function(WidgetTester tester) pumpShell,
@@ -106,6 +107,13 @@ void registerShellViewportChecks(
 
     final header = tester.getRect(
       find.byKey(const ValueKey('floating-shell-header-surface')),
+    );
+    expect(
+      header.height,
+      closeTo(
+        44 + mobileSectionAppBarHeight + mobileSectionAppBarPadding.vertical,
+        1,
+      ),
     );
     final firstSliver = tester.widget<SliverToBoxAdapter>(
       find
