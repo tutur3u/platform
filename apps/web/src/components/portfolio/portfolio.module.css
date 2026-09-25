@@ -402,7 +402,7 @@
   max-width: 430px;
   margin-top: 30px;
 }
-.stack svg {
+.stack > svg {
   width: 100%;
   height: auto;
 }
@@ -435,7 +435,7 @@
   line-height: 1.8;
   margin: 0;
 }
-.layers svg {
+.layers :where(article) > svg {
   color: var(--tone);
   flex-shrink: 0;
   margin-left: auto;
@@ -458,7 +458,7 @@
   max-width: 470px;
   margin: 28px 0;
 }
-.closing svg {
+.closing > svg {
   width: 100%;
   height: auto;
 }
@@ -633,7 +633,7 @@
     padding: 65px 6vw;
     gap: 25px;
   }
-  .closing svg {
+  .closing > svg {
     max-height: 220px;
   }
   .footer {

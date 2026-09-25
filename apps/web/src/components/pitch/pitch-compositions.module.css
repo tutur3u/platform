@@ -62,7 +62,7 @@
     [data-slide="vision"],
     [data-slide="closing"]
   )
-  svg {
+  svg[data-pitch-diagram] {
   max-height: 28vh;
 }
 .composition[data-slide="platform"] > div:first-child,
@@ -128,7 +128,7 @@
   width: 100%;
   margin: auto;
 }
-.composition[data-slide="workforce"] svg {
+.composition[data-slide="workforce"] svg[data-pitch-diagram] {
   max-height: 26vh;
 }
 .composition[data-slide="capacity"] {
@@ -148,7 +148,7 @@
 .composition[data-slide="onboarding"] h1 {
   font-size: clamp(2.5rem, 4.6vw, 6rem);
 }
-.composition[data-slide="evidence"] svg {
+.composition[data-slide="evidence"] svg[data-pitch-diagram] {
   max-height: 28vh;
 }
 .composition[data-slide="evidence"] > div:last-child {
@@ -189,7 +189,7 @@
 .composition[data-slide="roadmap"] {
   grid-template-columns: 1fr 1.2fr;
 }
-.composition[data-slide="intelligence"] svg {
+.composition[data-slide="intelligence"] svg[data-pitch-diagram] {
   max-height: 30vh;
 }
 .composition[data-slide="horizon"] h1 {
@@ -336,13 +336,13 @@
       [data-slide="vision"],
       [data-slide="closing"]
     )
-    svg {
+    svg[data-pitch-diagram] {
     max-height: 20vh;
   }
-  .composition[data-slide="closing"] svg {
+  .composition[data-slide="closing"] svg[data-pitch-diagram] {
     max-height: 16vh;
   }
-  .composition[data-slide="readiness"] svg {
+  .composition[data-slide="readiness"] svg[data-pitch-diagram] {
     max-height: 24vh;
   }
   .composition[data-slide="platform"] > div:first-child > div {
@@ -354,6 +354,18 @@
   }
   .composition[data-slide="business"] > div:first-child > h1 + p {
     margin-top: 1.7rem;
+  }
+}
+@media screen and (min-width: 1001px) {
+  .composition[data-slide="vision"] svg[data-pitch-diagram] {
+    max-height: 26vh;
+  }
+  .composition:is([data-slide="workforce"], [data-slide="readiness"])
+    svg[data-pitch-diagram] {
+    max-height: 30vh;
+  }
+  .composition[data-slide="evidence"] svg[data-pitch-diagram] {
+    max-height: 32vh;
   }
 }
 @media (max-width: 1000px) {
@@ -375,7 +387,7 @@
   .composition[data-slide="ownership"] figure {
     display: block;
   }
-  .composition[data-slide] svg {
+  .composition[data-slide] svg[data-pitch-diagram] {
     max-height: none;
   }
   .composition:is(
@@ -409,7 +421,7 @@
   .composition.composition[data-slide] h1 {
     font-size: 28pt;
   }
-  .composition[data-slide] svg {
+  .composition[data-slide] svg[data-pitch-diagram] {
     max-height: 70mm;
   }
   .composition:is(
@@ -451,7 +463,7 @@
       [data-slide="closing"],
       [data-slide="intelligence"]
     )
-    svg {
+    svg[data-pitch-diagram] {
     max-height: 50mm;
   }
 }

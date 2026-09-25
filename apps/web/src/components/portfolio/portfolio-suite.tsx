@@ -1,9 +1,16 @@
+import type { VisualCopy } from '../pitch/diagram-primitives';
 import { pitchTone } from '../pitch/pitch-brand';
 import { SceneGeometry } from '../pitch/scene-geometry';
 import type { PortfolioCopy } from './portfolio';
 import styles from './portfolio-suite.module.css';
 
-export function PortfolioSuite({ copy }: { copy: PortfolioCopy['suite'] }) {
+export function PortfolioSuite({
+  copy,
+  visuals,
+}: {
+  copy: PortfolioCopy['suite'];
+  visuals: VisualCopy;
+}) {
   return (
     <section className={styles.suite}>
       <header className={styles.intro}>
@@ -30,8 +37,13 @@ export function PortfolioSuite({ copy }: { copy: PortfolioCopy['suite'] }) {
             style={pitchTone(i)}
           >
             <div className={styles.visual}>
-              <svg viewBox="0 0 600 380" aria-hidden="true">
-                <SceneGeometry id={item.id} />
+              <svg
+                viewBox="0 0 600 380"
+                fill="none"
+                role="img"
+                aria-label={item.title}
+              >
+                <SceneGeometry id={item.id} copy={visuals} />
               </svg>
               <span className={styles.index}>0{i + 1}</span>
             </div>

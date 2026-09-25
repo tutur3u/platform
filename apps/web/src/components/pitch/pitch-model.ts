@@ -45,6 +45,7 @@ export const SLIDE_IDS = [
 ] as const;
 export type SlideId = (typeof SLIDE_IDS)[number];
 export interface PitchCopy {
+  visuals: import('./diagram-primitives').VisualCopy;
   sourceLabel: string;
   references: { label: string; detail: string }[];
   capabilities: CapabilityCopy;

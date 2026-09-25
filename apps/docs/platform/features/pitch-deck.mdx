@@ -69,8 +69,9 @@ Keep the app directory derived from `LAUNCHABLE_APPS`; every registered slug
 requires a translated description. The directory test catches missing descriptions.
 A registry entry does not imply every integration is complete or publicly accessible.
 
-Pitch slides use individual diagrams in `story-geometry.tsx` and
-`strategy-geometry.tsx`, with per-slide compositions. The Tasks and Meet scenes
+Pitch slides use labeled product flows, decision diagrams, and journey diagrams
+in `product-diagrams.tsx`, `decision-diagrams.tsx`, and `journey-diagrams.tsx`.
+The remaining editorial illustrations live in the geometry modules. The Tasks and Meet scenes
 are shared with the portfolio. They are local, synthetic illustrations: they do
 not call AI, create tasks, join meetings, or process real participant data.
 
@@ -92,3 +93,17 @@ slide. Update source details when changing a statistic. Full independence remain
 a roadmap; do not imply external infrastructure or model dependencies are gone.
 
 The ecosystem strategy slide explains the investment in shared architecture, ongoing engineering, and operations as AI-assisted app creation becomes more accessible. This is presented as a strategic thesis, with expansion tied to customer value and reuse rather than breadth alone.
+
+## Diagram and product-mark maintenance
+
+Keep diagram labels, icons, and connectors in the same SVG coordinate system.
+Use explicit unfilled paths for line art, route connectors to node boundaries,
+and draw opaque node surfaces over connection paths. Scope responsive SVG rules
+to the outer `data-pitch-diagram` element, never embedded product icons.
+
+`product-mark.tsx` uses approved local brand assets for Tuturuuu, Mira, Tasks
+(TuDo), Nova, and Rewise, with application icons for other products. It is shared
+by the deck, product illustrations, and portfolio directory. Short diagram labels
+live in both locales under `pitch.visuals`; do not position separate HTML labels
+over a scaled SVG. Workload and skills figures are explicitly synthetic, and
+evaluation cells stay empty until a real pilot provides measured results.

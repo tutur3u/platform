@@ -42,8 +42,7 @@ export function Tile({
         width={w}
         height={h}
         rx="10"
-        fill={colors[tone % 4]}
-        fillOpacity=".12"
+        fill="var(--background)"
         stroke={colors[tone % 4]}
         strokeWidth="1.5"
       />
@@ -66,6 +65,8 @@ export function Wire({
       fill="none"
       stroke={colors[tone % 4]}
       strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       strokeDasharray={dashed ? '5 7' : undefined}
     />
   );
@@ -73,7 +74,7 @@ export function Wire({
 export function Rings({ x, y }: { x: number; y: number }) {
   return (
     <g>
-      {[45, 80, 120].map((r, i) => (
+      {[35, 65, 95].map((r, i) => (
         <circle
           key={r}
           cx={x}

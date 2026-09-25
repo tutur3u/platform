@@ -3,39 +3,28 @@ import type { PitchCopy, SlideId } from './pitch-model';
 import styles from './pitch-scenes.module.css';
 import { SceneGeometry } from './scene-geometry';
 
+const diagramViewBoxes: Partial<Record<SlideId, string>> = {
+  vision: '0 100 600 240',
+  intelligence: '0 15 600 330',
+  workforce: '0 40 600 300',
+  evidence: '0 30 600 330',
+  readiness: '0 45 600 275',
+};
+
 export function PitchScene({ id, copy }: { id: SlideId; copy: PitchCopy }) {
   const panels = copy.slides[id].panels;
   return (
     <figure className={styles.scene} data-scene={id}>
       <div className={styles.canvas}>
-        <svg viewBox="0 0 600 380" aria-hidden="true">
-          <SceneGeometry id={id} />
+        <svg
+          data-pitch-diagram="true"
+          viewBox={diagramViewBoxes[id] ?? '0 0 600 380'}
+          fill="none"
+          role="img"
+          aria-label={copy.slides[id].title}
+        >
+          <SceneGeometry id={id} copy={copy.visuals} />
         </svg>
-        {id === 'platform' && (
-          <div className={styles.productNames}>
-            {[
-              'Tasks',
-              'Meet',
-              'Calendar',
-              'Mira',
-              'Mail',
-              'Drive',
-              'Contacts',
-              'Finance',
-              'Forms',
-              'Learn',
-              'Teach',
-              'Hive',
-              'Nova',
-              'Rewise',
-              'Git',
-            ].map((name, i) => (
-              <span style={pitchTone(i)} key={name}>
-                {name}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
       <figcaption className={styles.legend}>
         {panels.map((panel, i) => (

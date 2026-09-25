@@ -7,7 +7,7 @@
   border-top: 2px solid var(--tone);
   padding-top: 18px;
 }
-.researchAreas svg {
+.researchAreas article > svg {
   width: 100%;
   height: auto;
   margin-bottom: 20px;
@@ -75,7 +75,7 @@
     grid-template-columns: 1fr;
     gap: 35px;
   }
-  .researchAreas svg {
+  .researchAreas article > svg {
     max-height: 210px;
   }
   .process ol {
