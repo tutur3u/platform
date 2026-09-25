@@ -5,12 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/notifications/widgets/notification_destination.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -147,7 +149,9 @@ class _NotificationsViewState extends State<NotificationsView> {
             top: false,
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsivePadding.horizontal(context.deviceClass),
+              ),
               child: list,
             ),
           );

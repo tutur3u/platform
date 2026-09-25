@@ -9,6 +9,7 @@ void main() {
     WidgetTester tester, {
     Size size = const Size(390, 844),
     bool showHeader = false,
+    bool scrollableHeader = false,
     ScrollController? scrollController,
     ValueChanged<bool>? onVisibilityChanged,
   }) async {
@@ -29,6 +30,7 @@ void main() {
                     child: Text('Header'),
                   )
                 : null,
+            scrollableHeader: scrollableHeader,
             onVisibilityChanged: onVisibilityChanged,
             navigation: const Align(
               heightFactor: 1,
@@ -44,7 +46,10 @@ void main() {
                 controller: scrollController,
                 padding: EdgeInsets.fromLTRB(
                   16,
-                  16,
+                  16 +
+                      (scrollableHeader
+                          ? floatingShellHeaderInset(context)
+                          : 0),
                   16,
                   16 + MediaQuery.paddingOf(context).bottom,
                 ),
@@ -119,9 +124,7 @@ void main() {
     expect(visibility.last, isTrue);
   });
 
-  testWidgets('hidden header frees page height without shifting back on idle', (
-    tester,
-  ) async {
+  testWidgets('fixed header stays visible when the dock hides', (tester) async {
     await mount(tester, showHeader: true);
     final before = tester.getRect(find.byType(ListView));
     expect(before.top, greaterThan(0));
@@ -134,18 +137,20 @@ void main() {
       of: header,
       matching: find.byType(AnimatedOpacity),
     );
-    expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 0);
+    expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 1);
+    expect(
+      tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity).last).opacity,
+      0,
+    );
     final expanded = tester.getRect(find.byType(ListView));
-    expect(expanded.top, 0);
+    expect(expanded, before);
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
     expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 1);
     expect(tester.getRect(find.byType(ListView)), expanded);
   });
 
-  testWidgets('jumping to top restores clearance when header returns', (
-    tester,
-  ) async {
+  testWidgets('jumping to top keeps the viewport stable', (tester) async {
     final scrollController = ScrollController();
     addTearDown(scrollController.dispose);
     await mount(tester, showHeader: true, scrollController: scrollController);
@@ -153,13 +158,67 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -160));
     await tester.pump(const Duration(milliseconds: 250));
     await tester.pump(const Duration(milliseconds: 250));
-    expect(tester.getRect(find.byType(ListView)).top, 0);
+    expect(tester.getRect(find.byType(ListView)).top, initialTop);
 
     scrollController.jumpTo(0);
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
     expect(tester.getRect(find.byType(ListView)).top, initialTop);
+  });
+
+  testWidgets('root header floats over scrolling content without a gap', (
+    tester,
+  ) async {
+    final scrollController = ScrollController();
+    addTearDown(scrollController.dispose);
+    await mount(
+      tester,
+      showHeader: true,
+      scrollableHeader: true,
+      scrollController: scrollController,
+    );
+    final viewport = tester.getRect(find.byType(ListView));
+    expect(viewport.top, 0);
+    expect(
+      tester.getTopLeft(find.text('Row 0')).dy,
+      greaterThan(
+        tester.getBottomLeft(find.byKey(const Key('floating-header'))).dy,
+      ),
+    );
+    await tester.drag(find.byType(ListView), const Offset(0, -160));
+    await tester.pump(const Duration(milliseconds: 500));
+    final headerOpacity = find.ancestor(
+      of: find.byKey(const Key('floating-header')),
+      matching: find.byType(AnimatedOpacity),
+    );
+    expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 0);
+    expect(tester.getRect(find.byType(ListView)), viewport);
+    scrollController.jumpTo(0);
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(find.byType(ListView)), viewport);
+    expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 1);
+  });
+
+  testWidgets('header surface covers the system status area', (tester) async {
+    tester.view
+      ..padding = const FakeViewPadding(top: 44)
+      ..viewPadding = const FakeViewPadding(top: 44);
+    addTearDown(() {
+      tester.view.resetPadding();
+      tester.view.resetViewPadding();
+    });
+    await mount(tester, showHeader: true, scrollableHeader: true);
+    final surface = tester.getRect(
+      find.byKey(const ValueKey('floating-shell-header-surface')),
+    );
+    expect(surface.top, 0);
+    expect(surface.bottom, greaterThan(44));
+    expect(
+      tester.getTopLeft(find.text('Row 0')).dy,
+      greaterThan(surface.bottom),
+    );
   });
 
   testWidgets('route handoff previews never retain old action callbacks', (

@@ -9,7 +9,7 @@ class _SettingsOverviewSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Column(
+    final general = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -43,7 +43,11 @@ class _SettingsOverviewSection extends StatelessWidget {
               ),
           ],
         ),
-        const shad.Gap(20),
+      ],
+    );
+    final support = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Text(
           l10n.settingsSupportGroup,
           style: Theme.of(context).textTheme.titleSmall,
@@ -86,6 +90,24 @@ class _SettingsOverviewSection extends StatelessWidget {
           ],
         ),
       ],
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 840) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [general, const shad.Gap(20), support],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: general),
+            const SizedBox(width: 20),
+            Expanded(child: support),
+          ],
+        );
+      },
     );
   }
 }
@@ -223,70 +245,97 @@ class _PreferencesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return SettingsSection(
-      title: l10n.settingsPreferencesSectionTitle,
-      description: l10n.settingsPreferencesSectionDescription,
-      children: [
-        SettingsTile(
-          icon: Icons.palette_outlined,
-          title: l10n.settingsTheme,
-          subtitle: l10n.settingsThemeDescription,
-          value: themeLabel,
-          onTap: onChangeTheme,
+    final tiles = <Widget>[
+      SettingsTile(
+        icon: Icons.palette_outlined,
+        title: l10n.settingsTheme,
+        subtitle: l10n.settingsThemeDescription,
+        value: themeLabel,
+        onTap: onChangeTheme,
+      ),
+      SettingsTile(
+        icon: Icons.language_rounded,
+        title: l10n.settingsLanguage,
+        subtitle: l10n.settingsLanguageDescription,
+        value: languageLabel,
+        onTap: onChangeLanguage,
+      ),
+      SettingsTile(
+        icon: Icons.visibility_outlined,
+        title: l10n.settingsFinanceAmounts,
+        subtitle: l10n.settingsFinanceAmountsDescription,
+        value: showFinanceAmounts
+            ? l10n.financeShowAmounts
+            : l10n.financeHideAmounts,
+        onTap: onToggleFinanceAmounts,
+        showChevron: false,
+        trailing: IgnorePointer(
+          child: shad.Switch(value: showFinanceAmounts, onChanged: (_) {}),
         ),
-        SettingsTile(
-          icon: Icons.language_rounded,
-          title: l10n.settingsLanguage,
-          subtitle: l10n.settingsLanguageDescription,
-          value: languageLabel,
-          onTap: onChangeLanguage,
-        ),
-        SettingsTile(
-          icon: Icons.visibility_outlined,
-          title: l10n.settingsFinanceAmounts,
-          subtitle: l10n.settingsFinanceAmountsDescription,
-          value: showFinanceAmounts
-              ? l10n.financeShowAmounts
-              : l10n.financeHideAmounts,
-          onTap: onToggleFinanceAmounts,
-          showChevron: false,
-          trailing: IgnorePointer(
-            child: shad.Switch(value: showFinanceAmounts, onChanged: (_) {}),
+      ),
+      SettingsTile(
+        icon: Icons.calendar_today_outlined,
+        title: l10n.settingsFirstDayOfWeek,
+        subtitle: l10n.settingsFirstDayOfWeekDescription,
+        value: calendarLabel,
+        onTap: onChangeFirstDayOfWeek,
+      ),
+      SettingsTile(
+        icon: Icons.notifications_active_outlined,
+        title: l10n.remindersTitle,
+        subtitle: l10n.remindersDescription,
+        onTap: () => context.push(Routes.settingsReminders),
+      ),
+      SettingsTile(
+        icon: Icons.view_kanban_outlined,
+        title: l10n.settingsDefaultTaskBoardNavigation,
+        subtitle: l10n.settingsDefaultTaskBoardNavigationDescription,
+        value: disableDefaultTaskBoardNavigation
+            ? l10n.settingsDefaultTaskBoardNavigationBoardPicker
+            : l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
+        onTap: onToggleDefaultTaskBoardNavigation,
+        showChevron: false,
+        trailing: IgnorePointer(
+          child: shad.Switch(
+            value: !disableDefaultTaskBoardNavigation,
+            onChanged: (_) {},
           ),
         ),
-        SettingsTile(
-          icon: Icons.calendar_today_outlined,
-          title: l10n.settingsFirstDayOfWeek,
-          subtitle: l10n.settingsFirstDayOfWeekDescription,
-          value: calendarLabel,
-          onTap: onChangeFirstDayOfWeek,
-        ),
-        SettingsTile(
-          icon: Icons.notifications_active_outlined,
-          title: l10n.remindersTitle,
-          subtitle: l10n.remindersDescription,
-          onTap: () => context.push(Routes.settingsReminders),
-        ),
-        SettingsTile(
-          icon: Icons.view_kanban_outlined,
-          title: l10n.settingsDefaultTaskBoardNavigation,
-          subtitle: l10n.settingsDefaultTaskBoardNavigationDescription,
-          value: disableDefaultTaskBoardNavigation
-              ? l10n.settingsDefaultTaskBoardNavigationBoardPicker
-              : l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
-          onTap: onToggleDefaultTaskBoardNavigation,
-          showChevron: false,
-          trailing: IgnorePointer(
-            child: shad.Switch(
-              value: !disableDefaultTaskBoardNavigation,
-              onChanged: (_) {},
-            ),
-          ),
-        ),
-      ],
+      ),
+    ];
+    return LayoutBuilder(
+      builder: (context, constraints) => SettingsSection(
+        title: l10n.settingsPreferencesSectionTitle,
+        description: l10n.settingsPreferencesSectionDescription,
+        children: constraints.maxWidth < 840
+            ? tiles
+            : [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _settingsTileColumn(tiles.take(3).toList()),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _settingsTileColumn(tiles.skip(3).toList()),
+                    ),
+                  ],
+                ),
+              ],
+      ),
     );
   }
 }
+
+Widget _settingsTileColumn(List<Widget> tiles) => Column(
+  children: [
+    for (var index = 0; index < tiles.length; index++) ...[
+      if (index > 0) const shad.Gap(8),
+      tiles[index],
+    ],
+  ],
+);
 
 class _SettingsHeroCard extends StatelessWidget {
   const _SettingsHeroCard({required this.isRefreshing});

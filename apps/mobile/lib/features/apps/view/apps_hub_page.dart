@@ -12,6 +12,7 @@ import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/staggered_entrance.dart';
 
@@ -58,6 +59,9 @@ class _AppsHubPageState extends State<AppsHubPage> {
               parent: AlwaysScrollableScrollPhysics(),
             ),
             slivers: [
+              SliverToBoxAdapter(
+                child: SizedBox(height: floatingShellHeaderInset(context)),
+              ),
               if (modules.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,

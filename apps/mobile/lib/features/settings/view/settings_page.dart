@@ -175,7 +175,7 @@ class _SettingsViewState extends State<_SettingsView> {
             return NovaRefreshIndicator(
               onRefresh: () => _refresh(context),
               child: ResponsiveWrapper(
-                maxWidth: ResponsivePadding.maxContentWidth(
+                maxWidth: ResponsivePadding.rootContentWidth(
                   context.deviceClass,
                 ),
                 child: ListView(
@@ -184,7 +184,7 @@ class _SettingsViewState extends State<_SettingsView> {
                   ),
                   padding: EdgeInsets.fromLTRB(
                     horizontalPadding,
-                    20,
+                    10,
                     horizontalPadding,
                     32 + MediaQuery.paddingOf(context).bottom,
                   ),
