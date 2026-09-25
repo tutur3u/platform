@@ -13,7 +13,13 @@ import { PitchSimulation } from './pitch-simulation';
 import art from './pitch-visual.module.css';
 
 export function PitchVisual({ id, copy }: { id: SlideId; copy: PitchCopy }) {
-  if (id === 'horizon' || id === 'closing')
+  if (
+    id === 'horizon' ||
+    id === 'closing' ||
+    id === 'vision' ||
+    id === 'research' ||
+    id === 'engagement'
+  )
     return <PitchArtwork id={id} copy={copy} />;
   if (id === 'moment' || id === 'references')
     return <EvidenceScene id={id} copy={copy} />;

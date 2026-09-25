@@ -11582,8 +11582,11 @@
     "annual": "Thanh toán năm",
     "art": {
       "closingAlt": "Hành trình ý tưởng từ phong cảnh Việt Nam hướng tới các vì sao.",
+      "engagementAlt": "Xưởng đổi mới Việt Nam tưởng tượng với con người xây các mô hình kính kết nối lúc bình minh.",
       "horizonAlt": "Đài quan sát tưởng tượng với công cụ kết nối nhìn ra Trái Đất.",
-      "note": "Minh họa ý tưởng tạo bằng AI"
+      "note": "Minh họa ý tưởng bằng AI · không phải cơ sở hiện có hay ảnh chụp sản phẩm",
+      "researchAlt": "Thế giới mô phỏng thu nhỏ với các đường đi tác tử nhiều màu hội tụ tại sân chung.",
+      "visionAlt": "Khu vườn tri thức bằng kính tưởng tượng kết nối các đảo học tập, cộng tác và lập kế hoạch."
     },
     "capacity": "Thêm dung lượng",
     "celebrate": "Chúc mừng",
@@ -11627,6 +11630,10 @@
       "Chi phí phục vụ"
     ],
     "monthly": "Thanh toán tháng",
+    "motion": {
+      "pause": "Tạm dừng chuyển động",
+      "resume": "Tiếp tục chuyển động"
+    },
     "next": "Trang tiếp",
     "noClaims": "Định hướng sản phẩm, không cam kết phát hành hoặc hiệu suất.",
     "notes": "Ghi chú thuyết trình",
@@ -12539,7 +12546,7 @@
         "title": "Trợ lý giỏi hơn\nphải giúp bạn tự chủ hơn."
       },
       "vision": {
-        "body": "Hãy hình dung bạn mô tả kết quả mong muốn thay vì thao tác qua mười công cụ. Trợ lý tập hợp tri thức cần thiết, khảo sát lựa chọn và hỗ trợ thực hiện kế hoạch đã duyệt. Chúng tôi bắt đầu từ công việc hằng ngày để xây dựng sự thấu hiểu.",
+        "body": "Chúng tôi khát vọng xây công ty công nghệ Việt Nam với sức đổi mới và chiều rộng gợi nhắc Google, trên con đường mở của riêng mình. Đích hướng tới là cộng sự như JARVIS: hữu ích sâu sắc, kết nối thế giới của bạn và chịu trách nhiệm trước bạn.",
         "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Đích đến dài hạn",
         "note": "Hãy hình dung bạn mô tả kết quả mong muốn thay vì thao tác qua mười công cụ. Trợ lý tập hợp tri thức cần thiết, khảo sát lựa chọn và hỗ trợ thực hiện kế hoạch đã duyệt. Chúng tôi bắt đầu từ công việc hằng ngày để xây dựng sự thấu hiểu. Tầm nhìn dài hạn.",
@@ -12557,7 +12564,7 @@
             "detail": "Đề xuất, giải thích, xin phê duyệt và học từ kết quả."
           }
         ],
-        "status": "Tầm nhìn dài hạn",
+        "status": "Khát vọng toàn cầu, được chứng minh qua từng năng lực hữu ích",
         "title": "Một cộng sự như JARVIS.\nMột khởi đầu rất thực tế."
       },
       "workflow": {
@@ -12927,6 +12934,81 @@
     "explore": "Khám phá hệ sinh thái",
     "eyebrow": "TUTURUUU / HỒ SƠ NĂNG LỰC",
     "hero": "Xây từ Việt Nam.\nMở những khả năng mới.",
+    "innovation": {
+      "artNote": "Minh họa ý tưởng bằng AI · không phải cơ sở hiện có hay ảnh chụp sản phẩm",
+      "body": "Chúng tôi khát vọng trở thành Google tiếp theo của Việt Nam về chiều rộng đổi mới: sản phẩm hữu ích hằng ngày, năng lực kỹ thuật sâu và nghiên cứu mở ra khả năng mới. Hướng đi ấy phải được chứng minh bằng sản phẩm, độ tin cậy và giá trị mang lại cho con người.",
+      "chapters": [
+        {
+          "tab": "Sản phẩm hữu ích",
+          "title": "Bắt đầu từ một ngày đáng cải thiện.",
+          "body": "Công việc được đẩy tới. Cuộc họp nhớ được bước tiếp theo. Lịch bảo vệ sự tập trung. Công nghệ có chỗ trong cuộc sống khi giúp giải quyết công việc ngay trước mắt.",
+          "alt": "Xưởng đổi mới Việt Nam tưởng tượng với con người xây các mô hình kính kết nối lúc bình minh.",
+          "proof": "Hiện tại: nền tảng sản phẩm cho công việc, giao tiếp, học tập và vận hành.",
+          "steps": [
+            {
+              "title": "Giải quyết vướng mắc thật",
+              "body": "Đến với quy trình thực tế bằng công cụ hữu ích và lý do rõ ràng để quay lại."
+            },
+            {
+              "title": "Kết nối bước tiếp theo",
+              "body": "Nối những khoảnh khắc riêng lẻ: cuộc trò chuyện, lời hứa và kế hoạch."
+            },
+            {
+              "title": "Xây niềm tin hằng ngày",
+              "body": "Liên tục cải thiện độ tin cậy, khả năng tiếp cận và những chi tiết người dùng cảm nhận."
+            }
+          ]
+        },
+        {
+          "tab": "Nền tảng chung",
+          "title": "Mỗi sản phẩm làm sản phẩm kế tiếp mạnh hơn.",
+          "body": "Tệp, con người, quyền truy cập, kiến thức và công việc thuộc cùng một thế giới. Kiến trúc chung giúp ứng dụng tập trung đóng góp vào điều lớn hơn mà không bắt người dùng dựng lại ngữ cảnh mỗi lần.",
+          "alt": "Khu vườn tri thức bằng kính tưởng tượng kết nối các đảo học tập, cộng tác và lập kế hoạch.",
+          "proof": "Lợi thế cần được duy trì: kiến trúc, hạ tầng, kỹ thuật và trải nghiệm nhất quán.",
+          "steps": [
+            {
+              "title": "Tái sử dụng nền tảng",
+              "body": "Danh tính, ranh giới không gian làm việc, API, lưu trữ và triển khai phục vụ nhiều sản phẩm."
+            },
+            {
+              "title": "Giữ liền mạch ngữ cảnh",
+              "body": "Kết nối thông tin đúng quyền và mục đích để công cụ kế tiếp hiểu công việc."
+            },
+            {
+              "title": "Tích lũy giá trị đầu tư",
+              "body": "Cải thiện một năng lực chung và đưa lợi ích tới nhiều phần của hệ sinh thái."
+            }
+          ]
+        },
+        {
+          "tab": "Trí tuệ mới",
+          "title": "Xây thế giới mà trợ lý cần thấu hiểu.",
+          "body": "Cộng sự như JARVIS cần nhiều hơn câu trả lời thông minh. Mira cần ngữ cảnh đúng quyền, công cụ hữu ích, bộ nhớ, đánh giá và khả năng phối hợp với con người cùng tác tử khác. Đó là hướng nghiên cứu dài hạn.",
+          "alt": "Thế giới mô phỏng thu nhỏ với các đường đi tác tử nhiều màu hội tụ tại sân chung.",
+          "proof": "Hướng nghiên cứu: phối hợp đa tác tử, mô phỏng, học hỏi và hành động có kiểm duyệt.",
+          "steps": [
+            {
+              "title": "Khám phá qua mô phỏng",
+              "body": "So sánh hành vi tác tử và phương án quy trình trong môi trường có giới hạn."
+            },
+            {
+              "title": "Học từ bằng chứng",
+              "body": "Xem xét kết quả, thất bại, phản hồi và giả định phía sau quyết định."
+            },
+            {
+              "title": "Con người giữ quyền quyết định",
+              "body": "Tiến tới năng lực cao hơn với quyền rõ ràng và con người xem xét ở nơi cần thiết."
+            }
+          ]
+        }
+      ],
+      "cycle": "Mỗi khoản đầu tư tạo cơ hội tiếp theo như thế nào",
+      "explore": "Khám phá cách khát vọng tích lũy thành giá trị",
+      "eyebrow": "DOANH NGHIỆP VIỆT NAM. KHÁT VỌNG TOÀN CẦU.",
+      "footer": "Mở rộng đi cùng trách nhiệm. Chúng tôi mở rộng khi nền tảng chung tạo giá trị thật, rồi kiểm thử, duy trì và cải thiện những gì mọi người tin dùng. Nghiên cứu trở thành sản phẩm khi có đủ bằng chứng.",
+      "promise": "Con đường riêng của chúng tôi là mở: hệ sinh thái do Tuturuuu duy trì, nơi mọi người sở hữu công nghệ và làm chủ trí tuệ hỗ trợ mình.",
+      "title": "Công ty công nghệ lớn tiếp theo\ncó thể bắt đầu từ đây."
+    },
     "intro": "Công cụ hữu ích hôm nay. Trí tuệ kết nối ngày mai. Chúng tôi xây hệ sinh thái mở để con người cùng suy nghĩ, sáng tạo và đi xa hơn.",
     "journey": {
       "artNote": "Minh họa ý tưởng tạo bằng AI · thể hiện khát vọng",
@@ -12972,6 +13054,10 @@
     ],
     "meetBody": "Họp trực tuyến với Mira trong chat phòng và giọng nói Live. AI hiện diện rõ ràng, đầu vào micro chủ động bật, hỗ trợ riêng tư và bước tiếp theo được xem xét.",
     "meetTitle": "Gặp cộng sự AI của bạn.",
+    "motion": {
+      "pause": "Tạm dừng chuyển động",
+      "resume": "Tiếp tục chuyển động"
+    },
     "next": "Bước tiếp theo",
     "observatory": {
       "alt": "Đài quan sát ý tưởng với các mô-đun phát sáng kết nối nhìn ra Trái Đất.",

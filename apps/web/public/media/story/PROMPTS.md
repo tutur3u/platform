@@ -9,3 +9,11 @@ Premium technology website panorama, 16:9. A sculptural emerald Vietnamese coast
 ## observatory.webp
 
 Premium editorial research illustration, 16:9. A quiet open observatory above clouds at blue hour looking toward Earth's luminous horizon and stars. A circular worktable holds translucent glass and brushed aluminum modules, connected by fine blue, jade, amber and coral light channels. A metaphor for useful tools becoming coherent intelligence. Human-scale craftsmanship, architectural photography meets optimistic science fiction, believable materials, soft volumetric lighting. Table in lower half, expansive sky above. No text, logos, charts, interface labels, humanoid robots, people, weapons, watermark, or neon cyberpunk. Aspirational concept art, not an existing facility; composition suitable for mobile cropping.
+
+## Living ecosystem series — built-in image generation
+
+Generated with the built-in image tool and optimized to WebP. All are concept illustrations, not existing facilities, staff photographs, or product screenshots.
+
+- `innovation-studio.webp`: Premium 16:9 Vietnamese innovation workshop at dawn, overlooking a lush river city; anonymous adult researchers building translucent connected glass modules; timber, ivory stone and tropical greenery; restrained Tuturuuu blue, green, orange and coral lighting. Cinematic architectural concept photography. No words, logos, UI or watermark.
+- `knowledge-garden.webp`: Premium 16:9 physical-model concept of translucent glass islands for learning, meetings, planning and data, connected around a warm opalescent assistant sphere. Navy architectural space, glass and ivory ceramic, Vietnamese lacquer influence, blue/green/orange/coral highlights. No people, logos, text or UI.
+- `simulation-world.webp`: Premium 16:9 miniature scientific sandbox viewed from above at 35 degrees. Ivory terraced terrain, abstract pavilions, glass agent spheres and blue/green/orange/coral light paths converging at a shared courtyard. Transparent boundary, navy background, tactile glass and ceramic. No text, numerals, people, logos or UI. Communicates bounded exploration before real-world action.

@@ -6,15 +6,15 @@ export function PitchArtwork({
   id,
   copy,
 }: {
-  id: 'horizon' | 'closing';
+  id: 'horizon' | 'closing' | 'vision' | 'research' | 'engagement';
   copy: PitchCopy;
 }) {
   return (
     <figure className={styles.artwork} data-artwork={id}>
-      <div className={styles.image}>
+      <div className={styles.image} data-story-image>
         <Image
-          src={`/media/story/${id === 'horizon' ? 'observatory' : 'vietnam-starward'}.webp`}
-          alt={id === 'horizon' ? copy.art.horizonAlt : copy.art.closingAlt}
+          src={`/media/story/${{ horizon: 'observatory', closing: 'vietnam-starward', vision: 'knowledge-garden', research: 'simulation-world', engagement: 'innovation-studio' }[id]}.webp`}
+          alt={copy.art[`${id}Alt`]}
           width={1672}
           height={941}
           sizes="(max-width: 1000px) 90vw, 50vw"
