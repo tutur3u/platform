@@ -67,6 +67,10 @@ export default async function proxy(request: NextRequest) {
     request,
     response
   );
+  // The provider proxy already forwards refreshed, verified cookies. Replaying
+  // host-only cleanup from Set-Cookie would erase same-name shared cookies.
+  const providerCookie = response.headers.get('x-middleware-request-cookie');
+  if (providerCookie !== null) requestHeaders.set('cookie', providerCookie);
   const { user } = await resolveSupabaseSessionRequest({
     headers: requestHeaders,
     url: request.url,
