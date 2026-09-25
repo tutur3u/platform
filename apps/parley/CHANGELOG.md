@@ -15,3 +15,5 @@
 * **parley:** address studio review edge cases ([bddd876](https://github.com/tutur3u/platform/commit/bddd876eef70e86f10f1f070b23fe8b64ab2c5f5))
 * **parley:** complete discovery empty states ([b5c962d](https://github.com/tutur3u/platform/commit/b5c962dfd4d1ed7c7f75ddf7329e44ab4d64d1cc))
 * **parley:** complete workspace and deployment setup ([52e979f](https://github.com/tutur3u/platform/commit/52e979fef43a447aadf42b7ccf09e9579e0eee37))
+* **parley:** preserve shared cookies during browser cleanup ([#5518](https://github.com/tutur3u/platform/issues/5518)) ([96718c0](https://github.com/tutur3u/platform/commit/96718c0af2fca90bc2da48d26ca2cbe2a75fbefd))
+* **parley:** retain verified shared cookies during host cleanup ([7888782](https://github.com/tutur3u/platform/commit/7888782a14c82a2b4dada5ea8aafa35fe91fcaf7))

@@ -15,26 +15,31 @@ class AssistantChatFeedback extends StatelessWidget {
   Widget build(BuildContext context) {
     if (state.status == AssistantChatStatus.error) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 6),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.errorContainer,
-            borderRadius: BorderRadius.circular(16),
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             child: Row(
               children: [
                 Icon(
                   Icons.error_outline_rounded,
-                  color: Theme.of(context).colorScheme.onErrorContainer,
+                  color: Theme.of(context).colorScheme.error,
+                  size: 20,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     context.l10n.assistantReplyFailed,
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onErrorContainer,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 13,
                     ),
                   ),
                 ),
@@ -42,7 +47,7 @@ class AssistantChatFeedback extends StatelessWidget {
                   IconButton(
                     onPressed: onRetry,
                     tooltip: context.l10n.commonRetry,
-                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    color: Theme.of(context).colorScheme.onSurface,
                     icon: const Icon(Icons.refresh_rounded),
                   ),
               ],

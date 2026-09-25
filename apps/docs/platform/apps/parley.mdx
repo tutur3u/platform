@@ -100,3 +100,21 @@ Supabase request client. Cloudflare proxy execution does not provide the same
 ambient `next/headers` cookie context as a server component. Keep refreshed cookies
 on the forwarded request and response, and verify login on the deployed Worker.
 A local Next server alone does not prove this runtime boundary.
+
+### Shared-cookie forwarding and rollback recovery
+
+The centralized auth proxy forwards the verified provider cookie in
+`x-middleware-request-cookie`. Parley uses that value for its access check and
+page render. Do not replace it by replaying response cookie deletions: clearing a
+host-only duplicate must not erase the same-name `.tuturuuu.com` session. Include
+a shared-domain request in authentication smoke tests; a plain localhost cookie
+does not exercise this cleanup path.
+
+After a Worker rollback, Cloudflare can reject ordinary secret updates with
+error `10215` because the latest version is not active. Keep the working rollback
+active while preparing the corrected deployment. If existing required secrets
+are unchanged, deploy the corrected, validated artifact retaining those secrets,
+verify authentication, then retry the failed CI deployment. Never reactivate a
+broken version merely to unblock secret configuration. OpenNext artifacts may
+contain absolute build-host asset paths; deploy on the original build platform,
+or relocate only generated imports to the identical included assets.

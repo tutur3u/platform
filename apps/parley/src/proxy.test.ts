@@ -121,3 +121,26 @@ it('passes refreshed cookies into the same page render', async () => {
     'refreshed=session'
   );
 });
+
+it('retains the verified shared cookie when the browser clears its host-only duplicate', async () => {
+  const response = NextResponse.next({
+    request: {
+      headers: new Headers({ cookie: 'sb-test-auth-token=verified' }),
+    },
+  });
+  response.headers.append(
+    'set-cookie',
+    'sb-test-auth-token=; Path=/; Max-Age=0'
+  );
+  f.auth.mockResolvedValue(response);
+  // Replaying host-only deletion cannot represent the separate shared cookie.
+  f.headers.mockReturnValue(new Headers());
+  await proxy(request('/en/sessions'));
+  expect(f.session.mock.calls[0]?.[0].headers.get('cookie')).toBe(
+    'sb-test-auth-token=verified'
+  );
+  expect(f.intl.mock.calls[0]?.[0].headers.get('cookie')).toBe(
+    'sb-test-auth-token=verified'
+  );
+  expect(f.propagate).toHaveBeenCalledWith(response, expect.anything());
+});

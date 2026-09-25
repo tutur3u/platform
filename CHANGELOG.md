@@ -43,7 +43,10 @@
 ### Bug Fixes
 
 * **ai:** process first voice attachments and retire legacy tags ([ccae19a](https://github.com/tutur3u/platform/commit/ccae19a3894569b1574e31b35a174e9fca6bccd3)) ([#5500](https://github.com/tutur3u/platform/issues/5500)) ([4f3504b](https://github.com/tutur3u/platform/commit/4f3504b95ee6cbd17dcf80af16930100c0c3a382))
+* **assistant:** preserve voice retries and saved replies ([9a5a44f](https://github.com/tutur3u/platform/commit/9a5a44fe8f7e58f382658de4bf03c9d17c2d7345)) ([#5517](https://github.com/tutur3u/platform/issues/5517)) ([8101e94](https://github.com/tutur3u/platform/commit/8101e949b0484786e0ec490502ab32d3ac3e7041))
+* **assistant:** respect source size gate ([5603662](https://github.com/tutur3u/platform/commit/5603662c710c54efc6a9126666ed198b5e0f9f1b))
 * **auth:** order MFA migration and format message bundles ([5d3c4b1](https://github.com/tutur3u/platform/commit/5d3c4b1bebe5ce0fbba9b21a1db6df94f82883ad))
+* **auth:** resolve proxy sessions from explicit request cookies ([aa26f80](https://github.com/tutur3u/platform/commit/aa26f808ba00850c57a94024c229b39dbb014960)) ([#5516](https://github.com/tutur3u/platform/issues/5516)) ([856a8d7](https://github.com/tutur3u/platform/commit/856a8d7c179a35da68882230859609a1ee71d010))
 * **auth:** restore MFA CI validation on clean checkouts ([3d921f9](https://github.com/tutur3u/platform/commit/3d921f9b32581201faab118cd5bc333d850d969b))
 * **auth:** skip MFA enrollment without an authenticated user ([14e6837](https://github.com/tutur3u/platform/commit/14e6837acad77e16e2ca58a63d7a2b1863b14ec5))
 * **calendar:** treat working locations as non-reminder events ([454e666](https://github.com/tutur3u/platform/commit/454e666a6465e3debd06260aedc1de7b96ab5d67)) ([#5511](https://github.com/tutur3u/platform/issues/5511)) ([6508ad6](https://github.com/tutur3u/platform/commit/6508ad681aaa174b186022fcbd526e20be682973))
@@ -129,7 +132,9 @@
 * **parley:** complete discovery empty states ([b5c962d](https://github.com/tutur3u/platform/commit/b5c962dfd4d1ed7c7f75ddf7329e44ab4d64d1cc))
 * **parley:** complete workspace and deployment setup ([52e979f](https://github.com/tutur3u/platform/commit/52e979fef43a447aadf42b7ccf09e9579e0eee37))
 * **parley:** populate OpenNext cache before deployment ([f3bc1a6](https://github.com/tutur3u/platform/commit/f3bc1a658f1bf8e02e9c563aabca04671a3cb30b)) ([#5506](https://github.com/tutur3u/platform/issues/5506)) ([629c7f7](https://github.com/tutur3u/platform/commit/629c7f7ef2a67d3ddc75f9fcbbf3d15037438a2b))
+* **parley:** preserve shared cookies during browser cleanup ([#5518](https://github.com/tutur3u/platform/issues/5518)) ([96718c0](https://github.com/tutur3u/platform/commit/96718c0af2fca90bc2da48d26ca2cbe2a75fbefd))
 * **parley:** require rendered route success ([72e9fff](https://github.com/tutur3u/platform/commit/72e9fffaca9d376b744b52361578fcff86c3a4df))
+* **parley:** retain verified shared cookies during host cleanup ([7888782](https://github.com/tutur3u/platform/commit/7888782a14c82a2b4dada5ea8aafa35fe91fcaf7))
 * **pitch:** clarify human control in Vietnamese ([c8f5802](https://github.com/tutur3u/platform/commit/c8f580284dd849d8e46a66dd34217ed6770ecb26))
 * **tasks:** restore Smart Suggest session access and translations ([d243c2a](https://github.com/tutur3u/platform/commit/d243c2a33ca44d37ac605dfef7a786e7dc0d0603)) ([#5451](https://github.com/tutur3u/platform/issues/5451)) ([ecd6965](https://github.com/tutur3u/platform/commit/ecd6965f7143e9827840d8ae4e79181061ece2fd))
 * **web:** align pitch labels and keep trust diagram within print page ([6b8cb94](https://github.com/tutur3u/platform/commit/6b8cb946282bd5c38bf8f09626b45bd251984447)) ([#5515](https://github.com/tutur3u/platform/issues/5515)) ([c849de3](https://github.com/tutur3u/platform/commit/c849de30c540572d71b9909d842779ec2e298e21))

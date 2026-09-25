@@ -242,6 +242,10 @@ void main() {
     ).thenAnswer(
       (_) => Stream.fromIterable([
         const AssistantJsonStreamEvent({
+          'type': 'start',
+          'messageId': 'temporary-reply',
+        }),
+        const AssistantJsonStreamEvent({
           'type': 'error',
           'errorText': 'Service unavailable',
         }),
@@ -294,6 +298,141 @@ void main() {
         creditWsId: 'ws',
       ),
     ).called(2);
+  });
+
+  test('retry sends the original uploaded voice attachment', () async {
+    const voice = AssistantAttachment(
+      id: 'audio',
+      name: 'voice-message.m4a',
+      size: 4,
+      type: 'audio/mp4',
+      storagePath: 'chats/cached/audio.m4a',
+      uploadState: AssistantAttachmentUploadState.uploaded,
+    );
+    when(() => repository.restoreChat(wsId: 'ws', chatId: 'cached')).thenAnswer(
+      (_) async => const AssistantRestoredChat(
+        chat: AssistantChatRecord(id: 'cached'),
+        messages: [
+          AssistantMessage(
+            id: 'voice-turn',
+            role: 'user',
+            parts: [AssistantMessagePart(type: 'text', text: 'Please listen')],
+          ),
+        ],
+        attachmentsByMessageId: {
+          'voice-turn': [voice],
+        },
+      ),
+    );
+    when(
+      () => repository.streamChat(
+        chatId: 'cached',
+        wsId: 'ws',
+        workspaceContextId: 'ws',
+        modelId: 'model',
+        messages: any(named: 'messages'),
+        thinkingMode: AssistantThinkingMode.fast,
+        creditSource: AssistantCreditSource.workspace,
+        timezone: 'UTC',
+        attachments: any(named: 'attachments'),
+        creditWsId: 'ws',
+      ),
+    ).thenAnswer((_) => Stream.value(const AssistantDoneStreamEvent()));
+    when(
+      () => repository.writeAssistantChatCache(
+        wsId: 'ws',
+        chatId: 'cached',
+        restored: any(named: 'restored'),
+      ),
+    ).thenAnswer((_) async {});
+    await cubit.loadWorkspace('ws');
+    await cubit.retryLast(
+      wsId: 'ws',
+      modelId: 'model',
+      thinkingMode: AssistantThinkingMode.fast,
+      creditSource: AssistantCreditSource.workspace,
+      workspaceContextId: 'ws',
+      timezone: 'UTC',
+      creditWsId: 'ws',
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final invocation =
+        verify(
+              () => repository.streamChat(
+                chatId: 'cached',
+                wsId: 'ws',
+                workspaceContextId: 'ws',
+                modelId: 'model',
+                messages: any(named: 'messages'),
+                thinkingMode: AssistantThinkingMode.fast,
+                creditSource: AssistantCreditSource.workspace,
+                timezone: 'UTC',
+                attachments: captureAny(named: 'attachments'),
+                creditWsId: 'ws',
+              ),
+            ).captured.single
+            as List<AssistantAttachment>;
+    expect(invocation.single.id, voice.id);
+    expect(cubit.state.messages.single.id, 'voice-turn');
+  });
+
+  test('saved reply replaces the temporary streamed message id', () async {
+    await cubit.loadWorkspace('ws');
+    when(
+      () => repository.streamChat(
+        chatId: 'cached',
+        wsId: 'ws',
+        workspaceContextId: 'ws',
+        modelId: 'model',
+        messages: any(named: 'messages'),
+        thinkingMode: AssistantThinkingMode.fast,
+        creditSource: AssistantCreditSource.workspace,
+        timezone: 'UTC',
+        attachments: any(named: 'attachments'),
+        creditWsId: 'ws',
+      ),
+    ).thenAnswer(
+      (_) => Stream.fromIterable([
+        const AssistantJsonStreamEvent({
+          'type': 'start',
+          'messageId': 'temporary',
+        }),
+        const AssistantJsonStreamEvent({
+          'type': 'text-delta',
+          'delta': 'Hello',
+        }),
+        const AssistantJsonStreamEvent({
+          'type': 'saved-message',
+          'messageId': 'saved-reply',
+          'text': 'Hello',
+        }),
+        const AssistantDoneStreamEvent(),
+      ]),
+    );
+    when(
+      () => repository.writeAssistantChatCache(
+        wsId: 'ws',
+        chatId: 'cached',
+        restored: any(named: 'restored'),
+      ),
+    ).thenAnswer((_) async {});
+    await cubit.submit(
+      wsId: 'ws',
+      message: 'Hi',
+      modelId: 'model',
+      thinkingMode: AssistantThinkingMode.fast,
+      creditSource: AssistantCreditSource.workspace,
+      workspaceContextId: 'ws',
+      timezone: 'UTC',
+      creditWsId: 'ws',
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    expect(cubit.state.messages.last.id, 'saved-reply');
+    expect(cubit.state.messages.last.parts.single.text, 'Hello');
+    expect(
+      cubit.state.messages.where((message) => message.id == 'temporary'),
+      isEmpty,
+    );
   });
   test('cached conversation renders before delayed history', () async {
     final history = Completer<List<AssistantChatRecord>>();

@@ -8581,7 +8581,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileRecentActivity => 'Last 12 weeks';
 
   @override
-  String get assistantReplyFailed => 'Mira could not finish this reply. Your message is saved here; try again.';
+  String get assistantReplyFailed => 'Mira\'s reply stopped. Your message is still here. Retry';
 
   @override
   String get assistantCreditsUnavailable => 'Could not load your credit sources. Please try again.';

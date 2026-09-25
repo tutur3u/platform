@@ -30,6 +30,8 @@
 
 ### Bug Fixes
 
+* **assistant:** preserve voice retries and saved replies ([9a5a44f](https://github.com/tutur3u/platform/commit/9a5a44fe8f7e58f382658de4bf03c9d17c2d7345)) ([#5517](https://github.com/tutur3u/platform/issues/5517)) ([8101e94](https://github.com/tutur3u/platform/commit/8101e949b0484786e0ec490502ab32d3ac3e7041))
+* **assistant:** respect source size gate ([5603662](https://github.com/tutur3u/platform/commit/5603662c710c54efc6a9126666ed198b5e0f9f1b))
 * **auth:** skip MFA enrollment without an authenticated user ([14e6837](https://github.com/tutur3u/platform/commit/14e6837acad77e16e2ca58a63d7a2b1863b14ec5))
 * **calendar:** treat working locations as non-reminder events ([454e666](https://github.com/tutur3u/platform/commit/454e666a6465e3debd06260aedc1de7b96ab5d67)) ([#5511](https://github.com/tutur3u/platform/issues/5511)) ([6508ad6](https://github.com/tutur3u/platform/commit/6508ad681aaa174b186022fcbd526e20be682973))
 * **desktop:** address beta updater review findings ([bf53a23](https://github.com/tutur3u/platform/commit/bf53a2304d6d2d561a2fcacc5ea2d83a9a45cf1e))
