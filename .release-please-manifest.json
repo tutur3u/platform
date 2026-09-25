@@ -1,5 +1,5 @@
 {
-  ".": "0.55.0",
+  ".": "0.56.0",
   "apps/ai": "0.16.0",
   "apps/apps": "0.22.0",
   "apps/calendar": "0.31.0",
@@ -17,7 +17,7 @@
   "apps/mail": "0.24.0",
   "apps/meet": "0.32.0",
   "apps/mind": "0.23.0",
-  "apps/mobile": "0.13.0",
+  "apps/mobile": "0.13.1",
   "apps/nova": "0.40.0",
   "apps/playground": "0.5.2",
   "apps/tools": "0.20.0",

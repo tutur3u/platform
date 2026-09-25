@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.56.0](https://github.com/tutur3u/platform/compare/platform-v0.55.0...platform-v0.56.0) (2026-09-25)
+
+
+### Features
+
+* **web:** animate the ecosystem innovation story ([8040834](https://github.com/tutur3u/platform/commit/804083404dc20f1da53ae4d012f4e5f891c31cca)) ([#5528](https://github.com/tutur3u/platform/issues/5528)) ([51e1290](https://github.com/tutur3u/platform/commit/51e129078a8acae4a8bcdaebc9177ddca1f94e4a))
+* **web:** create a starward portfolio and consolidate the pitch ([#5527](https://github.com/tutur3u/platform/issues/5527)) ([ea703e3](https://github.com/tutur3u/platform/commit/ea703e33b5660dbfca093467b64a7e966471ca35))
+* **web:** shape a starward portfolio and focused pitch ([bce74f7](https://github.com/tutur3u/platform/commit/bce74f7f161f318235b50c250ec6d3e11553114d))
+
+
+### Bug Fixes
+
+* **mobile:** compact floating shell header ([#5526](https://github.com/tutur3u/platform/issues/5526)) ([8de4981](https://github.com/tutur3u/platform/commit/8de49811e119bc6e303eab6da152401926d47708))
+* **mobile:** preserve status inset beneath floating header ([322969d](https://github.com/tutur3u/platform/commit/322969d10e4cd20ca1483d9f100ed590aa6d9eab)) ([#5524](https://github.com/tutur3u/platform/issues/5524)) ([f523d80](https://github.com/tutur3u/platform/commit/f523d80ade14653096103e2f4af0a1f9d66ce56a))
+* **web:** contain pitch artwork and protect compact navigation ([784643a](https://github.com/tutur3u/platform/commit/784643aad59487e3150c0cb0f00b1b2dc8355942))
+* **web:** preserve revealed scenes when resuming motion ([334a5a9](https://github.com/tutur3u/platform/commit/334a5a900b49c636a7e51b3249ba1006beddf63b))
+* **web:** remove unused portfolio hero icon ([c3766b0](https://github.com/tutur3u/platform/commit/c3766b09fded8c4d8e27ae098d468b9a268d413c))
+* **web:** scale orbital artwork smoothly on smaller screens ([d36da28](https://github.com/tutur3u/platform/commit/d36da28fdaf89d060a07a63e86e5fda91555b00d))
+
 ## [0.55.0](https://github.com/tutur3u/platform/compare/platform-v0.54.0...platform-v0.55.0) (2026-09-25)
 
 

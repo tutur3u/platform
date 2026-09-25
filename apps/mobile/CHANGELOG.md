@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.13.1](https://github.com/tutur3u/platform/compare/mobile-v0.13.0...mobile-v0.13.1) (2026-09-25)
+
+
+### Bug Fixes
+
+* **mobile:** compact floating shell header ([#5526](https://github.com/tutur3u/platform/issues/5526)) ([8de4981](https://github.com/tutur3u/platform/commit/8de49811e119bc6e303eab6da152401926d47708))
+* **mobile:** preserve status inset beneath floating header ([322969d](https://github.com/tutur3u/platform/commit/322969d10e4cd20ca1483d9f100ed590aa6d9eab)) ([#5524](https://github.com/tutur3u/platform/issues/5524)) ([f523d80](https://github.com/tutur3u/platform/commit/f523d80ade14653096103e2f4af0a1f9d66ce56a))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/mobile-v0.12.0...mobile-v0.13.0) (2026-09-25)
 
 
