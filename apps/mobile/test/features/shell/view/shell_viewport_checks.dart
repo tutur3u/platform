@@ -82,4 +82,36 @@ void registerShellViewportChecks(
       },
     );
   }
+
+  testWidgets('root content clears the floating header and status bar', (
+    tester,
+  ) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(390, 844)
+      ..padding = const FakeViewPadding(top: 44, bottom: 34)
+      ..viewPadding = const FakeViewPadding(top: 44, bottom: 34);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPadding();
+      tester.view.resetViewPadding();
+    });
+
+    await pumpShell(tester);
+    final apps = find.byType(AppsHubPage);
+    final appsContext = tester.element(apps);
+    expect(MediaQuery.paddingOf(appsContext).top, 0);
+    expect(MediaQuery.viewPaddingOf(appsContext).top, 44);
+
+    final header = tester.getRect(
+      find.byKey(const ValueKey('floating-shell-header-surface')),
+    );
+    final firstSliver = tester.widget<SliverToBoxAdapter>(
+      find
+          .descendant(of: apps, matching: find.byType(SliverToBoxAdapter))
+          .first,
+    );
+    expect((firstSliver.child! as SizedBox).height, closeTo(header.bottom, 1));
+  });
 }

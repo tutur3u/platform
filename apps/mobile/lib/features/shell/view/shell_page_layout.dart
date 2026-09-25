@@ -80,32 +80,41 @@ extension _ShellPageLayout on _ShellPageState {
             child: !_hasVisitedRoot
                 ? const SizedBox.shrink()
                 : Builder(
-                    builder: (bodyContext) => MediaQuery.removePadding(
-                      context: bodyContext,
-                      removeTop: true,
-                      child: LazyIndexedStack(
-                        index: _ShellPageState._calculateSelectedIndex(
-                          _lastRootLocation,
+                    builder: (bodyContext) {
+                      final media = MediaQuery.of(bodyContext);
+                      return MediaQuery(
+                        // Root pages add their own scroll clearance for the
+                        // floating header. Keep the physical status-bar inset
+                        // available while removing automatic top padding.
+                        data: media
+                            .removePadding(removeTop: true)
+                            .copyWith(viewPadding: media.viewPadding),
+                        child: LazyIndexedStack(
+                          index: _ShellPageState._calculateSelectedIndex(
+                            _lastRootLocation,
+                          ),
+                          builders: [
+                            (_) => DashboardPage(
+                              replayToken:
+                                  _rootTabReplayTokens[Routes.home] ?? 0,
+                            ),
+                            (_) => AssistantPage(
+                              replayToken:
+                                  _rootTabReplayTokens[Routes.assistant] ?? 0,
+                            ),
+                            (_) => AppsScreen(
+                              replayToken:
+                                  _rootTabReplayTokens[Routes.apps] ?? 0,
+                            ),
+                            (_) => const NotificationsPage(),
+                            (_) => ProfileOverviewPage(
+                              replayToken:
+                                  _rootTabReplayTokens[Routes.profileRoot] ?? 0,
+                            ),
+                          ],
                         ),
-                        builders: [
-                          (_) => DashboardPage(
-                            replayToken: _rootTabReplayTokens[Routes.home] ?? 0,
-                          ),
-                          (_) => AssistantPage(
-                            replayToken:
-                                _rootTabReplayTokens[Routes.assistant] ?? 0,
-                          ),
-                          (_) => AppsScreen(
-                            replayToken: _rootTabReplayTokens[Routes.apps] ?? 0,
-                          ),
-                          (_) => const NotificationsPage(),
-                          (_) => ProfileOverviewPage(
-                            replayToken:
-                                _rootTabReplayTokens[Routes.profileRoot] ?? 0,
-                          ),
-                        ],
-                      ),
-                    ),
+                      );
+                    },
                   ),
           ),
         ),
