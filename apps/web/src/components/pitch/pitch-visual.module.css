@@ -1,5 +1,6 @@
 .universe {
   position: relative;
+  overflow: clip;
   min-height: 490px;
   display: grid;
   place-items: center;

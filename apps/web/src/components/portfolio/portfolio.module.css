@@ -38,6 +38,7 @@
   gap: 25px;
 }
 .brand {
+  flex-shrink: 0;
   font-size: 24px;
   font-weight: 750;
   letter-spacing: -0.06em;
@@ -532,6 +533,7 @@
 }
 @media (max-width: 700px) {
   .header {
+    gap: 12px;
     padding: 18px 6vw;
   }
   .header nav > a:first-child {
