@@ -115,12 +115,14 @@ export class CloudflareSfuClient {
   }
 
   addTracks(input: AddTracksInput) {
+    // `kind` is room authorization metadata, not a Connection API track field.
+    const tracks = input.tracks.map(({ kind: _kind, ...track }) => track);
     return this.request(
       `/sessions/${encodeURIComponent(input.sessionId)}/tracks/new`,
       {
         body: JSON.stringify({
           sessionDescription: input.sessionDescription,
-          tracks: input.tracks,
+          tracks,
         }),
         method: 'POST',
       }
