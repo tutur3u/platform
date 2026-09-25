@@ -6,12 +6,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 const double mobileSectionAppBarLogoSize = 26;
 const double mobileSectionAppBarHeight = 46;
-const EdgeInsets mobileSectionAppBarPadding = EdgeInsets.fromLTRB(
-  16,
-  10,
-  16,
-  10,
-);
+const EdgeInsets mobileSectionAppBarPadding = EdgeInsets.fromLTRB(16, 4, 16, 4);
 
 class MobileSectionAppBar extends StatelessWidget {
   const MobileSectionAppBar({

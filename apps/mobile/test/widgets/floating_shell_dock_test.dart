@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 
 void main() {
   Future<void> mount(
@@ -24,9 +25,12 @@ void main() {
             location: '/settings',
             bottomInset: 68,
             header: showHeader
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 10),
-                    child: SizedBox(
+                ? Padding(
+                    padding: EdgeInsets.only(
+                      top: mobileSectionAppBarPadding.top,
+                      bottom: mobileSectionAppBarPadding.bottom,
+                    ),
+                    child: const SizedBox(
                       key: Key('floating-header'),
                       height: 46,
                       child: Text('Header'),
