@@ -139,9 +139,7 @@ void main() {
     );
     expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 1);
     expect(
-      tester.widget<AnimatedOpacity>(
-        find.byType(AnimatedOpacity).last,
-      ).opacity,
+      tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity).last).opacity,
       0,
     );
     final expanded = tester.getRect(find.byType(ListView));
