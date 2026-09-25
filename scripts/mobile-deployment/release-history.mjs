@@ -47,7 +47,15 @@ function historyBaseTag(version, sha, git) {
   try {
     return git(
       'git',
-      ['describe', '--tags', '--match', 'mobile-v*', '--abbrev=0', sha],
+      [
+        'describe',
+        '--first-parent',
+        '--tags',
+        '--match',
+        'mobile-v*',
+        '--abbrev=0',
+        sha,
+      ],
       { cwd: repoRoot, encoding: 'utf8' }
     ).trim();
   } catch {

@@ -174,6 +174,15 @@ describe('mobile beta release history', () => {
         '--format=%s',
         'mobile-v0.11.0..current',
       ]);
+      assert.deepEqual(calls[1], [
+        'describe',
+        '--first-parent',
+        '--tags',
+        '--match',
+        'mobile-v*',
+        '--abbrev=0',
+        'current',
+      ]);
     } finally {
       globalThis.fetch = originalFetch;
     }
