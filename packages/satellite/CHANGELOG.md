@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/satellite-v0.20.0...satellite-v0.21.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **parley:** adopt satellite shell and session reviews ([#5509](https://github.com/tutur3u/platform/issues/5509)) ([88f36df](https://github.com/tutur3u/platform/commit/88f36df2d1862a30b824aed9b98d880e72f59368))
+
+
+### Bug Fixes
+
+* **parley:** address studio review edge cases ([bddd876](https://github.com/tutur3u/platform/commit/bddd876eef70e86f10f1f070b23fe8b64ab2c5f5))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/satellite-v0.19.1...satellite-v0.20.0) (2026-09-20)
 
 
