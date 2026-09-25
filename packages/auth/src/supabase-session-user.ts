@@ -15,10 +15,15 @@ export async function resolveSupabaseSessionRequest(
   providedSupabase?: TypedSupabaseClient
 ): Promise<SupabaseSessionResolution> {
   try {
-    const { createClient } = await import('@tuturuuu/supabase/next/server');
     const supabase =
       providedSupabase ??
-      ((await createClient(request)) as TypedSupabaseClient);
+      ((request
+        ? await (
+            await import('@tuturuuu/supabase/request/server')
+          ).createRequestClient(request)
+        : await (
+            await import('@tuturuuu/supabase/next/server')
+          ).createClient()) as TypedSupabaseClient);
     const { authError, user } = await resolveAuthenticatedSessionUser(supabase);
 
     return { authError, supabase, user };
