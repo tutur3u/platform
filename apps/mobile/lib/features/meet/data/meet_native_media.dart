@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:mobile/features/meet/data/meet_peer_negotiation.dart';
 import 'package:mobile/features/meet/data/meet_signaling.dart';
 
 typedef MeetRoomTrack = Map<String, dynamic>;
@@ -189,6 +190,9 @@ class MeetNativeMedia extends ChangeNotifier {
     if (pending.isEmpty) return;
     final (pc, sessionId) = await _openSession(publish: true);
     try {
+      if (await pc.getRemoteDescription() != null) {
+        await waitForMeetPeerConnection(pc);
+      }
       final transceivers = <(String, MediaStreamTrack, RTCRtpTransceiver)>[];
       for (final (name, track) in pending) {
         final transceiver = await pc.addTransceiver(
@@ -199,6 +203,7 @@ class MeetNativeMedia extends ChangeNotifier {
       }
       final offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      final localDescription = await gatheredLocalDescription(pc);
       // flutter_webrtc snapshots MID when addTransceiver returns. Read the
       // negotiated transceivers again after setLocalDescription. The iOS
       // transceiver ID itself changes with MID, so match stable sender IDs.
@@ -226,7 +231,7 @@ class MeetNativeMedia extends ChangeNotifier {
       final response = await signaling.request({
         'type': 'sfu.tracks.publish',
         'sessionId': sessionId,
-        'sessionDescription': {'type': 'offer', 'sdp': offer.sdp},
+        'sessionDescription': {'type': 'offer', 'sdp': localDescription.sdp},
         'tracks': publications,
       });
       if (response['errorCode'] != null) throw StateError('SFU publish failed');
@@ -237,6 +242,7 @@ class MeetNativeMedia extends ChangeNotifier {
       await pc.setRemoteDescription(
         RTCSessionDescription(answer['sdp'] as String, 'answer'),
       );
+      await waitForMeetPeerConnection(pc);
       _published.addAll(pending.map((entry) => entry.$1));
     } on Object {
       await _resetPublisher();
@@ -261,6 +267,9 @@ class MeetNativeMedia extends ChangeNotifier {
     if (pending.isEmpty) return;
     final (pc, sessionId) = await _openSession(publish: false);
     try {
+      if (await pc.getRemoteDescription() != null) {
+        await waitForMeetPeerConnection(pc);
+      }
       final response = await signaling.request({
         'type': 'sfu.tracks.subscribe',
         'sessionId': sessionId,
@@ -300,14 +309,16 @@ class MeetNativeMedia extends ChangeNotifier {
         );
         final answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
+        final localDescription = await gatheredLocalDescription(pc);
         final answerResponse = await signaling.request({
           'type': 'sfu.renegotiate',
           'sessionId': sessionId,
-          'sessionDescription': {'type': 'answer', 'sdp': answer.sdp},
+          'sessionDescription': {'type': 'answer', 'sdp': localDescription.sdp},
         });
         if (answerResponse['errorCode'] != null) {
           throw StateError('SFU negotiation failed');
         }
+        await waitForMeetPeerConnection(pc);
       } else {
         throw StateError('SFU remote offer missing');
       }

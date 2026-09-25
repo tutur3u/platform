@@ -88,7 +88,7 @@ describe('CloudflareSfuClient', () => {
     );
     expect(getJsonBody(fetchMock.mock.calls[1]?.[1])).toEqual({
       sessionDescription,
-      tracks,
+      tracks: [{ trackName: 'mic' }],
     });
 
     expect(fetchMock).toHaveBeenNthCalledWith(

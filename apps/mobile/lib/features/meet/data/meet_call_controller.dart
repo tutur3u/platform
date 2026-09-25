@@ -322,8 +322,9 @@ class MeetCallController extends ChangeNotifier {
               notifyListeners();
             }
           })
-          .catchError((Object _) {
+          .catchError((Object failure) {
             if (!_disposed) {
+              debugPrint('Meet media negotiation failed: $failure');
               error = 'media';
               notifyListeners();
             }
