@@ -93,3 +93,10 @@ Transcription and meeting notes reserve an AI Hub run before generation. They us
 Apply the research migration plus the meeting attribution and observability migrations before deploying either app's new billing code. A Gemini key marked sensitive in Vercel cannot be exported. Parley uses the private provider binding instead of duplicating that key. Native local development may configure its own development key; do not bind local testing to the production provider.
 
 Parley disables public Google Search during scenario roleplay. The scenario configuration is separate from the participant request, so reference text never becomes an explicit public search query.
+
+
+Proxy authentication must resolve explicit request headers through the framework-neutral
+Supabase request client. Cloudflare proxy execution does not provide the same
+ambient `next/headers` cookie context as a server component. Keep refreshed cookies
+on the forwarded request and response, and verify login on the deployed Worker.
+A local Next server alone does not prove this runtime boundary.
