@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   assistantAiRow,
@@ -13,7 +15,7 @@ import {
 describe('native AI chat message route', () => {
   beforeEach(resetMessageRouteMocks);
 
-  it('finds persisted personal AI messages through wrapped metadata without deleting prior resources', async () => {
+  it('reports failure when only the user message was saved', async () => {
     mocks.isAiChatConversationId.mockReturnValue(true);
     mocks.getAiChatId.mockReturnValue('ai-chat-1');
     const query = {
@@ -25,6 +27,51 @@ describe('native AI chat message route', () => {
       select: vi.fn(() => query),
     };
     mocks.auth.supabase = { from: vi.fn(() => query) };
+    mocks.listAiChatMessages.mockImplementation(async () => {
+      const body = mocks.aiRouteBodies.at(-1) as
+        | { persistenceRequestId?: string }
+        | undefined;
+      if (!body?.persistenceRequestId) return [];
+      return [
+        {
+          ...userMessage,
+          metadata: {
+            metadata: { requestId: body.persistenceRequestId },
+            source: 'ai-chat',
+          },
+        },
+      ];
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(createRequest() as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'AI response was not saved',
+    });
+  });
+
+  it('returns persisted personal AI replies when realtime publish fails', async () => {
+    mocks.isAiChatConversationId.mockReturnValue(true);
+    mocks.getAiChatId.mockReturnValue('ai-chat-1');
+    const query = {
+      eq: vi.fn(() => query),
+      maybeSingle: vi.fn(async () => ({
+        data: { id: 'ai-chat-1', model: 'gemini-3-flash', title: 'Existing' },
+        error: null,
+      })),
+      select: vi.fn(() => query),
+    };
+    mocks.auth.supabase = { from: vi.fn(() => query) };
+    mocks.publishChatRealtimeEvent.mockRejectedValueOnce(
+      new Error('realtime unavailable')
+    );
     mocks.listAiChatMessages.mockImplementation(async () => {
       const body = mocks.aiRouteBodies.at(-1) as
         | { persistenceRequestId?: string }
@@ -140,7 +187,13 @@ describe('native AI chat message route', () => {
         requestScopedReads += 1;
         return requestScopedReads === 1
           ? [persistedUserMessage]
-          : [persistedUserMessage, assistantMessage];
+          : [
+              persistedUserMessage,
+              {
+                ...assistantMessage,
+                metadata: persistedUserMessage.metadata,
+              },
+            ];
       }
     );
 

@@ -3475,7 +3475,7 @@
     "profileMoreActivity": "Show more",
     "profileSharedActivityUnavailable": "This activity is no longer available.",
     "profileRecentActivity": "Last 12 weeks",
-    "assistantReplyFailed": "Mira could not finish this reply. Your message is saved here; try again.",
+    "assistantReplyFailed": "Mira's reply stopped. Your message is still here. Retry",
     "assistantCreditsUnavailable": "Could not load your credit sources. Please try again.",
     "assistantMicrophoneUnavailable": "Microphone unavailable. Check microphone access or reconnect your headset, then try again.",
     "assistantAudioUnavailable": "Audio was interrupted. Reconnect to continue this conversation.",

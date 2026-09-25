@@ -186,10 +186,6 @@ export async function sendAiChatMessage({
       chatId: chat.id,
       error,
     });
-    return NextResponse.json(
-      { message: 'Failed to send AI chat message' },
-      { status: 500 }
-    );
   }
 
   const requestMessages = await listRequestMessages({
@@ -199,9 +195,7 @@ export async function sendAiChatMessage({
     wsId: context.normalizedWsId,
   });
   if (requestMessages instanceof NextResponse) return requestMessages;
-  const message =
-    requestMessages.findLast((item) => item.kind === 'assistant') ??
-    requestMessages.at(-1);
+  const message = requestMessages.findLast((item) => item.kind === 'assistant');
 
   if (!message) {
     return NextResponse.json(
@@ -210,18 +204,14 @@ export async function sendAiChatMessage({
     );
   }
 
-  await maybeAutoRenameAiChat({
+  await runSavedAiChatSideEffects({
+    auth,
     chatId: chat.id,
     currentTitle:
       'title' in chat && typeof chat.title === 'string' ? chat.title : null,
     firstMessageContent: messageContent,
-    previousMessages,
-    supabase: auth.supabase,
-  });
-  await publishChatRealtimeMessages({
-    actorUserId: auth.user.id,
-    audience: getChatRealtimeUserAudience(auth.user.id),
     messages: requestMessages,
+    previousMessages,
     wsId: context.normalizedWsId,
   });
 
@@ -270,6 +260,52 @@ function filterRequestMessages(messages: ChatMessage[], requestId: string) {
     const wrappedMetadata = readRecord(message.metadata);
     return readRecord(wrappedMetadata?.metadata)?.requestId === requestId;
   });
+}
+
+async function runSavedAiChatSideEffects({
+  auth,
+  chatId,
+  currentTitle,
+  firstMessageContent,
+  messages,
+  previousMessages,
+  wsId,
+}: {
+  auth: SessionAuthContext;
+  chatId: string;
+  currentTitle: string | null;
+  firstMessageContent: string;
+  messages: ChatMessage[];
+  previousMessages: ChatMessage[];
+  wsId: string;
+}) {
+  try {
+    await maybeAutoRenameAiChat({
+      chatId,
+      currentTitle,
+      firstMessageContent,
+      previousMessages,
+      supabase: auth.supabase,
+    });
+  } catch (error) {
+    console.warn('Saved AI chat reply but could not update title', {
+      chatId,
+      error,
+    });
+  }
+  try {
+    await publishChatRealtimeMessages({
+      actorUserId: auth.user.id,
+      audience: getChatRealtimeUserAudience(auth.user.id),
+      messages,
+      wsId,
+    });
+  } catch (error) {
+    console.warn('Saved AI chat reply but could not publish realtime update', {
+      chatId,
+      error,
+    });
+  }
 }
 
 function replayAiChatMessageResponse(messages: ChatMessage[], stream: boolean) {
@@ -334,23 +370,19 @@ function streamAiChatMessageResponse({
           return;
         }
 
-        if (requestMessages.length === 0) {
+        if (!requestMessages.some((message) => message.kind === 'assistant')) {
           write({ message: 'AI response was not saved', type: 'error' });
           write({ type: 'done' });
           return;
         }
 
-        await maybeAutoRenameAiChat({
+        await runSavedAiChatSideEffects({
+          auth,
           chatId,
           currentTitle,
           firstMessageContent,
-          previousMessages: previousMessages ?? [],
-          supabase: auth.supabase,
-        });
-        await publishChatRealtimeMessages({
-          actorUserId: auth.user.id,
-          audience: getChatRealtimeUserAudience(auth.user.id),
           messages: requestMessages,
+          previousMessages: previousMessages ?? [],
           wsId,
         });
         write({ messages: requestMessages, type: 'messages' });
@@ -368,6 +400,10 @@ function streamAiChatMessageResponse({
         });
         if (!(requestMessages instanceof NextResponse)) {
           write({ messages: requestMessages, type: 'messages' });
+          if (requestMessages.some((message) => message.kind === 'assistant')) {
+            write({ type: 'done' });
+            return;
+          }
         }
         write({ message: 'Failed to send AI chat message', type: 'error' });
         write({ type: 'done' });
