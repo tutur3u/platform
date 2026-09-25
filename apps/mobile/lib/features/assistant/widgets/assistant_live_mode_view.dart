@@ -64,9 +64,9 @@ class AssistantLiveModeView extends StatelessWidget {
           Padding(
             padding: EdgeInsets.fromLTRB(
               12,
-              floatingShellHeaderInset(context) + 8,
+              floatingShellHeaderInset(context) + (shortViewport ? 0 : 8),
               12,
-              12,
+              shortViewport ? 0 : 12,
             ),
             child: _LiveModeHeader(
               liveState: liveState,
