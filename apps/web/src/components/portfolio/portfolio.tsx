@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowUpRight, Code2 } from '@tuturuuu/icons/lucide';
+import { ArrowUpRight, Code2 } from '@tuturuuu/icons/lucide';
 import Image from 'next/image';
 import type messages from '../../../messages/en.json';
 import {
