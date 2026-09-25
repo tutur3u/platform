@@ -315,7 +315,7 @@ export function DecisionDiagram({
               x={30 + i * 55}
               y={30 + i * 87}
               width={540 - i * 110}
-              height={320 - i * 87}
+              height={320 - i * 105}
               rx={18}
               fill="var(--background)"
               stroke={colors[i]}
@@ -327,7 +327,7 @@ export function DecisionDiagram({
             </Label>
           </g>
         ))}
-        <Label x={300} y={315} size={11} muted>
+        <Label x={300} y={285} size={11} muted>
           01 → 02 → 03
         </Label>
       </g>
@@ -359,7 +359,7 @@ export function DecisionDiagram({
               y={119}
               w={150}
               h={82}
-              label={marks[i]!}
+              label={['Tasks', 'Mira', 'Hive'][i]!}
               product={marks[i]}
               tone={i}
             />

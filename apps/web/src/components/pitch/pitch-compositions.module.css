@@ -356,6 +356,18 @@
     margin-top: 1.7rem;
   }
 }
+@media screen and (min-width: 1001px) {
+  .composition[data-slide="vision"] svg[data-pitch-diagram] {
+    max-height: 26vh;
+  }
+  .composition:is([data-slide="workforce"], [data-slide="readiness"])
+    svg[data-pitch-diagram] {
+    max-height: 30vh;
+  }
+  .composition[data-slide="evidence"] svg[data-pitch-diagram] {
+    max-height: 32vh;
+  }
+}
 @media (max-width: 1000px) {
   .composition[data-slide] {
     grid-template-columns: 1fr;

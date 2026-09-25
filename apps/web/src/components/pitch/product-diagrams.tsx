@@ -122,7 +122,7 @@ export function ProductDiagram({
             <Connector
               d={`M155 ${103 + i * 98} H${180 + i * 10} V${165 + i * 25} H222`}
               x={222}
-              y={190}
+              y={165 + i * 25}
               tone={i}
             />
             <Connector
