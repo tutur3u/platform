@@ -23,6 +23,7 @@ export function StoryMotion({
 }) {
   const [paused, setPaused] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+  const revealed = useRef(new WeakSet<Element>());
   useEffect(() => {
     if (paused || !root.current || !('IntersectionObserver' in window)) return;
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -43,6 +44,7 @@ export function StoryMotion({
           }
           if (!entry.isIntersecting) continue;
           observer.unobserve(entry.target);
+          revealed.current.add(entry.target);
           if (preference.matches || !('animate' in entry.target)) continue;
           const animation = entry.target.animate(
             [
@@ -72,7 +74,7 @@ export function StoryMotion({
         ? 'main > section, [data-reveal], [data-grow], svg:has([data-flow-line])'
         : 'svg:has([data-flow-line])'
     ))
-      observer.observe(element);
+      if (!revealed.current.has(element)) observer.observe(element);
     preference.addEventListener('change', stop);
     window.addEventListener('beforeprint', stop);
     return () => {
