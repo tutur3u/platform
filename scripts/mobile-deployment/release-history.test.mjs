@@ -1,5 +1,6 @@
-import { describe, expect, test } from 'bun:test';
+import assert from 'node:assert/strict';
 import { generateKeyPairSync } from 'node:crypto';
+import { describe, test } from 'node:test';
 import { changesBetween, releaseHistory } from './release-history.mjs';
 
 describe('mobile beta release history', () => {
@@ -10,8 +11,8 @@ describe('mobile beta release history', () => {
       return 'fix(mobile): restore sessions (#5482)\nfeat(mobile): improve settings (#5483)\nfix(mobile): restore sessions (#5482)\n';
     });
 
-    expect(changes).toEqual(['restore sessions', 'improve settings']);
-    expect(calls).toEqual([
+    assert.deepEqual(changes, ['restore sessions', 'improve settings']);
+    assert.deepEqual(calls, [
       [
         'git',
         [
@@ -72,13 +73,13 @@ describe('mobile beta release history', () => {
             : 'fix(mobile): second patch (#2)',
       });
 
-      expect(releases).toEqual([
+      assert.deepEqual(releases, [
         { version: '0.11.1', date: '2026-09-23', changes: ['first patch'] },
         { version: '0.11.2', date: '2026-09-24', changes: ['second patch'] },
       ]);
-      expect(paths[2]).toContain('/v1/preReleaseVersions/v1/builds');
-      expect(paths[3]).toContain(
-        '/actions/workflows/mobile-deploy-stores.yaml/runs'
+      assert.ok(paths[2].includes('/v1/preReleaseVersions/v1/builds'));
+      assert.ok(
+        paths[3].includes('/actions/workflows/mobile-deploy-stores.yaml/runs')
       );
     } finally {
       globalThis.fetch = originalFetch;
@@ -120,11 +121,11 @@ describe('mobile beta release history', () => {
         date: '2026-09-24',
         git: () => 'fix(mobile): current patch (#2)',
       });
-      expect(releases).toEqual([
+      assert.deepEqual(releases, [
         { version: '0.11.1', date: '2026-09-23', changes: [] },
         { version: '0.11.2', date: '2026-09-24', changes: ['current patch'] },
       ]);
-      expect(warnings[0]).toContain('0.11.1 (build 1)');
+      assert.ok(warnings[0].includes('0.11.1 (build 1)'));
     } finally {
       globalThis.fetch = originalFetch;
       console.warn = originalWarn;

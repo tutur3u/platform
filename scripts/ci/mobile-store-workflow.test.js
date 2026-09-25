@@ -41,6 +41,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.deepEqual(Object.keys(parsed.true), ['push', 'workflow_dispatch']);
   assert.deepEqual(parsed.true.push.branches, ['production']);
   assert.deepEqual(parsed.permissions, {
+    actions: 'read',
     contents: 'read',
     deployments: 'read',
     'id-token': 'write',
