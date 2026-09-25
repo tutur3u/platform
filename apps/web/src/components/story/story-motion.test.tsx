@@ -44,8 +44,16 @@ it('keeps revealed sections steady after resuming while continuing to observe di
   act(() => {
     callbacks[0]?.(
       [
-        { target: sections[0], isIntersecting: true },
-      ] as IntersectionObserverEntry[],
+        {
+          target: sections[0]!,
+          isIntersecting: true,
+          boundingClientRect: new DOMRect(),
+          intersectionRect: new DOMRect(),
+          intersectionRatio: 1,
+          rootBounds: null,
+          time: 0,
+        },
+      ],
       {} as IntersectionObserver
     );
   });
