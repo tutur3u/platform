@@ -53,7 +53,9 @@ class _AllDayBanner extends StatelessWidget {
                   children: [
                     // Leading icon.
                     Icon(
-                      Icons.wb_sunny_outlined,
+                      event.workingLocationKind == null
+                          ? Icons.wb_sunny_outlined
+                          : workingLocationIcon(event.workingLocationKind!),
                       size: 18,
                       color: Colors.white.withValues(alpha: 0.9),
                     ),

@@ -8,6 +8,7 @@ import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/all_day_layout.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
+import 'package:mobile/features/calendar/utils/working_location_icon.dart';
 import 'package:mobile/features/calendar/widgets/current_time_indicator.dart';
 import 'package:mobile/l10n/l10n.dart';
 

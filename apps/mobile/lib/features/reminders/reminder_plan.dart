@@ -100,6 +100,7 @@ List<ReminderPlanEntry> buildReminderPlan({
     );
   }
   for (final event in events) {
+    if (event.isWorkingLocation) continue;
     final start = event.startAt;
     if (start == null) continue;
     final dueAt = event.isAllDay

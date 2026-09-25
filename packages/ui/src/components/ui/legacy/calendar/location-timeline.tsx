@@ -22,6 +22,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import { useCallback, useEffect, useState } from 'react';
+import { getEventLocationType } from './working-location';
 
 dayjs.extend(timezone);
 dayjs.extend(isBetween);
@@ -46,19 +47,6 @@ interface EventSpan {
   isMerged?: boolean;
   mergedEventIds?: string[];
 }
-
-type LocationType = 'home' | 'office' | 'school' | 'custom' | null;
-
-// Helper to determine location type
-export const getLocationType = (title: string): LocationType => {
-  const normalizedTitle = title.toLowerCase().trim();
-  if (normalizedTitle === 'home') return 'home';
-  if (normalizedTitle === 'office' || normalizedTitle === 'work')
-    return 'office';
-  if (normalizedTitle === 'school') return 'school';
-  if (title.startsWith('📍') || title.startsWith('Location: ')) return 'custom';
-  return null;
-};
 
 // Location colors using dynamic theme tokens
 const locationStyles = {
@@ -156,7 +144,7 @@ const LocationPill = ({
   );
 
   const { event, startIndex, span } = eventSpan;
-  const locationType = getLocationType(event.title ?? '');
+  const locationType = getEventLocationType(event);
   const isHome = locationType === 'home';
   const isOffice = locationType === 'office';
   const isSchool = locationType === 'school';

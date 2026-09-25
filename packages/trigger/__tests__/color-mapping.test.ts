@@ -151,6 +151,38 @@ describe('Color Mapping', () => {
   describe('formatEventForDb', () => {
     const wsId = 'test-workspace';
 
+    it('preserves Google working location metadata', () => {
+      const event = {
+        id: 'location',
+        summary: 'Home',
+        eventType: 'workingLocation',
+        workingLocationProperties: { type: 'homeOffice' },
+        start: { date: '2026-09-25' },
+        end: { date: '2026-09-26' },
+      };
+      expect(formatEventForDb(event, wsId).scheduling_metadata).toEqual({
+        google_event_type: 'workingLocation',
+        google_working_location_type: 'homeOffice',
+        google_working_location_label: null,
+      });
+    });
+    it('preserves custom working location labels', () => {
+      const event = {
+        id: 'school',
+        eventType: 'workingLocation',
+        workingLocationProperties: {
+          type: 'customLocation',
+          customLocation: { label: 'School' },
+        },
+        start: { date: '2026-09-25' },
+        end: { date: '2026-09-26' },
+      };
+      expect(formatEventForDb(event, wsId).scheduling_metadata).toEqual({
+        google_event_type: 'workingLocation',
+        google_working_location_type: 'customLocation',
+        google_working_location_label: 'School',
+      });
+    });
     it('formats event with all fields', () => {
       const event = {
         id: 'event-123',

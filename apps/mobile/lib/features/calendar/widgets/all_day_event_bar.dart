@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
+import 'package:mobile/features/calendar/utils/working_location_icon.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Vertically stacked colored chips for all-day events above the timeline.
@@ -73,14 +74,29 @@ class _AllDayEventBarState extends State<AllDayEventBar> {
                       ),
                     ),
                   ),
-                  child: Text(
-                    e.title ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: EventColors.bright(e.color),
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: Row(
+                    children: [
+                      if (e.workingLocationKind case final kind?) ...[
+                        Icon(
+                          workingLocationIcon(kind),
+                          size: 15,
+                          color: EventColors.bright(e.color),
+                        ),
+                        const SizedBox(width: 5),
+                      ],
+                      Expanded(
+                        child: Text(
+                          e.title ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: EventColors.bright(e.color),
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
