@@ -11,14 +11,17 @@ import {
   Printer,
   Sparkles,
 } from '@tuturuuu/icons/lucide';
+import { Button } from '@tuturuuu/ui/button';
 import Image from 'next/image';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { MotionToggle, StoryMotion } from '../story/story-motion';
 import styles from './pitch.module.css';
 import { pitchBrandColors, pitchBrandStyle, pitchTone } from './pitch-brand';
 import compositions from './pitch-compositions.module.css';
 import { PitchSourceLinks } from './pitch-evidence';
 import { type PitchCopy, SLIDE_IDS, slideFromHash } from './pitch-model';
+import motionStyles from './pitch-motion.module.css';
 import { PitchVisual } from './pitch-visual';
 
 const getPalette = (id: string) =>
@@ -41,6 +44,14 @@ const getPalette = (id: string) =>
     : 'light';
 
 export function PitchDeck({ copy }: { copy: PitchCopy }) {
+  return (
+    <StoryMotion>
+      <PitchDeckContent copy={copy} />
+    </StoryMotion>
+  );
+}
+
+function PitchDeckContent({ copy }: { copy: PitchCopy }) {
   const locale = useLocale();
   const [index, setIndex] = useState(0);
   const [overview, setOverview] = useState(false);
@@ -166,7 +177,7 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
   const id = SLIDE_IDS[index] ?? 'opening';
   return (
     <div
-      className={styles.deck}
+      className={`${styles.deck} ${motionStyles.deck}`}
       data-palette={getPalette(id)}
       ref={root}
       style={pitchBrandStyle}
@@ -187,7 +198,8 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
         <span className={styles.edition}>{copy.edition}</span>
         <span className={styles.chapter}>{copy.slides[id].chapter}</span>
         <div className={styles.tools}>
-          <button
+          <Button
+            variant="ghost"
             ref={overviewButton}
             type="button"
             title={copy.overview}
@@ -200,8 +212,9 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
             }}
           >
             <Grid2X2 size={18} />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
             type="button"
             title={copy.notes}
             aria-label={copy.notes}
@@ -212,8 +225,9 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
             }}
           >
             <NotebookPen size={18} />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
             type="button"
             title={copy.print}
             aria-label={copy.print}
@@ -223,15 +237,16 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
             }}
           >
             <Printer size={18} />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
             type="button"
             title={fullscreen ? copy.exitFullscreen : copy.fullscreen}
             aria-label={fullscreen ? copy.exitFullscreen : copy.fullscreen}
             onClick={toggleFullscreen}
           >
             <Expand size={18} />
-          </button>
+          </Button>
         </div>
       </header>
       {error && <p role="status">{error}</p>}
@@ -353,6 +368,7 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
         </nav>
         <span className={styles.help}>{copy.help}</span>
         <div className={styles.controls}>
+          <MotionToggle copy={copy.motion} />
           <span>
             {String(index + 1).padStart(2, '0')} / {SLIDE_IDS.length}
           </span>

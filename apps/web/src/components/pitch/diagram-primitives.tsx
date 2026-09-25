@@ -135,6 +135,7 @@ export function Connector({
       strokeLinejoin="round"
     >
       <path d={d} strokeDasharray={dashed ? '4 6' : undefined} />
+      <path data-flow-line d={d} opacity={0.45} strokeWidth={2.6} />
       <path
         d="m-6-4 6 4-6 4"
         transform={`translate(${x} ${y}) rotate(${rotation})`}

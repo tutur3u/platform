@@ -61,7 +61,15 @@ export const SLIDE_IDS = ALL_SLIDE_IDS.filter(
   (id) => !(id in CONSOLIDATED_SLIDES)
 );
 export interface PitchCopy {
-  art: { note: string; horizonAlt: string; closingAlt: string };
+  motion: { pause: string; resume: string };
+  art: {
+    note: string;
+    horizonAlt: string;
+    closingAlt: string;
+    visionAlt: string;
+    engagementAlt: string;
+    researchAlt: string;
+  };
   visuals: import('./diagram-primitives').VisualCopy;
   sourceLabel: string;
   references: { label: string; detail: string }[];

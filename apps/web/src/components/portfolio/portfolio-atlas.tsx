@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowRight } from '@tuturuuu/icons/lucide';
+import { Button } from '@tuturuuu/ui/button';
 import { useState } from 'react';
 import { ProductMark } from '../capabilities/product-mark';
 import { pitchTone } from '../pitch/pitch-brand';
@@ -50,7 +51,10 @@ export function PortfolioAtlas({
             >
               <span>{category.label}</span>
               <div className={styles.barTrack}>
-                <i style={{ width: `${(category.count / max) * 100}%` }} />
+                <i
+                  data-grow
+                  style={{ width: `${(category.count / max) * 100}%` }}
+                />
               </div>
               <strong>{category.count}</strong>
             </div>
@@ -67,7 +71,8 @@ export function PortfolioAtlas({
           aria-label={copy.atlas.flowTitle}
         >
           {flowProducts.map((product, i) => (
-            <button
+            <Button
+              variant="ghost"
               type="button"
               key={product}
               aria-pressed={step === i}
@@ -81,19 +86,17 @@ export function PortfolioAtlas({
               {i < flowProducts.length - 1 && (
                 <ArrowRight size={15} aria-hidden="true" />
               )}
-            </button>
+            </Button>
           ))}
         </fieldset>
-        <div
-          className={styles.flowDetail}
-          id="portfolio-flow-detail"
-          aria-live="polite"
-        >
-          <span>
-            0{step + 1} / {flowProducts[step]}
-          </span>
-          <h4>{copy.atlas.steps[step]!.title}</h4>
-          <p>{copy.atlas.steps[step]!.body}</p>
+        <div id="portfolio-flow-detail" aria-live="polite">
+          <div className={styles.flowDetail} key={step} data-story-panel>
+            <span>
+              0{step + 1} / {flowProducts[step]}
+            </span>
+            <h4>{copy.atlas.steps[step]!.title}</h4>
+            <p>{copy.atlas.steps[step]!.body}</p>
+          </div>
         </div>
         <small>{copy.atlas.flowNote}</small>
       </div>

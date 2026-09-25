@@ -1,4 +1,5 @@
 import { ArrowRight } from '@tuturuuu/icons/lucide';
+import { Button } from '@tuturuuu/ui/button';
 import Image from 'next/image';
 import { ProductMark } from '../capabilities/product-mark';
 import { pitchTone } from '../pitch/pitch-brand';
@@ -21,10 +22,12 @@ export function PortfolioHero({ copy }: { copy: PortfolioCopy }) {
         <p className={styles.eyebrow}>{copy.journey.eyebrow}</p>
         <h1>{copy.hero}</h1>
         <p>{copy.intro}</p>
-        <a href="#work" className={styles.cta}>
-          {copy.work}
-          <ArrowRight size={18} />
-        </a>
+        <Button asChild className={styles.cta}>
+          <a href="#work">
+            {copy.work}
+            <ArrowRight size={18} />
+          </a>
+        </Button>
       </div>
       <div className={styles.heroFooter}>
         <div className={styles.productDock}>
@@ -109,7 +112,7 @@ export function PortfolioObservatory({ copy }: { copy: PortfolioCopy }) {
         <h2>{copy.observatory.title}</h2>
         <p>{copy.observatory.body}</p>
       </div>
-      <figure>
+      <figure data-story-image>
         <Image
           src="/media/story/observatory.webp"
           alt={copy.observatory.alt}

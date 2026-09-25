@@ -1,0 +1,92 @@
+.stage {
+  display: contents;
+}
+.floating {
+  position: fixed;
+  z-index: 40;
+  right: 20px;
+  bottom: 20px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 4px 24px #0002;
+}
+.toggle {
+  color: inherit;
+  background: transparent;
+}
+.stage[data-motion="paused"] *,
+.stage[data-motion="paused"] *::before,
+.stage[data-motion="paused"] *::after {
+  /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
+  animation: none !important;
+  /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
+  transition: none !important;
+}
+.stage [data-flow-line] {
+  stroke-dasharray: 3 24;
+  animation: current 20s linear infinite;
+  animation-play-state: paused;
+}
+.stage [data-flow-active="true"] [data-flow-line] {
+  animation-play-state: running;
+}
+.stage [data-story-image] {
+  overflow: hidden;
+}
+.stage [data-story-image] img {
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.stage [data-story-image]:hover img {
+  transform: scale(1.025);
+}
+.stage [data-story-panel] {
+  animation: arrive 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes current {
+  to {
+    stroke-dashoffset: -270;
+  }
+}
+@keyframes arrive {
+  from {
+    opacity: 0.2;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage *,
+  .stage *::before,
+  .stage *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
+    animation: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
+    transition: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
+    scroll-behavior: auto !important;
+  }
+  .floating,
+  .toggle {
+    display: none;
+  }
+}
+@media print {
+  .stage *,
+  .stage *::before,
+  .stage *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
+    animation: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
+    transition: none !important;
+  }
+  .floating,
+  .toggle {
+    display: none;
+  }
+}

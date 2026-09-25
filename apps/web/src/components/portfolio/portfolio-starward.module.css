@@ -48,6 +48,7 @@
   margin: 30px 0;
 }
 .hero .cta {
+  height: auto;
   display: inline-flex;
   align-items: center;
   gap: 45px;
@@ -247,6 +248,8 @@
   margin: 45px 0 30px;
 }
 .flowSteps button {
+  height: auto;
+  white-space: normal;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -532,5 +535,55 @@
 @media (prefers-reduced-motion: reduce) {
   .flowSteps button {
     transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .heroImage {
+    animation: landscape 2.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .heroCopy > * {
+    animation: introduction 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .heroCopy h1 {
+    animation-delay: 0.08s;
+  }
+  .heroCopy > p:last-of-type {
+    animation-delay: 0.16s;
+  }
+  .heroCopy > a {
+    animation-delay: 0.24s;
+  }
+  .productDock > span {
+    transition:
+      transform 0.3s,
+      background 0.3s;
+  }
+  .productDock > span:hover {
+    transform: translateY(-5px);
+    background: #091421dd;
+  }
+  .barTrack i {
+    transform-origin: left;
+  }
+}
+@keyframes landscape {
+  from {
+    transform: scale(1.045);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes introduction {
+  from {
+    transform: translateY(22px);
+    opacity: 0.1;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }

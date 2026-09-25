@@ -11582,8 +11582,11 @@
     "annual": "Annual billing",
     "art": {
       "closingAlt": "A conceptual journey from a Vietnamese landscape toward the stars.",
+      "engagementAlt": "Imagined Vietnamese innovation studio with people building connected glass models at dawn.",
       "horizonAlt": "An imagined open observatory with connected tools overlooking Earth.",
-      "note": "AI-generated concept illustration"
+      "note": "AI concept illustration · not an existing facility or product screenshot",
+      "researchAlt": "A miniature simulation world with colored agent paths converging in a shared courtyard.",
+      "visionAlt": "A conceptual glass knowledge garden with connected learning, collaboration, and planning islands."
     },
     "capacity": "More capacity",
     "celebrate": "Celebrate",
@@ -11627,6 +11630,10 @@
       "Cost to serve"
     ],
     "monthly": "Monthly billing",
+    "motion": {
+      "pause": "Pause visual motion",
+      "resume": "Resume visual motion"
+    },
     "next": "Next slide",
     "noClaims": "Product direction, not a launch or performance guarantee.",
     "notes": "Presenter notes",
@@ -12539,7 +12546,7 @@
         "title": "More capable assistance\nshould strengthen your agency."
       },
       "vision": {
-        "body": "Imagine describing an outcome instead of navigating ten tools. Your assistant brings together the relevant knowledge, explores options, and helps execute an approved plan. We start with everyday work because that is where understanding is earned.",
+        "body": "Our ambition is to build a Vietnamese technology company with the invention and breadth people associate with Google—on our own open path. The north star is a JARVIS-like partner: deeply useful, connected to your world, and accountable to you.",
         "chapter": "01 / WHY NOW",
         "kicker": "Our north star",
         "note": "Imagine describing an outcome instead of navigating ten tools. Your assistant brings together the relevant knowledge, explores options, and helps execute an approved plan. We start with everyday work because that is where understanding is earned. Long-term vision.",
@@ -12557,7 +12564,7 @@
             "detail": "Propose, explain, ask for approval, and learn from outcomes."
           }
         ],
-        "status": "Long-term vision",
+        "status": "A global-scale ambition, earned one useful capability at a time",
         "title": "A JARVIS-like partner.\nA very practical beginning."
       },
       "workflow": {
@@ -12920,6 +12927,81 @@
     "explore": "Explore the ecosystem",
     "eyebrow": "TUTURUUU / COMPANY PORTFOLIO",
     "hero": "Built in Vietnam.\nMade for possibility.",
+    "innovation": {
+      "artNote": "AI concept illustration · not an existing facility or product screenshot",
+      "body": "Our ambition is to become the next Google of Vietnam in the breadth of our invention: useful everyday products, deep engineering, and research that opens new possibilities. It is a direction to earn through what we build, how reliably it works, and who it helps.",
+      "chapters": [
+        {
+          "tab": "Useful products",
+          "title": "Start with a day worth improving.",
+          "body": "A task that finally moves. A meeting that remembers the next step. A calendar that protects focus. Technology earns a place in our lives by helping with the work already in front of us.",
+          "alt": "Imagined Vietnamese innovation studio with people building connected glass models at dawn.",
+          "proof": "Today: product foundations across work, communication, learning, and business operations.",
+          "steps": [
+            {
+              "title": "Solve a real friction",
+              "body": "Meet people in their actual workflow, with a useful tool and a clear reason to return."
+            },
+            {
+              "title": "Connect the next step",
+              "body": "Turn isolated moments into continuity: a conversation, a commitment, a plan."
+            },
+            {
+              "title": "Earn everyday trust",
+              "body": "Keep improving reliability, accessibility, and the details people feel every day."
+            }
+          ]
+        },
+        {
+          "tab": "Shared foundations",
+          "title": "Every product should make the next one stronger.",
+          "body": "Files, people, permissions, knowledge, and work belong to the same world. Shared architecture lets a focused application contribute to something much larger—without asking people to rebuild their context each time.",
+          "alt": "A conceptual glass knowledge garden with connected learning, collaboration, and planning islands.",
+          "proof": "Our advantage must be maintained: architecture, infrastructure, engineering, and coherent experiences.",
+          "steps": [
+            {
+              "title": "Reuse the foundation",
+              "body": "Identity, workspace boundaries, APIs, storage, and delivery support many focused products."
+            },
+            {
+              "title": "Preserve the context",
+              "body": "Connect information with permission and purpose, so the next tool can understand the work."
+            },
+            {
+              "title": "Compound the investment",
+              "body": "Improve one shared capability and bring that improvement to more of the ecosystem."
+            }
+          ]
+        },
+        {
+          "tab": "New intelligence",
+          "title": "Build the world an assistant needs to understand.",
+          "body": "A JARVIS-like partner needs more than a clever reply. Mira needs permissioned context, useful tools, memory, evaluation, and a way to coordinate work with people and other agents. That is the long-term research path.",
+          "alt": "A miniature simulation world with colored agent paths converging in a shared courtyard.",
+          "proof": "Research direction: multi-agent coordination, simulation, learning, and reviewed action.",
+          "steps": [
+            {
+              "title": "Explore in simulation",
+              "body": "Compare agent behaviors and workflow alternatives inside bounded environments."
+            },
+            {
+              "title": "Learn from evidence",
+              "body": "Inspect outcomes, failures, user feedback, and the assumptions behind decisions."
+            },
+            {
+              "title": "Keep people in command",
+              "body": "Move toward greater capability with explicit permissions and human review where it matters."
+            }
+          ]
+        }
+      ],
+      "cycle": "How each investment creates the next opportunity",
+      "explore": "Explore how the ambition compounds",
+      "eyebrow": "A VIETNAMESE COMPANY. A GLOBAL-SCALE AMBITION.",
+      "footer": "Breadth is a responsibility. We expand where shared foundations create real value, then test, maintain, and improve what people depend on. Research becomes a product only when evidence justifies it.",
+      "promise": "Our own path is open: an ecosystem maintained by Tuturuuu, with people owning their technology and remaining in control of the intelligence around them.",
+      "title": "The next great technology company\ncan grow from here."
+    },
     "intro": "Useful tools today. Connected intelligence tomorrow. We build the open ecosystem that helps people think, create, and go further—together.",
     "journey": {
       "artNote": "AI-generated concept art · an illustration of our ambition",
@@ -12965,6 +13047,10 @@
     ],
     "meetBody": "Realtime meetings with Mira in room chat and Live voice. Visible AI presence, opt-in microphone input, private assistance, and reviewed follow-ups make collaboration more intentional.",
     "meetTitle": "Meet your AI colleague.",
+    "motion": {
+      "pause": "Pause visual motion",
+      "resume": "Resume visual motion"
+    },
     "next": "What’s next",
     "observatory": {
       "alt": "Conceptual observatory with connected illuminated modules overlooking Earth.",

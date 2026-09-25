@@ -52,6 +52,9 @@
   max-height: 20vh;
   object-position: 50% 43%;
 }
+.artwork[data-artwork="vision"] .image img {
+  max-height: 24vh;
+}
 @media (max-width: 1000px) {
   .image img {
     max-height: 45vh;
@@ -68,7 +71,8 @@
   .artwork p {
     font-size: 12px;
   }
-  .artwork[data-artwork="closing"] .image img {
+  .artwork[data-artwork="closing"] .image img,
+  .artwork[data-artwork="vision"] .image img {
     max-height: none;
     min-height: 190px;
     object-fit: cover;
@@ -78,7 +82,8 @@
   .image img {
     max-height: 75mm;
   }
-  .artwork[data-artwork="closing"] .image img {
+  .artwork[data-artwork="closing"] .image img,
+  .artwork[data-artwork="vision"] .image img {
     max-height: 38mm;
   }
   .artwork figcaption {
