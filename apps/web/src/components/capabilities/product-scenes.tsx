@@ -1,7 +1,8 @@
 'use client';
 
-import { Check, Mic, Sparkles, Video } from '@tuturuuu/icons/lucide';
+import { Check, Mic, Sparkles } from '@tuturuuu/icons/lucide';
 import { useState } from 'react';
+import { ProductMark } from './product-mark';
 import styles from './product-scenes.module.css';
 
 export interface CapabilityCopy {
@@ -47,12 +48,12 @@ export function TaskScene({
   return (
     <figure className={styles.product} data-compact={compact}>
       <div className={styles.chrome}>
-        <span className={styles.dot} /> Tuturuuu Tasks <span>↗</span>
+        <ProductMark product="tudo" size={22} /> Tuturuuu Tasks <span>↗</span>
       </div>
       <div className={styles.taskBoard}>
         <div className={styles.boardHeading}>
           <h3>{t.title}</h3>
-          <Sparkles size={24} />
+          <ProductMark product="mira" size={28} />
         </div>
         <div className={styles.columns}>
           {[t.inbox, t.planned, t.done].map((label, column) => (
@@ -119,7 +120,8 @@ export function MeetScene({ copy }: { copy: CapabilityCopy }) {
   return (
     <figure className={`${styles.product} ${styles.meeting}`}>
       <div className={styles.chrome}>
-        <Video size={16} /> Tuturuuu Meet <span>{t.room}</span>
+        <ProductMark product="meet" size={20} /> Tuturuuu Meet{' '}
+        <span>{t.room}</span>
       </div>
       <div className={styles.meetingBody}>
         <div className={styles.participants}>
@@ -129,6 +131,7 @@ export function MeetScene({ copy }: { copy: CapabilityCopy }) {
           </div>
           <div className={styles.mira}>
             <div className={styles.wave} aria-hidden="true">
+              <ProductMark product="mira" size={56} />
               {Array.from({ length: 13 }, (_, i) => (
                 <i key={i} style={{ height: `${14 + ((i * 17) % 45)}px` }} />
               ))}

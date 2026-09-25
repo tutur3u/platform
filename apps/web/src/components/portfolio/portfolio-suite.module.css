@@ -81,7 +81,7 @@
 .scene:nth-child(even) .visual {
   order: 2;
 }
-.visual svg {
+.visual > svg {
   width: 100%;
   height: auto;
 }

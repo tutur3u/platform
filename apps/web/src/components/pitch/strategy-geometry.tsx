@@ -1,4 +1,5 @@
-import { colors, Dot, Wire } from './scene-primitives';
+import { DiagramMark } from '../capabilities/product-mark';
+import { colors, Dot } from './scene-primitives';
 export function StrategyGeometry({ id }: { id: string }) {
   switch (id) {
     case 'trust':
@@ -29,99 +30,6 @@ export function StrategyGeometry({ id }: { id: string }) {
             <g key={i}>
               <Dot x={225 + i * 75} y={275} r={9} tone={i} />
               <path d={`M${225 + i * 75} 260v-25`} stroke={colors[i]} />
-            </g>
-          ))}
-        </g>
-      );
-    case 'architecture':
-      return (
-        <g>
-          {[0, 1, 2].map((i) => (
-            <g key={i}>
-              <path
-                d={`M90 ${80 + i * 90}l210-50 210 50-210 50z`}
-                fill={colors[i]}
-                fillOpacity=".15"
-                stroke={colors[i]}
-              />
-              <path
-                d={`M90 ${80 + i * 90}v25l210 50 210-50v-25`}
-                stroke={colors[i]}
-                fill="none"
-                opacity=".6"
-              />
-            </g>
-          ))}
-          <Wire d="M300 30V355" tone={3} dashed />
-        </g>
-      );
-    case 'readiness':
-      return (
-        <g>
-          {[0, 1, 2].map((i) => (
-            <g key={i}>
-              <rect
-                x={70 + i * 175}
-                y={250 - i * 75}
-                width="115"
-                height={80 + i * 75}
-                rx="8"
-                fill={colors[i]}
-                fillOpacity={0.65 - i * 0.2}
-                stroke={colors[i]}
-                strokeDasharray={i === 2 ? '6 6' : undefined}
-              />
-              <Dot x={127 + i * 175} y={220 - i * 75} r={8} tone={i} />
-            </g>
-          ))}
-          <path d="M50 340H550" stroke="currentColor" opacity=".3" />
-        </g>
-      );
-    case 'pilot':
-      return (
-        <g>
-          {Array.from({ length: 12 }, (_, i) => (
-            <g key={i}>
-              <text
-                x={57 + i * 45}
-                y="45"
-                textAnchor="middle"
-                fill="currentColor"
-                opacity=".5"
-                fontSize="10"
-              >
-                {String(i + 1).padStart(2, '0')}
-              </text>
-              <path
-                d={`M${57 + i * 45} 60V325`}
-                stroke="currentColor"
-                opacity=".08"
-              />
-            </g>
-          ))}
-          {[
-            [35, 90, 135],
-            [170, 170, 225],
-            [395, 250, 135],
-          ].map(([x, y, w], i) => (
-            <g key={i}>
-              <rect
-                x={x}
-                y={y}
-                width={w}
-                height="45"
-                rx="7"
-                fill={colors[i]}
-                opacity=".7"
-              />
-              <circle
-                cx={x! + w!}
-                cy={y! + 22}
-                r="8"
-                fill="var(--background)"
-                stroke={colors[i]}
-                strokeWidth="3"
-              />
             </g>
           ))}
         </g>
@@ -191,142 +99,6 @@ export function StrategyGeometry({ id }: { id: string }) {
           />
         </g>
       );
-    case 'business':
-      return (
-        <g>
-          {[0, 1, 2].map((i) => (
-            <g key={i} transform={`rotate(${i * 120} 300 190)`}>
-              <path
-                d="M300 60a130 130 0 0 1 113 195"
-                fill="none"
-                stroke={colors[i]}
-                strokeWidth="30"
-                opacity=".65"
-              />
-              <path
-                d="M405 230l8 32 28-20"
-                fill="none"
-                stroke={colors[i]}
-                strokeWidth="8"
-              />
-            </g>
-          ))}
-          <Dot x={300} y={190} r={27} tone={3} />
-        </g>
-      );
-    case 'audience':
-      return (
-        <g>
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <ellipse
-              key={i}
-              cx="300"
-              cy="185"
-              rx={40 + i * 35}
-              ry="150"
-              fill="none"
-              stroke="currentColor"
-              opacity=".09"
-            />
-          ))}
-          {[90, 140, 190, 240, 290].map((y) => (
-            <path
-              key={y}
-              d={`M90 ${y}Q300 ${y + 30}510 ${y}`}
-              fill="none"
-              stroke="currentColor"
-              opacity=".09"
-            />
-          ))}
-          <Wire
-            d="M355 230Q220 40 110 110M355 230Q440 80 510 170M355 230Q390 300 465 315"
-            tone={1}
-          />
-          <Dot x={355} y={230} r={14} tone={1} />
-          {[
-            [110, 110],
-            [510, 170],
-            [465, 315],
-          ].map(([x, y], i) => (
-            <Dot key={i} x={x!} y={y!} tone={i} />
-          ))}
-        </g>
-      );
-    case 'roadmap':
-      return (
-        <g>
-          <path
-            d="M30 335L195 230 350 245 555 55"
-            fill="none"
-            stroke={colors[0]}
-            strokeWidth="3"
-          />
-          {[
-            [195, 230],
-            [350, 245],
-            [555, 55],
-          ].map(([x, y], i) => (
-            <g key={i}>
-              <path
-                d={`M${x} ${y}V335`}
-                stroke={colors[i]}
-                strokeDasharray="4 6"
-              />
-              <circle
-                cx={x}
-                cy={y}
-                r="22"
-                fill="var(--background)"
-                stroke={colors[i]}
-                strokeWidth="3"
-              />
-              <Dot x={x!} y={y!} r={7} tone={i} />
-            </g>
-          ))}
-          <path d="M30 335H575" stroke="currentColor" opacity=".2" />
-        </g>
-      );
-    case 'intelligence':
-      return (
-        <g>
-          {[0, 1, 2, 3, 4].map((i) => {
-            const a = (i * Math.PI * 2) / 5 - Math.PI / 2,
-              x = 300 + Math.cos(a) * 145,
-              y = 190 + Math.sin(a) * 145;
-            return (
-              <g key={i}>
-                <Wire d={`M300 190L${x} ${y}`} tone={i} />
-                <circle
-                  cx={x}
-                  cy={y}
-                  r="36"
-                  fill={colors[i % 4]}
-                  fillOpacity=".18"
-                  stroke={colors[i % 4]}
-                />
-                <text
-                  x={x}
-                  y={y + 6}
-                  textAnchor="middle"
-                  fill="currentColor"
-                  fontSize="16"
-                >
-                  {['M', 'A', 'R', 'N', 'C'][i]}
-                </text>
-              </g>
-            );
-          })}
-          <circle
-            cx="300"
-            cy="190"
-            r="42"
-            fill="var(--background)"
-            stroke="currentColor"
-            strokeOpacity=".2"
-          />
-          <Dot x={300} y={190} r={12} tone={1} />
-        </g>
-      );
     case 'horizon':
       return (
         <g>
@@ -372,7 +144,7 @@ export function StrategyGeometry({ id }: { id: string }) {
             );
           })}
           <circle cx="300" cy="190" r="35" fill={colors[1]} fillOpacity=".2" />
-          <path d="M285 190h30m-15-15v30" stroke={colors[1]} strokeWidth="4" />
+          <DiagramMark product="tuturuuu" x={272} y={162} size={56} />
         </g>
       );
     default:

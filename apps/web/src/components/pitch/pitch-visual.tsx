@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { ProductMark } from '../capabilities/product-mark';
 import { MeetScene, TaskScene } from '../capabilities/product-scenes';
 import { pitchTone } from './pitch-brand';
 import { PitchCommerce } from './pitch-commerce';
@@ -42,7 +43,10 @@ export function PitchVisual({ id, copy }: { id: SlideId; copy: PitchCopy }) {
         <div className={art.constellation}>
           {copy.orbitLabels.map((label, i) => (
             <span key={label} style={pitchTone(i)}>
-              <i />
+              <ProductMark
+                product={['tasks', 'contacts', 'mira', 'rewise'][i]!}
+                size={23}
+              />
               {label}
             </span>
           ))}

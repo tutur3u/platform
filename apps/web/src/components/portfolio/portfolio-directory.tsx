@@ -2,6 +2,7 @@
 
 import { ArrowUpRight } from '@tuturuuu/icons/lucide';
 import { useState } from 'react';
+import { ProductMark } from '../capabilities/product-mark';
 import { pitchTone } from '../pitch/pitch-brand';
 import type { PortfolioCopy } from './portfolio';
 import styles from './portfolio.module.css';
@@ -63,7 +64,7 @@ export function EcosystemDirectory({
             )}
           >
             <div className={styles.appMonogram}>
-              {app.title.slice(0, 2)}
+              <ProductMark product={app.slug} size={30} />
               <span />
             </div>
             <div>

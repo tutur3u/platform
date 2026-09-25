@@ -2,11 +2,13 @@ import { ArrowRight, ArrowUpRight, Code2 } from '@tuturuuu/icons/lucide';
 import Image from 'next/image';
 import type { CSSProperties } from 'react';
 import type messages from '../../../messages/en.json';
+import { ProductMark } from '../capabilities/product-mark';
 import {
   type CapabilityCopy,
   MeetScene,
   TaskScene,
 } from '../capabilities/product-scenes';
+import type { VisualCopy } from '../pitch/diagram-primitives';
 import { pitchBrandStyle, pitchTone } from '../pitch/pitch-brand';
 import { SceneGeometry } from '../pitch/scene-geometry';
 import styles from './portfolio.module.css';
@@ -21,11 +23,13 @@ export function Portfolio({
   capabilities,
   apps,
   locale,
+  visuals,
 }: {
   copy: PortfolioCopy;
   capabilities: CapabilityCopy;
   apps: PortfolioApp[];
   locale: string;
+  visuals: VisualCopy;
 }) {
   const t = copy;
   return (
@@ -90,7 +94,7 @@ export function Portfolio({
                 key={name}
                 style={{ ...pitchTone(i), '--i': i } as CSSProperties}
               >
-                <i />
+                <ProductMark product={name} size={24} />
                 {name}
               </span>
             ))}
@@ -153,7 +157,7 @@ export function Portfolio({
             </div>
           </article>
         </section>
-        <PortfolioSuite copy={t.suite} />
+        <PortfolioSuite copy={t.suite} visuals={visuals} />
         <section id="ecosystem" className={styles.ecosystem}>
           <div className={styles.sectionHeading}>
             <p className={styles.eyebrow}>02 / {t.explore}</p>
@@ -173,8 +177,8 @@ export function Portfolio({
               <ArrowUpRight size={16} />
             </a>
             <div className={styles.stack} aria-hidden="true">
-              <svg viewBox="0 0 600 380" aria-hidden="true">
-                <SceneGeometry id="architecture" />
+              <svg viewBox="0 0 600 380" fill="none" aria-hidden="true">
+                <SceneGeometry copy={visuals} id="architecture" />
               </svg>
             </div>
           </div>
@@ -200,8 +204,9 @@ export function Portfolio({
           <div className={researchStyles.researchAreas}>
             {t.researchAreas.map((area, i) => (
               <article key={area.title} style={pitchTone(i)}>
-                <svg viewBox="0 0 600 380" aria-hidden="true">
+                <svg viewBox="0 0 600 380" fill="none" aria-hidden="true">
                   <SceneGeometry
+                    copy={visuals}
                     id={['capacity', 'context', 'skills', 'research'][i]!}
                   />
                 </svg>
@@ -235,8 +240,8 @@ export function Portfolio({
               <ArrowUpRight size={20} />
             </a>
           </div>
-          <svg viewBox="0 0 600 380" aria-hidden="true">
-            <SceneGeometry id="closing" />
+          <svg viewBox="0 0 600 380" fill="none" aria-hidden="true">
+            <SceneGeometry copy={visuals} id="closing" />
           </svg>
         </section>
       </main>

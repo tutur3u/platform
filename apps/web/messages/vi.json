@@ -12602,7 +12602,125 @@
     },
     "sourceLabel": "Nguồn",
     "stages": ["Lập kế hoạch", "Kết nối", "Hoàn thành", "Nhìn lại"],
-    "title": "Tuturuuu — kỷ nguyên cộng sự thông minh"
+    "title": "Tuturuuu — kỷ nguyên cộng sự thông minh",
+    "visuals": {
+      "audience": ["Cá nhân", "Đội nhóm", "MSME", "Nhà nghiên cứu"],
+      "boundary": "Con người duyệt hành động có tác động lớn",
+      "calendar": [
+        "T2",
+        "T3",
+        "T4",
+        "T5",
+        "T6",
+        "Tập trung",
+        "Họp",
+        "Đánh giá",
+        "Lập lịch theo ràng buộc của bạn"
+      ],
+      "capacity": [
+        "Thiết kế",
+        "Kỹ thuật",
+        "Nghiên cứu",
+        "Vận hành",
+        "Giờ dự kiến",
+        "Năng lực: 32 giờ",
+        "Khối lượng tuần minh họa · không phải kết quả khách hàng"
+      ],
+      "chat": ["Đội ngũ", "Hội thoại chung", "Mira", "Duyệt bước tiếp theo"],
+      "collaboration": [
+        "Cùng khám phá",
+        "Hoàn thiện tài liệu",
+        "Lưu kiến thức chung"
+      ],
+      "context": [
+        "Hội thoại",
+        "Cam kết",
+        "Kiến thức",
+        "Quan hệ",
+        "Thời gian",
+        "Vận hành"
+      ],
+      "contextTitle": "Ngữ cảnh theo quyền truy cập",
+      "evidence": [
+        "Ban đầu",
+        "Thử nghiệm",
+        "Đánh giá",
+        "Thời gian hoàn thành",
+        "Tỷ lệ sửa lỗi",
+        "Sự tin tưởng",
+        "Thống nhất tiêu chí trước khi thử nghiệm"
+      ],
+      "flow": [
+        "Ghi nhận",
+        "Hiểu ngữ cảnh",
+        "Duyệt",
+        "Lập kế hoạch",
+        "Thực hiện",
+        "Học hỏi"
+      ],
+      "independence": [
+        "Mã nguồn mở",
+        "Dịch vụ thay thế được",
+        "Vận hành độc lập"
+      ],
+      "intelligence": [
+        "Trợ lý",
+        "Điều phối",
+        "Học tập",
+        "Thử nghiệm",
+        "Kiến thức"
+      ],
+      "layers": [
+        "Sản phẩm tập trung",
+        "Ngữ cảnh & phân quyền chung",
+        "API, dữ liệu & hạ tầng"
+      ],
+      "loop": ["Sản phẩm hữu ích", "Nền tảng chung", "Tái đầu tư"],
+      "mail": [
+        "Hộp thư",
+        "Tách đầu việc",
+        "Bạn phê duyệt",
+        "Tasks",
+        "Calendar",
+        "Theo dõi"
+      ],
+      "onboarding": ["Tìm kiến thức", "Hỏi Mira", "Thực hành", "Phản hồi"],
+      "pilot": [
+        "Phạm vi & quản trị",
+        "Cấu hình & thử nghiệm",
+        "Đánh giá & quyết định",
+        "Phạm vi 12 tuần minh họa"
+      ],
+      "readiness": ["Đã triển khai", "Đang phát triển", "Hướng nghiên cứu"],
+      "research": [
+        "Tạo kịch bản",
+        "Phối hợp tác tử",
+        "Xem dấu vết",
+        "Đánh giá kết quả"
+      ],
+      "roadmap": [
+        "Kết nối công cụ hữu ích",
+        "Kiểm chứng hành động",
+        "Mở rộng phối hợp"
+      ],
+      "sample": "Luồng minh họa · tích hợp theo lộ trình chưa phải cam kết sẵn có",
+      "skills": [
+        "Phân tích",
+        "Viết",
+        "Công cụ AI",
+        "Lập kế hoạch",
+        "Khám phá",
+        "Thực hành",
+        "Hướng dẫn",
+        "Nhu cầu học tập minh họa · tự đánh giá, không xếp hạng"
+      ],
+      "vision": [
+        "Ý định của bạn",
+        "Hành động đã duyệt",
+        "Cùng bạn học hỏi, dưới quyền kiểm soát của bạn"
+      ],
+      "workforce": ["Năng lực", "Kỹ năng", "Hội nhập"]
+    }
   },
   "platform-role-data-table": {
     "allow_challenge_management": "Quản lý thử thách",

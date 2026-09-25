@@ -8,34 +8,15 @@ export function PitchScene({ id, copy }: { id: SlideId; copy: PitchCopy }) {
   return (
     <figure className={styles.scene} data-scene={id}>
       <div className={styles.canvas}>
-        <svg viewBox="0 0 600 380" aria-hidden="true">
-          <SceneGeometry id={id} />
+        <svg
+          data-pitch-diagram="true"
+          viewBox="0 0 600 380"
+          fill="none"
+          role="img"
+          aria-label={copy.slides[id].title}
+        >
+          <SceneGeometry id={id} copy={copy.visuals} />
         </svg>
-        {id === 'platform' && (
-          <div className={styles.productNames}>
-            {[
-              'Tasks',
-              'Meet',
-              'Calendar',
-              'Mira',
-              'Mail',
-              'Drive',
-              'Contacts',
-              'Finance',
-              'Forms',
-              'Learn',
-              'Teach',
-              'Hive',
-              'Nova',
-              'Rewise',
-              'Git',
-            ].map((name, i) => (
-              <span style={pitchTone(i)} key={name}>
-                {name}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
       <figcaption className={styles.legend}>
         {panels.map((panel, i) => (

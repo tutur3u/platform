@@ -9,7 +9,7 @@
   max-width: 660px;
   margin: auto;
 }
-.canvas svg {
+.canvas > svg {
   display: block;
   width: 100%;
   height: auto;
@@ -54,27 +54,6 @@
   color: var(--muted-foreground);
   margin: 18px 0 0;
   letter-spacing: 0.05em;
-}
-.productNames {
-  position: absolute;
-  inset: 10.5263% 7.5%;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 5% 2.9412%;
-  pointer-events: none;
-}
-.productNames span {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 10%;
-  font-size: clamp(7px, 0.8vw, 12px);
-  color: var(--tone);
-}
-.scene[data-scene="platform"] svg path,
-.scene[data-scene="platform"] svg circle {
-  transform: translateY(-8px);
 }
 .scene[data-scene="origin"] {
   transform: rotate(-3deg);
@@ -124,7 +103,7 @@
   align-items: center;
   gap: 24px;
 }
-.scene[data-scene="trust"] .canvas svg {
+.scene[data-scene="trust"] .canvas > svg {
   max-height: 360px;
 }
 .scene[data-scene="team"] .legend > div {
@@ -148,7 +127,7 @@
   left: calc(50% - 11px);
 }
 @media (max-width: 800px) {
-  .canvas svg {
+  .canvas > svg {
     max-height: none;
   }
   .legend {
@@ -169,9 +148,6 @@
   .scene[data-scene="context"] .legend > div {
     grid-template-columns: 1fr;
   }
-  .productNames span {
-    font-size: 9px;
-  }
 }
 @media (max-width: 450px) {
   .legend {
@@ -189,7 +165,7 @@
   }
 }
 @media print {
-  .canvas svg {
+  .canvas > svg {
     max-height: 72mm;
   }
   .legend {
@@ -207,13 +183,10 @@
     grid-template-columns: 1fr 1fr;
     gap: 5mm;
   }
-  .scene[data-scene="trust"] .canvas svg {
+  .scene[data-scene="trust"] .canvas > svg {
     max-height: 60mm;
   }
   .scene[data-scene="intelligence"] .legend {
     grid-template-columns: repeat(3, 1fr);
-  }
-  .productNames span {
-    font-size: 7pt;
   }
 }

@@ -2,6 +2,7 @@ import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
 import type { Metadata } from 'next';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import type { CapabilityCopy } from '@/components/capabilities/product-scenes';
+import type { VisualCopy } from '@/components/pitch/diagram-primitives';
 import {
   Portfolio,
   type PortfolioCopy,
@@ -35,6 +36,7 @@ export default async function PortfolioPage() {
   return (
     <Portfolio
       copy={copy}
+      visuals={(messages.pitch as { visuals: VisualCopy }).visuals}
       capabilities={messages.capabilities as CapabilityCopy}
       apps={apps}
       locale={locale}
