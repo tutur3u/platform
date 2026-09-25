@@ -644,7 +644,6 @@ class AssistantRepository {
           yield _assistantEventFromChatPart(event.part);
           continue;
         }
-
         if (event is ChatStreamMessagesEvent) {
           final assistantMessages = event.messages.where(
             (message) => message.kind == ChatMessageKind.assistant,
