@@ -1,21 +1,17 @@
 import {
-  clearSupabaseAuthCookies,
-  getAppSessionClaimsFromRequest,
-} from '@tuturuuu/auth/app-session';
-import {
   createCentralizedAuthProxy,
   getRequestHeadersWithResponseCookies,
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
+import { resolveSupabaseSessionRequest } from '@tuturuuu/auth/supabase-session-user';
 import { TTR_URL } from '@tuturuuu/meet-core/constants/common';
 import { hasParleyAccess } from '@tuturuuu/meet-core/parley-access';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
-import { type NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 
 const auth = createCentralizedAuthProxy({
-  appSession: { sessionMode: 'app-session', targetApp: 'parley' },
   webAppUrl: TTR_URL,
   publicPaths: [
     '/login',
@@ -28,9 +24,9 @@ const auth = createCentralizedAuthProxy({
     '/en/access-denied',
     '/vi/access-denied',
   ],
-  skipApiRoutes: true,
+  skipApiRoutes: false,
   excludeRootPath: false,
-  mfa: { enabled: false },
+  mfa: { enabled: true, excludedPaths: ['/login'] },
 });
 const intl = createIntlMiddleware(routing);
 export default async function proxy(request: NextRequest) {
@@ -54,32 +50,58 @@ export default async function proxy(request: NextRequest) {
   if (['/login', '/verify-token', '/access-denied'].includes(path))
     return intl(request);
   const response = await auth(request);
-  if (response.headers.get('location')) return response;
-  const claims = getAppSessionClaimsFromRequest(
-    { headers: getRequestHeadersWithResponseCookies(request, response) },
-    {
-      targetApp: 'parley',
-    }
+  const finish = (result: NextResponse) => {
+    propagateAuthCookies(response, result);
+    return result;
+  };
+  if (response.status >= 400) return response;
+  if (response.headers.get('location')) {
+    if (!path.startsWith('/api/')) return response;
+    const denied = NextResponse.json(
+      { error: 'Authentication required' },
+      { status: 401 }
+    );
+    return finish(denied);
+  }
+  const requestHeaders = getRequestHeadersWithResponseCookies(
+    request,
+    response
   );
-  if (!claims)
-    return path.startsWith('/api/')
-      ? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      : NextResponse.redirect(new URL('/login', request.url));
+  const { user } = await resolveSupabaseSessionRequest({
+    headers: requestHeaders,
+    url: request.url,
+  });
+  if (!user)
+    return finish(
+      path.startsWith('/api/')
+        ? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        : NextResponse.redirect(
+            new URL(
+              `/login?next=${encodeURIComponent(request.nextUrl.pathname + request.nextUrl.search)}`,
+              request.url
+            )
+          )
+    );
   try {
-    if (!(await hasParleyAccess(claims.sub)))
-      return path.startsWith('/api/')
-        ? NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        : NextResponse.redirect(new URL('/access-denied', request.url));
+    if (!(await hasParleyAccess(user.id)))
+      return finish(
+        path.startsWith('/api/')
+          ? NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+          : NextResponse.redirect(new URL('/access-denied', request.url))
+      );
   } catch {
-    return NextResponse.json(
-      { error: 'Access verification unavailable' },
-      { status: 503 }
+    return finish(
+      NextResponse.json(
+        { error: 'Access verification unavailable' },
+        { status: 503 }
+      )
     );
   }
-  const result = path.startsWith('/api/') ? NextResponse.next() : intl(request);
-  clearSupabaseAuthCookies(request, result);
-  propagateAuthCookies(response, result);
-  return result;
+  const result = path.startsWith('/api/')
+    ? NextResponse.next({ request: { headers: requestHeaders } })
+    : intl(new NextRequest(request, { headers: requestHeaders }));
+
+  return finish(result);
 }
 export const config = {
   matcher: [

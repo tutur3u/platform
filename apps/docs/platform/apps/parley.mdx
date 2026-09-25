@@ -3,11 +3,30 @@ title: Parley
 description: Operate the private scenario training application and shared Meet runtime.
 ---
 
-Parley runs at `parley.tuturuuu.com`. It uses Tuturuuu app-session authentication
-and the shared `@tuturuuu/meet-core` runtime. Verified `@tuturuuu.com` accounts
+Parley runs at `parley.tuturuuu.com`. It uses the shared Tuturuuu Supabase session cookie across subdomains
+and the standard satellite shell (`structure.tsx`), alongside the shared `@tuturuuu/meet-core` runtime. Verified `@tuturuuu.com` accounts
 have access; external accounts require an enabled entry managed in Infrastructure
 under **Platform administration → Parley**. Authorization checks the current
 confirmed account identity. Failed lookups deny access.
+
+## Discovery and session review
+
+The scenario library at `/` supports text search and category filters. Open
+`/scenarios/[scenarioId]` to read the public briefing, preview role names and
+confirm participation before creating a session. Hidden role briefs and AI
+instructions never enter the discovery client payload.
+
+`/sessions` is the signed-in facilitator's paginated archive. Each
+`/sessions/[meetingId]` review reuses Meet's metered AI transcript, summary,
+decision and follow-up tools. Private research notes are shown separately and
+remain facilitator-only, even when meeting notes are shared with participants. Research notes are paginated newest first, with full-session note and decision totals; the note-type filter applies to the current page.
+These satellite-only routes are owned by `apps/parley`; the current TanStack
+migration manifest scans `apps/web`, not satellite app trees.
+
+Authentication uses the centralized provider-cookie proxy with MFA verification,
+then fresh confirmed-email/allowlist authorization. Do not clear shared Supabase
+cookies or make an app-specific coordination token mandatory. Realtime room
+signing remains a separate server-to-server requirement.
 
 ## Private content
 
@@ -33,8 +52,9 @@ viseme synthesis or a full 3D avatar.
 
 1. Apply the additive Parley migration locally and regenerate database types.
    Do not reset a shared development database to test this app.
-2. Run `bun --cwd apps/parley dev` with the same Supabase, app-session signing,
-   realtime and provider environment contracts as Meet. The app uses port 7834
+2. Run `bun --cwd apps/parley dev` with the same Supabase,
+   realtime and provider environment contracts as Meet. Browser authentication
+   uses shared provider cookies; no Parley-specific app-session token is required. The app uses port 7834
    and `parley.tuturuuu.localhost`.
 3. Validate the shared runtime and build Meet, Parley and Infrastructure through
    `ttr resources run`. The extraction affects all three consumers.

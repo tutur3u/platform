@@ -6,6 +6,7 @@ import { getSessionScenario } from '@tuturuuu/meet-core/parley/repository';
 import RoomPage from '@tuturuuu/meet-core/routes/[locale]/r/[code]/page';
 import { Button } from '@tuturuuu/ui/button';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
@@ -48,6 +49,11 @@ export default async function Session(props: {
             <a className="text-sm underline" href="/">
               {t('library')}
             </a>
+            {access.isHost && (
+              <Button asChild variant="outline">
+                <Link href={`/sessions/${id}`}>{t('review')}</Link>
+              </Button>
+            )}
           </section>
           {access.isHost && (
             <section className="space-y-4">

@@ -42,6 +42,7 @@ export async function saveObservation(form: FormData) {
     .insert({ ...input, meeting_id: meetingId, author_id: user.id });
   if (error) throw new Error('Could not save observation');
   revalidatePath(`/r/${encodeRoomCode(meetingId)}`);
+  revalidatePath(`/sessions/${meetingId}`);
 }
 export async function joinScenario(form: FormData) {
   await requireParleyUser();
