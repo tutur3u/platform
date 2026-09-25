@@ -11580,6 +11580,11 @@
   "pitch": {
     "advanced": "Advanced workflows",
     "annual": "Annual billing",
+    "art": {
+      "closingAlt": "A conceptual journey from a Vietnamese landscape toward the stars.",
+      "horizonAlt": "An imagined open observatory with connected tools overlooking Earth.",
+      "note": "AI-generated concept illustration"
+    },
     "capacity": "More capacity",
     "celebrate": "Celebrate",
     "company": "Meet the company",
@@ -11914,7 +11919,7 @@
         "title": "The team leaves\na shared trail of understanding."
       },
       "context": {
-        "body": "A task becomes more useful when connected to the promise behind it, the knowledge needed, the people involved, and the time available. Our next layer is permission-aware context that helps Mira understand relationships across work.",
+        "body": "A message carries a promise. A task carries the plan. A calendar carries the constraint. Mira is our assistant across this ecosystem; permission-aware context is the next layer that can make each decision more useful.",
         "chapter": "03 / CONNECT THE INTELLIGENCE",
         "kicker": "Why an ecosystem matters",
         "note": "A task becomes more useful when connected to the promise behind it, the knowledge needed, the people involved, and the time available. Our next layer is permission-aware context that helps Mira understand relationships across work. Connected-context strategy.",
@@ -11933,10 +11938,10 @@
           }
         ],
         "status": "Connected-context strategy",
-        "title": "Now the pieces\ncan mean something together."
+        "title": "Mira connects\nthe meaning between things."
       },
       "ecosystem": {
-        "body": "As AI-assisted “vibe coding” lowers the cost of a first version, a single feature becomes easier to recreate. Our bet is on what takes sustained engineering: shared architecture, connected context, dependable infrastructure, and an ecosystem that keeps getting better together.",
+        "body": "AI makes first versions easier to build. Lasting value lives in maintained architecture, shared permissions, reliable infrastructure, and connected context. We build focused products on that common foundation, expanding where reuse and customer value justify it.",
         "chapter": "02 / BUILD THE WORLD",
         "kicker": "Why an ecosystem?",
         "note": "This is our strategic belief, not a claim that focused products cannot succeed. AI can reduce the cost of making an initial app; it does not automatically solve operating a coherent system over years. We choose a maintained ecosystem so that engineering improvements, shared context, and reusable infrastructure can benefit many workflows. Breadth is not the goal by itself: prioritize real needs, prove reuse, and account for the cost of supporting each product.",
@@ -11955,10 +11960,10 @@
           }
         ],
         "status": "Our strategic thesis · durability must be earned in operation",
-        "title": "Apps get easier to build.\nEcosystems still need builders."
+        "title": "Many useful products.\nOne compounding foundation."
       },
       "engagement": {
-        "body": "Agree the technical contact, data boundaries, deliverables, timeline, and budget before building. Define configurable outputs, interaction tracking, evaluation criteria, and handover so everyone knows what progress will mean.",
+        "body": "Founded by Võ Hoàng Phúc, Tuturuuu contributes product engineering and maintained software. Partners bring domain expertise and real workflows. Agree 1–3 issues, a technical lead, data boundaries, scope, budget, and success criteria before building.",
         "chapter": "04 / EARN THE TRUST",
         "kicker": "Scope before scale",
         "note": "Agree the technical contact, data boundaries, deliverables, timeline, and budget before building. Define configurable outputs, interaction tracking, evaluation criteria, and handover so everyone knows what progress will mean. Proposed engagement structure · quotation after discovery.",
@@ -11977,7 +11982,7 @@
           }
         ],
         "status": "Proposed engagement structure · quotation after discovery",
-        "title": "Make the collaboration\nas clear as the ambition."
+        "title": "A shared mission.\nA clear way to build."
       },
       "evidence": {
         "body": "Agree a baseline before a pilot. Track task success, corrections, review effort, user experience, and operating cost. A compelling demonstration starts the conversation; dependable performance in the intended setting earns expansion.",
@@ -12002,7 +12007,7 @@
         "title": "Earn the next step\nwith evidence."
       },
       "horizon": {
-        "body": "For us, the ambition reaches beyond productivity: learning, discovery, and eventually assistance in the physical world. Success means people can do more, understand more, and remain authors of their own direction as the technology improves.",
+        "body": "Our horizon reaches beyond productivity: learning, discovery, and eventually assistance in the physical world. We build toward it through dependable tools, shared intelligence, and people who remain authors of their own direction.",
         "chapter": "06 / PUT THE FUTURE IN YOUR HANDS",
         "kicker": "Beyond the screen",
         "note": "For us, the ambition reaches beyond productivity: learning, discovery, and eventually assistance in the physical world. Success means people can do more, understand more, and remain authors of their own direction as the technology improves. Long-term research vision.",
@@ -12021,7 +12026,7 @@
           }
         ],
         "status": "Long-term research vision",
-        "title": "The smartest assistant\nis one you grow with."
+        "title": "From Vietnam.\nFor the world.\nToward the extraordinary."
       },
       "independence": {
         "body": "Full independence is our direction, not today’s deployment claim. We aim to make the ecosystem independently operable through portable data, replaceable services, verified deployment paths, and model/runtime choice—while remaining open to the wider world.",
@@ -12164,7 +12169,7 @@
         "title": "Let new people\ninherit the context."
       },
       "opening": {
-        "body": "Our ambition is to build the smartest assistant we can imagine: an intelligent partner that understands your world, helps you act, and makes you more capable. Tuturuuu is building the open ecosystem that can make it possible.",
+        "body": "Born from a wish for more focus, Tuturuuu is building an open ecosystem for human potential. Useful tools today. A deeply capable partner tomorrow—one that understands your world and helps you act.",
         "chapter": "01 / WHY NOW",
         "kicker": "An ecosystem for human potential",
         "note": "Our ambition is to build the smartest assistant we can imagine: an intelligent partner that understands your world, helps you act, and makes you more capable. Tuturuuu is building the open ecosystem that can make it possible. The Tuturuuu vision.",
@@ -12186,7 +12191,7 @@
         "title": "Your world.\nWorking with you."
       },
       "openness": {
-        "body": "Tuturuuu’s platform source is available under Apache 2.0. We want openness to extend beyond code: understandable interfaces, portable knowledge, extensible workflows, and choices about where and how your technology runs.",
+        "body": "Our platform source is available under Apache 2.0. We are building toward portable knowledge, replaceable services, and independently operable deployments. Full independence is a direction to prove, while current services still use external infrastructure and models.",
         "chapter": "06 / PUT THE FUTURE IN YOUR HANDS",
         "kicker": "Open by design",
         "note": "Tuturuuu’s platform source is available under Apache 2.0. We want openness to extend beyond code: understandable interfaces, portable knowledge, extensible workflows, and choices about where and how your technology runs. Open-source platform today · wider portability and deployment choice are ongoing work.",
@@ -12205,7 +12210,7 @@
           }
         ],
         "status": "Open-source platform today · wider portability and deployment choice are ongoing work",
-        "title": "An open ecosystem\nshould make you more independent."
+        "title": "Open by design.\nMore yours over time."
       },
       "origin": {
         "body": "Every idea asks for time. Every tool asks for attention. Tuturuuu began by helping people organize their work; the bigger question became how technology could give people more room to think, learn, and create.",
@@ -12380,7 +12385,7 @@
         "title": "Practice coordination\nin worlds we can inspect."
       },
       "roadmap": {
-        "body": "Make the products dependable. Connect permissioned context. Validate reviewed workflows. Coordinate specialized agents. Expand deployment and model choice. Each stage should leave users with more useful capability and more control.",
+        "body": "The foundations are here; integration is the work. Strengthen connected products, prove reviewed workflows with partners, then scale trusted coordination. Each stage must leave people with more useful capability and more control.",
         "chapter": "06 / PUT THE FUTURE IN YOUR HANDS",
         "kicker": "Progress through evidence",
         "note": "Make the products dependable. Connect permissioned context. Validate reviewed workflows. Coordinate specialized agents. Expand deployment and model choice. Each stage should leave users with more useful capability and more control. Strategic roadmap · no fixed launch promises.",
@@ -12399,7 +12404,7 @@
           }
         ],
         "status": "Strategic roadmap · no fixed launch promises",
-        "title": "Capability compounds\nwhen each stage is earned."
+        "title": "Connect. Validate.\nThen expand."
       },
       "shift": {
         "body": "AI is moving from isolated conversations toward tools and agents that can act across workflows. Our thesis: lasting value comes from connecting that capability to real context, clear permissions, and people who keep learning.",
@@ -12578,7 +12583,7 @@
         "title": "“Can we take on\nthis project?”"
       },
       "workforce": {
-        "body": "In an OECD survey, 31% of SMEs used generative AI; among users, 65% reported improved employee performance. That is a reason to test practical support for smaller teams—not evidence that every workflow or product will deliver the same result.",
+        "body": "Start with three bounded questions: Do we have capacity? What should we learn? How can a new teammate get up to speed? Existing product foundations support a configurable prototype, with human review and measurable outcomes.",
         "chapter": "03 / CONNECT THE INTELLIGENCE",
         "kicker": "Start where the stakes are real",
         "note": "In an OECD survey, 31% of SMEs used generative AI; among users, 65% reported improved employee performance. That is a reason to test practical support for smaller teams—not evidence that every workflow or product will deliver the same result. Proposed workforce decision-support prototype.",
@@ -12768,6 +12773,42 @@
   },
   "portfolio": {
     "all": "All applications",
+    "atlas": {
+      "body": "Different doors into one maintained foundation. The catalog below describes product scope—not adoption, revenue, or equal maturity across apps.",
+      "chart": "Product catalog by domain",
+      "count": "apps in the current catalog",
+      "eyebrow": "THE ECOSYSTEM, IN PERSPECTIVE",
+      "flowBody": "Explore the coordination we are building toward. Each product contributes context; people keep control of consequential actions.",
+      "flowNote": "Illustrative connected workflow · integrations mature at different speeds",
+      "flowTitle": "Follow one promise through the ecosystem.",
+      "steps": [
+        {
+          "title": "A request arrives",
+          "body": "Mail captures the promise and the conversation behind it. Mira can help turn the message into a proposed next step."
+        },
+        {
+          "title": "The team aligns",
+          "body": "Meet brings people and Mira into the same discussion, with visible AI participation and room-wide context."
+        },
+        {
+          "title": "A plan takes shape",
+          "body": "Tasks connects priorities, owners, and dependencies. Suggestions become a plan people can inspect and adjust."
+        },
+        {
+          "title": "Time becomes real",
+          "body": "Calendar works with availability, habits, and deadlines to make a realistic schedule."
+        },
+        {
+          "title": "Knowledge stays",
+          "body": "Collaborative documents and shared files preserve the reasoning, decisions, and work for the next person."
+        },
+        {
+          "title": "Understanding grows",
+          "body": "Mira connects permissioned context across the work. Reviewed outcomes can guide the next useful action."
+        }
+      ],
+      "title": "Breadth with a reason."
+    },
     "categories": {
       "ai": "AI & experimentation",
       "learning": "Learning & development",
@@ -12878,8 +12919,32 @@
     "engineeringBody": "We build across the stack because useful intelligence needs more than a model. It needs context, collaboration, dependable systems, and thoughtful interaction.",
     "explore": "Explore the ecosystem",
     "eyebrow": "TUTURUUU / COMPANY PORTFOLIO",
-    "hero": "We build the pieces.\nAnd the possibilities\nbetween them.",
-    "intro": "A product ecosystem, an engineering practice, and a place to turn ambitious research into useful software. Built in Vietnam, with a wider horizon.",
+    "hero": "Built in Vietnam.\nMade for possibility.",
+    "intro": "Useful tools today. Connected intelligence tomorrow. We build the open ecosystem that helps people think, create, and go further—together.",
+    "journey": {
+      "artNote": "AI-generated concept art · an illustration of our ambition",
+      "body": "Our starting point is human. Our horizon is deliberately wide. We earn each step by making technology more useful, more understandable, and more yours.",
+      "eyebrow": "VIETNAM → WORLD → STARWARD",
+      "imageAlt": "An imagined Vietnamese coastal landscape meeting the illuminated horizon of Earth.",
+      "stages": [
+        {
+          "title": "Vietnam",
+          "tag": "OUR ROOTS",
+          "body": "Build close to real people, real teams, and the everyday work that deserves better tools."
+        },
+        {
+          "title": "The world",
+          "tag": "OUR REACH, BY DESIGN",
+          "body": "Open source, shared foundations, and local partnerships make room for different languages and ways of working."
+        },
+        {
+          "title": "Starward",
+          "tag": "OUR DIRECTION",
+          "body": "Explore intelligence that expands what people can imagine and accomplish. An ambition to earn, not a destination already reached."
+        }
+      ],
+      "title": "Rooted somewhere.\nOpen to everywhere."
+    },
     "layers": [
       {
         "title": "Human interfaces",
@@ -12901,6 +12966,13 @@
     "meetBody": "Realtime meetings with Mira in room chat and Live voice. Visible AI presence, opt-in microphone input, private assistance, and reviewed follow-ups make collaboration more intentional.",
     "meetTitle": "Meet your AI colleague.",
     "next": "What’s next",
+    "observatory": {
+      "alt": "Conceptual observatory with connected illuminated modules overlooking Earth.",
+      "body": "We research how memory, reasoning, learning, and coordinated agents can work together. Today’s dependable software is the foundation for tomorrow’s extraordinary assistance.",
+      "eyebrow": "THE LONG VIEW",
+      "note": "AI-generated research vision · not an existing Tuturuuu facility",
+      "title": "Build the tools.\nConnect the intelligence.\nExpand the possible."
+    },
     "openProduct": "Explore product",
     "pitch": "View the vision",
     "process": [

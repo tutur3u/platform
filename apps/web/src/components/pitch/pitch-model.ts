@@ -1,5 +1,6 @@
 import type { CapabilityCopy } from '../capabilities/product-scenes';
-export const SLIDE_IDS = [
+
+const ALL_SLIDE_IDS = [
   'opening',
   'origin',
   'problem',
@@ -43,8 +44,24 @@ export const SLIDE_IDS = [
   'references',
   'closing',
 ] as const;
-export type SlideId = (typeof SLIDE_IDS)[number];
+export type SlideId = (typeof ALL_SLIDE_IDS)[number];
+const CONSOLIDATED_SLIDES: Partial<Record<SlideId, SlideId>> = {
+  origin: 'opening',
+  shift: 'moment',
+  ownership: 'ecosystem',
+  ai: 'context',
+  onboarding: 'workforce',
+  architecture: 'ecosystem',
+  readiness: 'roadmap',
+  team: 'engagement',
+  pricing: 'calculator',
+  independence: 'openness',
+};
+export const SLIDE_IDS = ALL_SLIDE_IDS.filter(
+  (id) => !(id in CONSOLIDATED_SLIDES)
+);
 export interface PitchCopy {
+  art: { note: string; horizonAlt: string; closingAlt: string };
   visuals: import('./diagram-primitives').VisualCopy;
   sourceLabel: string;
   references: { label: string; detail: string }[];
@@ -132,7 +149,9 @@ export interface PitchCopy {
   >;
 }
 export function slideFromHash(hash: string): number {
-  const index = SLIDE_IDS.findIndex((id) => `#${id}` === hash);
+  const requested = hash.replace(/^#/, '') as SlideId;
+  const target = CONSOLIDATED_SLIDES[requested] ?? requested;
+  const index = SLIDE_IDS.indexOf(target);
   return index < 0 ? 0 : index;
 }
 export function subscriptionEstimate(

@@ -12,6 +12,9 @@
 .portfolio * {
   box-sizing: border-box;
 }
+.portfolio :where(section[id]) {
+  scroll-margin-top: 100px;
+}
 .portfolio a {
   text-decoration: none;
   color: inherit;
@@ -22,6 +25,11 @@
   outline-offset: 5px;
 }
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--background) 94%, transparent);
+  backdrop-filter: blur(16px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -30,6 +38,7 @@
   gap: 25px;
 }
 .brand {
+  flex-shrink: 0;
   font-size: 24px;
   font-weight: 750;
   letter-spacing: -0.06em;
@@ -524,6 +533,7 @@
 }
 @media (max-width: 700px) {
   .header {
+    gap: 12px;
     padding: 18px 6vw;
   }
   .header nav > a:first-child {

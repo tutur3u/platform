@@ -1,8 +1,6 @@
-import { ArrowRight, ArrowUpRight, Code2 } from '@tuturuuu/icons/lucide';
+import { ArrowUpRight, Code2 } from '@tuturuuu/icons/lucide';
 import Image from 'next/image';
-import type { CSSProperties } from 'react';
 import type messages from '../../../messages/en.json';
-import { ProductMark } from '../capabilities/product-mark';
 import {
   type CapabilityCopy,
   MeetScene,
@@ -12,8 +10,14 @@ import type { VisualCopy } from '../pitch/diagram-primitives';
 import { pitchBrandStyle, pitchTone } from '../pitch/pitch-brand';
 import { SceneGeometry } from '../pitch/scene-geometry';
 import styles from './portfolio.module.css';
+import { PortfolioAtlas } from './portfolio-atlas';
 import { EcosystemDirectory, type PortfolioApp } from './portfolio-directory';
 import researchStyles from './portfolio-research.module.css';
+import {
+  PortfolioHero,
+  PortfolioJourney,
+  PortfolioObservatory,
+} from './portfolio-starward';
 import { PortfolioSuite } from './portfolio-suite';
 
 export type PortfolioCopy = typeof messages.portfolio;
@@ -54,53 +58,7 @@ export function Portfolio({
         </nav>
       </header>
       <main>
-        <section className={styles.hero}>
-          <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>{t.eyebrow}</p>
-            <h1>{t.hero}</h1>
-            <p className={styles.intro}>{t.intro}</p>
-            <a className={styles.cta} href="#work">
-              {t.work}
-              <ArrowRight size={18} />
-            </a>
-          </div>
-          <div className={styles.heroArt} aria-hidden="true">
-            <div className={styles.halo} />
-            <svg viewBox="0 0 600 600" aria-hidden="true">
-              <path d="M70 90Q580 30 420 300T95 500Q-20 290 300 300T530 100" />
-              <circle cx="300" cy="300" r="185" />
-              <circle cx="300" cy="300" r="120" />
-            </svg>
-            <div className={styles.centerMark}>
-              <Image
-                src="/media/branding/tuturuuu.svg"
-                width={80}
-                height={80}
-                alt=""
-              />
-            </div>
-            {[
-              'Tasks',
-              'Meet',
-              'Mira',
-              'Calendar',
-              'Finance',
-              'Learn',
-              'Hive',
-              'Drive',
-            ].map((name, i) => (
-              <span
-                className={styles.satellite}
-                key={name}
-                style={{ ...pitchTone(i), '--i': i } as CSSProperties}
-              >
-                <ProductMark product={name} size={24} />
-                {name}
-              </span>
-            ))}
-            <span className={styles.heroIndex}>01—∞</span>
-          </div>
-        </section>
+        <PortfolioHero copy={t} />
         <div className={styles.ticker} aria-hidden="true">
           {t.ticker.map((word, i) => (
             <span style={pitchTone(i)} key={word}>
@@ -109,6 +67,7 @@ export function Portfolio({
             </span>
           ))}
         </div>
+        <PortfolioJourney copy={t} />
         <section id="work" className={styles.work}>
           <div className={styles.sectionHeading}>
             <p className={styles.eyebrow}>01 / {t.work}</p>
@@ -158,6 +117,7 @@ export function Portfolio({
           </article>
         </section>
         <PortfolioSuite copy={t.suite} visuals={visuals} />
+        <PortfolioAtlas copy={t} apps={apps} />
         <section id="ecosystem" className={styles.ecosystem}>
           <div className={styles.sectionHeading}>
             <p className={styles.eyebrow}>02 / {t.explore}</p>
@@ -230,6 +190,7 @@ export function Portfolio({
             <p>{t.deliverables}</p>
           </div>
         </section>
+        <PortfolioObservatory copy={t} />
         <section className={styles.closing}>
           <div>
             <p className={styles.eyebrow}>TUTURUUU / {t.next}</p>

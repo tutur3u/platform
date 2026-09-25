@@ -1,5 +1,6 @@
 .universe {
   position: relative;
+  overflow: clip;
   min-height: 490px;
   display: grid;
   place-items: center;
@@ -421,6 +422,16 @@
 
   .universe {
     min-height: 350px;
+  }
+  .orb {
+    width: min(78%, 300px);
+    mask-image: radial-gradient(ellipse, #000 40%, transparent 72%);
+  }
+  .orbit {
+    width: min(92%, 360px);
+  }
+  .orbitInner {
+    width: min(82%, 320px);
   }
   .identity img {
     width: 76px;
