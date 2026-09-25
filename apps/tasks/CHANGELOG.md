@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.35.0](https://github.com/tutur3u/platform/compare/tasks-v0.34.1...tasks-v0.35.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
+
+### Bug Fixes
+
+* **notifications:** run task deadline reminders in web cron ([d07db6c](https://github.com/tutur3u/platform/commit/d07db6c81eb69291b53bf43eb2aeb23215205037)) ([#5489](https://github.com/tutur3u/platform/issues/5489)) ([e37f45c](https://github.com/tutur3u/platform/commit/e37f45c43a8bd3fc40dbe068ff333e76d6e22698))
+* **tasks:** restore Smart Suggest session access and translations ([d243c2a](https://github.com/tutur3u/platform/commit/d243c2a33ca44d37ac605dfef7a786e7dc0d0603)) ([#5451](https://github.com/tutur3u/platform/issues/5451)) ([ecd6965](https://github.com/tutur3u/platform/commit/ecd6965f7143e9827840d8ae4e79181061ece2fd))
+
 ## [0.34.1](https://github.com/tutur3u/platform/compare/tasks-v0.34.0...tasks-v0.34.1) (2026-09-23)
 
 

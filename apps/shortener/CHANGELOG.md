@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/shortener-v0.20.0...shortener-v0.21.0) (2026-09-25)
+
+
+### Features
+
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/shortener-v0.19.0...shortener-v0.20.0) (2026-09-20)
 
 
