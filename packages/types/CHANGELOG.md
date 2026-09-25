@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.33.0](https://github.com/tutur3u/platform/compare/types-v0.32.0...types-v0.33.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **database:** add private Parley research and AI usage attribution ([1031b88](https://github.com/tutur3u/platform/commit/1031b8872a835f33d853f802027e55aa3deb58dd)) ([#5504](https://github.com/tutur3u/platform/issues/5504)) ([5375b61](https://github.com/tutur3u/platform/commit/5375b6139a3200e0298f3c5f18c9d853a8dd1e39))
+* **finance:** add granular invoice audit trail and recovery review ([#5376](https://github.com/tutur3u/platform/issues/5376)) ([b8df666](https://github.com/tutur3u/platform/commit/b8df666804848d96d35ba693d126fe611a3ebf2b))
+* **finance:** add invoice history and recoverable deletion ([3d6dea5](https://github.com/tutur3u/platform/commit/3d6dea5bdbb055073b9b5d5680e391d094874ad2))
+* **finance:** expand invoice audit review and filters ([c346cac](https://github.com/tutur3u/platform/commit/c346cac5a2dfcdcd944d1fcdfa72f40ec27aa720))
+* **finance:** track tuition coverage and harden invoice exports ([72e07be](https://github.com/tutur3u/platform/commit/72e07bebef58dfee398bcd0d896304d13a2d9aad)) ([#5447](https://github.com/tutur3u/platform/issues/5447)) ([6e822d8](https://github.com/tutur3u/platform/commit/6e822d89d079d9ea8b2677f208c16364cd70d586))
+* **mail:** add personal thread snooze and mute ([50f7b88](https://github.com/tutur3u/platform/commit/50f7b884706c156cd9a10a2b5c38f3079615096e)) ([#5445](https://github.com/tutur3u/platform/issues/5445)) ([26e392c](https://github.com/tutur3u/platform/commit/26e392c283a31fab038f03294ced90f2e8174874))
+* **mail:** deliver incoming email push notifications ([273003a](https://github.com/tutur3u/platform/commit/273003ac9b6b6f47729eb65c9a207a35d9764fed)) ([#5442](https://github.com/tutur3u/platform/issues/5442)) ([256ab93](https://github.com/tutur3u/platform/commit/256ab93d7e96273c0d351c26e48e87fb6496c3ba))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/types-v0.31.0...types-v0.32.0) (2026-09-25)
 
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/auth-v0.5.0...auth-v0.6.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** add trusted mobile authenticators and login approvals ([55e4d79](https://github.com/tutur3u/platform/commit/55e4d792bde2c543c3be8204a980fa99069527e4))
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **auth:** trusted mobile authenticators and desktop login approvals ([#5400](https://github.com/tutur3u/platform/issues/5400)) ([4e9e9d2](https://github.com/tutur3u/platform/commit/4e9e9d20fd6a65c07b9f83008ef5ccd7c4d60d7f))
+
+
+### Bug Fixes
+
+* **auth:** identify cross-app verification requests ([4165eda](https://github.com/tutur3u/platform/commit/4165edaf6460b0f884d8b0984a1f5ac6dd213e34)) ([#5435](https://github.com/tutur3u/platform/issues/5435)) ([570c849](https://github.com/tutur3u/platform/commit/570c84905a02f9b17d7df1255357c554c921395f))
+* **auth:** resolve proxy sessions from explicit request cookies ([aa26f80](https://github.com/tutur3u/platform/commit/aa26f808ba00850c57a94024c229b39dbb014960)) ([#5516](https://github.com/tutur3u/platform/issues/5516)) ([856a8d7](https://github.com/tutur3u/platform/commit/856a8d7c179a35da68882230859609a1ee71d010))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/auth-v0.4.1...auth-v0.5.0) (2026-09-25)
 
 

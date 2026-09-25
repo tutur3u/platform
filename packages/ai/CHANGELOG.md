@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/ai-v0.15.0...ai-v0.16.0) (2026-09-25)
+
+
+### Features
+
+* **mira:** integrate permission-scoped SDK tool search ([12a924c](https://github.com/tutur3u/platform/commit/12a924ce0688e621c1836b16ef7be519d222d478)) ([#5401](https://github.com/tutur3u/platform/issues/5401)) ([22ddc8e](https://github.com/tutur3u/platform/commit/22ddc8e046622d6a407575e20f6a1f757068e7eb))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
+
+### Bug Fixes
+
+* **ai:** process first voice attachments and retire legacy tags ([ccae19a](https://github.com/tutur3u/platform/commit/ccae19a3894569b1574e31b35a174e9fca6bccd3)) ([#5500](https://github.com/tutur3u/platform/issues/5500)) ([4f3504b](https://github.com/tutur3u/platform/commit/4f3504b95ee6cbd17dcf80af16930100c0c3a382))
+* **mira:** scope Live token provisioning to validated context ([6ea6766](https://github.com/tutur3u/platform/commit/6ea6766c1cd8808bfe571a6c5360943ac8f8eeb8))
+* **mira:** share Chat personalization with Live ([9a7dc02](https://github.com/tutur3u/platform/commit/9a7dc02392126287889a5395c08bfeff217ad7e7)) ([#5374](https://github.com/tutur3u/platform/issues/5374)) ([93cd871](https://github.com/tutur3u/platform/commit/93cd871611b1a5dc56e07f1a56b6c8d55620a458))
+* **mobile:** keep Assistant voice recordings attached and sendable ([a73f83b](https://github.com/tutur3u/platform/commit/a73f83b6ab4e6707ab766bff73ba3ae8bd22c113)) ([#5485](https://github.com/tutur3u/platform/issues/5485)) ([311fa5b](https://github.com/tutur3u/platform/commit/311fa5b0e68c395b08fcba4d5c195cf8d49fde85))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/ai-v0.14.0...ai-v0.15.0) (2026-09-25)
 
 

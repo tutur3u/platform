@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/calendar-v0.30.0...calendar-v0.31.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **calendar:** add provider invitation and RSVP adapters ([90aa756](https://github.com/tutur3u/platform/commit/90aa756e4834f9ee441182a64cb4ca003fa8e867))
+* **calendar:** deliver retry-safe invitations and authenticated responses ([2a097f3](https://github.com/tutur3u/platform/commit/2a097f39c8e293ce05e5bc0e3d487f686692bc38))
+* **calendar:** deliver retry-safe meeting invitations and RSVP ([#5410](https://github.com/tutur3u/platform/issues/5410)) ([40fa0cc](https://github.com/tutur3u/platform/commit/40fa0cccd4b068cb26787a7b7d7cd55eef86782e))
+* **finance:** add granular invoice audit trail and recovery review ([#5376](https://github.com/tutur3u/platform/issues/5376)) ([b8df666](https://github.com/tutur3u/platform/commit/b8df666804848d96d35ba693d126fe611a3ebf2b))
+* **finance:** add invoice history and recoverable deletion ([3d6dea5](https://github.com/tutur3u/platform/commit/3d6dea5bdbb055073b9b5d5680e391d094874ad2))
+* **finance:** clarify category charts and add promotions management ([88f85ea](https://github.com/tutur3u/platform/commit/88f85eaadb722b42b99537be3c75fabb1715bf09)) ([#5384](https://github.com/tutur3u/platform/issues/5384)) ([b6fd666](https://github.com/tutur3u/platform/commit/b6fd666bccca6aa929166210fb1c6abdb91c1448))
+* **finance:** expand invoice audit review and filters ([c346cac](https://github.com/tutur3u/platform/commit/c346cac5a2dfcdcd944d1fcdfa72f40ec27aa720))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
+
+### Bug Fixes
+
+* **auth:** reuse completed session-bound challenges ([b63d510](https://github.com/tutur3u/platform/commit/b63d51046b427350d959137cf37058223e544788))
+* **calendar:** admit authenticated scheduler requests through proxies ([ef00b7a](https://github.com/tutur3u/platform/commit/ef00b7ab2b2593888e05fb92010d613eeaa0614e))
+* **calendar:** admit authenticated schedulers through app proxies ([#5412](https://github.com/tutur3u/platform/issues/5412)) ([cc7c82a](https://github.com/tutur3u/platform/commit/cc7c82a913d9e59e73cf9e8be0b939b1f5d0435c))
+* **calendar:** normalize event colors before invitation delivery ([2e8de45](https://github.com/tutur3u/platform/commit/2e8de453043ca837104642f3bab3ba0bb82d5ef4)) ([#5415](https://github.com/tutur3u/platform/issues/5415)) ([dd82f5b](https://github.com/tutur3u/platform/commit/dd82f5bdefdf81557fb3ed794d69538cbaa3eae0))
+* **calendar:** recover expired pending meeting requests ([3848bb9](https://github.com/tutur3u/platform/commit/3848bb9710b98fc38f576b81b81c8be040b7b7ff))
+* **calendar:** restore background sync and mobile refresh ([#5402](https://github.com/tutur3u/platform/issues/5402)) ([98a6a29](https://github.com/tutur3u/platform/commit/98a6a2963f26eab0bf785829a76f04f892c05efd))
+* **calendar:** restore server sync and mobile freshness ([26c6f51](https://github.com/tutur3u/platform/commit/26c6f5114ac1605071b077d63550a73082c38ec4))
+* **calendar:** schedule hosted sync through authenticated gateway ([522a494](https://github.com/tutur3u/platform/commit/522a49455f3d97bf9bec39c4a85727ab550abb3d)) ([#5408](https://github.com/tutur3u/platform/issues/5408)) ([96b09cd](https://github.com/tutur3u/platform/commit/96b09cd961de9cb9393b698df00a5d7428db4ffa))
+* **finance:** restrict promotion forwarding and clarify chart labels ([30d3f05](https://github.com/tutur3u/platform/commit/30d3f053df12360beab94cbdcb0a9fd3a84d38f7))
+* **finance:** retain actors across invoice audit writes ([75e1139](https://github.com/tutur3u/platform/commit/75e11390aa30493ee1f83f95660cfaf7547e13c0)) ([#5383](https://github.com/tutur3u/platform/issues/5383)) ([a1fbb54](https://github.com/tutur3u/platform/commit/a1fbb54532f652116064ab7d7b8d11b217b2b9d4))
+* **finance:** speed up invoice audit history and improve pagination ([b6c165e](https://github.com/tutur3u/platform/commit/b6c165e88e8888facec7744ee16c1d9378bb90e5)) ([#5380](https://github.com/tutur3u/platform/issues/5380)) ([c829653](https://github.com/tutur3u/platform/commit/c8296532b5282324b28c09d3c06a64894694b46c))
+* **mobile:** repair Live persistence and reuse session verification ([#5436](https://github.com/tutur3u/platform/issues/5436)) ([cb452e1](https://github.com/tutur3u/platform/commit/cb452e1908eab3db2dce9dfd1d57d721284a2e49))
+* **tasks:** restore Smart Suggest session access and translations ([d243c2a](https://github.com/tutur3u/platform/commit/d243c2a33ca44d37ac605dfef7a786e7dc0d0603)) ([#5451](https://github.com/tutur3u/platform/issues/5451)) ([ecd6965](https://github.com/tutur3u/platform/commit/ecd6965f7143e9827840d8ae4e79181061ece2fd))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/calendar-v0.29.2...calendar-v0.30.0) (2026-09-25)
 
 

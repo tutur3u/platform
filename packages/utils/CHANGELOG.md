@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/utils-v0.30.0...utils-v0.31.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **calendar:** add provider invitation and RSVP adapters ([90aa756](https://github.com/tutur3u/platform/commit/90aa756e4834f9ee441182a64cb4ca003fa8e867))
+* **calendar:** deliver retry-safe meeting invitations and RSVP ([#5410](https://github.com/tutur3u/platform/issues/5410)) ([40fa0cc](https://github.com/tutur3u/platform/commit/40fa0cccd4b068cb26787a7b7d7cd55eef86782e))
+* **infrastructure:** coordinate authenticator and meeting leases on Cloudflare ([2582bf2](https://github.com/tutur3u/platform/commit/2582bf2f72670e1f2696de80820eddd118c27d29))
+* **infrastructure:** use Cloudflare for authenticator and meeting coordination ([#5411](https://github.com/tutur3u/platform/issues/5411)) ([a154602](https://github.com/tutur3u/platform/commit/a15460282959831fe617494126d9955b772957aa))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
+
+### Bug Fixes
+
+* **auth:** reuse completed session-bound challenges ([b63d510](https://github.com/tutur3u/platform/commit/b63d51046b427350d959137cf37058223e544788))
+* **mobile:** repair Live persistence and reuse session verification ([#5436](https://github.com/tutur3u/platform/issues/5436)) ([cb452e1](https://github.com/tutur3u/platform/commit/cb452e1908eab3db2dce9dfd1d57d721284a2e49))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/utils-v0.29.1...utils-v0.30.0) (2026-09-25)
 
 

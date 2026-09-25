@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.15.0...ai-studio-v0.16.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
+
+### Bug Fixes
+
+* **parley:** complete audience coverage and legacy usage fallback ([f853a3b](https://github.com/tutur3u/platform/commit/f853a3bddebe2da204801df8c9abe3776693b0c2))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.14.0...ai-studio-v0.15.0) (2026-09-25)
 
 
