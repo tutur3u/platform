@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/infra-v0.25.0...infra-v0.26.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
+
+### Bug Fixes
+
+* **infrastructure:** harden vault draft inheritance ([466cbe6](https://github.com/tutur3u/platform/commit/466cbe67c7f87e1a638d96a369e800ac43746029))
+* **infrastructure:** inherit encrypted mobile vault drafts safely ([9dbaadd](https://github.com/tutur3u/platform/commit/9dbaaddc53fcac4c00f6a68f554d9f92febeac8f)) ([#5446](https://github.com/tutur3u/platform/issues/5446)) ([7ba7028](https://github.com/tutur3u/platform/commit/7ba7028d9f0b001de97ae34b721eeb75b51bca69))
+* **infrastructure:** log safe mobile bundle denial codes ([f09d985](https://github.com/tutur3u/platform/commit/f09d985b21f28e92490d24ba53bd3ba16d851eac)) ([#5491](https://github.com/tutur3u/platform/issues/5491)) ([58c806c](https://github.com/tutur3u/platform/commit/58c806c6cb9005badf6df4facb484f5096975b0c))
+* **infrastructure:** repair vault scalar inheritance hash check ([#5453](https://github.com/tutur3u/platform/issues/5453)) ([3bf24f3](https://github.com/tutur3u/platform/commit/3bf24f3b92875568f3b5d98ba3daa18136404c1a))
+* **infrastructure:** tolerate slow GitHub OIDC key fetches ([ffcd795](https://github.com/tutur3u/platform/commit/ffcd795f81b32827842ac709224e9f3d45e81061)) ([#5493](https://github.com/tutur3u/platform/issues/5493)) ([fa1e3e1](https://github.com/tutur3u/platform/commit/fa1e3e199d4ea82db16e5ec8e704d80af13f2248))
+* **infrastructure:** verify vault scalar hashes in stored format ([52c26db](https://github.com/tutur3u/platform/commit/52c26db8a86d0265b4653838e5fb1efb5d5f5cb0))
+* **mobile:** defer external TestFlight review while prior build is pending ([99c4cb4](https://github.com/tutur3u/platform/commit/99c4cb4e6aa413ea7df102b21c66f02aa2415291)) ([#5469](https://github.com/tutur3u/platform/issues/5469)) ([c617b62](https://github.com/tutur3u/platform/commit/c617b62a35ab7803639ac4d4309a3029f2c6a49d))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/infra-v0.24.0...infra-v0.25.0) (2026-09-23)
 
 

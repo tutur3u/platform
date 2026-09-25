@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/meet-v0.30.1...meet-v0.31.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **meet:** add playback volume and finish voice turns ([1053212](https://github.com/tutur3u/platform/commit/1053212c4bb583f9dd1cd451d242af40ee841644)) ([#5456](https://github.com/tutur3u/platform/issues/5456)) ([29242b4](https://github.com/tutur3u/platform/commit/29242b45dd25f6fd0bc19e3a2a10801135348bb4))
+* **meet:** improve mobile meeting entry and ended review ([a889bd1](https://github.com/tutur3u/platform/commit/a889bd13ecf417fdfb308e1fce8d09443d715329))
+* **meet:** improve tablet prejoin, listing, and ended review ([#5477](https://github.com/tutur3u/platform/issues/5477)) ([e507a8f](https://github.com/tutur3u/platform/commit/e507a8f5e45a6c308499090ab4ce0008369ac831))
+* **meet:** unify Mira participant chat and audio controls ([c8f9801](https://github.com/tutur3u/platform/commit/c8f9801a4a342bb8509c67202e26b8ca0ae5e22f)) ([#5450](https://github.com/tutur3u/platform/issues/5450)) ([aa044ef](https://github.com/tutur3u/platform/commit/aa044efcb869f06859be60d8aee137e24b0c7bca))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
+
+### Bug Fixes
+
+* **meet:** address review findings in mobile scheduling and room review ([f2a637c](https://github.com/tutur3u/platform/commit/f2a637c34d9019c04616606a50c6cd313b0ce68e))
+* **meet:** harden Mira playback and live status updates ([b70ca43](https://github.com/tutur3u/platform/commit/b70ca43e6151f82a9b7a6eaa3c6cd99abff648e3))
+* **meet:** preserve volume changes during live startup ([659c55f](https://github.com/tutur3u/platform/commit/659c55faf3bfc5e1b667eac52e9028a9f6ec9003))
+
 ## [0.30.1](https://github.com/tutur3u/platform/compare/meet-v0.30.0...meet-v0.30.1) (2026-09-20)
 
 

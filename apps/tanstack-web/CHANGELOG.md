@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.30.0...tanstack-web-v0.31.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **mail:** deliver incoming email push notifications ([#5442](https://github.com/tutur3u/platform/issues/5442)) ([256ab93](https://github.com/tutur3u/platform/commit/256ab93d7e96273c0d351c26e48e87fb6496c3ba))
+* **meet:** improve mobile meeting entry and ended review ([a889bd1](https://github.com/tutur3u/platform/commit/a889bd13ecf417fdfb308e1fce8d09443d715329))
+* **meet:** improve tablet prejoin, listing, and ended review ([#5477](https://github.com/tutur3u/platform/issues/5477)) ([e507a8f](https://github.com/tutur3u/platform/commit/e507a8f5e45a6c308499090ab4ce0008369ac831))
+* **meet:** show speaker-attributed mobile transcripts ([f078fb4](https://github.com/tutur3u/platform/commit/f078fb422ef2461801054a87304948ac058e7a7d)) ([#5498](https://github.com/tutur3u/platform/issues/5498)) ([7c4dd5a](https://github.com/tutur3u/platform/commit/7c4dd5a44cd161ff30c7bf5b65b7cdcadea2dd96))
+* **mobile:** add Meet prejoin and device controls ([d443582](https://github.com/tutur3u/platform/commit/d443582c7b678d262bdd21e37003b42a9b764373))
+* **mobile:** add native Meet Mira reviews ([#5468](https://github.com/tutur3u/platform/issues/5468)) ([db3b60a](https://github.com/tutur3u/platform/commit/db3b60a374642342ff538c04965ad61537419e04))
+* **mobile:** add native Meet prejoin and device controls ([#5463](https://github.com/tutur3u/platform/issues/5463)) ([1e2b658](https://github.com/tutur3u/platform/commit/1e2b65897d3ebfc3593d677f60b37631d5f2d967))
+* **mobile:** add private Mira chat in Meet ([14af2d4](https://github.com/tutur3u/platform/commit/14af2d438c7f6d123a69cc1156f8994d888c1faa)) ([#5464](https://github.com/tutur3u/platform/issues/5464)) ([8cb0e82](https://github.com/tutur3u/platform/commit/8cb0e82da990e7842705e9ece159bc13dd74e528))
+* **mobile:** archive opened notifications quietly ([9685b0d](https://github.com/tutur3u/platform/commit/9685b0dd80ff5ba2349c915f9672ab5f5ae5b3b3)) ([#5467](https://github.com/tutur3u/platform/issues/5467)) ([e31cae8](https://github.com/tutur3u/platform/commit/e31cae8c430e849d6eb3bc9109abbea8fe785848))
+* **mobile:** bring public Mira reviews into native Meet ([ea5fb63](https://github.com/tutur3u/platform/commit/ea5fb6377527b7357db63493e84560facd8f75d6))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **web:** tell the ecosystem story and showcase company capabilities ([652636f](https://github.com/tutur3u/platform/commit/652636fa1bde776b42c2e630fe4cbc8b26ffe8a1)) ([#5512](https://github.com/tutur3u/platform/issues/5512)) ([7385173](https://github.com/tutur3u/platform/commit/7385173b45022653336d1a7d10c2087ebb8f49eb))
+
+
+### Bug Fixes
+
+* **notifications:** run task deadline reminders in web cron ([d07db6c](https://github.com/tutur3u/platform/commit/d07db6c81eb69291b53bf43eb2aeb23215205037)) ([#5489](https://github.com/tutur3u/platform/issues/5489)) ([e37f45c](https://github.com/tutur3u/platform/commit/e37f45c43a8bd3fc40dbe068ff333e76d6e22698))
+* **parley:** complete workspace and deployment setup ([52e979f](https://github.com/tutur3u/platform/commit/52e979fef43a447aadf42b7ccf09e9579e0eee37))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.29.1...tanstack-web-v0.30.0) (2026-09-23)
 
 

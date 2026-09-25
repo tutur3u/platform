@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.11.1...hive-realtime-v0.12.0) (2026-09-25)
+
+
+### Features
+
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+
+
+### Bug Fixes
+
+* **parley:** complete workspace and deployment setup ([52e979f](https://github.com/tutur3u/platform/commit/52e979fef43a447aadf42b7ccf09e9579e0eee37))
+
 ## [0.11.1](https://github.com/tutur3u/platform/compare/hive-realtime-v0.11.0...hive-realtime-v0.11.1) (2026-09-20)
 
 

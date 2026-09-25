@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/realtime-v0.8.0...realtime-v0.9.0) (2026-09-25)
+
+
+### Features
+
+* **meet:** unify Mira participant chat and audio controls ([c8f9801](https://github.com/tutur3u/platform/commit/c8f9801a4a342bb8509c67202e26b8ca0ae5e22f)) ([#5450](https://github.com/tutur3u/platform/issues/5450)) ([aa044ef](https://github.com/tutur3u/platform/commit/aa044efcb869f06859be60d8aee137e24b0c7bca))
+
+
+### Bug Fixes
+
+* **meet:** complete native SFU negotiation ([a820f39](https://github.com/tutur3u/platform/commit/a820f392699daa02d6530fd5c1bf7a9327dc4c8e)) ([#5510](https://github.com/tutur3u/platform/issues/5510)) ([7683b66](https://github.com/tutur3u/platform/commit/7683b66741641e9b526a3fdb6f69f4a6aac274da))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/realtime-v0.7.0...realtime-v0.8.0) (2026-09-20)
 
 
