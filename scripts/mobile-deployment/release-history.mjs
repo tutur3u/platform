@@ -33,6 +33,39 @@ function readableSubject(subject) {
     .trim();
 }
 
+function historyBaseTag(version, sha, git) {
+  const baseTag = `mobile-v${version[0]}.${version[1]}.0`;
+  try {
+    git('git', ['merge-base', '--is-ancestor', baseTag, sha], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    });
+    return baseTag;
+  } catch {
+    // A new minor can reach TestFlight before Release Please creates its tag.
+  }
+  try {
+    return git(
+      'git',
+      [
+        'describe',
+        '--first-parent',
+        '--tags',
+        '--match',
+        'mobile-v*',
+        '--abbrev=0',
+        sha,
+      ],
+      { cwd: repoRoot, encoding: 'utf8' }
+    ).trim();
+  } catch {
+    console.warn(
+      'No reachable mobile release tag; omitting unbounded history.'
+    );
+    return null;
+  }
+}
+
 export function changesBetween(fromSha, toSha, git = execFileSync) {
   const lines = git(
     'git',
@@ -136,12 +169,16 @@ export async function releaseHistory({
     .sort((a, b) => compareVersions(a.version, b.version));
   releases.push({ version, date, sha });
 
-  let previousSha = `mobile-v${current[0]}.${current[1]}.0`;
+  let previousSha = historyBaseTag(current, sha, git);
   return releases.map((item) => {
     if (!item.sha) {
       console.warn(
         `No source workflow for TestFlight ${item.version} (build ${item.buildNumber}); keeping the version without inferred changes.`
       );
+      return { version: item.version, date: item.date, changes: [] };
+    }
+    if (!previousSha) {
+      previousSha = item.sha;
       return { version: item.version, date: item.date, changes: [] };
     }
     const changes = changesBetween(previousSha, item.sha, git);

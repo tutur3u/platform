@@ -67,10 +67,12 @@ describe('mobile beta release history', () => {
         version: '0.11.2',
         sha: 'current',
         date: '2026-09-24',
-        git: (_command, args) =>
-          args[3] === 'mobile-v0.11.0..previous'
+        git: (_command, args) => {
+          if (args[0] === 'merge-base') return '';
+          return args[3] === 'mobile-v0.11.0..previous'
             ? 'feat(mobile): first patch (#1)'
-            : 'fix(mobile): second patch (#2)',
+            : 'fix(mobile): second patch (#2)';
+        },
       });
 
       assert.deepEqual(releases, [
@@ -119,7 +121,8 @@ describe('mobile beta release history', () => {
         version: '0.11.2',
         sha: 'current',
         date: '2026-09-24',
-        git: () => 'fix(mobile): current patch (#2)',
+        git: (_command, args) =>
+          args[0] === 'merge-base' ? '' : 'fix(mobile): current patch (#2)',
       });
       assert.deepEqual(releases, [
         { version: '0.11.1', date: '2026-09-23', changes: [] },
@@ -129,6 +132,59 @@ describe('mobile beta release history', () => {
     } finally {
       globalThis.fetch = originalFetch;
       console.warn = originalWarn;
+    }
+  });
+
+  test('uses the last reachable tag when a new minor has no base tag', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => ({
+      ok: true,
+      json: async () => ({ data: [{ id: 'app' }], links: {} }),
+    });
+    const { privateKey } = generateKeyPairSync('ec', {
+      namedCurve: 'prime256v1',
+    });
+    const calls = [];
+    try {
+      const releases = await releaseHistory({
+        credentials: { privateKey, keyId: 'key', issuerId: 'issuer' },
+        githubToken: 'test-token',
+        version: '0.12.1',
+        sha: 'current',
+        date: '2026-09-25',
+        git: (_command, args) => {
+          calls.push(args);
+          if (args[0] === 'merge-base') throw new Error('tag absent');
+          return args[0] === 'describe'
+            ? 'mobile-v0.11.0\n'
+            : 'fix(mobile): reserve full floating header height (#5521)';
+        },
+      });
+
+      assert.deepEqual(releases, [
+        {
+          version: '0.12.1',
+          date: '2026-09-25',
+          changes: ['reserve full floating header height'],
+        },
+      ]);
+      assert.deepEqual(calls[2].slice(0, 4), [
+        'log',
+        '--first-parent',
+        '--format=%s',
+        'mobile-v0.11.0..current',
+      ]);
+      assert.deepEqual(calls[1], [
+        'describe',
+        '--first-parent',
+        '--tags',
+        '--match',
+        'mobile-v*',
+        '--abbrev=0',
+        'current',
+      ]);
+    } finally {
+      globalThis.fetch = originalFetch;
     }
   });
 });
