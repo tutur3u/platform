@@ -24,10 +24,13 @@ void main() {
             location: '/settings',
             bottomInset: 68,
             header: showHeader
-                ? const SizedBox(
-                    key: Key('floating-header'),
-                    height: 46,
-                    child: Text('Header'),
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    child: SizedBox(
+                      key: Key('floating-header'),
+                      height: 46,
+                      child: Text('Header'),
+                    ),
                   )
                 : null,
             scrollableHeader: scrollableHeader,
@@ -215,6 +218,10 @@ void main() {
     );
     expect(surface.top, 0);
     expect(surface.bottom, greaterThan(44));
+    expect(
+      surface.bottom,
+      floatingShellHeaderInset(tester.element(find.byType(ListView))),
+    );
     expect(
       tester.getTopLeft(find.text('Row 0')).dy,
       greaterThan(surface.bottom),
