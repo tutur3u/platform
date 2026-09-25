@@ -112,6 +112,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     final headerClearance = widget.header == null || widget.scrollableHeader
         ? 0.0
         : floatingShellHeaderInset(context);
+    final headerHidden = _hidden && widget.scrollableHeader;
     return NotificationListener<ScrollNotification>(
       onNotification: _onScroll,
       child: Stack(
@@ -134,16 +135,16 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
               left: 0,
               right: 0,
               child: IgnorePointer(
-                ignoring: _hidden,
+                ignoring: headerHidden,
                 child: AnimatedSlide(
                   duration: media.disableAnimations
                       ? Duration.zero
                       : const Duration(milliseconds: 240),
                   curve: Curves.easeOutCubic,
-                  offset: _hidden ? const Offset(0, -1.3) : Offset.zero,
+                  offset: headerHidden ? const Offset(0, -1.3) : Offset.zero,
                   child: AnimatedOpacity(
                     duration: const Duration(milliseconds: 180),
-                    opacity: _hidden ? 0 : 1,
+                    opacity: headerHidden ? 0 : 1,
                     child: ColoredBox(
                       key: const ValueKey('floating-shell-header-surface'),
                       color: Theme.of(context).colorScheme.surface,

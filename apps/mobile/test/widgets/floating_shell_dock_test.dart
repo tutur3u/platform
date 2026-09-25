@@ -124,7 +124,7 @@ void main() {
     expect(visibility.last, isTrue);
   });
 
-  testWidgets('hidden header never resizes the page viewport', (tester) async {
+  testWidgets('fixed header stays visible when the dock hides', (tester) async {
     await mount(tester, showHeader: true);
     final before = tester.getRect(find.byType(ListView));
     expect(before.top, greaterThan(0));
@@ -137,7 +137,13 @@ void main() {
       of: header,
       matching: find.byType(AnimatedOpacity),
     );
-    expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 0);
+    expect(tester.widget<AnimatedOpacity>(headerOpacity).opacity, 1);
+    expect(
+      tester.widget<AnimatedOpacity>(
+        find.byType(AnimatedOpacity).last,
+      ).opacity,
+      0,
+    );
     final expanded = tester.getRect(find.byType(ListView));
     expect(expanded, before);
     await tester.pump(const Duration(seconds: 2));
