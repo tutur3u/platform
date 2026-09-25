@@ -52,18 +52,18 @@ describe('pitch presentation controls', () => {
     const overview = screen.getByRole('navigation', { name: copy.overview });
     fireEvent.click(
       within(overview).getByRole('button', {
-        name: new RegExp(copy.slides.pricing.kicker),
+        name: new RegExp(copy.slides.calculator.kicker),
       })
     );
-    expect(window.location.hash).toBe('#pricing');
+    expect(window.location.hash).toBe('#calculator');
     expect(
       screen.queryByRole('navigation', { name: copy.overview })
     ).toBeNull();
     const notes = screen.getByRole('button', { name: copy.notes });
     fireEvent.click(notes);
-    expect(screen.getByText(copy.slides.pricing.note)).toBeDefined();
+    expect(screen.getByText(copy.slides.calculator.note)).toBeDefined();
     fireEvent.keyDown(notes, { key: 'Escape' });
-    expect(screen.queryByText(copy.slides.pricing.note)).toBeNull();
+    expect(screen.queryByText(copy.slides.calculator.note)).toBeNull();
   });
 
   it('pauses autoplay for manual navigation and bounds the final slide', () => {
@@ -82,7 +82,7 @@ describe('pitch presentation controls', () => {
 
 it('labels printed slides independently of the selected slide', () => {
   render(<PitchDeck copy={copy} />);
-  expect(screen.getAllByText(copy.livePricingProposal)).toHaveLength(2);
+  expect(screen.getAllByText(copy.livePricingProposal)).toHaveLength(1);
   expect(screen.getAllByText(copy.slides.vision.status).length).toBeGreaterThan(
     0
   );

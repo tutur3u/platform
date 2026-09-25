@@ -1,0 +1,94 @@
+.artwork {
+  margin: 0;
+  min-width: 0;
+}
+.image {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+}
+.image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 40vh;
+  object-fit: cover;
+}
+.image span {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 25px 15px 12px;
+  background: linear-gradient(transparent, #06101ebd);
+  color: #f3f6ed;
+  font: 9px var(--font-mono, monospace);
+}
+.artwork figcaption {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 25px;
+}
+.artwork h3 {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+.artwork p {
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 0;
+  color: var(--muted-foreground);
+}
+.artwork[data-artwork="closing"] {
+  max-width: 950px;
+  width: 100%;
+  margin: auto;
+}
+.artwork[data-artwork="closing"] .image img {
+  max-height: 20vh;
+  object-position: 50% 43%;
+}
+@media (max-width: 1000px) {
+  .image img {
+    max-height: 45vh;
+  }
+}
+@media (max-width: 600px) {
+  .artwork figcaption {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .artwork h3 {
+    margin-bottom: 4px;
+  }
+  .artwork p {
+    font-size: 12px;
+  }
+  .artwork[data-artwork="closing"] .image img {
+    max-height: none;
+    min-height: 190px;
+    object-fit: cover;
+  }
+}
+@media print {
+  .image img {
+    max-height: 75mm;
+  }
+  .artwork[data-artwork="closing"] .image img {
+    max-height: 38mm;
+  }
+  .artwork figcaption {
+    margin-top: 4mm;
+    gap: 4mm;
+  }
+  .artwork p {
+    font-size: 7pt;
+  }
+  .artwork h3 {
+    font-size: 8pt;
+  }
+}

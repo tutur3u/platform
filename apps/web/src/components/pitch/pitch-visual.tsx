@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { ProductMark } from '../capabilities/product-mark';
 import { MeetScene, TaskScene } from '../capabilities/product-scenes';
+import { PitchArtwork } from './pitch-artwork';
 import { pitchTone } from './pitch-brand';
 import { PitchCommerce } from './pitch-commerce';
 import { EvidenceScene } from './pitch-evidence';
@@ -12,6 +13,8 @@ import { PitchSimulation } from './pitch-simulation';
 import art from './pitch-visual.module.css';
 
 export function PitchVisual({ id, copy }: { id: SlideId; copy: PitchCopy }) {
+  if (id === 'horizon' || id === 'closing')
+    return <PitchArtwork id={id} copy={copy} />;
   if (id === 'moment' || id === 'references')
     return <EvidenceScene id={id} copy={copy} />;
   if (id === 'pricing' || id === 'calculator')

@@ -8,7 +8,8 @@ const prices = {
 
 describe('pitch share links and catalog billing illustration', () => {
   it('opens named slides and safely falls back for unknown fragments', () => {
-    expect(slideFromHash('#pricing')).toBe(SLIDE_IDS.indexOf('pricing'));
+    expect(slideFromHash('#pricing')).toBe(SLIDE_IDS.indexOf('calculator'));
+    expect(slideFromHash('#ownership')).toBe(SLIDE_IDS.indexOf('ecosystem'));
     expect(slideFromHash('#unknown')).toBe(0);
     expect(slideFromHash('')).toBe(0);
   });

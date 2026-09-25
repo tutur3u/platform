@@ -11580,6 +11580,11 @@
   "pitch": {
     "advanced": "Quy trình nâng cao",
     "annual": "Thanh toán năm",
+    "art": {
+      "closingAlt": "Hành trình ý tưởng từ phong cảnh Việt Nam hướng tới các vì sao.",
+      "horizonAlt": "Đài quan sát tưởng tượng với công cụ kết nối nhìn ra Trái Đất.",
+      "note": "Minh họa ý tưởng tạo bằng AI"
+    },
     "capacity": "Thêm dung lượng",
     "celebrate": "Chúc mừng",
     "company": "Tìm hiểu công ty",
@@ -11914,7 +11919,7 @@
         "title": "Đội nhóm tạo nên\ndấu vết hiểu biết chung."
       },
       "context": {
-        "body": "Nhiệm vụ hữu ích hơn khi gắn với cam kết phía sau, tri thức cần có, người tham gia và thời gian sẵn có. Lớp tiếp theo là ngữ cảnh tuân thủ quyền truy cập, giúp Mira hiểu các mối liên hệ trong công việc.",
+        "body": "Thư mang một cam kết. Nhiệm vụ mang kế hoạch. Lịch mang ràng buộc. Mira là trợ lý trong hệ sinh thái; ngữ cảnh theo quyền truy cập là lớp tiếp theo để mỗi quyết định hữu ích hơn.",
         "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Vì sao cần hệ sinh thái",
         "note": "Nhiệm vụ hữu ích hơn khi gắn với cam kết phía sau, tri thức cần có, người tham gia và thời gian sẵn có. Lớp tiếp theo là ngữ cảnh tuân thủ quyền truy cập, giúp Mira hiểu các mối liên hệ trong công việc. Chiến lược kết nối bối cảnh.",
@@ -11933,10 +11938,10 @@
           }
         ],
         "status": "Chiến lược kết nối bối cảnh",
-        "title": "Các mảnh ghép\nbắt đầu có ý nghĩa cùng nhau."
+        "title": "Mira kết nối\ný nghĩa giữa mọi việc."
       },
       "ecosystem": {
-        "body": "Khi “vibe coding” với AI giảm chi phí tạo phiên bản đầu tiên, một tính năng riêng lẻ cũng dễ được tái tạo hơn. Chúng tôi đặt niềm tin vào công việc kỹ thuật lâu dài: kiến trúc chung, ngữ cảnh kết nối, hạ tầng đáng tin cậy và hệ sinh thái cùng tiến bộ.",
+        "body": "AI giúp tạo phiên bản đầu tiên dễ hơn. Giá trị lâu dài nằm ở kiến trúc được duy trì, phân quyền chung, hạ tầng tin cậy và ngữ cảnh kết nối. Chúng tôi mở rộng sản phẩm khi khả năng tái sử dụng và giá trị cho khách hàng xứng đáng.",
         "chapter": "02 / XÂY DỰNG THẾ GIỚI",
         "kicker": "Vì sao là một hệ sinh thái?",
         "note": "Đây là niềm tin chiến lược, không phải khẳng định sản phẩm tập trung không thể thành công. AI có thể giảm chi phí tạo ứng dụng ban đầu nhưng không tự giải quyết việc vận hành hệ thống nhất quán qua nhiều năm. Chúng tôi chọn hệ sinh thái được duy trì chủ động để cải tiến kỹ thuật, ngữ cảnh chung và hạ tầng tái sử dụng mang lại lợi ích cho nhiều quy trình. Độ rộng không phải mục tiêu tự thân: ưu tiên nhu cầu thực, chứng minh khả năng tái sử dụng và tính đủ chi phí hỗ trợ từng sản phẩm.",
@@ -11955,10 +11960,10 @@
           }
         ],
         "status": "Luận điểm chiến lược · giá trị bền vững cần được chứng minh qua vận hành",
-        "title": "Tạo ứng dụng ngày càng dễ.\nHệ sinh thái vẫn cần người xây dựng."
+        "title": "Nhiều sản phẩm hữu ích.\nMột nền tảng tích lũy giá trị."
       },
       "engagement": {
-        "body": "Thống nhất đầu mối kỹ thuật, ranh giới dữ liệu, sản phẩm bàn giao, thời gian và ngân sách trước khi xây dựng. Xác định đầu ra tùy chỉnh, theo dõi tương tác, tiêu chí đánh giá và bàn giao để mọi người hiểu tiến bộ nghĩa là gì.",
+        "body": "Do Võ Hoàng Phúc sáng lập, Tuturuuu đóng góp kỹ thuật sản phẩm và phần mềm được duy trì. Đối tác mang chuyên môn lĩnh vực và quy trình thực. Thống nhất 1–3 vấn đề, đầu mối kỹ thuật, dữ liệu, phạm vi, ngân sách và tiêu chí thành công trước khi xây.",
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Rõ phạm vi trước khi mở rộng",
         "note": "Thống nhất đầu mối kỹ thuật, ranh giới dữ liệu, sản phẩm bàn giao, thời gian và ngân sách trước khi xây dựng. Xác định đầu ra tùy chỉnh, theo dõi tương tác, tiêu chí đánh giá và bàn giao để mọi người hiểu tiến bộ nghĩa là gì. Cấu trúc hợp tác đề xuất · báo giá sau khảo sát.",
@@ -11977,7 +11982,7 @@
           }
         ],
         "status": "Cấu trúc hợp tác đề xuất · báo giá sau khảo sát",
-        "title": "Hợp tác rõ ràng\nxứng tầm khát vọng."
+        "title": "Chung sứ mệnh.\nRõ cách cùng xây dựng."
       },
       "evidence": {
         "body": "Thống nhất đường cơ sở trước thử nghiệm. Theo dõi thành công nhiệm vụ, sửa lỗi, công sức duyệt, trải nghiệm và chi phí. Bản trình diễn mở đầu cuộc trao đổi; kết quả đáng tin trong bối cảnh thực mới là cơ sở mở rộng.",
@@ -12002,7 +12007,7 @@
         "title": "Dùng bằng chứng\nđể tiến bước tiếp theo."
       },
       "horizon": {
-        "body": "Khát vọng vượt xa năng suất: học tập, khám phá và cuối cùng là hỗ trợ trong thế giới vật lý. Thành công là con người làm được nhiều hơn, hiểu sâu hơn và vẫn tự định hướng khi công nghệ tiến bộ.",
+        "body": "Chân trời vượt khỏi năng suất: học tập, khám phá và tương lai hỗ trợ trong thế giới vật lý. Chúng tôi tiến tới bằng công cụ tin cậy, trí tuệ chung và con người luôn làm chủ hướng đi.",
         "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Vượt khỏi màn hình",
         "note": "Khát vọng vượt xa năng suất: học tập, khám phá và cuối cùng là hỗ trợ trong thế giới vật lý. Thành công là con người làm được nhiều hơn, hiểu sâu hơn và vẫn tự định hướng khi công nghệ tiến bộ. Tầm nhìn nghiên cứu dài hạn.",
@@ -12021,7 +12026,7 @@
           }
         ],
         "status": "Tầm nhìn nghiên cứu dài hạn",
-        "title": "Trợ lý thông minh nhất\nlà người bạn cùng tiến bộ."
+        "title": "Từ Việt Nam.\nCho thế giới.\nHướng tới điều phi thường."
       },
       "independence": {
         "body": "Độc lập hoàn toàn là định hướng, chưa phải tuyên bố về triển khai hiện tại. Chúng tôi hướng tới hệ sinh thái tự vận hành qua dữ liệu di chuyển được, dịch vụ thay thế được, triển khai kiểm chứng và lựa chọn mô hình—vẫn kết nối với thế giới.",
@@ -12164,7 +12169,7 @@
         "title": "Để người mới\ntiếp nối ngữ cảnh."
       },
       "opening": {
-        "body": "Khát vọng của chúng tôi là xây dựng trợ lý thông minh nhất có thể hình dung: một cộng sự hiểu thế giới của bạn, giúp bạn hành động và trở nên giỏi hơn. Tuturuuu đang xây dựng hệ sinh thái mở để hiện thực hóa điều đó.",
+        "body": "Từ mong muốn tập trung hơn, Tuturuuu xây hệ sinh thái mở cho tiềm năng con người. Công cụ hữu ích hôm nay. Cộng sự sâu sắc ngày mai—hiểu thế giới của bạn và giúp bạn hành động.",
         "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Tương lai của tiềm năng con người",
         "note": "Khát vọng của chúng tôi là xây dựng trợ lý thông minh nhất có thể hình dung: một cộng sự hiểu thế giới của bạn, giúp bạn hành động và trở nên giỏi hơn. Tuturuuu đang xây dựng hệ sinh thái mở để hiện thực hóa điều đó. Tầm nhìn Tuturuuu.",
@@ -12186,7 +12191,7 @@
         "title": "Thế giới của bạn.\nCùng bạn hành động."
       },
       "openness": {
-        "body": "Mã nguồn nền tảng Tuturuuu được cung cấp theo Apache 2.0. Chúng tôi muốn sự mở rộng ra ngoài mã: giao diện dễ hiểu, tri thức có thể di chuyển, quy trình có thể mở rộng và lựa chọn nơi, cách vận hành công nghệ.",
+        "body": "Mã nguồn nền tảng được công bố theo Apache 2.0. Chúng tôi hướng tới tri thức di chuyển được, dịch vụ thay thế được và triển khai có thể vận hành độc lập. Tự chủ hoàn toàn là hướng cần chứng minh; hiện vẫn dùng hạ tầng và mô hình bên ngoài.",
         "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Thiết kế mở",
         "note": "Mã nguồn nền tảng Tuturuuu được cung cấp theo Apache 2.0. Chúng tôi muốn sự mở rộng ra ngoài mã: giao diện dễ hiểu, tri thức có thể di chuyển, quy trình có thể mở rộng và lựa chọn nơi, cách vận hành công nghệ. Nền tảng mã nguồn mở đã có · khả năng di chuyển và lựa chọn triển khai đang phát triển.",
@@ -12205,7 +12210,7 @@
           }
         ],
         "status": "Nền tảng mã nguồn mở đã có · khả năng di chuyển và lựa chọn triển khai đang phát triển",
-        "title": "Hệ sinh thái mở\nđể bạn tự chủ hơn."
+        "title": "Thiết kế mở.\nNgày càng thuộc về bạn."
       },
       "origin": {
         "body": "Mỗi ý tưởng cần thời gian. Mỗi công cụ đòi hỏi sự chú ý. Tuturuuu bắt đầu bằng việc giúp mọi người tổ chức công việc; rồi câu hỏi lớn hơn xuất hiện: công nghệ có thể mở thêm không gian để suy nghĩ, học hỏi và sáng tạo như thế nào?",
@@ -12380,7 +12385,7 @@
         "title": "Luyện phối hợp trong\nthế giới có thể kiểm tra."
       },
       "roadmap": {
-        "body": "Làm sản phẩm đáng tin. Kết nối ngữ cảnh theo quyền. Kiểm chứng quy trình có duyệt. Phối hợp tác tử chuyên biệt. Mở rộng lựa chọn triển khai và mô hình. Mỗi bước cần đem lại năng lực hữu ích và quyền kiểm soát lớn hơn.",
+        "body": "Nền móng đã có; kết nối là việc tiếp theo. Củng cố sản phẩm, kiểm chứng quy trình có người duyệt cùng đối tác, rồi mở rộng phối hợp đáng tin. Mỗi bước phải tăng năng lực hữu ích và quyền chủ động.",
         "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Tiến lên bằng bằng chứng",
         "note": "Làm sản phẩm đáng tin. Kết nối ngữ cảnh theo quyền. Kiểm chứng quy trình có duyệt. Phối hợp tác tử chuyên biệt. Mở rộng lựa chọn triển khai và mô hình. Mỗi bước cần đem lại năng lực hữu ích và quyền kiểm soát lớn hơn. Lộ trình chiến lược · chưa cam kết ngày ra mắt.",
@@ -12399,7 +12404,7 @@
           }
         ],
         "status": "Lộ trình chiến lược · chưa cam kết ngày ra mắt",
-        "title": "Năng lực tích lũy\nkhi từng bước xứng đáng."
+        "title": "Kết nối. Kiểm chứng.\nRồi mở rộng."
       },
       "shift": {
         "body": "AI đang chuyển từ hội thoại riêng lẻ sang công cụ và tác tử có thể hành động qua nhiều quy trình. Chúng tôi tin giá trị lâu dài đến từ ngữ cảnh thực, quyền hạn rõ ràng và những con người không ngừng học hỏi.",
@@ -12578,7 +12583,7 @@
         "title": "“Chúng ta có thể\nnhận dự án này không?”"
       },
       "workforce": {
-        "body": "Trong khảo sát OECD, 31% doanh nghiệp nhỏ và vừa dùng AI tạo sinh; trong nhóm sử dụng, 65% cho biết hiệu suất nhân viên được cải thiện. Đây là lý do để thử nghiệm hỗ trợ thực tế, không phải bằng chứng mọi sản phẩm đều đạt kết quả tương tự.",
+        "body": "Bắt đầu với ba câu hỏi rõ phạm vi: Chúng ta có đủ năng lực thời gian? Nên học gì? Giúp thành viên mới bắt nhịp thế nào? Nền tảng sản phẩm hỗ trợ nguyên mẫu có thể cấu hình, con người xem xét và kết quả đo được.",
         "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Bắt đầu từ nhu cầu thật",
         "note": "Trong khảo sát OECD, 31% doanh nghiệp nhỏ và vừa dùng AI tạo sinh; trong nhóm sử dụng, 65% cho biết hiệu suất nhân viên được cải thiện. Đây là lý do để thử nghiệm hỗ trợ thực tế, không phải bằng chứng mọi sản phẩm đều đạt kết quả tương tự. Đề xuất nguyên mẫu hỗ trợ quyết định nhân lực.",
@@ -12597,7 +12602,7 @@
           }
         ],
         "status": "Đề xuất nguyên mẫu hỗ trợ quyết định nhân lực",
-        "title": "Hữu ích cho những đội nhóm\nthực sự cần đến nó."
+        "title": "Hữu ích cho\nđội ngũ đang cần."
       }
     },
     "sourceLabel": "Nguồn",
@@ -12775,6 +12780,42 @@
   },
   "portfolio": {
     "all": "Tất cả ứng dụng",
+    "atlas": {
+      "body": "Nhiều lối vào cùng một nền tảng được duy trì. Danh mục mô tả phạm vi sản phẩm, không phải mức sử dụng, doanh thu hay mức độ hoàn thiện đồng đều.",
+      "chart": "Danh mục sản phẩm theo lĩnh vực",
+      "count": "ứng dụng trong danh mục hiện tại",
+      "eyebrow": "NHÌN TOÀN CẢNH HỆ SINH THÁI",
+      "flowBody": "Khám phá khả năng phối hợp chúng tôi đang xây dựng. Mỗi sản phẩm góp ngữ cảnh; con người kiểm soát hành động có tác động lớn.",
+      "flowNote": "Quy trình kết nối minh họa · mức độ hoàn thiện tùy tích hợp",
+      "flowTitle": "Theo một cam kết xuyên hệ sinh thái.",
+      "steps": [
+        {
+          "title": "Yêu cầu xuất hiện",
+          "body": "Mail lưu cam kết và cuộc trao đổi phía sau. Mira có thể giúp chuyển thư thành đề xuất bước tiếp theo."
+        },
+        {
+          "title": "Đội ngũ thống nhất",
+          "body": "Meet đưa con người và Mira vào cùng cuộc thảo luận, với sự hiện diện AI rõ ràng và ngữ cảnh chung."
+        },
+        {
+          "title": "Kế hoạch hình thành",
+          "body": "Tasks kết nối ưu tiên, người phụ trách và quan hệ phụ thuộc. Con người xem xét và điều chỉnh kế hoạch từ gợi ý."
+        },
+        {
+          "title": "Thời gian cụ thể",
+          "body": "Calendar kết hợp thời gian rảnh, thói quen và hạn chót để xây dựng lịch khả thi."
+        },
+        {
+          "title": "Tri thức ở lại",
+          "body": "Tài liệu cộng tác và tệp dùng chung giữ lại lý do, quyết định và kết quả cho người tiếp theo."
+        },
+        {
+          "title": "Hiểu biết sâu hơn",
+          "body": "Mira kết nối ngữ cảnh được cấp quyền trong công việc. Kết quả đã xem xét giúp định hướng hành động hữu ích tiếp theo."
+        }
+      ],
+      "title": "Rộng, với một lý do rõ ràng."
+    },
     "categories": {
       "ai": "AI & thử nghiệm",
       "learning": "Học tập & phát triển",
@@ -12885,8 +12926,32 @@
     "engineeringBody": "Chúng tôi xây dựng xuyên suốt hệ thống vì trí tuệ hữu ích cần nhiều hơn một mô hình: ngữ cảnh, cộng tác, hệ thống đáng tin cậy và tương tác có chủ đích.",
     "explore": "Khám phá hệ sinh thái",
     "eyebrow": "TUTURUUU / HỒ SƠ NĂNG LỰC",
-    "hero": "Xây từng sản phẩm.\nMở những khả năng\nkhi chúng kết nối.",
-    "intro": "Một hệ sinh thái sản phẩm, năng lực kỹ thuật và nơi biến nghiên cứu tham vọng thành phần mềm hữu ích. Xây dựng tại Việt Nam, hướng đến chân trời rộng hơn.",
+    "hero": "Xây từ Việt Nam.\nMở những khả năng mới.",
+    "intro": "Công cụ hữu ích hôm nay. Trí tuệ kết nối ngày mai. Chúng tôi xây hệ sinh thái mở để con người cùng suy nghĩ, sáng tạo và đi xa hơn.",
+    "journey": {
+      "artNote": "Minh họa ý tưởng tạo bằng AI · thể hiện khát vọng",
+      "body": "Điểm xuất phát của chúng tôi là con người. Chân trời được mở rộng có chủ đích. Mỗi bước tiến phải giúp công nghệ hữu ích, dễ hiểu và thuộc về bạn hơn.",
+      "eyebrow": "VIỆT NAM → THẾ GIỚI → VƯƠN TỚI VÌ SAO",
+      "imageAlt": "Phong cảnh ven biển Việt Nam tưởng tượng nối với đường chân trời rực sáng của Trái Đất.",
+      "stages": [
+        {
+          "title": "Việt Nam",
+          "tag": "CỘI NGUỒN",
+          "body": "Xây dựng gần con người, đội ngũ và những công việc hằng ngày đang cần công cụ tốt hơn."
+        },
+        {
+          "title": "Thế giới",
+          "tag": "THIẾT KẾ ĐỂ VƯƠN XA",
+          "body": "Mã nguồn mở, nền tảng chung và đối tác địa phương tạo chỗ cho nhiều ngôn ngữ và cách làm việc."
+        },
+        {
+          "title": "Vươn tới vì sao",
+          "tag": "HƯỚNG ĐI",
+          "body": "Khám phá trí tuệ mở rộng điều con người có thể hình dung và thực hiện. Khát vọng cần từng bước chứng minh, chưa phải đích đến đã đạt được."
+        }
+      ],
+      "title": "Có nơi bắt đầu.\nKhông giới hạn chân trời."
+    },
     "layers": [
       {
         "title": "Giao diện cho con người",
@@ -12908,6 +12973,13 @@
     "meetBody": "Họp trực tuyến với Mira trong chat phòng và giọng nói Live. AI hiện diện rõ ràng, đầu vào micro chủ động bật, hỗ trợ riêng tư và bước tiếp theo được xem xét.",
     "meetTitle": "Gặp cộng sự AI của bạn.",
     "next": "Bước tiếp theo",
+    "observatory": {
+      "alt": "Đài quan sát ý tưởng với các mô-đun phát sáng kết nối nhìn ra Trái Đất.",
+      "body": "Chúng tôi nghiên cứu cách trí nhớ, suy luận, học tập và tác tử phối hợp cùng nhau. Phần mềm đáng tin cậy hôm nay là nền móng cho sự hỗ trợ phi thường ngày mai.",
+      "eyebrow": "TẦM NHÌN DÀI HẠN",
+      "note": "Tầm nhìn nghiên cứu tạo bằng AI · không phải cơ sở hiện có của Tuturuuu",
+      "title": "Xây công cụ.\nKết nối trí tuệ.\nMở rộng khả năng."
+    },
     "openProduct": "Khám phá sản phẩm",
     "pitch": "Xem tầm nhìn",
     "process": [
