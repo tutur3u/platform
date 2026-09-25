@@ -57,19 +57,18 @@
 }
 .productNames {
   position: absolute;
-  inset: 0;
+  inset: 10.5263% 7.5%;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  padding: 6% 7.5% 12%;
-  gap: 5% 2.5%;
+  gap: 5% 2.9412%;
   pointer-events: none;
 }
 .productNames span {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 6%;
+  padding-bottom: 10%;
   font-size: clamp(7px, 0.8vw, 12px);
   color: var(--tone);
 }
@@ -204,7 +203,12 @@
     font-size: 7pt;
   }
   .scene[data-scene="trust"] {
-    display: block;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5mm;
+  }
+  .scene[data-scene="trust"] .canvas svg {
+    max-height: 60mm;
   }
   .scene[data-scene="intelligence"] .legend {
     grid-template-columns: repeat(3, 1fr);
