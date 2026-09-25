@@ -2538,6 +2538,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Scheduled deadline reminders run in the deployed web app, honor each workspace's task reminder intervals and channel preferences, and queue mobile push across workspaces. Rust parity pending."
+    },
+    "page:/:locale/portfolio:apps/web/src/app/[locale]/portfolio/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Public bilingual technology portfolio remains Next-owned; includes product illustrations and the application registry. Track for a future TanStack marketing port."
     }
   }
 }

@@ -2,6 +2,7 @@
 
 import {
   BookText,
+  Code2,
   Download,
   FileText,
   Fingerprint,
@@ -54,6 +55,12 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
   ];
 
   const resources: NavItem[] = [
+    {
+      href: '/portfolio',
+      label: t('marketing-nav.portfolio'),
+      description: t('marketing-nav.portfolio_description'),
+      icon: <Code2 className="h-4 w-4" />,
+    },
     {
       href: '/download',
       label: t('desktop_download.badge'),

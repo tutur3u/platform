@@ -1,0 +1,172 @@
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  margin: 18px 0 0;
+  max-width: 620px;
+  color: var(--muted-foreground);
+  font-size: 9px;
+  line-height: 1.6;
+}
+.sources > span {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.sources a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.statistics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4vw;
+}
+.statistics figure {
+  margin: 0;
+  border-top: 1px solid var(--border);
+  padding-top: 22px;
+}
+.plot {
+  height: 100px;
+  margin-bottom: 18px;
+}
+.plot svg {
+  width: 100px;
+  height: 100px;
+}
+.statistics strong {
+  display: block;
+  font-size: clamp(55px, 7vw, 110px);
+  letter-spacing: -0.08em;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--tone);
+}
+.statistics figcaption {
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 260px;
+  margin-top: 20px;
+}
+.statistics a {
+  text-decoration: underline;
+}
+.agentDots {
+  display: grid;
+  grid-template-columns: repeat(5, 16px);
+  gap: 10px;
+  padding-top: 10px;
+}
+.agentDots i {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+.agentDots i:first-child {
+  outline: 1px solid var(--tone);
+  outline-offset: 3px;
+}
+.skillsGrid {
+  display: grid;
+  grid-template-columns: repeat(10, 7px);
+  gap: 3px;
+  padding-top: 2px;
+}
+.skillsGrid i {
+  width: 7px;
+  height: 7px;
+  background: var(--foreground);
+  opacity: 0.1;
+}
+.skillsGrid i[data-highlight="true"] {
+  background: var(--tone);
+  opacity: 1;
+}
+.references {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px 35px;
+}
+.references li {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.references a {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: none;
+}
+.references span {
+  margin-right: 8px;
+  color: var(--tone);
+  font-family: monospace;
+}
+.references p {
+  font-size: 11px;
+  line-height: 1.75;
+  color: var(--muted-foreground);
+  margin-top: 10px;
+}
+@media (max-width: 700px) {
+  .statistics {
+    gap: 22px;
+  }
+  .statistics strong {
+    font-size: 52px;
+  }
+  .statistics figcaption {
+    font-size: 11px;
+  }
+  .plot {
+    transform: scale(0.8);
+    transform-origin: left center;
+  }
+  .references {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 450px) {
+  .statistics {
+    grid-template-columns: 1fr;
+  }
+  .statistics figure {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 0 15px;
+    align-items: center;
+  }
+  .plot {
+    grid-row: 1 / 3;
+    margin: 0;
+  }
+  .statistics figcaption {
+    margin-top: 8px;
+  }
+}
+@media print {
+  .statistics strong {
+    font-size: 42pt;
+  }
+  .statistics figcaption {
+    font-size: 9pt;
+  }
+  .sources {
+    font-size: 6pt;
+    margin-top: 3mm;
+  }
+  .references {
+    gap: 3mm 7mm;
+  }
+  .references a {
+    font-size: 9pt;
+  }
+  .references p {
+    font-size: 7pt;
+    line-height: 1.5;
+  }
+}

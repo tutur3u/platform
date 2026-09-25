@@ -3649,6 +3649,40 @@
     "sync-dashboard": "Bảng điều khiển đồng bộ",
     "sync-history": "Đồng bộ hóa lịch sử"
   },
+  "capabilities": {
+    "illustration": "Minh họa sản phẩm tương tác · nội dung mẫu",
+    "meet": {
+      "action": "Khám phá cuộc trò chuyện",
+      "answer": "So sánh hai quy trình, thống nhất tiêu chí thành công và cùng đánh giá kết quả.",
+      "colleague": "Cộng sự AI",
+      "followup": "Xem xét việc tiếp theo",
+      "optIn": "Chủ động bật đầu vào giọng nói",
+      "privacy": "Thao tác với không gian riêng cần bạn phê duyệt. Chia sẻ với phòng phải được xác nhận.",
+      "private": "Hỗ trợ riêng tư",
+      "question": "@mira Chúng ta nên thử nghiệm gì tiếp?",
+      "room": "Phòng nghiên cứu sản phẩm",
+      "shared": "Trao đổi trong phòng",
+      "team": "Đội ngũ của bạn",
+      "title": "Cộng sự trong cuộc trò chuyện."
+    },
+    "tasks": {
+      "action": "Sắp xếp tuần này",
+      "calendar": "Lịch",
+      "done": "Hoàn thành",
+      "inbox": "Ghi lại",
+      "items": [
+        "Chuẩn bị đề cương nghiên cứu",
+        "Đánh giá nguyên mẫu",
+        "Lên kế hoạch thử nghiệm"
+      ],
+      "planned": "Lên kế hoạch",
+      "reset": "Đặt lại minh họa",
+      "review": "Xem xét gợi ý",
+      "scheduled": "Kế hoạch dành chỗ cho tập trung.",
+      "suggestion": "Gợi ý ưu tiên, thời lượng và bước tiếp theo. Bạn xem xét.",
+      "title": "Từ ý tưởng đến kế hoạch."
+    }
+  },
   "changelog-data-table": {
     "category": "Danh mục",
     "created_at": "Ngày tạo",
@@ -9985,6 +10019,8 @@
       },
       "title": "Mọi ứng dụng đội ngũ của bạn cần"
     },
+    "portfolio": "Hồ sơ năng lực",
+    "portfolio_description": "Sản phẩm, kỹ thuật và hợp tác nghiên cứu.",
     "products": {
       "ai": {
         "description": "Mira và các trợ lý vận hành mọi bề mặt sản phẩm.",
@@ -11558,6 +11594,7 @@
     ],
     "custom": "Theo thỏa thuận",
     "description": "Hệ sinh thái kết nối công việc, học tập và tiềm năng con người. Khám phá hướng phát triển AI nhân lực và tầm nhìn dài hạn.",
+    "diagramNote": "Minh họa ý tưởng · không phải kết quả đo lường",
     "edition": "KỶ NGUYÊN CỘNG SỰ",
     "enterprise": "Enterprise",
     "equivalent": "tương đương mỗi tháng",
@@ -11602,6 +11639,7 @@
     ],
     "play": "Tự động trình chiếu",
     "plus": "Plus",
+    "portfolio": "Khám phá năng lực",
     "previous": "Trang trước",
     "pricesLoading": "Đang tải giá hiện tại…",
     "pricesUnavailable": "Chưa thể tải giá hiện tại. Vui lòng thử lại sau.",
@@ -11620,6 +11658,32 @@
       "Learn · Teach · CMS · AI"
     ],
     "proposal": "Hướng phát triển sản phẩm",
+    "references": [
+      {
+        "label": "Stanford HAI · AI Index 2026",
+        "detail": "Ghi nhận 88% tổ chức được khảo sát dùng AI năm 2025; đây là dữ liệu khảo sát, không phải điều tra mọi doanh nghiệp."
+      },
+      {
+        "label": "Microsoft · Work Trend Index 2026",
+        "detail": "Tác tử hoạt động riêng biệt trên Microsoft 365 Copilot Agents và SharePoint tăng 15×, theo cửa sổ 28 ngày, 3/2025–3/2026. Dữ liệu nhà cung cấp, không phải toàn cầu."
+      },
+      {
+        "label": "Diễn đàn Kinh tế Thế giới · Future of Jobs 2025",
+        "detail": "Nhà tuyển dụng dự báo 39% kỹ năng cốt lõi thay đổi tới 2030. Khảo sát hơn 1.000 nhà tuyển dụng ở 55 nền kinh tế; đây là kỳ vọng, chưa phải kết quả quan sát."
+      },
+      {
+        "label": "OECD · Generative AI and the SME Workforce (2025)",
+        "detail": "Khảo sát cuối 2024 với hơn 5.000 doanh nghiệp nhỏ và vừa ở bảy quốc gia: 31% dùng AI tạo sinh; 65% nhóm dùng báo cáo hiệu suất tăng. Không phải thử nghiệm nhân quả hay ước lượng ASEAN."
+      },
+      {
+        "label": "Anthropic · Trustworthy agents in practice (2026)",
+        "detail": "Thảo luận từ nhà phát triển về quyền tác tử, giám sát và rủi ro prompt injection. Dùng làm bối cảnh thiết kế, không kiểm chứng Tuturuuu."
+      },
+      {
+        "label": "Tuturuuu · Mã nguồn và giấy phép nền tảng",
+        "detail": "Mã nguồn công khai, Apache 2.0 và triển khai sản phẩm. Có mã nguồn không đồng nghĩa mọi thành phần đã sẵn sàng tự vận hành."
+      }
+    ],
     "roadmap": [
       "Thống nhất giá và chính sách",
       "Kiểm chứng mọi giới hạn",
@@ -11643,10 +11707,10 @@
     "slide": "Trang",
     "slides": {
       "ai": {
-        "body": "Mira là giao diện AI hội thoại của chúng tôi. Tham vọng là biến Mira thành cánh cửa gần gũi đến toàn bộ hệ sinh thái: đặt câu hỏi, khám phá kế hoạch và hiểu bước tiếp theo.",
-        "chapter": "02 / HỆ SINH THÁI",
+        "body": "Một cuộc trò chuyện tự nhiên có thể mở ra công cụ, tri thức và quy trình phối hợp. Mục tiêu dài hạn là trợ lý biết dùng khả năng nào, giải thích cơ sở đề xuất và xin đúng quyền hạn cần thiết.",
+        "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Gặp Mira",
-        "note": "Mira là giao diện AI hội thoại của chúng tôi. Tham vọng là biến Mira thành cánh cửa gần gũi đến toàn bộ hệ sinh thái: đặt câu hỏi, khám phá kế hoạch và hiểu bước tiếp theo. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Một cuộc trò chuyện tự nhiên có thể mở ra công cụ, tri thức và quy trình phối hợp. Mục tiêu dài hạn là trợ lý biết dùng khả năng nào, giải thích cơ sở đề xuất và xin đúng quyền hạn cần thiết. Giao diện AI hiện có → tầm nhìn mở rộng.",
         "panels": [
           {
             "label": "Hỏi tự nhiên",
@@ -11662,13 +11726,13 @@
           }
         ],
         "status": "Giao diện AI hiện có → tầm nhìn mở rộng",
-        "title": "Một cuộc trò chuyện.\nNhiều khả năng hơn."
+        "title": "Mira là cánh cửa.\nHệ sinh thái là năng lực."
       },
       "architecture": {
-        "body": "Điều chỉnh nền tảng không gian làm việc và AI hiện có thành nguyên mẫu có giới hạn. Tách dữ liệu có quyền truy cập, phép tính tái lập, giải thích do AI tạo và phê duyệt của con người.",
+        "body": "Tách truy cập dữ liệu, tính toán, suy luận mô hình, thực thi quy trình và phê duyệt thành các lớp rõ ràng. Mẫu thử giới hạn sẽ dễ đánh giá hơn—đồng thời mở đường thay thế từng thành phần khi hệ sinh thái trưởng thành.",
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Kiến trúc thực tế",
-        "note": "Điều chỉnh nền tảng không gian làm việc và AI hiện có thành nguyên mẫu có giới hạn. Tách dữ liệu có quyền truy cập, phép tính tái lập, giải thích do AI tạo và phê duyệt của con người. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Tách truy cập dữ liệu, tính toán, suy luận mô hình, thực thi quy trình và phê duyệt thành các lớp rõ ràng. Mẫu thử giới hạn sẽ dễ đánh giá hơn—đồng thời mở đường thay thế từng thành phần khi hệ sinh thái trưởng thành. Thiết kế kỹ thuật đề xuất.",
         "panels": [
           {
             "label": "Đầu vào được cấp quyền",
@@ -11684,13 +11748,13 @@
           }
         ],
         "status": "Thiết kế kỹ thuật đề xuất",
-        "title": "Kết nối. Hiểu.\nMô phỏng. Xem xét."
+        "title": "Biến khát vọng thành\nhệ thống có thể kiểm tra."
       },
       "audience": {
-        "body": "Bắt đầu với đội nhỏ và cộng đồng học tập tại Việt Nam. Phát triển quy trình lặp lại được cùng đối tác địa phương, rồi thích ứng với ngôn ngữ và thực tế vận hành tại Đông Nam Á.",
-        "chapter": "05 / ĐỘNG LỰC TĂNG TRƯỞNG",
+        "body": "Xây dựng cùng cá nhân, đội nhóm nhỏ, nhà giáo dục và người vận hành tại Việt Nam. Học điều gì hiệu quả trong ngôn ngữ và thực tế của họ. Mở rộng mô hình đã kiểm chứng tới Đông Nam Á và xa hơn qua đối tác địa phương.",
+        "chapter": "05 / ĐỒNG HÀNH BỀN VỮNG",
         "kicker": "Thị trường rộng, điểm bắt đầu rõ",
-        "note": "Bắt đầu với đội nhỏ và cộng đồng học tập tại Việt Nam. Phát triển quy trình lặp lại được cùng đối tác địa phương, rồi thích ứng với ngôn ngữ và thực tế vận hành tại Đông Nam Á. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Xây dựng cùng cá nhân, đội nhóm nhỏ, nhà giáo dục và người vận hành tại Việt Nam. Học điều gì hiệu quả trong ngôn ngữ và thực tế của họ. Mở rộng mô hình đã kiểm chứng tới Đông Nam Á và xa hơn qua đối tác địa phương. Chiến lược tiếp cận thị trường.",
         "panels": [
           {
             "label": "Trọng tâm ban đầu",
@@ -11706,13 +11770,13 @@
           }
         ],
         "status": "Chiến lược tiếp cận thị trường",
-        "title": "Xây từ địa phương.\nHướng đến khu vực."
+        "title": "Bắt đầu đủ gần\nđể hiểu con người."
       },
       "business": {
-        "body": "Bắt đầu bằng sản phẩm hữu ích hằng ngày. Phát triển thành sử dụng theo đội, dung lượng trả phí và giải pháp lặp lại được. Mỗi bước mở rộng phải tạo giá trị và có chi phí bền vững.",
-        "chapter": "05 / ĐỘNG LỰC TĂNG TRƯỞNG",
+        "body": "Sản phẩm hằng ngày tạo lý do gắn bó. Thuê bao và hợp tác kỹ thuật có phạm vi tài trợ cho triển khai, bảo trì và nghiên cứu. Chúng tôi hướng tới hệ sinh thái tiếp tục cải thiện nhờ giá trị và hiệu quả vận hành hỗ trợ nhau.",
+        "chapter": "05 / ĐỒNG HÀNH BỀN VỮNG",
         "kicker": "Mô hình kinh doanh tích lũy giá trị",
-        "note": "Bắt đầu bằng sản phẩm hữu ích hằng ngày. Phát triển thành sử dụng theo đội, dung lượng trả phí và giải pháp lặp lại được. Mỗi bước mở rộng phải tạo giá trị và có chi phí bền vững. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Sản phẩm hằng ngày tạo lý do gắn bó. Thuê bao và hợp tác kỹ thuật có phạm vi tài trợ cho triển khai, bảo trì và nghiên cứu. Chúng tôi hướng tới hệ sinh thái tiếp tục cải thiện nhờ giá trị và hiệu quả vận hành hỗ trợ nhau. Chiến lược thương mại.",
         "panels": [
           {
             "label": "Tiếp cận",
@@ -11728,22 +11792,44 @@
           }
         ],
         "status": "Chiến lược thương mại",
-        "title": "Giải tốt một quy trình.\nMở rộng hệ sinh thái."
+        "title": "Hữu ích hôm nay.\nBền vững trong dài hạn."
       },
       "calculator": {
-        "body": "Khám phá chi phí thuê bao đội ngũ theo danh mục giá hiện tại. Phát triển riêng, đánh giá thí điểm, thuế và tiện ích bổ sung không nằm trong minh họa này.",
-        "chapter": "05 / ĐỘNG LỰC TĂNG TRƯỞNG",
+        "body": "Khám phá tổng tiền thuê bao theo bảng giá công khai hiện tại. Đây là điểm bắt đầu trao đổi cho đội nhóm; triển khai, đánh giá, thuế và tiện ích bổ sung được xác định riêng.",
+        "chapter": "05 / ĐỒNG HÀNH BỀN VỮNG",
         "kicker": "Khám phá chi phí thuê bao",
-        "note": "Khám phá chi phí thuê bao đội ngũ theo danh mục giá hiện tại. Phát triển riêng, đánh giá thí điểm, thuế và tiện ích bổ sung không nằm trong minh họa này. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Khám phá tổng tiền thuê bao theo bảng giá công khai hiện tại. Đây là điểm bắt đầu trao đổi cho đội nhóm; triển khai, đánh giá, thuế và tiện ích bổ sung được xác định riêng. Giá hiện tại · thay đổi hạn mức chờ triển khai.",
         "panels": [],
         "status": "Giá hiện tại · thay đổi hạn mức chờ triển khai",
-        "title": "Làm rõ\nbước tiếp theo."
+        "title": "Một con số cụ thể\ncho bước khởi đầu."
+      },
+      "calendar": {
+        "body": "Smart Calendar đưa nhiệm vụ và thói quen vào thực tế của giờ làm, sự kiện, ưu tiên và hạn chót. Tự động xếp lịch giúp biến ý định thành thời gian có thể sử dụng; bạn có thể xem lại và điều chỉnh kết quả.",
+        "chapter": "02 / XÂY DỰNG THẾ GIỚI",
+        "kicker": "CALENDAR × TASKS",
+        "note": "Smart Calendar đưa nhiệm vụ và thói quen vào thực tế của giờ làm, sự kiện, ưu tiên và hạn chót. Tự động xếp lịch giúp biến ý định thành thời gian có thể sử dụng; bạn có thể xem lại và điều chỉnh kết quả. Đã có khả năng xếp lịch thông minh · tùy cấu hình và phạm vi sử dụng.",
+        "panels": [
+          {
+            "label": "Tôn trọng thực tế",
+            "detail": "Thời gian rảnh, giờ làm việc và sự kiện hiện có."
+          },
+          {
+            "label": "Lập kế hoạch hữu ích",
+            "detail": "Xếp lịch theo ưu tiên cho nhiệm vụ và thói quen."
+          },
+          {
+            "label": "Liên tục thích ứng",
+            "detail": "Xem lại lịch khi các ưu tiên thay đổi."
+          }
+        ],
+        "status": "Đã có khả năng xếp lịch thông minh · tùy cấu hình và phạm vi sử dụng",
+        "title": "Kế hoạch tìm được chỗ\ntrong ngày của bạn."
       },
       "capacity": {
-        "body": "Kết hợp thời gian khả dụng đã thống nhất, ước lượng công việc và thời hạn để nhìn rõ tải công việc. Giúp quản lý so sánh kế hoạch trước khi giao thêm việc.",
-        "chapter": "03 / KIỂM CHỨNG ĐẦU TIÊN",
+        "body": "Bắt đầu từ thời gian sẵn có, ước lượng và hạn chót đã thống nhất. Chỉ ra áp lực của một cam kết mới. So sánh thời điểm, phạm vi và nguồn hỗ trợ trước khi quyết định đội nhóm có thể nhận thêm điều gì.",
+        "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Ứng dụng 01 / Lập kế hoạch",
-        "note": "Kết hợp thời gian khả dụng đã thống nhất, ước lượng công việc và thời hạn để nhìn rõ tải công việc. Giúp quản lý so sánh kế hoạch trước khi giao thêm việc. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Bắt đầu từ thời gian sẵn có, ước lượng và hạn chót đã thống nhất. Chỉ ra áp lực của một cam kết mới. So sánh thời điểm, phạm vi và nguồn hỗ trợ trước khi quyết định đội nhóm có thể nhận thêm điều gì. Mô-đun thí điểm đề xuất.",
         "panels": [
           {
             "label": "Dữ liệu đầu vào",
@@ -11759,13 +11845,35 @@
           }
         ],
         "status": "Mô-đun thí điểm đề xuất",
-        "title": "Nhìn rõ áp lực.\nKhám phá lựa chọn."
+        "title": "Trước tiên, làm rõ\nnhững đánh đổi."
+      },
+      "chat": {
+        "body": "Con người, kênh, tệp chung và hội thoại AI cần cùng một ngữ cảnh làm việc. Smart Chat là con đường để con người và AI phối hợp ngay trong cuộc trao đổi nơi quyết định bắt đầu.",
+        "chapter": "02 / XÂY DỰNG THẾ GIỚI",
+        "kicker": "CHAT × MIRA",
+        "note": "Con người, kênh, tệp chung và hội thoại AI cần cùng một ngữ cảnh làm việc. Smart Chat là con đường để con người và AI phối hợp ngay trong cuộc trao đổi nơi quyết định bắt đầu. Nền tảng Chat đã có · đang phát triển khả năng phối hợp sâu hơn.",
+        "panels": [
+          {
+            "label": "Cùng trao đổi",
+            "detail": "Tin nhắn trực tiếp, nhóm, kênh và hội thoại AI."
+          },
+          {
+            "label": "Giữ ngữ cảnh",
+            "detail": "Lịch sử hội thoại và tệp đính kèm từ Drive."
+          },
+          {
+            "label": "Phối hợp bước tiếp theo",
+            "detail": "Định hướng: con người và AI cộng tác xuyên suốt quy trình."
+          }
+        ],
+        "status": "Nền tảng Chat đã có · đang phát triển khả năng phối hợp sâu hơn",
+        "title": "Hội thoại trở thành\nnơi cùng nhau làm việc."
       },
       "closing": {
-        "body": "Mang đến một quy trình thật, câu hỏi khó hoặc đội ngũ sẵn sàng khám phá cách làm tốt hơn. Cùng nhau, ta có thể biến tầm nhìn lớn thành tiến bộ hữu ích và đo lường được.",
-        "chapter": "06 / TẦM NHÌN DÀI HẠN",
+        "body": "Chúng tôi hướng tới hệ sinh thái mở có thể vận hành độc lập và một trợ lý đặc biệt mạnh mẽ bên trong. Hãy mang đến vấn đề có ý nghĩa, câu hỏi nghiên cứu hoặc đội nhóm sẵn sàng xây dựng. Cùng biến tương lai đó thành điều hữu ích—và thuộc về bạn.",
+        "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Cùng xây kỷ nguyên tiếp theo",
-        "note": "Mang đến một quy trình thật, câu hỏi khó hoặc đội ngũ sẵn sàng khám phá cách làm tốt hơn. Cùng nhau, ta có thể biến tầm nhìn lớn thành tiến bộ hữu ích và đo lường được. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Chúng tôi hướng tới hệ sinh thái mở có thể vận hành độc lập và một trợ lý đặc biệt mạnh mẽ bên trong. Hãy mang đến vấn đề có ý nghĩa, câu hỏi nghiên cứu hoặc đội nhóm sẵn sàng xây dựng. Cùng biến tương lai đó thành điều hữu ích—và thuộc về bạn. Bắt đầu từ một vấn đề có ý nghĩa.",
         "panels": [
           {
             "label": "Cho mỗi người",
@@ -11781,13 +11889,35 @@
           }
         ],
         "status": "Bắt đầu từ một vấn đề có ý nghĩa",
-        "title": "Trả lại sự tập trung\ncho con người."
+        "title": "Làm chủ công nghệ.\nMở rộng khả năng."
+      },
+      "collaboration": {
+        "body": "Bảng trắng thời gian thực làm rõ suy nghĩ. Tài liệu cộng tác biến chúng thành tri thức chung. Soạn thảo như Google Docs, tệp và ngữ cảnh không gian làm việc tạo nên một phần bộ nhớ mà cộng sự thông minh cần có.",
+        "chapter": "02 / XÂY DỰNG THẾ GIỚI",
+        "kicker": "DOCUMENTS × WHITEBOARDS",
+        "note": "Bảng trắng thời gian thực làm rõ suy nghĩ. Tài liệu cộng tác biến chúng thành tri thức chung. Soạn thảo như Google Docs, tệp và ngữ cảnh không gian làm việc tạo nên một phần bộ nhớ mà cộng sự thông minh cần có. Đã có nền tảng cộng tác · tiếp tục kết nối sâu hơn giữa các sản phẩm.",
+        "panels": [
+          {
+            "label": "Cùng phác thảo",
+            "detail": "Không gian vẽ chung và bảng trắng thời gian thực."
+          },
+          {
+            "label": "Cùng viết",
+            "detail": "Soạn thảo văn bản cộng tác và tri thức dùng chung."
+          },
+          {
+            "label": "Kết nối kết quả",
+            "detail": "Tệp, con người, nhiệm vụ và hội thoại trong một định hướng sản phẩm."
+          }
+        ],
+        "status": "Đã có nền tảng cộng tác · tiếp tục kết nối sâu hơn giữa các sản phẩm",
+        "title": "Đội nhóm tạo nên\ndấu vết hiểu biết chung."
       },
       "context": {
-        "body": "Một công việc riêng lẻ chỉ là ô đánh dấu. Thêm thời hạn, kỹ năng, thời gian khả dụng và cam kết với khách hàng, nó trở thành một quyết định đáng được hỗ trợ.",
-        "chapter": "02 / HỆ SINH THÁI",
+        "body": "Nhiệm vụ hữu ích hơn khi gắn với cam kết phía sau, tri thức cần có, người tham gia và thời gian sẵn có. Lớp tiếp theo là ngữ cảnh tuân thủ quyền truy cập, giúp Mira hiểu các mối liên hệ trong công việc.",
+        "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Vì sao cần hệ sinh thái",
-        "note": "Một công việc riêng lẻ chỉ là ô đánh dấu. Thêm thời hạn, kỹ năng, thời gian khả dụng và cam kết với khách hàng, nó trở thành một quyết định đáng được hỗ trợ. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Nhiệm vụ hữu ích hơn khi gắn với cam kết phía sau, tri thức cần có, người tham gia và thời gian sẵn có. Lớp tiếp theo là ngữ cảnh tuân thủ quyền truy cập, giúp Mira hiểu các mối liên hệ trong công việc. Chiến lược kết nối bối cảnh.",
         "panels": [
           {
             "label": "Bối cảnh chung",
@@ -11803,13 +11933,35 @@
           }
         ],
         "status": "Chiến lược kết nối bối cảnh",
-        "title": "Trí tuệ cần\nbối cảnh để hiểu."
+        "title": "Các mảnh ghép\nbắt đầu có ý nghĩa cùng nhau."
+      },
+      "ecosystem": {
+        "body": "Khi “vibe coding” với AI giảm chi phí tạo phiên bản đầu tiên, một tính năng riêng lẻ cũng dễ được tái tạo hơn. Chúng tôi đặt niềm tin vào công việc kỹ thuật lâu dài: kiến trúc chung, ngữ cảnh kết nối, hạ tầng đáng tin cậy và hệ sinh thái cùng tiến bộ.",
+        "chapter": "02 / XÂY DỰNG THẾ GIỚI",
+        "kicker": "Vì sao là một hệ sinh thái?",
+        "note": "Đây là niềm tin chiến lược, không phải khẳng định sản phẩm tập trung không thể thành công. AI có thể giảm chi phí tạo ứng dụng ban đầu nhưng không tự giải quyết việc vận hành hệ thống nhất quán qua nhiều năm. Chúng tôi chọn hệ sinh thái được duy trì chủ động để cải tiến kỹ thuật, ngữ cảnh chung và hạ tầng tái sử dụng mang lại lợi ích cho nhiều quy trình. Độ rộng không phải mục tiêu tự thân: ưu tiên nhu cầu thực, chứng minh khả năng tái sử dụng và tính đủ chi phí hỗ trợ từng sản phẩm.",
+        "panels": [
+          {
+            "label": "Tạo phiên bản đầu tiên",
+            "detail": "Giúp mọi người tạo và tùy chỉnh công cụ hữu ích. Rào cản thấp hơn mở ra cơ hội."
+          },
+          {
+            "label": "Duy trì toàn hệ thống",
+            "detail": "Phân quyền, bảo mật, độ tin cậy, chuyển đổi dữ liệu và khả năng tương tác cần được chăm sóc liên tục."
+          },
+          {
+            "label": "Tích lũy giá trị đầu tư",
+            "detail": "Xây sản phẩm tập trung trên nền tảng chung. Mở rộng khi giá trị sử dụng và khả năng tái sử dụng xứng đáng với chi phí duy trì."
+          }
+        ],
+        "status": "Luận điểm chiến lược · giá trị bền vững cần được chứng minh qua vận hành",
+        "title": "Tạo ứng dụng ngày càng dễ.\nHệ sinh thái vẫn cần người xây dựng."
       },
       "engagement": {
-        "body": "Bắt đầu bằng trao đổi khảo sát và đề xuất kỹ thuật bằng văn bản. Xác định công việc, yếu tố chi phí và tiêu chí nghiệm thu trước khi hai bên cam kết triển khai.",
+        "body": "Thống nhất đầu mối kỹ thuật, ranh giới dữ liệu, sản phẩm bàn giao, thời gian và ngân sách trước khi xây dựng. Xác định đầu ra tùy chỉnh, theo dõi tương tác, tiêu chí đánh giá và bàn giao để mọi người hiểu tiến bộ nghĩa là gì.",
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Rõ phạm vi trước khi mở rộng",
-        "note": "Đầu mối kỹ thuật, phạm vi, tiến độ và ngân sách được thống nhất trong đề xuất bằng văn bản. Giá thuê bao không bao gồm thí điểm riêng.",
+        "note": "Thống nhất đầu mối kỹ thuật, ranh giới dữ liệu, sản phẩm bàn giao, thời gian và ngân sách trước khi xây dựng. Xác định đầu ra tùy chỉnh, theo dõi tương tác, tiêu chí đánh giá và bàn giao để mọi người hiểu tiến bộ nghĩa là gì. Cấu trúc hợp tác đề xuất · báo giá sau khảo sát.",
         "panels": [
           {
             "label": "Phạm vi & đầu ra",
@@ -11825,13 +11977,13 @@
           }
         ],
         "status": "Cấu trúc hợp tác đề xuất · báo giá sau khảo sát",
-        "title": "Phạm vi rõ ràng.\nCam kết có cơ sở."
+        "title": "Hợp tác rõ ràng\nxứng tầm khát vọng."
       },
       "evidence": {
-        "body": "Thống nhất đường cơ sở và tiêu chí thành công trước thí điểm. Đo tính hữu ích, độ tin cậy, mức sử dụng cùng chi phí vận hành hệ thống.",
-        "chapter": "03 / KIỂM CHỨNG ĐẦU TIÊN",
+        "body": "Thống nhất đường cơ sở trước thử nghiệm. Theo dõi thành công nhiệm vụ, sửa lỗi, công sức duyệt, trải nghiệm và chi phí. Bản trình diễn mở đầu cuộc trao đổi; kết quả đáng tin trong bối cảnh thực mới là cơ sở mở rộng.",
+        "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Chứng minh bằng đo lường",
-        "note": "Thống nhất đường cơ sở và tiêu chí thành công trước thí điểm. Đo tính hữu ích, độ tin cậy, mức sử dụng cùng chi phí vận hành hệ thống. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Thống nhất đường cơ sở trước thử nghiệm. Theo dõi thành công nhiệm vụ, sửa lỗi, công sức duyệt, trải nghiệm và chi phí. Bản trình diễn mở đầu cuộc trao đổi; kết quả đáng tin trong bối cảnh thực mới là cơ sở mở rộng. Khung đánh giá đề xuất.",
         "panels": [
           {
             "label": "Chất lượng quyết định",
@@ -11847,13 +11999,13 @@
           }
         ],
         "status": "Khung đánh giá đề xuất",
-        "title": "Demo mở cánh cửa.\nBằng chứng tạo\nniềm tin tiếp theo."
+        "title": "Dùng bằng chứng\nđể tiến bước tiếp theo."
       },
       "horizon": {
-        "body": "Công việc là điểm bắt đầu. Học tập, khám phá khoa học và hỗ trợ trong thế giới vật lý là chân trời rộng hơn. Ước mơ là công nghệ giúp nhân loại trở nên có năng lực hơn.",
-        "chapter": "06 / TẦM NHÌN DÀI HẠN",
+        "body": "Khát vọng vượt xa năng suất: học tập, khám phá và cuối cùng là hỗ trợ trong thế giới vật lý. Thành công là con người làm được nhiều hơn, hiểu sâu hơn và vẫn tự định hướng khi công nghệ tiến bộ.",
+        "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Vượt khỏi màn hình",
-        "note": "Công việc là điểm bắt đầu. Học tập, khám phá khoa học và hỗ trợ trong thế giới vật lý là chân trời rộng hơn. Ước mơ là công nghệ giúp nhân loại trở nên có năng lực hơn. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Khát vọng vượt xa năng suất: học tập, khám phá và cuối cùng là hỗ trợ trong thế giới vật lý. Thành công là con người làm được nhiều hơn, hiểu sâu hơn và vẫn tự định hướng khi công nghệ tiến bộ. Tầm nhìn nghiên cứu dài hạn.",
         "panels": [
           {
             "label": "Mira / Mối quan hệ",
@@ -11869,13 +12021,35 @@
           }
         ],
         "status": "Tầm nhìn nghiên cứu dài hạn",
-        "title": "Nếu tiềm năng\ncon người vượt mọi\ngiới hạn giao diện?"
+        "title": "Trợ lý thông minh nhất\nlà người bạn cùng tiến bộ."
+      },
+      "independence": {
+        "body": "Độc lập hoàn toàn là định hướng, chưa phải tuyên bố về triển khai hiện tại. Chúng tôi hướng tới hệ sinh thái tự vận hành qua dữ liệu di chuyển được, dịch vụ thay thế được, triển khai kiểm chứng và lựa chọn mô hình—vẫn kết nối với thế giới.",
+        "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
+        "kicker": "Lộ trình tự chủ",
+        "note": "Độc lập hoàn toàn là định hướng, chưa phải tuyên bố về triển khai hiện tại. Chúng tôi hướng tới hệ sinh thái tự vận hành qua dữ liệu di chuyển được, dịch vụ thay thế được, triển khai kiểm chứng và lựa chọn mô hình—vẫn kết nối với thế giới. Lộ trình chiến lược · hiện vẫn dùng hạ tầng và nhà cung cấp mô hình bên ngoài.",
+        "panels": [
+          {
+            "label": "Hiện tại / làm chủ sản phẩm",
+            "detail": "Duy trì mã nguồn, giao ước, trải nghiệm và quy trình phát hành."
+          },
+          {
+            "label": "Tiếp theo / làm chủ lựa chọn",
+            "detail": "Kiểm chứng xuất và phục hồi, ghi rõ phụ thuộc và thử tích hợp thay thế."
+          },
+          {
+            "label": "Tầm nhìn / làm chủ vận hành",
+            "detail": "Mở rộng tự triển khai và mô hình cục bộ hoặc mở khi khả thi."
+          }
+        ],
+        "status": "Lộ trình chiến lược · hiện vẫn dùng hạ tầng và nhà cung cấp mô hình bên ngoài",
+        "title": "Tự chủ được xây\nqua từng phụ thuộc."
       },
       "intelligence": {
-        "body": "Tầm nhìn ban đầu đặt tên cho từng phần của một tổng thể lớn. Giá trị đến từ sự phối hợp quanh mục tiêu của con người, với bối cảnh và cơ chế bảo vệ kết nối mọi lớp.",
-        "chapter": "06 / TẦM NHÌN DÀI HẠN",
+        "body": "Tầm nhìn dài hạn kết hợp suy luận, bộ nhớ, sáng tạo, học hỏi và hành động quanh mục tiêu của con người. Các khái niệm Tuturuuu ban đầu mô tả hướng nghiên cứu bổ trợ, chưa phải hệ thống tự chủ tổng quát đã hoàn thiện.",
+        "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Kiến trúc trí tuệ dài hạn",
-        "note": "Mira, Rewise và Nova có giao diện sản phẩm trong mã nguồn. Các vai trò ở đây mô tả kiến trúc dài hạn; điều phối Aurora và hỗ trợ vật lý Crystal là ý tưởng tầm nhìn, không phải cam kết bàn giao.",
+        "note": "Tầm nhìn dài hạn kết hợp suy luận, bộ nhớ, sáng tạo, học hỏi và hành động quanh mục tiêu của con người. Các khái niệm Tuturuuu ban đầu mô tả hướng nghiên cứu bổ trợ, chưa phải hệ thống tự chủ tổng quát đã hoàn thiện. Kiến trúc ý tưởng · không có nghĩa cả năm hệ thống đã hoàn thiện.",
         "panels": [
           {
             "label": "Mira / Mối quan hệ",
@@ -11899,13 +12073,79 @@
           }
         ],
         "status": "Kiến trúc ý tưởng · không có nghĩa cả năm hệ thống đã hoàn thiện",
-        "title": "Năm ý tưởng.\nMột cộng sự\nthông minh."
+        "title": "Một khát vọng.\nNhiều dạng trí tuệ."
+      },
+      "mail": {
+        "body": "Nhãn thông minh, hỗ trợ soạn thư và theo dõi phản hồi là nền tảng. Chúng tôi hướng tới Mira trích xuất việc cần làm, gắn cam kết với nhiệm vụ và lịch—để hộp thư về không đồng nghĩa với ít việc dang dở hơn.",
+        "chapter": "02 / XÂY DỰNG THẾ GIỚI",
+        "kicker": "MAIL × MIRA",
+        "note": "Nhãn thông minh, hỗ trợ soạn thư và theo dõi phản hồi là nền tảng. Chúng tôi hướng tới Mira trích xuất việc cần làm, gắn cam kết với nhiệm vụ và lịch—để hộp thư về không đồng nghĩa với ít việc dang dở hơn. Nền tảng AI cho Mail đã có · Mira trích xuất nhiệm vụ là hướng phát triển.",
+        "panels": [
+          {
+            "label": "Thấu hiểu",
+            "detail": "Nền tảng nhãn thông minh và soạn thư theo ngữ cảnh."
+          },
+          {
+            "label": "Trích xuất",
+            "detail": "Hướng tới việc Mira nhận diện nhiệm vụ và cam kết."
+          },
+          {
+            "label": "Theo sát",
+            "detail": "Duyệt phản hồi, theo dõi và tiến tới hộp thư không tồn đọng."
+          }
+        ],
+        "status": "Nền tảng AI cho Mail đã có · Mira trích xuất nhiệm vụ là hướng phát triển",
+        "title": "Tin nhắn trở thành\ncam kết được theo sát."
+      },
+      "meet": {
+        "body": "Mira có thể tham gia Tuturuuu Meet qua chat phòng và giọng nói Live theo lựa chọn của người dùng. Hỗ trợ riêng và thao tác được duyệt nối thảo luận với hành động, đồng thời giúp mọi người biết AI đang tham gia như thế nào.",
+        "chapter": "02 / XÂY DỰNG THẾ GIỚI",
+        "kicker": "Sản phẩm nổi bật / Meet",
+        "note": "Mira có thể tham gia Tuturuuu Meet qua chat phòng và giọng nói Live theo lựa chọn của người dùng. Hỗ trợ riêng và thao tác được duyệt nối thảo luận với hành động, đồng thời giúp mọi người biết AI đang tham gia như thế nào. Năng lực đã triển khai · tùy quyền và khả năng cung cấp.",
+        "panels": [
+          {
+            "label": "AI hiện diện rõ ràng",
+            "detail": "Mira có ô người tham gia, trạng thái nói và điều khiển âm thanh riêng."
+          },
+          {
+            "label": "Riêng tư khi cần",
+            "detail": "Ngữ cảnh phòng và hỗ trợ cá nhân có ranh giới riêng."
+          },
+          {
+            "label": "Từ trao đổi đến hành động",
+            "detail": "Xem xét nhiệm vụ và lịch hẹn được gợi ý trước khi tạo."
+          }
+        ],
+        "status": "Năng lực đã triển khai · tùy quyền và khả năng cung cấp",
+        "title": "Trợ lý bước vào\nphòng họp."
+      },
+      "moment": {
+        "body": "AI được dùng rộng rãi, tác tử tăng nhanh và yêu cầu kỹ năng thay đổi. Những tín hiệu này cho thấy nhu cầu tổ chức công việc, học hỏi và giữ quyền kiểm soát tốt hơn—vượt ra ngoài một nơi để đặt câu hỏi.",
+        "chapter": "01 / VÌ SAO LÚC NÀY",
+        "kicker": "Thế giới chuyển động",
+        "note": "AI được dùng rộng rãi, tác tử tăng nhanh và yêu cầu kỹ năng thay đổi. Những tín hiệu này cho thấy nhu cầu tổ chức công việc, học hỏi và giữ quyền kiểm soát tốt hơn—vượt ra ngoài một nơi để đặt câu hỏi. Bằng chứng bên ngoài · khác mẫu và thước đo, không so sánh trực tiếp.",
+        "panels": [
+          {
+            "label": "88%",
+            "detail": "Tổ chức được khảo sát cho biết có dùng AI trong năm 2025."
+          },
+          {
+            "label": "15×",
+            "detail": "Mức tăng tác tử hoạt động trong hệ sinh thái Microsoft, 3/2025–3/2026."
+          },
+          {
+            "label": "39%",
+            "detail": "Kỹ năng cốt lõi được nhà tuyển dụng dự báo sẽ thay đổi tới 2030."
+          }
+        ],
+        "status": "Bằng chứng bên ngoài · khác mẫu và thước đo, không so sánh trực tiếp",
+        "title": "Làn sóng đã đến.\nCách vận hành vẫn đang hình thành."
       },
       "onboarding": {
-        "body": "Đồng đội mới nên dành ít thời gian tìm câu trả lời và nhiều thời gian xây dựng sự tự tin. Đưa hướng dẫn vai trò, kiến thức đáng tin và kế hoạch hội nhập đến gần họ.",
-        "chapter": "03 / KIỂM CHỨNG ĐẦU TIÊN",
+        "body": "Tri thức được kết nối có thể giúp đồng đội mới hiểu công việc, tìm câu trả lời đáng tin và xây dựng tự tin. Mục tiêu là rút ngắn con đường từ gia nhập đội nhóm đến đóng góp có ý nghĩa.",
+        "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Ứng dụng 03 / Chuyển giao kiến thức",
-        "note": "Đồng đội mới nên dành ít thời gian tìm câu trả lời và nhiều thời gian xây dựng sự tự tin. Đưa hướng dẫn vai trò, kiến thức đáng tin và kế hoạch hội nhập đến gần họ. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Tri thức được kết nối có thể giúp đồng đội mới hiểu công việc, tìm câu trả lời đáng tin và xây dựng tự tin. Mục tiêu là rút ngắn con đường từ gia nhập đội nhóm đến đóng góp có ý nghĩa. Mô-đun thí điểm đề xuất.",
         "panels": [
           {
             "label": "Dữ liệu đầu vào",
@@ -11921,13 +12161,13 @@
           }
         ],
         "status": "Mô-đun thí điểm đề xuất",
-        "title": "Tháng đầu tiên\nkhông còn là mê cung."
+        "title": "Để người mới\ntiếp nối ngữ cảnh."
       },
       "opening": {
-        "body": "Chúng tôi đang xây dựng một hệ sinh thái kết nối phía sau người cộng sự thông minh: hiểu công việc, giúp đội ngũ phát triển và tạo không gian để ý tưởng lớn trở thành hiện thực.",
-        "chapter": "01 / KHẢ NĂNG",
+        "body": "Khát vọng của chúng tôi là xây dựng trợ lý thông minh nhất có thể hình dung: một cộng sự hiểu thế giới của bạn, giúp bạn hành động và trở nên giỏi hơn. Tuturuuu đang xây dựng hệ sinh thái mở để hiện thực hóa điều đó.",
+        "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Tương lai của tiềm năng con người",
-        "note": "Chúng tôi đang xây dựng một hệ sinh thái kết nối phía sau người cộng sự thông minh: hiểu công việc, giúp đội ngũ phát triển và tạo không gian để ý tưởng lớn trở thành hiện thực. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Khát vọng của chúng tôi là xây dựng trợ lý thông minh nhất có thể hình dung: một cộng sự hiểu thế giới của bạn, giúp bạn hành động và trở nên giỏi hơn. Tuturuuu đang xây dựng hệ sinh thái mở để hiện thực hóa điều đó. Tầm nhìn Tuturuuu.",
         "panels": [
           {
             "label": "Công việc",
@@ -11943,13 +12183,35 @@
           }
         ],
         "status": "Tầm nhìn Tuturuuu",
-        "title": "Khát vọng của bạn.\nSức mạnh để bứt phá."
+        "title": "Thế giới của bạn.\nCùng bạn hành động."
+      },
+      "openness": {
+        "body": "Mã nguồn nền tảng Tuturuuu được cung cấp theo Apache 2.0. Chúng tôi muốn sự mở rộng ra ngoài mã: giao diện dễ hiểu, tri thức có thể di chuyển, quy trình có thể mở rộng và lựa chọn nơi, cách vận hành công nghệ.",
+        "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
+        "kicker": "Thiết kế mở",
+        "note": "Mã nguồn nền tảng Tuturuuu được cung cấp theo Apache 2.0. Chúng tôi muốn sự mở rộng ra ngoài mã: giao diện dễ hiểu, tri thức có thể di chuyển, quy trình có thể mở rộng và lựa chọn nơi, cách vận hành công nghệ. Nền tảng mã nguồn mở đã có · khả năng di chuyển và lựa chọn triển khai đang phát triển.",
+        "panels": [
+          {
+            "label": "Kiểm tra và mở rộng",
+            "detail": "Đọc mã nguồn, xây trên API có tài liệu và điều chỉnh theo giấy phép."
+          },
+          {
+            "label": "Giữ tri thức của bạn",
+            "detail": "Phát triển xuất, nhập và quy trình tương tác đáng tin xuyên hệ sinh thái."
+          },
+          {
+            "label": "Chọn tương lai",
+            "detail": "Hướng tới nhiều lựa chọn triển khai, mô hình và tiếp tục kết nối hữu ích."
+          }
+        ],
+        "status": "Nền tảng mã nguồn mở đã có · khả năng di chuyển và lựa chọn triển khai đang phát triển",
+        "title": "Hệ sinh thái mở\nđể bạn tự chủ hơn."
       },
       "origin": {
-        "body": "Tuturuuu bắt đầu từ cảm giác quen thuộc: quá nhiều công cụ, quá nhiều ý tưởng dang dở, quá ít thời gian sáng tạo. Sứ mệnh lớn dần từ sắp xếp một ngày đến mở rộng khả năng của mỗi người.",
-        "chapter": "01 / KHẢ NĂNG",
+        "body": "Mỗi ý tưởng cần thời gian. Mỗi công cụ đòi hỏi sự chú ý. Tuturuuu bắt đầu bằng việc giúp mọi người tổ chức công việc; rồi câu hỏi lớn hơn xuất hiện: công nghệ có thể mở thêm không gian để suy nghĩ, học hỏi và sáng tạo như thế nào?",
+        "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Khởi đầu từ con người",
-        "note": "Tuturuuu bắt đầu từ cảm giác quen thuộc: quá nhiều công cụ, quá nhiều ý tưởng dang dở, quá ít thời gian sáng tạo. Sứ mệnh lớn dần từ sắp xếp một ngày đến mở rộng khả năng của mỗi người. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Mỗi ý tưởng cần thời gian. Mỗi công cụ đòi hỏi sự chú ý. Tuturuuu bắt đầu bằng việc giúp mọi người tổ chức công việc; rồi câu hỏi lớn hơn xuất hiện: công nghệ có thể mở thêm không gian để suy nghĩ, học hỏi và sáng tạo như thế nào? Mục đích khởi đầu.",
         "panels": [
           {
             "label": "Vấn đề cá nhân",
@@ -11965,13 +12227,35 @@
           }
         ],
         "status": "Mục đích khởi đầu",
-        "title": "Chúng tôi muốn\nlấy lại sự tập trung."
+        "title": "Bắt đầu từ mong muốn\nđược tập trung hơn."
+      },
+      "ownership": {
+        "body": "Chúng tôi xây dựng và vận hành sản phẩm riêng cho tệp, họp, thư, chat, tài liệu, CRM, danh bạ, tài chính và vận hành. Tuturuuu chịu trách nhiệm về cách các mảnh ghép cùng phát triển—và tạo nền tảng để mọi người làm chủ công nghệ nhiều hơn.",
+        "chapter": "02 / XÂY DỰNG THẾ GIỚI",
+        "kicker": "TUTURUUU / ONE ECOSYSTEM",
+        "note": "Chúng tôi xây dựng và vận hành sản phẩm riêng cho tệp, họp, thư, chat, tài liệu, CRM, danh bạ, tài chính và vận hành. Tuturuuu chịu trách nhiệm về cách các mảnh ghép cùng phát triển—và tạo nền tảng để mọi người làm chủ công nghệ nhiều hơn. Hệ sinh thái sản phẩm do Tuturuuu sở hữu · khả năng và quyền truy cập tùy ứng dụng.",
+        "panels": [
+          {
+            "label": "Sản phẩm của chúng tôi",
+            "detail": "Một lựa chọn nhất quán cho giao tiếp, cộng tác và vận hành."
+          },
+          {
+            "label": "Trách nhiệm vận hành",
+            "detail": "Tuturuuu xây dựng, vận hành và phát triển hệ sinh thái sản phẩm."
+          },
+          {
+            "label": "Giá trị tích lũy",
+            "detail": "Mỗi khả năng mới làm phong phú ngữ cảnh cho toàn hệ thống."
+          }
+        ],
+        "status": "Hệ sinh thái sản phẩm do Tuturuuu sở hữu · khả năng và quyền truy cập tùy ứng dụng",
+        "title": "Một hệ sinh thái.\nMột trách nhiệm dài hạn."
       },
       "pilot": {
-        "body": "Kế hoạch tham khảo 12 tuần, phụ thuộc dữ liệu và phạm vi thống nhất. Bắt đầu với một vấn đề nhân lực; chỉ bổ sung tối đa hai vấn đề khi bước đầu chứng minh được giá trị.",
+        "body": "Hợp tác dự kiến 12 tuần bắt đầu với một câu hỏi nhân sự và kế hoạch đánh giá rõ ràng. Điều chỉnh thành phần phù hợp, thử với người dùng và cùng quyết định liệu bằng chứng có đủ để mở rộng tình huống sử dụng.",
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Lộ trình kiểm chứng có giới hạn",
-        "note": "Kế hoạch tham khảo 12 tuần, phụ thuộc dữ liệu và phạm vi thống nhất. Bắt đầu với một vấn đề nhân lực; chỉ bổ sung tối đa hai vấn đề khi bước đầu chứng minh được giá trị. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường. Cấu trúc ngân sách: tách khảo sát, điều chỉnh, đánh giá và hỗ trợ; giới hạn chi phí mô hình và hạ tầng; thống nhất mốc và báo giá sau khảo sát dữ liệu. Tiến độ tham khảo, không phải cam kết bàn giao.",
+        "note": "Hợp tác dự kiến 12 tuần bắt đầu với một câu hỏi nhân sự và kế hoạch đánh giá rõ ràng. Điều chỉnh thành phần phù hợp, thử với người dùng và cùng quyết định liệu bằng chứng có đủ để mở rộng tình huống sử dụng. Kế hoạch minh họa · cần thống nhất phạm vi.",
         "panels": [
           {
             "label": "Tuần 01–03 / Xác định",
@@ -11987,13 +12271,13 @@
           }
         ],
         "status": "Kế hoạch minh họa · cần thống nhất phạm vi",
-        "title": "Bắt đầu nhỏ.\nHọc từ thực tế."
+        "title": "Xây một vòng hữu ích.\nHọc hỏi. Rồi mở rộng."
       },
       "platform": {
-        "body": "Công việc, giao tiếp, vận hành và học tập cần gắn kết. Tuturuuu đưa các lĩnh vực này vào một hệ sinh thái đang phát triển, tạo nền móng cho trí tuệ hiểu sự liên kết trong công việc.",
-        "chapter": "02 / HỆ SINH THÁI",
+        "body": "Nhiệm vụ thể hiện ý định. Lịch thể hiện ràng buộc. Hội thoại ghi lại quyết định. Tài liệu lưu tri thức. Tài chính và danh bạ gắn công việc với quan hệ thực. Hệ sinh thái là nền tảng để kết nối các tín hiệu này có trách nhiệm.",
+        "chapter": "02 / XÂY DỰNG THẾ GIỚI",
         "kicker": "Đã có nền móng",
-        "note": "Công việc, giao tiếp, vận hành và học tập cần gắn kết. Mã nguồn sản phẩm của chúng tôi đã bao phủ các lĩnh vực này, tạo nền móng cho trí tuệ hiểu được sự liên kết trong công việc. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Nhiệm vụ thể hiện ý định. Lịch thể hiện ràng buộc. Hội thoại ghi lại quyết định. Tài liệu lưu tri thức. Tài chính và danh bạ gắn công việc với quan hệ thực. Hệ sinh thái là nền tảng để kết nối các tín hiệu này có trách nhiệm. Nền tảng sản phẩm hiện có · mức độ cung cấp tùy ứng dụng.",
         "panels": [
           {
             "label": "Công việc & cộng tác",
@@ -12009,22 +12293,22 @@
           }
         ],
         "status": "Nền tảng sản phẩm hiện có · mức độ cung cấp tùy ứng dụng",
-        "title": "Nhiều ứng dụng.\nMột bức tranh lớn."
+        "title": "Mỗi sản phẩm hữu ích\nthêm một mảnh ghép thế giới."
       },
       "pricing": {
-        "body": "Thuê bao hỗ trợ sản phẩm hằng ngày. Thí điểm phân tích riêng có phạm vi, kế hoạch và ngân sách riêng; không nằm trong ước tính thuê bao.",
-        "chapter": "05 / ĐỘNG LỰC TĂNG TRƯỞNG",
+        "body": "Thuê bao không gian làm việc giúp tiếp cận hệ sinh thái hằng ngày. Hợp tác nghiên cứu hoặc phân tích chuyên biệt có phạm vi và ngân sách riêng. Bắt đầu ở nơi sản phẩm hữu ích, rồi mở rộng khi lớp tiếp theo chứng minh giá trị.",
+        "chapter": "05 / ĐỒNG HÀNH BỀN VỮNG",
         "kicker": "Kinh tế không gian làm việc",
-        "note": "Thuê bao hỗ trợ sản phẩm hằng ngày. Thí điểm phân tích riêng có phạm vi, kế hoạch và ngân sách riêng; không nằm trong ước tính thuê bao. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Thuê bao không gian làm việc giúp tiếp cận hệ sinh thái hằng ngày. Hợp tác nghiên cứu hoặc phân tích chuyên biệt có phạm vi và ngân sách riêng. Bắt đầu ở nơi sản phẩm hữu ích, rồi mở rộng khi lớp tiếp theo chứng minh giá trị. Giá hiện tại · thay đổi hạn mức chờ triển khai.",
         "panels": [],
         "status": "Giá hiện tại · thay đổi hạn mức chờ triển khai",
-        "title": "Bắt đầu từ hữu ích.\nLớn lên cùng giá trị."
+        "title": "Một cách thực tế\nđể bắt đầu đồng hành."
       },
       "problem": {
-        "body": "Lời hứa với khách hàng nằm trong email. Năng lực đội ngũ nằm trong bảng tính. Quyết định trôi vào cuộc họp. Một người phải ghi nhớ toàn bộ hoạt động của doanh nghiệp.",
-        "chapter": "01 / KHẢ NĂNG",
+        "body": "Cam kết với khách hàng đến qua email. Kế hoạch nằm trên bảng nhiệm vụ. Quyết định được đưa ra trong cuộc họp. Ngữ cảnh nằm sâu trong tài liệu. Con người phải nối mọi thứ lại—còn AI mạnh đến đâu cũng chỉ thấy từng mảnh.",
+        "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Những việc không tên",
-        "note": "Lời hứa với khách hàng nằm trong email. Năng lực đội ngũ nằm trong bảng tính. Quyết định trôi vào cuộc họp. Một người phải ghi nhớ toàn bộ hoạt động của doanh nghiệp. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Cam kết với khách hàng đến qua email. Kế hoạch nằm trên bảng nhiệm vụ. Quyết định được đưa ra trong cuộc họp. Ngữ cảnh nằm sâu trong tài liệu. Con người phải nối mọi thứ lại—còn AI mạnh đến đâu cũng chỉ thấy từng mảnh. Thách thức vận hành quen thuộc.",
         "panels": [
           {
             "label": "09:00 / Cam kết",
@@ -12040,13 +12324,13 @@
           }
         ],
         "status": "Thách thức vận hành quen thuộc",
-        "title": "Con người tài năng.\nCông việc rời rạc."
+        "title": "Công việc kết nối.\nCông cụ thường rời rạc."
       },
       "readiness": {
-        "body": "Hệ sinh thái tạo điểm xuất phát để điều chỉnh. Nguyên mẫu phân tích nhân lực vẫn cần quá trình phát triển và kiểm chứng theo phạm vi cụ thể.",
+        "body": "Chúng tôi có bề mặt sản phẩm, quyền không gian làm việc, công cụ AI, cộng tác và mô phỏng. Ngữ cảnh xuyên sản phẩm và hỗ trợ quyết định nhân sự vẫn cần triển khai, đánh giá có giới hạn. Đó là cây cầu chúng tôi sẵn sàng xây cùng đối tác.",
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Tham vọng có điểm xuất phát rõ ràng",
-        "note": "Hệ sinh thái tạo điểm xuất phát để điều chỉnh. Nguyên mẫu phân tích nhân lực vẫn cần quá trình phát triển và kiểm chứng theo phạm vi cụ thể. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Chúng tôi có bề mặt sản phẩm, quyền không gian làm việc, công cụ AI, cộng tác và mô phỏng. Ngữ cảnh xuyên sản phẩm và hỗ trợ quyết định nhân sự vẫn cần triển khai, đánh giá có giới hạn. Đó là cây cầu chúng tôi sẵn sàng xây cùng đối tác. Ranh giới năng lực và bàn giao.",
         "panels": [
           {
             "label": "Nền tảng hiện có",
@@ -12062,13 +12346,44 @@
           }
         ],
         "status": "Ranh giới năng lực và bàn giao",
-        "title": "Nền móng đã có.\nBước tiếp theo rõ ràng."
+        "title": "Nền tảng đã có.\nKết nối là việc tiếp theo."
+      },
+      "references": {
+        "body": "Thống kê trong bài mô tả thế giới quanh Tuturuuu, không phải kết quả hiệu suất của Tuturuuu. Hãy đọc cùng thời điểm, mẫu và phương pháp; chiến lược của chúng tôi là cách diễn giải các tín hiệu đó.",
+        "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
+        "kicker": "Bằng chứng & tài liệu",
+        "note": "Thống kê trong bài mô tả thế giới quanh Tuturuuu, không phải kết quả hiệu suất của Tuturuuu. Hãy đọc cùng thời điểm, mẫu và phương pháp; chiến lược của chúng tôi là cách diễn giải các tín hiệu đó. Nguồn được xem xét tháng 9/2026 · ghi rõ dự báo và tự báo cáo.",
+        "panels": [],
+        "status": "Nguồn được xem xét tháng 9/2026 · ghi rõ dự báo và tự báo cáo",
+        "title": "Khát vọng lớn cần\nbằng chứng truy xuất được."
+      },
+      "research": {
+        "body": "Trước khi mở rộng hành vi tác tử phức tạp, chúng tôi nghiên cứu bằng mô phỏng. Hive và Mind kết nối vai trò, quy trình tương tác, môi trường và lịch sử phiên nghiên cứu để khảo sát phối hợp, bàn giao và phục hồi khi lỗi.",
+        "chapter": "04 / XÂY DỰNG NIỀM TIN",
+        "kicker": "HIVE × MIND",
+        "note": "Trước khi mở rộng hành vi tác tử phức tạp, chúng tôi nghiên cứu bằng mô phỏng. Hive và Mind kết nối vai trò, quy trình tương tác, môi trường và lịch sử phiên nghiên cứu để khảo sát phối hợp, bàn giao và phục hồi khi lỗi. Đang nghiên cứu và thử nghiệm · mô phỏng chưa chứng minh hiệu quả thực tế.",
+        "panels": [
+          {
+            "label": "Tạo bối cảnh",
+            "detail": "Vai trò, ngữ cảnh thế giới và điều kiện kịch bản."
+          },
+          {
+            "label": "Điều phối tác tử",
+            "detail": "Các cặp tương tác và quy trình được thiết kế."
+          },
+          {
+            "label": "Quan sát và học hỏi",
+            "detail": "Lịch sử chạy, nhịp mô phỏng và phiên nghiên cứu."
+          }
+        ],
+        "status": "Đang nghiên cứu và thử nghiệm · mô phỏng chưa chứng minh hiệu quả thực tế",
+        "title": "Luyện phối hợp trong\nthế giới có thể kiểm tra."
       },
       "roadmap": {
-        "body": "Lộ trình gồm các khả năng và điều kiện kiểm chứng. Mỗi giai đoạn phải chứng minh độ tin cậy, tính hữu ích, niềm tin và chi phí khả thi trước khi tiến tiếp.",
-        "chapter": "06 / TẦM NHÌN DÀI HẠN",
+        "body": "Làm sản phẩm đáng tin. Kết nối ngữ cảnh theo quyền. Kiểm chứng quy trình có duyệt. Phối hợp tác tử chuyên biệt. Mở rộng lựa chọn triển khai và mô hình. Mỗi bước cần đem lại năng lực hữu ích và quyền kiểm soát lớn hơn.",
+        "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Tiến lên bằng bằng chứng",
-        "note": "Lộ trình gồm các khả năng và điều kiện kiểm chứng. Mỗi giai đoạn phải chứng minh độ tin cậy, tính hữu ích, niềm tin và chi phí khả thi trước khi tiến tiếp. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Làm sản phẩm đáng tin. Kết nối ngữ cảnh theo quyền. Kiểm chứng quy trình có duyệt. Phối hợp tác tử chuyên biệt. Mở rộng lựa chọn triển khai và mô hình. Mỗi bước cần đem lại năng lực hữu ích và quyền kiểm soát lớn hơn. Lộ trình chiến lược · chưa cam kết ngày ra mắt.",
         "panels": [
           {
             "label": "Hiện tại / Củng cố nền móng",
@@ -12084,13 +12399,13 @@
           }
         ],
         "status": "Lộ trình chiến lược · chưa cam kết ngày ra mắt",
-        "title": "Tầm nhìn lớn.\nTừng bước vững chắc."
+        "title": "Năng lực tích lũy\nkhi từng bước xứng đáng."
       },
       "shift": {
-        "body": "Bước tiến tiếp theo là AI có thể làm việc trong bối cảnh doanh nghiệp: điều gì quan trọng, điều gì khả thi và điều gì cần sự phán đoán của bạn.",
-        "chapter": "01 / KHẢ NĂNG",
+        "body": "AI đang chuyển từ hội thoại riêng lẻ sang công cụ và tác tử có thể hành động qua nhiều quy trình. Chúng tôi tin giá trị lâu dài đến từ ngữ cảnh thực, quyền hạn rõ ràng và những con người không ngừng học hỏi.",
+        "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Kỷ nguyên làm việc tiếp theo",
-        "note": "Bước tiến tiếp theo là AI có thể làm việc trong bối cảnh doanh nghiệp: điều gì quan trọng, điều gì khả thi và điều gì cần sự phán đoán của bạn. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "AI đang chuyển từ hội thoại riêng lẻ sang công cụ và tác tử có thể hành động qua nhiều quy trình. Chúng tôi tin giá trị lâu dài đến từ ngữ cảnh thực, quyền hạn rõ ràng và những con người không ngừng học hỏi. Luận điểm chiến lược.",
         "panels": [
           {
             "label": "01 / Công cụ",
@@ -12106,13 +12421,13 @@
           }
         ],
         "status": "Luận điểm chiến lược",
-        "title": "Từ dùng công cụ.\nĐến có cộng sự."
+        "title": "Từ trả lời câu hỏi\nđến cùng gánh vác công việc."
       },
       "simulation": {
-        "body": "Hệ thống hỗ trợ quyết định hữu ích phải làm rõ giả định. Mô phỏng năng lực đơn giản này minh họa nguyên tắc: thay đầu vào, so sánh khoảng chênh rồi thảo luận những đánh đổi liên quan đến con người.",
-        "chapter": "03 / KIỂM CHỨNG ĐẦU TIÊN",
+        "body": "Trợ lý hữu ích cần giúp xem xét giả định. Mô phỏng năng lực này làm rõ một quan hệ đơn giản: số người, giờ sẵn có và nhu cầu. Nó minh họa cách công cụ hỗ trợ quyết định có thể mở ra thảo luận trước hành động.",
+        "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Khám phá trước khi cam kết",
-        "note": "Hệ thống hỗ trợ quyết định hữu ích phải làm rõ giả định. Mô phỏng năng lực đơn giản này minh họa nguyên tắc: thay đầu vào, so sánh khoảng chênh rồi thảo luận những đánh đổi liên quan đến con người. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Trợ lý hữu ích cần giúp xem xét giả định. Mô phỏng năng lực này làm rõ một quan hệ đơn giản: số người, giờ sẵn có và nhu cầu. Nó minh họa cách công cụ hỗ trợ quyết định có thể mở ra thảo luận trước hành động. Minh họa tương tác · dữ liệu giả lập.",
         "panels": [
           {
             "label": "Nhu cầu",
@@ -12128,13 +12443,13 @@
           }
         ],
         "status": "Minh họa tương tác · dữ liệu giả lập",
-        "title": "Nếu thử đổi\nkế hoạch trước thì sao?"
+        "title": "Thử quyết định\ntrước khi đưa ra cam kết."
       },
       "skills": {
-        "body": "Kết nối kỹ năng dự án cần với kỹ năng mọi người chọn chia sẻ. Biến khoảng trống thành lộ trình học, cơ hội cố vấn và bài tập thực hành.",
-        "chapter": "03 / KIỂM CHỨNG ĐẦU TIÊN",
+        "body": "Nhà tuyển dụng trong khảo sát Diễn đàn Kinh tế Thế giới dự báo 39% kỹ năng cốt lõi sẽ thay đổi tới năm 2030. Chúng tôi muốn công việc và học tập bổ trợ nhau: hồ sơ kỹ năng tự nguyện, hướng dẫn và lộ trình phát triển gắn với dự án thực.",
+        "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Ứng dụng 02 / Phát triển đội ngũ",
-        "note": "Kết nối kỹ năng dự án cần với kỹ năng mọi người chọn chia sẻ. Biến khoảng trống thành lộ trình học, cơ hội cố vấn và bài tập thực hành. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Nhà tuyển dụng trong khảo sát Diễn đàn Kinh tế Thế giới dự báo 39% kỹ năng cốt lõi sẽ thay đổi tới năm 2030. Chúng tôi muốn công việc và học tập bổ trợ nhau: hồ sơ kỹ năng tự nguyện, hướng dẫn và lộ trình phát triển gắn với dự án thực. Mô-đun thí điểm đề xuất.",
         "panels": [
           {
             "label": "Dữ liệu đầu vào",
@@ -12150,13 +12465,35 @@
           }
         ],
         "status": "Mô-đun thí điểm đề xuất",
-        "title": "Cơ hội tiếp theo\nbắt đầu từ học tập."
+        "title": "Rồi giúp con người\ntrưởng thành cùng cơ hội."
+      },
+      "tasks": {
+        "body": "Một suy nghĩ trở thành nhiệm vụ, rồi thành kế hoạch. Bảng việc, dự án, chu kỳ và gợi ý thông minh giúp mọi người xác định điều quan trọng. Đây là viên gạch đầu tiên để trợ lý hiểu điều bạn muốn hoàn thành.",
+        "chapter": "02 / XÂY DỰNG THẾ GIỚI",
+        "kicker": "Sản phẩm nổi bật / Tasks",
+        "note": "Một suy nghĩ trở thành nhiệm vụ, rồi thành kế hoạch. Bảng việc, dự án, chu kỳ và gợi ý thông minh giúp mọi người xác định điều quan trọng. Đây là viên gạch đầu tiên để trợ lý hiểu điều bạn muốn hoàn thành. Năng lực đã triển khai · tùy quyền và khả năng cung cấp.",
+        "panels": [
+          {
+            "label": "Ghi lại dễ dàng",
+            "detail": "Bảng, dự án, chu kỳ và hộp ghi nhanh."
+          },
+          {
+            "label": "Xem xét gợi ý thông minh",
+            "detail": "Con người quyết định thông tin nhiệm vụ được đề xuất."
+          },
+          {
+            "label": "Dành thời gian thực hiện",
+            "detail": "Kết nối nhiệm vụ, thói quen và tùy chọn lịch."
+          }
+        ],
+        "status": "Năng lực đã triển khai · tùy quyền và khả năng cung cấp",
+        "title": "Ý định trở thành\nbước tiếp theo."
       },
       "team": {
-        "body": "Được sáng lập bởi Võ Hoàng Phúc, Tuturuuu mang đến nền tảng sản phẩm và kỹ thuật. Đối tác nghiệp vụ mang đến câu hỏi thực tế, hiểu biết vận hành và những người sẽ sử dụng kết quả.",
+        "body": "Do Võ Hoàng Phúc sáng lập, Tuturuuu đóng góp năng lực sản phẩm, kỹ thuật và duy trì hệ sinh thái. Đối tác mang đến chuyên môn lĩnh vực, quy trình thực và bối cảnh đánh giá. Cùng nhau, chúng ta biến câu hỏi nghiên cứu thành công cụ hữu ích.",
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Cộng sự cùng xây dựng",
-        "note": "Tuturuuu mang đến nền tảng sản phẩm và kỹ thuật. Đối tác nghiệp vụ mang đến câu hỏi thực tế, hiểu biết vận hành và những người sẽ sử dụng kết quả. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Do Võ Hoàng Phúc sáng lập, Tuturuuu đóng góp năng lực sản phẩm, kỹ thuật và duy trì hệ sinh thái. Đối tác mang đến chuyên môn lĩnh vực, quy trình thực và bối cảnh đánh giá. Cùng nhau, chúng ta biến câu hỏi nghiên cứu thành công cụ hữu ích. Mô hình hợp tác đề xuất.",
         "panels": [
           {
             "label": "Đầu mối kỹ thuật Tuturuuu",
@@ -12172,13 +12509,13 @@
           }
         ],
         "status": "Mô hình hợp tác đề xuất",
-        "title": "Chung chuyên môn.\nRõ trách nhiệm."
+        "title": "Sứ mệnh chung.\nTrách nhiệm rõ ràng."
       },
       "trust": {
-        "body": "AI nhân lực nên giúp con người phát triển và lập kế hoạch tốt hơn. Thí điểm đề xuất đặt minh bạch, dữ liệu phù hợp và sự xem xét thực chất của con người ở trung tâm.",
+        "body": "Tự động hóa hữu ích cần ranh giới rõ: trợ lý được đọc gì, làm gì và khi nào cần con người. Chúng tôi muốn mọi người hiểu, chất vấn, sửa và dừng hành động quan trọng, đồng thời giữ tiếng nói khi hệ thống ngày càng mạnh.",
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Quyền chủ động của con người",
-        "note": "AI nhân lực nên giúp con người phát triển và lập kế hoạch tốt hơn. Thí điểm đề xuất đặt minh bạch, dữ liệu phù hợp và sự xem xét thực chất của con người ở trung tâm. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Tự động hóa hữu ích cần ranh giới rõ: trợ lý được đọc gì, làm gì và khi nào cần con người. Chúng tôi muốn mọi người hiểu, chất vấn, sửa và dừng hành động quan trọng, đồng thời giữ tiếng nói khi hệ thống ngày càng mạnh. Yêu cầu quản trị thí điểm.",
         "panels": [
           {
             "label": "Chỉ dùng dữ liệu cần thiết",
@@ -12194,13 +12531,13 @@
           }
         ],
         "status": "Yêu cầu quản trị thí điểm",
-        "title": "Thông minh hơn.\nCon người làm chủ."
+        "title": "Trợ lý giỏi hơn\nphải giúp bạn tự chủ hơn."
       },
       "vision": {
-        "body": "Hãy hình dung một cộng sự nhớ đúng bối cảnh, thử các phương án và hỗ trợ thực hiện kế hoạch với sự cho phép của bạn. Tuturuuu đang hướng đến tương lai đó.",
-        "chapter": "01 / KHẢ NĂNG",
+        "body": "Hãy hình dung bạn mô tả kết quả mong muốn thay vì thao tác qua mười công cụ. Trợ lý tập hợp tri thức cần thiết, khảo sát lựa chọn và hỗ trợ thực hiện kế hoạch đã duyệt. Chúng tôi bắt đầu từ công việc hằng ngày để xây dựng sự thấu hiểu.",
+        "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Đích đến dài hạn",
-        "note": "Hãy hình dung một cộng sự nhớ đúng bối cảnh, thử các phương án và hỗ trợ thực hiện kế hoạch với sự cho phép của bạn. Tuturuuu đang hướng đến tương lai đó. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Hãy hình dung bạn mô tả kết quả mong muốn thay vì thao tác qua mười công cụ. Trợ lý tập hợp tri thức cần thiết, khảo sát lựa chọn và hỗ trợ thực hiện kế hoạch đã duyệt. Chúng tôi bắt đầu từ công việc hằng ngày để xây dựng sự thấu hiểu. Tầm nhìn dài hạn.",
         "panels": [
           {
             "label": "Thấu hiểu",
@@ -12216,13 +12553,13 @@
           }
         ],
         "status": "Tầm nhìn dài hạn",
-        "title": "Tương lai như JARVIS.\nTừ từng khả năng\nthực sự hữu ích."
+        "title": "Một cộng sự như JARVIS.\nMột khởi đầu rất thực tế."
       },
       "workflow": {
-        "body": "Hình dung chủ doanh nghiệp nhỏ hỏi Mira một câu. Câu trả lời kết nối cam kết giao hàng, năng lực đội ngũ và cơ hội học tập thành kế hoạch để cả đội xem xét.",
-        "chapter": "02 / HỆ SINH THÁI",
+        "body": "Theo dõi một quy trình tương lai: Mira kết nối yêu cầu khách hàng với cam kết giao hàng, năng lực và kỹ năng đội nhóm muốn phát triển. Trợ lý đề xuất lựa chọn để mọi người xem xét. Giá trị nằm ở quyết định tốt hơn với đầy đủ ngữ cảnh.",
+        "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Một ngày trong tương lai",
-        "note": "Hình dung chủ doanh nghiệp nhỏ hỏi Mira một câu. Câu trả lời kết nối cam kết giao hàng, năng lực đội ngũ và cơ hội học tập thành kế hoạch để cả đội xem xét. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Theo dõi một quy trình tương lai: Mira kết nối yêu cầu khách hàng với cam kết giao hàng, năng lực và kỹ năng đội nhóm muốn phát triển. Trợ lý đề xuất lựa chọn để mọi người xem xét. Giá trị nằm ở quyết định tốt hơn với đầy đủ ngữ cảnh. Tình huống tương lai minh họa.",
         "panels": [
           {
             "label": "Hiểu cam kết",
@@ -12238,13 +12575,13 @@
           }
         ],
         "status": "Tình huống tương lai minh họa",
-        "title": "“Đội mình nhận thêm\ndự án này được không?”"
+        "title": "“Chúng ta có thể\nnhận dự án này không?”"
       },
       "workforce": {
-        "body": "Doanh nghiệp siêu nhỏ, nhỏ và vừa cần hỗ trợ thực tế mà không phải có phòng phân tích lớn. Chúng tôi đề xuất bắt đầu với ba quyết định nhân lực gắn trực tiếp với công việc hằng ngày.",
-        "chapter": "03 / KIỂM CHỨNG ĐẦU TIÊN",
+        "body": "Trong khảo sát OECD, 31% doanh nghiệp nhỏ và vừa dùng AI tạo sinh; trong nhóm sử dụng, 65% cho biết hiệu suất nhân viên được cải thiện. Đây là lý do để thử nghiệm hỗ trợ thực tế, không phải bằng chứng mọi sản phẩm đều đạt kết quả tương tự.",
+        "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Bắt đầu từ nhu cầu thật",
-        "note": "Doanh nghiệp siêu nhỏ, nhỏ và vừa cần hỗ trợ thực tế mà không phải có phòng phân tích lớn. Chúng tôi đề xuất bắt đầu với ba quyết định nhân lực gắn trực tiếp với công việc hằng ngày. Dùng nhãn trạng thái để phân biệt nền tảng hiện có, phát triển đề xuất và tầm nhìn dài hạn. Không trình bày đầu ra minh họa như kết quả đã đo lường.",
+        "note": "Trong khảo sát OECD, 31% doanh nghiệp nhỏ và vừa dùng AI tạo sinh; trong nhóm sử dụng, 65% cho biết hiệu suất nhân viên được cải thiện. Đây là lý do để thử nghiệm hỗ trợ thực tế, không phải bằng chứng mọi sản phẩm đều đạt kết quả tương tự. Đề xuất nguyên mẫu hỗ trợ quyết định nhân lực.",
         "panels": [
           {
             "label": "01 / Năng lực",
@@ -12260,9 +12597,10 @@
           }
         ],
         "status": "Đề xuất nguyên mẫu hỗ trợ quyết định nhân lực",
-        "title": "Đội ngũ nhỏ xứng đáng\ncó trí tuệ mạnh mẽ."
+        "title": "Hữu ích cho những đội nhóm\nthực sự cần đến nó."
       }
     },
+    "sourceLabel": "Nguồn",
     "stages": ["Lập kế hoạch", "Kết nối", "Hoàn thành", "Nhìn lại"],
     "title": "Tuturuuu — kỷ nguyên cộng sự thông minh"
   },
@@ -12316,6 +12654,234 @@
     "hourly_total_from_last_12_hours": "Tổng số token sử dụng hàng giờ trong 12 giờ gần đây",
     "monthly_total_from_12_recent_months": "Tổng số token sử dụng hàng tháng trong 12 tháng gần đây",
     "prompt_tokens": "Token lệnh nhắc"
+  },
+  "portfolio": {
+    "all": "Tất cả ứng dụng",
+    "categories": {
+      "ai": "AI & thử nghiệm",
+      "learning": "Học tập & phát triển",
+      "miscellaneous": "Công cụ & hạ tầng",
+      "operations": "Vận hành kinh doanh",
+      "productivity": "Công việc & cộng tác"
+    },
+    "closing": "Mang đến câu hỏi\nxứng đáng để cùng xây dựng.",
+    "closingBody": "Hãy chia sẻ nhóm người bạn muốn hỗ trợ, quy trình cần cải thiện và kết quả hữu ích mà bạn mong đợi.",
+    "contact": "Cùng chúng tôi xây dựng",
+    "deliverables": "Hợp tác có thể gồm đầu mối kỹ thuật, gói công việc rõ phạm vi, thời gian và ngân sách dự kiến, đầu ra cấu hình được, kế hoạch đánh giá và tài liệu bàn giao. Hai bên thống nhất trong giai đoạn tìm hiểu.",
+    "description": "Khám phá sản phẩm, năng lực kỹ thuật và cơ hội hợp tác nghiên cứu ứng dụng cùng Tuturuuu.",
+    "directory": {
+      "ai": {
+        "description": "Thử nghiệm mô hình, tác nhân và đánh giá"
+      },
+      "apps": {
+        "description": "Cổng vào hệ sinh thái"
+      },
+      "calendar": {
+        "description": "Sự kiện, thói quen và xếp lịch theo ưu tiên"
+      },
+      "chat": {
+        "description": "Con người, kênh và AI trong hội thoại chung"
+      },
+      "cms": {
+        "description": "Quản lý nội dung và quy trình xuất bản"
+      },
+      "colab": {
+        "description": "Học AI cộng tác và hội thảo"
+      },
+      "contacts": {
+        "description": "Con người, khách hàng và ngữ cảnh quan hệ"
+      },
+      "docs": {
+        "description": "Hướng dẫn kỹ thuật và tài liệu tham khảo"
+      },
+      "drive": {
+        "description": "Tệp và lưu trữ chia sẻ"
+      },
+      "finance": {
+        "description": "Ví, giao dịch, ngân sách và hóa đơn"
+      },
+      "forms": {
+        "description": "Biểu mẫu, phản hồi và thu thập dữ liệu"
+      },
+      "git": {
+        "description": "Khám phá kho mã nguồn"
+      },
+      "hive": {
+        "description": "Mô phỏng tác nhân và thử nghiệm"
+      },
+      "inventory": {
+        "description": "Sản phẩm, tồn kho và dữ liệu vận hành"
+      },
+      "learn": {
+        "description": "Trải nghiệm học tập"
+      },
+      "lettin": {
+        "description": "Xây dựng thế giới, câu chuyện và tri thức chia sẻ"
+      },
+      "mail": {
+        "description": "Nhãn thông minh, hỗ trợ soạn thư và theo dõi phản hồi"
+      },
+      "meet": {
+        "description": "Cuộc họp cùng con người và cộng sự AI"
+      },
+      "mind": {
+        "description": "Tư duy trực quan và ý tưởng kết nối"
+      },
+      "nova": {
+        "description": "Thử nghiệm prompt và thử thách"
+      },
+      "parley": {
+        "description": "Huấn luyện tình huống nhiều người riêng tư và nhập vai cùng AI"
+      },
+      "pay": {
+        "description": "Quy trình thanh toán và tính phí"
+      },
+      "platform": {
+        "description": "Nền tảng không gian làm việc"
+      },
+      "rewise": {
+        "description": "Ôn tập kiến thức và công cụ học tập"
+      },
+      "shortener": {
+        "description": "Liên kết ngắn và tiện ích liên kết"
+      },
+      "storefront": {
+        "description": "Trải nghiệm cửa hàng cho người mua"
+      },
+      "tasks": {
+        "description": "Nhiệm vụ, bảng, dự án và gợi ý thông minh"
+      },
+      "teach": {
+        "description": "Lớp học và vận hành giảng dạy"
+      },
+      "tools": {
+        "description": "Tiện ích cho công việc hằng ngày"
+      },
+      "track": {
+        "description": "Theo dõi thời gian và hoạt động"
+      }
+    },
+    "ecosystem": "Một hệ sinh thái. Nhiều điểm bắt đầu.",
+    "ecosystemBody": "Khám phá danh mục ứng dụng hiện tại theo lĩnh vực. Mỗi sản phẩm có quyền truy cập và mức độ hoàn thiện riêng; việc xuất hiện trong danh mục không có nghĩa mọi tích hợp dự kiến đều đã có.",
+    "engineering": "Từ giao diện\nđến hạ tầng.",
+    "engineeringBody": "Chúng tôi xây dựng xuyên suốt hệ thống vì trí tuệ hữu ích cần nhiều hơn một mô hình: ngữ cảnh, cộng tác, hệ thống đáng tin cậy và tương tác có chủ đích.",
+    "explore": "Khám phá hệ sinh thái",
+    "eyebrow": "TUTURUUU / HỒ SƠ NĂNG LỰC",
+    "hero": "Xây từng sản phẩm.\nMở những khả năng\nkhi chúng kết nối.",
+    "intro": "Một hệ sinh thái sản phẩm, năng lực kỹ thuật và nơi biến nghiên cứu tham vọng thành phần mềm hữu ích. Xây dựng tại Việt Nam, hướng đến chân trời rộng hơn.",
+    "layers": [
+      {
+        "title": "Giao diện cho con người",
+        "detail": "Ứng dụng web, Flutter, tương tác dễ tiếp cận, trải nghiệm tiếng Anh và tiếng Việt."
+      },
+      {
+        "title": "Quy trình thông minh",
+        "detail": "Tích hợp mô hình, công cụ streaming, xếp lịch thông minh, trợ lý giọng nói, con người xem xét."
+      },
+      {
+        "title": "Hệ thống cộng tác",
+        "detail": "Phòng thời gian thực, trạng thái chia sẻ, ngữ cảnh họp, biên tập cộng tác, quyền không gian làm việc."
+      },
+      {
+        "title": "Dữ liệu & triển khai",
+        "detail": "PostgreSQL, kiểm soát theo hàng, API và SDK, edge worker, quy trình phát hành có kiểm thử."
+      }
+    ],
+    "meetBody": "Họp trực tuyến với Mira trong chat phòng và giọng nói Live. AI hiện diện rõ ràng, đầu vào micro chủ động bật, hỗ trợ riêng tư và bước tiếp theo được xem xét.",
+    "meetTitle": "Gặp cộng sự AI của bạn.",
+    "next": "Bước tiếp theo",
+    "openProduct": "Khám phá sản phẩm",
+    "pitch": "Xem tầm nhìn",
+    "process": [
+      "Xác định câu hỏi",
+      "Thống nhất dữ liệu & quản trị",
+      "Xây nguyên mẫu có phạm vi",
+      "Đánh giá cùng người dùng",
+      "Ghi nhận và quyết định"
+    ],
+    "processTitle": "Từ câu hỏi đến bằng chứng theo lộ trình thực tế.",
+    "readDocs": "Đọc hướng dẫn kỹ thuật",
+    "research": "Ý tưởng nghiên cứu xứng đáng\nđược thử nghiệm thực tế.",
+    "researchAreas": [
+      {
+        "title": "Hỗ trợ quyết định nhân lực",
+        "detail": "Nghiên cứu năng lực làm việc, phát triển kỹ năng và hội nhập với giả định minh bạch và con người xem xét."
+      },
+      {
+        "title": "Cộng tác người–AI",
+        "detail": "Khám phá cộng sự AI trong họp, giọng nói có sự đồng thuận và chuyển trao đổi thành hành động được xem xét."
+      },
+      {
+        "title": "Học tập & tri thức",
+        "detail": "Nghiên cứu truy xuất kiến thức, quy trình học tập và cách đội ngũ xây dựng sự tự tin với AI."
+      },
+      {
+        "title": "Điều phối đa tác tử",
+        "detail": "Chúng tôi nghiên cứu hành vi đa tác tử và điều phối quy trình qua các kịch bản mô phỏng. Hive và Mind kết nối tác tử, quy trình tương tác, môi trường chung và lịch sử có thể kiểm tra—để thử nghiệm ý tưởng trước khi mở rộng."
+      }
+    ],
+    "researchBody": "Chúng tôi chào đón trường đại học, nhóm nghiên cứu, doanh nghiệp và đối tác vì cộng đồng cùng khám phá AI ứng dụng, phát triển nhân lực và năng suất số. Tuturuuu có thể đóng góp kỹ thuật sản phẩm và nền tảng phần mềm có thể cấu hình cho nghiên cứu chung, thí điểm được tài trợ và đề xuất liên danh.",
+    "researchNote": "Định hướng hợp tác mở—không khẳng định đã được tài trợ, bảo trợ bởi tổ chức hay có kết quả nghiên cứu được xác nhận.",
+    "source": "Khám phá mã nguồn",
+    "suite": {
+      "body": "Chúng tôi đang xây dựng lựa chọn Tuturuuu toàn diện cho các nhóm sản phẩm như Google Drive, Meet, Mail, Chat và Docs—cùng CRM, Contacts, Finance và hệ thống vận hành. Một hệ sinh thái sản phẩm do Tuturuuu xây dựng, vận hành và phát triển. Nền tảng mở theo Apache 2.0. Chúng tôi chủ động duy trì và phát triển khả năng di chuyển dữ liệu, thay thế dịch vụ và triển khai có thể vận hành độc lập.",
+      "domains": [
+        "Tệp & tri thức",
+        "Họp & hội thoại",
+        "Thư & cam kết",
+        "Nhiệm vụ & thời gian",
+        "CRM & danh bạ",
+        "Tài chính & vận hành"
+      ],
+      "eyebrow": "MỘT HỆ SINH THÁI. CAM KẾT DÀI HẠN.",
+      "items": [
+        {
+          "id": "chat",
+          "title": "Con người và AI. Trong cùng cuộc trò chuyện.",
+          "body": "Smart Chat kết nối con người, các kênh, ngữ cảnh chung và hội thoại AI trong một không gian làm việc. Chúng tôi đang xây dựng những đồng nghiệp có thể biến trao đổi thành công việc được phối hợp.",
+          "status": "Nền tảng Chat đã có · đang phát triển khả năng phối hợp sâu hơn"
+        },
+        {
+          "id": "mail",
+          "title": "Hộp thư về không. Cam kết vẫn được theo sát.",
+          "body": "Smart Mail bắt đầu từ nhãn thông minh, hỗ trợ soạn thư và theo dõi phản hồi. Bước tiếp theo là Mira trích xuất việc cần làm, kết nối cam kết với nhiệm vụ và giúp xử lý dứt điểm công việc trong hộp thư.",
+          "status": "Nền tảng AI cho Mail đã có · Mira trích xuất nhiệm vụ là hướng phát triển"
+        },
+        {
+          "id": "calendar",
+          "title": "Lịch dành chỗ cho điều bạn ưu tiên.",
+          "body": "Nhiệm vụ, thói quen, giờ làm và hạn chót cùng chia sẻ một ngày hữu hạn. Smart Calendar giúp tự động xếp lịch theo ràng buộc của bạn—và đưa ra kế hoạch để bạn điều chỉnh.",
+          "status": "Đã có khả năng xếp lịch thông minh · tùy cấu hình và phạm vi sử dụng"
+        },
+        {
+          "id": "collaboration",
+          "title": "Tư duy trên bảng. Cùng xây dựng tài liệu.",
+          "body": "Bảng trắng thời gian thực và tài liệu cộng tác mang đến không gian chung để suy nghĩ, viết và hoàn thiện. Trải nghiệm cộng tác như Google Docs cần nằm trong cùng hệ sinh thái với công việc mà nó hỗ trợ.",
+          "status": "Đã có nền tảng cộng tác · tiếp tục kết nối sâu hơn giữa các sản phẩm"
+        },
+        {
+          "id": "research",
+          "title": "Trước khi giao việc cho tác tử, hãy để chúng vận hành thế giới.",
+          "body": "Chúng tôi nghiên cứu hành vi đa tác tử và điều phối quy trình qua các kịch bản mô phỏng. Hive và Mind kết nối tác tử, quy trình tương tác, môi trường chung và lịch sử có thể kiểm tra—để thử nghiệm ý tưởng trước khi mở rộng.",
+          "status": "Đang nghiên cứu và thử nghiệm · mô phỏng chưa chứng minh hiệu quả thực tế"
+        }
+      ],
+      "note": "Định hướng dài hạn bao trùm toàn bộ hệ sinh thái. Tính năng, mức độ hoàn thiện và quyền truy cập tùy từng ứng dụng.",
+      "strategy": "Vì sao là hệ sinh thái? Khi AI giúp tạo phiên bản đầu tiên của ứng dụng dễ hơn, chúng tôi tin giá trị lâu dài sẽ chuyển dần sang hệ thống xung quanh. Kiến trúc, phân quyền, hạ tầng chung và kỹ thuật được duy trì liên tục giúp các sản phẩm tập trung cùng tiến bộ. Chúng tôi mở rộng khi giá trị sử dụng và khả năng tái sử dụng xứng đáng với trách nhiệm duy trì thêm phần mềm.",
+      "title": "Bộ công cụ làm việc.\nNền tảng doanh nghiệp.\nTrí tuệ kết nối tất cả."
+    },
+    "taskBody": "Phân cấp nhiệm vụ, gợi ý thông minh, dự án liên bảng và xếp lịch theo ưu tiên. Một trải nghiệm lập kế hoạch kết nối, với con người là người quyết định.",
+    "taskTitle": "Cách thông minh hơn để tiến hành công việc.",
+    "technology": "Công nghệ",
+    "ticker": [
+      "Kỹ thuật sản phẩm",
+      "Con người × AI",
+      "Hệ thống thời gian thực",
+      "Nghiên cứu ứng dụng"
+    ],
+    "title": "Công nghệ cùng cả một hệ sinh thái.",
+    "work": "Sản phẩm tiêu biểu",
+    "workIntro": "Năng lực thực tế. Minh họa bằng những tình huống thường ngày."
   },
   "post-email-data-table": {
     "approval_status": "Trạng thái phê duyệt",

@@ -1,0 +1,215 @@
+.scene {
+  margin: 0;
+  position: relative;
+  min-width: 0;
+}
+.canvas {
+  position: relative;
+  width: 100%;
+  max-width: 660px;
+  margin: auto;
+}
+.canvas svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 44vh;
+  overflow: visible;
+}
+.legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 24px;
+}
+.legend > div {
+  min-width: 0;
+  position: relative;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.marker {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 22px;
+  height: 3px;
+  background: var(--tone);
+}
+.legend h3 {
+  font-size: 13px;
+  letter-spacing: -0.025em;
+  line-height: 1.4;
+  font-weight: 650;
+  margin: 0 0 8px;
+}
+.legend p {
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+.caption {
+  font-size: 9px;
+  color: var(--muted-foreground);
+  margin: 18px 0 0;
+  letter-spacing: 0.05em;
+}
+.productNames {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 6% 7.5% 12%;
+  gap: 5% 2.5%;
+  pointer-events: none;
+}
+.productNames span {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6%;
+  font-size: clamp(7px, 0.8vw, 12px);
+  color: var(--tone);
+}
+.scene[data-scene="platform"] svg path,
+.scene[data-scene="platform"] svg circle {
+  transform: translateY(-8px);
+}
+.scene[data-scene="origin"] {
+  transform: rotate(-3deg);
+}
+.scene[data-scene="origin"] .legend {
+  transform: rotate(3deg);
+}
+.scene[data-scene="problem"] .canvas {
+  filter: drop-shadow(0 12px 12px #00000008);
+}
+.scene[data-scene="shift"] .legend {
+  text-align: center;
+}
+.scene[data-scene="vision"] .legend {
+  gap: 30px;
+  text-align: center;
+}
+.scene[data-scene="vision"] .legend > div {
+  border: 0;
+}
+.scene[data-scene="vision"] .marker {
+  left: calc(50% - 11px);
+}
+.scene[data-scene="context"] .legend {
+  grid-template-columns: 1fr;
+}
+.scene[data-scene="context"] .legend > div {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+  padding-top: 10px;
+}
+.scene[data-scene="workflow"] .legend {
+  counter-reset: step;
+}
+.scene[data-scene="workflow"] .legend h3:before {
+  counter-increment: step;
+  content: "0" counter(step) " / ";
+  color: var(--tone);
+}
+.scene[data-scene="trust"] .legend {
+  grid-template-columns: 1fr;
+}
+.scene[data-scene="trust"] {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 24px;
+}
+.scene[data-scene="trust"] .canvas svg {
+  max-height: 360px;
+}
+.scene[data-scene="team"] .legend > div {
+  border-top: 0;
+  padding: 18px 0 0;
+}
+.scene[data-scene="intelligence"] .legend {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+.scene[data-scene="intelligence"] .legend p {
+  font-size: 10px;
+}
+.scene[data-scene="closing"] .legend {
+  text-align: center;
+}
+.scene[data-scene="closing"] .legend > div {
+  border: 0;
+}
+.scene[data-scene="closing"] .marker {
+  left: calc(50% - 11px);
+}
+@media (max-width: 800px) {
+  .canvas svg {
+    max-height: none;
+  }
+  .legend {
+    gap: 14px;
+  }
+  .legend h3 {
+    font-size: 12px;
+  }
+  .legend p {
+    font-size: 11px;
+  }
+  .scene[data-scene="trust"] {
+    display: block;
+  }
+  .scene[data-scene="intelligence"] .legend {
+    grid-template-columns: 1fr 1fr;
+  }
+  .scene[data-scene="context"] .legend > div {
+    grid-template-columns: 1fr;
+  }
+  .productNames span {
+    font-size: 9px;
+  }
+}
+@media (max-width: 450px) {
+  .legend {
+    grid-template-columns: 1fr;
+  }
+  .scene[data-scene="shift"] .legend,
+  .scene[data-scene="vision"] .legend {
+    text-align: left;
+  }
+  .scene[data-scene="vision"] .marker {
+    left: 0;
+  }
+  .scene[data-scene="origin"] {
+    transform: none;
+  }
+}
+@media print {
+  .canvas svg {
+    max-height: 72mm;
+  }
+  .legend {
+    gap: 4mm;
+    margin-top: 4mm;
+  }
+  .legend h3 {
+    font-size: 9pt;
+  }
+  .legend p {
+    font-size: 7pt;
+  }
+  .scene[data-scene="trust"] {
+    display: block;
+  }
+  .scene[data-scene="intelligence"] .legend {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .productNames span {
+    font-size: 7pt;
+  }
+}

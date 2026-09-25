@@ -1,0 +1,131 @@
+.suite {
+  padding: 100px 6vw;
+  background: #12201c;
+  color: #f3f6ed;
+  --background: #12201c;
+}
+.intro {
+  max-width: 1160px;
+  margin: auto;
+}
+.eyebrow {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #b8c4b9;
+  margin-bottom: 30px;
+}
+.intro h2 {
+  font-size: clamp(36px, 4.7vw, 76px);
+  line-height: 1.06;
+  font-weight: 500;
+  letter-spacing: -0.06em;
+  white-space: pre-line;
+  margin: 0;
+}
+.body {
+  max-width: 760px;
+  font-size: 17px;
+  line-height: 1.8;
+  color: #bac7bc;
+  margin: 32px 0;
+}
+.domains {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 26px;
+  max-width: 780px;
+  padding: 24px 0;
+  border-top: 1px solid #ffffff25;
+  border-bottom: 1px solid #ffffff25;
+}
+.domains span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+}
+.domains i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+.note {
+  color: #a2b0a6;
+  font-size: 11px;
+  line-height: 1.7;
+  max-width: 670px;
+  margin: 20px 0 60px;
+}
+.scenes {
+  max-width: 1160px;
+  margin: auto;
+}
+.scene {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 6vw;
+  padding: 70px 0;
+  align-items: center;
+  border-bottom: 1px solid #ffffff20;
+}
+.visual {
+  position: relative;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--tone) 9%, transparent),
+    transparent 70%
+  );
+}
+.scene:nth-child(even) .visual {
+  order: 2;
+}
+.visual svg {
+  width: 100%;
+  height: auto;
+}
+.index {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #ffffff50;
+  font: 11px var(--font-mono, monospace);
+}
+.copy h3 {
+  font-size: clamp(28px, 3vw, 48px);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.05em;
+  margin: 0 0 22px;
+}
+.copy p {
+  font-size: 14px;
+  line-height: 1.85;
+  color: #bac7bc;
+  margin: 0 0 24px;
+}
+.copy small {
+  display: block;
+  border-left: 2px solid var(--tone);
+  padding-left: 12px;
+  color: #a2b0a6;
+  font-size: 10px;
+  line-height: 1.8;
+}
+@media (max-width: 700px) {
+  .suite {
+    padding: 65px 6vw;
+  }
+  .scene {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding: 45px 0;
+  }
+  .scene:nth-child(even) .visual {
+    order: 0;
+  }
+  .body {
+    font-size: 14px;
+  }
+}

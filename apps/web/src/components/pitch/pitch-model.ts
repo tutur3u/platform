@@ -1,10 +1,20 @@
+import type { CapabilityCopy } from '../capabilities/product-scenes';
 export const SLIDE_IDS = [
   'opening',
   'origin',
   'problem',
+  'moment',
   'shift',
   'vision',
+  'ecosystem',
   'platform',
+  'tasks',
+  'calendar',
+  'mail',
+  'chat',
+  'meet',
+  'collaboration',
+  'ownership',
   'context',
   'ai',
   'workflow',
@@ -13,9 +23,10 @@ export const SLIDE_IDS = [
   'skills',
   'onboarding',
   'simulation',
-  'evidence',
-  'trust',
+  'research',
   'architecture',
+  'trust',
+  'evidence',
   'readiness',
   'pilot',
   'team',
@@ -24,13 +35,21 @@ export const SLIDE_IDS = [
   'audience',
   'pricing',
   'calculator',
+  'openness',
+  'independence',
   'roadmap',
   'intelligence',
   'horizon',
+  'references',
   'closing',
 ] as const;
 export type SlideId = (typeof SLIDE_IDS)[number];
 export interface PitchCopy {
+  sourceLabel: string;
+  references: { label: string; detail: string }[];
+  capabilities: CapabilityCopy;
+  portfolio: string;
+  diagramNote: string;
   contact: string;
   company: string;
   simulation: {

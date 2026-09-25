@@ -14,5 +14,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PitchPage() {
   const messages = await getMessages();
-  return <PitchDeck copy={messages.pitch as PitchCopy} />;
+  return (
+    <PitchDeck
+      copy={
+        { ...messages.pitch, capabilities: messages.capabilities } as PitchCopy
+      }
+    />
+  );
 }

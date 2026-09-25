@@ -16,6 +16,8 @@ import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './pitch.module.css';
 import { pitchBrandColors, pitchBrandStyle, pitchTone } from './pitch-brand';
+import compositions from './pitch-compositions.module.css';
+import { PitchSourceLinks } from './pitch-evidence';
 import { type PitchCopy, SLIDE_IDS, slideFromHash } from './pitch-model';
 import { PitchVisual } from './pitch-visual';
 
@@ -25,6 +27,11 @@ const getPalette = (id: string) =>
     'shift',
     'vision',
     'ai',
+    'meet',
+    'chat',
+    'research',
+    'ownership',
+    'architecture',
     'workforce',
     'trust',
     'horizon',
@@ -257,7 +264,7 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
               style={pitchTone(i)}
               data-palette={getPalette(slideId)}
               data-slide={slideId}
-              className={`${styles.slide} ${i === index ? styles.active : ''}`}
+              className={`${styles.slide} ${compositions.composition} ${i === index ? styles.active : ''}`}
               aria-hidden={i !== index}
               aria-label={`${copy.slide} ${i + 1}: ${slide.kicker}`}
             >
@@ -278,6 +285,7 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
                       : slide.status}
                   </span>
                 )}
+                <PitchSourceLinks id={slideId} copy={copy} />
                 {slideId === 'opening' && (
                   <div className={styles.links}>
                     <button
@@ -291,10 +299,10 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
                     </button>
                   </div>
                 )}
-                {slideId === 'team' && (
+                {(slideId === 'team' || slideId === 'platform') && (
                   <div className={styles.links}>
-                    <a href={`/${locale}/about`}>
-                      {copy.company}
+                    <a href={`/${locale}/portfolio`}>
+                      {copy.portfolio}
                       <ArrowRight size={18} />
                     </a>
                   </div>
