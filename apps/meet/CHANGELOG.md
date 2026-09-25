@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.32.0](https://github.com/tutur3u/platform/compare/meet-v0.31.0...meet-v0.32.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **finance:** add granular invoice audit trail and recovery review ([#5376](https://github.com/tutur3u/platform/issues/5376)) ([b8df666](https://github.com/tutur3u/platform/commit/b8df666804848d96d35ba693d126fe611a3ebf2b))
+* **finance:** add invoice history and recoverable deletion ([3d6dea5](https://github.com/tutur3u/platform/commit/3d6dea5bdbb055073b9b5d5680e391d094874ad2))
+* **finance:** clarify category charts and add promotions management ([88f85ea](https://github.com/tutur3u/platform/commit/88f85eaadb722b42b99537be3c75fabb1715bf09)) ([#5384](https://github.com/tutur3u/platform/issues/5384)) ([b6fd666](https://github.com/tutur3u/platform/commit/b6fd666bccca6aa929166210fb1c6abdb91c1448))
+* **finance:** expand invoice audit review and filters ([c346cac](https://github.com/tutur3u/platform/commit/c346cac5a2dfcdcd944d1fcdfa72f40ec27aa720))
+* **meet:** add playback volume and finish voice turns ([1053212](https://github.com/tutur3u/platform/commit/1053212c4bb583f9dd1cd451d242af40ee841644)) ([#5456](https://github.com/tutur3u/platform/issues/5456)) ([29242b4](https://github.com/tutur3u/platform/commit/29242b45dd25f6fd0bc19e3a2a10801135348bb4))
+* **meet:** automate echo protection and compact call controls ([0c2a9fe](https://github.com/tutur3u/platform/commit/0c2a9fe780f61a82b377cfc6897249593db8c015))
+* **meet:** automatic echo protection and compact call controls ([#5368](https://github.com/tutur3u/platform/issues/5368)) ([4aaceff](https://github.com/tutur3u/platform/commit/4aaceff7a65bad952ad5ffb0560fa79cb0b55398))
+* **meet:** improve mobile meeting entry and ended review ([a889bd1](https://github.com/tutur3u/platform/commit/a889bd13ecf417fdfb308e1fce8d09443d715329))
+* **meet:** improve tablet prejoin, listing, and ended review ([#5477](https://github.com/tutur3u/platform/issues/5477)) ([e507a8f](https://github.com/tutur3u/platform/commit/e507a8f5e45a6c308499090ab4ce0008369ac831))
+* **meet:** redesign the startup screen with Tuturuuu branding ([#5367](https://github.com/tutur3u/platform/issues/5367)) ([fd38331](https://github.com/tutur3u/platform/commit/fd38331a60b0e28dc42faae876705509440136e0))
+* **meet:** unify Mira participant chat and audio controls ([c8f9801](https://github.com/tutur3u/platform/commit/c8f9801a4a342bb8509c67202e26b8ca0ae5e22f)) ([#5450](https://github.com/tutur3u/platform/issues/5450)) ([aa044ef](https://github.com/tutur3u/platform/commit/aa044efcb869f06859be60d8aee137e24b0c7bca))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
+
+### Bug Fixes
+
+* **finance:** restrict promotion forwarding and clarify chart labels ([30d3f05](https://github.com/tutur3u/platform/commit/30d3f053df12360beab94cbdcb0a9fd3a84d38f7))
+* **finance:** retain actors across invoice audit writes ([75e1139](https://github.com/tutur3u/platform/commit/75e11390aa30493ee1f83f95660cfaf7547e13c0)) ([#5383](https://github.com/tutur3u/platform/issues/5383)) ([a1fbb54](https://github.com/tutur3u/platform/commit/a1fbb54532f652116064ab7d7b8d11b217b2b9d4))
+* **finance:** speed up invoice audit history and improve pagination ([b6c165e](https://github.com/tutur3u/platform/commit/b6c165e88e8888facec7744ee16c1d9378bb90e5)) ([#5380](https://github.com/tutur3u/platform/issues/5380)) ([c829653](https://github.com/tutur3u/platform/commit/c8296532b5282324b28c09d3c06a64894694b46c))
+* **meet:** address review findings in mobile scheduling and room review ([f2a637c](https://github.com/tutur3u/platform/commit/f2a637c34d9019c04616606a50c6cd313b0ce68e))
+* **meet:** clarify accessible call control labels ([2d0d0cc](https://github.com/tutur3u/platform/commit/2d0d0cca1d23e3320b87340c77e615379fcabec5))
+* **meet:** diagnose audio stutter and harden playback checks ([c371b60](https://github.com/tutur3u/platform/commit/c371b60a25853ca7a7ff049105cfbb372a96016e))
+* **meet:** harden Mira playback and live status updates ([b70ca43](https://github.com/tutur3u/platform/commit/b70ca43e6151f82a9b7a6eaa3c6cd99abff648e3))
+* **meet:** preserve live speech and improve call recovery ([efb0ef0](https://github.com/tutur3u/platform/commit/efb0ef01023090ce5d9e56a7f9959a631a1611c1)) ([#5416](https://github.com/tutur3u/platform/issues/5416)) ([ab8196c](https://github.com/tutur3u/platform/commit/ab8196c29b17476848dcb95bdfb852cb10a6093d))
+* **meet:** preserve volume changes during live startup ([659c55f](https://github.com/tutur3u/platform/commit/659c55faf3bfc5e1b667eac52e9028a9f6ec9003))
+
 ## [0.31.0](https://github.com/tutur3u/platform/compare/meet-v0.30.1...meet-v0.31.0) (2026-09-25)
 
 

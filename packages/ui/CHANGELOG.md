@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.35.0](https://github.com/tutur3u/platform/compare/ui-v0.34.0...ui-v0.35.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **finance:** add granular invoice audit trail and recovery review ([#5376](https://github.com/tutur3u/platform/issues/5376)) ([b8df666](https://github.com/tutur3u/platform/commit/b8df666804848d96d35ba693d126fe611a3ebf2b))
+* **finance:** add invoice history and recoverable deletion ([3d6dea5](https://github.com/tutur3u/platform/commit/3d6dea5bdbb055073b9b5d5680e391d094874ad2))
+* **finance:** clarify category charts and add promotions management ([88f85ea](https://github.com/tutur3u/platform/commit/88f85eaadb722b42b99537be3c75fabb1715bf09)) ([#5384](https://github.com/tutur3u/platform/issues/5384)) ([b6fd666](https://github.com/tutur3u/platform/commit/b6fd666bccca6aa929166210fb1c6abdb91c1448))
+* **finance:** expand invoice audit review and filters ([c346cac](https://github.com/tutur3u/platform/commit/c346cac5a2dfcdcd944d1fcdfa72f40ec27aa720))
+* **finance:** track tuition coverage and harden invoice exports ([72e07be](https://github.com/tutur3u/platform/commit/72e07bebef58dfee398bcd0d896304d13a2d9aad)) ([#5447](https://github.com/tutur3u/platform/issues/5447)) ([6e822d8](https://github.com/tutur3u/platform/commit/6e822d89d079d9ea8b2677f208c16364cd70d586))
+
+
+### Bug Fixes
+
+* **calendar:** treat working locations as non-reminder events ([454e666](https://github.com/tutur3u/platform/commit/454e666a6465e3debd06260aedc1de7b96ab5d67)) ([#5511](https://github.com/tutur3u/platform/issues/5511)) ([6508ad6](https://github.com/tutur3u/platform/commit/6508ad681aaa174b186022fcbd526e20be682973))
+* **finance:** expose audit amount visibility control ([d3ef238](https://github.com/tutur3u/platform/commit/d3ef2389b1fd189f5b7cd327d1e0b65d03b7b136))
+* **finance:** preserve discount display across invoice views ([11eda37](https://github.com/tutur3u/platform/commit/11eda372d53c60041c676e1e8f9ca0ad06809b13))
+* **finance:** preserve discounts in checkout and saved invoice views ([#5378](https://github.com/tutur3u/platform/issues/5378)) ([2297145](https://github.com/tutur3u/platform/commit/2297145c59d6dbec174e5e22bf69f2fd2b54695b))
+* **finance:** retain actors across invoice audit writes ([75e1139](https://github.com/tutur3u/platform/commit/75e11390aa30493ee1f83f95660cfaf7547e13c0)) ([#5383](https://github.com/tutur3u/platform/issues/5383)) ([a1fbb54](https://github.com/tutur3u/platform/commit/a1fbb54532f652116064ab7d7b8d11b217b2b9d4))
+* **finance:** speed up invoice audit history and improve pagination ([b6c165e](https://github.com/tutur3u/platform/commit/b6c165e88e8888facec7744ee16c1d9378bb90e5)) ([#5380](https://github.com/tutur3u/platform/issues/5380)) ([c829653](https://github.com/tutur3u/platform/commit/c8296532b5282324b28c09d3c06a64894694b46c))
+* **notifications:** replace denied realtime filters with API refresh ([35293ac](https://github.com/tutur3u/platform/commit/35293ac06517c63689780351facec22a93c8da3b))
+* **notifications:** stop invalid user_id realtime filters ([#5377](https://github.com/tutur3u/platform/issues/5377)) ([1c4ab1f](https://github.com/tutur3u/platform/commit/1c4ab1fe9830cfd18fbe98c10b0fbe1d6de168a3))
+* **tasks:** keep synced checklists and board state interactive ([63761b5](https://github.com/tutur3u/platform/commit/63761b59aa8abe99c0e48f1694a1fa0573bdcffa)) ([#5379](https://github.com/tutur3u/platform/issues/5379)) ([c647460](https://github.com/tutur3u/platform/commit/c64746019a2e18798e71f0c5cfbf8bff13a58485))
+* **tasks:** restore checklist controls and board drag UX ([72d2495](https://github.com/tutur3u/platform/commit/72d2495717f7550f2ca4c26234abd2ceebbc280c)) ([#5375](https://github.com/tutur3u/platform/issues/5375)) ([fd9ed4e](https://github.com/tutur3u/platform/commit/fd9ed4ef63272cc2a434ad72aa1081fa641055c2))
+* **ui:** ensure report pagination always consumes text ([2f91cb9](https://github.com/tutur3u/platform/commit/2f91cb9e03cf9fd9432daeb76244e33805bb3da6))
+* **ui:** prevent report pagination from freezing editors ([#5392](https://github.com/tutur3u/platform/issues/5392)) ([efe6e95](https://github.com/tutur3u/platform/commit/efe6e95205134df4fc5b10b9e48b4dafb7dce52b))
+
 ## [0.34.0](https://github.com/tutur3u/platform/compare/ui-v0.33.0...ui-v0.34.0) (2026-09-25)
 
 
