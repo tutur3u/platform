@@ -36,7 +36,9 @@ class ChatConversationList extends StatelessWidget {
           SliverFillRemaining(hasScrollBody: false, child: _ChatEmptyList())
         else
           SliverPadding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.paddingOf(context).bottom + 16,
+            ),
             sliver: SliverList.separated(
               itemCount: conversations.length + (hasMore ? 1 : 0),
               separatorBuilder: (_, _) => Divider(

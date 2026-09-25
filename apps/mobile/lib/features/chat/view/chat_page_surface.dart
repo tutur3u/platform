@@ -8,8 +8,6 @@ class _ChatSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.sizeOf(context).width >= 700;
-    final bottomPadding = MediaQuery.paddingOf(context).bottom + 16;
-
     return ResponsiveWrapper(
       maxWidth: ResponsivePadding.rootContentWidth(context.deviceClass),
       child: Padding(
@@ -17,7 +15,7 @@ class _ChatSurface extends StatelessWidget {
           ResponsivePadding.horizontal(context.deviceClass),
           10,
           ResponsivePadding.horizontal(context.deviceClass),
-          bottomPadding,
+          0,
         ),
         child: isWide
             ? Row(
@@ -64,13 +62,6 @@ class _ConversationPane extends StatelessWidget {
     return NovaRefreshIndicator(
       onRefresh: cubit.refresh,
       child: ChatConversationList(
-        header: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _ChatFilters(state: state),
-            const SizedBox(height: 6),
-          ],
-        ),
         conversations: state.visibleConversations,
         selectedConversationId: state.selectedConversationId,
         isLoadingMore: state.isLoadingMore,
@@ -91,27 +82,32 @@ class _ThreadPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<ChatCubit>();
-    return ChatThreadView(
-      conversation: state.selectedConversation,
-      messages: state.selectedMessages,
-      messageStatus: state.messageStatus,
-      currentUserId: context.select<AuthCubit, String?>(
-        (cubit) => cubit.state.user?.id,
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.paddingOf(context).bottom + 16,
       ),
-      pendingAttachments: state.pendingAttachments,
-      streamingAssistantText: state.streamingAssistantText,
-      isSending: state.isSending,
-      isUploadingAttachment: state.isUploadingAttachment,
-      onSend: (content) => unawaited(cubit.sendMessage(content)),
-      onPickAttachment: (file) => unawaited(cubit.uploadAttachment(file)),
-      onRemoveAttachment: cubit.removePendingAttachment,
-      onReaction: (message, reaction) =>
-          unawaited(cubit.toggleReaction(message, reaction)),
-      onDetails: () =>
-          unawaited(showChatDetailsSheet(context: context, cubit: cubit)),
-      onPin: state.selectedConversation == null
-          ? () {}
-          : () => unawaited(cubit.togglePin(state.selectedConversation!)),
+      child: ChatThreadView(
+        conversation: state.selectedConversation,
+        messages: state.selectedMessages,
+        messageStatus: state.messageStatus,
+        currentUserId: context.select<AuthCubit, String?>(
+          (cubit) => cubit.state.user?.id,
+        ),
+        pendingAttachments: state.pendingAttachments,
+        streamingAssistantText: state.streamingAssistantText,
+        isSending: state.isSending,
+        isUploadingAttachment: state.isUploadingAttachment,
+        onSend: (content) => unawaited(cubit.sendMessage(content)),
+        onPickAttachment: (file) => unawaited(cubit.uploadAttachment(file)),
+        onRemoveAttachment: cubit.removePendingAttachment,
+        onReaction: (message, reaction) =>
+            unawaited(cubit.toggleReaction(message, reaction)),
+        onDetails: () =>
+            unawaited(showChatDetailsSheet(context: context, cubit: cubit)),
+        onPin: state.selectedConversation == null
+            ? () {}
+            : () => unawaited(cubit.togglePin(state.selectedConversation!)),
+      ),
     );
   }
 }

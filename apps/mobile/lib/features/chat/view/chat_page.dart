@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -15,9 +16,11 @@ import 'package:mobile/features/chat/widgets/chat_sheets.dart';
 import 'package:mobile/features/chat/widgets/chat_thread_view.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -74,11 +77,13 @@ class _ChatPageState extends State<ChatPage> {
               (cubit) => cubit.state,
             );
             final shellActions = _buildShellActions(context, state);
+            final miniNav = _buildChatMiniNav(context, state);
 
             if (workspace.currentWorkspace == null) {
               return Stack(
                 children: [
                   shellActions,
+                  miniNav,
                   _CenteredMessage(
                     title: l10n.chatTitle,
                     description: l10n.chatNoWorkspace,
@@ -92,6 +97,7 @@ class _ChatPageState extends State<ChatPage> {
               return Stack(
                 children: [
                   shellActions,
+                  miniNav,
                   const Center(child: NovaLoadingIndicator()),
                 ],
               );
@@ -104,6 +110,7 @@ class _ChatPageState extends State<ChatPage> {
               return Stack(
                 children: [
                   shellActions,
+                  miniNav,
                   _CenteredMessage(
                     title: isForbidden
                         ? l10n.chatNoAccessTitle
@@ -121,6 +128,7 @@ class _ChatPageState extends State<ChatPage> {
             return Stack(
               children: [
                 shellActions,
+                miniNav,
                 _ChatSurface(state: state),
               ],
             );
@@ -130,23 +138,88 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Widget _buildChatMiniNav(BuildContext context, ChatState state) {
+    final l10n = context.l10n;
+    return ShellMiniNav(
+      ownerId: 'chat-navigation',
+      locations: const {Routes.chat},
+      items: [
+        ShellMiniNavItemSpec(
+          id: 'back',
+          icon: Icons.chevron_left,
+          label: l10n.navBack,
+          onPressed: _backFromChat,
+        ),
+        ShellMiniNavItemSpec(
+          id: 'workspace',
+          icon: shad.LucideIcons.building2,
+          label: l10n.chatWorkspace,
+          selected: state.scope == ChatScope.workspaces,
+          onPressed: _selectWorkspace,
+        ),
+        ShellMiniNavItemSpec(
+          id: 'personal',
+          icon: shad.LucideIcons.user,
+          label: l10n.chatPersonal,
+          selected: state.scope == ChatScope.personal,
+          onPressed: _selectPersonal,
+        ),
+        ShellMiniNavItemSpec(
+          id: 'filters',
+          icon: shad.LucideIcons.listFilter,
+          label: l10n.commonFilters,
+          dropdown: true,
+          onPressed: _openFilters,
+        ),
+      ],
+    );
+  }
+
+  void _backFromChat() {
+    if (_chatCubit.state.selectedConversationId != null &&
+        MediaQuery.sizeOf(context).width < 700) {
+      _chatCubit.clearSelection();
+      context.go(Routes.chat);
+    } else {
+      context.go(Routes.apps);
+    }
+  }
+
+  void _selectWorkspace() => _selectScope(ChatScope.workspaces);
+
+  void _selectPersonal() => _selectScope(ChatScope.personal);
+
+  void _openFilters() => unawaited(_showFilters(context));
+
+  void _selectScope(ChatScope scope) {
+    _chatCubit.setScope(scope);
+    if (_chatCubit.state.selectedConversationId != null) {
+      _chatCubit.clearSelection();
+      context.go(Routes.chat);
+    }
+  }
+
+  Future<void> _showFilters(BuildContext context) => showAdaptiveSheet<void>(
+    context: context,
+    useRootNavigator: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => BlocProvider.value(
+      value: _chatCubit,
+      child: BlocBuilder<ChatCubit, ChatState>(
+        builder: (context, state) => AppDialogScaffold(
+          title: context.l10n.commonFilters,
+          child: _ChatFilters(state: state),
+        ),
+      ),
+    ),
+  );
+
   ShellChromeActions _buildShellActions(BuildContext context, ChatState state) {
     final l10n = context.l10n;
     return ShellChromeActions(
       ownerId: 'chat-root',
       locations: const {Routes.chat},
       actions: [
-        if (state.selectedConversationId != null &&
-            MediaQuery.sizeOf(context).width < 700)
-          ShellActionSpec(
-            id: 'chat-back',
-            icon: shad.LucideIcons.arrowLeft,
-            tooltip: l10n.navBack,
-            onPressed: () {
-              _chatCubit.clearSelection();
-              context.go(Routes.chat);
-            },
-          ),
         ShellActionSpec(
           id: 'chat-new',
           icon: shad.LucideIcons.messageSquarePlus,
