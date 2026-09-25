@@ -24,14 +24,20 @@ import { ResearchNotes } from '@/features/studio/research-notes';
 
 export default async function Review({
   params,
+  searchParams,
 }: {
   params: Promise<{ meetingId: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   await connection();
   const user = await requireParleyUser();
   const { meetingId } = await params;
   if (!z.uuid().safeParse(meetingId).success) notFound();
-  const notes = await getFacilitatorNotes(meetingId, user.id);
+  const page = Math.min(
+    10000,
+    Math.max(0, Number.parseInt((await searchParams).page ?? '0', 10) || 0)
+  );
+  const notes = await getFacilitatorNotes(meetingId, user.id, page);
   if (!notes) notFound();
   const access = await getMeetCallAccess(meetingId, 'Participant');
   if (!access.isHost) notFound();
@@ -74,11 +80,11 @@ export default async function Review({
       >
         {[
           { icon: Users, label: t('roles'), value: scenario.roles.length },
-          { icon: NotebookPen, label: t('notes'), value: notes.length },
+          { icon: NotebookPen, label: t('notes'), value: notes.total },
           {
             icon: BookOpen,
             label: t('decisions'),
-            value: notes.filter((n) => n.kind === 'decision').length,
+            value: notes.decisions,
           },
         ].map(({ icon: Icon, label, value }) => (
           <div key={label} className="p-5">
@@ -111,7 +117,12 @@ export default async function Review({
             </p>
           </details>
         </div>
-        <ResearchNotes meetingId={meetingId} notes={notes} />
+        <ResearchNotes
+          meetingId={meetingId}
+          notes={notes.notes}
+          page={page}
+          hasMore={notes.hasMore}
+        />
       </div>
       <p className="border-t pt-5 text-muted-foreground text-xs">
         {t('research_note')}

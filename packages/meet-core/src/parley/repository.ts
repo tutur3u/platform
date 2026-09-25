@@ -111,7 +111,11 @@ export async function listFacilitatedSessions(userId: string, page = 0) {
   };
 }
 
-export async function getFacilitatorNotes(meetingId: string, userId: string) {
+export async function getFacilitatorNotes(
+  meetingId: string,
+  userId: string,
+  page = 0
+) {
   const db = await parleyDatabase();
   const { data: session, error: sessionError } = await db
     .schema('private')
@@ -122,13 +126,26 @@ export async function getFacilitatorNotes(meetingId: string, userId: string) {
     .maybeSingle();
   if (sessionError) throw new Error('Session authorization unavailable');
   if (!session) return null;
-  const { data, error } = await db
+  const { data, error, count } = await db
     .schema('private')
     .from('parley_observations')
-    .select('id, kind, content, created_at')
+    .select('id, kind, content, created_at', { count: 'exact' })
     .eq('meeting_id', meetingId)
     .order('created_at', { ascending: false })
-    .limit(100);
+    .order('id')
+    .range(page * 20, page * 20 + 19);
   if (error) throw new Error('Observations unavailable');
-  return data;
+  const { count: decisions, error: decisionsError } = await db
+    .schema('private')
+    .from('parley_observations')
+    .select('id', { count: 'exact', head: true })
+    .eq('meeting_id', meetingId)
+    .eq('kind', 'decision');
+  if (decisionsError) throw new Error('Observations unavailable');
+  return {
+    notes: data,
+    total: count ?? 0,
+    decisions: decisions ?? 0,
+    hasMore: (page + 1) * 20 < (count ?? 0),
+  };
 }

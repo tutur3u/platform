@@ -1,5 +1,7 @@
 'use client';
 import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
+import { unstable_rethrow } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { startScenario } from './actions';
@@ -12,7 +14,12 @@ export function StartSession({ scenarioId }: { scenarioId: string }) {
       className="space-y-4"
       action={(data) =>
         startTransition(async () => {
-          await startScenario(data);
+          try {
+            await startScenario(data);
+          } catch (error) {
+            unstable_rethrow(error);
+            toast.error(t('start_failed'));
+          }
         })
       }
     >

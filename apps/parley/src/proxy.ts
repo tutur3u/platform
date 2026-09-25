@@ -7,7 +7,7 @@ import { resolveSupabaseSessionRequest } from '@tuturuuu/auth/supabase-session-u
 import { TTR_URL } from '@tuturuuu/meet-core/constants/common';
 import { hasParleyAccess } from '@tuturuuu/meet-core/parley-access';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
-import { type NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 
@@ -75,7 +75,12 @@ export default async function proxy(request: NextRequest) {
     return finish(
       path.startsWith('/api/')
         ? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        : NextResponse.redirect(new URL('/login', request.url))
+        : NextResponse.redirect(
+            new URL(
+              `/login?next=${encodeURIComponent(request.nextUrl.pathname + request.nextUrl.search)}`,
+              request.url
+            )
+          )
     );
   try {
     if (!(await hasParleyAccess(user.id)))
@@ -94,7 +99,7 @@ export default async function proxy(request: NextRequest) {
   }
   const result = path.startsWith('/api/')
     ? NextResponse.next({ request: { headers: requestHeaders } })
-    : intl(request);
+    : intl(new NextRequest(request, { headers: requestHeaders }));
 
   return finish(result);
 }

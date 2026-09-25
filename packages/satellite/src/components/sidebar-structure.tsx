@@ -225,7 +225,7 @@ export function SidebarStructure({
             ),
           }}
           mobileBrandActions={workspaceToggle}
-          userPopover={userPopover}
+          userPopover={isCollapsed ? userPopover : null}
           sidebarUtility={
             showSettingsButton ? (
               <SidebarSettingsButton

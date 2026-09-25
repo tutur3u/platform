@@ -82,3 +82,28 @@ it('excludes hidden role briefs from published discovery data', async () => {
   ]);
   expect(JSON.stringify(result)).not.toContain('Hidden fixture');
 });
+
+it('paginates notes after ownership authorization and counts the whole session', async () => {
+  const session = query({ data: { meeting_id: 'meeting' }, error: null });
+  const notes = query({ data: [{ id: 'older-note' }], count: 45, error: null });
+  const decisions = { select: vi.fn().mockReturnThis(), eq: vi.fn() };
+  decisions.eq
+    .mockReturnValueOnce(decisions)
+    .mockResolvedValueOnce({ count: 7, error: null });
+  const from = vi
+    .fn()
+    .mockReturnValueOnce(session)
+    .mockReturnValueOnce(notes)
+    .mockReturnValueOnce(decisions);
+  f.database.mockResolvedValue({ schema: () => ({ from }) });
+  const result = await getFacilitatorNotes('meeting', 'owner', 1);
+  expect(notes.range).toHaveBeenCalledWith(20, 39);
+  expect(notes.order).toHaveBeenCalledWith('created_at', { ascending: false });
+  expect(notes.order).toHaveBeenCalledWith('id');
+  expect(result).toEqual({
+    notes: [{ id: 'older-note' }],
+    total: 45,
+    decisions: 7,
+    hasMore: true,
+  });
+});

@@ -7,6 +7,8 @@ const f = vi.hoisted(() => ({
   access: vi.fn(),
   propagate: vi.fn(),
   guard: vi.fn(),
+  intl: vi.fn(),
+  headers: vi.fn(),
 }));
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: f.guard,
@@ -16,7 +18,7 @@ vi.mock('@tuturuuu/auth/supabase-session-user', () => ({
 }));
 vi.mock('@tuturuuu/auth/proxy', () => ({
   createCentralizedAuthProxy: () => f.auth,
-  getRequestHeadersWithResponseCookies: (request: Request) => request.headers,
+  getRequestHeadersWithResponseCookies: f.headers,
   propagateAuthCookies: f.propagate,
 }));
 vi.mock('@tuturuuu/meet-core/constants/common', () => ({
@@ -29,7 +31,7 @@ vi.mock('./i18n/routing', () => ({
   routing: { locales: ['en', 'vi'], defaultLocale: 'en' },
 }));
 vi.mock('next-intl/middleware', () => ({
-  default: () => () => NextResponse.next(),
+  default: () => f.intl,
 }));
 
 import proxy from './proxy';
@@ -39,6 +41,8 @@ const request = (path: string) =>
 beforeEach(() => {
   vi.resetAllMocks();
   f.auth.mockResolvedValue(NextResponse.next());
+  f.headers.mockImplementation((request: Request) => request.headers);
+  f.intl.mockReturnValue(NextResponse.next());
   f.session.mockResolvedValue({ user: { id: 'verified-user' } });
   f.access.mockResolvedValue(true);
   f.guard.mockResolvedValue(null);
@@ -101,4 +105,19 @@ it('does not bypass an unavailable MFA or provider assurance check', async () =>
   expect((await proxy(request('/sessions'))).status).toBe(503);
   expect(f.session).not.toHaveBeenCalled();
   expect(f.access).not.toHaveBeenCalled();
+});
+
+it('keeps the requested page and query through fallback sign-in', async () => {
+  f.session.mockResolvedValue({ user: null });
+  const response = await proxy(request('/en/sessions/room?page=2'));
+  const location = new URL(response.headers.get('location')!);
+  expect(location.pathname).toBe('/login');
+  expect(location.searchParams.get('next')).toBe('/en/sessions/room?page=2');
+});
+it('passes refreshed cookies into the same page render', async () => {
+  f.headers.mockReturnValue(new Headers({ cookie: 'refreshed=session' }));
+  await proxy(request('/en/sessions'));
+  expect(f.intl.mock.calls[0]?.[0].headers.get('cookie')).toBe(
+    'refreshed=session'
+  );
 });

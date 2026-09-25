@@ -19,7 +19,7 @@ instructions never enter the discovery client payload.
 `/sessions` is the signed-in facilitator's paginated archive. Each
 `/sessions/[meetingId]` review reuses Meet's metered AI transcript, summary,
 decision and follow-up tools. Private research notes are shown separately and
-remain facilitator-only, even when meeting notes are shared with participants.
+remain facilitator-only, even when meeting notes are shared with participants. Research notes are paginated newest first, with full-session note and decision totals; the note-type filter applies to the current page.
 These satellite-only routes are owned by `apps/parley`; the current TanStack
 migration manifest scans `apps/web`, not satellite app trees.
 

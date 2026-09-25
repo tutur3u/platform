@@ -3,6 +3,7 @@ import { MeetingLocalTime } from '@tuturuuu/meet-core/features/call/components/m
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useRef, useState, useTransition } from 'react';
 import { saveObservation } from './actions';
@@ -10,8 +11,12 @@ import { saveObservation } from './actions';
 export function ResearchNotes({
   meetingId,
   notes,
+  page,
+  hasMore,
 }: {
   meetingId: string;
+  page: number;
+  hasMore: boolean;
   notes: { id: string; kind: string; content: string; created_at: string }[];
 }) {
   const t = useTranslations('parley');
@@ -111,9 +116,24 @@ export function ResearchNotes({
           ))
         )}
       </div>
-      {notes.length === 100 && (
-        <p className="text-muted-foreground text-xs">{t('notes_limit')}</p>
-      )}
+      <nav aria-label={t('pagination')} className="flex justify-between gap-3">
+        {page > 0 ? (
+          <Button asChild variant="outline">
+            <Link href={`/sessions/${meetingId}?page=${page - 1}`}>
+              {t('previous')}
+            </Link>
+          </Button>
+        ) : (
+          <span />
+        )}
+        {hasMore && (
+          <Button asChild variant="outline">
+            <Link href={`/sessions/${meetingId}?page=${page + 1}`}>
+              {t('next')}
+            </Link>
+          </Button>
+        )}
+      </nav>
     </section>
   );
 }
