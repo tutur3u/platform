@@ -11601,12 +11601,7 @@
     "estimate": "Tạm tính minh họa · USD · chưa gồm thuế và tiện ích bổ sung",
     "exitFullscreen": "Thoát toàn màn hình",
     "explore": "Khám phá Tuturuuu",
-    "families": [
-      "Tổ chức",
-      "Cộng tác",
-      "Vận hành",
-      "Học và sáng tạo"
-    ],
+    "families": ["Tổ chức", "Cộng tác", "Vận hành", "Học và sáng tạo"],
     "feedback": "Góp ý",
     "free": "Miễn phí",
     "friction": [
@@ -11630,20 +11625,10 @@
     "next": "Trang tiếp",
     "noClaims": "Định hướng sản phẩm, không cam kết phát hành hoặc hiệu suất.",
     "notes": "Ghi chú thuyết trình",
-    "orbitLabels": [
-      "Công việc",
-      "Con người",
-      "Kiến thức",
-      "Học tập"
-    ],
+    "orbitLabels": ["Công việc", "Con người", "Kiến thức", "Học tập"],
     "overview": "Tất cả trang",
     "pause": "Tạm dừng",
-    "people": [
-      "Cá nhân",
-      "Đội nhóm nhỏ",
-      "Nhà giáo dục",
-      "Nhà vận hành"
-    ],
+    "people": ["Cá nhân", "Đội nhóm nhỏ", "Nhà giáo dục", "Nhà vận hành"],
     "perMonth": "mỗi tháng",
     "perYear": "mỗi năm",
     "planDetails": [
@@ -12616,12 +12601,7 @@
       }
     },
     "sourceLabel": "Nguồn",
-    "stages": [
-      "Lập kế hoạch",
-      "Kết nối",
-      "Hoàn thành",
-      "Nhìn lại"
-    ],
+    "stages": ["Lập kế hoạch", "Kết nối", "Hoàn thành", "Nhìn lại"],
     "title": "Tuturuuu — kỷ nguyên cộng sự thông minh"
   },
   "platform-role-data-table": {
