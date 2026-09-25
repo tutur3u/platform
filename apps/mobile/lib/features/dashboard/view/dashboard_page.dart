@@ -24,6 +24,7 @@ import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_suggestion.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -238,6 +239,11 @@ class _DashboardViewState extends State<_DashboardView> {
                               parent: BouncingScrollPhysics(),
                             ),
                             slivers: [
+                              SliverToBoxAdapter(
+                                child: SizedBox(
+                                  height: floatingShellHeaderInset(context),
+                                ),
+                              ),
                               const SliverToBoxAdapter(
                                 child: DeviceMfaSuggestion(),
                               ),

@@ -41,6 +41,7 @@ import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/assistant/widgets/assistant_voice_message_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -64,7 +65,6 @@ class _AssistantPageState extends State<AssistantPage> {
   final _inputController = TextEditingController();
   final _inputFocusNode = FocusNode();
   final _scrollController = ScrollController();
-
   static const _assistantScrollPhysics = AlwaysScrollableScrollPhysics(
     parent: BouncingScrollPhysics(),
   );
@@ -338,7 +338,10 @@ class _AssistantPageState extends State<AssistantPage> {
                                               SliverPadding(
                                                 padding: EdgeInsets.fromLTRB(
                                                   _horizontalPadding(context),
-                                                  12,
+                                                  floatingShellHeaderInset(
+                                                        context,
+                                                      ) +
+                                                      12,
                                                   _horizontalPadding(context),
                                                   _composerReservedSpace(
                                                     context,

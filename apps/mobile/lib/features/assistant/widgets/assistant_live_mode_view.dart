@@ -9,6 +9,7 @@ import 'package:mobile/features/assistant/widgets/assistant_live_screen_control.
 import 'package:mobile/features/assistant/widgets/assistant_live_status_panel.dart';
 import 'package:mobile/features/assistant/widgets/assistant_status_badge.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 part 'assistant_live_mode_components.dart';
@@ -47,6 +48,7 @@ class AssistantLiveModeView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final safeArea = MediaQuery.paddingOf(context);
+    final shortViewport = MediaQuery.sizeOf(context).height < 500;
     final userBlobCaption = liveState.isMicrophoneActive
         ? context.l10n.assistantLiveStageYouListening
         : context.l10n.assistantLiveStageYouMuted;
@@ -60,7 +62,12 @@ class AssistantLiveModeView extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(12, safeArea.top + 8, 12, 12),
+            padding: EdgeInsets.fromLTRB(
+              12,
+              floatingShellHeaderInset(context) + 8,
+              12,
+              12,
+            ),
             child: _LiveModeHeader(
               liveState: liveState,
               liveUiState: liveUiState,
@@ -133,7 +140,12 @@ class AssistantLiveModeView extends StatelessWidget {
           ),
           AssistantLiveScreenControl(state: liveState),
           Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, safeArea.bottom + 16),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              shortViewport ? 4 : 12,
+              16,
+              safeArea.bottom + (shortViewport ? 4 : 16),
+            ),
             child: Center(
               child: _LiveControlRail(
                 liveState: liveState,

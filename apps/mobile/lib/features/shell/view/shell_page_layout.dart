@@ -225,6 +225,7 @@ extension _ShellPageLayout on _ShellPageState {
       bottomInset: bodyBottomInset,
       navigation: navigationBar,
       header: header,
+      scrollableHeader: _isRootTabLocation(widget.matchedLocation),
       child: body,
     );
   }

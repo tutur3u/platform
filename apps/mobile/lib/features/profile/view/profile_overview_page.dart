@@ -13,6 +13,7 @@ import 'package:mobile/features/profile/view/workspace_activity_section.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
@@ -59,7 +60,7 @@ class ProfileOverviewPage extends StatelessWidget {
             LayoutBuilder(
               builder: (context, constraints) {
                 final maxWidth =
-                    ResponsivePadding.maxContentWidth(context.deviceClass) ??
+                    ResponsivePadding.rootContentWidth(context.deviceClass) ??
                     constraints.maxWidth;
                 final horizontal =
                     ((constraints.maxWidth - maxWidth) / 2).clamp(
@@ -70,7 +71,7 @@ class ProfileOverviewPage extends StatelessWidget {
                 return ListView(
                   padding: EdgeInsets.fromLTRB(
                     horizontal,
-                    20,
+                    floatingShellHeaderInset(context) + 10,
                     horizontal,
                     24 + MediaQuery.paddingOf(context).bottom,
                   ),
@@ -137,19 +138,40 @@ class ProfileOverviewPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    ProfileActivitySection(replayToken: replayToken),
-                    if (workspace != null &&
-                        !workspace.personal &&
-                        userId != null)
-                      WorkspaceActivitySection(
-                        key: ValueKey('$userId:${workspace.id}'),
-                        workspaceId: workspace.id,
-                        replayToken: replayToken,
-                        workspaceName: displayWorkspaceNameOrFallback(
-                          context,
-                          workspace,
-                        ),
-                      ),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final activity = ProfileActivitySection(
+                          replayToken: replayToken,
+                        );
+                        if (workspace == null ||
+                            workspace.personal ||
+                            userId == null) {
+                          return activity;
+                        }
+                        final workspaceActivity = WorkspaceActivitySection(
+                          key: ValueKey('$userId:${workspace.id}'),
+                          workspaceId: workspace.id,
+                          replayToken: replayToken,
+                          workspaceName: displayWorkspaceNameOrFallback(
+                            context,
+                            workspace,
+                          ),
+                        );
+                        if (constraints.maxWidth < 840) {
+                          return Column(
+                            children: [activity, workspaceActivity],
+                          );
+                        }
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: activity),
+                            const SizedBox(width: 20),
+                            Expanded(child: workspaceActivity),
+                          ],
+                        );
+                      },
+                    ),
                   ],
                 );
               },

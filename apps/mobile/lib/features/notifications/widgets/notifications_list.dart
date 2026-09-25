@@ -75,9 +75,13 @@ class _NotificationsListState extends State<_NotificationsList> {
       });
     }
     Widget child;
+    final pageTopInset = widget.pageMode
+        ? floatingShellHeaderInset(context) + 10
+        : 0.0;
     if (feed.status == NotificationFeedStatus.loading && !feed.hasLoadedOnce) {
       child = ListView(
         physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(top: pageTopInset),
         children: const [
           SizedBox(
             height: 320,
@@ -89,6 +93,7 @@ class _NotificationsListState extends State<_NotificationsList> {
         !feed.hasLoadedOnce) {
       child = ListView(
         physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(top: pageTopInset),
         children: [
           SizedBox(
             height: 320,
@@ -108,6 +113,7 @@ class _NotificationsListState extends State<_NotificationsList> {
     } else if (feed.items.isEmpty) {
       child = ListView(
         physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(top: pageTopInset),
         children: [
           SizedBox(
             height: 320,
@@ -136,7 +142,12 @@ class _NotificationsListState extends State<_NotificationsList> {
           return ListView.separated(
             controller: _scrollController,
             padding: widget.pageMode
-                ? const EdgeInsets.fromLTRB(0, 0, 0, 14)
+                ? EdgeInsets.fromLTRB(
+                    0,
+                    pageTopInset,
+                    0,
+                    14 + MediaQuery.paddingOf(context).bottom,
+                  )
                 : const EdgeInsets.fromLTRB(0, 8, 0, 14),
             physics: const AlwaysScrollableScrollPhysics(),
             itemBuilder: (context, row) {
