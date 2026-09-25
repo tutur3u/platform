@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.41.0](https://github.com/tutur3u/platform/compare/internal-api-v0.40.0...internal-api-v0.41.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([e08f27d](https://github.com/tutur3u/platform/commit/e08f27dbc082f7d9c951bb0792357638f3dcfb0a)) ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **finance:** track tuition coverage and harden invoice exports ([72e07be](https://github.com/tutur3u/platform/commit/72e07bebef58dfee398bcd0d896304d13a2d9aad)) ([#5447](https://github.com/tutur3u/platform/issues/5447)) ([6e822d8](https://github.com/tutur3u/platform/commit/6e822d89d079d9ea8b2677f208c16364cd70d586))
+* **mail:** add personal thread snooze and mute ([50f7b88](https://github.com/tutur3u/platform/commit/50f7b884706c156cd9a10a2b5c38f3079615096e)) ([#5445](https://github.com/tutur3u/platform/issues/5445)) ([26e392c](https://github.com/tutur3u/platform/commit/26e392c283a31fab038f03294ced90f2e8174874))
+* **meet:** unify Mira participant chat and audio controls ([c8f9801](https://github.com/tutur3u/platform/commit/c8f9801a4a342bb8509c67202e26b8ca0ae5e22f)) ([#5450](https://github.com/tutur3u/platform/issues/5450)) ([aa044ef](https://github.com/tutur3u/platform/commit/aa044efcb869f06859be60d8aee137e24b0c7bca))
+
+
+### Bug Fixes
+
+* **infrastructure:** inherit encrypted mobile vault drafts safely ([9dbaadd](https://github.com/tutur3u/platform/commit/9dbaaddc53fcac4c00f6a68f554d9f92febeac8f)) ([#5446](https://github.com/tutur3u/platform/issues/5446)) ([7ba7028](https://github.com/tutur3u/platform/commit/7ba7028d9f0b001de97ae34b721eeb75b51bca69))
+
 ## [0.40.0](https://github.com/tutur3u/platform/compare/internal-api-v0.39.0...internal-api-v0.40.0) (2026-09-23)
 
 
