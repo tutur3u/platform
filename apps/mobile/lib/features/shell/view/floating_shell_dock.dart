@@ -4,11 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/dock_action_transition.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+
+const _floatingHeaderPadding = EdgeInsets.fromLTRB(12, 4, 12, 8);
 
 /// The floating header includes the system status bar and the section bar.
 double floatingShellHeaderInset(BuildContext context) =>
-    MediaQuery.viewPaddingOf(context).top + 62;
+    MediaQuery.viewPaddingOf(context).top +
+    mobileSectionAppBarHeight +
+    mobileSectionAppBarPadding.vertical +
+    _floatingHeaderPadding.vertical;
 
 /// Overlays the dock without shortening the page viewport.
 /// Pages consume bottom MediaQuery padding inside their scrollable content.
@@ -151,7 +157,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                       child: SafeArea(
                         bottom: false,
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                          padding: _floatingHeaderPadding,
                           child: widget.header,
                         ),
                       ),
