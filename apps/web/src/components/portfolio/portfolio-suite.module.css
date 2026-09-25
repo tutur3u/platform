@@ -3,6 +3,9 @@
   background: #12201c;
   color: #f3f6ed;
   --background: #12201c;
+  --foreground: #f3f6ed;
+  --muted-foreground: #bac7bc;
+  --border: #ffffff25;
 }
 .intro {
   max-width: 1160px;
