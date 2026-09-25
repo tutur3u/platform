@@ -10,25 +10,9 @@ class _ChatFilters extends StatelessWidget {
     final cubit = context.read<ChatCubit>();
     final l10n = context.l10n;
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SegmentedButton<ChatScope>(
-          segments: [
-            ButtonSegment(
-              value: ChatScope.workspaces,
-              icon: const Icon(shad.LucideIcons.building2, size: 16),
-              label: Text(l10n.chatWorkspace),
-            ),
-            ButtonSegment(
-              value: ChatScope.personal,
-              icon: const Icon(shad.LucideIcons.user, size: 16),
-              label: Text(l10n.chatPersonal),
-            ),
-          ],
-          selected: {state.scope},
-          onSelectionChanged: (value) => cubit.setScope(value.first),
-        ),
-        const SizedBox(height: 8),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
