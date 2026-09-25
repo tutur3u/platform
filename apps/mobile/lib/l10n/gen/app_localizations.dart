@@ -16432,7 +16432,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantReplyFailed.
   ///
   /// In en, this message translates to:
-  /// **'Mira could not finish this reply. Your message is saved here; try again.'**
+  /// **'Mira\'s reply stopped. Your message is still here. Retry'**
   String get assistantReplyFailed;
 
   /// No description provided for @assistantCreditsUnavailable.

@@ -17,6 +17,7 @@ import 'assistant_tool_output.dart';
 part 'assistant_chat_attachments.dart';
 part 'assistant_chat_restore.dart';
 part 'assistant_chat_state.dart';
+part 'assistant_chat_stream_reconcile.dart';
 
 class AssistantChatCubit extends Cubit<AssistantChatState> {
   AssistantChatCubit({
@@ -102,9 +103,14 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     String? retryMessageId,
   }) async {
     final trimmed = message.trim();
-    final uploadedAttachments = state.composerAttachments
-        .where((attachment) => attachment.isUploaded)
-        .toList();
+    final uploadedAttachments = retryMessageId == null
+        ? state.composerAttachments
+              .where((attachment) => attachment.isUploaded)
+              .toList()
+        : (state.attachmentsByMessageId[retryMessageId] ??
+                  const <AssistantAttachment>[])
+              .where((attachment) => attachment.isUploaded)
+              .toList();
     if (trimmed.isEmpty && uploadedAttachments.isEmpty) {
       return;
     }
@@ -340,7 +346,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
 
       final shouldAppendUserMessage =
           retryMessageId == null &&
-          !_matchesLatestQueuedMessage(combined, attachments);
+          !_matchesLatestQueuedMessage(state, combined, attachments);
 
       var nextMessages = state.messages;
       final attachmentsByMessageId =
@@ -392,6 +398,10 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
             onError: (Object error, StackTrace stackTrace) {
               emit(
                 state.copyWith(
+                  messages: _withoutEmptyAssistantReply(
+                    state.messages,
+                    _activeAssistantMessageId,
+                  ),
                   status: AssistantChatStatus.error,
                   error: error.toString(),
                 ),
@@ -409,6 +419,10 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     } on Exception catch (error) {
       emit(
         state.copyWith(
+          messages: _withoutEmptyAssistantReply(
+            state.messages,
+            _activeAssistantMessageId,
+          ),
           status: AssistantChatStatus.error,
           error: error.toString(),
         ),
@@ -422,40 +436,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         state.messages.isEmpty &&
         !state.isBusy &&
         (attachments.isNotEmpty || _queue.isNotEmpty);
-  }
-
-  bool _matchesLatestQueuedMessage(
-    String combined,
-    List<AssistantAttachment> attachments,
-  ) {
-    if (state.messages.isEmpty) {
-      return false;
-    }
-
-    final latest = state.messages.last;
-    if (latest.role != 'user') {
-      return false;
-    }
-
-    final latestText = latest.parts
-        .where((part) => part.type == 'text')
-        .map((part) => part.text ?? '')
-        .join('\n\n')
-        .trim();
-    if (latestText != combined.trim()) {
-      return false;
-    }
-
-    final existingAttachmentIds =
-        (state.attachmentsByMessageId[latest.id] ?? const [])
-            .map((attachment) => attachment.id)
-            .toList(growable: false)
-          ..sort();
-    final queuedAttachmentIds =
-        attachments.map((attachment) => attachment.id).toList(growable: false)
-          ..sort();
-
-    return listEquals(existingAttachmentIds, queuedAttachmentIds);
   }
 
   void _handleStreamEvent(AssistantStreamEvent event) {
@@ -476,8 +456,10 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
             payload['messageId'] as String? ?? _repository.generateUuid();
         _activeTextBlockId = null;
         _activeReasoningBlockId = null;
-        _ensureAssistantMessage(_activeAssistantMessageId!);
         emit(state.copyWith(status: AssistantChatStatus.streaming));
+        break;
+      case 'saved-message':
+        _reconcileSavedMessage(payload);
         break;
       case 'text-start':
         _activeTextBlockId = payload['id'] as String?;
@@ -546,6 +528,10 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       case 'error':
         emit(
           state.copyWith(
+            messages: _withoutEmptyAssistantReply(
+              state.messages,
+              _activeAssistantMessageId,
+            ),
             status: AssistantChatStatus.error,
             error:
                 payload['errorText'] as String? ?? 'Assistant stream failed.',
@@ -562,6 +548,35 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       default:
         break;
     }
+  }
+
+  void _reconcileSavedMessage(Map<String, dynamic> payload) {
+    final savedId = payload['messageId'] as String?;
+    if (savedId == null || savedId.isEmpty) return;
+    final result = _reconcileSavedAssistantMessage(
+      state.messages,
+      streamedId: _activeAssistantMessageId,
+      savedId: savedId,
+      savedText: payload['text'] as String? ?? '',
+    );
+    _activeAssistantMessageId = savedId;
+    emit(state.copyWith(messages: result));
+  }
+
+  void _ensureAssistantMessage(String messageId) {
+    if (state.messages.any((message) => message.id == messageId)) return;
+    emit(
+      state.copyWith(
+        messages: [
+          ...state.messages,
+          AssistantMessage(
+            id: messageId,
+            role: 'assistant',
+            createdAt: DateTime.now(),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _handleToolSideEffect(Map<String, dynamic> payload) async {
@@ -583,23 +598,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       final isImmersive = readImmersiveFlag(output);
       _onImmersiveModeChanged(isImmersive);
     }
-  }
-
-  void _ensureAssistantMessage(String messageId) {
-    final existing = state.messages.any((message) => message.id == messageId);
-    if (existing) return;
-    emit(
-      state.copyWith(
-        messages: [
-          ...state.messages,
-          AssistantMessage(
-            id: messageId,
-            role: 'assistant',
-            createdAt: DateTime.now(),
-          ),
-        ],
-      ),
-    );
   }
 
   void _appendTextPart({required String? blockId, required String delta}) {

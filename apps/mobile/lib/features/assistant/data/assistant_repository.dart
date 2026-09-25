@@ -644,24 +644,24 @@ class AssistantRepository {
           yield _assistantEventFromChatPart(event.part);
           continue;
         }
-
-        if (event is ChatStreamMessagesEvent && !assistantStarted) {
+        if (event is ChatStreamMessagesEvent) {
           final assistantMessages = event.messages.where(
             (message) => message.kind == ChatMessageKind.assistant,
           );
           for (final message in assistantMessages) {
-            yield AssistantJsonStreamEvent({
-              'type': 'start',
-              'messageId': message.id,
-            });
-            if (message.content.isNotEmpty) {
+            if (!assistantStarted) {
               yield AssistantJsonStreamEvent({
-                'type': 'text-delta',
-                'delta': message.content,
+                'type': 'start',
+                'messageId': message.id,
               });
+              assistantStarted = true;
             }
+            yield AssistantJsonStreamEvent({
+              'type': 'saved-message',
+              'messageId': message.id,
+              'text': message.content,
+            });
           }
-          assistantStarted = true;
           continue;
         }
 

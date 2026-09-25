@@ -8551,7 +8551,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileRecentActivity => '12 tuần gần đây';
 
   @override
-  String get assistantReplyFailed => 'Mira chưa thể hoàn tất câu trả lời. Tin nhắn của bạn vẫn được giữ ở đây; hãy thử lại.';
+  String get assistantReplyFailed => 'Mira chưa trả lời xong. Tin nhắn của bạn vẫn ở đây. Thử lại';
 
   @override
   String get assistantCreditsUnavailable => 'Chưa thể tải nguồn tín dụng của bạn. Vui lòng thử lại.';
