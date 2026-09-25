@@ -60,4 +60,87 @@ void main() {
     expect(plan, hasLength(2));
     expect(plan.every((entry) => entry.entityId == 'active'), isTrue);
   });
+
+  test('does not remind for Google working locations', () {
+    final now = DateTime(2026, 9, 24, 10);
+    final tomorrow = DateTime(2026, 9, 25);
+    final nextDay = DateTime(2026, 9, 26);
+    final plan = buildReminderPlan(
+      now: now,
+      workspaceId: 'ws',
+      tasks: const [],
+      events: [
+        CalendarEvent(
+          id: 'typed-location',
+          title: 'At home',
+          provider: 'google',
+          schedulingMetadata: const {'google_event_type': 'workingLocation'},
+          startAt: tomorrow,
+          endAt: nextDay,
+        ),
+        CalendarEvent(
+          id: 'old-location',
+          title: 'Home',
+          provider: 'google',
+          startAt: tomorrow,
+          endAt: nextDay,
+        ),
+        CalendarEvent(
+          id: 'school-location',
+          title: 'Campus',
+          provider: 'google',
+          schedulingMetadata: const {
+            'google_event_type': 'workingLocation',
+            'google_working_location_type': 'customLocation',
+            'google_working_location_label': 'School',
+          },
+          startAt: tomorrow,
+          endAt: nextDay,
+        ),
+        CalendarEvent(
+          id: 'first-party-school',
+          title: 'School',
+          provider: 'tuturuuu',
+          startAt: tomorrow,
+          endAt: nextDay,
+        ),
+        CalendarEvent(
+          id: 'ordinary-event',
+          title: 'Home renovation',
+          provider: 'google',
+          startAt: tomorrow,
+          endAt: nextDay,
+        ),
+      ],
+      taskOffsets: const [],
+      eventOffsets: const ['12h'],
+    );
+
+    expect(plan.map((entry) => entry.entityId), ['ordinary-event']);
+    expect(
+      CalendarEvent(
+        id: 'typed-school',
+        title: 'Campus',
+        provider: 'google',
+        schedulingMetadata: const {
+          'google_event_type': 'workingLocation',
+          'google_working_location_type': 'customLocation',
+          'google_working_location_label': 'School',
+        },
+        startAt: tomorrow,
+        endAt: nextDay,
+      ).workingLocationKind,
+      WorkingLocationKind.school,
+    );
+    expect(
+      CalendarEvent(
+        id: 'school',
+        title: 'School',
+        provider: 'google',
+        startAt: tomorrow,
+        endAt: nextDay,
+      ).workingLocationKind,
+      WorkingLocationKind.school,
+    );
+  });
 }

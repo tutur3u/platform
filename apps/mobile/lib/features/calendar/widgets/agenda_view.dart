@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
+import 'package:mobile/features/calendar/utils/working_location_icon.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 

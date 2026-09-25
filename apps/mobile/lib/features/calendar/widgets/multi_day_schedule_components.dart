@@ -420,14 +420,28 @@ class _MultiDayAllDayChip extends StatelessWidget {
             border: Border.all(color: accentColor.withValues(alpha: 0.22)),
           ),
           alignment: Alignment.centerLeft,
-          child: Text(
-            event.title ?? '',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: foregroundColor,
-              fontWeight: FontWeight.w700,
-            ),
+          child: Row(
+            children: [
+              if (event.workingLocationKind case final kind?) ...[
+                Icon(
+                  workingLocationIcon(kind),
+                  size: 14,
+                  color: foregroundColor,
+                ),
+                const SizedBox(width: 4),
+              ],
+              Expanded(
+                child: Text(
+                  event.title ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: foregroundColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

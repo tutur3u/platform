@@ -77,6 +77,16 @@ export const formatEventForDb = (
     end_at,
     location: event.location || '',
     color: getColorFromGoogleColorId(event.colorId ?? undefined),
+    scheduling_metadata:
+      event.eventType === 'workingLocation'
+        ? {
+            google_event_type: 'workingLocation',
+            google_working_location_type:
+              event.workingLocationProperties?.type ?? null,
+            google_working_location_label:
+              event.workingLocationProperties?.customLocation?.label ?? null,
+          }
+        : null,
     ws_id: ws_id,
     locked: true,
   };
