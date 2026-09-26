@@ -11609,7 +11609,12 @@
     "estimate": "Illustrative subscription subtotal · USD · excludes tax and add-ons",
     "exitFullscreen": "Exit fullscreen",
     "explore": "Explore Tuturuuu",
-    "families": ["Organize", "Collaborate", "Operate", "Learn & create"],
+    "families": [
+      "Organize",
+      "Collaborate",
+      "Operate",
+      "Learn & create"
+    ],
     "feedback": "Share feedback",
     "free": "Free",
     "friction": [
@@ -11637,10 +11642,20 @@
     "next": "Next slide",
     "noClaims": "Product direction, not a launch or performance guarantee.",
     "notes": "Presenter notes",
-    "orbitLabels": ["Work", "People", "Knowledge", "Learning"],
+    "orbitLabels": [
+      "Work",
+      "People",
+      "Knowledge",
+      "Learning"
+    ],
     "overview": "All slides",
     "pause": "Pause",
-    "people": ["Individuals", "Small teams", "Educators", "Operators"],
+    "people": [
+      "Individuals",
+      "Small teams",
+      "Educators",
+      "Operators"
+    ],
     "perMonth": "per month",
     "perYear": "per year",
     "planDetails": [
@@ -12613,10 +12628,20 @@
       }
     },
     "sourceLabel": "Sources",
-    "stages": ["Plan", "Connect", "Deliver", "Reflect"],
+    "stages": [
+      "Plan",
+      "Connect",
+      "Deliver",
+      "Reflect"
+    ],
     "title": "Tuturuuu — the age of intelligent partners",
     "visuals": {
-      "audience": ["Individuals", "Teams", "MSMEs", "Researchers"],
+      "audience": [
+        "Individuals",
+        "Teams",
+        "MSMEs",
+        "Researchers"
+      ],
       "boundary": "Human review before consequential action",
       "calendar": [
         "Mon",
@@ -12638,7 +12663,12 @@
         "Capacity: 32 h",
         "Illustrative weekly workload · not customer results"
       ],
-      "chat": ["Your team", "Shared conversation", "Mira", "Review next steps"],
+      "chat": [
+        "Your team",
+        "Shared conversation",
+        "Mira",
+        "Review next steps"
+      ],
       "collaboration": [
         "Explore together",
         "Refine the document",
@@ -12662,7 +12692,14 @@
         "User confidence",
         "Agree success criteria before testing"
       ],
-      "flow": ["Capture", "Understand", "Review", "Plan", "Act", "Learn"],
+      "flow": [
+        "Capture",
+        "Understand",
+        "Review",
+        "Plan",
+        "Act",
+        "Learn"
+      ],
       "independence": [
         "Open source",
         "Replaceable services",
@@ -12680,7 +12717,11 @@
         "Shared context & permissions",
         "APIs, data & infrastructure"
       ],
-      "loop": ["Useful products", "Shared foundations", "Reinvestment"],
+      "loop": [
+        "Useful products",
+        "Shared foundations",
+        "Reinvestment"
+      ],
       "mail": [
         "Inbox",
         "Extract actions",
@@ -12689,14 +12730,23 @@
         "Calendar",
         "Follow-up"
       ],
-      "onboarding": ["Find knowledge", "Ask Mira", "Practice", "Give feedback"],
+      "onboarding": [
+        "Find knowledge",
+        "Ask Mira",
+        "Practice",
+        "Give feedback"
+      ],
       "pilot": [
         "Frame & govern",
         "Configure & test",
         "Evaluate & decide",
         "Illustrative 12-week scope"
       ],
-      "readiness": ["Implemented", "In development", "Research direction"],
+      "readiness": [
+        "Implemented",
+        "In development",
+        "Research direction"
+      ],
       "research": [
         "Define a scenario",
         "Coordinate agents",
@@ -12724,7 +12774,11 @@
         "Reviewed action",
         "Learn with you, under your control"
       ],
-      "workforce": ["Capacity", "Skills", "Onboarding"]
+      "workforce": [
+        "Capacity",
+        "Skills",
+        "Onboarding"
+      ]
     }
   },
   "platform-role-data-table": {
