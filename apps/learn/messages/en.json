@@ -218,6 +218,7 @@
     "continue": "Continue",
     "empty": "Nothing here yet.",
     "hide_sidebar": "Hide sidebar",
+    "home": "Home",
     "learner": "Learner",
     "loading": "Loading",
     "navigation": "Learner navigation",
@@ -225,7 +226,8 @@
     "previous": "Previous",
     "retry": "Retry",
     "save": "Save",
-    "saving": "Saving"
+    "saving": "Saving",
+    "settings": "Settings"
   },
   "courses": {
     "aiFeedback": "AI feedback",

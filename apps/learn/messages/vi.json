@@ -218,6 +218,7 @@
     "continue": "Tiếp tục",
     "empty": "Chưa có nội dung.",
     "hide_sidebar": "Ẩn thanh bên",
+    "home": "Trang chủ",
     "learner": "Học viên",
     "loading": "Đang tải",
     "navigation": "Điều hướng học tập",
@@ -225,7 +226,8 @@
     "previous": "Trước",
     "retry": "Thử lại",
     "save": "Lưu",
-    "saving": "Đang lưu"
+    "saving": "Đang lưu",
+    "settings": "Cài đặt"
   },
   "courses": {
     "aiFeedback": "Phản hồi AI",
