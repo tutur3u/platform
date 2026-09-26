@@ -58,10 +58,15 @@ async function readTaskSettings(supabase: TypedSupabaseClient, userId: string) {
 
 export async function GET() {
   try {
-    const supabase = await createClient();
+    let supabase = await createClient();
 
     // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+    const {
+      user,
+      authError,
+      supabase: sessionSupabase,
+    } = await resolveAuthenticatedSessionUser(supabase);
+    if (sessionSupabase) supabase = sessionSupabase;
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -98,10 +103,15 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const supabase = await createClient();
+    let supabase = await createClient();
 
     // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+    const {
+      user,
+      authError,
+      supabase: sessionSupabase,
+    } = await resolveAuthenticatedSessionUser(supabase);
+    if (sessionSupabase) supabase = sessionSupabase;
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

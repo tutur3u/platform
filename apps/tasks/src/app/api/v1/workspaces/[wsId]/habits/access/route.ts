@@ -18,9 +18,14 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
-  const supabase = await createClient(req);
+  let supabase = await createClient(req);
 
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+  const {
+    user,
+    authError,
+    supabase: sessionSupabase,
+  } = await resolveAuthenticatedSessionUser(supabase);
+  if (sessionSupabase) supabase = sessionSupabase;
 
   if (authError || !user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

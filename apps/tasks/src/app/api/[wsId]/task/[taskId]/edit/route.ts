@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TablesInsert, TablesUpdate } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
@@ -35,13 +36,32 @@ export async function PATCH(
   { params }: { params: Promise<{ wsId: string; taskId: string }> }
 ) {
   try {
-    const { taskId } = await params;
-    const supabase = await createClient(req);
-    const { user } = await resolveAuthenticatedSessionUser(req, supabase);
+    const { wsId, taskId } = await params;
+    const cookieSupabase = await createClient(req);
+    const { user, supabase: sessionSupabase } =
+      await resolveAuthenticatedSessionUser(req, cookieSupabase);
 
     // 1. Authenticate the user
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const supabase = sessionSupabase ?? cookieSupabase;
+    const membership = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
+    if (membership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Workspace lookup failed' },
+        { status: 500 }
+      );
+    }
+    if (!membership.ok) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
     }
 
     // 2. Parse the request body

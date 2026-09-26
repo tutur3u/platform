@@ -36,10 +36,15 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid habit ID' }, { status: 400 });
     }
 
-    const supabase = await createClient(request);
+    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+    const {
+      user,
+      authError,
+      supabase: sessionSupabase,
+    } = await resolveAuthenticatedSessionUser(request);
+    if (sessionSupabase) supabase = sessionSupabase;
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

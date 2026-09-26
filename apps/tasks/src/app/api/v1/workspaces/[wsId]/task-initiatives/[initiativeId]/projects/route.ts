@@ -21,10 +21,14 @@ export async function POST(
 ) {
   try {
     const { wsId: rawWsId, initiativeId } = await params;
-    const supabase = await createClient(request);
+    let supabase = await createClient(request);
 
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
+    const {
+      user,
+      authError: userError,
+      supabase: sessionSupabase,
+    } = await resolveAuthenticatedSessionUser(request);
+    if (sessionSupabase) supabase = sessionSupabase;
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

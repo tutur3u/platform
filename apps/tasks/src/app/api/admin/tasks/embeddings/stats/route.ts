@@ -14,10 +14,12 @@ export async function GET() {
   await connection();
 
   try {
-    const supabase = await createClient();
+    let supabase = await createClient();
 
     // Check authentication
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    const { user, supabase: sessionSupabase } =
+      await resolveAuthenticatedSessionUser(supabase);
+    if (sessionSupabase) supabase = sessionSupabase;
 
     if (!user || !isValidTuturuuuEmail(user.email)) {
       return NextResponse.json(

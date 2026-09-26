@@ -48,10 +48,15 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    let supabase = await createClient();
     const sbAdmin = await createAdminClient();
 
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+    const {
+      user,
+      authError,
+      supabase: sessionSupabase,
+    } = await resolveAuthenticatedSessionUser(supabase);
+    if (sessionSupabase) supabase = sessionSupabase;
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
