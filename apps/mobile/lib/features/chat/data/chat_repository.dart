@@ -123,6 +123,7 @@ class ChatRepository {
     List<ChatAttachmentDraft> attachments = const [],
     String? replyToMessageId,
     String? clientRequestId,
+    bool miraMode = false,
   }) async* {
     final response = await _apiClient.sendJsonStream(
       'POST',
@@ -135,6 +136,7 @@ class ChatRepository {
             .toList(growable: false),
         if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
         if (clientRequestId != null) 'clientRequestId': clientRequestId,
+        if (miraMode) 'miraMode': true,
       },
       accept: 'application/x-ndjson',
     );
@@ -244,18 +246,17 @@ class ChatRepository {
     String conversationId, {
     required PlatformFile file,
   }) async {
-    final bytes = await file.readAsBytes();
+    final sizeBytes = await file.length();
     final contentType = file.name.toLowerCase().endsWith('.m4a')
         ? 'audio/mp4'
-        : lookupMimeType(file.name, headerBytes: bytes) ??
-              'application/octet-stream';
+        : lookupMimeType(file.name) ?? 'application/octet-stream';
 
     final uploadPayload = await _apiClient.postJson(
       '${_conversationPath(wsId, conversationId)}/attachments/upload-url',
       {
         'filename': file.name,
         'contentType': contentType,
-        'sizeBytes': bytes.length,
+        'sizeBytes': sizeBytes,
       },
     );
 
@@ -278,19 +279,21 @@ class ChatRepository {
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
 
-    var uploadResponse = await _httpClient.put(
-      Uri.parse(signedUrl),
+    var uploadResponse = await _uploadSignedFile(
+      file: file,
       headers: uploadHeaders,
-      body: bytes,
+      sizeBytes: sizeBytes,
+      url: signedUrl,
     );
 
     if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
       final fallbackHeaders = <String, String>{...uploadHeaders}
         ..remove('Content-Type');
-      uploadResponse = await _httpClient.put(
-        Uri.parse(signedUrl),
+      uploadResponse = await _uploadSignedFile(
+        file: file,
         headers: fallbackHeaders,
-        body: bytes,
+        sizeBytes: sizeBytes,
+        url: signedUrl,
       );
     }
 
@@ -305,6 +308,21 @@ class ChatRepository {
       uploadPayload['attachment'] as Map<String, dynamic>? ??
           const <String, dynamic>{},
     );
+  }
+
+  Future<http.StreamedResponse> _uploadSignedFile({
+    required PlatformFile file,
+    required Map<String, String> headers,
+    required int sizeBytes,
+    required String url,
+  }) async {
+    final request = http.StreamedRequest('PUT', Uri.parse(url))
+      ..contentLength = sizeBytes
+      ..headers.addAll(headers);
+    final response = _httpClient.send(request);
+    await request.sink.addStream(file.readAsByteStream());
+    await request.sink.close();
+    return await response;
   }
 
   String _conversationPath(String wsId, String conversationId) {

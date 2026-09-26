@@ -38,7 +38,7 @@ class ChatThreadView extends StatelessWidget {
   final bool isSending;
   final bool isUploadingAttachment;
   final ValueChanged<String> onSend;
-  final ValueChanged<PlatformFile> onPickAttachment;
+  final Future<void> Function(PlatformFile) onPickAttachment;
   final ValueChanged<String> onRemoveAttachment;
   final void Function(ChatMessage message, String emoji) onReaction;
   final VoidCallback onDetails;

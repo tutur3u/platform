@@ -121,7 +121,9 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
 
   Future<void> _stop() => _operation = _stopRecording();
 
-  Future<void> _stopRecording() async {
+  Future<void> _stopAndSend() => _operation = _stopRecording(sendNow: true);
+
+  Future<void> _stopRecording({bool sendNow = false}) async {
     if (_busy || !_recording) return;
     _timer?.cancel();
     setState(() {
@@ -136,6 +138,17 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
         throw const FormatException('Empty voice recording');
       }
       if (!mounted) return;
+      if (sendNow) {
+        final bytes = await File(path).readAsBytes();
+        if (!mounted) return;
+        Navigator.of(context).pop(
+          AssistantVoiceMessageResult(
+            file: AssistantMemoryFile(name: 'voice-message.m4a', bytes: bytes),
+            sendNow: true,
+          ),
+        );
+        return;
+      }
       final preview = VideoPlayerController.file(File(path));
       _preview = preview;
       await preview.initialize();
@@ -301,6 +314,12 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
                     _recording ? Icons.stop_rounded : Icons.mic_rounded,
                   ),
                   label: Text(_recording ? l10n.voiceStop : l10n.voiceRecord),
+                ),
+              if (_recording)
+                FilledButton.icon(
+                  onPressed: _busy ? null : _stopAndSend,
+                  icon: const Icon(Icons.send_rounded),
+                  label: Text(l10n.voiceSendNow),
                 ),
               if (!_recording && _hasRecording) ...[
                 if (preview != null && preview.value.isInitialized)

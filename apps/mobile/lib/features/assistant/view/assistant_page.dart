@@ -5,11 +5,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
@@ -862,6 +864,23 @@ class _AssistantPageState extends State<AssistantPage> {
     );
   }
 
+  Future<void> _pickGalleryMedia(String wsId) async {
+    try {
+      final media = await ImagePicker().pickMultipleMedia();
+      if (media.isEmpty || !mounted) return;
+      final files = media.map(GalleryPlatformFile.new).toList();
+      if (!mounted) return;
+      await _chatCubit.addComposerAttachments(
+        wsId: wsId,
+        files: files,
+        modelId: _shellCubit.state.selectedModel.value,
+        timezone: await getCurrentTimezoneIdentifier(),
+      );
+    } on Exception {
+      if (mounted) _showInlineNotice(context.l10n.assistantGalleryPickError);
+    }
+  }
+
   Future<void> _toggleFullscreen(bool value) async {
     FocusManager.instance.primaryFocus?.unfocus();
     context.read<AssistantChromeCubit>().setFullscreen(value: value);
@@ -912,6 +931,10 @@ class _AssistantPageState extends State<AssistantPage> {
         onPickFiles: () async {
           await Navigator.of(sheetContext).maybePop();
           await _pickFiles(wsId);
+        },
+        onPickGalleryMedia: () async {
+          await Navigator.of(sheetContext).maybePop();
+          await _pickGalleryMedia(wsId);
         },
         onClearAttachments: () async {
           final attachments = _chatCubit.state.composerAttachments

@@ -29,6 +29,7 @@ export async function sendAiChatMessage({
   content,
   context,
   conversationId,
+  miraMode,
   request,
   stream,
 }: {
@@ -38,6 +39,7 @@ export async function sendAiChatMessage({
   content: string;
   context: ChatRouteContext;
   conversationId: string;
+  miraMode: boolean;
   request: NextRequest;
   stream: boolean;
 }) {
@@ -145,7 +147,7 @@ export async function sendAiChatMessage({
     creditSource: 'workspace',
     creditWsId: context.normalizedWsId,
     messages: aiMessages,
-    miraMode: false,
+    miraMode,
     model: normalizeAiChatModel(chat.model),
     observabilityContext: buildNativeAiObservabilityContext(previousMessages),
     persistenceRequestId: requestId,

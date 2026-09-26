@@ -508,6 +508,8 @@
     "assistantCreditsTitle": "Tín dụng",
     "assistantConversationTitle": "Cuộc trò chuyện",
     "assistantAttachFilesAction": "Đính kèm tệp",
+    "assistantAttachGalleryMediaAction": "Ảnh và video",
+    "assistantGalleryPickError": "Không thể mở thư viện ảnh. Vui lòng thử lại.",
     "assistantEnterFullscreenAction": "Vào toàn màn hình",
     "assistantExitFullscreenAction": "Thoát toàn màn hình",
     "assistantPersonalCredits": "Tín dụng cá nhân",
