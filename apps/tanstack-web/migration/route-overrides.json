@@ -1,5 +1,10 @@
 {
   "routes": {
+    "api:/api/v1/workspaces/:wsId/tutoring/sessions/:id:apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Workspace-scoped tutoring session edits and pending/cancelled deletion remain on the live Next.js API with update_user_groups_scores authorization. Rust parity pending."
+    },
     "api:/api/v1/notifications/mail-thread:apps/web/src/app/api/v1/notifications/mail-thread/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

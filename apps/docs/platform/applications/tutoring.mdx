@@ -28,7 +28,9 @@ payroll.
 Row actions mark a session done, no-show, cancelled, or back to pending, and
 generate the parent-facing message for the session. Staff can edit each
 session's lesson content after creation, so teaching notes from the separate
-content sheet can be kept with the attendance record.
+content sheet can be kept with the attendance record. Managers can permanently
+delete a pending or cancelled session after an in-app confirmation. Completed
+and no-show sessions stay intact for attendance and payroll history.
 
 ## Enablement
 
@@ -58,8 +60,8 @@ full set of toggles and states.
 ## Permissions
 
 - `view_user_groups` — open tutoring and read sessions, the queue, and exports.
-- `update_user_groups_scores` — schedule sessions, mark attendance, and
-  generate parent messages.
+- `update_user_groups_scores` — schedule, edit, and delete eligible sessions,
+  mark attendance, and generate parent messages.
 - `manage_workspace_settings` — enable or disable the module.
 
 Three non-404 states replace the old blanket 404 so an operator can tell the

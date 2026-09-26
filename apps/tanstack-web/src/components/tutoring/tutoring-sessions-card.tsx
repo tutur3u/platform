@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Download, Loader2, RotateCcw } from '@tuturuuu/icons';
+import { Download, Loader2, RotateCcw, Trash2 } from '@tuturuuu/icons';
 import type {
   TutoringAttendanceStatus,
   TutoringDetailedExportRow,
@@ -13,6 +13,7 @@ import {
   exportTutoringSessions,
   updateTutoringSession,
 } from '@tuturuuu/internal-api';
+import { deleteTutoringSession } from '@tuturuuu/internal-api/tutoring';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -144,6 +145,8 @@ export function TutoringSessionsCard({
   const queryClient = useQueryClient();
   const [editingSession, setEditingSession] =
     useState<TutoringSessionRecord | null>(null);
+  const [deletingSession, setDeletingSession] =
+    useState<TutoringSessionRecord | null>(null);
   const [draftContent, setDraftContent] = useState('');
   const updateContent = useMutation({
     mutationFn: ({ id, content }: { id: string; content: string }) =>
@@ -157,6 +160,24 @@ export function TutoringSessionsCard({
     },
     onError: () => toast.error(t('content_update_failed')),
   });
+  const deleteSession = useMutation({
+    mutationFn: (id: string) => deleteTutoringSession(wsId, id),
+    onSuccess: () => {
+      toast.success(t('session_deleted'));
+      setDeletingSession(null);
+      if (sessions.length === 1 && pagination.page > 1) {
+        actions.onParamsChange({ page: pagination.page - 1 });
+      }
+      for (const key of [
+        'tutoring-sessions',
+        'tutoring-session-stats',
+        'tutoring-queue',
+      ]) {
+        void queryClient.invalidateQueries({ queryKey: [key, wsId] });
+      }
+    },
+    onError: () => toast.error(t('session_delete_failed')),
+  });
 
   const columns = ({ t: tableT }: { t: ReturnType<typeof useTranslations> }) =>
     buildTutoringSessionColumns({
@@ -167,6 +188,7 @@ export function TutoringSessionsCard({
         setEditingSession(session);
         setDraftContent(session.content);
       },
+      onDelete: setDeletingSession,
       t,
       tableT,
     });
@@ -453,6 +475,51 @@ export function TutoringSessionsCard({
           >
             {t('save_content')}
           </Button>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        onOpenChange={(open) => {
+          if (!open && !deleteSession.isPending) setDeletingSession(null);
+        }}
+        open={Boolean(deletingSession)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('delete_session')}</DialogTitle>
+            <DialogDescription>
+              {t('delete_session_description')}
+            </DialogDescription>
+            {deletingSession ? (
+              <p className="text-sm font-medium">
+                {getDisplayName(deletingSession.student)} ·{' '}
+                {deletingSession.session_date} ·{' '}
+                {String(deletingSession.start_time).slice(0, 5)}
+              </p>
+            ) : null}
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button
+              disabled={deleteSession.isPending}
+              onClick={() => setDeletingSession(null)}
+              variant="outline"
+            >
+              {tCommon('common.cancel')}
+            </Button>
+            <Button
+              disabled={deleteSession.isPending}
+              onClick={() =>
+                deletingSession && deleteSession.mutate(deletingSession.id)
+              }
+              variant="destructive"
+            >
+              {deleteSession.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              {t('delete_session')}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </section>

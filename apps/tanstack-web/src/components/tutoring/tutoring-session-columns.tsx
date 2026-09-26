@@ -2,6 +2,7 @@ import type {
   TutoringAttendanceStatus,
   TutoringSessionRecord,
 } from '@tuturuuu/internal-api';
+import { Trash2 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
@@ -21,6 +22,7 @@ export function buildTutoringSessionColumns({
   isMarking,
   onMark,
   onEditContent,
+  onDelete,
   t,
   tableT,
 }: {
@@ -28,6 +30,7 @@ export function buildTutoringSessionColumns({
   isMarking: boolean;
   onMark: (id: string, status: TutoringAttendanceStatus) => void;
   onEditContent: (session: TutoringSessionRecord) => void;
+  onDelete: (session: TutoringSessionRecord) => void;
   t: ReturnType<typeof useTranslations>;
   tableT: ReturnType<typeof useTranslations>;
 }) {
@@ -129,13 +132,26 @@ export function buildTutoringSessionColumns({
             {row.original.content || '—'}
           </span>
           {canManage ? (
-            <Button
-              onClick={() => onEditContent(row.original)}
-              size="sm"
-              variant="ghost"
-            >
-              {t('edit_content')}
-            </Button>
+            <>
+              <Button
+                onClick={() => onEditContent(row.original)}
+                size="sm"
+                variant="ghost"
+              >
+                {t('edit_content')}
+              </Button>
+              {row.original.attendance_status === 'PENDING' ||
+              row.original.attendance_status === 'CANCELLED' ? (
+                <Button
+                  aria-label={t('delete_session')}
+                  onClick={() => onDelete(row.original)}
+                  size="icon"
+                  variant="ghost"
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              ) : null}
+            </>
           ) : null}
         </div>
       ),
