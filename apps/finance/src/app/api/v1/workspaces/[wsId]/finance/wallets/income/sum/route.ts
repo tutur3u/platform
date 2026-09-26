@@ -1,4 +1,9 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
@@ -51,11 +56,18 @@ async function getDataWithApiKey({
 }
 
 async function getDataFromSession({ wsId }: { wsId: string }) {
-  const supabase = await createClient();
+  const user = await getSatelliteAppSessionUser('finance');
+  if (!user)
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  const permissions = await getPermissions({ user, wsId });
+  if (!permissions)
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  const supabase = await createAdminClient({ noCookie: true });
 
   // Use optimized aggregation function - calculates sum at database level
   const { data: sum, error } = await supabase.rpc('get_wallet_income_sum', {
-    p_ws_id: wsId,
+    p_ws_id: permissions.wsId,
+    p_user_id: user.id,
   });
 
   if (error) {
