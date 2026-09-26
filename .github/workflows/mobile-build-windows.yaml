@@ -31,6 +31,7 @@ jobs:
         needs: [check-ci]
         if: needs.check-ci.outputs.should_run == 'true'
         runs-on: windows-latest
+        timeout-minutes: 45
         defaults:
             run:
                 working-directory: apps/mobile
@@ -51,8 +52,10 @@ jobs:
               with:
                   flutter-version: "3.47.x"
                   channel: stable
-                  cache: true
-                  pub-cache: true
+                  # Cache uploads can stall the Windows post-job step after the
+                  # build artifact is already available. Keep this check bounded.
+                  cache: false
+                  pub-cache: false
 
             - name: Enable Windows desktop
               run: flutter config --enable-windows-desktop
