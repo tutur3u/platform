@@ -136,5 +136,46 @@ void main() {
       await refresh;
       expect(cubit.state.isRefreshing, isFalse);
     });
+
+    test('shows a disk snapshot for a cold forced refresh', () async {
+      const wsId = 'ws_cold_force';
+      const wallets = [
+        Wallet(id: 'wallet_cold', name: 'Saved', currency: 'USD'),
+      ];
+      final pendingWallets = Completer<List<Wallet>>();
+      var calls = 0;
+      when(() => repository.getWallets(wsId)).thenAnswer((_) {
+        calls++;
+        return calls == 1 ? Future.value(wallets) : pendingWallets.future;
+      });
+      when(
+        () => repository.getTransactionsInfinite(wsId: wsId, limit: 10),
+      ).thenAnswer(
+        (_) async =>
+            const InfiniteTransactionResponse(data: [], hasMore: false),
+      );
+      when(
+        () => repository.getWorkspaceDefaultCurrency(wsId),
+      ).thenAnswer((_) async => 'USD');
+      when(
+        () => repository.getExchangeRates(),
+      ).thenAnswer((_) async => const []);
+
+      final first = FinanceCubit(financeRepository: repository);
+      await first.loadFinanceData(wsId);
+      await first.close();
+      FinanceCubit.clearWorkspaceCache(wsId);
+
+      final cold = FinanceCubit(financeRepository: repository);
+      addTearDown(cold.close);
+      final refresh = cold.loadFinanceData(wsId, forceRefresh: true);
+      await Future<void>.delayed(Duration.zero);
+      expect(cold.state.status, FinanceStatus.loaded);
+      expect(cold.state.wallets, wallets);
+      expect(cold.state.isRefreshing, isTrue);
+
+      pendingWallets.complete(wallets);
+      await refresh;
+    });
   });
 }

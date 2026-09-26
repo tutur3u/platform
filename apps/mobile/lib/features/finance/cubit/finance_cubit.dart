@@ -111,13 +111,16 @@ class FinanceCubit extends Cubit<FinanceState> {
     );
     final cached = _cache[memoryCacheKey];
     final hasVisibleData = _loadedWorkspaceId == wsId;
-    final hasDiskSnapshot =
-        !forceRefresh && diskCached.hasValue && diskCached.data != null;
+    final hasDiskSnapshot = diskCached.hasValue && diskCached.data != null;
+    final shouldShowDiskSnapshot =
+        hasDiskSnapshot && (!forceRefresh || !hasVisibleData);
 
-    if (hasDiskSnapshot) {
+    if (shouldShowDiskSnapshot) {
       _loadedWorkspaceId = wsId;
       emit(diskCached.data!);
-      if (diskCached.isFresh && diskCached.data!.hasWorkspaceCurrency) {
+      if (!forceRefresh &&
+          diskCached.isFresh &&
+          diskCached.data!.hasWorkspaceCurrency) {
         return;
       }
     }
@@ -129,7 +132,7 @@ class FinanceCubit extends Cubit<FinanceState> {
           cached.state.hasWorkspaceCurrency) {
         return;
       }
-    } else if (!hasVisibleData && !hasDiskSnapshot) {
+    } else if (!hasVisibleData && !shouldShowDiskSnapshot) {
       emit(
         state.copyWith(
           status: FinanceStatus.loading,
@@ -143,7 +146,7 @@ class FinanceCubit extends Cubit<FinanceState> {
       emit(
         state.copyWith(
           status: FinanceStatus.loaded,
-          isFromCache: state.isFromCache || hasDiskSnapshot,
+          isFromCache: state.isFromCache || shouldShowDiskSnapshot,
           isRefreshing: true,
           lastUpdatedAt: cached?.fetchedAt ?? diskCached.fetchedAt,
           clearError: true,
