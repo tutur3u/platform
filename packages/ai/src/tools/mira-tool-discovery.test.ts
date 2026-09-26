@@ -27,6 +27,19 @@ describe('Mira tool discovery', () => {
     expect(result.guidance.some(({ domain }) => domain === 'tasks')).toBe(true);
     expect(searchMiraTools({ query: 'zzzzzzzzz' }).selectedTools).toEqual([]);
   });
+  it('discovers task creation and its board/list prerequisites together', () => {
+    const tools = searchMiraTools({
+      query: 'help me add new tasks',
+    }).selectedTools;
+    expect(tools).toContain('create_task');
+    expect(tools).toContain('list_boards');
+    expect(tools).toContain('list_task_lists');
+  });
+  it('prefers task-list creation over task creation', () => {
+    expect(
+      searchMiraTools({ query: 'create task list', limit: 1 }).selectedTools
+    ).toEqual(['create_task_list']);
+  });
 });
 
 it('finds singular calendar operations from plural queries', () => {

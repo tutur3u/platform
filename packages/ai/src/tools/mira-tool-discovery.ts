@@ -83,6 +83,12 @@ export function searchMiraTools(
         .some((word) => word === term || term === `${word}s`)
     )
   );
+  const creatingTasks =
+    /\b(?:add|create|make)\b.*\btasks?\b|\bnew tasks?\b/.test(query) &&
+    !/\b(?:label|assignee|project)\b|\btasks?\s+lists?\b/.test(query);
+  const taskCreationPrerequisiteScore: Record<string, number> = creatingTasks
+    ? { create_task: 30, list_boards: 28, list_task_lists: 26 }
+    : {};
   const matches = (
     Object.entries(MIRA_TOOL_DIRECTORY) as [MiraToolName, string][]
   )
@@ -99,6 +105,7 @@ export function searchMiraTools(
       const nameWords = normalize(name).split(' ');
       const score =
         (normalize(name) === query ? 100 : 0) +
+        (taskCreationPrerequisiteScore[name] ?? 0) +
         terms.reduce(
           (total, term) =>
             total +

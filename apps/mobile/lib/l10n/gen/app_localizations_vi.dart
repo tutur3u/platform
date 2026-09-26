@@ -1395,6 +1395,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantModelLabel => 'Mô hình';
 
   @override
+  String get assistantSearchModels => 'Tìm mô hình';
+
+  @override
   String get assistantModeFast => 'Nhanh';
 
   @override
@@ -1453,6 +1456,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantAttachmentFailedShort => 'Tải lên thất bại';
+
+  @override
+  String get assistantPhotoAttachment => 'Ảnh';
+
+  @override
+  String get assistantVideoAttachment => 'Video';
+
+  @override
+  String get assistantMediaPreviewError => 'Không mở được nội dung này. Vui lòng thử lại.';
 
   @override
   String get assistantContextUpdatedLabel => 'Đã cập nhật ngữ cảnh không gian làm việc';

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
+import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
+import 'package:mobile/features/assistant/widgets/assistant_model_picker.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -11,11 +14,11 @@ class AssistantComposerDock extends StatelessWidget {
     required this.chatState,
     required this.liveState,
     required this.liveUiState,
-    required this.creditSource,
+    required this.shellState,
     required this.isFullscreen,
     required this.bottomInset,
     required this.isPersonalWorkspace,
-    required this.thinkingMode,
+    required this.onModelSelected,
     required this.onOpenCreditSourceSheet,
     required this.onThinkingModeChanged,
     required this.controller,
@@ -31,11 +34,11 @@ class AssistantComposerDock extends StatelessWidget {
   final AssistantChatState chatState;
   final AssistantLiveState liveState;
   final AssistantLiveUiState liveUiState;
-  final AssistantCreditSource creditSource;
+  final AssistantShellState shellState;
   final bool isFullscreen;
   final double bottomInset;
   final bool isPersonalWorkspace;
-  final AssistantThinkingMode thinkingMode;
+  final Future<void> Function(AssistantGatewayModel) onModelSelected;
   final Future<void> Function() onOpenCreditSourceSheet;
   final Future<void> Function(AssistantThinkingMode mode) onThinkingModeChanged;
   final TextEditingController controller;
@@ -115,12 +118,19 @@ class AssistantComposerDock extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               _ThinkingModeDropdown(
-                thinkingMode: thinkingMode,
+                thinkingMode: shellState.thinkingMode,
                 onChanged: onThinkingModeChanged,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 2),
+              AssistantModelPicker(
+                selected: shellState.selectedModel,
+                models: shellState.availableModels,
+                allowedModels: shellState.activeCredits.allowedModels,
+                onSelected: onModelSelected,
+              ),
+              const SizedBox(width: 2),
               _CreditSourceDropdown(
-                creditSource: creditSource,
+                creditSource: shellState.creditSource,
                 onPressed: onOpenCreditSourceSheet,
               ),
               const Spacer(),
@@ -173,32 +183,9 @@ class _AttachmentStrip extends StatelessWidget {
             .map(
               (attachment) => Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: InputChip(
-                  visualDensity: VisualDensity.compact,
-                  avatar: Icon(
-                    attachment.uploadState ==
-                            AssistantAttachmentUploadState.error
-                        ? Icons.error_outline_rounded
-                        : attachment.type.startsWith('audio/')
-                        ? Icons.graphic_eq_rounded
-                        : attachment.isImage
-                        ? Icons.image_outlined
-                        : Icons.attach_file_rounded,
-                    size: 14,
-                    color:
-                        attachment.uploadState ==
-                            AssistantAttachmentUploadState.error
-                        ? Theme.of(context).colorScheme.error
-                        : null,
-                  ),
-                  label: Text(
-                    attachment.uploadState ==
-                            AssistantAttachmentUploadState.error
-                        ? '${attachment.name} · '
-                              '${context.l10n.assistantAttachmentFailedShort}'
-                        : attachment.name,
-                  ),
-                  onDeleted: () => onRemoveAttachment(attachment.id),
+                child: AssistantAttachmentPreview(
+                  attachment: attachment,
+                  onRemove: () => onRemoveAttachment(attachment.id),
                 ),
               ),
             )

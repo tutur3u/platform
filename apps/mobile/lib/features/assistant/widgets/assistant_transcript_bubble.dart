@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_tool_results_section.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -106,27 +107,19 @@ class AssistantTranscriptBubble extends StatelessWidget {
                           runSpacing: 8,
                           children: attachments
                               .map(
-                                (attachment) => Chip(
-                                  avatar: Icon(
-                                    attachment.type.startsWith('audio/')
-                                        ? Icons.graphic_eq_rounded
-                                        : attachment.isImage
-                                        ? Icons.image_outlined
-                                        : Icons.attach_file_rounded,
-                                    size: 16,
-                                  ),
-                                  label: Text(attachment.name),
+                                (attachment) => AssistantAttachmentPreview(
+                                  attachment: attachment,
                                 ),
                               )
                               .toList(growable: false),
                         ),
                       ],
                       if (toolParts.isNotEmpty) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         AssistantToolResultsSection(parts: toolParts),
                       ],
-                      if (toolNames.isNotEmpty) ...[
-                        const SizedBox(height: 12),
+                      if (toolNames.isNotEmpty && toolParts.isEmpty) ...[
+                        const SizedBox(height: 8),
                         _AssistantToolCallsCollapsible(toolNames: toolNames),
                       ],
                     ],

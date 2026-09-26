@@ -1395,6 +1395,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantModelLabel => 'Model';
 
   @override
+  String get assistantSearchModels => 'Search models';
+
+  @override
   String get assistantModeFast => 'Fast';
 
   @override
@@ -1453,6 +1456,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantAttachmentFailedShort => 'Upload failed';
+
+  @override
+  String get assistantPhotoAttachment => 'Photo';
+
+  @override
+  String get assistantVideoAttachment => 'Video';
+
+  @override
+  String get assistantMediaPreviewError => 'Could not open this media. Try again.';
 
   @override
   String get assistantContextUpdatedLabel => 'Workspace context updated';

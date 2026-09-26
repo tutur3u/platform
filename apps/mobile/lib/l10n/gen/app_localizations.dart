@@ -2803,6 +2803,12 @@ abstract class AppLocalizations {
   /// **'Model'**
   String get assistantModelLabel;
 
+  /// No description provided for @assistantSearchModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Search models'**
+  String get assistantSearchModels;
+
   /// No description provided for @assistantModeFast.
   ///
   /// In en, this message translates to:
@@ -2922,6 +2928,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Upload failed'**
   String get assistantAttachmentFailedShort;
+
+  /// No description provided for @assistantPhotoAttachment.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get assistantPhotoAttachment;
+
+  /// No description provided for @assistantVideoAttachment.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get assistantVideoAttachment;
+
+  /// No description provided for @assistantMediaPreviewError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open this media. Try again.'**
+  String get assistantMediaPreviewError;
 
   /// No description provided for @assistantContextUpdatedLabel.
   ///
