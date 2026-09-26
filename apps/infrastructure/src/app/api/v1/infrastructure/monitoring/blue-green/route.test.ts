@@ -2,17 +2,17 @@ import type { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
-  createClientMock,
+  resolveSatelliteRequestActorMock,
   getPermissionsMock,
   readBlueGreenMonitoringSnapshotMock,
 } = vi.hoisted(() => ({
-  createClientMock: vi.fn(),
+  resolveSatelliteRequestActorMock: vi.fn(),
   getPermissionsMock: vi.fn(),
   readBlueGreenMonitoringSnapshotMock: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createClient: createClientMock,
+vi.mock('@tuturuuu/satellite/workspace-access', () => ({
+  resolveSatelliteRequestActor: resolveSatelliteRequestActorMock,
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -42,19 +42,15 @@ function createTestRequest(query = '') {
 }
 
 describe('blue-green monitoring route', () => {
-  const authGetUserMock = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
-    createClientMock.mockResolvedValue({
-      auth: {
-        getUser: authGetUserMock,
-      },
+    resolveSatelliteRequestActorMock.mockResolvedValue({
+      user: { id: 'user-1', email: 'user@tuturuuu.com' },
     });
   });
 
   it('rejects unauthenticated requests', async () => {
-    authGetUserMock.mockResolvedValue({ data: { user: null } });
+    resolveSatelliteRequestActorMock.mockResolvedValue(null);
 
     const response = await GET(createTestRequest());
 
@@ -64,7 +60,6 @@ describe('blue-green monitoring route', () => {
 
   it('rejects authenticated users without infrastructure access', async () => {
     const request = createTestRequest();
-    authGetUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     getPermissionsMock.mockResolvedValue(createPermissionsResult());
 
     const response = await GET(request);
@@ -73,12 +68,11 @@ describe('blue-green monitoring route', () => {
     await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
     expect(getPermissionsMock).toHaveBeenCalledWith({
       wsId: '00000000-0000-0000-0000-000000000000',
-      request,
+      user: { id: 'user-1', email: 'user@tuturuuu.com' },
     });
   });
 
   it('returns the monitoring snapshot for authorized viewers', async () => {
-    authGetUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     getPermissionsMock.mockResolvedValue(
       createPermissionsResult(['view_infrastructure'])
     );
@@ -195,7 +189,6 @@ describe('blue-green monitoring route', () => {
   });
 
   it('passes preview limits to the monitoring snapshot reader', async () => {
-    authGetUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     getPermissionsMock.mockResolvedValue(
       createPermissionsResult(['view_infrastructure'])
     );

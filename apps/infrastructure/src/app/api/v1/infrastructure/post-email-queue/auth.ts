@@ -1,22 +1,20 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 
-export async function requirePostEmailQueueRootAdmin(request?: Request) {
-  const supabase = await createClient(request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+export async function requirePostEmailQueueRootAdmin(request: Request) {
+  const actor = await resolveSatelliteRequestActor(request, 'infra');
 
-  if (!user) {
+  if (!actor) {
     return {
       error: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
     };
   }
 
-  const { data: rootWorkspaceUser, error } = await supabase
+  const { data: rootWorkspaceUser, error } = await actor.admin
     .from('workspace_user_linked_users')
     .select('platform_user_id')
-    .eq('platform_user_id', user.id)
+    .eq('platform_user_id', actor.user.id)
     .eq('ws_id', ROOT_WORKSPACE_ID)
     .maybeSingle();
 
@@ -35,5 +33,5 @@ export async function requirePostEmailQueueRootAdmin(request?: Request) {
     };
   }
 
-  return { user };
+  return { user: actor.user };
 }

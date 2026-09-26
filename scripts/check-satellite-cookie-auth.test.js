@@ -107,6 +107,38 @@ test('flags a satellite route that authorizes with the cookie client', () => {
   ]);
 });
 
+test('flags cookie auth hidden in an API helper or shared library', () => {
+  const root = createTempRepo();
+  const source = `
+    import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+    const supabase = await createClient(request);
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+  `;
+  writeFile(root, 'apps/infrastructure/src/app/api/v1/thing/auth.ts', source);
+  writeFile(root, 'apps/infrastructure/src/lib/thing/authorization.ts', source);
+
+  assert.deepEqual(findViolations(root), [
+    path.join(
+      'apps',
+      'infrastructure',
+      'src',
+      'app',
+      'api',
+      'v1',
+      'thing',
+      'auth.ts'
+    ),
+    path.join(
+      'apps',
+      'infrastructure',
+      'src',
+      'lib',
+      'thing',
+      'authorization.ts'
+    ),
+  ]);
+});
+
 test('flags Infrastructure routes that query directly with a cookie client', () => {
   const root = createTempRepo();
   writeFile(

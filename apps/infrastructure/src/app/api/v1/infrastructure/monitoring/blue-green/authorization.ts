@@ -1,5 +1,4 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -18,10 +17,9 @@ export async function authorizeInfrastructureViewer(
   request: Request,
   requiredPermission: InfrastructureMonitoringPermission = 'view_infrastructure'
 ) {
-  const supabase = await createClient(request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  const actor = await resolveSatelliteRequestActor(request, 'infra');
 
-  if (!user) {
+  if (!actor) {
     return {
       ok: false as const,
       response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
@@ -29,13 +27,13 @@ export async function authorizeInfrastructureViewer(
   }
 
   setLogDrainUserContext({
-    userEmail: user.email,
-    userId: user.id,
+    userEmail: actor.user.email,
+    userId: actor.user.id,
   });
 
   const permissions = await getPermissions({
     wsId: ROOT_WORKSPACE_ID,
-    request,
+    user: actor.user,
   });
 
   if (
@@ -50,7 +48,7 @@ export async function authorizeInfrastructureViewer(
 
   return {
     ok: true as const,
-    user,
+    user: actor.user,
   };
 }
 

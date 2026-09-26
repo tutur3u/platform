@@ -1,11 +1,14 @@
 import 'server-only';
 
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  resolveSatellitePageActor,
+  resolveSatelliteRequestActor,
+} from '@tuturuuu/satellite/workspace-access';
 
-export async function hasAIWhitelistAccess(request?: Pick<Request, 'headers'>) {
-  const supabase = await createClient(request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+export async function hasAIWhitelistAccess(request?: Request) {
+  const actor = request
+    ? await resolveSatelliteRequestActor(request, 'infra')
+    : await resolveSatellitePageActor('infra');
 
-  return Boolean(user?.email?.endsWith('@tuturuuu.com'));
+  return Boolean(actor?.user.email?.endsWith('@tuturuuu.com'));
 }
