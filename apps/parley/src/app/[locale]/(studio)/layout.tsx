@@ -1,5 +1,8 @@
 import { personalWorkspace } from '@tuturuuu/meet-core/features/call/server/room-service';
-import { requireParleyUser } from '@tuturuuu/meet-core/parley/authorization';
+import {
+  hasParleyAdministratorRole,
+  requireParleyUser,
+} from '@tuturuuu/meet-core/parley/authorization';
 import NavbarActions from '@tuturuuu/satellite/navbar-actions';
 import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
@@ -12,6 +15,7 @@ import {
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
 import { connection } from 'next/server';
+import { getLocale } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
@@ -19,12 +23,19 @@ import { Structure } from './structure';
 export default async function Layout({ children }: { children: ReactNode }) {
   await connection();
   const user = await requireParleyUser();
-  const [cookieStore, wsId, links] = await Promise.all([
+  const [cookieStore, wsId, locale, isAdministrator] = await Promise.all([
     cookies(),
     personalWorkspace(user.id),
-    getNavigationLinks(),
+    getLocale(),
+    hasParleyAdministratorRole(user.id).catch(() => {
+      console.warn('Parley administrator navigation unavailable');
+      return false;
+    }),
   ]);
-  const workspace = await getWorkspace(wsId, { useAdmin: true, user });
+  const [workspace, links] = await Promise.all([
+    getWorkspace(wsId, { useAdmin: true, user }),
+    getNavigationLinks(locale, isAdministrator),
+  ]);
   if (!workspace?.joined) throw new Error('Personal workspace unavailable');
   const behavior = parseSidebarBehavior(cookieStore);
   return (

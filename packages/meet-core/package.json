@@ -422,6 +422,8 @@
     "./utils/configs.ts": "./src/utils/configs.ts",
     "./parley/admin-actions": "./src/parley/admin-actions.ts",
     "./parley/admin-actions.ts": "./src/parley/admin-actions.ts",
+    "./parley/scenario-mutations": "./src/parley/scenario-mutations.ts",
+    "./parley/scenario-mutations.ts": "./src/parley/scenario-mutations.ts",
     "./parley/repository": "./src/parley/repository.ts",
     "./parley/repository.ts": "./src/parley/repository.ts",
     "./parley/contracts": "./src/parley/contracts.ts",

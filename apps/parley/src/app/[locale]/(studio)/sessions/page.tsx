@@ -23,11 +23,16 @@ export default async function Sessions({
   ]);
   return (
     <>
-      <header className="space-y-2">
-        <h1 className="font-semibold text-3xl tracking-tight">
-          {t('sessions')}
-        </h1>
-        <p className="text-muted-foreground">{t('sessions_hint')}</p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="font-semibold text-3xl tracking-tight">
+            {t('sessions')}
+          </h1>
+          <p className="text-muted-foreground">{t('sessions_hint')}</p>
+        </div>
+        <Button asChild>
+          <Link href="/sessions/new">{t('new_session')}</Link>
+        </Button>
       </header>
       {!sessions.length ? (
         <div className="rounded-xl border border-dashed p-12 text-center">
@@ -37,7 +42,7 @@ export default async function Sessions({
             {t('sessions_empty_hint')}
           </p>
           <Button asChild className="mt-5">
-            <Link href="/">{t('discover')}</Link>
+            <Link href="/sessions/new">{t('new_session')}</Link>
           </Button>
         </div>
       ) : (
