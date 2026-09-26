@@ -1,5 +1,4 @@
 import { getMindBoardGraphSnapshot } from '@tuturuuu/mind-core';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient(request);
+    const supabase = access.access.sbAdmin;
     let normalizedWsId: string;
 
     try {
