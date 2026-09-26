@@ -8871,6 +8871,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesInsertLink => 'Insert link';
 
   @override
+  String get notesLinkEvents => 'Events';
+
+  @override
+  String get notesLinkMeetings => 'Meetings';
+
+  @override
+  String get notesLinkTasks => 'Tasks';
+
+  @override
+  String get notesLinkWork => 'Link work';
+
+  @override
   String get notesLinkText => 'Link text';
 
   @override
@@ -8878,6 +8890,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesInsertButton => 'Insert';
+
+  @override
+  String get notesNoLinkResults => 'No matching items';
+
+  @override
+  String get notesSearchWork => 'Search tasks, events, or meetings';
 
   @override
   String get notesLoadError => 'Could not load notes. Pull to retry.';

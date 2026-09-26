@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { JSONContent } from '@tiptap/react';
+import type { Editor, JSONContent } from '@tiptap/react';
 import { Archive, ArrowLeft, NotebookPen, Plus, Search } from '@tuturuuu/icons';
 import {
   createWorkspaceNote,
@@ -14,6 +14,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { NoteEntityPicker } from './note-entity-picker';
 
 const emptyDoc: JSONContent = { type: 'doc', content: [] };
 
@@ -46,6 +47,7 @@ export function NotesClient({ wsId }: { wsId: string }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const editorRef = useRef<Editor | null>(null);
   const inFlight = useRef<Promise<boolean> | null>(null);
   const pending = useRef<{
     id: string;
@@ -258,6 +260,20 @@ export function NotesClient({ wsId }: { wsId: string }) {
                   <Archive className="size-4" />
                 </Button>
               </div>
+              <NoteEntityPicker
+                wsId={wsId}
+                onSelect={({ label, href }) => {
+                  editorRef.current
+                    ?.chain()
+                    .focus()
+                    .insertContent({
+                      type: 'text',
+                      text: label,
+                      marks: [{ type: 'link', attrs: { href } }],
+                    })
+                    .run();
+                }}
+              />
               <div
                 aria-live="polite"
                 className="min-h-5 text-muted-foreground text-xs"
@@ -278,6 +294,7 @@ export function NotesClient({ wsId }: { wsId: string }) {
               </div>
               <RichTextEditor
                 key={selectedId}
+                editorRef={editorRef}
                 workspaceId={wsId}
                 content={content}
                 onImmediateChange={(next) => {

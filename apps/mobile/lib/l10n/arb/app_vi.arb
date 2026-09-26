@@ -3582,9 +3582,15 @@
     "notesUntitled": "Ghi chú chưa đặt tên",
     "notesStartWriting": "Bắt đầu viết...",
     "notesInsertLink": "Chèn liên kết",
+    "notesLinkEvents": "Sự kiện",
+    "notesLinkMeetings": "Cuộc họp",
+    "notesLinkTasks": "Công việc",
+    "notesLinkWork": "Liên kết công việc",
     "notesLinkText": "Văn bản liên kết",
     "notesLinkUrl": "Liên kết đến công việc, sự kiện, cuộc họp hoặc trang web",
     "notesInsertButton": "Chèn",
+    "notesNoLinkResults": "Không có mục phù hợp",
+    "notesSearchWork": "Tìm công việc, sự kiện hoặc cuộc họp",
     "notesLoadError": "Không thể tải ghi chú. Kéo xuống để thử lại.",
     "notesSaveError": "Không thể lưu ghi chú. Nội dung bạn sửa vẫn còn ở đây."
 }

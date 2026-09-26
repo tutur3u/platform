@@ -17005,6 +17005,30 @@ abstract class AppLocalizations {
   /// **'Insert link'**
   String get notesInsertLink;
 
+  /// No description provided for @notesLinkEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Events'**
+  String get notesLinkEvents;
+
+  /// No description provided for @notesLinkMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetings'**
+  String get notesLinkMeetings;
+
+  /// No description provided for @notesLinkTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get notesLinkTasks;
+
+  /// No description provided for @notesLinkWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Link work'**
+  String get notesLinkWork;
+
   /// No description provided for @notesLinkText.
   ///
   /// In en, this message translates to:
@@ -17022,6 +17046,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Insert'**
   String get notesInsertButton;
+
+  /// No description provided for @notesNoLinkResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching items'**
+  String get notesNoLinkResults;
+
+  /// No description provided for @notesSearchWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tasks, events, or meetings'**
+  String get notesSearchWork;
 
   /// No description provided for @notesLoadError.
   ///
