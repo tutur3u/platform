@@ -119,7 +119,12 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 if (message.attachments.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  ...message.attachments.map(_AttachmentChip.new),
+                  ...message.attachments.map(
+                    (attachment) => ChatAttachmentPreview(
+                      key: ValueKey(attachment.id),
+                      attachment: attachment,
+                    ),
+                  ),
                 ],
                 if (message.reactions.isNotEmpty) ...[
                   const SizedBox(height: 8),
