@@ -76,7 +76,7 @@ export async function POST(req: Request, { params }: Params) {
     const { targetWorkspaceId, newBoardName } = parsedData.data;
     const { boardId: parsedBoardId } = parsedParams.data;
 
-    const supabase = await createClient(req);
+    let supabase = await createClient(req);
     const sbAdmin = await createAdminClient();
     const wsId = await normalizeWorkspaceId(id, supabase);
 
@@ -87,8 +87,12 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
+    const {
+      user,
+      authError: userError,
+      supabase: sessionSupabase,
+    } = await resolveAuthenticatedSessionUser(supabase);
+    if (sessionSupabase) supabase = sessionSupabase;
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

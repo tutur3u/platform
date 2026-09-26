@@ -39,8 +39,10 @@ export async function GET(request: Request) {
     const wsId = searchParams.get('wsId');
     const isPersonal = searchParams.get('isPersonal') === 'true';
 
-    const supabase = await createClient(request);
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    let supabase = await createClient(request);
+    const { user, supabase: sessionSupabase } =
+      await resolveAuthenticatedSessionUser(request);
+    if (sessionSupabase) supabase = sessionSupabase;
 
     if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

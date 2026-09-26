@@ -63,10 +63,15 @@ interface TemplateContent {
 export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { wsId: rawWsId, boardId } = await params;
-    const supabase = await createClient(req);
+    let supabase = await createClient(req);
 
     // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+    const {
+      user,
+      authError,
+      supabase: sessionSupabase,
+    } = await resolveAuthenticatedSessionUser(supabase);
+    if (sessionSupabase) supabase = sessionSupabase;
 
     if (authError || !user) {
       return NextResponse.json(
