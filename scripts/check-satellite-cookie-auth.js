@@ -32,6 +32,12 @@ const COOKIE_SESSION_OWNER_APPS = new Set(['web']);
 const COOKIE_CLIENT_PATTERN = /\bconst supabase = await createClient\(\s*\)/u;
 const MEMBERSHIP_CALL_PATTERN =
   /verifyWorkspaceMembershipType\(\s*\{[^}]*?supabase:\s*supabase\b/su;
+const DIRECT_SUPABASE_RESOLVER_PATTERN =
+  /from ['"]@tuturuuu\/supabase\/next\/auth-session-user['"]/u;
+const COOKIE_CLIENT_CALL_PATTERN = /\bcreateClient\(\s*(?:request|req)?\s*\)/u;
+const LOCAL_RESOLVER_PATTERN =
+  /resolveAuthenticatedSessionUser\(\s*supabase\s*\)/u;
+const COOKIE_QUERY_PATTERN = /\bsupabase\s*\.\s*(?:from|schema|rpc)\(/u;
 
 function listDirectories(directory) {
   try {
@@ -75,7 +81,15 @@ function collectRouteFiles(directory) {
 /** True when the file authorizes membership with the cookie-backed client. */
 function authorizesWithCookieClient(source) {
   return (
-    COOKIE_CLIENT_PATTERN.test(source) && MEMBERSHIP_CALL_PATTERN.test(source)
+    (COOKIE_CLIENT_PATTERN.test(source) &&
+      MEMBERSHIP_CALL_PATTERN.test(source)) ||
+    (DIRECT_SUPABASE_RESOLVER_PATTERN.test(source) &&
+      COOKIE_CLIENT_CALL_PATTERN.test(source)) ||
+    (LOCAL_RESOLVER_PATTERN.test(source) &&
+      COOKIE_CLIENT_CALL_PATTERN.test(source) &&
+      COOKIE_QUERY_PATTERN.test(source) &&
+      !source.includes('sessionSupabase') &&
+      !source.includes('authResult.supabase'))
   );
 }
 
@@ -89,7 +103,14 @@ function findViolations(root = REPO_ROOT) {
     const apiDir = path.join(appsDir, appName, 'src', 'app', 'api');
 
     for (const filePath of collectRouteFiles(apiDir)) {
-      if (!authorizesWithCookieClient(fs.readFileSync(filePath, 'utf8'))) {
+      const source = fs.readFileSync(filePath, 'utf8');
+      if (
+        !authorizesWithCookieClient(source) &&
+        !(
+          appName === 'infrastructure' &&
+          COOKIE_CLIENT_CALL_PATTERN.test(source)
+        )
+      ) {
         continue;
       }
 
