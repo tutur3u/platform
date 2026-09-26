@@ -2,6 +2,7 @@ import { SatelliteVersionBadge } from '@tuturuuu/satellite/version-badge';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
+import { NuqsAdapter } from '@tuturuuu/ui/nuqs-adapter';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
@@ -68,10 +69,12 @@ export default async function RootLayout({ children }: Props) {
           <NextIntlClientProvider>
             <TeachThemeProvider>
               <TeachQueryProvider>
-                {children}
-                <Suspense fallback={null}>
-                  <SatelliteVersionBadge appName="Teach" />
-                </Suspense>
+                <NuqsAdapter>
+                  {children}
+                  <Suspense fallback={null}>
+                    <SatelliteVersionBadge appName="Teach" />
+                  </Suspense>
+                </NuqsAdapter>
               </TeachQueryProvider>
             </TeachThemeProvider>
           </NextIntlClientProvider>

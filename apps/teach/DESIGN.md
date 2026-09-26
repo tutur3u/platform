@@ -3,6 +3,11 @@
 Teach follows the shared Tuturuuu Education Satellites design language defined in
 `apps/learn/DESIGN.md`.
 
+Authenticated teacher workspaces use the shared satellite sidebar through
+`[wsId]/structure.tsx`; route links, workspace switching, app launching, account
+controls, and responsive navigation belong to that shell. Keep teacher-specific
+workflows inside the page content.
+
 ## Visual Mode
 
 - Use Neobrutalism for every Teach surface: hard 2px foreground borders, offset

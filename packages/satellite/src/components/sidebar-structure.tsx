@@ -54,6 +54,7 @@ export interface SidebarStructureProps {
   sidebarHeaderClassName?: string;
   sidebarHeaderHeight?: string;
   showSettingsButton?: boolean;
+  showUpgrade?: boolean;
   upgradeExternal?: boolean;
   upgradeHref?: string;
   userPopover: ReactNode;
@@ -84,6 +85,7 @@ export function SidebarStructure({
   sidebarHeaderClassName,
   sidebarHeaderHeight,
   showSettingsButton = true,
+  showUpgrade,
   upgradeExternal = false,
   upgradeHref,
   userPopover,
@@ -169,7 +171,9 @@ export function SidebarStructure({
           feedbackButton={
             <SidebarFooterActions
               isCollapsed={isCollapsed}
-              showUpgrade={!workspace?.tier || workspace.tier === 'FREE'}
+              showUpgrade={
+                showUpgrade ?? (!workspace?.tier || workspace.tier === 'FREE')
+              }
               upgradeExternal={upgradeExternal}
               upgradeHref={upgradeHref}
               wsId={wsId}

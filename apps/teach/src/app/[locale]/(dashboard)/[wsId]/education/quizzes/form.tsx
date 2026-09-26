@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Loader, Pencil, Plus, PlusCircle, Wand } from '@tuturuuu/icons';
 import {
   createWorkspaceQuiz,
+  generateWorkspaceQuizOptionExplanation,
   updateWorkspaceQuiz,
 } from '@tuturuuu/internal-api';
 import type { WorkspaceQuiz } from '@tuturuuu/types';
@@ -134,13 +135,12 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
     setLoadingIndex(index);
 
     try {
-      const res = await fetch('/api/ai/objects/quizzes/explanation', {
-        method: 'POST',
-        body: JSON.stringify({ wsId, question, option }),
-      });
+      const { explanation } = await generateWorkspaceQuizOptionExplanation(
+        wsId,
+        { question, option }
+      );
 
-      if (res.ok) {
-        const { explanation } = await res.json();
+      if (explanation) {
         form.setValue(`quiz_options.${index}.explanation`, explanation);
       } else {
         toast({

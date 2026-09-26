@@ -1,6 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { GlobalCommandLauncher } from '@tuturuuu/satellite/command-launcher';
 import { type ReactNode, useState } from 'react';
 
 export function TeachQueryProvider({ children }: { children: ReactNode }) {
@@ -16,6 +17,9 @@ export function TeachQueryProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <GlobalCommandLauncher currentApp="teach" />
+    </QueryClientProvider>
   );
 }

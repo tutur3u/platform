@@ -61,7 +61,7 @@ describe('notification and invitation shell coverage', () => {
 
   it.each([
     'apps/learn/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
-    'apps/teach/src/components/teach-workspace-shell.tsx',
+    'apps/teach/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
     'apps/nova/src/app/[locale]/(marketing)/navbar-actions.tsx',
     'apps/storefront/src/app/[locale]/storefront-header-actions.tsx',
   ])('renders the shared notification popover in %s', (path) => {
@@ -128,12 +128,14 @@ describe('notification and invitation shell coverage', () => {
   });
 
   it('uses the shared invitation-aware picker in Learn and Teach', () => {
-    const learn = source('apps/learn/src/components/learner-shell-parts.tsx');
+    const learn = source(
+      'apps/learn/src/app/[locale]/(dashboard)/[wsId]/structure.tsx'
+    );
     const teach = source(
       'apps/teach/src/components/teach-workspace-select.tsx'
     );
 
-    expect(learn).toContain('WorkspaceSelect as SharedWorkspaceSelect');
+    expect(learn).toContain("from '@tuturuuu/ui/custom/workspace-select'");
     expect(learn).toContain('cacheScope={bootstrap.profile.id}');
     expect(teach).toContain("from '@tuturuuu/ui/custom/workspace-select'");
     expect(teach).toContain('cacheScope={cacheScope}');

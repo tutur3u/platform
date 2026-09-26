@@ -1,48 +1,7 @@
 'use client';
 
 import { GraduationCap } from '@tuturuuu/icons';
-import type {
-  TulearnBootstrapResponse,
-  TulearnWorkspaceSummary,
-} from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
-import {
-  LearnerHeader,
-  LearnerNavDock,
-  useSelectedStudentId,
-} from './learner-shell-parts';
-
-export function LearnerShell({
-  bootstrap,
-  children,
-  notificationPopover,
-  wsId,
-}: {
-  bootstrap: TulearnBootstrapResponse;
-  children: ReactNode;
-  notificationPopover: ReactNode;
-  wsId: string;
-}) {
-  const selectedStudentId = useSelectedStudentId();
-
-  return (
-    <div className="min-h-screen overflow-x-hidden bg-root-background">
-      <LearnerNavDock selectedStudentId={selectedStudentId} wsId={wsId} />
-      <main className="min-h-screen pb-28 md:pb-8 md:pl-32">
-        <LearnerHeader
-          bootstrap={bootstrap}
-          notificationPopover={notificationPopover}
-          selectedStudentId={selectedStudentId}
-          wsId={wsId}
-        />
-        <div className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-8">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
-}
 
 export function NoWorkspaceState() {
   const t = useTranslations();
@@ -62,5 +21,3 @@ export function NoWorkspaceState() {
     </div>
   );
 }
-
-export type { TulearnWorkspaceSummary };
