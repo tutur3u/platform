@@ -5,22 +5,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/notes/note_editor.dart';
 import 'package:mobile/features/notes/note_link_picker_sheet.dart';
+import 'package:mobile/features/notes/note_list.dart';
 import 'package:mobile/features/notes/note_repository.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_tiptap_converter.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:url_launcher/url_launcher.dart';
+
+part 'notes_page_links.dart';
 
 class NotesPage extends StatefulWidget {
   const NotesPage({super.key, this.repository});
@@ -48,6 +55,8 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   bool _saving = false;
   bool _initializingEditor = false;
   bool _dirty = false;
+  bool _editing = false;
+  bool _searching = false;
   String _lastTitle = '';
   String _lastDocument = '';
   int _editRevision = 0;
@@ -136,6 +145,8 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
       _selected = note;
       _selectedWsId = _wsId;
       _dirty = false;
+      _editing = false;
+      _editor.readOnly = true;
     });
   }
 
@@ -148,6 +159,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     _lastDocument = nextDocument;
     _dirty = true;
     _editRevision++;
+    if (nextTitle != _selected?.title && mounted) setState(() {});
     _armSaveTimer();
   }
 
@@ -256,6 +268,10 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
       if (!mounted || _wsId != wsId) return;
       setState(() => _notes = [note, ..._notes]);
       _select(note);
+      setState(() {
+        _editing = true;
+        _editor.readOnly = false;
+      });
       unawaited(_refresh());
     } on Object {
       if (mounted) setState(() => _error = context.l10n.notesSaveError);
@@ -273,6 +289,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
       setState(() {
         _notes = _notes.where((item) => item.id != note.id).toList();
         _selected = null;
+        _editing = false;
       });
       unawaited(_refresh());
     } on Object {
@@ -280,120 +297,81 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _insertLink() async {
+  Future<void> _delete() async {
     final wsId = _wsId;
-    final label = TextEditingController();
-    final url = TextEditingController();
-    final result = await showModalBottomSheet<bool>(
+    final note = _selected;
+    if (wsId == null || note == null) return;
+    final confirmed = await showAdaptiveSheet<bool>(
       context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          20,
-          20,
-          20 + MediaQuery.viewInsetsOf(sheetContext).bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      maxDialogWidth: 420,
+      builder: (sheetContext) => AppDialogScaffold(
+        title: sheetContext.l10n.notesDelete,
+        description: sheetContext.l10n.notesDeleteDescription,
+        icon: Icons.delete_outline_rounded,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text(
-              context.l10n.notesInsertLink,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            if (wsId != null) ...[
-              OutlinedButton.icon(
-                onPressed: () async {
-                  final option = await showNoteLinkPickerSheet(
-                    sheetContext,
-                    wsId: wsId,
-                  );
-                  if (option == null) return;
-                  label.text = option.title;
-                  url.text = option.url;
-                },
-                icon: const Icon(Icons.search_rounded),
-                label: Text(context.l10n.notesLinkWork),
-              ),
-              const SizedBox(height: 12),
-            ],
-            TextField(
-              controller: label,
-              decoration: InputDecoration(
-                labelText: context.l10n.notesLinkText,
+            TextButton(
+              onPressed: () => Navigator.of(sheetContext).pop(false),
+              child: Text(
+                MaterialLocalizations.of(sheetContext).cancelButtonLabel,
               ),
             ),
-            TextField(
-              controller: url,
-              decoration: InputDecoration(labelText: context.l10n.notesLinkUrl),
-            ),
-            const SizedBox(height: 12),
             FilledButton(
               onPressed: () => Navigator.of(sheetContext).pop(true),
-              child: Text(context.l10n.notesInsertButton),
+              child: Text(sheetContext.l10n.notesDelete),
             ),
           ],
         ),
       ),
     );
-    if (result == true) {
-      final uri = Uri.tryParse(url.text.trim());
-      if (uri != null && ['https', 'http'].contains(uri.scheme)) {
-        final selection = _editor.selection;
-        if (!selection.isCollapsed) {
-          _editor.formatSelection(LinkAttribute(uri.toString()));
-        } else {
-          final text = label.text.trim().isEmpty
-              ? url.text.trim()
-              : label.text.trim();
-          final index = selection.baseOffset.clamp(
-            0,
-            _editor.document.length - 1,
-          );
-          _editor
-            ..replaceText(
-              index,
-              0,
-              text,
-              TextSelection.collapsed(offset: index + text.length),
-            )
-            ..formatText(index, text.length, LinkAttribute(uri.toString()));
-        }
-      }
+    if (confirmed != true || !mounted || _selected?.id != note.id) return;
+    _saveTimer?.cancel();
+    await _saveQueue;
+    try {
+      await _repository.delete(wsId, note.id);
+      if (!mounted || _wsId != wsId || _selected?.id != note.id) return;
+      setState(() {
+        _notes = _notes.where((item) => item.id != note.id).toList();
+        _selected = null;
+        _editing = false;
+        _dirty = false;
+        _error = null;
+      });
+      unawaited(_refresh());
+    } on Object {
+      if (mounted) setState(() => _error = context.l10n.notesDeleteError);
     }
-    label.dispose();
-    url.dispose();
   }
 
-  Future<void> _openLink(String href) async {
-    final uri = Uri.tryParse(href);
-    if (uri == null || !['https', 'http'].contains(uri.scheme)) return;
-    final parts = uri.pathSegments;
-    final wsId = _wsId;
-    if (wsId != null && parts.length >= 2 && parts[1] == wsId) {
-      if (uri.host == 'tasks.tuturuuu.com' &&
-          parts.length == 4 &&
-          parts[2] == 'tasks') {
-        await context.push<void>('/tasks/${parts[3]}');
-        return;
-      }
-      if (uri.host == 'calendar.tuturuuu.com') {
-        final eventId = uri.queryParameters['eventId'];
-        if (eventId != null && eventId.isNotEmpty) {
-          await context.push<void>('/calendar/$eventId');
-          return;
-        }
-      }
-      if (uri.host == 'meet.tuturuuu.com' &&
-          parts.length == 4 &&
-          parts[2] == 'meetings') {
-        await context.push<void>('/meet?room=${parts[3]}');
-        return;
-      }
-    }
-    await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+  Future<void> _showNoteActions() async {
+    final action = await showAdaptiveSheet<String>(
+      context: context,
+      maxDialogWidth: 420,
+      builder: (sheetContext) => AppDialogScaffold(
+        title: _title.text.trim().isEmpty
+            ? sheetContext.l10n.notesUntitled
+            : _title.text.trim(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.archive_outlined),
+              title: Text(sheetContext.l10n.notesArchive),
+              onTap: () => Navigator.of(sheetContext).pop('archive'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded),
+              title: Text(sheetContext.l10n.notesDelete),
+              onTap: () => Navigator.of(sheetContext).pop('delete'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (action == 'archive') await _archive();
+    if (action == 'delete') await _delete();
   }
 
   @override
@@ -417,6 +395,9 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
           _selected = null;
           _selectedWsId = null;
           _dirty = false;
+          _editing = false;
+          _searching = false;
+          _search.clear();
           _notes = const [];
         });
         unawaited(_load());
@@ -424,6 +405,18 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
       child: shad.Scaffold(
         child: Stack(
           children: [
+            ShellTitleOverride(
+              ownerId: 'notes-title',
+              locations: const {Routes.notes},
+              title: _searching && _selected == null
+                  ? context.l10n.notesSearch
+                  : _selected == null
+                  ? context.l10n.notesTitle
+                  : _title.text.trim().isEmpty
+                  ? context.l10n.notesUntitled
+                  : _title.text.trim(),
+              showLeadingBrand: _selected == null && !_searching,
+            ),
             ShellMiniNav(
               ownerId: 'notes-nav',
               locations: const {Routes.notes},
@@ -436,8 +429,15 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                   callbackToken: 'back',
                   onPressed: () async {
                     if (compact && _selected != null) {
-                      if (!(await _save())) return;
-                      if (mounted) setState(() => _selected = null);
+                      if (!(await _save())) {
+                        return;
+                      }
+                      if (mounted) {
+                        setState(() {
+                          _selected = null;
+                          _editing = false;
+                        });
+                      }
                     } else {
                       if (!(await _save())) return;
                       if (context.mounted) context.go(Routes.apps);
@@ -458,22 +458,65 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
               ownerId: 'notes-actions',
               locations: const {Routes.notes},
               actions: [
-                ShellActionSpec(
-                  id: 'notes-new',
-                  icon: Icons.add_rounded,
-                  tooltip: context.l10n.notesNew,
-                  callbackToken: wsId,
-                  enabled: wsId != null,
-                  onPressed: _create,
-                ),
-                if (_selected != null)
+                if (_selected == null) ...[
                   ShellActionSpec(
-                    id: 'notes-archive',
-                    icon: Icons.archive_outlined,
-                    tooltip: context.l10n.notesArchive,
-                    callbackToken: _selected?.id,
-                    onPressed: _archive,
+                    id: 'notes-search',
+                    icon: _searching
+                        ? Icons.search_off_rounded
+                        : Icons.search_rounded,
+                    tooltip: context.l10n.notesSearch,
+                    inDock: true,
+                    callbackToken: _searching,
+                    searchController: _searching ? _search : null,
+                    searchHint: context.l10n.notesSearch,
+                    onSearchChanged: (_) => setState(() {}),
+                    onCloseSearch: () => setState(() {
+                      _searching = false;
+                      _search.clear();
+                    }),
+                    onPressed: () => setState(() {
+                      _searching = !_searching;
+                      if (!_searching) _search.clear();
+                    }),
                   ),
+                  ShellActionSpec(
+                    id: 'notes-new',
+                    icon: Icons.add_rounded,
+                    tooltip: context.l10n.notesNew,
+                    inDock: true,
+                    callbackToken: wsId,
+                    enabled: wsId != null,
+                    onPressed: () => unawaited(_create()),
+                  ),
+                ] else ...[
+                  ShellActionSpec(
+                    id: 'notes-edit',
+                    icon: _editing ? Icons.check_rounded : Icons.edit_outlined,
+                    tooltip: _editing
+                        ? context.l10n.notesDone
+                        : context.l10n.notesEdit,
+                    inDock: true,
+                    callbackToken: '${_selected?.id}-$_editing',
+                    onPressed: () async {
+                      if (_editing && !(await _save())) {
+                        return;
+                      }
+                      if (!mounted) return;
+                      setState(() {
+                        _editing = !_editing;
+                        _editor.readOnly = !_editing;
+                      });
+                    },
+                  ),
+                  ShellActionSpec(
+                    id: 'notes-more',
+                    icon: Icons.more_horiz_rounded,
+                    tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+                    inDock: true,
+                    callbackToken: _selected?.id,
+                    onPressed: () => unawaited(_showNoteActions()),
+                  ),
+                ],
               ],
             ),
             ResponsiveWrapper(
@@ -505,16 +548,6 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                               flex: compact ? 1 : 2,
                               child: Column(
                                 children: [
-                                  TextField(
-                                    controller: _search,
-                                    decoration: InputDecoration(
-                                      hintText: context.l10n.notesSearch,
-                                      prefixIcon: const Icon(
-                                        Icons.search_rounded,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
                                   Expanded(
                                     child: _loading && _notes.isEmpty
                                         ? const Center(
@@ -522,58 +555,22 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                                           )
                                         : RefreshIndicator(
                                             onRefresh: _refresh,
-                                            child: ListView.builder(
-                                              itemCount: visible.isEmpty
-                                                  ? 1
-                                                  : visible.length,
-                                              itemBuilder: (context, index) {
-                                                if (visible.isEmpty) {
-                                                  return Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                          24,
-                                                        ),
-                                                    child: Text(
-                                                      context.l10n.notesEmpty,
-                                                    ),
-                                                  );
+                                            child: NoteList(
+                                              notes: visible,
+                                              selectedId: _selected?.id,
+                                              onSelect: (note) async {
+                                                if (!(await _save())) {
+                                                  return;
                                                 }
-                                                final note = visible[index];
-                                                return ListTile(
-                                                  selected:
-                                                      note.id == _selected?.id,
-                                                  title: Text(
-                                                    note.title.isEmpty
-                                                        ? context
-                                                              .l10n
-                                                              .notesUntitled
-                                                        : note.title,
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  subtitle: Text(
-                                                    note.preview,
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  onTap: () async {
-                                                    if (!(await _save())) {
-                                                      return;
-                                                    }
-                                                    if (mounted) {
-                                                      final current = _notes
-                                                          .where(
-                                                            (item) =>
-                                                                item.id ==
-                                                                note.id,
-                                                          )
-                                                          .firstOrNull;
-                                                      _select(current ?? note);
-                                                    }
-                                                  },
-                                                );
+                                                if (mounted) {
+                                                  final current = _notes
+                                                      .where(
+                                                        (item) =>
+                                                            item.id == note.id,
+                                                      )
+                                                      .firstOrNull;
+                                                  _select(current ?? note);
+                                                }
                                               },
                                             ),
                                           ),
@@ -587,9 +584,10 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                               flex: compact ? 1 : 5,
                               child: _selected == null
                                   ? Center(child: Text(context.l10n.notesEmpty))
-                                  : _NoteEditor(
+                                  : NoteEditor(
                                       title: _title,
                                       editor: _editor,
+                                      editing: _editing,
                                       saving: _saving,
                                       onInsertLink: _insertLink,
                                       onOpenLink: (href) =>
@@ -608,73 +606,4 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
       ),
     );
   }
-}
-
-class _NoteEditor extends StatelessWidget {
-  const _NoteEditor({
-    required this.title,
-    required this.editor,
-    required this.saving,
-    required this.onInsertLink,
-    required this.onOpenLink,
-  });
-  final TextEditingController title;
-  final QuillController editor;
-  final bool saving;
-  final VoidCallback onInsertLink;
-  final ValueChanged<String> onOpenLink;
-
-  @override
-  Widget build(BuildContext context) => Localizations.override(
-    context: context,
-    delegates: const [FlutterQuillLocalizations.delegate],
-    child: Column(
-      children: [
-        TextField(
-          controller: title,
-          style: Theme.of(context).textTheme.headlineSmall,
-          decoration: InputDecoration(
-            hintText: context.l10n.notesUntitled,
-            border: InputBorder.none,
-          ),
-        ),
-        Row(
-          children: [
-            for (final action in <(Attribute<dynamic>, IconData)>[
-              (Attribute.bold, Icons.format_bold),
-              (Attribute.italic, Icons.format_italic),
-              (Attribute.ul, Icons.format_list_bulleted),
-              (Attribute.ol, Icons.format_list_numbered),
-            ])
-              IconButton(
-                icon: Icon(action.$2),
-                onPressed: () => editor.formatSelection(action.$1),
-              ),
-            IconButton(
-              tooltip: context.l10n.notesInsertLink,
-              icon: const Icon(Icons.link_rounded),
-              onPressed: onInsertLink,
-            ),
-            const Spacer(),
-            if (saving)
-              const SizedBox.square(
-                dimension: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-          ],
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: QuillEditor.basic(
-            controller: editor,
-            config: QuillEditorConfig(
-              placeholder: context.l10n.notesStartWriting,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              onLaunchUrl: onOpenLink,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
 }

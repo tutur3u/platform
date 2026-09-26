@@ -8856,6 +8856,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesArchive => 'Archive note';
 
   @override
+  String get notesEdit => 'Edit note';
+
+  @override
+  String get notesDone => 'Done';
+
+  @override
+  String get notesDelete => 'Delete note';
+
+  @override
+  String get notesDeleteDescription => 'Delete this note permanently? This cannot be undone.';
+
+  @override
+  String get notesDeleteError => 'Could not delete this note. Try again.';
+
+  @override
   String get notesSearch => 'Search notes';
 
   @override
@@ -8869,6 +8884,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesInsertLink => 'Insert link';
+
+  @override
+  String get notesOpenLink => 'Open';
+
+  @override
+  String get notesEditLink => 'Link';
+
+  @override
+  String get notesSaveLink => 'Save link';
 
   @override
   String get notesLinkEvents => 'Events';

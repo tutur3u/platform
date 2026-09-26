@@ -16975,6 +16975,36 @@ abstract class AppLocalizations {
   /// **'Archive note'**
   String get notesArchive;
 
+  /// No description provided for @notesEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit note'**
+  String get notesEdit;
+
+  /// No description provided for @notesDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get notesDone;
+
+  /// No description provided for @notesDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete note'**
+  String get notesDelete;
+
+  /// No description provided for @notesDeleteDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this note permanently? This cannot be undone.'**
+  String get notesDeleteDescription;
+
+  /// No description provided for @notesDeleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete this note. Try again.'**
+  String get notesDeleteError;
+
   /// No description provided for @notesSearch.
   ///
   /// In en, this message translates to:
@@ -17004,6 +17034,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Insert link'**
   String get notesInsertLink;
+
+  /// No description provided for @notesOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get notesOpenLink;
+
+  /// No description provided for @notesEditLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get notesEditLink;
+
+  /// No description provided for @notesSaveLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Save link'**
+  String get notesSaveLink;
 
   /// No description provided for @notesLinkEvents.
   ///

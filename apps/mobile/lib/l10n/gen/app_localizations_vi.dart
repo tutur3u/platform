@@ -8826,6 +8826,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get notesArchive => 'Lưu trữ ghi chú';
 
   @override
+  String get notesEdit => 'Sửa ghi chú';
+
+  @override
+  String get notesDone => 'Xong';
+
+  @override
+  String get notesDelete => 'Xóa ghi chú';
+
+  @override
+  String get notesDeleteDescription => 'Xóa vĩnh viễn ghi chú này? Bạn không thể hoàn tác.';
+
+  @override
+  String get notesDeleteError => 'Không thể xóa ghi chú này. Hãy thử lại.';
+
+  @override
   String get notesSearch => 'Tìm ghi chú';
 
   @override
@@ -8839,6 +8854,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notesInsertLink => 'Chèn liên kết';
+
+  @override
+  String get notesOpenLink => 'Mở';
+
+  @override
+  String get notesEditLink => 'Liên kết';
+
+  @override
+  String get notesSaveLink => 'Lưu liên kết';
 
   @override
   String get notesLinkEvents => 'Sự kiện';
