@@ -35,6 +35,11 @@ describe('Mira tool discovery', () => {
     expect(tools).toContain('list_boards');
     expect(tools).toContain('list_task_lists');
   });
+  it('prefers task-list creation over task creation', () => {
+    expect(
+      searchMiraTools({ query: 'create task list', limit: 1 }).selectedTools
+    ).toEqual(['create_task_list']);
+  });
 });
 
 it('finds singular calendar operations from plural queries', () => {

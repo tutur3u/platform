@@ -85,7 +85,7 @@ export function searchMiraTools(
   );
   const creatingTasks =
     /\b(?:add|create|make)\b.*\btasks?\b|\bnew tasks?\b/.test(query) &&
-    !/\b(?:label|assignee|project)\b/.test(query);
+    !/\b(?:label|assignee|project)\b|\btasks?\s+lists?\b/.test(query);
   const taskCreationPrerequisiteScore: Record<string, number> = creatingTasks
     ? { create_task: 30, list_boards: 28, list_task_lists: 26 }
     : {};

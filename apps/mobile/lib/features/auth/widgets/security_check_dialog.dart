@@ -30,10 +30,9 @@ Future<String?> showSecurityCheck(BuildContext context) async {
     } on Object {
       // Invisible verification is unavailable or requires user interaction.
     } finally {
-      try {
-        await invisible?.dispose();
-      } on Object {
-        // A failed background WebView must not hide the manual challenge.
+      if (invisible != null) {
+        // Disposal may hang on a failed WebView; keep the manual challenge usable.
+        unawaited(invisible.dispose().catchError((Object _) {}));
       }
     }
     if (!context.mounted) return null;
