@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 List<AppModule> arrangeApps(List<AppModule> modules, AppTabCubit cubit) {
@@ -48,7 +49,7 @@ class AppsPickerEditor extends StatelessWidget {
     return ReorderableListView.builder(
       padding: EdgeInsets.fromLTRB(
         16,
-        8,
+        floatingShellHeaderInset(context) + 8,
         16,
         8 + MediaQuery.paddingOf(context).bottom,
       ),
