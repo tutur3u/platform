@@ -26,7 +26,10 @@ vi.mock('@tuturuuu/internal-api', () => ({
 function renderNavLink(
   link: ComponentProps<typeof NavLink>['link'],
   props: Partial<
-    Pick<ComponentProps<typeof NavLink>, 'onClick' | 'onSubMenuClick'>
+    Pick<
+      ComponentProps<typeof NavLink>,
+      'isCollapsed' | 'onClick' | 'onSubMenuClick'
+    >
   > = {}
 ) {
   const queryClient = new QueryClient({
@@ -42,7 +45,7 @@ function renderNavLink(
       <NavLink
         wsId="personal"
         link={link}
-        isCollapsed={false}
+        isCollapsed={props.isCollapsed ?? false}
         onClick={props.onClick ?? vi.fn()}
         onSubMenuClick={props.onSubMenuClick ?? vi.fn()}
       />
@@ -72,6 +75,18 @@ describe('NavLink', () => {
     expect(navigationState.prefetch).toHaveBeenCalledTimes(1);
     expect(navigationState.prefetch).toHaveBeenCalledWith(
       '/personal/tasks/boards'
+    );
+  });
+
+  it('gives collapsed icon links a spoken navigation label', () => {
+    renderNavLink(
+      { href: '/personal/tasks/boards', title: 'Boards' },
+      { isCollapsed: true }
+    );
+
+    expect(screen.getByRole('link', { name: 'Boards' })).toHaveAttribute(
+      'aria-label',
+      'Boards'
     );
   });
 

@@ -362,6 +362,7 @@ export function NavLink({
   };
 
   const commonProps = {
+    'aria-label': isCollapsed ? title : undefined,
     className: cn(
       satelliteNavigationItemClass({
         isCollapsed,
