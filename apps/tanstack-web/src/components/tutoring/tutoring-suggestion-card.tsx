@@ -66,7 +66,12 @@ export function TutoringSuggestionCard({
           />
         </div>
         <Button
-          disabled={!form.groupId || !missedDate || classSchedule.isFetching}
+          disabled={
+            !form.groupId ||
+            !missedDate ||
+            classSchedule.isFetching ||
+            (!classSchedule.isSuccess && !classSchedule.isError)
+          }
           onClick={() => {
             if (classSchedule.isError) {
               void classSchedule.refetch();

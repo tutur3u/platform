@@ -356,7 +356,9 @@ export function TutoringSessionsCard({
         wsId={wsId}
       />
       <Dialog
-        onOpenChange={(open) => !open && setEditingSession(null)}
+        onOpenChange={(open) => {
+          if (!open && !updateContent.isPending) setEditingSession(null);
+        }}
         open={Boolean(editingSession)}
       >
         <DialogContent className="sm:max-w-xl">

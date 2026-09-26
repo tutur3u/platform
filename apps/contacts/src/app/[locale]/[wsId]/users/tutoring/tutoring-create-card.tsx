@@ -269,7 +269,10 @@ export function TutoringCreateCard({
             </div>
             <Button
               disabled={
-                !form.groupId || !missedDate || classSchedule.isFetching
+                !form.groupId ||
+                !missedDate ||
+                classSchedule.isFetching ||
+                (!classSchedule.isSuccess && !classSchedule.isError)
               }
               onClick={() => {
                 if (classSchedule.isError) {
