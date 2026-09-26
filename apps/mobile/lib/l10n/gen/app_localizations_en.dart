@@ -8521,6 +8521,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get remindersEventTitle => 'Calendar events';
 
   @override
+  String remindersAllDayEvent(String title) {
+    return 'All-day event: $title';
+  }
+
+  @override
+  String remindersUpcomingEvent(String when, String title) {
+    return '$when: $title';
+  }
+
+  @override
+  String get remindersIn3d => 'In 3 days';
+
+  @override
+  String get remindersIn1d => 'Tomorrow';
+
+  @override
+  String get remindersIn12h => 'In 12 hours';
+
+  @override
+  String get remindersIn3h => 'In 3 hours';
+
+  @override
+  String get remindersIn1h => 'In 1 hour';
+
+  @override
   String get remindersTiming => 'Remind me';
 
   @override

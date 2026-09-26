@@ -8491,6 +8491,31 @@ class AppLocalizationsVi extends AppLocalizations {
   String get remindersEventTitle => 'Sự kiện lịch';
 
   @override
+  String remindersAllDayEvent(String title) {
+    return 'Sự kiện cả ngày: $title';
+  }
+
+  @override
+  String remindersUpcomingEvent(String when, String title) {
+    return '$when: $title';
+  }
+
+  @override
+  String get remindersIn3d => 'Còn 3 ngày';
+
+  @override
+  String get remindersIn1d => 'Ngày mai';
+
+  @override
+  String get remindersIn12h => 'Còn 12 giờ';
+
+  @override
+  String get remindersIn3h => 'Còn 3 giờ';
+
+  @override
+  String get remindersIn1h => 'Còn 1 giờ';
+
+  @override
   String get remindersTiming => 'Nhắc tôi';
 
   @override

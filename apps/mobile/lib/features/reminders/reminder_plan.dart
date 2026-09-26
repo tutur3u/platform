@@ -24,6 +24,7 @@ class ReminderPlanEntry {
     required this.scheduledAt,
     required this.notificationId,
     this.boardId,
+    this.isAllDay = false,
   });
 
   final ReminderKind kind;
@@ -35,6 +36,7 @@ class ReminderPlanEntry {
   final DateTime scheduledAt;
   final int notificationId;
   final String? boardId;
+  final bool isAllDay;
 }
 
 int reminderNotificationId(String key) {
@@ -63,6 +65,7 @@ List<ReminderPlanEntry> buildReminderPlan({
     required DateTime dueAt,
     required List<String> offsets,
     String? boardId,
+    bool isAllDay = false,
   }) {
     if (!dueAt.isAfter(now)) return;
     for (final offset in offsets.toSet()) {
@@ -83,6 +86,7 @@ List<ReminderPlanEntry> buildReminderPlan({
             '${kind.name}:$workspaceId:$entityId:$offset',
           ),
           boardId: boardId,
+          isAllDay: isAllDay,
         ),
       );
     }
@@ -112,6 +116,7 @@ List<ReminderPlanEntry> buildReminderPlan({
       title: event.title ?? 'Event',
       dueAt: dueAt,
       offsets: eventOffsets,
+      isAllDay: event.isAllDay,
     );
   }
 
