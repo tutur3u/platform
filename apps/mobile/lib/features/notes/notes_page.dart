@@ -159,7 +159,7 @@ class _NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
         title: title,
         content: content,
       );
-      if (!mounted) return;
+      if (!mounted) return true;
       setState(() {
         _selected = saved;
         _notes = [
@@ -448,8 +448,9 @@ class _NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                                                         TextOverflow.ellipsis,
                                                   ),
                                                   onTap: () async {
-                                                    if (!(await _save()))
+                                                    if (!(await _save())) {
                                                       return;
+                                                    }
                                                     if (mounted) {
                                                       final current = _notes
                                                           .where(
