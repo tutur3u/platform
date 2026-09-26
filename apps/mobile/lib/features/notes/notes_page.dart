@@ -20,6 +20,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:url_launcher/url_launcher.dart';
 
 class NotesPage extends StatefulWidget {
   const NotesPage({super.key, this.repository});
@@ -366,6 +367,35 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     url.dispose();
   }
 
+  Future<void> _openLink(String href) async {
+    final uri = Uri.tryParse(href);
+    if (uri == null || !['https', 'http'].contains(uri.scheme)) return;
+    final parts = uri.pathSegments;
+    final wsId = _wsId;
+    if (wsId != null && parts.length >= 2 && parts[1] == wsId) {
+      if (uri.host == 'tasks.tuturuuu.com' &&
+          parts.length == 4 &&
+          parts[2] == 'tasks') {
+        await context.push<void>('/tasks/${parts[3]}');
+        return;
+      }
+      if (uri.host == 'calendar.tuturuuu.com') {
+        final eventId = uri.queryParameters['eventId'];
+        if (eventId != null && eventId.isNotEmpty) {
+          await context.push<void>('/calendar/$eventId');
+          return;
+        }
+      }
+      if (uri.host == 'meet.tuturuuu.com' &&
+          parts.length == 4 &&
+          parts[2] == 'meetings') {
+        await context.push<void>('/meet?room=${parts[3]}');
+        return;
+      }
+    }
+    await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+  }
+
   @override
   Widget build(BuildContext context) {
     final wsId = _wsId;
@@ -562,6 +592,8 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                                       editor: _editor,
                                       saving: _saving,
                                       onInsertLink: _insertLink,
+                                      onOpenLink: (href) =>
+                                          unawaited(_openLink(href)),
                                     ),
                             ),
                         ],
@@ -584,11 +616,13 @@ class _NoteEditor extends StatelessWidget {
     required this.editor,
     required this.saving,
     required this.onInsertLink,
+    required this.onOpenLink,
   });
   final TextEditingController title;
   final QuillController editor;
   final bool saving;
   final VoidCallback onInsertLink;
+  final ValueChanged<String> onOpenLink;
 
   @override
   Widget build(BuildContext context) => Localizations.override(
@@ -636,6 +670,7 @@ class _NoteEditor extends StatelessWidget {
             config: QuillEditorConfig(
               placeholder: context.l10n.notesStartWriting,
               padding: const EdgeInsets.symmetric(vertical: 16),
+              onLaunchUrl: onOpenLink,
             ),
           ),
         ),
