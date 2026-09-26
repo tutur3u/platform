@@ -1,16 +1,11 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
-  ROOT_WORKSPACE_ID,
 } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 import { sendCustomPushMessageBatch } from '@/lib/notifications/push-delivery';
 
 const MAX_BROADCAST_DEVICES = 50;
@@ -52,35 +47,8 @@ const requestSchema = z
     }
   });
 
-async function authorizePlatformAdmin(request: Request) {
-  const supabase = await createClient(request);
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  const permissions = await getPermissions({
-    wsId: ROOT_WORKSPACE_ID,
-    request,
-  });
-  if (!permissions || permissions.withoutPermission('manage_workspace_roles')) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
-    };
-  }
-
-  return { ok: true as const };
-}
-
 async function cleanupInvalidPushTokens(sbAdmin: any, tokens: string[]) {
-  if (tokens.length === 0) {
-    return;
-  }
+  if (tokens.length === 0) return;
 
   const uniqueTokens = [...new Set(tokens)];
   const { error } = await sbAdmin
@@ -97,7 +65,9 @@ async function cleanupInvalidPushTokens(sbAdmin: any, tokens: string[]) {
 }
 
 export async function POST(request: Request) {
-  const authorization = await authorizePlatformAdmin(request);
+  const authorization = await authorizeInfrastructureAdminRequest(
+    'manage_workspace_roles'
+  );
   if (!authorization.ok) {
     return authorization.response;
   }

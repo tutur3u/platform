@@ -1,30 +1,12 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { connection, NextResponse } from 'next/server';
+import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 
 export async function GET(req: Request) {
   await connection();
 
-  const supabase = await createClient();
-
-  // Check if user is authenticated
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Check if user is from root workspace
-  const { data: rootWorkspaceUser } = await supabase
-    .from('workspace_user_linked_users')
-    .select('*')
-    .eq('platform_user_id', user.id)
-    .eq('ws_id', '00000000-0000-0000-0000-000000000000')
-    .single();
-
-  if (!rootWorkspaceUser) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
+  const authorization = await authorizeInfrastructureAdminRequest();
+  if (!authorization.ok) return authorization.response;
+  const supabase = authorization.sbAdmin;
 
   // Parse query parameters
   const url = new URL(req.url);

@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_NAME_LENGTH,
@@ -44,7 +44,7 @@ interface Params {
 export async function GET(_: Request, { params }: Params) {
   await connection();
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const { id } = await params;
 
   const { authorized } = await checkChangelogPermission(supabase);
@@ -72,7 +72,7 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const { id } = await params;
 
   const perm = await checkChangelogPermission(supabase);
@@ -147,7 +147,7 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const { id } = await params;
 
   const perm = await checkChangelogPermission(supabase);

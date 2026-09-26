@@ -1,7 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 
 const QueryParamsSchema = z.object({
   workspaceId: z.guid().optional(),
@@ -41,7 +41,9 @@ export async function GET(req: NextRequest) {
     const { workspaceId, channelId, startDate, endDate, metric } =
       validationResult.data;
 
-    const supabase = await createClient();
+    const authorization = await authorizeInfrastructureAdminRequest();
+    if (!authorization.ok) return authorization.response;
+    const supabase = authorization.sbAdmin;
 
     // Build the base query using UTC date range
     let query = supabase

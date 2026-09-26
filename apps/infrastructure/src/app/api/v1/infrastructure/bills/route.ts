@@ -1,10 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { connection, NextResponse } from 'next/server';
+import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 
 export async function GET(req: Request) {
   await connection();
-
-  const supabase = await createClient();
 
   const { searchParams } = new URL(req.url);
   const wsId = searchParams.get('ws_id');
@@ -17,6 +15,10 @@ export async function GET(req: Request) {
       { status: 400 }
     );
   }
+
+  const authorization = await authorizeInfrastructureAdminRequest();
+  if (!authorization.ok) return authorization.response;
+  const supabase = authorization.sbAdmin;
 
   const { data, error, count } = await supabase
     .from('finance_invoices')

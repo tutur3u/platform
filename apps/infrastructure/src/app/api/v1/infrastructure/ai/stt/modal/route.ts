@@ -1,11 +1,8 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import type { NextRequest } from 'next/server';
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  const user = await getSatelliteAppSessionUser('infra');
 
   // if user is not logged in
   if (!user) {

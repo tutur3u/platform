@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
+import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 import { getFirebaseMessagingConfigurationStatus } from '@/lib/notifications/firebase-admin';
 
 type PushDeviceCoverage = Record<
@@ -36,9 +37,12 @@ function maskToken(token: string) {
   return `${token.slice(0, 8)}...${token.slice(-8)}`;
 }
 
-async function authorizePushDashboard(request: Request) {
+async function authorizePushDashboard() {
+  const authorization = await authorizeInfrastructureAdminRequest();
+  if (!authorization.ok) return authorization;
+
   const permissions = await getPermissions({
-    request,
+    user: authorization.user,
     wsId: ROOT_WORKSPACE_ID,
   });
 
@@ -78,10 +82,10 @@ async function countRows(
   return count ?? 0;
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   await connection();
 
-  const authorization = await authorizePushDashboard(request);
+  const authorization = await authorizePushDashboard();
   if (!authorization.ok) return authorization.response;
 
   const sbAdmin = await createAdminClient();

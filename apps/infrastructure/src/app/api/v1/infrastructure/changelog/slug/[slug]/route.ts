@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { connection, NextResponse } from 'next/server';
 
 interface Params {
@@ -10,7 +10,7 @@ interface Params {
 export async function GET(_: Request, { params }: Params) {
   await connection();
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const { slug } = await params;
 
   // This endpoint is public - only returns published changelogs
