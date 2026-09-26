@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -29,7 +29,7 @@ const ALLOWED_EXTENSIONS = new Set([
 ]);
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   const perm = await checkChangelogPermission(supabase);
   const authError = changelogPermissionDeniedResponse(perm);

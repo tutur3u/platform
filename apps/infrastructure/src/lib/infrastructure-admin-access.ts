@@ -87,3 +87,26 @@ export async function authorizeInfrastructureWorkspaceSecretsRequest(
     user: session.user,
   };
 }
+
+export async function authorizeInfrastructureWorkspaceRequest(
+  wsId: string,
+  permission: PermissionId
+) {
+  const session = await getInfrastructureSessionUser();
+  if (!session.ok) return session;
+
+  const permissions = await getPermissions({ user: session.user, wsId });
+  if (!permissions?.containsPermission(permission)) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+    };
+  }
+
+  return {
+    ok: true as const,
+    sbAdmin: await createAdminClient({ noCookie: true }),
+    user: session.user,
+    wsId: permissions.wsId,
+  };
+}

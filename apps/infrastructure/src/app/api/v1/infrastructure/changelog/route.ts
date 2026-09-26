@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_NAME_LENGTH,
@@ -35,7 +35,7 @@ const CreateChangelogSchema = z.object({
 export async function GET(req: Request) {
   await connection();
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const { searchParams } = new URL(req.url);
 
   const published = searchParams.get('published');
@@ -93,7 +93,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   const perm = await checkChangelogPermission(supabase);
   const authError = changelogPermissionDeniedResponse(perm);

@@ -3,19 +3,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   createAdminClientMock,
-  createClientMock,
+  getSatelliteAppSessionUserMock,
   getMobileVersionPoliciesMock,
   getPermissionsMock,
 } = vi.hoisted(() => ({
   createAdminClientMock: vi.fn(),
-  createClientMock: vi.fn(),
+  getSatelliteAppSessionUserMock: vi.fn(),
   getMobileVersionPoliciesMock: vi.fn(),
   getPermissionsMock: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: createAdminClientMock,
-  createClient: createClientMock,
+}));
+
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteAppSessionUser: getSatelliteAppSessionUserMock,
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -53,45 +56,38 @@ function createTestRequest(init?: RequestInit) {
 }
 
 describe('infrastructure mobile-versions route', () => {
-  const authGetUserMock = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
-    createClientMock.mockResolvedValue({
-      auth: {
-        getUser: authGetUserMock,
-      },
-    });
+    getSatelliteAppSessionUserMock.mockResolvedValue({ id: 'user-1' });
   });
 
   it('rejects unauthenticated requests', async () => {
-    authGetUserMock.mockResolvedValue({ data: { user: null } });
+    getSatelliteAppSessionUserMock.mockResolvedValue(null);
 
     const request = createTestRequest();
     const response = await GET(request);
 
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({ message: 'Unauthorized' });
-    expect(createClientMock).toHaveBeenCalledWith(request);
+    await expect(response.json()).resolves.toEqual({ error: 'Unauthorized' });
   });
 
   it('rejects authenticated users without root permission', async () => {
-    authGetUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     getPermissionsMock.mockResolvedValue(createPermissionsResult());
 
     const request = createTestRequest();
     const response = await GET(request);
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
+    await expect(response.json()).resolves.toEqual({
+      error: 'Infrastructure permission required',
+    });
     expect(getPermissionsMock).toHaveBeenCalledWith({
       wsId: '00000000-0000-0000-0000-000000000000',
-      request,
+      user: { id: 'user-1' },
     });
   });
 
   it('returns stored policies for platform admins', async () => {
-    authGetUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     getPermissionsMock.mockResolvedValue(
       createPermissionsResult(['manage_workspace_roles'])
     );
@@ -125,7 +121,6 @@ describe('infrastructure mobile-versions route', () => {
   it('persists validated policy updates for platform admins', async () => {
     const upsertMock = vi.fn().mockResolvedValue({ error: null });
 
-    authGetUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     getPermissionsMock.mockResolvedValue(
       createPermissionsResult(['manage_workspace_roles'])
     );
@@ -163,7 +158,7 @@ describe('infrastructure mobile-versions route', () => {
     expect(upsertMock).toHaveBeenCalledOnce();
     expect(getPermissionsMock).toHaveBeenCalledWith({
       wsId: '00000000-0000-0000-0000-000000000000',
-      request,
+      user: { id: 'user-1' },
     });
   });
 });

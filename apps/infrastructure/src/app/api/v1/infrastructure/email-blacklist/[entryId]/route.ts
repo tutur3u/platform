@@ -1,8 +1,7 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 
 const UpdateEmailBlacklistSchema = z.object({
   reason: z.string().max(MAX_SEARCH_LENGTH).optional(),
@@ -14,41 +13,13 @@ interface Params {
   }>;
 }
 
-async function checkRootWorkspaceAccess(supabase: any) {
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return { authorized: false, user: null };
-  }
-
-  // Check if user is from root workspace
-  const { data: rootWorkspaceUser } = await supabase
-    .from('workspace_user_linked_users')
-    .select('*')
-    .eq('platform_user_id', user.id)
-    .eq('ws_id', '00000000-0000-0000-0000-000000000000')
-    .single();
-
-  if (!rootWorkspaceUser) {
-    return { authorized: false, user };
-  }
-
-  return { authorized: true, user };
-}
-
-export async function GET(_: Request, { params }: Params) {
+export async function GET(_request: Request, { params }: Params) {
   await connection();
 
-  const supabase = await createClient();
+  const authorization = await authorizeInfrastructureAdminRequest();
+  if (!authorization.ok) return authorization.response;
+  const supabase = authorization.sbAdmin;
   const { entryId } = await params;
-
-  const { authorized } = await checkRootWorkspaceAccess(supabase);
-  if (!authorized) {
-    return NextResponse.json(
-      { message: 'Unauthorized' },
-      { status: authorized === false ? 401 : 403 }
-    );
-  }
 
   const { data, error } = await supabase
     .from('email_blacklist')
@@ -68,16 +39,10 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const authorization = await authorizeInfrastructureAdminRequest();
+  if (!authorization.ok) return authorization.response;
+  const supabase = authorization.sbAdmin;
   const { entryId } = await params;
-
-  const { authorized, user } = await checkRootWorkspaceAccess(supabase);
-  if (!authorized) {
-    return NextResponse.json(
-      { message: 'Unauthorized' },
-      { status: user ? 403 : 401 }
-    );
-  }
 
   try {
     const body = await req.json();
@@ -129,17 +94,11 @@ export async function PUT(req: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(_request: Request, { params }: Params) {
+  const authorization = await authorizeInfrastructureAdminRequest();
+  if (!authorization.ok) return authorization.response;
+  const supabase = authorization.sbAdmin;
   const { entryId } = await params;
-
-  const { authorized, user } = await checkRootWorkspaceAccess(supabase);
-  if (!authorized) {
-    return NextResponse.json(
-      { message: 'Unauthorized' },
-      { status: user ? 403 : 401 }
-    );
-  }
 
   // Check if entry exists
   const { data: existingEntry, error: fetchError } = await supabase

@@ -1,10 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { connection, NextResponse } from 'next/server';
+import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 
 export async function GET(req: Request) {
   await connection();
-
-  const supabase = await createClient();
 
   const { searchParams } = new URL(req.url);
   const wsId = searchParams.get('ws_id');
@@ -18,6 +16,10 @@ export async function GET(req: Request) {
     );
   }
 
+  const authorization = await authorizeInfrastructureAdminRequest();
+  if (!authorization.ok) return authorization.response;
+  const supabase = authorization.sbAdmin;
+
   const limitNum = Number.parseInt(limit, 10);
   const offsetNum = Number.parseInt(offset, 10);
 
@@ -26,6 +28,7 @@ export async function GET(req: Request) {
     'get_wallet_transactions_with_permissions',
     {
       p_ws_id: wsId,
+      p_user_id: authorization.user.id,
       p_limit: limitNum,
       p_offset: offsetNum,
       p_order_by: 'taken_at',

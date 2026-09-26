@@ -3,19 +3,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   createAdminClientMock,
-  createClientMock,
+  getSatelliteAppSessionUserMock,
   getPermissionsMock,
   sendCustomPushMessageBatchMock,
 } = vi.hoisted(() => ({
   createAdminClientMock: vi.fn(),
-  createClientMock: vi.fn(),
+  getSatelliteAppSessionUserMock: vi.fn(),
   getPermissionsMock: vi.fn(),
   sendCustomPushMessageBatchMock: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: createAdminClientMock,
-  createClient: createClientMock,
+}));
+
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteAppSessionUser: getSatelliteAppSessionUserMock,
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -49,23 +52,14 @@ function createRequest(init?: RequestInit) {
 }
 
 describe('infrastructure push notifications test route', () => {
-  const authGetUserMock = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
 
-    createClientMock.mockResolvedValue({
-      auth: {
-        getUser: authGetUserMock,
-      },
-    });
+    getSatelliteAppSessionUserMock.mockResolvedValue({ id: 'user-1' });
   });
 
   it('rejects unauthenticated requests', async () => {
-    authGetUserMock.mockResolvedValue({
-      data: { user: null },
-      error: null,
-    });
+    getSatelliteAppSessionUserMock.mockResolvedValue(null);
 
     const response = await POST(
       createRequest({
@@ -81,14 +75,10 @@ describe('infrastructure push notifications test route', () => {
     );
 
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({ message: 'Unauthorized' });
+    await expect(response.json()).resolves.toEqual({ error: 'Unauthorized' });
   });
 
   it('rejects callers without platform admin permissions', async () => {
-    authGetUserMock.mockResolvedValue({
-      data: { user: { id: 'user-1' } },
-      error: null,
-    });
     getPermissionsMock.mockResolvedValue(createPermissionsResult());
 
     const request = createRequest({
@@ -104,18 +94,16 @@ describe('infrastructure push notifications test route', () => {
     const response = await POST(request);
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
+    await expect(response.json()).resolves.toEqual({
+      error: 'Infrastructure permission required',
+    });
     expect(getPermissionsMock).toHaveBeenCalledWith({
       wsId: '00000000-0000-0000-0000-000000000000',
-      request,
+      user: { id: 'user-1' },
     });
   });
 
   it('sends a test push and removes invalid tokens', async () => {
-    authGetUserMock.mockResolvedValue({
-      data: { user: { id: 'user-1' } },
-      error: null,
-    });
     getPermissionsMock.mockResolvedValue(
       createPermissionsResult(['manage_workspace_roles'])
     );
@@ -205,10 +193,6 @@ describe('infrastructure push notifications test route', () => {
   });
 
   it('rejects requests without a broadcast toggle or a target filter', async () => {
-    authGetUserMock.mockResolvedValue({
-      data: { user: { id: 'user-1' } },
-      error: null,
-    });
     getPermissionsMock.mockResolvedValue(
       createPermissionsResult(['manage_workspace_roles'])
     );

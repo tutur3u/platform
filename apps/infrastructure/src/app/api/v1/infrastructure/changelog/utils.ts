@@ -1,4 +1,4 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -31,7 +31,7 @@ export type CheckChangelogPermissionResult =
 export async function checkChangelogPermission(
   supabase: TypedSupabaseClient
 ): Promise<CheckChangelogPermissionResult> {
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  const user = await getSatelliteAppSessionUser('infra');
 
   if (!user) {
     return { authorized: false, user: null, denial: 'unauthenticated' };
@@ -47,7 +47,7 @@ export async function checkChangelogPermission(
     return { authorized: false, user, denial: 'membership_lookup_failed' };
   }
 
-  const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
+  const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
 
   if (!permissions?.containsPermission('manage_changelog')) {
     return { authorized: false, user, denial: 'forbidden' };

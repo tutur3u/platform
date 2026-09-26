@@ -70,6 +70,30 @@ test('recognizes membership checks made with the cookie client', () => {
   assert.equal(authorizesWithCookieClient(ADMIN_AUTH_ROUTE), false);
 });
 
+test('flags direct Supabase-session auth in satellite routes', () => {
+  const source = `
+    import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+    const supabase = await createClient(request);
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+  `;
+  assert.equal(authorizesWithCookieClient(source), true);
+});
+
+test('flags Tasks routes that ignore the returned app-session client', () => {
+  const source = `
+    const supabase = await createClient(req);
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    const { data } = await supabase.from('tasks').select('*');
+  `;
+  assert.equal(authorizesWithCookieClient(source), true);
+  assert.equal(
+    authorizesWithCookieClient(
+      source.replace('{ user }', '{ user, supabase: sessionSupabase }')
+    ),
+    false
+  );
+});
+
 test('flags a satellite route that authorizes with the cookie client', () => {
   const root = createTempRepo();
   writeFile(
@@ -80,6 +104,28 @@ test('flags a satellite route that authorizes with the cookie client', () => {
 
   assert.deepEqual(findViolations(root), [
     path.join('apps', 'tasks', 'src', 'app', 'api', 'v1', 'thing', 'route.ts'),
+  ]);
+});
+
+test('flags Infrastructure routes that query directly with a cookie client', () => {
+  const root = createTempRepo();
+  writeFile(
+    root,
+    'apps/infrastructure/src/app/api/v1/thing/route.ts',
+    "const supabase = await createClient(); await supabase.from('things').select('*');"
+  );
+
+  assert.deepEqual(findViolations(root), [
+    path.join(
+      'apps',
+      'infrastructure',
+      'src',
+      'app',
+      'api',
+      'v1',
+      'thing',
+      'route.ts'
+    ),
   ]);
 });
 

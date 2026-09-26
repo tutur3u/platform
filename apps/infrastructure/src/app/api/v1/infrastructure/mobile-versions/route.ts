@@ -1,13 +1,9 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 import {
   getMobileVersionPolicies,
   MOBILE_VERSION_POLICY_CONFIG_KEYS,
@@ -31,35 +27,12 @@ const UpdatePayloadSchema = z.object({
   webOtpEnabled: z.boolean().optional(),
 });
 
-async function authorizePlatformAdmin(request: Request) {
-  const supabase = await createClient(request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  const permissions = await getPermissions({
-    wsId: ROOT_WORKSPACE_ID,
-    request,
-  });
-  if (!permissions || permissions.withoutPermission('manage_workspace_roles')) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
-    };
-  }
-
-  return { ok: true as const };
-}
-
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   await connection();
 
-  const authorization = await authorizePlatformAdmin(request);
+  const authorization = await authorizeInfrastructureAdminRequest(
+    'manage_workspace_roles'
+  );
   if (!authorization.ok) {
     return authorization.response;
   }
@@ -77,7 +50,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const authorization = await authorizePlatformAdmin(request);
+  const authorization = await authorizeInfrastructureAdminRequest(
+    'manage_workspace_roles'
+  );
   if (!authorization.ok) {
     return authorization.response;
   }

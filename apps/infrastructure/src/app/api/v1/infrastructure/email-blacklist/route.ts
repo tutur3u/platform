@@ -1,5 +1,3 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH, MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import {
   DOMAIN_BLACKLIST_REGEX,
@@ -7,6 +5,7 @@ import {
 } from '@tuturuuu/utils/email/validation';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 
 const CreateEmailBlacklistSchema = z.object({
   entry_type: z.enum(['email', 'domain']),
@@ -14,29 +13,12 @@ const CreateEmailBlacklistSchema = z.object({
   reason: z.string().max(MAX_SEARCH_LENGTH).optional(),
 });
 
-export async function GET(_req: Request) {
+export async function GET() {
   await connection();
 
-  const supabase = await createClient();
-
-  // Check if user is authenticated and from root workspace
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Check if user is from root workspace
-  const { data: rootWorkspaceUser } = await supabase
-    .from('workspace_user_linked_users')
-    .select('*')
-    .eq('platform_user_id', user.id)
-    .eq('ws_id', '00000000-0000-0000-0000-000000000000')
-    .single();
-
-  if (!rootWorkspaceUser) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
+  const authorization = await authorizeInfrastructureAdminRequest();
+  if (!authorization.ok) return authorization.response;
+  const { sbAdmin: supabase } = authorization;
 
   const { data, error } = await supabase
     .from('email_blacklist')
@@ -55,26 +37,9 @@ export async function GET(_req: Request) {
 }
 
 export async function POST(req: Request) {
-  const supabase = await createClient();
-
-  // Check if user is authenticated and from root workspace
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Check if user is from root workspace
-  const { data: rootWorkspaceUser } = await supabase
-    .from('workspace_user_linked_users')
-    .select('*')
-    .eq('platform_user_id', user.id)
-    .eq('ws_id', '00000000-0000-0000-0000-000000000000')
-    .single();
-
-  if (!rootWorkspaceUser) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
+  const authorization = await authorizeInfrastructureAdminRequest();
+  if (!authorization.ok) return authorization.response;
+  const { sbAdmin: supabase, user } = authorization;
 
   try {
     const body = await req.json();

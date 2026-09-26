@@ -1,19 +1,8 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
+import { authorizeInfrastructureWorkspaceRequest } from '@/lib/infrastructure-admin-access';
 
 export async function GET(req: Request) {
   await connection();
-
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
 
   const { searchParams } = new URL(req.url);
   const wsId = searchParams.get('ws_id');
@@ -27,18 +16,12 @@ export async function GET(req: Request) {
     );
   }
 
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({ wsId, request: req });
-
-  if (!permissions?.containsPermission('view_inventory')) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
+  const authorization = await authorizeInfrastructureWorkspaceRequest(
+    wsId,
+    'view_inventory'
+  );
+  if (!authorization.ok) return authorization.response;
+  const { sbAdmin, wsId: normalizedWsId } = authorization;
 
   const { data, error, count } = await sbAdmin
     .from('workspace_products')
