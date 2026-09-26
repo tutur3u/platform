@@ -16333,6 +16333,48 @@ abstract class AppLocalizations {
   /// **'Calendar events'**
   String get remindersEventTitle;
 
+  /// No description provided for @remindersAllDayEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'All-day event: {title}'**
+  String remindersAllDayEvent(String title);
+
+  /// No description provided for @remindersUpcomingEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'{when}: {title}'**
+  String remindersUpcomingEvent(String when, String title);
+
+  /// No description provided for @remindersIn3d.
+  ///
+  /// In en, this message translates to:
+  /// **'In 3 days'**
+  String get remindersIn3d;
+
+  /// No description provided for @remindersIn1d.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get remindersIn1d;
+
+  /// No description provided for @remindersIn12h.
+  ///
+  /// In en, this message translates to:
+  /// **'In 12 hours'**
+  String get remindersIn12h;
+
+  /// No description provided for @remindersIn3h.
+  ///
+  /// In en, this message translates to:
+  /// **'In 3 hours'**
+  String get remindersIn3h;
+
+  /// No description provided for @remindersIn1h.
+  ///
+  /// In en, this message translates to:
+  /// **'In 1 hour'**
+  String get remindersIn1h;
+
   /// No description provided for @remindersTiming.
   ///
   /// In en, this message translates to:

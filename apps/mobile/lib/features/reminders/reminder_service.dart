@@ -226,13 +226,27 @@ class ReminderService extends ChangeNotifier {
           .toSet();
       for (final entry in entries) {
         if (_userId != userId) return;
+        final when = switch (entry.offset) {
+          '3d' => l10n.remindersIn3d,
+          '1d' => l10n.remindersIn1d,
+          '12h' => l10n.remindersIn12h,
+          '3h' => l10n.remindersIn3h,
+          '1h' => l10n.remindersIn1h,
+          _ => l10n.remindersEventTitle,
+        };
         await PushNotificationService.instance.scheduleLocalReminder(
           id: entry.notificationId,
           scheduledAt: entry.scheduledAt,
           title: entry.kind == ReminderKind.task
               ? l10n.remindersTaskTitle
+              : entry.isAllDay
+              ? l10n.remindersAllDayEvent(entry.title)
+              : l10n.remindersUpcomingEvent(when, entry.title),
+          body: entry.kind == ReminderKind.task
+              ? entry.title
+              : entry.isAllDay
+              ? when
               : l10n.remindersEventTitle,
-          body: entry.title,
           request: PushNavigationRequest(
             notificationId: '',
             openTarget: entry.kind == ReminderKind.task ? 'task' : 'calendar',
