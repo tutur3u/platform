@@ -1,3 +1,6 @@
+mod query;
+
+use query::{QueryParseError, TutoringQueueQuery, parse_query};
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
@@ -5,7 +8,7 @@ use serde_json::json;
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    method_not_allowed, no_store_response,
+    no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
     workspace_permission_check::{
         WorkspacePermissionAuthorizationError, authorize_workspace_permission,
@@ -20,37 +23,9 @@ const NOT_FOUND_MESSAGE: &str = "Not found";
 const INSUFFICIENT_PERMISSIONS_MESSAGE: &str = "Insufficient permissions";
 const INVALID_QUERY_MESSAGE: &str = "Invalid query";
 const FAILED_TO_LOAD_MESSAGE: &str = "Failed to load queue";
-const DEFAULT_PAGE: u32 = 1;
-const DEFAULT_PAGE_SIZE: u32 = 20;
-const MAX_PAGE_SIZE: u32 = 100;
-const MAX_SEARCH_LEN: usize = 200;
 
 // ---------------------------------------------------------------------------
-// Query parameters (mirror of TutoringQueueQuerySchema in shared.ts)
-// ---------------------------------------------------------------------------
-
-#[derive(Debug, Default)]
-struct TutoringQueueQuery {
-    group_id: Option<String>,
-    student_user_id: Option<String>,
-    reason_type: Option<String>,
-    search: String,
-    page: u32,
-    page_size: u32,
-}
-
-#[derive(Debug)]
-enum QueryParseError {
-    InvalidUuid(&'static str),
-    InvalidReasonType,
-    SearchTooLong(&'static str),
-    InvalidPage,
-    InvalidPageSize,
-}
-
-// ---------------------------------------------------------------------------
-// Supabase row shapes
-// ---------------------------------------------------------------------------
+// Query parameters (mirror of TutoringQueueQuerySch-------------------------------------------------
 
 #[derive(Deserialize)]
 struct AttendanceGroupEmbed {
@@ -138,9 +113,13 @@ pub(crate) async fn handle_workspaces_tutoring_queue_route(
 ) -> Option<BackendResponse> {
     let raw_ws_id = workspaces_tutoring_queue_ws_id(request.path)?;
 
+    if contact::request_has_app_session_token(request) {
+        return None;
+    }
+
     Some(match request.method {
         "GET" => tutoring_queue_response(config, request, raw_ws_id, outbound).await,
-        method => no_store_response(method_not_allowed(method, "GET")),
+        _ => return None,
     })
 }
 
@@ -561,120 +540,7 @@ fn is_present_id(value: Option<&str>) -> bool {
 }
 
 // ---------------------------------------------------------------------------
-// Query parsing (mirror of TutoringQueueQuerySchema.safeParse)
-// ---------------------------------------------------------------------------
-
-fn parse_query(request_url: Option<&str>) -> Result<TutoringQueueQuery, QueryParseError> {
-    let mut query = TutoringQueueQuery {
-        page: DEFAULT_PAGE,
-        page_size: DEFAULT_PAGE_SIZE,
-        ..TutoringQueueQuery::default()
-    };
-
-    let Some(parsed) = request_url.and_then(|url| url::Url::parse(url).ok()) else {
-        // No URL / unparseable -> behave like an empty query (defaults).
-        return Ok(query);
-    };
-
-    let mut q: Option<String> = None;
-    let mut query_alias: Option<String> = None;
-    let mut search_alias: Option<String> = None;
-
-    for (key, value) in parsed.query_pairs() {
-        let value = value.into_owned();
-        match key.as_ref() {
-            "groupId" => {
-                let value = value.trim();
-                if value.is_empty() {
-                    continue;
-                }
-                if !is_uuid(value) {
-                    return Err(QueryParseError::InvalidUuid("groupId"));
-                }
-                query.group_id = Some(value.to_owned());
-            }
-            "studentUserId" => {
-                let value = value.trim();
-                if value.is_empty() {
-                    continue;
-                }
-                if !is_uuid(value) {
-                    return Err(QueryParseError::InvalidUuid("studentUserId"));
-                }
-                query.student_user_id = Some(value.to_owned());
-            }
-            "reasonType" => {
-                if value.is_empty() {
-                    continue;
-                }
-                if !matches!(value.as_str(), "ABSENT_RECOVERY" | "WEAK_SUPPORT" | "BOTH") {
-                    return Err(QueryParseError::InvalidReasonType);
-                }
-                query.reason_type = Some(value);
-            }
-            "q" => {
-                if value.len() > MAX_SEARCH_LEN {
-                    return Err(QueryParseError::SearchTooLong("q"));
-                }
-                q = Some(value);
-            }
-            "query" => {
-                if value.len() > MAX_SEARCH_LEN {
-                    return Err(QueryParseError::SearchTooLong("query"));
-                }
-                query_alias = Some(value);
-            }
-            "search" => {
-                if value.len() > MAX_SEARCH_LEN {
-                    return Err(QueryParseError::SearchTooLong("search"));
-                }
-                search_alias = Some(value);
-            }
-            "page" => {
-                query.page = parse_int_min(&value, 1).ok_or(QueryParseError::InvalidPage)?;
-            }
-            "pageSize" => {
-                let parsed_page_size =
-                    parse_int_min(&value, 1).ok_or(QueryParseError::InvalidPageSize)?;
-                if parsed_page_size > MAX_PAGE_SIZE {
-                    return Err(QueryParseError::InvalidPageSize);
-                }
-                query.page_size = parsed_page_size;
-            }
-            _ => {}
-        }
-    }
-
-    // q ?? query ?? search
-    query.search = q.or(query_alias).or(search_alias).unwrap_or_default();
-
-    Ok(query)
-}
-
-fn parse_int_min(value: &str, min: u32) -> Option<u32> {
-    let trimmed = value.trim();
-    // z.coerce.number().int() coerces via Number(); reject non-integer values.
-    let parsed = trimmed.parse::<i64>().ok()?;
-    if parsed < min as i64 {
-        return None;
-    }
-    u32::try_from(parsed).ok()
-}
-
-fn is_uuid(value: &str) -> bool {
-    let bytes = value.as_bytes();
-    if bytes.len() != 36 {
-        return false;
-    }
-    bytes.iter().enumerate().all(|(index, byte)| match index {
-        8 | 13 | 18 | 23 => *byte == b'-',
-        _ => byte.is_ascii_hexdigit(),
-    })
-}
-
-// ---------------------------------------------------------------------------
-// Path matching
-// ---------------------------------------------------------------------------
+// Query parsing (mirror of TutoringQueueQuerySchema-------------------------------------------
 
 fn workspaces_tutoring_queue_ws_id(path: &str) -> Option<&str> {
     let ws_id = path

@@ -145,6 +145,12 @@ pub(crate) async fn handle_workspaces_wsid_tutoring_sessions_route(
 ) -> Option<crate::BackendResponse> {
     let raw_ws_id = extract_ws_id(request.path)?;
 
+    // Next.js verifies the tutoring route's Contacts/platform app-session
+    // audience. Preserve that check until this handler has equivalent support.
+    if contact::request_has_app_session_token(request) {
+        return None;
+    }
+
     Some(match request.method {
         "GET" => tutoring_sessions_get(config, request, raw_ws_id, outbound).await,
         _ => return None,
