@@ -1,17 +1,23 @@
 import { requireParleyStudioAdministrator } from '@tuturuuu/meet-core/parley/authorization';
 import { scenarioSchema } from '@tuturuuu/meet-core/parley/contracts';
 import { parleyDatabase } from '@tuturuuu/meet-core/parley/database';
-import { RoleEditor } from '@tuturuuu/meet-core/parley/role-editor';
 import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
-import { Textarea } from '@tuturuuu/ui/textarea';
+import Link from 'next/link';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
-import { saveStudioScenario } from '@/features/studio/scenario-admin-actions';
+import { ScenarioForm } from '@/features/studio/scenario-form';
 
-export default async function ManageScenarios() {
+export default async function ManageScenarios({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   await connection();
   await requireParleyStudioAdministrator();
+  const page = Math.min(
+    10000,
+    Math.max(0, Number.parseInt((await searchParams).page ?? '0', 10) || 0)
+  );
   const [t, result] = await Promise.all([
     getTranslations('parley-admin'),
     (await parleyDatabase())
@@ -19,7 +25,8 @@ export default async function ManageScenarios() {
       .from('parley_scenarios')
       .select('*')
       .order('updated_at', { ascending: false })
-      .limit(100),
+      .order('id')
+      .range(page * 20, page * 20 + 20),
   ]);
   if (result.error) throw new Error('Scenario administration unavailable');
   return (
@@ -30,7 +37,7 @@ export default async function ManageScenarios() {
         </h1>
         <p className="text-muted-foreground">{t('studio_description')}</p>
       </header>
-      {[null, ...(result.data ?? [])].map((scenario) => (
+      {[null, ...(result.data ?? []).slice(0, 20)].map((scenario) => (
         <details
           key={scenario?.id ?? 'new'}
           className="rounded-xl border bg-card p-5"
@@ -43,72 +50,31 @@ export default async function ManageScenarios() {
               </span>
             )}
           </summary>
-          <form
-            action={saveStudioScenario}
-            className="mt-5 grid gap-4 md:grid-cols-2"
-          >
-            {scenario && <input type="hidden" name="id" value={scenario.id} />}
-            <label className="text-sm">
-              {t('name')}
-              <Input
-                name="title"
-                defaultValue={scenario?.title}
-                required
-                maxLength={200}
-              />
-            </label>
-            <label className="text-sm">
-              {t('category')}
-              <Input
-                name="category"
-                defaultValue={scenario?.category}
-                required
-                maxLength={80}
-              />
-            </label>
-            <label className="text-sm md:col-span-2">
-              {t('briefing')}
-              <Textarea
-                name="briefing"
-                defaultValue={scenario?.briefing}
-                maxLength={12000}
-              />
-            </label>
-            <label className="text-sm md:col-span-2">
-              {t('instructions')}
-              <Textarea
-                name="instructions"
-                defaultValue={scenario?.instructions}
-                required
-                maxLength={24000}
-                rows={8}
-              />
-            </label>
-            <RoleEditor
-              initialRoles={scenarioSchema.shape.roles.parse(
-                scenario?.roles ?? []
-              )}
-            />
-            <label className="text-sm md:col-span-2">
-              {t('rubric')}
-              <Textarea
-                name="rubric"
-                defaultValue={scenario?.rubric}
-                maxLength={12000}
-              />
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                name="enabled"
-                type="checkbox"
-                defaultChecked={scenario?.enabled}
-              />
-              {t('publish')}
-            </label>
-            <Button type="submit">{t('save')}</Button>
-          </form>
+          <ScenarioForm
+            scenario={
+              scenario
+                ? { id: scenario.id, ...scenarioSchema.parse(scenario) }
+                : null
+            }
+          />
         </details>
       ))}
+      <nav aria-label={t('pages')} className="flex justify-between gap-3">
+        {page > 0 ? (
+          <Button asChild variant="outline">
+            <Link href={`/manage/scenarios?page=${page - 1}`}>
+              {t('previous')}
+            </Link>
+          </Button>
+        ) : (
+          <span />
+        )}
+        {(result.data?.length ?? 0) > 20 && (
+          <Button asChild variant="outline">
+            <Link href={`/manage/scenarios?page=${page + 1}`}>{t('next')}</Link>
+          </Button>
+        )}
+      </nav>
     </main>
   );
 }

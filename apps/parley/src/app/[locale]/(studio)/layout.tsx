@@ -27,7 +27,10 @@ export default async function Layout({ children }: { children: ReactNode }) {
     cookies(),
     personalWorkspace(user.id),
     getLocale(),
-    hasParleyAdministratorRole(user.id),
+    hasParleyAdministratorRole(user.id).catch(() => {
+      console.warn('Parley administrator navigation unavailable');
+      return false;
+    }),
   ]);
   const [workspace, links] = await Promise.all([
     getWorkspace(wsId, { useAdmin: true, user }),
