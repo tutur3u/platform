@@ -1,5 +1,7 @@
 import { requireParleyUser } from '@tuturuuu/meet-core/parley/authorization';
 import { listScenarios } from '@tuturuuu/meet-core/parley/repository';
+import { Button } from '@tuturuuu/ui/button';
+import Link from 'next/link';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { JoinSession } from '@/features/studio/join-session';
@@ -24,7 +26,12 @@ export default async function Studio() {
           </h1>
           <p className="text-muted-foreground">{t('discover_hint')}</p>
         </div>
-        <JoinSession />
+        <div className="flex flex-wrap gap-2">
+          <Button asChild>
+            <Link href="/sessions/new">{t('new_session')}</Link>
+          </Button>
+          <JoinSession />
+        </div>
       </header>
       <ScenarioDiscovery scenarios={scenarios} />
       <p className="border-t pt-5 text-muted-foreground text-xs leading-relaxed">

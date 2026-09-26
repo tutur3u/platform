@@ -4,8 +4,8 @@ import { createHash } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireParleyAdministrator } from './authorization';
-import { scenarioSchema } from './contracts';
 import { parleyDatabase } from './database';
+import { persistParleyScenario } from './scenario-mutations';
 
 const adminPath = '/internal/parley';
 export async function saveParleyMember(form: FormData) {
@@ -28,26 +28,7 @@ export async function saveParleyMember(form: FormData) {
 }
 export async function saveParleyScenario(form: FormData) {
   const user = await requireParleyAdministrator();
-  const input = scenarioSchema.parse({
-    title: form.get('title'),
-    category: form.get('category'),
-    briefing: form.get('briefing'),
-    instructions: form.get('instructions'),
-    rubric: form.get('rubric'),
-    enabled: form.get('enabled') === 'on',
-    roles: JSON.parse(String(form.get('roles') || '[]')),
-  });
-  const id = form.get('id');
-  const db = (await parleyDatabase()).schema('private');
-  const { error } = id
-    ? await db
-        .from('parley_scenarios')
-        .update(input)
-        .eq('id', z.uuid().parse(id))
-    : await db
-        .from('parley_scenarios')
-        .insert({ ...input, created_by: user.id });
-  if (error) throw new Error('Could not save scenario');
+  await persistParleyScenario(form, user.id);
   revalidatePath(adminPath);
 }
 export async function uploadParleyReference(form: FormData) {

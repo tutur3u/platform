@@ -3,7 +3,7 @@ title: Parley
 description: Operate the private scenario training application and shared Meet runtime.
 ---
 
-Parley runs at `parley.tuturuuu.com`. It uses the shared Tuturuuu Supabase session cookie across subdomains
+Parley runs at `parley.tuturuuu.com` with locale-free page URLs. It uses the shared Tuturuuu Supabase session cookie across subdomains
 and the standard satellite shell (`structure.tsx`), alongside the shared `@tuturuuu/meet-core` runtime. Verified `@tuturuuu.com` accounts
 have access; external accounts require an enabled entry managed in Infrastructure
 under **Platform administration → Parley**. Authorization checks the current
@@ -11,7 +11,9 @@ confirmed account identity. Failed lookups deny access.
 
 ## Discovery and session review
 
-The scenario library at `/` supports text search and category filters. Open
+The scenario library at `/` supports text search and category filters. The
+**New testing session** navigation item opens `/sessions/new`, where facilitators
+select a published scenario, acknowledge participation, and create a room. Open
 `/scenarios/[scenarioId]` to read the public briefing, preview role names and
 confirm participation before creating a session. Hidden role briefs and AI
 instructions never enter the discovery client payload.
@@ -22,6 +24,9 @@ decision and follow-up tools. Private research notes are shown separately and
 remain facilitator-only, even when meeting notes are shared with participants. Research notes are paginated newest first, with full-session note and decision totals; the note-type filter applies to the current page.
 These satellite-only routes are owned by `apps/parley`; the current TanStack
 migration manifest scans `apps/web`, not satellite app trees.
+The studio `layout.tsx` owns the sidebar, workspace shell and administrator
+navigation. Its locale and administrator flag key the cached navigation labels;
+session, workspace and role checks remain request-scoped.
 
 Authentication uses the centralized provider-cookie proxy with MFA verification,
 then fresh confirmed-email/allowlist authorization. Do not clear shared Supabase
@@ -31,7 +36,11 @@ signing remains a separate server-to-server requirement.
 ## Private content
 
 Infrastructure administrators manage scenario briefs, private AI instructions,
-roles, debrief rubrics, publication state and reference uploads. Reference bytes
+roles, debrief rubrics and publication state directly in Parley at
+`/manage/scenarios`. The same authoring tools remain in Infrastructure under
+**Platform administration → Parley**, which also manages account access and
+reference uploads. The Parley route checks the current platform administrator
+role on the server before reading or saving private scenario data. Reference bytes
 are stored in `private.parley_references`, accessible only through authorized
 server operations. Source documents are never seeded or committed. Import real
 content through Infrastructure separately in each intended environment.
