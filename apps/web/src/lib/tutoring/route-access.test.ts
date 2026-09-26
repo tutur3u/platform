@@ -32,7 +32,13 @@ describe('tutoring route access', () => {
     const request = new Request(
       `https://contacts.tuturuuu.com/api/${workspaceId}`
     );
-    const user = { id: 'd58e0b8c-5fe8-4b3f-9f16-4137890b738d' };
+    const user = {
+      id: 'd58e0b8c-5fe8-4b3f-9f16-4137890b738d',
+      app_metadata: {},
+      user_metadata: {},
+      aud: 'authenticated',
+      created_at: '2026-01-01T00:00:00.000Z',
+    };
     const admin = { kind: 'admin' };
     const supabase = { kind: 'actor-bound' };
     mocks.getAppSessionUserFromRequest.mockReturnValue(user);
