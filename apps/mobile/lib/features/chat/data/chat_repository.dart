@@ -322,7 +322,7 @@ class ChatRepository {
     final response = _httpClient.send(request);
     await request.sink.addStream(file.readAsByteStream());
     await request.sink.close();
-    return response;
+    return await response;
   }
 
   String _conversationPath(String wsId, String conversationId) {
