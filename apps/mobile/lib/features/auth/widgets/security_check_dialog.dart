@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/config/env.dart';
@@ -12,10 +14,32 @@ Future<String?> showSecurityCheck(BuildContext context) async {
   final navigator = Navigator.of(context, rootNavigator: true);
   if (_activeChecks[navigator] ?? false) return null;
   _activeChecks[navigator] = true;
-  FocusManager.instance.primaryFocus?.unfocus();
   try {
+    // Try a background challenge first. A managed challenge still opens the
+    // interactive dialog below; verification is never skipped.
+    CloudflareTurnstile? invisible;
+    try {
+      invisible = CloudflareTurnstile.invisible(
+        siteKey: Env.turnstileSiteKey,
+        baseUrl: Env.turnstileBaseUrl,
+      );
+      final token = await invisible.getToken().timeout(
+        const Duration(seconds: 6),
+      );
+      if (token != null && token.isNotEmpty) return token;
+    } on Object {
+      // Invisible verification is unavailable or requires user interaction.
+    } finally {
+      try {
+        await invisible?.dispose();
+      } on Object {
+        // A failed background WebView must not hide the manual challenge.
+      }
+    }
+    if (!context.mounted) return null;
     return await showDialog<String>(
       context: context,
+      requestFocus: false,
       builder: (_) => const SecurityCheckDialog(),
     );
   } finally {

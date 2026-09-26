@@ -429,14 +429,13 @@ class _AssistantPageState extends State<AssistantPage> {
                                                 chatState: chatState,
                                                 liveState: liveState,
                                                 liveUiState: liveUiState,
-                                                creditSource:
-                                                    shellState.creditSource,
+                                                shellState: shellState,
                                                 isFullscreen: isFullscreen,
                                                 bottomInset: 0,
                                                 isPersonalWorkspace:
                                                     isPersonalWorkspace,
-                                                thinkingMode:
-                                                    shellState.thinkingMode,
+                                                onModelSelected: _shellCubit
+                                                    .setSelectedModel,
                                                 onOpenCreditSourceSheet: () =>
                                                     _showCreditSourceSheet(
                                                       context,

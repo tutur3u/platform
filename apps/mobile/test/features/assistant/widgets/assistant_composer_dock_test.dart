@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
+import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
@@ -39,11 +40,18 @@ void main() {
                 isEligible: false,
                 isVisibleLiveSession: false,
               ),
-              creditSource: AssistantCreditSource.personal,
+              shellState: const AssistantShellState(
+                creditSource: AssistantCreditSource.personal,
+                selectedModel: AssistantGatewayModel(
+                  value: 'test-model',
+                  label: 'Test model',
+                  provider: 'test',
+                ),
+              ),
               isFullscreen: false,
               bottomInset: 0,
               isPersonalWorkspace: true,
-              thinkingMode: AssistantThinkingMode.fast,
+              onModelSelected: (_) async {},
               onOpenCreditSourceSheet: () async {},
               onThinkingModeChanged: (_) async {},
               controller: controller,

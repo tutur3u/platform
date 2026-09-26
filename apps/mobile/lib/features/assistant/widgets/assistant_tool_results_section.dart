@@ -8,14 +8,81 @@ import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
-class AssistantToolResultsSection extends StatefulWidget {
+class AssistantToolResultsSection extends StatelessWidget {
   const AssistantToolResultsSection({required this.parts, super.key});
 
   final List<AssistantMessagePart> parts;
 
   @override
-  State<AssistantToolResultsSection> createState() =>
-      _AssistantToolResultsSectionState();
+  Widget build(BuildContext context) {
+    final visible = _visibleToolParts(parts);
+    if (visible.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final actionCount = visible
+        .where((part) => part.toolName != 'search_tools')
+        .length;
+    final displayCount = actionCount == 0 ? visible.length : actionCount;
+    final label = displayCount == 1
+        ? context.l10n.assistantToolLabel
+        : context.l10n.assistantToolsLabel;
+    return Material(
+      color: theme.colorScheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          showDragHandle: true,
+          builder: (sheetContext) => SafeArea(
+            child: FractionallySizedBox(
+              heightFactor: 0.72,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                    child: Text(
+                      '$label · ${visible.length}',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                      itemCount: visible.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (_, index) =>
+                          _AssistantToolResultTile(part: visible[index]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.handyman_outlined,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$label · $displayCount',
+                style: theme.textTheme.labelMedium,
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right_rounded, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class AssistantInlineToolImages extends StatelessWidget {
@@ -42,110 +109,6 @@ class AssistantInlineToolImages extends StatelessWidget {
           if (i != imageParts.length - 1) const SizedBox(height: 12),
         ],
       ],
-    );
-  }
-}
-
-class _AssistantToolResultsSectionState
-    extends State<AssistantToolResultsSection> {
-  var _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final parts = _visibleToolParts(widget.parts);
-    if (parts.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final theme = Theme.of(context);
-    final itemCountLabel = parts.length == 1
-        ? context.l10n.assistantToolLabel.toLowerCase()
-        : context.l10n.assistantToolsLabel.toLowerCase();
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.52),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.8),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(18),
-              onTap: () => setState(() => _expanded = !_expanded),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.handyman_outlined, size: 18),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.l10n.assistantToolsLabel,
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            '${parts.length} $itemCountLabel',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    AnimatedRotation(
-                      turns: _expanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 180),
-                      child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 180),
-            crossFadeState: _expanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            firstChild: const SizedBox.shrink(),
-            secondChild: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var i = 0; i < parts.length; i++) ...[
-                    _AssistantToolResultTile(part: parts[i]),
-                    if (i != parts.length - 1) const SizedBox(height: 10),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
