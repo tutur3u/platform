@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 90px 6vw 30px;
+  padding: 90px var(--page-gutter, 6vw) 30px;
   color: #f3f6ed;
   background: #081421;
 }
@@ -90,11 +90,13 @@
 }
 .journey,
 .atlas {
-  padding: 110px 6vw;
+  padding: 110px var(--page-gutter, 6vw);
 }
 .journey > header,
 .atlas > header {
   max-width: 780px;
+  margin-inline: auto;
+  text-align: center;
 }
 .journey h2,
 .atlas h2,
@@ -112,6 +114,7 @@
   line-height: 1.85;
   color: var(--muted-foreground);
   max-width: 660px;
+  margin-inline: auto;
 }
 .stages {
   display: grid;
@@ -263,11 +266,10 @@
   cursor: pointer;
   transition:
     background 0.2s,
-    transform 0.2s,
     border-color 0.2s;
 }
 .flowSteps button:hover {
-  transform: translateY(-4px);
+  border-color: var(--tone);
 }
 .flowSteps button[aria-pressed="true"] {
   background: #fff;
@@ -325,7 +327,7 @@
   color: #f3f6ed;
 }
 .observatoryCopy {
-  padding: 90px 6vw 55px;
+  padding: 90px var(--page-gutter, 6vw) 55px;
   display: grid;
   grid-template-columns: 1.3fr 1fr;
   gap: 10px 7vw;
@@ -352,7 +354,7 @@
   object-fit: cover;
 }
 .observatory figcaption {
-  padding: 18px 6vw;
+  padding: 18px var(--page-gutter, 6vw);
   font: 9px var(--font-mono, monospace);
   color: #acbbc7;
 }
@@ -399,7 +401,7 @@
 @media (max-width: 700px) {
   .hero {
     min-height: 780px;
-    padding: 60px 6vw 24px;
+    padding: 60px var(--page-gutter, 6vw) 24px;
   }
   .hero h1 {
     font-size: clamp(43px, 10vw, 65px);
@@ -435,7 +437,7 @@
   }
   .journey,
   .atlas {
-    padding: 65px 6vw;
+    padding: 65px var(--page-gutter, 6vw);
   }
   .stages {
     grid-template-columns: 1fr;
@@ -521,7 +523,7 @@
     font-size: 13px;
   }
   .observatoryCopy {
-    padding: 65px 6vw 30px;
+    padding: 65px var(--page-gutter, 6vw) 30px;
     grid-template-columns: 1fr;
   }
   .observatoryCopy > p:last-child {
@@ -535,55 +537,5 @@
 @media (prefers-reduced-motion: reduce) {
   .flowSteps button {
     transition: none;
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .heroImage {
-    animation: landscape 2.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-  .heroCopy > * {
-    animation: introduction 1s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-  .heroCopy h1 {
-    animation-delay: 0.08s;
-  }
-  .heroCopy > p:last-of-type {
-    animation-delay: 0.16s;
-  }
-  .heroCopy > a {
-    animation-delay: 0.24s;
-  }
-  .productDock > span {
-    transition:
-      transform 0.3s,
-      background 0.3s;
-  }
-  .productDock > span:hover {
-    transform: translateY(-5px);
-    background: #091421dd;
-  }
-  .barTrack i {
-    transform-origin: left;
-  }
-}
-@keyframes landscape {
-  from {
-    transform: scale(1.045);
-    opacity: 0.4;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-@keyframes introduction {
-  from {
-    transform: translateY(22px);
-    opacity: 0.1;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
   }
 }

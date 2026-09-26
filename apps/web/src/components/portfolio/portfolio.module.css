@@ -1,4 +1,5 @@
 .portfolio {
+  --page-gutter: max(6vw, calc((100vw - 1280px) / 2));
   --background: #f7f8f2;
   --foreground: #17211e;
   --card: #fff;
@@ -33,7 +34,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 5vw;
+  padding: 24px var(--page-gutter);
   border-bottom: 1px solid var(--border);
   gap: 25px;
 }
@@ -62,7 +63,7 @@
   gap: 2vw;
   align-items: center;
   min-height: 770px;
-  padding: 80px 6vw 100px;
+  padding: 80px var(--page-gutter, 6vw) 100px;
 }
 .eyebrow {
   text-transform: uppercase;
@@ -120,7 +121,6 @@
   );
   opacity: 0.24;
   border-radius: 45% 55% 60% 40%;
-  animation: breathe 14s ease-in-out infinite alternate;
 }
 .heroArt > svg {
   width: 100%;
@@ -200,11 +200,12 @@
 .work,
 .ecosystem,
 .research {
-  padding: 110px 6vw;
+  padding: 110px var(--page-gutter, 6vw);
 }
 .sectionHeading {
   max-width: 1000px;
-  margin-bottom: 65px;
+  margin: 0 auto 65px;
+  text-align: center;
 }
 .sectionHeading h2,
 .engineering h2,
@@ -221,7 +222,7 @@
   line-height: 1.85;
   color: var(--muted-foreground);
   max-width: 760px;
-  margin: 28px 0 0;
+  margin: 28px auto 0;
 }
 .caseStudy {
   display: grid;
@@ -278,7 +279,7 @@
     radial-gradient(ellipse at 90% 100%, #4180e920, transparent);
   border: 1px solid var(--border);
   border-radius: 25px;
-  transform: rotate(1deg);
+  transform: none;
 }
 .meetCase {
   grid-template-columns: 1.25fr 0.8fr;
@@ -289,7 +290,7 @@
   background:
     radial-gradient(ellipse at 30% 30%, #4180e930, transparent), #edf0e8;
   border-radius: 25px;
-  transform: rotate(-1deg);
+  transform: none;
 }
 .ecosystem {
   background: #eef1e9;
@@ -389,7 +390,7 @@
   --muted-foreground: #a2b3aa;
   background: var(--background);
   color: var(--foreground);
-  padding: 100px 6vw;
+  padding: 100px var(--page-gutter, 6vw);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8vw;
@@ -453,7 +454,7 @@
   background: radial-gradient(ellipse at 100% 20%, #fb7b0510, transparent 50%);
 }
 .closing {
-  padding: 100px 6vw;
+  padding: 100px var(--page-gutter, 6vw);
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   align-items: center;
@@ -475,7 +476,7 @@
   display: flex;
   align-items: center;
   gap: 35px;
-  padding: 28px 6vw;
+  padding: 28px var(--page-gutter, 6vw);
   border-top: 1px solid var(--border);
   font-size: 11px;
 }
@@ -507,7 +508,7 @@
 @media (max-width: 1000px) {
   .hero {
     min-height: 0;
-    padding: 70px 6vw;
+    padding: 70px var(--page-gutter, 6vw);
   }
   .hero h1 {
     font-size: 6vw;
@@ -534,7 +535,7 @@
 @media (max-width: 700px) {
   .header {
     gap: 12px;
-    padding: 18px 6vw;
+    padding: 18px var(--page-gutter, 6vw);
   }
   .header nav > a:first-child {
     display: none;
@@ -548,7 +549,7 @@
   .hero {
     grid-template-columns: 1fr;
     gap: 35px;
-    padding: 55px 6vw;
+    padding: 55px var(--page-gutter, 6vw);
   }
   .hero h1 {
     font-size: clamp(42px, 9vw, 65px);
@@ -581,12 +582,12 @@
     justify-content: flex-start;
     gap: 18px;
     font-size: 8px;
-    padding: 20px 6vw;
+    padding: 20px var(--page-gutter, 6vw);
   }
   .work,
   .ecosystem,
   .research {
-    padding: 65px 6vw;
+    padding: 65px var(--page-gutter, 6vw);
   }
   .sectionHeading {
     margin-bottom: 40px;
@@ -631,7 +632,7 @@
   }
   .engineering {
     grid-template-columns: 1fr;
-    padding: 65px 6vw;
+    padding: 65px var(--page-gutter, 6vw);
     gap: 20px;
   }
   .stack {
@@ -640,7 +641,7 @@
   }
   .closing {
     grid-template-columns: 1fr;
-    padding: 65px 6vw;
+    padding: 65px var(--page-gutter, 6vw);
     gap: 25px;
   }
   .closing > svg {

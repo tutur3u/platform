@@ -126,6 +126,11 @@
 .scene[data-scene="closing"] .marker {
   left: calc(50% - 11px);
 }
+@media screen and (min-width: 1001px) and (max-height: 850px) {
+  .scene[data-scene="trust"] .canvas > svg {
+    max-height: 280px;
+  }
+}
 @media (max-width: 800px) {
   .canvas > svg {
     max-height: none;

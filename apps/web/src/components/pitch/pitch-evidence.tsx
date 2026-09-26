@@ -1,3 +1,4 @@
+import { ArrowUpRight } from '@tuturuuu/icons/lucide';
 import { pitchTone } from './pitch-brand';
 import styles from './pitch-evidence.module.css';
 import type { PitchCopy, SlideId } from './pitch-model';
@@ -65,7 +66,7 @@ export function EvidenceScene({
               rel="noopener noreferrer"
             >
               <span>0{i + 1}</span>
-              {source.label} ↗
+              {source.label} <ArrowUpRight size={13} aria-hidden="true" />
             </a>
             <p>{source.detail}</p>
           </li>

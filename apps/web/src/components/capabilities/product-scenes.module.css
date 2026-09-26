@@ -19,6 +19,9 @@
   font-size: 12px;
   font-weight: 650;
 }
+.chrome > svg:last-child {
+  margin-left: auto;
+}
 .chrome > span:last-child {
   margin-left: auto;
   font-size: 10px;
@@ -73,7 +76,6 @@
   border-radius: 10px;
   margin-bottom: 8px;
   background: var(--background, #f5f7f2);
-  animation: arrive 0.3s ease;
 }
 .task strong {
   display: block;
@@ -102,6 +104,8 @@
   color: var(--foreground, #17201d);
 }
 .dropzone {
+  display: grid;
+  place-items: center;
   border: 1px dashed var(--border, #ddd);
   text-align: center;
   padding: 10px;
@@ -219,7 +223,6 @@
   width: 4px;
   border-radius: 3px;
   background: var(--pitch-growth);
-  animation: voice 2s ease-in-out infinite alternate;
 }
 .wave i:nth-child(2n) {
   animation-delay: -1s;
@@ -326,6 +329,9 @@
   .mira {
     height: 145px;
   }
+  .chrome > svg:last-child {
+    margin-left: auto;
+  }
   .chrome > span:last-child {
     max-width: 45%;
     text-overflow: ellipsis;
@@ -348,9 +354,18 @@
 }
 .product[data-compact="true"] .task {
   padding: 8px;
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 4px 6px;
+}
+.product[data-compact="true"] .taskMark {
+  grid-row: 1 / 3;
+}
+.product[data-compact="true"] .taskMeta {
+  grid-column: 2;
 }
 .product[data-compact="true"] .task strong {
-  margin: 4px 0 7px;
+  margin: 0;
 }
 .product[data-compact="true"] .dropzone {
   padding: 6px;

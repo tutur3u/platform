@@ -25,39 +25,18 @@
   /* biome-ignore lint/complexity/noImportantStyles: Motion preferences and print must override every scene animation. */
   transition: none !important;
 }
-.stage [data-flow-line] {
-  stroke-dasharray: 3 24;
-  animation: current 20s linear infinite;
-  animation-play-state: paused;
-}
-.stage [data-flow-active="true"] [data-flow-line] {
-  animation-play-state: running;
-}
 .stage [data-story-image] {
   overflow: hidden;
 }
-.stage [data-story-image] img {
-  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.stage [data-story-image]:hover img {
-  transform: scale(1.025);
-}
 .stage [data-story-panel] {
-  animation: arrive 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-@keyframes current {
-  to {
-    stroke-dashoffset: -270;
-  }
+  animation: arrive 220ms ease-out;
 }
 @keyframes arrive {
   from {
-    opacity: 0.2;
-    transform: translateY(14px);
+    opacity: 0.8;
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 @media (prefers-reduced-motion: reduce) {

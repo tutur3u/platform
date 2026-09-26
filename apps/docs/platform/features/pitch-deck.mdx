@@ -121,8 +121,11 @@ with icons from `@tuturuuu/icons`. Its three chapters connect useful products,
 maintained foundations, and long-term intelligence research. The Google comparison
 is explicitly an ambition, not a claim of equivalent scale or market position.
 
-`StoryMotion` provides optional scroll reveals and a reader-controlled motion
-switch. Reduced-motion preferences disable scene animation; print removes motion
+`StoryMotion` provides a reader-controlled motion switch. Use a single short
+opacity transition per scene; do not animate full sections, stack parent and child
+entrances, or run decorative loops. Chapter panels share a grid cell to reserve
+the tallest panel, with inactive content inert and hidden from assistive technology.
+Use SVG icons from `@tuturuuu/icons` for every button icon, never emoji or text glyphs. Reduced-motion preferences disable scene animation; print removes motion
 and keeps all pitch slides visible. Essential content is rendered without waiting
 for an animation or observer. Check keyboard tab navigation, the pause control,
 EN/VI mobile layouts, and print whenever these compositions change.

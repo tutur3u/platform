@@ -39,7 +39,7 @@ export function Portfolio({
 }) {
   const t = copy;
   return (
-    <StoryMotion reveal>
+    <StoryMotion>
       <div className={styles.portfolio} style={pitchBrandStyle}>
         <header className={styles.header}>
           <a href={`/${locale}`} className={styles.brand}>
@@ -212,7 +212,9 @@ export function Portfolio({
         </main>
         <footer className={styles.footer}>
           <a href={`/${locale}`}>Tuturuuu</a>
-          <a href={`/${locale}/pitch`}>{t.pitch} ↗</a>
+          <a href={`/${locale}/pitch`}>
+            {t.pitch} <ArrowUpRight size={16} aria-hidden="true" />
+          </a>
           <span>contact@tuturuuu.com</span>
         </footer>
         <MotionToggle copy={t.motion} floating />

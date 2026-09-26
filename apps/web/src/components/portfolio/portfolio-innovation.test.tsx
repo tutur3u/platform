@@ -6,7 +6,9 @@ import { PortfolioInnovation } from './portfolio-innovation';
 
 describe('innovation story', () => {
   it('changes the illustration and product story when a chapter receives keyboard focus', () => {
-    render(<PortfolioInnovation copy={messages.portfolio.innovation} />);
+    const { container } = render(
+      <PortfolioInnovation copy={messages.portfolio.innovation} />
+    );
     const first = screen.getByRole('tab', { name: /Useful products/ });
     expect(first.getAttribute('aria-selected')).toBe('true');
     const platform = screen.getByRole('tab', { name: /Shared foundations/ });
@@ -22,6 +24,11 @@ describe('innovation story', () => {
         name: messages.portfolio.innovation.chapters[0]!.alt,
       })
     ).toBeNull();
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
+    expect(container.querySelectorAll('[role="tabpanel"]')).toHaveLength(3);
+    expect(container.querySelectorAll('[role="tabpanel"][inert]')).toHaveLength(
+      2
+    );
   });
 
   it('lets a reader pause and resume motion without changing content', () => {

@@ -1,5 +1,5 @@
 .suite {
-  padding: 100px 6vw;
+  padding: 100px var(--page-gutter, 6vw);
   background: #12201c;
   color: #f3f6ed;
   --background: #12201c;
@@ -8,7 +8,7 @@
   --border: #ffffff25;
 }
 .intro {
-  max-width: 1160px;
+  max-width: 1280px;
   margin: auto;
 }
 .eyebrow {
@@ -62,13 +62,13 @@
   margin: 20px 0 60px;
 }
 .scenes {
-  max-width: 1160px;
+  max-width: 1280px;
   margin: auto;
 }
 .scene {
   display: grid;
   grid-template-columns: 1.1fr 1fr;
-  gap: 6vw;
+  gap: clamp(32px, 5vw, 80px);
   padding: 70px 0;
   align-items: center;
   border-bottom: 1px solid #ffffff20;
@@ -118,7 +118,7 @@
 }
 @media (max-width: 700px) {
   .suite {
-    padding: 65px 6vw;
+    padding: 65px var(--page-gutter, 6vw);
   }
   .scene {
     grid-template-columns: 1fr;
