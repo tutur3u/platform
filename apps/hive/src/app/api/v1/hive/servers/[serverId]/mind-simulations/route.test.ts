@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   buildPlan: vi.fn(),
   getSnapshot: vi.fn(),
+  getPersonalWorkspaceId: vi.fn(),
   materialize: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   requireAdmin: vi.fn(),
@@ -21,6 +22,9 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 vi.mock('@/lib/hive/mind-simulation-blueprint', () => ({
   buildHiveMindSimulationPlan: mocks.buildPlan,
+}));
+vi.mock('@/lib/hive/ai', () => ({
+  getHivePersonalWorkspaceId: mocks.getPersonalWorkspaceId,
 }));
 vi.mock('@/lib/hive/mind-simulation-materializer', () => ({
   HiveMindMaterializationValidationError: class extends Error {},
@@ -67,10 +71,12 @@ function params() {
 describe('POST Mind simulation materialization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    const sbAdmin = { name: 'admin' };
     mocks.requireAdmin.mockResolvedValue({
-      access: { user: { id: 'user-1' } },
+      access: { sbAdmin, user: { id: 'user-1' } },
       ok: true,
     });
+    mocks.getPersonalWorkspaceId.mockResolvedValue(WS_ID);
     mocks.normalizeWorkspaceId.mockResolvedValue(WS_ID);
     mocks.verifyMembership.mockResolvedValue({ ok: true });
     mocks.getSnapshot.mockResolvedValue(snapshot);
@@ -102,6 +108,23 @@ describe('POST Mind simulation materialization', () => {
       workflow: { id: 'workflow-1' },
     });
     expect(mocks.materialize).toHaveBeenCalledOnce();
+  });
+
+  it('resolves the personal workspace from the verified actor', async () => {
+    const response = await POST(
+      request({ boardId: BOARD_ID, workspaceId: 'personal' }) as never,
+      params()
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.getPersonalWorkspaceId).toHaveBeenCalledWith({
+      sbAdmin: { name: 'admin' },
+      userId: 'user-1',
+    });
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+    expect(mocks.verifyMembership).toHaveBeenCalledWith(
+      expect.objectContaining({ wsId: WS_ID, userId: 'user-1' })
+    );
   });
 
   it('rejects an undersized board plan before materialization', async () => {
