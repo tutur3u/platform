@@ -415,6 +415,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appLockSettingsTitle => 'Khóa ứng dụng';
 
   @override
+  String get appLockDelayTitle => 'Khóa sau khi rời ứng dụng';
+
+  @override
+  String get appLockDelayDescription => 'Chọn thời điểm yêu cầu mở khóa sau khi chuyển khỏi ứng dụng.';
+
+  @override
+  String get appLockDelayImmediately => 'Ngay lập tức';
+
+  @override
+  String get appLockDelay30Seconds => 'Sau 30 giây';
+
+  @override
+  String get appLockDelay1Minute => 'Sau 1 phút';
+
+  @override
+  String get appLockDelay5Minutes => 'Sau 5 phút';
+
+  @override
   String get appLockUnavailableDescription => 'Xác thực cục bộ không khả dụng hoặc đã bị hủy.';
 
   @override

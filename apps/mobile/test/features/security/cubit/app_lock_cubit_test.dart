@@ -19,6 +19,12 @@ void main() {
       settingsStore = _MockAppLockSettingsStore();
       when(settingsStore.isEnabled).thenAnswer((_) async => false);
       when(
+        settingsStore.readDelay,
+      ).thenAnswer((_) async => AppLockDelay.after30Seconds);
+      when(
+        () => settingsStore.setDelay(AppLockDelay.after5Minutes),
+      ).thenAnswer((_) async {});
+      when(
         () => settingsStore.setEnabled(enabled: any(named: 'enabled')),
       ).thenAnswer((_) async {});
       when(localAuthService.isDeviceSupported).thenAnswer((_) async => true);
@@ -73,6 +79,37 @@ void main() {
         ).called(1);
         verify(() => settingsStore.setEnabled(enabled: true)).called(1);
       },
+    );
+
+    blocTest<AppLockCubit, AppLockState>(
+      'loads and saves the selected lock delay',
+      setUp: () {
+        when(settingsStore.isEnabled).thenAnswer((_) async => true);
+        when(
+          settingsStore.readDelay,
+        ).thenAnswer((_) async => AppLockDelay.immediately);
+      },
+      build: buildCubit,
+      act: (cubit) async {
+        await cubit.load();
+        await cubit.setDelay(AppLockDelay.after5Minutes);
+      },
+      expect: () => [
+        const AppLockState(status: AppLockStatus.loading),
+        const AppLockState(
+          enabled: true,
+          delay: AppLockDelay.immediately,
+          hasLoaded: true,
+        ),
+        const AppLockState(
+          enabled: true,
+          delay: AppLockDelay.after5Minutes,
+          hasLoaded: true,
+        ),
+      ],
+      verify: (_) => verify(
+        () => settingsStore.setDelay(AppLockDelay.after5Minutes),
+      ).called(1),
     );
 
     blocTest<AppLockCubit, AppLockState>(

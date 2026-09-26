@@ -871,6 +871,42 @@ abstract class AppLocalizations {
   /// **'App lock'**
   String get appLockSettingsTitle;
 
+  /// No description provided for @appLockDelayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock after leaving'**
+  String get appLockDelayTitle;
+
+  /// No description provided for @appLockDelayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose when the app asks to unlock after you switch away.'**
+  String get appLockDelayDescription;
+
+  /// No description provided for @appLockDelayImmediately.
+  ///
+  /// In en, this message translates to:
+  /// **'Immediately'**
+  String get appLockDelayImmediately;
+
+  /// No description provided for @appLockDelay30Seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'After 30 seconds'**
+  String get appLockDelay30Seconds;
+
+  /// No description provided for @appLockDelay1Minute.
+  ///
+  /// In en, this message translates to:
+  /// **'After 1 minute'**
+  String get appLockDelay1Minute;
+
+  /// No description provided for @appLockDelay5Minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'After 5 minutes'**
+  String get appLockDelay5Minutes;
+
   /// No description provided for @appLockUnavailableDescription.
   ///
   /// In en, this message translates to:
