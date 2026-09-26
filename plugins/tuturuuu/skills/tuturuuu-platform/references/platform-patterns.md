@@ -6,6 +6,17 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- For a customer-facing behavior fix that spans apps, trace the setting from its
+  writer through server-prefetched and client-only views, summary counts, and
+  exports. Share the decision logic when possible, and record the scope, default,
+  and deliberate exceptions in the owning `apps/docs/platform` feature page.
+  Verify the live app and migration implementation against that decision before
+  delivery so an older copy of the behavior cannot return during an app switch.
+- TanStack Query keys must identify the cached value's shape. A raw workspace
+  config string and a parsed attendance boolean cannot share
+  `['workspace-config', wsId, configId]`: navigating between settings and the
+  attendance roster can reuse the wrong type. Use a distinct parsed-value key
+  and invalidate it when the raw setting changes.
 - Server Components are the default. Add `'use client'` only for browser APIs,
   local state, or interactivity.
 - Client data fetching and mutations use TanStack Query. Do not fetch data in

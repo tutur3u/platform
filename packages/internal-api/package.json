@@ -247,6 +247,11 @@
       "import": "./dist/teach.js",
       "require": "./dist/teach.js"
     },
+    "./user-group-attendance": {
+      "types": "./dist/user-group-attendance.d.ts",
+      "import": "./dist/user-group-attendance.js",
+      "require": "./dist/user-group-attendance.js"
+    },
     "./user-groups": {
       "types": "./dist/user-groups.d.ts",
       "import": "./dist/user-groups.js",

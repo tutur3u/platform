@@ -9,6 +9,10 @@ import {
   listWorkspaceUserGroupSessions,
   saveWorkspaceUserGroupAttendance,
 } from '@tuturuuu/internal-api';
+import {
+  filterWorkspaceUserGroupAttendanceMembers,
+  workspaceUserGroupAttendanceShowManagersQueryKey,
+} from '@tuturuuu/internal-api/user-group-attendance';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';
 import { format, parse } from 'date-fns';
@@ -139,19 +143,24 @@ export function GroupAttendanceClient({
     staleTime: 60 * 1000,
   });
 
-  const { data: showManagers = initialShowManagers } = useQuery({
+  const {
+    data: showManagers = initialShowManagers,
+    isError: isManagersConfigError,
+    isFetching: isRefreshingManagersConfig,
+  } = useQuery({
     initialData: initialShowManagers,
     queryFn: () => getWorkspaceUserGroupAttendanceShowManagers(wsId),
-    queryKey: ['workspace-config', wsId, 'ATTENDANCE_SHOW_MANAGERS'],
-    staleTime: 5 * 60 * 1000,
+    queryKey: workspaceUserGroupAttendanceShowManagersQueryKey(wsId),
+    staleTime: 0,
+    refetchOnWindowFocus: 'always',
   });
 
   const members = useMemo(() => {
-    if (showManagers) {
-      return allMembers;
-    }
-    return allMembers.filter((member) => member.role !== 'TEACHER');
-  }, [allMembers, showManagers]);
+    return filterWorkspaceUserGroupAttendanceMembers(
+      allMembers,
+      showManagers && !isRefreshingManagersConfig && !isManagersConfigError
+    );
+  }, [allMembers, showManagers, isRefreshingManagersConfig, isManagersConfigError]);
 
   const attendanceDate = format(currentDate, 'yyyy-MM-dd');
   const attendanceKey = [

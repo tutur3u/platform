@@ -106,5 +106,28 @@ export async function getWorkspaceUserGroupAttendanceShowManagers(
     options
   );
 
-  return config?.value?.trim().toLowerCase() !== 'false';
+  return parseWorkspaceUserGroupAttendanceShowManagers(config?.value);
+}
+
+/** A missing setting preserves the existing default-on workspace behavior. */
+export function parseWorkspaceUserGroupAttendanceShowManagers(
+  value: string | null | undefined
+): boolean {
+  return value?.trim().toLowerCase() !== 'false';
+}
+
+/** Keep the parsed boolean separate from the raw workspace config query cache. */
+export function workspaceUserGroupAttendanceShowManagersQueryKey(
+  workspaceId: string
+) {
+  return ['attendance-show-managers', workspaceId] as const;
+}
+
+/** Use the same manager rule in every attendance-taking client. */
+export function filterWorkspaceUserGroupAttendanceMembers<
+  T extends { role?: string | null },
+>(members: T[], showManagers: boolean): T[] {
+  return showManagers
+    ? members
+    : members.filter((member) => member.role !== 'TEACHER');
 }
