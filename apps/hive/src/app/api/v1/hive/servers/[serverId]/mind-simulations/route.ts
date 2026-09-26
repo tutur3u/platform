@@ -1,10 +1,12 @@
 import { getMindBoardGraphSnapshot } from '@tuturuuu/mind-core';
+import { PERSONAL_WORKSPACE_SLUG } from '@tuturuuu/utils/constants';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getHivePersonalWorkspaceId } from '@/lib/hive/ai';
 import { buildHiveMindSimulationPlan } from '@/lib/hive/mind-simulation-blueprint';
 import {
   HiveMindMaterializationValidationError,
@@ -46,11 +48,17 @@ export async function POST(request: NextRequest, { params }: Params) {
     let normalizedWsId: string;
 
     try {
-      normalizedWsId = await normalizeWorkspaceId(
-        parsed.data.workspaceId,
-        supabase,
-        request
-      );
+      normalizedWsId =
+        parsed.data.workspaceId.trim().toLowerCase() === PERSONAL_WORKSPACE_SLUG
+          ? await getHivePersonalWorkspaceId({
+              sbAdmin: supabase,
+              userId: access.access.user.id,
+            })
+          : await normalizeWorkspaceId(
+              parsed.data.workspaceId,
+              supabase,
+              request
+            );
     } catch {
       return NextResponse.json(
         { error: 'Invalid workspace identifier' },
