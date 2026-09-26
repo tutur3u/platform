@@ -67,7 +67,7 @@ Workspace members can have workspace-specific display names, similar to server p
 
 ## Attendance Manager Visibility And Counting
 
-In Contacts workspace settings, open **Attendance display**, turn off **Show Managers in Attendance**, and save. The setting is shared by every group attendance-taking view. Both attendance settings default on for workspaces without an explicit value.
+In Contacts workspace settings, open **Attendance → Display & Totals**, turn off **Show Managers in Attendance**, and save. The setting is shared by every group attendance-taking view. Both attendance settings default on for workspaces without an explicit value.
 
 - `ATTENDANCE_SHOW_MANAGERS=false` hides members whose role in that group is `TEACHER` (the group manager/teacher role) from attendance-taking rosters and their on-screen totals. It applies to the Contacts attendance page, group detail attendance, the shared web attendance client, and the TanStack replacement. It does not remove a manager from the group, alter saved attendance, or erase historical records and exports.
 - The setting is read for the first server render of group detail attendance. Client-only rosters wait for the setting before showing managers, so a hidden manager does not briefly appear while the setting loads or refreshes. The setting is scoped to the workspace, not an individual browser or group.
