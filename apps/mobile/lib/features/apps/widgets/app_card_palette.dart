@@ -166,6 +166,7 @@ AppCardPalette? _paletteForModule(String? moduleId, {required bool isDark}) {
             );
     case 'drive':
     case 'documents':
+    case 'notes':
       return isDark
           ? const AppCardPalette(
               background: Color(0xFF1B3225),

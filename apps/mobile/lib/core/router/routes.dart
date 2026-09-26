@@ -38,6 +38,7 @@ abstract final class Routes {
   static const inventory = '/inventory';
   static const drive = '/drive';
   static const documents = '/documents';
+  static const notes = '/notes';
   static const cms = '/cms';
   static const crm = '/crm';
   static const meet = '/meet';
@@ -171,6 +172,9 @@ abstract final class Routes {
     }
     if (normalized == documents || normalized.startsWith('$documents/')) {
       return documents;
+    }
+    if (normalized == notes || normalized.startsWith('$notes/')) {
+      return notes;
     }
     if (normalized == cms || normalized.startsWith('$cms/')) {
       return cms;

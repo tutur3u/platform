@@ -16872,6 +16872,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in again'**
   String get requiredMfaSignInAgain;
+
+  /// No description provided for @appsHubNotesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture ideas and connect them to your work.'**
+  String get appsHubNotesDescription;
+
+  /// No description provided for @notesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get notesTitle;
+
+  /// No description provided for @notesNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New note'**
+  String get notesNew;
+
+  /// No description provided for @notesArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive note'**
+  String get notesArchive;
+
+  /// No description provided for @notesSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search notes'**
+  String get notesSearch;
+
+  /// No description provided for @notesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No notes yet. Capture your first idea.'**
+  String get notesEmpty;
+
+  /// No description provided for @notesUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled note'**
+  String get notesUntitled;
+
+  /// No description provided for @notesStartWriting.
+  ///
+  /// In en, this message translates to:
+  /// **'Start writing...'**
+  String get notesStartWriting;
+
+  /// No description provided for @notesInsertLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert link'**
+  String get notesInsertLink;
+
+  /// No description provided for @notesLinkText.
+  ///
+  /// In en, this message translates to:
+  /// **'Link text'**
+  String get notesLinkText;
+
+  /// No description provided for @notesLinkUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to a task, event, meeting or web page'**
+  String get notesLinkUrl;
+
+  /// No description provided for @notesInsertButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert'**
+  String get notesInsertButton;
+
+  /// No description provided for @notesLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load notes. Pull to retry.'**
+  String get notesLoadError;
+
+  /// No description provided for @notesSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save this note. Your edits are still here.'**
+  String get notesSaveError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

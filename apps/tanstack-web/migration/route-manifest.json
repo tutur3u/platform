@@ -18,12 +18,12 @@
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 54,
+        "legacyNext": 55,
         "migrated": 99,
-        "percentComplete": 65.16,
-        "remaining": 54,
+        "percentComplete": 64.74,
+        "remaining": 55,
         "terminal": 101,
-        "total": 155,
+        "total": 156,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 76,
+        "legacyNext": 77,
         "migrated": 148,
-        "percentComplete": 66.37,
-        "remaining": 76,
+        "percentComplete": 66.08,
+        "remaining": 77,
         "terminal": 150,
-        "total": 226,
+        "total": 227,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 605,
+      "legacyNext": 606,
       "migrated": 215,
-      "percentComplete": 27.46,
-      "remaining": 605,
+      "percentComplete": 27.43,
+      "remaining": 606,
       "terminal": 229,
-      "total": 834,
+      "total": 835,
       "unknownStatus": 0
     }
   },
@@ -3911,20 +3911,20 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/notes:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/notes/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/notes:apps/web/src/app/api/v1/workspaces/[wsId]/notes/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
       "routePath": "/api/v1/workspaces/:wsId/notes",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/notes/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/notes/:noteId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/notes/[noteId]/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/notes/:noteId:apps/web/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/route.ts",
       "kind": "api",
       "methods": ["PUT", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/notes/:noteId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/notes/[noteId]/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -6958,6 +6958,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/:wsId/notes:apps/web/src/app/[locale]/(dashboard)/[wsId]/notes/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/notes",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/notes/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/:wsId/notifications:apps/web/src/app/[locale]/(dashboard)/[wsId]/notifications/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7952,7 +7961,7 @@
     "apiRoutes": 593,
     "cronRoutes": 10,
     "layouts": 67,
-    "pages": 155,
+    "pages": 156,
     "routeHandlers": 608,
     "methodCounts": {
       "GET": 305,
@@ -7963,6 +7972,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 834
+    "total": 835
   }
 }

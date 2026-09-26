@@ -11028,6 +11028,23 @@
     "rollout_notice": "Xin lưu ý rằng các gói đăng ký trả phí đang được triển khai dần dần và hiện tại chưa khả dụng. Chúng tôi đánh giá cao sự kiên nhẫn của bạn khi chúng tôi làm việc để cung cấp tính năng này cho tất cả mọi người.",
     "title": "Yêu cầu Gói {tier}"
   },
+  "notes_app": {
+    "archive": "Lưu trữ ghi chú",
+    "back": "Quay lại ghi chú",
+    "description": "Nơi ghi lại ý tưởng, kế hoạch và công việc liên quan. Đồng bộ trên các thiết bị.",
+    "empty": "Chưa có ghi chú. Hãy ghi lại ý tưởng đầu tiên.",
+    "load_error": "Không thể tải ghi chú. Vui lòng thử lại.",
+    "loading": "Đang tải ghi chú...",
+    "new": "Ghi chú mới",
+    "save_error": "Không thể lưu. Thử lại",
+    "saved": "Đã lưu",
+    "saving": "Đang lưu...",
+    "search": "Tìm ghi chú",
+    "select": "Chọn ghi chú hoặc tạo ghi chú mới.",
+    "start_writing": "Bắt đầu viết...",
+    "title": "Ghi chú",
+    "untitled": "Ghi chú chưa đặt tên"
+  },
   "notifications": {
     "accept": "Chấp nhận",
     "archive": "Lưu trữ",
