@@ -1,32 +1,5 @@
 part of 'cms_page.dart';
 
-class _CmsSegmentedControl extends StatelessWidget {
-  const _CmsSegmentedControl({required this.section, required this.onChanged});
-
-  final int section;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<int>(
-      segments: [
-        ButtonSegment(
-          value: 0,
-          icon: const Icon(Icons.dashboard_customize_outlined),
-          label: Text(context.l10n.cmsOverview),
-        ),
-        ButtonSegment(
-          value: 1,
-          icon: const Icon(Icons.collections_bookmark_outlined),
-          label: Text(context.l10n.cmsLibrary),
-        ),
-      ],
-      selected: {section},
-      onSelectionChanged: (value) => onChanged(value.first),
-    );
-  }
-}
-
 class _CmsMetricsGrid extends StatelessWidget {
   const _CmsMetricsGrid({required this.summary});
 

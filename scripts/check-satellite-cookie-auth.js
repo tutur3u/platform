@@ -38,6 +38,10 @@ const COOKIE_CLIENT_CALL_PATTERN = /\bcreateClient\(\s*(?:request|req)?\s*\)/u;
 const LOCAL_RESOLVER_PATTERN =
   /resolveAuthenticatedSessionUser\(\s*supabase\s*\)/u;
 const COOKIE_QUERY_PATTERN = /\bsupabase\s*\.\s*(?:from|schema|rpc)\(/u;
+const COOKIE_MEMBERSHIP_SHORTHAND_PATTERN =
+  /verifyWorkspaceMembershipType\(\s*\{[^}]*?\bsupabase\s*(?:,|\})/su;
+const APP_SESSION_FALLBACK_PATTERN =
+  /\b(?:getAppSessionTokenFromRequest|verifyAppSessionRequest|verifyCliAccessToken|resolveSatelliteRequestActor|resolveSatellitePageActor)\s*\(/u;
 
 function listDirectories(directory) {
   try {
@@ -70,7 +74,12 @@ function collectRouteFiles(directory) {
       continue;
     }
 
-    if (entry.isFile() && entry.name === 'route.ts') {
+    if (
+      entry.isFile() &&
+      entry.name.endsWith('.ts') &&
+      !entry.name.endsWith('.test.ts') &&
+      !entry.name.endsWith('.d.ts')
+    ) {
       files.push(fullPath);
     }
   }
@@ -80,6 +89,7 @@ function collectRouteFiles(directory) {
 
 /** True when the file authorizes membership with the cookie-backed client. */
 function authorizesWithCookieClient(source) {
+  if (APP_SESSION_FALLBACK_PATTERN.test(source)) return false;
   return (
     (COOKIE_CLIENT_PATTERN.test(source) &&
       MEMBERSHIP_CALL_PATTERN.test(source)) ||
@@ -87,7 +97,8 @@ function authorizesWithCookieClient(source) {
       COOKIE_CLIENT_CALL_PATTERN.test(source)) ||
     (LOCAL_RESOLVER_PATTERN.test(source) &&
       COOKIE_CLIENT_CALL_PATTERN.test(source) &&
-      COOKIE_QUERY_PATTERN.test(source) &&
+      (COOKIE_QUERY_PATTERN.test(source) ||
+        COOKIE_MEMBERSHIP_SHORTHAND_PATTERN.test(source)) &&
       !source.includes('sessionSupabase') &&
       !source.includes('authResult.supabase'))
   );
@@ -101,13 +112,28 @@ function findViolations(root = REPO_ROOT) {
     if (COOKIE_SESSION_OWNER_APPS.has(appName)) continue;
 
     const apiDir = path.join(appsDir, appName, 'src', 'app', 'api');
+    const libDir = path.join(appsDir, appName, 'src', 'lib');
 
-    for (const filePath of collectRouteFiles(apiDir)) {
+    for (const filePath of [
+      ...collectRouteFiles(apiDir),
+      ...collectRouteFiles(libDir),
+    ]) {
       const source = fs.readFileSync(filePath, 'utf8');
+      const isRoute = filePath.endsWith(`${path.sep}route.ts`);
+      const hasDirectCookieResolver =
+        DIRECT_SUPABASE_RESOLVER_PATTERN.test(source) &&
+        COOKIE_CLIENT_CALL_PATTERN.test(source) &&
+        !APP_SESSION_FALLBACK_PATTERN.test(source);
+      const hasLocalCookieResolver =
+        LOCAL_RESOLVER_PATTERN.test(source) &&
+        authorizesWithCookieClient(source);
       if (
-        !authorizesWithCookieClient(source) &&
+        !(isRoute
+          ? authorizesWithCookieClient(source)
+          : hasDirectCookieResolver || hasLocalCookieResolver) &&
         !(
           appName === 'infrastructure' &&
+          isRoute &&
           COOKIE_CLIENT_CALL_PATTERN.test(source)
         )
       ) {

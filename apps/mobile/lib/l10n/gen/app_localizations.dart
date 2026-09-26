@@ -871,6 +871,42 @@ abstract class AppLocalizations {
   /// **'App lock'**
   String get appLockSettingsTitle;
 
+  /// No description provided for @appLockDelayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock after leaving'**
+  String get appLockDelayTitle;
+
+  /// No description provided for @appLockDelayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose when the app asks to unlock after you switch away.'**
+  String get appLockDelayDescription;
+
+  /// No description provided for @appLockDelayImmediately.
+  ///
+  /// In en, this message translates to:
+  /// **'Immediately'**
+  String get appLockDelayImmediately;
+
+  /// No description provided for @appLockDelay30Seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'After 30 seconds'**
+  String get appLockDelay30Seconds;
+
+  /// No description provided for @appLockDelay1Minute.
+  ///
+  /// In en, this message translates to:
+  /// **'After 1 minute'**
+  String get appLockDelay1Minute;
+
+  /// No description provided for @appLockDelay5Minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'After 5 minutes'**
+  String get appLockDelay5Minutes;
+
   /// No description provided for @appLockUnavailableDescription.
   ///
   /// In en, this message translates to:
@@ -16333,6 +16369,48 @@ abstract class AppLocalizations {
   /// **'Calendar events'**
   String get remindersEventTitle;
 
+  /// No description provided for @remindersAllDayEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'All-day event: {title}'**
+  String remindersAllDayEvent(String title);
+
+  /// No description provided for @remindersUpcomingEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'{when}: {title}'**
+  String remindersUpcomingEvent(String when, String title);
+
+  /// No description provided for @remindersIn3d.
+  ///
+  /// In en, this message translates to:
+  /// **'In 3 days'**
+  String get remindersIn3d;
+
+  /// No description provided for @remindersIn1d.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get remindersIn1d;
+
+  /// No description provided for @remindersIn12h.
+  ///
+  /// In en, this message translates to:
+  /// **'In 12 hours'**
+  String get remindersIn12h;
+
+  /// No description provided for @remindersIn3h.
+  ///
+  /// In en, this message translates to:
+  /// **'In 3 hours'**
+  String get remindersIn3h;
+
+  /// No description provided for @remindersIn1h.
+  ///
+  /// In en, this message translates to:
+  /// **'In 1 hour'**
+  String get remindersIn1h;
+
   /// No description provided for @remindersTiming.
   ///
   /// In en, this message translates to:
@@ -16975,6 +17053,36 @@ abstract class AppLocalizations {
   /// **'Archive note'**
   String get notesArchive;
 
+  /// No description provided for @notesEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit note'**
+  String get notesEdit;
+
+  /// No description provided for @notesDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get notesDone;
+
+  /// No description provided for @notesDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete note'**
+  String get notesDelete;
+
+  /// No description provided for @notesDeleteDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this note permanently? This cannot be undone.'**
+  String get notesDeleteDescription;
+
+  /// No description provided for @notesDeleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete this note. Try again.'**
+  String get notesDeleteError;
+
   /// No description provided for @notesSearch.
   ///
   /// In en, this message translates to:
@@ -17004,6 +17112,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Insert link'**
   String get notesInsertLink;
+
+  /// No description provided for @notesOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get notesOpenLink;
+
+  /// No description provided for @notesEditLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get notesEditLink;
+
+  /// No description provided for @notesSaveLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Save link'**
+  String get notesSaveLink;
 
   /// No description provided for @notesLinkEvents.
   ///

@@ -14,7 +14,8 @@ extension _AppPushNavigation on _AppState {
 
   void _handleLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
+        (state == AppLifecycleState.inactive &&
+            _appLockCubit.state.delay != AppLockDelay.immediately) ||
         state == AppLifecycleState.hidden) {
       _backgroundedAt ??= DateTime.now();
       return;
@@ -25,7 +26,7 @@ extension _AppPushNavigation on _AppState {
     _backgroundedAt = null;
     if (backgroundedAt != null &&
         DateTime.now().difference(backgroundedAt) >=
-            const Duration(seconds: 30) &&
+            _appLockCubit.state.delay.duration &&
         _authCubit.state.status == AuthStatus.authenticated &&
         !isAppLockExcludedRoute(_currentMatchedLocation())) {
       _appLockCubit.lock();

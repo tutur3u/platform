@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
-  createClientMock,
+  resolveSatelliteRequestActorMock,
   createQueuedStressTestRunMock,
   getPermissionsMock,
   persistStressTestRunMock,
@@ -12,7 +12,7 @@ const {
   readStressTestSnapshotMock,
   serverLoggerErrorMock,
 } = vi.hoisted(() => ({
-  createClientMock: vi.fn(),
+  resolveSatelliteRequestActorMock: vi.fn(),
   createQueuedStressTestRunMock: vi.fn(),
   getPermissionsMock: vi.fn(),
   persistStressTestRunMock: vi.fn(),
@@ -25,8 +25,8 @@ const {
 
 const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createClient: createClientMock,
+vi.mock('@tuturuuu/satellite/workspace-access', () => ({
+  resolveSatelliteRequestActor: resolveSatelliteRequestActorMock,
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -76,14 +76,10 @@ function createTestRequest(method = 'GET', body?: unknown) {
 }
 
 describe('infrastructure stress-test route', () => {
-  const authGetUserMock = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
-    createClientMock.mockResolvedValue({
-      auth: {
-        getUser: authGetUserMock,
-      },
+    resolveSatelliteRequestActorMock.mockResolvedValue({
+      user: { email: 'ops@tuturuuu.com', id: 'user-1' },
     });
     readStressTestSnapshotMock.mockResolvedValue({
       activeRun: null,
@@ -96,18 +92,12 @@ describe('infrastructure stress-test route', () => {
   });
 
   function authorizeStressTestManager() {
-    authGetUserMock.mockResolvedValue({
-      data: { user: { email: 'ops@tuturuuu.com', id: 'user-1' } },
-    });
     getPermissionsMock.mockResolvedValue(
       createPermissionsResult(['manage_infrastructure_stress_tests'])
     );
   }
 
   it('allows infrastructure viewers to read the snapshot', async () => {
-    authGetUserMock.mockResolvedValue({
-      data: { user: { id: 'user-1' } },
-    });
     getPermissionsMock
       .mockResolvedValueOnce(createPermissionsResult(['view_infrastructure']))
       .mockResolvedValueOnce(createPermissionsResult(['view_infrastructure']));
@@ -121,9 +111,6 @@ describe('infrastructure stress-test route', () => {
   });
 
   it('rejects queue requests without the stress-test permission', async () => {
-    authGetUserMock.mockResolvedValue({
-      data: { user: { id: 'user-1' } },
-    });
     getPermissionsMock.mockResolvedValue(
       createPermissionsResult(['view_infrastructure'])
     );

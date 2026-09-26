@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -15,6 +16,7 @@ import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -526,6 +528,11 @@ class _CmsPageState extends State<CmsPage> {
       child: shad.Scaffold(
         child: Stack(
           children: [
+            ShellTitleOverride(
+              ownerId: 'cms-root-title',
+              locations: const {Routes.cms},
+              title: context.l10n.cmsTitleApp,
+            ),
             ShellMiniNav(
               ownerId: 'cms-root-nav',
               locations: const {Routes.cms},
@@ -590,7 +597,7 @@ class _CmsPageState extends State<CmsPage> {
               ],
             ),
             ResponsiveWrapper(
-              maxWidth: context.isCompact ? null : 1440,
+              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
               child: NovaRefreshIndicator(
                 onRefresh: _reload,
                 child: ListView(
@@ -601,16 +608,6 @@ class _CmsPageState extends State<CmsPage> {
                     40 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: [
-                    FinanceSectionHeader(
-                      title: context.l10n.cmsTitleApp,
-                      subtitle: context.l10n.cmsSubtitleApp,
-                    ),
-                    const SizedBox(height: 12),
-                    _CmsSegmentedControl(
-                      section: _section,
-                      onChanged: (value) => setState(() => _section = value),
-                    ),
-                    const SizedBox(height: 16),
                     if (_isLoading && _summary == null)
                       const CmsLoadingSkeleton()
                     else if (_error != null)

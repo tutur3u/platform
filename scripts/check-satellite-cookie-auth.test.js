@@ -107,6 +107,70 @@ test('flags a satellite route that authorizes with the cookie client', () => {
   ]);
 });
 
+test('flags cookie auth hidden in an API helper or shared library', () => {
+  const root = createTempRepo();
+  const source = `
+    import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+    const supabase = await createClient(request);
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+  `;
+  writeFile(root, 'apps/infrastructure/src/app/api/v1/thing/auth.ts', source);
+  writeFile(root, 'apps/infrastructure/src/lib/thing/authorization.ts', source);
+
+  assert.deepEqual(findViolations(root), [
+    path.join(
+      'apps',
+      'infrastructure',
+      'src',
+      'app',
+      'api',
+      'v1',
+      'thing',
+      'auth.ts'
+    ),
+    path.join(
+      'apps',
+      'infrastructure',
+      'src',
+      'lib',
+      'thing',
+      'authorization.ts'
+    ),
+  ]);
+});
+
+test('flags a local resolver that discards its app-session client in helpers', () => {
+  const root = createTempRepo();
+  writeFile(
+    root,
+    'apps/tasks/src/lib/task-perm-helper.ts',
+    `const supabase = await createClient();
+     const { user } = await resolveAuthenticatedSessionUser(supabase);
+     await supabase.from('tasks').select('*');`
+  );
+  writeFile(
+    root,
+    'apps/tasks/src/app/api/v1/task-plans/_utils.ts',
+    `const supabase = (await createClient(request)) as TypedSupabaseClient;
+     const { user } = await resolveAuthenticatedSessionUser(supabase);
+     await verifyWorkspaceMembershipType({ wsId, userId: user.id, supabase });`
+  );
+
+  assert.deepEqual(findViolations(root), [
+    path.join(
+      'apps',
+      'tasks',
+      'src',
+      'app',
+      'api',
+      'v1',
+      'task-plans',
+      '_utils.ts'
+    ),
+    path.join('apps', 'tasks', 'src', 'lib', 'task-perm-helper.ts'),
+  ]);
+});
+
 test('flags Infrastructure routes that query directly with a cookie client', () => {
   const root = createTempRepo();
   writeFile(

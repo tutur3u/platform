@@ -10,6 +10,7 @@ class AppLockState extends Equatable {
     this.enabled = false,
     this.locked = false,
     this.hasLoaded = false,
+    this.delay = AppLockDelay.after30Seconds,
     this.status = AppLockStatus.idle,
     this.error,
   });
@@ -17,6 +18,7 @@ class AppLockState extends Equatable {
   final bool enabled;
   final bool locked;
   final bool hasLoaded;
+  final AppLockDelay delay;
   final AppLockStatus status;
   final String? error;
 
@@ -24,6 +26,7 @@ class AppLockState extends Equatable {
     bool? enabled,
     bool? locked,
     bool? hasLoaded,
+    AppLockDelay? delay,
     AppLockStatus? status,
     String? error,
   }) {
@@ -31,13 +34,14 @@ class AppLockState extends Equatable {
       enabled: enabled ?? this.enabled,
       locked: locked ?? this.locked,
       hasLoaded: hasLoaded ?? this.hasLoaded,
+      delay: delay ?? this.delay,
       status: status ?? this.status,
       error: error,
     );
   }
 
   @override
-  List<Object?> get props => [enabled, locked, hasLoaded, status, error];
+  List<Object?> get props => [enabled, locked, hasLoaded, delay, status, error];
 }
 
 class AppLockCubit extends Cubit<AppLockState> {
@@ -54,11 +58,13 @@ class AppLockCubit extends Cubit<AppLockState> {
   Future<void> load({bool lockIfEnabled = false}) async {
     emit(state.copyWith(status: AppLockStatus.loading));
     final enabled = await _settingsStore.isEnabled();
+    final delay = await _settingsStore.readDelay();
     emit(
       AppLockState(
         enabled: enabled,
         locked: enabled && lockIfEnabled,
         hasLoaded: true,
+        delay: delay,
       ),
     );
   }
@@ -88,7 +94,13 @@ class AppLockCubit extends Cubit<AppLockState> {
     }
 
     await _settingsStore.setEnabled(enabled: enabled);
-    emit(AppLockState(enabled: enabled, hasLoaded: true));
+    emit(AppLockState(enabled: enabled, hasLoaded: true, delay: state.delay));
+  }
+
+  Future<void> setDelay(AppLockDelay delay) async {
+    if (delay == state.delay) return;
+    await _settingsStore.setDelay(delay);
+    emit(state.copyWith(delay: delay));
   }
 
   void lock() {

@@ -1,41 +1,5 @@
 part of 'chat_thread_view.dart';
 
-class _AttachmentChip extends StatelessWidget {
-  const _AttachmentChip(this.attachment);
-
-  final ChatAttachment attachment;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = shad.Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(top: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-      decoration: BoxDecoration(
-        color: colorScheme.muted,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            attachment.isImage ? shad.LucideIcons.image : shad.LucideIcons.file,
-            size: 14,
-          ),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              attachment.filename,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _NoConversationSelected extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

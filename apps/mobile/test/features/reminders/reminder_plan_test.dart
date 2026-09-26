@@ -143,4 +143,25 @@ void main() {
       WorkingLocationKind.school,
     );
   });
+
+  test('keeps the all-day designation for calendar notification copy', () {
+    final plan = buildReminderPlan(
+      now: DateTime(2026, 12, 20),
+      workspaceId: 'ws',
+      tasks: const [],
+      events: [
+        CalendarEvent(
+          id: 'christmas',
+          title: 'Christmas',
+          startAt: DateTime(2026, 12, 25),
+          endAt: DateTime(2026, 12, 26),
+        ),
+      ],
+      taskOffsets: const [],
+      eventOffsets: const ['3d'],
+    );
+
+    expect(plan.single.title, 'Christmas');
+    expect(plan.single.isAllDay, isTrue);
+  });
 }

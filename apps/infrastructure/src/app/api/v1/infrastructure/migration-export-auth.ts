@@ -1,8 +1,7 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import {
   getPermissions,
-  normalizeWorkspaceId,
+  resolveWorkspaceIdForPrincipal,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -10,10 +9,9 @@ export async function authorizeInfrastructureMigrationExport(
   request: Request,
   wsId: string
 ) {
-  const supabase = await createClient(request);
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+  const actor = await resolveSatelliteRequestActor(request, 'infra');
 
-  if (authError || !user) {
+  if (!actor) {
     return {
       ok: false as const,
       response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
@@ -23,7 +21,11 @@ export async function authorizeInfrastructureMigrationExport(
   let normalizedWsId: string;
 
   try {
-    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+    normalizedWsId = await resolveWorkspaceIdForPrincipal({
+      authorizationClient: actor.admin,
+      principal: { email: actor.user.email ?? null, id: actor.user.id },
+      wsId,
+    });
   } catch (error) {
     console.error('Error normalizing infrastructure export workspace:', {
       error,
@@ -37,7 +39,7 @@ export async function authorizeInfrastructureMigrationExport(
   }
 
   const permissions = await getPermissions({
-    request,
+    user: actor.user,
     wsId: normalizedWsId,
   });
 
@@ -58,7 +60,7 @@ export async function authorizeInfrastructureMigrationExport(
   return {
     ok: true as const,
     value: {
-      userId: user.id,
+      userId: actor.user.id,
       wsId: normalizedWsId,
     },
   };

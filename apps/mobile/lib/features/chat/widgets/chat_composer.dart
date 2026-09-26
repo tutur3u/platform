@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
+import 'package:mobile/features/chat/widgets/chat_attachment_preview.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -178,8 +179,6 @@ class _PendingAttachmentStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = shad.Theme.of(context).colorScheme;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Wrap(
@@ -187,41 +186,11 @@ class _PendingAttachmentStrip extends StatelessWidget {
         runSpacing: 8,
         children: attachments
             .map(
-              (attachment) => Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.muted,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: colorScheme.border),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      attachment.isImage
-                          ? shad.LucideIcons.image
-                          : shad.LucideIcons.file,
-                      size: 15,
-                    ),
-                    const SizedBox(width: 6),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 180),
-                      child: Text(
-                        attachment.filename,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () => onRemove(attachment.id),
-                      child: const Icon(shad.LucideIcons.x, size: 14),
-                    ),
-                  ],
-                ),
+              (attachment) => ChatAttachmentPreview(
+                key: ValueKey(attachment.id),
+                attachment: attachment,
+                compact: true,
+                onRemove: () => onRemove(attachment.id),
               ),
             )
             .toList(growable: false),

@@ -415,6 +415,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appLockSettingsTitle => 'App lock';
 
   @override
+  String get appLockDelayTitle => 'Lock after leaving';
+
+  @override
+  String get appLockDelayDescription => 'Choose when the app asks to unlock after you switch away.';
+
+  @override
+  String get appLockDelayImmediately => 'Immediately';
+
+  @override
+  String get appLockDelay30Seconds => 'After 30 seconds';
+
+  @override
+  String get appLockDelay1Minute => 'After 1 minute';
+
+  @override
+  String get appLockDelay5Minutes => 'After 5 minutes';
+
+  @override
   String get appLockUnavailableDescription => 'Local authentication is unavailable or was cancelled.';
 
   @override
@@ -8521,6 +8539,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get remindersEventTitle => 'Calendar events';
 
   @override
+  String remindersAllDayEvent(String title) {
+    return 'All-day event: $title';
+  }
+
+  @override
+  String remindersUpcomingEvent(String when, String title) {
+    return '$when: $title';
+  }
+
+  @override
+  String get remindersIn3d => 'In 3 days';
+
+  @override
+  String get remindersIn1d => 'Tomorrow';
+
+  @override
+  String get remindersIn12h => 'In 12 hours';
+
+  @override
+  String get remindersIn3h => 'In 3 hours';
+
+  @override
+  String get remindersIn1h => 'In 1 hour';
+
+  @override
   String get remindersTiming => 'Remind me';
 
   @override
@@ -8856,6 +8899,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesArchive => 'Archive note';
 
   @override
+  String get notesEdit => 'Edit note';
+
+  @override
+  String get notesDone => 'Done';
+
+  @override
+  String get notesDelete => 'Delete note';
+
+  @override
+  String get notesDeleteDescription => 'Delete this note permanently? This cannot be undone.';
+
+  @override
+  String get notesDeleteError => 'Could not delete this note. Try again.';
+
+  @override
   String get notesSearch => 'Search notes';
 
   @override
@@ -8869,6 +8927,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesInsertLink => 'Insert link';
+
+  @override
+  String get notesOpenLink => 'Open';
+
+  @override
+  String get notesEditLink => 'Link';
+
+  @override
+  String get notesSaveLink => 'Save link';
 
   @override
   String get notesLinkEvents => 'Events';

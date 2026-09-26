@@ -415,6 +415,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appLockSettingsTitle => 'Khóa ứng dụng';
 
   @override
+  String get appLockDelayTitle => 'Khóa sau khi rời ứng dụng';
+
+  @override
+  String get appLockDelayDescription => 'Chọn thời điểm yêu cầu mở khóa sau khi chuyển khỏi ứng dụng.';
+
+  @override
+  String get appLockDelayImmediately => 'Ngay lập tức';
+
+  @override
+  String get appLockDelay30Seconds => 'Sau 30 giây';
+
+  @override
+  String get appLockDelay1Minute => 'Sau 1 phút';
+
+  @override
+  String get appLockDelay5Minutes => 'Sau 5 phút';
+
+  @override
   String get appLockUnavailableDescription => 'Xác thực cục bộ không khả dụng hoặc đã bị hủy.';
 
   @override
@@ -8491,6 +8509,31 @@ class AppLocalizationsVi extends AppLocalizations {
   String get remindersEventTitle => 'Sự kiện lịch';
 
   @override
+  String remindersAllDayEvent(String title) {
+    return 'Sự kiện cả ngày: $title';
+  }
+
+  @override
+  String remindersUpcomingEvent(String when, String title) {
+    return '$when: $title';
+  }
+
+  @override
+  String get remindersIn3d => 'Còn 3 ngày';
+
+  @override
+  String get remindersIn1d => 'Ngày mai';
+
+  @override
+  String get remindersIn12h => 'Còn 12 giờ';
+
+  @override
+  String get remindersIn3h => 'Còn 3 giờ';
+
+  @override
+  String get remindersIn1h => 'Còn 1 giờ';
+
+  @override
   String get remindersTiming => 'Nhắc tôi';
 
   @override
@@ -8826,6 +8869,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get notesArchive => 'Lưu trữ ghi chú';
 
   @override
+  String get notesEdit => 'Sửa ghi chú';
+
+  @override
+  String get notesDone => 'Xong';
+
+  @override
+  String get notesDelete => 'Xóa ghi chú';
+
+  @override
+  String get notesDeleteDescription => 'Xóa vĩnh viễn ghi chú này? Bạn không thể hoàn tác.';
+
+  @override
+  String get notesDeleteError => 'Không thể xóa ghi chú này. Hãy thử lại.';
+
+  @override
   String get notesSearch => 'Tìm ghi chú';
 
   @override
@@ -8839,6 +8897,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notesInsertLink => 'Chèn liên kết';
+
+  @override
+  String get notesOpenLink => 'Mở';
+
+  @override
+  String get notesEditLink => 'Liên kết';
+
+  @override
+  String get notesSaveLink => 'Lưu liên kết';
 
   @override
   String get notesLinkEvents => 'Sự kiện';
