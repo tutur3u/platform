@@ -138,6 +138,26 @@ class AssistantRepository {
         .toList(growable: false);
   }
 
+  Future<Set<String>> fetchModelFavorites(String wsId) async {
+    final payload = await _apiClient.getJson(
+      '/api/v1/workspaces/${Uri.encodeComponent(wsId)}/ai/model-favorites',
+    );
+    return (payload['favoriteIds'] as List<dynamic>? ?? const [])
+        .whereType<String>()
+        .toSet();
+  }
+
+  Future<void> toggleModelFavorite(
+    String wsId,
+    String modelId, {
+    required bool isFavorited,
+  }) async {
+    await _apiClient.patchJson(
+      '/api/v1/workspaces/${Uri.encodeComponent(wsId)}/ai/model-favorites',
+      {'modelId': modelId, 'isFavorited': isFavorited},
+    );
+  }
+
   static List<AssistantChatRecord> _decodeRecentChatsCache(Object? json) {
     if (json is! List<dynamic>) {
       throw const FormatException('Invalid assistant history cache payload.');

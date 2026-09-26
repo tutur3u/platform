@@ -426,6 +426,7 @@ class _AssistantPageState extends State<AssistantPage> {
                                                   ? 1
                                                   : 0,
                                               child: AssistantComposerDock(
+                                                repository: _repository,
                                                 chatState: chatState,
                                                 liveState: liveState,
                                                 liveUiState: liveUiState,

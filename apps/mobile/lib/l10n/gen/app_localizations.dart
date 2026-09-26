@@ -2809,6 +2809,60 @@ abstract class AppLocalizations {
   /// **'Search models'**
   String get assistantSearchModels;
 
+  /// No description provided for @assistantModelAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get assistantModelAll;
+
+  /// No description provided for @assistantModelFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get assistantModelFavorites;
+
+  /// No description provided for @assistantModelHideLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide unavailable models'**
+  String get assistantModelHideLocked;
+
+  /// No description provided for @assistantModelEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No models match these filters'**
+  String get assistantModelEmpty;
+
+  /// No description provided for @assistantModelFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to favorites'**
+  String get assistantModelFavorite;
+
+  /// No description provided for @assistantModelUnfavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favorites'**
+  String get assistantModelUnfavorite;
+
+  /// No description provided for @assistantModelFavoritesError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not sync favorites. Try again.'**
+  String get assistantModelFavoritesError;
+
+  /// No description provided for @assistantModelInputCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Input'**
+  String get assistantModelInputCost;
+
+  /// No description provided for @assistantModelOutputCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Output'**
+  String get assistantModelOutputCost;
+
   /// No description provided for @assistantModeFast.
   ///
   /// In en, this message translates to:

@@ -1398,6 +1398,33 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSearchModels => 'Tìm mô hình';
 
   @override
+  String get assistantModelAll => 'Tất cả';
+
+  @override
+  String get assistantModelFavorites => 'Yêu thích';
+
+  @override
+  String get assistantModelHideLocked => 'Ẩn mô hình không khả dụng';
+
+  @override
+  String get assistantModelEmpty => 'Không có mô hình phù hợp';
+
+  @override
+  String get assistantModelFavorite => 'Thêm vào yêu thích';
+
+  @override
+  String get assistantModelUnfavorite => 'Bỏ khỏi yêu thích';
+
+  @override
+  String get assistantModelFavoritesError => 'Không thể đồng bộ yêu thích. Hãy thử lại.';
+
+  @override
+  String get assistantModelInputCost => 'Đầu vào';
+
+  @override
+  String get assistantModelOutputCost => 'Đầu ra';
+
+  @override
   String get assistantModeFast => 'Nhanh';
 
   @override

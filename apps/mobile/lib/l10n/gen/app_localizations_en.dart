@@ -1398,6 +1398,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSearchModels => 'Search models';
 
   @override
+  String get assistantModelAll => 'All';
+
+  @override
+  String get assistantModelFavorites => 'Favorites';
+
+  @override
+  String get assistantModelHideLocked => 'Hide unavailable models';
+
+  @override
+  String get assistantModelEmpty => 'No models match these filters';
+
+  @override
+  String get assistantModelFavorite => 'Add to favorites';
+
+  @override
+  String get assistantModelUnfavorite => 'Remove from favorites';
+
+  @override
+  String get assistantModelFavoritesError => 'Could not sync favorites. Try again.';
+
+  @override
+  String get assistantModelInputCost => 'Input';
+
+  @override
+  String get assistantModelOutputCost => 'Output';
+
+  @override
   String get assistantModeFast => 'Fast';
 
   @override
