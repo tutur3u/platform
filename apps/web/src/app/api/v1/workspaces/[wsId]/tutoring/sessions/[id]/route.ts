@@ -1,13 +1,6 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TablesUpdate } from '@tuturuuu/types';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { getAdjacentSessionDates } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/session-create-helpers';
 import {
@@ -15,6 +8,7 @@ import {
   type TutoringSessionSlotInput,
   TutoringSessionUpdateSchema,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
+import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 
 interface Params {
   params: Promise<{ wsId: string; id: string }>;
@@ -46,12 +40,10 @@ async function isGroupTeacher(
 
 export async function PUT(request: Request, { params }: Params) {
   const { wsId, id } = await params;
-  const supabase = await createClient(request);
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({
-    wsId: normalizedWsId,
+  const { normalizedWsId, permissions } = await resolveTutoringRouteAccess(
     request,
-  });
+    wsId
+  );
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -282,9 +274,10 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(request: Request, { params }: Params) {
   const { wsId, id } = await params;
-  const supabase = await createClient(request);
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({ wsId: normalizedWsId, request });
+  const { normalizedWsId, permissions } = await resolveTutoringRouteAccess(
+    request,
+    wsId
+  );
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });

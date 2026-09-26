@@ -1,4 +1,74 @@
 use super::*;
+use crate::outbound::{OutboundHttpClient, OutboundRequest};
+
+struct NoOutbound;
+
+impl OutboundHttpClient for NoOutbound {
+    fn send<'a>(&'a self, _: OutboundRequest<'a>) -> crate::outbound::OutboundFuture<'a> {
+        panic!("delegated tutoring requests must not read Supabase")
+    }
+}
+
+#[tokio::test]
+async fn tutoring_app_sessions_and_unported_methods_fall_through_to_next() {
+    let config = BackendConfig::new("test", "tutoring");
+    for (path, handler) in [
+        (
+            "/api/v1/workspaces/00000000-0000-0000-0000-000000000000/tutoring/sessions",
+            0,
+        ),
+        (
+            "/api/v1/workspaces/00000000-0000-0000-0000-000000000000/tutoring/queue",
+            1,
+        ),
+        (
+            "/api/v1/workspaces/00000000-0000-0000-0000-000000000000/tutoring/export",
+            2,
+        ),
+    ] {
+        for (method, authorization, cookie) in [
+            ("GET", Some("Bearer ttr_app_test"), None),
+            ("GET", None, Some("tuturuuu_app_session=ttr_app_test")),
+            ("POST", None, None),
+        ] {
+            let request = BackendRequest {
+                authorization,
+                body_text: None,
+                cookie,
+                if_none_match: None,
+                method,
+                origin: None,
+                path,
+                referer: None,
+                request_id: None,
+                url: None,
+            };
+            let response = match handler {
+                0 => {
+                    handle_workspaces_wsid_tutoring_sessions_route(&config, request, &NoOutbound)
+                        .await
+                }
+                1 => {
+                    crate::workspaces_tutoring_queue::handle_workspaces_tutoring_queue_route(
+                        &config,
+                        request,
+                        &NoOutbound,
+                    )
+                    .await
+                }
+                _ => {
+                    crate::workspaces_tutoring_export::handle_workspaces_tutoring_export_route(
+                        &config,
+                        request,
+                        &NoOutbound,
+                    )
+                    .await
+                }
+            };
+            assert!(response.is_none(), "{method} {path} should fall through");
+        }
+    }
+}
 
 // --- path extraction ---
 

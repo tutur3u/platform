@@ -4743,29 +4743,29 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/tutoring/export:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/export/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/tutoring/export:apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/export/route.ts",
       "kind": "api",
-      "methods": ["GET"],
+      "methods": ["GET", "HEAD"],
       "routePath": "/api/v1/workspaces/:wsId/tutoring/export",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/export/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/export/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/tutoring/queue:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/queue/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/tutoring/queue:apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/queue/route.ts",
       "kind": "api",
-      "methods": ["GET"],
+      "methods": ["GET", "HEAD"],
       "routePath": "/api/v1/workspaces/:wsId/tutoring/queue",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/queue/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/queue/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/tutoring/sessions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/tutoring/sessions:apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET", "HEAD", "POST"],
       "routePath": "/api/v1/workspaces/:wsId/tutoring/sessions",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -4779,20 +4779,20 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/tutoring/sessions/:id/mark:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/[id]/mark/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/tutoring/sessions/:id/mark:apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/mark/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/tutoring/sessions/:id/mark",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/[id]/mark/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/mark/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/tutoring/sessions/:id/message-preview:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/[id]/message-preview/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/tutoring/sessions/:id/message-preview:apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/message-preview/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/tutoring/sessions/:id/message-preview",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/[id]/message-preview/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/message-preview/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7965,7 +7965,7 @@
     "routeHandlers": 608,
     "methodCounts": {
       "GET": 305,
-      "HEAD": 4,
+      "HEAD": 7,
       "POST": 300,
       "PUT": 54,
       "PATCH": 63,

@@ -5,7 +5,7 @@ use serde_json::json;
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    method_not_allowed, no_store_response,
+    no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
     workspace_permission_check::{
         WorkspacePermissionAuthorizationError, authorize_workspace_permission,
@@ -138,9 +138,13 @@ pub(crate) async fn handle_workspaces_tutoring_queue_route(
 ) -> Option<BackendResponse> {
     let raw_ws_id = workspaces_tutoring_queue_ws_id(request.path)?;
 
+    if contact::request_has_app_session_token(request) {
+        return None;
+    }
+
     Some(match request.method {
         "GET" => tutoring_queue_response(config, request, raw_ws_id, outbound).await,
-        method => no_store_response(method_not_allowed(method, "GET")),
+        _ => return None,
     })
 }
 

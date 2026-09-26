@@ -24,7 +24,7 @@ use serde_json::{Value, json};
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    method_not_allowed, no_store_response,
+    no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
     supabase_auth,
     workspace_permission_check::{
@@ -106,9 +106,13 @@ pub(crate) async fn handle_workspaces_tutoring_export_route(
 ) -> Option<BackendResponse> {
     let raw_ws_id = tutoring_export_ws_id(request.path)?;
 
+    if contact::request_has_app_session_token(request) {
+        return None;
+    }
+
     Some(match request.method {
         "GET" => tutoring_export_response(config, request, raw_ws_id, outbound).await,
-        method => no_store_response(method_not_allowed(method, "GET")),
+        _ => return None,
     })
 }
 

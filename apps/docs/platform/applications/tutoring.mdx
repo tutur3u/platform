@@ -117,7 +117,10 @@ that group attendance is being recorded and that feedback is flagged.
 ### The schedule or queue stays empty after loading
 
 An API failure now shows a retry button instead of an empty table. Check the
-workspace permission, then retry. Schedule and queue loading show table-shaped
+workspace permission, then retry. If the same tutoring API works on the central
+web domain but returns `404 Not found` through Contacts, check that the central
+route accepts the verified Contacts app session forwarded by the satellite
+proxy. Schedule and queue loading show table-shaped
 placeholders while data is in flight.
 
 ### A session cannot be created
