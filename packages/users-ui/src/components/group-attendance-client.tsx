@@ -10,6 +10,10 @@ import {
   saveWorkspaceUserGroupAttendance,
   type WorkspaceUserGroupSession,
 } from '@tuturuuu/internal-api';
+import {
+  filterWorkspaceUserGroupAttendanceMembers,
+  workspaceUserGroupAttendanceShowManagersQueryKey,
+} from '@tuturuuu/internal-api/user-group-attendance';
 import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -43,6 +47,7 @@ export type InitialAttendanceProps = {
   initialDate?: string; // yyyy-MM-dd
   initialSessionId?: string | null;
   initialAttendance?: Record<string, AttendanceEntry>;
+  initialShowManagers?: boolean;
   canUpdateAttendance: boolean;
   startingDate?: string | null;
   endingDate?: string | null;
@@ -56,6 +61,7 @@ export default function GroupAttendanceClient({
   initialDate,
   initialSessionId,
   initialAttendance = {},
+  initialShowManagers,
   canUpdateAttendance,
   startingDate,
   endingDate,
@@ -181,17 +187,25 @@ export default function GroupAttendanceClient({
   });
 
   // Attendance display settings query
-  const { data: showManagersConfig } = useQuery({
-    queryKey: ['workspace-config', wsId, 'ATTENDANCE_SHOW_MANAGERS'],
+  const {
+    data: showManagersConfig,
+    isError: isManagersConfigError,
+    isFetching: isRefreshingManagersConfig,
+  } = useQuery({
+    queryKey: workspaceUserGroupAttendanceShowManagersQueryKey(wsId),
     queryFn: () => getWorkspaceUserGroupAttendanceShowManagers(wsId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    initialData: initialShowManagers,
+    staleTime: 0,
+    refetchOnWindowFocus: 'always',
   });
 
   // Filter members based on display setting
-  const showManagers = showManagersConfig !== false;
+  const showManagers =
+    showManagersConfig === true &&
+    !isRefreshingManagersConfig &&
+    !isManagersConfigError;
   const members = useMemo(() => {
-    if (showManagers) return allMembers;
-    return allMembers.filter((m) => m.role !== 'TEACHER');
+    return filterWorkspaceUserGroupAttendanceMembers(allMembers, showManagers);
   }, [allMembers, showManagers]);
 
   // Attendance state is local (front-end only for now), managed via React Query cache

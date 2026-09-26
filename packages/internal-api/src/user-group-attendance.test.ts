@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { InternalApiError } from './client';
 import {
+  filterWorkspaceUserGroupAttendanceMembers,
   getWorkspaceUserGroupAttendanceShowManagers,
   listWorkspaceUserGroupAttendance,
   listWorkspaceUserGroupAttendanceMembers,
+  parseWorkspaceUserGroupAttendanceShowManagers,
   saveWorkspaceUserGroupAttendance,
+  workspaceUserGroupAttendanceShowManagersQueryKey,
 } from './user-group-attendance';
 
 function createJsonResponse(payload: unknown, init: { status?: number } = {}) {
@@ -23,6 +26,28 @@ function getFetchInit(fetchMock: ReturnType<typeof vi.fn>) {
 }
 
 describe('user group attendance internal-api helpers', () => {
+  it('uses one workspace manager rule for all attendance rosters', () => {
+    const members = [
+      { id: 'teacher', role: 'TEACHER' },
+      { id: 'student', role: 'STUDENT' },
+      { id: 'unassigned', role: null },
+    ];
+
+    expect(parseWorkspaceUserGroupAttendanceShowManagers(' FALSE ')).toBe(
+      false
+    );
+    expect(parseWorkspaceUserGroupAttendanceShowManagers(null)).toBe(true);
+    expect(filterWorkspaceUserGroupAttendanceMembers(members, false)).toEqual(
+      members.slice(1)
+    );
+    expect(filterWorkspaceUserGroupAttendanceMembers(members, true)).toBe(
+      members
+    );
+    expect(
+      workspaceUserGroupAttendanceShowManagersQueryKey('ws-1')
+    ).not.toEqual(['workspace-config', 'ws-1', 'ATTENDANCE_SHOW_MANAGERS']);
+  });
+
   it('lists group members through the existing user-group members endpoint', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({

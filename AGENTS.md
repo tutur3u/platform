@@ -155,6 +155,11 @@ merge, or production evidence only when that delivery is authorized.
   re-exports (or `pub use`) when callers depend on them.
 - Update `apps/docs` when work changes how the team should build, run, debug,
   deploy, or operate the system. Add new docs pages to `apps/docs/docs.json`.
+- Record product behavior decisions in the relevant `apps/docs/platform` feature
+  page when changing a customer-facing rule. State its scope, default, affected
+  app surfaces, and intentional exceptions; check that existing docs and the
+  live and migration paths agree before delivery. Keep AGENTS.md for this
+  cross-cutting requirement, not copies of individual product decisions.
 - For TypeScript, JavaScript, root script, or repo config changes, finish with
   `bun check` unless an unrelated pre-existing blocker prevents it. Run focused
   tests first.

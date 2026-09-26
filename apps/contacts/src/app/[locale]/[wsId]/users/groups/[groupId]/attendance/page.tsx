@@ -1,3 +1,5 @@
+import { parseWorkspaceUserGroupAttendanceShowManagers } from '@tuturuuu/internal-api/user-group-attendance';
+import { ATTENDANCE_SHOW_MANAGERS_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   getGroupGuestUserIds,
@@ -71,6 +73,7 @@ export default async function UserGroupAttendancePage({
         const {
           sessions,
           members,
+          showManagers,
           attendance: attendanceMap,
         } = await getInitialAttendanceData(
           wsId,
@@ -85,6 +88,7 @@ export default async function UserGroupAttendancePage({
             groupId={groupId}
             initialSessions={sessions}
             initialMembers={members}
+            initialShowManagers={showManagers}
             initialDate={effectiveDate}
             initialSessionId={requestedSessionId}
             initialAttendance={attendanceMap}
@@ -124,7 +128,7 @@ async function getInitialAttendanceData(
     .eq('group_id', groupId)
     .eq('date', dateYYYYMMDD);
 
-  const [membersRes, attRes, sessionData] = await Promise.all([
+  const [membersRes, attRes, sessionData, configRes] = await Promise.all([
     sbAdmin
       .from('workspace_user_groups_users')
       .select(
@@ -142,7 +146,15 @@ async function getInitialAttendanceData(
       to: rangeEnd.toISOString(),
       wsId,
     }),
+    sbAdmin
+      .from('workspace_configs')
+      .select('value')
+      .eq('ws_id', wsId)
+      .eq('id', ATTENDANCE_SHOW_MANAGERS_CONFIG_ID)
+      .maybeSingle(),
   ]);
+
+  if (configRes.error) throw configRes.error;
 
   const membersRows = membersRes.data ?? [];
   const attendanceRows = (attRes.data ?? []) as unknown as Array<{
@@ -183,6 +195,9 @@ async function getInitialAttendanceData(
   return {
     sessions: sessionData.data,
     members,
+    showManagers: parseWorkspaceUserGroupAttendanceShowManagers(
+      configRes.data?.value
+    ),
     attendance,
   };
 }

@@ -65,13 +65,15 @@ Workspace members can have workspace-specific display names, similar to server p
 - Auto-linking runs on `workspace_members` insert. If a virtual profile is created or its email is corrected after membership already exists, use the database-page repair action to reconcile the link.
 - Repair is conservative: a link is inserted only when one unlinked workspace profile and one existing member platform account share the same normalized email. Missing emails, no member match, duplicate workspace profiles, duplicate platform matches, and platform accounts already linked elsewhere are reported as skipped cases.
 
-## Attendance Manager Counting
+## Attendance Manager Visibility And Counting
 
-Workspace attendance settings include a default-on `ATTENDANCE_COUNT_MANAGERS` flag.
+In Contacts workspace settings, open **Attendance display**, turn off **Show Managers in Attendance**, and save. The setting is shared by every group attendance-taking view. Both attendance settings default on for workspaces without an explicit value.
 
-- When enabled, group managers count toward attendance totals in user-group list summaries.
-- When disabled, attendance totals on the user-group list subtract group managers from the group member count.
-- This is separate from `ATTENDANCE_SHOW_MANAGERS`, which controls whether managers appear in detailed attendance-taking views.
+- `ATTENDANCE_SHOW_MANAGERS=false` hides members whose role in that group is `TEACHER` (the group manager/teacher role) from attendance-taking rosters and their on-screen totals. It applies to the Contacts attendance page, group detail attendance, the shared web attendance client, and the TanStack replacement. It does not remove a manager from the group, alter saved attendance, or erase historical records and exports.
+- The setting is read for the first server render of group detail attendance. Client-only rosters wait for the setting before showing managers, so a hidden manager does not briefly appear while the setting loads or refreshes. The setting is scoped to the workspace, not an individual browser or group.
+- `ATTENDANCE_COUNT_MANAGERS` controls the separate group-list attendance totals. When enabled, group managers count toward those totals. When disabled, the totals subtract group managers from the group member count.
+
+When a product change touches attendance, check the settings UI, every roster entry point, summary counts, exports, and the live Next.js API plus the TanStack/Rust migration path. Record any intentional difference here before release so a later app port cannot reintroduce a resolved behavior.
 
 ## User Group Activity Audit Logs
 

@@ -4,6 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import {
+  parseWorkspaceUserGroupAttendanceShowManagers,
+  workspaceUserGroupAttendanceShowManagersQueryKey,
+} from '@tuturuuu/internal-api/user-group-attendance';
+import {
   ATTENDANCE_COUNT_MANAGERS_CONFIG_ID,
   ATTENDANCE_SHOW_MANAGERS_CONFIG_ID,
   updateWorkspaceConfig,
@@ -71,7 +75,9 @@ export default function AttendanceDisplaySettings({ wsId }: Props) {
         count_managers_in_attendance_totals:
           countManagersConfigValue.trim().toLowerCase() !== 'false',
         show_managers_in_attendance:
-          showManagersConfigValue.trim().toLowerCase() === 'true',
+          parseWorkspaceUserGroupAttendanceShowManagers(
+            showManagersConfigValue
+          ),
       };
     }, [isLoading, showManagersConfigValue, countManagersConfigValue]),
     resetOptions: {
@@ -95,6 +101,9 @@ export default function AttendanceDisplaySettings({ wsId }: Props) {
       ]);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: workspaceUserGroupAttendanceShowManagersQueryKey(wsId),
+      });
       for (const configId of [
         ATTENDANCE_SHOW_MANAGERS_CONFIG_ID,
         ATTENDANCE_COUNT_MANAGERS_CONFIG_ID,

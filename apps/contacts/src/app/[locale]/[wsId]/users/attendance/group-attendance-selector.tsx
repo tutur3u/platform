@@ -2,7 +2,15 @@
 
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { CalendarDays, Check, ChevronsUpDown, Users } from '@tuturuuu/icons';
-import { listWorkspaceUserGroupSessions } from '@tuturuuu/internal-api';
+import {
+  getWorkspaceUserGroupAttendanceShowManagers,
+  listWorkspaceUserGroupAttendanceMembers,
+  listWorkspaceUserGroupSessions,
+} from '@tuturuuu/internal-api';
+import {
+  filterWorkspaceUserGroupAttendanceMembers,
+  workspaceUserGroupAttendanceShowManagersQueryKey,
+} from '@tuturuuu/internal-api/user-group-attendance';
 import {
   getNextWorkspaceUserGroupsPageParam,
   listWorkspaceUserGroups,
@@ -35,6 +43,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 type Member = {
   id: string;
+  role?: string | null;
   display_name?: string | null;
   full_name?: string | null;
   email?: string | null;
@@ -216,21 +225,39 @@ export default function GroupAttendanceSelector({
     ],
     queryFn: async () => {
       if (!selectedGroupId) return [];
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${selectedGroupId}/members?limit=1000`,
-        { cache: 'no-store' }
+      const response = await listWorkspaceUserGroupAttendanceMembers(
+        wsId,
+        selectedGroupId,
+        { limit: 1000 }
       );
-      if (!res.ok) throw new Error('Failed to fetch group members');
-      const { data } = await res.json();
-      return data || [];
+      return response.data as Member[];
     },
     enabled: !!selectedGroupId,
     staleTime: 60 * 1000,
   });
 
-  const isLoadingData = isLoadingSessions || isLoadingMembers;
+  const {
+    data: showManagers,
+    isError: isManagersConfigError,
+    isFetching: isRefreshingManagersConfig,
+    isLoading: isLoadingManagersConfig,
+  } = useQuery({
+    queryKey: workspaceUserGroupAttendanceShowManagersQueryKey(wsId),
+    queryFn: () => getWorkspaceUserGroupAttendanceShowManagers(wsId),
+    staleTime: 0,
+    refetchOnWindowFocus: 'always',
+  });
+  const canShowManagers =
+    showManagers === true &&
+    !isRefreshingManagersConfig &&
+    !isManagersConfigError;
+  const isLoadingData =
+    isLoadingSessions || isLoadingMembers || isLoadingManagersConfig;
   const selectedGroupSessions = groupData?.sessions?.length ?? 0;
-  const selectedGroupMembers = members.length;
+  const selectedGroupMembers = filterWorkspaceUserGroupAttendanceMembers(
+    members,
+    canShowManagers
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -388,6 +415,7 @@ export default function GroupAttendanceSelector({
               groupId={selectedGroupId}
               initialSessions={groupData?.sessions ?? []}
               initialMembers={members}
+              initialShowManagers={canShowManagers}
               canUpdateAttendance={canUpdateAttendance}
               startingDate={groupData?.startingDate ?? null}
               endingDate={groupData?.endingDate ?? null}
