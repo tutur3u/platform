@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
+import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
@@ -15,6 +16,7 @@ class AssistantComposerDock extends StatelessWidget {
     required this.liveState,
     required this.liveUiState,
     required this.shellState,
+    this.repository,
     required this.isFullscreen,
     required this.bottomInset,
     required this.isPersonalWorkspace,
@@ -35,6 +37,7 @@ class AssistantComposerDock extends StatelessWidget {
   final AssistantLiveState liveState;
   final AssistantLiveUiState liveUiState;
   final AssistantShellState shellState;
+  final AssistantRepository? repository;
   final bool isFullscreen;
   final double bottomInset;
   final bool isPersonalWorkspace;
@@ -126,6 +129,8 @@ class AssistantComposerDock extends StatelessWidget {
                 selected: shellState.selectedModel,
                 models: shellState.availableModels,
                 allowedModels: shellState.activeCredits.allowedModels,
+                repository: repository,
+                workspaceId: shellState.workspace?.id,
                 onSelected: onModelSelected,
               ),
               const SizedBox(width: 2),

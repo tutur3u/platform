@@ -403,9 +403,8 @@ class _AssistantPageState extends State<AssistantPage> {
                                         right: _horizontalPadding(context),
                                         bottom: keyboardVisible
                                             ? 8
-                                            : MediaQuery.paddingOf(
-                                                    context,
-                                                  ).bottom +
+                                            : MediaQuery.paddingOf(context)
+                                                      .bottom +
                                                   (isFullscreen ? 8 : 0),
                                         child: IgnorePointer(
                                           ignoring: !_isComposerVisible,
@@ -426,6 +425,7 @@ class _AssistantPageState extends State<AssistantPage> {
                                                   ? 1
                                                   : 0,
                                               child: AssistantComposerDock(
+                                                repository: _repository,
                                                 chatState: chatState,
                                                 liveState: liveState,
                                                 liveUiState: liveUiState,
@@ -477,14 +477,12 @@ class _AssistantPageState extends State<AssistantPage> {
                                         Positioned(
                                           right:
                                               _assistantFabSideOffset +
-                                              MediaQuery.paddingOf(
-                                                context,
-                                              ).right,
+                                              MediaQuery.paddingOf(context)
+                                                  .right,
                                           bottom:
                                               _assistantFabBottomOffset +
-                                              MediaQuery.paddingOf(
-                                                context,
-                                              ).bottom,
+                                              MediaQuery.paddingOf(context)
+                                                  .bottom,
                                           child: AssistantComposerFab(
                                             label: context
                                                 .l10n
