@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
+import 'package:mobile/features/chat/widgets/chat_attachment_preview.dart';
 import 'package:mobile/features/chat/widgets/chat_composer.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';

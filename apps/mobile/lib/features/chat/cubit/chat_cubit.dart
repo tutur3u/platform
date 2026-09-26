@@ -24,6 +24,18 @@ class ChatCubit extends Cubit<ChatState> {
   StreamSubscription<ChatMessageStreamEvent>? _sendSubscription;
   int _loadToken = 0;
 
+  Future<String> attachmentReadUrl(ChatAttachment attachment) async {
+    final wsId = state.wsId;
+    if (wsId == null) {
+      throw const ApiException(message: 'Workspace unavailable', statusCode: 0);
+    }
+    return await _repository.attachmentReadUrl(
+      wsId,
+      attachment.conversationId,
+      attachment.id,
+    );
+  }
+
   void _emitState(ChatState nextState) {
     if (!isClosed) emit(nextState);
   }
