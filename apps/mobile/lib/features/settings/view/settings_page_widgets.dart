@@ -287,6 +287,12 @@ class _PreferencesSection extends StatelessWidget {
         onTap: () => context.push(Routes.settingsReminders),
       ),
       SettingsTile(
+        icon: Icons.storage_outlined,
+        title: l10n.cacheStorageTitle,
+        subtitle: l10n.cacheStorageDescription,
+        onTap: () => unawaited(showCacheStorageSheet(context)),
+      ),
+      SettingsTile(
         icon: Icons.view_kanban_outlined,
         title: l10n.settingsDefaultTaskBoardNavigation,
         subtitle: l10n.settingsDefaultTaskBoardNavigationDescription,

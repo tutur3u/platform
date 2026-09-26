@@ -3615,5 +3615,19 @@
     "notesNoLinkResults": "Không có mục phù hợp",
     "notesSearchWork": "Tìm công việc, sự kiện hoặc cuộc họp",
     "notesLoadError": "Không thể tải ghi chú. Kéo xuống để thử lại.",
-    "notesSaveError": "Không thể lưu ghi chú. Nội dung bạn sửa vẫn còn ở đây."
+    "notesSaveError": "Không thể lưu ghi chú. Nội dung bạn sửa vẫn còn ở đây.",
+    "cacheStorageTitle": "Bộ nhớ và dữ liệu đệm",
+    "cacheStorageDescription": "Xem dữ liệu đệm theo loại và chọn dung lượng tối đa.",
+    "cacheStorageLimit": "Dung lượng dữ liệu đệm tối đa",
+    "cacheStorageClear": "Xóa dữ liệu đệm",
+    "cacheStorageClearDescription": "Dữ liệu đã tải sẽ được tải lại khi cần. Các thay đổi ngoại tuyến đang chờ vẫn được giữ.",
+    "cacheStorageError": "Không thể đọc hoặc cập nhật dữ liệu đệm. Hãy thử lại.",
+    "cacheStorageEstimateNote": "Dung lượng dữ liệu đã lưu ước tính. Dữ liệu mã hóa và bộ nhớ đệm hệ thống có thể khác.",
+    "cacheCategoryMailMedia": "Hình ảnh thư",
+    "cacheCategoryMail": "Thư",
+    "cacheCategoryMessages": "Tin nhắn và ghi chú",
+    "cacheCategoryTasks": "Công việc",
+    "cacheCategoryCalendar": "Lịch",
+    "cacheCategoryFinance": "Tài chính",
+    "cacheCategoryOther": "Dữ liệu khác"
 }

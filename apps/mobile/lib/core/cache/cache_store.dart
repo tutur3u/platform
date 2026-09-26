@@ -9,9 +9,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:path_provider/path_provider.dart';
+
+part 'cache_store_storage.dart';
 
 typedef CacheJsonDecoder<T> = T Function(Object? json);
 typedef CacheDirectoryResolver = Future<Directory> Function();
@@ -35,6 +38,13 @@ class CacheStore {
   static const _resourceBoxName = 'offline_cache_v1';
   static const _mutationBoxName = 'offline_mutations_v1';
   static const _encryptionKeyStorageKey = 'offline-cache-hive-key-v1';
+  static const _maxBytesStorageKey = 'offline-cache-max-bytes-v1';
+  static const allowedMaxBytes = <int>[
+    100 * 1024 * 1024,
+    250 * 1024 * 1024,
+    500 * 1024 * 1024,
+    1024 * 1024 * 1024,
+  ];
   static const _nonPersistentResourceNamespaces = {
     'settings.workspaceSecrets.list',
   };
@@ -42,9 +52,11 @@ class CacheStore {
   final FlutterSecureStorage _secureStorage;
   final CacheDirectoryResolver? _directoryResolver;
   final Map<String, CachedResourceRecord> _memory = {};
+  int _resourceBytes = 0;
   late Box<dynamic> _resourceBox;
   late Box<dynamic> _mutationBox;
   bool _initialized = false;
+  int _maxBytes = allowedMaxBytes[1];
   Future<void>? _initialization;
   final Map<String, Future<Object?>> _inFlight = {};
   final Map<String, ({CacheKey key, List<String> tags})> _flightScopes = {};
@@ -52,6 +64,22 @@ class CacheStore {
   int _revision = 0;
   final Map<(String?, String?, String?), int> _scopeRevisions = {};
   final Map<(String?, String?, String?), int> _clearingScopes = {};
+
+  void _putRecord(CachedResourceRecord record) {
+    final previous = _memory[record.key];
+    if (previous != null) {
+      _resourceBytes -= utf8.encode(previous.jsonPayload).length;
+    }
+    _memory[record.key] = record;
+    _resourceBytes += utf8.encode(record.jsonPayload).length;
+  }
+
+  void _dropRecord(String key) {
+    final previous = _memory.remove(key);
+    if (previous != null) {
+      _resourceBytes -= utf8.encode(previous.jsonPayload).length;
+    }
+  }
 
   Iterable<(String?, String?, String?)> _scopes(CacheKey key) => {
     for (final user in {null, key.userId})
@@ -101,6 +129,14 @@ class CacheStore {
     final encryptionCipher = await _resolveEncryptionCipher();
     _resourceBox = await _openEncryptedBox(_resourceBoxName, encryptionCipher);
     _mutationBox = await _openEncryptedBox(_mutationBoxName, encryptionCipher);
+    try {
+      final storedMaxBytes = int.tryParse(
+        await _secureStorage.read(key: _maxBytesStorageKey) ?? '',
+      );
+      if (allowedMaxBytes.contains(storedMaxBytes)) _maxBytes = storedMaxBytes!;
+    } on Object {
+      // Cache initialization should not depend on an optional size setting.
+    }
     final nonPersistentKeys = <dynamic>[];
     for (final key in _resourceBox.keys) {
       final raw = _resourceBox.get(key);
@@ -110,13 +146,14 @@ class CacheStore {
           nonPersistentKeys.add(key);
           continue;
         }
-        _memory[record.key] = record;
+        _putRecord(record);
       }
     }
     for (final key in nonPersistentKeys) {
       await _resourceBox.delete(key);
     }
     _initialized = true;
+    await _pruneResourceCache();
   }
 
   Future<Directory> _resolveHiveDirectory() async {
@@ -258,6 +295,7 @@ class CacheStore {
     await _resourceBox.close();
     await _mutationBox.close();
     _memory.clear();
+    _resourceBytes = 0;
     _initialized = false;
     _initialization = null;
   }
@@ -276,7 +314,7 @@ class CacheStore {
       record,
       decode: decode,
       onCorrupt: () async {
-        _memory.remove(key.value);
+        _dropRecord(key.value);
         await _resourceBox.delete(key.value);
       },
     );
@@ -309,7 +347,7 @@ class CacheStore {
       record,
       decode: decode,
       onCorrupt: () {
-        _memory.remove(key.value);
+        _dropRecord(key.value);
         unawaited(_resourceBox.delete(key.value));
       },
     );
@@ -340,7 +378,7 @@ class CacheStore {
     }
     if (expectedRevision == null) _advanceKey(key.value);
     if (_nonPersistentResourceNamespaces.contains(key.namespace)) {
-      _memory.remove(key.value);
+      _dropRecord(key.value);
       await _resourceBox.delete(key.value);
       return;
     }
@@ -360,14 +398,15 @@ class CacheStore {
       tags: tags,
       params: key.params,
     );
-    _memory[key.value] = record;
+    _putRecord(record);
     await _resourceBox.put(key.value, record.toJson());
+    await _pruneResourceCache();
   }
 
   Future<void> remove(CacheKey key) async {
     _advanceKey(key.value);
     await init();
-    _memory.remove(key.value);
+    _dropRecord(key.value);
     await _resourceBox.delete(key.value);
   }
 
@@ -400,7 +439,7 @@ class CacheStore {
 
     for (final entry in recordsToInvalidate.entries) {
       final invalidatedRecord = _markRecordStale(entry.value, now: now);
-      _memory[entry.key] = invalidatedRecord;
+      _putRecord(invalidatedRecord);
       await _resourceBox.put(entry.key, invalidatedRecord.toJson());
     }
   }
@@ -409,6 +448,7 @@ class CacheStore {
     String? userId,
     String? workspaceId,
     String? namespace,
+    bool resourceOnly = false,
   }) async {
     final scope = (userId, workspaceId, namespace);
     _scopeRevisions[scope] = ++_revision;
@@ -429,12 +469,12 @@ class CacheStore {
       }
 
       for (final key in keysToDelete) {
-        _memory.remove(key);
+        _dropRecord(key);
         await _resourceBox.delete(key);
       }
 
       // Resource-only purges must preserve unrelated queued offline changes.
-      if (namespace != null) return;
+      if (namespace != null || resourceOnly) return;
       final mutationIds = <dynamic>[];
       for (final dynamic key in _mutationBox.keys) {
         final raw = _mutationBox.get(key);

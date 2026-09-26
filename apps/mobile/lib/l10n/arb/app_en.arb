@@ -3611,5 +3611,19 @@
     "notesNoLinkResults": "No matching items",
     "notesSearchWork": "Search tasks, events, or meetings",
     "notesLoadError": "Could not load notes. Pull to retry.",
-    "notesSaveError": "Could not save this note. Your edits are still here."
+    "notesSaveError": "Could not save this note. Your edits are still here.",
+    "cacheStorageTitle": "Storage and cache",
+    "cacheStorageDescription": "See cached data by category and choose how much space it can use.",
+    "cacheStorageLimit": "Maximum cached data",
+    "cacheStorageClear": "Clear cached data",
+    "cacheStorageClearDescription": "Downloaded data will be fetched again when needed. Pending offline changes are kept.",
+    "cacheStorageError": "Could not read or update cached data. Try again.",
+    "cacheStorageEstimateNote": "Estimated saved data. Encrypted file overhead and system caches may differ.",
+    "cacheCategoryMailMedia": "Mail images",
+    "cacheCategoryMail": "Mail",
+    "cacheCategoryMessages": "Messages and notes",
+    "cacheCategoryTasks": "Tasks",
+    "cacheCategoryCalendar": "Calendar",
+    "cacheCategoryFinance": "Finance",
+    "cacheCategoryOther": "Other data"
 }
