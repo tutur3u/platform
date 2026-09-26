@@ -76,10 +76,11 @@ export default function InvoiceSettings({ workspaceId }: Props) {
     'DEFAULT_SUBSCRIPTION_CATEGORY_ID',
   ];
 
-  const { data: configs, isLoading: isLoadingConfigs } = useWorkspaceConfigs(
-    workspaceId,
-    configKeys
-  );
+  const {
+    data: configs,
+    isLoading: isLoadingConfigs,
+    isError: configsError,
+  } = useWorkspaceConfigs(workspaceId, configKeys);
 
   const { data: groupsData, isLoading: isLoadingGroups } =
     useWorkspaceUserGroups(workspaceId, { includeGuest: true });
@@ -109,7 +110,7 @@ export default function InvoiceSettings({ workspaceId }: Props) {
   const [currentValues, setCurrentValues] = useState(initialValues);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || configsError) return;
 
     const parseIds = (raw: string | null | undefined): string[] =>
       safeTrim(raw)
@@ -150,7 +151,7 @@ export default function InvoiceSettings({ workspaceId }: Props) {
       setCurrentValues(values);
       setInitialized(true);
     }
-  }, [isLoading, configs, initialized, availableGroups]);
+  }, [isLoading, configsError, configs, initialized, availableGroups]);
 
   const updateMutation = useMutation({
     mutationFn: async (values: typeof currentValues) => {
@@ -240,6 +241,14 @@ export default function InvoiceSettings({ workspaceId }: Props) {
       toast.error(t('update_error'));
     },
   });
+
+  if (configsError) {
+    return (
+      <p role="alert" className="text-destructive text-sm">
+        {t('invoice_settings_load_error')}
+      </p>
+    );
+  }
 
   if (!initialized) {
     return (

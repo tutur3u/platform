@@ -6,6 +6,13 @@ const mocks = vi.hoisted(() => ({
   getFinanceRouteContext: vi.fn(),
   resolveFinanceRouteAuthContext: vi.fn(),
   serverError: vi.fn(),
+  plannedDates: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/users-core/lib/user-groups/planned-session-dates', () => ({
+  listPlannedUserGroupSessionDatesByGroupIds: (
+    ...args: Parameters<typeof mocks.plannedDates>
+  ) => mocks.plannedDates(...args),
 }));
 
 vi.mock('@tuturuuu/apis/finance/request-access', () => ({
@@ -49,6 +56,7 @@ function createThenableQuery<T>(response: T) {
     not: vi.fn(() => query),
     order: vi.fn(() => query),
     select: vi.fn(() => query),
+    single: vi.fn(async () => response),
     // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
     then: promise.then.bind(promise),
     catch: promise.catch.bind(promise),
@@ -70,6 +78,7 @@ describe('subscription invoice context route', () => {
     vi.resetModules();
     vi.clearAllMocks();
     mocks.resolveFinanceRouteAuthContext.mockResolvedValue({});
+    mocks.plannedDates.mockResolvedValue(new Map());
   });
 
   it('uses only completed invoices as paid subscription coverage', () => {
@@ -87,6 +96,11 @@ describe('subscription invoice context route', () => {
   });
 
   it('returns the completed invoice with the furthest valid_until for each group', async () => {
+    mocks.plannedDates.mockResolvedValue(
+      new Map([
+        ['group-1', ['2026-05-31', '2026-06-05', '2026-08-28', '2026-09-01']],
+      ])
+    );
     const validGroupsQuery = createThenableQuery({
       data: [{ group_id: 'group-1' }],
       error: null,
@@ -140,6 +154,12 @@ describe('subscription invoice context route', () => {
         if (table === 'finance_invoice_user_groups') {
           return latestInvoicesQuery;
         }
+        if (table === 'workspaces') {
+          return createThenableQuery({
+            data: { timezone: 'Asia/Ho_Chi_Minh' },
+            error: null,
+          });
+        }
         throw new Error(`Unexpected table: ${table}`);
       }),
     };
@@ -167,6 +187,9 @@ describe('subscription invoice context route', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       attendance: [],
+      scheduledSessionsByGroupId: {
+        'group-1': ['2026-06-05', '2026-08-28'],
+      },
       latestInvoices: [
         {
           created_at: '2026-05-10T00:00:00.000Z',
@@ -182,6 +205,13 @@ describe('subscription invoice context route', () => {
     );
     expect(attendanceQuery.gte).toHaveBeenCalledWith('date', '2026-06-01');
     expect(attendanceQuery.lt).toHaveBeenCalledWith('date', '2026-09-01');
+    expect(mocks.plannedDates).toHaveBeenCalledWith(
+      expect.objectContaining({
+        groupIds: ['group-1'],
+        timezone: 'Asia/Ho_Chi_Minh',
+        wsId: 'ws-1',
+      })
+    );
     expect(validGroupsQuery.select).toHaveBeenCalledWith(
       'group_id, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(ws_id)'
     );
@@ -240,7 +270,12 @@ describe('subscription invoice context route', () => {
           ? validGroups
           : table === 'user_group_attendance'
             ? attendance
-            : history
+            : table === 'workspaces'
+              ? createThenableQuery({
+                  data: { timezone: 'Asia/Ho_Chi_Minh' },
+                  error: null,
+                })
+              : history
       ),
     };
     mocks.getFinanceRouteContext.mockResolvedValue({
