@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -167,10 +168,15 @@ class _MailReaderState extends State<MailReader> {
       });
     }
     if (optimisticClose) {
-      // Keep the active dock action visually stable during the pop animation.
-      // Its callback is guarded by _busy until this reader is disposed.
+      // Hand the dock back to Mail now, before the reader's pop animation.
       _busy = true;
       widget.onOptimisticAction?.call(action, id);
+      lookupShellMiniNavCubit(context)?.dismissOwner('mail-reader');
+      try {
+        context.read<ShellChromeActionsCubit>().dismissOwner('mail-reader');
+      } on ProviderNotFoundException {
+        // Standalone reader tests and screens need no shared dock handoff.
+      }
       Navigator.of(context).pop();
     }
     try {
@@ -391,6 +397,7 @@ class _MailReaderState extends State<MailReader> {
                               workspaceId: widget.workspaceId,
                               mailboxId: widget.mailboxId,
                               message: message,
+                              threadId: _id,
                               showControls: !sharedShell,
                               imagesVisible: sharedShell ? _showImages : null,
                             ),

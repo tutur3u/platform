@@ -81,6 +81,11 @@ class MailCache {
           _disabled = true;
           debugPrint('Mail cache cleanup unavailable; cache disabled');
         }
+      } else if (error.statusCode == 0 || error.statusCode >= 500) {
+        // Keep a previously opened inbox or thread usable during a transient
+        // network failure. Auth and permanent errors still surface normally.
+        final cached = await snapshot(wsId, path);
+        if (cached != null) return cached;
       }
       rethrow;
     }

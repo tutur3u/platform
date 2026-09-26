@@ -12,6 +12,7 @@ class MailMessageContent extends StatefulWidget {
     required this.workspaceId,
     required this.mailboxId,
     required this.message,
+    required this.threadId,
     this.imagesVisible,
     this.showControls = true,
     super.key,
@@ -21,6 +22,7 @@ class MailMessageContent extends StatefulWidget {
   final String workspaceId;
   final String mailboxId;
   final Map<String, dynamic> message;
+  final String threadId;
   final bool? imagesVisible;
   final bool showControls;
 
@@ -48,6 +50,7 @@ class _MailMessageContentState extends State<MailMessageContent> {
     if (oldWidget.message != widget.message ||
         oldWidget.workspaceId != widget.workspaceId ||
         oldWidget.mailboxId != widget.mailboxId ||
+        oldWidget.threadId != widget.threadId ||
         oldWidget.repository != widget.repository) {
       _images = const {};
       unawaited(_loadImages());
@@ -87,6 +90,8 @@ class _MailMessageContentState extends State<MailMessageContent> {
           mailboxId,
           message['id'] as String,
           file['id'] as String,
+          threadId: widget.threadId,
+          cacheInlineImage: true,
         );
         if (!mounted || generation != _generation) return;
         totalBytes += bytes.length;

@@ -135,4 +135,13 @@ class ShellMiniNavCubit extends Cubit<ShellMiniNavState> {
     )..remove(registrationId);
     emit(state.copyWith(registrations: nextRegistrations));
   }
+
+  void dismissOwner(String ownerId) {
+    if (isClosed) return;
+    final next = Map<String, ShellMiniNavRegistration>.from(state.registrations)
+      ..removeWhere((_, registration) => registration.ownerId == ownerId);
+    if (next.length != state.registrations.length) {
+      emit(state.copyWith(registrations: next));
+    }
+  }
 }
