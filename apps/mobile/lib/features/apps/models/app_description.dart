@@ -12,6 +12,7 @@ String appDescription(BuildContext context, String moduleId) {
     'finance' => context.l10n.appsHubFinanceDescription,
     'drive' => context.l10n.appsHubDriveDescription,
     'documents' => context.l10n.appsHubDocumentsDescription,
+    'notes' => context.l10n.appsHubNotesDescription,
     'education' => context.l10n.appsHubEducationDescription,
     'crm' => context.l10n.appsHubCrmDescription,
     'meet' => context.l10n.appsHubMeetDescription,

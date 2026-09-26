@@ -42,13 +42,11 @@ type NavigationUser = {
 
 async function createNavigationSupabaseClient() {
   const { createClient } = await import('@tuturuuu/supabase/next/server');
-
   return createClient();
 }
 
 async function createNavigationAdminClient(options?: { noCookie?: boolean }) {
   const { createAdminClient } = await import('@tuturuuu/supabase/next/server');
-
   return createAdminClient(options);
 }
 
@@ -57,7 +55,6 @@ async function loadWorkspaceNavigationHelpers() {
     '@tuturuuu/utils/workspace-helper'
   );
   const { getPermissions, getSecret, getSecrets } = workspaceHelperModule;
-
   return {
     getPermissions,
     getSecret,
@@ -85,7 +82,6 @@ export async function WorkspaceNavigationLinks({
       loadWorkspaceNavigationHelpers(),
     ]);
   const { getPermissions, getSecret, getSecrets } = workspaceNavigationHelpers;
-
   // Parallelize all independent initial queries
   const [t, user, secrets] = await Promise.all([
     getTranslations(),
@@ -98,7 +94,6 @@ export async function WorkspaceNavigationLinks({
     getSecrets({ wsId: resolvedWorkspaceId, forceAdmin: true }),
   ]);
   if (!secrets) notFound();
-
   // Helper to check secrets from cached list
   const hasSecret = (name: string, value: string) =>
     getSecret(name, secrets)?.value === value;
@@ -572,6 +567,13 @@ export async function WorkspaceNavigationLinks({
       icon: createDashboardNavigationIcon('SquareChevronRight', 'h-5 w-5'),
       children: [
         {
+          id: 'notes',
+          title: t('sidebar_tabs.notes'),
+          href: `/${personalOrWsId}/notes`,
+          icon: createDashboardNavigationIcon('NotebookPen', 'h-5 w-5'),
+          preferenceSectionLabel: sidebarSections.workTools,
+        },
+        {
           id: 'documents',
           title: t('sidebar_tabs.documents'),
           href: `/${personalOrWsId}/documents`,
@@ -977,12 +979,10 @@ export async function WorkspaceNavigationLinks({
       },
       []
     );
-
     // Remove leading nulls
     while (withoutConsecutive.length > 0 && withoutConsecutive[0] === null) {
       withoutConsecutive.shift();
     }
-
     // Remove trailing nulls
     while (
       withoutConsecutive.length > 0 &&

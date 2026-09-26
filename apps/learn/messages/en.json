@@ -207,27 +207,54 @@
     "workspaces": "Workspaces"
   },
   "common": {
+    "affected-product-required": "Affected Product *",
     "back": "Back",
+    "cancel": "Cancel",
     "checklist": {
       "completed": "Done",
       "in_progress": "In progress",
       "status": "Checklist status",
       "unchecked": "To do"
     },
+    "collapsed": "Collapsed",
     "completed": "Completed",
     "continue": "Continue",
+    "dark": "Dark",
+    "dashboard": "Dashboard",
     "empty": "Nothing here yet.",
+    "expand_on_hover": "Expand on Hover",
+    "expanded": "Expanded",
+    "feedback": "Feedback",
+    "hidden": "Hidden",
     "hide_sidebar": "Hide sidebar",
     "home": "Home",
+    "language": "Language",
     "learner": "Learner",
+    "light": "Light",
     "loading": "Loading",
+    "logout": "Logout",
+    "media-alt": "Media file {number}",
+    "media-optional": "Media Files (Optional)",
     "navigation": "Learner navigation",
     "next": "Next",
     "previous": "Previous",
+    "report-problem": "Leave a Feedback",
+    "report-problem-description": "Help us improve by reporting issues you've encountered. Your feedback is valuable to us.",
+    "report-submitted-success": "Report submitted successfully! Thank you for your feedback.",
     "retry": "Retry",
     "save": "Save",
     "saving": "Saving",
-    "settings": "Settings"
+    "select-product-placeholder": "Select the product with the issue",
+    "settings": "Settings",
+    "sidebar": "Sidebar",
+    "submit-report": "Submit Report",
+    "submitting": "Submitting...",
+    "suggestion-improve": "Suggestion to Improve ",
+    "suggestion-placeholder": "Describe the issue and any suggestions you have to improve the situation...",
+    "system": "System",
+    "theme": "Theme",
+    "unnamed": "No name",
+    "upgrade": "Upgrade"
   },
   "courses": {
     "aiFeedback": "AI feedback",
@@ -901,5 +928,14 @@
       "private": "Private",
       "workspace": "Workspace"
     }
+  },
+  "account_switcher": {
+    "accounts": "Accounts",
+    "current_account": "Current Account",
+    "manage_accounts": "Manage Accounts",
+    "please_wait": "Please wait...",
+    "remove_account": "Remove account",
+    "switch_account": "Switch Account",
+    "unknown_user": "Unknown User"
   }
 }

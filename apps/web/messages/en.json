@@ -11028,6 +11028,23 @@
     "rollout_notice": "Please note that paid subscriptions are slowly rolling out and are currently unavailable. We appreciate your patience as we work to make this available to everyone.",
     "title": "{tier} Plan Required"
   },
+  "notes_app": {
+    "archive": "Archive note",
+    "back": "Back to notes",
+    "description": "A quiet place for ideas, plans, and linked work. Synced across your devices.",
+    "empty": "No notes yet. Capture your first idea.",
+    "load_error": "Could not load notes. Try again.",
+    "loading": "Loading notes...",
+    "new": "New note",
+    "save_error": "Could not save. Retry",
+    "saved": "Saved",
+    "saving": "Saving...",
+    "search": "Search notes",
+    "select": "Select a note or create a new one.",
+    "start_writing": "Start writing...",
+    "title": "Notes",
+    "untitled": "Untitled note"
+  },
   "notifications": {
     "accept": "Accept",
     "archive": "Archive",
