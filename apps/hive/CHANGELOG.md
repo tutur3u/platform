@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.24.1](https://github.com/tutur3u/platform/compare/hive-v0.24.0...hive-v0.24.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **hive:** resolve personal workspace from verified actor ([fcbb322](https://github.com/tutur3u/platform/commit/fcbb322d629d3f0f98e1ad537e1ff10039f15bd1))
+* **hive:** use verified client for mind simulation access ([b1c26bc](https://github.com/tutur3u/platform/commit/b1c26bc1fc28e5f602ee5ed7961715a3e0d7dd4d)) ([#5550](https://github.com/tutur3u/platform/issues/5550)) ([f72338c](https://github.com/tutur3u/platform/commit/f72338c02fd8d650d862e1ae4f5dc60e28544241))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/hive-v0.23.0...hive-v0.24.0) (2026-09-25)
 
 

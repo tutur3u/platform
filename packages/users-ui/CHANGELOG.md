@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.8](https://github.com/tutur3u/platform/compare/users-ui-v0.7.7...users-ui-v0.7.8) (2026-09-26)
+
+
+### Bug Fixes
+
+* **contacts:** honor workspace manager visibility in attendance ([60c2c4d](https://github.com/tutur3u/platform/commit/60c2c4ddd44465431291d5fe53c76332f2de0a27)) ([#5532](https://github.com/tutur3u/platform/issues/5532)) ([300eb11](https://github.com/tutur3u/platform/commit/300eb11bbf7753cdad9ada9f4dc2c4640c1a4509))
+
 ## [0.7.7](https://github.com/tutur3u/platform/compare/users-ui-v0.7.6...users-ui-v0.7.7) (2026-09-20)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.35.1](https://github.com/tutur3u/platform/compare/ui-v0.35.0...ui-v0.35.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **education:** label satellite navigation in Learn and Teach ([7728149](https://github.com/tutur3u/platform/commit/77281496b86def6f02afaaabea0fb39a89557717)) ([#5536](https://github.com/tutur3u/platform/issues/5536)) ([d76aa49](https://github.com/tutur3u/platform/commit/d76aa49d93303156d900c872ada803c43e1c8530))
+* **finance:** count recurring sessions in subscription previews ([94119f5](https://github.com/tutur3u/platform/commit/94119f5126e2c48d7e096a572c5957610ce67724)) ([#5541](https://github.com/tutur3u/platform/issues/5541)) ([e645a51](https://github.com/tutur3u/platform/commit/e645a51b0c9006cc1baf66e9846c5656b2063220))
+
 ## [0.35.0](https://github.com/tutur3u/platform/compare/ui-v0.34.0...ui-v0.35.0) (2026-09-25)
 
 

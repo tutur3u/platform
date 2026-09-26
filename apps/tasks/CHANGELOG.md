@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.36.1](https://github.com/tutur3u/platform/compare/tasks-v0.36.0...tasks-v0.36.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **tasks:** use app-session client in sharing and plans ([1b609f0](https://github.com/tutur3u/platform/commit/1b609f0826ff51034025d5fa31b518eea91023cd)) ([#5561](https://github.com/tutur3u/platform/issues/5561)) ([04d04c8](https://github.com/tutur3u/platform/commit/04d04c8a1133eb28b345b1eef82f6c6b0f5b57e3))
+* **tasks:** use verified app-session client across local APIs ([02e9c1a](https://github.com/tutur3u/platform/commit/02e9c1aad4f042a9177d86567d86c6467e955f58))
+* **tasks:** use verified app-session clients across local APIs ([#5546](https://github.com/tutur3u/platform/issues/5546)) ([dc83c4a](https://github.com/tutur3u/platform/commit/dc83c4a0ad6b9d59e7a8cf9a5636bf312db16114))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/tasks-v0.35.0...tasks-v0.36.0) (2026-09-25)
 
 

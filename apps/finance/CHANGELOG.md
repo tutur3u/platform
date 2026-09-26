@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.31.1](https://github.com/tutur3u/platform/compare/finance-v0.31.0...finance-v0.31.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **finance:** authorize satellite API access ([84664ee](https://github.com/tutur3u/platform/commit/84664ee14bf2293b16bf8fa970da8ce4daddb5c2)) ([#5549](https://github.com/tutur3u/platform/issues/5549)) ([4c010a2](https://github.com/tutur3u/platform/commit/4c010a2b0ccddb275e10ac1febdea3012ebe7a13))
+* **finance:** count recurring sessions in subscription previews ([94119f5](https://github.com/tutur3u/platform/commit/94119f5126e2c48d7e096a572c5957610ce67724)) ([#5541](https://github.com/tutur3u/platform/issues/5541)) ([e645a51](https://github.com/tutur3u/platform/commit/e645a51b0c9006cc1baf66e9846c5656b2063220))
+
 ## [0.31.0](https://github.com/tutur3u/platform/compare/finance-v0.30.0...finance-v0.31.0) (2026-09-25)
 
 

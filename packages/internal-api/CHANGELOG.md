@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.43.0](https://github.com/tutur3u/platform/compare/internal-api-v0.42.0...internal-api-v0.43.0) (2026-09-26)
+
+
+### Features
+
+* **contacts:** improve tutoring workflow and scheduling ([5ee943f](https://github.com/tutur3u/platform/commit/5ee943fa61ff43086496fbcb72ad28f232e02803)) ([#5537](https://github.com/tutur3u/platform/issues/5537)) ([3a3b978](https://github.com/tutur3u/platform/commit/3a3b9785aa5e523aded2c2d03b7de56b864d1b6f))
+* **contacts:** let managers delete unmarked tutoring sessions ([08a8137](https://github.com/tutur3u/platform/commit/08a81378ceb7eb1a21eeb5aee05dc5f745f043d2))
+* **notes:** add synced workspace notes on web and mobile ([47adf2e](https://github.com/tutur3u/platform/commit/47adf2e9a353e8f5f20f003570f0166b92f9a89b))
+* **notes:** add workspace Notes on web and mobile ([#5535](https://github.com/tutur3u/platform/issues/5535)) ([eeee849](https://github.com/tutur3u/platform/commit/eeee8494ba1198fc098d03cee34276dd40d39103))
+
+
+### Bug Fixes
+
+* **contacts:** honor workspace manager visibility in attendance ([60c2c4d](https://github.com/tutur3u/platform/commit/60c2c4ddd44465431291d5fe53c76332f2de0a27)) ([#5532](https://github.com/tutur3u/platform/issues/5532)) ([300eb11](https://github.com/tutur3u/platform/commit/300eb11bbf7753cdad9ada9f4dc2c4640c1a4509))
+* **finance:** count recurring sessions in subscription previews ([94119f5](https://github.com/tutur3u/platform/commit/94119f5126e2c48d7e096a572c5957610ce67724)) ([#5541](https://github.com/tutur3u/platform/issues/5541)) ([e645a51](https://github.com/tutur3u/platform/commit/e645a51b0c9006cc1baf66e9846c5656b2063220))
+* **notes:** satisfy migration and source size gates ([d719d26](https://github.com/tutur3u/platform/commit/d719d2627520a466e62d7c2a45eb8c0c1a37b8e3))
+
 ## [0.42.0](https://github.com/tutur3u/platform/compare/internal-api-v0.41.0...internal-api-v0.42.0) (2026-09-25)
 
 

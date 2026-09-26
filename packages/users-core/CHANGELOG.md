@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/tutur3u/platform/compare/users-core-v0.9.0...users-core-v0.9.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **finance:** count recurring sessions in subscription previews ([94119f5](https://github.com/tutur3u/platform/commit/94119f5126e2c48d7e096a572c5957610ce67724)) ([#5541](https://github.com/tutur3u/platform/issues/5541)) ([e645a51](https://github.com/tutur3u/platform/commit/e645a51b0c9006cc1baf66e9846c5656b2063220))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/users-core-v0.8.2...users-core-v0.9.0) (2026-09-20)
 
 

@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.33.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.32.0...tanstack-web-v0.33.0) (2026-09-26)
+
+
+### Features
+
+* **contacts:** improve tutoring workflow and scheduling ([5ee943f](https://github.com/tutur3u/platform/commit/5ee943fa61ff43086496fbcb72ad28f232e02803)) ([#5537](https://github.com/tutur3u/platform/issues/5537)) ([3a3b978](https://github.com/tutur3u/platform/commit/3a3b9785aa5e523aded2c2d03b7de56b864d1b6f))
+* **contacts:** let managers delete unmarked tutoring sessions ([08a8137](https://github.com/tutur3u/platform/commit/08a81378ceb7eb1a21eeb5aee05dc5f745f043d2))
+* **notes:** add synced workspace notes on web and mobile ([47adf2e](https://github.com/tutur3u/platform/commit/47adf2e9a353e8f5f20f003570f0166b92f9a89b))
+* **notes:** add workspace Notes on web and mobile ([#5535](https://github.com/tutur3u/platform/issues/5535)) ([eeee849](https://github.com/tutur3u/platform/commit/eeee8494ba1198fc098d03cee34276dd40d39103))
+
+
+### Bug Fixes
+
+* **contacts:** authenticate tutoring APIs from satellite ([aecb534](https://github.com/tutur3u/platform/commit/aecb534064a42ea963003b76d25608674044832b)) ([#5545](https://github.com/tutur3u/platform/issues/5545)) ([7162021](https://github.com/tutur3u/platform/commit/71620216c1387c226091c109b8d839fb041f6a69))
+* **contacts:** guard tutoring suggestions and content saves ([3dffdba](https://github.com/tutur3u/platform/commit/3dffdba7e21e7f1f3f5f3c626c012140af18b287))
+* **contacts:** honor workspace manager visibility in attendance ([60c2c4d](https://github.com/tutur3u/platform/commit/60c2c4ddd44465431291d5fe53c76332f2de0a27)) ([#5532](https://github.com/tutur3u/platform/issues/5532)) ([300eb11](https://github.com/tutur3u/platform/commit/300eb11bbf7753cdad9ada9f4dc2c4640c1a4509))
+* **mobile:** improve Assistant voice and gallery attachments ([#5534](https://github.com/tutur3u/platform/issues/5534)) ([fab87d7](https://github.com/tutur3u/platform/commit/fab87d7e51ba0ef36a9d53d89a748407942e89d0))
+* **mobile:** improve assistant voice and media attachments ([f733f5b](https://github.com/tutur3u/platform/commit/f733f5b981fd90bcbedb438e4b4ae7eb3cc4551c))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.31.0...tanstack-web-v0.32.0) (2026-09-25)
 
 
