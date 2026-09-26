@@ -182,6 +182,11 @@
       "import": "./dist/mind.js",
       "require": "./dist/mind.js"
     },
+    "./notes": {
+      "types": "./dist/notes.d.ts",
+      "import": "./dist/notes.js",
+      "require": "./dist/notes.js"
+    },
     "./onboarding": {
       "types": "./dist/onboarding.d.ts",
       "import": "./dist/onboarding.js",

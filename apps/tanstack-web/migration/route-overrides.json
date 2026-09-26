@@ -1,5 +1,20 @@
 {
   "routes": {
+    "api:/api/v1/workspaces/:wsId/notes:apps/web/src/app/api/v1/workspaces/[wsId]/notes/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Notes list and create with workspace membership and creator scoping, including mobile app-session auth. Rust GET retains Supabase JWT parity and falls through for app sessions; POST remains on Next.js."
+    },
+    "api:/api/v1/workspaces/:wsId/notes/:noteId:apps/web/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Notes update, archive and delete use creator-scoped membership checks and mobile app-session auth. Rust parity pending."
+    },
+    "page:/:locale/:wsId/notes:apps/web/src/app/[locale]/(dashboard)/[wsId]/notes/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Dedicated synced Notes editor with the shared internal API facade and rich text content. TanStack Start page parity pending."
+    },
     "api:/api/v1/workspaces/:wsId/tutoring/sessions/:id:apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

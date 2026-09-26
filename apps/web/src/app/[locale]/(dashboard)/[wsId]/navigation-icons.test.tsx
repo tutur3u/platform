@@ -67,6 +67,7 @@ vi.mock('@tuturuuu/icons/lucide', async () => {
     'MailX',
     'Megaphone',
     'MessageCircleIcon',
+    'NotebookPen',
     'Package',
     'PencilRuler',
     'Play',

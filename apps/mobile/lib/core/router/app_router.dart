@@ -383,11 +383,7 @@ GoRouter createAppRouter(
             path: Routes.notificationsArchive,
             builder: (context, state) => const NotificationsPage.archive(),
           ),
-          for (final module in AppRegistry.allModules)
-            GoRoute(
-              path: module.route,
-              builder: (context, _) => module.pageBuilder(context),
-            ),
+          ...AppRegistry.routes,
           GoRoute(
             path: Routes.habits,
             builder: (context, state) => const HabitsPage(),

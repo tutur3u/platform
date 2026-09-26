@@ -55,6 +55,12 @@ pub(crate) async fn handle_workspaces_wsid_notes_route(
 ) -> Option<crate::BackendResponse> {
     let raw_ws_id = notes_ws_id(request.path)?;
 
+    // The live Next route verifies mobile app sessions. This future Rust port
+    // only authenticates Supabase JWTs, so let app sessions fall through.
+    if contact::request_has_app_session_token(request) {
+        return None;
+    }
+
     Some(match request.method {
         "GET" => notes_get_response(config, request, raw_ws_id, outbound).await,
         _ => return None,
@@ -171,6 +177,7 @@ async fn fetch_notes(
             ("ws_id", format!("eq.{ws_id}")),
             ("creator_id", format!("eq.{user_id}")),
             ("archived", archived_filter),
+            ("deleted", "eq.false".to_owned()),
             ("order", "created_at.desc".to_owned()),
         ],
     ) else {
