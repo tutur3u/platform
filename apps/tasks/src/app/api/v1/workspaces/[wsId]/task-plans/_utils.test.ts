@@ -1,13 +1,62 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
+
+const authMocks = vi.hoisted(() => ({
+  normalizeWorkspaceId: vi.fn(),
+  resolveAuthenticatedSessionUser: vi.fn(),
+  verifyWorkspaceMembershipType: vi.fn(),
+}));
+
+vi.mock('@/lib/app-session-user', () => ({
+  resolveAuthenticatedSessionUser: authMocks.resolveAuthenticatedSessionUser,
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@tuturuuu/utils/workspace-helper')
+  >()),
+  normalizeWorkspaceId: authMocks.normalizeWorkspaceId,
+  verifyWorkspaceMembershipType: authMocks.verifyWorkspaceMembershipType,
+}));
+
 import {
   buildTaskPlanDigest,
   isTaskPlanSchemaUnavailableError,
   planShareCreateSchema,
+  resolveTaskPlanRouteAuth,
   taskPlanRouteErrorResponse,
 } from './_utils';
 
 describe('task plan route utilities', () => {
+  it('authorizes membership with the resolved app-session client', async () => {
+    const sessionClient = { name: 'app-session-client' };
+    const request = new Request(
+      'https://tasks.tuturuuu.com/api/v1/workspaces/personal/task-plans'
+    );
+    authMocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      authError: null,
+      supabase: sessionClient,
+      user: { id: 'user-1' },
+    });
+    authMocks.normalizeWorkspaceId.mockResolvedValue('workspace-1');
+    authMocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: false });
+
+    const result = await resolveTaskPlanRouteAuth(request as never, {
+      params: Promise.resolve({ wsId: 'personal' }),
+    });
+
+    expect(result).toBeInstanceOf(Response);
+    expect((result as Response).status).toBe(403);
+    expect(authMocks.resolveAuthenticatedSessionUser).toHaveBeenCalledWith(
+      request
+    );
+    expect(authMocks.verifyWorkspaceMembershipType).toHaveBeenCalledWith({
+      wsId: 'workspace-1',
+      userId: 'user-1',
+      supabase: sessionClient,
+    });
+  });
+
   it('detects missing schema errors from Postgres and PostgREST', () => {
     expect(isTaskPlanSchemaUnavailableError({ code: '42P01' })).toBe(true);
     expect(isTaskPlanSchemaUnavailableError({ code: 'PGRST204' })).toBe(true);

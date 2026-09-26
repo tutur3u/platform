@@ -38,6 +38,8 @@ const COOKIE_CLIENT_CALL_PATTERN = /\bcreateClient\(\s*(?:request|req)?\s*\)/u;
 const LOCAL_RESOLVER_PATTERN =
   /resolveAuthenticatedSessionUser\(\s*supabase\s*\)/u;
 const COOKIE_QUERY_PATTERN = /\bsupabase\s*\.\s*(?:from|schema|rpc)\(/u;
+const COOKIE_MEMBERSHIP_SHORTHAND_PATTERN =
+  /verifyWorkspaceMembershipType\(\s*\{[^}]*?\bsupabase\s*(?:,|\})/su;
 const APP_SESSION_FALLBACK_PATTERN =
   /\b(?:getAppSessionTokenFromRequest|verifyAppSessionRequest|verifyCliAccessToken|resolveSatelliteRequestActor|resolveSatellitePageActor)\s*\(/u;
 
@@ -95,7 +97,8 @@ function authorizesWithCookieClient(source) {
       COOKIE_CLIENT_CALL_PATTERN.test(source)) ||
     (LOCAL_RESOLVER_PATTERN.test(source) &&
       COOKIE_CLIENT_CALL_PATTERN.test(source) &&
-      COOKIE_QUERY_PATTERN.test(source) &&
+      (COOKIE_QUERY_PATTERN.test(source) ||
+        COOKIE_MEMBERSHIP_SHORTHAND_PATTERN.test(source)) &&
       !source.includes('sessionSupabase') &&
       !source.includes('authResult.supabase'))
   );
@@ -121,10 +124,13 @@ function findViolations(root = REPO_ROOT) {
         DIRECT_SUPABASE_RESOLVER_PATTERN.test(source) &&
         COOKIE_CLIENT_CALL_PATTERN.test(source) &&
         !APP_SESSION_FALLBACK_PATTERN.test(source);
+      const hasLocalCookieResolver =
+        LOCAL_RESOLVER_PATTERN.test(source) &&
+        authorizesWithCookieClient(source);
       if (
         !(isRoute
           ? authorizesWithCookieClient(source)
-          : hasDirectCookieResolver) &&
+          : hasDirectCookieResolver || hasLocalCookieResolver) &&
         !(
           appName === 'infrastructure' &&
           isRoute &&
