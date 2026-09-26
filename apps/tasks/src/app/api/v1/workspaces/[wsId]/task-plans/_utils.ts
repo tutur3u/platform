@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskRouteAuthContext } from '@tuturuuu/tasks-api/server/tasks/route';
@@ -240,10 +237,10 @@ export async function resolveTaskPlanRouteAuth(
   request: NextRequest,
   context: TaskPlanRouteContext
 ): Promise<TaskPlanRouteAuth | NextResponse> {
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+  const { user, authError, supabase } =
+    await resolveAuthenticatedSessionUser(request);
 
-  if (authError || !user) {
+  if (authError || !user || !supabase) {
     return taskPlanErrorResponse('Unauthorized', 401);
   }
 
@@ -263,7 +260,9 @@ export async function resolveTaskPlanRouteAuth(
     return taskPlanErrorResponse('Workspace access denied', 403);
   }
 
-  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const sbAdmin = (await createAdminClient({
+    noCookie: true,
+  })) as TypedSupabaseClient;
 
   return { sbAdmin, supabase, user, wsId };
 }

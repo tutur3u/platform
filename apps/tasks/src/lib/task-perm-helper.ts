@@ -1,5 +1,4 @@
 import type { SupabaseClient, SupabaseUser } from '@tuturuuu/supabase';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -22,11 +21,9 @@ export async function verifyTaskShareAccess(
   wsId: string,
   taskId: string
 ): Promise<TaskShareAccessResult> {
-  const supabase = await createClient();
+  const { user, authError, supabase } = await resolveAuthenticatedSessionUser();
 
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
+  if (authError || !user || !supabase) {
     return {
       success: false,
       response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
