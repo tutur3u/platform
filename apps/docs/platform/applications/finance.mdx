@@ -258,6 +258,38 @@ historical audit records to fill that gap.
 
 ## Subscription coverage and tuition reporting
 
+### Subscription session counting
+
+Across workspaces, the Finance subscription invoice form uses the workspace's
+`INVOICE_USE_ATTENDANCE_BASED_CALCULATION` setting, including invoices opened
+from a customer or pending-invoice link. Its default is on: completed months and
+the current month bill present or late attendance, while future prepaid months
+use planned sessions. When the
+setting is off, every planned session in the coverage months is billable,
+regardless of the student's attendance. Completed paid months remain visible in
+the preview but cannot be billed again.
+
+The planned session count includes scheduled records and the group's recurring
+occurrences in the selected coverage period, even when those future occurrences
+have not been materialized in `workspace_user_group_sessions`. Canceled
+occurrences are excluded. The invoice preview reads these dates without
+reconciling or writing session records. The same session dates feed the total,
+calendar, notes, and linked tuition product quantity in Finance; Contacts group
+schedule is the operator view for checking the underlying recurrence. A customer
+and group supplied in an invoice URL remain selected when the page first loads.
+When a linked product is absent or has no matching inventory unit, the operator
+must configure or select a product before creating an invoice; the preview must
+never invent a tuition price.
+
+For a reported `Days Attended > 0` with `Total Sessions = 0`, inspect the
+authenticated subscription context response's `scheduledSessionsByGroupId`,
+the selected group's recurring series and canceled exceptions, and the effective
+workspace billing setting. If the Finance settings panel cannot read that
+setting, it reports a load error instead of showing a guessed default. Verify
+a real customer and group in Finance and the same group schedule in Contacts
+without creating an invoice or changing customer attendance. Use a controlled
+workspace for any save or toggle test.
+
 New subscription invoices persist their paid tuition months in
 `finance_invoices.subscription_months`. This nullable array is the canonical
 coverage record: only its listed months are covered. A payment for March does

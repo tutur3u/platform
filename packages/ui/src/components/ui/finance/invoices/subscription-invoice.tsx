@@ -62,6 +62,7 @@ import { createSubscriptionInvoiceWithInternalApi } from './internal-api';
 import { formatInvoiceRecalculationDescription } from './invoice-visibility-format';
 import { ProductSelection } from './product-selection';
 import { invalidateInvoiceMutationQueries } from './query-invalidation';
+import { useSubscriptionBillingGroups } from './subscription-billing-groups';
 import type { SubscriptionInvoiceProps } from './subscription-invoice-props';
 import type { SelectedProductItem } from './types';
 import {
@@ -193,7 +194,6 @@ export function SubscriptionInvoice({
     enabled: shouldPreloadPaymentSettings,
   });
 
-  // Blocked groups check
   const { data: blockedGroupIds = [] } = useInvoiceBlockedGroups(wsId, {
     enabled: hasSelectedGroups,
   });
@@ -245,7 +245,6 @@ export function SubscriptionInvoice({
   const [isCreating, setIsCreating] = useState(false);
   const [createPromotionOpen, setCreatePromotionOpen] = useState(false);
 
-  // Track previous user ID to detect user changes (skip initial mount for reset)
   const prevUserIdRef = useRef<string | null>(null);
 
   const {
@@ -335,6 +334,11 @@ export function SubscriptionInvoice({
   const userAttendance = subscriptionInvoiceContext?.attendance ?? [];
   const latestSubscriptionInvoices =
     subscriptionInvoiceContext?.latestInvoices ?? [];
+  const { billingUserGroups, groupsWithScheduleIds } =
+    useSubscriptionBillingGroups(
+      userGroups,
+      subscriptionInvoiceContext?.scheduledSessionsByGroupId
+    );
   const userAttendanceError =
     subscriptionInvoiceContextError instanceof Error
       ? subscriptionInvoiceContextError
@@ -404,7 +408,7 @@ export function SubscriptionInvoice({
   const billableSessions = useMemo(
     () =>
       getBillableSessionsForGroupsInRange(
-        userGroups,
+        billingUserGroups,
         selectedGroupIds,
         effectiveSelectedMonth,
         prepaidMonthCount,
@@ -415,7 +419,7 @@ export function SubscriptionInvoice({
       latestSubscriptionInvoices,
       prepaidMonthCount,
       selectedGroupIds,
-      userGroups,
+      billingUserGroups,
     ]
   );
 
@@ -438,12 +442,17 @@ export function SubscriptionInvoice({
   const monthlySessions = useMemo(
     () =>
       getBillableSessionsForGroupsInRange(
-        userGroups,
+        billingUserGroups,
         selectedGroupIds,
         effectiveSelectedMonth,
         prepaidMonthCount
       ),
-    [effectiveSelectedMonth, prepaidMonthCount, selectedGroupIds, userGroups]
+    [
+      billingUserGroups,
+      effectiveSelectedMonth,
+      prepaidMonthCount,
+      selectedGroupIds,
+    ]
   );
 
   const {
@@ -537,7 +546,7 @@ export function SubscriptionInvoice({
     prefillAmount: prefillQuantity,
     groupProducts,
     products,
-    userGroups,
+    userGroups: billingUserGroups,
     useAttendanceBased,
     userAttendance: billableAttendance,
     latestSubscriptionInvoices,
@@ -550,7 +559,7 @@ export function SubscriptionInvoice({
     enabled: true,
     selectedGroupIds,
     selectedMonth: effectiveSelectedMonth,
-    userGroups,
+    userGroups: billingUserGroups,
     groupProducts,
     subscriptionSelectedProducts,
     userAttendance: billableAttendance,
@@ -608,8 +617,12 @@ export function SubscriptionInvoice({
     resetRounding: resetRoundingSubscription,
   } = useInvoiceRounding(totalBeforeRounding);
 
-  // Reset subscription state when user changes (including switching to a different user)
   useEffect(() => {
+    // URL-prefilled customer, group and month are one initial selection.
+    if (prevUserIdRef.current === null) {
+      prevUserIdRef.current = selectedUserId;
+      return;
+    }
     const userChanged = prevUserIdRef.current !== selectedUserId;
     prevUserIdRef.current = selectedUserId;
 
@@ -632,20 +645,6 @@ export function SubscriptionInvoice({
     defaultCategoryId,
   ]);
 
-  const groupsWithScheduleIds = useMemo(() => {
-    const sessions = (g: (typeof userGroups)[0]) =>
-      g.workspace_user_groups?.sessions;
-    return userGroups
-      .filter(
-        (g) =>
-          g.workspace_user_groups?.id &&
-          Array.isArray(sessions(g)) &&
-          (sessions(g)?.length ?? 0) > 0
-      )
-      .map((g) => g.workspace_user_groups!.id);
-  }, [userGroups]);
-
-  // Auto-select all groups with schedule when userGroups are loaded
   useEffect(() => {
     if (
       groupsWithScheduleIds.length > 0 &&
