@@ -9,6 +9,7 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/notes/note_link_picker_sheet.dart';
 import 'package:mobile/features/notes/note_repository.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -279,6 +280,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   }
 
   Future<void> _insertLink() async {
+    final wsId = _wsId;
     final label = TextEditingController();
     final url = TextEditingController();
     final result = await showModalBottomSheet<bool>(
@@ -300,6 +302,22 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
+            if (wsId != null) ...[
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final option = await showNoteLinkPickerSheet(
+                    sheetContext,
+                    wsId: wsId,
+                  );
+                  if (option == null) return;
+                  label.text = option.title;
+                  url.text = option.url;
+                },
+                icon: const Icon(Icons.search_rounded),
+                label: Text(context.l10n.notesLinkWork),
+              ),
+              const SizedBox(height: 12),
+            ],
             TextField(
               controller: label,
               decoration: InputDecoration(

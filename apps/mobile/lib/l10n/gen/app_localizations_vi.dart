@@ -8796,6 +8796,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get notesInsertLink => 'Chèn liên kết';
 
   @override
+  String get notesLinkEvents => 'Sự kiện';
+
+  @override
+  String get notesLinkMeetings => 'Cuộc họp';
+
+  @override
+  String get notesLinkTasks => 'Công việc';
+
+  @override
+  String get notesLinkWork => 'Liên kết công việc';
+
+  @override
   String get notesLinkText => 'Văn bản liên kết';
 
   @override
@@ -8803,6 +8815,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notesInsertButton => 'Chèn';
+
+  @override
+  String get notesNoLinkResults => 'Không có mục phù hợp';
+
+  @override
+  String get notesSearchWork => 'Tìm công việc, sự kiện hoặc cuộc họp';
 
   @override
   String get notesLoadError => 'Không thể tải ghi chú. Kéo xuống để thử lại.';

@@ -3563,9 +3563,15 @@
     "notesUntitled": "Untitled note",
     "notesStartWriting": "Start writing...",
     "notesInsertLink": "Insert link",
+    "notesLinkEvents": "Events",
+    "notesLinkMeetings": "Meetings",
+    "notesLinkTasks": "Tasks",
+    "notesLinkWork": "Link work",
     "notesLinkText": "Link text",
     "notesLinkUrl": "Link to a task, event, meeting or web page",
     "notesInsertButton": "Insert",
+    "notesNoLinkResults": "No matching items",
+    "notesSearchWork": "Search tasks, events, or meetings",
     "notesLoadError": "Could not load notes. Pull to retry.",
     "notesSaveError": "Could not save this note. Your edits are still here."
 }
