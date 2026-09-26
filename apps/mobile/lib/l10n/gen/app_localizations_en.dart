@@ -415,6 +415,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appLockSettingsTitle => 'App lock';
 
   @override
+  String get appLockDelayTitle => 'Lock after leaving';
+
+  @override
+  String get appLockDelayDescription => 'Choose when the app asks to unlock after you switch away.';
+
+  @override
+  String get appLockDelayImmediately => 'Immediately';
+
+  @override
+  String get appLockDelay30Seconds => 'After 30 seconds';
+
+  @override
+  String get appLockDelay1Minute => 'After 1 minute';
+
+  @override
+  String get appLockDelay5Minutes => 'After 5 minutes';
+
+  @override
   String get appLockUnavailableDescription => 'Local authentication is unavailable or was cancelled.';
 
   @override

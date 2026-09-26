@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
+import 'package:mobile/features/security/data/app_lock_settings_store.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_sheet.dart';
 import 'package:mobile/features/security/mfa_approval/data/mfa_approval_repository.dart';
 import 'package:mobile/features/security/mfa_approval/view/mfa_approval_dialog.dart';
@@ -175,6 +176,37 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
             );
           },
         ),
+        if (appLockEnabled)
+          SettingsTile(
+            icon: Icons.timer_outlined,
+            title: l10n.appLockDelayTitle,
+            subtitle: l10n.appLockDelayDescription,
+            value: _appLockDelayLabel(context, appLockState.delay),
+            onTap: () async {
+              final cubit = context.read<AppLockCubit>();
+              final selected = await showModalBottomSheet<AppLockDelay>(
+                context: context,
+                useSafeArea: true,
+                builder: (sheetContext) => Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final delay in AppLockDelay.values)
+                        ListTile(
+                          title: Text(_appLockDelayLabel(context, delay)),
+                          trailing: delay == appLockState.delay
+                              ? const Icon(Icons.check_rounded)
+                              : null,
+                          onTap: () => Navigator.of(sheetContext).pop(delay),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+              if (selected != null) await cubit.setDelay(selected);
+            },
+          ),
         SettingsTile(
           icon: Icons.qr_code_scanner_rounded,
           title: l10n.qrLoginSettingsTitle,
@@ -225,4 +257,14 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
       ],
     );
   }
+}
+
+String _appLockDelayLabel(BuildContext context, AppLockDelay delay) {
+  final l10n = context.l10n;
+  return switch (delay) {
+    AppLockDelay.immediately => l10n.appLockDelayImmediately,
+    AppLockDelay.after30Seconds => l10n.appLockDelay30Seconds,
+    AppLockDelay.after1Minute => l10n.appLockDelay1Minute,
+    AppLockDelay.after5Minutes => l10n.appLockDelay5Minutes,
+  };
 }
