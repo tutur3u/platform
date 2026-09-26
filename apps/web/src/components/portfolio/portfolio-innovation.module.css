@@ -1,5 +1,5 @@
 .innovation {
-  padding: 100px 6vw;
+  padding: 100px var(--page-gutter, 6vw);
   background: #0b151d;
   color: #f3f6ed;
   overflow: clip;
@@ -9,6 +9,7 @@
   font: 10px var(--font-mono, monospace);
   letter-spacing: 0.15em;
   margin-bottom: 28px;
+  text-align: center;
 }
 .innovation h2 {
   font-size: clamp(38px, 5.2vw, 80px);
@@ -16,12 +17,15 @@
   letter-spacing: -0.055em;
   line-height: 1.08;
   white-space: pre-line;
-  max-width: 1000px;
+  max-width: 900px;
+  margin-inline: auto;
+  text-align: center;
+  text-wrap: balance;
 }
 .manifesto {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 8vw;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(28px, 4vw, 64px);
   margin: 38px 0 55px;
 }
 .manifesto p {
@@ -73,9 +77,8 @@
   inset: auto 16px -1px;
   height: 2px;
   background: var(--pitch-growth);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.35s;
+  opacity: 0;
+  transition: opacity 160ms ease;
 }
 .tab[data-state="active"] {
   background: #ffffff08;
@@ -83,11 +86,32 @@
   box-shadow: none;
 }
 .tab[data-state="active"]::after {
-  transform: scaleX(1);
+  opacity: 1;
+}
+.panels {
+  display: grid;
 }
 .chapter {
+  grid-area: 1 / 1;
+  min-width: 0;
+  align-self: start;
   margin: 0;
   padding-top: 32px;
+}
+.chapter[data-state="inactive"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+.chapter:where([data-state="active"]) :where(.scene) {
+  animation: chapterEnter 220ms ease-out;
+}
+@keyframes chapterEnter {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .scene {
   display: grid;
@@ -105,8 +129,8 @@
 .scene figure img {
   display: block;
   width: 100%;
+  aspect-ratio: 16 / 10;
   height: auto;
-  min-height: 370px;
   object-fit: cover;
 }
 .scene figcaption {
@@ -225,12 +249,6 @@
   flex-shrink: 0;
   background: var(--pitch-growth);
   box-shadow: 0 0 0 7px #4aa34918;
-  animation: signal 3s ease-in-out infinite;
-}
-@keyframes signal {
-  50% {
-    box-shadow: 0 0 0 12px #4aa34900;
-  }
 }
 @media (max-width: 1000px) {
   .scene {
@@ -238,12 +256,16 @@
     grid-template-columns: 1.2fr 1fr;
   }
   .scene figure img {
-    min-height: 420px;
+    aspect-ratio: 4 / 5;
   }
 }
 @media (max-width: 700px) {
   .innovation {
-    padding: 65px 6vw;
+    padding: 65px var(--page-gutter, 6vw);
+  }
+  .innovation h2,
+  .eyebrow {
+    text-align: left;
   }
   .manifesto {
     grid-template-columns: 1fr;
@@ -268,7 +290,7 @@
     gap: 28px;
   }
   .scene figure img {
-    min-height: 240px;
+    aspect-ratio: 4 / 3;
   }
   .chapterNumber {
     font-size: 38px;

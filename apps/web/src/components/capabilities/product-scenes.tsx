@@ -1,6 +1,12 @@
 'use client';
 
-import { Check, Mic, Sparkles } from '@tuturuuu/icons/lucide';
+import {
+  ArrowUpRight,
+  Check,
+  Mic,
+  Plus,
+  Sparkles,
+} from '@tuturuuu/icons/lucide';
 import { useState } from 'react';
 import { ProductMark } from './product-mark';
 import styles from './product-scenes.module.css';
@@ -48,7 +54,8 @@ export function TaskScene({
   return (
     <figure className={styles.product} data-compact={compact}>
       <div className={styles.chrome}>
-        <ProductMark product="tudo" size={22} /> Tuturuuu Tasks <span>↗</span>
+        <ProductMark product="tudo" size={22} /> Tuturuuu Tasks{' '}
+        <ArrowUpRight size={16} aria-hidden="true" />
       </div>
       <div className={styles.taskBoard}>
         <div className={styles.boardHeading}>
@@ -90,7 +97,7 @@ export function TaskScene({
                   )
               )}
               <div className={styles.dropzone} aria-hidden="true">
-                +
+                <Plus size={16} />
               </div>
             </div>
           ))}
@@ -105,7 +112,7 @@ export function TaskScene({
           onClick={() => setOrganized(!organized)}
         >
           {organized ? t.reset : t.action}
-          <span aria-hidden="true">↗</span>
+          <ArrowUpRight size={16} aria-hidden="true" />
         </button>
       </div>
       <figcaption>{copy.illustration}</figcaption>
@@ -175,7 +182,7 @@ export function MeetScene({ copy }: { copy: CapabilityCopy }) {
                 onClick={() => setAnswer(!answer)}
               >
                 {answer ? copy.tasks.reset : t.action}
-                <span aria-hidden="true">↗</span>
+                <ArrowUpRight size={16} aria-hidden="true" />
               </button>
               {answer && <small>{t.privacy}</small>}
             </>

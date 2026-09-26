@@ -26,9 +26,6 @@
   color: var(--foreground);
   overflow-x: clip;
   isolation: isolate;
-  transition:
-    background 0.4s,
-    color 0.4s;
 }
 .header,
 .footer {
@@ -122,7 +119,8 @@
   grid-template-columns: 1.12fr 1fr;
   align-items: center;
   gap: 6vw;
-  padding: 4.5vw 6vw;
+  padding: 40px max(6vw, calc((100vw - 1440px) / 2));
+  align-content: center;
   min-height: calc(100svh - 155px);
   color: var(--foreground);
   background: var(--background);
@@ -175,13 +173,6 @@
 }
 .active {
   display: grid;
-}
-.active .story,
-.active .visual {
-  animation: enter 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-.active .visual {
-  animation-delay: 0.08s;
 }
 .eyebrow {
   display: flex;
@@ -425,16 +416,6 @@
   pointer-events: none;
   z-index: 50;
 }
-@keyframes enter {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 .slide:is(
   [data-slide="workforce"],
@@ -486,7 +467,7 @@
 }
 @media (min-width: 1600px) {
   .slide {
-    padding: 5vw 8vw;
+    padding-inline: max(6vw, calc((100vw - 1440px) / 2));
   }
 }
 @media (max-width: 1100px) {

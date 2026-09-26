@@ -51,10 +51,7 @@ export function PortfolioAtlas({
             >
               <span>{category.label}</span>
               <div className={styles.barTrack}>
-                <i
-                  data-grow
-                  style={{ width: `${(category.count / max) * 100}%` }}
-                />
+                <i style={{ width: `${(category.count / max) * 100}%` }} />
               </div>
               <strong>{category.count}</strong>
             </div>

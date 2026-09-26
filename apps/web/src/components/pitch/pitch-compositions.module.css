@@ -23,6 +23,7 @@
 .composition[data-slide="closing"] > div:first-child {
   text-align: center;
   max-width: 1100px;
+  width: 100%;
   margin: auto;
 }
 .composition:is(
@@ -378,6 +379,7 @@
   .composition[data-slide] > div:last-child {
     grid-column: 1;
     grid-row: auto;
+    width: 100%;
   }
   .composition:is([data-slide="platform"], [data-slide="intelligence"])
     > div:first-child {
@@ -409,6 +411,30 @@
   }
   .composition[data-slide="closing"] > div:first-child > div {
     justify-content: flex-start;
+  }
+}
+@media screen and (min-width: 1001px) and (max-height: 850px) {
+  .composition[data-slide] {
+    padding-top: 20px;
+    padding-bottom: 20px;
+    row-gap: 16px;
+  }
+  .composition[data-slide] > div:first-child h1 {
+    font-size: clamp(32px, 3.4vw, 48px);
+  }
+  .composition[data-slide] > div:first-child > p:first-child {
+    margin-bottom: 16px;
+  }
+  .composition[data-slide] > div:first-child > h1 + p {
+    font-size: 14px;
+    line-height: 1.65;
+    margin-top: 18px;
+  }
+  .composition[data-slide] > div:first-child > span {
+    margin-top: 16px;
+  }
+  .composition[data-slide] svg[data-pitch-diagram] {
+    max-height: 25vh;
   }
 }
 @media print {

@@ -13,7 +13,6 @@
   border-radius: 50%;
   filter: blur(22px);
   opacity: 0.8;
-  animation: breathe 10s ease-in-out infinite alternate;
 }
 .orb > div {
   position: absolute;
@@ -300,7 +299,6 @@
   width: 5px;
   border-radius: 5px;
   background: linear-gradient(var(--pitch-innovation), var(--pitch-growth));
-  animation: breathe 3s ease-in-out infinite alternate;
 }
 .voice i:nth-child(3n) {
   animation-delay: -0.7s;
