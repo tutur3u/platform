@@ -1,6 +1,7 @@
 'use client';
 
-import { Download } from '@tuturuuu/icons';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Download, Loader2, RotateCcw, Trash2 } from '@tuturuuu/icons';
 import type {
   TutoringAttendanceStatus,
   TutoringDetailedExportRow,
@@ -8,7 +9,11 @@ import type {
   TutoringSessionRecord,
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
-import { exportTutoringSessions } from '@tuturuuu/internal-api';
+import {
+  exportTutoringSessions,
+  updateTutoringSession,
+} from '@tuturuuu/internal-api';
+import { deleteTutoringSession } from '@tuturuuu/internal-api/tutoring';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -16,6 +21,7 @@ import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
@@ -33,8 +39,11 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { XLSX } from '@tuturuuu/ui/xlsx';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import { TutoringCreateCard } from './tutoring-create-card';
 import { buildTutoringSessionColumns } from './tutoring-session-columns';
@@ -83,6 +92,10 @@ interface Props {
   create: TutoringSessionsCreateState;
   pagination: TutoringSessionsPagination;
   isMarking: boolean;
+  isLoading: boolean;
+  isRefreshing: boolean;
+  error: string | null;
+  onRetry: () => void;
   actions: TutoringSessionsActions;
 }
 
@@ -121,16 +134,61 @@ export function TutoringSessionsCard({
   create,
   pagination,
   isMarking,
+  isLoading,
+  isRefreshing,
+  error,
+  onRetry,
   actions,
 }: Props) {
   const t = useTranslations('ws-tutoring');
   const tCommon = useTranslations();
+  const queryClient = useQueryClient();
+  const [editingSession, setEditingSession] =
+    useState<TutoringSessionRecord | null>(null);
+  const [deletingSession, setDeletingSession] =
+    useState<TutoringSessionRecord | null>(null);
+  const [draftContent, setDraftContent] = useState('');
+  const updateContent = useMutation({
+    mutationFn: ({ id, content }: { id: string; content: string }) =>
+      updateTutoringSession(wsId, id, { content }),
+    onSuccess: () => {
+      toast.success(t('content_updated'));
+      setEditingSession(null);
+      void queryClient.invalidateQueries({
+        queryKey: ['tutoring-sessions', wsId],
+      });
+    },
+    onError: () => toast.error(t('content_update_failed')),
+  });
+  const deleteSession = useMutation({
+    mutationFn: (id: string) => deleteTutoringSession(wsId, id),
+    onSuccess: () => {
+      toast.success(t('session_deleted'));
+      setDeletingSession(null);
+      if (sessions.length === 1 && pagination.page > 1) {
+        actions.onParamsChange({ page: pagination.page - 1 });
+      }
+      for (const key of [
+        'tutoring-sessions',
+        'tutoring-session-stats',
+        'tutoring-queue',
+      ]) {
+        void queryClient.invalidateQueries({ queryKey: [key, wsId] });
+      }
+    },
+    onError: () => toast.error(t('session_delete_failed')),
+  });
 
   const columns = ({ t: tableT }: { t: ReturnType<typeof useTranslations> }) =>
     buildTutoringSessionColumns({
       canManage,
       isMarking,
       onMark: actions.onMark,
+      onEditContent: (session) => {
+        setEditingSession(session);
+        setDraftContent(session.content);
+      },
+      onDelete: setDeletingSession,
       t,
       tableT,
     });
@@ -220,7 +278,7 @@ export function TutoringSessionsCard({
               >
                 {t('create')}
               </Button>
-              <DialogContent className="sm:max-w-4xl">
+              <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-4xl">
                 <DialogHeader>
                   <DialogTitle>{t('create_session')}</DialogTitle>
                 </DialogHeader>
@@ -239,123 +297,231 @@ export function TutoringSessionsCard({
           ) : null
         }
       />
-      <DataTable
-        t={tCommon}
-        data={sessions}
-        count={pagination.count}
-        pageIndex={pagination.page > 0 ? pagination.page - 1 : 0}
-        pageSize={pagination.pageSize}
-        namespace="tutoring-sessions-table"
-        columnGenerator={columns}
-        disableSearch
-        setParams={actions.onParamsChange}
-        filters={
-          <div className="flex flex-wrap items-center gap-2">
-            <Select
-              value={filters.reasonType}
-              onValueChange={actions.onReasonTypeChange}
-            >
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder={t('reason')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('all_reasons')}</SelectItem>
-                <SelectItem value="ABSENT_RECOVERY">
-                  {t('absent_recovery')}
-                </SelectItem>
-                <SelectItem value="WEAK_SUPPORT">
-                  {t('weak_support')}
-                </SelectItem>
-                <SelectItem value="CUSTOM">{t('custom_reason')}</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.attendanceStatus}
-              onValueChange={actions.onAttendanceStatusChange}
-            >
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder={t('status')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('all_statuses')}</SelectItem>
-                <SelectItem value="PENDING">{t('status_pending')}</SelectItem>
-                <SelectItem value="DONE">{t('status_done')}</SelectItem>
-                <SelectItem value="NO_SHOW">{t('status_no_show')}</SelectItem>
-                <SelectItem value="CANCELLED">
-                  {t('status_cancelled')}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.groupId}
-              onValueChange={actions.onGroupIdChange}
-            >
-              <SelectTrigger className="w-52">
-                <SelectValue placeholder={t('group')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('all_groups')}</SelectItem>
-                {groups.map((group) => (
-                  <SelectItem key={group.id} value={group.id}>
-                    {group.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.studentUserId}
-              onValueChange={actions.onStudentUserIdChange}
-            >
-              <SelectTrigger className="w-56">
-                <SelectValue placeholder={t('student')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('all_students')}</SelectItem>
-                {students.map((student) => (
-                  <SelectItem key={student.id} value={student.id}>
-                    {getDisplayName(student)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        }
-        resetParams={actions.onResetFilters}
-        toolbarActions={
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="ml-auto h-8 w-full md:w-fit"
+      {isRefreshing ? (
+        <p
+          className="flex items-center gap-1 text-muted-foreground text-xs"
+          role="status"
+        >
+          <Loader2 className="h-3 w-3 animate-spin" />
+          {tCommon('common.loading')}
+        </p>
+      ) : null}
+      {error ? (
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dynamic-red/25 bg-dynamic-red/5 px-4 py-10 text-center">
+          <p className="font-medium text-sm">{error}</p>
+          <Button onClick={onRetry} size="sm" variant="outline">
+            <RotateCcw className="h-4 w-4" />
+            {t('retry')}
+          </Button>
+        </div>
+      ) : isLoading ? (
+        <div
+          aria-label={t('loading_sessions')}
+          className="space-y-3 rounded-xl border p-4"
+          role="status"
+        >
+          {Array.from({ length: 5 }, (_, index) => (
+            <Skeleton className="h-8 w-full" key={index} />
+          ))}
+        </div>
+      ) : (
+        <DataTable
+          t={tCommon}
+          data={sessions}
+          count={pagination.count}
+          pageIndex={pagination.page > 0 ? pagination.page - 1 : 0}
+          pageSize={pagination.pageSize}
+          namespace="tutoring-sessions-table"
+          columnGenerator={columns}
+          disableSearch
+          setParams={actions.onParamsChange}
+          filters={
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                value={filters.reasonType}
+                onValueChange={actions.onReasonTypeChange}
               >
-                <Download className="h-4 w-4" />
-                {tCommon('common.export')}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleExportDetailedCsv}>
-                {t('export_detailed_csv')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportPayrollCsv}>
-                {t('export_payroll_csv')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportDetailedXlsx}>
-                {t('export_detailed_xlsx')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        }
-        isFiltered={
-          filters.reasonType !== 'all' ||
-          filters.attendanceStatus !== 'all' ||
-          filters.groupId !== 'all' ||
-          filters.studentUserId !== 'all'
-        }
-      />
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder={t('reason')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all_reasons')}</SelectItem>
+                  <SelectItem value="ABSENT_RECOVERY">
+                    {t('absent_recovery')}
+                  </SelectItem>
+                  <SelectItem value="WEAK_SUPPORT">
+                    {t('weak_support')}
+                  </SelectItem>
+                  <SelectItem value="CUSTOM">{t('custom_reason')}</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filters.attendanceStatus}
+                onValueChange={actions.onAttendanceStatusChange}
+              >
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder={t('status')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all_statuses')}</SelectItem>
+                  <SelectItem value="PENDING">{t('status_pending')}</SelectItem>
+                  <SelectItem value="DONE">{t('status_done')}</SelectItem>
+                  <SelectItem value="NO_SHOW">{t('status_no_show')}</SelectItem>
+                  <SelectItem value="CANCELLED">
+                    {t('status_cancelled')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filters.groupId}
+                onValueChange={actions.onGroupIdChange}
+              >
+                <SelectTrigger className="w-52">
+                  <SelectValue placeholder={t('group')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all_groups')}</SelectItem>
+                  {groups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      {group.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filters.studentUserId}
+                onValueChange={actions.onStudentUserIdChange}
+              >
+                <SelectTrigger className="w-56">
+                  <SelectValue placeholder={t('student')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all_students')}</SelectItem>
+                  {students.map((student) => (
+                    <SelectItem key={student.id} value={student.id}>
+                      {getDisplayName(student)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          }
+          resetParams={actions.onResetFilters}
+          toolbarActions={
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto h-8 w-full md:w-fit"
+                >
+                  <Download className="h-4 w-4" />
+                  {tCommon('common.export')}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportDetailedCsv}>
+                  {t('export_detailed_csv')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPayrollCsv}>
+                  {t('export_payroll_csv')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportDetailedXlsx}>
+                  {t('export_detailed_xlsx')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          }
+          isFiltered={
+            filters.reasonType !== 'all' ||
+            filters.attendanceStatus !== 'all' ||
+            filters.groupId !== 'all' ||
+            filters.studentUserId !== 'all'
+          }
+        />
+      )}
+      <Dialog
+        onOpenChange={(open) => {
+          if (!open && !updateContent.isPending) setEditingSession(null);
+        }}
+        open={Boolean(editingSession)}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{t('edit_content')}</DialogTitle>
+            <DialogDescription>
+              {t('edit_content_description')}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            aria-label={t('content')}
+            maxLength={10_000}
+            onChange={(event) => setDraftContent(event.target.value)}
+            rows={6}
+            value={draftContent}
+          />
+          <Button
+            disabled={updateContent.isPending}
+            onClick={() =>
+              editingSession &&
+              updateContent.mutate({
+                id: editingSession.id,
+                content: draftContent,
+              })
+            }
+          >
+            {t('save_content')}
+          </Button>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        onOpenChange={(open) => {
+          if (!open && !deleteSession.isPending) setDeletingSession(null);
+        }}
+        open={Boolean(deletingSession)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('delete_session')}</DialogTitle>
+            <DialogDescription>
+              {t('delete_session_description')}
+            </DialogDescription>
+            {deletingSession ? (
+              <p className="text-sm font-medium">
+                {getDisplayName(deletingSession.student)} ·{' '}
+                {deletingSession.session_date} ·{' '}
+                {String(deletingSession.start_time).slice(0, 5)}
+              </p>
+            ) : null}
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button
+              disabled={deleteSession.isPending}
+              onClick={() => setDeletingSession(null)}
+              variant="outline"
+            >
+              {tCommon('common.cancel')}
+            </Button>
+            <Button
+              disabled={deleteSession.isPending}
+              onClick={() =>
+                deletingSession && deleteSession.mutate(deletingSession.id)
+              }
+              variant="destructive"
+            >
+              {deleteSession.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              {t('delete_session')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

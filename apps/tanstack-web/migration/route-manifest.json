@@ -4770,11 +4770,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/tutoring/sessions/:id:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/[id]/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/tutoring/sessions/:id:apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route.ts",
       "kind": "api",
-      "methods": ["PUT"],
+      "methods": ["PUT", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/tutoring/sessions/:id",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/sessions/[id]/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7969,7 +7969,7 @@
       "POST": 300,
       "PUT": 54,
       "PATCH": 63,
-      "DELETE": 99,
+      "DELETE": 100,
       "OPTIONS": 23
     },
     "total": 835

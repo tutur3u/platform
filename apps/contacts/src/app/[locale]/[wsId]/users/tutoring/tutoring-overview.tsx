@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  CalendarClock,
-  CircleCheck,
-  LifeBuoy,
-  Sun,
-  UserX,
-} from '@tuturuuu/icons';
+import { CalendarClock, CircleCheck, Sun, UserX } from '@tuturuuu/icons';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
@@ -17,7 +11,6 @@ export interface TutoringOverviewCounts {
   completed: number | undefined;
   missed: number | undefined;
   pending: number | undefined;
-  queue: number | undefined;
   today: number | undefined;
 }
 
@@ -56,7 +49,9 @@ function StatCard({
           {isLoading && value === undefined ? (
             <Skeleton className="mt-1 h-6 w-10" />
           ) : (
-            <p className="font-semibold text-xl leading-tight">{value ?? 0}</p>
+            <p className="font-semibold text-xl tabular-nums leading-tight">
+              {value ?? '—'}
+            </p>
           )}
           <p className="truncate text-[11px] text-muted-foreground">
             {definition.hint}
@@ -106,18 +101,10 @@ export function TutoringOverview({
       key: 'missed',
       label: t('stat_missed'),
     },
-    {
-      accent:
-        'border-dynamic-purple/25 bg-dynamic-purple/10 text-dynamic-purple',
-      hint: t('stat_queue_hint'),
-      icon: <LifeBuoy className="h-4 w-4" />,
-      key: 'queue',
-      label: t('stat_queue'),
-    },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {definitions.map((definition) => (
         <StatCard
           key={definition.key}

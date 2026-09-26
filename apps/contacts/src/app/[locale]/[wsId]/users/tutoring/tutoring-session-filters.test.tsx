@@ -31,6 +31,28 @@ function withQueryClient(children: ReactNode) {
 }
 
 describe('TutoringSessionFiltersBar', () => {
+  it('keeps optional facets out of the initial view and lets staff reveal them', () => {
+    render(
+      withQueryClient(
+        <TutoringSessionFiltersBar
+          filters={DEFAULT_SESSION_FILTERS}
+          groups={groups}
+          onChange={vi.fn()}
+          onReset={vi.fn()}
+          wsId="ws-1"
+        />
+      )
+    );
+
+    expect(screen.queryByText('Class A')).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'ws-tutoring.more_filters' })
+    );
+    expect(
+      screen.getByRole('button', { name: 'ws-tutoring.hide_filters' })
+    ).toHaveAttribute('aria-expanded', 'true');
+  });
+
   it('emits a single facet change per press so other facets survive', () => {
     const onChange = vi.fn();
 

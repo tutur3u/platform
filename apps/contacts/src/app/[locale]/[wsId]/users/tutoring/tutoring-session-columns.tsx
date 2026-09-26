@@ -6,6 +6,7 @@ import {
   MessageSquareText,
   MoreHorizontal,
   RotateCcw,
+  Trash2,
   UserX,
 } from '@tuturuuu/icons';
 import type {
@@ -31,6 +32,8 @@ export interface TutoringSessionColumnActions {
   canManage: boolean;
   isMarking: boolean;
   locale: string;
+  onEditContent: (session: TutoringSessionRecord) => void;
+  onDelete: (session: TutoringSessionRecord) => void;
   onMark: (id: string, status: TutoringAttendanceStatus) => void;
   onParentMessage: (session: TutoringSessionRecord) => void;
   t: ReturnType<typeof useTranslations>;
@@ -60,7 +63,15 @@ function SessionActionsCell({
   actions: TutoringSessionColumnActions;
   session: TutoringSessionRecord;
 }) {
-  const { canManage, isMarking, onMark, onParentMessage, t } = actions;
+  const {
+    canManage,
+    isMarking,
+    onDelete,
+    onEditContent,
+    onMark,
+    onParentMessage,
+    t,
+  } = actions;
   const isPending = session.attendance_status === 'PENDING';
 
   return (
@@ -90,6 +101,13 @@ function SessionActionsCell({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            disabled={!canManage}
+            onClick={() => onEditContent(session)}
+          >
+            <MessageSquareText className="h-4 w-4" />
+            {t('edit_content')}
+          </DropdownMenuItem>
           <DropdownMenuItem
             disabled={!canManage}
             onClick={() => onParentMessage(session)}
@@ -134,6 +152,20 @@ function SessionActionsCell({
             <RotateCcw className="h-4 w-4" />
             {t('mark_pending')}
           </DropdownMenuItem>
+          {canManage &&
+          (session.attendance_status === 'PENDING' ||
+            session.attendance_status === 'CANCELLED') ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => onDelete(session)}
+              >
+                <Trash2 className="h-4 w-4" />
+                {t('delete_session')}
+              </DropdownMenuItem>
+            </>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
