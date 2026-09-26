@@ -27,6 +27,12 @@ import {
   toIsoDate,
   toTime,
 } from './session-schedule-data';
+import {
+  addDate,
+  buildSeriesTimestamp,
+  compareIsoDate,
+  normalizeDbTime,
+} from './session-schedule-date';
 import { summarizeNextFourWeekSchedule } from './session-schedule-summary';
 
 const SCHEDULE_SUMMARY_DAYS = 28;
@@ -276,24 +282,6 @@ export async function listUserGroupScheduleGroupSummaries({
       upcomingCount: schedule.upcomingCount,
     };
   });
-}
-
-function normalizeDbTime(value: string) {
-  return value.length === 5 ? `${value}:00` : value;
-}
-
-function compareIsoDate(a: string, b: string) {
-  return a.localeCompare(b);
-}
-
-function addDate(date: string, days: number) {
-  return dayjs(date).add(days, 'day').format('YYYY-MM-DD');
-}
-
-function buildSeriesTimestamp(date: string, time: string, timezone: string) {
-  return dayjs
-    .tz(`${date} ${normalizeDbTime(time)}`, 'YYYY-MM-DD HH:mm:ss', timezone)
-    .toISOString();
 }
 
 function seriesDateBounds(series: SeriesRow, from: string, to: string) {
@@ -746,12 +734,14 @@ async function findSeriesOccurrenceReconciliationCandidate({
 export async function listMissingUserGroupSessionOccurrences({
   from,
   groupId,
+  reconcile = true,
   supabase,
   to,
   wsId,
 }: {
   from?: string | null;
   groupId?: string | null;
+  reconcile?: boolean;
   supabase: TypedSupabaseClient;
   to?: string | null;
   wsId: string;
@@ -853,6 +843,11 @@ export async function listMissingUserGroupSessionOccurrences({
         });
 
       if (reconciliationCandidate) {
+        if (!reconcile) {
+          existingKeys.add(`${series.id}:${date}`);
+          usedReconciliationIds.add(reconciliationCandidate.id);
+          continue;
+        }
         const reconciled = await reconcileScheduledSeriesOccurrence({
           date,
           privateDb,

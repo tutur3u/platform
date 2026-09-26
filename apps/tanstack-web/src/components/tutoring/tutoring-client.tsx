@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   createTutoringSession,
   listAllWorkspaceUserGroups,
@@ -108,6 +113,11 @@ export function TutoringClient({ wsId, canManage }: Props) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const sessionsQuery = useQuery({
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: 1,
     queryKey: [
       'tutoring-sessions',
       wsId,
@@ -124,17 +134,12 @@ export function TutoringClient({ wsId, canManage }: Props) {
           sessionReasonType === 'all'
             ? undefined
             : (sessionReasonType as
-                | 'ABSENT_RECOVERY'
-                | 'WEAK_SUPPORT'
-                | 'CUSTOM'),
+                'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'CUSTOM'),
         attendanceStatus:
           sessionAttendance === 'all'
             ? undefined
             : (sessionAttendance as
-                | 'PENDING'
-                | 'DONE'
-                | 'NO_SHOW'
-                | 'CANCELLED'),
+                'PENDING' | 'DONE' | 'NO_SHOW' | 'CANCELLED'),
         groupId: sessionGroupId === 'all' ? undefined : sessionGroupId,
         studentUserId:
           sessionStudentId === 'all' ? undefined : sessionStudentId,
@@ -143,6 +148,7 @@ export function TutoringClient({ wsId, canManage }: Props) {
       }),
   });
   const groupsQuery = useQuery({
+    enabled: sessionsQuery.isFetched || createDialogOpen || tab === 'queue',
     queryKey: ['tutoring-groups', wsId],
     queryFn: () =>
       listAllWorkspaceUserGroups(wsId, {
@@ -150,6 +156,7 @@ export function TutoringClient({ wsId, canManage }: Props) {
       }),
   });
   const studentsQuery = useQuery({
+    enabled: sessionsQuery.isFetched || createDialogOpen || tab === 'queue',
     queryKey: ['tutoring-students', wsId],
     queryFn: () => listAllWorkspaceBasicUsers(wsId),
   });
@@ -277,6 +284,10 @@ export function TutoringClient({ wsId, canManage }: Props) {
           create={sessionsProps.create}
           pagination={sessionsProps.pagination}
           isMarking={markMutation.isPending}
+          isLoading={sessionsQuery.isLoading}
+          isRefreshing={sessionsQuery.isFetching && !sessionsQuery.isLoading}
+          error={sessionsQuery.isError ? t('sessions_load_failed') : null}
+          onRetry={() => void sessionsQuery.refetch()}
           actions={{
             onReasonTypeChange: (value) => {
               void setSessionReasonType(value);

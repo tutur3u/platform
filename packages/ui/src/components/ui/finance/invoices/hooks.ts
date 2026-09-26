@@ -373,7 +373,6 @@ export const useInfiniteUserInvoices = (
   });
 };
 
-// Subscription-specific hooks
 export const useUserGroups = (wsId: string, userId: string) => {
   return useQuery({
     queryKey: ['user-groups', wsId, userId],
@@ -421,6 +420,7 @@ export const useSubscriptionInvoiceContext = (
             valid_until?: string | null;
             created_at?: string | null;
           }>,
+          scheduledSessionsByGroupId: {} as Record<string, string[]>,
         };
       }
 

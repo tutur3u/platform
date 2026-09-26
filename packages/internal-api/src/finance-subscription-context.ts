@@ -24,6 +24,7 @@ export interface SubscriptionInvoiceContextResponse {
     valid_until?: string | null;
     covered_months?: string[] | null;
   }>;
+  scheduledSessionsByGroupId: Record<string, string[]>;
 }
 
 function buildSubscriptionInvoiceContextSearchParams(

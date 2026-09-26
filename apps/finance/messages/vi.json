@@ -11886,6 +11886,7 @@
     "invoice_promotion_help": "Khi bật, khuyến mãi có thể áp dụng cho tất cả hóa đơn. Khi tắt, khuyến mãi chỉ được phép cho hóa đơn đăng ký.",
     "invoice_promotion_label": "Cho phép khuyến mãi cho hóa đơn thông thường",
     "invoice_promotion_title": "Cài đặt khuyến mãi hóa đơn",
+    "invoice_settings_load_error": "Không thể tải cài đặt hóa đơn. Hãy tải lại trang hoặc nhờ quản lý không gian làm việc kiểm tra quyền truy cập.",
     "no_default_category": "Không có danh mục mặc định",
     "no_default_group": "Không có nhóm mặc định",
     "no_default_reconciliation_category": "Không có danh mục đối chiếu mặc định",

@@ -180,6 +180,18 @@ export async function updateTutoringSession(
   );
 }
 
+export async function deleteTutoringSession(
+  workspaceId: string,
+  sessionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `${basePath(workspaceId)}/sessions/${encodePathSegment(sessionId)}`,
+    { method: 'DELETE' }
+  );
+}
+
 export async function markTutoringSession(
   workspaceId: string,
   sessionId: string,

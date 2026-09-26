@@ -11886,6 +11886,7 @@
     "invoice_promotion_help": "When enabled, promotions can be applied to all invoices. When disabled, promotions are only allowed for subscription invoices.",
     "invoice_promotion_label": "Allow promotions for standard invoices",
     "invoice_promotion_title": "Invoice Promotion Settings",
+    "invoice_settings_load_error": "Invoice settings could not be loaded. Refresh or ask a workspace manager to check access.",
     "no_default_category": "No default category",
     "no_default_group": "No default group",
     "no_default_reconciliation_category": "No default reconciliation category",

@@ -1,7 +1,7 @@
 ---
 title: 'Tutoring'
 description: 'Schedule make-up and remedial sessions, work the support queue, and enable the module per workspace.'
-updatedAt: '2026-08-29'
+updatedAt: '2026-09-26'
 ---
 
 Tutoring lives in the Contacts satellite at `/{wsId}/users/tutoring`. It turns
@@ -21,10 +21,16 @@ payroll.
   Scheduling from a queue row prefills the session form with the learner, the
   group, the reason, and one slot per missing session.
 - **Headline counts** run as bounded `count: exact` queries, so they stay
-  correct on workspaces with more sessions than one page.
+  correct on workspaces with more sessions than one page. The schedule loads
+  first; counts then load behind it. The support queue is requested when its
+  tab is opened, and the client reuses recent results for two minutes.
 
 Row actions mark a session done, no-show, cancelled, or back to pending, and
-generate the parent-facing message for the session.
+generate the parent-facing message for the session. Staff can edit each
+session's lesson content after creation, so teaching notes from the separate
+content sheet can be kept with the attendance record. Managers can permanently
+delete a pending or cancelled session after an in-app confirmation. Completed
+and no-show sessions stay intact for attendance and payroll history.
 
 ## Enablement
 
@@ -54,8 +60,8 @@ full set of toggles and states.
 ## Permissions
 
 - `view_user_groups` — open tutoring and read sessions, the queue, and exports.
-- `update_user_groups_scores` — schedule sessions, mark attendance, and
-  generate parent messages.
+- `update_user_groups_scores` — schedule, edit, and delete eligible sessions,
+  mark attendance, and generate parent messages.
 - `manage_workspace_settings` — enable or disable the module.
 
 Three non-404 states replace the old blanket 404 so an operator can tell the
@@ -78,6 +84,16 @@ same teacher on both slots; a learner conflict needs only the same learner.
 Teachers are the managers of the selected group. Choosing a group with exactly
 one manager assigns that teacher to every slot.
 
+For an absence, staff can enter the missed class date and select **Use next
+class time**. The form reads the selected group's scheduled sessions over the
+next four weeks and proposes a 45-minute slot immediately before the first
+upcoming class after the absence. This follows the same next-class rule for a
+Monday-to-Wednesday, Saturday-to-Sunday, or Sunday-to-Saturday pattern. Staff
+must review the teacher and can edit the date and time before creating; the
+suggestion does not create a session. If the group has no upcoming scheduled
+class, staff enter the time manually. A group schedule must be set up for this
+suggestion to work.
+
 ## Exports
 
 Detailed (per session) and payroll (per teacher, completed sessions and total
@@ -97,6 +113,12 @@ which points at the app session rather than at tutoring.
 
 The queue reads absence deficits and `user_feedbacks.require_attention`. Check
 that group attendance is being recorded and that feedback is flagged.
+
+### The schedule or queue stays empty after loading
+
+An API failure now shows a retry button instead of an empty table. Check the
+workspace permission, then retry. Schedule and queue loading show table-shaped
+placeholders while data is in flight.
 
 ### A session cannot be created
 

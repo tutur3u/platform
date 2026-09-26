@@ -11,12 +11,10 @@ import { CalendarClock, LifeBuoy } from '@tuturuuu/icons';
 import {
   createTutoringSession,
   listAllWorkspaceUserGroups,
-  listTutoringQueue,
   listTutoringSessions,
   markTutoringSession,
   type TutoringQueueItem,
 } from '@tuturuuu/internal-api';
-import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -165,6 +163,10 @@ export function TutoringClient({ wsId, canManage }: Props) {
 
   const sessionsQuery = useQuery({
     placeholderData: keepPreviousData,
+    staleTime: 2 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: 1,
     queryKey: [
       'tutoring-sessions',
       wsId,
@@ -182,6 +184,7 @@ export function TutoringClient({ wsId, canManage }: Props) {
 
   const statQueries = useQueries({
     queries: TUTORING_STAT_KEYS.map((key) => ({
+      enabled: sessionsQuery.isSuccess,
       queryKey: ['tutoring-session-stats', wsId, key, today],
       queryFn: () =>
         listTutoringSessions(wsId, {
@@ -193,13 +196,8 @@ export function TutoringClient({ wsId, canManage }: Props) {
     })),
   });
 
-  const queueSummaryQuery = useQuery({
-    queryKey: ['tutoring-queue-summary', wsId],
-    queryFn: () => listTutoringQueue(wsId, { page: 1, pageSize: 1 }),
-    staleTime: 60_000,
-  });
-
   const groupsQuery = useQuery({
+    enabled: createDialogOpen || tab === 'queue' || sessionsQuery.isFetched,
     queryKey: ['tutoring-groups', wsId],
     queryFn: () => listAllWorkspaceUserGroups(wsId, { status: 'active' }),
     staleTime: 5 * 60_000,
@@ -210,7 +208,6 @@ export function TutoringClient({ wsId, canManage }: Props) {
       'tutoring-sessions',
       'tutoring-session-stats',
       'tutoring-queue',
-      'tutoring-queue-summary',
     ]) {
       void queryClient.invalidateQueries({ queryKey: [key, wsId] });
     }
@@ -288,7 +285,6 @@ export function TutoringClient({ wsId, canManage }: Props) {
     },
   });
 
-  const queueCount = queueSummaryQuery.data?.count ?? 0;
   const sessions = sessionsQuery.data?.data ?? [];
 
   const prefillFromQueue = (item: TutoringQueueItem) => {
@@ -329,7 +325,7 @@ export function TutoringClient({ wsId, canManage }: Props) {
   };
 
   return (
-    <main className="space-y-4 p-2 md:space-y-6 md:p-6">
+    <main className="mx-auto max-w-[1440px] space-y-6 px-3 py-5 md:px-8 md:py-8">
       <FeatureSummary
         description={t('page_description')}
         pluralTitle={t('page_title')}
@@ -341,12 +337,12 @@ export function TutoringClient({ wsId, canManage }: Props) {
           completed: statQueries[2]?.data?.count,
           missed: statQueries[3]?.data?.count,
           pending: statQueries[1]?.data?.count,
-          queue: queueSummaryQuery.data?.count,
           today: statQueries[0]?.data?.count,
         }}
         isLoading={
-          statQueries.some((query) => query.isLoading) ||
-          queueSummaryQuery.isLoading
+          sessionsQuery.isLoading ||
+          (sessionsQuery.isSuccess &&
+            statQueries.some((query) => query.isLoading))
         }
       />
 
@@ -363,14 +359,6 @@ export function TutoringClient({ wsId, canManage }: Props) {
           <TabsTrigger className="gap-2" value="queue">
             <LifeBuoy className="h-4 w-4" />
             {t('queue_tab')}
-            {queueCount > 0 ? (
-              <Badge
-                className="ml-1 rounded-full border-dynamic-orange/25 bg-dynamic-orange/10 text-dynamic-orange"
-                variant="outline"
-              >
-                {queueCount}
-              </Badge>
-            ) : null}
           </TabsTrigger>
         </TabsList>
 
@@ -424,6 +412,9 @@ export function TutoringClient({ wsId, canManage }: Props) {
             filters={filters}
             groups={groupsQuery.data ?? []}
             isLoading={sessionsQuery.isLoading}
+            isRefreshing={sessionsQuery.isFetching && !sessionsQuery.isLoading}
+            error={sessionsQuery.isError ? t('sessions_load_failed') : null}
+            onRetry={() => void sessionsQuery.refetch()}
             isMarking={markMutation.isPending}
             locale={locale}
             pagination={{

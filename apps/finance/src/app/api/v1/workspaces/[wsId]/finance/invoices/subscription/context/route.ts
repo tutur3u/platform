@@ -1,5 +1,6 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
+import { listPlannedUserGroupSessionDatesByGroupIds } from '@tuturuuu/users-core/lib/user-groups/planned-session-dates';
 import { connection, NextResponse } from 'next/server';
 import { readSubscriptionPages } from './read-pages';
 
@@ -112,6 +113,7 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({
       attendance: [],
       latestInvoices: [],
+      scheduledSessionsByGroupId: {},
     });
   }
 
@@ -163,6 +165,7 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({
       attendance: [],
       latestInvoices: [],
+      scheduledSessionsByGroupId: {},
     });
   }
 
@@ -218,6 +221,57 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
+  const { data: workspace, error: workspaceError } = await sbAdmin
+    .from('workspaces')
+    .select('timezone')
+    .eq('id', normalizedWsId)
+    .single();
+  if (workspaceError) {
+    console.error(
+      'Error fetching workspace timezone for subscription invoice:',
+      workspaceError
+    );
+    return NextResponse.json(
+      { message: 'Error fetching subscription invoice context' },
+      { status: 500 }
+    );
+  }
+
+  // Expand the UTC query window so sessions near local midnight remain visible.
+  // The returned dates are then constrained to the requested civil months.
+  const from = new Date(
+    Date.parse(`${monthDateRange.startDate}T00:00:00Z`) - 86_400_000
+  ).toISOString();
+  const to = new Date(
+    Date.parse(`${monthDateRange.endDate}T00:00:00Z`) + 86_400_000
+  ).toISOString();
+  let scheduledSessionsByGroupId: Record<string, string[]>;
+  try {
+    const plannedDates = await listPlannedUserGroupSessionDatesByGroupIds({
+      from,
+      groupIds: validGroupIds,
+      supabase: sbAdmin,
+      timezone: workspace?.timezone || 'Asia/Ho_Chi_Minh',
+      to,
+      wsId: normalizedWsId,
+    });
+    scheduledSessionsByGroupId = Object.fromEntries(
+      Array.from(plannedDates, ([groupId, dates]) => [
+        groupId,
+        dates.filter(
+          (date) =>
+            date >= monthDateRange.startDate && date < monthDateRange.endDate
+        ),
+      ])
+    );
+  } catch (error) {
+    console.error('Error fetching planned subscription sessions:', error);
+    return NextResponse.json(
+      { message: 'Error fetching subscription invoice context' },
+      { status: 500 }
+    );
+  }
+
   const sortedRows = (latestInvoicesResponse.data ?? [])
     .filter(
       (row) =>
@@ -261,6 +315,7 @@ export async function GET(req: Request, { params }: Params) {
 
   return NextResponse.json({
     attendance: attendanceResponse.data ?? [],
+    scheduledSessionsByGroupId,
     latestInvoices: [
       ...Array.from(latestInvoicesMap.values()),
       ...(latestInvoicesResponse.data ?? [])
