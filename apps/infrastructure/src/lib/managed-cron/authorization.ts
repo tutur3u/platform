@@ -1,20 +1,19 @@
 import 'server-only';
 
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  resolveSatellitePageActor,
+  resolveSatelliteRequestActor,
+} from '@tuturuuu/satellite/workspace-access';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 
-export async function getManagedCronAdminUser(
-  request?: Pick<Request, 'headers'>
-) {
-  const supabase = await createClient(request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+export async function getManagedCronAdminUser(request?: Request) {
+  const actor = request
+    ? await resolveSatelliteRequestActor(request, 'infra')
+    : await resolveSatellitePageActor('infra');
 
-  return isExactTuturuuuDotComEmail(user?.email) ? user : null;
+  return isExactTuturuuuDotComEmail(actor?.user.email) ? actor?.user : null;
 }
 
-export async function hasManagedCronAdminAccess(
-  request?: Pick<Request, 'headers'>
-) {
+export async function hasManagedCronAdminAccess(request?: Request) {
   return Boolean(await getManagedCronAdminUser(request));
 }

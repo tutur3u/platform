@@ -1,8 +1,4 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -14,19 +10,17 @@ export async function authorizeAbuseIntelligenceRequest(
     | 'manage_workspace_roles'
     | 'view_infrastructure' = 'view_infrastructure'
 ) {
-  const supabase = await createClient(request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  const actor = await resolveSatelliteRequestActor(request, 'infra');
 
-  if (!user) {
+  if (!actor) {
     return {
       ok: false as const,
       response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-      supabase,
     };
   }
 
   const permissions = await getPermissions({
-    request,
+    user: actor.user,
     wsId: ROOT_WORKSPACE_ID,
   });
 
@@ -34,17 +28,14 @@ export async function authorizeAbuseIntelligenceRequest(
     return {
       ok: false as const,
       response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
-      supabase,
     };
   }
 
   return {
     ok: true as const,
-    sbAdmin: (await createAdminClient({
-      noCookie: true,
-    })) as TypedSupabaseClient,
-    supabase,
-    user,
+    sbAdmin: actor.admin as TypedSupabaseClient,
+    supabase: actor.admin,
+    user: actor.user,
   };
 }
 

@@ -1,10 +1,7 @@
 import 'server-only';
 
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -29,10 +26,9 @@ function jsonMessage(message: string, status: number) {
 export async function authorizeGitHubBotAdmin(
   request: Request
 ): Promise<GitHubBotAdminAccess> {
-  const supabase = await createClient(request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  const actor = await resolveSatelliteRequestActor(request, 'infra');
 
-  if (!user) {
+  if (!actor) {
     return {
       ok: false,
       response: jsonMessage('Unauthorized', 401),
@@ -40,7 +36,7 @@ export async function authorizeGitHubBotAdmin(
   }
 
   const permissions = await getPermissions({
-    request,
+    user: actor.user,
     wsId: ROOT_WORKSPACE_ID,
   });
 
@@ -57,7 +53,7 @@ export async function authorizeGitHubBotAdmin(
   return {
     db: await createAdminClient({ noCookie: true }),
     ok: true,
-    userId: user.id,
+    userId: actor.user.id,
   };
 }
 
