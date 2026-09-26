@@ -5,7 +5,7 @@ import {
   useInfiniteQuery,
   useQuery,
 } from '@tanstack/react-query';
-import { Loader2 } from '@tuturuuu/icons';
+import { Loader2, RotateCcw } from '@tuturuuu/icons';
 import type {
   TutoringQueueItem,
   WorkspaceBasicUserRecord,
@@ -26,6 +26,7 @@ import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Input } from '@tuturuuu/ui/input';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -109,6 +110,10 @@ export function TutoringQueueCard({
         pageSize: pagination.pageSize,
       }),
     placeholderData: keepPreviousData,
+    staleTime: 2 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: 1,
     enabled,
   });
   const queueRows = queueQuery.isLoading ? undefined : queueQuery.data?.data;
@@ -346,10 +351,12 @@ export function TutoringQueueCard({
       <FeatureSummary
         title={
           <h3 className="font-semibold text-lg">
-            {t('queue_title', {
-              absent: summary.absent,
-              weak: summary.weak,
-            })}
+            {queueQuery.data
+              ? t('queue_title', {
+                  absent: summary.absent,
+                  weak: summary.weak,
+                })
+              : t('queue_tab')}
           </h3>
         }
       />
@@ -365,91 +372,115 @@ export function TutoringQueueCard({
             </div>
           </div>
         )}
-        <DataTable
-          t={tCommon}
-          data={queueRows}
-          count={queueQuery.data?.count ?? 0}
-          pageIndex={(queueQuery.data?.page ?? pagination.page) - 1}
-          pageSize={queueQuery.data?.pageSize ?? pagination.pageSize}
-          namespace="tutoring-queue-table"
-          columnGenerator={columns}
-          disableSearch
-          setParams={actions.onParamsChange}
-          filters={
-            <div className="flex flex-wrap items-center gap-2">
-              <Input
-                value={filters.search}
-                onChange={(event) =>
-                  actions.onSearchChange(event.currentTarget.value)
-                }
-                placeholder={t('search_queue')}
-                className="h-9 w-56"
-              />
-
-              <Select
-                value={filters.reasonType}
-                onValueChange={actions.onReasonTypeChange}
-              >
-                <SelectTrigger className="w-44">
-                  <SelectValue placeholder={t('reason')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('all_reasons')}</SelectItem>
-                  <SelectItem value="ABSENT_RECOVERY">
-                    {t('absent_recovery')}
-                  </SelectItem>
-                  <SelectItem value="WEAK_SUPPORT">
-                    {t('weak_support')}
-                  </SelectItem>
-                  <SelectItem value="BOTH">{t('both_reason')}</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Combobox
-                options={groupOptions}
-                selected={filters.groupId}
-                onChange={(value) => actions.onGroupIdChange(value as string)}
-                placeholder={t('all_groups')}
-                searchPlaceholder={t('search_groups')}
-                onSearchChange={setGroupSearch}
-                hasMore={Boolean(groupsQuery.hasNextPage)}
-                loadingMore={groupsQuery.isFetchingNextPage}
-                onLoadMore={() => {
-                  if (groupsQuery.hasNextPage) {
-                    void groupsQuery.fetchNextPage();
+        {queueQuery.isError ? (
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dynamic-red/25 bg-dynamic-red/5 px-4 py-10 text-center">
+            <p className="font-medium text-sm">{t('queue_load_failed')}</p>
+            <Button
+              onClick={() => void queueQuery.refetch()}
+              size="sm"
+              variant="outline"
+            >
+              <RotateCcw className="h-4 w-4" />
+              {t('retry')}
+            </Button>
+          </div>
+        ) : queueQuery.isLoading ? (
+          <div
+            aria-label={t('loading_queue')}
+            className="space-y-3 rounded-xl border p-4"
+            role="status"
+          >
+            {Array.from({ length: 5 }, (_, index) => (
+              <Skeleton className="h-8 w-full" key={index} />
+            ))}
+          </div>
+        ) : (
+          <DataTable
+            t={tCommon}
+            data={queueRows}
+            count={queueQuery.data?.count ?? 0}
+            pageIndex={(queueQuery.data?.page ?? pagination.page) - 1}
+            pageSize={queueQuery.data?.pageSize ?? pagination.pageSize}
+            namespace="tutoring-queue-table"
+            columnGenerator={columns}
+            disableSearch
+            setParams={actions.onParamsChange}
+            filters={
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  value={filters.search}
+                  onChange={(event) =>
+                    actions.onSearchChange(event.currentTarget.value)
                   }
-                }}
-                className="w-52"
-              />
+                  placeholder={t('search_queue')}
+                  className="h-9 w-56"
+                />
 
-              <Combobox
-                options={studentOptions}
-                selected={filters.studentUserId}
-                onChange={(value) =>
-                  actions.onStudentUserIdChange(value as string)
-                }
-                placeholder={t('all_students')}
-                searchPlaceholder={t('search_students')}
-                onSearchChange={setStudentSearch}
-                hasMore={Boolean(studentsQuery.hasNextPage)}
-                loadingMore={studentsQuery.isFetchingNextPage}
-                onLoadMore={() => {
-                  if (studentsQuery.hasNextPage) {
-                    void studentsQuery.fetchNextPage();
+                <Select
+                  value={filters.reasonType}
+                  onValueChange={actions.onReasonTypeChange}
+                >
+                  <SelectTrigger className="w-44">
+                    <SelectValue placeholder={t('reason')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('all_reasons')}</SelectItem>
+                    <SelectItem value="ABSENT_RECOVERY">
+                      {t('absent_recovery')}
+                    </SelectItem>
+                    <SelectItem value="WEAK_SUPPORT">
+                      {t('weak_support')}
+                    </SelectItem>
+                    <SelectItem value="BOTH">{t('both_reason')}</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Combobox
+                  options={groupOptions}
+                  selected={filters.groupId}
+                  onChange={(value) => actions.onGroupIdChange(value as string)}
+                  placeholder={t('all_groups')}
+                  searchPlaceholder={t('search_groups')}
+                  onSearchChange={setGroupSearch}
+                  hasMore={Boolean(groupsQuery.hasNextPage)}
+                  loadingMore={groupsQuery.isFetchingNextPage}
+                  onLoadMore={() => {
+                    if (groupsQuery.hasNextPage) {
+                      void groupsQuery.fetchNextPage();
+                    }
+                  }}
+                  className="w-52"
+                />
+
+                <Combobox
+                  options={studentOptions}
+                  selected={filters.studentUserId}
+                  onChange={(value) =>
+                    actions.onStudentUserIdChange(value as string)
                   }
-                }}
-                className="w-56"
-              />
-            </div>
-          }
-          resetParams={actions.onResetFilters}
-          isFiltered={
-            filters.search.trim().length > 0 ||
-            filters.reasonType !== 'all' ||
-            filters.groupId !== 'all' ||
-            filters.studentUserId !== 'all'
-          }
-        />
+                  placeholder={t('all_students')}
+                  searchPlaceholder={t('search_students')}
+                  onSearchChange={setStudentSearch}
+                  hasMore={Boolean(studentsQuery.hasNextPage)}
+                  loadingMore={studentsQuery.isFetchingNextPage}
+                  onLoadMore={() => {
+                    if (studentsQuery.hasNextPage) {
+                      void studentsQuery.fetchNextPage();
+                    }
+                  }}
+                  className="w-56"
+                />
+              </div>
+            }
+            resetParams={actions.onResetFilters}
+            isFiltered={
+              filters.search.trim().length > 0 ||
+              filters.reasonType !== 'all' ||
+              filters.groupId !== 'all' ||
+              filters.studentUserId !== 'all'
+            }
+          />
+        )}
       </div>
     </section>
   );

@@ -1,18 +1,23 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { CalendarPlus, Loader2, TriangleAlert } from '@tuturuuu/icons';
 import type {
   TutoringReasonType,
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
+import { listWorkspaceUserGroupSessions } from '@tuturuuu/internal-api';
+import { suggestTutoringBeforeNextClass } from '@tuturuuu/internal-api/tutoring-suggestion';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { TutoringCreateSlots } from './tutoring-create-slots';
+import { addDaysToIsoDate, toIsoDate } from './tutoring-filters';
 import { WorkspacePersonPicker } from './tutoring-people-picker';
 import {
   findSessionSlotConflicts,
@@ -47,6 +52,22 @@ export function TutoringCreateCard({
   wsId,
 }: Props) {
   const t = useTranslations('ws-tutoring');
+  const [missedDate, setMissedDate] = useState('');
+  const [scheduleMessage, setScheduleMessage] = useState('');
+  const today = toIsoDate(new Date());
+  const classSchedule = useQuery({
+    enabled: Boolean(
+      form.groupId && missedDate && form.reasonType === 'ABSENT_RECOVERY'
+    ),
+    queryKey: ['tutoring-class-schedule', wsId, form.groupId, today],
+    queryFn: () =>
+      listWorkspaceUserGroupSessions(wsId, {
+        from: today,
+        groupId: form.groupId,
+        to: addDaysToIsoDate(today, 28),
+      }),
+    staleTime: 5 * 60_000,
+  });
 
   const groupOptions = useMemo<ComboboxOption[]>(
     () =>
@@ -221,6 +242,87 @@ export function TutoringCreateCard({
           />
         </div>
       </div>
+
+      {form.reasonType === 'ABSENT_RECOVERY' ? (
+        <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
+          <div>
+            <h3 className="font-semibold text-sm">{t('suggestion_title')}</h3>
+            <p className="text-muted-foreground text-sm">
+              {t('suggestion_description')}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-40 flex-1 space-y-1">
+              <Label htmlFor="missed-class-date">
+                {t('missed_class_date')}
+              </Label>
+              <Input
+                id="missed-class-date"
+                max={today}
+                onChange={(event) => {
+                  setMissedDate(event.target.value);
+                  setScheduleMessage('');
+                }}
+                type="date"
+                value={missedDate}
+              />
+            </div>
+            <Button
+              disabled={
+                !form.groupId || !missedDate || classSchedule.isFetching
+              }
+              onClick={() => {
+                if (classSchedule.isError) {
+                  void classSchedule.refetch();
+                  return;
+                }
+                const suggestion = suggestTutoringBeforeNextClass(
+                  classSchedule.data?.data ?? [],
+                  missedDate
+                );
+                if (!suggestion) {
+                  setScheduleMessage(t('suggestion_unavailable'));
+                  return;
+                }
+                onChange({
+                  ...form,
+                  sessionSlots: form.sessionSlots.map((slot, index) =>
+                    index === 0
+                      ? {
+                          ...slot,
+                          durationMinutes: 45,
+                          sessionDate: suggestion.sessionDate,
+                          startTime: suggestion.startTime,
+                        }
+                      : slot
+                  ),
+                });
+                setScheduleMessage(
+                  t('suggestion_applied', { time: suggestion.classStartsAt })
+                );
+              }}
+              type="button"
+              variant="outline"
+            >
+              {classSchedule.isFetching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CalendarPlus className="h-4 w-4" />
+              )}
+              {t('suggest_next_class')}
+            </Button>
+          </div>
+          {classSchedule.isError ? (
+            <p className="text-destructive text-sm">
+              {t('schedule_load_failed')}
+            </p>
+          ) : scheduleMessage ? (
+            <p aria-live="polite" className="text-muted-foreground text-sm">
+              {scheduleMessage}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <TutoringCreateSlots
         conflictingIndexes={conflictingIndexes}

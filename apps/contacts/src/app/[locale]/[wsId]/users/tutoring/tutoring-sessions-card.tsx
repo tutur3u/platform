@@ -1,11 +1,19 @@
 'use client';
 
-import { CalendarPlus, Download, GraduationCap } from '@tuturuuu/icons';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  CalendarPlus,
+  Download,
+  GraduationCap,
+  Loader2,
+  RotateCcw,
+} from '@tuturuuu/icons';
 import type {
   TutoringAttendanceStatus,
   TutoringSessionRecord,
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
+import { updateTutoringSession } from '@tuturuuu/internal-api';
 import type { ListTutoringSessionsParams } from '@tuturuuu/internal-api/tutoring';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
@@ -25,7 +33,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { TutoringCreateCard } from './tutoring-create-card';
@@ -76,10 +86,13 @@ interface Props {
   canManage: boolean;
   create: TutoringSessionsCreateState;
   exportQuery: ListTutoringSessionsParams;
+  error: string | null;
   filters: TutoringSessionFilters;
   groups: UserGroup[];
   isLoading: boolean;
+  isRefreshing: boolean;
   isMarking: boolean;
+  onRetry: () => void;
   locale: string;
   pagination: TutoringSessionsPagination;
   sessions: TutoringSessionRecord[];
@@ -134,10 +147,13 @@ export function TutoringSessionsCard({
   canManage,
   create,
   exportQuery,
+  error,
   filters,
   groups,
   isLoading,
+  isRefreshing,
   isMarking,
+  onRetry,
   locale,
   pagination,
   sessions,
@@ -146,9 +162,25 @@ export function TutoringSessionsCard({
 }: Props) {
   const t = useTranslations('ws-tutoring');
   const tCommon = useTranslations();
+  const queryClient = useQueryClient();
   const [parentMessageSession, setParentMessageSession] =
     useState<TutoringSessionRecord | null>(null);
+  const [editingSession, setEditingSession] =
+    useState<TutoringSessionRecord | null>(null);
+  const [draftContent, setDraftContent] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const updateContent = useMutation({
+    mutationFn: ({ id, content }: { id: string; content: string }) =>
+      updateTutoringSession(wsId, id, { content }),
+    onSuccess: () => {
+      toast.success(t('content_updated'));
+      setEditingSession(null);
+      void queryClient.invalidateQueries({
+        queryKey: ['tutoring-sessions', wsId],
+      });
+    },
+    onError: () => toast.error(t('content_update_failed')),
+  });
 
   const handleExport = async (format: TutoringExportFormat) => {
     setIsExporting(true);
@@ -171,6 +203,10 @@ export function TutoringSessionsCard({
       canManage,
       isMarking,
       locale,
+      onEditContent: (session) => {
+        setEditingSession(session);
+        setDraftContent(session.content);
+      },
       onMark: actions.onMark,
       onParentMessage: setParentMessageSession,
       t,
@@ -187,6 +223,15 @@ export function TutoringSessionsCard({
           <p className="text-muted-foreground text-sm">
             {t('schedule_description')}
           </p>
+          {isRefreshing ? (
+            <p
+              className="flex items-center gap-1 text-muted-foreground text-xs"
+              role="status"
+            >
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {tCommon('common.loading')}
+            </p>
+          ) : null}
         </div>
 
         <div className="flex items-center gap-2">
@@ -231,32 +276,64 @@ export function TutoringSessionsCard({
         wsId={wsId}
       />
 
-      <DataTable
-        columnGenerator={columns}
-        count={pagination.count}
-        data={isLoading ? undefined : sessions}
-        disableSearch
-        emptyState={
-          <SessionsEmptyState
-            canManage={canManage}
-            isFiltered={isTutoringSessionFiltered(filters)}
-            onCreate={() => actions.onCreateDialogOpenChange(true)}
-            onReset={actions.onResetFilters}
-          />
-        }
-        hideToolbar
-        namespace="tutoring-sessions-table"
-        pageIndex={pagination.page > 0 ? pagination.page - 1 : 0}
-        pageSize={pagination.pageSize}
-        setParams={actions.onParamsChange}
-        t={tCommon}
-      />
+      {error ? (
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dynamic-red/25 bg-dynamic-red/5 px-4 py-10 text-center">
+          <p className="font-medium text-sm">{error}</p>
+          <Button onClick={onRetry} size="sm" variant="outline">
+            <RotateCcw className="h-4 w-4" />
+            {t('retry')}
+          </Button>
+        </div>
+      ) : isLoading ? (
+        <div
+          aria-label={t('loading_sessions')}
+          className="space-y-3 rounded-xl border p-4"
+          role="status"
+        >
+          <div className="grid grid-cols-3 gap-3 border-b pb-3 md:grid-cols-6">
+            {Array.from({ length: 6 }, (_, index) => (
+              <Skeleton className="h-4 w-full" key={index} />
+            ))}
+          </div>
+          {Array.from({ length: 5 }, (_, index) => (
+            <div
+              className="grid grid-cols-3 gap-3 py-2 md:grid-cols-6"
+              key={index}
+            >
+              {Array.from({ length: 6 }, (_, cell) => (
+                <Skeleton className="h-5 w-full" key={cell} />
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <DataTable
+          columnGenerator={columns}
+          count={pagination.count}
+          data={sessions}
+          disableSearch
+          emptyState={
+            <SessionsEmptyState
+              canManage={canManage}
+              isFiltered={isTutoringSessionFiltered(filters)}
+              onCreate={() => actions.onCreateDialogOpenChange(true)}
+              onReset={actions.onResetFilters}
+            />
+          }
+          hideToolbar
+          namespace="tutoring-sessions-table"
+          pageIndex={pagination.page > 0 ? pagination.page - 1 : 0}
+          pageSize={pagination.pageSize}
+          setParams={actions.onParamsChange}
+          t={tCommon}
+        />
+      )}
 
       <Dialog
         onOpenChange={actions.onCreateDialogOpenChange}
         open={create.open}
       >
-        <DialogContent className="sm:max-w-4xl">
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>{t('create_session')}</DialogTitle>
             <DialogDescription>{t('create_description')}</DialogDescription>
@@ -278,6 +355,38 @@ export function TutoringSessionsCard({
         session={parentMessageSession}
         wsId={wsId}
       />
+      <Dialog
+        onOpenChange={(open) => !open && setEditingSession(null)}
+        open={Boolean(editingSession)}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{t('edit_content')}</DialogTitle>
+            <DialogDescription>
+              {t('edit_content_description')}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            aria-label={t('content')}
+            maxLength={10_000}
+            onChange={(event) => setDraftContent(event.target.value)}
+            rows={6}
+            value={draftContent}
+          />
+          <Button
+            disabled={updateContent.isPending}
+            onClick={() =>
+              editingSession &&
+              updateContent.mutate({
+                id: editingSession.id,
+                content: draftContent,
+              })
+            }
+          >
+            {t('save_content')}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

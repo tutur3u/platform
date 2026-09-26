@@ -15,6 +15,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { TutoringSuggestionCard } from './tutoring-suggestion-card';
 import {
   findSessionSlotConflicts,
   getDisplayName,
@@ -277,6 +278,9 @@ export function TutoringCreateCard({
             }}
           />
         </div>
+        {form.reasonType === 'ABSENT_RECOVERY' ? (
+          <TutoringSuggestionCard form={form} onChange={onChange} wsId={wsId} />
+        ) : null}
         <div className="space-y-3 md:col-span-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

@@ -1,7 +1,13 @@
 'use client';
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { CalendarPlus, PartyPopper, RotateCcw, Search } from '@tuturuuu/icons';
+import {
+  CalendarPlus,
+  Loader2,
+  PartyPopper,
+  RotateCcw,
+  Search,
+} from '@tuturuuu/icons';
 import type { TutoringQueueItem } from '@tuturuuu/internal-api';
 import { listTutoringQueue } from '@tuturuuu/internal-api';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
@@ -12,6 +18,7 @@ import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Input } from '@tuturuuu/ui/input';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { TutoringReasonBadge } from './tutoring-badges';
@@ -83,6 +90,10 @@ export function TutoringQueueCard({
   const queueQuery = useQuery({
     enabled,
     placeholderData: keepPreviousData,
+    staleTime: 2 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: 1,
     queryKey: [
       'tutoring-queue',
       wsId,
@@ -233,20 +244,34 @@ export function TutoringQueueCard({
           <p className="text-muted-foreground text-sm">
             {t('queue_description')}
           </p>
+          {queueQuery.isFetching && !queueQuery.isLoading ? (
+            <p
+              className="flex items-center gap-1 text-muted-foreground text-xs"
+              role="status"
+            >
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {tCommon('common.loading')}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            className="rounded-full border-dynamic-orange/25 bg-dynamic-orange/10 text-dynamic-orange"
-            variant="outline"
-          >
-            {t('queue_absent_count', { count: summary.absent })}
-          </Badge>
-          <Badge
-            className="rounded-full border-dynamic-sky/25 bg-dynamic-sky/10 text-dynamic-sky"
-            variant="outline"
-          >
-            {t('queue_weak_count', { count: summary.weak })}
-          </Badge>
+          {queueQuery.isLoading ? <Skeleton className="h-6 w-44" /> : null}
+          {!queueQuery.isLoading ? (
+            <>
+              <Badge
+                className="rounded-full border-dynamic-orange/25 bg-dynamic-orange/10 text-dynamic-orange"
+                variant="outline"
+              >
+                {t('queue_absent_count', { count: summary.absent })}
+              </Badge>
+              <Badge
+                className="rounded-full border-dynamic-sky/25 bg-dynamic-sky/10 text-dynamic-sky"
+                variant="outline"
+              >
+                {t('queue_weak_count', { count: summary.weak })}
+              </Badge>
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -310,19 +335,50 @@ export function TutoringQueueCard({
         ) : null}
       </div>
 
-      <DataTable
-        columnGenerator={columns}
-        count={queueQuery.data?.count ?? 0}
-        data={queueQuery.isLoading ? undefined : queueQuery.data?.data}
-        disableSearch
-        emptyState={<QueueEmptyState isFiltered={isFiltered} />}
-        hideToolbar
-        namespace="tutoring-queue-table"
-        pageIndex={(queueQuery.data?.page ?? pagination.page) - 1}
-        pageSize={queueQuery.data?.pageSize ?? pagination.pageSize}
-        setParams={actions.onParamsChange}
-        t={tCommon}
-      />
+      {queueQuery.isError ? (
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dynamic-red/25 bg-dynamic-red/5 px-4 py-10 text-center">
+          <p className="font-medium text-sm">{t('queue_load_failed')}</p>
+          <Button
+            onClick={() => void queueQuery.refetch()}
+            size="sm"
+            variant="outline"
+          >
+            <RotateCcw className="h-4 w-4" />
+            {t('retry')}
+          </Button>
+        </div>
+      ) : queueQuery.isLoading ? (
+        <div
+          aria-label={t('loading_queue')}
+          className="space-y-3 rounded-xl border p-4"
+          role="status"
+        >
+          {Array.from({ length: 5 }, (_, index) => (
+            <div
+              className="grid grid-cols-3 gap-3 py-2 md:grid-cols-5"
+              key={index}
+            >
+              {Array.from({ length: 5 }, (_, cell) => (
+                <Skeleton className="h-5 w-full" key={cell} />
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <DataTable
+          columnGenerator={columns}
+          count={queueQuery.data?.count ?? 0}
+          data={queueQuery.data?.data}
+          disableSearch
+          emptyState={<QueueEmptyState isFiltered={isFiltered} />}
+          hideToolbar
+          namespace="tutoring-queue-table"
+          pageIndex={(queueQuery.data?.page ?? pagination.page) - 1}
+          pageSize={queueQuery.data?.pageSize ?? pagination.pageSize}
+          setParams={actions.onParamsChange}
+          t={tCommon}
+        />
+      )}
     </section>
   );
 }

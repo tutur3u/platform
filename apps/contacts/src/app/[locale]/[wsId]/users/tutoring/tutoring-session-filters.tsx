@@ -7,7 +7,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   countActiveTutoringFilters,
   isTutoringSessionFiltered,
@@ -86,6 +86,8 @@ export function TutoringSessionFiltersBar({
 }) {
   const t = useTranslations('ws-tutoring');
   const activeCount = countActiveTutoringFilters(filters);
+  const [expanded, setExpanded] = useState(activeCount > 0);
+  const showAdvanced = expanded;
 
   const groupOptions = useMemo<ComboboxOption[]>(
     () => [
@@ -145,51 +147,19 @@ export function TutoringSessionFiltersBar({
           }))}
           value={filters.attendanceStatus}
         />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Combobox
-          className="w-full sm:w-52"
-          emptyText={t('no_groups')}
-          onChange={(value) => onChange({ groupId: value as string })}
-          options={groupOptions}
-          placeholder={t('all_groups')}
-          searchPlaceholder={t('search_groups')}
-          selected={filters.groupId}
-        />
-        <WorkspacePersonPicker
-          className="w-full sm:w-52"
-          emptyText={t('no_students')}
-          extraOptions={[{ label: t('all_students'), value: 'all' }]}
-          onChange={(value) => onChange({ studentUserId: value })}
-          placeholder={t('all_students')}
-          searchPlaceholder={t('search_students')}
-          value={filters.studentUserId}
-          wsId={wsId}
-        />
-        <WorkspacePersonPicker
-          className="w-full sm:w-52"
-          emptyText={t('no_teachers')}
-          extraOptions={[{ label: t('all_teachers'), value: 'all' }]}
-          onChange={(value) => onChange({ teacherUserId: value })}
-          placeholder={t('all_teachers')}
-          searchPlaceholder={t('search_teachers')}
-          value={filters.teacherUserId}
-          wsId={wsId}
-        />
-        <Combobox
-          className="w-full sm:w-44"
-          emptyText={t('no_reasons')}
-          onChange={(value) => onChange({ reasonType: value as string })}
-          options={REASON_OPTIONS.map((reason) => ({
-            label: reasonLabels[reason],
-            value: reason as string,
-          }))}
-          placeholder={t('all_reasons')}
-          searchPlaceholder={t('reason')}
-          selected={filters.reasonType}
-        />
-
+        <Button
+          aria-controls="tutoring-advanced-filters"
+          aria-expanded={showAdvanced}
+          onClick={() => setExpanded((current) => !current)}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          {showAdvanced ? t('hide_filters') : t('more_filters')}
+          {activeCount > 0 ? (
+            <Badge variant="secondary">{activeCount}</Badge>
+          ) : null}
+        </Button>
         {isTutoringSessionFiltered(filters) ? (
           <Button
             className="ml-auto"
@@ -199,14 +169,58 @@ export function TutoringSessionFiltersBar({
           >
             <RotateCcw className="h-4 w-4" />
             {t('reset_filters')}
-            {activeCount > 0 ? (
-              <Badge className="ml-1" variant="secondary">
-                {activeCount}
-              </Badge>
-            ) : null}
           </Button>
         ) : null}
       </div>
+
+      {showAdvanced ? (
+        <div
+          className="flex flex-wrap items-center gap-2"
+          id="tutoring-advanced-filters"
+        >
+          <Combobox
+            className="w-full sm:w-52"
+            emptyText={t('no_groups')}
+            onChange={(value) => onChange({ groupId: value as string })}
+            options={groupOptions}
+            placeholder={t('all_groups')}
+            searchPlaceholder={t('search_groups')}
+            selected={filters.groupId}
+          />
+          <WorkspacePersonPicker
+            className="w-full sm:w-52"
+            emptyText={t('no_students')}
+            extraOptions={[{ label: t('all_students'), value: 'all' }]}
+            onChange={(value) => onChange({ studentUserId: value })}
+            placeholder={t('all_students')}
+            searchPlaceholder={t('search_students')}
+            value={filters.studentUserId}
+            wsId={wsId}
+          />
+          <WorkspacePersonPicker
+            className="w-full sm:w-52"
+            emptyText={t('no_teachers')}
+            extraOptions={[{ label: t('all_teachers'), value: 'all' }]}
+            onChange={(value) => onChange({ teacherUserId: value })}
+            placeholder={t('all_teachers')}
+            searchPlaceholder={t('search_teachers')}
+            value={filters.teacherUserId}
+            wsId={wsId}
+          />
+          <Combobox
+            className="w-full sm:w-44"
+            emptyText={t('no_reasons')}
+            onChange={(value) => onChange({ reasonType: value as string })}
+            options={REASON_OPTIONS.map((reason) => ({
+              label: reasonLabels[reason],
+              value: reason as string,
+            }))}
+            placeholder={t('all_reasons')}
+            searchPlaceholder={t('reason')}
+            selected={filters.reasonType}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

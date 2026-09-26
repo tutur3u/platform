@@ -31,6 +31,7 @@ export interface TutoringSessionColumnActions {
   canManage: boolean;
   isMarking: boolean;
   locale: string;
+  onEditContent: (session: TutoringSessionRecord) => void;
   onMark: (id: string, status: TutoringAttendanceStatus) => void;
   onParentMessage: (session: TutoringSessionRecord) => void;
   t: ReturnType<typeof useTranslations>;
@@ -60,7 +61,8 @@ function SessionActionsCell({
   actions: TutoringSessionColumnActions;
   session: TutoringSessionRecord;
 }) {
-  const { canManage, isMarking, onMark, onParentMessage, t } = actions;
+  const { canManage, isMarking, onEditContent, onMark, onParentMessage, t } =
+    actions;
   const isPending = session.attendance_status === 'PENDING';
 
   return (
@@ -90,6 +92,13 @@ function SessionActionsCell({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            disabled={!canManage}
+            onClick={() => onEditContent(session)}
+          >
+            <MessageSquareText className="h-4 w-4" />
+            {t('edit_content')}
+          </DropdownMenuItem>
           <DropdownMenuItem
             disabled={!canManage}
             onClick={() => onParentMessage(session)}

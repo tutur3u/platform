@@ -3,6 +3,7 @@ import type {
   TutoringSessionRecord,
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import {
@@ -19,12 +20,14 @@ export function buildTutoringSessionColumns({
   canManage,
   isMarking,
   onMark,
+  onEditContent,
   t,
   tableT,
 }: {
   canManage: boolean;
   isMarking: boolean;
   onMark: (id: string, status: TutoringAttendanceStatus) => void;
+  onEditContent: (session: TutoringSessionRecord) => void;
   t: ReturnType<typeof useTranslations>;
   tableT: ReturnType<typeof useTranslations>;
 }) {
@@ -110,6 +113,32 @@ export function buildTutoringSessionColumns({
         }
         return reason;
       },
+    },
+    {
+      accessorKey: 'content',
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          t={tableT}
+          column={column}
+          title={t('content')}
+        />
+      ),
+      cell: ({ row }) => (
+        <div className="flex min-w-40 items-center gap-2">
+          <span className="line-clamp-2 max-w-56 text-sm">
+            {row.original.content || '—'}
+          </span>
+          {canManage ? (
+            <Button
+              onClick={() => onEditContent(row.original)}
+              size="sm"
+              variant="ghost"
+            >
+              {t('edit_content')}
+            </Button>
+          ) : null}
+        </div>
+      ),
     },
     {
       accessorKey: 'attendance_status',
