@@ -1326,6 +1326,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantAttachFilesAction => 'Đính kèm tệp';
 
   @override
+  String get assistantAttachGalleryMediaAction => 'Ảnh và video';
+
+  @override
+  String get assistantGalleryPickError => 'Không thể mở thư viện ảnh. Vui lòng thử lại.';
+
+  @override
   String get assistantEnterFullscreenAction => 'Vào toàn màn hình';
 
   @override

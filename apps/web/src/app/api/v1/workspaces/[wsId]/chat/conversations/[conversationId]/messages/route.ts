@@ -1,4 +1,5 @@
 import type { ChatAttachmentDraft } from '@tuturuuu/internal-api';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
@@ -70,6 +71,7 @@ const createMessageSchema = z.object({
   clientRequestId: z.string().uuid().optional(),
   content: z.string().max(10000).default(''),
   kind: z.enum(['user', 'assistant', 'system']).default('user'),
+  miraMode: z.boolean().optional(),
   replyToMessageId: z.string().uuid().nullable().optional(),
 });
 export const GET = withSessionAuth<RouteParams>(
@@ -185,6 +187,22 @@ export const POST = withSessionAuth<RouteParams>(
       sizeBytes: attachment.sizeBytes ?? null,
     }));
 
+    // Mira tools are currently restricted to internal accounts. Preserve the
+    // normal assistant reply for everyone else instead of forwarding a mode
+    // that the model endpoint would reject after their message has been saved.
+    let miraMode = false;
+    if (parsed.data.miraMode === true) {
+      miraMode = isExactTuturuuuDotComEmail(auth.user.email);
+      if (!miraMode) {
+        const { data } = await auth.supabase
+          .from('user_private_details')
+          .select('email')
+          .eq('user_id', auth.user.id)
+          .maybeSingle();
+        miraMode = isExactTuturuuuDotComEmail(data?.email);
+      }
+    }
+
     if (isAiChatConversationId(params.conversationId)) {
       return sendAiChatMessage({
         attachments,
@@ -194,6 +212,7 @@ export const POST = withSessionAuth<RouteParams>(
         context: context.context,
         conversationId: params.conversationId,
         request,
+        miraMode,
         stream: wantsChatMessageStream(request),
       });
     }
@@ -456,6 +475,7 @@ export const POST = withSessionAuth<RouteParams>(
             context: context.context,
             conversation,
             request,
+            miraMode,
             userMessage: message,
           });
         }
@@ -468,6 +488,7 @@ export const POST = withSessionAuth<RouteParams>(
             context: context.context,
             conversation,
             request,
+            miraMode,
             userMessage: message,
           });
         } catch (error) {

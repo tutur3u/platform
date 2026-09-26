@@ -2665,6 +2665,18 @@ abstract class AppLocalizations {
   /// **'Attach files'**
   String get assistantAttachFilesAction;
 
+  /// No description provided for @assistantAttachGalleryMediaAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos and videos'**
+  String get assistantAttachGalleryMediaAction;
+
+  /// No description provided for @assistantGalleryPickError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open your photo library. Try again.'**
+  String get assistantGalleryPickError;
+
   /// No description provided for @assistantEnterFullscreenAction.
   ///
   /// In en, this message translates to:

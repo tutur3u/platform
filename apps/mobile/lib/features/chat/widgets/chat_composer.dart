@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -23,7 +25,7 @@ class ChatComposer extends StatefulWidget {
   final bool isSending;
   final bool isUploadingAttachment;
   final ValueChanged<String> onSend;
-  final ValueChanged<PlatformFile> onPickAttachment;
+  final Future<void> Function(PlatformFile) onPickAttachment;
   final ValueChanged<String> onRemoveAttachment;
 
   @override
@@ -42,8 +44,51 @@ class _ChatComposerState extends State<ChatComposer> {
   Future<void> _pickAttachment() async {
     final file = await FilePicker.pickFile();
     if (file != null) {
-      widget.onPickAttachment(file);
+      await widget.onPickAttachment(file);
     }
+  }
+
+  Future<void> _pickGalleryMedia() async {
+    try {
+      final media = await ImagePicker().pickMultipleMedia();
+      for (final item in media) {
+        await widget.onPickAttachment(GalleryPlatformFile(item));
+      }
+    } on Exception {
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(context.l10n.assistantGalleryPickError)),
+      );
+    }
+  }
+
+  Future<void> _showAttachmentOptions() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.attach_file_rounded),
+              title: Text(context.l10n.assistantAttachFilesAction),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                unawaited(_pickAttachment());
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text(context.l10n.assistantAttachGalleryMediaAction),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                unawaited(_pickGalleryMedia());
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _send() {
@@ -88,7 +133,7 @@ class _ChatComposerState extends State<ChatComposer> {
                         : const Icon(shad.LucideIcons.paperclip, size: 18),
                     onPressed: widget.isUploadingAttachment || widget.isSending
                         ? null
-                        : () => unawaited(_pickAttachment()),
+                        : () => unawaited(_showAttachmentOptions()),
                   ),
                 ),
                 const SizedBox(width: 8),

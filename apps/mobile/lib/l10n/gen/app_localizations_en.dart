@@ -1326,6 +1326,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantAttachFilesAction => 'Attach files';
 
   @override
+  String get assistantAttachGalleryMediaAction => 'Photos and videos';
+
+  @override
+  String get assistantGalleryPickError => 'Could not open your photo library. Try again.';
+
+  @override
   String get assistantEnterFullscreenAction => 'Enter fullscreen';
 
   @override

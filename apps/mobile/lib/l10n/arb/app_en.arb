@@ -508,6 +508,8 @@
     "assistantCreditsTitle": "Credits",
     "assistantConversationTitle": "Conversation",
     "assistantAttachFilesAction": "Attach files",
+    "assistantAttachGalleryMediaAction": "Photos and videos",
+    "assistantGalleryPickError": "Could not open your photo library. Try again.",
     "assistantEnterFullscreenAction": "Enter fullscreen",
     "assistantExitFullscreenAction": "Exit fullscreen",
     "assistantPersonalCredits": "Personal credits",

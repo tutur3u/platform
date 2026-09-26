@@ -5,12 +5,14 @@ class AssistantAttachmentSheetBody extends StatelessWidget {
   const AssistantAttachmentSheetBody({
     required this.hasAttachments,
     required this.onPickFiles,
+    required this.onPickGalleryMedia,
     required this.onClearAttachments,
     super.key,
   });
 
   final bool hasAttachments;
   final Future<void> Function() onPickFiles;
+  final Future<void> Function() onPickGalleryMedia;
   final Future<void> Function() onClearAttachments;
 
   @override
@@ -38,6 +40,12 @@ class AssistantAttachmentSheetBody extends StatelessWidget {
                 leading: const Icon(Icons.attach_file_rounded),
                 title: Text(context.l10n.assistantAttachFilesAction),
                 onTap: onPickFiles,
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.photo_library_outlined),
+                title: Text(context.l10n.assistantAttachGalleryMediaAction),
+                onTap: onPickGalleryMedia,
               ),
               if (hasAttachments)
                 ListTile(

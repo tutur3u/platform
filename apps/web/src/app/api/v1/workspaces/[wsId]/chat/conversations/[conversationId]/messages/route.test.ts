@@ -198,7 +198,7 @@ describe('native AI chat message route', () => {
     );
 
     const { POST } = await import('./route');
-    const response = await POST(createRequest() as never, {
+    const response = await POST(createRequest({ miraMode: true }) as never, {
       params: Promise.resolve({
         conversationId: 'conversation-1',
         wsId: 'workspace-1',
@@ -216,6 +216,7 @@ describe('native AI chat message route', () => {
           message.role === 'user' && message.parts[0]?.text === 'hello'
       )
     ).toHaveLength(1);
+    expect(mocks.aiRouteBodies.at(-1)).toMatchObject({ isMiraMode: true });
     expect(mocks.deleteWorkspaceStorageFolderByPath).not.toHaveBeenCalled();
   });
 
@@ -233,7 +234,7 @@ describe('native AI chat message route', () => {
     });
 
     const { POST } = await import('./route');
-    const response = await POST(createRequest() as never, {
+    const response = await POST(createRequest({ miraMode: true }) as never, {
       params: Promise.resolve({
         conversationId: 'conversation-1',
         wsId: 'workspace-1',
@@ -250,6 +251,7 @@ describe('native AI chat message route', () => {
     expect(mocks.aiRouteBodies).toContainEqual(
       expect.objectContaining({
         id: 'message-1',
+        isMiraMode: true,
         model: 'google/gemini-3.1-flash-lite',
       })
     );
@@ -279,6 +281,49 @@ describe('native AI chat message route', () => {
       wsId: 'workspace-1',
     });
     expect(mocks.deleteWorkspaceStorageFolderByPath).toHaveBeenCalledOnce();
+  });
+
+  it('uses normal assistant mode for external accounts', async () => {
+    mocks.auth.user.email = 'tester@example.com';
+    const privateDetailsQuery = {
+      eq: vi.fn(() => privateDetailsQuery),
+      maybeSingle: vi.fn(async () => ({
+        data: { email: 'tester@example.com' },
+      })),
+      select: vi.fn(() => privateDetailsQuery),
+    };
+    const originalFrom = (
+      mocks.auth.supabase as { from: (table: string) => unknown }
+    ).from;
+    mocks.auth.supabase = {
+      from: vi.fn((table: string) =>
+        table === 'user_private_details'
+          ? privateDetailsQuery
+          : originalFrom(table)
+      ),
+    };
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_send_user_message_idempotent') {
+        return { message: userMessage, replayed: false };
+      }
+      if (name === 'chat_get_conversation') return conversation;
+      if (name === 'chat_list_messages') return [userMessage];
+      if (name === 'chat_persist_ai_message_batch_idempotent') {
+        return { messages: [assistantMessage], replayed: false };
+      }
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(createRequest({ miraMode: true }) as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(201);
+    expect(mocks.aiRouteBodies.at(-1)).toMatchObject({ isMiraMode: false });
   });
 
   it('reuses an already persisted native assistant reply on retry', async () => {

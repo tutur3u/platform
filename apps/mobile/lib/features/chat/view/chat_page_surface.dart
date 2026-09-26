@@ -98,7 +98,7 @@ class _ThreadPane extends StatelessWidget {
         isSending: state.isSending,
         isUploadingAttachment: state.isUploadingAttachment,
         onSend: (content) => unawaited(cubit.sendMessage(content)),
-        onPickAttachment: (file) => unawaited(cubit.uploadAttachment(file)),
+        onPickAttachment: cubit.uploadAttachment,
         onRemoveAttachment: cubit.removePendingAttachment,
         onReaction: (message, reaction) =>
             unawaited(cubit.toggleReaction(message, reaction)),

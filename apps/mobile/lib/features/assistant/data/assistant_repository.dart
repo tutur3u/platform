@@ -617,6 +617,7 @@ class AssistantRepository {
         content: _latestUserText(messages),
         attachments: nativeAttachments,
         clientRequestId: requestId,
+        miraMode: true,
       )) {
         if (event is ChatStreamAssistantDeltaEvent) {
           if (!assistantStarted) {

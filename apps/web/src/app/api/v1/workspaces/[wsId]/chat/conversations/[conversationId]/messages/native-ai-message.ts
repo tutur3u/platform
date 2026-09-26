@@ -50,12 +50,14 @@ export function streamNativeAiConversationResponse({
   auth,
   context,
   conversation,
+  miraMode,
   request,
   userMessage,
 }: {
   auth: SessionAuthContext;
   context: ChatRouteContext;
   conversation: ChatConversation;
+  miraMode: boolean;
   request: NextRequest;
   userMessage: ChatMessage;
 }) {
@@ -73,6 +75,7 @@ export function streamNativeAiConversationResponse({
           auth,
           context,
           conversation,
+          miraMode,
           onDelta: (delta) => write({ delta, type: 'assistant_delta' }),
           onPart: (part) => write({ part, type: 'assistant_part' }),
           request,
@@ -117,6 +120,7 @@ export async function sendNativeAiConversationMessages({
   auth,
   context,
   conversation,
+  miraMode,
   onDelta,
   onPart,
   request,
@@ -125,6 +129,7 @@ export async function sendNativeAiConversationMessages({
   auth: SessionAuthContext;
   context: ChatRouteContext;
   conversation: ChatConversation;
+  miraMode: boolean;
   onDelta?: (delta: string) => void;
   onPart?: (part: Record<string, unknown>) => void;
   request: NextRequest;
@@ -197,7 +202,7 @@ export async function sendNativeAiConversationMessages({
           ? (settings.credit_ws_id ?? undefined)
           : (settings.credit_ws_id ?? context.normalizedWsId),
       messages: aiMessages,
-      miraMode: false,
+      miraMode,
       model: normalizeNativeAiModel(settings.model_id),
       observabilityContext: buildNativeAiObservabilityContext(
         privateMessages ?? []

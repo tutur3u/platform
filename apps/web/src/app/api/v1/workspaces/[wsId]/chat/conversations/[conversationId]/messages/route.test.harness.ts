@@ -5,7 +5,7 @@ vi.mock('server-only', () => ({}));
 export const mocks = {
   auth: {
     supabase: null as unknown,
-    user: { id: 'user-1' },
+    user: { email: 'test@tuturuuu.com', id: 'user-1' },
   },
   callPrivateChatRpc: vi.fn(),
   cancelExternalChatReply: vi.fn(),
@@ -197,13 +197,14 @@ export const assistantAiRow: {
   prompt_tokens: 7,
 };
 
-export function createRequest() {
+export function createRequest({ miraMode = false } = {}) {
   return new Request(
     'http://localhost/api/v1/workspaces/workspace-1/chat/conversations/conversation-1/messages',
     {
       body: JSON.stringify({
         clientRequestId: '11111111-1111-4111-8111-111111111111',
         content: 'hello',
+        ...(miraMode ? { miraMode: true } : {}),
       }),
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
@@ -274,6 +275,7 @@ function mockRouteContext() {
 
 export function resetMessageRouteMocks() {
   vi.clearAllMocks();
+  mocks.auth.user.email = 'test@tuturuuu.com';
   mocks.isExternalChatConversation.mockResolvedValue(false);
   mocks.getAiChatId.mockReturnValue(null);
   mocks.isAiChatConversationId.mockReturnValue(false);

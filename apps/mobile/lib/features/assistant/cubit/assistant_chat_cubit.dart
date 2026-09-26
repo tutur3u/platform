@@ -341,7 +341,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         chatId = created.id;
         await _preferences.saveChatId(wsId, chatId);
         emit(state.copyWith(chat: created, storedChatId: chatId));
-        await refreshHistory();
+        // History is secondary to the first response. Refresh it without
+        // delaying the stream after a conversation is created.
+        unawaited(refreshHistory());
       }
 
       final shouldAppendUserMessage =
