@@ -8767,4 +8767,46 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get requiredMfaSignInAgain => 'Đăng nhập lại';
+
+  @override
+  String get appsHubNotesDescription => 'Ghi lại ý tưởng và liên kết với công việc.';
+
+  @override
+  String get notesTitle => 'Ghi chú';
+
+  @override
+  String get notesNew => 'Ghi chú mới';
+
+  @override
+  String get notesArchive => 'Lưu trữ ghi chú';
+
+  @override
+  String get notesSearch => 'Tìm ghi chú';
+
+  @override
+  String get notesEmpty => 'Chưa có ghi chú. Hãy ghi lại ý tưởng đầu tiên.';
+
+  @override
+  String get notesUntitled => 'Ghi chú chưa đặt tên';
+
+  @override
+  String get notesStartWriting => 'Bắt đầu viết...';
+
+  @override
+  String get notesInsertLink => 'Chèn liên kết';
+
+  @override
+  String get notesLinkText => 'Văn bản liên kết';
+
+  @override
+  String get notesLinkUrl => 'Liên kết đến công việc, sự kiện, cuộc họp hoặc trang web';
+
+  @override
+  String get notesInsertButton => 'Chèn';
+
+  @override
+  String get notesLoadError => 'Không thể tải ghi chú. Kéo xuống để thử lại.';
+
+  @override
+  String get notesSaveError => 'Không thể lưu ghi chú. Nội dung bạn sửa vẫn còn ở đây.';
 }

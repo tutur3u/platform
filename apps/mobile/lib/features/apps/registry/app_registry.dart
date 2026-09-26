@@ -17,6 +17,7 @@ import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/inventory/view/inventory_page.dart';
 import 'package:mobile/features/mail/mail_module.dart';
 import 'package:mobile/features/meet/view/meet_portal_page.dart';
+import 'package:mobile/features/notes/notes_page.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/tasks/view/task_list_page.dart';
@@ -35,6 +36,7 @@ class AppRegistry {
     'calendar',
     'finance',
     'meet',
+    'notes',
   };
 
   static const Set<String> experimentalModuleIds = {
@@ -113,6 +115,15 @@ class AppRegistry {
       pageBuilder: _pageDocuments,
       miniAppNavItems: _documentsMiniNav,
       isVisible: _showDocumentsModule,
+    ),
+    AppModule(
+      id: 'notes',
+      route: Routes.notes,
+      icon: Icons.note_alt_outlined,
+      labelBuilder: _labelNotes,
+      pageBuilder: _pageNotes,
+      miniAppNavItems: _notesMiniNav,
+      isPinned: true,
     ),
     AppModule(
       id: 'cms',
@@ -343,6 +354,15 @@ class AppRegistry {
       route: Routes.documents,
       icon: Icons.description_outlined,
       labelBuilder: _labelDocuments,
+    ),
+  ];
+
+  static const List<MiniAppNavItem> _notesMiniNav = [
+    MiniAppNavItem(
+      id: 'notes_home',
+      route: Routes.notes,
+      icon: Icons.note_alt_outlined,
+      labelBuilder: _labelNotes,
     ),
   ];
 
@@ -583,6 +603,7 @@ class AppRegistry {
   static String _labelFinance(AppLocalizations l10n) => l10n.navFinance;
   static String _labelDrive(AppLocalizations l10n) => l10n.driveTitle;
   static String _labelDocuments(AppLocalizations l10n) => l10n.documentsTitle;
+  static String _labelNotes(AppLocalizations l10n) => l10n.notesTitle;
   static String _labelCms(AppLocalizations l10n) => l10n.cmsTitleApp;
   static String _labelEducation(AppLocalizations l10n) => l10n.educationTitle;
   static String _labelCrm(AppLocalizations l10n) => l10n.crmTitle;
@@ -618,6 +639,7 @@ class AppRegistry {
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();
   static Widget _pageDrive(BuildContext context) => const DrivePage();
   static Widget _pageDocuments(BuildContext context) => const DocumentsPage();
+  static Widget _pageNotes(BuildContext context) => const NotesPage();
   static Widget _pageCms(BuildContext context) => const CmsPage();
   static Widget _pageEducation(BuildContext context) => const EducationPage();
   static Widget _pageCrm(BuildContext context) => const CrmPage();

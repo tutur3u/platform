@@ -3553,5 +3553,19 @@
     "adminAccountsMfaPolicyDescription": "Requiring MFA invalidates previous verification. Making MFA optional keeps existing authenticators; reset them separately to remove them.",
     "requiredMfaRecoveryTitle": "Sign in again to secure your account",
     "requiredMfaRecoveryDescription": "Your administrator reset account security. Sign in again before setting up or verifying an authenticator.",
-    "requiredMfaSignInAgain": "Sign in again"
+    "requiredMfaSignInAgain": "Sign in again",
+    "appsHubNotesDescription": "Capture ideas and connect them to your work.",
+    "notesTitle": "Notes",
+    "notesNew": "New note",
+    "notesArchive": "Archive note",
+    "notesSearch": "Search notes",
+    "notesEmpty": "No notes yet. Capture your first idea.",
+    "notesUntitled": "Untitled note",
+    "notesStartWriting": "Start writing...",
+    "notesInsertLink": "Insert link",
+    "notesLinkText": "Link text",
+    "notesLinkUrl": "Link to a task, event, meeting or web page",
+    "notesInsertButton": "Insert",
+    "notesLoadError": "Could not load notes. Pull to retry.",
+    "notesSaveError": "Could not save this note. Your edits are still here."
 }

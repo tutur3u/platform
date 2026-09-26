@@ -572,6 +572,13 @@ export async function WorkspaceNavigationLinks({
       icon: createDashboardNavigationIcon('SquareChevronRight', 'h-5 w-5'),
       children: [
         {
+          id: 'notes',
+          title: t('sidebar_tabs.notes'),
+          href: `/${personalOrWsId}/notes`,
+          icon: createDashboardNavigationIcon('NotebookPen', 'h-5 w-5'),
+          preferenceSectionLabel: sidebarSections.workTools,
+        },
+        {
           id: 'documents',
           title: t('sidebar_tabs.documents'),
           href: `/${personalOrWsId}/documents`,

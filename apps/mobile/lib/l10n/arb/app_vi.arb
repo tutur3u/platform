@@ -3557,5 +3557,19 @@
     "adminAccountsMfaPolicyDescription": "Bắt buộc xác thực hai bước sẽ yêu cầu xác minh lại. Khi không bắt buộc, các phương thức hiện có vẫn được giữ; hãy đặt lại riêng nếu muốn xóa.",
     "requiredMfaRecoveryTitle": "Đăng nhập lại để bảo vệ tài khoản",
     "requiredMfaRecoveryDescription": "Quản trị viên đã đặt lại bảo mật tài khoản. Hãy đăng nhập lại trước khi thiết lập hoặc xác minh ứng dụng xác thực.",
-    "requiredMfaSignInAgain": "Đăng nhập lại"
+    "requiredMfaSignInAgain": "Đăng nhập lại",
+    "appsHubNotesDescription": "Ghi lại ý tưởng và liên kết với công việc.",
+    "notesTitle": "Ghi chú",
+    "notesNew": "Ghi chú mới",
+    "notesArchive": "Lưu trữ ghi chú",
+    "notesSearch": "Tìm ghi chú",
+    "notesEmpty": "Chưa có ghi chú. Hãy ghi lại ý tưởng đầu tiên.",
+    "notesUntitled": "Ghi chú chưa đặt tên",
+    "notesStartWriting": "Bắt đầu viết...",
+    "notesInsertLink": "Chèn liên kết",
+    "notesLinkText": "Văn bản liên kết",
+    "notesLinkUrl": "Liên kết đến công việc, sự kiện, cuộc họp hoặc trang web",
+    "notesInsertButton": "Chèn",
+    "notesLoadError": "Không thể tải ghi chú. Kéo xuống để thử lại.",
+    "notesSaveError": "Không thể lưu ghi chú. Nội dung bạn sửa vẫn còn ở đây."
 }

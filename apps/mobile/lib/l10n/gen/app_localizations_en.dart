@@ -8797,4 +8797,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get requiredMfaSignInAgain => 'Sign in again';
+
+  @override
+  String get appsHubNotesDescription => 'Capture ideas and connect them to your work.';
+
+  @override
+  String get notesTitle => 'Notes';
+
+  @override
+  String get notesNew => 'New note';
+
+  @override
+  String get notesArchive => 'Archive note';
+
+  @override
+  String get notesSearch => 'Search notes';
+
+  @override
+  String get notesEmpty => 'No notes yet. Capture your first idea.';
+
+  @override
+  String get notesUntitled => 'Untitled note';
+
+  @override
+  String get notesStartWriting => 'Start writing...';
+
+  @override
+  String get notesInsertLink => 'Insert link';
+
+  @override
+  String get notesLinkText => 'Link text';
+
+  @override
+  String get notesLinkUrl => 'Link to a task, event, meeting or web page';
+
+  @override
+  String get notesInsertButton => 'Insert';
+
+  @override
+  String get notesLoadError => 'Could not load notes. Pull to retry.';
+
+  @override
+  String get notesSaveError => 'Could not save this note. Your edits are still here.';
 }
