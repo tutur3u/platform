@@ -16,7 +16,6 @@ class AssistantComposerDock extends StatelessWidget {
     required this.liveState,
     required this.liveUiState,
     required this.shellState,
-    this.repository,
     required this.isFullscreen,
     required this.bottomInset,
     required this.isPersonalWorkspace,
@@ -30,6 +29,7 @@ class AssistantComposerDock extends StatelessWidget {
     required this.onMicrophoneTap,
     required this.onSend,
     required this.onRemoveAttachment,
+    this.repository,
     super.key,
   });
 

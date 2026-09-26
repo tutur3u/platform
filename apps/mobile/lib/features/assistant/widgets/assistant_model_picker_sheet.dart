@@ -120,25 +120,25 @@ class _AssistantModelPickerSheetState extends State<AssistantModelPickerSheet> {
 
   List<AssistantGatewayModel> get _visible {
     final query = _search.text.trim().toLowerCase();
-    return widget.models
-        .where(
-          (model) =>
-              (_provider == null || model.provider == _provider) &&
-              (!_favoritesOnly || _favorites.contains(model.value)) &&
-              (!_hideLocked || widget.isAllowed(model)) &&
-              '${model.provider} ${model.label} ${model.description ?? ''} ${model.tags.join(' ')}'
-                  .toLowerCase()
-                  .contains(query),
-        )
-        .toList()
-      ..sort((a, b) {
-        final favorite =
-            (_favorites.contains(b.value) ? 1 : 0) -
-            (_favorites.contains(a.value) ? 1 : 0);
-        if (favorite != 0) return favorite;
-        final provider = a.provider.compareTo(b.provider);
-        return provider != 0 ? provider : a.label.compareTo(b.label);
-      });
+    return widget.models.where((model) {
+      final searchable = [
+        model.provider,
+        model.label,
+        model.description ?? '',
+        ...model.tags,
+      ].join(' ').toLowerCase();
+      return (_provider == null || model.provider == _provider) &&
+          (!_favoritesOnly || _favorites.contains(model.value)) &&
+          (!_hideLocked || widget.isAllowed(model)) &&
+          searchable.contains(query);
+    }).toList()..sort((a, b) {
+      final favorite =
+          (_favorites.contains(b.value) ? 1 : 0) -
+          (_favorites.contains(a.value) ? 1 : 0);
+      if (favorite != 0) return favorite;
+      final provider = a.provider.compareTo(b.provider);
+      return provider != 0 ? provider : a.label.compareTo(b.label);
+    });
   }
 
   @override
