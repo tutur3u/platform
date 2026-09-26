@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0](https://github.com/tutur3u/platform/compare/satellite-v0.22.0...satellite-v0.23.0) (2026-09-26)
+
+
+### Features
+
+* **education:** adopt satellite shells for Learn and Teach ([4e88589](https://github.com/tutur3u/platform/commit/4e88589bbee5def0d9d1b8d8882f93c18334c825)) ([#5533](https://github.com/tutur3u/platform/issues/5533)) ([e1dba1e](https://github.com/tutur3u/platform/commit/e1dba1e2ce2a85b84bd3e69253698d2f37694e6a))
+
 ## [0.22.0](https://github.com/tutur3u/platform/compare/satellite-v0.21.0...satellite-v0.22.0) (2026-09-25)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/tutur3u/platform/compare/meet-core-v1.1.0...meet-core-v1.2.0) (2026-09-26)
+
+
+### Features
+
+* **parley:** add native scenario admin and session entry points ([3351094](https://github.com/tutur3u/platform/commit/3351094d9f8c269e83b67f24dc20906649b142c1)) ([#5531](https://github.com/tutur3u/platform/issues/5531)) ([88610f7](https://github.com/tutur3u/platform/commit/88610f7834a70e30b4c4b2c5a5f26b1beae1a073))
+
 ## [1.1.0](https://github.com/tutur3u/platform/compare/meet-core-v1.0.0...meet-core-v1.1.0) (2026-09-25)
 
 

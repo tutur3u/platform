@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/learn-v0.24.0...learn-v0.25.0) (2026-09-26)
+
+
+### Features
+
+* **education:** adopt satellite shells for Learn and Teach ([4e88589](https://github.com/tutur3u/platform/commit/4e88589bbee5def0d9d1b8d8882f93c18334c825)) ([#5533](https://github.com/tutur3u/platform/issues/5533)) ([e1dba1e](https://github.com/tutur3u/platform/commit/e1dba1e2ce2a85b84bd3e69253698d2f37694e6a))
+
+
+### Bug Fixes
+
+* **education:** label satellite navigation in Learn and Teach ([7728149](https://github.com/tutur3u/platform/commit/77281496b86def6f02afaaabea0fb39a89557717)) ([#5536](https://github.com/tutur3u/platform/issues/5536)) ([d76aa49](https://github.com/tutur3u/platform/commit/d76aa49d93303156d900c872ada803c43e1c8530))
+* **education:** translate satellite shell controls ([4ebe6f7](https://github.com/tutur3u/platform/commit/4ebe6f7c213d82a903f56c257aea9f04ab7676e0)) ([#5538](https://github.com/tutur3u/platform/issues/5538)) ([ea043e5](https://github.com/tutur3u/platform/commit/ea043e5f42f157eb1eded660bc55b0752e6514f5))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/learn-v0.23.0...learn-v0.24.0) (2026-09-25)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.27.1](https://github.com/tutur3u/platform/compare/infra-v0.27.0...infra-v0.27.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **infrastructure:** authorize satellite API clients ([4f2a3d1](https://github.com/tutur3u/platform/commit/4f2a3d1886669cae83d64d2b0c53669f2fe31674)) ([#5547](https://github.com/tutur3u/platform/issues/5547)) ([d877c6b](https://github.com/tutur3u/platform/commit/d877c6bc7b47b22e6f234adee7598a26ea7c3357))
+* **infrastructure:** honor app sessions across authorization helpers ([cc0de17](https://github.com/tutur3u/platform/commit/cc0de17d00cf2859b587d62d65f758dd2103df3f)) ([#5556](https://github.com/tutur3u/platform/issues/5556)) ([f67ad63](https://github.com/tutur3u/platform/commit/f67ad6369040b473490af0b1bacdeb0d1a09b464))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/infra-v0.26.0...infra-v0.27.0) (2026-09-25)
 
 

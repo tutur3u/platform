@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.16.1](https://github.com/tutur3u/platform/compare/ai-v0.16.0...ai-v0.16.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **assistant:** address media and discovery review issues ([28996d3](https://github.com/tutur3u/platform/commit/28996d3c2aa8dab47d974856620bd1989f3233bd))
+* **mobile:** streamline assistant media and model selection ([c0b3583](https://github.com/tutur3u/platform/commit/c0b3583ef0d6c77633444f6d36b484c89e65da22)) ([#5539](https://github.com/tutur3u/platform/issues/5539)) ([73a9381](https://github.com/tutur3u/platform/commit/73a938103504e7bd93200eee08d6b6410af5ab72))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/ai-v0.15.0...ai-v0.16.0) (2026-09-25)
 
 

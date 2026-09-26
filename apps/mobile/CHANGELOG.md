@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/mobile-v0.13.1...mobile-v0.14.0) (2026-09-26)
+
+
+### Features
+
+* **mobile:** configure app lock delay ([df54f42](https://github.com/tutur3u/platform/commit/df54f428717277c492d981dff296ebe17401933d))
+* **mobile:** configure app lock timing ([#5558](https://github.com/tutur3u/platform/issues/5558)) ([d3474d2](https://github.com/tutur3u/platform/commit/d3474d24fe96753e01edc67fc1dc876251e41a01))
+* **mobile:** expand Assistant model picker parity ([a5335fe](https://github.com/tutur3u/platform/commit/a5335febf7b3f8898d7d2a34186355897946f8bc)) ([#5542](https://github.com/tutur3u/platform/issues/5542)) ([8a4115d](https://github.com/tutur3u/platform/commit/8a4115d3d5e345e029ee4b0c019f349625583db3))
+* **mobile:** make Notes compact and readable ([c5e6ace](https://github.com/tutur3u/platform/commit/c5e6ace651635fcc4eb448479dee0587eb8abf1e)) ([#5551](https://github.com/tutur3u/platform/issues/5551)) ([ca357f9](https://github.com/tutur3u/platform/commit/ca357f936a1f0660a0e1148ef403314b356a230c))
+* **mobile:** preview Chat media attachments ([c181038](https://github.com/tutur3u/platform/commit/c181038dd2f3e8dd25efbfbd7b0a49183bdf3ce7)) ([#5553](https://github.com/tutur3u/platform/issues/5553)) ([f6045a7](https://github.com/tutur3u/platform/commit/f6045a75fb935dd6e44bdebe24b7f57cfbce0f53))
+* **mobile:** show and limit cached storage by category ([de7292a](https://github.com/tutur3u/platform/commit/de7292ae2f0fbc13e7f5a6dc3f1a442c390b5726))
+* **mobile:** visualize and limit cached storage ([#5560](https://github.com/tutur3u/platform/issues/5560)) ([4b9989b](https://github.com/tutur3u/platform/commit/4b9989b23ba5e3b41e298550aa80277c09e6a7f7))
+* **notes:** add synced workspace notes on web and mobile ([47adf2e](https://github.com/tutur3u/platform/commit/47adf2e9a353e8f5f20f003570f0166b92f9a89b))
+* **notes:** add workspace Notes on web and mobile ([#5535](https://github.com/tutur3u/platform/issues/5535)) ([eeee849](https://github.com/tutur3u/platform/commit/eeee8494ba1198fc098d03cee34276dd40d39103))
+* **notes:** link tasks events and meetings from notes ([6596c64](https://github.com/tutur3u/platform/commit/6596c641a81b8823f48acb2b08d65d7ba0d20ffb))
+* **notes:** link tasks, events, and meetings ([#5543](https://github.com/tutur3u/platform/issues/5543)) ([6304aae](https://github.com/tutur3u/platform/commit/6304aaef3d7a8a52d2d62ad5c66e3127595aa5d7))
+
+
+### Bug Fixes
+
+* **assistant:** address media and discovery review issues ([28996d3](https://github.com/tutur3u/platform/commit/28996d3c2aa8dab47d974856620bd1989f3233bd))
+* **mobile:** await streamed upload response ([a65f01e](https://github.com/tutur3u/platform/commit/a65f01e1cbe37000cee85607e2d3b311b893a023))
+* **mobile:** clarify calendar reminder notifications ([cc8bb1b](https://github.com/tutur3u/platform/commit/cc8bb1bb937dc0506babe49fab489e83ece06e86))
+* **mobile:** clear floating header in Apps sorting ([0ab680e](https://github.com/tutur3u/platform/commit/0ab680ede731224d1126aa247221fed5e8dbace6))
+* **mobile:** improve Assistant voice and gallery attachments ([#5534](https://github.com/tutur3u/platform/issues/5534)) ([fab87d7](https://github.com/tutur3u/platform/commit/fab87d7e51ba0ef36a9d53d89a748407942e89d0))
+* **mobile:** improve assistant voice and media attachments ([f733f5b](https://github.com/tutur3u/platform/commit/f733f5b981fd90bcbedb438e4b4ae7eb3cc4551c))
+* **mobile:** keep Apps sorting below floating header ([#5557](https://github.com/tutur3u/platform/issues/5557)) ([4c55c11](https://github.com/tutur3u/platform/commit/4c55c11edf5db7746a553dd67373f8ea7c701def))
+* **mobile:** keep cached Finance overview visible during refresh ([f9609ac](https://github.com/tutur3u/platform/commit/f9609ac8b4b2fa9763a79a47d1b275b7ee488ef0))
+* **mobile:** make calendar reminders name events and lead times ([#5555](https://github.com/tutur3u/platform/issues/5555)) ([c49e07f](https://github.com/tutur3u/platform/commit/c49e07f92230a2b30f63e1b6d41cc8dfdd9ca96e))
+* **mobile:** remove duplicate CMS chrome ([45b24b8](https://github.com/tutur3u/platform/commit/45b24b828b71af0b31391509bb1c552265ad35c5)) ([#5552](https://github.com/tutur3u/platform/issues/5552)) ([9e41876](https://github.com/tutur3u/platform/commit/9e41876a118f8f6a7f6894576c202e036321fe33))
+* **mobile:** retain cached Finance overview during refresh ([#5559](https://github.com/tutur3u/platform/issues/5559)) ([416b70d](https://github.com/tutur3u/platform/commit/416b70d5d9275e209516d94e020866fb71508b38))
+* **mobile:** return save result when Notes closes ([8970176](https://github.com/tutur3u/platform/commit/897017609747feeb51cc9be67dc259e3a92b6988))
+* **mobile:** satisfy model picker analyzer style ([330f9c1](https://github.com/tutur3u/platform/commit/330f9c175bd0ede543fcbed7cdcb40a8f4ef09f2))
+* **mobile:** satisfy security dialog lint ([83b63cf](https://github.com/tutur3u/platform/commit/83b63cfe66c7b7cc54714abd1c8b4d3270d16b70))
+* **mobile:** show disk Finance snapshot on forced refresh ([ac7ecc5](https://github.com/tutur3u/platform/commit/ac7ecc57b84702d062f2b9ed6e5a227c06cbe770))
+* **mobile:** streamline assistant media and model selection ([c0b3583](https://github.com/tutur3u/platform/commit/c0b3583ef0d6c77633444f6d36b484c89e65da22)) ([#5539](https://github.com/tutur3u/platform/issues/5539)) ([73a9381](https://github.com/tutur3u/platform/commit/73a938103504e7bd93200eee08d6b6410af5ab72))
+* **notes:** open linked work in native mobile screens ([cbcb5c2](https://github.com/tutur3u/platform/commit/cbcb5c2cbd514ff911ce016153020b3603b8dea8))
+* **notes:** preserve mobile drafts across navigation and workspaces ([0abee33](https://github.com/tutur3u/platform/commit/0abee335035f08a0397492c6659b66d823cbca06))
+
+
+### Performance Improvements
+
+* **mobile:** cache inline Mail media and hand off archive actions ([670a4f6](https://github.com/tutur3u/platform/commit/670a4f66e3b56cd8623e1f22e983cb0745278781)) ([#5554](https://github.com/tutur3u/platform/issues/5554)) ([5445f50](https://github.com/tutur3u/platform/commit/5445f50a194c94bee85ef4fbb5e4d97ad652bfc7))
+* **mobile:** keep cache usage totals during writes ([4853fbf](https://github.com/tutur3u/platform/commit/4853fbf868e2238d301a7d8cc7a96fe2e229bfe1))
+
 ## [0.13.1](https://github.com/tutur3u/platform/compare/mobile-v0.13.0...mobile-v0.13.1) (2026-09-25)
 
 

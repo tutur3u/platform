@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/tutur3u/platform/compare/parley-v1.1.0...parley-v1.2.0) (2026-09-26)
+
+
+### Features
+
+* **parley:** add native scenario admin and session entry points ([3351094](https://github.com/tutur3u/platform/commit/3351094d9f8c269e83b67f24dc20906649b142c1)) ([#5531](https://github.com/tutur3u/platform/issues/5531)) ([88610f7](https://github.com/tutur3u/platform/commit/88610f7834a70e30b4c4b2c5a5f26b1beae1a073))
+
+
+### Bug Fixes
+
+* **parley:** handle admin lookup and scenario authoring edge cases ([647cb0f](https://github.com/tutur3u/platform/commit/647cb0f33a7b5d5a5c217fa344bc8dd5a7e99d2f))
+
 ## [1.1.0](https://github.com/tutur3u/platform/compare/parley-v1.0.0...parley-v1.1.0) (2026-09-25)
 
 

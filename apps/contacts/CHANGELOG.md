@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.23.0](https://github.com/tutur3u/platform/compare/contacts-v0.22.0...contacts-v0.23.0) (2026-09-26)
+
+
+### Features
+
+* **contacts:** improve tutoring workflow and scheduling ([5ee943f](https://github.com/tutur3u/platform/commit/5ee943fa61ff43086496fbcb72ad28f232e02803)) ([#5537](https://github.com/tutur3u/platform/issues/5537)) ([3a3b978](https://github.com/tutur3u/platform/commit/3a3b9785aa5e523aded2c2d03b7de56b864d1b6f))
+* **contacts:** let managers delete unmarked tutoring sessions ([08a8137](https://github.com/tutur3u/platform/commit/08a81378ceb7eb1a21eeb5aee05dc5f745f043d2))
+
+
+### Bug Fixes
+
+* **contacts:** guard tutoring suggestions and content saves ([3dffdba](https://github.com/tutur3u/platform/commit/3dffdba7e21e7f1f3f5f3c626c012140af18b287))
+* **contacts:** honor workspace manager visibility in attendance ([60c2c4d](https://github.com/tutur3u/platform/commit/60c2c4ddd44465431291d5fe53c76332f2de0a27)) ([#5532](https://github.com/tutur3u/platform/issues/5532)) ([300eb11](https://github.com/tutur3u/platform/commit/300eb11bbf7753cdad9ada9f4dc2c4640c1a4509))
+
 ## [0.22.0](https://github.com/tutur3u/platform/compare/contacts-v0.21.0...contacts-v0.22.0) (2026-09-25)
 
 
