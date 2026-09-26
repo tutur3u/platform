@@ -61,6 +61,7 @@ const NAVIGATION_ICON_NAMES = [
   'MailX',
   'Megaphone',
   'MessageCircleIcon',
+  'NotebookPen',
   'Package',
   'PencilRuler',
   'Play',
