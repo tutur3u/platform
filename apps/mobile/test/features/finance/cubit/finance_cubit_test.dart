@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
@@ -98,5 +100,41 @@ void main() {
         );
       },
     );
+
+    test('keeps finance visible during a forced background refresh', () async {
+      final pendingWallets = Completer<List<Wallet>>();
+      var calls = 0;
+      const wallets = [Wallet(id: 'wallet_2', name: 'Main', currency: 'USD')];
+      when(() => repository.getWallets('ws_refresh')).thenAnswer((_) {
+        calls++;
+        return calls == 1 ? Future.value(wallets) : pendingWallets.future;
+      });
+      when(
+        () => repository.getTransactionsInfinite(wsId: 'ws_refresh', limit: 10),
+      ).thenAnswer(
+        (_) async =>
+            const InfiniteTransactionResponse(data: [], hasMore: false),
+      );
+      when(
+        () => repository.getWorkspaceDefaultCurrency('ws_refresh'),
+      ).thenAnswer((_) async => 'USD');
+      when(
+        () => repository.getExchangeRates(),
+      ).thenAnswer((_) async => const []);
+
+      final cubit = FinanceCubit(financeRepository: repository);
+      addTearDown(cubit.close);
+      await cubit.loadFinanceData('ws_refresh');
+
+      final refresh = cubit.loadFinanceData('ws_refresh', forceRefresh: true);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.status, FinanceStatus.loaded);
+      expect(cubit.state.isRefreshing, isTrue);
+      expect(cubit.state.wallets, wallets);
+
+      pendingWallets.complete(wallets);
+      await refresh;
+      expect(cubit.state.isRefreshing, isFalse);
+    });
   });
 }
