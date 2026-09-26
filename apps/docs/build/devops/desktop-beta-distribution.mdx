@@ -95,6 +95,11 @@ browser callback activation leaves the app running. This smoke check does not
 prove authenticated sign-in or interactive Polkit updates. Never label missing platform
 runtime or signing verification as complete.
 
+The separate `mobile-build-windows.yaml` development check runs Flutter setup
+without an Actions cache. If its Windows job remains in `Post Setup Flutter`
+after the artifact upload, inspect the exact job and rerun that workflow on the
+same commit. The post-job cache upload is not evidence that the build failed.
+
 ## Automatic desktop updates
 
 Published desktop builds include `DESKTOP_RELEASE_RUN_ID`, supplied directly by
