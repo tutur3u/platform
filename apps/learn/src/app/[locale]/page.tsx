@@ -1,9 +1,7 @@
-import {
-  getSatelliteAppSession,
-  getSatelliteCurrentUser,
-} from '@tuturuuu/satellite/auth';
+import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { createPageMetadata } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { LearnLanding } from '@/components/learn-landing';
 import { BASE_URL } from '@/constants/common';
 
@@ -29,31 +27,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-function firstNonBlank(values: Array<string | null | undefined>) {
-  for (const value of values) {
-    const trimmed = value?.trim();
-    if (trimmed) return trimmed;
-  }
-
-  return null;
-}
-
 export default async function IndexPage() {
   const appSession = await getSatelliteAppSession('learn');
-  const currentUser = appSession
-    ? await getSatelliteCurrentUser('learn')
-    : null;
-  const userName = firstNonBlank([
-    currentUser?.display_name,
-    currentUser?.full_name,
-    currentUser?.email,
-  ]);
 
-  return (
-    <LearnLanding
-      dashboardHref={appSession ? '/dashboard' : '/login?next=/dashboard'}
-      isAuthenticated={Boolean(appSession)}
-      userName={userName}
-    />
-  );
+  if (appSession) redirect('/dashboard');
+
+  return <LearnLanding dashboardHref="/login?next=/dashboard" />;
 }

@@ -25,7 +25,20 @@ Avoid purple/blue neon, glowing shadows, oversized gradients, low-contrast trans
 
 Hero headings must use wide containers such as `max-w-6xl` and clamp sizing so they stay within 2-3 lines.
 
-## 4. Component Stylings
+## 4. Workspace Shell
+
+Authenticated Learn and Teach workspaces use the shared satellite `SidebarStructure`
+through each app's `[wsId]/structure.tsx`. The workspace layout owns the
+server-side bootstrap, membership gate, invitation state, sidebar cookie state,
+navigation links, notification control, and account menu. Keep app-specific
+controls in the shell actions: Learn's linked-student selector and Teach's theme
+control. Preserve a selected learner when navigating between Learn sections.
+
+The shared shell provides the Tuturuuu brand, app launcher, workspace selector,
+account controls, sidebar behavior, and mobile navigation. Product pages should
+focus on learning or teaching work rather than rebuilding that chrome.
+
+## 5. Component Stylings
 
 - **Buttons:** Rectangular, two-pixel ink borders, theme-safe foreground/background fills, offset shadow, and tactile active translate. Primary actions may use semantic `bg-primary`; supporting actions should use dynamic accent surfaces instead of another plain neutral block.
 - **Cards:** Use hard bordered paper blocks with offset shadows. Use cards for meaningful repeated objects only; do not nest cards inside cards.
@@ -34,17 +47,17 @@ Hero headings must use wide containers such as `max-w-6xl` and clamp sizing so t
 - **Loaders:** Skeleton blocks that match final layout dimensions. Avoid generic circular spinners unless inherited from a shared platform utility.
 - **Empty States:** Small composed classroom cues with a clear next action, not only "No data" text.
 
-## 5. Layout Principles
+## 6. Layout Principles
 
 Use CSS Grid first. Bento grids must use `grid-flow-dense` and mathematically fill their rows with no empty cells. Avoid generic three-equal-card rows; use asymmetric grids, split work loops, and horizontal rhythm. Auth-gated dashboards should stack secondary rails below the main content until there is enough room for every card to keep readable text on one line or wrapped cleanly without clipping. All layouts collapse to one column below 768px and must never create horizontal scroll.
 
 Every major page follows Navigation, Attention, Interest, Desire, and Action. The first viewport should show the product identity immediately while leaving a hint of the next section visible on common desktop and mobile heights.
 
-## 6. Motion & Interaction
+## 7. Motion & Interaction
 
 Use GSAP only in isolated client components. Prefer ScrollTrigger pinning, image scale/fade, and staggered card reveals. Animate only `transform` and `opacity`. Active cards and images must have hover physics through scale or offset-shadow movement. Respect `prefers-reduced-motion`.
 
-## 7. Auth & Platform Ownership
+## 8. Auth & Platform Ownership
 
 Learn and Teach do not own local login portals. Their `/login` routes redirect to `apps/web` with a satellite `returnUrl`, and their `/verify-token` routes complete the local domain session after `apps/web` confirms the current platform account and issues a cross-app token.
 
@@ -61,7 +74,7 @@ owns reusable server-only domain logic, not HTTP traffic.
 `packages/internal-api` selects the Learn or Teach origin for satellite-owned
 contracts and keeps retained Web exceptions on the platform origin.
 
-## 8. Anti-Patterns (Banned)
+## 9. Anti-Patterns (Banned)
 
 - No emojis.
 - No local login portals in Learn or Teach.

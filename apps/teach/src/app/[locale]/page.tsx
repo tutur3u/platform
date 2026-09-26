@@ -1,6 +1,7 @@
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { createPageMetadata } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { TeachHome } from '@/components/teach-home';
 import { BASE_URL } from '@/constants/common';
 
@@ -31,9 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TeachPage() {
   const appSession = await getSatelliteAppSession('teach');
 
-  return (
-    <TeachHome
-      dashboardHref={appSession ? '/dashboard' : '/login?next=/dashboard'}
-    />
-  );
+  if (appSession) redirect('/dashboard');
+
+  return <TeachHome dashboardHref="/login?next=/dashboard" />;
 }
