@@ -51,12 +51,16 @@ export async function PATCH(
         { status: 400 }
       );
     }
-    const supabase = await createClient(request);
+    let supabase = await createClient(request);
     const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Get current user
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
+    const {
+      user,
+      authError: userError,
+      supabase: sessionSupabase,
+    } = await resolveAuthenticatedSessionUser(request);
+    if (sessionSupabase) supabase = sessionSupabase;
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -199,12 +203,16 @@ export async function DELETE(
         { status: 400 }
       );
     }
-    const supabase = await createClient(request);
+    let supabase = await createClient(request);
     const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Get current user
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
+    const {
+      user,
+      authError: userError,
+      supabase: sessionSupabase,
+    } = await resolveAuthenticatedSessionUser(request);
+    if (sessionSupabase) supabase = sessionSupabase;
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

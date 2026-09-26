@@ -96,6 +96,7 @@ describe('task project workspace resolver', () => {
     mocks.createAdminClient.mockResolvedValue(sbAdmin);
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       authError: null,
+      supabase,
       user: { id: USER_ID },
     });
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
@@ -113,6 +114,25 @@ describe('task project workspace resolver', () => {
     expect(boardIdFilter).not.toHaveBeenCalled();
     expect(projectIdsFilter).not.toHaveBeenCalled();
     expect(mocks.verifyWorkspaceMembershipType).not.toHaveBeenCalled();
+  });
+
+  it('verifies membership with the app-session client, not the anonymous cookie client', async () => {
+    const sessionSupabase = {
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({ in: projectIdsFilter })),
+      })),
+    };
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      authError: null,
+      supabase: sessionSupabase,
+      user: { id: USER_ID },
+    });
+
+    await POST(request({ boardId: BOARD_ID }));
+
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledWith(
+      expect.objectContaining({ supabase: sessionSupabase })
+    );
   });
 
   it('rejects malformed JSON', async () => {

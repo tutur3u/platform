@@ -198,7 +198,8 @@ type CandidateTask = {
 
 // Helper: authenticate and restrict to Tuturuuu email
 async function getAuthorizedUser(supabase: TypedSupabaseClient) {
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+  const resolution = await resolveAuthenticatedSessionUser(supabase);
+  const { user, authError } = resolution;
 
   if (authError || !user) {
     return {
@@ -208,15 +209,11 @@ async function getAuthorizedUser(supabase: TypedSupabaseClient) {
     };
   }
 
-  // if (!isValidTuturuuuEmail(user.email)) {
-  //   return {
-  //     kind: 'error' as const,
-  //     status: 403 as const,
-  //     body: { error: 'This feature is limited to Tuturuuu team members.' },
-  //   };
-  // }
-
-  return { kind: 'ok' as const, user };
+  return {
+    kind: 'ok' as const,
+    user,
+    supabase: resolution.supabase ?? supabase,
+  };
 }
 
 // Helper: parse and validate request body
@@ -576,13 +573,12 @@ export async function POST(
 ) {
   try {
     const { wsId: rawWsId } = await params;
-    const supabase = await createClient(req);
-
-    const authResult = await getAuthorizedUser(supabase);
+    const authResult = await getAuthorizedUser(await createClient(req));
     if (authResult.kind === 'error') {
       return NextResponse.json(authResult.body, { status: authResult.status });
     }
     const user = authResult.user;
+    const supabase = authResult.supabase;
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const rawBody = await req.json();

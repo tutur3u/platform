@@ -25,11 +25,13 @@ interface Params {
  */
 export async function POST(_: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
+    let supabase = await createClient();
     const { wsId: rawWsId } = await params;
 
     // Check authentication
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    const { user, supabase: sessionSupabase } =
+      await resolveAuthenticatedSessionUser(supabase);
+    if (sessionSupabase) supabase = sessionSupabase;
 
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

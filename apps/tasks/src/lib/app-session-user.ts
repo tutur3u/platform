@@ -97,12 +97,11 @@ export async function resolveAuthenticatedSessionUser(
   }
 
   const user = createAppSessionUser(verification.claims);
-  const adminSupabase =
-    providedSupabase ??
-    (isRequestLike(requestOrClient) ? undefined : requestOrClient) ??
-    ((await createAdminClient({
-      noCookie: true,
-    })) as TypedSupabaseClient);
+  // A cookie-backed client stays anonymous under an app-session JWT. Never
+  // attach the verified actor to it: RLS queries would still run as anon.
+  const adminSupabase = (await createAdminClient({
+    noCookie: true,
+  })) as TypedSupabaseClient;
   const supabase = attachSupabaseAuthUser(adminSupabase, user);
 
   setLogDrainUserContext({

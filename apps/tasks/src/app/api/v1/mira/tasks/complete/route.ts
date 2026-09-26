@@ -56,8 +56,10 @@ interface TaskList {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    let supabase = await createClient();
+    const { user, supabase: sessionSupabase } =
+      await resolveAuthenticatedSessionUser(supabase);
+    if (sessionSupabase) supabase = sessionSupabase;
 
     if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

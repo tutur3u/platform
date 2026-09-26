@@ -18,10 +18,12 @@ export async function POST(req: Request) {
   const encoder = new TextEncoder();
 
   try {
-    const supabase = await createClient();
+    let supabase = await createClient();
 
     // Check authentication
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    const { user, supabase: sessionSupabase } =
+      await resolveAuthenticatedSessionUser(supabase);
+    if (sessionSupabase) supabase = sessionSupabase;
 
     if (!user || !isValidTuturuuuEmail(user.email)) {
       return new Response(
