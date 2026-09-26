@@ -213,8 +213,9 @@ class AssistantRepository {
       tags: [_assistantMetadataCacheTag, 'module:assistant'],
       fetch: () async {
         final response = await _apiClient.getJson('/api/v1/mira/soul');
-        return AssistantSoul.fromJson(response['soul'] as Map<String, dynamic>?)
-            .toJson();
+        return AssistantSoul.fromJson(
+          response['soul'] as Map<String, dynamic>?,
+        ).toJson();
       },
     );
     return result.data ?? const AssistantSoul();
