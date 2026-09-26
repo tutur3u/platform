@@ -26,10 +26,12 @@ class NotesPage extends StatefulWidget {
   final NoteRepository? repository;
 
   @override
-  State<NotesPage> createState() => _NotesPageState();
+  State<NotesPage> createState() => NotesPageState();
 }
 
-class _NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
+final notesPageKey = GlobalKey<NotesPageState>();
+
+class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   late final NoteRepository _repository = widget.repository ?? NoteRepository();
   final _title = TextEditingController();
   final _search = TextEditingController();
@@ -38,10 +40,16 @@ class _NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   Future<bool> _saveQueue = Future<bool>.value(true);
   List<NoteRecord> _notes = const [];
   NoteRecord? _selected;
+  String? _selectedWsId;
   String? _error;
   bool _loading = false;
   bool _saving = false;
   bool _initializingEditor = false;
+  bool _dirty = false;
+  String _lastTitle = '';
+  String _lastDocument = '';
+  int _editRevision = 0;
+  int _queuedRevision = -1;
   int _requestVersion = 0;
 
   String? get _wsId =>
@@ -73,7 +81,9 @@ class _NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     _title.dispose();
     _search.dispose();
     _editor.dispose();
-    if (widget.repository == null) _repository.dispose();
+    if (widget.repository == null) {
+      unawaited(_saveQueue.then((_) => _repository.dispose()));
+    }
     super.dispose();
   }
 
@@ -117,12 +127,29 @@ class _NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     _initializingEditor = true;
     _title.text = note.title;
     _editor.document = tipTapJsonToQuillDocument(jsonEncode(note.content));
+    _lastTitle = _title.text;
+    _lastDocument = jsonEncode(_editor.document.toDelta().toJson());
     _initializingEditor = false;
-    setState(() => _selected = note);
+    setState(() {
+      _selected = note;
+      _selectedWsId = _wsId;
+      _dirty = false;
+    });
   }
 
   void _scheduleSave() {
     if (_initializingEditor || _selected == null) return;
+    final nextTitle = _title.text;
+    final nextDocument = jsonEncode(_editor.document.toDelta().toJson());
+    if (nextTitle == _lastTitle && nextDocument == _lastDocument) return;
+    _lastTitle = nextTitle;
+    _lastDocument = nextDocument;
+    _dirty = true;
+    _editRevision++;
+    _armSaveTimer();
+  }
+
+  void _armSaveTimer() {
     _saveTimer?.cancel();
     _saveTimer = Timer(
       const Duration(milliseconds: 700),
@@ -131,26 +158,45 @@ class _NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   }
 
   Future<bool> _save() {
-    final next = _saveQueue.then((_) => _performSave());
-    _saveQueue = next.catchError((Object _) => false);
-    return next;
-  }
-
-  Future<bool> _performSave() async {
-    final wsId = _wsId;
-    final note = _selected;
-    if (wsId == null || note == null) return true;
     _saveTimer?.cancel();
+    final wsId = _selectedWsId;
+    final note = _selected;
+    if (!_dirty || wsId == null || note == null) return _saveQueue;
+    if (_queuedRevision == _editRevision) return _saveQueue;
     final encoded = quillDocumentToTipTapJson(_editor.document);
     final content = encoded == null
         ? <String, dynamic>{'type': 'doc', 'content': <Object>[]}
         : (jsonDecode(encoded) as Map).cast<String, dynamic>();
     final title = _title.text.trim();
+    final revision = _editRevision;
+    _queuedRevision = revision;
+    final next = _saveQueue.then(
+      (_) => _performSave(wsId, note, title, content, revision),
+    );
+    _saveQueue = next.catchError((Object _) => false);
+    return next;
+  }
+
+  Future<bool> _performSave(
+    String wsId,
+    NoteRecord note,
+    String title,
+    Map<String, dynamic> content,
+    int revision,
+  ) async {
     if (title == note.title &&
         jsonEncode(content) == jsonEncode(note.content)) {
+      if (mounted &&
+          _selectedWsId == wsId &&
+          _selected?.id == note.id &&
+          _editRevision == revision) {
+        _dirty = false;
+      }
       return true;
     }
-    setState(() => _saving = true);
+    if (mounted && _selectedWsId == wsId && _selected?.id == note.id) {
+      setState(() => _saving = true);
+    }
     var savedSuccessfully = false;
     try {
       final saved = await _repository.update(
@@ -159,33 +205,45 @@ class _NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
         title: title,
         content: content,
       );
-      if (!mounted) return true;
-      setState(() {
-        _selected = saved;
-        _notes = [
-          for (final item in _notes)
-            if (item.id == saved.id) saved else item,
-        ];
-        _error = null;
-      });
+      if (mounted &&
+          _wsId == wsId &&
+          _selectedWsId == wsId &&
+          _selected?.id == note.id) {
+        setState(() {
+          _selected = saved;
+          _notes = [
+            for (final item in _notes)
+              if (item.id == saved.id) saved else item,
+          ];
+          if (_editRevision == revision) _dirty = false;
+          _error = null;
+        });
+      }
       savedSuccessfully = true;
       return true;
     } on Object {
-      if (mounted) setState(() => _error = context.l10n.notesSaveError);
+      if (_queuedRevision == revision) _queuedRevision = -1;
+      if (mounted &&
+          _wsId == wsId &&
+          _selectedWsId == wsId &&
+          _selected?.id == note.id) {
+        setState(() => _error = context.l10n.notesSaveError);
+      }
       return false;
     } finally {
-      if (mounted) setState(() => _saving = false);
-      if (mounted && savedSuccessfully) {
-        unawaited(_refresh());
-        final currentContent = quillDocumentToTipTapJson(_editor.document);
-        if (_title.text.trim() != _selected?.title ||
-            (currentContent ?? '{"type":"doc","content":[]}') !=
-                jsonEncode(content)) {
-          _scheduleSave();
+      if (mounted &&
+          _wsId == wsId &&
+          _selectedWsId == wsId &&
+          _selected?.id == note.id) {
+        setState(() => _saving = false);
+        if (savedSuccessfully && _dirty && _editRevision != revision) {
+          _armSaveTimer();
         }
       }
     }
   }
+
+  Future<bool> savePending() => _save();
 
   Future<void> _create() async {
     final wsId = _wsId;
@@ -193,7 +251,7 @@ class _NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     if (!(await _save())) return;
     try {
       final note = await _repository.create(wsId);
-      if (!mounted) return;
+      if (!mounted || _wsId != wsId) return;
       setState(() => _notes = [note, ..._notes]);
       _select(note);
       unawaited(_refresh());
@@ -209,7 +267,7 @@ class _NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     if (!(await _save())) return;
     try {
       await _repository.update(wsId, note, archived: true);
-      if (!mounted) return;
+      if (!mounted || _wsId != wsId || _selected?.id != note.id) return;
       setState(() {
         _notes = _notes.where((item) => item.id != note.id).toList();
         _selected = null;
@@ -303,9 +361,14 @@ class _NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
         .toList();
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (a, b) => a.currentWorkspace?.id != b.currentWorkspace?.id,
-      listener: (context, state) {
+      listener: (context, state) async {
+        final nextWsId = state.currentWorkspace?.id;
+        _requestVersion++;
+        if (!(await _save()) || !mounted || _wsId != nextWsId) return;
         setState(() {
           _selected = null;
+          _selectedWsId = null;
+          _dirty = false;
           _notes = const [];
         });
         unawaited(_load());

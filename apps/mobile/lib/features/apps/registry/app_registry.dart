@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
@@ -28,6 +29,18 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppRegistry {
   const AppRegistry._();
+
+  static List<GoRoute> get routes => [
+    for (final module in allModules)
+      GoRoute(
+        path: module.route,
+        builder: (context, _) => module.pageBuilder(context),
+        onExit: module.route == Routes.notes
+            ? (context, _) async =>
+                  await notesPageKey.currentState?.savePending() ?? true
+            : null,
+      ),
+  ];
 
   static const Set<String> coreModuleIds = {
     'mail',
@@ -639,7 +652,8 @@ class AppRegistry {
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();
   static Widget _pageDrive(BuildContext context) => const DrivePage();
   static Widget _pageDocuments(BuildContext context) => const DocumentsPage();
-  static Widget _pageNotes(BuildContext context) => const NotesPage();
+  static Widget _pageNotes(BuildContext context) =>
+      NotesPage(key: notesPageKey);
   static Widget _pageCms(BuildContext context) => const CmsPage();
   static Widget _pageEducation(BuildContext context) => const EducationPage();
   static Widget _pageCrm(BuildContext context) => const CrmPage();

@@ -78,7 +78,7 @@ export async function PUT(
       .eq('ws_id', wsId)
       .eq('creator_id', user.id)
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (updateError) {
       console.error('Error updating note:', updateError);
