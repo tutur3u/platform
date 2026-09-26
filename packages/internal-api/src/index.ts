@@ -1275,7 +1275,6 @@ export {
   type UpdateMindBoardPayload,
   updateMindBoard,
 } from './mind';
-export * from './notes';
 export {
   type AccountNotificationChannel,
   type AccountNotificationEventType,

@@ -8,7 +8,7 @@ import {
   listWorkspaceNotes,
   updateWorkspaceNote,
   type WorkspaceNote,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/internal-api/notes';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
