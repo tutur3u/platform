@@ -17070,6 +17070,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not save this note. Your edits are still here.'**
   String get notesSaveError;
+
+  /// No description provided for @cacheStorageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage and cache'**
+  String get cacheStorageTitle;
+
+  /// No description provided for @cacheStorageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'See cached data by category and choose how much space it can use.'**
+  String get cacheStorageDescription;
+
+  /// No description provided for @cacheStorageLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum cached data'**
+  String get cacheStorageLimit;
+
+  /// No description provided for @cacheStorageClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear cached data'**
+  String get cacheStorageClear;
+
+  /// No description provided for @cacheStorageClearDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded data will be fetched again when needed. Pending offline changes are kept.'**
+  String get cacheStorageClearDescription;
+
+  /// No description provided for @cacheStorageError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read or update cached data. Try again.'**
+  String get cacheStorageError;
+
+  /// No description provided for @cacheStorageEstimateNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated saved data. Encrypted file overhead and system caches may differ.'**
+  String get cacheStorageEstimateNote;
+
+  /// No description provided for @cacheCategoryMailMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail images'**
+  String get cacheCategoryMailMedia;
+
+  /// No description provided for @cacheCategoryMail.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail'**
+  String get cacheCategoryMail;
+
+  /// No description provided for @cacheCategoryMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages and notes'**
+  String get cacheCategoryMessages;
+
+  /// No description provided for @cacheCategoryTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get cacheCategoryTasks;
+
+  /// No description provided for @cacheCategoryCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get cacheCategoryCalendar;
+
+  /// No description provided for @cacheCategoryFinance.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance'**
+  String get cacheCategoryFinance;
+
+  /// No description provided for @cacheCategoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other data'**
+  String get cacheCategoryOther;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -8872,4 +8872,46 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notesSaveError => 'Không thể lưu ghi chú. Nội dung bạn sửa vẫn còn ở đây.';
+
+  @override
+  String get cacheStorageTitle => 'Bộ nhớ và dữ liệu đệm';
+
+  @override
+  String get cacheStorageDescription => 'Xem dữ liệu đệm theo loại và chọn dung lượng tối đa.';
+
+  @override
+  String get cacheStorageLimit => 'Dung lượng dữ liệu đệm tối đa';
+
+  @override
+  String get cacheStorageClear => 'Xóa dữ liệu đệm';
+
+  @override
+  String get cacheStorageClearDescription => 'Dữ liệu đã tải sẽ được tải lại khi cần. Các thay đổi ngoại tuyến đang chờ vẫn được giữ.';
+
+  @override
+  String get cacheStorageError => 'Không thể đọc hoặc cập nhật dữ liệu đệm. Hãy thử lại.';
+
+  @override
+  String get cacheStorageEstimateNote => 'Dung lượng dữ liệu đã lưu ước tính. Dữ liệu mã hóa và bộ nhớ đệm hệ thống có thể khác.';
+
+  @override
+  String get cacheCategoryMailMedia => 'Hình ảnh thư';
+
+  @override
+  String get cacheCategoryMail => 'Thư';
+
+  @override
+  String get cacheCategoryMessages => 'Tin nhắn và ghi chú';
+
+  @override
+  String get cacheCategoryTasks => 'Công việc';
+
+  @override
+  String get cacheCategoryCalendar => 'Lịch';
+
+  @override
+  String get cacheCategoryFinance => 'Tài chính';
+
+  @override
+  String get cacheCategoryOther => 'Dữ liệu khác';
 }

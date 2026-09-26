@@ -9,6 +9,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:path_provider/path_provider.dart';
@@ -35,6 +36,13 @@ class CacheStore {
   static const _resourceBoxName = 'offline_cache_v1';
   static const _mutationBoxName = 'offline_mutations_v1';
   static const _encryptionKeyStorageKey = 'offline-cache-hive-key-v1';
+  static const _maxBytesStorageKey = 'offline-cache-max-bytes-v1';
+  static const allowedMaxBytes = <int>[
+    100 * 1024 * 1024,
+    250 * 1024 * 1024,
+    500 * 1024 * 1024,
+    1024 * 1024 * 1024,
+  ];
   static const _nonPersistentResourceNamespaces = {
     'settings.workspaceSecrets.list',
   };
@@ -45,6 +53,7 @@ class CacheStore {
   late Box<dynamic> _resourceBox;
   late Box<dynamic> _mutationBox;
   bool _initialized = false;
+  int _maxBytes = allowedMaxBytes[1];
   Future<void>? _initialization;
   final Map<String, Future<Object?>> _inFlight = {};
   final Map<String, ({CacheKey key, List<String> tags})> _flightScopes = {};
@@ -101,6 +110,14 @@ class CacheStore {
     final encryptionCipher = await _resolveEncryptionCipher();
     _resourceBox = await _openEncryptedBox(_resourceBoxName, encryptionCipher);
     _mutationBox = await _openEncryptedBox(_mutationBoxName, encryptionCipher);
+    try {
+      final storedMaxBytes = int.tryParse(
+        await _secureStorage.read(key: _maxBytesStorageKey) ?? '',
+      );
+      if (allowedMaxBytes.contains(storedMaxBytes)) _maxBytes = storedMaxBytes!;
+    } on Object {
+      // Cache initialization should not depend on an optional size setting.
+    }
     final nonPersistentKeys = <dynamic>[];
     for (final key in _resourceBox.keys) {
       final raw = _resourceBox.get(key);
@@ -117,6 +134,7 @@ class CacheStore {
       await _resourceBox.delete(key);
     }
     _initialized = true;
+    await _pruneResourceCache();
   }
 
   Future<Directory> _resolveHiveDirectory() async {
@@ -362,6 +380,67 @@ class CacheStore {
     );
     _memory[key.value] = record;
     await _resourceBox.put(key.value, record.toJson());
+    await _pruneResourceCache();
+  }
+
+  Future<CacheStorageSnapshot> storageSnapshot() async {
+    await init();
+    final categories = <CacheStorageCategory, int>{};
+    var total = 0;
+    for (final record in _memory.values) {
+      final bytes = utf8.encode(record.jsonPayload).length;
+      total += bytes;
+      final category = CacheStorageCategory.forNamespace(record.namespace);
+      categories[category] = (categories[category] ?? 0) + bytes;
+    }
+    return CacheStorageSnapshot(
+      totalBytes: total,
+      maxBytes: _maxBytes,
+      categoryBytes: Map.unmodifiable(categories),
+    );
+  }
+
+  Future<void> setMaxStorageBytes(int bytes) async {
+    if (!allowedMaxBytes.contains(bytes)) {
+      throw ArgumentError.value(bytes, 'bytes', 'Unsupported cache limit');
+    }
+    await init();
+    await _secureStorage.write(key: _maxBytesStorageKey, value: '$bytes');
+    _maxBytes = bytes;
+    await _pruneResourceCache();
+  }
+
+  Future<void> clearResourceCache() => clearScope(resourceOnly: true);
+
+  Future<void> _pruneResourceCache() async {
+    final now = DateTime.now();
+    var total = 0;
+    for (final record in _memory.values) {
+      total += utf8.encode(record.jsonPayload).length;
+    }
+    if (total <= _maxBytes) return;
+
+    final surviving = <CachedResourceRecord>[];
+    for (final record in _memory.values.toList(growable: false)) {
+      final bytes = utf8.encode(record.jsonPayload).length;
+      if (!now.isBefore(record.expireAt)) {
+        _advanceKey(record.key);
+        _memory.remove(record.key);
+        await _resourceBox.delete(record.key);
+        total -= bytes;
+        continue;
+      }
+      surviving.add(record);
+    }
+    if (total <= _maxBytes) return;
+    surviving.sort((a, b) => a.fetchedAt.compareTo(b.fetchedAt));
+    for (final record in surviving) {
+      if (total <= _maxBytes) break;
+      _advanceKey(record.key);
+      _memory.remove(record.key);
+      await _resourceBox.delete(record.key);
+      total -= utf8.encode(record.jsonPayload).length;
+    }
   }
 
   Future<void> remove(CacheKey key) async {
@@ -409,6 +488,7 @@ class CacheStore {
     String? userId,
     String? workspaceId,
     String? namespace,
+    bool resourceOnly = false,
   }) async {
     final scope = (userId, workspaceId, namespace);
     _scopeRevisions[scope] = ++_revision;
@@ -434,7 +514,7 @@ class CacheStore {
       }
 
       // Resource-only purges must preserve unrelated queued offline changes.
-      if (namespace != null) return;
+      if (namespace != null || resourceOnly) return;
       final mutationIds = <dynamic>[];
       for (final dynamic key in _mutationBox.keys) {
         final raw = _mutationBox.get(key);

@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mocktail/mocktail.dart';
@@ -61,6 +62,40 @@ void main() {
 
   const key = CacheKey(namespace: 'mail.list', userId: 'a', workspaceId: 'one');
   String decode(Object? value) => value! as String;
+
+  test(
+    'reports category use and clears resources without offline changes',
+    () async {
+      await cacheStore.write(
+        key: key,
+        policy: CachePolicies.detail,
+        payload: 'inbox data',
+      );
+      await cacheStore.savePendingMutation(
+        PendingMutationRecord(
+          id: 'pending-1',
+          feature: 'tasks',
+          method: 'POST',
+          path: '/api/v1/tasks',
+          createdAt: DateTime.utc(2026),
+        ),
+      );
+
+      final snapshot = await cacheStore.storageSnapshot();
+      expect(snapshot.totalBytes, greaterThan(0));
+      expect(snapshot.categoryBytes[CacheStorageCategory.mail], greaterThan(0));
+      expect(snapshot.maxBytes, CacheStore.allowedMaxBytes[1]);
+
+      await cacheStore.setMaxStorageBytes(CacheStore.allowedMaxBytes.first);
+      expect(
+        (await cacheStore.storageSnapshot()).maxBytes,
+        CacheStore.allowedMaxBytes.first,
+      );
+      await cacheStore.clearResourceCache();
+      expect((await cacheStore.storageSnapshot()).totalBytes, 0);
+      expect((await cacheStore.listPendingMutations()).single.id, 'pending-1');
+    },
+  );
 
   test('long mail query keys persist, reopen, and invalidate', () async {
     const user = '11111111-1111-4111-8111-111111111111';

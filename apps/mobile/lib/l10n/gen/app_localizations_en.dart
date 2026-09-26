@@ -8902,4 +8902,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesSaveError => 'Could not save this note. Your edits are still here.';
+
+  @override
+  String get cacheStorageTitle => 'Storage and cache';
+
+  @override
+  String get cacheStorageDescription => 'See cached data by category and choose how much space it can use.';
+
+  @override
+  String get cacheStorageLimit => 'Maximum cached data';
+
+  @override
+  String get cacheStorageClear => 'Clear cached data';
+
+  @override
+  String get cacheStorageClearDescription => 'Downloaded data will be fetched again when needed. Pending offline changes are kept.';
+
+  @override
+  String get cacheStorageError => 'Could not read or update cached data. Try again.';
+
+  @override
+  String get cacheStorageEstimateNote => 'Estimated saved data. Encrypted file overhead and system caches may differ.';
+
+  @override
+  String get cacheCategoryMailMedia => 'Mail images';
+
+  @override
+  String get cacheCategoryMail => 'Mail';
+
+  @override
+  String get cacheCategoryMessages => 'Messages and notes';
+
+  @override
+  String get cacheCategoryTasks => 'Tasks';
+
+  @override
+  String get cacheCategoryCalendar => 'Calendar';
+
+  @override
+  String get cacheCategoryFinance => 'Finance';
+
+  @override
+  String get cacheCategoryOther => 'Other data';
 }
