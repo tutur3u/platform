@@ -2,14 +2,20 @@ import 'dart:typed_data';
 
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_cache.dart';
+import 'package:mobile/features/mail/data/mail_media_cache.dart';
 
 /// Uses the same authenticated, workspace-scoped contract as apps/mail.
 class MailRepository {
-  MailRepository({ApiClient? apiClient, MailCache? cache})
-    : _api = apiClient ?? ApiClient(),
-      _cache = cache ?? MailCache();
+  MailRepository({
+    ApiClient? apiClient,
+    MailCache? cache,
+    MailMediaCache? mediaCache,
+  }) : _api = apiClient ?? ApiClient(),
+       _cache = cache ?? MailCache(),
+       _mediaCache = mediaCache ?? MailMediaCache();
   final ApiClient _api;
   final MailCache _cache;
+  final MailMediaCache _mediaCache;
 
   Future<Map<String, dynamic>?> savedView(String wsId) =>
       _cache.snapshot(wsId, 'view-state');
@@ -115,6 +121,9 @@ class MailRepository {
           'snoozedUntil': snoozedUntil.toUtc().toIso8601String(),
       }),
     );
+    if (thread && (action == 'archive' || action == 'trash')) {
+      await _mediaCache.clearThread(wsId, mailboxId, id);
+    }
   }
 
   Future<Map<String, dynamic>> saveDraft(
@@ -239,6 +248,13 @@ class MailRepository {
       } else {
         await _cache.mutate(wsId, () => _api.patchJson(path, body));
       }
+      if (threads && (action == 'archive' || action == 'trash')) {
+        await Future.wait(
+          ids
+              .sublist(start, end)
+              .map((id) => _mediaCache.clearThread(wsId, mailboxId, id)),
+        );
+      }
     }
   }
 
@@ -327,10 +343,35 @@ class MailRepository {
     String wsId,
     String mailboxId,
     String messageId,
-    String attachmentId,
-  ) => _api.getBytes(
-    '${mailboxPath(wsId, mailboxId)}/messages/${Uri.encodeComponent(messageId)}/attachments/${Uri.encodeComponent(attachmentId)}',
-  );
+    String attachmentId, {
+    String? threadId,
+    bool cacheInlineImage = false,
+  }) async {
+    if (cacheInlineImage && threadId != null) {
+      final cached = await _mediaCache.read(
+        wsId,
+        mailboxId,
+        threadId,
+        messageId,
+        attachmentId,
+      );
+      if (cached != null) return cached;
+    }
+    final bytes = await _api.getBytes(
+      '${mailboxPath(wsId, mailboxId)}/messages/${Uri.encodeComponent(messageId)}/attachments/${Uri.encodeComponent(attachmentId)}',
+    );
+    if (cacheInlineImage && threadId != null) {
+      await _mediaCache.save(
+        wsId,
+        mailboxId,
+        threadId,
+        messageId,
+        attachmentId,
+        bytes,
+      );
+    }
+    return bytes;
+  }
 
   Future<Map<String, dynamic>> copyAttachments(
     String wsId,

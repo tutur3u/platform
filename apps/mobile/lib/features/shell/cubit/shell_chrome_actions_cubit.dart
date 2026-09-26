@@ -178,4 +178,21 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
     )..remove(registrationId);
     emit(state.copyWith(registrations: nextRegistrations));
   }
+
+  /// Remove a departing route's dock action before its pop animation ends.
+  /// Otherwise the handoff preview briefly shows a disabled stale action.
+  void dismissOwner(String ownerId) {
+    if (isClosed) return;
+    final departed = state.registrations.values
+        .where((registration) => registration.ownerId == ownerId)
+        .toList();
+    if (departed.isEmpty) return;
+    for (final registration in departed) {
+      registration.locations.forEach(_dockPreviews.remove);
+    }
+    final next = Map<String, ShellChromeActionRegistration>.from(
+      state.registrations,
+    )..removeWhere((_, registration) => registration.ownerId == ownerId);
+    emit(state.copyWith(registrations: next));
+  }
 }

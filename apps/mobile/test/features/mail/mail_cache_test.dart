@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +11,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_cache.dart';
+import 'package:mobile/features/mail/data/mail_media_cache.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _SecureStorage extends Mock implements FlutterSecureStorage {}
@@ -113,6 +115,60 @@ void main() {
     );
     expect(fetched, isFalse);
   });
+
+  test('transient refresh errors retain the last cached inbox', () async {
+    final store = await createStore();
+    final mail = MailCache(store: store, currentUserId: () => 'a');
+    await mail.read(
+      'ws',
+      'inbox',
+      () async => {
+        'threads': [1],
+      },
+    );
+
+    final fallback = await mail.read(
+      'ws',
+      'inbox',
+      () async => throw const ApiException(
+        message: 'Temporarily unavailable',
+        statusCode: 503,
+      ),
+      forceRefresh: true,
+    );
+    expect(fallback['threads'], [1]);
+  });
+
+  test(
+    'inline media is encrypted by scope and removed with its thread',
+    () async {
+      final store = await createStore();
+      var user = 'a';
+      final media = MailMediaCache(store: store, currentUserId: () => user);
+      final bytes = Uint8List.fromList([1, 2, 3, 4]);
+      await media.save('ws', 'box', 'thread', 'message', 'image', bytes);
+
+      expect(
+        await media.read('ws', 'box', 'thread', 'message', 'image'),
+        bytes,
+      );
+      expect(
+        await media.read('another-ws', 'box', 'thread', 'message', 'image'),
+        isNull,
+      );
+      user = 'b';
+      expect(
+        await media.read('ws', 'box', 'thread', 'message', 'image'),
+        isNull,
+      );
+      user = 'a';
+      await media.clearThread('ws', 'box', 'thread');
+      expect(
+        await media.read('ws', 'box', 'thread', 'message', 'image'),
+        isNull,
+      );
+    },
+  );
 
   for (final status in [401, 403]) {
     test('$status purges scoped mail and pending responses', () async {
