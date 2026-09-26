@@ -25,6 +25,9 @@ class AssistantToolResultsSection extends StatelessWidget {
     final label = displayCount == 1
         ? context.l10n.assistantToolLabel
         : context.l10n.assistantToolsLabel;
+    final sheetLabel = visible.length == 1
+        ? context.l10n.assistantToolLabel
+        : context.l10n.assistantToolsLabel;
     return Material(
       color: theme.colorScheme.surfaceContainerLow,
       borderRadius: BorderRadius.circular(12),
@@ -42,7 +45,7 @@ class AssistantToolResultsSection extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
                     child: Text(
-                      '$label · ${visible.length}',
+                      '$sheetLabel · ${visible.length}',
                       style: theme.textTheme.titleMedium,
                     ),
                   ),

@@ -131,7 +131,7 @@ class _MediaPreviewDialog extends StatefulWidget {
 
 class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
   VideoPlayerController? _player;
-  String? _error;
+  bool _failed = false;
 
   @override
   void initState() {
@@ -142,7 +142,7 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
       final hasLocalFile =
           path != null && path.isNotEmpty && File(path).existsSync();
       if (!hasLocalFile && (url == null || url.isEmpty)) {
-        _error = context.l10n.assistantMediaPreviewError;
+        _failed = true;
         return;
       }
       final player = hasLocalFile
@@ -161,7 +161,7 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
       await player.play();
     } on Object {
       if (mounted) {
-        setState(() => _error = context.l10n.assistantMediaPreviewError);
+        setState(() => _failed = true);
       }
     }
   }
@@ -208,8 +208,8 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
             ),
             Expanded(
               child: Center(
-                child: _error != null
-                    ? Text(_error!)
+                child: _failed
+                    ? Text(context.l10n.assistantMediaPreviewError)
                     : player != null
                     ? player.value.isInitialized
                           ? AspectRatio(
