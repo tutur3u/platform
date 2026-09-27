@@ -12,11 +12,39 @@ import {
   playReleaseReady,
   retryDeferredTestFlightReview,
   selectBetaGroups,
+  storeApiErrorDiagnostic,
   submitExternalBetaReview,
   supersededTestFlightBuildIds,
   testFlightReady,
   verifyPlay,
 } from './verify-store.mjs';
+
+test('store API errors expose bounded codes without account details', () => {
+  assert.equal(
+    storeApiErrorDiagnostic({
+      errors: [
+        {
+          code: 'ENTITY_ERROR.ATTRIBUTE.REQUIRED',
+          title: 'Private account title',
+          detail: 'user@example.com and a secret',
+          source: { pointer: '/data/attributes/build' },
+        },
+      ],
+    }),
+    'ENTITY_ERROR.ATTRIBUTE.REQUIRED at /data/attributes/build'
+  );
+  assert.equal(
+    storeApiErrorDiagnostic({
+      errors: [
+        {
+          code: 'leak@example.com',
+          source: { pointer: '/data/attributes/user@example.com' },
+        },
+      ],
+    }),
+    ''
+  );
+});
 
 test('TestFlight beta distribution defaults to all existing groups and can be limited', () => {
   const groups = [
