@@ -188,6 +188,7 @@ export function NotesClient({ wsId }: { wsId: string }) {
     setTitle(note.title ?? '');
     passphraseRef.current = null;
     setRecoveryError(false);
+    setRecovering(false);
     setTransferQr(null);
     transferToken.current++;
     setLockedNote(noteLockEnvelope(note.content) ? note : null);
@@ -276,17 +277,22 @@ export function NotesClient({ wsId }: { wsId: string }) {
 
   const recoverWithPasskey = async () => {
     if (!lockedNote || recovering) return;
+    const selectedNote = lockedNote;
+    const token = ++transferToken.current;
+    setTransferQr(null);
     setRecovering(true);
     setRecoveryError(false);
     try {
-      const secret = await recoverNoteKeyWithPasskey(wsId, lockedNote.id);
-      const decoded = await decryptNote(lockedNote.content, secret);
+      const secret = await recoverNoteKeyWithPasskey(wsId, selectedNote.id);
+      if (token !== transferToken.current) return;
+      const decoded = await decryptNote(selectedNote.content, secret);
+      if (token !== transferToken.current) return;
       passphraseRef.current = secret;
       setContent(decoded);
     } catch {
-      setRecoveryError(true);
+      if (token === transferToken.current) setRecoveryError(true);
     } finally {
-      setRecovering(false);
+      if (token === transferToken.current) setRecovering(false);
     }
   };
 
