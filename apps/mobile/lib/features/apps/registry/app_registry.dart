@@ -40,6 +40,11 @@ class AppRegistry {
                   await notesPageKey.currentState?.savePending() ?? true
             : null,
       ),
+    GoRoute(
+      path: Routes.calendarEventDetail,
+      builder: (context, state) =>
+          CalendarPage(initialEventId: state.pathParameters['eventId']),
+    ),
   ];
 
   static const Set<String> coreModuleIds = {

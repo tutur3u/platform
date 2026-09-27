@@ -19,7 +19,6 @@ import 'package:mobile/features/auth/view/login_page.dart';
 import 'package:mobile/features/auth/view/mfa_verify_page.dart';
 import 'package:mobile/features/auth/view/signup_page.dart';
 import 'package:mobile/features/auth/widgets/security_check_dialog.dart';
-import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/documents/view/document_detail_page.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
@@ -385,11 +384,6 @@ GoRouter createAppRouter(
             builder: (context, state) => const NotificationsPage.archive(),
           ),
           ...AppRegistry.routes,
-          GoRoute(
-            path: Routes.calendarEventDetail,
-            builder: (context, state) =>
-                CalendarPage(initialEventId: state.pathParameters['eventId']),
-          ),
           GoRoute(
             path: Routes.habits,
             builder: (context, state) => const HabitsPage(),
