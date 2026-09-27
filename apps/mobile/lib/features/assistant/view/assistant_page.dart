@@ -1212,9 +1212,7 @@ class _AssistantPageState extends State<AssistantPage>
       highlighted: isLiveMode,
       onPressed: isLiveMode
           ? null
-          : () => unawaited(
-              _handleMicrophoneTap(wsId, shellState, chatState, liveState),
-            ),
+          : () => unawaited(_handleMicrophoneTap(wsId)),
     ),
   ];
 

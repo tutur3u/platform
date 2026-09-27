@@ -1,14 +1,13 @@
 part of 'assistant_page.dart';
 
 extension _AssistantPageLiveActions on _AssistantPageState {
-  Future<void> _handleMicrophoneTap(
-    String wsId,
-    AssistantShellState shellState,
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-  ) async {
+  Future<void> _handleMicrophoneTap(String wsId) async {
     await _workspaceDisconnect;
     if (!mounted || _loadedWorkspaceId != wsId) return;
+    final shellState = _shellCubit.state;
+    if (shellState.workspace?.id != wsId) return;
+    final chatState = _chatCubit.state;
+    final liveState = _liveCubit.state;
     if (!_hasLiveAccess(shellState)) {
       final blockedState = deriveAssistantLiveUiState(
         shellState: shellState,
