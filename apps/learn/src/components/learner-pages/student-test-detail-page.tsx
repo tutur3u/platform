@@ -962,7 +962,7 @@ export function StudentTestDetailPage({
                 });
               }}
               rows={4}
-              className="w-full rounded-lg border border-border bg-background p-3 font-bold text-sm focus:outline-none"
+              className="w-full rounded-lg border border-border bg-background p-3 font-bold text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="..."
             />
             <span className="mt-1 block text-[10px] text-muted-foreground italic">
@@ -1077,7 +1077,7 @@ export function StudentTestDetailPage({
                     onChange={(e) =>
                       handleMatchingChange(index, e.target.value)
                     }
-                    className="rounded-lg border border-border bg-background p-2 font-bold text-sm focus:outline-none"
+                    className="rounded-lg border border-border bg-background p-2 font-bold text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <option value="">{t('courses.quizSelectMatch')}</option>
                     {choices.map((choice: string, choiceIndex: number) => (
