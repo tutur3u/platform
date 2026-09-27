@@ -54,6 +54,14 @@ test('invalidates cached availability and preserves the shared storefront shell'
     expect(streamedProductPage.ok()).toBe(true);
     expect(await streamedProductPage.text()).toContain('data-storefront-shell');
 
+    // Compile the destination route before freezing an instant navigation.
+    // The contract here is client-side shell persistence, not cold dev compile.
+    const streamedBrowsePage = await request.get(
+      `${STOREFRONT_URL}/${fixture.slug}`
+    );
+    expect(streamedBrowsePage.ok()).toBe(true);
+    expect(await streamedBrowsePage.text()).toContain('Cache Test Product');
+
     let documentRequests = 0;
     page.on('request', (requestEvent) => {
       if (requestEvent.resourceType() === 'document') documentRequests += 1;
