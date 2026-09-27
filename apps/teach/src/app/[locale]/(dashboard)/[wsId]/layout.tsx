@@ -100,16 +100,18 @@ export default async function TeachWorkspaceLayout({
         bootstrap={bootstrap}
         defaultCollapsed={defaultCollapsed}
         footerActions={
-          <div className="ml-auto flex shrink-0 items-center gap-2">
+          <>
+            <div className="min-w-0 flex-1">
+              <AppUserNav />
+            </div>
             <NotificationPopover userId={bootstrap.profile.id} />
-            <AppUserNav />
-          </div>
+          </>
         }
         links={await getNavigationLinks(wsId)}
         notificationPopover={
           <NotificationPopover userId={bootstrap.profile.id} />
         }
-        userPopover={<AppUserNav />}
+        userPopover={<AppUserNav hideMetadata />}
         workspace={workspace}
         wsId={wsId}
       >
