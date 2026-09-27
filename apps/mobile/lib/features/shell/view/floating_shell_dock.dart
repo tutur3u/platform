@@ -257,7 +257,10 @@ class _DockActionsState extends State<_DockActions> {
                   .resolveForLocation(widget.location)
                   .where((a) => a.inDock)
                   .toList();
-        final visibleCount = MediaQuery.sizeOf(context).width >= 840 ? 2 : 1;
+        // Two compact actions fit beside the flexible navigation on a phone.
+        // Keep both primary and secondary actions one tap away (for example,
+        // Search and New note) instead of hiding the latter behind a menu.
+        final visibleCount = MediaQuery.sizeOf(context).width >= 320 ? 2 : 1;
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

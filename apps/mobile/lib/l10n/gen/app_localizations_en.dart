@@ -8893,6 +8893,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesTitle => 'Notes';
 
   @override
+  String get notesToday => 'Today';
+
+  @override
+  String get notesYesterday => 'Yesterday';
+
+  @override
+  String get notesPrevious7Days => 'Previous 7 days';
+
+  @override
+  String get notesPrevious30Days => 'Previous 30 days';
+
+  @override
+  String get notesOlder => 'Older';
+
+  @override
+  String get notesLocked => 'Locked note';
+
+  @override
+  String get notesLock => 'Lock note';
+
+  @override
+  String get notesUnlock => 'Remove lock';
+
+  @override
+  String get notesOpenLocked => 'Open locked note';
+
+  @override
+  String get notesLockDescription => 'Set a passphrase to encrypt this note across your devices. Keep it safe: it cannot be recovered.';
+
+  @override
+  String get notesUnlockDescription => 'Enter the note passphrase to view its content.';
+
+  @override
+  String get notesPassphrase => 'Passphrase';
+
+  @override
+  String get notesConfirmPassphrase => 'Confirm passphrase';
+
+  @override
+  String get notesPassphraseRequirements => 'Use at least 8 characters and enter matching passphrases.';
+
+  @override
+  String get notesIncorrectPassphrase => 'Could not unlock this note. Check the passphrase.';
+
+  @override
   String get notesNew => 'New note';
 
   @override

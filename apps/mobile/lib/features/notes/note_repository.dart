@@ -3,6 +3,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/notes/note_lock_crypto.dart';
 
 class NoteRecord {
   const NoteRecord({
@@ -29,7 +30,10 @@ class NoteRecord {
   final DateTime? updatedAt;
   final bool archived;
 
+  bool get locked => lockedNoteEnvelope(content) != null;
+
   String get preview {
+    if (locked) return '';
     final parts = <String>[];
     void visit(Object? node) {
       if (node is Map<String, dynamic>) {

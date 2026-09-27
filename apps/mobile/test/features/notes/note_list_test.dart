@@ -56,4 +56,47 @@ void main() {
     await tester.tap(find.text('Note 1'));
     expect(selected?.id, '1');
   });
+
+  testWidgets('notes group by date and short titles start at the left edge', (
+    tester,
+  ) async {
+    final now = DateTime.now();
+    final notes = [
+      NoteRecord(
+        id: 'today',
+        title: 'Short',
+        content: const {'type': 'doc', 'content': <Object>[]},
+        updatedAt: now,
+        archived: false,
+      ),
+      NoteRecord(
+        id: 'yesterday',
+        title: 'Longer note title',
+        content: const {'type': 'doc', 'content': <Object>[]},
+        updatedAt: now.subtract(const Duration(days: 1)),
+        archived: false,
+      ),
+    ];
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: SizedBox(
+            width: 360,
+            height: 400,
+            child: NoteList(notes: notes, selectedId: null, onSelect: (_) {}),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Yesterday'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Short')).dx,
+      tester.getTopLeft(find.text('Longer note title')).dx,
+    );
+  });
 }

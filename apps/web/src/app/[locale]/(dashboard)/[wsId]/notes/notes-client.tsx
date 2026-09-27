@@ -2,7 +2,15 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
-import { Archive, ArrowLeft, NotebookPen, Plus, Search } from '@tuturuuu/icons';
+import {
+  Archive,
+  ArrowLeft,
+  Lock,
+  LockOpen,
+  NotebookPen,
+  Plus,
+  Search,
+} from '@tuturuuu/icons';
 import {
   createWorkspaceNote,
   listWorkspaceNotes,
@@ -15,6 +23,8 @@ import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { NoteEntityPicker } from './note-entity-picker';
+import { decryptNote, encryptNote, noteLockEnvelope } from './note-lock';
+import { NotePassphraseDialog } from './note-passphrase-dialog';
 
 const emptyDoc: JSONContent = { type: 'doc', content: [] };
 
@@ -46,6 +56,9 @@ export function NotesClient({ wsId }: { wsId: string }) {
   const [content, setContent] = useState<JSONContent>(emptyDoc);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [lockedNote, setLockedNote] = useState<WorkspaceNote | null>(null);
+  const [lockDialog, setLockDialog] = useState<'lock' | 'open' | null>(null);
+  const passphraseRef = useRef<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editorRef = useRef<Editor | null>(null);
   const inFlight = useRef<Promise<boolean> | null>(null);
@@ -75,10 +88,15 @@ export function NotesClient({ wsId }: { wsId: string }) {
     if (!draft) return true;
     pending.current = null;
     setSaving(true);
-    const request = updateWorkspaceNote(wsId, draft.id, {
-      title: draft.title,
-      content: draft.content as Record<string, unknown>,
-    });
+    const request = (async () => {
+      const storedContent = lockedNote
+        ? await encryptNote(draft.content, passphraseRef.current ?? '')
+        : draft.content;
+      return updateWorkspaceNote(wsId, draft.id, {
+        title: draft.title,
+        content: storedContent as Record<string, unknown>,
+      });
+    })();
     const savingRequest = request.then(
       () => true,
       () => false
@@ -104,7 +122,7 @@ export function NotesClient({ wsId }: { wsId: string }) {
         }, 700);
       }
     }
-  }, [updateList, wsId]);
+  }, [lockedNote, updateList, wsId]);
 
   const scheduleSave = (draft: {
     id: string;
@@ -122,7 +140,14 @@ export function NotesClient({ wsId }: { wsId: string }) {
     if (!(await savePending())) return;
     setSelectedId(note.id);
     setTitle(note.title ?? '');
-    setContent((note.content as JSONContent) ?? emptyDoc);
+    passphraseRef.current = null;
+    setLockedNote(noteLockEnvelope(note.content) ? note : null);
+    setContent(
+      noteLockEnvelope(note.content)
+        ? emptyDoc
+        : ((note.content as JSONContent) ?? emptyDoc)
+    );
+    if (noteLockEnvelope(note.content)) setLockDialog('open');
   };
 
   const createNote = async () => {
@@ -139,6 +164,8 @@ export function NotesClient({ wsId }: { wsId: string }) {
       setSelectedId(note.id);
       setTitle('');
       setContent(emptyDoc);
+      setLockedNote(null);
+      passphraseRef.current = null;
       setSaveError(false);
     } catch {
       setSaveError(true);
@@ -154,13 +181,61 @@ export function NotesClient({ wsId }: { wsId: string }) {
         current.filter((note) => note.id !== selectedId)
       );
       setSelectedId(null);
+      setLockedNote(null);
+      passphraseRef.current = null;
+    } catch {
+      setSaveError(true);
+    }
+  };
+
+  const submitPassphrase = async (passphrase: string): Promise<boolean> => {
+    if (lockDialog === 'open' && lockedNote) {
+      try {
+        const decoded = await decryptNote(lockedNote.content, passphrase);
+        passphraseRef.current = passphrase;
+        setContent(decoded);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    if (lockDialog === 'lock' && selectedId) {
+      if (!(await savePending())) return false;
+      try {
+        const encrypted = await encryptNote(content, passphrase);
+        const saved = await updateWorkspaceNote(wsId, selectedId, {
+          content: encrypted as Record<string, unknown>,
+        });
+        updateList(saved);
+        setLockedNote(saved);
+        passphraseRef.current = null;
+        setContent(emptyDoc);
+        return true;
+      } catch {
+        setSaveError(true);
+        return false;
+      }
+    }
+    return false;
+  };
+
+  const removeLock = async () => {
+    if (!selectedId || !lockedNote || !passphraseRef.current) return;
+    if (!(await savePending())) return;
+    try {
+      const saved = await updateWorkspaceNote(wsId, selectedId, {
+        content: content as Record<string, unknown>,
+      });
+      updateList(saved);
+      setLockedNote(null);
+      passphraseRef.current = null;
     } catch {
       setSaveError(true);
     }
   };
 
   const visible = notes.filter((note) =>
-    `${note.title ?? ''} ${excerpt(note.content)}`
+    `${note.title ?? ''} ${noteLockEnvelope(note.content) ? '' : excerpt(note.content)}`
       .toLowerCase()
       .includes(search.toLowerCase())
   );
@@ -212,11 +287,16 @@ export function NotesClient({ wsId }: { wsId: string }) {
                 onClick={() => void selectNote(note)}
                 className={`w-full rounded-xl px-3 py-3 text-left transition-colors hover:bg-muted/70 ${selectedId === note.id ? 'bg-muted' : ''}`}
               >
-                <span className="block truncate font-medium">
+                <span className="flex items-center gap-2 truncate font-medium">
+                  {noteLockEnvelope(note.content) && (
+                    <Lock className="size-3.5 shrink-0" />
+                  )}
                   {note.title || t('untitled')}
                 </span>
                 <span className="mt-1 block truncate text-muted-foreground text-sm">
-                  {excerpt(note.content) || t('start_writing')}
+                  {noteLockEnvelope(note.content)
+                    ? t('locked_preview')
+                    : excerpt(note.content) || t('start_writing')}
                 </span>
               </button>
             ))}
@@ -243,6 +323,7 @@ export function NotesClient({ wsId }: { wsId: string }) {
                 </Button>
                 <Input
                   value={title}
+                  disabled={!!lockedNote && !passphraseRef.current}
                   onChange={(event) => {
                     const next = event.target.value;
                     setTitle(next);
@@ -254,26 +335,43 @@ export function NotesClient({ wsId }: { wsId: string }) {
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={() =>
+                    lockedNote ? void removeLock() : setLockDialog('lock')
+                  }
+                  aria-label={t(lockedNote ? 'remove_lock' : 'lock')}
+                  disabled={!!lockedNote && !passphraseRef.current}
+                >
+                  {lockedNote ? (
+                    <LockOpen className="size-4" />
+                  ) : (
+                    <Lock className="size-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => void archiveNote()}
                   aria-label={t('archive')}
                 >
                   <Archive className="size-4" />
                 </Button>
               </div>
-              <NoteEntityPicker
-                wsId={wsId}
-                onSelect={({ label, href }) => {
-                  editorRef.current
-                    ?.chain()
-                    .focus()
-                    .insertContent({
-                      type: 'text',
-                      text: label,
-                      marks: [{ type: 'link', attrs: { href } }],
-                    })
-                    .run();
-                }}
-              />
+              {(!lockedNote || passphraseRef.current) && (
+                <NoteEntityPicker
+                  wsId={wsId}
+                  onSelect={({ label, href }) => {
+                    editorRef.current
+                      ?.chain()
+                      .focus()
+                      .insertContent({
+                        type: 'text',
+                        text: label,
+                        marks: [{ type: 'link', attrs: { href } }],
+                      })
+                      .run();
+                  }}
+                />
+              )}
               <div
                 aria-live="polite"
                 className="min-h-5 text-muted-foreground text-xs"
@@ -292,19 +390,32 @@ export function NotesClient({ wsId }: { wsId: string }) {
                   t('saved')
                 )}
               </div>
-              <RichTextEditor
-                key={selectedId}
-                editorRef={editorRef}
-                workspaceId={wsId}
-                content={content}
-                onImmediateChange={(next) => {
-                  const doc = next ?? emptyDoc;
-                  setContent(doc);
-                  scheduleSave({ id: selectedId, title, content: doc });
-                }}
-                writePlaceholder={t('start_writing')}
-                className="min-h-96 flex-1 border-0"
-              />
+              {!lockedNote || passphraseRef.current ? (
+                <RichTextEditor
+                  key={selectedId}
+                  editorRef={editorRef}
+                  workspaceId={wsId}
+                  content={content}
+                  onImmediateChange={(next) => {
+                    const doc = next ?? emptyDoc;
+                    setContent(doc);
+                    scheduleSave({ id: selectedId, title, content: doc });
+                  }}
+                  writePlaceholder={t('start_writing')}
+                  className="min-h-96 flex-1 border-0"
+                />
+              ) : (
+                <div className="flex min-h-96 flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
+                  <Lock className="size-6" />
+                  <p>{t('locked_preview')}</p>
+                  <Button
+                    variant="outline"
+                    onClick={() => setLockDialog('open')}
+                  >
+                    {t('open_locked')}
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
@@ -313,6 +424,11 @@ export function NotesClient({ wsId }: { wsId: string }) {
           )}
         </section>
       </div>
+      <NotePassphraseDialog
+        mode={lockDialog}
+        onClose={() => setLockDialog(null)}
+        onSubmit={submitPassphrase}
+      />
     </div>
   );
 }
