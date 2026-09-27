@@ -7,12 +7,14 @@ class NoteList extends StatelessWidget {
     required this.notes,
     required this.selectedId,
     required this.onSelect,
+    this.archived = false,
     super.key,
   });
 
   final List<NoteRecord> notes;
   final String? selectedId;
   final ValueChanged<NoteRecord> onSelect;
+  final bool archived;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +23,12 @@ class NoteList extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
-            child: Text(context.l10n.notesEmpty, textAlign: TextAlign.center),
+            child: Text(
+              archived
+                  ? context.l10n.notesArchiveEmpty
+                  : context.l10n.notesEmpty,
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
       );

@@ -8959,7 +8959,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesNew => 'New note';
 
   @override
+  String get notesInbox => 'Inbox';
+
+  @override
+  String get notesArchiveTab => 'Archive';
+
+  @override
   String get notesArchive => 'Archive note';
+
+  @override
+  String get notesRestore => 'Restore note';
 
   @override
   String get notesEdit => 'Edit note';
@@ -8983,10 +8992,49 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesEmpty => 'No notes yet. Capture your first idea.';
 
   @override
+  String get notesArchiveEmpty => 'Archived notes will appear here.';
+
+  @override
   String get notesUntitled => 'Untitled note';
 
   @override
   String get notesStartWriting => 'Start writing...';
+
+  @override
+  String get notesHighlight => 'Highlight';
+
+  @override
+  String get notesChecklist => 'Checklist';
+
+  @override
+  String get notesConvertToTask => 'Convert to task';
+
+  @override
+  String get notesSelectChecklistItem => 'Place the cursor in a checklist item to convert it.';
+
+  @override
+  String get notesTaskBoard => 'Board';
+
+  @override
+  String get notesTaskList => 'List';
+
+  @override
+  String get notesTaskNoBoards => 'No task boards available in this workspace.';
+
+  @override
+  String get notesTaskNoLists => 'This board has no task lists.';
+
+  @override
+  String get notesTaskLoadError => 'Could not load task destinations. Try again.';
+
+  @override
+  String get notesTaskCreateError => 'Could not create the task. Try again.';
+
+  @override
+  String get notesCreateTask => 'Create task';
+
+  @override
+  String get notesInsertTable => 'Insert table';
 
   @override
   String get notesInsertLink => 'Insert link';
@@ -9002,6 +9050,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesLinkEvents => 'Events';
+
+  @override
+  String get notesLinkFinance => 'Finance';
 
   @override
   String get notesLinkMeetings => 'Meetings';
@@ -9025,7 +9076,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesNoLinkResults => 'No matching items';
 
   @override
-  String get notesSearchWork => 'Search tasks, events, or meetings';
+  String get notesSearchWork => 'Search linked work';
 
   @override
   String get notesLoadError => 'Could not load notes. Pull to retry.';

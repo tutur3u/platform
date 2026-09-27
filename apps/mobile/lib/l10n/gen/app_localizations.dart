@@ -17173,11 +17173,29 @@ abstract class AppLocalizations {
   /// **'New note'**
   String get notesNew;
 
+  /// No description provided for @notesInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get notesInbox;
+
+  /// No description provided for @notesArchiveTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get notesArchiveTab;
+
   /// No description provided for @notesArchive.
   ///
   /// In en, this message translates to:
   /// **'Archive note'**
   String get notesArchive;
+
+  /// No description provided for @notesRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore note'**
+  String get notesRestore;
 
   /// No description provided for @notesEdit.
   ///
@@ -17221,6 +17239,12 @@ abstract class AppLocalizations {
   /// **'No notes yet. Capture your first idea.'**
   String get notesEmpty;
 
+  /// No description provided for @notesArchiveEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived notes will appear here.'**
+  String get notesArchiveEmpty;
+
   /// No description provided for @notesUntitled.
   ///
   /// In en, this message translates to:
@@ -17232,6 +17256,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start writing...'**
   String get notesStartWriting;
+
+  /// No description provided for @notesHighlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Highlight'**
+  String get notesHighlight;
+
+  /// No description provided for @notesChecklist.
+  ///
+  /// In en, this message translates to:
+  /// **'Checklist'**
+  String get notesChecklist;
+
+  /// No description provided for @notesConvertToTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert to task'**
+  String get notesConvertToTask;
+
+  /// No description provided for @notesSelectChecklistItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Place the cursor in a checklist item to convert it.'**
+  String get notesSelectChecklistItem;
+
+  /// No description provided for @notesTaskBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Board'**
+  String get notesTaskBoard;
+
+  /// No description provided for @notesTaskList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get notesTaskList;
+
+  /// No description provided for @notesTaskNoBoards.
+  ///
+  /// In en, this message translates to:
+  /// **'No task boards available in this workspace.'**
+  String get notesTaskNoBoards;
+
+  /// No description provided for @notesTaskNoLists.
+  ///
+  /// In en, this message translates to:
+  /// **'This board has no task lists.'**
+  String get notesTaskNoLists;
+
+  /// No description provided for @notesTaskLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load task destinations. Try again.'**
+  String get notesTaskLoadError;
+
+  /// No description provided for @notesTaskCreateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create the task. Try again.'**
+  String get notesTaskCreateError;
+
+  /// No description provided for @notesCreateTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Create task'**
+  String get notesCreateTask;
+
+  /// No description provided for @notesInsertTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert table'**
+  String get notesInsertTable;
 
   /// No description provided for @notesInsertLink.
   ///
@@ -17262,6 +17358,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Events'**
   String get notesLinkEvents;
+
+  /// No description provided for @notesLinkFinance.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance'**
+  String get notesLinkFinance;
 
   /// No description provided for @notesLinkMeetings.
   ///
@@ -17308,7 +17410,7 @@ abstract class AppLocalizations {
   /// No description provided for @notesSearchWork.
   ///
   /// In en, this message translates to:
-  /// **'Search tasks, events, or meetings'**
+  /// **'Search linked work'**
   String get notesSearchWork;
 
   /// No description provided for @notesLoadError.

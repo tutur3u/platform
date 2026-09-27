@@ -20,11 +20,16 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { type MouseEvent, useCallback, useMemo, useRef, useState } from 'react';
+import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
+import { getFinanceAppOrigin } from '@/lib/finance-app-url';
+import { getMeetAppOrigin } from '@/lib/meet-app-url';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import { NoteEntityPicker } from './note-entity-picker';
 import { decryptNote, encryptNote, noteLockEnvelope } from './note-lock';
 import { NotePassphraseDialog } from './note-passphrase-dialog';
+import { NoteTaskConversionDialog } from './note-task-conversion-dialog';
 
 const emptyDoc: JSONContent = { type: 'doc', content: [] };
 
@@ -40,22 +45,37 @@ function excerpt(node: unknown): string {
 
 export function NotesClient({ wsId }: { wsId: string }) {
   const t = useTranslations('notes_app');
+  const locale = useLocale();
   const queryClient = useQueryClient();
-  const queryKey = useMemo(() => ['workspace', wsId, 'notes'] as const, [wsId]);
+  const [tab, setTab] = useState<'inbox' | 'archive'>('inbox');
+  const queryKey = useMemo(
+    () => ['workspace', wsId, 'notes', tab] as const,
+    [wsId, tab]
+  );
+  const inboxQueryKey = useMemo(
+    () => ['workspace', wsId, 'notes', 'inbox'] as const,
+    [wsId]
+  );
   const {
     data: notes = [],
     isLoading,
     error,
   } = useQuery({
     queryKey,
-    queryFn: () => listWorkspaceNotes(wsId),
+    queryFn: () => listWorkspaceNotes(wsId, { archived: tab === 'archive' }),
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [taskDraft, setTaskDraft] = useState<{
+    name: string;
+    from: number;
+    to: number;
+  } | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState<JSONContent>(emptyDoc);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [taskSelectionError, setTaskSelectionError] = useState(false);
   const [lockedNote, setLockedNote] = useState<WorkspaceNote | null>(null);
   const [lockDialog, setLockDialog] = useState<'lock' | 'open' | null>(null);
   const passphraseRef = useRef<string | null>(null);
@@ -157,10 +177,11 @@ export function NotesClient({ wsId }: { wsId: string }) {
         title: '',
         content: emptyDoc,
       });
-      queryClient.setQueryData<WorkspaceNote[]>(queryKey, (current = []) => [
-        note,
-        ...current,
-      ]);
+      queryClient.setQueryData<WorkspaceNote[]>(
+        inboxQueryKey,
+        (current = []) => [note, ...current]
+      );
+      setTab('inbox');
       setSelectedId(note.id);
       setTitle('');
       setContent(emptyDoc);
@@ -172,17 +193,20 @@ export function NotesClient({ wsId }: { wsId: string }) {
     }
   };
 
-  const archiveNote = async () => {
+  const setArchived = async (archived: boolean) => {
     if (!selectedId) return;
     if (!(await savePending())) return;
     try {
-      await updateWorkspaceNote(wsId, selectedId, { archived: true });
+      await updateWorkspaceNote(wsId, selectedId, { archived });
       queryClient.setQueryData<WorkspaceNote[]>(queryKey, (current = []) =>
         current.filter((note) => note.id !== selectedId)
       );
       setSelectedId(null);
       setLockedNote(null);
       passphraseRef.current = null;
+      await queryClient.invalidateQueries({
+        queryKey: ['workspace', wsId, 'notes', archived ? 'archive' : 'inbox'],
+      });
     } catch {
       setSaveError(true);
     }
@@ -240,6 +264,61 @@ export function NotesClient({ wsId }: { wsId: string }) {
       .includes(search.toLowerCase())
   );
 
+  const convertChecklistItem = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const { $from } = editor.state.selection;
+    let checklist = false;
+    for (let depth = $from.depth; depth > 0; depth--) {
+      if ($from.node(depth).type.name === 'taskItem') {
+        checklist = true;
+        break;
+      }
+    }
+    const paragraph = $from.parent;
+    const name = paragraph.textContent.trim();
+    if (!checklist || paragraph.type.name !== 'paragraph' || !name) {
+      setTaskSelectionError(true);
+      return;
+    }
+    setTaskSelectionError(false);
+    setTaskDraft({ name, from: $from.start(), to: $from.end() });
+  };
+
+  const openMention = async (event: MouseEvent<HTMLElement>) => {
+    const element = (event.target as HTMLElement).closest<HTMLElement>(
+      '[data-mention="true"]'
+    );
+    if (!element) return;
+    const id = element.dataset.entityId;
+    if (!id) return;
+    const kind = element.dataset.entityType;
+    if (kind === 'note') {
+      const [inbox, archive] = await Promise.all([
+        listWorkspaceNotes(wsId),
+        listWorkspaceNotes(wsId, { archived: true }),
+      ]);
+      const note = [...inbox, ...archive].find((item) => item.id === id);
+      if (!note) return;
+      if (!(await savePending())) return;
+      setTab(note.archived ? 'archive' : 'inbox');
+      await selectNote(note);
+      return;
+    }
+    const encodedId = encodeURIComponent(id);
+    const route =
+      kind === 'task'
+        ? getTasksAppUrlClient(`/${locale}/${wsId}/tasks/${encodedId}`)
+        : kind === 'event'
+          ? `${getCalendarAppOrigin()}/${locale}/${wsId}?eventId=${encodedId}`
+          : kind === 'finance'
+            ? `${getFinanceAppOrigin()}/${locale}/${wsId}/wallets/${encodedId}`
+            : kind === 'meeting'
+              ? `${getMeetAppOrigin()}/${locale}/${wsId}/meetings/${encodedId}`
+              : null;
+    if (route) window.location.assign(route);
+  };
+
   return (
     <div className="mx-auto flex min-h-[min(76vh,800px)] w-full max-w-6xl flex-col gap-5 px-4 pb-8 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -270,6 +349,32 @@ export function NotesClient({ wsId }: { wsId: string }) {
               className="pl-9"
             />
           </div>
+          <div
+            className="mb-3 grid grid-cols-2 gap-1 rounded-xl bg-muted/60 p-1"
+            role="tablist"
+            aria-label={t('title')}
+          >
+            {(['inbox', 'archive'] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={tab === value}
+                className={`rounded-lg px-3 py-2 font-medium text-sm transition-colors ${tab === value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                onClick={() => {
+                  void savePending().then((saved) => {
+                    if (!saved) return;
+                    setSelectedId(null);
+                    setLockedNote(null);
+                    passphraseRef.current = null;
+                    setTab(value);
+                  });
+                }}
+              >
+                {t(value === 'inbox' ? 'inbox' : 'archive_tab')}
+              </button>
+            ))}
+          </div>
           {isLoading && (
             <p className="p-4 text-muted-foreground text-sm">{t('loading')}</p>
           )}
@@ -277,7 +382,9 @@ export function NotesClient({ wsId }: { wsId: string }) {
             <p className="p-4 text-destructive text-sm">{t('load_error')}</p>
           )}
           {!isLoading && !error && visible.length === 0 && (
-            <p className="p-4 text-muted-foreground text-sm">{t('empty')}</p>
+            <p className="p-4 text-muted-foreground text-sm">
+              {t(tab === 'archive' ? 'archived_empty' : 'empty')}
+            </p>
           )}
           <div className="max-h-[65vh] space-y-1 overflow-y-auto">
             {visible.map((note) => (
@@ -350,8 +457,8 @@ export function NotesClient({ wsId }: { wsId: string }) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => void archiveNote()}
-                  aria-label={t('archive')}
+                  onClick={() => void setArchived(tab === 'inbox')}
+                  aria-label={t(tab === 'inbox' ? 'archive' : 'restore')}
                 >
                   <Archive className="size-4" />
                 </Button>
@@ -359,14 +466,27 @@ export function NotesClient({ wsId }: { wsId: string }) {
               {(!lockedNote || passphraseRef.current) && (
                 <NoteEntityPicker
                   wsId={wsId}
-                  onSelect={({ label, href }) => {
+                  onSelect={({ id, kind, label }) => {
                     editorRef.current
                       ?.chain()
                       .focus()
                       .insertContent({
-                        type: 'text',
-                        text: label,
-                        marks: [{ type: 'link', attrs: { href } }],
+                        type: 'mention',
+                        attrs: {
+                          entityId: id,
+                          entityType:
+                            kind === 'tasks'
+                              ? 'task'
+                              : kind === 'events'
+                                ? 'event'
+                                : kind === 'notes'
+                                  ? 'note'
+                                  : kind === 'meetings'
+                                    ? 'meeting'
+                                    : 'finance',
+                          displayName: label,
+                          workspaceId: wsId,
+                        },
                       })
                       .run();
                   }}
@@ -376,7 +496,11 @@ export function NotesClient({ wsId }: { wsId: string }) {
                 aria-live="polite"
                 className="min-h-5 text-muted-foreground text-xs"
               >
-                {saveError ? (
+                {taskSelectionError ? (
+                  <span className="text-destructive">
+                    {t('select_checklist_item')}
+                  </span>
+                ) : saveError ? (
                   <button
                     type="button"
                     className="text-destructive underline"
@@ -391,19 +515,25 @@ export function NotesClient({ wsId }: { wsId: string }) {
                 )}
               </div>
               {!lockedNote || passphraseRef.current ? (
-                <RichTextEditor
-                  key={selectedId}
-                  editorRef={editorRef}
-                  workspaceId={wsId}
-                  content={content}
-                  onImmediateChange={(next) => {
-                    const doc = next ?? emptyDoc;
-                    setContent(doc);
-                    scheduleSave({ id: selectedId, title, content: doc });
-                  }}
-                  writePlaceholder={t('start_writing')}
-                  className="min-h-96 flex-1 border-0"
-                />
+                <div
+                  onClickCapture={(event) => void openMention(event)}
+                  className="min-h-0 flex-1 [&_[data-mention]]:cursor-pointer"
+                >
+                  <RichTextEditor
+                    key={selectedId}
+                    editorRef={editorRef}
+                    workspaceId={wsId}
+                    content={content}
+                    onImmediateChange={(next) => {
+                      const doc = next ?? emptyDoc;
+                      setContent(doc);
+                      scheduleSave({ id: selectedId, title, content: doc });
+                    }}
+                    onConvertToTask={convertChecklistItem}
+                    writePlaceholder={t('start_writing')}
+                    className="min-h-96 flex-1 border-0"
+                  />
+                </div>
               ) : (
                 <div className="flex min-h-96 flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
                   <Lock className="size-6" />
@@ -429,6 +559,35 @@ export function NotesClient({ wsId }: { wsId: string }) {
         onClose={() => setLockDialog(null)}
         onSubmit={submitPassphrase}
       />
+      {taskDraft && (
+        <NoteTaskConversionDialog
+          wsId={wsId}
+          name={taskDraft.name}
+          open
+          onOpenChange={(open) => {
+            if (!open) setTaskDraft(null);
+          }}
+          onCreated={(id) => {
+            editorRef.current
+              ?.chain()
+              .focus()
+              .insertContentAt(
+                { from: taskDraft.from, to: taskDraft.to },
+                {
+                  type: 'mention',
+                  attrs: {
+                    entityId: id,
+                    entityType: 'task',
+                    displayName: taskDraft.name,
+                    workspaceId: wsId,
+                  },
+                }
+              )
+              .run();
+            setTaskDraft(null);
+          }}
+        />
+      )}
     </div>
   );
 }

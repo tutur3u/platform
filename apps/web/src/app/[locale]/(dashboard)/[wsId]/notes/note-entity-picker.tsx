@@ -3,7 +3,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link2, Search } from '@tuturuuu/icons';
 import { listWorkspaceCalendarEvents } from '@tuturuuu/internal-api/calendar';
+import { listWallets } from '@tuturuuu/internal-api/finance';
 import { getWorkspaceMeetings } from '@tuturuuu/internal-api/meetings';
+import { listWorkspaceNotes } from '@tuturuuu/internal-api/notes';
 import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -20,8 +22,8 @@ import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
 import { getMeetAppOrigin } from '@/lib/meet-app-url';
 import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 
-type LinkKind = 'tasks' | 'events' | 'meetings';
-type LinkOption = { id: string; label: string; href: string };
+type LinkKind = 'tasks' | 'events' | 'finance' | 'notes' | 'meetings';
+type LinkOption = { id: string; kind: LinkKind; label: string; href: string };
 
 export function NoteEntityPicker({
   wsId,
@@ -61,11 +63,28 @@ export function NoteEntityPicker({
       }>(wsId, { page: 1, pageSize: 30, search }),
     enabled: open && kind === 'meetings',
   });
+  const wallets = useQuery({
+    queryKey: ['notes', wsId, 'link-finance'],
+    queryFn: () => listWallets(wsId),
+    enabled: open && kind === 'finance',
+  });
+  const linkedNotes = useQuery({
+    queryKey: ['notes', wsId, 'link-notes'],
+    queryFn: async () => {
+      const [inbox, archive] = await Promise.all([
+        listWorkspaceNotes(wsId),
+        listWorkspaceNotes(wsId, { archived: true }),
+      ]);
+      return [...inbox, ...archive];
+    },
+    enabled: open && kind === 'notes',
+  });
 
   const options: LinkOption[] =
     kind === 'tasks'
       ? (tasks.data?.tasks ?? []).map((task) => ({
           id: task.id,
+          kind,
           label: task.name,
           href: getTasksAppUrlClient(`/${locale}/${wsId}/tasks/${task.id}`),
         }))
@@ -77,16 +96,56 @@ export function NoteEntityPicker({
             .slice(0, 30)
             .map((event) => ({
               id: event.id,
+              kind,
               label: event.title || t('untitled'),
               href: `${getCalendarAppOrigin()}/${locale}/${wsId}?eventId=${encodeURIComponent(event.id)}`,
             }))
-        : (meetings.data?.meetings ?? []).map((meeting) => ({
-            id: meeting.id,
-            label: meeting.name,
-            href: `${getMeetAppOrigin()}/${locale}/${wsId}/meetings/${meeting.id}`,
-          }));
+        : kind === 'finance'
+          ? (wallets.data ?? [])
+              .filter(
+                (wallet) =>
+                  Boolean(wallet.id) &&
+                  (wallet.name ?? '')
+                    .toLowerCase()
+                    .includes(search.toLowerCase())
+              )
+              .slice(0, 30)
+              .map((wallet) => ({
+                id: wallet.id ?? '',
+                kind,
+                label: wallet.name || t('untitled'),
+                href: `/finance/wallets/${wallet.id}`,
+              }))
+          : kind === 'notes'
+            ? (linkedNotes.data ?? [])
+                .filter((note) =>
+                  (note.title ?? '')
+                    .toLowerCase()
+                    .includes(search.toLowerCase())
+                )
+                .slice(0, 30)
+                .map((note) => ({
+                  id: note.id,
+                  kind,
+                  label: note.title || t('untitled'),
+                  href: `/${locale}/${wsId}/notes?noteId=${note.id}`,
+                }))
+            : (meetings.data?.meetings ?? []).map((meeting) => ({
+                id: meeting.id,
+                kind,
+                label: meeting.name,
+                href: `${getMeetAppOrigin()}/${locale}/${wsId}/meetings/${meeting.id}`,
+              }));
   const activeQuery =
-    kind === 'tasks' ? tasks : kind === 'events' ? events : meetings;
+    kind === 'tasks'
+      ? tasks
+      : kind === 'events'
+        ? events
+        : kind === 'finance'
+          ? wallets
+          : kind === 'notes'
+            ? linkedNotes
+            : meetings;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -101,20 +160,22 @@ export function NoteEntityPicker({
           <DialogTitle>{t('link_work')}</DialogTitle>
         </DialogHeader>
         <fieldset className="flex flex-wrap gap-2" aria-label={t('link_work')}>
-          {(['tasks', 'events', 'meetings'] as const).map((value) => (
-            <Button
-              key={value}
-              type="button"
-              size="sm"
-              variant={kind === value ? 'default' : 'outline'}
-              onClick={() => {
-                setKind(value);
-                setSearch('');
-              }}
-            >
-              {t(`link_${value}`)}
-            </Button>
-          ))}
+          {(['tasks', 'events', 'finance', 'notes', 'meetings'] as const).map(
+            (value) => (
+              <Button
+                key={value}
+                type="button"
+                size="sm"
+                variant={kind === value ? 'default' : 'outline'}
+                onClick={() => {
+                  setKind(value);
+                  setSearch('');
+                }}
+              >
+                {t(`link_${value}`)}
+              </Button>
+            )
+          )}
         </fieldset>
         <div className="relative">
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />

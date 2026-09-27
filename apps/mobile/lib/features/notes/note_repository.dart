@@ -65,8 +65,8 @@ class NoteRepository {
   final ApiClient _api;
   static const CachePolicy _policy = CachePolicies.moduleData;
 
-  CacheKey _key(String wsId) => CacheKey(
-    namespace: 'notes.list',
+  CacheKey _key(String wsId, {bool archived = false}) => CacheKey(
+    namespace: archived ? 'notes.archive' : 'notes.list',
     userId: currentCacheUserId(),
     workspaceId: wsId,
   );
@@ -77,19 +77,21 @@ class NoteRepository {
           .map((item) => NoteRecord.fromJson(item.cast<String, dynamic>()))
           .toList(growable: false);
 
-  Future<List<NoteRecord>> cached(String wsId) async {
+  Future<List<NoteRecord>> cached(String wsId, {bool archived = false}) async {
     final result = await CacheStore.instance.read<List<NoteRecord>>(
-      key: _key(wsId),
+      key: _key(wsId, archived: archived),
       decode: _decode,
     );
     return result.data ?? const [];
   }
 
-  Future<List<NoteRecord>> refresh(String wsId) async {
-    final response = await _api.getJsonList('/api/v1/workspaces/$wsId/notes');
+  Future<List<NoteRecord>> refresh(String wsId, {bool archived = false}) async {
+    final response = await _api.getJsonList(
+      '/api/v1/workspaces/$wsId/notes?archived=$archived',
+    );
     final notes = _decode(response);
     await CacheStore.instance.write(
-      key: _key(wsId),
+      key: _key(wsId, archived: archived),
       policy: _policy,
       payload: notes.map((note) => note.toJson()).toList(),
       tags: ['module:notes', 'workspace:$wsId'],
