@@ -39,6 +39,7 @@ import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.d
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
+import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/assistant/widgets/assistant_voice_message_sheet.dart';
@@ -60,7 +61,8 @@ class AssistantPage extends StatefulWidget {
   State<AssistantPage> createState() => _AssistantPageState();
 }
 
-class _AssistantPageState extends State<AssistantPage> {
+class _AssistantPageState extends State<AssistantPage>
+    with WidgetsBindingObserver {
   final _repository = AssistantRepository();
   final _preferences = AssistantPreferences();
   final _liveRepository = AssistantLiveRepository();
@@ -118,14 +120,24 @@ class _AssistantPageState extends State<AssistantPage> {
   bool _wasAssistantEmptyLayout = false;
   bool _isComposerVisible = false;
   bool _showScrollToBottomFab = false;
+  bool _keepLiveWhileBrowsing = false;
   bool _ignoreScrollVisibilityUpdates = false;
   double? _composerVisibilityAnchorOffset;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_handleScroll);
     _inputFocusNode.addListener(_handleInputFocusChange);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_liveCubit.disconnect());
+    }
   }
 
   @override
@@ -135,8 +147,9 @@ class _AssistantPageState extends State<AssistantPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || TickerMode.valuesOf(context).enabled) return;
         _collapseComposerToFab();
-        if (_liveCubit.state.status !=
-            AssistantLiveConnectionStatus.disconnected) {
+        if (!_keepLiveWhileBrowsing &&
+            _liveCubit.state.status !=
+                AssistantLiveConnectionStatus.disconnected) {
           unawaited(_liveCubit.disconnect());
         }
       });
@@ -145,6 +158,7 @@ class _AssistantPageState extends State<AssistantPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_handleScroll);
     _inputFocusNode.removeListener(_handleInputFocusChange);
     _inputController.dispose();
@@ -567,6 +581,8 @@ class _AssistantPageState extends State<AssistantPage> {
     }
 
     _loadedWorkspaceId = workspace.id;
+    _keepLiveWhileBrowsing = false;
+    unawaited(_loadLiveBrowsingPreference(workspace.id));
     _lastEmptyStateResetKey = null;
     _wasAssistantEmptyLayout = false;
     _isComposerVisible = false;
@@ -579,6 +595,12 @@ class _AssistantPageState extends State<AssistantPage> {
     unawaited(_shellCubit.loadWorkspace(workspace));
     _shellCubit.setImmersiveMode(false);
     unawaited(_chatCubit.loadWorkspace(workspace.id));
+  }
+
+  Future<void> _loadLiveBrowsingPreference(String wsId) async {
+    final value = await _preferences.loadKeepLiveWhileBrowsing(wsId);
+    if (!mounted || _loadedWorkspaceId != wsId) return;
+    setState(() => _keepLiveWhileBrowsing = value);
   }
 
   void _scheduleScrollToBottom() {
@@ -1065,13 +1087,13 @@ class _AssistantPageState extends State<AssistantPage> {
       assistantName: shellState.soul.name,
       cameraController: liveCameraController,
       scrollController: _scrollController,
-      onClose: _exitLiveMode,
       onRetry: () => _handleLiveRetry(wsId, chatState),
       onToggleMicrophone: () => _handleLiveMicrophoneToggle(wsId, chatState),
       onToggleCamera: _liveCubit.toggleCamera,
+      onSettings: _showLiveSettings,
       onDisconnect: () async {
         await _liveCubit.disconnect(clearSession: true);
-        await _exitLiveMode();
+        if (mounted) context.read<AssistantChromeCubit>().exitLiveMode();
       },
       onOpenTextEntry: _openChatComposerFromLiveMode,
     );
@@ -1119,11 +1141,8 @@ class _AssistantPageState extends State<AssistantPage> {
       return;
     }
 
-    await _enterLiveMode(
-      wsId: wsId,
-      activeChatId: chatState.chat?.id ?? chatState.storedChatId,
-      autoStartMicrophone: true,
-    );
+    _dismissKeyboard();
+    context.read<AssistantChromeCubit>().enterLiveMode();
   }
 
   Future<void> _showLiveInfoSheet(
@@ -1205,16 +1224,35 @@ class _AssistantPageState extends State<AssistantPage> {
   }
 
   Future<void> _exitLiveMode() async {
-    if (_liveCubit.state.isMicrophoneActive) {
-      await _liveCubit.toggleMicrophone();
-    }
-    if (_liveCubit.state.isCameraActive) {
-      await _liveCubit.toggleCamera();
+    if (!_keepLiveWhileBrowsing) {
+      // The opt-in browsing setting is the only path that retains media tracks.
+      await _liveCubit.disconnect();
     }
     if (!mounted) {
       return;
     }
     context.read<AssistantChromeCubit>().exitLiveMode();
+  }
+
+  Future<void> _showLiveSettings() async {
+    final wsId = _loadedWorkspaceId;
+    if (wsId == null) return;
+    await showAdaptiveSheet<void>(
+      context: context,
+      builder: (sheetContext) => AssistantSettingsSheetBody(
+        keepLiveWhileBrowsing: _keepLiveWhileBrowsing,
+        onKeepLiveWhileBrowsingChanged: ({required value}) async {
+          await _preferences.saveKeepLiveWhileBrowsing(wsId, value: value);
+          if (!mounted || _loadedWorkspaceId != wsId) return;
+          setState(() => _keepLiveWhileBrowsing = value);
+          if (!value &&
+              !context.read<AssistantChromeCubit>().state.isLiveMode) {
+            await _liveCubit.disconnect();
+          }
+          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+        },
+      ),
+    );
   }
 
   Future<void> _openChatComposerFromLiveMode() async {

@@ -1572,6 +1572,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveCameraPreview => 'Camera trực tiếp';
 
   @override
+  String get assistantKeepLiveBrowsingTitle => 'Giữ Live khi duyệt ứng dụng';
+
+  @override
+  String get assistantKeepLiveBrowsingDescription => 'Khi bật, Mira tiếp tục lắng nghe khi bạn chuyển sang Chat hoặc màn hình khác. Tắt để kết thúc Live khi rời đi.';
+
+  @override
+  String get assistantLiveIdleHeading => 'Trò chuyện với Mira';
+
+  @override
   String get assistantLiveConnect => 'Bắt đầu phiên trực tiếp';
 
   @override
@@ -1612,6 +1621,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantLiveListen => 'Bật micro';
+
+  @override
+  String get miraChatTitle => 'Mira Chat';
+
+  @override
+  String get miraLiveTitle => 'Mira Live';
 
   @override
   String get assistantLiveModelBadge => 'Gemini 3.8 Live';
@@ -1664,7 +1679,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveStatusConnecting => 'Đang kết nối';
 
   @override
-  String get assistantLiveStatusDisconnected => 'Ngoại tuyến';
+  String get assistantLiveStatusDisconnected => 'Chưa kết nối';
 
   @override
   String get assistantLiveStatusError => 'Cần xử lý';
@@ -1691,13 +1706,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveTierRequired => 'Giọng nói trực tiếp chỉ có từ gói PLUS trở lên.';
 
   @override
-  String get assistantLiveTranscriptEmpty => 'Hãy bắt đầu nói hoặc dùng nút bàn phím bên dưới để gõ. Bản nháp trực tiếp và các lượt đã đồng bộ sẽ xuất hiện ở đây.';
+  String get assistantLiveTranscriptEmpty => 'Bắt đầu nói hoặc nhập tin nhắn. Cuộc trò chuyện sẽ hiển thị ở đây.';
 
   @override
   String get assistantLiveTranscriptTitle => 'Bản ghi trực tiếp';
 
   @override
-  String get assistantLiveTitle => 'Trợ lý trực tiếp';
+  String get assistantLiveTitle => 'Mira Live';
 
   @override
   String get assistantLiveTypeMessage => 'Gõ';

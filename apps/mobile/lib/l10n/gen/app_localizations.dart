@@ -3145,6 +3145,24 @@ abstract class AppLocalizations {
   /// **'Live camera'**
   String get assistantLiveCameraPreview;
 
+  /// No description provided for @assistantKeepLiveBrowsingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Live while browsing'**
+  String get assistantKeepLiveBrowsingTitle;
+
+  /// No description provided for @assistantKeepLiveBrowsingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When on, Mira keeps listening as you switch to Chat or another screen. Turn it off to end Live when you leave.'**
+  String get assistantKeepLiveBrowsingDescription;
+
+  /// No description provided for @assistantLiveIdleHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Talk with Mira'**
+  String get assistantLiveIdleHeading;
+
   /// No description provided for @assistantLiveConnect.
   ///
   /// In en, this message translates to:
@@ -3228,6 +3246,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open mic'**
   String get assistantLiveListen;
+
+  /// No description provided for @miraChatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira Chat'**
+  String get miraChatTitle;
+
+  /// No description provided for @miraLiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira Live'**
+  String get miraLiveTitle;
 
   /// No description provided for @assistantLiveModelBadge.
   ///
@@ -3328,7 +3358,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveStatusDisconnected.
   ///
   /// In en, this message translates to:
-  /// **'Offline'**
+  /// **'Not connected'**
   String get assistantLiveStatusDisconnected;
 
   /// No description provided for @assistantLiveStatusError.
@@ -3382,7 +3412,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveTranscriptEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Start talking or type from the keyboard action below. Live drafts and synced turns will appear here.'**
+  /// **'Start talking or type a message. Your conversation appears here.'**
   String get assistantLiveTranscriptEmpty;
 
   /// No description provided for @assistantLiveTranscriptTitle.
@@ -3394,7 +3424,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveTitle.
   ///
   /// In en, this message translates to:
-  /// **'Live assistant'**
+  /// **'Mira Live'**
   String get assistantLiveTitle;
 
   /// No description provided for @assistantLiveTypeMessage.

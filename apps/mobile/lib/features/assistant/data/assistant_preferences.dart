@@ -15,6 +15,8 @@ const assistantThinkingModeStorageKeyPrefix = 'mira-dashboard-thinking-mode-';
 const assistantCreditSourceStorageKeyPrefix = 'mira-dashboard-credit-source-';
 const assistantWorkspaceContextStorageKeyPrefix =
     'mira-dashboard-workspace-context-';
+const assistantKeepLiveWhileBrowsingKeyPrefix =
+    'mira-dashboard-keep-live-while-browsing-';
 
 const _flashLitePreviewModel = 'gemini-3.1-flash-lite-preview';
 const _flashLiteStableModel = 'gemini-3.1-flash-lite';
@@ -31,6 +33,27 @@ class AssistantPreferences {
   String? _key(String prefix, String wsId) {
     final userId = _currentUserId();
     return userId == null ? null : '$userId::$prefix$wsId';
+  }
+
+  Future<bool> loadKeepLiveWhileBrowsing(String wsId) async {
+    final key = _key(assistantKeepLiveWhileBrowsingKeyPrefix, wsId);
+    if (key == null) return false;
+    final prefs = await SharedPreferences.getInstance();
+    if (key != _key(assistantKeepLiveWhileBrowsingKeyPrefix, wsId)) {
+      return false;
+    }
+    return prefs.getBool(key) ?? false;
+  }
+
+  Future<void> saveKeepLiveWhileBrowsing(
+    String wsId, {
+    required bool value,
+  }) async {
+    final key = _key(assistantKeepLiveWhileBrowsingKeyPrefix, wsId);
+    if (key == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    if (key != _key(assistantKeepLiveWhileBrowsingKeyPrefix, wsId)) return;
+    await prefs.setBool(key, value);
   }
 
   Future<String?> loadChatId(String wsId) async {

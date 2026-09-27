@@ -6,7 +6,7 @@ import 'package:mobile/features/assistant/widgets/assistant_mode_title.dart';
 import 'package:mobile/l10n/gen/app_localizations.dart';
 
 void main() {
-  testWidgets('mode title briefly includes Assistant, then settles', (
+  testWidgets('mode title stays Mira Chat or Mira Live without animation', (
     tester,
   ) async {
     final chrome = AssistantChromeCubit();
@@ -32,21 +32,13 @@ void main() {
         .map((text) => text.data ?? '')
         .join();
 
-    expect(title(), 'Assistant');
+    expect(title(), 'Mira Chat');
     chrome.enterLiveMode();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(title(), 'Live Assistant');
-    await tester.pump(const Duration(milliseconds: 1500));
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(title(), 'Live');
+    expect(title(), 'Mira Live');
 
     chrome.exitLiveMode();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(title(), 'Chat Assistant');
-    await tester.pump(const Duration(milliseconds: 1500));
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(title(), 'Chat');
+    await tester.pumpAndSettle();
+    expect(title(), 'Mira Chat');
   });
 }

@@ -58,7 +58,6 @@ void main() {
                     ),
                     assistantName: 'Mira',
                     scrollController: scroll,
-                    onClose: () async {},
                     onRetry: () async {},
                     onToggleMicrophone: () async {
                       microphoneTaps++;
@@ -82,7 +81,7 @@ void main() {
     }
   }
 
-  testWidgets('renders live model badge, activity labels, and controls', (
+  testWidgets('renders compact activity and controls without duplicate title', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -112,7 +111,6 @@ void main() {
             ),
             assistantName: 'Mira',
             scrollController: ScrollController(),
-            onClose: () async {},
             onRetry: () async {},
             onToggleMicrophone: () async {},
             onToggleCamera: () async {},
@@ -123,7 +121,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Gemini 3.8 Live'), findsOneWidget);
+    expect(find.text('Gemini 3.8 Live'), findsNothing);
+    expect(find.text('Mira Live'), findsNothing);
     expect(
       find.text(
         'Microphone streaming is active. '
@@ -140,9 +139,10 @@ void main() {
     expect(find.text('Voice response is streaming'), findsOneWidget);
   });
 
-  testWidgets('shows empty transcript guidance when no turns exist', (
+  testWidgets('waits for an explicit connection in the idle state', (
     tester,
   ) async {
+    var connectTaps = 0;
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -164,9 +164,10 @@ void main() {
             ),
             assistantName: 'Mira',
             scrollController: ScrollController(),
-            onClose: () async {},
             onRetry: () async {},
-            onToggleMicrophone: () async {},
+            onToggleMicrophone: () async {
+              connectTaps++;
+            },
             onToggleCamera: () async {},
             onDisconnect: () async {},
             onOpenTextEntry: () async {},
@@ -175,13 +176,11 @@ void main() {
       ),
     );
 
-    expect(
-      find.text(
-        'Start talking or type from the keyboard action below. '
-        'Live drafts and synced turns will appear here.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('Talk with Mira'), findsOneWidget);
+    expect(find.text('Start live session'), findsOneWidget);
+    expect(find.text('Live transcript'), findsNothing);
+    await tester.tap(find.text('Start live session'));
+    expect(connectTaps, 1);
   });
 
   testWidgets('shows localized recovery without raw provider details', (
@@ -217,7 +216,6 @@ void main() {
             ),
             assistantName: 'Mira',
             scrollController: ScrollController(),
-            onClose: () async {},
             onRetry: () async {},
             onToggleMicrophone: () async {},
             onToggleCamera: () async {},
@@ -228,7 +226,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Needs attention'), findsNWidgets(2));
+    expect(find.text('Needs attention'), findsOneWidget);
     expect(find.text('Socket closed unexpectedly.'), findsNothing);
     expect(
       find.text(
