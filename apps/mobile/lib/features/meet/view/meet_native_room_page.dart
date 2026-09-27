@@ -147,7 +147,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
       await _call.start();
     } on Object {
       if (mounted) setState(() => _joinRequested = false);
-      _showError();
+      _showMediaError();
     }
   }
 
@@ -158,7 +158,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
       await _call.prepareMedia();
       await _call.setCamera(enabled: !_call.media.videoEnabled);
     } on Object {
-      _showError();
+      _showMediaError();
     } finally {
       if (mounted) setState(() => _previewBusy = false);
     }
@@ -335,11 +335,24 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
     );
   }
 
+  void _showMediaError() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _call.media.failureStage == 'capture'
+              ? context.l10n.meetMediaCaptureFailed
+              : context.l10n.meetMediaUnavailable,
+        ),
+      ),
+    );
+  }
+
   Future<void> _toggleAudio() async {
     try {
       await _call.setMicrophone(enabled: !_call.media.audioEnabled);
     } on Object {
-      _showError();
+      _showMediaError();
     }
   }
 
@@ -347,7 +360,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
     try {
       await _call.setCamera(enabled: !_call.media.videoEnabled);
     } on Object {
-      _showError();
+      _showMediaError();
     }
   }
 
