@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.58.0](https://github.com/tutur3u/platform/compare/platform-v0.57.0...platform-v0.58.0) (2026-09-27)
+
+
+### Features
+
+* **contacts:** automate tutoring scheduling and center policies ([4558b42](https://github.com/tutur3u/platform/commit/4558b426700615c5ca2839d43a658b476ca8ad81)) ([#5574](https://github.com/tutur3u/platform/issues/5574)) ([b5361e8](https://github.com/tutur3u/platform/commit/b5361e83c4975367cca24cccc474f2b463b42af6))
+* **contacts:** draft tutoring content from learning records ([786d7d7](https://github.com/tutur3u/platform/commit/786d7d70dc56fe408ec85de27777f46707b165a3))
+* **mobile:** add Apps list and grid views ([d836961](https://github.com/tutur3u/platform/commit/d836961dc6f999b8786dc98c68f36687153ba9a9)) ([#5575](https://github.com/tutur3u/platform/issues/5575)) ([5d72345](https://github.com/tutur3u/platform/commit/5d72345a19b1cae6678b6bf7182b6b9f86571ba0))
+* **mobile:** cache inventory catalog and refine finance overview ([1a0c1ab](https://github.com/tutur3u/platform/commit/1a0c1ab18b7fff2712dfe59b8883e8dbfa2b0b56))
+* **mobile:** cache inventory catalog and wallet checkpoints ([#5564](https://github.com/tutur3u/platform/issues/5564)) ([192df98](https://github.com/tutur3u/platform/commit/192df98a4ee6f2dc4b0b0e70322d67cf74ecdb4d))
+* **mobile:** refine notes and add cross-platform locking ([457d85c](https://github.com/tutur3u/platform/commit/457d85c57ebeed1325623604f1bd0bea891d2772)) ([#5562](https://github.com/tutur3u/platform/issues/5562)) ([fde79d6](https://github.com/tutur3u/platform/commit/fde79d6074fd970fe8964c40669b9d4696fc61e2))
+* **mobile:** simplify assistant mode and chat history controls ([4453d32](https://github.com/tutur3u/platform/commit/4453d323600d336ad3d0378bd3a53a232fd69ac6)) ([#5566](https://github.com/tutur3u/platform/issues/5566)) ([e9f839e](https://github.com/tutur3u/platform/commit/e9f839e43f671059fc3f8fd6d11be84b5cc30a23))
+* **notes:** add archive views and structured editing ([1c78aa2](https://github.com/tutur3u/platform/commit/1c78aa292ebca25660c1ec7464cd6cc02144c82a))
+* **notes:** archive views and structured editing ([#5576](https://github.com/tutur3u/platform/issues/5576)) ([a67b186](https://github.com/tutur3u/platform/commit/a67b186318153cad8b10b71bbfc9335b80d0768a))
+
+
+### Bug Fixes
+
+* **chat:** restore earlier media and finish persisted replies ([19f7c5b](https://github.com/tutur3u/platform/commit/19f7c5bf0cf7ae88db370472d96091612333e31f)) ([#5563](https://github.com/tutur3u/platform/issues/5563)) ([28689eb](https://github.com/tutur3u/platform/commit/28689eb485835205b1bddc54ac1eb598e4ba9c1e))
+* **ci:** keep Apple signing keychain metadata out of logs ([e57707d](https://github.com/tutur3u/platform/commit/e57707df0563db793e2182d37069ec0da0045c17))
+* **ci:** keep Apple signing keychain metadata out of public logs ([#5568](https://github.com/tutur3u/platform/issues/5568)) ([0caa8de](https://github.com/tutur3u/platform/commit/0caa8de4b4b1637d44bc9e6b1bc15d58c53b17b6))
+* **ci:** retry transient Release Please disconnects ([#5570](https://github.com/tutur3u/platform/issues/5570)) ([0b85335](https://github.com/tutur3u/platform/commit/0b85335bafa72ca95ffc69e3690606d9eda5af82))
+* **ci:** retry transient release-please disconnects ([f13ee97](https://github.com/tutur3u/platform/commit/f13ee97725f96815181343af470785d564a0121f))
+* **contacts:** refine tutoring shifts and campus planning ([e12c60a](https://github.com/tutur3u/platform/commit/e12c60a71708c2c91b09bad7246c514663748a5f))
+* **education:** show account and workspace in satellite sidebar ([6086530](https://github.com/tutur3u/platform/commit/608653081d22ea208bf3b153dfd29e322cd9c067)) ([#5572](https://github.com/tutur3u/platform/issues/5572)) ([7d12d14](https://github.com/tutur3u/platform/commit/7d12d14937bd980ed63acbfeee83d0134191d41b))
+* **learn:** show keyboard focus on test answers ([ebfa3ef](https://github.com/tutur3u/platform/commit/ebfa3ef6e95e69dde00ef083d665f19314fd91c5))
+* **mobile:** gate Mira Live entry on current workspace ([ec83b24](https://github.com/tutur3u/platform/commit/ec83b2481bff9e5da7d5800b6c7e2e70fb9566b5))
+* **mobile:** guard note unlock state and format widgets ([bfd22f1](https://github.com/tutur3u/platform/commit/bfd22f17f853f282b3d28edf5d4852c515e37d4a))
+* **mobile:** keep Apps grid usable at narrow widths ([45db40a](https://github.com/tutur3u/platform/commit/45db40a056038457c421664f06bce9823c49afb9))
+* **mobile:** keep Mira Live scoped and stable across screens ([8aee732](https://github.com/tutur3u/platform/commit/8aee732b14142e6e185384a0e2f9cd2c83864934))
+* **mobile:** prioritize newest TestFlight review and expire stale builds ([43cefd4](https://github.com/tutur3u/platform/commit/43cefd48d2b858bd17328d766f3874c6e2c716f5)) ([#5569](https://github.com/tutur3u/platform/issues/5569)) ([bf35b66](https://github.com/tutur3u/platform/commit/bf35b6698f930e5349725073a54315c9f61d609d))
+* **mobile:** refine assistant title and navbar retap ([f9c0b32](https://github.com/tutur3u/platform/commit/f9c0b32d219328cdc30797654342ee63f467217b))
+* **mobile:** simplify Mira Live and require explicit connection ([8100f94](https://github.com/tutur3u/platform/commit/8100f942ab3058100a38ca60f6fdc6ad1953a642)) ([#5573](https://github.com/tutur3u/platform/issues/5573)) ([8d3f52b](https://github.com/tutur3u/platform/commit/8d3f52be217d049ebd35ba003b29eaa79c0696ab))
+
+
+### Performance Improvements
+
+* **ci:** avoid Docker builds for unrelated app releases ([#5571](https://github.com/tutur3u/platform/issues/5571)) ([4947be1](https://github.com/tutur3u/platform/commit/4947be130360d5ddf713d3cba5345124875b0e9d))
+* **ci:** scope Docker checks to Docker app manifests ([2ff2046](https://github.com/tutur3u/platform/commit/2ff20468d138ed7ba310d3322b876a5fcfaac52b))
+
 ## [0.57.0](https://github.com/tutur3u/platform/compare/platform-v0.56.0...platform-v0.57.0) (2026-09-26)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.25.1](https://github.com/tutur3u/platform/compare/learn-v0.25.0...learn-v0.25.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* **education:** show account and workspace in satellite sidebar ([6086530](https://github.com/tutur3u/platform/commit/608653081d22ea208bf3b153dfd29e322cd9c067)) ([#5572](https://github.com/tutur3u/platform/issues/5572)) ([7d12d14](https://github.com/tutur3u/platform/commit/7d12d14937bd980ed63acbfeee83d0134191d41b))
+* **learn:** show keyboard focus on test answers ([ebfa3ef](https://github.com/tutur3u/platform/commit/ebfa3ef6e95e69dde00ef083d665f19314fd91c5))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/learn-v0.24.0...learn-v0.25.0) (2026-09-26)
 
 

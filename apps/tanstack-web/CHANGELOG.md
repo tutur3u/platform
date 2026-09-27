@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.34.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.33.0...tanstack-web-v0.34.0) (2026-09-27)
+
+
+### Features
+
+* **contacts:** automate tutoring scheduling and center policies ([4558b42](https://github.com/tutur3u/platform/commit/4558b426700615c5ca2839d43a658b476ca8ad81)) ([#5574](https://github.com/tutur3u/platform/issues/5574)) ([b5361e8](https://github.com/tutur3u/platform/commit/b5361e83c4975367cca24cccc474f2b463b42af6))
+
+
+### Bug Fixes
+
+* **mobile:** keep Mira Live scoped and stable across screens ([8aee732](https://github.com/tutur3u/platform/commit/8aee732b14142e6e185384a0e2f9cd2c83864934))
+* **mobile:** simplify Mira Live and require explicit connection ([#5573](https://github.com/tutur3u/platform/issues/5573)) ([8d3f52b](https://github.com/tutur3u/platform/commit/8d3f52be217d049ebd35ba003b29eaa79c0696ab))
+
 ## [0.33.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.32.0...tanstack-web-v0.33.0) (2026-09-26)
 
 
