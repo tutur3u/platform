@@ -105,11 +105,12 @@ describe('tutoring policy storage', () => {
   });
 
   it('keeps emoji intact when a chunk ends at a surrogate pair', () => {
-    const messageStart = JSON.stringify({
-      ...EASY_CENTER_TUTORING_POLICY,
-      parentMessageTemplate: '',
-    }).indexOf('parentMessageTemplate') + 'parentMessageTemplate":"'.length;
-    const message = 'a'.repeat(899 - (messageStart % 900)) + '🙂';
+    const messageStart =
+      JSON.stringify({
+        ...EASY_CENTER_TUTORING_POLICY,
+        parentMessageTemplate: '',
+      }).indexOf('parentMessageTemplate') + 'parentMessageTemplate":"'.length;
+    const message = `${'a'.repeat(899 - (messageStart % 900))}🙂`;
     const policy = {
       ...EASY_CENTER_TUTORING_POLICY,
       parentMessageTemplate: message,
