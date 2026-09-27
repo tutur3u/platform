@@ -442,9 +442,16 @@ the already-scanned `main` commit to `production`.
 `e2e-tests.yaml` uses native push paths for E2E specs, Playwright and Docker
 configuration, database fixtures, dependency manifests, lockfiles, and its own
 runner scripts. Normal application source-only commits do not create the image
-bundle and six downstream consumers. E2E has no cron trigger: automatic runs
-are limited to matching commits, and maintainers can still use manual dispatch
-for an intentional full run.
+bundle and its downstream Playwright jobs. A small relevance job also compares
+matching pushes against their previous SHA. It skips image builds and Playwright
+when only Release Please versions, changelogs, and release badge metadata
+changed. Dependency edits, unknown changes, and unavailable comparison history
+run E2E. Run `node --test scripts/ci/release-only-changes.test.js` to check this gate.
+E2E has no cron trigger; maintainers can still dispatch an intentional full run.
+`docker-setup-check.yaml`, `turbo-unit-tests.yaml`, `codecov.yaml`, and
+`type-check.yaml` use the same gate before their expensive jobs, so version-only
+package manifest edits do not rebuild images or repeat unchanged tests and type
+checks. Manual dispatch remains a full run.
 
 Supabase migration workflows still consume the required platform workflow-run
 signals, but compare the target SHA with the last successful migration marker.

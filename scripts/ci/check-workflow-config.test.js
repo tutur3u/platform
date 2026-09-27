@@ -920,12 +920,10 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
   const migration = workflow.jobs?.['migration-e2e'];
   const cleanup = workflow.jobs?.['cleanup-e2e-images'];
 
-  assert.ok(producer);
-  assert.ok(e2e);
-  assert.ok(migration);
-  assert.ok(cleanup);
-  assert.equal(producer.needs, undefined);
-  assert.deepEqual(e2e.needs, ['prepare-e2e-images']);
+  assert.ok(producer && e2e && migration && cleanup);
+  assert.equal(producer.needs, 'relevance');
+  assert.match(producer.if, /needs\.relevance\.outputs\.run_e2e/u);
+  assert.deepEqual(e2e.needs, ['relevance', 'prepare-e2e-images']);
   assert.deepEqual(migration.needs, ['prepare-e2e-images']);
   assert.match(e2e.if, /always\(\)/u);
   assert.equal(migration.if, githubExpression('false'));
@@ -977,11 +975,13 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
   );
 
   assert.deepEqual(cleanup.needs, [
+    'relevance',
     'prepare-e2e-images',
     'e2e',
     'migration-e2e',
   ]);
   assert.match(cleanup.if, /always\(\)/u);
+  assert.match(cleanup.if, /needs\.relevance\.outputs\.run_e2e/u);
   assert.ok(
     cleanup.steps.some(
       (step) =>

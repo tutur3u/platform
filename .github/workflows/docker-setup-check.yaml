@@ -34,6 +34,7 @@ on:
       - "scripts/docker-web.test.js"
       - "scripts/run-tanstack-e2e-docker.js"
       - "scripts/run-tanstack-e2e-docker.test.js"
+      - "scripts/ci/release-only-changes.*"
       - "scripts/watch-blue-green/**/*.js"
       - "turbo.json"
   push:
@@ -70,6 +71,7 @@ on:
       - "scripts/docker-web.test.js"
       - "scripts/run-tanstack-e2e-docker.js"
       - "scripts/run-tanstack-e2e-docker.test.js"
+      - "scripts/ci/release-only-changes.*"
       - "scripts/watch-blue-green/**/*.js"
       - "turbo.json"
   workflow_dispatch:
@@ -86,10 +88,37 @@ jobs:
     with:
       workflow_name: docker-setup-check.yaml
 
+  release-relevance:
+    name: Check release-only changes
+    runs-on: ubuntu-latest
+    outputs:
+      run_checks: ${{ steps.detect.outputs.run_checks }}
+    steps:
+      - name: Check out code and comparison history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          sparse-checkout: scripts/ci/release-only-changes.js
+          sparse-checkout-cone-mode: false
+
+      - name: Detect release-only changes
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          AFTER_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
+            echo 'run_checks=true' >> "$GITHUB_OUTPUT"
+          else
+            result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$AFTER_SHA")"
+            echo "run_checks=$result" >> "$GITHUB_OUTPUT"
+          fi
+
   verify:
     name: Verify Docker Setup
-    needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    needs: [check-ci, release-relevance]
+    if: needs.check-ci.outputs.should_run == 'true' && needs.release-relevance.outputs.run_checks == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
