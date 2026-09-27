@@ -66,12 +66,10 @@ void main() {
       expect(listAction.highlighted, isTrue);
       expect(find.byType(SliverList), findsOneWidget);
       final listControl = find.byWidgetPredicate(
-        (widget) =>
-            widget is Semantics && widget.properties.label == 'List',
+        (widget) => widget is Semantics && widget.properties.label == 'List',
       );
       final gridControl = find.byWidgetPredicate(
-        (widget) =>
-            widget is Semantics && widget.properties.label == 'Grid',
+        (widget) => widget is Semantics && widget.properties.label == 'Grid',
       );
       expect(listControl, findsOneWidget);
       expect(gridControl, findsOneWidget);
