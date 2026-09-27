@@ -22,6 +22,7 @@ type QueueItem = {
   student_name: string;
   reason_type: 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'BOTH';
   absence_deficit: number;
+  missed_class_dates: string[];
   feedback_content: string;
   feedback_created_at: string | null;
   source_feedback_id: string | null;
@@ -201,6 +202,7 @@ async function getTutoringData(request: Request, { params }: Params) {
   const todayNumber = Math.floor(Date.now() / 86_400_000);
 
   const absenceCountMap = new Map<string, number>();
+  const missedClassDatesMap = new Map<string, string[]>();
   const groupNameMap = new Map<string, string>();
   const studentNameMap = new Map<string, string>();
 
@@ -208,6 +210,10 @@ async function getTutoringData(request: Request, { params }: Params) {
     if (row.date < absenceCutoff) continue;
     const key = `${row.group_id}:${row.user_id}`;
     absenceCountMap.set(key, (absenceCountMap.get(key) ?? 0) + 1);
+    missedClassDatesMap.set(key, [
+      ...(missedClassDatesMap.get(key) ?? []),
+      row.date,
+    ]);
 
     if (row.group_id && row.group?.name) {
       groupNameMap.set(row.group_id, row.group.name);
@@ -321,6 +327,9 @@ async function getTutoringData(request: Request, { params }: Params) {
       student_name: studentNameMap.get(studentId) ?? studentId,
       reason_type: reasonType,
       absence_deficit: deficit,
+      missed_class_dates: (missedClassDatesMap.get(key) ?? [])
+        .sort()
+        .slice(-deficit),
       feedback_content: hasWeak ? (feedback?.content ?? '') : '',
       feedback_created_at: hasWeak ? (feedback?.createdAt ?? null) : null,
       source_feedback_id: hasWeak ? (feedback?.id ?? null) : null,

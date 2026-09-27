@@ -89,6 +89,7 @@ struct QueueItem {
     student_name: String,
     reason_type: String,
     absence_deficit: u32,
+    missed_class_dates: Vec<String>,
     feedback_content: String,
     feedback_created_at: Option<String>,
     source_feedback_id: Option<String>,
@@ -360,6 +361,7 @@ fn build_queue_response(
 ) -> QueueResponse {
     let absence_cutoff = today - absence_lookback_days;
     let mut absence_count: BTreeMap<String, u32> = BTreeMap::new();
+    let mut missed_class_dates: BTreeMap<String, Vec<String>> = BTreeMap::new();
     let mut group_name: BTreeMap<String, String> = BTreeMap::new();
     let mut student_name: BTreeMap<String, String> = BTreeMap::new();
 
@@ -377,6 +379,12 @@ fn build_queue_response(
         };
         let key = format!("{group_id}:{user_id}");
         *absence_count.entry(key).or_insert(0) += 1;
+        if let Some(date) = &row.date {
+            missed_class_dates
+                .entry(format!("{group_id}:{user_id}"))
+                .or_default()
+                .push(date.clone());
+        }
 
         if let Some(name) = row.group.as_ref().and_then(|group| group.name.as_ref()) {
             group_name.insert(group_id.clone(), name.clone());
@@ -510,6 +518,18 @@ fn build_queue_response(
                 .unwrap_or_else(|| student_id.to_owned()),
             reason_type: reason_type.to_owned(),
             absence_deficit: deficit,
+            missed_class_dates: {
+                let mut dates = missed_class_dates.get(key).cloned().unwrap_or_default();
+                dates.sort();
+                dates
+                    .into_iter()
+                    .rev()
+                    .take(deficit as usize)
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .rev()
+                    .collect()
+            },
             feedback_content: if has_weak {
                 feedback
                     .map(|(_, content, _)| content.clone())

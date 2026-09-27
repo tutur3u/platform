@@ -8935,6 +8935,8 @@
     "both_reason": "Both",
     "both_reason_tooltip": "Qualifies for both absent recovery and weak support",
     "campus": "Campus",
+    "content_rule_absent": "Use the missed class lesson. Recorded lesson content is filled in when available; check it before saving.",
+    "content_rule_weak": "Use the learning need entered by the homeroom teacher. Review it before saving.",
     "conflict_student_slots": "Session {slotA} conflicts with session {slotB} for the selected student",
     "conflict_teacher_slots": "Session {slotA} conflicts with session {slotB} for the selected teacher",
     "content": "Content",

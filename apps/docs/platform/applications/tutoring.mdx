@@ -123,6 +123,13 @@ Easy Center template uses the resolved label in the parent draft. The
 center's tuition remains free to
 learners; payroll exports count completed teaching time.
 
+When scheduling from **Needs support**, a make-up draft copies the recorded
+lesson description from the missed class date. If that class has no recorded
+content, the field stays empty for staff to fill. A weak-support draft uses the
+teacher's flagged feedback content. Staff can review and edit either draft
+before saving; content is never invented from a class title or an unrelated
+lesson.
+
 Policies are validated at `GET/PUT /api/v1/workspaces/{wsId}/tutoring/policy`
 and stored under `TUTORING_POLICY` in `workspace_configs`. Unset or malformed
 values safely use the standard preset. Existing workspaces need no migration.

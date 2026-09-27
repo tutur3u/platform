@@ -52,6 +52,7 @@ export interface TutoringQueueItem {
   student_name: string;
   reason_type: 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'BOTH';
   absence_deficit: number;
+  missed_class_dates: string[];
   feedback_content: string;
   feedback_created_at: string | null;
   source_feedback_id: string | null;

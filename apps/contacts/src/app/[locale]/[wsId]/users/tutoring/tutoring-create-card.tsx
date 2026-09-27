@@ -356,6 +356,13 @@ export function TutoringCreateCard({
 
       <div className="space-y-2">
         <Label htmlFor="content">{t('content')}</Label>
+        <p className="text-muted-foreground text-xs">
+          {t(
+            form.reasonType === 'WEAK_SUPPORT'
+              ? 'content_rule_weak'
+              : 'content_rule_absent'
+          )}
+        </p>
         <Textarea
           id="content"
           onChange={(event) =>

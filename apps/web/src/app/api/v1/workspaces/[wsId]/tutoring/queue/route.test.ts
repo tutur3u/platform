@@ -109,7 +109,11 @@ describe('tutoring support queue', () => {
     ];
     const body = await (await listQueue()).json();
     expect(body.data).toMatchObject([
-      { absence_deficit: 1, reason_type: 'ABSENT_RECOVERY' },
+      {
+        absence_deficit: 1,
+        missed_class_dates: ['2026-09-20'],
+        reason_type: 'ABSENT_RECOVERY',
+      },
     ]);
   });
 

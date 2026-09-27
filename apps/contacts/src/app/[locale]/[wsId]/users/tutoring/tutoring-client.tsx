@@ -25,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useState } from 'react';
+import { getMissedLessonContent } from './tutoring-content';
 import {
   addDaysToIsoDate,
   buildTutoringSessionQuery,
@@ -323,8 +324,9 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
       )
     );
     let suggestions: ReturnType<typeof suggestTutoringSlots> = [];
-    try {
-      const classSchedule = await queryClient.fetchQuery({
+    let makeupContent = '';
+    const [futureSchedule, missedLessons] = await Promise.allSettled([
+      queryClient.fetchQuery({
         queryKey: [
           'tutoring-class-schedule',
           wsId,
@@ -339,20 +341,46 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
             to: addDaysToIsoDate(today, policy.schedulingHorizonDays),
           }),
         staleTime: 5 * 60_000,
-      });
+      }),
+      item.missed_class_dates.length
+        ? queryClient.fetchQuery({
+            queryKey: [
+              'tutoring-missed-lessons',
+              wsId,
+              item.group_id,
+              item.missed_class_dates,
+            ],
+            queryFn: () =>
+              listWorkspaceUserGroupSessions(wsId, {
+                from: item.missed_class_dates[0] ?? today,
+                groupId: item.group_id,
+                to: today,
+              }),
+            staleTime: 5 * 60_000,
+          })
+        : Promise.resolve(null),
+    ]);
+    if (futureSchedule.status === 'fulfilled') {
       suggestions = suggestTutoringSlots(
-        classSchedule.data ?? [],
+        futureSchedule.value.data ?? [],
         addDaysToIsoDate(today, -1),
         count,
         policy,
         item.reason_type === 'WEAK_SUPPORT' ? 'consecutive' : 'separate'
       );
-    } catch {
-      // Scheduling remains available for manual entry when group dates fail.
+    }
+    if (missedLessons.status === 'fulfilled' && missedLessons.value) {
+      makeupContent = getMissedLessonContent(
+        missedLessons.value.data ?? [],
+        item.missed_class_dates
+      );
     }
     setForm((current) => ({
       ...current,
-      content: item.feedback_content,
+      content:
+        item.reason_type === 'WEAK_SUPPORT'
+          ? item.feedback_content
+          : makeupContent,
       groupId: item.group_id,
       reasonDetail: item.feedback_content,
       reasonType:

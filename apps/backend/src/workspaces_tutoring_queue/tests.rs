@@ -37,6 +37,7 @@ fn pending_recovery_reserves_an_absence_without_hiding_other_missing_sessions() 
     );
     assert_eq!(response.count, 1);
     assert_eq!(response.data[0].absence_deficit, 1);
+    assert_eq!(response.data[0].missed_class_dates, ["2026-09-20"]);
 }
 
 #[test]
@@ -102,4 +103,5 @@ fn historical_absence_and_recovery_do_not_distort_recent_deficit() {
         iso_day("2026-09-27").unwrap(),
     );
     assert_eq!(response.data[0].absence_deficit, 1);
+    assert_eq!(response.data[0].missed_class_dates, ["2026-09-20"]);
 }

@@ -8979,6 +8979,8 @@
     "feature_highlight_schedule_description": "Đặt nhiều buổi cùng lúc kèm kiểm tra trùng giờ.",
     "feedback": "Nhận xét",
     "campus": "Cơ sở",
+    "content_rule_absent": "Dùng nội dung buổi học đã nghỉ. Nội dung được điền sẵn nếu lớp đã ghi nhận; kiểm tra trước khi lưu.",
+    "content_rule_weak": "Dùng nội dung cần kèm do giáo viên chủ nhiệm đã điền. Kiểm tra trước khi lưu.",
     "follow_up_due": "Liên hệ lại phụ huynh",
     "group": "Nhóm",
     "hide_filters": "Ẩn bộ lọc",
