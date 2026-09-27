@@ -4,7 +4,9 @@ import {
   getTutoringCampus,
   getTutoringShiftLabel,
   parseTutoringPolicy,
+  readTutoringPolicyConfigRows,
   renderTutoringParentMessage,
+  serializeTutoringPolicyConfigRows,
 } from './tutoring-policy';
 
 describe('Easy Center tutoring shifts', () => {
@@ -86,5 +88,19 @@ describe('Easy Center tutoring shifts', () => {
         'Kids CS2'
       )
     ).toBe('CS1');
+  });
+});
+
+describe('tutoring policy storage', () => {
+  it('round trips the full center preset under the database value limit', () => {
+    const rows = serializeTutoringPolicyConfigRows(EASY_CENTER_TUTORING_POLICY);
+    expect(rows.length).toBeGreaterThan(1);
+    expect(rows.every((row) => row.value.length <= 1000)).toBe(true);
+    expect(readTutoringPolicyConfigRows(rows)).toEqual(
+      EASY_CENTER_TUTORING_POLICY
+    );
+    expect(readTutoringPolicyConfigRows(rows.slice(0, 1))).not.toEqual(
+      EASY_CENTER_TUTORING_POLICY
+    );
   });
 });

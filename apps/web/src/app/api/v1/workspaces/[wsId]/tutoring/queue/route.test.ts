@@ -25,6 +25,9 @@ function query(rows: () => unknown[]) {
     gte() {
       return this;
     },
+    like() {
+      return this;
+    },
     order() {
       return this;
     },
