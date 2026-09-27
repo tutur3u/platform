@@ -10,12 +10,15 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/notes/note_checklist_selection.dart';
 import 'package:mobile/features/notes/note_editor.dart';
 import 'package:mobile/features/notes/note_link_picker_sheet.dart';
 import 'package:mobile/features/notes/note_list.dart';
 import 'package:mobile/features/notes/note_lock_crypto.dart';
+import 'package:mobile/features/notes/note_mention_embed_builder.dart';
 import 'package:mobile/features/notes/note_passphrase_sheet.dart';
 import 'package:mobile/features/notes/note_repository.dart';
+import 'package:mobile/features/notes/note_task_conversion_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -31,6 +34,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 part 'notes_page_links.dart';
 part 'notes_page_lock.dart';
+part 'notes_page_actions.dart';
+part 'notes_page_tasks.dart';
+
+enum NotesTab { inbox, archive }
 
 class NotesPage extends StatefulWidget {
   const NotesPage({super.key, this.repository});
@@ -51,6 +58,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   Timer? _saveTimer;
   Future<bool> _saveQueue = Future<bool>.value(true);
   List<NoteRecord> _notes = const [];
+  NotesTab _tab = NotesTab.inbox;
   NoteRecord? _selected;
   String? _selectedWsId;
   String? _selectedPassphrase;
@@ -67,11 +75,31 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   int _queuedRevision = -1;
   int _requestVersion = 0;
   int _selectionVersion = 0;
+  BuildContext? _activeSheetContext;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
 
   void _updateState(VoidCallback change) => setState(change);
+
+  Future<T?> _showNotesSheet<T>({
+    required Widget Function(BuildContext) builder,
+    double maxDialogWidth = 420,
+  }) async {
+    final previous = _activeSheetContext;
+    try {
+      return await showAdaptiveSheet<T>(
+        context: context,
+        maxDialogWidth: maxDialogWidth,
+        builder: (sheetContext) {
+          _activeSheetContext = sheetContext;
+          return builder(sheetContext);
+        },
+      );
+    } finally {
+      _activeSheetContext = previous;
+    }
+  }
 
   @override
   void initState() {
@@ -111,8 +139,12 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     final wsId = _wsId;
     if (wsId == null) return;
     final version = ++_requestVersion;
-    final cached = await _repository.cached(wsId);
-    if (!mounted || version != _requestVersion) return;
+    final tab = _tab;
+    final cached = await _repository.cached(
+      wsId,
+      archived: tab == NotesTab.archive,
+    );
+    if (!mounted || version != _requestVersion || tab != _tab) return;
     setState(() {
       _notes = cached;
       _loading = cached.isEmpty;
@@ -124,22 +156,46 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     final wsId = _wsId;
     if (wsId == null) return;
     final requestVersion = version ?? ++_requestVersion;
+    final tab = _tab;
     try {
-      final fresh = await _repository.refresh(wsId);
-      if (!mounted || requestVersion != _requestVersion) return;
+      final fresh = await _repository.refresh(
+        wsId,
+        archived: tab == NotesTab.archive,
+      );
+      if (!mounted || requestVersion != _requestVersion || tab != _tab) return;
       setState(() {
         _notes = fresh;
         _error = null;
       });
     } on Object {
-      if (mounted && requestVersion == _requestVersion && _notes.isEmpty) {
+      if (mounted &&
+          requestVersion == _requestVersion &&
+          tab == _tab &&
+          _notes.isEmpty) {
         setState(() => _error = context.l10n.notesLoadError);
       }
     } finally {
-      if (mounted && requestVersion == _requestVersion) {
+      if (mounted && requestVersion == _requestVersion && tab == _tab) {
         setState(() => _loading = false);
       }
     }
+  }
+
+  Future<void> _switchTab(NotesTab tab) async {
+    if (_tab == tab || !(await _save()) || !mounted) return;
+    _selectionVersion++;
+    setState(() {
+      _tab = tab;
+      _selected = null;
+      _selectedPassphrase = null;
+      _selectedWsId = null;
+      _editing = false;
+      _searching = false;
+      _search.clear();
+      _notes = const [];
+      _error = null;
+    });
+    await _load();
   }
 
   Future<void> _select(NoteRecord note) async {
@@ -311,6 +367,10 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   Future<void> _create() async {
     final wsId = _wsId;
     if (wsId == null) return;
+    if (_tab == NotesTab.archive) {
+      await _switchTab(NotesTab.inbox);
+      if (!mounted || _tab != NotesTab.inbox) return;
+    }
     if (!(await _save())) return;
     try {
       final note = await _repository.create(wsId);
@@ -326,121 +386,6 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     } on Object {
       if (mounted) setState(() => _error = context.l10n.notesSaveError);
     }
-  }
-
-  Future<void> _archive() async {
-    final wsId = _wsId;
-    final note = _selected;
-    if (wsId == null || note == null) return;
-    if (!(await _save())) return;
-    try {
-      await _repository.update(wsId, note, archived: true);
-      if (!mounted || _wsId != wsId || _selected?.id != note.id) return;
-      setState(() {
-        _notes = _notes.where((item) => item.id != note.id).toList();
-        _selected = null;
-        _selectedPassphrase = null;
-        _editing = false;
-      });
-      unawaited(_refresh());
-    } on Object {
-      if (mounted) setState(() => _error = context.l10n.notesSaveError);
-    }
-  }
-
-  Future<void> _delete() async {
-    final wsId = _wsId;
-    final note = _selected;
-    if (wsId == null || note == null) return;
-    final confirmed = await showAdaptiveSheet<bool>(
-      context: context,
-      maxDialogWidth: 420,
-      builder: (sheetContext) => AppDialogScaffold(
-        title: sheetContext.l10n.notesDelete,
-        description: sheetContext.l10n.notesDeleteDescription,
-        icon: Icons.delete_outline_rounded,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            TextButton(
-              onPressed: () => Navigator.of(sheetContext).pop(false),
-              child: Text(
-                MaterialLocalizations.of(sheetContext).cancelButtonLabel,
-              ),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(sheetContext).pop(true),
-              child: Text(sheetContext.l10n.notesDelete),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (confirmed != true || !mounted || _selected?.id != note.id) return;
-    _saveTimer?.cancel();
-    await _saveQueue;
-    try {
-      await _repository.delete(wsId, note.id);
-      if (!mounted || _wsId != wsId || _selected?.id != note.id) return;
-      setState(() {
-        _notes = _notes.where((item) => item.id != note.id).toList();
-        _selected = null;
-        _selectedPassphrase = null;
-        _editing = false;
-        _dirty = false;
-        _error = null;
-      });
-      unawaited(_refresh());
-    } on Object {
-      if (mounted) setState(() => _error = context.l10n.notesDeleteError);
-    }
-  }
-
-  Future<void> _showNoteActions() async {
-    final action = await showAdaptiveSheet<String>(
-      context: context,
-      maxDialogWidth: 420,
-      builder: (sheetContext) => AppDialogScaffold(
-        title: _title.text.trim().isEmpty
-            ? sheetContext.l10n.notesUntitled
-            : _title.text.trim(),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(
-                _selected?.locked == true
-                    ? Icons.lock_open_rounded
-                    : Icons.lock_outline_rounded,
-              ),
-              title: Text(
-                _selected?.locked == true
-                    ? sheetContext.l10n.notesUnlock
-                    : sheetContext.l10n.notesLock,
-              ),
-              onTap: () => Navigator.of(
-                sheetContext,
-              ).pop(_selected?.locked == true ? 'unlock' : 'lock'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.archive_outlined),
-              title: Text(sheetContext.l10n.notesArchive),
-              onTap: () => Navigator.of(sheetContext).pop('archive'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline_rounded),
-              title: Text(sheetContext.l10n.notesDelete),
-              onTap: () => Navigator.of(sheetContext).pop('delete'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (!mounted) return;
-    if (action == 'lock') await _lock();
-    if (action == 'unlock') await _removeLock();
-    if (action == 'archive') await _archive();
-    if (action == 'delete') await _delete();
   }
 
   @override
@@ -487,6 +432,15 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                   ? context.l10n.notesUntitled
                   : _title.text.trim(),
               showLeadingBrand: _selected == null && !_searching,
+              onTitleSubmitted: _selected == null
+                  ? null
+                  : (title) async {
+                      if (title.trim() == _title.text.trim()) return;
+                      _title.text = title.trim();
+                      if (!(await _save())) {
+                        throw StateError('Could not save note title');
+                      }
+                    },
             ),
             ShellMiniNav(
               ownerId: 'notes-nav',
@@ -499,6 +453,11 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                   label: context.l10n.navBack,
                   callbackToken: 'back',
                   onPressed: () async {
+                    final sheetContext = _activeSheetContext;
+                    if (sheetContext != null && sheetContext.mounted) {
+                      await Navigator.of(sheetContext).maybePop();
+                      return;
+                    }
                     if (compact && _selected != null) {
                       if (!(await _save())) {
                         return;
@@ -589,6 +548,21 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                     onPressed: () => unawaited(_showNoteActions()),
                   ),
                 ],
+                if (_selected == null)
+                  for (final tab in NotesTab.values)
+                    ShellActionSpec(
+                      id: 'notes-tab-${tab.name}',
+                      segmentGroup: 'notes-tabs',
+                      icon: tab == NotesTab.inbox
+                          ? Icons.inbox_outlined
+                          : Icons.archive_outlined,
+                      tooltip: tab == NotesTab.inbox
+                          ? context.l10n.notesInbox
+                          : context.l10n.notesArchiveTab,
+                      highlighted: _tab == tab,
+                      callbackToken: _tab,
+                      onPressed: () => unawaited(_switchTab(tab)),
+                    ),
               ],
             ),
             ResponsiveWrapper(
@@ -629,6 +603,8 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                                             onRefresh: _refresh,
                                             child: NoteList(
                                               notes: visible,
+                                              archived:
+                                                  _tab == NotesTab.archive,
                                               selectedId: _selected?.id,
                                               onSelect: (note) async {
                                                 if (!(await _save())) {
@@ -659,13 +635,16 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                               child: _selected == null
                                   ? Center(child: Text(context.l10n.notesEmpty))
                                   : NoteEditor(
-                                      title: _title,
                                       editor: _editor,
                                       editing: _editing,
                                       saving: _saving,
                                       onInsertLink: _insertLink,
                                       onOpenLink: (href) =>
                                           unawaited(_openLink(href)),
+                                      onOpenMention: (target) =>
+                                          unawaited(_openMention(target)),
+                                      onConvertToTask: () =>
+                                          unawaited(_convertChecklistToTask()),
                                     ),
                             ),
                         ],

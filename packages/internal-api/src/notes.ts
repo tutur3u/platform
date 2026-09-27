@@ -20,9 +20,12 @@ function path(wsId: string, noteId?: string) {
 
 export function listWorkspaceNotes(
   wsId: string,
-  options?: InternalApiClientOptions
+  options?: InternalApiClientOptions & { archived?: boolean }
 ) {
-  return getInternalApiClient(options).json<WorkspaceNote[]>(path(wsId));
+  const { archived = false, ...clientOptions } = options ?? {};
+  return getInternalApiClient(clientOptions).json<WorkspaceNote[]>(
+    `${path(wsId)}?archived=${archived}`
+  );
 }
 
 export function createWorkspaceNote(

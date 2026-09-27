@@ -8929,7 +8929,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get notesNew => 'Ghi chú mới';
 
   @override
+  String get notesInbox => 'Hộp thư đến';
+
+  @override
+  String get notesArchiveTab => 'Lưu trữ';
+
+  @override
   String get notesArchive => 'Lưu trữ ghi chú';
+
+  @override
+  String get notesRestore => 'Khôi phục ghi chú';
 
   @override
   String get notesEdit => 'Sửa ghi chú';
@@ -8953,10 +8962,49 @@ class AppLocalizationsVi extends AppLocalizations {
   String get notesEmpty => 'Chưa có ghi chú. Hãy ghi lại ý tưởng đầu tiên.';
 
   @override
+  String get notesArchiveEmpty => 'Ghi chú đã lưu trữ sẽ xuất hiện ở đây.';
+
+  @override
   String get notesUntitled => 'Ghi chú chưa đặt tên';
 
   @override
   String get notesStartWriting => 'Bắt đầu viết...';
+
+  @override
+  String get notesHighlight => 'Tô sáng';
+
+  @override
+  String get notesChecklist => 'Danh sách kiểm tra';
+
+  @override
+  String get notesConvertToTask => 'Chuyển thành công việc';
+
+  @override
+  String get notesSelectChecklistItem => 'Đặt con trỏ trong một mục kiểm tra để chuyển đổi.';
+
+  @override
+  String get notesTaskBoard => 'Bảng';
+
+  @override
+  String get notesTaskList => 'Danh sách';
+
+  @override
+  String get notesTaskNoBoards => 'Không có bảng công việc trong không gian này.';
+
+  @override
+  String get notesTaskNoLists => 'Bảng này chưa có danh sách công việc.';
+
+  @override
+  String get notesTaskLoadError => 'Không thể tải nơi lưu công việc. Hãy thử lại.';
+
+  @override
+  String get notesTaskCreateError => 'Không thể tạo công việc. Hãy thử lại.';
+
+  @override
+  String get notesCreateTask => 'Tạo công việc';
+
+  @override
+  String get notesInsertTable => 'Chèn bảng';
 
   @override
   String get notesInsertLink => 'Chèn liên kết';
@@ -8972,6 +9020,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notesLinkEvents => 'Sự kiện';
+
+  @override
+  String get notesLinkFinance => 'Tài chính';
 
   @override
   String get notesLinkMeetings => 'Cuộc họp';
@@ -8995,7 +9046,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get notesNoLinkResults => 'Không có mục phù hợp';
 
   @override
-  String get notesSearchWork => 'Tìm công việc, sự kiện hoặc cuộc họp';
+  String get notesSearchWork => 'Tìm mục liên kết';
 
   @override
   String get notesLoadError => 'Không thể tải ghi chú. Kéo xuống để thử lại.';

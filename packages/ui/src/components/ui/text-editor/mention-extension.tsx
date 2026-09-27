@@ -95,6 +95,32 @@ const getMentionVisualMeta = (entityType?: string): MentionVisualMeta => {
           </span>
         ),
       };
+    case 'event':
+    case 'meeting':
+      return {
+        prefix: '@',
+        pillClass: 'border-border bg-muted text-foreground',
+        avatarClass: 'border-border bg-background text-foreground',
+        fallback: 'E',
+        icon: renderToString(
+          <span className="flex h-full w-full items-center justify-center">
+            <Calendar className="h-3 w-3" />
+          </span>
+        ),
+      };
+    case 'finance':
+    case 'note':
+      return {
+        prefix: '@',
+        pillClass: 'border-border bg-muted text-foreground',
+        avatarClass: 'border-border bg-background text-foreground',
+        fallback: entityType === 'finance' ? 'F' : 'N',
+        icon: renderToString(
+          <span className="flex h-full w-full items-center justify-center">
+            <Box className="h-3 w-3" />
+          </span>
+        ),
+      };
     case 'external-user':
       return {
         prefix: '@',
