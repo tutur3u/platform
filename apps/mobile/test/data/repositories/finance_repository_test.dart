@@ -139,6 +139,17 @@ void main() {
         expect(summary.wallets.single.id, 'wallet_1');
         expect(summary.latestCheckpoints.single.currentVariance, 20);
         expect(summary.totalsByCurrency.single.actualTotal, 120);
+        final cached = await repository.getWalletCheckpointSummary(
+          wsId: 'ws_1',
+        );
+        expect(cached.latestCheckpoints.single.id, 'checkpoint_1');
+        verify(
+          () => apiClient.getJson('/api/workspaces/ws_1/wallets/checkpoints'),
+        ).called(1);
+        await repository.getWalletCheckpointSummary(
+          wsId: 'ws_1',
+          forceRefresh: true,
+        );
         verify(
           () => apiClient.getJson('/api/workspaces/ws_1/wallets/checkpoints'),
         ).called(1);

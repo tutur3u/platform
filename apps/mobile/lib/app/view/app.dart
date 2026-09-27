@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
@@ -23,6 +24,7 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/data/repositories/habits_access_repository.dart';
 import 'package:mobile/data/repositories/inventory_access_repository.dart';
+import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -76,6 +78,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'app_push_navigation.dart';
+part 'app_inventory_warmup.dart';
 
 class App extends StatefulWidget {
   const App({
@@ -106,6 +109,7 @@ class _AppState extends State<App> {
   late final FinanceRepository _financeRepository;
   late final HabitsAccessRepository _habitsAccessRepository;
   late final InventoryAccessRepository _inventoryAccessRepository;
+  late final InventoryRepository _inventoryRepository;
   late final TimeTrackerRepository _timeTrackerRepository;
   late final ProfileRepository _profileRepository;
   late final AssistantRepository _assistantRepository;
@@ -144,6 +148,7 @@ class _AppState extends State<App> {
     _calendarRepository = CalendarRepository();
     _educationAccessRepository = EducationAccessRepository();
     _financeRepository = FinanceRepository();
+    _inventoryRepository = InventoryRepository();
     _habitsAccessRepository = HabitsAccessRepository();
     _inventoryAccessRepository = InventoryAccessRepository();
     _timeTrackerRepository = TimeTrackerRepository();
@@ -338,6 +343,7 @@ class _AppState extends State<App> {
   }
 
   void _registerWarmupTasks() {
+    _registerInventoryWarmupTask();
     CacheWarmupCoordinator.instance.register('home_payload', ({
       forceRefresh = false,
     }) async {
@@ -535,6 +541,7 @@ class _AppState extends State<App> {
     unawaited(_habitsAccessCubit.close());
     unawaited(_educationAccessCubit.close());
     unawaited(_inventoryAccessCubit.close());
+    _inventoryRepository.dispose();
     unawaited(_appTabCubit.close());
     unawaited(_shellChromeActionsCubit.close());
     unawaited(_shellMiniNavCubit.close());

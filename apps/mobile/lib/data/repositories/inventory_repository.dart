@@ -253,7 +253,7 @@ class InventoryRepository {
       namespace: 'product-options',
       wsId: wsId,
       forceRefresh: forceRefresh,
-      policy: CachePolicies.metadata,
+      policy: CachePolicies.offlineCatalog,
       tags: const ['inventory:catalog'],
       fetch: () => _api.getJson(InventoryEndpoints.productOptions(wsId)),
       decode: (response) =>

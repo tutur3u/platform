@@ -264,6 +264,7 @@ class FinanceAmountText extends StatelessWidget {
     this.isVisible = true,
     this.forceColor,
     this.alignment = CrossAxisAlignment.end,
+    this.fitToWidth = false,
     super.key,
   });
 
@@ -274,6 +275,7 @@ class FinanceAmountText extends StatelessWidget {
   final bool isVisible;
   final Color? forceColor;
   final CrossAxisAlignment alignment;
+  final bool fitToWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -291,13 +293,36 @@ class FinanceAmountText extends StatelessWidget {
     return Column(
       crossAxisAlignment: alignment,
       children: [
-        Text(
-          amountText,
-          style: (style ?? theme.typography.large).copyWith(
-            fontWeight: FontWeight.w700,
-            color: color,
+        if (fitToWidth)
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: alignment == CrossAxisAlignment.end
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              child: Text(
+                amountText,
+                maxLines: 1,
+                softWrap: false,
+                style: (style ?? theme.typography.large).copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ),
+          )
+        else
+          Text(
+            amountText,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: (style ?? theme.typography.large).copyWith(
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
-        ),
         Text(
           currency.toUpperCase(),
           style: theme.typography.xSmall.copyWith(

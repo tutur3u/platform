@@ -9,7 +9,11 @@ class CacheWarmupCoordinator {
 
   final Map<String, CacheWarmupTask> _tasks = {};
   final Map<String, List<String>> _groups = {
-    'boot': <String>['apps_registry', 'assistant_metadata'],
+    'boot': <String>[
+      'apps_registry',
+      'assistant_metadata',
+      'inventory_catalog',
+    ],
     'home': <String>['apps_registry', 'assistant_metadata'],
     'tasks': <String>[
       'tasks_list',
@@ -19,6 +23,7 @@ class CacheWarmupCoordinator {
       'task_portfolio',
     ],
     'finance': <String>['finance_overview', 'finance_transactions'],
+    'inventory': <String>['inventory_catalog'],
     'habits': <String>['habits_overview', 'habits_activity'],
     'timer': <String>['time_tracker_root', 'time_tracker_requests'],
     'apps': <String>[
