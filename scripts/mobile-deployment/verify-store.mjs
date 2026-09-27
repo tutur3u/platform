@@ -27,12 +27,40 @@ async function json(url, options = {}) {
     signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) {
-    // Store error payloads may contain account data. Keep CI diagnostics bounded.
+    // Store error payloads may contain account data. Log only bounded API codes
+    // and JSON pointers, never titles, details, or request bodies.
+    const payload = await response.json().catch(() => null);
+    const diagnostic = storeApiErrorDiagnostic(payload);
     throw new Error(
-      `Store API request failed (${response.status}, ${new URL(url).pathname})`
+      `Store API request failed (${response.status}, ${new URL(url).pathname}${diagnostic ? `; ${diagnostic}` : ''})`
     );
   }
   return response.status === 204 ? null : response.json();
+}
+
+export function storeApiErrorDiagnostic(payload) {
+  if (!Array.isArray(payload?.errors)) return '';
+  return payload.errors
+    .slice(0, 3)
+    .map((error) => {
+      const code = error?.code;
+      const pointer = error?.source?.pointer;
+      const safeCode =
+        typeof code === 'string' && /^[A-Za-z0-9_.-]{1,100}$/.test(code)
+          ? code
+          : '';
+      const safePointer =
+        typeof pointer === 'string' &&
+        /^\/(?:data|attributes|relationships)(?:\/[A-Za-z0-9_~.-]+){0,8}$/.test(
+          pointer
+        ) &&
+        pointer.length <= 120
+          ? pointer
+          : '';
+      return [safeCode, safePointer].filter(Boolean).join(' at ');
+    })
+    .filter(Boolean)
+    .join(', ');
 }
 
 export function playReleaseReady(track, buildNumber) {

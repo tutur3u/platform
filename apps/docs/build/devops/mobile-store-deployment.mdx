@@ -186,6 +186,12 @@ app's beta review contact and app description current there. Missing export
 compliance, processing failures, and internal distribution must also be
 resolved in App Store Connect.
 
+When App Store Connect rejects a review submission, the workflow logs the HTTP
+status, API error code, and JSON field pointer. It omits Apple error titles,
+details, and request bodies because they may contain account data. Use the code
+and field pointer to inspect the rejected build's TestFlight information in
+App Store Connect before retrying the production review workflow.
+
 Apple permits one external beta build per app version in review at a time. The
 review queue checks every five minutes and dispatches the production retry
 workflow. It leaves existing reviews in place and submits the newest eligible
