@@ -446,8 +446,8 @@ export function UserFeedbacksClient({
     await queryClient.invalidateQueries({
       queryKey: ['user-feedbacks'],
     });
+    await queryClient.invalidateQueries({ queryKey: ['tutoring-queue', wsId] });
   };
-
   const createMutation = useMutation({
     mutationFn: async () =>
       createWorkspaceUserFeedback(wsId, {

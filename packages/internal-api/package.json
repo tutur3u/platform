@@ -247,6 +247,11 @@
       "import": "./dist/tutoring-policy.js",
       "require": "./dist/tutoring-policy.js"
     },
+    "./tutoring-queue-rules": {
+      "types": "./dist/tutoring-queue-rules.d.ts",
+      "import": "./dist/tutoring-queue-rules.js",
+      "require": "./dist/tutoring-queue-rules.js"
+    },
     "./task-templates": {
       "types": "./dist/task-templates.d.ts",
       "import": "./dist/task-templates.js",

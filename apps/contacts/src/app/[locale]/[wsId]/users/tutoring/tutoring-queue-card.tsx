@@ -20,7 +20,8 @@ import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Input } from '@tuturuuu/ui/input';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { TutoringReasonBadge } from './tutoring-badges';
 import { WorkspacePersonPicker } from './tutoring-people-picker';
@@ -91,6 +92,7 @@ export function TutoringQueueCard({
 }: Props) {
   const t = useTranslations('ws-tutoring');
   const tCommon = useTranslations();
+  const locale = useLocale();
 
   const queueQuery = useQuery({
     enabled,
@@ -122,7 +124,11 @@ export function TutoringQueueCard({
       }),
   });
 
-  const summary = queueQuery.data?.summary ?? { absent: 0, weak: 0 };
+  const summary = queueQuery.data?.summary ?? {
+    absent: 0,
+    weak: 0,
+    review_due: 0,
+  };
   const isFiltered =
     filters.search.trim().length > 0 ||
     filters.reasonType !== 'all' ||
@@ -220,7 +226,8 @@ export function TutoringQueueCard({
             <p className="line-clamp-2 text-sm">
               {row.original.feedback_content || '-'}
             </p>
-            {row.original.feedback_created_at &&
+            {!row.original.review_only &&
+            row.original.feedback_created_at &&
             Date.parse(row.original.feedback_created_at) <=
               Date.now() - policy.followUpDays * 86_400_000 ? (
               <Badge
@@ -230,6 +237,14 @@ export function TutoringQueueCard({
                 {t('follow_up_due')}
               </Badge>
             ) : null}
+            {row.original.content_review_due ? (
+              <Badge
+                className="border-dynamic-red/25 bg-dynamic-red/10 text-dynamic-red"
+                variant="outline"
+              >
+                {t('weak_content_review_due')}
+              </Badge>
+            ) : null}
           </div>
         ),
       },
@@ -237,7 +252,13 @@ export function TutoringQueueCard({
         id: 'actions',
         header: () => <div className="text-right">{t('actions')}</div>,
         cell: ({ row }) =>
-          canManage ? (
+          row.original.review_only ? (
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/${locale}/${wsId}/users/feedbacks`}>
+                {t('queue_office_review')}
+              </Link>
+            </Button>
+          ) : canManage ? (
             <div className="flex justify-end">
               <Button
                 disabled={schedulingKey !== null}
@@ -293,6 +314,14 @@ export function TutoringQueueCard({
               >
                 {t('queue_weak_count', { count: summary.weak })}
               </Badge>
+              {summary.review_due > 0 ? (
+                <Badge
+                  className="rounded-full border-dynamic-red/25 bg-dynamic-red/10 text-dynamic-red"
+                  variant="outline"
+                >
+                  {t('queue_review_due_count', { count: summary.review_due })}
+                </Badge>
+              ) : null}
             </>
           ) : null}
         </div>

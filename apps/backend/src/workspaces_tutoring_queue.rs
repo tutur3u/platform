@@ -1,11 +1,16 @@
 mod policy;
 mod query;
+mod response;
 
-use policy::{current_utc_day, iso_day, load_queue_policy, reassessment_due};
+use policy::{
+    QueuePolicy, content_review_due, current_utc_day, group_excluded, iso_day, load_queue_policy,
+    reassessment_due, unchanged_feedback_since,
+};
 use query::{QueryParseError, TutoringQueueQuery, parse_query};
+use response::{QueueItem, QueueResponse, summarize_queue};
 use std::collections::{BTreeMap, BTreeSet};
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::json;
 
 use crate::{
@@ -75,42 +80,6 @@ struct FeedbackRow {
     group_id: Option<String>,
     user: Option<IdentityEmbed>,
     group: Option<FeedbackGroupEmbed>,
-}
-
-// ---------------------------------------------------------------------------
-// Response shapes
-// ---------------------------------------------------------------------------
-
-#[derive(Serialize)]
-struct QueueItem {
-    group_id: String,
-    student_user_id: String,
-    group_name: String,
-    student_name: String,
-    reason_type: String,
-    absence_deficit: u32,
-    missed_class_dates: Vec<String>,
-    feedback_content: String,
-    feedback_created_at: Option<String>,
-    source_feedback_id: Option<String>,
-}
-
-#[derive(Serialize)]
-struct QueueSummary {
-    absent: u32,
-    weak: u32,
-}
-
-#[derive(Serialize)]
-struct QueueResponse {
-    data: Vec<QueueItem>,
-    count: usize,
-    page: u32,
-    #[serde(rename = "pageSize")]
-    page_size: u32,
-    summary: QueueSummary,
-    #[serde(rename = "totalPages")]
-    total_pages: u32,
 }
 
 // ---------------------------------------------------------------------------
@@ -199,8 +168,7 @@ async fn tutoring_queue_response(
         attendance_rows,
         reserved_rows,
         feedback_rows,
-        policy.reassessment_days,
-        policy.absence_lookback_days,
+        &policy,
         current_utc_day(),
     );
 
@@ -355,11 +323,10 @@ fn build_queue_response(
     attendance_rows: Vec<AttendanceRow>,
     reserved_rows: Vec<ReservedSessionRow>,
     feedback_rows: Vec<FeedbackRow>,
-    reassessment_days: i64,
-    absence_lookback_days: i64,
+    policy: &QueuePolicy,
     today: i64,
 ) -> QueueResponse {
-    let absence_cutoff = today - absence_lookback_days;
+    let absence_cutoff = today - policy.absence_lookback_days;
     let mut absence_count: BTreeMap<String, u32> = BTreeMap::new();
     let mut missed_class_dates: BTreeMap<String, Vec<String>> = BTreeMap::new();
     let mut group_name: BTreeMap<String, String> = BTreeMap::new();
@@ -445,6 +412,7 @@ fn build_queue_response(
     // Latest feedback per key (rows already ordered created_at desc).
     let mut latest_feedback: BTreeMap<String, (Option<String>, String, Option<String>)> =
         BTreeMap::new();
+    let mut feedback_history: BTreeMap<String, Vec<(String, String)>> = BTreeMap::new();
     for row in &feedback_rows {
         if !is_present_id(row.group_id.as_deref()) || !is_present_id(row.user_id.as_deref()) {
             continue;
@@ -452,6 +420,12 @@ fn build_queue_response(
         let group_id = row.group_id.as_deref().unwrap_or_default();
         let user_id = row.user_id.as_deref().unwrap_or_default();
         let key = format!("{group_id}:{user_id}");
+        if let (Some(content), Some(created_at)) = (&row.content, &row.created_at) {
+            feedback_history
+                .entry(key.clone())
+                .or_default()
+                .push((content.clone(), created_at.clone()));
+        }
         latest_feedback.entry(key).or_insert_with(|| {
             (
                 row.id.clone(),
@@ -483,22 +457,40 @@ fn build_queue_response(
             .unwrap_or(0)
             .saturating_sub(reserved_count.get(key).copied().unwrap_or(0));
         let feedback = latest_feedback.get(key);
-        let has_absent = deficit > 0;
+        let group_label = group_name
+            .get(group_id)
+            .map(String::as_str)
+            .unwrap_or_default();
+        let has_absent = deficit > 0 && !group_excluded(policy, group_label, "make_up");
         let has_weak = feedback
             .and_then(|(id, _, _)| id.as_ref())
             .is_some_and(|id| {
                 !scheduled_feedback_ids.contains(id)
+                    && !group_excluded(policy, group_label, "weak_support")
                     && reassessment_due(
                         completed_feedback_dates.get(id).map(String::as_str),
-                        reassessment_days,
+                        policy.reassessment_days,
                         today,
                     )
             });
 
-        if !has_absent && !has_weak {
+        let content_unchanged_since =
+            if feedback.is_some() && !group_excluded(policy, group_label, "weak_support") {
+                feedback_history
+                    .get(key)
+                    .and_then(|rows| unchanged_feedback_since(rows))
+            } else {
+                None
+            };
+        let review_due = content_review_due(
+            content_unchanged_since.as_deref(),
+            policy.weak_content_review_days,
+            today,
+        );
+        if !has_absent && !has_weak && !review_due {
             continue;
         }
-
+        let review_only = !has_absent && !has_weak;
         let reason_type = if has_absent {
             if has_weak { "BOTH" } else { "ABSENT_RECOVERY" }
         } else {
@@ -517,27 +509,31 @@ fn build_queue_response(
                 .cloned()
                 .unwrap_or_else(|| student_id.to_owned()),
             reason_type: reason_type.to_owned(),
-            absence_deficit: deficit,
+            absence_deficit: if has_absent { deficit } else { 0 },
             missed_class_dates: {
-                let mut dates = missed_class_dates.get(key).cloned().unwrap_or_default();
-                dates.sort();
-                dates
-                    .into_iter()
-                    .rev()
-                    .take(deficit as usize)
-                    .collect::<Vec<_>>()
-                    .into_iter()
-                    .rev()
-                    .collect()
+                if has_absent {
+                    let mut dates = missed_class_dates.get(key).cloned().unwrap_or_default();
+                    dates.sort();
+                    dates
+                        .into_iter()
+                        .rev()
+                        .take(deficit as usize)
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .rev()
+                        .collect()
+                } else {
+                    Vec::new()
+                }
             },
-            feedback_content: if has_weak {
+            feedback_content: if has_weak || review_due {
                 feedback
                     .map(|(_, content, _)| content.clone())
                     .unwrap_or_default()
             } else {
                 String::new()
             },
-            feedback_created_at: if has_weak {
+            feedback_created_at: if has_weak || review_due {
                 feedback.and_then(|(_, _, created_at)| created_at.clone())
             } else {
                 None
@@ -547,6 +543,9 @@ fn build_queue_response(
             } else {
                 None
             },
+            content_review_due: review_due,
+            content_unchanged_since,
+            review_only,
         });
     }
 
@@ -614,19 +613,6 @@ fn build_queue_response(
         summary,
         total_pages,
     }
-}
-
-fn summarize_queue(queue: &[QueueItem]) -> QueueSummary {
-    let mut summary = QueueSummary { absent: 0, weak: 0 };
-    for item in queue {
-        if item.reason_type == "ABSENT_RECOVERY" || item.reason_type == "BOTH" {
-            summary.absent += 1;
-        }
-        if item.reason_type == "WEAK_SUPPORT" || item.reason_type == "BOTH" {
-            summary.weak += 1;
-        }
-    }
-    summary
 }
 
 fn name_of(identity: &IdentityEmbed) -> String {

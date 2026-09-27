@@ -11,6 +11,12 @@ export interface TutoringTimeRule {
   label?: string;
 }
 
+export interface TutoringGroupExclusion {
+  scope: 'all' | 'make_up' | 'weak_support';
+  match: 'contains' | 'exact' | 'prefix' | 'suffix';
+  value: string;
+}
+
 export interface TutoringPolicy {
   preset: 'standard' | 'easy_center' | 'custom';
   durationMinutes: number;
@@ -19,8 +25,10 @@ export interface TutoringPolicy {
   absenceLookbackDays: number;
   reassessmentDays: number;
   followUpDays: number;
+  weakContentReviewDays: number;
   schedulingHorizonDays: number;
   timeRules: TutoringTimeRule[];
+  groupExclusions: TutoringGroupExclusion[];
   campusByGroupId: Record<string, string>;
   parentMessageTemplate: string;
 }
@@ -39,8 +47,10 @@ export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   absenceLookbackDays: 28,
   reassessmentDays: 14,
   followUpDays: 7,
+  weakContentReviewDays: 0,
   schedulingHorizonDays: 56,
   timeRules: [],
+  groupExclusions: [],
   campusByGroupId: {},
   parentMessageTemplate: DEFAULT_PARENT_MESSAGE_TEMPLATE,
 };
@@ -50,6 +60,8 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
   preset: 'easy_center',
   weakSupportSessions: 2,
   absenceLookbackDays: 21,
+  weakContentReviewDays: 14,
+  groupExclusions: [{ scope: 'all', match: 'contains', value: 'DDT' }],
   parentMessageTemplate: EASY_CENTER_PARENT_MESSAGE_TEMPLATE,
   // The seven class shifts supplied by Easy Center. Shift 4 is after class.
   timeRules: [
@@ -113,6 +125,7 @@ const FIELDS = [
   'absenceLookbackDays',
   'reassessmentDays',
   'followUpDays',
+  'weakContentReviewDays',
   'schedulingHorizonDays',
 ] as const;
 
@@ -125,11 +138,21 @@ function isIntegerInRange(value: unknown, min: number, max: number) {
 /** Strict validation is shared by settings UI and the API write boundary. */
 export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  const candidate = value as Record<string, unknown>;
+  const saved = value as Record<string, unknown>;
+  const defaults =
+    saved.preset === 'easy_center'
+      ? EASY_CENTER_TUTORING_POLICY
+      : STANDARD_TUTORING_POLICY;
+  const candidate: Record<string, unknown> = {
+    weakContentReviewDays: defaults.weakContentReviewDays,
+    groupExclusions: defaults.groupExclusions,
+    ...saved,
+  };
   if (!['standard', 'easy_center', 'custom'].includes(String(candidate.preset)))
     return null;
   for (const field of FIELDS) {
-    const min = field === 'leadMinutes' ? 0 : 1;
+    const min =
+      field === 'leadMinutes' || field === 'weakContentReviewDays' ? 0 : 1;
     const max =
       field === 'schedulingHorizonDays'
         ? 180
@@ -150,11 +173,34 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     candidate.parentMessageTemplate.length > 2000 ||
     !Array.isArray(candidate.timeRules) ||
     candidate.timeRules.length > 30 ||
+    !Array.isArray(candidate.groupExclusions) ||
+    candidate.groupExclusions.length > 30 ||
     !candidate.campusByGroupId ||
     typeof candidate.campusByGroupId !== 'object' ||
     Array.isArray(candidate.campusByGroupId)
   )
     return null;
+
+  const groupExclusions: TutoringGroupExclusion[] = [];
+  for (const raw of candidate.groupExclusions) {
+    if (!raw || typeof raw !== 'object') return null;
+    const exclusion = raw as Record<string, unknown>;
+    if (
+      !['all', 'make_up', 'weak_support'].includes(String(exclusion.scope)) ||
+      !['contains', 'exact', 'prefix', 'suffix'].includes(
+        String(exclusion.match)
+      ) ||
+      typeof exclusion.value !== 'string' ||
+      !exclusion.value.trim() ||
+      exclusion.value.length > 80
+    )
+      return null;
+    groupExclusions.push({
+      scope: exclusion.scope as TutoringGroupExclusion['scope'],
+      match: exclusion.match as TutoringGroupExclusion['match'],
+      value: exclusion.value.trim(),
+    });
+  }
 
   const campusEntries = Object.entries(candidate.campusByGroupId);
   if (
@@ -214,13 +260,33 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     absenceLookbackDays: candidate.absenceLookbackDays as number,
     reassessmentDays: candidate.reassessmentDays as number,
     followUpDays: candidate.followUpDays as number,
+    weakContentReviewDays: candidate.weakContentReviewDays as number,
     schedulingHorizonDays: candidate.schedulingHorizonDays as number,
     timeRules: rules,
+    groupExclusions,
     campusByGroupId: Object.fromEntries(
       campusEntries.map(([groupId, name]) => [groupId, String(name).trim()])
     ),
     parentMessageTemplate: candidate.parentMessageTemplate,
   };
+}
+
+/** Match group names using the workspace's editable eligibility rules. */
+export function isTutoringGroupExcluded(
+  policy: TutoringPolicy,
+  groupName: string,
+  reason: 'make_up' | 'weak_support'
+) {
+  const name = groupName.trim().toLocaleLowerCase();
+  return policy.groupExclusions.some((rule) => {
+    if (rule.scope !== 'all' && rule.scope !== reason) return false;
+    const value = rule.value.trim().toLocaleLowerCase();
+    if (!value) return false;
+    if (rule.match === 'exact') return name === value;
+    if (rule.match === 'prefix') return name.startsWith(value);
+    if (rule.match === 'suffix') return name.endsWith(value);
+    return name.includes(value);
+  });
 }
 
 export function getTutoringShiftLabel(

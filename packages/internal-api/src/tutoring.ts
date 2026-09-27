@@ -56,11 +56,15 @@ export interface TutoringQueueItem {
   feedback_content: string;
   feedback_created_at: string | null;
   source_feedback_id: string | null;
+  content_review_due: boolean;
+  content_unchanged_since: string | null;
+  review_only: boolean;
 }
 
 export interface TutoringQueueSummary {
   absent: number;
   weak: number;
+  review_due: number;
 }
 
 export interface TutoringDetailedExportRow {
