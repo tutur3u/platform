@@ -221,7 +221,10 @@ exponential backoff.
 - `rust-backend.yml`
 
 `docker-setup-check.yaml` is the workflow to watch whenever Docker files,
-compose files, or Docker helper scripts change. `rust-backend.yml` owns the
+compose files, or Docker helper scripts change. It also watches the manifests
+of apps directly represented in the Docker topology and `bun.lock` for
+workspace dependency changes. Unrelated app or package version-only bumps do
+not rebuild the web images. `rust-backend.yml` owns the
 `apps/backend` Rust service checks and the migration Cloudflare checks:
 formatting, locked dependency fetch, Clippy, tests, Cloudflare Worker target
 validation, smoke reporter unit tests, native binary build, Docker image build,
