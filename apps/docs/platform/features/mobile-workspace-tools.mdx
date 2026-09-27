@@ -236,8 +236,10 @@ response bodies to 8 MiB, and forwarding to 20 seconds.
 Mobile Notes defaults to a device-first encrypted lock. Where OS local
 authentication is available, Face ID or Touch ID gates a random note key in
 device-only secure storage; otherwise the lock sheet defaults to a six-digit
-app PIN. The PIN gates that local key and is never used as the encryption
-password. Five incorrect PIN attempts pause retries for 30 seconds. The server
+app PIN. The lock encrypts the note body; the title and list metadata retain
+their existing visibility. The PIN gates that local key and is never used as
+the encryption password. Five incorrect PIN attempts pause retries for 30
+seconds. The server
 also stores a wrapped copy of the random key in the note envelope using the
 configured encryption master key. Creating a device lock fails if wrapping is
 unavailable. Web releases that key only for the note creator after a verified
