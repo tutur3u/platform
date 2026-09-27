@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { decryptNote, encryptNote, noteLockEnvelope } from './note-lock';
+import {
+  decryptNote,
+  encryptNote,
+  isDeviceLockedNote,
+  noteLockEnvelope,
+} from './note-lock';
 
 const sharedNote = {
   type: 'doc',
@@ -37,5 +42,20 @@ describe('locked notes', () => {
       sharedNote
     );
     await expect(decryptNote(encrypted, 'incorrect')).rejects.toThrow();
+  });
+
+  it('recognizes device-only notes without offering a passphrase prompt', () => {
+    const deviceNote = {
+      ...crossPlatformEnvelope,
+      attrs: {
+        tuturuuuLock: {
+          ...crossPlatformEnvelope.attrs.tuturuuuLock,
+          mode: 'device',
+        },
+      },
+    };
+    expect(noteLockEnvelope(deviceNote)).not.toBeNull();
+    expect(isDeviceLockedNote(deviceNote)).toBe(true);
+    expect(isDeviceLockedNote(crossPlatformEnvelope)).toBe(false);
   });
 });

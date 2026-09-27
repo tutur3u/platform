@@ -114,6 +114,10 @@ class NoteRepository {
     Map<String, dynamic>? content,
     bool? archived,
   }) async {
+    // Remove the earlier plaintext snapshot before a lock can be persisted.
+    // CacheStore.remove also invalidates in-flight list writes for this key.
+    await CacheStore.instance.remove(_key(wsId));
+    await CacheStore.instance.remove(_key(wsId, archived: true));
     final response = await _api
         .putJson('/api/v1/workspaces/$wsId/notes/${note.id}', {
           if (title != null) 'title': title,
@@ -123,7 +127,41 @@ class NoteRepository {
     return NoteRecord.fromJson(response);
   }
 
+  Future<String> wrapRecoveryKey(
+    String wsId,
+    String noteId,
+    String secret,
+  ) async {
+    final result = await _api.postJson(
+      '/api/v1/workspaces/$wsId/notes/$noteId/recovery',
+      {'secret': secret},
+    );
+    return result['wrapped'] as String;
+  }
+
+  Future<String> recoverKeyWithPasskey(String wsId, String noteId) async {
+    final result = await _api.getJson(
+      '/api/v1/workspaces/$wsId/notes/$noteId/recovery',
+    );
+    return result['secret'] as String;
+  }
+
+  Future<void> approveKeyTransfer(
+    String wsId,
+    String noteId,
+    String id,
+    String sealed,
+  ) async {
+    await _api.postJson('/api/v1/workspaces/$wsId/notes/$noteId/transfer', {
+      'action': 'approve',
+      'id': id,
+      'sealed': sealed,
+    });
+  }
+
   Future<void> delete(String wsId, String noteId) async {
+    await CacheStore.instance.remove(_key(wsId));
+    await CacheStore.instance.remove(_key(wsId, archived: true));
     await _api.deleteJson('/api/v1/workspaces/$wsId/notes/$noteId');
   }
 

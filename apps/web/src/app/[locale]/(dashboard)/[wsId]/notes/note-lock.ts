@@ -5,6 +5,9 @@ const iterations = 150000;
 
 type LockEnvelope = {
   version: 1;
+  mode?: 'device';
+  recovery?: string;
+  lockId?: string;
   salt: string;
   nonce: string;
   ciphertext: string;
@@ -32,6 +35,10 @@ export function noteLockEnvelope(document: unknown): LockEnvelope | null {
     typeof value.ciphertext === 'string'
     ? (value as LockEnvelope)
     : null;
+}
+
+export function isDeviceLockedNote(document: unknown): boolean {
+  return noteLockEnvelope(document)?.mode === 'device';
 }
 
 async function deriveKey(passphrase: string, salt: Uint8Array) {

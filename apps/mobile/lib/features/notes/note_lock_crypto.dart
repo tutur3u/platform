@@ -14,10 +14,16 @@ Map<String, dynamic>? lockedNoteEnvelope(Map<String, dynamic> document) {
   return envelope.cast<String, dynamic>();
 }
 
+bool isDeviceLockedNote(Map<String, dynamic> document) =>
+    lockedNoteEnvelope(document)?['mode'] == 'device';
+
 Future<Map<String, dynamic>> encryptNoteDocument(
   Map<String, dynamic> document,
-  String passphrase,
-) async {
+  String passphrase, {
+  bool deviceOnly = false,
+  String? recovery,
+  String? lockId,
+}) async {
   if (passphrase.isEmpty) throw ArgumentError('Passphrase is required');
   final random = Random.secure();
   final salt = List<int>.generate(16, (_) => random.nextInt(256));
@@ -37,6 +43,9 @@ Future<Map<String, dynamic>> encryptNoteDocument(
     'attrs': {
       _lockKey: {
         'version': 1,
+        if (deviceOnly) 'mode': 'device',
+        if (lockId != null) 'lockId': lockId,
+        if (recovery != null) 'recovery': recovery,
         'salt': base64Encode(salt),
         'nonce': base64Encode(nonce),
         // Web Crypto stores the authentication tag at the end of ciphertext.

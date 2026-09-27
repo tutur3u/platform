@@ -10,7 +10,9 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/notes/note_checklist_selection.dart';
+import 'package:mobile/features/notes/note_device_lock.dart';
 import 'package:mobile/features/notes/note_editor.dart';
 import 'package:mobile/features/notes/note_link_picker_sheet.dart';
 import 'package:mobile/features/notes/note_list.dart';
@@ -19,6 +21,7 @@ import 'package:mobile/features/notes/note_mention_embed_builder.dart';
 import 'package:mobile/features/notes/note_passphrase_sheet.dart';
 import 'package:mobile/features/notes/note_repository.dart';
 import 'package:mobile/features/notes/note_task_conversion_sheet.dart';
+import 'package:mobile/features/notes/note_transfer_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -29,11 +32,14 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:passkeys/authenticator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 part 'notes_page_links.dart';
 part 'notes_page_lock.dart';
+part 'notes_page_selection.dart';
 part 'notes_page_actions.dart';
 part 'notes_page_tasks.dart';
 
@@ -52,6 +58,7 @@ final notesPageKey = GlobalKey<NotesPageState>();
 
 class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   late final NoteRepository _repository = widget.repository ?? NoteRepository();
+  final _deviceLock = NoteDeviceLockService();
   final _title = TextEditingController();
   final _search = TextEditingController();
   final _editor = QuillController.basic();
@@ -76,6 +83,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   int _requestVersion = 0;
   int _selectionVersion = 0;
   BuildContext? _activeSheetContext;
+  bool _backRequestedFromSheet = false;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -88,7 +96,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   }) async {
     final previous = _activeSheetContext;
     try {
-      return await showAdaptiveSheet<T>(
+      final result = await showAdaptiveSheet<T>(
         context: context,
         maxDialogWidth: maxDialogWidth,
         builder: (sheetContext) {
@@ -96,8 +104,45 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
           return builder(sheetContext);
         },
       );
+      if (result == null) await _returnToNotesListIfBackRequested();
+      return result;
     } finally {
+      _backRequestedFromSheet = false;
       _activeSheetContext = previous;
+    }
+  }
+
+  Future<void> _returnToNotesListIfBackRequested() async {
+    if (!_backRequestedFromSheet) return;
+    _backRequestedFromSheet = false;
+    await _returnToNotesList();
+  }
+
+  Future<void> _returnToNotesList() async {
+    if (_selected == null || !mounted || !(await _save()) || !mounted) return;
+    setState(() {
+      _selected = null;
+      _selectedPassphrase = null;
+      _selectedWsId = null;
+      _editing = false;
+    });
+  }
+
+  Future<void> _goBack() async {
+    final sheetContext = _activeSheetContext;
+    if (sheetContext != null && sheetContext.mounted) {
+      _backRequestedFromSheet = true;
+      if (!await Navigator.of(sheetContext).maybePop()) {
+        _backRequestedFromSheet = false;
+      }
+      return;
+    }
+    if (!mounted || !(await _save())) return;
+    if (!mounted) return;
+    if (_selected != null) {
+      await _returnToNotesList();
+    } else {
+      context.go(Routes.apps);
     }
   }
 
@@ -198,49 +243,6 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     await _load();
   }
 
-  Future<void> _select(NoteRecord note) async {
-    final selectionVersion = ++_selectionVersion;
-    final wsId = _wsId;
-    var document = note.content;
-    String? passphrase;
-    if (note.locked) {
-      passphrase = await showNotePassphraseSheet(context, create: false);
-      if (passphrase == null ||
-          !mounted ||
-          selectionVersion != _selectionVersion ||
-          _wsId != wsId) {
-        return;
-      }
-      try {
-        document = await decryptNoteDocument(note.content, passphrase);
-      } on Object {
-        if (mounted && selectionVersion == _selectionVersion && _wsId == wsId) {
-          setState(() => _error = context.l10n.notesIncorrectPassphrase);
-        }
-        return;
-      }
-    }
-    if (!mounted || selectionVersion != _selectionVersion || _wsId != wsId) {
-      return;
-    }
-    _saveTimer?.cancel();
-    _initializingEditor = true;
-    _title.text = note.title;
-    _editor.document = tipTapJsonToQuillDocument(jsonEncode(document));
-    _lastTitle = _title.text;
-    _lastDocument = jsonEncode(_editor.document.toDelta().toJson());
-    _initializingEditor = false;
-    setState(() {
-      _selected = note;
-      _selectedPassphrase = passphrase;
-      _selectedWsId = wsId;
-      _error = null;
-      _dirty = false;
-      _editing = false;
-      _editor.readOnly = true;
-    });
-  }
-
   void _scheduleSave() {
     if (_initializingEditor || _selected == null) return;
     final nextTitle = _title.text;
@@ -282,7 +284,13 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
         return false;
       }
       try {
-        content = await encryptNoteDocument(content, passphrase);
+        content = await encryptNoteDocument(
+          content,
+          passphrase,
+          deviceOnly: isDeviceLockedNote(note.content),
+          recovery: lockedNoteEnvelope(note.content)?['recovery'] as String?,
+          lockId: lockedNoteEnvelope(note.content)?['lockId'] as String?,
+        );
       } on Object {
         _queuedRevision = -1;
         if (mounted) setState(() => _error = context.l10n.notesSaveError);
@@ -452,28 +460,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                   icon: Icons.chevron_left,
                   label: context.l10n.navBack,
                   callbackToken: 'back',
-                  onPressed: () async {
-                    final sheetContext = _activeSheetContext;
-                    if (sheetContext != null && sheetContext.mounted) {
-                      await Navigator.of(sheetContext).maybePop();
-                      return;
-                    }
-                    if (compact && _selected != null) {
-                      if (!(await _save())) {
-                        return;
-                      }
-                      if (mounted) {
-                        setState(() {
-                          _selected = null;
-                          _selectedPassphrase = null;
-                          _editing = false;
-                        });
-                      }
-                    } else {
-                      if (!(await _save())) return;
-                      if (context.mounted) context.go(Routes.apps);
-                    }
-                  },
+                  onPressed: _goBack,
                 ),
                 ShellMiniNavItemSpec(
                   id: 'notes-home',

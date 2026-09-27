@@ -21,6 +21,7 @@ extension NotesPageActions on NotesPageState {
         _notes = _notes.where((item) => item.id != note.id).toList();
         _selected = null;
         _selectedPassphrase = null;
+        _selectedWsId = null;
         _editing = false;
       });
       unawaited(_refresh());
@@ -65,10 +66,14 @@ extension NotesPageActions on NotesPageState {
         _notes = _notes.where((item) => item.id != note.id).toList();
         _selected = null;
         _selectedPassphrase = null;
+        _selectedWsId = null;
         _editing = false;
         _dirty = false;
         _error = null;
       });
+      if (isDeviceLockedNote(note.content)) {
+        await _deviceLock.delete(wsId, note.id);
+      }
       unawaited(_refresh());
     } on Object {
       if (mounted) _updateState(() => _error = context.l10n.notesDeleteError);
@@ -99,6 +104,12 @@ extension NotesPageActions on NotesPageState {
                 sheetContext,
               ).pop(_selected?.locked == true ? 'unlock' : 'lock'),
             ),
+            if (_selected != null && isDeviceLockedNote(_selected!.content))
+              ListTile(
+                leading: const Icon(Icons.qr_code_scanner_rounded),
+                title: Text(sheetContext.l10n.notesTransferTitle),
+                onTap: () => Navigator.of(sheetContext).pop('transfer'),
+              ),
             if (_tab == NotesTab.inbox)
               ListTile(
                 leading: const Icon(Icons.archive_outlined),
@@ -122,9 +133,68 @@ extension NotesPageActions on NotesPageState {
     );
     if (!mounted) return;
     if (action == 'lock') await _lock();
+    if (action == 'transfer') await _transferToWeb();
     if (action == 'unlock') await _removeLock();
     if (action == 'archive') await _archive();
     if (action == 'restore') await _restore();
     if (action == 'delete') await _delete();
+  }
+
+  Future<void> _transferToWeb() async {
+    final wsId = _wsId;
+    final note = _selected;
+    if (wsId == null || note == null || !isDeviceLockedNote(note.content)) {
+      return;
+    }
+    final unlockReason = context.l10n.notesDeviceUnlockReason;
+    final originalDeviceMessage = context.l10n.notesTransferOriginalDeviceOnly;
+    final lockId = lockedNoteEnvelope(note.content)?['lockId'] as String?;
+    final method = await _deviceLock.method(wsId, note.id, lockId: lockId);
+    if (method == null) {
+      if (mounted) {
+        _updateState(() => _error = originalDeviceMessage);
+      }
+      return;
+    }
+    if (!mounted) return;
+    final payload = await showNoteTransferSheet(
+      context,
+      wsId: wsId,
+      noteId: note.id,
+      onSheetContext: (value) => _activeSheetContext = value,
+      onDismissed: _returnToNotesListIfBackRequested,
+    );
+    if (payload == null || !mounted || _selected?.id != note.id) return;
+    String? pin;
+    if (method == NoteDeviceLockMethod.pin) {
+      if (!mounted) return;
+      pin = await showNotePinSheet(
+        context,
+        onSheetContext: (value) => _activeSheetContext = value,
+        onDismissed: _returnToNotesListIfBackRequested,
+      );
+      if (pin == null) return;
+    }
+    try {
+      final secret = await _deviceLock.unlock(
+        wsId,
+        note.id,
+        lockId: lockId,
+        pin: pin,
+        reason: unlockReason,
+      );
+      if (secret == null || !mounted || _selected?.id != note.id) return;
+      await _repository.approveKeyTransfer(
+        wsId,
+        note.id,
+        payload.id,
+        await payload.seal(secret),
+      );
+      if (mounted) await _returnToNotesList();
+    } on Object {
+      if (mounted) {
+        _updateState(() => _error = context.l10n.notesTransferFailed);
+      }
+    }
   }
 }

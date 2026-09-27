@@ -231,6 +231,35 @@ exception as a fallback. Missing or invalid secret configuration fails closed wi
 JSON 503. Responses use `private, no-store`; request bodies are limited to 512 KiB,
 response bodies to 8 MiB, and forwarding to 20 seconds.
 
+## Locked Notes
+
+Mobile Notes defaults to a device-first encrypted lock. Where OS local
+authentication is available, Face ID or Touch ID gates a random note key in
+device-only secure storage; otherwise the lock sheet defaults to a six-digit
+app PIN. The lock encrypts the note body; the title and list metadata retain
+their existing visibility. The PIN gates that local key and is never used as
+the encryption password. Five incorrect PIN attempts pause retries for 30
+seconds. The server
+also stores a wrapped copy of the random key in the note envelope using the
+configured encryption master key. Creating a device lock fails if wrapping is
+unavailable. Web releases that key only for the note creator after a verified
+passkey sign-in within five minutes, on web or mobile. Account sign-in alone
+does not release it. Native passkeys use `webcredentials:tuturuuu.com` on iOS
+and the `get_login_creds` Digital Asset Links relation for the production
+Android signing certificate. Keep the association files and mobile signing
+identities aligned when changing app IDs or certificates.
+The user can also show a two-minute QR code on web and scan it from the
+original phone's note actions; the phone requires fresh local unlock and sends
+the key encrypted with a one-time QR secret. The QR secret stays on the two
+devices. The server relays only the sealed key. A custom passphrase remains
+available and existing passphrase-locked notes keep their current behavior.
+Server-wrapped recovery means this lock is not end-to-end encrypted against the
+server. Preserve the configured encryption master key when rotating deployment
+secrets; losing it disables passkey recovery for existing locked notes, though
+the original phone or its QR transfer can still open them. On compact layouts,
+Back closes any open Notes action sheet and returns
+from note detail to the Notes list.
+
 ## Mobile App Lock And Web QR Approval
 
 The mobile app supports a device-level app lock from Settings > Session. The

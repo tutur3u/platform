@@ -8917,6 +8917,68 @@ class AppLocalizationsVi extends AppLocalizations {
   String get notesLockDescription => 'Đặt mật khẩu để mã hóa ghi chú trên các thiết bị. Hãy giữ an toàn vì không thể khôi phục.';
 
   @override
+  String get notesDeviceLockDescription => 'Dùng Face ID hoặc Touch ID để mở hằng ngày. Khóa khôi phục được lưu an toàn để mở bằng passkey trên thiết bị khác. Bạn cũng có thể chuyển quyền truy cập bằng QR.';
+
+  @override
+  String get notesPinLockDescription => 'Dùng mã PIN 6 chữ số trên thiết bị này. Có thể mở ở nơi khác bằng passkey hoặc chuyển khóa từ điện thoại qua QR.';
+
+  @override
+  String get notesPinUnlockDescription => 'Nhập mã PIN 6 chữ số của ghi chú.';
+
+  @override
+  String get notesUseDeviceLock => 'Dùng Face ID hoặc Touch ID';
+
+  @override
+  String get notesUsePin => 'Dùng mã PIN 6 chữ số';
+
+  @override
+  String get notesUsePassphrase => 'Dùng mật khẩu riêng';
+
+  @override
+  String get notesPin => 'Mã PIN 6 chữ số';
+
+  @override
+  String get notesConfirmPin => 'Xác nhận mã PIN';
+
+  @override
+  String get notesPinRequirements => 'Nhập cùng một mã PIN 6 chữ số hai lần.';
+
+  @override
+  String get notesIncorrectPin => 'Không thể mở ghi chú. Hãy kiểm tra mã PIN hoặc thử lại sau.';
+
+  @override
+  String get notesDeviceUnlockReason => 'Mở khóa ghi chú riêng tư';
+
+  @override
+  String get notesDeviceKeyUnavailable => 'Ghi chú này được khóa trên thiết bị khác. Hãy mở ở đó hoặc dùng passkey hay QR từ điện thoại trên web.';
+
+  @override
+  String get notesPasskeyUnlockFailed => 'Không thể mở bằng passkey của tài khoản này. Hãy thử lại hoặc dùng điện thoại ban đầu.';
+
+  @override
+  String get notesTransferTitle => 'Mở khóa trên web';
+
+  @override
+  String get notesTransferScanDescription => 'Quét mã QR hiển thị trên ghi chú đã khóa ở web.';
+
+  @override
+  String notesTransferConfirmDescription(String host) {
+    return 'Chia sẻ khóa mở ghi chú này với $host?';
+  }
+
+  @override
+  String get notesTransferInvalidCode => 'Mã này không khớp với ghi chú hiện tại.';
+
+  @override
+  String get notesTransferApprove => 'Chia sẻ khóa mở';
+
+  @override
+  String get notesTransferFailed => 'Không thể chuyển khóa ghi chú. Hãy thử mã QR mới.';
+
+  @override
+  String get notesTransferOriginalDeviceOnly => 'Hãy quét mã trên điện thoại đã khóa ghi chú hoặc mở trực tiếp trên web bằng passkey.';
+
+  @override
   String get notesUnlockDescription => 'Nhập mật khẩu ghi chú để xem nội dung.';
 
   @override

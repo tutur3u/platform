@@ -8947,6 +8947,68 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesLockDescription => 'Set a passphrase to encrypt this note across your devices. Keep it safe: it cannot be recovered.';
 
   @override
+  String get notesDeviceLockDescription => 'Use Face ID or Touch ID for everyday access. A recovery key is stored securely for passkey unlock on another device. You can also transfer access by QR.';
+
+  @override
+  String get notesPinLockDescription => 'Use a six-digit PIN on this device. Passkey recovery or a phone-to-web QR transfer can unlock it elsewhere.';
+
+  @override
+  String get notesPinUnlockDescription => 'Enter your six-digit note PIN.';
+
+  @override
+  String get notesUseDeviceLock => 'Use Face ID or Touch ID';
+
+  @override
+  String get notesUsePin => 'Use a six-digit PIN';
+
+  @override
+  String get notesUsePassphrase => 'Use a custom passphrase';
+
+  @override
+  String get notesPin => 'Six-digit PIN';
+
+  @override
+  String get notesConfirmPin => 'Confirm PIN';
+
+  @override
+  String get notesPinRequirements => 'Enter the same six-digit PIN twice.';
+
+  @override
+  String get notesIncorrectPin => 'Could not unlock this note. Check your PIN or try again shortly.';
+
+  @override
+  String get notesDeviceUnlockReason => 'Unlock your private note';
+
+  @override
+  String get notesDeviceKeyUnavailable => 'This note was locked on another device. Open it there, or unlock on web with a passkey or phone QR transfer.';
+
+  @override
+  String get notesPasskeyUnlockFailed => 'Could not unlock with a passkey for this account. Try again or use the original phone.';
+
+  @override
+  String get notesTransferTitle => 'Unlock on web';
+
+  @override
+  String get notesTransferScanDescription => 'Scan the QR code shown on the locked note on web.';
+
+  @override
+  String notesTransferConfirmDescription(String host) {
+    return 'Share this note\'s unlock key with $host?';
+  }
+
+  @override
+  String get notesTransferInvalidCode => 'This code does not match the current note.';
+
+  @override
+  String get notesTransferApprove => 'Share unlock key';
+
+  @override
+  String get notesTransferFailed => 'Could not transfer this note\'s key. Try a new QR code.';
+
+  @override
+  String get notesTransferOriginalDeviceOnly => 'Scan this code from the phone where the note was locked, or unlock directly with a passkey on web.';
+
+  @override
   String get notesUnlockDescription => 'Enter the note passphrase to view its content.';
 
   @override

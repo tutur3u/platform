@@ -69,3 +69,40 @@ export function deleteWorkspaceNote(
     }
   );
 }
+
+export function recoverWorkspaceNoteKey(
+  wsId: string,
+  noteId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ secret: string }>(
+    `${path(wsId, noteId)}/recovery`
+  );
+}
+
+export function startWorkspaceNoteTransfer(
+  wsId: string,
+  noteId: string,
+  id: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ success: boolean }>(
+    `${path(wsId, noteId)}/transfer`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'start', id }),
+    }
+  );
+}
+
+export function pollWorkspaceNoteTransfer(
+  wsId: string,
+  noteId: string,
+  id: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ sealed: string | null }>(
+    `${path(wsId, noteId)}/transfer?id=${encodePathSegment(id)}`
+  );
+}
