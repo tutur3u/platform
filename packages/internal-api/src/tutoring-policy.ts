@@ -61,7 +61,11 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
   weakSupportSessions: 2,
   absenceLookbackDays: 21,
   weakContentReviewDays: 14,
-  groupExclusions: [{ scope: 'all', match: 'contains', value: 'DDT' }],
+  groupExclusions: [
+    { scope: 'all', match: 'contains', value: 'DDT' },
+    { scope: 'all', match: 'contains', value: 'Mẫu giáo' },
+    { scope: 'all', match: 'contains', value: 'Kindergarten' },
+  ],
   parentMessageTemplate: EASY_CENTER_PARENT_MESSAGE_TEMPLATE,
   // The seven class shifts supplied by Easy Center. Shift 4 is after class.
   timeRules: [
@@ -148,6 +152,18 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     groupExclusions: defaults.groupExclusions,
     ...saved,
   };
+  // Earlier Easy Center policies stored only the DDT rule. Carry the expanded
+  // kindergarten preset forward without replacing staff-edited custom rules.
+  if (
+    saved.preset === 'easy_center' &&
+    Array.isArray(saved.groupExclusions) &&
+    saved.groupExclusions.length === 1 &&
+    saved.groupExclusions[0]?.scope === 'all' &&
+    saved.groupExclusions[0]?.match === 'contains' &&
+    saved.groupExclusions[0]?.value === 'DDT'
+  ) {
+    candidate.groupExclusions = EASY_CENTER_TUTORING_POLICY.groupExclusions;
+  }
   if (!['standard', 'easy_center', 'custom'].includes(String(candidate.preset)))
     return null;
   for (const field of FIELDS) {

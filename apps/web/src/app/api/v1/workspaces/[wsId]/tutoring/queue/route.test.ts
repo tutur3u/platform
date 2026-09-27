@@ -188,7 +188,7 @@ describe('tutoring support queue', () => {
     expect((await (await listQueue()).json()).count).toBe(0);
   });
 
-  it('excludes DDT from all tutoring by default and respects a narrower scope', async () => {
+  it('excludes kindergarten from all tutoring by default and respects a narrower scope', async () => {
     configRows = serializeTutoringPolicyConfigRows(EASY_CENTER_TUTORING_POLICY);
     attendanceRows = [
       {
@@ -216,6 +216,13 @@ describe('tutoring support queue', () => {
     ];
     feedbackRows = [
       { ...(feedbackRows[0] as object), group: { name: 'Kindergarten ABC' } },
+    ];
+    expect((await (await listQueue()).json()).count).toBe(0);
+    attendanceRows = [
+      { ...(attendanceRows[0] as object), group: { name: 'English ABC' } },
+    ];
+    feedbackRows = [
+      { ...(feedbackRows[0] as object), group: { name: 'English ABC' } },
     ];
     expect((await (await listQueue()).json()).data).toMatchObject([
       { reason_type: 'BOTH', absence_deficit: 1 },

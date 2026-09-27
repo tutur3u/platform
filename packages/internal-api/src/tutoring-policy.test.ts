@@ -99,6 +99,18 @@ describe('Easy Center tutoring shifts', () => {
         'make_up'
       )
     ).toBe(true);
+    for (const name of ['Lớp Mẫu Giáo A', 'Kindergarten Bluebirds']) {
+      expect(
+        isTutoringGroupExcluded(EASY_CENTER_TUTORING_POLICY, name, 'make_up')
+      ).toBe(true);
+      expect(
+        isTutoringGroupExcluded(
+          EASY_CENTER_TUTORING_POLICY,
+          name,
+          'weak_support'
+        )
+      ).toBe(true);
+    }
     expect(
       isTutoringGroupExcluded(
         EASY_CENTER_TUTORING_POLICY,
@@ -130,11 +142,28 @@ describe('Easy Center tutoring shifts', () => {
     const { weakContentReviewDays, groupExclusions, ...legacy } =
       EASY_CENTER_TUTORING_POLICY;
     expect(weakContentReviewDays).toBe(14);
-    expect(groupExclusions).toHaveLength(1);
+    expect(groupExclusions).toHaveLength(3);
     expect(parseTutoringPolicy(legacy)).toMatchObject({
       weakContentReviewDays: 14,
-      groupExclusions: [{ scope: 'all', match: 'contains', value: 'DDT' }],
+      groupExclusions,
     });
+  });
+
+  it('upgrades only the prior Easy Center exclusion preset', () => {
+    const priorRules = [{ scope: 'all', match: 'contains', value: 'DDT' }];
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        groupExclusions: priorRules,
+      })?.groupExclusions
+    ).toEqual(EASY_CENTER_TUTORING_POLICY.groupExclusions);
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        preset: 'custom',
+        groupExclusions: priorRules,
+      })?.groupExclusions
+    ).toEqual(priorRules);
   });
 });
 
