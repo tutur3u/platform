@@ -96,8 +96,12 @@ export async function GET(request: NextRequest, { params }: Params) {
   if ('response' in authorized) return authorized.response;
   // Only a verified Supabase JWT with a recent passkey AMR can recover.
   // App-session clients have no Supabase claims and fail closed here.
+  const authorization = request.headers.get('authorization');
+  const bearerToken = authorization?.startsWith('Bearer ')
+    ? authorization.slice('Bearer '.length).trim()
+    : undefined;
   const { data: claimData, error: claimError } =
-    await authorized.auth.supabase.auth.getClaims();
+    await authorized.auth.supabase.auth.getClaims(bearerToken);
   const claims = claimData?.claims;
   const recentPasskey =
     !claimError && hasRecentPasskeyClaim(claims, authorized.auth.user.id);
