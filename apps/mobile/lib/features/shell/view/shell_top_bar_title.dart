@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
+import 'package:mobile/features/assistant/widgets/assistant_mode_title.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_config.dart';
@@ -25,6 +27,9 @@ class ShellTopBarTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (matchedLocation == Routes.assistant) {
+      return const AssistantModeTitle();
+    }
     final config = ShellChromeConfig.forLocation(context, matchedLocation);
     final titleOverrideCubit = lookupShellTitleOverrideCubit(context);
 

@@ -29,6 +29,10 @@ extension _ShellPageInteractions on _ShellPageState {
       unawaited(_returnToAppOrigin());
       return;
     }
+    if (selected.selected && !selected.dropdown) {
+      _scrollPageToTop(widget.matchedLocation);
+      return;
+    }
     selected.onPressed?.call();
   }
 
@@ -67,6 +71,7 @@ extension _ShellPageInteractions on _ShellPageState {
     final currentRoute = _normalizeRouteLocation(widget.matchedLocation);
     final selectedRoute = _normalizeRouteLocation(selected.route);
     if (currentRoute == selectedRoute) {
+      _scrollPageToTop(currentRoute);
       return;
     }
 
@@ -159,6 +164,10 @@ extension _ShellPageInteractions on _ShellPageState {
   Future<void> _onItemTapped(int index, BuildContext context) async {
     final appTabCubit = context.read<AppTabCubit>();
     if (index == 2) {
+      if (_normalizeRouteLocation(widget.matchedLocation) == Routes.apps) {
+        _scrollPageToTop(Routes.apps);
+        return;
+      }
       await _openAppsDrawerFromAppsTab();
       return;
     }
@@ -170,6 +179,10 @@ extension _ShellPageInteractions on _ShellPageState {
       4 => Routes.profileRoot,
       _ => Routes.home,
     };
+    if (_normalizeRouteLocation(widget.matchedLocation) == route) {
+      _scrollPageToTop(route);
+      return;
+    }
     _debugBack(
       'rootNav.tap',
       'index=$index route=$route selectedApp=${appTabCubit.state.selectedId}',
