@@ -164,7 +164,7 @@ export default function CourseVocabularyShell({
       {activeModuleId && tabContainer
         ? createPortal(
             <button
-              className={`cursor-pointer border-2 border-border px-4 py-2 font-black text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] ${
+              className={`cursor-pointer rounded-lg border border-border px-4 py-2 font-semibold text-sm transition ${
                 isVocabularyTabActive
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-background text-foreground'

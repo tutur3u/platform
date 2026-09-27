@@ -196,25 +196,25 @@ export function ModuleDetailClient({
       <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
         <div className="mx-auto max-w-6xl space-y-6">
           {/* Page header */}
-          <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
+          <div className="rounded-lg border border-border bg-background p-6 md:p-8">
             <Link
               href={`/${wsId}/courses`}
-              className="mb-5 inline-flex items-center gap-2 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+              className="mb-5 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to courses
             </Link>
 
             <div className="flex items-start gap-4">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[4px_4px_0_var(--border)]">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center border border-border bg-dynamic-cyan/15">
                 <BookOpenCheck className="h-7 w-7" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="mb-2 inline-flex items-center gap-1.5 border-2 border-border bg-dynamic-yellow/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+                <p className="mb-2 inline-flex items-center gap-1.5 border border-border bg-dynamic-yellow/15 px-3 py-1 font-semibold text-xs">
                   <GraduationCap className="h-3.5 w-3.5" />
                   {workspaceName ?? 'Workspace'}
                 </p>
-                <h1 className="font-black text-[clamp(1.75rem,3.5vw,3rem)] leading-none tracking-normal">
+                <h1 className="font-semibold text-3xl leading-tight tracking-normal md:text-4xl">
                   Course Modules
                 </h1>
                 <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
@@ -232,15 +232,15 @@ export function ModuleDetailClient({
           <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
             {/* Left Sidebar: Tests list */}
             <div className="space-y-4 md:col-span-1">
-              <div className="border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]">
-                <h2 className="mb-4 flex items-center gap-2 border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
+              <div className="rounded-lg border border-border bg-background p-5">
+                <h2 className="mb-4 flex items-center gap-2 border-border border-b pb-2 font-semibold text-lg uppercase tracking-wider">
                   <BookOpenCheck className="h-5 w-5 text-primary" />
                   {t('teachModules.tests')}
                 </h2>
                 {isLoadingTests ? (
                   <div className="space-y-3">
-                    <div className="h-16 animate-pulse border-2 border-border bg-muted" />
-                    <div className="h-16 animate-pulse border-2 border-border bg-muted" />
+                    <div className="h-16 animate-pulse rounded-lg border border-border bg-muted" />
+                    <div className="h-16 animate-pulse rounded-lg border border-border bg-muted" />
                   </div>
                 ) : isTestsError ? (
                   <div className="space-y-3">
@@ -248,7 +248,7 @@ export function ModuleDetailClient({
                       {t('teachModules.testsLoadError')}
                     </p>
                     <button
-                      className="border-2 border-border bg-background px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+                      className="rounded-lg border border-border bg-background px-3 py-1.5 font-bold text-xs transition"
                       onClick={() => {
                         void refetchTests();
                       }}
@@ -267,21 +267,21 @@ export function ModuleDetailClient({
                       <Link
                         key={test.id}
                         href={`/${wsId}/modules/${courseId}/tests/${test.id}`}
-                        className="block flex cursor-pointer flex-col gap-1.5 border-2 border-border bg-muted/10 p-3 shadow-[2px_2px_0_var(--border)] transition hover:bg-muted/20"
+                        className="block flex cursor-pointer flex-col gap-1.5 rounded-lg border border-border bg-muted/10 p-3 transition hover:bg-muted/20"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="break-words font-bold text-primary text-sm leading-tight">
                             {test.name}
                           </h3>
                           {!test.is_published && (
-                            <span className="shrink-0 border border-border bg-muted px-1.5 py-0.5 font-bold text-[9px] text-muted-foreground uppercase tracking-wider shadow-[1px_1px_0_var(--border)]">
+                            <span className="shrink-0 rounded-lg border border-border bg-muted px-1.5 py-0.5 font-bold text-[9px] text-muted-foreground uppercase tracking-wider">
                               {t('teachModules.testDraft')}
                             </span>
                           )}
                         </div>
                         {test.start_at && (
                           <div className="flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
-                            <span className="font-black text-[10px] uppercase tracking-wider">
+                            <span className="font-semibold text-[10px] uppercase tracking-wider">
                               {t('teachModules.testDetailsStartAt')}:
                             </span>
                             <span>
@@ -294,7 +294,7 @@ export function ModuleDetailClient({
                         )}
                         {test.duration_in_minutes && (
                           <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <span className="font-black text-[10px] uppercase tracking-wider">
+                            <span className="font-semibold text-[10px] uppercase tracking-wider">
                               {t('teachModules.testDetailsDuration')}:
                             </span>
                             <span>
@@ -316,7 +316,7 @@ export function ModuleDetailClient({
               {/* Toolbar */}
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <span className="font-black text-xl">
+                  <span className="font-semibold text-xl">
                     {displayGroups.length} section
                     {displayGroups.length !== 1 ? 's' : ''}
                   </span>
@@ -330,7 +330,7 @@ export function ModuleDetailClient({
                   <div className="flex flex-wrap items-center gap-2">
                     <input
                       ref={sectionInputRef}
-                      className="border-2 border-border bg-background px-3 py-1.5 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+                      className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
                       placeholder="Section name…"
                       value={addingSectionName}
                       onChange={(e) => setAddingSectionName(e.target.value)}
@@ -343,7 +343,7 @@ export function ModuleDetailClient({
                       }}
                     />
                     <button
-                      className="whitespace-nowrap border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                      className="whitespace-nowrap rounded-lg border border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm disabled:opacity-40"
                       disabled={
                         !addingSectionName.trim() || createGroup.isPending
                       }
@@ -353,7 +353,7 @@ export function ModuleDetailClient({
                       Add
                     </button>
                     <button
-                      className="whitespace-nowrap border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+                      className="whitespace-nowrap rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm"
                       onClick={() => {
                         setAddingSectionName('');
                         setShowAddSection(false);
@@ -366,7 +366,7 @@ export function ModuleDetailClient({
                 ) : (
                   <div className="flex flex-wrap items-center gap-2">
                     <button
-                      className="inline-flex items-center gap-2 whitespace-nowrap border-2 border-border bg-dynamic-yellow/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                      className="inline-flex items-center gap-2 whitespace-nowrap border border-border bg-dynamic-yellow/15 px-4 py-2 font-bold text-sm transition"
                       onClick={() => setShowAiDialog(true)}
                       type="button"
                     >
@@ -380,7 +380,7 @@ export function ModuleDetailClient({
                     />
                     <ModuleStorageDialog courseId={courseId} wsId={wsId} />
                     <button
-                      className="inline-flex items-center gap-2 whitespace-nowrap border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                      className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm transition"
                       onClick={() => setShowAddSection(true)}
                       type="button"
                       aria-label={t('teachModules.addSection')}
@@ -399,7 +399,7 @@ export function ModuleDetailClient({
               {isLoading ? (
                 <LoadingSkeleton />
               ) : isError ? (
-                <div className="border-2 border-border border-dashed bg-muted/60 p-8 text-center shadow-[8px_8px_0_var(--border)]">
+                <div className="rounded-lg border border-border border-dashed bg-muted/60 p-8 text-center">
                   <p className="text-muted-foreground">
                     Failed to load modules.
                   </p>
@@ -452,14 +452,14 @@ export function ModuleDetailClient({
                   {/* Drag overlay — ghost while dragging */}
                   <DragOverlay>
                     {activeGroupId ? (
-                      <div className="border-2 border-primary bg-background px-4 py-3 font-bold text-sm opacity-90 shadow-[6px_6px_0_var(--border)]">
+                      <div className="border border-primary bg-background px-4 py-3 font-bold text-sm opacity-90">
                         {
                           displayGroups.find((g) => g.id === activeGroupId)
                             ?.title
                         }
                       </div>
                     ) : activeModuleId ? (
-                      <div className="border-2 border-primary bg-background px-4 py-2.5 text-sm opacity-90 shadow-[4px_4px_0_var(--border)]">
+                      <div className="border border-primary bg-background px-4 py-2.5 text-sm opacity-90">
                         {displayGroups
                           .flatMap((g) => g.modules)
                           .find((m) => m.id === activeModuleId)?.name ??

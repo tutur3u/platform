@@ -68,7 +68,7 @@ export async function LessonVocabularyPage({
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <Link
-            className="inline-flex items-center gap-2 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition"
             href={backHref}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -77,7 +77,7 @@ export async function LessonVocabularyPage({
 
           <div>
             <p className="text-muted-foreground text-sm">{workspace.name}</p>
-            <h1 className="font-black text-2xl">{t('title')}</h1>
+            <h1 className="font-semibold text-2xl">{t('title')}</h1>
           </div>
         </div>
 

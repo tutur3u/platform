@@ -130,14 +130,16 @@ export function AiGenerateDialog({
       }}
     >
       {/* Panel */}
-      <div className="w-full max-w-lg border-2 border-border bg-background shadow-[8px_8px_0_var(--border)]">
+      <div className="w-full max-w-lg rounded-lg border border-border bg-background">
         {/* Header */}
-        <div className="flex items-center gap-3 border-border border-b-2 bg-dynamic-yellow/15 px-5 py-4">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-background shadow-[2px_2px_0_var(--border)]">
+        <div className="flex items-center gap-3 border-border border-b bg-dynamic-yellow/15 px-5 py-4">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background">
             <Sparkles className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="font-black text-lg leading-tight">{t('title')}</h2>
+            <h2 className="font-semibold text-lg leading-tight">
+              {t('title')}
+            </h2>
             <p className="text-muted-foreground text-xs">{t('description')}</p>
           </div>
           {!isActive && (
@@ -156,7 +158,7 @@ export function AiGenerateDialog({
           {/* ── Success state ─────────────────────────────────────────────── */}
           {isDone && (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 border-2 border-border bg-dynamic-green/15 px-4 py-3 shadow-[3px_3px_0_var(--border)]">
+              <div className="flex items-center gap-3 border border-border bg-dynamic-green/15 px-4 py-3">
                 <Check className="h-5 w-5 shrink-0 text-dynamic-green" />
                 <div>
                   <p className="font-bold text-sm">{t('success.title')}</p>
@@ -166,7 +168,7 @@ export function AiGenerateDialog({
                 </div>
               </div>
               <button
-                className="w-full border-2 border-border bg-primary py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                className="w-full rounded-lg border border-border bg-primary py-2 font-bold text-primary-foreground text-sm transition"
                 onClick={onClose}
                 type="button"
               >
@@ -178,7 +180,7 @@ export function AiGenerateDialog({
           {/* ── In-progress state ─────────────────────────────────────────── */}
           {isActive && (
             <div className="space-y-4">
-              <div className="border-2 border-border bg-muted/40 px-4 py-3">
+              <div className="rounded-lg border border-border bg-muted/40 px-4 py-3">
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span className="font-bold">
                     {stage === 'uploading'
@@ -192,7 +194,7 @@ export function AiGenerateDialog({
                   )}
                 </div>
                 {stage === 'uploading' ? (
-                  <div className="h-2 w-full border border-border bg-muted">
+                  <div className="h-2 w-full rounded-lg border border-border bg-muted">
                     <div
                       className="h-full bg-primary transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
@@ -221,7 +223,7 @@ export function AiGenerateDialog({
                   onChange={(e) => setContext(e.target.value)}
                   placeholder={t('context.placeholder')}
                   maxLength={MAX_CONTEXT_LENGTH}
-                  className="min-h-28 resize-y border-2 border-border bg-background shadow-[2px_2px_0_var(--border)]"
+                  className="min-h-28 resize-y rounded-lg border border-border bg-background"
                 />
                 <p className="text-muted-foreground text-xs">
                   {t('context.hint')}
@@ -231,7 +233,7 @@ export function AiGenerateDialog({
               {/* Drop zone */}
               <div
                 className={cn(
-                  'border-2 border-border border-dashed bg-muted/30 p-6 text-center transition-colors hover:bg-muted/50',
+                  'rounded-lg border border-border border-dashed bg-muted/30 p-6 text-center transition-colors hover:bg-muted/50',
                   dragOver && 'border-primary bg-primary/5'
                 )}
                 onDragOver={(e) => {
@@ -288,7 +290,7 @@ export function AiGenerateDialog({
 
               {/* File error */}
               {fileError && (
-                <div className="flex items-start gap-2 border-2 border-border bg-destructive/10 px-3 py-2 text-destructive text-sm">
+                <div className="flex items-start gap-2 border border-border bg-destructive/10 px-3 py-2 text-destructive text-sm">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                   {fileError}
                 </div>
@@ -296,7 +298,7 @@ export function AiGenerateDialog({
 
               {/* Mutation error */}
               {mutation.isError && (
-                <div className="flex items-start gap-2 border-2 border-border bg-destructive/10 px-3 py-2 text-destructive text-sm">
+                <div className="flex items-start gap-2 border border-border bg-destructive/10 px-3 py-2 text-destructive text-sm">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                   {mutation.error.message}
                 </div>
@@ -305,14 +307,14 @@ export function AiGenerateDialog({
               {/* Actions */}
               <div className="flex items-center justify-end gap-2">
                 <button
-                  className="border-2 border-border bg-card px-4 py-2 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+                  className="rounded-lg border border-border bg-card px-4 py-2 font-bold text-sm"
                   onClick={onClose}
                   type="button"
                 >
                   {t('actions.cancel')}
                 </button>
                 <button
-                  className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0_var(--border)]"
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm transition disabled:cursor-not-allowed disabled:opacity-40"
                   disabled={!file || !!fileError}
                   onClick={handleGenerate}
                   type="button"

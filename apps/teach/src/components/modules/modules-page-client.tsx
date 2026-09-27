@@ -27,25 +27,25 @@ function ModulesPageHeader({
   const t = useTranslations();
 
   return (
-    <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
+    <div className="rounded-lg border border-border bg-background p-6 md:p-8">
       <Link
         href={`/${wsId}`}
-        className="mb-5 inline-flex items-center gap-2 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+        className="mb-5 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition"
       >
         <ArrowLeft className="h-4 w-4" />
         {t('teachModules.backToDashboard')}
       </Link>
 
       <div className="flex items-start gap-4">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[4px_4px_0_var(--border)]">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center border border-border bg-dynamic-cyan/15">
           <BookOpenCheck className="h-7 w-7" />
         </span>
         <div>
-          <p className="mb-2 inline-flex border-2 border-border bg-dynamic-yellow/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+          <p className="mb-2 inline-flex border border-border bg-dynamic-yellow/15 px-3 py-1 font-semibold text-xs">
             <GraduationCap className="mr-1.5 h-3.5 w-3.5" />
             {workspaceName ?? t('teachModules.workspace')}
           </p>
-          <h1 className="font-black text-[clamp(2rem,4vw,3.5rem)] leading-none tracking-normal">
+          <h1 className="font-semibold text-3xl leading-tight tracking-normal md:text-4xl">
             {t('teachModules.title')}
           </h1>
           <p className="mt-3 max-w-2xl text-muted-foreground leading-7">
@@ -115,14 +115,18 @@ function ModulesSummaryBar({
 
   return (
     <div className="flex flex-wrap gap-3">
-      <div className="border-2 border-border bg-card px-4 py-2 shadow-[3px_3px_0_var(--border)]">
-        <span className="font-black text-2xl tabular-nums">{courseCount}</span>
+      <div className="rounded-lg border border-border bg-card px-4 py-2">
+        <span className="font-semibold text-2xl tabular-nums">
+          {courseCount}
+        </span>
         <span className="ml-2 text-muted-foreground text-sm">
           {t('teachModules.courses')}
         </span>
       </div>
-      <div className="border-2 border-border bg-card px-4 py-2 shadow-[3px_3px_0_var(--border)]">
-        <span className="font-black text-2xl tabular-nums">{totalModules}</span>
+      <div className="rounded-lg border border-border bg-card px-4 py-2">
+        <span className="font-semibold text-2xl tabular-nums">
+          {totalModules}
+        </span>
         <span className="ml-2 text-muted-foreground text-sm">
           {t('teachModules.totalModules')}
         </span>
@@ -203,7 +207,7 @@ export function ModulesPageClient({
         {/* Section label */}
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="font-black text-2xl">
+            <h2 className="font-semibold text-2xl">
               {t('teachModules.allCourses')}
             </h2>
             <p className="mt-1 text-muted-foreground text-sm">
@@ -220,7 +224,7 @@ export function ModulesPageClient({
             label={t('teachModules.loadError')}
             action={
               <button
-                className="border-2 border-border bg-background px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                className="rounded-lg border border-border bg-background px-4 py-2 font-bold text-sm transition"
                 onClick={() => coursesQuery.refetch()}
                 type="button"
               >

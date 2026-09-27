@@ -30,7 +30,7 @@ export function AddModuleRow({ isAdding, onAdd, onCancel }: AddModuleRowProps) {
     <div className="flex items-center gap-2 border-border border-t px-4 py-2">
       <input
         ref={inputRef}
-        className="min-w-0 flex-1 border-primary border-b-2 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+        className="min-w-0 flex-1 border-primary border-b bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         placeholder="Module name…"
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -43,7 +43,7 @@ export function AddModuleRow({ isAdding, onAdd, onCancel }: AddModuleRowProps) {
         }}
       />
       <button
-        className="shrink-0 border-2 border-border bg-primary px-3 py-1 font-bold text-primary-foreground text-xs shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+        className="shrink-0 rounded-lg border border-border bg-primary px-3 py-1 font-bold text-primary-foreground text-xs disabled:opacity-40"
         disabled={!trimmedName || isAdding}
         onClick={commit}
         type="button"

@@ -105,21 +105,21 @@ export function MetricsPanel({
         </Button>
       </div>
 
-      <div className="grid gap-3 border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)] md:grid-cols-[minmax(0,1fr)_12rem_auto]">
+      <div className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-[minmax(0,1fr)_12rem_auto]">
         <input
-          className="h-11 border-2 border-border bg-background px-3 font-bold outline-none focus:border-primary"
+          className="h-11 rounded-lg border border-border bg-background px-3 font-bold outline-none focus:border-primary"
           onChange={(event) => setMetricName(event.target.value)}
           placeholder={t('metricName')}
           value={metricName}
         />
         <input
-          className="h-11 border-2 border-border bg-background px-3 outline-none focus:border-primary"
+          className="h-11 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary"
           onChange={(event) => setMetricUnit(event.target.value)}
           placeholder={t('metricUnit')}
           value={metricUnit}
         />
         <button
-          className="h-11 border-2 border-border bg-primary px-4 font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] disabled:opacity-60"
+          className="h-11 rounded-lg border border-border bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-60"
           disabled={createIndicator.isPending || !metricName.trim()}
           onClick={() => createIndicator.mutate()}
           type="button"
@@ -128,13 +128,13 @@ export function MetricsPanel({
         </button>
       </div>
 
-      <div className="overflow-x-auto border-2 border-border bg-background shadow-[5px_5px_0_var(--border)]">
+      <div className="overflow-x-auto rounded-lg border border-border bg-background">
         <table className="w-full min-w-[720px] border-collapse">
           <thead>
-            <tr className="border-border border-b-2 bg-muted/60">
-              <th className="p-3 text-left font-black">{t('learner')}</th>
+            <tr className="border-border border-b bg-muted/60">
+              <th className="p-3 text-left font-semibold">{t('learner')}</th>
               {(indicatorsQuery.data?.indicators ?? []).map((indicator) => (
-                <th className="p-3 text-left font-black" key={indicator.id}>
+                <th className="p-3 text-left font-semibold" key={indicator.id}>
                   {indicator.name}
                 </th>
               ))}
@@ -152,7 +152,7 @@ export function MetricsPanel({
                   return (
                     <td className="p-3" key={indicator.id}>
                       <input
-                        className="h-10 w-24 border-2 border-border bg-card px-2 outline-none focus:border-primary"
+                        className="h-10 w-24 rounded-lg border border-border bg-card px-2 outline-none focus:border-primary"
                         onChange={(event) =>
                           setDraftValues((current) => ({
                             ...current,
@@ -172,7 +172,7 @@ export function MetricsPanel({
       </div>
 
       <button
-        className="inline-flex h-11 items-center border-2 border-border bg-primary px-4 font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] disabled:opacity-60"
+        className="inline-flex h-11 items-center rounded-lg border border-border bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-60"
         disabled={saveValues.isPending || Object.keys(draftValues).length === 0}
         onClick={() => saveValues.mutate()}
         type="button"
@@ -191,9 +191,9 @@ function MetricSummary({
   value: number | string;
 }) {
   return (
-    <div className="border-2 border-border bg-card p-3 shadow-[2px_2px_0_var(--border)]">
+    <div className="rounded-lg border border-border bg-card p-3">
       <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="font-black text-2xl">{value}</p>
+      <p className="font-semibold text-2xl">{value}</p>
     </div>
   );
 }

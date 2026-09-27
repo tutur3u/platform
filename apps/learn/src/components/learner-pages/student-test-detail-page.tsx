@@ -425,7 +425,7 @@ export function StudentTestDetailPage({
           action={
             <Link
               href={courseHref}
-              className="mt-4 inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm transition"
             >
               <ChevronLeft className="h-4 w-4" />
               {t('courses.backToCourse')}
@@ -492,7 +492,7 @@ export function StudentTestDetailPage({
                   <div
                     key={opt.id}
                     className={cn(
-                      'flex items-start gap-3 border-2 p-3.5 shadow-[2px_2px_0_var(--border)] transition',
+                      'flex items-start gap-3 border p-3.5 transition',
                       cardStyle
                     )}
                   >
@@ -513,8 +513,8 @@ export function StudentTestDetailPage({
                 );
               })}
               {quiz.quiz_options?.some((o) => o.explanation) && (
-                <div className="mt-3 border-2 border-border border-dashed bg-muted/20 p-4 text-muted-foreground text-xs leading-relaxed">
-                  <span className="mb-1 block font-black text-[10px] uppercase tracking-wider">
+                <div className="mt-3 rounded-lg border border-border border-dashed bg-muted/20 p-4 text-muted-foreground text-xs leading-relaxed">
+                  <span className="mb-1 block font-semibold text-[10px] uppercase tracking-wider">
                     {t('courses.quizExplanation')}
                   </span>
                   {quiz.quiz_options.find((o) => o.is_correct)?.explanation ||
@@ -552,7 +552,7 @@ export function StudentTestDetailPage({
                   <div
                     key={String(opt.value)}
                     className={cn(
-                      'flex items-center justify-center border-2 py-3 font-bold text-sm shadow-[2px_2px_0_var(--border)]',
+                      'flex items-center justify-center border py-3 font-bold text-sm',
                       cardStyle
                     )}
                   >
@@ -581,14 +581,14 @@ export function StudentTestDetailPage({
                 <div
                   key={`${item}-${index}`}
                   className={cn(
-                    'flex items-center justify-between border-2 p-3 text-sm shadow-[2px_2px_0_var(--border)]',
+                    'flex items-center justify-between border p-3 text-sm',
                     isCorrect
                       ? 'border-dynamic-green bg-dynamic-green/10'
                       : 'border-dynamic-red bg-dynamic-red/10'
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border border-border bg-primary font-semibold text-[10px] text-primary-foreground">
                       {index + 1}
                     </span>
                     <span className="font-bold">{item}</span>
@@ -620,14 +620,14 @@ export function StudentTestDetailPage({
                   <div
                     key={`${pair.left}-${index}`}
                     className={cn(
-                      'grid gap-3 border-2 p-3 text-sm shadow-[2px_2px_0_var(--border)] md:grid-cols-[1fr_1fr] md:items-center',
+                      'grid gap-3 border p-3 text-sm md:grid-cols-[1fr_1fr] md:items-center',
                       isCorrect
                         ? 'border-dynamic-green bg-dynamic-green/10'
                         : 'border-dynamic-red bg-dynamic-red/10'
                     )}
                   >
                     <span className="font-bold">{pair.left}</span>
-                    <div className="border-2 border-border bg-background p-2 font-bold text-sm shadow-[2px_2px_0_var(--border)]">
+                    <div className="rounded-lg border border-border bg-background p-2 font-bold text-sm">
                       {currentRight}
                     </div>
                   </div>
@@ -644,7 +644,7 @@ export function StudentTestDetailPage({
               <p className="font-bold text-muted-foreground text-xs">
                 {t('courses.yourResponse')}
               </p>
-              <div className="w-full whitespace-pre-wrap border-2 border-border bg-muted/10 p-3 font-bold text-sm shadow-[2px_2px_0_var(--border)]">
+              <div className="w-full whitespace-pre-wrap rounded-lg border border-border bg-muted/10 p-3 font-bold text-sm">
                 {textValue}
               </div>
               <span className="mt-1 block text-[10px] text-muted-foreground italic">
@@ -663,7 +663,7 @@ export function StudentTestDetailPage({
             {/* Back Navigation */}
             <div>
               <Link
-                className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 font-bold text-sm transition"
                 href={courseHref}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -674,13 +674,13 @@ export function StudentTestDetailPage({
             {/* Header / Score Overview */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_18rem]">
               {/* Info panel */}
-              <div className="flex flex-col justify-between border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
+              <div className="flex flex-col justify-between rounded-lg border border-border bg-background p-6 md:p-8">
                 <div>
-                  <p className="mb-2 inline-flex items-center gap-1.5 border-2 border-border bg-dynamic-cyan/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+                  <p className="mb-2 inline-flex items-center gap-1.5 border border-border bg-dynamic-cyan/15 px-3 py-1 font-semibold text-xs">
                     <BookOpenCheck className="h-3.5 w-3.5" />
                     {t('courses.testSubmitted')}
                   </p>
-                  <h1 className="mt-2 break-words font-black text-[clamp(1.75rem,3.5vw,3rem)] leading-none tracking-normal">
+                  <h1 className="mt-2 break-words font-semibold text-3xl leading-tight tracking-normal md:text-4xl">
                     {test.name}
                   </h1>
                   <p className="mt-4 text-muted-foreground text-sm leading-relaxed">
@@ -688,8 +688,8 @@ export function StudentTestDetailPage({
                   </p>
                 </div>
 
-                <div className="mt-6 border-2 border-border bg-muted/10 p-4 shadow-[4px_4px_0_var(--border)]">
-                  <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+                <div className="mt-6 rounded-lg border border-border bg-muted/10 p-4">
+                  <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                     {t('courses.submittedDateTime')}
                   </span>
                   <span className="font-bold text-sm">
@@ -702,24 +702,24 @@ export function StudentTestDetailPage({
               </div>
 
               {/* Score visual card */}
-              <div className="relative flex min-h-[200px] flex-col items-center justify-center overflow-hidden border-2 border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center shadow-[8px_8px_0_var(--border)]">
-                <span className="mb-2 block font-black text-muted-foreground text-xs uppercase tracking-wider">
+              <div className="relative flex min-h-[200px] flex-col items-center justify-center overflow-hidden border border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center">
+                <span className="mb-2 block font-semibold text-muted-foreground text-xs uppercase tracking-wider">
                   {t('courses.yourGrade')}
                 </span>
 
                 <div className="relative flex items-center justify-center">
-                  <span className="font-black text-6xl text-foreground tracking-tight md:text-7xl">
+                  <span className="font-semibold text-4xl text-foreground tracking-tight md:text-4xl">
                     {studentScore}
                   </span>
                   <span className="mx-1 font-bold text-2xl text-muted-foreground">
                     /
                   </span>
-                  <span className="font-black text-3xl text-muted-foreground">
+                  <span className="font-semibold text-3xl text-muted-foreground">
                     {maxScore}
                   </span>
                 </div>
 
-                <div className="mt-4 inline-flex items-center gap-1.5 border-2 border-border bg-background px-3 py-1 font-black text-xs shadow-[2px_2px_0_var(--border)]">
+                <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1 font-semibold text-xs">
                   {percentage}%
                 </div>
               </div>
@@ -727,11 +727,11 @@ export function StudentTestDetailPage({
 
             {/* Submissions Review list */}
             <div className="space-y-6">
-              <h2 className="border-border border-b-2 pb-2 font-black text-xl uppercase tracking-wider">
+              <h2 className="border-border border-b pb-2 font-semibold text-xl uppercase tracking-wider">
                 {t('courses.questionsReview')}
               </h2>
               {quizzes.length === 0 ? (
-                <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
+                <div className="rounded-lg border border-border border-dashed bg-background p-8 text-center">
                   <span className="text-muted-foreground text-sm italic">
                     {t('courses.noQuestions')}
                   </span>
@@ -748,13 +748,13 @@ export function StudentTestDetailPage({
                     return (
                       <div
                         key={quiz.id}
-                        className="space-y-4 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]"
+                        className="space-y-4 rounded-lg border border-border bg-background p-6"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b-2 border-dashed pb-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b border-dashed pb-3">
                           <div className="flex items-center gap-3">
                             <span
                               className={cn(
-                                'flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border font-black text-xs shadow-[1px_1px_0_var(--border)]',
+                                'flex h-7 w-7 shrink-0 items-center justify-center border border-border font-semibold text-xs',
                                 isQuizCorrect
                                   ? 'bg-dynamic-green/15 text-dynamic-green-foreground'
                                   : 'bg-dynamic-red/15 text-dynamic-red-foreground'
@@ -768,7 +768,7 @@ export function StudentTestDetailPage({
                           </div>
                           <div
                             className={cn(
-                              'border-2 border-border px-2 py-0.5 font-bold text-xs shadow-[2px_2px_0_var(--border)]',
+                              'rounded-lg border border-border px-2 py-0.5 font-bold text-xs',
                               isQuizCorrect
                                 ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
                                 : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground'
@@ -782,8 +782,8 @@ export function StudentTestDetailPage({
                         </div>
                         {renderQuizReview(quiz)}
                         {quizAns?.feedback && (
-                          <div className="mt-4 border-2 border-primary bg-primary/5 p-4 text-left shadow-[2px_2px_0_var(--border)]">
-                            <span className="mb-1 block font-black text-[10px] text-primary uppercase tracking-wider">
+                          <div className="mt-4 border border-primary bg-primary/5 p-4 text-left">
+                            <span className="mb-1 block font-semibold text-[10px] text-primary uppercase tracking-wider">
                               {t('courses.teacherFeedback')}
                             </span>
                             <p className="font-bold text-foreground text-sm">
@@ -804,13 +804,13 @@ export function StudentTestDetailPage({
 
     return (
       <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
-        <div className="mx-auto max-w-xl space-y-6 border-2 border-border bg-background p-8 text-center shadow-[8px_8px_0_var(--border)]">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[4px_4px_0_var(--border)]">
+        <div className="mx-auto max-w-xl space-y-6 rounded-lg border border-border bg-background p-8 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center border border-border bg-dynamic-cyan/15">
             <GraduationCap className="h-8 w-8 text-foreground" />
           </div>
 
           <div className="space-y-2">
-            <h2 className="font-black text-2xl uppercase tracking-wider">
+            <h2 className="font-semibold text-2xl uppercase tracking-wider">
               {t('courses.testSubmitted')}
             </h2>
             <p className="text-muted-foreground text-sm">
@@ -819,7 +819,7 @@ export function StudentTestDetailPage({
           </div>
 
           {/* Marking animation */}
-          <div className="flex items-center justify-center gap-2 border-2 border-border bg-muted/20 p-4 shadow-[4px_4px_0_var(--border)]">
+          <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/20 p-4">
             <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:0ms]" />
             <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:150ms]" />
             <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:300ms]" />
@@ -830,7 +830,7 @@ export function StudentTestDetailPage({
 
           <Link
             href={courseHref}
-            className="inline-flex items-center gap-2 border-2 border-border bg-primary px-5 py-2.5 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)]"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-primary px-5 py-2.5 font-bold text-primary-foreground text-sm transition"
           >
             <ChevronLeft className="h-4 w-4" />
             {t('courses.backToCourse')}
@@ -858,7 +858,7 @@ export function StudentTestDetailPage({
                 <label
                   key={opt.id}
                   className={cn(
-                    'flex cursor-pointer items-start gap-3 border-2 border-border bg-background p-3.5 shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 active:translate-y-0',
+                    'flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background p-3.5 transition',
                     isChecked && 'border-dynamic-cyan bg-dynamic-cyan/10'
                   )}
                 >
@@ -928,7 +928,7 @@ export function StudentTestDetailPage({
                     });
                   }}
                   className={cn(
-                    'flex cursor-pointer items-center justify-center border-2 border-border bg-background py-3 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 active:translate-y-0',
+                    'flex cursor-pointer items-center justify-center rounded-lg border border-border bg-background py-3 font-bold text-sm transition',
                     isChecked && 'border-dynamic-cyan bg-dynamic-cyan/10'
                   )}
                 >
@@ -962,7 +962,7 @@ export function StudentTestDetailPage({
                 });
               }}
               rows={4}
-              className="w-full border-2 border-border bg-background p-3 font-bold text-sm shadow-[2px_2px_0_var(--border)] focus:outline-none"
+              className="w-full rounded-lg border border-border bg-background p-3 font-bold text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="..."
             />
             <span className="mt-1 block text-[10px] text-muted-foreground italic">
@@ -1002,10 +1002,10 @@ export function StudentTestDetailPage({
             {orderList.map((item: string, index: number) => (
               <div
                 key={`${item}-${index}`}
-                className="flex items-center justify-between border-2 border-border bg-background p-3 text-sm shadow-[2px_2px_0_var(--border)]"
+                className="flex items-center justify-between rounded-lg border border-border bg-background p-3 text-sm"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border border-border bg-primary font-semibold text-[10px] text-primary-foreground">
                     {index + 1}
                   </span>
                   <span className="font-bold">{item}</span>
@@ -1015,7 +1015,7 @@ export function StudentTestDetailPage({
                     type="button"
                     disabled={index === 0}
                     onClick={() => moveItem(index, 'up')}
-                    className="flex h-8 w-8 items-center justify-center border-2 border-border bg-background shadow-[1px_1px_0_var(--border)] hover:bg-muted/10 disabled:opacity-40"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted/10 disabled:opacity-40"
                   >
                     ↑
                   </button>
@@ -1023,7 +1023,7 @@ export function StudentTestDetailPage({
                     type="button"
                     disabled={index === orderList.length - 1}
                     onClick={() => moveItem(index, 'down')}
-                    className="flex h-8 w-8 items-center justify-center border-2 border-border bg-background shadow-[1px_1px_0_var(--border)] hover:bg-muted/10 disabled:opacity-40"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted/10 disabled:opacity-40"
                   >
                     ↓
                   </button>
@@ -1069,7 +1069,7 @@ export function StudentTestDetailPage({
               return (
                 <div
                   key={`${pair.left}-${index}`}
-                  className="grid gap-3 border-2 border-border bg-muted/10 p-3 text-sm shadow-[2px_2px_0_var(--border)] md:grid-cols-[1fr_1fr] md:items-center"
+                  className="grid gap-3 rounded-lg border border-border bg-muted/10 p-3 text-sm md:grid-cols-[1fr_1fr] md:items-center"
                 >
                   <span className="font-bold">{pair.left}</span>
                   <select
@@ -1077,7 +1077,7 @@ export function StudentTestDetailPage({
                     onChange={(e) =>
                       handleMatchingChange(index, e.target.value)
                     }
-                    className="border-2 border-border bg-background p-2 font-bold text-sm shadow-[2px_2px_0_var(--border)] focus:outline-none"
+                    className="rounded-lg border border-border bg-background p-2 font-bold text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <option value="">{t('courses.quizSelectMatch')}</option>
                     {choices.map((choice: string, choiceIndex: number) => (
@@ -1103,11 +1103,11 @@ export function StudentTestDetailPage({
             {/* Sidebar with timer and navigation */}
             <aside>
               <div className="sticky top-5 space-y-4">
-                <div className="border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]">
+                <div className="rounded-lg border border-border bg-background p-5">
                   <h3 className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
                     {t('courses.timeLeft')}
                   </h3>
-                  <div className="mt-1.5 font-black text-2xl text-foreground tracking-tight">
+                  <div className="mt-1.5 font-semibold text-2xl text-foreground tracking-tight">
                     {timeLeft !== null ? formatTime(timeLeft) : '--:--'}
                   </div>
                 </div>
@@ -1118,12 +1118,12 @@ export function StudentTestDetailPage({
                   disabled={
                     submitMutation.isPending || saveAnswerMutation.isPending
                   }
-                  className="inline-flex w-full items-center justify-center gap-2 border-2 border-border bg-primary py-3 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-primary py-3 font-bold text-primary-foreground text-sm transition disabled:opacity-50"
                 >
                   {t('courses.submitTest')}
                 </button>
 
-                <div className="border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]">
+                <div className="rounded-lg border border-border bg-background p-5">
                   <h3 className="mb-3 font-bold text-muted-foreground text-xs uppercase tracking-wider">
                     {t('courses.testTakeQuizzes')}
                   </h3>
@@ -1149,7 +1149,7 @@ export function StudentTestDetailPage({
                               el?.scrollIntoView({ behavior: 'smooth' });
                             }}
                             className={cn(
-                              'flex h-9 items-center justify-center border-2 border-border font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 active:translate-y-0',
+                              'flex h-9 items-center justify-center border border-border font-bold text-xs transition',
                               isAnswered
                                 ? 'bg-dynamic-cyan/15 text-foreground'
                                 : 'bg-muted/10 text-muted-foreground'
@@ -1167,8 +1167,8 @@ export function StudentTestDetailPage({
 
             {/* Test Sheet Quizzes */}
             <div className="space-y-6">
-              <div className="border-2 border-border bg-background p-6 shadow-[6px_6px_0_var(--border)]">
-                <h1 className="font-black text-2xl leading-tight tracking-tight">
+              <div className="rounded-lg border border-border bg-background p-6">
+                <h1 className="font-semibold text-2xl leading-tight tracking-tight">
                   {test.name}
                 </h1>
                 <p className="mt-1 text-muted-foreground text-sm">
@@ -1177,7 +1177,7 @@ export function StudentTestDetailPage({
               </div>
 
               {quizzes.length === 0 ? (
-                <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
+                <div className="rounded-lg border border-border border-dashed bg-background p-8 text-center">
                   <span className="text-muted-foreground text-sm italic">
                     {t('courses.noQuestions')}
                   </span>
@@ -1188,10 +1188,10 @@ export function StudentTestDetailPage({
                     <div
                       key={quiz.id}
                       id={`question-${index}`}
-                      className="space-y-4 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]"
+                      className="space-y-4 rounded-lg border border-border bg-background p-6"
                     >
                       <div className="flex items-start gap-3">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-primary-foreground text-xs shadow-[1px_1px_0_var(--border)]">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-primary font-semibold text-primary-foreground text-xs">
                           {index + 1}
                         </span>
                         <h3 className="pt-0.5 font-bold text-base">
@@ -1217,7 +1217,7 @@ export function StudentTestDetailPage({
         {/* Back navigation link */}
         <div>
           <Link
-            className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 font-bold text-sm transition"
             href={courseHref}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -1226,18 +1226,18 @@ export function StudentTestDetailPage({
         </div>
 
         {/* Page Header */}
-        <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
+        <div className="rounded-lg border border-border bg-background p-6 md:p-8">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div className="flex items-start gap-4">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[4px_4px_0_var(--border)]">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center border border-border bg-dynamic-cyan/15">
                 <BookOpenCheck className="h-7 w-7" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="mb-2 inline-flex items-center gap-1.5 border-2 border-border bg-dynamic-yellow/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+                <p className="mb-2 inline-flex items-center gap-1.5 border border-border bg-dynamic-yellow/15 px-3 py-1 font-semibold text-xs">
                   <GraduationCap className="h-3.5 w-3.5" />
                   {courseQuery.data.name ?? t('courses.untitled')}
                 </p>
-                <h1 className="break-words font-black text-[clamp(1.75rem,3.5vw,3rem)] leading-none tracking-normal">
+                <h1 className="break-words font-semibold text-3xl leading-tight tracking-normal md:text-4xl">
                   {test.name}
                 </h1>
               </div>
@@ -1247,7 +1247,7 @@ export function StudentTestDetailPage({
               <button
                 onClick={() => startMutation.mutate()}
                 disabled={startMutation.isPending || !hasStarted}
-                className="inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border bg-primary px-5 py-3 font-bold text-base text-primary-foreground shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-primary px-5 py-3 font-bold text-base text-primary-foreground transition disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
               >
                 <Play className="h-5 w-5" />
@@ -1260,13 +1260,13 @@ export function StudentTestDetailPage({
         </div>
 
         {/* Metadata Details Row */}
-        <div className="grid grid-cols-1 gap-4 border-2 border-border bg-background p-5 shadow-[6px_6px_0_var(--border)] md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 rounded-lg border border-border bg-background p-5 md:grid-cols-3">
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-muted/40">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40">
               <Calendar className="h-5 w-5" />
             </span>
             <div>
-              <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+              <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                 {t('courses.testDetailsStartAt')}
               </span>
               <span className="font-bold text-sm">
@@ -1281,11 +1281,11 @@ export function StudentTestDetailPage({
           </div>
 
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-muted/40">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40">
               <Clock className="h-5 w-5" />
             </span>
             <div>
-              <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+              <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                 {t('courses.testDetailsDuration')}
               </span>
               <span className="font-bold text-sm">
@@ -1299,11 +1299,11 @@ export function StudentTestDetailPage({
           </div>
 
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-muted/40">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40">
               <Layers className="h-5 w-5" />
             </span>
             <div>
-              <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+              <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                 {t('courses.submittingType')}
               </span>
               <span className="font-bold text-sm">
@@ -1314,8 +1314,8 @@ export function StudentTestDetailPage({
         </div>
 
         {/* Description / Instructions */}
-        <div className="space-y-4 border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
-          <h2 className="border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
+        <div className="space-y-4 rounded-lg border border-border bg-background p-6">
+          <h2 className="border-border border-b pb-2 font-semibold text-lg uppercase tracking-wider">
             {t('courses.assessmentOverview')}
           </h2>
           <div className="whitespace-pre-wrap text-muted-foreground text-sm leading-relaxed">
@@ -1324,8 +1324,8 @@ export function StudentTestDetailPage({
         </div>
 
         {/* Learning Objectives Assessed */}
-        <div className="space-y-4 border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
-          <h2 className="border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
+        <div className="space-y-4 rounded-lg border border-border bg-background p-6">
+          <h2 className="border-border border-b pb-2 font-semibold text-lg uppercase tracking-wider">
             {t('courses.learningObjectivesAssessed')}
           </h2>
           <p className="text-muted-foreground text-xs leading-relaxed">
@@ -1340,7 +1340,7 @@ export function StudentTestDetailPage({
               {testModules.map((m) => (
                 <div
                   key={m.id}
-                  className="flex items-center gap-2.5 border-2 border-border bg-muted/10 p-3 shadow-[2px_2px_0_var(--border)]"
+                  className="flex items-center gap-2.5 rounded-lg border border-border bg-muted/10 p-3"
                 >
                   <span className="h-2 w-2 rounded-full bg-primary" />
                   <span className="font-bold text-sm">{m.name}</span>

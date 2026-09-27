@@ -1,51 +1,7 @@
-# Teach Design System
+# Teach satellite design
 
-Teach follows the shared Tuturuuu Education Satellites design language defined in
-`apps/learn/DESIGN.md`.
+Teach follows the shared Learn and Teach guidance in `apps/learn/DESIGN.md` and the Tuturuuu platform shell. The authenticated workspace uses `structure.tsx` and `navigation.tsx` with `SidebarStructure`; the teacher theme and workspace controls should look like other satellite controls.
 
-Authenticated teacher workspaces use the shared satellite sidebar through
-`[wsId]/structure.tsx`; route links, workspace switching, app launching, account
-controls, and responsive navigation belong to that shell. Keep teacher-specific
-workflows inside the page content.
+Teacher pages emphasize course groups, modules, attendance, assignments, reports, and metrics. Use compact page headers, subtle bordered cards, rounded controls, readable tables, and clear next actions. Avoid thick outlines, offset shadows, display-sized dashboard headlines, and decorative color blocks.
 
-## Visual Mode
-
-- Use Neobrutalism for every Teach surface: hard 2px foreground borders, offset
-  shadows, visible grid logic, loud type, and functional color blocks.
-- Keep Teach complementary to Learn:
-  - Teach is planner/operator energy: yellow, green, blue, and orange blocks.
-  - Learn is learner momentum: playful progress, checkpoint cards, and activity
-    rails.
-- Do not use soft SaaS gradients, glass cards, pill-heavy chrome, or generic
-  marketing-page hero compositions.
-
-## Authentication
-
-- Teach has no local login portal.
-- `/login` redirects to Tuturuuu platform login in `apps/web`.
-- `/verify-token` consumes the cross-app token issued after platform account
-  confirmation.
-
-## Relationship To Apps
-
-- `apps/web` owns platform login, protected APIs, app-session verification,
-  workspace permissions, and the central data model.
-- `apps/teach` owns the teacher UI for core education operations: course
-  creation, course publishing, existing-user enrollment, module authoring,
-  schedule-aware attendance, posts, report previewing, and metrics.
-- `apps/learn` presents the learner/parent-facing companion surface.
-- Teach should not link core teacher actions back to `apps/web`. Keep external
-  handoffs intentional, such as learner preview into `apps/learn` and
-  centralized auth/logout.
-
-## Teacher Tools
-
-- Attendance must use the course schedule stored on `workspace_user_groups`
-  (`sessions`, `starting_date`, and `ending_date`) as the source of truth.
-  Calendar cells should distinguish unscheduled days, scheduled-but-unchecked
-  days, partial attendance, complete attendance, late arrivals, and absences.
-- Reports should be previewed in Teach before save with the same learner,
-  course, score, feedback, and metric context that learners will later see in
-  Learn.
-- Assignment/post and metric tools should include intentional Learn handoffs
-  for previewing the learner-facing course, assignments, reports, or marks.
+Keep course and schedule behavior intact. Attendance reads each course schedule from `workspace_user_groups` (`sessions`, `starting_date`, and `ending_date`). Reports can be previewed in Teach before save and handed off to Learn where appropriate. Central platform login and local token verification remain the authentication flow.

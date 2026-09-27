@@ -383,7 +383,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
           />
 
           {pronunciationItems.length === 0 ? (
-            <div className="border-2 border-border bg-background p-6 text-muted-foreground text-sm shadow-[4px_4px_0_var(--border)]">
+            <div className="rounded-lg border border-border bg-background p-6 text-muted-foreground text-sm">
               {t('pronunciationEmpty')}
             </div>
           ) : (
@@ -392,12 +392,12 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
               if (!item) return null;
 
               return (
-                <div className="space-y-5 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]">
+                <div className="space-y-5 rounded-lg border border-border bg-background p-6">
                   <div className="grid gap-5 md:grid-cols-[14rem_minmax(0,1fr)]">
                     {item.entry.imageUrl ? (
                       <Image
                         alt={t('imageAlt', { word: item.entry.word })}
-                        className="aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)] md:aspect-square"
+                        className="aspect-video w-full border border-border object-cover md:aspect-square"
                         height={320}
                         unoptimized
                         referrerPolicy="no-referrer"
@@ -405,14 +405,16 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                         width={320}
                       />
                     ) : (
-                      <div className="flex aspect-video items-center justify-center border-2 border-border border-dashed bg-muted/20 text-muted-foreground text-xs shadow-[3px_3px_0_var(--border)] md:aspect-square">
+                      <div className="flex aspect-video items-center justify-center rounded-lg border border-border border-dashed bg-muted/20 text-muted-foreground text-xs md:aspect-square">
                         {t('noImage')}
                       </div>
                     )}
 
                     <div className="space-y-4">
                       <div>
-                        <p className="font-black text-2xl">{item.entry.word}</p>
+                        <p className="font-semibold text-2xl">
+                          {item.entry.word}
+                        </p>
                         {item.entry.pronunciation ? (
                           <p className="text-muted-foreground text-sm">
                             {item.entry.pronunciation}
@@ -420,7 +422,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                         ) : null}
                       </div>
 
-                      <div className="border-2 border-border bg-card p-4 shadow-[2px_2px_0_var(--border)]">
+                      <div className="rounded-lg border border-border bg-card p-4">
                         <p className="mb-2 font-bold text-[10px] text-muted-foreground uppercase tracking-widest">
                           {t('readSentence')}
                         </p>
@@ -431,7 +433,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
 
                       <div className="flex flex-wrap gap-2">
                         <button
-                          className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
+                          className="rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm disabled:opacity-50"
                           disabled={playingKey !== null}
                           onClick={() =>
                             playSpeech(
@@ -448,7 +450,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                             : t('playTarget')}
                         </button>
                         <button
-                          className="border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
+                          className="rounded-lg border border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm disabled:opacity-50"
                           disabled={isAnalyzingPronunciation}
                           onClick={() =>
                             isRecording
@@ -466,7 +468,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                   </div>
 
                   {isRecording ? (
-                    <p className="border-2 border-dynamic-yellow/50 bg-dynamic-yellow/10 p-3 font-bold text-sm shadow-[2px_2px_0_var(--border)]">
+                    <p className="border border-dynamic-yellow/50 bg-dynamic-yellow/10 p-3 font-bold text-sm">
                       {t('recording')}
                     </p>
                   ) : null}
@@ -478,7 +480,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                   ) : null}
 
                   {recordingPreviewUrl ? (
-                    <div className="space-y-2 border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)]">
+                    <div className="space-y-2 rounded-lg border border-border bg-card p-4">
                       <p className="font-bold text-xs uppercase tracking-widest">
                         {t('yourRecording')}
                       </p>
@@ -505,7 +507,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
 
                   <div className="flex justify-end">
                     <button
-                      className="border-2 border-border bg-background px-4 py-2 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
+                      className="rounded-lg border border-border bg-background px-4 py-2 font-bold text-sm disabled:opacity-50"
                       disabled={
                         pronunciationIndex + 1 >= pronunciationItems.length
                       }
@@ -539,9 +541,9 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
               const entry = vocabulary[quizIndex];
               if (!entry) return null;
               return (
-                <div className="space-y-6 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]">
+                <div className="space-y-6 rounded-lg border border-border bg-background p-6">
                   {entry.imageUrl ? (
-                    <div className="mx-auto flex max-w-md justify-center overflow-hidden border-2 border-border bg-muted/20 shadow-[2px_2px_0_var(--border)]">
+                    <div className="mx-auto flex max-w-md justify-center overflow-hidden rounded-lg border border-border bg-muted/20">
                       <Image
                         alt={t('quizClueAlt')}
                         className="max-h-64 w-full object-contain"
@@ -553,7 +555,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                       />
                     </div>
                   ) : (
-                    <div className="flex h-36 items-center justify-center border-2 border-border border-dashed bg-muted/10 text-muted-foreground text-xs">
+                    <div className="flex h-36 items-center justify-center rounded-lg border border-border border-dashed bg-muted/10 text-muted-foreground text-xs">
                       {t('noImageClue')}
                     </div>
                   )}
@@ -566,7 +568,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                         </p>
                         {quizAnswered && (
                           <button
-                            className="inline-flex items-center gap-1 rounded border-2 border-border bg-card px-2 py-0.5 font-bold text-xs shadow-[1.5px_1.5px_0_var(--border)] hover:bg-muted/30 disabled:opacity-50"
+                            className="inline-flex items-center gap-1 rounded rounded-lg border border-border bg-card px-2 py-0.5 font-bold text-xs hover:bg-muted/30 disabled:opacity-50"
                             disabled={playingKey !== null}
                             onClick={() =>
                               playSpeech(
@@ -590,7 +592,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                         "{entry.definition}"
                       </p>
                       <button
-                        className="inline-flex items-center gap-1 rounded border border-border bg-card px-2 py-0.5 text-xs shadow-[1px_1px_0_var(--border)] hover:bg-muted/30 disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded rounded-lg border border-border bg-card px-2 py-0.5 text-xs hover:bg-muted/30 disabled:opacity-50"
                         disabled={playingKey !== null}
                         onClick={() =>
                           playSpeech(
@@ -614,17 +616,17 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                       const isSelectedOption = option === quizSelectedOption;
 
                       let optionStyle =
-                        'border-border bg-background shadow-[3px_3px_0_var(--border)] hover:bg-muted/30';
+                        'border-border bg-background  hover:bg-muted/30';
                       if (quizAnswered) {
                         if (isCorrectOption) {
                           optionStyle =
-                            'border-dynamic-green/70 bg-dynamic-green/10 text-dynamic-green shadow-[3px_3px_0_var(--border)] font-bold';
+                            'border-dynamic-green/70 bg-dynamic-green/10 text-dynamic-green  font-bold';
                         } else if (isSelectedOption) {
                           optionStyle =
-                            'border-destructive/70 bg-destructive/10 text-destructive shadow-[3px_3px_0_var(--border)] font-bold';
+                            'border-destructive/70 bg-destructive/10 text-destructive  font-bold';
                         } else {
                           optionStyle =
-                            'border-border bg-background/50 opacity-60 shadow-[1px_1px_0_var(--border)]';
+                            'border-border bg-background/50 opacity-60 ';
                         }
                       }
 
@@ -632,7 +634,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                         <button
                           key={option}
                           className={cn(
-                            'min-h-16 border-2 px-4 text-left font-bold text-sm transition-all',
+                            'min-h-16 border px-4 text-left font-bold text-sm transition-all',
                             optionStyle
                           )}
                           disabled={quizAnswered}
@@ -651,7 +653,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                   {quizAnswered && (
                     <div className="flex justify-end pt-2">
                       <button
-                        className="inline-flex items-center gap-2 border-2 border-border bg-primary px-5 py-2.5 font-black text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-primary px-5 py-2.5 font-semibold text-primary-foreground text-sm transition"
                         onClick={nextQuizQuestion}
                         type="button"
                       >

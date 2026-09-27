@@ -82,7 +82,7 @@ export function ModuleItemRow({
       </button>
 
       {/* Index badge */}
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-border bg-muted font-bold text-[10px] tabular-nums">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-border bg-muted font-bold text-[10px] tabular-nums">
         {index + 1}
       </span>
 
@@ -90,7 +90,7 @@ export function ModuleItemRow({
       {editing ? (
         <input
           ref={inputRef}
-          className="min-w-0 flex-1 border-primary border-b-2 bg-transparent text-sm outline-none"
+          className="min-w-0 flex-1 border-primary border-b bg-transparent text-sm outline-none"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commitRename}
@@ -114,7 +114,7 @@ export function ModuleItemRow({
       {/* Published toggle */}
       <button
         className={cn(
-          'shrink-0 border border-border px-1.5 py-0.5 font-bold text-[10px] transition',
+          'shrink-0 rounded-lg border border-border px-1.5 py-0.5 font-bold text-[10px] transition',
           module.is_published
             ? 'bg-dynamic-green/15 text-foreground'
             : 'bg-muted text-muted-foreground'

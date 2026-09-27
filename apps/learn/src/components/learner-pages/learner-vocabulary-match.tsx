@@ -42,7 +42,7 @@ export function LearnerVocabularyMatch({
               })}
         </p>
         <button
-          className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 font-bold text-sm"
           onClick={resetPractice}
           type="button"
         >
@@ -82,7 +82,7 @@ export function LearnerVocabularyMatch({
               }
               aria-pressed={isSelected}
               className={cn(
-                'min-h-24 border-2 border-border bg-background p-4 text-left font-bold text-sm shadow-[3px_3px_0_var(--border)] transition',
+                'min-h-24 rounded-lg border border-border bg-background p-4 text-left font-bold text-sm transition',
                 isSelected && 'bg-dynamic-cyan/15',
                 isMismatch && 'bg-destructive/10',
                 isMatched &&

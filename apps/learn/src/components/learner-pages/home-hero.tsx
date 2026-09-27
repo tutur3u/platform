@@ -28,15 +28,15 @@ export function HomeHero({
 
   return (
     <section
-      className="relative grid overflow-hidden border-2 border-border bg-background shadow-[10px_10px_0_var(--border)] lg:grid-cols-[minmax(0,1fr)_24rem]"
+      className="grid overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-[minmax(0,1fr)_18rem]"
       data-learn-reveal
     >
-      <div className="p-5 md:p-8">
-        <div className="mb-5 inline-flex items-center gap-2 border-2 border-border bg-dynamic-yellow/15 px-4 py-2 font-black text-sm shadow-[4px_4px_0_var(--border)]">
+      <div className="p-6 md:p-8">
+        <div className="mb-5 inline-flex items-center gap-2 font-medium text-muted-foreground text-sm">
           <Sparkles className="h-4 w-4" />
           {t('home.dailyGoal')}
         </div>
-        <h1 className="max-w-4xl text-balance font-black text-[clamp(2.05rem,4.5vw,4.35rem)] leading-[0.95] tracking-normal">
+        <h1 className="max-w-4xl text-balance font-semibold text-3xl leading-tight tracking-tight md:text-4xl">
           {t('home.heroTitle', { name: studentName })}
         </h1>
         <p className="mt-5 max-w-2xl text-base text-muted-foreground leading-7">
@@ -44,14 +44,14 @@ export function HomeHero({
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
-            className="inline-flex h-12 items-center justify-center gap-2 border-2 border-border bg-primary px-6 font-black text-primary-foreground shadow-[5px_5px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             href={practiceHref}
           >
             <Zap className="h-4 w-4" />
             {t('home.startPractice')}
           </Link>
           <Link
-            className="inline-flex h-12 items-center justify-center gap-2 border-2 border-border bg-background px-6 font-black shadow-[5px_5px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 font-medium text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             href={coursesHref}
           >
             <BookOpen className="h-4 w-4" />
@@ -59,7 +59,7 @@ export function HomeHero({
           </Link>
         </div>
       </div>
-      <aside className="grid gap-3 border-foreground/70 border-t-2 bg-card p-5 lg:border-t-0 lg:border-l-2">
+      <aside className="grid gap-2 border-border border-t bg-muted/20 p-4 lg:border-t-0 lg:border-l">
         <StatBubble icon={Sparkles} label={t('home.xp')} value={xp} />
         <StatBubble icon={Flame} label={t('home.streak')} value={streak} />
         <StatBubble

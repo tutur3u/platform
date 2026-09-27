@@ -45,7 +45,7 @@ export function RenderNode({ node }: { node: TipTapNode }) {
       if (mark.type === 'italic') element = <em>{element}</em>;
       if (mark.type === 'code') {
         element = (
-          <code className="border border-border bg-muted px-1 py-0.5 text-xs">
+          <code className="rounded-lg border border-border bg-muted px-1 py-0.5 text-xs">
             {element}
           </code>
         );
@@ -79,7 +79,7 @@ export function RenderNode({ node }: { node: TipTapNode }) {
     case 'heading': {
       const level = (node.attrs?.level as number) ?? 2;
       if (level === 1) {
-        return <h1 className="mb-3 font-black text-2xl">{children}</h1>;
+        return <h1 className="mb-3 font-semibold text-2xl">{children}</h1>;
       }
       if (level === 2) {
         return <h2 className="mb-2 font-bold text-xl">{children}</h2>;
@@ -100,7 +100,7 @@ export function RenderNode({ node }: { node: TipTapNode }) {
       );
     case 'codeBlock':
       return (
-        <pre className="mb-3 overflow-x-auto border-2 border-border bg-muted p-4 text-sm">
+        <pre className="mb-3 overflow-x-auto rounded-lg border border-border bg-muted p-4 text-sm">
           <code>{children}</code>
         </pre>
       );

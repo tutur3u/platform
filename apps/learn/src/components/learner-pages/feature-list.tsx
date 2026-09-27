@@ -8,7 +8,7 @@ import type {
 import { Link } from '@/i18n/navigation';
 import { AssignmentRow } from './assignment-row';
 import { MarkCard } from './mark-card';
-import { BrutalCard, EmptyState } from './shared';
+import { EmptyState, SurfaceCard } from './shared';
 
 export function FeatureList({
   actionHref,
@@ -28,12 +28,12 @@ export function FeatureList({
   type: 'assignment' | 'mark';
 }) {
   return (
-    <BrutalCard className="p-6">
+    <SurfaceCard className="p-6">
       <div className="mb-5 flex items-center justify-between gap-4">
         <h2 className="font-bold text-2xl tracking-normal">{title}</h2>
         {actionHref && actionLabel ? (
           <Link
-            className="inline-flex h-10 items-center justify-center gap-2 border-2 border-border bg-primary px-4 font-black text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-primary px-4 font-semibold text-primary-foreground text-sm transition"
             href={actionHref}
           >
             {actionLabel}
@@ -59,6 +59,6 @@ export function FeatureList({
         )}
       </div>
       {!items.length ? <EmptyState label={emptyLabel} /> : null}
-    </BrutalCard>
+    </SurfaceCard>
   );
 }

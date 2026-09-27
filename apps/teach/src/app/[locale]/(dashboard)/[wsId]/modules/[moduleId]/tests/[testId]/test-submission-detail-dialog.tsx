@@ -66,7 +66,7 @@ export function TestSubmissionDetailDialog({
             </div>
 
             <button
-              className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-background shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background transition"
               onClick={() => onOpenChange(false)}
               type="button"
               aria-label={t('common.close') || 'Close'}
@@ -86,7 +86,7 @@ export function TestSubmissionDetailDialog({
         )}
 
         {isError && (
-          <div className="my-4 border-2 border-border border-dashed p-8 text-center shadow-[4px_4px_0_var(--border)]">
+          <div className="my-4 rounded-lg border border-border border-dashed p-8 text-center">
             <p className="font-bold text-muted-foreground text-sm">
               {t('teachModules.submissionDetailsLoadError')}
             </p>
@@ -174,38 +174,38 @@ function SubmissionContent({
     <div className="mt-4 space-y-6">
       {/* Stats summary row */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="border-2 border-border bg-background p-4 text-center shadow-[3px_3px_0_var(--border)]">
-          <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+        <div className="rounded-lg border border-border bg-background p-4 text-center">
+          <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
             {t('teachModules.attemptScore')}
           </span>
-          <span className="mt-1 block font-black text-2xl">
+          <span className="mt-1 block font-semibold text-2xl">
             {studentScore} / {maxScore}
           </span>
         </div>
 
-        <div className="border-2 border-border bg-background p-4 text-center shadow-[3px_3px_0_var(--border)]">
-          <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+        <div className="rounded-lg border border-border bg-background p-4 text-center">
+          <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
             {t('teachModules.percentage')}
           </span>
-          <span className="mt-1 block font-black text-2xl text-primary">
+          <span className="mt-1 block font-semibold text-2xl text-primary">
             {percentage}%
           </span>
         </div>
 
-        <div className="border-2 border-border bg-background p-4 text-center shadow-[3px_3px_0_var(--border)]">
-          <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+        <div className="rounded-lg border border-border bg-background p-4 text-center">
+          <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
             {t('teachModules.correctAnswers')}
           </span>
-          <span className="mt-1 block font-black text-2xl text-dynamic-green">
+          <span className="mt-1 block font-semibold text-2xl text-dynamic-green">
             {correctAnswers}
           </span>
         </div>
 
-        <div className="border-2 border-border bg-background p-4 text-center shadow-[3px_3px_0_var(--border)]">
-          <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+        <div className="rounded-lg border border-border bg-background p-4 text-center">
+          <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
             {t('teachModules.incorrectAnswers')}
           </span>
-          <span className="mt-1 block font-black text-2xl text-destructive">
+          <span className="mt-1 block font-semibold text-2xl text-destructive">
             {incorrectAnswers}
           </span>
         </div>
@@ -213,7 +213,7 @@ function SubmissionContent({
 
       {/* Quizzes list review */}
       <div className="space-y-6">
-        <h3 className="border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
+        <h3 className="border-border border-b pb-2 font-semibold text-lg uppercase tracking-wider">
           {t('teachModules.questionResponsesFeedback')}
         </h3>
 
@@ -230,14 +230,14 @@ function SubmissionContent({
           return (
             <div
               key={quiz.id}
-              className="space-y-4 border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]"
+              className="space-y-4 rounded-lg border border-border bg-background p-5"
             >
               {/* Question header */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b-2 border-dashed pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b border-dashed pb-3">
                 <div className="flex items-center gap-3">
                   <span
                     className={cn(
-                      'flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border font-black text-xs shadow-[1px_1px_0_var(--border)]',
+                      'flex h-7 w-7 shrink-0 items-center justify-center border border-border font-semibold text-xs',
                       quizAns.is_correct
                         ? 'bg-dynamic-green/15 text-dynamic-green-foreground'
                         : 'bg-dynamic-red/15 text-dynamic-red-foreground'
@@ -251,7 +251,7 @@ function SubmissionContent({
                 </div>
                 <div
                   className={cn(
-                    'border-2 border-border px-2 py-0.5 font-bold text-xs shadow-[2px_2px_0_var(--border)]',
+                    'rounded-lg border border-border px-2 py-0.5 font-bold text-xs',
                     quizAns.is_correct
                       ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
                       : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground'
@@ -267,7 +267,7 @@ function SubmissionContent({
               {/* Student response render */}
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="cursor-default border-2 border-border border-dashed bg-muted/10 p-3.5 text-sm"
+                className="cursor-default rounded-lg border border-border border-dashed bg-muted/10 p-3.5 text-sm"
               >
                 <QuizSubmissionResponseViewer
                   quiz={quiz}
@@ -432,14 +432,14 @@ function FeedbackForm({
   return (
     <div className="space-y-2 border-border border-t pt-2">
       <div className="flex items-center justify-between">
-        <label className="block font-black text-muted-foreground text-xs uppercase tracking-wider">
+        <label className="block font-semibold text-muted-foreground text-xs uppercase tracking-wider">
           {t('teachModules.questionFeedback')}
         </label>
         <button
           type="button"
           onClick={onGenerateAi}
           disabled={isAiDisabled || isAiLoading || feedbackMutation.isPending}
-          className="inline-flex cursor-pointer items-center gap-1 border border-border bg-background px-2 py-0.5 font-bold text-foreground text-xs shadow-[1px_1px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50"
+          className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-2 py-0.5 font-bold text-foreground text-xs transition disabled:opacity-50"
         >
           {isAiLoading ? (
             <Loader2 className="h-3 w-3 animate-spin text-primary" />
@@ -458,7 +458,7 @@ function FeedbackForm({
           </label>
           <input
             id={`manual-score-${quizId}`}
-            className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             disabled={feedbackMutation.isPending}
             max={maxScore ?? undefined}
             min={0}
@@ -478,7 +478,7 @@ function FeedbackForm({
             setHasManualEdit(true);
           }}
           placeholder={t('teachModules.feedbackPlaceholder')}
-          className="w-full resize-none border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+          className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
           disabled={feedbackMutation.isPending || isAiLoading}
         />
         <button
@@ -486,7 +486,7 @@ function FeedbackForm({
           onClick={() => feedbackMutation.mutate()}
           disabled={feedbackMutation.isPending || !isChanged || isAiLoading}
           className={cn(
-            'inline-flex w-full shrink-0 cursor-pointer items-center justify-center gap-2 border-2 border-border px-4 py-2.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50 sm:w-auto',
+            'inline-flex w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 font-bold text-sm transition disabled:opacity-50 sm:w-auto',
             isFeedbackChanged
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-muted-foreground'

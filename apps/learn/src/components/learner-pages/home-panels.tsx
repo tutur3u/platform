@@ -13,7 +13,7 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { BrutalCard, BrutalIcon, type IconComponent } from './shared';
+import { type IconComponent, SurfaceCard, SurfaceIcon } from './shared';
 
 export function StatBubble({
   icon: Icon,
@@ -25,13 +25,12 @@ export function StatBubble({
   value: number | string;
 }) {
   return (
-    <div
-      className="min-w-0 border-2 border-foreground/70 bg-background p-4 text-center shadow-[5px_5px_0_var(--foreground)]"
-      data-ink-float
-    >
-      <Icon className="mx-auto mb-2 h-5 w-5" />
-      <p className="truncate font-black text-2xl tabular-nums">{value}</p>
-      <p className="truncate text-muted-foreground text-xs">{label}</p>
+    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border bg-background px-4 py-3">
+      <Icon className="size-4 shrink-0 text-muted-foreground" />
+      <p className="min-w-0 flex-1 truncate text-muted-foreground text-sm">
+        {label}
+      </p>
+      <p className="shrink-0 font-semibold text-lg tabular-nums">{value}</p>
     </div>
   );
 }
@@ -52,23 +51,23 @@ export function MissionPanel({
   title: string;
 }) {
   return (
-    <BrutalCard className="bg-dynamic-cyan/10 p-5 sm:p-6 md:col-span-3 md:row-span-2">
+    <SurfaceCard className="bg-dynamic-cyan/10 p-5 sm:p-6 md:col-span-3 md:row-span-2">
       <div className="flex h-full min-h-72 flex-col justify-between gap-8">
         <div className="flex items-start justify-between gap-4">
-          <BrutalIcon className="bg-dynamic-green/15" icon={Icon} />
-          <p className="border-2 border-border bg-background px-4 py-2 font-black text-xl tabular-nums shadow-[4px_4px_0_var(--border)]">
+          <SurfaceIcon className="bg-dynamic-green/15" icon={Icon} />
+          <p className="rounded-lg border border-border bg-background px-4 py-2 font-semibold text-xl tabular-nums">
             {stat}
           </p>
         </div>
         <div>
-          <h3 className="text-balance font-black text-3xl tracking-normal">
+          <h3 className="text-balance font-semibold text-3xl tracking-normal">
             {title}
           </h3>
           <p className="mt-3 line-clamp-3 text-muted-foreground leading-7">
             {description}
           </p>
           <Link
-            className="mt-6 inline-flex h-11 items-center justify-center gap-2 border-2 border-border bg-primary px-5 font-black text-primary-foreground shadow-[4px_4px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
+            className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-primary px-5 font-semibold text-primary-foreground transition"
             href={actionHref}
           >
             {actionLabel}
@@ -76,7 +75,7 @@ export function MissionPanel({
           </Link>
         </div>
       </div>
-    </BrutalCard>
+    </SurfaceCard>
   );
 }
 
@@ -95,26 +94,26 @@ export function QuestPanel({
     : 0;
 
   return (
-    <BrutalCard className="bg-dynamic-yellow/10 p-5 sm:p-6 md:col-span-3">
+    <SurfaceCard className="bg-dynamic-yellow/10 p-5 sm:p-6 md:col-span-3">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h3 className="font-black text-2xl tracking-normal">
+          <h3 className="font-semibold text-2xl tracking-normal">
             {t('home.questBoard')}
           </h3>
           <p className="mt-2 text-muted-foreground text-sm">
             {t('home.questBoardDescription', { count: dueAssignments })}
           </p>
         </div>
-        <BrutalIcon className="bg-dynamic-pink/15" icon={Target} />
+        <SurfaceIcon className="bg-dynamic-pink/15" icon={Target} />
       </div>
       <div className="mt-5 space-y-2">
-        <div className="flex justify-between font-black text-sm">
+        <div className="flex justify-between font-semibold text-sm">
           <span>{t('common.completed')}</span>
           <span className="tabular-nums">{progress}%</span>
         </div>
         <Progress value={progress} />
       </div>
-    </BrutalCard>
+    </SurfaceCard>
   );
 }
 
@@ -139,18 +138,18 @@ export function MiniPanel({
   }[tone];
 
   return (
-    <BrutalCard
+    <SurfaceCard
       className={cn(
         'min-h-48 overflow-hidden bg-card p-5 sm:p-6',
         span === 'wide' ? 'md:col-span-4' : 'md:col-span-2'
       )}
     >
-      <BrutalIcon className={cn('mb-5 h-10 w-10', toneClass)} icon={Icon} />
+      <SurfaceIcon className={cn('mb-5 h-10 w-10', toneClass)} icon={Icon} />
       <p className="text-muted-foreground text-sm">{label}</p>
-      <p className="mt-2 break-words font-black text-[clamp(1.6rem,2.4vw,2.1rem)] leading-[1.05] tracking-normal">
+      <p className="mt-2 break-words font-semibold text-3xl leading-[1.05] tracking-normal md:text-4xl">
         {value}
       </p>
-    </BrutalCard>
+    </SurfaceCard>
   );
 }
 
@@ -199,33 +198,33 @@ export function LearningPlanStrip({
 
   return (
     <section
-      className="border-2 border-foreground/70 bg-background p-5 shadow-[8px_8px_0_var(--foreground)] md:p-6"
+      className="rounded-2xl border border-border bg-card p-6"
       data-learn-reveal
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="font-black text-3xl tracking-normal">
+          <h2 className="font-semibold text-2xl tracking-tight">
             {t('home.todayPlan')}
           </h2>
           <p className="mt-2 max-w-2xl text-muted-foreground leading-7">
             {t('home.todayPlanDescription')}
           </p>
         </div>
-        <div className="border-2 border-border bg-dynamic-yellow/15 px-4 py-2 font-black text-sm shadow-[3px_3px_0_var(--border)]">
+        <div className="rounded-lg bg-muted px-3 py-1.5 font-medium text-muted-foreground text-sm">
           {t('home.dailyGoal')}
         </div>
       </div>
       <div className="mt-5 grid gap-3 lg:grid-cols-3">
         {planItems.map(({ href, icon: Icon, meta, surface, text, title }) => (
           <Link
-            className="group grid min-h-44 gap-4 border-2 border-border bg-card p-4 shadow-[5px_5px_0_var(--border)] transition duration-200 hover:-translate-y-0.5 hover:border-foreground/70 hover:shadow-[7px_7px_0_var(--foreground)]"
+            className="group grid min-h-40 gap-4 rounded-xl border border-border bg-background p-4 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             href={href}
             key={title}
           >
             <div className="flex items-start justify-between gap-4">
               <span
                 className={cn(
-                  'flex h-11 w-11 items-center justify-center border-2 border-border shadow-[3px_3px_0_var(--border)]',
+                  'flex h-11 w-11 items-center justify-center border border-border',
                   surface
                 )}
               >
@@ -236,12 +235,12 @@ export function LearningPlanStrip({
               </span>
             </div>
             <div>
-              <h3 className="font-black text-xl">{title}</h3>
+              <h3 className="font-semibold text-xl">{title}</h3>
               <p className="mt-2 line-clamp-2 text-muted-foreground text-sm leading-6">
                 {text}
               </p>
             </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-foreground" />
+            <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:text-foreground" />
           </Link>
         ))}
       </div>
@@ -303,44 +302,44 @@ export function LearningToolkitPanel({
 
   return (
     <section
-      className="border-2 border-border bg-background p-5 shadow-[8px_8px_0_var(--border)] md:p-6"
+      className="rounded-lg border border-border bg-background p-5 md:p-6"
       data-learn-reveal
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="font-black text-3xl tracking-normal">
+          <h2 className="font-semibold text-3xl tracking-normal">
             {t('home.toolkitTitle')}
           </h2>
           <p className="mt-2 max-w-2xl text-muted-foreground leading-7">
             {t('home.toolkitDescription')}
           </p>
         </div>
-        <span className="w-fit border-2 border-border bg-dynamic-purple/15 px-4 py-2 font-black text-sm shadow-[3px_3px_0_var(--border)]">
+        <span className="w-fit border border-border bg-dynamic-purple/15 px-4 py-2 font-semibold text-sm">
           {t('home.toolkitBadge')}
         </span>
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {tools.map(({ body, href, icon: Icon, surface, title }) => (
           <Link
-            className="group grid min-h-44 content-between gap-4 border-2 border-border bg-card p-4 shadow-[5px_5px_0_var(--border)] transition duration-200 hover:-translate-y-0.5 hover:border-foreground/70 hover:shadow-[7px_7px_0_var(--foreground)]"
+            className="group grid min-h-44 content-between gap-4 rounded-lg border border-border bg-card p-4 transition duration-200 hover:bg-muted/30"
             href={href}
             key={title}
           >
             <span
               className={cn(
-                'flex h-11 w-11 items-center justify-center border-2 border-border shadow-[3px_3px_0_var(--border)]',
+                'flex h-11 w-11 items-center justify-center border border-border',
                 surface
               )}
             >
               <Icon className="h-5 w-5" />
             </span>
             <div>
-              <h3 className="font-black text-lg leading-tight">{title}</h3>
+              <h3 className="font-semibold text-lg leading-tight">{title}</h3>
               <p className="mt-2 line-clamp-3 text-muted-foreground text-sm leading-6">
                 {body}
               </p>
             </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-foreground" />
+            <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:text-foreground" />
           </Link>
         ))}
       </div>
@@ -364,14 +363,14 @@ export function QuestCard({
   return (
     <Link
       className={cn(
-        'group flex items-center gap-3 border-2 border-border p-4 shadow-[5px_5px_0_var(--border)] transition duration-200 hover:-translate-y-0.5 hover:border-foreground/70 hover:shadow-[7px_7px_0_var(--foreground)]',
+        'group flex items-center gap-3 rounded-lg border border-border p-4 transition duration-200 hover:bg-muted/30',
         quest.complete ? 'bg-dynamic-green/10' : 'bg-card'
       )}
       href={quest.href}
     >
       <div
         className={cn(
-          'flex h-12 w-12 shrink-0 items-center justify-center border-2 border-border shadow-[2px_2px_0_var(--border)]',
+          'flex h-12 w-12 shrink-0 items-center justify-center border border-border',
           quest.complete ? 'bg-primary text-primary-foreground' : quest.surface
         )}
       >
@@ -382,12 +381,12 @@ export function QuestCard({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-black">{quest.title}</p>
+        <p className="truncate font-semibold">{quest.title}</p>
         <p className="line-clamp-2 text-muted-foreground text-sm">
           {quest.description}
         </p>
       </div>
-      <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-foreground" />
+      <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:text-foreground" />
     </Link>
   );
 }

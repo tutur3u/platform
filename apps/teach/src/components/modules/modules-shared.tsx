@@ -17,7 +17,7 @@ function SkeletonBlock({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'animate-pulse border-2 border-border bg-card shadow-[7px_7px_0_var(--border)]',
+        'animate-pulse rounded-lg border border-border bg-card',
         className
       )}
     />
@@ -44,8 +44,8 @@ export function ModulesEmptyState({
   label: string;
 }) {
   return (
-    <div className="border-2 border-border border-dashed bg-muted/60 p-8 text-center shadow-[8px_8px_0_var(--border)]">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center border-2 border-border bg-background shadow-[4px_4px_0_var(--border)]">
+    <div className="rounded-lg border border-border border-dashed bg-muted/60 p-8 text-center">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-border bg-background">
         <Sparkles className="h-7 w-7" />
       </div>
       <p className="mx-auto max-w-md text-muted-foreground leading-7">
@@ -56,9 +56,9 @@ export function ModulesEmptyState({
   );
 }
 
-// ─── Brutal Card ──────────────────────────────────────────────────────────────
+// ─── Course surface ───────────────────────────────────────────────────────────
 
-export function BrutalCard({
+export function SurfaceCard({
   children,
   className,
 }: {
@@ -68,7 +68,7 @@ export function BrutalCard({
   return (
     <article
       className={cn(
-        'border-2 border-border bg-card shadow-[7px_7px_0_var(--border)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[9px_9px_0_var(--border)]',
+        'rounded-xl border border-border bg-card transition-colors duration-200 hover:bg-muted/30',
         className
       )}
     >

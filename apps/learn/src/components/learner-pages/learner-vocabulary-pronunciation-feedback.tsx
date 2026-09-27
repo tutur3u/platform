@@ -16,15 +16,15 @@ export function LearnerVocabularyPronunciationFeedback({
   const t = useTranslations('learnerVocabulary');
 
   return (
-    <div className="space-y-4 border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)]">
+    <div className="space-y-4 rounded-lg border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="font-black text-base">{t('feedbackTitle')}</p>
+          <p className="font-semibold text-base">{t('feedbackTitle')}</p>
           <p className="text-muted-foreground text-sm">{feedback.summary}</p>
         </div>
         {typeof feedback.score === 'number' ? (
-          <div className="border-2 border-border bg-background px-3 py-2 text-center shadow-[2px_2px_0_var(--border)]">
-            <p className="font-black text-xl">{feedback.score}/100</p>
+          <div className="rounded-lg border border-border bg-background px-3 py-2 text-center">
+            <p className="font-semibold text-xl">{feedback.score}/100</p>
           </div>
         ) : null}
       </div>
@@ -37,7 +37,7 @@ export function LearnerVocabularyPronunciationFeedback({
 
       {feedback.mistakes?.length ? (
         <div className="space-y-3">
-          <div className="border-2 border-dynamic-yellow/50 bg-dynamic-yellow/10 p-3 shadow-[2px_2px_0_var(--border)]">
+          <div className="border border-dynamic-yellow/50 bg-dynamic-yellow/10 p-3">
             <p className="mb-2 font-bold text-xs uppercase tracking-widest">
               {t('sentenceMap')}
             </p>
@@ -45,7 +45,7 @@ export function LearnerVocabularyPronunciationFeedback({
               {sentenceParts(sentence, feedback.mistakes).map((part, index) =>
                 part.isMistake ? (
                   <mark
-                    className="border-2 border-dynamic-yellow bg-dynamic-yellow px-1 font-black text-black shadow-[1px_1px_0_var(--border)]"
+                    className="border border-dynamic-yellow bg-dynamic-yellow px-1 font-semibold text-black"
                     key={`${part.text}-${index}`}
                   >
                     {part.text}
@@ -64,7 +64,7 @@ export function LearnerVocabularyPronunciationFeedback({
             <ul className="space-y-2 text-sm">
               {feedback.mistakes.map((mistake, index) => (
                 <li
-                  className="border border-border bg-background p-3"
+                  className="rounded-lg border border-border bg-background p-3"
                   key={`${mistake.target}-${index}`}
                 >
                   <p>

@@ -26,7 +26,7 @@ import {
   type Quiz,
   type SelectedAnswer,
 } from './quiz-practice/types';
-import { BrutalCard, useStudentId } from './shared';
+import { SurfaceCard, useStudentId } from './shared';
 
 type QuizSubmission = {
   answer: unknown;
@@ -178,9 +178,9 @@ export function LearnerQuizzes({
 
   if (!quizzes || quizzes.length === 0) {
     return (
-      <BrutalCard className="p-6 text-center">
+      <SurfaceCard className="p-6 text-center">
         <p className="text-muted-foreground">{t('common.empty')}</p>
-      </BrutalCard>
+      </SurfaceCard>
     );
   }
 
@@ -359,20 +359,20 @@ export function LearnerQuizzes({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between border-2 border-border bg-muted/40 px-4 py-2.5 shadow-[2px_2px_0_var(--border)]">
+      <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-4 py-2.5">
         <span className="font-bold text-muted-foreground text-xs uppercase tracking-widest">
           {t('courses.quizQuestionProgress', {
             current: currentIdx + 1,
             total: quizzes.length,
           })}
         </span>
-        <span className="font-black text-primary text-sm">
+        <span className="font-semibold text-primary text-sm">
           {t('courses.quizXp', { xp: currentScore })}
         </span>
       </div>
 
-      <BrutalCard className="p-6 md:p-8">
-        <h3 className="font-black text-xl leading-snug tracking-normal md:text-2xl">
+      <SurfaceCard className="p-6 md:p-8">
+        <h3 className="font-semibold text-xl leading-snug tracking-normal md:text-2xl">
           {currentQuiz.question}
         </h3>
 
@@ -420,7 +420,7 @@ export function LearnerQuizzes({
 
         {isParagraphQuiz && (
           <div className="mt-6 space-y-3">
-            <div className="flex gap-2 rounded-sm border-2 border-dynamic-cyan/30 bg-dynamic-cyan/10 p-3 text-dynamic-cyan text-xs">
+            <div className="flex gap-2 rounded-sm border border-dynamic-cyan/30 bg-dynamic-cyan/10 p-3 text-dynamic-cyan text-xs">
               <span className="font-bold">
                 {t('courses.paragraphManualGradingHint')}
               </span>
@@ -435,15 +435,15 @@ export function LearnerQuizzes({
                 disabled={isSubmitted}
                 rows={6}
                 placeholder={t('courses.yourResponse')}
-                className="w-full rounded-none border-2 border-border bg-background px-3 py-3 font-bold text-sm leading-7 shadow-[2px_2px_0_var(--border)] focus-visible:ring-0"
+                className="w-full rounded-lg border border-border bg-background px-3 py-3 font-bold text-sm leading-7 focus-visible:ring-0"
               />
             </div>
           </div>
         )}
 
         {isSubmitted && !isParagraphQuiz && isCorrect && (
-          <div className="mt-6 border-2 border-dynamic-green/30 bg-dynamic-green/10 p-4 text-dynamic-green shadow-[3px_3px_0_hsl(var(--dynamic-green)/0.2)]">
-            <div className="flex items-center gap-2 font-black">
+          <div className="mt-6 border border-dynamic-green/30 bg-dynamic-green/10 p-4 text-dynamic-green">
+            <div className="flex items-center gap-2 font-semibold">
               <Check className="h-5 w-5" />
               <span>{t('courses.quizCorrect')}</span>
             </div>
@@ -461,8 +461,8 @@ export function LearnerQuizzes({
         )}
 
         {isSubmitted && isParagraphQuiz && (
-          <div className="mt-6 border-2 border-dynamic-cyan/30 bg-dynamic-cyan/10 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--dynamic-cyan)/0.2)]">
-            <div className="flex items-center gap-2 font-black">
+          <div className="mt-6 border border-dynamic-cyan/30 bg-dynamic-cyan/10 p-4 text-foreground">
+            <div className="flex items-center gap-2 font-semibold">
               <Check className="h-5 w-5 text-dynamic-cyan" />
               <span>{t('courses.quizResponseRecorded')}</span>
             </div>
@@ -473,8 +473,8 @@ export function LearnerQuizzes({
         )}
 
         {isSubmitted && !isParagraphQuiz && !isCorrect && (
-          <div className="mt-6 border-2 border-dynamic-red/30 bg-dynamic-red/10 p-4 text-dynamic-red shadow-[3px_3px_0_hsl(var(--dynamic-red)/0.2)]">
-            <div className="flex items-center gap-2 font-black">
+          <div className="mt-6 border border-dynamic-red/30 bg-dynamic-red/10 p-4 text-dynamic-red">
+            <div className="flex items-center gap-2 font-semibold">
               <X className="h-5 w-5" />
               <span>{t('courses.quizIncorrect')}</span>
             </div>
@@ -494,8 +494,8 @@ export function LearnerQuizzes({
         )}
 
         {isSubmitted && quizFeedback && (
-          <div className="mt-6 space-y-1 border-2 border-dynamic-yellow/30 bg-dynamic-yellow/10 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--dynamic-yellow)/0.2)]">
-            <span className="block font-black text-[10px] text-dynamic-yellow uppercase tracking-wider">
+          <div className="mt-6 space-y-1 border border-dynamic-yellow/30 bg-dynamic-yellow/10 p-4 text-foreground">
+            <span className="block font-semibold text-[10px] text-dynamic-yellow uppercase tracking-wider">
               {t('courses.teacherFeedback')}
             </span>
             <p className="font-semibold text-sm leading-relaxed">
@@ -505,8 +505,8 @@ export function LearnerQuizzes({
         )}
 
         {isSubmitted && quizAiFeedback && (
-          <div className="mt-6 space-y-1 border-2 border-primary bg-primary/5 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--primary)/0.2)]">
-            <span className="block font-black text-[10px] text-primary uppercase tracking-wider">
+          <div className="mt-6 space-y-1 border border-primary bg-primary/5 p-4 text-foreground">
+            <span className="block font-semibold text-[10px] text-primary uppercase tracking-wider">
               {t('courses.aiFeedback')}
             </span>
             <p className="font-medium text-sm leading-relaxed">
@@ -519,14 +519,14 @@ export function LearnerQuizzes({
           {!isSubmitted ? (
             <div className="flex flex-col items-end gap-2">
               {isDeadlinePassed && (
-                <span className="font-black text-destructive text-xs uppercase tracking-wider">
+                <span className="font-semibold text-destructive text-xs uppercase tracking-wider">
                   {t('courses.quizDeadlinePassed') || 'Deadline passed'}
                 </span>
               )}
               <Button
                 onClick={handleSubmit}
                 disabled={!canSubmit || isSubmitting || isDeadlinePassed}
-                className="h-12 border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+                className="h-12 rounded-lg border border-border bg-primary font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 {isSubmitting
                   ? t('common.loading')
@@ -536,7 +536,7 @@ export function LearnerQuizzes({
           ) : (
             <Button
               onClick={handleNext}
-              className="h-12 border-2 border-border bg-dynamic-green font-black text-dynamic-green-foreground shadow-[3px_3px_0_var(--border)] hover:-translate-y-0.5 hover:bg-dynamic-green/90 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[3px_3px_0_var(--border)]"
+              className="h-12 border border-border bg-dynamic-green font-semibold text-dynamic-green-foreground hover:bg-dynamic-green/90"
             >
               {currentIdx + 1 < quizzes.length
                 ? t('courses.quizNextQuestion')
@@ -544,7 +544,7 @@ export function LearnerQuizzes({
             </Button>
           )}
         </div>
-      </BrutalCard>
+      </SurfaceCard>
     </div>
   );
 }

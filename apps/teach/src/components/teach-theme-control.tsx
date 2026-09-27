@@ -18,8 +18,8 @@ export function TeachThemeControl({ compact = false }: { compact?: boolean }) {
   return (
     <fieldset
       className={cn(
-        'inline-flex h-10 shrink-0 items-center border-2 border-border bg-background p-1 shadow-[2px_2px_0_var(--border)]',
-        !compact && 'h-11 shadow-[3px_3px_0_var(--border)]'
+        'inline-flex h-9 shrink-0 items-center rounded-lg border border-border bg-background p-0.5',
+        !compact && 'h-10'
       )}
     >
       <legend className="sr-only">{t('theme')}</legend>
@@ -30,10 +30,10 @@ export function TeachThemeControl({ compact = false }: { compact?: boolean }) {
           <button
             aria-pressed={active}
             className={cn(
-              'inline-flex h-8 min-w-9 items-center justify-center gap-1 px-2 font-black text-xs transition active:translate-x-0.5 active:translate-y-0.5',
+              'inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-md px-2 font-medium text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               !compact && 'h-9 min-w-20 px-3 text-sm',
               active
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-muted text-foreground'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
             key={value}

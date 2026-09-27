@@ -17,7 +17,7 @@ import { useState } from 'react';
 import { ContentCard } from './content-card';
 import { LearnerQuizzes } from './learner-quizzes';
 import { hasContent, RichContentRenderer } from './rich-content-renderer';
-import { BrutalCard, EmptyState } from './shared';
+import { EmptyState, SurfaceCard } from './shared';
 import { YoutubeCard } from './youtube-card';
 
 type CourseModule = TulearnCourseModuleDetail;
@@ -51,7 +51,7 @@ export function ModuleDetailView({
     <div className="space-y-6" data-learn-module-detail-id={courseModule.id}>
       <div className="flex items-center gap-2 text-sm">
         <button
-          className="inline-flex items-center gap-1.5 border-2 border-border bg-background px-3 py-1.5 font-bold shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-bold transition"
           data-learn-module-back
           onClick={onBack}
           type="button"
@@ -65,15 +65,15 @@ export function ModuleDetailView({
         </span>
       </div>
 
-      <BrutalCard className="p-6">
-        <Badge className="mb-3 border-2 border-border bg-dynamic-cyan/15 font-bold text-foreground shadow-[2px_2px_0_var(--border)]">
+      <SurfaceCard className="p-6">
+        <Badge className="mb-3 border border-border bg-dynamic-cyan/15 font-bold text-foreground">
           <Layers className="mr-1.5 h-3 w-3" />
           {t('courses.modulePosition', {
             current: moduleIndex + 1,
             total: totalModules,
           })}
         </Badge>
-        <h2 className="font-black text-3xl leading-tight tracking-normal">
+        <h2 className="font-semibold text-3xl leading-tight tracking-normal">
           {courseModule.name ?? t('courses.untitled')}
         </h2>
         {group.description && (
@@ -81,17 +81,17 @@ export function ModuleDetailView({
             {group.description}
           </p>
         )}
-      </BrutalCard>
+      </SurfaceCard>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="space-y-5">
           <div
-            className="flex gap-2 border-border border-b-2 pb-1"
+            className="flex gap-2 border-border border-b pb-1"
             data-learn-module-tabs
           >
             <button
               className={cn(
-                'cursor-pointer border-2 border-border px-4 py-2 font-black text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]',
+                'cursor-pointer rounded-lg border border-border px-4 py-2 font-semibold text-sm transition',
                 activeTab === 'content'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-background text-foreground'
@@ -105,7 +105,7 @@ export function ModuleDetailView({
             {courseModule.quizzes?.length > 0 && (
               <button
                 className={cn(
-                  'cursor-pointer border-2 border-border px-4 py-2 font-black text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]',
+                  'cursor-pointer rounded-lg border border-border px-4 py-2 font-semibold text-sm transition',
                   activeTab === 'quizzes'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-background text-foreground'
@@ -172,7 +172,7 @@ export function ModuleDetailView({
         </div>
 
         <aside className="space-y-4">
-          <BrutalCard className="p-4">
+          <SurfaceCard className="p-4">
             <p className="font-bold text-[10px] text-muted-foreground uppercase tracking-widest">
               {t('courses.moduleStatus')}
             </p>
@@ -194,16 +194,16 @@ export function ModuleDetailView({
                 </span>
               </div>
             </div>
-          </BrutalCard>
+          </SurfaceCard>
 
-          <BrutalCard className="p-4">
+          <SurfaceCard className="p-4">
             <p className="font-bold text-[10px] text-muted-foreground uppercase tracking-widest">
               {t('courses.moduleNavigation')}
             </p>
             <div className="mt-3 space-y-2">
               {previousModule && (
                 <button
-                  className="flex w-full items-center justify-between border-2 border-border bg-background px-3 py-2 text-sm transition hover:bg-muted/40"
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm transition hover:bg-muted/40"
                   onClick={() => onNavigate(previousModule.id)}
                   type="button"
                 >
@@ -213,7 +213,7 @@ export function ModuleDetailView({
               )}
               {nextModule && (
                 <button
-                  className="flex w-full items-center justify-between border-2 border-border bg-background px-3 py-2 text-sm transition hover:bg-muted/40"
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm transition hover:bg-muted/40"
                   onClick={() => onNavigate(nextModule.id)}
                   type="button"
                 >
@@ -222,9 +222,9 @@ export function ModuleDetailView({
                 </button>
               )}
             </div>
-          </BrutalCard>
+          </SurfaceCard>
 
-          <div className="border-2 border-dynamic-green/30 bg-dynamic-green/10 p-4 text-dynamic-green text-sm leading-relaxed shadow-[3px_3px_0_hsl(var(--dynamic-green)/0.2)]">
+          <div className="border border-dynamic-green/30 bg-dynamic-green/10 p-4 text-dynamic-green text-sm leading-relaxed">
             {t('courses.moduleHint')}
           </div>
         </aside>

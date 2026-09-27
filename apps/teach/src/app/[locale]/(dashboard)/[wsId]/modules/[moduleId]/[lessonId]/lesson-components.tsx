@@ -32,8 +32,8 @@ function getYoutubeVideoId(url: string) {
 export function LessonSkeleton() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-5 py-5 md:px-8">
-      <div className="h-10 w-48 animate-pulse border-2 border-border bg-card shadow-[2px_2px_0_var(--border)]" />
-      <div className="space-y-4 border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
+      <div className="h-10 w-48 animate-pulse rounded-lg border border-border bg-card" />
+      <div className="space-y-4 rounded-lg border border-border bg-background p-6">
         <div className="h-8 w-3/4 animate-pulse bg-muted" />
         <div className="h-4 w-1/2 animate-pulse bg-muted" />
         <div className="mt-6 h-64 animate-pulse bg-muted/60" />
@@ -56,7 +56,7 @@ export function YoutubeRow({
     : null;
 
   return (
-    <div className="group/yt flex items-center gap-2 border-2 border-border bg-card px-3 py-2 shadow-[2px_2px_0_var(--border)]">
+    <div className="group/yt flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
       <Youtube className="h-4 w-4 shrink-0 text-dynamic-red" />
       {safeYoutubeUrl ? (
         <a

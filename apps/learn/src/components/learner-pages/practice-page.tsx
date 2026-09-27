@@ -11,12 +11,12 @@ import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import {
-  BrutalCard,
-  BrutalIcon,
   EmptyState,
   type IconComponent,
   LoadingState,
   Section,
+  SurfaceCard,
+  SurfaceIcon,
   usePageMotion,
   useStudentId,
 } from './shared';
@@ -60,11 +60,11 @@ export function PracticePage({ wsId }: { wsId: string }) {
       title={t('practice.title')}
     >
       <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <BrutalCard className="bg-background p-6 md:p-8">
-          <Badge className="mb-5 rounded-none border-2 border-border bg-primary text-primary-foreground hover:bg-primary">
+        <SurfaceCard className="bg-background p-6 md:p-8">
+          <Badge className="mb-5 rounded-lg border border-border bg-primary text-primary-foreground hover:bg-primary">
             {practice.data.item.courseName}
           </Badge>
-          <h2 className="font-bold text-[clamp(2rem,4vw,4.25rem)] leading-none tracking-normal">
+          <h2 className="font-bold text-3xl leading-tight tracking-normal md:text-4xl">
             {practice.data.item.title}
           </h2>
           <p className="mt-6 text-lg text-muted-foreground leading-8">
@@ -73,7 +73,7 @@ export function PracticePage({ wsId }: { wsId: string }) {
           {result ? (
             <div
               className={cn(
-                'mt-8 border-2 border-border p-5 shadow-[5px_5px_0_var(--border)]',
+                'mt-8 rounded-lg border border-border p-5',
                 result.correct ? 'bg-muted/60' : 'bg-background'
               )}
             >
@@ -92,7 +92,7 @@ export function PracticePage({ wsId }: { wsId: string }) {
           ) : null}
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             <Button
-              className="h-12 rounded-none border-2 border-border bg-primary font-black text-primary-foreground shadow-[4px_4px_0_var(--border)] hover:bg-primary active:translate-x-1 active:translate-y-1 active:shadow-none"
+              className="h-12 rounded-lg border border-border bg-primary font-semibold text-primary-foreground hover:bg-primary"
               disabled={submit.isPending}
               onClick={() => submit.mutate(true)}
             >
@@ -100,7 +100,7 @@ export function PracticePage({ wsId }: { wsId: string }) {
               {t('practice.submitCorrect')}
             </Button>
             <Button
-              className="h-12 rounded-none border-2 border-border font-black shadow-[4px_4px_0_var(--border)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+              className="h-12 rounded-lg border border-border font-semibold"
               disabled={submit.isPending}
               onClick={() => submit.mutate(false)}
               variant="secondary"
@@ -108,7 +108,7 @@ export function PracticePage({ wsId }: { wsId: string }) {
               {t('practice.submitIncorrect')}
             </Button>
           </div>
-        </BrutalCard>
+        </SurfaceCard>
         <aside className="space-y-3" data-learn-reveal>
           <PracticeHint
             icon={Heart}
@@ -145,10 +145,10 @@ function PracticeHint({
   value: string;
 }) {
   return (
-    <BrutalCard className="p-5">
-      <BrutalIcon className="mb-4 h-10 w-10" icon={Icon} />
+    <SurfaceCard className="p-5">
+      <SurfaceIcon className="mb-4 h-10 w-10" icon={Icon} />
       <p className="text-muted-foreground text-sm">{label}</p>
       <p className="mt-1 font-bold text-xl tracking-normal">{value}</p>
-    </BrutalCard>
+    </SurfaceCard>
   );
 }

@@ -160,12 +160,12 @@ export function LessonDetailClient({
   if (isError || !lesson) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-root-background px-5">
-        <div className="border-2 border-border border-dashed bg-muted/60 p-10 text-center shadow-[8px_8px_0_var(--border)]">
+        <div className="rounded-lg border border-border border-dashed bg-muted/60 p-10 text-center">
           <p className="text-muted-foreground">
             {isError ? 'Failed to load lesson.' : 'Lesson not found.'}
           </p>
           <Link
-            className="mt-4 inline-flex items-center gap-2 border-2 border-border bg-background px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)]"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 font-bold text-sm"
             href={`/${wsId}/modules/${courseId}`}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -179,9 +179,9 @@ export function LessonDetailClient({
   return (
     <main className="min-h-screen bg-root-background text-foreground">
       {/* ── Top nav bar ─────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-10 flex items-center gap-3 border-border border-b-2 bg-background px-5 py-2.5 shadow-[0_2px_0_var(--border)]">
+      <nav className="sticky top-0 z-10 flex items-center gap-3 border-border border-b bg-background px-5 py-2.5">
         <Link
-          className="inline-flex items-center gap-2 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition"
           href={`/${wsId}/modules/${courseId}`}
         >
           <ArrowLeft className="h-4 w-4" />
@@ -197,7 +197,7 @@ export function LessonDetailClient({
 
           {/* Attach files button */}
           <button
-            className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition"
             onClick={() => setShowAttachDialog(true)}
             type="button"
           >
@@ -208,7 +208,7 @@ export function LessonDetailClient({
           {/* Published toggle */}
           <button
             className={cn(
-              'inline-flex items-center gap-1.5 border-2 border-border px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5',
+              'inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 font-bold text-xs transition',
               lesson.is_published
                 ? 'bg-dynamic-green/15 text-foreground'
                 : 'bg-muted text-muted-foreground'
@@ -234,7 +234,7 @@ export function LessonDetailClient({
       <div className="mx-auto max-w-4xl px-5 py-6 md:px-8">
         {/* ── Lesson title ──────────────────────────────────────────────────── */}
         <div className="mb-6 flex items-start gap-3">
-          <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[2px_2px_0_var(--border)]">
+          <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center border border-border bg-dynamic-cyan/15">
             <BookOpen className="h-4 w-4" />
           </span>
 
@@ -242,7 +242,7 @@ export function LessonDetailClient({
             <div className="flex min-w-0 flex-1 items-center gap-2">
               <input
                 ref={nameInputRef}
-                className="min-w-0 flex-1 border-primary border-b-2 bg-transparent font-black text-2xl outline-none md:text-3xl"
+                className="min-w-0 flex-1 border-primary border-b bg-transparent font-semibold text-2xl outline-none md:text-3xl"
                 value={nameDraft ?? lesson.name ?? ''}
                 onChange={(e) => setNameDraft(e.target.value)}
                 onBlur={handleNameBlur}
@@ -276,7 +276,7 @@ export function LessonDetailClient({
             </div>
           ) : (
             <div className="group/title flex min-w-0 flex-1 items-center gap-2">
-              <h1 className="min-w-0 flex-1 font-black text-2xl leading-tight md:text-3xl">
+              <h1 className="min-w-0 flex-1 font-semibold text-2xl leading-tight md:text-3xl">
                 {lesson.name ?? 'Untitled lesson'}
               </h1>
               <button
@@ -298,7 +298,7 @@ export function LessonDetailClient({
         {/* ── Rich text editor — keyed on lessonId so it remounts with fresh
              content when navigating between lessons. Only rendered once lesson
              data is available so the editor initialises with real content. ── */}
-        <div className="border-2 border-border bg-background shadow-[5px_5px_0_var(--border)]">
+        <div className="rounded-lg border border-border bg-background">
           <RichTextEditor
             key={lessonId}
             content={(lesson.content as JSONContent | null) ?? null}
@@ -328,7 +328,7 @@ export function LessonDetailClient({
               </DialogDescription>
             </DialogHeader>
 
-            <div className="max-h-72 overflow-auto border-2 border-border bg-card p-2">
+            <div className="max-h-72 overflow-auto rounded-lg border border-border bg-card p-2">
               {attachFilesQuery.isLoading && (
                 <div className="p-4 text-muted-foreground text-sm">
                   {t('loadingFiles')}
@@ -374,14 +374,14 @@ export function LessonDetailClient({
 
             <DialogFooter>
               <button
-                className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+                className="rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm"
                 onClick={() => setShowAttachDialog(false)}
                 type="button"
               >
                 {t('cancel')}
               </button>
               <button
-                className="border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                className="rounded-lg border border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm disabled:opacity-40"
                 disabled={attachLoading}
                 onClick={async () => {
                   const paths = Object.keys(selectedPaths).filter(
@@ -452,9 +452,9 @@ export function LessonDetailClient({
         </Dialog>
         <section className="mt-6 space-y-3">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="font-black text-lg">YouTube Videos</h2>
+            <h2 className="font-semibold text-lg">YouTube Videos</h2>
             <button
-              className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition"
               onClick={() => setAddingYoutube(true)}
               type="button"
             >
@@ -481,7 +481,7 @@ export function LessonDetailClient({
             <div className="flex items-center gap-2">
               <input
                 ref={youtubeLinkInputRef}
-                className="min-w-0 flex-1 border-2 border-border bg-background px-3 py-1.5 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+                className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
                 placeholder="https://youtube.com/watch?v=…"
                 value={youtubeDraft}
                 onChange={(e) => setYoutubeDraft(e.target.value)}
@@ -494,7 +494,7 @@ export function LessonDetailClient({
                 }}
               />
               <button
-                className="shrink-0 border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                className="shrink-0 rounded-lg border border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm disabled:opacity-40"
                 disabled={!youtubeDraft.trim()}
                 onClick={commitYoutubeLink}
                 type="button"
@@ -502,7 +502,7 @@ export function LessonDetailClient({
                 Add
               </button>
               <button
-                className="shrink-0 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+                className="shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm"
                 onClick={() => {
                   setYoutubeDraft('');
                   setAddingYoutube(false);

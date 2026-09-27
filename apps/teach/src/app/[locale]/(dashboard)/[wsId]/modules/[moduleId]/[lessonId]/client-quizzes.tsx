@@ -291,7 +291,7 @@ export default function ClientQuizzes({
                 )}
                 {/* Paragraph Rendering */}
                 {quiz?.type === 'paragraph' && (
-                  <div className="mt-4 border-2 border-border border-dashed bg-muted/20 p-4 text-center text-muted-foreground text-sm italic shadow-[2px_2px_0_var(--border)]">
+                  <div className="mt-4 rounded-lg border border-border border-dashed bg-muted/20 p-4 text-center text-muted-foreground text-sm italic">
                     {t('ws-quizzes.paragraph')}
                   </div>
                 )}

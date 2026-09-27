@@ -111,7 +111,7 @@ export function CourseTestDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <button
-          className="inline-flex items-center gap-2 whitespace-nowrap border-2 border-border bg-dynamic-cyan/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+          className="inline-flex items-center gap-2 whitespace-nowrap border border-border bg-dynamic-cyan/15 px-4 py-2 font-bold text-sm transition"
           type="button"
         >
           <ClipboardCheck className="h-4 w-4" />
@@ -130,7 +130,7 @@ export function CourseTestDialog({
             </div>
 
             <button
-              className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-background shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background transition"
               onClick={() => handleOpenChange(false)}
               type="button"
               aria-label={t('common.close') || 'Close'}
@@ -144,13 +144,13 @@ export function CourseTestDialog({
           <div className="space-y-2">
             <label
               htmlFor="test-name-input"
-              className="block font-black text-muted-foreground text-xs uppercase tracking-wider"
+              className="block font-semibold text-muted-foreground text-xs uppercase tracking-wider"
             >
               {t('teachModules.testName')}
             </label>
             <input
               id="test-name-input"
-              className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               placeholder={
                 t('teachModules.testNamePlaceholder') || 'e.g. Midterm Exam'
               }
@@ -164,14 +164,14 @@ export function CourseTestDialog({
             <div className="space-y-2">
               <label
                 htmlFor="test-start-at"
-                className="block font-black text-muted-foreground text-xs uppercase tracking-wider"
+                className="block font-semibold text-muted-foreground text-xs uppercase tracking-wider"
               >
                 {t('teachModules.testStartAt')}
               </label>
               <input
                 id="test-start-at"
                 type="datetime-local"
-                className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                 value={startAt}
                 onChange={(e) => setStartAt(e.target.value)}
                 disabled={createTestMutation.isPending}
@@ -181,7 +181,7 @@ export function CourseTestDialog({
             <div className="space-y-2">
               <label
                 htmlFor="test-duration"
-                className="block font-black text-muted-foreground text-xs uppercase tracking-wider"
+                className="block font-semibold text-muted-foreground text-xs uppercase tracking-wider"
               >
                 {t('teachModules.testDuration')}
               </label>
@@ -190,7 +190,7 @@ export function CourseTestDialog({
                 type="number"
                 min="1"
                 max="1440"
-                className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                 placeholder={t('teachModules.testDurationPlaceholder')}
                 value={durationInMinutes}
                 onChange={(e) => setDurationInMinutes(e.target.value)}
@@ -202,14 +202,14 @@ export function CourseTestDialog({
           <div className="space-y-2">
             <label
               htmlFor="test-description-input"
-              className="block font-black text-muted-foreground text-xs uppercase tracking-wider"
+              className="block font-semibold text-muted-foreground text-xs uppercase tracking-wider"
             >
               {t('teachModules.testDescription')}
             </label>
             <textarea
               id="test-description-input"
               rows={3}
-              className="w-full resize-none border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               placeholder={t('teachModules.testDescriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -218,16 +218,16 @@ export function CourseTestDialog({
           </div>
 
           <div className="space-y-2">
-            <span className="block font-black text-muted-foreground text-xs uppercase tracking-wider">
+            <span className="block font-semibold text-muted-foreground text-xs uppercase tracking-wider">
               {t('teachModules.selectModules')}
             </span>
 
             {modules.length === 0 ? (
-              <div className="border-2 border-border border-dashed p-4 text-center text-muted-foreground text-sm">
+              <div className="rounded-lg border border-border border-dashed p-4 text-center text-muted-foreground text-sm">
                 {t('teachModules.noModulesInGroup')}
               </div>
             ) : (
-              <div className="max-h-[200px] space-y-2.5 overflow-y-auto border-2 border-border bg-muted/20 p-3">
+              <div className="max-h-[200px] space-y-2.5 overflow-y-auto rounded-lg border border-border bg-muted/20 p-3">
                 {modules.map((m) => {
                   const isChecked = selectedModuleIds.includes(m.id);
                   return (
@@ -240,7 +240,7 @@ export function CourseTestDialog({
                         checked={isChecked}
                         onChange={() => handleToggleModule(m.id)}
                         disabled={createTestMutation.isPending}
-                        className="h-4 w-4 cursor-pointer border-2 border-border accent-primary shadow-[1px_1px_0_var(--border)] focus:ring-0"
+                        className="h-4 w-4 cursor-pointer border border-border accent-primary focus:ring-0"
                       />
                       <span>{m.name}</span>
                     </label>
@@ -252,7 +252,7 @@ export function CourseTestDialog({
 
           <div className="flex justify-end gap-3 pt-2">
             <button
-              className="border-2 border-border bg-card px-4 py-2 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+              className="rounded-lg border border-border bg-card px-4 py-2 font-bold text-sm transition"
               onClick={() => setOpen(false)}
               type="button"
               disabled={createTestMutation.isPending}
@@ -260,7 +260,7 @@ export function CourseTestDialog({
               {t('common.cancel') || 'Cancel'}
             </button>
             <button
-              className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm transition disabled:opacity-50"
               type="submit"
               disabled={
                 createTestMutation.isPending ||

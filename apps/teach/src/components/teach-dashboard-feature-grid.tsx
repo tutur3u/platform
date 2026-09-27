@@ -71,13 +71,13 @@ export async function TeachDashboardFeatureGrid({
   ] as const;
 
   return (
-    <section className="mx-auto mt-8 max-w-7xl border-2 border-border bg-background p-5 shadow-[8px_8px_0_var(--border)] md:p-6">
+    <section className="mx-auto mt-8 max-w-7xl rounded-2xl border border-border bg-card p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="mb-3 inline-flex border-2 border-border bg-dynamic-pink/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+          <p className="mb-3 text-muted-foreground text-sm">
             {t('featureGrid.eyebrow')}
           </p>
-          <h2 className="font-black text-3xl tracking-normal">
+          <h2 className="font-semibold text-3xl tracking-normal">
             {t('featureGrid.title')}
           </h2>
           <p className="mt-2 max-w-2xl text-muted-foreground leading-7">
@@ -85,7 +85,7 @@ export async function TeachDashboardFeatureGrid({
           </p>
         </div>
         <a
-          className="inline-flex h-10 w-fit shrink-0 items-center gap-2 border-2 border-border bg-primary px-3 font-black text-primary-foreground text-xs shadow-[2px_2px_0_var(--border)]"
+          className="inline-flex h-10 w-fit shrink-0 items-center gap-2 rounded-lg border border-border bg-primary px-3 font-semibold text-primary-foreground text-xs"
           href={`/${wsId}/courses`}
         >
           {t('featureGrid.primaryAction')}
@@ -95,32 +95,32 @@ export async function TeachDashboardFeatureGrid({
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {featureCards.map(({ href, icon: Icon, key, surface, value }) => (
           <a
-            className="group grid min-h-52 content-between gap-4 border-2 border-border bg-card p-4 shadow-[5px_5px_0_var(--border)] transition duration-200 hover:-translate-y-0.5 hover:border-foreground/70 hover:shadow-[7px_7px_0_var(--foreground)]"
+            className="group grid min-h-52 content-between gap-4 rounded-lg border border-border bg-card p-4 transition duration-200 hover:bg-muted/30"
             href={href}
             key={key}
           >
             <div className="flex items-start justify-between gap-3">
               <span
                 className={cn(
-                  'flex h-11 w-11 items-center justify-center border-2 border-border shadow-[3px_3px_0_var(--border)]',
+                  'flex h-11 w-11 items-center justify-center border border-border',
                   surface
                 )}
               >
                 <Icon className="h-5 w-5" />
               </span>
-              <span className="border-2 border-border bg-background px-3 py-1 font-black text-xl tabular-nums shadow-[2px_2px_0_var(--border)]">
+              <span className="rounded-lg border border-border bg-background px-3 py-1 font-semibold text-xl tabular-nums">
                 {value}
               </span>
             </div>
             <div>
-              <h3 className="font-black text-xl">
+              <h3 className="font-semibold text-xl">
                 {t(`featureGrid.items.${key}.title`)}
               </h3>
               <p className="mt-2 text-muted-foreground text-sm leading-6">
                 {t(`featureGrid.items.${key}.body`)}
               </p>
             </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-foreground" />
+            <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:text-foreground" />
           </a>
         ))}
       </div>

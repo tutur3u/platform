@@ -34,14 +34,14 @@ export async function TeachRealtimePanel({
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-2 inline-flex items-center gap-2 border-2 border-border bg-dynamic-orange/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+          <p className="mb-2 inline-flex items-center gap-2 border border-border bg-dynamic-orange/15 px-3 py-1 font-semibold text-xs">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-dynamic-orange opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-dynamic-orange" />
             </span>
             {t('realtimeEyebrow') || 'Real-time Overview'}
           </p>
-          <h2 className="font-black text-3xl">
+          <h2 className="font-semibold text-3xl">
             {t('realtimeTitle') || 'Course Status Dashboard'}
           </h2>
           <p className="mt-2 max-w-2xl text-muted-foreground text-sm leading-6">
@@ -50,7 +50,7 @@ export async function TeachRealtimePanel({
           </p>
         </div>
         <a
-          className="inline-flex h-10 shrink-0 items-center gap-2 border-2 border-border bg-background px-3 font-black text-xs shadow-[2px_2px_0_var(--border)]"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border border-border bg-background px-3 font-semibold text-xs"
           href={coursesHref}
         >
           {t('allGroups') || 'All courses'}
@@ -84,8 +84,8 @@ export async function TeachRealtimePanel({
 
       {/* Course table / cards */}
       {!stats ? (
-        <div className="border-2 border-border border-dashed bg-muted/40 p-10 text-center shadow-[4px_4px_0_var(--border)]">
-          <p className="font-black text-xl">
+        <div className="rounded-lg border border-border border-dashed bg-muted/40 p-10 text-center">
+          <p className="font-semibold text-xl">
             {t('statsUnavailableTitle') || 'Course stats unavailable'}
           </p>
           <p className="mt-3 text-muted-foreground text-sm">
@@ -94,8 +94,8 @@ export async function TeachRealtimePanel({
           </p>
         </div>
       ) : stats.courses.length === 0 ? (
-        <div className="border-2 border-border border-dashed bg-muted/40 p-10 text-center shadow-[4px_4px_0_var(--border)]">
-          <p className="font-black text-xl">
+        <div className="rounded-lg border border-border border-dashed bg-muted/40 p-10 text-center">
+          <p className="font-semibold text-xl">
             {t('emptyGroupsTitle') || 'No active courses'}
           </p>
           <p className="mt-3 text-muted-foreground text-sm">
@@ -132,19 +132,15 @@ function AlertBadge({
   variant: 'warning' | 'info' | 'danger';
 }) {
   const styles = {
-    warning:
-      'border-dynamic-yellow bg-dynamic-yellow/10 text-dynamic-yellow shadow-[3px_3px_0_hsl(var(--dynamic-yellow)/0.4)]',
-    info: 'border-dynamic-cyan bg-dynamic-cyan/10 text-dynamic-cyan shadow-[3px_3px_0_hsl(var(--dynamic-cyan)/0.4)]',
-    danger:
-      'border-dynamic-red bg-dynamic-red/10 text-dynamic-red shadow-[3px_3px_0_hsl(var(--dynamic-red)/0.4)]',
+    warning: 'border-dynamic-yellow bg-dynamic-yellow/10 text-dynamic-yellow ',
+    info: 'border-dynamic-cyan bg-dynamic-cyan/10 text-dynamic-cyan ',
+    danger: 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red ',
   };
   return (
-    <div
-      className={cn('flex items-center gap-4 border-2 p-4', styles[variant])}
-    >
+    <div className={cn('flex items-center gap-4 border p-4', styles[variant])}>
       <Icon className="h-6 w-6 shrink-0 opacity-80" />
       <div>
-        <p className="font-black text-2xl tabular-nums">{count}</p>
+        <p className="font-semibold text-2xl tabular-nums">{count}</p>
         <p className="font-bold text-xs opacity-80">{label}</p>
       </div>
     </div>
@@ -169,16 +165,16 @@ function CourseStatRow({
   const courseHref = getCourseHref(wsId, course.id);
 
   return (
-    <article className="grid gap-4 border-2 border-border bg-background p-4 shadow-[4px_4px_0_var(--border)] sm:grid-cols-[minmax(0,1fr)_auto]">
+    <article className="grid gap-4 rounded-lg border border-border bg-background p-4 sm:grid-cols-[minmax(0,1fr)_auto]">
       {/* Left: course name + stats */}
       <div className="min-w-0 space-y-3">
         <div className="flex items-start gap-3">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border font-black text-xs shadow-[1px_1px_0_var(--border)]">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center border border-border font-semibold text-xs">
             {index + 1}
           </span>
           <div className="min-w-0">
             <a
-              className="block truncate font-black text-lg leading-tight hover:underline"
+              className="block truncate font-semibold text-lg leading-tight hover:underline"
               href={courseHref}
             >
               {course.name}
@@ -278,13 +274,13 @@ function StatChip({
   return (
     <div
       className={cn(
-        'flex items-center gap-1.5 border-2 px-2 py-1.5',
+        'flex items-center gap-1.5 border px-2 py-1.5',
         styles[variant]
       )}
     >
       {Icon && <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" />}
       <div>
-        <p className="font-black text-base tabular-nums leading-none">
+        <p className="font-semibold text-base tabular-nums leading-tight">
           {value}
         </p>
         <p className="mt-0.5 truncate font-bold text-[10px] opacity-70">
@@ -322,7 +318,7 @@ function QuickActionLink({
   return (
     <a
       className={cn(
-        'inline-flex items-center gap-1.5 border-2 px-3 py-1.5 font-black text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5',
+        'inline-flex items-center gap-1.5 border px-3 py-1.5 font-semibold text-xs transition',
         styles[variant]
       )}
       href={href}

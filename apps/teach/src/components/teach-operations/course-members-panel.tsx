@@ -48,13 +48,13 @@ export function CourseMembersPanel({
   );
 
   return (
-    <section className="grid gap-4 border-2 border-border bg-background p-4 shadow-[5px_5px_0_var(--border)] lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
+    <section className="grid gap-4 rounded-lg border border-border bg-background p-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
       <div>
-        <h2 className="font-black text-xl">{t('title')}</h2>
+        <h2 className="font-semibold text-xl">{t('title')}</h2>
         <div className="mt-3 grid gap-2">
           {(membersQuery.data?.data ?? []).map((member) => (
             <div
-              className="flex items-center justify-between gap-3 border-2 border-border bg-card px-3 py-2"
+              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"
               key={member.id}
             >
               <span className="min-w-0">
@@ -66,7 +66,7 @@ export function CourseMembersPanel({
                 </span>
               </span>
               <button
-                className="shrink-0 border-2 border-border bg-background p-2 shadow-[2px_2px_0_var(--border)]"
+                className="shrink-0 rounded-lg border border-border bg-background p-2"
                 onClick={() => removeMember.mutate(member.id)}
                 type="button"
               >
@@ -78,7 +78,7 @@ export function CourseMembersPanel({
         </div>
       </div>
       <div>
-        <label className="flex h-11 items-center gap-2 border-2 border-border bg-card px-3">
+        <label className="flex h-11 items-center gap-2 rounded-lg border border-border bg-card px-3">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
             className="min-w-0 flex-1 bg-transparent outline-none"
@@ -92,7 +92,7 @@ export function CourseMembersPanel({
             .filter((user) => !memberIds.has(user.id))
             .map((user) => (
               <button
-                className="flex items-center justify-between gap-3 border-2 border-border bg-card px-3 py-2 text-left shadow-[2px_2px_0_var(--border)]"
+                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 text-left"
                 key={user.id}
                 onClick={() => addMember.mutate(user.id)}
                 type="button"

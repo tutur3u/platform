@@ -56,8 +56,8 @@ export function ReportPreviewer({
   const learnReportsUrl = `${LEARN_APP_URL}/${wsId}/reports`;
 
   return (
-    <article className="space-y-5 border-2 border-border bg-background p-5 shadow-[6px_6px_0_var(--border)]">
-      <div className="flex flex-col gap-3 border-border border-b-2 pb-4 sm:flex-row sm:items-start sm:justify-between">
+    <article className="space-y-5 rounded-lg border border-border bg-background p-5">
+      <div className="flex flex-col gap-3 border-border border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{courseName}</Badge>
@@ -79,7 +79,7 @@ export function ReportPreviewer({
               <Badge variant="outline">{t('draftPreview')}</Badge>
             )}
           </div>
-          <h2 className="mt-3 font-black text-2xl tracking-normal">
+          <h2 className="mt-3 font-semibold text-2xl tracking-normal">
             {title || t('reportTitle')}
           </h2>
           <p className="text-muted-foreground text-sm">
@@ -116,16 +116,16 @@ export function ReportPreviewer({
           />
         </div>
 
-        <aside className="space-y-4 border-2 border-border bg-muted/40 p-4">
+        <aside className="space-y-4 rounded-lg border border-border bg-muted/40 p-4">
           <div>
             <div className="flex items-center justify-between text-sm">
-              <span className="font-black">{t('reportScore')}</span>
-              <span className="font-black">{score ?? '-'}</span>
+              <span className="font-semibold">{t('reportScore')}</span>
+              <span className="font-semibold">{score ?? '-'}</span>
             </div>
             <Progress className="mt-2 h-2" value={normalizedScore} />
           </div>
           <div className="space-y-2">
-            <p className="font-black text-sm">{t('metricSnapshot')}</p>
+            <p className="font-semibold text-sm">{t('metricSnapshot')}</p>
             {indicators.length ? (
               indicators.map((indicator) => {
                 const value = valuesByMetric.get(indicator.id)?.value;
@@ -137,7 +137,7 @@ export function ReportPreviewer({
                     <span className="min-w-0 truncate text-muted-foreground">
                       {indicator.name}
                     </span>
-                    <span className="font-black">
+                    <span className="font-semibold">
                       {value ?? '-'}
                       {indicator.unit ? (
                         <span className="ml-1 text-muted-foreground">
@@ -170,8 +170,8 @@ function PreviewBlock({
   value: string;
 }) {
   return (
-    <section className="rounded-none border-2 border-border bg-card p-4">
-      <div className="mb-3 flex items-center gap-2 font-black text-sm">
+    <section className="rounded-lg border border-border bg-card p-4">
+      <div className="mb-3 flex items-center gap-2 font-semibold text-sm">
         <Icon className="h-4 w-4" />
         {label}
       </div>

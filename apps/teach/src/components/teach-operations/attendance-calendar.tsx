@@ -59,10 +59,10 @@ export function AttendanceCalendar({
 
   return (
     <TooltipProvider>
-      <section className="space-y-4 border-2 border-border bg-card p-4 shadow-[4px_4px_0_var(--border)]">
+      <section className="space-y-4 rounded-lg border border-border bg-card p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2 font-black text-lg">
+            <div className="flex items-center gap-2 font-semibold text-lg">
               {monthDate.toLocaleDateString(locale, {
                 month: 'long',
                 year: 'numeric',
@@ -100,7 +100,7 @@ export function AttendanceCalendar({
 
         <div className="grid grid-cols-7 gap-1 text-center text-xs">
           {weekdays.map((weekday) => (
-            <div className="bg-muted px-1 py-2 font-black" key={weekday}>
+            <div className="bg-muted px-1 py-2 font-semibold" key={weekday}>
               {weekday}
             </div>
           ))}
@@ -137,12 +137,10 @@ export function AttendanceCalendar({
                 <TooltipTrigger asChild>
                   <button
                     className={cn(
-                      'min-h-14 border-2 bg-background p-1 text-left transition',
-                      selected
-                        ? 'border-primary shadow-[2px_2px_0_var(--border)]'
-                        : 'border-border/60',
+                      'min-h-14 border bg-background p-1 text-left transition',
+                      selected ? 'border-primary' : 'border-border/60',
                       !scheduled && 'text-muted-foreground/45',
-                      scheduled && 'hover:-translate-y-0.5 hover:bg-muted',
+                      scheduled && 'hover:bg-muted',
                       tone === 'scheduled' &&
                         'border-dynamic-yellow/40 bg-dynamic-yellow/10',
                       tone === 'partial' &&
@@ -159,7 +157,7 @@ export function AttendanceCalendar({
                     }}
                     type="button"
                   >
-                    <span className="font-black">{day.getDate()}</span>
+                    <span className="font-semibold">{day.getDate()}</span>
                     {scheduled ? (
                       <span
                         className={cn(

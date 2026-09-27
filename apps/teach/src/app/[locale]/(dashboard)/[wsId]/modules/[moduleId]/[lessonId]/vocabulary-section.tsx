@@ -357,14 +357,14 @@ export default function LessonVocabularySection({
   }
 
   return (
-    <section className="mt-8 space-y-4 border-2 border-border bg-background p-6 shadow-[5px_5px_0_var(--border)]">
+    <section className="mt-8 space-y-4 rounded-lg border border-border bg-background p-6">
       <div className="flex items-center justify-between gap-4">
         <VocabularySectionIntro count={entries.length} />
       </div>
 
-      <Separator className="border-border border-b-2" />
+      <Separator className="border-border border-b" />
 
-      <div className="space-y-4 border-2 border-border bg-card p-5 shadow-[4px_4px_0_var(--border)]">
+      <div className="space-y-4 rounded-lg border border-border bg-card p-5">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="lesson-vocabulary-word">{t('word')}</Label>
@@ -388,7 +388,7 @@ export default function LessonVocabularySection({
                 {showSuggestions &&
                 (isSuggesting || suggestions.length > 0) &&
                 draft.word.trim().length >= 2 ? (
-                  <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto border-2 border-border bg-card shadow-[4px_4px_0_var(--border)]">
+                  <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-lg border border-border bg-card">
                     {isSuggesting ? (
                       <div className="px-3 py-2 text-muted-foreground text-sm">
                         {t('loadingSuggestions')}
@@ -424,7 +424,7 @@ export default function LessonVocabularySection({
                 ) : null}
               </div>
               <button
-                className="shrink-0 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-40"
+                className="shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition disabled:opacity-40"
                 disabled={isSaving || isFetchingDetails || !draft.word.trim()}
                 onClick={() => fetchDictionaryDetails(draft.word.trim())}
                 type="button"
@@ -465,7 +465,7 @@ export default function LessonVocabularySection({
         <div className="space-y-3">
           <Label htmlFor="lesson-vocabulary-image">{t('image')}</Label>
           <div className="grid gap-3 md:grid-cols-[10rem_minmax(0,1fr)]">
-            <div className="flex aspect-video items-center justify-center overflow-hidden border-2 border-border bg-background shadow-[3px_3px_0_var(--border)]">
+            <div className="flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-border bg-background">
               {draft.imageUrl ? (
                 <Image
                   alt={t('imageAlt', { word: draft.word || t('word') })}
@@ -493,7 +493,7 @@ export default function LessonVocabularySection({
               />
               {draft.imageUrl ? (
                 <button
-                  className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                  className="rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm disabled:opacity-40"
                   disabled={isSaving}
                   onClick={() => updateDraft('imageUrl', '')}
                   type="button"
@@ -518,10 +518,10 @@ export default function LessonVocabularySection({
                         key={img.image}
                         type="button"
                         onClick={() => updateDraft('imageUrl', img.thumbnail)}
-                        className={`relative aspect-square w-16 shrink-0 overflow-hidden border-2 transition-all hover:scale-105 ${
+                        className={`relative aspect-square w-16 shrink-0 overflow-hidden border transition-all hover:scale-105 ${
                           draft.imageUrl === img.thumbnail
-                            ? 'scale-105 border-primary shadow-[2px_2px_0_var(--border)] ring-2 ring-primary/20'
-                            : 'border-border shadow-[1px_1px_0_var(--border)]'
+                            ? 'scale-105 border-primary ring-2 ring-primary/20'
+                            : 'border-border'
                         }`}
                         title={img.title}
                       >
@@ -547,7 +547,7 @@ export default function LessonVocabularySection({
           <div className="flex items-center justify-between gap-3">
             <Label htmlFor="lesson-vocabulary-example-0">{t('examples')}</Label>
             <button
-              className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+              className="rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm disabled:opacity-40"
               disabled={isSaving || draft.examples.length >= 20}
               onClick={addExampleLine}
               type="button"
@@ -573,7 +573,7 @@ export default function LessonVocabularySection({
 
                 {draft.examples.length > 1 || example ? (
                   <button
-                    className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                    className="rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm disabled:opacity-40"
                     disabled={isSaving}
                     onClick={() => removeExampleLine(index)}
                     type="button"
@@ -590,7 +590,7 @@ export default function LessonVocabularySection({
 
         <div className="flex flex-wrap items-center gap-2">
           <button
-            className="inline-flex items-center gap-1.5 border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm disabled:opacity-40"
             onClick={handleSubmit}
             disabled={isSaving}
             type="button"
@@ -609,7 +609,7 @@ export default function LessonVocabularySection({
             draft.imageUrl ||
             draft.examples.length > 0) && (
             <button
-              className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+              className="rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm disabled:opacity-40"
               onClick={resetForm}
               disabled={isSaving}
               type="button"
@@ -629,20 +629,20 @@ export default function LessonVocabularySection({
           {entries.map((entry) => (
             <article
               key={entry.id}
-              className="space-y-4 border-2 border-border bg-card p-5 shadow-[4px_4px_0_var(--border)]"
+              className="space-y-4 rounded-lg border border-border bg-card p-5"
             >
               <div className="space-y-1">
                 {entry.imageUrl ? (
                   <Image
                     alt={t('imageAlt', { word: entry.word })}
-                    className="aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)]"
+                    className="aspect-video w-full border border-border object-cover"
                     height={360}
                     unoptimized
                     src={entry.imageUrl}
                     width={640}
                   />
                 ) : null}
-                <h3 className="font-black text-base">{entry.word}</h3>
+                <h3 className="font-semibold text-base">{entry.word}</h3>
                 {entry.pronunciation ? (
                   <p className="text-muted-foreground text-sm">
                     {entry.pronunciation}
@@ -667,14 +667,14 @@ export default function LessonVocabularySection({
 
               <div className="flex items-center gap-2">
                 <button
-                  className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+                  className="rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm"
                   onClick={() => handleEdit(entry)}
                   type="button"
                 >
                   {t('edit')}
                 </button>
                 <button
-                  className="border-2 border-destructive bg-destructive px-3 py-1.5 font-bold text-destructive-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                  className="border border-destructive bg-destructive px-3 py-1.5 font-bold text-destructive-foreground text-sm disabled:opacity-40"
                   onClick={() => handleDelete(entry.id)}
                   disabled={isSaving}
                   type="button"

@@ -36,14 +36,14 @@ export default async function TeachSettingsPage({
   return (
     <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
       <div className="mx-auto max-w-4xl space-y-6">
-        <header className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
+        <header className="rounded-lg border border-border bg-background p-6 md:p-8">
           <Link
-            className="mb-5 inline-flex items-center border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+            className="mb-5 inline-flex items-center rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm"
             href={`/${wsId}`}
           >
             {t('backToDashboard')}
           </Link>
-          <h1 className="font-black text-[clamp(2rem,4vw,3.5rem)] leading-none">
+          <h1 className="font-semibold text-3xl leading-tight md:text-4xl">
             {t('title')}
           </h1>
           <p className="mt-3 text-muted-foreground">
@@ -51,17 +51,17 @@ export default async function TeachSettingsPage({
           </p>
         </header>
         <section className="grid gap-4 md:grid-cols-2">
-          <article className="border-2 border-border bg-card p-5 shadow-[5px_5px_0_var(--border)]">
-            <h2 className="font-black text-xl">{t('theme')}</h2>
+          <article className="rounded-lg border border-border bg-card p-5">
+            <h2 className="font-semibold text-xl">{t('theme')}</h2>
             <div className="mt-4">
               <TeachThemeControl />
             </div>
           </article>
-          <article className="border-2 border-border bg-card p-5 shadow-[5px_5px_0_var(--border)]">
-            <h2 className="font-black text-xl">{t('language')}</h2>
+          <article className="rounded-lg border border-border bg-card p-5">
+            <h2 className="font-semibold text-xl">{t('language')}</h2>
             <div className="mt-4 flex gap-2">
               <Link
-                className="inline-flex h-10 items-center gap-2 border-2 border-border bg-background px-3 font-black text-xs shadow-[2px_2px_0_var(--border)]"
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-background px-3 font-semibold text-xs"
                 href={`/${wsId}/settings`}
                 locale="en"
               >
@@ -69,7 +69,7 @@ export default async function TeachSettingsPage({
                 English
               </Link>
               <Link
-                className="inline-flex h-10 items-center gap-2 border-2 border-border bg-background px-3 font-black text-xs shadow-[2px_2px_0_var(--border)]"
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-background px-3 font-semibold text-xs"
                 href={`/${wsId}/settings`}
                 locale="vi"
               >
@@ -80,7 +80,7 @@ export default async function TeachSettingsPage({
           </article>
         </section>
         <a
-          className="inline-flex h-11 items-center gap-2 border-2 border-border bg-primary px-4 font-black text-primary-foreground shadow-[3px_3px_0_var(--border)]"
+          className="inline-flex h-11 items-center gap-2 rounded-lg border border-border bg-primary px-4 font-semibold text-primary-foreground"
           href="/api/auth/logout"
         >
           <LogOut className="h-4 w-4" />

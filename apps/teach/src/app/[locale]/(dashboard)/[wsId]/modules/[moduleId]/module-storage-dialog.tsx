@@ -87,9 +87,9 @@ function StorageItemRow({
     generateMutation.variables?.fileId === entry.id;
 
   return (
-    <div className="border-2 border-border bg-card px-4 py-3 shadow-[3px_3px_0_var(--border)]">
+    <div className="rounded-lg border border-border bg-card px-4 py-3">
       <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[2px_2px_0_var(--border)]">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-dynamic-cyan/15">
           {isFolder ? (
             <FolderOpen className="h-4 w-4" />
           ) : (
@@ -104,7 +104,7 @@ function StorageItemRow({
               {label}
             </p>
           ) : null}
-          <p className="mt-2 inline-flex border border-border bg-background px-2 py-0.5 font-semibold text-[10px] text-muted-foreground uppercase tracking-[0.16em]">
+          <p className="mt-2 inline-flex rounded-lg border border-border bg-background px-2 py-0.5 font-semibold text-[10px] text-muted-foreground uppercase tracking-[0.16em]">
             {isFolder ? t('kinds.folder') : t('kinds.file')}
           </p>
         </div>
@@ -126,7 +126,7 @@ function StorageItemRow({
           <Button
             variant="ghost"
             size="icon"
-            className="flex-shrink-0 border-2 border-transparent text-dynamic-yellow hover:border-border hover:bg-dynamic-yellow/10 hover:text-dynamic-yellow"
+            className="flex-shrink-0 border border-transparent text-dynamic-yellow hover:border-border hover:bg-dynamic-yellow/10 hover:text-dynamic-yellow"
             onClick={() =>
               generateMutation.mutate({
                 fileId: entry.id!,
@@ -175,7 +175,7 @@ export function ModuleStorageDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button
-          className="inline-flex items-center gap-2 whitespace-nowrap border-2 border-border bg-dynamic-cyan/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+          className="inline-flex items-center gap-2 whitespace-nowrap border border-border bg-dynamic-cyan/15 px-4 py-2 font-bold text-sm transition"
           type="button"
         >
           <FolderOpen className="h-4 w-4" />
@@ -193,7 +193,7 @@ export function ModuleStorageDialog({
 
             <div className="flex items-center gap-2">
               <button
-                className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={storageQuery.isFetching}
                 onClick={() => storageQuery.refetch()}
                 type="button"
@@ -204,7 +204,7 @@ export function ModuleStorageDialog({
                 {t('actions.refresh')}
               </button>
               <button
-                className="flex h-9 w-9 items-center justify-center border-2 border-border bg-background shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background transition"
                 onClick={() => setOpen(false)}
                 type="button"
                 aria-label={t('actions.close')}
@@ -217,7 +217,7 @@ export function ModuleStorageDialog({
 
         <div className="space-y-4">
           {storageQuery.isLoading ? (
-            <div className="flex items-center gap-3 border-2 border-border border-dashed bg-muted/50 px-4 py-5 shadow-[3px_3px_0_var(--border)]">
+            <div className="flex items-center gap-3 rounded-lg border border-border border-dashed bg-muted/50 px-4 py-5">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               <div>
                 <p className="font-bold text-sm">{t('loading')}</p>
@@ -227,7 +227,7 @@ export function ModuleStorageDialog({
               </div>
             </div>
           ) : storageQuery.isError ? (
-            <div className="space-y-3 border-2 border-border border-dashed bg-muted/50 px-4 py-5 shadow-[3px_3px_0_var(--border)]">
+            <div className="space-y-3 rounded-lg border border-border border-dashed bg-muted/50 px-4 py-5">
               <div>
                 <p className="font-bold text-sm">{t('error')}</p>
                 <p className="mt-1 text-muted-foreground text-xs">
@@ -237,7 +237,7 @@ export function ModuleStorageDialog({
                 </p>
               </div>
               <button
-                className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 font-bold text-sm transition"
                 onClick={() => storageQuery.refetch()}
                 type="button"
               >
@@ -245,7 +245,7 @@ export function ModuleStorageDialog({
               </button>
             </div>
           ) : storageFiles.length === 0 ? (
-            <div className="flex items-center gap-3 border-2 border-border border-dashed bg-muted/50 px-4 py-5 shadow-[3px_3px_0_var(--border)]">
+            <div className="flex items-center gap-3 rounded-lg border border-border border-dashed bg-muted/50 px-4 py-5">
               <FolderOpen className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="font-bold text-sm">{t('empty')}</p>

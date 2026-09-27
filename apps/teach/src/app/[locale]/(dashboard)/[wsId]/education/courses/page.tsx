@@ -108,7 +108,7 @@ export default async function WorkspaceCoursesPage({
               createDescription={t('ws-courses.create_description')}
               form={<CourseForm wsId={resolvedWsId} />}
               trigger={
-                <Button className="h-11 rounded-2xl bg-foreground px-5 text-background shadow-sm transition-transform hover:-translate-y-0.5 hover:bg-foreground/90">
+                <Button className="h-11 rounded-2xl bg-foreground px-5 text-background shadow-sm transition-transform hover:bg-foreground/90">
                   <Plus className="h-4 w-4" />
                   {t('ws-courses.create')}
                 </Button>

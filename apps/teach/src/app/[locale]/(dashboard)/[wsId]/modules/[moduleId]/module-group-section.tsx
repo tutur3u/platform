@@ -91,12 +91,12 @@ export function ModuleGroupSection({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'border-2 border-border bg-background shadow-[5px_5px_0_var(--border)] transition-shadow',
+        'rounded-lg border border-border bg-background transition-shadow',
         isDragging && 'opacity-50 shadow-none'
       )}
     >
       {/* Section header */}
-      <div className="flex items-center gap-2 border-border border-b-2 bg-muted/40 px-3 py-2.5">
+      <div className="flex items-center gap-2 border-border border-b bg-muted/40 px-3 py-2.5">
         {/* Drag handle */}
         <button
           {...attributes}
@@ -131,7 +131,7 @@ export function ModuleGroupSection({
         {editingTitle ? (
           <input
             ref={titleInputRef}
-            className="min-w-0 flex-1 border-primary border-b-2 bg-transparent font-bold text-sm outline-none"
+            className="min-w-0 flex-1 border-primary border-b bg-transparent font-bold text-sm outline-none"
             value={titleDraft}
             onChange={(e) => setTitleDraft(e.target.value)}
             onBlur={commitTitle}
@@ -157,7 +157,7 @@ export function ModuleGroupSection({
         )}
 
         {/* Module count badge */}
-        <span className="shrink-0 border border-border bg-card px-1.5 py-0.5 font-bold text-muted-foreground text-xs tabular-nums">
+        <span className="shrink-0 rounded-lg border border-border bg-card px-1.5 py-0.5 font-bold text-muted-foreground text-xs tabular-nums">
           {group.modules.length}
         </span>
 

@@ -61,7 +61,7 @@ export function AssignmentsPage({ wsId }: { wsId: string }) {
                       ? `/${wsId}/courses/${assignment.course.id}/tests/${assignment.id}?studentId=${studentId}`
                       : `/${wsId}/courses/${assignment.course.id}/tests/${assignment.id}`
                   }
-                  className="inline-flex h-11 items-center justify-center border-2 border-border bg-dynamic-cyan/15 px-4 font-black text-foreground shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)]"
+                  className="inline-flex h-11 items-center justify-center border border-border bg-dynamic-cyan/15 px-4 font-semibold text-foreground transition"
                 >
                   {assignment.is_completed
                     ? t('courses.reviewTest')
@@ -69,7 +69,7 @@ export function AssignmentsPage({ wsId }: { wsId: string }) {
                 </Link>
               ) : !assignment.is_completed ? (
                 <Button
-                  className="h-11 rounded-none border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:bg-primary active:translate-x-1 active:translate-y-1 active:shadow-none"
+                  className="h-11 rounded-lg border border-border bg-primary font-semibold text-primary-foreground hover:bg-primary"
                   disabled={complete.isPending}
                   onClick={() => complete.mutate(assignment.id)}
                   size="sm"

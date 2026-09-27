@@ -172,7 +172,7 @@ export function QuizSubmissionResponseViewer({
 }) {
   if (!hasSubmittedAnswer(answer)) {
     return (
-      <div className="border-2 border-border bg-background p-3 font-bold text-muted-foreground text-sm">
+      <div className="rounded-lg border border-border bg-background p-3 font-bold text-muted-foreground text-sm">
         {t('teachModules.noAnswerSubmitted')}
       </div>
     );
@@ -214,13 +214,13 @@ export function QuizSubmissionResponseViewer({
             <div
               key={opt.id}
               className={cn(
-                'flex items-center justify-between border-2 p-3 shadow-[1px_1px_0_var(--border)]',
+                'flex items-center justify-between border p-3',
                 optionStyle
               )}
             >
               <span className="font-bold text-sm">{opt.value}</span>
               {isSelected && (
-                <span className="font-black text-xs uppercase tracking-wider">
+                <span className="font-semibold text-xs uppercase tracking-wider">
                   {isCorrect
                     ? t('teachModules.selectedCorrectAnswer')
                     : t('teachModules.selectedIncorrectAnswer')}
@@ -267,7 +267,7 @@ export function QuizSubmissionResponseViewer({
               <div
                 key={String(opt.value)}
                 className={cn(
-                  'flex items-center justify-center border-2 py-3 font-bold text-sm shadow-[1px_1px_0_var(--border)]',
+                  'flex items-center justify-center border py-3 font-bold text-sm',
                   optionStyle
                 )}
               >
@@ -293,13 +293,13 @@ export function QuizSubmissionResponseViewer({
             <div
               key={`${item}-${idx}`}
               className={cn(
-                'flex items-center gap-3 border-2 p-3 text-sm shadow-[1px_1px_0_var(--border)]',
+                'flex items-center gap-3 border p-3 text-sm',
                 isCorrect
                   ? 'border-dynamic-green bg-dynamic-green/10'
                   : 'border-dynamic-red bg-dynamic-red/10'
               )}
             >
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border border-border bg-primary font-semibold text-[10px] text-primary-foreground">
                 {idx + 1}
               </span>
               <span className="font-bold">{item}</span>
@@ -329,14 +329,14 @@ export function QuizSubmissionResponseViewer({
               <div
                 key={`${pair.left}-${idx}`}
                 className={cn(
-                  'grid gap-3 border-2 p-3 text-sm shadow-[1px_1px_0_var(--border)] md:grid-cols-[1fr_1fr] md:items-center',
+                  'grid gap-3 border p-3 text-sm md:grid-cols-[1fr_1fr] md:items-center',
                   isCorrect
                     ? 'border-dynamic-green bg-dynamic-green/10'
                     : 'border-dynamic-red bg-dynamic-red/10'
                 )}
               >
                 <span className="font-bold">{pair.left}</span>
-                <div className="border-2 border-border bg-background p-2 font-bold text-sm">
+                <div className="rounded-lg border border-border bg-background p-2 font-bold text-sm">
                   {currentRight}
                 </div>
               </div>
@@ -358,7 +358,7 @@ export function QuizSubmissionResponseViewer({
         <p className="mb-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
           {t('teachModules.studentResponse')}
         </p>
-        <div className="w-full whitespace-pre-wrap border-2 border-border bg-background p-3 font-bold text-sm">
+        <div className="w-full whitespace-pre-wrap rounded-lg border border-border bg-background p-3 font-bold text-sm">
           {textValue}
         </div>
       </div>

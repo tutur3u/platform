@@ -123,12 +123,12 @@ function ModuleQuestionsManager({
   };
 
   return (
-    <div className="border-2 border-border bg-background p-6 shadow-[6px_6px_0_var(--border)]">
+    <div className="rounded-lg border border-border bg-background p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <BookOpenCheck className="h-5 w-5 text-primary" />
           <div>
-            <h3 className="font-black text-base">{moduleName}</h3>
+            <h3 className="font-semibold text-base">{moduleName}</h3>
             <p className="text-muted-foreground text-xs">
               {quizzes.length} {t('ws-quizzes.plural').toLowerCase()}
             </p>
@@ -138,7 +138,7 @@ function ModuleQuestionsManager({
         {!creating && (
           <div className="flex flex-wrap items-center gap-2">
             <button
-              className="inline-flex items-center gap-1.5 whitespace-nowrap border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition disabled:opacity-50"
               onClick={() => setShowAiDialog(true)}
               disabled={generateMutation.isPending}
               type="button"
@@ -157,7 +157,7 @@ function ModuleQuestionsManager({
             </button>
 
             <button
-              className="inline-flex items-center gap-1.5 whitespace-nowrap border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition disabled:opacity-50"
               onClick={() => setCreating(true)}
               disabled={generateMutation.isPending}
               type="button"
@@ -169,11 +169,11 @@ function ModuleQuestionsManager({
         )}
       </div>
 
-      <Separator className="my-4 border-border border-b-2" />
+      <Separator className="my-4 border-border border-b" />
 
       {creating && (
-        <div className="mb-6 border-2 border-border bg-card p-5 shadow-[4px_4px_0_var(--border)]">
-          <h4 className="mb-4 font-black text-sm">
+        <div className="mb-6 rounded-lg border border-border bg-card p-5">
+          <h4 className="mb-4 font-semibold text-sm">
             {t('ws-quizzes.manual_create')}
           </h4>
           <DynamicQuizForm
@@ -334,7 +334,7 @@ function ModuleQuestionsManager({
 
           <DialogFooter>
             <button
-              className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+              className="rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm disabled:opacity-40"
               onClick={() => setShowAiDialog(false)}
               disabled={generateMutation.isPending}
               type="button"
@@ -342,7 +342,7 @@ function ModuleQuestionsManager({
               {t('common.cancel')}
             </button>
             <button
-              className="inline-flex items-center gap-1.5 border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm disabled:opacity-40"
               onClick={handleGenerate}
               disabled={generateMutation.isPending}
               type="button"
@@ -383,8 +383,8 @@ export function TestQuestionsSection({
 
   return (
     <div className="space-y-6">
-      <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
-        <h2 className="font-black text-lg uppercase tracking-wider">
+      <div className="rounded-lg border border-border bg-background p-6">
+        <h2 className="font-semibold text-lg uppercase tracking-wider">
           {t('ws-quizzes.test_questions_manager')}
         </h2>
         <p className="mt-1 text-muted-foreground text-sm">
@@ -393,7 +393,7 @@ export function TestQuestionsSection({
       </div>
 
       {testModules.length === 0 ? (
-        <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
+        <div className="rounded-lg border border-border border-dashed bg-background p-8 text-center">
           <p className="text-muted-foreground text-sm">
             {t('ws-quizzes.link_modules_before_questions')}
           </p>

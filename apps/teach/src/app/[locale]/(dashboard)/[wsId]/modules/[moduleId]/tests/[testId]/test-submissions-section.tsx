@@ -54,7 +54,7 @@ export function TestSubmissionsSection({
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
-            className="h-20 animate-pulse border-2 border-border bg-card shadow-[4px_4px_0_var(--border)]"
+            className="h-20 animate-pulse rounded-lg border border-border bg-card"
           />
         ))}
       </div>
@@ -63,7 +63,7 @@ export function TestSubmissionsSection({
 
   if (isError) {
     return (
-      <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
+      <div className="rounded-lg border border-border border-dashed bg-background p-8 text-center">
         <p className="font-bold text-muted-foreground text-sm">
           {t('teachModules.submissionsLoadError')}
         </p>
@@ -73,7 +73,7 @@ export function TestSubmissionsSection({
 
   if (submissions.length === 0) {
     return (
-      <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
+      <div className="rounded-lg border border-border border-dashed bg-background p-8 text-center">
         <User className="mx-auto mb-3 h-8 w-8 text-muted-foreground/50" />
         <p className="font-bold text-muted-foreground text-sm">
           {t('teachModules.noSubmissions')}
@@ -91,7 +91,7 @@ export function TestSubmissionsSection({
   return (
     <div className="space-y-4">
       {/* Publish scores action */}
-      <div className="flex items-center justify-between border-2 border-border bg-background p-4 shadow-[4px_4px_0_var(--border)]">
+      <div className="flex items-center justify-between rounded-lg border border-border bg-background p-4">
         <div>
           <p className="font-bold text-sm">
             {t('teachModules.scoreVisibility')}
@@ -107,7 +107,7 @@ export function TestSubmissionsSection({
           onClick={onToggleScorePublished}
           disabled={isToggling}
           className={cn(
-            'inline-flex cursor-pointer items-center gap-2 border-2 border-border px-4 py-2.5 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50',
+            'inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border px-4 py-2.5 font-bold text-sm transition disabled:opacity-50',
             isScorePublished
               ? 'bg-dynamic-green/15 text-foreground'
               : 'bg-primary text-primary-foreground'
@@ -200,13 +200,13 @@ function StatCard({
   variant?: 'success' | 'warning';
 }) {
   return (
-    <div className="border-2 border-border bg-background p-3 shadow-[2px_2px_0_var(--border)]">
-      <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+    <div className="rounded-lg border border-border bg-background p-3">
+      <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
         {label}
       </span>
       <span
         className={cn(
-          'mt-0.5 block font-black text-xl',
+          'mt-0.5 block font-semibold text-xl',
           variant === 'success' && 'text-dynamic-green',
           variant === 'warning' && 'text-dynamic-yellow'
         )}
@@ -238,12 +238,12 @@ function SubmissionRow({
     <button
       onClick={onClick}
       type="button"
-      className="flex w-full cursor-pointer select-none items-center gap-4 border-2 border-border bg-background p-4 text-left shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+      className="flex w-full cursor-pointer select-none items-center gap-4 rounded-lg border border-border bg-background p-4 text-left transition"
     >
       {/* Status icon */}
       <span
         className={cn(
-          'flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border',
+          'flex h-10 w-10 shrink-0 items-center justify-center border border-border',
           isSubmitted ? 'bg-dynamic-green/15' : 'bg-dynamic-yellow/15'
         )}
       >
@@ -300,7 +300,7 @@ function SubmissionRow({
       {isSubmitted && scorePercent !== null && (
         <div
           className={cn(
-            'flex h-12 w-12 shrink-0 items-center justify-center border-2 border-border font-black text-sm',
+            'flex h-12 w-12 shrink-0 items-center justify-center border border-border font-semibold text-sm',
             scorePercent >= 70
               ? 'bg-dynamic-green/15 text-dynamic-green'
               : scorePercent >= 50
@@ -313,7 +313,7 @@ function SubmissionRow({
       )}
 
       {!isSubmitted && (
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center border-2 border-border bg-muted/20 font-bold text-muted-foreground text-xs">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/20 font-bold text-muted-foreground text-xs">
           <Clock className="h-4 w-4" />
         </div>
       )}

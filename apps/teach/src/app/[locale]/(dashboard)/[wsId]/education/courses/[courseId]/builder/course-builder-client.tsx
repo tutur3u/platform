@@ -476,7 +476,7 @@ export function CourseBuilderClient({
         <EducationContentSurface className="min-h-120" padded>
           <div className="flex min-h-105 items-center justify-center rounded-2xl border border-border/70 border-dashed bg-foreground/5 text-foreground/65">
             <div className="flex flex-col items-center gap-3 text-center">
-              <div className="h-10 w-10 animate-spin rounded-full border-2 border-dynamic-blue border-t-transparent" />
+              <div className="h-10 w-10 animate-spin rounded-full border border-dynamic-blue border-t-transparent" />
               <div className="font-medium text-sm">{t('common.loading')}</div>
             </div>
           </div>
@@ -615,7 +615,7 @@ export function CourseBuilderClient({
                   </div>
                 </div>
               ) : activeModuleItem ? (
-                <div className="pointer-events-none flex min-h-11 min-w-[220px] max-w-[min(100vw-2rem,320px)] flex-col gap-1 rounded-xl border-2 border-dynamic-blue/45 bg-background/98 px-3 py-2.5 text-left shadow-2xl ring-2 ring-dynamic-blue/25 ring-offset-2 ring-offset-background">
+                <div className="pointer-events-none flex min-h-11 min-w-[220px] max-w-[min(100vw-2rem,320px)] flex-col gap-1 rounded-xl border border-dynamic-blue/45 bg-background/98 px-3 py-2.5 text-left shadow-2xl ring-2 ring-dynamic-blue/25 ring-offset-2 ring-offset-background">
                   <div className="font-medium text-foreground text-xs uppercase tracking-wide">
                     {t('ws-course-modules.singular')}
                   </div>
