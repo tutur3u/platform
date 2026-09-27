@@ -504,6 +504,11 @@ downstream workflows, and falls back to `github.token` only to keep the job from
 failing when the bot token is not provisioned. The `github.token` fallback does
 not trigger downstream workflow runs from generated release PRs. Release Please
 rejects non-production manual dispatches before the write-capable release job.
+`release-please-transient-retry.yaml` retries only the GitHub API disconnect
+reported as `release-please failed: other side closed`. It checks that the run
+is still failed on the current production SHA, then reruns failed jobs for at
+most three total attempts. Other failures remain visible for investigation;
+a manual rerun supersedes a queued automatic retry.
 Package publish workflows consume release-please version bumps on `production`;
 they must not recreate checksum or PR-title version bump automation. Package
 release workflows use npm trusted publishing: build and artifact-pack work runs
