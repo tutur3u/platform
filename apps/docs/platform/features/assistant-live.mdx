@@ -77,6 +77,15 @@ expiration ends media capture and keeps the saved conversation available.
 
 ## Mobile audio capture
 
+On mobile, Chat and Live use the same top header mode switch and page background.
+Live keeps the floating bottom navigation visible. Its idle start action is the
+icon-only microphone button beside that navigation; the top header opens Live
+settings in a sheet with the Keep Live while browsing switch. The idle screen
+does not show an availability badge or a second start button. During a session,
+the controls above the navigation provide camera, microphone, typing, and end
+actions. Connection problems show a retry message without changing the page
+background.
+
 Starting mobile Live with the microphone enabled requests permission and captures
 speech while the connection initializes. A memory-only FIFO holds at most 30
 seconds of 16 kHz mono PCM. Once ready, chunks drain in order; cancelling capture

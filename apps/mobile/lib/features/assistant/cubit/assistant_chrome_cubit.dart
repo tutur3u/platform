@@ -24,7 +24,7 @@ class AssistantChromeCubit extends Cubit<AssistantChromeState> {
     emit(
       state.copyWith(
         isLiveMode: true,
-        isFullscreen: true,
+        isFullscreen: false,
         hasSelectedMode: true,
       ),
     );
@@ -44,7 +44,7 @@ class AssistantChromeCubit extends Cubit<AssistantChromeState> {
     emit(
       state.copyWith(
         isLiveMode: value,
-        isFullscreen: value,
+        isFullscreen: false,
         hasSelectedMode: true,
       ),
     );

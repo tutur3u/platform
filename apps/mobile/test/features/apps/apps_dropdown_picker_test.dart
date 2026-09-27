@@ -55,6 +55,25 @@ void main() {
           .resolveForLocation(Routes.apps)
           .firstWhere((action) => action.id == 'apps-search');
       expect(searchAction.inDock, isTrue);
+      final listAction = chrome.state
+          .resolveForLocation(Routes.apps)
+          .firstWhere((action) => action.id == 'apps-view-list');
+      final gridAction = chrome.state
+          .resolveForLocation(Routes.apps)
+          .firstWhere((action) => action.id == 'apps-view-grid');
+      expect(listAction.segmentGroup, 'apps-view');
+      expect(gridAction.segmentGroup, 'apps-view');
+      expect(listAction.highlighted, isTrue);
+      gridAction.onPressed!();
+      await tester.pumpAndSettle();
+      expect(
+        chrome.state
+            .resolveForLocation(Routes.apps)
+            .firstWhere((action) => action.id == 'apps-view-grid')
+            .highlighted,
+        isTrue,
+      );
+      expect(find.byType(SegmentedButton<bool>), findsNothing);
       searchAction.onPressed!();
       await tester.pumpAndSettle();
       final activeSearch = chrome.state

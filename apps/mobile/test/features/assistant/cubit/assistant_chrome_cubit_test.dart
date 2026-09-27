@@ -3,11 +3,11 @@ import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 
 void main() {
   group('AssistantChromeCubit', () {
-    test('enterLiveMode enables live mode and fullscreen', () {
+    test('enterLiveMode keeps the shared navigation visible', () {
       final cubit = AssistantChromeCubit()..enterLiveMode();
 
       expect(cubit.state.isLiveMode, isTrue);
-      expect(cubit.state.isFullscreen, isTrue);
+      expect(cubit.state.isFullscreen, isFalse);
     });
 
     test('exitLiveMode clears live mode and fullscreen', () {

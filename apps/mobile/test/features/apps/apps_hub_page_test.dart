@@ -1,5 +1,3 @@
-import 'dart:ui' show Tristate;
-
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -45,6 +43,8 @@ void main() {
     await experimentalAppsCubit.load();
     addTearDown(cubit.close);
     addTearDown(experimentalAppsCubit.close);
+    final showGrid = ValueNotifier(false);
+    addTearDown(showGrid.dispose);
 
     await tester.pumpApp(
       MultiBlocProvider(
@@ -52,7 +52,10 @@ void main() {
           BlocProvider.value(value: cubit),
           BlocProvider.value(value: experimentalAppsCubit),
         ],
-        child: const AppsHubPage(),
+        child: ValueListenableBuilder<bool>(
+          valueListenable: showGrid,
+          builder: (context, value, _) => AppsHubPage(showGrid: value),
+        ),
       ),
     );
 
@@ -91,28 +94,10 @@ void main() {
       findsOneWidget,
     );
 
-    final semantics = tester.ensureSemantics();
-    expect(find.bySemanticsLabel('List'), findsOneWidget);
-    expect(find.bySemanticsLabel('Grid'), findsOneWidget);
-    expect(
-      tester
-          .getSemantics(find.text('List'))
-          .getSemanticsData()
-          .flagsCollection
-          .isSelected,
-      Tristate.isTrue,
-    );
-
-    await tester.tap(find.text('Grid'));
+    expect(find.byType(SegmentedButton<bool>), findsNothing);
+    showGrid.value = true;
     await tester.pumpAndSettle();
-    expect(
-      tester
-          .getSemantics(find.text('Grid'))
-          .getSemanticsData()
-          .flagsCollection
-          .isSelected,
-      Tristate.isTrue,
-    );
+    final semantics = tester.ensureSemantics();
     final tasksSemantics = tester
         .getSemantics(find.text('Tasks'))
         .getSemanticsData();
@@ -138,7 +123,7 @@ void main() {
     tester.view.physicalSize = const Size(430, 2400);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('List'));
+    showGrid.value = false;
     await tester.pumpAndSettle();
     expect(
       find.text(

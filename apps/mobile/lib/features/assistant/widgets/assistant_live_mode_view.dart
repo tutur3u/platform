@@ -23,7 +23,6 @@ class AssistantLiveModeView extends StatelessWidget {
     required this.onToggleCamera,
     required this.onDisconnect,
     required this.onOpenTextEntry,
-    this.onSettings,
     this.cameraController,
     super.key,
   });
@@ -38,7 +37,6 @@ class AssistantLiveModeView extends StatelessWidget {
   final Future<void> Function() onToggleCamera;
   final Future<void> Function() onDisconnect;
   final Future<void> Function() onOpenTextEntry;
-  final Future<void> Function()? onSettings;
   final CameraController? cameraController;
 
   @override
@@ -56,10 +54,14 @@ class AssistantLiveModeView extends StatelessWidget {
     final isIdle =
         liveState.status == AssistantLiveConnectionStatus.disconnected;
 
-    return ColoredBox(
-      color: theme.scaffoldBackgroundColor,
-      child: Column(
-        children: [
+    final needsRecovery =
+        liveUiState.kind == AssistantLiveUiKind.error ||
+        liveUiState.kind == AssistantLiveUiKind.reconnecting ||
+        liveUiState.kind == AssistantLiveUiKind.permissionDenied;
+
+    return Column(
+      children: [
+        if (needsRecovery)
           Padding(
             padding: EdgeInsets.fromLTRB(
               12,
@@ -70,102 +72,102 @@ class AssistantLiveModeView extends StatelessWidget {
             child: _LiveModeHeader(
               liveState: liveState,
               liveUiState: liveUiState,
-              onDisconnect: onDisconnect,
               onRetry: onRetry,
-              onSettings: onSettings,
             ),
-          ),
-          Expanded(
-            child: isIdle
-                ? _LiveIdleState(onConnect: onToggleMicrophone)
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      final wide = constraints.maxWidth >= 840;
-                      final stage = _LiveStageCard(
-                        liveState: liveState,
-                        assistantName: assistantName,
-                        userBlobCaption: userBlobCaption,
-                        assistantBlobCaption: assistantBlobCaption,
-                        cameraController: cameraController,
-                      );
-                      final transcript = _LiveTranscriptCard(
-                        chatState: chatState,
-                        liveState: liveState,
-                        assistantName: assistantName,
-                        scrollController: scrollController,
-                      );
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: wide
-                            ? Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Expanded(
-                                    flex: 4,
-                                    child: Align(
-                                      alignment: Alignment.topCenter,
-                                      child: stage,
+          )
+        else
+          SizedBox(height: floatingShellHeaderInset(context)),
+        Expanded(
+          child: isIdle
+              ? const _LiveIdleState()
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    final wide = constraints.maxWidth >= 840;
+                    final stage = _LiveStageCard(
+                      liveState: liveState,
+                      assistantName: assistantName,
+                      userBlobCaption: userBlobCaption,
+                      assistantBlobCaption: assistantBlobCaption,
+                      cameraController: cameraController,
+                    );
+                    final transcript = _LiveTranscriptCard(
+                      chatState: chatState,
+                      liveState: liveState,
+                      assistantName: assistantName,
+                      scrollController: scrollController,
+                    );
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: wide
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  flex: 4,
+                                  child: Align(
+                                    alignment: Alignment.topCenter,
+                                    child: stage,
+                                  ),
+                                ),
+                                if (hasTranscript) ...[
+                                  const SizedBox(width: 16),
+                                  Expanded(flex: 5, child: transcript),
+                                ],
+                              ],
+                            )
+                          : ListView(
+                              children: [
+                                stage,
+                                const SizedBox(height: 12),
+                                if (hasTranscript)
+                                  SizedBox(
+                                    height: (constraints.maxHeight * .45).clamp(
+                                      180.0,
+                                      480.0,
+                                    ),
+                                    child: transcript,
+                                  )
+                                else
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
+                                    child: Text(
+                                      context.l10n.assistantLiveTranscriptEmpty,
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
                                     ),
                                   ),
-                                  if (hasTranscript) ...[
-                                    const SizedBox(width: 16),
-                                    Expanded(flex: 5, child: transcript),
-                                  ],
-                                ],
-                              )
-                            : ListView(
-                                children: [
-                                  stage,
-                                  const SizedBox(height: 12),
-                                  if (hasTranscript)
-                                    SizedBox(
-                                      height: (constraints.maxHeight * .45)
-                                          .clamp(180.0, 480.0),
-                                      child: transcript,
-                                    )
-                                  else
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                      ),
-                                      child: Text(
-                                        context
-                                            .l10n
-                                            .assistantLiveTranscriptEmpty,
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: theme
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
-                                            ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                      );
-                    },
-                  ),
-          ),
-          if (!isIdle) AssistantLiveScreenControl(state: liveState),
-          if (!isIdle)
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                shortViewport ? 4 : 12,
-                16,
-                safeArea.bottom + (shortViewport ? 4 : 16),
-              ),
-              child: Center(
-                child: _LiveControlRail(
-                  liveState: liveState,
-                  onToggleMicrophone: onToggleMicrophone,
-                  onToggleCamera: onToggleCamera,
-                  onOpenTextEntry: onOpenTextEntry,
+                              ],
+                            ),
+                    );
+                  },
                 ),
+        ),
+        if (!isIdle) AssistantLiveScreenControl(state: liveState),
+        if (!isIdle)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              shortViewport ? 4 : 12,
+              16,
+              safeArea.bottom + (shortViewport ? 80 : 92),
+            ),
+            child: Center(
+              child: _LiveControlRail(
+                liveState: liveState,
+                onToggleMicrophone: onToggleMicrophone,
+                onToggleCamera: onToggleCamera,
+                onOpenTextEntry: onOpenTextEntry,
+                onDisconnect: onDisconnect,
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
