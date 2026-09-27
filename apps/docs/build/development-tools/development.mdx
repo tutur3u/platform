@@ -607,13 +607,17 @@ Development builds remain available through `bun build:android:dev`.
 TestFlight distribution defaults to all available beta groups. Configure
 `TESTFLIGHT_BETA_ENABLED=false` to disable automatic distribution, or set
 `TESTFLIGHT_BETA_GROUPS` to a comma-separated list of group names or IDs to
-limit it. If Apple is still reviewing an earlier external build, the new build
-remains available to internal testers and its external review is deferred.
+limit it. If Apple is still reviewing another build of the same app version,
+the new build remains available to internal testers and its external review is
+deferred. Reviews of older app versions do not block a newer version.
 The Mobile TestFlight Review Queue workflow checks every five minutes and can be
-run manually; after the earlier review ends, it submits the newest processed
-internal build to the selected external groups. It never withdraws the earlier
-submission. The retry workflow accesses App Store Connect only after its code
-has been promoted to `production`.
+run manually; it submits the newest processed internal build to the selected
+external groups without falling back to an older build. It never withdraws an
+earlier submission. Once an approved build is available, the retry also expires
+superseded builds older than 14 days while retaining the two newest uploads,
+the two newest approved builds, builds in review, and builds attached to an App
+Store release. The retry workflow accesses App Store Connect only after its
+code has been promoted to `production`.
 
 Validate the store workflow and review queue locally with
 `node --test scripts/ci/mobile-store-workflow.test.js scripts/mobile-deployment/verify-store.test.mjs`.

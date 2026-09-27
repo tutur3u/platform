@@ -142,15 +142,26 @@ export async function distributeTestFlightBuild(apple, appId, buildId, config) {
   return selected;
 }
 
-export async function pendingExternalBetaReview(apple, appId) {
+export async function pendingExternalBetaReview(apple, appId, buildId) {
+  const target = await apple(`/v1/builds/${buildId}?include=preReleaseVersion`);
+  const versionId = target.data?.relationships?.preReleaseVersion?.data?.id;
+  if (!versionId) {
+    throw new Error('TestFlight build prerelease version is missing');
+  }
   for (const state of ['WAITING_FOR_REVIEW', 'IN_REVIEW']) {
     const query = new URLSearchParams({
       'filter[app]': appId,
       'filter[betaAppReviewSubmission.betaReviewState]': state,
-      limit: '2',
+      include: 'preReleaseVersion',
+      limit: '200',
     });
-    const builds = await apple(`/v1/builds?${query}`);
-    if (builds.data?.length) return builds.data[0];
+    const builds = await listAppleResources(apple, `/v1/builds?${query}`);
+    const sameVersion = builds.find(
+      (build) =>
+        build.id !== buildId &&
+        build.relationships?.preReleaseVersion?.data?.id === versionId
+    );
+    if (sameVersion) return sameVersion;
   }
   return null;
 }
@@ -170,7 +181,7 @@ export async function submitExternalBetaReview(
     );
   }
   if (!existing.data?.length) {
-    const pending = await pendingExternalBetaReview(apple, appId);
+    const pending = await pendingExternalBetaReview(apple, appId, buildId);
     if (pending && pending.id !== buildId) {
       console.log(
         `External TestFlight review deferred for build ${buildId}; build ${pending.id} is still in review.`
@@ -238,9 +249,68 @@ export function latestReadyTestFlightBuild(page) {
     const detail = page.included?.find(
       (item) => item.type === 'buildBetaDetails' && item.id === detailId
     );
-    if (testFlightReady(build, detail)) return build;
+    // A newer build still processing must not cause an older build to be sent
+    // to review. The next deployment or retry can submit the newer one.
+    return testFlightReady(build, detail) ? build : null;
   }
   return null;
+}
+
+export function supersededTestFlightBuildIds(page, now = Date.now()) {
+  const builds = page.data ?? [];
+  const reviews = new Map(
+    (page.included ?? [])
+      .filter((item) => item.type === 'betaAppReviewSubmissions')
+      .map((item) => [item.id, item.attributes?.betaReviewState])
+  );
+  const reviewState = (build) =>
+    reviews.get(build.relationships?.betaAppReviewSubmission?.data?.id);
+  const approved = builds.filter((build) => reviewState(build) === 'APPROVED');
+  if (!approved.length) return [];
+  const newestApprovedDate = Date.parse(approved[0].attributes?.uploadedDate);
+  if (!Number.isFinite(newestApprovedDate)) return [];
+  const retained = new Set(
+    [...builds.slice(0, 2), ...approved.slice(0, 2)].map((build) => build.id)
+  );
+  const cutoff = now - 14 * 24 * 60 * 60_000;
+  return builds
+    .filter((build) => {
+      const uploaded = Date.parse(build.attributes?.uploadedDate);
+      return (
+        !retained.has(build.id) &&
+        build.attributes?.processingState === 'VALID' &&
+        build.attributes?.expired !== true &&
+        Number.isFinite(uploaded) &&
+        uploaded < cutoff &&
+        uploaded < newestApprovedDate &&
+        !build.relationships?.appStoreVersion?.data &&
+        !['WAITING_FOR_REVIEW', 'IN_REVIEW'].includes(reviewState(build))
+      );
+    })
+    .map((build) => build.id);
+}
+
+export async function expireSupersededTestFlightBuilds(apple, appId) {
+  const query = new URLSearchParams({
+    'filter[app]': appId,
+    sort: '-uploadedDate',
+    include: 'betaAppReviewSubmission,appStoreVersion',
+    limit: '200',
+  });
+  const page = await apple(`/v1/builds?${query}`);
+  const ids = supersededTestFlightBuildIds(page);
+  for (const id of ids) {
+    await apple(`/v1/builds/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        data: { type: 'builds', id, attributes: { expired: true } },
+      }),
+    });
+  }
+  if (ids.length) {
+    console.log(`Expired ${ids.length} superseded TestFlight build(s).`);
+  }
+  return ids.length;
 }
 
 export async function retryDeferredTestFlightReview(apple, appId, config) {
@@ -252,13 +322,6 @@ export async function retryDeferredTestFlightReview(apple, appId, config) {
   const selected = selectBetaGroups(groups, config.enabled, config.groups);
   if (!selected.some((group) => group.attributes?.isInternalGroup === false)) {
     return 'no-external-groups';
-  }
-  const pending = await pendingExternalBetaReview(apple, appId);
-  if (pending) {
-    console.log(
-      `External TestFlight review remains active for build ${pending.id}.`
-    );
-    return 'deferred';
   }
   const query = new URLSearchParams({
     'filter[app]': appId,
@@ -283,6 +346,7 @@ export async function retryDeferredTestFlightReview(apple, appId, config) {
     return 'rejected';
   }
   await distributeTestFlightBuild(apple, appId, build.id, config);
+  await expireSupersededTestFlightBuilds(apple, appId);
   return 'processed';
 }
 
@@ -409,6 +473,7 @@ export async function verifyTestFlight(buildNumber) {
         build.id,
         betaDistributionConfig()
       );
+      await expireSupersededTestFlightBuilds(apple, appId);
       console.log(
         `Verified TestFlight processing and internal testing for build ${buildNumber} (${build.id}).`
       );
