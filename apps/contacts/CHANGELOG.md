@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.24.0](https://github.com/tutur3u/platform/compare/contacts-v0.23.0...contacts-v0.24.0) (2026-09-27)
+
+
+### Features
+
+* **contacts:** automate tutoring scheduling and center policies ([4558b42](https://github.com/tutur3u/platform/commit/4558b426700615c5ca2839d43a658b476ca8ad81)) ([#5574](https://github.com/tutur3u/platform/issues/5574)) ([b5361e8](https://github.com/tutur3u/platform/commit/b5361e83c4975367cca24cccc474f2b463b42af6))
+* **contacts:** draft tutoring content from learning records ([786d7d7](https://github.com/tutur3u/platform/commit/786d7d70dc56fe408ec85de27777f46707b165a3))
+
+
+### Bug Fixes
+
+* **contacts:** refine tutoring shifts and campus planning ([e12c60a](https://github.com/tutur3u/platform/commit/e12c60a71708c2c91b09bad7246c514663748a5f))
+
 ## [0.23.0](https://github.com/tutur3u/platform/compare/contacts-v0.22.0...contacts-v0.23.0) (2026-09-26)
 
 

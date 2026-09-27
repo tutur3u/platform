@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/mobile-v0.14.0...mobile-v0.15.0) (2026-09-27)
+
+
+### Features
+
+* **mobile:** add Apps list and grid views ([d836961](https://github.com/tutur3u/platform/commit/d836961dc6f999b8786dc98c68f36687153ba9a9)) ([#5575](https://github.com/tutur3u/platform/issues/5575)) ([5d72345](https://github.com/tutur3u/platform/commit/5d72345a19b1cae6678b6bf7182b6b9f86571ba0))
+* **mobile:** cache inventory catalog and refine finance overview ([1a0c1ab](https://github.com/tutur3u/platform/commit/1a0c1ab18b7fff2712dfe59b8883e8dbfa2b0b56))
+* **mobile:** cache inventory catalog and wallet checkpoints ([#5564](https://github.com/tutur3u/platform/issues/5564)) ([192df98](https://github.com/tutur3u/platform/commit/192df98a4ee6f2dc4b0b0e70322d67cf74ecdb4d))
+* **mobile:** refine notes and add cross-platform locking ([457d85c](https://github.com/tutur3u/platform/commit/457d85c57ebeed1325623604f1bd0bea891d2772)) ([#5562](https://github.com/tutur3u/platform/issues/5562)) ([fde79d6](https://github.com/tutur3u/platform/commit/fde79d6074fd970fe8964c40669b9d4696fc61e2))
+* **mobile:** simplify assistant mode and chat history controls ([4453d32](https://github.com/tutur3u/platform/commit/4453d323600d336ad3d0378bd3a53a232fd69ac6)) ([#5566](https://github.com/tutur3u/platform/issues/5566)) ([e9f839e](https://github.com/tutur3u/platform/commit/e9f839e43f671059fc3f8fd6d11be84b5cc30a23))
+* **notes:** add archive views and structured editing ([1c78aa2](https://github.com/tutur3u/platform/commit/1c78aa292ebca25660c1ec7464cd6cc02144c82a))
+* **notes:** archive views and structured editing ([#5576](https://github.com/tutur3u/platform/issues/5576)) ([a67b186](https://github.com/tutur3u/platform/commit/a67b186318153cad8b10b71bbfc9335b80d0768a))
+
+
+### Bug Fixes
+
+* **mobile:** gate Mira Live entry on current workspace ([ec83b24](https://github.com/tutur3u/platform/commit/ec83b2481bff9e5da7d5800b6c7e2e70fb9566b5))
+* **mobile:** guard note unlock state and format widgets ([bfd22f1](https://github.com/tutur3u/platform/commit/bfd22f17f853f282b3d28edf5d4852c515e37d4a))
+* **mobile:** keep Apps grid usable at narrow widths ([45db40a](https://github.com/tutur3u/platform/commit/45db40a056038457c421664f06bce9823c49afb9))
+* **mobile:** keep Mira Live scoped and stable across screens ([8aee732](https://github.com/tutur3u/platform/commit/8aee732b14142e6e185384a0e2f9cd2c83864934))
+* **mobile:** refine assistant title and navbar retap ([f9c0b32](https://github.com/tutur3u/platform/commit/f9c0b32d219328cdc30797654342ee63f467217b))
+* **mobile:** simplify Mira Live and require explicit connection ([8100f94](https://github.com/tutur3u/platform/commit/8100f942ab3058100a38ca60f6fdc6ad1953a642)) ([#5573](https://github.com/tutur3u/platform/issues/5573)) ([8d3f52b](https://github.com/tutur3u/platform/commit/8d3f52be217d049ebd35ba003b29eaa79c0696ab))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/mobile-v0.13.1...mobile-v0.14.0) (2026-09-26)
 
 

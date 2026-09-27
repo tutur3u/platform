@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.36.0](https://github.com/tutur3u/platform/compare/ui-v0.35.1...ui-v0.36.0) (2026-09-27)
+
+
+### Features
+
+* **notes:** add archive views and structured editing ([1c78aa2](https://github.com/tutur3u/platform/commit/1c78aa292ebca25660c1ec7464cd6cc02144c82a))
+* **notes:** archive views and structured editing ([#5576](https://github.com/tutur3u/platform/issues/5576)) ([a67b186](https://github.com/tutur3u/platform/commit/a67b186318153cad8b10b71bbfc9335b80d0768a))
+
 ## [0.35.1](https://github.com/tutur3u/platform/compare/ui-v0.35.0...ui-v0.35.1) (2026-09-26)
 
 
