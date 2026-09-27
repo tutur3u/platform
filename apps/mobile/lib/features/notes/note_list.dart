@@ -158,7 +158,9 @@ class _NoteRow extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (note.preview.isNotEmpty || dateLabel.isNotEmpty) ...[
+                if (note.locked ||
+                    note.preview.isNotEmpty ||
+                    dateLabel.isNotEmpty) ...[
                   const SizedBox(height: 3),
                   Text(
                     [

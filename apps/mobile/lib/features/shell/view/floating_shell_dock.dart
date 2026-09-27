@@ -322,8 +322,9 @@ class _DockActionsState extends State<_DockActions> {
                     Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: PopupMenuButton<ShellActionSpec>(
-                        tooltip: MaterialLocalizations.of(context)
-                            .showMenuTooltip,
+                        tooltip: MaterialLocalizations.of(
+                          context,
+                        ).showMenuTooltip,
                         icon: const Icon(Icons.more_horiz),
                         onSelected: (action) => action.onPressed?.call(),
                         itemBuilder: (context) => [

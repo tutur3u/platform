@@ -66,6 +66,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   int _editRevision = 0;
   int _queuedRevision = -1;
   int _requestVersion = 0;
+  int _selectionVersion = 0;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -142,21 +143,30 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   }
 
   Future<void> _select(NoteRecord note) async {
+    final selectionVersion = ++_selectionVersion;
+    final wsId = _wsId;
     var document = note.content;
     String? passphrase;
     if (note.locked) {
       passphrase = await showNotePassphraseSheet(context, create: false);
-      if (passphrase == null || !mounted) return;
+      if (passphrase == null ||
+          !mounted ||
+          selectionVersion != _selectionVersion ||
+          _wsId != wsId) {
+        return;
+      }
       try {
         document = await decryptNoteDocument(note.content, passphrase);
       } on Object {
-        if (mounted) {
+        if (mounted && selectionVersion == _selectionVersion && _wsId == wsId) {
           setState(() => _error = context.l10n.notesIncorrectPassphrase);
         }
         return;
       }
     }
-    if (!mounted) return;
+    if (!mounted || selectionVersion != _selectionVersion || _wsId != wsId) {
+      return;
+    }
     _saveTimer?.cancel();
     _initializingEditor = true;
     _title.text = note.title;
@@ -167,7 +177,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     setState(() {
       _selected = note;
       _selectedPassphrase = passphrase;
-      _selectedWsId = _wsId;
+      _selectedWsId = wsId;
       _error = null;
       _dirty = false;
       _editing = false;
@@ -449,6 +459,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
       listener: (context, state) async {
         final nextWsId = state.currentWorkspace?.id;
         _requestVersion++;
+        _selectionVersion++;
         if (!(await _save()) || !mounted || _wsId != nextWsId) return;
         setState(() {
           _selected = null;
