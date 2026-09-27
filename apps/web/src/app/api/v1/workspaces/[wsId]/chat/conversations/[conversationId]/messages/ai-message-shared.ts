@@ -89,6 +89,61 @@ export async function copyChatAttachmentsToAiResources({
   });
 }
 
+// Native AI chats use a new shadow chat for each turn. Bring a small set of
+// earlier uploads into that turn so references such as "the photo above" can
+// resolve without re-uploading. Old or deleted media must not prevent a new
+// message from being sent.
+export async function copyRecentChatAttachmentsToAiResources({
+  resourceChatId,
+  targetWsId,
+  previousMessages,
+}: {
+  resourceChatId: string;
+  targetWsId: string;
+  previousMessages: ChatMessage[];
+}) {
+  const seenPaths = new Set<string>();
+  let remainingBytes = 25 * 1024 * 1024;
+  let copied = 0;
+  for (const message of [...previousMessages].reverse()) {
+    if (message.kind !== 'user') continue;
+    for (const attachment of message.attachments) {
+      if (copied >= 4) return;
+      const size = attachment.sizeBytes;
+      if (
+        !attachment.storagePath ||
+        seenPaths.has(attachment.storagePath) ||
+        size == null ||
+        size <= 0 ||
+        size > remainingBytes
+      ) {
+        continue;
+      }
+      seenPaths.add(attachment.storagePath);
+      try {
+        await copyAttachmentInputsToAiResources({
+          attachments: [
+            {
+              ...attachment,
+              path: attachment.storagePath,
+              storageWsId: attachment.storageWsId,
+            },
+          ],
+          resourceChatId,
+          targetWsId,
+        });
+        remainingBytes -= size;
+        copied++;
+      } catch (error) {
+        console.warn('Could not restore earlier AI chat media', {
+          resourceChatId,
+          error,
+        });
+      }
+    }
+  }
+}
+
 export async function copyAiChatAttachmentInputsToResources({
   attachments,
   chatId,

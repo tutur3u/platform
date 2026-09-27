@@ -22,6 +22,7 @@ import {
   cleanupNativeAiResources,
   consumeAiResponseTextDeltas,
   copyChatAttachmentsToAiResources,
+  copyRecentChatAttachmentsToAiResources,
   maybeAutoRenameNativeAiConversation,
   NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
   normalizeNativeAiModel,
@@ -82,12 +83,21 @@ export function streamNativeAiConversationResponse({
           userMessage,
         });
 
-        await publishChatRealtimeMessages({
-          actorUserId: auth.user.id,
-          audience: getChatRealtimeAudience(conversation),
-          messages: persistence.messages,
-          wsId: context.normalizedWsId,
-        });
+        try {
+          await publishChatRealtimeMessages({
+            actorUserId: auth.user.id,
+            audience: getChatRealtimeAudience(conversation),
+            messages: persistence.messages,
+            wsId: context.normalizedWsId,
+          });
+        } catch (error) {
+          // Realtime delivery is supplementary. The reply is already saved;
+          // failing the stream here makes the client offer an unnecessary retry.
+          console.warn('Saved AI reply but realtime publish failed', {
+            conversationId: conversation.id,
+            error,
+          });
+        }
         write({ messages: persistence.messages, type: 'messages' });
         write({ type: 'done' });
       } catch (error) {
@@ -180,6 +190,13 @@ export async function sendNativeAiConversationMessages({
       targetWsId: context.normalizedWsId,
       userMessage,
     });
+    await copyRecentChatAttachmentsToAiResources({
+      resourceChatId: shadowChatId,
+      targetWsId: context.normalizedWsId,
+      previousMessages: (privateMessages ?? []).filter(
+        (message) => message.id !== userMessage.id
+      ),
+    });
 
     await maybeAutoRenameNativeAiConversation({
       auth,
@@ -227,11 +244,18 @@ export async function sendNativeAiConversationMessages({
 
     await consumeAiResponseTextDeltas(aiResponse, onDelta, onPart);
 
-    assistantResponse = await getLatestAiAssistantMessage({
-      chatId: shadowChatId,
-      requestId: userMessage.id,
-      supabase: auth.supabase,
-    });
+    // The AI stream can close just before its onFinish persistence callback
+    // becomes visible to this request. A short bounded retry avoids reporting
+    // a failed reply after its text and tool results have already streamed.
+    for (const delayMs of [0, 150, 350, 700]) {
+      if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
+      assistantResponse = await getLatestAiAssistantMessage({
+        chatId: shadowChatId,
+        requestId: userMessage.id,
+        supabase: auth.supabase,
+      });
+      if (assistantResponse) break;
+    }
   }
 
   const assistantContent = getPersistableAssistantContent(assistantResponse);

@@ -515,6 +515,39 @@ describe('native AI chat message route', () => {
     );
   });
 
+  it('finishes a saved streaming reply when assistant realtime delivery fails', async () => {
+    mocks.publishChatRealtimeEvent
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('realtime unavailable'));
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_send_user_message_idempotent') {
+        return { message: userMessage, replayed: false };
+      }
+      if (name === 'chat_get_conversation') return conversation;
+      if (name === 'chat_list_messages') return [userMessage];
+      if (name === 'chat_persist_ai_message_batch_idempotent') {
+        return { messages: [assistantMessage], replayed: false };
+      }
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+
+    const request = createRequest();
+    request.headers.set('accept', 'application/x-ndjson');
+    const { POST } = await import('./route');
+    const response = await POST(request as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(201);
+    const body = await response.text();
+    expect(body).toContain('"type":"messages"');
+    expect(body).toContain('"type":"done"');
+    expect(body).not.toContain('"type":"error"');
+  });
+
   it('returns assistantError when assistant persistence fails after the user message saves', async () => {
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
       if (name === 'chat_send_user_message_idempotent') {
