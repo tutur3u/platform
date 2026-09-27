@@ -17149,6 +17149,126 @@ abstract class AppLocalizations {
   /// **'Set a passphrase to encrypt this note across your devices. Keep it safe: it cannot be recovered.'**
   String get notesLockDescription;
 
+  /// No description provided for @notesDeviceLockDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Face ID or Touch ID for everyday access. A recovery key is stored securely for passkey unlock on another device. You can also transfer access by QR.'**
+  String get notesDeviceLockDescription;
+
+  /// No description provided for @notesPinLockDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a six-digit PIN on this device. Passkey recovery or a phone-to-web QR transfer can unlock it elsewhere.'**
+  String get notesPinLockDescription;
+
+  /// No description provided for @notesPinUnlockDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your six-digit note PIN.'**
+  String get notesPinUnlockDescription;
+
+  /// No description provided for @notesUseDeviceLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Face ID or Touch ID'**
+  String get notesUseDeviceLock;
+
+  /// No description provided for @notesUsePin.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a six-digit PIN'**
+  String get notesUsePin;
+
+  /// No description provided for @notesUsePassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a custom passphrase'**
+  String get notesUsePassphrase;
+
+  /// No description provided for @notesPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Six-digit PIN'**
+  String get notesPin;
+
+  /// No description provided for @notesConfirmPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm PIN'**
+  String get notesConfirmPin;
+
+  /// No description provided for @notesPinRequirements.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the same six-digit PIN twice.'**
+  String get notesPinRequirements;
+
+  /// No description provided for @notesIncorrectPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not unlock this note. Check your PIN or try again shortly.'**
+  String get notesIncorrectPin;
+
+  /// No description provided for @notesDeviceUnlockReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock your private note'**
+  String get notesDeviceUnlockReason;
+
+  /// No description provided for @notesDeviceKeyUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This note was locked on another device. Open it there, or unlock on web with a passkey or phone QR transfer.'**
+  String get notesDeviceKeyUnavailable;
+
+  /// No description provided for @notesPasskeyUnlockFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not unlock with a passkey for this account. Try again or use the original phone.'**
+  String get notesPasskeyUnlockFailed;
+
+  /// No description provided for @notesTransferTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock on web'**
+  String get notesTransferTitle;
+
+  /// No description provided for @notesTransferScanDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the QR code shown on the locked note on web.'**
+  String get notesTransferScanDescription;
+
+  /// No description provided for @notesTransferConfirmDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this note\'s unlock key with {host}?'**
+  String notesTransferConfirmDescription(String host);
+
+  /// No description provided for @notesTransferInvalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'This code does not match the current note.'**
+  String get notesTransferInvalidCode;
+
+  /// No description provided for @notesTransferApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Share unlock key'**
+  String get notesTransferApprove;
+
+  /// No description provided for @notesTransferFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not transfer this note\'s key. Try a new QR code.'**
+  String get notesTransferFailed;
+
+  /// No description provided for @notesTransferOriginalDeviceOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan this code from the phone where the note was locked, or unlock directly with a passkey on web.'**
+  String get notesTransferOriginalDeviceOnly;
+
   /// No description provided for @notesUnlockDescription.
   ///
   /// In en, this message translates to:

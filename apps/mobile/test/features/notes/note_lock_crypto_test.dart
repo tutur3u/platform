@@ -45,4 +45,20 @@ void main() {
     expect(result['type'], 'doc');
     expect(result.toString(), contains('Cross platform'));
   });
+
+  test('device-mode notes retain wrapped recovery without plaintext', () async {
+    const secret = 'a random device key';
+    final encrypted = await encryptNoteDocument(
+      document,
+      secret,
+      deviceOnly: true,
+      recovery: 'server-wrapped-key',
+      lockId: 'lock-1',
+    );
+    expect(isDeviceLockedNote(encrypted), isTrue);
+    expect(lockedNoteEnvelope(encrypted)?['recovery'], 'server-wrapped-key');
+    expect(lockedNoteEnvelope(encrypted)?['lockId'], 'lock-1');
+    expect(encrypted.toString(), isNot(contains('A private note')));
+    expect(await decryptNoteDocument(encrypted, secret), document);
+  });
 }

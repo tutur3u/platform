@@ -27,7 +27,17 @@ import { getFinanceAppOrigin } from '@/lib/finance-app-url';
 import { getMeetAppOrigin } from '@/lib/meet-app-url';
 import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import { NoteEntityPicker } from './note-entity-picker';
-import { decryptNote, encryptNote, noteLockEnvelope } from './note-lock';
+import {
+  recoverNoteKeyWithPasskey,
+  transferNoteKey,
+} from './note-key-transfer';
+import {
+  decryptNote,
+  encryptNote,
+  isDeviceLockedNote,
+  noteLockEnvelope,
+} from './note-lock';
+import { NoteLockPlaceholder } from './note-lock-placeholder';
 import { NotePassphraseDialog } from './note-passphrase-dialog';
 import { NoteTaskConversionDialog } from './note-task-conversion-dialog';
 
@@ -78,6 +88,10 @@ export function NotesClient({ wsId }: { wsId: string }) {
   const [taskSelectionError, setTaskSelectionError] = useState(false);
   const [lockedNote, setLockedNote] = useState<WorkspaceNote | null>(null);
   const [lockDialog, setLockDialog] = useState<'lock' | 'open' | null>(null);
+  const [recovering, setRecovering] = useState(false);
+  const [recoveryError, setRecoveryError] = useState(false);
+  const [transferQr, setTransferQr] = useState<string | null>(null);
+  const transferToken = useRef(0);
   const passphraseRef = useRef<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editorRef = useRef<Editor | null>(null);
@@ -112,6 +126,18 @@ export function NotesClient({ wsId }: { wsId: string }) {
       const storedContent = lockedNote
         ? await encryptNote(draft.content, passphraseRef.current ?? '')
         : draft.content;
+      const recovery = noteLockEnvelope(lockedNote?.content)?.recovery;
+      if (lockedNote && recovery && isDeviceLockedNote(lockedNote.content)) {
+        (storedContent as JSONContent).attrs = {
+          ...(storedContent as JSONContent).attrs,
+          tuturuuuLock: {
+            ...noteLockEnvelope(storedContent),
+            mode: 'device',
+            recovery,
+            lockId: noteLockEnvelope(lockedNote.content)?.lockId,
+          },
+        };
+      }
       return updateWorkspaceNote(wsId, draft.id, {
         title: draft.title,
         content: storedContent as Record<string, unknown>,
@@ -161,13 +187,18 @@ export function NotesClient({ wsId }: { wsId: string }) {
     setSelectedId(note.id);
     setTitle(note.title ?? '');
     passphraseRef.current = null;
+    setRecoveryError(false);
+    setTransferQr(null);
+    transferToken.current++;
     setLockedNote(noteLockEnvelope(note.content) ? note : null);
     setContent(
       noteLockEnvelope(note.content)
         ? emptyDoc
         : ((note.content as JSONContent) ?? emptyDoc)
     );
-    if (noteLockEnvelope(note.content)) setLockDialog('open');
+    if (noteLockEnvelope(note.content) && !isDeviceLockedNote(note.content)) {
+      setLockDialog('open');
+    }
   };
 
   const createNote = async () => {
@@ -241,6 +272,45 @@ export function NotesClient({ wsId }: { wsId: string }) {
       }
     }
     return false;
+  };
+
+  const recoverWithPasskey = async () => {
+    if (!lockedNote || recovering) return;
+    setRecovering(true);
+    setRecoveryError(false);
+    try {
+      const secret = await recoverNoteKeyWithPasskey(wsId, lockedNote.id);
+      const decoded = await decryptNote(lockedNote.content, secret);
+      passphraseRef.current = secret;
+      setContent(decoded);
+    } catch {
+      setRecoveryError(true);
+    } finally {
+      setRecovering(false);
+    }
+  };
+
+  const unlockWithPhone = async () => {
+    if (!lockedNote || transferQr) return;
+    const selectedNote = lockedNote;
+    const token = ++transferToken.current;
+    setRecoveryError(false);
+    try {
+      const secret = await transferNoteKey({
+        wsId,
+        noteId: selectedNote.id,
+        onQr: setTransferQr,
+        isCancelled: () => token !== transferToken.current,
+      });
+      if (!secret || token !== transferToken.current) return;
+      const decoded = await decryptNote(selectedNote.content, secret);
+      passphraseRef.current = secret;
+      setContent(decoded);
+    } catch {
+      if (token === transferToken.current) setRecoveryError(true);
+    } finally {
+      if (token === transferToken.current) setTransferQr(null);
+    }
   };
 
   const removeLock = async () => {
@@ -535,16 +605,29 @@ export function NotesClient({ wsId }: { wsId: string }) {
                   />
                 </div>
               ) : (
-                <div className="flex min-h-96 flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
-                  <Lock className="size-6" />
-                  <p>{t('locked_preview')}</p>
-                  <Button
-                    variant="outline"
-                    onClick={() => setLockDialog('open')}
-                  >
-                    {t('open_locked')}
-                  </Button>
-                </div>
+                <NoteLockPlaceholder
+                  deviceLocked={isDeviceLockedNote(lockedNote.content)}
+                  recovering={recovering}
+                  transferQr={transferQr}
+                  recoveryError={recoveryError}
+                  labels={{
+                    devicePreview: t('device_locked_preview'),
+                    lockedPreview: t('locked_preview'),
+                    passkey: t('recover_with_passkey'),
+                    phone: t('unlock_with_phone'),
+                    scanQr: t('scan_transfer_qr'),
+                    cancelTransfer: t('cancel_transfer'),
+                    recoveryError: t('recovery_error'),
+                    openLocked: t('open_locked'),
+                  }}
+                  onPasskey={() => void recoverWithPasskey()}
+                  onPhone={() => void unlockWithPhone()}
+                  onCancelTransfer={() => {
+                    transferToken.current++;
+                    setTransferQr(null);
+                  }}
+                  onPassphrase={() => setLockDialog('open')}
+                />
               )}
             </div>
           ) : (

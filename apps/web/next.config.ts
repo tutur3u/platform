@@ -126,14 +126,20 @@ const nextConfig = createTuturuuuNextConfig({
   },
   async headers() {
     return [
-      '/login',
-      '/:locale/login',
-      '/add-account',
-      '/:locale/add-account',
-    ].map((source) => ({
-      source,
-      headers: authShellHeaders,
-    }));
+      {
+        source: '/.well-known/apple-app-site-association',
+        headers: [{ key: 'Content-Type', value: 'application/json' }],
+      },
+      ...[
+        '/login',
+        '/:locale/login',
+        '/add-account',
+        '/:locale/add-account',
+      ].map((source) => ({
+        source,
+        headers: authShellHeaders,
+      })),
+    ];
   },
   async rewrites() {
     return {

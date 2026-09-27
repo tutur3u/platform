@@ -1,4 +1,11 @@
 {
+  "webcredentials": {
+    "apps": [
+      "8H6TTBD6T8.com.tuturuuu.app.mobile",
+      "8H6TTBD6T8.com.tuturuuu.app.mobile.stg",
+      "8H6TTBD6T8.com.tuturuuu.app.mobile.dev"
+    ]
+  },
   "applinks": {
     "details": [
       {

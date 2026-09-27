@@ -10,6 +10,16 @@
       "targetOwner": "rust-backend",
       "note": "First-class Notes update, archive and delete use creator-scoped membership checks and mobile app-session auth. Rust parity pending."
     },
+    "api:/api/v1/workspaces/:wsId/notes/:noteId/recovery:apps/web/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/recovery/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Creator-scoped wrapped note key creation and recent verified passkey recovery. Rust parity pending."
+    },
+    "api:/api/v1/workspaces/:wsId/notes/:noteId/transfer:apps/web/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/transfer/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Creator-scoped short-lived sealed key relay for phone-to-web QR transfer. Rust parity pending."
+    },
     "page:/:locale/:wsId/notes:apps/web/src/app/[locale]/(dashboard)/[wsId]/notes/page.tsx": {
       "status": "legacy-next",
       "targetOwner": "tanstack-start",

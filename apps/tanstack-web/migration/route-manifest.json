@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 520,
+        "legacyNext": 522,
         "migrated": 62,
-        "percentComplete": 12.46,
-        "remaining": 520,
+        "percentComplete": 12.42,
+        "remaining": 522,
         "terminal": 74,
-        "total": 594,
+        "total": 596,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 530,
+        "legacyNext": 532,
         "migrated": 67,
-        "percentComplete": 12.97,
-        "remaining": 530,
+        "percentComplete": 12.93,
+        "remaining": 532,
         "terminal": 79,
-        "total": 609,
+        "total": 611,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 607,
+      "legacyNext": 609,
       "migrated": 215,
-      "percentComplete": 27.39,
-      "remaining": 607,
+      "percentComplete": 27.33,
+      "remaining": 609,
       "terminal": 229,
-      "total": 836,
+      "total": 838,
       "unknownStatus": 0
     }
   },
@@ -3934,6 +3934,24 @@
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/notes/:noteId/convert-to-project",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/notes/[noteId]/convert-to-project/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/notes/:noteId/recovery:apps/web/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/recovery/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/notes/:noteId/recovery",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/recovery/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/notes/:noteId/transfer:apps/web/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/transfer/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/notes/:noteId/transfer",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/transfer/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7967,20 +7985,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 594,
+    "apiRoutes": 596,
     "cronRoutes": 10,
     "layouts": 67,
     "pages": 156,
-    "routeHandlers": 609,
+    "routeHandlers": 611,
     "methodCounts": {
-      "GET": 306,
+      "GET": 308,
       "HEAD": 7,
-      "POST": 300,
+      "POST": 302,
       "PUT": 55,
       "PATCH": 63,
       "DELETE": 100,
       "OPTIONS": 23
     },
-    "total": 836
+    "total": 838
   }
 }
