@@ -1,5 +1,8 @@
 // @vitest-environment node
-import { EASY_CENTER_TUTORING_POLICY } from '@tuturuuu/internal-api/tutoring-policy';
+import {
+  EASY_CENTER_TUTORING_POLICY,
+  readTutoringPolicyConfigRows,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const wsId = '5d23287f-9094-4714-b8e0-dcce877464a0';
@@ -10,8 +13,13 @@ const mocks = vi.hoisted(() => ({
 const query = {
   select: vi.fn(() => query),
   eq: vi.fn(() => query),
-  maybeSingle: vi.fn(async () => ({ data: null, error: null })),
-  upsert: vi.fn(async (_value: { value: string }) => ({ error: null })),
+  like: vi.fn(async () => ({ data: [], error: null })),
+  upsert: vi.fn(
+    async (
+      _rows: { id: string; value: string; ws_id: string }[],
+      _options?: { onConflict: string }
+    ) => ({ error: null })
+  ),
 };
 
 vi.mock('next/server', () => ({
@@ -80,10 +88,14 @@ describe('tutoring policy API', () => {
     const response = await request('PUT', EASY_CENTER_TUTORING_POLICY);
     expect(response.status).toBe(200);
     expect(query.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ ws_id: wsId })
+      expect.arrayContaining([expect.objectContaining({ ws_id: wsId })]),
+      { onConflict: 'ws_id,id' }
     );
-    const saved = query.upsert.mock.calls[0]?.[0];
-    expect(JSON.parse(saved?.value ?? '{}')).toMatchObject(
+    const saved = query.upsert.mock.calls[0]?.[0] ?? [];
+    expect(
+      saved.every((row: { value: string }) => row.value.length <= 1000)
+    ).toBe(true);
+    expect(readTutoringPolicyConfigRows(saved)).toMatchObject(
       EASY_CENTER_TUTORING_POLICY
     );
   });

@@ -1,6 +1,7 @@
 import {
   parseTutoringPolicy,
-  readTutoringPolicy,
+  readTutoringPolicyConfigRows,
+  serializeTutoringPolicyConfigRows,
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -29,10 +30,9 @@ export async function GET(request: Request, { params }: Params) {
   const admin = await createAdminClient();
   const { data, error } = await admin
     .from('workspace_configs')
-    .select('value')
+    .select('id,value')
     .eq('ws_id', normalizedWsId)
-    .eq('id', TUTORING_POLICY_CONFIG_ID)
-    .maybeSingle();
+    .like('id', `${TUTORING_POLICY_CONFIG_ID}%`);
   if (error) {
     console.error('Failed to load tutoring policy', error);
     return NextResponse.json(
@@ -43,8 +43,10 @@ export async function GET(request: Request, { params }: Params) {
 
   return NextResponse.json(
     {
-      policy: readTutoringPolicy(data?.value),
-      isConfigured: Boolean(data?.value),
+      policy: readTutoringPolicyConfigRows(data ?? []),
+      isConfigured: Boolean(
+        data?.some((row) => row.id === TUTORING_POLICY_CONFIG_ID)
+      ),
     },
     { headers: { 'Cache-Control': 'private, no-store' } }
   );
@@ -78,12 +80,15 @@ export async function PUT(request: Request, { params }: Params) {
     );
 
   const admin = await createAdminClient();
-  const { error } = await admin.from('workspace_configs').upsert({
-    id: TUTORING_POLICY_CONFIG_ID,
-    ws_id: normalizedWsId,
-    value: JSON.stringify(policy),
-    updated_at: new Date().toISOString(),
-  });
+  const updatedAt = new Date().toISOString();
+  const { error } = await admin.from('workspace_configs').upsert(
+    serializeTutoringPolicyConfigRows(policy).map((row) => ({
+      ...row,
+      ws_id: normalizedWsId,
+      updated_at: updatedAt,
+    })),
+    { onConflict: 'ws_id,id' }
+  );
   if (error) {
     console.error('Failed to save tutoring policy', error);
     return NextResponse.json(

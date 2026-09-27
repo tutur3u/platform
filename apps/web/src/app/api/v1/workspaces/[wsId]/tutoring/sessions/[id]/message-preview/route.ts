@@ -1,6 +1,6 @@
 import {
   getTutoringCampus,
-  readTutoringPolicy,
+  readTutoringPolicyConfigRows,
   renderTutoringParentMessage,
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
@@ -112,10 +112,9 @@ export async function POST(request: Request, { params }: Params) {
         : Promise.resolve({ data: null, error: null }),
       sbAdmin
         .from('workspace_configs')
-        .select('value')
+        .select('id,value')
         .eq('ws_id', normalizedWsId)
-        .eq('id', TUTORING_POLICY_CONFIG_ID)
-        .maybeSingle(),
+        .like('id', `${TUTORING_POLICY_CONFIG_ID}%`),
     ]);
 
   if (
@@ -144,7 +143,7 @@ export async function POST(request: Request, { params }: Params) {
   const group = groupResult.data;
   const studentName = displayName(student);
 
-  const policy = readTutoringPolicy(policyResult.data?.value);
+  const policy = readTutoringPolicyConfigRows(policyResult.data ?? []);
   const preview = renderTutoringParentMessage(policy.parentMessageTemplate, {
     campus:
       getTutoringCampus(policy, data.group_id, group?.name) ?? 'Chưa xác định',

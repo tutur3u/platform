@@ -1,5 +1,5 @@
 import {
-  readTutoringPolicy,
+  readTutoringPolicyConfigRows,
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -162,10 +162,9 @@ async function getTutoringData(request: Request, { params }: Params) {
 
   const policyQuery = sbAdmin
     .from('workspace_configs')
-    .select('value')
+    .select('id,value')
     .eq('ws_id', normalizedWsId)
-    .eq('id', TUTORING_POLICY_CONFIG_ID)
-    .maybeSingle();
+    .like('id', `${TUTORING_POLICY_CONFIG_ID}%`);
 
   // These reads are independent; the queue should wait for one database round
   // trip rather than stacking four round trips in series.
@@ -192,7 +191,7 @@ async function getTutoringData(request: Request, { params }: Params) {
   const attendanceRows = attendanceResult.data;
   const reservedRows = reservedResult.data;
   const feedbackRows = feedbackResult.data;
-  const policy = readTutoringPolicy(policyResult.data?.value);
+  const policy = readTutoringPolicyConfigRows(policyResult.data ?? []);
   const reassessmentDays = policy.reassessmentDays;
   const absenceCutoff = new Date(
     Date.now() - policy.absenceLookbackDays * 86_400_000

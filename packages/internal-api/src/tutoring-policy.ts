@@ -1,4 +1,6 @@
 export const TUTORING_POLICY_CONFIG_ID = 'TUTORING_POLICY';
+export const TUTORING_POLICY_PART_PREFIX = 'TUTORING_POLICY_PART_';
+const CONFIG_VALUE_LIMIT = 900;
 
 export interface TutoringTimeRule {
   /** JavaScript weekday: Sunday is 0. */
@@ -257,6 +259,69 @@ export function readTutoringPolicy(value: string | null | undefined) {
   } catch {
     return STANDARD_TUTORING_POLICY;
   }
+}
+
+export interface TutoringPolicyConfigRow {
+  id: string;
+  value: string;
+}
+
+/** Each workspace config value is limited to 1,000 characters in production. */
+export function serializeTutoringPolicyConfigRows(policy: TutoringPolicy) {
+  const json = JSON.stringify(policy);
+  const chunks: TutoringPolicyConfigRow[] = [];
+  for (let index = 0; index < json.length; ) {
+    let end = Math.min(index + CONFIG_VALUE_LIMIT, json.length);
+    const lastCodeUnit = json.charCodeAt(end - 1);
+    if (end < json.length && lastCodeUnit >= 0xd800 && lastCodeUnit <= 0xdbff)
+      end -= 1;
+    chunks.push({
+      id: `${TUTORING_POLICY_PART_PREFIX}${chunks.length}`,
+      value: json.slice(index, end),
+    });
+    index = end;
+  }
+  return [
+    {
+      id: TUTORING_POLICY_CONFIG_ID,
+      value: JSON.stringify({
+        format: 'chunks-v1',
+        parts: chunks.length,
+        reassessmentDays: policy.reassessmentDays,
+        absenceLookbackDays: policy.absenceLookbackDays,
+      }),
+    },
+    ...chunks,
+  ];
+}
+
+export function readTutoringPolicyConfigRows(rows: TutoringPolicyConfigRow[]) {
+  const values = new Map(rows.map((row) => [row.id, row.value]));
+  const base = values.get(TUTORING_POLICY_CONFIG_ID);
+  if (!base) return STANDARD_TUTORING_POLICY;
+  try {
+    const marker: unknown = JSON.parse(base);
+    if (
+      marker &&
+      typeof marker === 'object' &&
+      'format' in marker &&
+      marker.format === 'chunks-v1' &&
+      'parts' in marker &&
+      Number.isInteger(marker.parts) &&
+      Number(marker.parts) >= 1 &&
+      Number(marker.parts) <= 100
+    ) {
+      const chunks = Array.from({ length: Number(marker.parts) }, (_, index) =>
+        values.get(`${TUTORING_POLICY_PART_PREFIX}${index}`)
+      );
+      if (chunks.some((chunk) => chunk === undefined))
+        return STANDARD_TUTORING_POLICY;
+      return readTutoringPolicy(chunks.join(''));
+    }
+  } catch {
+    return STANDARD_TUTORING_POLICY;
+  }
+  return readTutoringPolicy(base);
 }
 
 export function renderTutoringParentMessage(

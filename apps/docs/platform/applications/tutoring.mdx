@@ -131,8 +131,11 @@ before saving; content is never invented from a class title or an unrelated
 lesson.
 
 Policies are validated at `GET/PUT /api/v1/workspaces/{wsId}/tutoring/policy`
-and stored under `TUTORING_POLICY` in `workspace_configs`. Unset or malformed
-values safely use the standard preset. Existing workspaces need no migration.
+and stored under `TUTORING_POLICY` with bounded `TUTORING_POLICY_PART_*` rows in
+`workspace_configs`. The table enforces a 1,000-character limit per value, so
+the policy API writes all chunks in one upsert and readers reconstruct the
+validated policy. Unset or malformed values safely use the standard preset.
+Existing workspaces need no migration.
 
 ## Exports
 
