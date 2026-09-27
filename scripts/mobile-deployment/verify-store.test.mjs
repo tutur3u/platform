@@ -8,6 +8,7 @@ import test from 'node:test';
 import {
   distributeTestFlightBuild,
   expireSupersededTestFlightBuilds,
+  isBetaReviewSubmissionLimit,
   latestReadyTestFlightBuild,
   playReleaseReady,
   retryDeferredTestFlightReview,
@@ -43,6 +44,51 @@ test('store API errors expose bounded codes without account details', () => {
       ],
     }),
     ''
+  );
+});
+
+test('only the Apple beta review submission quota defers external review', async () => {
+  const payload = {
+    errors: [{ code: 'ENTITY_UNPROCESSABLE.SUBMISSION_LIMIT_REACHED' }],
+  };
+  assert.equal(
+    isBetaReviewSubmissionLimit('/v1/betaAppReviewSubmissions', payload),
+    true
+  );
+  assert.equal(isBetaReviewSubmissionLimit('/v1/builds', payload), false);
+  assert.equal(
+    isBetaReviewSubmissionLimit('/v1/betaAppReviewSubmissions', {
+      errors: [{ code: 'ENTITY_ERROR.ATTRIBUTE.REQUIRED' }],
+    }),
+    false
+  );
+
+  const apple = async (path, options = {}) => {
+    if (path === '/v1/betaAppReviewSubmissions') {
+      assert.equal(options.method, 'POST');
+      const error = new Error('Apple beta review quota reached');
+      error.betaReviewQuotaReached = true;
+      throw error;
+    }
+    if (path.startsWith('/v1/betaAppReviewSubmissions?')) return { data: [] };
+    if (path === '/v1/builds/new-build?include=preReleaseVersion') {
+      return {
+        data: {
+          relationships: { preReleaseVersion: { data: { id: 'version' } } },
+        },
+      };
+    }
+    if (path.includes('betaReviewState%5D=')) return { data: [] };
+    if (path.endsWith('/betaBuildLocalizations?limit=200')) {
+      return { data: [{ attributes: { locale: 'en-US' } }] };
+    }
+    if (path.endsWith('/buildBetaDetail')) return { data: { id: 'detail' } };
+    if (path === '/v1/buildBetaDetails/detail') return { data: {} };
+    throw new Error(`Unexpected App Store Connect request: ${path}`);
+  };
+  assert.equal(
+    await submitExternalBetaReview(apple, 'app', 'new-build', 'Test latest'),
+    'deferred'
   );
 });
 

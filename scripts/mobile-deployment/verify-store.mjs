@@ -31,11 +31,26 @@ async function json(url, options = {}) {
     // and JSON pointers, never titles, details, or request bodies.
     const payload = await response.json().catch(() => null);
     const diagnostic = storeApiErrorDiagnostic(payload);
-    throw new Error(
+    const error = new Error(
       `Store API request failed (${response.status}, ${new URL(url).pathname}${diagnostic ? `; ${diagnostic}` : ''})`
     );
+    error.betaReviewQuotaReached = isBetaReviewSubmissionLimit(
+      new URL(url).pathname,
+      payload
+    );
+    throw error;
   }
   return response.status === 204 ? null : response.json();
+}
+
+export function isBetaReviewSubmissionLimit(pathname, payload) {
+  return (
+    pathname === '/v1/betaAppReviewSubmissions' &&
+    Array.isArray(payload?.errors) &&
+    payload.errors.some(
+      (error) => error?.code === 'ENTITY_UNPROCESSABLE.SUBMISSION_LIMIT_REACHED'
+    )
+  );
 }
 
 export function storeApiErrorDiagnostic(payload) {
@@ -162,7 +177,17 @@ export async function distributeTestFlightBuild(apple, appId, buildId, config) {
     );
   }
   if (selected.some((group) => group.attributes?.isInternalGroup === false)) {
-    await submitExternalBetaReview(apple, appId, buildId, config.whatsNew);
+    const reviewState = await submitExternalBetaReview(
+      apple,
+      appId,
+      buildId,
+      config.whatsNew
+    );
+    if (reviewState === 'deferred') {
+      console.log(
+        'Internal TestFlight testing is available; external testers must wait for beta review.'
+      );
+    }
   }
   console.log(
     `Verified TestFlight build ${buildId} in ${selected.length} beta group(s): ${selected.map((group) => group.attributes?.name ?? group.id).join(', ')}.`
@@ -244,15 +269,23 @@ export async function submitExternalBetaReview(
         },
       }),
     });
-    await apple('/v1/betaAppReviewSubmissions', {
-      method: 'POST',
-      body: JSON.stringify({
-        data: {
-          type: 'betaAppReviewSubmissions',
-          relationships: { build: { data: { type: 'builds', id: buildId } } },
-        },
-      }),
-    });
+    try {
+      await apple('/v1/betaAppReviewSubmissions', {
+        method: 'POST',
+        body: JSON.stringify({
+          data: {
+            type: 'betaAppReviewSubmissions',
+            relationships: { build: { data: { type: 'builds', id: buildId } } },
+          },
+        }),
+      });
+    } catch (error) {
+      if (!error?.betaReviewQuotaReached) throw error;
+      console.log(
+        `External TestFlight review deferred for build ${buildId}; Apple's beta review submission limit is reached. The review queue will retry.`
+      );
+      return 'deferred';
+    }
   }
   const confirmed = await apple(path);
   const state = confirmed.data?.[0]?.attributes?.betaReviewState;
