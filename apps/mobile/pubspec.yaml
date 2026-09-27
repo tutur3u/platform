@@ -15,6 +15,7 @@ dependencies:
   cloudflare_turnstile: ^3.6.2
   connectivity_plus: ^7.3.0
   crypto: ^3.0.7
+  cryptography: ^2.9.0
   cupertino_icons: ^1.0.9
   dart_quill_delta: ^10.8.3
   device_info_plus: ^13.2.0

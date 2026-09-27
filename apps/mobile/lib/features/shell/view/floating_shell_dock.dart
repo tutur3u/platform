@@ -257,7 +257,10 @@ class _DockActionsState extends State<_DockActions> {
                   .resolveForLocation(widget.location)
                   .where((a) => a.inDock)
                   .toList();
-        final visibleCount = MediaQuery.sizeOf(context).width >= 840 ? 2 : 1;
+        // Two compact actions fit beside the flexible navigation on a phone.
+        // Keep both primary and secondary actions one tap away (for example,
+        // Search and New note) instead of hiding the latter behind a menu.
+        final visibleCount = MediaQuery.sizeOf(context).width >= 320 ? 2 : 1;
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -319,9 +322,8 @@ class _DockActionsState extends State<_DockActions> {
                     Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: PopupMenuButton<ShellActionSpec>(
-                        tooltip: MaterialLocalizations.of(
-                          context,
-                        ).showMenuTooltip,
+                        tooltip: MaterialLocalizations.of(context)
+                            .showMenuTooltip,
                         icon: const Icon(Icons.more_horiz),
                         onSelected: (action) => action.onPressed?.call(),
                         itemBuilder: (context) => [

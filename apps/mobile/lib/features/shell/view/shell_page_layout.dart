@@ -533,6 +533,7 @@ extension _ShellPageLayout on _ShellPageState {
           key: const ValueKey('shell-search-query'),
           controller: searchAction.searchController,
           autofocus: true,
+          textAlignVertical: TextAlignVertical.center,
           onChanged: searchAction.onSearchChanged,
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
@@ -540,6 +541,8 @@ extension _ShellPageLayout on _ShellPageState {
             prefixIcon: const Icon(Icons.search_rounded),
             border: InputBorder.none,
             isDense: true,
+            contentPadding: EdgeInsets.zero,
+            prefixIconConstraints: const BoxConstraints(minWidth: 36),
           ),
         ),
       );

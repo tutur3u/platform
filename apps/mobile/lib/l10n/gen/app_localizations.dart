@@ -17041,6 +17041,96 @@ abstract class AppLocalizations {
   /// **'Notes'**
   String get notesTitle;
 
+  /// No description provided for @notesToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get notesToday;
+
+  /// No description provided for @notesYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get notesYesterday;
+
+  /// No description provided for @notesPrevious7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous 7 days'**
+  String get notesPrevious7Days;
+
+  /// No description provided for @notesPrevious30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous 30 days'**
+  String get notesPrevious30Days;
+
+  /// No description provided for @notesOlder.
+  ///
+  /// In en, this message translates to:
+  /// **'Older'**
+  String get notesOlder;
+
+  /// No description provided for @notesLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked note'**
+  String get notesLocked;
+
+  /// No description provided for @notesLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock note'**
+  String get notesLock;
+
+  /// No description provided for @notesUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove lock'**
+  String get notesUnlock;
+
+  /// No description provided for @notesOpenLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Open locked note'**
+  String get notesOpenLocked;
+
+  /// No description provided for @notesLockDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a passphrase to encrypt this note across your devices. Keep it safe: it cannot be recovered.'**
+  String get notesLockDescription;
+
+  /// No description provided for @notesUnlockDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the note passphrase to view its content.'**
+  String get notesUnlockDescription;
+
+  /// No description provided for @notesPassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Passphrase'**
+  String get notesPassphrase;
+
+  /// No description provided for @notesConfirmPassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm passphrase'**
+  String get notesConfirmPassphrase;
+
+  /// No description provided for @notesPassphraseRequirements.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least 8 characters and enter matching passphrases.'**
+  String get notesPassphraseRequirements;
+
+  /// No description provided for @notesIncorrectPassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not unlock this note. Check the passphrase.'**
+  String get notesIncorrectPassphrase;
+
   /// No description provided for @notesNew.
   ///
   /// In en, this message translates to:

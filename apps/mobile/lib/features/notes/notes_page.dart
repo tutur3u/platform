@@ -13,6 +13,8 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/notes/note_editor.dart';
 import 'package:mobile/features/notes/note_link_picker_sheet.dart';
 import 'package:mobile/features/notes/note_list.dart';
+import 'package:mobile/features/notes/note_lock_crypto.dart';
+import 'package:mobile/features/notes/note_passphrase_sheet.dart';
 import 'package:mobile/features/notes/note_repository.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -28,6 +30,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:url_launcher/url_launcher.dart';
 
 part 'notes_page_links.dart';
+part 'notes_page_lock.dart';
 
 class NotesPage extends StatefulWidget {
   const NotesPage({super.key, this.repository});
@@ -50,6 +53,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   List<NoteRecord> _notes = const [];
   NoteRecord? _selected;
   String? _selectedWsId;
+  String? _selectedPassphrase;
   String? _error;
   bool _loading = false;
   bool _saving = false;
@@ -66,6 +70,8 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
 
+  void _updateState(VoidCallback change) => setState(change);
+
   @override
   void initState() {
     super.initState();
@@ -79,9 +85,11 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) unawaited(_refresh());
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.inactive) {
       unawaited(_save());
+    }
+    if (state == AppLifecycleState.paused) {
+      unawaited(_clearUnlockedNoteOnBackground());
     }
   }
 
@@ -133,17 +141,34 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     }
   }
 
-  void _select(NoteRecord note) {
+  Future<void> _select(NoteRecord note) async {
+    var document = note.content;
+    String? passphrase;
+    if (note.locked) {
+      passphrase = await showNotePassphraseSheet(context, create: false);
+      if (passphrase == null || !mounted) return;
+      try {
+        document = await decryptNoteDocument(note.content, passphrase);
+      } on Object {
+        if (mounted) {
+          setState(() => _error = context.l10n.notesIncorrectPassphrase);
+        }
+        return;
+      }
+    }
+    if (!mounted) return;
     _saveTimer?.cancel();
     _initializingEditor = true;
     _title.text = note.title;
-    _editor.document = tipTapJsonToQuillDocument(jsonEncode(note.content));
+    _editor.document = tipTapJsonToQuillDocument(jsonEncode(document));
     _lastTitle = _title.text;
     _lastDocument = jsonEncode(_editor.document.toDelta().toJson());
     _initializingEditor = false;
     setState(() {
       _selected = note;
+      _selectedPassphrase = passphrase;
       _selectedWsId = _wsId;
+      _error = null;
       _dirty = false;
       _editing = false;
       _editor.readOnly = true;
@@ -171,24 +196,38 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
     );
   }
 
-  Future<bool> _save() {
+  Future<bool> _save() async {
     _saveTimer?.cancel();
     final wsId = _selectedWsId;
     final note = _selected;
-    if (!_dirty || wsId == null || note == null) return _saveQueue;
-    if (_queuedRevision == _editRevision) return _saveQueue;
+    if (!_dirty || wsId == null || note == null) return await _saveQueue;
+    if (_queuedRevision == _editRevision) return await _saveQueue;
     final encoded = quillDocumentToTipTapJson(_editor.document);
-    final content = encoded == null
+    var content = encoded == null
         ? <String, dynamic>{'type': 'doc', 'content': <Object>[]}
         : (jsonDecode(encoded) as Map).cast<String, dynamic>();
     final title = _title.text.trim();
     final revision = _editRevision;
     _queuedRevision = revision;
+    if (note.locked) {
+      final passphrase = _selectedPassphrase;
+      if (passphrase == null) {
+        _queuedRevision = -1;
+        return false;
+      }
+      try {
+        content = await encryptNoteDocument(content, passphrase);
+      } on Object {
+        _queuedRevision = -1;
+        if (mounted) setState(() => _error = context.l10n.notesSaveError);
+        return false;
+      }
+    }
     final next = _saveQueue.then(
       (_) => _performSave(wsId, note, title, content, revision),
     );
     _saveQueue = next.catchError((Object _) => false);
-    return next;
+    return await next;
   }
 
   Future<bool> _performSave(
@@ -267,7 +306,8 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
       final note = await _repository.create(wsId);
       if (!mounted || _wsId != wsId) return;
       setState(() => _notes = [note, ..._notes]);
-      _select(note);
+      await _select(note);
+      if (!mounted) return;
       setState(() {
         _editing = true;
         _editor.readOnly = false;
@@ -289,6 +329,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
       setState(() {
         _notes = _notes.where((item) => item.id != note.id).toList();
         _selected = null;
+        _selectedPassphrase = null;
         _editing = false;
       });
       unawaited(_refresh());
@@ -334,6 +375,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
       setState(() {
         _notes = _notes.where((item) => item.id != note.id).toList();
         _selected = null;
+        _selectedPassphrase = null;
         _editing = false;
         _dirty = false;
         _error = null;
@@ -356,6 +398,21 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
+              leading: Icon(
+                _selected?.locked == true
+                    ? Icons.lock_open_rounded
+                    : Icons.lock_outline_rounded,
+              ),
+              title: Text(
+                _selected?.locked == true
+                    ? sheetContext.l10n.notesUnlock
+                    : sheetContext.l10n.notesLock,
+              ),
+              onTap: () => Navigator.of(
+                sheetContext,
+              ).pop(_selected?.locked == true ? 'unlock' : 'lock'),
+            ),
+            ListTile(
               leading: const Icon(Icons.archive_outlined),
               title: Text(sheetContext.l10n.notesArchive),
               onTap: () => Navigator.of(sheetContext).pop('archive'),
@@ -370,6 +427,8 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
       ),
     );
     if (!mounted) return;
+    if (action == 'lock') await _lock();
+    if (action == 'unlock') await _removeLock();
     if (action == 'archive') await _archive();
     if (action == 'delete') await _delete();
   }
@@ -393,6 +452,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
         if (!(await _save()) || !mounted || _wsId != nextWsId) return;
         setState(() {
           _selected = null;
+          _selectedPassphrase = null;
           _selectedWsId = null;
           _dirty = false;
           _editing = false;
@@ -435,6 +495,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                       if (mounted) {
                         setState(() {
                           _selected = null;
+                          _selectedPassphrase = null;
                           _editing = false;
                         });
                       }
@@ -569,7 +630,9 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                                                             item.id == note.id,
                                                       )
                                                       .firstOrNull;
-                                                  _select(current ?? note);
+                                                  await _select(
+                                                    current ?? note,
+                                                  );
                                                 }
                                               },
                                             ),

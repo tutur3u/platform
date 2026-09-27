@@ -8863,6 +8863,51 @@ class AppLocalizationsVi extends AppLocalizations {
   String get notesTitle => 'Ghi chú';
 
   @override
+  String get notesToday => 'Hôm nay';
+
+  @override
+  String get notesYesterday => 'Hôm qua';
+
+  @override
+  String get notesPrevious7Days => '7 ngày trước';
+
+  @override
+  String get notesPrevious30Days => '30 ngày trước';
+
+  @override
+  String get notesOlder => 'Cũ hơn';
+
+  @override
+  String get notesLocked => 'Ghi chú đã khóa';
+
+  @override
+  String get notesLock => 'Khóa ghi chú';
+
+  @override
+  String get notesUnlock => 'Bỏ khóa';
+
+  @override
+  String get notesOpenLocked => 'Mở ghi chú đã khóa';
+
+  @override
+  String get notesLockDescription => 'Đặt mật khẩu để mã hóa ghi chú trên các thiết bị. Hãy giữ an toàn vì không thể khôi phục.';
+
+  @override
+  String get notesUnlockDescription => 'Nhập mật khẩu ghi chú để xem nội dung.';
+
+  @override
+  String get notesPassphrase => 'Mật khẩu';
+
+  @override
+  String get notesConfirmPassphrase => 'Xác nhận mật khẩu';
+
+  @override
+  String get notesPassphraseRequirements => 'Dùng ít nhất 8 ký tự và nhập mật khẩu giống nhau.';
+
+  @override
+  String get notesIncorrectPassphrase => 'Không thể mở ghi chú. Hãy kiểm tra mật khẩu.';
+
+  @override
   String get notesNew => 'Ghi chú mới';
 
   @override
