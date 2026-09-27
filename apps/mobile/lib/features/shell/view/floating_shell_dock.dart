@@ -274,13 +274,22 @@ class _DockActionsState extends State<_DockActions> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  for (final action in actions.take(visibleCount))
+                  for (final (index, action)
+                      in actions.take(visibleCount).indexed)
                     Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: Tooltip(
                         message: action.tooltip ?? '',
                         child: FilledButton(
                           style: FilledButton.styleFrom(
+                            backgroundColor: index == 0
+                                ? Theme.of(context).colorScheme.onSurface
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHigh,
+                            foregroundColor: index == 0
+                                ? Theme.of(context).colorScheme.surface
+                                : Theme.of(context).colorScheme.onSurface,
                             minimumSize: const Size(48, 48),
                             padding: EdgeInsets.symmetric(
                               horizontal:
