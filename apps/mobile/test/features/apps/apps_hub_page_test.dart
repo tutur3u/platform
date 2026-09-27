@@ -88,6 +88,32 @@ void main() {
       ),
       findsOneWidget,
     );
+
+    await tester.tap(find.text('Grid'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tasks'), findsOneWidget);
+    expect(find.text('Chat'), findsOneWidget);
+    expect(
+      find.text(
+        'Keep team conversations, direct messages, files, '
+        'and AI chats together.',
+      ),
+      findsNothing,
+    );
+    expect(
+      tester.getTopLeft(find.text('Tasks')).dy,
+      tester.getTopLeft(find.text('Chat')).dy,
+    );
+
+    await tester.tap(find.text('List'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Keep team conversations, direct messages, files, '
+        'and AI chats together.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Apps hub shows enabled experimental apps after core apps', (

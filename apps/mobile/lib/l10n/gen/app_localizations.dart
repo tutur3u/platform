@@ -1501,6 +1501,18 @@ abstract class AppLocalizations {
   /// **'Search results'**
   String get appsHubSearchResults;
 
+  /// No description provided for @appsHubListView.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get appsHubListView;
+
+  /// No description provided for @appsHubGridView.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid'**
+  String get appsHubGridView;
+
   /// No description provided for @appsHubOpenApp.
   ///
   /// In en, this message translates to:

@@ -734,6 +734,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsHubSearchResults => 'Kết quả tìm kiếm';
 
   @override
+  String get appsHubListView => 'Danh sách';
+
+  @override
+  String get appsHubGridView => 'Lưới';
+
+  @override
   String get appsHubOpenApp => 'Mở';
 
   @override

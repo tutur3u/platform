@@ -278,6 +278,8 @@
     "appsHubFeatured": "Nổi bật",
     "appsHubMoreTools": "Công cụ khác",
     "appsHubSearchResults": "Kết quả tìm kiếm",
+    "appsHubListView": "Danh sách",
+    "appsHubGridView": "Lưới",
     "appsHubOpenApp": "Mở",
     "appsHubTasksDescription": "Theo dõi việc được giao, bảng việc, ước lượng và kế hoạch portfolio.",
     "appsHubHabitsDescription": "Theo dõi thói quen chung, chuỗi ngày và tiến độ lặp lại.",

@@ -734,6 +734,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsHubSearchResults => 'Search results';
 
   @override
+  String get appsHubListView => 'List';
+
+  @override
+  String get appsHubGridView => 'Grid';
+
+  @override
   String get appsHubOpenApp => 'Open';
 
   @override
