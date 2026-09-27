@@ -400,10 +400,10 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                   ),
                 if (_joinRequested && !_call.ended)
                   IconButton(
-                    tooltip: l10n.meetParticipants,
+                    tooltip: l10n.meetParticipantsAndInvite,
                     onPressed: () =>
                         unawaited(showMeetParticipantsSheet(context, _call)),
-                    icon: const Icon(Icons.people_outline),
+                    icon: const Icon(Icons.group_add_outlined),
                   ),
                 if (_joinRequested && !_call.ended && _call.role == 'host')
                   MeetHostActionsMenu(
@@ -563,6 +563,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                   ),
                   if (joined && _call.error == 'media')
                     MeetMediaStatusBanner(
+                      failureStage: _call.media.failureStage,
                       onRetry: () => unawaited(_call.retryMedia()),
                     ),
                   if (joined && !_call.ended)

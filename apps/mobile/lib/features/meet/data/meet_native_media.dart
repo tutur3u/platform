@@ -36,6 +36,7 @@ class MeetNativeMedia extends ChangeNotifier {
 
   bool audioEnabled = false;
   bool videoEnabled = false;
+  String? failureStage;
 
   Future<void> initialize() async {
     await localRenderer.initialize();
@@ -43,6 +44,7 @@ class MeetNativeMedia extends ChangeNotifier {
 
   Future<void> setAudioEnabled({required bool enabled}) => _serialize(() async {
     if (enabled && _audio == null) {
+      failureStage = 'capture';
       final stream = await navigator.mediaDevices.getUserMedia({
         'audio': true,
         'video': false,
@@ -59,17 +61,21 @@ class MeetNativeMedia extends ChangeNotifier {
     audioEnabled = enabled;
     notifyListeners();
     await _publishPending();
+    failureStage = null;
   });
 
   Future<void> setVideoEnabled({required bool enabled}) => _serialize(() async {
     if (enabled && _video == null) {
+      failureStage = 'capture';
       final stream = await navigator.mediaDevices.getUserMedia({
         'audio': false,
         'video': {
           'facingMode': 'user',
-          'width': {'ideal': 1280},
-          'height': {'ideal': 720},
-          'frameRate': {'ideal': 24},
+          // flutter_webrtc's iOS bridge reads numeric values here; numeric
+          // `ideal` values are ignored and can select an unsuitable default.
+          'width': 1280,
+          'height': 720,
+          'frameRate': 24,
         },
       });
       _streams.add(stream);
@@ -80,6 +86,7 @@ class MeetNativeMedia extends ChangeNotifier {
     videoEnabled = enabled;
     notifyListeners();
     await _publishPending();
+    failureStage = null;
   });
 
   Future<void> switchCamera() async {
@@ -100,6 +107,7 @@ class MeetNativeMedia extends ChangeNotifier {
     if (!_admitted) return;
     await _publishPending();
     await _subscribePending();
+    failureStage = null;
   });
 
   Future<void> resetPeers() => _serialize(() async {
@@ -107,6 +115,7 @@ class MeetNativeMedia extends ChangeNotifier {
     await _resetSubscriber();
     await _publishPending();
     await _subscribePending();
+    failureStage = null;
   });
 
   Future<void> _resetPublisher() async {
@@ -158,6 +167,7 @@ class MeetNativeMedia extends ChangeNotifier {
       ],
     });
     try {
+      failureStage = 'session';
       final response = await signaling.request({'type': 'sfu.session.create'});
       final id = response['sessionId'] as String?;
       if (id == null) throw StateError('SFU session unavailable');
@@ -190,6 +200,7 @@ class MeetNativeMedia extends ChangeNotifier {
     if (pending.isEmpty) return;
     final (pc, sessionId) = await _openSession(publish: true);
     try {
+      failureStage = 'publish';
       if (await pc.getRemoteDescription() != null) {
         await waitForMeetPeerConnection(pc);
       }
@@ -203,7 +214,9 @@ class MeetNativeMedia extends ChangeNotifier {
       }
       final offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      failureStage = 'connect';
       final localDescription = await gatheredLocalDescription(pc);
+      failureStage = 'publish';
       // flutter_webrtc snapshots MID when addTransceiver returns. Read the
       // negotiated transceivers again after setLocalDescription. The iOS
       // transceiver ID itself changes with MID, so match stable sender IDs.
@@ -242,6 +255,7 @@ class MeetNativeMedia extends ChangeNotifier {
       await pc.setRemoteDescription(
         RTCSessionDescription(answer['sdp'] as String, 'answer'),
       );
+      failureStage = 'connect';
       await waitForMeetPeerConnection(pc);
       _published.addAll(pending.map((entry) => entry.$1));
     } on Object {
@@ -267,6 +281,7 @@ class MeetNativeMedia extends ChangeNotifier {
     if (pending.isEmpty) return;
     final (pc, sessionId) = await _openSession(publish: false);
     try {
+      failureStage = 'receive';
       if (await pc.getRemoteDescription() != null) {
         await waitForMeetPeerConnection(pc);
       }
@@ -309,7 +324,9 @@ class MeetNativeMedia extends ChangeNotifier {
         );
         final answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
+        failureStage = 'connect';
         final localDescription = await gatheredLocalDescription(pc);
+        failureStage = 'receive';
         final answerResponse = await signaling.request({
           'type': 'sfu.renegotiate',
           'sessionId': sessionId,
@@ -318,6 +335,7 @@ class MeetNativeMedia extends ChangeNotifier {
         if (answerResponse['errorCode'] != null) {
           throw StateError('SFU negotiation failed');
         }
+        failureStage = 'connect';
         await waitForMeetPeerConnection(pc);
       } else {
         throw StateError('SFU remote offer missing');
