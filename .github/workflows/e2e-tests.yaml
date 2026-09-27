@@ -21,6 +21,7 @@ on:
       - "packages/*/package.json"
       - "packages/devbox/src/e2e-harness*"
       - "scripts/ci/e2e-*"
+      - "scripts/ci/release-only-changes.*"
       - "scripts/ci/supabase-baseline*"
       - "scripts/ci/run-with-backoff.sh"
       - "scripts/docker-web.js"
@@ -55,9 +56,36 @@ env:
   E2E_SUPABASE_IMAGE_TRANSPORT: ${{ inputs.supabase_image_transport || 'cache' }}
 
 jobs:
+  relevance:
+    name: Check E2E relevance
+    runs-on: ubuntu-latest
+    outputs:
+      run_e2e: ${{ steps.detect.outputs.run_e2e }}
+    steps:
+      - name: Check out code and comparison history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          sparse-checkout: scripts/ci/release-only-changes.js
+          sparse-checkout-cone-mode: false
+
+      - name: Detect release-only changes
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
+            echo 'run_e2e=true' >> "$GITHUB_OUTPUT"
+          else
+            result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
+            echo "run_e2e=$result" >> "$GITHUB_OUTPUT"
+          fi
+
   prepare-e2e-images:
     name: Prepare E2E image bundle
-    if: github.ref != 'refs/heads/production'
+    needs: relevance
+    if: github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true'
     continue-on-error: true
     timeout-minutes: 45
     runs-on: ubuntu-latest
@@ -178,8 +206,8 @@ jobs:
 
   e2e:
     name: Playwright E2E (${{ matrix.label }})
-    needs: [prepare-e2e-images]
-    if: ${{ always() && github.ref != 'refs/heads/production' }}
+    needs: [relevance, prepare-e2e-images]
+    if: ${{ always() && github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' }}
     timeout-minutes: 45
     runs-on: ubuntu-latest
     permissions:
@@ -811,8 +839,8 @@ jobs:
 
   cleanup-e2e-images:
     name: Clean up E2E image bundle
-    needs: [prepare-e2e-images, e2e, migration-e2e]
-    if: ${{ always() && github.ref != 'refs/heads/production' }}
+    needs: [relevance, prepare-e2e-images, e2e, migration-e2e]
+    if: ${{ always() && github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' }}
     timeout-minutes: 10
     runs-on: ubuntu-latest
     permissions:

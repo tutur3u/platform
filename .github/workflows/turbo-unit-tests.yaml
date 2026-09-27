@@ -19,10 +19,31 @@ jobs:
     with:
       workflow_name: turbo-unit-tests.yaml
 
+  release-relevance:
+    name: Check release-only changes
+    runs-on: ubuntu-latest
+    outputs:
+      run_checks: ${{ steps.detect.outputs.run_checks }}
+    steps:
+      - name: Check out code and comparison history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          sparse-checkout: scripts/ci/release-only-changes.js
+          sparse-checkout-cone-mode: false
+
+      - name: Detect release-only changes
+        id: detect
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
+          echo "run_checks=$result" >> "$GITHUB_OUTPUT"
+
   test-shards:
     name: Unit test shard (${{ matrix.shard }})
-    needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    needs: [check-ci, release-relevance]
+    if: needs.check-ci.outputs.should_run == 'true' && needs.release-relevance.outputs.run_checks == 'true'
     timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
@@ -84,8 +105,8 @@ jobs:
 
   build:
     name: Unit Tests (24)
-    needs: [check-ci, test-shards]
-    if: always() && needs.check-ci.outputs.should_run == 'true'
+    needs: [check-ci, release-relevance, test-shards]
+    if: always() && needs.check-ci.outputs.should_run == 'true' && needs.release-relevance.outputs.run_checks == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Require every unit-test shard

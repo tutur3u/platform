@@ -10,10 +10,31 @@ jobs:
     with:
       workflow_name: type-check.yaml
 
+  release-relevance:
+    name: Check release-only changes
+    runs-on: ubuntu-latest
+    outputs:
+      run_checks: ${{ steps.detect.outputs.run_checks }}
+    steps:
+      - name: Check out code and comparison history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          sparse-checkout: scripts/ci/release-only-changes.js
+          sparse-checkout-cone-mode: false
+
+      - name: Detect release-only changes
+        id: detect
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
+          echo "run_checks=$result" >> "$GITHUB_OUTPUT"
+
   type-check:
     name: Type Check
-    needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    needs: [check-ci, release-relevance]
+    if: needs.check-ci.outputs.should_run == 'true' && needs.release-relevance.outputs.run_checks == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
