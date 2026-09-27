@@ -4,10 +4,7 @@ import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
-import 'package:mobile/features/assistant/widgets/assistant_live_activity_blob.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_screen_control.dart';
-import 'package:mobile/features/assistant/widgets/assistant_live_status_panel.dart';
-import 'package:mobile/features/assistant/widgets/assistant_status_badge.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -21,12 +18,12 @@ class AssistantLiveModeView extends StatelessWidget {
     required this.liveUiState,
     required this.assistantName,
     required this.scrollController,
-    required this.onClose,
     required this.onRetry,
     required this.onToggleMicrophone,
     required this.onToggleCamera,
     required this.onDisconnect,
     required this.onOpenTextEntry,
+    this.onSettings,
     this.cameraController,
     super.key,
   });
@@ -36,12 +33,12 @@ class AssistantLiveModeView extends StatelessWidget {
   final AssistantLiveUiState liveUiState;
   final String assistantName;
   final ScrollController scrollController;
-  final Future<void> Function() onClose;
   final Future<void> Function() onRetry;
   final Future<void> Function() onToggleMicrophone;
   final Future<void> Function() onToggleCamera;
   final Future<void> Function() onDisconnect;
   final Future<void> Function() onOpenTextEntry;
+  final Future<void> Function()? onSettings;
   final CameraController? cameraController;
 
   @override
@@ -55,7 +52,9 @@ class AssistantLiveModeView extends StatelessWidget {
     final assistantBlobCaption = liveState.isAssistantSpeaking
         ? context.l10n.assistantLiveStageAssistantSpeaking
         : context.l10n.assistantLiveStageAssistantReady;
-    final showRetry = liveState.status == AssistantLiveConnectionStatus.error;
+    final hasTranscript = chatState.messages.isNotEmpty || liveState.hasDraft;
+    final isIdle =
+        liveState.status == AssistantLiveConnectionStatus.disconnected;
 
     return ColoredBox(
       color: theme.scaffoldBackgroundColor,
@@ -71,98 +70,102 @@ class AssistantLiveModeView extends StatelessWidget {
             child: _LiveModeHeader(
               liveState: liveState,
               liveUiState: liveUiState,
-              onClose: onClose,
               onDisconnect: onDisconnect,
               onRetry: onRetry,
-              showRetry: showRetry,
+              onSettings: onSettings,
             ),
           ),
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 840;
-                final stage = _LiveStageCard(
-                  liveState: liveState,
-                  assistantName: assistantName,
-                  userBlobCaption: userBlobCaption,
-                  assistantBlobCaption: assistantBlobCaption,
-                  cameraController: cameraController,
-                );
-                final transcript = _LiveTranscriptCard(
-                  chatState: chatState,
-                  liveState: liveState,
-                  assistantName: assistantName,
-                  scrollController: scrollController,
-                );
-                final status = _showStatusPanel
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: AssistantLiveStatusPanel(
-                          liveUiState: liveUiState,
-                          liveState: liveState,
-                          onRetry: onRetry,
-                        ),
-                      )
-                    : const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: wide
-                      ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              flex: 4,
-                              child: SingleChildScrollView(
-                                child: Column(children: [stage, status]),
+            child: isIdle
+                ? _LiveIdleState(onConnect: onToggleMicrophone)
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wide = constraints.maxWidth >= 840;
+                      final stage = _LiveStageCard(
+                        liveState: liveState,
+                        assistantName: assistantName,
+                        userBlobCaption: userBlobCaption,
+                        assistantBlobCaption: assistantBlobCaption,
+                        cameraController: cameraController,
+                      );
+                      final transcript = _LiveTranscriptCard(
+                        chatState: chatState,
+                        liveState: liveState,
+                        assistantName: assistantName,
+                        scrollController: scrollController,
+                      );
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: wide
+                            ? Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(
+                                    flex: 4,
+                                    child: Align(
+                                      alignment: Alignment.topCenter,
+                                      child: stage,
+                                    ),
+                                  ),
+                                  if (hasTranscript) ...[
+                                    const SizedBox(width: 16),
+                                    Expanded(flex: 5, child: transcript),
+                                  ],
+                                ],
+                              )
+                            : ListView(
+                                children: [
+                                  stage,
+                                  const SizedBox(height: 12),
+                                  if (hasTranscript)
+                                    SizedBox(
+                                      height: (constraints.maxHeight * .45)
+                                          .clamp(180.0, 480.0),
+                                      child: transcript,
+                                    )
+                                  else
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                      child: Text(
+                                        context
+                                            .l10n
+                                            .assistantLiveTranscriptEmpty,
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(flex: 5, child: transcript),
-                          ],
-                        )
-                      : ListView(
-                          children: [
-                            stage,
-                            status,
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              height: (constraints.maxHeight * .45).clamp(
-                                180.0,
-                                480.0,
-                              ),
-                              child: transcript,
-                            ),
-                          ],
-                        ),
-                );
-              },
-            ),
+                      );
+                    },
+                  ),
           ),
-          AssistantLiveScreenControl(state: liveState),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              shortViewport ? 4 : 12,
-              16,
-              safeArea.bottom + (shortViewport ? 4 : 16),
-            ),
-            child: Center(
-              child: _LiveControlRail(
-                liveState: liveState,
-                onToggleMicrophone: onToggleMicrophone,
-                onToggleCamera: onToggleCamera,
-                onOpenTextEntry: onOpenTextEntry,
+          if (!isIdle) AssistantLiveScreenControl(state: liveState),
+          if (!isIdle)
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                shortViewport ? 4 : 12,
+                16,
+                safeArea.bottom + (shortViewport ? 4 : 16),
+              ),
+              child: Center(
+                child: _LiveControlRail(
+                  liveState: liveState,
+                  onToggleMicrophone: onToggleMicrophone,
+                  onToggleCamera: onToggleCamera,
+                  onOpenTextEntry: onOpenTextEntry,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
   }
-
-  bool get _showStatusPanel =>
-      liveState.isBusy ||
-      liveUiState.kind == AssistantLiveUiKind.error ||
-      liveUiState.kind == AssistantLiveUiKind.reconnecting ||
-      liveUiState.kind == AssistantLiveUiKind.permissionDenied;
 }

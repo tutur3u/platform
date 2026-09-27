@@ -34,6 +34,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     required AssistantLiveCameraService cameraService,
     required Future<void> Function(String wsId, String chatId) onChatBound,
     required Future<void> Function(String wsId, String chatId) onHistoryUpdated,
+    this.screenContextProvider,
     AssistantLiveScreenService? screenService,
   }) : _repository = repository,
        _socket = socket,
@@ -60,6 +61,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   bool get screenSharingAvailable => _screenService.isSupported;
   final Future<void> Function(String wsId, String chatId) _onChatBound;
   final Future<void> Function(String wsId, String chatId) _onHistoryUpdated;
+  final Map<String, dynamic> Function()? screenContextProvider;
 
   StreamSubscription<AssistantLiveSocketEvent>? _socketSubscription;
   Completer<void>? _readyCompleter;
@@ -313,11 +315,13 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       });
 
       try {
-        final result = await _repository.executeToolCall(
-          wsId: wsId,
-          functionName: call.name,
-          args: call.args,
-        );
+        final result = call.name == 'get_mobile_screen_context'
+            ? screenContextProvider?.call() ?? {'screen': 'unavailable'}
+            : await _repository.executeToolCall(
+                wsId: wsId,
+                functionName: call.name,
+                args: call.args,
+              );
         _currentToolResults.add({
           'toolCallId': call.id,
           'toolName': call.name,

@@ -1572,6 +1572,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveCameraPreview => 'Live camera';
 
   @override
+  String get assistantLiveSettingSaveError => 'Couldn\'t save Live settings. Try again.';
+
+  @override
+  String get assistantKeepLiveBrowsingTitle => 'Keep Live while browsing';
+
+  @override
+  String get assistantKeepLiveBrowsingDescription => 'Mira keeps listening as you browse and can read the current app section to find relevant tasks. Live ends when you turn this off or leave the app.';
+
+  @override
+  String get assistantLiveIdleHeading => 'Talk with Mira';
+
+  @override
   String get assistantLiveConnect => 'Start live session';
 
   @override
@@ -1612,6 +1624,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantLiveListen => 'Open mic';
+
+  @override
+  String get miraChatTitle => 'Mira Chat';
+
+  @override
+  String get miraLiveTitle => 'Mira Live';
 
   @override
   String get assistantLiveModelBadge => 'Gemini 3.8 Live';
@@ -1664,7 +1682,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveStatusConnecting => 'Connecting';
 
   @override
-  String get assistantLiveStatusDisconnected => 'Offline';
+  String get assistantLiveStatusDisconnected => 'Not connected';
 
   @override
   String get assistantLiveStatusError => 'Needs attention';
@@ -1691,13 +1709,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveTierRequired => 'Live voice is available on PLUS and above.';
 
   @override
-  String get assistantLiveTranscriptEmpty => 'Start talking or type from the keyboard action below. Live drafts and synced turns will appear here.';
+  String get assistantLiveTranscriptEmpty => 'Start talking or type a message. Your conversation appears here.';
 
   @override
   String get assistantLiveTranscriptTitle => 'Live transcript';
 
   @override
-  String get assistantLiveTitle => 'Live assistant';
+  String get assistantLiveTitle => 'Mira Live';
 
   @override
   String get assistantLiveTypeMessage => 'Type';

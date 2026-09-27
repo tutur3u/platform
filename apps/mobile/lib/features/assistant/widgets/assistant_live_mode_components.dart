@@ -1,63 +1,131 @@
 part of 'assistant_live_mode_view.dart';
 
+class _LiveIdleState extends StatelessWidget {
+  const _LiveIdleState({required this.onConnect});
+
+  final Future<void> Function() onConnect;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                child: Icon(
+                  Icons.graphic_eq_rounded,
+                  size: 28,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                context.l10n.assistantLiveIdleHeading,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                context.l10n.assistantLiveDescriptionIdle,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: onConnect,
+                icon: const Icon(Icons.mic_rounded),
+                label: Text(context.l10n.assistantLiveConnect),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _LiveModeHeader extends StatelessWidget {
   const _LiveModeHeader({
     required this.liveState,
     required this.liveUiState,
-    required this.onClose,
     required this.onDisconnect,
     required this.onRetry,
-    required this.showRetry,
+    this.onSettings,
   });
 
   final AssistantLiveState liveState;
   final AssistantLiveUiState liveUiState;
-  final Future<void> Function() onClose;
   final Future<void> Function() onDisconnect;
   final Future<void> Function() onRetry;
-  final bool showRetry;
+  final Future<void> Function()? onSettings;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final needsRecovery =
+        liveUiState.kind == AssistantLiveUiKind.error ||
+        liveUiState.kind == AssistantLiveUiKind.reconnecting;
     return Row(
       children: [
-        IconButton(
-          tooltip: context.l10n.assistantLiveReturnToChat,
-          onPressed: onClose,
-          icon: const Icon(Icons.arrow_back_rounded),
+        Icon(
+          liveState.isBusy ? Icons.sync_rounded : Icons.graphic_eq_rounded,
+          size: 20,
+          color: _toneColor(theme, liveUiState.tone),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                context.l10n.assistantLiveTitle,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
+                liveUiState.statusLabel(context.l10n),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 6),
-              AssistantStatusBadge(
-                label: liveUiState.statusLabel(context.l10n),
-                color: _toneColor(theme, liveUiState.tone),
-              ),
+              if (needsRecovery ||
+                  liveUiState.kind == AssistantLiveUiKind.permissionDenied) ...[
+                const SizedBox(height: 2),
+                Text(
+                  liveUiState.detailLabel(context.l10n, liveState),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
-        if (showRetry)
-          IconButton(
-            tooltip: context.l10n.assistantLiveRetryAction,
+        if (needsRecovery)
+          TextButton(
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
+            child: Text(context.l10n.assistantLiveRetryAction),
           ),
-        IconButton(
-          tooltip: context.l10n.assistantLiveDisconnect,
-          onPressed: onDisconnect,
-          icon: Icon(Icons.call_end_rounded, color: theme.colorScheme.error),
-        ),
+        if (onSettings != null)
+          IconButton(
+            tooltip: context.l10n.assistantSettingsTitle,
+            onPressed: onSettings,
+            icon: const Icon(Icons.tune_rounded),
+          ),
+        if (liveState.status != AssistantLiveConnectionStatus.disconnected)
+          IconButton(
+            tooltip: context.l10n.assistantLiveDisconnect,
+            onPressed: onDisconnect,
+            icon: Icon(Icons.call_end_rounded, color: theme.colorScheme.error),
+          ),
       ],
     );
   }
@@ -85,51 +153,38 @@ class _LiveStageCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.28),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+        padding: const EdgeInsets.all(16),
         child: Stack(
           children: [
             Column(
               children: [
-                Text(
-                  context.l10n.assistantLiveModelBadge,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
-                      child: AssistantLiveActivityBlob(
+                      child: _LiveSignal(
                         label: context.l10n.assistantYouLabel,
                         caption: userBlobCaption,
-                        level: liveState.audioLevel,
                         isActive: liveState.isMicrophoneActive,
                         icon: liveState.isMicrophoneActive
                             ? Icons.mic_rounded
                             : Icons.mic_off_rounded,
-                        color: theme.colorScheme.primary,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: AssistantLiveActivityBlob(
+                      child: _LiveSignal(
                         label: assistantName,
                         caption: assistantBlobCaption,
-                        level: liveState.assistantAudioLevel,
                         isActive: liveState.isAssistantSpeaking,
                         icon: liveState.isAssistantSpeaking
                             ? Icons.graphic_eq_rounded
                             : Icons.hearing_rounded,
-                        color: theme.colorScheme.tertiary,
                       ),
                     ),
                   ],
@@ -139,12 +194,12 @@ class _LiveStageCard extends StatelessWidget {
             if (_showCameraPreview)
               Positioned(
                 right: 0,
-                top: 0,
+                bottom: 0,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
                   child: SizedBox(
-                    width: 88,
-                    height: 116,
+                    width: 64,
+                    height: 76,
                     child: CameraPreview(cameraController!),
                   ),
                 ),
@@ -159,6 +214,59 @@ class _LiveStageCard extends StatelessWidget {
       liveState.isCameraActive &&
       cameraController != null &&
       cameraController!.value.isInitialized;
+}
+
+class _LiveSignal extends StatelessWidget {
+  const _LiveSignal({
+    required this.label,
+    required this.caption,
+    required this.isActive,
+    required this.icon,
+  });
+
+  final String label;
+  final String caption;
+  final bool isActive;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: isActive
+              ? theme.colorScheme.primaryContainer
+              : theme.colorScheme.surfaceContainerHigh,
+          child: Icon(
+            icon,
+            size: 20,
+            color: isActive
+                ? theme.colorScheme.onPrimaryContainer
+                : theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                caption,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _LiveTranscriptCard extends StatelessWidget {

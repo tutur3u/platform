@@ -39,6 +39,15 @@ void main() {
       );
     });
 
+    test('Live browsing is opt-in and scoped to the workspace', () async {
+      expect(await preferences.loadKeepLiveWhileBrowsing('ws-a'), isFalse);
+      await preferences.saveKeepLiveWhileBrowsing('ws-a', value: true);
+      expect(await preferences.loadKeepLiveWhileBrowsing('ws-a'), isTrue);
+      expect(await preferences.loadKeepLiveWhileBrowsing('ws-b'), isFalse);
+      await preferences.saveKeepLiveWhileBrowsing('ws-a', value: false);
+      expect(await preferences.loadKeepLiveWhileBrowsing('ws-a'), isFalse);
+    });
+
     test(
       'does not adopt another account or legacy workspace preferences',
       () async {

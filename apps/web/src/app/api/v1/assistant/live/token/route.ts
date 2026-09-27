@@ -1,4 +1,4 @@
-import { Modality, ThinkingLevel } from '@google/genai';
+import { Modality, ThinkingLevel, Type } from '@google/genai';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -211,7 +211,21 @@ export async function POST(request: Request) {
         model: resolvedModel,
         systemInstruction,
         tools: [
-          { functionDeclarations: ASSISTANT_LIVE_TOOL_DECLARATIONS },
+          {
+            functionDeclarations: [
+              ...ASSISTANT_LIVE_TOOL_DECLARATIONS,
+              {
+                name: 'get_mobile_screen_context',
+                description:
+                  'Read the current mobile app section when the user has enabled Live while browsing. Returns only route metadata, never screen text. Use the declared workspace tools to fetch record details when needed.',
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {},
+                  required: [],
+                },
+              },
+            ],
+          },
           { googleSearch: {} },
         ],
         toolConfig: ASSISTANT_LIVE_TOOL_CONFIG,
