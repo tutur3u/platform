@@ -1572,10 +1572,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveCameraPreview => 'Camera trực tiếp';
 
   @override
+  String get assistantLiveSettingSaveError => 'Không thể lưu cài đặt Live. Vui lòng thử lại.';
+
+  @override
   String get assistantKeepLiveBrowsingTitle => 'Giữ Live khi duyệt ứng dụng';
 
   @override
-  String get assistantKeepLiveBrowsingDescription => 'Khi bật, Mira tiếp tục lắng nghe khi bạn chuyển sang Chat hoặc màn hình khác. Tắt để kết thúc Live khi rời đi.';
+  String get assistantKeepLiveBrowsingDescription => 'Mira tiếp tục lắng nghe khi bạn duyệt ứng dụng và có thể biết mục đang mở để tìm tác vụ liên quan. Live kết thúc khi bạn tắt tùy chọn hoặc rời ứng dụng.';
 
   @override
   String get assistantLiveIdleHeading => 'Trò chuyện với Mira';

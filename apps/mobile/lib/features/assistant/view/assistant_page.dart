@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
@@ -29,6 +30,7 @@ import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_chat_identity.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
+import 'package:mobile/features/assistant/models/assistant_mobile_screen_context.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
@@ -51,6 +53,8 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+part 'assistant_page_live_actions.dart';
 
 class AssistantPage extends StatefulWidget {
   const AssistantPage({this.replayToken = 0, super.key});
@@ -113,6 +117,15 @@ class _AssistantPageState extends State<AssistantPage>
       await _chatCubit.openChatById(wsId, assistantLiveConversationId(chatId));
       await _chatCubit.refreshHistory();
     },
+    screenContextProvider: () {
+      if (!_keepLiveWhileBrowsing || !mounted) {
+        return {'screen': 'unavailable'};
+      }
+      final uri = GoRouter.maybeOf(
+        context,
+      )?.routerDelegate.currentConfiguration.uri;
+      return assistantMobileScreenContext(uri);
+    },
   );
 
   String? _loadedWorkspaceId;
@@ -121,6 +134,16 @@ class _AssistantPageState extends State<AssistantPage>
   bool _isComposerVisible = false;
   bool _showScrollToBottomFab = false;
   bool _keepLiveWhileBrowsing = false;
+  Future<void> _workspaceDisconnect = Future<void>.value();
+  Future<void> _liveBrowsingPreferenceLoad = Future<void>.value();
+  bool _liveStartPending = false;
+  bool _lifecycleDisconnectPending = false;
+  bool _appIsForeground = true;
+
+  void _setKeepLiveWhileBrowsing(bool value) {
+    if (mounted) setState(() => _keepLiveWhileBrowsing = value);
+  }
+
   bool _ignoreScrollVisibilityUpdates = false;
   double? _composerVisibilityAnchorOffset;
 
@@ -134,9 +157,26 @@ class _AssistantPageState extends State<AssistantPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _appIsForeground = true;
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
-      unawaited(_liveCubit.disconnect());
+      _appIsForeground = false;
+      unawaited(_disconnectForLifecycle());
+    }
+  }
+
+  Future<void> _disconnectForLifecycle() async {
+    if (_lifecycleDisconnectPending ||
+        (!_liveStartPending &&
+            _liveCubit.state.status ==
+                AssistantLiveConnectionStatus.disconnected)) {
+      return;
+    }
+    _lifecycleDisconnectPending = true;
+    try {
+      await _liveCubit.disconnect();
+    } finally {
+      _lifecycleDisconnectPending = false;
     }
   }
 
@@ -147,13 +187,15 @@ class _AssistantPageState extends State<AssistantPage>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || TickerMode.valuesOf(context).enabled) return;
         _collapseComposerToFab();
-        if (!_keepLiveWhileBrowsing &&
-            _liveCubit.state.status !=
-                AssistantLiveConnectionStatus.disconnected) {
-          unawaited(_liveCubit.disconnect());
-        }
+        unawaited(_disconnectWhenHidden());
       });
     }
+  }
+
+  Future<void> _disconnectWhenHidden() async {
+    await _liveBrowsingPreferenceLoad;
+    if (!mounted || TickerMode.valuesOf(context).enabled) return;
+    if (!_keepLiveWhileBrowsing) await _disconnectForLifecycle();
   }
 
   @override
@@ -582,7 +624,7 @@ class _AssistantPageState extends State<AssistantPage>
 
     _loadedWorkspaceId = workspace.id;
     _keepLiveWhileBrowsing = false;
-    unawaited(_loadLiveBrowsingPreference(workspace.id));
+    _liveBrowsingPreferenceLoad = _loadLiveBrowsingPreference(workspace.id);
     _lastEmptyStateResetKey = null;
     _wasAssistantEmptyLayout = false;
     _isComposerVisible = false;
@@ -591,16 +633,28 @@ class _AssistantPageState extends State<AssistantPage>
     if (mounted) {
       context.read<AssistantChromeCubit>().exitLiveMode();
     }
-    unawaited(_liveCubit.disconnect());
+    final previousDisconnect = _workspaceDisconnect;
+    _workspaceDisconnect = () async {
+      await previousDisconnect;
+      await _liveCubit.disconnect();
+    }();
     unawaited(_shellCubit.loadWorkspace(workspace));
     _shellCubit.setImmersiveMode(false);
     unawaited(_chatCubit.loadWorkspace(workspace.id));
   }
 
   Future<void> _loadLiveBrowsingPreference(String wsId) async {
-    final value = await _preferences.loadKeepLiveWhileBrowsing(wsId);
+    bool value;
+    try {
+      value = await _preferences.loadKeepLiveWhileBrowsing(wsId);
+    } on Exception {
+      value = false;
+    }
     if (!mounted || _loadedWorkspaceId != wsId) return;
     setState(() => _keepLiveWhileBrowsing = value);
+    if (!value && !context.read<AssistantChromeCubit>().state.isLiveMode) {
+      await _disconnectForLifecycle();
+    }
   }
 
   void _scheduleScrollToBottom() {
@@ -1117,150 +1171,6 @@ class _AssistantPageState extends State<AssistantPage>
       onDisconnect: () => _liveCubit.disconnect(clearSession: true),
       onCameraToggle: _liveCubit.toggleCamera,
     );
-  }
-
-  Future<void> _handleMicrophoneTap(
-    String wsId,
-    AssistantShellState shellState,
-    AssistantChatState chatState,
-    AssistantLiveState liveState,
-  ) async {
-    if (!_hasLiveAccess(shellState)) {
-      final blockedState = deriveAssistantLiveUiState(
-        shellState: shellState,
-        liveState: liveState,
-        isEligible: false,
-        isVisibleLiveSession: _isVisibleLiveSession(chatState, liveState),
-        showBlockedReason: true,
-      );
-      await _showLiveInfoSheet(
-        context,
-        liveUiState: blockedState,
-        liveState: liveState,
-      );
-      return;
-    }
-
-    _dismissKeyboard();
-    context.read<AssistantChromeCubit>().enterLiveMode();
-  }
-
-  Future<void> _showLiveInfoSheet(
-    BuildContext context, {
-    required AssistantLiveUiState liveUiState,
-    required AssistantLiveState liveState,
-  }) async {
-    await showAdaptiveSheet<void>(
-      context: context,
-      builder: (sheetContext) => AssistantLiveInfoSheetBody(
-        liveUiState: liveUiState,
-        liveState: liveState,
-        onClose: () => Navigator.of(sheetContext).maybePop(),
-      ),
-    );
-  }
-
-  Future<void> _handleLiveRetry(
-    String wsId,
-    AssistantChatState chatState,
-  ) async {
-    await _liveCubit.prepareSession(
-      wsId: wsId,
-      chatId: chatState.chat?.id ?? chatState.storedChatId,
-      reconnect: _liveCubit.state.chatId != null,
-    );
-  }
-
-  Future<void> _handleLiveMicrophoneToggle(
-    String wsId,
-    AssistantChatState chatState,
-  ) async {
-    if (_liveCubit.state.isMicrophoneActive) {
-      await _liveCubit.toggleMicrophone();
-      return;
-    }
-    await _enterLiveMode(
-      wsId: wsId,
-      activeChatId: chatState.chat?.id ?? chatState.storedChatId,
-      autoStartMicrophone: true,
-    );
-  }
-
-  Future<void> _enterLiveMode({
-    required String wsId,
-    required String? activeChatId,
-    required bool autoStartMicrophone,
-  }) async {
-    _dismissKeyboard();
-    context.read<AssistantChromeCubit>().enterLiveMode();
-
-    final liveState = _liveCubit.state;
-    final isVisibleLiveSession = _isVisibleLiveSession(
-      _chatCubit.state,
-      liveState,
-    );
-    if (!isVisibleLiveSession || liveState.status.isDisconnectedOrErrored) {
-      final connecting = _liveCubit.prepareSession(
-        wsId: wsId,
-        chatId: activeChatId,
-        model: assistantLiveModelId,
-      );
-      if (autoStartMicrophone && !_liveCubit.state.isMicrophoneActive) {
-        await Future.wait([connecting, _liveCubit.toggleMicrophone()]);
-      } else {
-        await connecting;
-      }
-    }
-
-    if (!mounted ||
-        _liveCubit.state.status == AssistantLiveConnectionStatus.error ||
-        !autoStartMicrophone) {
-      return;
-    }
-
-    if (!_liveCubit.state.isMicrophoneActive) {
-      await _liveCubit.toggleMicrophone();
-    }
-  }
-
-  Future<void> _exitLiveMode() async {
-    if (!_keepLiveWhileBrowsing) {
-      // The opt-in browsing setting is the only path that retains media tracks.
-      await _liveCubit.disconnect();
-    }
-    if (!mounted) {
-      return;
-    }
-    context.read<AssistantChromeCubit>().exitLiveMode();
-  }
-
-  Future<void> _showLiveSettings() async {
-    final wsId = _loadedWorkspaceId;
-    if (wsId == null) return;
-    await showAdaptiveSheet<void>(
-      context: context,
-      builder: (sheetContext) => AssistantSettingsSheetBody(
-        keepLiveWhileBrowsing: _keepLiveWhileBrowsing,
-        onKeepLiveWhileBrowsingChanged: ({required value}) async {
-          await _preferences.saveKeepLiveWhileBrowsing(wsId, value: value);
-          if (!mounted || _loadedWorkspaceId != wsId) return;
-          setState(() => _keepLiveWhileBrowsing = value);
-          if (!value &&
-              !context.read<AssistantChromeCubit>().state.isLiveMode) {
-            await _liveCubit.disconnect();
-          }
-          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-        },
-      ),
-    );
-  }
-
-  Future<void> _openChatComposerFromLiveMode() async {
-    await _exitLiveMode();
-    if (!mounted) {
-      return;
-    }
-    _restoreComposerAndFocus();
   }
 
   List<ShellActionSpec> _buildChromeActions(

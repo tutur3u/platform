@@ -612,8 +612,9 @@
         }
     },
     "assistantLiveCameraPreview": "Live camera",
+    "assistantLiveSettingSaveError": "Couldn't save Live settings. Try again.",
     "assistantKeepLiveBrowsingTitle": "Keep Live while browsing",
-    "assistantKeepLiveBrowsingDescription": "When on, Mira keeps listening as you switch to Chat or another screen. Turn it off to end Live when you leave.",
+    "assistantKeepLiveBrowsingDescription": "Mira keeps listening as you browse and can read the current app section to find relevant tasks. Live ends when you turn this off or leave the app.",
     "assistantLiveIdleHeading": "Talk with Mira",
     "assistantLiveConnect": "Start live session",
     "assistantLiveDescriptionConnecting": "Creating a direct Gemini Live session for text, audio, and camera input.",

@@ -612,8 +612,9 @@
         }
     },
     "assistantLiveCameraPreview": "Camera trực tiếp",
+    "assistantLiveSettingSaveError": "Không thể lưu cài đặt Live. Vui lòng thử lại.",
     "assistantKeepLiveBrowsingTitle": "Giữ Live khi duyệt ứng dụng",
-    "assistantKeepLiveBrowsingDescription": "Khi bật, Mira tiếp tục lắng nghe khi bạn chuyển sang Chat hoặc màn hình khác. Tắt để kết thúc Live khi rời đi.",
+    "assistantKeepLiveBrowsingDescription": "Mira tiếp tục lắng nghe khi bạn duyệt ứng dụng và có thể biết mục đang mở để tìm tác vụ liên quan. Live kết thúc khi bạn tắt tùy chọn hoặc rời ứng dụng.",
     "assistantLiveIdleHeading": "Trò chuyện với Mira",
     "assistantLiveConnect": "Bắt đầu phiên trực tiếp",
     "assistantLiveDescriptionConnecting": "Đang tạo phiên Gemini Live trực tiếp cho văn bản, âm thanh và camera.",

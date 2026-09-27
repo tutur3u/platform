@@ -3145,6 +3145,12 @@ abstract class AppLocalizations {
   /// **'Live camera'**
   String get assistantLiveCameraPreview;
 
+  /// No description provided for @assistantLiveSettingSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save Live settings. Try again.'**
+  String get assistantLiveSettingSaveError;
+
   /// No description provided for @assistantKeepLiveBrowsingTitle.
   ///
   /// In en, this message translates to:
@@ -3154,7 +3160,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantKeepLiveBrowsingDescription.
   ///
   /// In en, this message translates to:
-  /// **'When on, Mira keeps listening as you switch to Chat or another screen. Turn it off to end Live when you leave.'**
+  /// **'Mira keeps listening as you browse and can read the current app section to find relevant tasks. Live ends when you turn this off or leave the app.'**
   String get assistantKeepLiveBrowsingDescription;
 
   /// No description provided for @assistantLiveIdleHeading.

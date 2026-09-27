@@ -1572,10 +1572,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveCameraPreview => 'Live camera';
 
   @override
+  String get assistantLiveSettingSaveError => 'Couldn\'t save Live settings. Try again.';
+
+  @override
   String get assistantKeepLiveBrowsingTitle => 'Keep Live while browsing';
 
   @override
-  String get assistantKeepLiveBrowsingDescription => 'When on, Mira keeps listening as you switch to Chat or another screen. Turn it off to end Live when you leave.';
+  String get assistantKeepLiveBrowsingDescription => 'Mira keeps listening as you browse and can read the current app section to find relevant tasks. Live ends when you turn this off or leave the app.';
 
   @override
   String get assistantLiveIdleHeading => 'Talk with Mira';
