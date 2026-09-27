@@ -103,4 +103,27 @@ describe('tutoring policy storage', () => {
       EASY_CENTER_TUTORING_POLICY
     );
   });
+
+  it('keeps emoji intact when a chunk ends at a surrogate pair', () => {
+    const messageStart = JSON.stringify({
+      ...EASY_CENTER_TUTORING_POLICY,
+      parentMessageTemplate: '',
+    }).indexOf('parentMessageTemplate') + 'parentMessageTemplate":"'.length;
+    const message = 'a'.repeat(899 - (messageStart % 900)) + '🙂';
+    const policy = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      parentMessageTemplate: message,
+    };
+    const rows = serializeTutoringPolicyConfigRows(policy);
+    expect(rows.every((row) => row.value.length <= 900)).toBe(true);
+    expect(
+      rows.slice(1).every((row) => {
+        const lastCodeUnit = row.value.charCodeAt(row.value.length - 1);
+        return lastCodeUnit < 0xd800 || lastCodeUnit > 0xdbff;
+      })
+    ).toBe(true);
+    expect(readTutoringPolicyConfigRows(rows).parentMessageTemplate).toBe(
+      message
+    );
+  });
 });

@@ -270,11 +270,16 @@ export interface TutoringPolicyConfigRow {
 export function serializeTutoringPolicyConfigRows(policy: TutoringPolicy) {
   const json = JSON.stringify(policy);
   const chunks: TutoringPolicyConfigRow[] = [];
-  for (let index = 0; index < json.length; index += CONFIG_VALUE_LIMIT) {
+  for (let index = 0; index < json.length; ) {
+    let end = Math.min(index + CONFIG_VALUE_LIMIT, json.length);
+    const lastCodeUnit = json.charCodeAt(end - 1);
+    if (end < json.length && lastCodeUnit >= 0xd800 && lastCodeUnit <= 0xdbff)
+      end -= 1;
     chunks.push({
       id: `${TUTORING_POLICY_PART_PREFIX}${chunks.length}`,
-      value: json.slice(index, index + CONFIG_VALUE_LIMIT),
+      value: json.slice(index, end),
     });
+    index = end;
   }
   return [
     {
