@@ -21,15 +21,33 @@ class AssistantChromeCubit extends Cubit<AssistantChromeState> {
   }
 
   void enterLiveMode() {
-    emit(state.copyWith(isLiveMode: true, isFullscreen: true));
+    emit(
+      state.copyWith(
+        isLiveMode: true,
+        isFullscreen: true,
+        hasSelectedMode: true,
+      ),
+    );
   }
 
   void exitLiveMode() {
-    emit(state.copyWith(isLiveMode: false, isFullscreen: false));
+    emit(
+      state.copyWith(
+        isLiveMode: false,
+        isFullscreen: false,
+        hasSelectedMode: true,
+      ),
+    );
   }
 
   void setLiveMode({required bool value}) {
-    emit(state.copyWith(isLiveMode: value, isFullscreen: value));
+    emit(
+      state.copyWith(
+        isLiveMode: value,
+        isFullscreen: value,
+        hasSelectedMode: true,
+      ),
+    );
   }
 }
 
@@ -37,18 +55,25 @@ class AssistantChromeState extends Equatable {
   const AssistantChromeState({
     this.isFullscreen = false,
     this.isLiveMode = false,
+    this.hasSelectedMode = false,
   });
 
   final bool isFullscreen;
   final bool isLiveMode;
+  final bool hasSelectedMode;
 
-  AssistantChromeState copyWith({bool? isFullscreen, bool? isLiveMode}) {
+  AssistantChromeState copyWith({
+    bool? isFullscreen,
+    bool? isLiveMode,
+    bool? hasSelectedMode,
+  }) {
     return AssistantChromeState(
       isFullscreen: isFullscreen ?? this.isFullscreen,
       isLiveMode: isLiveMode ?? this.isLiveMode,
+      hasSelectedMode: hasSelectedMode ?? this.hasSelectedMode,
     );
   }
 
   @override
-  List<Object?> get props => [isFullscreen, isLiveMode];
+  List<Object?> get props => [isFullscreen, isLiveMode, hasSelectedMode];
 }

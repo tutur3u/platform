@@ -65,7 +65,11 @@ extension _ShellPageLayout on _ShellPageState {
   }
 
   Widget _buildNormalizedChild() {
-    return SizedBox.expand(child: widget.child);
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) =>
+          _trackPageScroll(widget.matchedLocation, notification),
+      child: SizedBox.expand(child: widget.child),
+    );
   }
 
   Widget _buildGlobalBody() {
@@ -89,29 +93,34 @@ extension _ShellPageLayout on _ShellPageState {
                         data: media
                             .removePadding(removeTop: true)
                             .copyWith(viewPadding: media.viewPadding),
-                        child: LazyIndexedStack(
-                          index: _ShellPageState._calculateSelectedIndex(
-                            _lastRootLocation,
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (notification) =>
+                              _trackPageScroll(_lastRootLocation, notification),
+                          child: LazyIndexedStack(
+                            index: _ShellPageState._calculateSelectedIndex(
+                              _lastRootLocation,
+                            ),
+                            builders: [
+                              (_) => DashboardPage(
+                                replayToken:
+                                    _rootTabReplayTokens[Routes.home] ?? 0,
+                              ),
+                              (_) => AssistantPage(
+                                replayToken:
+                                    _rootTabReplayTokens[Routes.assistant] ?? 0,
+                              ),
+                              (_) => AppsScreen(
+                                replayToken:
+                                    _rootTabReplayTokens[Routes.apps] ?? 0,
+                              ),
+                              (_) => const NotificationsPage(),
+                              (_) => ProfileOverviewPage(
+                                replayToken:
+                                    _rootTabReplayTokens[Routes.profileRoot] ??
+                                    0,
+                              ),
+                            ],
                           ),
-                          builders: [
-                            (_) => DashboardPage(
-                              replayToken:
-                                  _rootTabReplayTokens[Routes.home] ?? 0,
-                            ),
-                            (_) => AssistantPage(
-                              replayToken:
-                                  _rootTabReplayTokens[Routes.assistant] ?? 0,
-                            ),
-                            (_) => AppsScreen(
-                              replayToken:
-                                  _rootTabReplayTokens[Routes.apps] ?? 0,
-                            ),
-                            (_) => const NotificationsPage(),
-                            (_) => ProfileOverviewPage(
-                              replayToken:
-                                  _rootTabReplayTokens[Routes.profileRoot] ?? 0,
-                            ),
-                          ],
                         ),
                       );
                     },

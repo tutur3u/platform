@@ -36,6 +36,7 @@ part 'shell_page_actions.dart';
 part 'shell_page_interactions.dart';
 part 'shell_page_layout.dart';
 part 'shell_page_navigation.dart';
+part 'shell_page_scroll.dart';
 
 /// Shell layout with adaptive navigation.
 ///
@@ -104,6 +105,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     Routes.assistant: 0,
     Routes.apps: 0,
   };
+  final Map<String, WeakReference<ScrollableState>> _pageScrollables = {};
   shad.ToastOverlay? _exitConfirmationToast;
 
   void _markBackDispatch({required String source}) {
