@@ -1,4 +1,5 @@
 import {
+  getTutoringCampus,
   readTutoringPolicy,
   renderTutoringParentMessage,
   TUTORING_POLICY_CONFIG_ID,
@@ -143,18 +144,18 @@ export async function POST(request: Request, { params }: Params) {
   const group = groupResult.data;
   const studentName = displayName(student);
 
-  const preview = renderTutoringParentMessage(
-    readTutoringPolicy(policyResult.data?.value).parentMessageTemplate,
-    {
-      date: formatDateOnly(data.session_date),
-      duration: String(data.duration_minutes),
-      group: group?.name ?? 'N/A',
-      reason: reasonLabel,
-      student: studentName,
-      teacher: displayName(teacher),
-      time: String(data.start_time).slice(0, 5),
-    }
-  );
+  const policy = readTutoringPolicy(policyResult.data?.value);
+  const preview = renderTutoringParentMessage(policy.parentMessageTemplate, {
+    campus:
+      getTutoringCampus(policy, data.group_id, group?.name) ?? 'Chưa xác định',
+    date: formatDateOnly(data.session_date),
+    duration: String(data.duration_minutes),
+    group: group?.name ?? 'N/A',
+    reason: reasonLabel,
+    student: studentName,
+    teacher: displayName(teacher),
+    time: String(data.start_time).slice(0, 5),
+  });
 
   const { error: updateError } = await tutoringSessionsClient
     .from('workspace_tutoring_sessions')

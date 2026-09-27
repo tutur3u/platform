@@ -16,7 +16,8 @@ payroll.
   learner, teacher, and reason. Filters drive both the table and the export.
   Forward-looking presets request `sortOrder=asc` so the nearest session is
   first; `past` and `all` keep the API default of newest-first.
-- **Needs support** is the queue of learners with an absence deficit
+- **Needs support** is the queue of learners with an absence deficit within the
+  configured recent attendance window
   (`ABSENT_RECOVERY`), a `require_attention` feedback (`WEAK_SUPPORT`), or both.
   Scheduling from a queue row fills the learner, group, reason, teacher when
   unambiguous, and suggested times for the missing sessions. A pending recovery
@@ -27,8 +28,9 @@ payroll.
   a parent follow-up prompt.
 - **Settings** stores a workspace tutoring policy with standard and English
   center presets. Operators can adjust session length, lead time, support
-  session count, reassessment and follow-up intervals, scheduling horizon,
-  class-time exceptions, and the parent message template. Only members with
+  session count, absence lookback, reassessment and follow-up intervals, scheduling horizon,
+  class-time exceptions, named shifts, group-to-campus labels, and the parent
+  message template. Only members with
   `manage_workspace_settings` can save it.
 - **Headline counts** run as bounded `count: exact` queries, so they stay
   correct on workspaces with more sessions than one page. The schedule loads
@@ -106,11 +108,19 @@ date, and time before creating any session. If too few scheduled classes are
 available, remaining slots stay blank for manual scheduling.
 
 The standard preset places a 45-minute session immediately before class. The
-English center preset also places tutoring after an 08:00 Saturday or Sunday
-class at 09:30 for 60 minutes. Settings allow a different weekday and class
-time mapping. Suggestions need an existing group schedule; they never create
+Easy Center preset includes the seven named weekday and weekend shifts from
+the center's schedule, including a 09:30, 50-minute session after the weekend
+08:00 class. The schedule displays a matching shift name alongside the actual
+date and time. Staff can rename, add, or change each rule. Suggestions need an
+existing group schedule; they never create
 sessions or send parent messages automatically. The parent message is a draft
-that staff copy after reviewing it. The center's tuition remains free to
+that staff copy after reviewing it. Campus labels are configured per class
+group; a clear `CS1`, `CS2`, `Cơ sở 1`, or `Cơ sở 2` marker in the group name
+is inferred when no override exists. The existing generic `Lớp học` group tag
+does not identify a campus. Ambiguous groups show no campus on the schedule
+and `Chưa xác định` in the parent draft until staff set an override. The
+Easy Center template uses the resolved label in the parent draft. The
+center's tuition remains free to
 learners; payroll exports count completed teaching time.
 
 Policies are validated at `GET/PUT /api/v1/workspaces/{wsId}/tutoring/policy`

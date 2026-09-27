@@ -229,6 +229,7 @@ export function TutoringSessionsCard({
       canManage,
       isMarking,
       locale,
+      policy,
       onEditContent: (session) => {
         setEditingSession(session);
         setDraftContent(session.content);

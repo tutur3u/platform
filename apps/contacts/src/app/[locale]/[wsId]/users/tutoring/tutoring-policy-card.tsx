@@ -9,7 +9,9 @@ import {
   STANDARD_TUTORING_POLICY,
   type TutoringPolicy,
 } from '@tuturuuu/internal-api/tutoring-policy';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -19,6 +21,7 @@ import { useState } from 'react';
 
 interface Props {
   canConfigure: boolean;
+  groups: UserGroup[];
   policy: TutoringPolicy;
   wsId: string;
 }
@@ -27,12 +30,18 @@ const NUMERIC_FIELDS = [
   ['durationMinutes', 1, 480],
   ['leadMinutes', 0, 480],
   ['weakSupportSessions', 1, 6],
+  ['absenceLookbackDays', 1, 365],
   ['reassessmentDays', 1, 90],
   ['followUpDays', 1, 90],
   ['schedulingHorizonDays', 1, 180],
 ] as const;
 
-export function TutoringPolicyCard({ canConfigure, policy, wsId }: Props) {
+export function TutoringPolicyCard({
+  canConfigure,
+  groups,
+  policy,
+  wsId,
+}: Props) {
   const t = useTranslations('ws-tutoring');
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<TutoringPolicy>(policy);
@@ -105,7 +114,12 @@ export function TutoringPolicyCard({ canConfigure, policy, wsId }: Props) {
         <div className="flex flex-wrap gap-2">
           <Button
             disabled={!canConfigure}
-            onClick={() => setDraft({ ...STANDARD_TUTORING_POLICY })}
+            onClick={() =>
+              setDraft({
+                ...STANDARD_TUTORING_POLICY,
+                campusByGroupId: draft.campusByGroupId,
+              })
+            }
             size="sm"
             variant={draft.preset === 'standard' ? 'default' : 'outline'}
           >
@@ -116,6 +130,7 @@ export function TutoringPolicyCard({ canConfigure, policy, wsId }: Props) {
             onClick={() =>
               setDraft({
                 ...EASY_CENTER_TUTORING_POLICY,
+                campusByGroupId: draft.campusByGroupId,
                 timeRules: EASY_CENTER_TUTORING_POLICY.timeRules.map(
                   (rule) => ({ ...rule, weekdays: [...rule.weekdays] })
                 ),
@@ -178,7 +193,7 @@ export function TutoringPolicyCard({ canConfigure, policy, wsId }: Props) {
                       weekdays: [0, 6],
                       classStartTime: '08:00',
                       tutoringStartTime: '09:30',
-                      durationMinutes: 60,
+                      durationMinutes: 50,
                     },
                   ],
                 })
@@ -242,7 +257,21 @@ export function TutoringPolicyCard({ canConfigure, policy, wsId }: Props) {
                 </Button>
               ) : null}
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="space-y-1">
+                <Label htmlFor={`policy-label-${index}`}>
+                  {t('policy_shift_label')}
+                </Label>
+                <Input
+                  disabled={!canConfigure}
+                  id={`policy-label-${index}`}
+                  maxLength={50}
+                  onChange={(event) =>
+                    editRule(index, { label: event.target.value })
+                  }
+                  value={rule.label ?? ''}
+                />
+              </div>
               <div className="space-y-1">
                 <Label htmlFor={`policy-class-${index}`}>
                   {t('policy_class_time')}
@@ -292,6 +321,75 @@ export function TutoringPolicyCard({ canConfigure, policy, wsId }: Props) {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="space-y-3 rounded-xl border bg-card p-4">
+        <div>
+          <h3 className="font-medium">{t('policy_campuses')}</h3>
+          <p className="text-muted-foreground text-sm">
+            {t('policy_campuses_description')}
+          </p>
+        </div>
+        {Object.entries(draft.campusByGroupId).map(([groupId, name]) => (
+          <div className="flex items-end gap-2" key={groupId}>
+            <div className="min-w-0 flex-1 space-y-1">
+              <Label htmlFor={`policy-campus-${groupId}`}>
+                {groups.find((group) => group.id === groupId)?.name ?? groupId}
+              </Label>
+              <Input
+                disabled={!canConfigure}
+                id={`policy-campus-${groupId}`}
+                maxLength={80}
+                onChange={(event) =>
+                  edit({
+                    campusByGroupId: {
+                      ...draft.campusByGroupId,
+                      [groupId]: event.target.value,
+                    },
+                  })
+                }
+                placeholder={t('policy_campus_name')}
+                value={name}
+              />
+            </div>
+            {canConfigure ? (
+              <Button
+                aria-label={t('policy_remove_campus')}
+                onClick={() => {
+                  const next = { ...draft.campusByGroupId };
+                  delete next[groupId];
+                  edit({ campusByGroupId: next });
+                }}
+                size="icon"
+                variant="ghost"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            ) : null}
+          </div>
+        ))}
+        {canConfigure ? (
+          <Combobox
+            emptyText={t('no_groups')}
+            onChange={(value) =>
+              edit({
+                campusByGroupId: {
+                  ...draft.campusByGroupId,
+                  [value as string]: '',
+                },
+              })
+            }
+            options={groups
+              .filter((group) => !(group.id in draft.campusByGroupId))
+              .map((group) => ({
+                label: group.name || group.id,
+                value: group.id,
+              }))}
+            placeholder={t('policy_add_campus')}
+            searchPlaceholder={t('search_groups')}
+            selected=""
+          />
+        ) : null}
       </div>
 
       <div className="space-y-2 rounded-xl border bg-card p-4">

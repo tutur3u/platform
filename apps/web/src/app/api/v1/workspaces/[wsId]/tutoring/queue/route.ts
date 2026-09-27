@@ -103,12 +103,16 @@ async function getTutoringData(request: Request, { params }: Params) {
   let attendanceQuery = sbAdmin
     .from('user_group_attendance')
     .select(
-      `group_id,user_id,status,
+      `group_id,user_id,date,status,
       group:workspace_user_groups!user_group_attendance_group_id_fkey!inner(id,ws_id,name),
       user:workspace_users!user_group_attendance_user_id_fkey!inner(id,full_name,display_name,email,archived)`
     )
     .eq('group.ws_id', normalizedWsId)
     .eq('user.archived', false)
+    .gte(
+      'date',
+      new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10)
+    )
     .in('status', ['ABSENT', 'Absent', 'absent'])
     .order('group_id', { ascending: true })
     .order('user_id', { ascending: true });
@@ -123,7 +127,7 @@ async function getTutoringData(request: Request, { params }: Params) {
   let reservedQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .select(
-      'group_id,student_user_id,reason_type,attendance_status,source_feedback_id,resolved_at'
+      'group_id,student_user_id,reason_type,attendance_status,source_feedback_id,resolved_at,session_date'
     )
     .eq('ws_id', normalizedWsId)
     .in('attendance_status', ['DONE', 'PENDING']);
@@ -187,9 +191,13 @@ async function getTutoringData(request: Request, { params }: Params) {
   const attendanceRows = attendanceResult.data;
   const reservedRows = reservedResult.data;
   const feedbackRows = feedbackResult.data;
-  const reassessmentDays = readTutoringPolicy(
-    policyResult.data?.value
-  ).reassessmentDays;
+  const policy = readTutoringPolicy(policyResult.data?.value);
+  const reassessmentDays = policy.reassessmentDays;
+  const absenceCutoff = new Date(
+    Date.now() - policy.absenceLookbackDays * 86_400_000
+  )
+    .toISOString()
+    .slice(0, 10);
   const todayNumber = Math.floor(Date.now() / 86_400_000);
 
   const absenceCountMap = new Map<string, number>();
@@ -197,6 +205,7 @@ async function getTutoringData(request: Request, { params }: Params) {
   const studentNameMap = new Map<string, string>();
 
   for (const row of attendanceRows ?? []) {
+    if (row.date < absenceCutoff) continue;
     const key = `${row.group_id}:${row.user_id}`;
     absenceCountMap.set(key, (absenceCountMap.get(key) ?? 0) + 1);
 
@@ -213,7 +222,10 @@ async function getTutoringData(request: Request, { params }: Params) {
   const completedFeedbackDays = new Map<string, number>();
   for (const row of reservedRows ?? []) {
     const key = `${row.group_id}:${row.student_user_id}`;
-    if (row.reason_type === 'ABSENT_RECOVERY')
+    if (
+      row.reason_type === 'ABSENT_RECOVERY' &&
+      row.session_date >= absenceCutoff
+    )
       reservedCountMap.set(key, (reservedCountMap.get(key) ?? 0) + 1);
     if (row.attendance_status === 'PENDING' && row.source_feedback_id)
       scheduledFeedbackIds.add(row.source_feedback_id);

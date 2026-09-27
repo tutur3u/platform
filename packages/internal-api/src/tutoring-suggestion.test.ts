@@ -105,7 +105,7 @@ describe('center scheduling policy', () => {
         now
       )
     ).toMatchObject([
-      { sessionDate: '2026-09-27', startTime: '09:30', durationMinutes: 60 },
+      { sessionDate: '2026-09-27', startTime: '09:30', durationMinutes: 50 },
     ]);
   });
 
@@ -137,6 +137,7 @@ describe('center scheduling policy', () => {
         time: '',
         duration: '',
         group: '',
+        campus: '',
         teacher: '',
       })
     ).toBe('Hello Lan {{unknown}}');

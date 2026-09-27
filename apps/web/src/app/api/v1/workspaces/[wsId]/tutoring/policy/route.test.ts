@@ -11,7 +11,7 @@ const query = {
   select: vi.fn(() => query),
   eq: vi.fn(() => query),
   maybeSingle: vi.fn(async () => ({ data: null, error: null })),
-  upsert: vi.fn(async () => ({ error: null })),
+  upsert: vi.fn(async (_value: { value: string }) => ({ error: null })),
 };
 
 vi.mock('next/server', () => ({
@@ -80,10 +80,11 @@ describe('tutoring policy API', () => {
     const response = await request('PUT', EASY_CENTER_TUTORING_POLICY);
     expect(response.status).toBe(200);
     expect(query.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        ws_id: wsId,
-        value: JSON.stringify(EASY_CENTER_TUTORING_POLICY),
-      })
+      expect.objectContaining({ ws_id: wsId })
+    );
+    const saved = query.upsert.mock.calls[0]?.[0];
+    expect(JSON.parse(saved?.value ?? '{}')).toMatchObject(
+      EASY_CENTER_TUTORING_POLICY
     );
   });
 });

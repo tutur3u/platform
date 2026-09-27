@@ -554,6 +554,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
           ) : (
             <TutoringPolicyCard
               canConfigure={canConfigure}
+              groups={groupsQuery.data ?? []}
               policy={policy}
               wsId={wsId}
             />

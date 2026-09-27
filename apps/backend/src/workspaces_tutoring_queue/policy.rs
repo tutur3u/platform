@@ -4,17 +4,23 @@ use super::send_service_role_request;
 use crate::{contact, outbound::OutboundHttpClient};
 
 const DEFAULT_REASSESSMENT_DAYS: i64 = 14;
+const DEFAULT_ABSENCE_LOOKBACK_DAYS: i64 = 28;
+
+pub(super) struct QueuePolicy {
+    pub(super) reassessment_days: i64,
+    pub(super) absence_lookback_days: i64,
+}
 
 #[derive(Deserialize)]
 struct ConfigRow {
     value: Option<String>,
 }
 
-pub(super) async fn load_reassessment_days(
+pub(super) async fn load_queue_policy(
     contact_data: &contact::ContactDataConfig,
     outbound: &impl OutboundHttpClient,
     ws_id: &str,
-) -> Result<i64, ()> {
+) -> Result<QueuePolicy, ()> {
     let params = [
         ("select", "value".to_owned()),
         ("ws_id", format!("eq.{ws_id}")),
@@ -32,11 +38,19 @@ pub(super) async fn load_reassessment_days(
     let configured = rows
         .first()
         .and_then(|row| row.value.as_deref())
-        .and_then(|value| serde_json::from_str::<serde_json::Value>(value).ok())
-        .and_then(|value| value.get("reassessmentDays")?.as_i64());
-    Ok(configured
-        .filter(|days| (1..=90).contains(days))
-        .unwrap_or(DEFAULT_REASSESSMENT_DAYS))
+        .and_then(|value| serde_json::from_str::<serde_json::Value>(value).ok());
+    Ok(QueuePolicy {
+        reassessment_days: configured
+            .as_ref()
+            .and_then(|value| value.get("reassessmentDays")?.as_i64())
+            .filter(|days| (1..=90).contains(days))
+            .unwrap_or(DEFAULT_REASSESSMENT_DAYS),
+        absence_lookback_days: configured
+            .as_ref()
+            .and_then(|value| value.get("absenceLookbackDays")?.as_i64())
+            .filter(|days| (1..=365).contains(days))
+            .unwrap_or(DEFAULT_ABSENCE_LOOKBACK_DAYS),
+    })
 }
 
 pub(super) fn current_utc_day() -> i64 {
@@ -52,7 +66,7 @@ pub(super) fn reassessment_due(resolved_at: Option<&str>, days: i64, today: i64)
         .is_none_or(|resolved_day| today - resolved_day >= days)
 }
 
-fn iso_day(value: &str) -> Option<i64> {
+pub(super) fn iso_day(value: &str) -> Option<i64> {
     let date = value.get(..10)?;
     let (year, rest) = date.split_once('-')?;
     let (month, day) = rest.split_once('-')?;

@@ -1,7 +1,7 @@
 mod policy;
 mod query;
 
-use policy::{current_utc_day, load_reassessment_days, reassessment_due};
+use policy::{current_utc_day, iso_day, load_queue_policy, reassessment_due};
 use query::{QueryParseError, TutoringQueueQuery, parse_query};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -43,6 +43,7 @@ struct IdentityEmbed {
 
 #[derive(Deserialize)]
 struct AttendanceRow {
+    date: Option<String>,
     group_id: Option<String>,
     user_id: Option<String>,
     group: Option<AttendanceGroupEmbed>,
@@ -51,6 +52,7 @@ struct AttendanceRow {
 
 #[derive(Deserialize)]
 struct ReservedSessionRow {
+    session_date: Option<String>,
     group_id: Option<String>,
     student_user_id: Option<String>,
     reason_type: Option<String>,
@@ -186,8 +188,8 @@ async fn tutoring_queue_response(
         Err(()) => return message_response(500, FAILED_TO_LOAD_MESSAGE),
     };
 
-    let reassessment_days = match load_reassessment_days(contact_data, outbound, &ws_id).await {
-        Ok(days) => days,
+    let policy = match load_queue_policy(contact_data, outbound, &ws_id).await {
+        Ok(policy) => policy,
         Err(()) => return message_response(500, FAILED_TO_LOAD_MESSAGE),
     };
 
@@ -196,7 +198,8 @@ async fn tutoring_queue_response(
         attendance_rows,
         reserved_rows,
         feedback_rows,
-        reassessment_days,
+        policy.reassessment_days,
+        policy.absence_lookback_days,
         current_utc_day(),
     );
 
@@ -216,7 +219,7 @@ async fn load_attendance_rows(
     let mut params: Vec<(&str, String)> = vec![
         (
             "select",
-            "group_id,user_id,status,\
+            "group_id,user_id,date,status,\
              group:workspace_user_groups!user_group_attendance_group_id_fkey!inner(id,ws_id,name),\
              user:workspace_users!user_group_attendance_user_id_fkey!inner(id,full_name,display_name,email,archived)"
                 .to_owned(),
@@ -254,7 +257,7 @@ async fn load_reserved_rows(
     let mut params: Vec<(&str, String)> = vec![
         (
             "select",
-            "group_id,student_user_id,reason_type,attendance_status,source_feedback_id,resolved_at"
+            "group_id,student_user_id,reason_type,attendance_status,source_feedback_id,resolved_at,session_date"
                 .to_owned(),
         ),
         ("ws_id", format!("eq.{ws_id}")),
@@ -352,13 +355,23 @@ fn build_queue_response(
     reserved_rows: Vec<ReservedSessionRow>,
     feedback_rows: Vec<FeedbackRow>,
     reassessment_days: i64,
+    absence_lookback_days: i64,
     today: i64,
 ) -> QueueResponse {
+    let absence_cutoff = today - absence_lookback_days;
     let mut absence_count: BTreeMap<String, u32> = BTreeMap::new();
     let mut group_name: BTreeMap<String, String> = BTreeMap::new();
     let mut student_name: BTreeMap<String, String> = BTreeMap::new();
 
     for row in &attendance_rows {
+        if !row
+            .date
+            .as_deref()
+            .and_then(iso_day)
+            .is_some_and(|day| day >= absence_cutoff)
+        {
+            continue;
+        }
         let (Some(group_id), Some(user_id)) = (&row.group_id, &row.user_id) else {
             continue;
         };
@@ -384,7 +397,13 @@ fn build_queue_response(
             continue;
         };
         let key = format!("{group_id}:{student_user_id}");
-        if row.reason_type.as_deref() == Some("ABSENT_RECOVERY") {
+        if row.reason_type.as_deref() == Some("ABSENT_RECOVERY")
+            && row
+                .session_date
+                .as_deref()
+                .and_then(iso_day)
+                .is_some_and(|day| day >= absence_cutoff)
+        {
             *reserved_count.entry(key).or_insert(0) += 1;
         }
         if row.attendance_status.as_deref() == Some("PENDING")

@@ -22,6 +22,9 @@ function query(rows: () => unknown[]) {
     in() {
       return this;
     },
+    gte() {
+      return this;
+    },
     order() {
       return this;
     },
@@ -88,10 +91,33 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe('tutoring support queue', () => {
+  it('limits make-up deficits and completed credits to the recent attendance window', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T12:00:00Z'));
+    attendanceRows = [
+      { group_id: 'group', user_id: 'student', date: '2026-07-01' },
+      { group_id: 'group', user_id: 'student', date: '2026-09-20' },
+    ];
+    reservedRows = [
+      {
+        group_id: 'group',
+        student_user_id: 'student',
+        reason_type: 'ABSENT_RECOVERY',
+        attendance_status: 'DONE',
+        session_date: '2026-07-05',
+      },
+    ];
+    const body = await (await listQueue()).json();
+    expect(body.data).toMatchObject([
+      { absence_deficit: 1, reason_type: 'ABSENT_RECOVERY' },
+    ]);
+  });
+
   it('counts a pending make-up once instead of suggesting it again', async () => {
     attendanceRows = Array.from({ length: 2 }, () => ({
       group_id: 'group',
       user_id: 'student',
+      date: new Date().toISOString().slice(0, 10),
       group: { name: 'English 2' },
       user: { full_name: 'Lan' },
     }));
@@ -101,6 +127,7 @@ describe('tutoring support queue', () => {
         student_user_id: 'student',
         reason_type: 'ABSENT_RECOVERY',
         attendance_status: 'PENDING',
+        session_date: new Date().toISOString().slice(0, 10),
       },
     ];
     const response = await listQueue();
