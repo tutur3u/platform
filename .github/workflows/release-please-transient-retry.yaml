@@ -1,0 +1,73 @@
+name: Release Please Transient Retry
+
+on:
+  workflow_run:
+    workflows: ["Release Please"]
+    types: [completed]
+    branches: [production]
+
+# A completed run can race with a manual rerun. Serialize duplicate completion
+# events for the same run and recheck its live state before requesting a retry.
+concurrency:
+  group: release-please-transient-retry-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  retry-transient-github-disconnect:
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'production' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      EVENT_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+      EVENT_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Retry only a transient Release Please disconnect
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Three total attempts is enough for a transient GitHub API disconnect.
+          # Never replay a deterministic failure or an older production SHA.
+          if [[ ! "$EVENT_ATTEMPT" =~ ^[0-9]+$ ]]; then
+            echo "::error::Release Please completion event has no valid run attempt."
+            exit 1
+          fi
+          if [[ "$EVENT_ATTEMPT" -ge 3 ]]; then
+            echo "::notice::Release Please reached its three-attempt retry limit."
+            exit 0
+          fi
+
+          run_json="$(gh api "repos/${GH_REPO}/actions/runs/${RUN_ID}")"
+          live_attempt="$(jq -r '.run_attempt' <<<"$run_json")"
+          live_status="$(jq -r '.status' <<<"$run_json")"
+          live_conclusion="$(jq -r '.conclusion' <<<"$run_json")"
+          live_sha="$(jq -r '.head_sha' <<<"$run_json")"
+          production_sha="$(gh api "repos/${GH_REPO}/git/ref/heads/production" --jq '.object.sha')"
+
+          if [[ "$live_attempt" != "$EVENT_ATTEMPT" ||
+                "$live_status" != completed ||
+                "$live_conclusion" != failure ||
+                "$live_sha" != "$EVENT_SHA" ||
+                "$production_sha" != "$EVENT_SHA" ]]; then
+            echo "::notice::The run was already retried or production moved; no retry needed."
+            exit 0
+          fi
+
+          failed_log="$(gh run view "$RUN_ID" --attempt "$EVENT_ATTEMPT" --log-failed)"
+          if [[ "$failed_log" != *'release-please failed: other side closed'* ]]; then
+            echo "::notice::Release Please failed for a different reason; leaving it for investigation."
+            exit 0
+          fi
+
+          gh run rerun "$RUN_ID" --failed
+          echo "::notice::Requested failed-job retry for Release Please attempt ${EVENT_ATTEMPT}."
