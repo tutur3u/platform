@@ -906,16 +906,22 @@ class _AssistantPageState extends State<AssistantPage> {
         onClose: () => dismissAdaptiveDrawerOverlay(drawerContext),
         onNewConversation: () async {
           await dismissAdaptiveDrawerOverlay(drawerContext);
-          if (!mounted) {
-            return;
+          if (!mounted) return;
+          if (this.context.read<AssistantChromeCubit>().state.isLiveMode) {
+            await _exitLiveMode();
           }
           await _startNewConversation(wsId, _chatCubit.state, _liveCubit.state);
         },
         onSelectChat: (chat) async {
           await dismissAdaptiveDrawerOverlay(drawerContext);
+          if (!mounted) return;
           if (_liveCubit.state.chatId != null &&
               _liveCubit.state.chatId != chat.id) {
             await _liveCubit.disconnect();
+          }
+          if (!mounted) return;
+          if (this.context.read<AssistantChromeCubit>().state.isLiveMode) {
+            await _exitLiveMode();
           }
           await _chatCubit.openChat(wsId, chat);
         },
@@ -1226,52 +1232,43 @@ class _AssistantPageState extends State<AssistantPage> {
     required AssistantChatState chatState,
     required AssistantLiveState liveState,
     required bool isLiveMode,
-  }) {
-    final actions = <ShellActionSpec>[
-      if (!_isComposerVisible && !isLiveMode)
-        ShellActionSpec(
-          id: 'assistant-compose',
-          inDock: true,
-          icon: Icons.chat_bubble_outline_rounded,
-          tooltip: context.l10n.assistantAskPlaceholder,
-          onPressed: _restoreComposerAndFocus,
-        ),
+  }) => <ShellActionSpec>[
+    if (!_isComposerVisible && !isLiveMode)
       ShellActionSpec(
-        id: 'assistant-live-mode',
-        icon: isLiveMode
-            ? Icons.hearing_disabled_rounded
-            : Icons.graphic_eq_rounded,
-        callbackToken:
-            '${identityHashCode(this)}:live:$wsId:${liveState.status.name}',
-        tooltip: isLiveMode
-            ? context.l10n.assistantLiveReturnToChat
-            : context.l10n.assistantLiveConnect,
-        highlighted: isLiveMode,
-        onPressed: () {
-          unawaited(
-            isLiveMode
-                ? _exitLiveMode()
-                : _handleMicrophoneTap(wsId, shellState, chatState, liveState),
-          );
-        },
+        id: 'assistant-compose',
+        inDock: true,
+        icon: Icons.chat_bubble_outline_rounded,
+        tooltip: context.l10n.assistantAskPlaceholder,
+        onPressed: _restoreComposerAndFocus,
       ),
-    ];
-    if (!isLiveMode) {
-      actions.add(
-        ShellActionSpec(
-          id: 'assistant-history',
-          icon: Icons.history_rounded,
-          callbackToken:
-              '${identityHashCode(this)}:$wsId:${widget.replayToken}',
-          tooltip: context.l10n.assistantHistoryTitle,
-          onPressed: () {
-            unawaited(_showHistorySheet(context, wsId));
-          },
-        ),
-      );
-    }
-    return actions;
-  }
+    ShellActionSpec(
+      id: 'assistant-history',
+      icon: Icons.history_rounded,
+      callbackToken: '${identityHashCode(this)}:$wsId:${widget.replayToken}',
+      tooltip: context.l10n.assistantHistoryTitle,
+      onPressed: () => unawaited(_showHistorySheet(context, wsId)),
+    ),
+    ShellActionSpec(
+      id: 'assistant-mode-chat',
+      segmentGroup: 'assistant-modes',
+      icon: Icons.chat_bubble_outline_rounded,
+      tooltip: context.l10n.chatTitle,
+      highlighted: !isLiveMode,
+      onPressed: isLiveMode ? () => unawaited(_exitLiveMode()) : null,
+    ),
+    ShellActionSpec(
+      id: 'assistant-mode-live',
+      segmentGroup: 'assistant-modes',
+      icon: Icons.graphic_eq_rounded,
+      tooltip: context.l10n.commonLive,
+      highlighted: isLiveMode,
+      onPressed: isLiveMode
+          ? null
+          : () => unawaited(
+              _handleMicrophoneTap(wsId, shellState, chatState, liveState),
+            ),
+    ),
+  ];
 
   bool _hasLiveAccess(AssistantShellState shellState) {
     return hasAssistantLiveWorkspaceAccess(

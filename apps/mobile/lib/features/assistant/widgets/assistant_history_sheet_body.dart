@@ -34,6 +34,7 @@ class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
   static const _loadMoreThreshold = 240.0;
 
   final _scrollController = ScrollController();
+  final _searchController = TextEditingController();
   late int _visibleCount = _initialVisibleCount(
     widget.chatCubit.state.history.length,
   );
@@ -49,6 +50,7 @@ class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
     _scrollController
       ..removeListener(_handleScroll)
       ..dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -61,18 +63,36 @@ class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
         child: BlocBuilder<AssistantChatCubit, AssistantChatState>(
           bloc: widget.chatCubit,
           builder: (context, state) {
+            final query = _searchController.text.trim().toLowerCase();
+            final matchingHistory = query.isEmpty
+                ? state.history
+                : state.history
+                      .where(
+                        (chat) =>
+                            (chat.title ?? '').toLowerCase().contains(query),
+                      )
+                      .toList(growable: false);
             final visibleCount = math.min(
               _visibleCount == 0
-                  ? _initialVisibleCount(state.history.length)
+                  ? _initialVisibleCount(matchingHistory.length)
                   : _visibleCount,
-              state.history.length,
+              matchingHistory.length,
             );
-            final visibleHistory = state.history
+            final visibleHistory = matchingHistory
                 .take(visibleCount)
                 .toList(growable: false);
+            final colors = Theme.of(context).colorScheme;
+
+            final availableHeight =
+                MediaQuery.sizeOf(context).height -
+                MediaQuery.viewInsetsOf(context).bottom -
+                MediaQuery.paddingOf(context).top -
+                32;
 
             return SizedBox(
-              height: context.isCompact ? 420 : 480,
+              height: math
+                  .min(context.isCompact ? 540.0 : 620.0, availableHeight)
+                  .clamp(240.0, 620.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -82,8 +102,13 @@ class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
                         child: Text(
                           context.l10n.assistantHistoryTitle,
                           style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
+                      ),
+                      IconButton(
+                        tooltip: context.l10n.assistantNewConversation,
+                        onPressed: widget.onNewConversation,
+                        icon: const Icon(Icons.add_comment_outlined),
                       ),
                       IconButton(
                         onPressed: widget.onClose,
@@ -91,21 +116,40 @@ class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: widget.onNewConversation,
-                      icon: const Icon(Icons.add_comment_rounded, size: 18),
-                      label: Text(context.l10n.assistantNewConversation),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() => _visibleCount = _pageSize),
+                    decoration: InputDecoration(
+                      hintText: context.l10n.chatSearch,
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: query.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: context.l10n.financeActivityClearSearch,
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _visibleCount = _pageSize);
+                              },
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      isDense: true,
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  if (state.history.isEmpty)
-                    Text(
-                      context.l10n.assistantHistoryEmpty,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  const SizedBox(height: 12),
+                  if (matchingHistory.isEmpty)
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          query.isEmpty
+                              ? context.l10n.assistantHistoryEmpty
+                              : context.l10n.chatNoSearchResults,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: colors.onSurfaceVariant),
+                        ),
                       ),
                     )
                   else
@@ -113,29 +157,53 @@ class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
                       child: ListView.separated(
                         controller: _scrollController,
                         itemCount: visibleHistory.length,
-                        separatorBuilder: (_, _) => const Divider(height: 18),
+                        separatorBuilder: (_, _) => const SizedBox(height: 4),
                         itemBuilder: (context, index) {
                           final chat = visibleHistory[index];
-                          final formatter = DateFormat.MMMd().add_jm();
-                          return ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: CircleAvatar(child: Text('${index + 1}')),
-                            title: Text(
-                              chat.title?.trim().isNotEmpty == true
-                                  ? chat.title!
-                                  : context.l10n.assistantUntitledChat,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                          final selected = chat.id == widget.activeChatId;
+                          return Material(
+                            color: selected
+                                ? colors.primaryContainer.withValues(alpha: .55)
+                                : colors.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(14),
+                            child: ListTile(
+                              dense: true,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 3,
+                              ),
+                              leading: Icon(
+                                Icons.chat_bubble_outline_rounded,
+                                color: selected
+                                    ? colors.primary
+                                    : colors.onSurfaceVariant,
+                              ),
+                              title: Text(
+                                chat.title?.trim().isNotEmpty == true
+                                    ? chat.title!
+                                    : context.l10n.assistantUntitledChat,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                chat.createdAt == null
+                                    ? (chat.model ?? '')
+                                    : DateFormat.MMMd().add_jm().format(
+                                        chat.createdAt!.toLocal(),
+                                      ),
+                                maxLines: 1,
+                              ),
+                              trailing: selected
+                                  ? Icon(
+                                      Icons.check_rounded,
+                                      color: colors.primary,
+                                    )
+                                  : const Icon(Icons.chevron_right_rounded),
+                              onTap: () => widget.onSelectChat(chat),
                             ),
-                            subtitle: Text(
-                              chat.createdAt == null
-                                  ? (chat.model ?? '')
-                                  : formatter.format(chat.createdAt!.toLocal()),
-                            ),
-                            trailing: chat.id == widget.activeChatId
-                                ? const Icon(Icons.check_circle_rounded)
-                                : null,
-                            onTap: () => widget.onSelectChat(chat),
                           );
                         },
                       ),
@@ -157,7 +225,12 @@ class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
       return;
     }
 
-    final total = widget.chatCubit.state.history.length;
+    final query = _searchController.text.trim().toLowerCase();
+    final total = query.isEmpty
+        ? widget.chatCubit.state.history.length
+        : widget.chatCubit.state.history
+              .where((chat) => (chat.title ?? '').toLowerCase().contains(query))
+              .length;
     if (_visibleCount >= total) {
       return;
     }
