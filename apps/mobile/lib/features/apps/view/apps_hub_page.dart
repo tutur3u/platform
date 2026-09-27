@@ -20,11 +20,13 @@ class AppsHubPage extends StatefulWidget {
   const AppsHubPage({
     this.replayToken = 0,
     this.query = '',
+    this.showGrid = false,
     this.onSelected,
     super.key,
   });
 
   final String query;
+  final bool showGrid;
   final ValueChanged<AppModule>? onSelected;
 
   final int replayToken;
@@ -34,11 +36,8 @@ class AppsHubPage extends StatefulWidget {
 }
 
 class _AppsHubPageState extends State<AppsHubPage> {
-  bool _showGrid = false;
-
   @override
   Widget build(BuildContext context) {
-    final showViewLabels = MediaQuery.sizeOf(context).width >= 300;
     final modules =
         arrangeApps(AppRegistry.modules(context), context.watch<AppTabCubit>())
             .where(
@@ -65,44 +64,6 @@ class _AppsHubPageState extends State<AppsHubPage> {
               SliverToBoxAdapter(
                 child: SizedBox(height: floatingShellHeaderInset(context)),
               ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    ResponsivePadding.horizontal(context.deviceClass),
-                    10,
-                    ResponsivePadding.horizontal(context.deviceClass),
-                    0,
-                  ),
-                  child: Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: SegmentedButton<bool>(
-                      showSelectedIcon: false,
-                      segments: [
-                        ButtonSegment(
-                          value: false,
-                          icon: const Icon(Icons.view_agenda_rounded),
-                          label: showViewLabels
-                              ? Text(context.l10n.appsHubListView)
-                              : null,
-                          tooltip: context.l10n.appsHubListView,
-                        ),
-                        ButtonSegment(
-                          value: true,
-                          icon: const Icon(Icons.grid_view_rounded),
-                          label: showViewLabels
-                              ? Text(context.l10n.appsHubGridView)
-                              : null,
-                          tooltip: context.l10n.appsHubGridView,
-                        ),
-                      ],
-                      selected: {_showGrid},
-                      onSelectionChanged: (selection) {
-                        setState(() => _showGrid = selection.single);
-                      },
-                    ),
-                  ),
-                ),
-              ),
               if (modules.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
@@ -117,7 +78,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
                 ),
                 sliver: SliverLayoutBuilder(
                   builder: (context, constraints) {
-                    if (_showGrid) {
+                    if (widget.showGrid) {
                       final columns = (constraints.crossAxisExtent / 96)
                           .floor()
                           .clamp(1, 6);

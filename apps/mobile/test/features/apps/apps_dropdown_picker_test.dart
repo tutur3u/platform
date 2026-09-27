@@ -55,6 +55,38 @@ void main() {
           .resolveForLocation(Routes.apps)
           .firstWhere((action) => action.id == 'apps-search');
       expect(searchAction.inDock, isTrue);
+      final listAction = chrome.state
+          .resolveForLocation(Routes.apps)
+          .firstWhere((action) => action.id == 'apps-view-list');
+      final gridAction = chrome.state
+          .resolveForLocation(Routes.apps)
+          .firstWhere((action) => action.id == 'apps-view-grid');
+      expect(listAction.segmentGroup, 'apps-view');
+      expect(gridAction.segmentGroup, 'apps-view');
+      expect(listAction.highlighted, isTrue);
+      expect(find.byType(SliverList), findsOneWidget);
+      final listControl = find.byWidgetPredicate(
+        (widget) => widget is Semantics && widget.properties.label == 'List',
+      );
+      final gridControl = find.byWidgetPredicate(
+        (widget) => widget is Semantics && widget.properties.label == 'Grid',
+      );
+      expect(listControl, findsOneWidget);
+      expect(gridControl, findsOneWidget);
+      await tester.tap(gridControl);
+      await tester.pumpAndSettle();
+      expect(find.byType(SliverGrid), findsOneWidget);
+      expect(
+        chrome.state
+            .resolveForLocation(Routes.apps)
+            .firstWhere((action) => action.id == 'apps-view-grid')
+            .highlighted,
+        isTrue,
+      );
+      await tester.tap(listControl);
+      await tester.pumpAndSettle();
+      expect(find.byType(SliverList), findsOneWidget);
+      expect(find.byType(SegmentedButton<bool>), findsNothing);
       searchAction.onPressed!();
       await tester.pumpAndSettle();
       final activeSearch = chrome.state

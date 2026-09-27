@@ -130,7 +130,7 @@ void main() {
       ),
       findsNothing,
     );
-    expect(find.text('Live'), findsWidgets);
+    expect(find.text('Available'), findsNothing);
     expect(find.text('Mute mic'), findsOneWidget);
     expect(find.text('Show camera'), findsOneWidget);
     expect(find.text('Type'), findsOneWidget);
@@ -139,10 +139,9 @@ void main() {
     expect(find.text('Voice response is streaming'), findsOneWidget);
   });
 
-  testWidgets('waits for an explicit connection in the idle state', (
+  testWidgets('keeps the idle state clear for the shell start action', (
     tester,
   ) async {
-    var connectTaps = 0;
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -165,9 +164,7 @@ void main() {
             assistantName: 'Mira',
             scrollController: ScrollController(),
             onRetry: () async {},
-            onToggleMicrophone: () async {
-              connectTaps++;
-            },
+            onToggleMicrophone: () async {},
             onToggleCamera: () async {},
             onDisconnect: () async {},
             onOpenTextEntry: () async {},
@@ -177,10 +174,9 @@ void main() {
     );
 
     expect(find.text('Talk with Mira'), findsOneWidget);
-    expect(find.text('Start live session'), findsOneWidget);
+    expect(find.text('Start live session'), findsNothing);
+    expect(find.text('Available'), findsNothing);
     expect(find.text('Live transcript'), findsNothing);
-    await tester.tap(find.text('Start live session'));
-    expect(connectTaps, 1);
   });
 
   testWidgets('shows localized recovery without raw provider details', (

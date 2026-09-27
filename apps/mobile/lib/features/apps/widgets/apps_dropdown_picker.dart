@@ -82,6 +82,7 @@ class _AppsScreenState extends State<AppsScreen> {
   final _search = TextEditingController();
   bool _searching = false;
   bool _editing = false;
+  bool _showGrid = false;
 
   @override
   void initState() {
@@ -142,6 +143,24 @@ class _AppsScreenState extends State<AppsScreen> {
               callbackToken: 'arrange-$_editing',
               onPressed: () => setState(() => _editing = !_editing),
             ),
+            ShellActionSpec(
+              id: 'apps-view-list',
+              segmentGroup: 'apps-view',
+              icon: Icons.view_agenda_rounded,
+              tooltip: context.l10n.appsHubListView,
+              highlighted: !_showGrid,
+              callbackToken: _showGrid,
+              onPressed: () => setState(() => _showGrid = false),
+            ),
+            ShellActionSpec(
+              id: 'apps-view-grid',
+              segmentGroup: 'apps-view',
+              icon: Icons.grid_view_rounded,
+              tooltip: context.l10n.appsHubGridView,
+              highlighted: _showGrid,
+              callbackToken: _showGrid,
+              onPressed: () => setState(() => _showGrid = true),
+            ),
           ],
         ),
         Expanded(
@@ -149,6 +168,7 @@ class _AppsScreenState extends State<AppsScreen> {
               ? const AppsPickerEditor()
               : AppsHubPage(
                   query: _search.text,
+                  showGrid: _showGrid,
                   replayToken: widget.replayToken,
                 ),
         ),

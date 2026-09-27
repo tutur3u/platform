@@ -1144,7 +1144,6 @@ class _AssistantPageState extends State<AssistantPage>
       onRetry: () => _handleLiveRetry(wsId, chatState),
       onToggleMicrophone: () => _handleLiveMicrophoneToggle(wsId, chatState),
       onToggleCamera: _liveCubit.toggleCamera,
-      onSettings: _showLiveSettings,
       onDisconnect: () async {
         await _liveCubit.disconnect(clearSession: true);
         if (mounted) context.read<AssistantChromeCubit>().exitLiveMode();
@@ -1189,13 +1188,33 @@ class _AssistantPageState extends State<AssistantPage>
         tooltip: context.l10n.assistantAskPlaceholder,
         onPressed: _restoreComposerAndFocus,
       ),
-    ShellActionSpec(
-      id: 'assistant-history',
-      icon: Icons.history_rounded,
-      callbackToken: '${identityHashCode(this)}:$wsId:${widget.replayToken}',
-      tooltip: context.l10n.assistantHistoryTitle,
-      onPressed: () => unawaited(_showHistorySheet(context, wsId)),
-    ),
+    if (!isLiveMode)
+      ShellActionSpec(
+        id: 'assistant-history',
+        icon: Icons.history_rounded,
+        callbackToken: '${identityHashCode(this)}:$wsId:${widget.replayToken}',
+        tooltip: context.l10n.assistantHistoryTitle,
+        onPressed: () => unawaited(_showHistorySheet(context, wsId)),
+      ),
+    if (isLiveMode)
+      ShellActionSpec(
+        id: 'assistant-live-settings',
+        icon: Icons.tune_rounded,
+        tooltip: context.l10n.assistantSettingsTitle,
+        callbackToken: '$wsId:$_keepLiveWhileBrowsing',
+        onPressed: () => unawaited(_showLiveSettings()),
+      ),
+    if (isLiveMode &&
+        liveState.status == AssistantLiveConnectionStatus.disconnected)
+      ShellActionSpec(
+        id: 'assistant-live-start',
+        inDock: true,
+        icon: Icons.mic_rounded,
+        tooltip: context.l10n.assistantLiveConnect,
+        callbackToken: '$wsId:${liveState.status}',
+        onPressed: () =>
+            unawaited(_handleLiveMicrophoneToggle(wsId, chatState)),
+      ),
     ShellActionSpec(
       id: 'assistant-mode-chat',
       segmentGroup: 'assistant-modes',

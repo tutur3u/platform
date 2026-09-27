@@ -1,9 +1,7 @@
 part of 'assistant_live_mode_view.dart';
 
 class _LiveIdleState extends StatelessWidget {
-  const _LiveIdleState({required this.onConnect});
-
-  final Future<void> Function() onConnect;
+  const _LiveIdleState();
 
   @override
   Widget build(BuildContext context) {
@@ -40,12 +38,6 @@ class _LiveIdleState extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: onConnect,
-                icon: const Icon(Icons.mic_rounded),
-                label: Text(context.l10n.assistantLiveConnect),
-              ),
             ],
           ),
         ),
@@ -58,16 +50,12 @@ class _LiveModeHeader extends StatelessWidget {
   const _LiveModeHeader({
     required this.liveState,
     required this.liveUiState,
-    required this.onDisconnect,
     required this.onRetry,
-    this.onSettings,
   });
 
   final AssistantLiveState liveState;
   final AssistantLiveUiState liveUiState;
-  final Future<void> Function() onDisconnect;
   final Future<void> Function() onRetry;
-  final Future<void> Function()? onSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -113,18 +101,6 @@ class _LiveModeHeader extends StatelessWidget {
           TextButton(
             onPressed: onRetry,
             child: Text(context.l10n.assistantLiveRetryAction),
-          ),
-        if (onSettings != null)
-          IconButton(
-            tooltip: context.l10n.assistantSettingsTitle,
-            onPressed: onSettings,
-            icon: const Icon(Icons.tune_rounded),
-          ),
-        if (liveState.status != AssistantLiveConnectionStatus.disconnected)
-          IconButton(
-            tooltip: context.l10n.assistantLiveDisconnect,
-            onPressed: onDisconnect,
-            icon: Icon(Icons.call_end_rounded, color: theme.colorScheme.error),
           ),
       ],
     );
@@ -344,11 +320,13 @@ class _LiveControlRail extends StatelessWidget {
     required this.onToggleMicrophone,
     required this.onToggleCamera,
     required this.onOpenTextEntry,
+    required this.onDisconnect,
   });
   final AssistantLiveState liveState;
   final Future<void> Function() onToggleMicrophone;
   final Future<void> Function() onToggleCamera;
   final Future<void> Function() onOpenTextEntry;
+  final Future<void> Function() onDisconnect;
 
   @override
   Widget build(BuildContext context) {
@@ -397,6 +375,13 @@ class _LiveControlRail extends StatelessWidget {
               label: context.l10n.assistantLiveTypeMessage,
               showLabel: labels,
               onPressed: onOpenTextEntry,
+            ),
+            const SizedBox(width: 6),
+            _LiveControlButton(
+              icon: Icons.call_end_rounded,
+              label: context.l10n.assistantLiveDisconnect,
+              showLabel: false,
+              onPressed: onDisconnect,
             ),
           ],
         ),
