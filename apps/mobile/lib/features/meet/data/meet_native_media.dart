@@ -18,6 +18,7 @@ class MeetNativeMedia extends ChangeNotifier {
   final _remoteTrackIds = <String, Set<String>>{};
   final _midOwners = <String, String>{};
   final _subscribed = <String>{};
+  String? _lastSubscribeSummary;
   final _published = <String>{};
   final _streams = <MediaStream>[];
   RTCPeerConnection? _publisher;
@@ -100,6 +101,12 @@ class MeetNativeMedia extends ChangeNotifier {
     required bool admitted,
     required List<MeetRoomTrack> tracks,
   }) => _serialize(() async {
+    if (_participants != participants) {
+      debugPrint(
+        'Meet media participants=$participants audio=$audioEnabled '
+        'video=$videoEnabled remoteTracks=${tracks.length}',
+      );
+    }
     _selfUserId = selfUserId;
     _participants = participants;
     _admitted = admitted;
@@ -113,16 +120,23 @@ class MeetNativeMedia extends ChangeNotifier {
   Future<void> resetPeers() => _serialize(() async {
     await _resetPublisher();
     await _resetSubscriber();
-    await _publishPending();
-    await _subscribePending();
+    failureStage = null;
+  });
+
+  Future<void> resetReceiver() => _serialize(() async {
+    await _resetSubscriber();
     failureStage = null;
   });
 
   Future<void> _resetPublisher() async {
     final peer = _publisher;
+    final session = _publishSession;
     _publisher = null;
     _publishSession = null;
     _published.clear();
+    if (session != null) {
+      signaling.send({'type': 'media.idle', 'sessionId': session});
+    }
     await peer?.dispose();
   }
 
@@ -162,6 +176,7 @@ class MeetNativeMedia extends ChangeNotifier {
     if (current != null && session != null) return (current, session);
     final pc = await createPeerConnection({
       'sdpSemantics': 'unified-plan',
+      'bundlePolicy': 'max-bundle',
       'iceServers': [
         {'urls': 'stun:stun.cloudflare.com:3478'},
       ],
@@ -172,7 +187,12 @@ class MeetNativeMedia extends ChangeNotifier {
       final id = response['sessionId'] as String?;
       if (id == null) throw StateError('SFU session unavailable');
       final ice = response['iceServers'];
-      if (ice is List) await pc.setConfiguration({'iceServers': ice});
+      if (ice is List) {
+        await pc.setConfiguration({
+          'bundlePolicy': 'max-bundle',
+          'iceServers': ice,
+        });
+      }
       if (publish) {
         _publisher = pc;
         _publishSession = id;
@@ -198,6 +218,7 @@ class MeetNativeMedia extends ChangeNotifier {
         ('$self-video', _video!),
     ];
     if (pending.isEmpty) return;
+    debugPrint('Meet publisher starting ${pending.length} local tracks');
     final (pc, sessionId) = await _openSession(publish: true);
     try {
       failureStage = 'publish';
@@ -258,6 +279,9 @@ class MeetNativeMedia extends ChangeNotifier {
       failureStage = 'connect';
       await waitForMeetPeerConnection(pc);
       _published.addAll(pending.map((entry) => entry.$1));
+      debugPrint(
+        'Meet publisher connected with ${pending.length} local tracks',
+      );
     } on Object {
       await _resetPublisher();
       rethrow;
@@ -300,8 +324,25 @@ class MeetNativeMedia extends ChangeNotifier {
       if (response['errorCode'] != null) {
         throw StateError('SFU subscribe failed');
       }
+      final resultTracks = response['tracks'] as List? ?? [];
+      final summary = resultTracks
+          .map((value) {
+            if (value is! Map) return 'invalid';
+            return '${value['errorCode'] ?? 'ok'}:'
+                '${value['mid'] != null}:${value['trackName'] != null}';
+          })
+          .join(',');
+      if (_lastSubscribeSummary != summary) {
+        _lastSubscribeSummary = summary;
+        debugPrint('Meet subscribe results: $summary');
+        if (resultTracks.any(
+          (value) => value is Map && value['errorCode'] != null,
+        )) {
+          await _logPublisherHealth();
+        }
+      }
       var accepted = 0;
-      for (final value in response['tracks'] as List? ?? []) {
+      for (final value in resultTracks) {
         if (value is! Map || value['errorCode'] != null) continue;
         final mid = value['mid'] as String?;
         final name = value['trackName'] as String?;
@@ -343,6 +384,29 @@ class MeetNativeMedia extends ChangeNotifier {
     } on Object {
       await _resetSubscriber();
       rethrow;
+    }
+  }
+
+  Future<void> _logPublisherHealth() async {
+    final publisher = _publisher;
+    if (publisher == null) return;
+    try {
+      final stats = await publisher.getStats().timeout(
+        const Duration(seconds: 2),
+      );
+      final outbound = stats.where((entry) => entry.type == 'outbound-rtp');
+      final packets = outbound.fold<int>(
+        0,
+        (total, entry) =>
+            total + ((entry.values['packetsSent'] as num?)?.toInt() ?? 0),
+      );
+      debugPrint(
+        'Meet publisher health: state=${await publisher.getConnectionState()} '
+        'outboundStreams=${outbound.length} packetsSent=$packets '
+        'audioEnabled=${_audio?.enabled} videoEnabled=${_video?.enabled}',
+      );
+    } on Object {
+      // Diagnostics must never interrupt a media retry.
     }
   }
 
