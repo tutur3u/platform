@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.35.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.34.0...tanstack-web-v0.35.0) (2026-09-27)
+
+
+### Features
+
+* **notes:** add device lock with passkey and QR recovery ([f8ad1f9](https://github.com/tutur3u/platform/commit/f8ad1f9b3e6a2008411337aced706227d732f068)) ([#5583](https://github.com/tutur3u/platform/issues/5583)) ([7f9372b](https://github.com/tutur3u/platform/commit/7f9372bd37886d73f93ab0f732d7603d17811115))
+
 ## [0.34.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.33.0...tanstack-web-v0.34.0) (2026-09-27)
 
 

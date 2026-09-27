@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.45.0](https://github.com/tutur3u/platform/compare/internal-api-v0.44.0...internal-api-v0.45.0) (2026-09-27)
+
+
+### Features
+
+* **notes:** add device lock with passkey and QR recovery ([f8ad1f9](https://github.com/tutur3u/platform/commit/f8ad1f9b3e6a2008411337aced706227d732f068)) ([#5583](https://github.com/tutur3u/platform/issues/5583)) ([7f9372b](https://github.com/tutur3u/platform/commit/7f9372bd37886d73f93ab0f732d7603d17811115))
+* **tutoring:** configure eligibility and content reviews ([1a85645](https://github.com/tutur3u/platform/commit/1a85645cdc1402389cd2c590958c8ec5c9f22671)) ([#5582](https://github.com/tutur3u/platform/issues/5582)) ([05f24fc](https://github.com/tutur3u/platform/commit/05f24fc78f6b474a35b11a8c7647388be53e7240))
+* **tutoring:** exclude kindergarten groups in center preset ([40b6acd](https://github.com/tutur3u/platform/commit/40b6acdd1cd81cfcbaf3f06af0d73e2245d7b19e)) ([#5588](https://github.com/tutur3u/platform/issues/5588)) ([4eba095](https://github.com/tutur3u/platform/commit/4eba095b781d48410c6051fc121c773eb56fcb73))
+
+
+### Bug Fixes
+
+* **contacts:** preserve Unicode in tutoring policy chunks ([4924886](https://github.com/tutur3u/platform/commit/4924886660933b5087ec2913450f87168c0bbb5e))
+* **contacts:** store tutoring policies within config limits ([#5577](https://github.com/tutur3u/platform/issues/5577)) ([071c7c5](https://github.com/tutur3u/platform/commit/071c7c52c0ed60209006140fb2251a644009ee12))
+* **tutoring:** declare review fields on queue items ([0d7b22d](https://github.com/tutur3u/platform/commit/0d7b22d090da0461c679b972511917f77e7201f7))
+
 ## [0.44.0](https://github.com/tutur3u/platform/compare/internal-api-v0.43.0...internal-api-v0.44.0) (2026-09-27)
 
 

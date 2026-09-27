@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/mobile-v0.15.0...mobile-v0.16.0) (2026-09-27)
+
+
+### Features
+
+* **mobile:** align Apps and Mira Live navigation ([#5580](https://github.com/tutur3u/platform/issues/5580)) ([350774f](https://github.com/tutur3u/platform/commit/350774f179a58ae7e9c00c5f2c5a642d129cdaf9))
+* **mobile:** align Apps and Mira Live with shell navigation ([8c63228](https://github.com/tutur3u/platform/commit/8c632282f95eac1c2fb577da5cc38c6ff0a9d9a8))
+* **notes:** add device lock with passkey and QR recovery ([f8ad1f9](https://github.com/tutur3u/platform/commit/f8ad1f9b3e6a2008411337aced706227d732f068)) ([#5583](https://github.com/tutur3u/platform/issues/5583)) ([7f9372b](https://github.com/tutur3u/platform/commit/7f9372bd37886d73f93ab0f732d7603d17811115))
+
+
+### Bug Fixes
+
+* **mobile:** open calendar reminder events and clarify alerts ([76f144c](https://github.com/tutur3u/platform/commit/76f144c8ff27d3f144aba33299249cd33bd882c7))
+* **mobile:** open calendar reminders and clarify alerts ([#5589](https://github.com/tutur3u/platform/issues/5589)) ([efecc5b](https://github.com/tutur3u/platform/commit/efecc5ba30644037ca942a44607e07b55ab06bf9))
+* **notes:** tighten lock navigation and recovery boundaries ([4f2960c](https://github.com/tutur3u/platform/commit/4f2960c2ca0f5e3d06ff440ef462f3f1e5027672))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/mobile-v0.14.0...mobile-v0.15.0) (2026-09-27)
 
 

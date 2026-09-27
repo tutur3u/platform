@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/contacts-v0.24.0...contacts-v0.25.0) (2026-09-27)
+
+
+### Features
+
+* **tutoring:** configure eligibility and content reviews ([1a85645](https://github.com/tutur3u/platform/commit/1a85645cdc1402389cd2c590958c8ec5c9f22671)) ([#5582](https://github.com/tutur3u/platform/issues/5582)) ([05f24fc](https://github.com/tutur3u/platform/commit/05f24fc78f6b474a35b11a8c7647388be53e7240))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/contacts-v0.23.0...contacts-v0.24.0) (2026-09-27)
 
 
