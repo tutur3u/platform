@@ -7,6 +7,7 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
+import 'package:mobile/features/reminders/reminder_notification_copy.dart';
 import 'package:mobile/features/reminders/reminder_plan.dart';
 import 'package:mobile/features/reminders/reminder_settings.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
@@ -226,27 +227,12 @@ class ReminderService extends ChangeNotifier {
           .toSet();
       for (final entry in entries) {
         if (_userId != userId) return;
-        final when = switch (entry.offset) {
-          '3d' => l10n.remindersIn3d,
-          '1d' => l10n.remindersIn1d,
-          '12h' => l10n.remindersIn12h,
-          '3h' => l10n.remindersIn3h,
-          '1h' => l10n.remindersIn1h,
-          _ => l10n.remindersEventTitle,
-        };
+        final copy = reminderNotificationCopy(entry, l10n);
         await PushNotificationService.instance.scheduleLocalReminder(
           id: entry.notificationId,
           scheduledAt: entry.scheduledAt,
-          title: entry.kind == ReminderKind.task
-              ? l10n.remindersTaskTitle
-              : entry.isAllDay
-              ? l10n.remindersAllDayEvent(entry.title)
-              : l10n.remindersUpcomingEvent(when, entry.title),
-          body: entry.kind == ReminderKind.task
-              ? entry.title
-              : entry.isAllDay
-              ? when
-              : l10n.remindersEventTitle,
+          title: copy.title,
+          body: copy.body,
           request: PushNavigationRequest(
             notificationId: '',
             openTarget: entry.kind == ReminderKind.task ? 'task' : 'calendar',

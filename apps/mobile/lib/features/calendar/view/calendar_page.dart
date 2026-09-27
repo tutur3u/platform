@@ -35,7 +35,9 @@ CalendarViewMode _defaultCalendarMode(BuildContext context) =>
     : CalendarViewMode.threeDays;
 
 class CalendarPage extends StatelessWidget {
-  const CalendarPage({super.key});
+  const CalendarPage({super.key, this.initialEventId});
+
+  final String? initialEventId;
 
   @override
   Widget build(BuildContext context) {
@@ -53,13 +55,15 @@ class CalendarPage extends StatelessWidget {
         if (wsId != null) unawaited(cubit.loadEvents(wsId, forceRefresh: true));
         return cubit;
       },
-      child: const _CalendarView(),
+      child: _CalendarView(initialEventId: initialEventId),
     );
   }
 }
 
 class _CalendarView extends StatefulWidget {
-  const _CalendarView();
+  const _CalendarView({this.initialEventId});
+
+  final String? initialEventId;
 
   @override
   State<_CalendarView> createState() => _CalendarViewState();
@@ -71,6 +75,7 @@ class _CalendarViewState extends State<_CalendarView> {
   @override
   void initState() {
     super.initState();
+    _scheduleInitialEventOpen();
     _lifecycle = AppLifecycleListener(
       onResume: () {
         final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -80,6 +85,57 @@ class _CalendarViewState extends State<_CalendarView> {
         }
       },
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant _CalendarView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialEventId != widget.initialEventId) {
+      _scheduleInitialEventOpen();
+    }
+  }
+
+  void _scheduleInitialEventOpen() {
+    final eventId = widget.initialEventId;
+    if (eventId == null || eventId.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.initialEventId == eventId) {
+        unawaited(_openInitialEvent(eventId));
+      }
+    });
+  }
+
+  Future<void> _openInitialEvent(String eventId) async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
+    final repository = CalendarRepository();
+    CalendarEvent? event;
+    try {
+      event = await repository.getEventById(wsId, eventId);
+    } on Exception {
+      // The calendar remains usable if the event cannot be loaded.
+    } finally {
+      repository.dispose();
+    }
+    if (!mounted || widget.initialEventId != eventId) return;
+    if (event == null) {
+      shad.showToast(
+        context: Navigator.of(context, rootNavigator: true).context,
+        builder: (context, overlay) => shad.SurfaceCard(
+          child: Text(context.l10n.calendarEventUnavailable),
+        ),
+      );
+      context.go(Routes.calendar);
+      return;
+    }
+    if (event.startAt case final startAt?) {
+      final cubit = context.read<CalendarCubit>()..selectDate(startAt);
+      unawaited(cubit.ensureRangeLoaded(wsId, startAt));
+    }
+    await _showEventDetail(context, event);
+    if (mounted && widget.initialEventId == eventId) {
+      context.go(Routes.calendar);
+    }
   }
 
   @override
@@ -113,7 +169,11 @@ class _CalendarViewState extends State<_CalendarView> {
             builder: (context, state) {
               return ShellMiniNav(
                 ownerId: 'calendar-view-modes',
-                locations: const {Routes.calendar},
+                locations: {
+                  Routes.calendar,
+                  if (widget.initialEventId case final eventId?)
+                    Routes.calendarEventDetailPath(eventId),
+                },
                 deepLinkBackRoute: Routes.apps,
                 items: [
                   ShellMiniNavItemSpec(
@@ -164,7 +224,11 @@ class _CalendarViewState extends State<_CalendarView> {
                   ?.id;
               return ShellChromeActions(
                 ownerId: 'calendar-root',
-                locations: const {Routes.calendar},
+                locations: {
+                  Routes.calendar,
+                  if (widget.initialEventId case final eventId?)
+                    Routes.calendarEventDetailPath(eventId),
+                },
                 actions: [
                   ShellActionSpec(
                     id: 'calendar-create',

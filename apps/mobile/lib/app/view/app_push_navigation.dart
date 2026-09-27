@@ -99,7 +99,7 @@ extension _AppPushNavigation on _AppState {
     if (request.openTarget == 'calendar' &&
         request.entityId != null &&
         request.entityId!.isNotEmpty) {
-      _router.go('/calendar/${Uri.encodeComponent(request.entityId!)}');
+      _router.go(Routes.calendarEventDetailPath(request.entityId!));
       unawaited(archiveOpenedNotification(request.notificationId));
       return;
     }
