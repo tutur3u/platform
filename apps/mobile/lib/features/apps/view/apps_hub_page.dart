@@ -38,6 +38,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
 
   @override
   Widget build(BuildContext context) {
+    final showViewLabels = MediaQuery.sizeOf(context).width >= 300;
     final modules =
         arrangeApps(AppRegistry.modules(context), context.watch<AppTabCubit>())
             .where(
@@ -80,12 +81,18 @@ class _AppsHubPageState extends State<AppsHubPage> {
                         ButtonSegment(
                           value: false,
                           icon: const Icon(Icons.view_agenda_rounded),
-                          label: Text(context.l10n.appsHubListView),
+                          label: showViewLabels
+                              ? Text(context.l10n.appsHubListView)
+                              : null,
+                          tooltip: context.l10n.appsHubListView,
                         ),
                         ButtonSegment(
                           value: true,
                           icon: const Icon(Icons.grid_view_rounded),
-                          label: Text(context.l10n.appsHubGridView),
+                          label: showViewLabels
+                              ? Text(context.l10n.appsHubGridView)
+                              : null,
+                          tooltip: context.l10n.appsHubGridView,
                         ),
                       ],
                       selected: {_showGrid},
@@ -113,13 +120,22 @@ class _AppsHubPageState extends State<AppsHubPage> {
                     if (_showGrid) {
                       final columns = (constraints.crossAxisExtent / 96)
                           .floor()
-                          .clamp(3, 6);
+                          .clamp(1, 6);
+                      final labelStyle = Theme.of(
+                        context,
+                      ).textTheme.labelMedium;
+                      final labelHeight =
+                          MediaQuery.textScalerOf(
+                            context,
+                          ).scale(labelStyle?.fontSize ?? 14) *
+                          (labelStyle?.height ?? 1.2) *
+                          2;
                       return SliverGrid(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: columns,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
-                          mainAxisExtent: 116,
+                          mainAxisExtent: 64 + 8 + labelHeight + 12,
                         ),
                         delegate: SliverChildBuilderDelegate(
                           (context, index) => _AppGridTile(
