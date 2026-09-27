@@ -92,7 +92,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
               _CheckpointEmpty(onBatchCheck: _openBatchSheet)
             else
               NovaRefreshIndicator(
-                onRefresh: () => _load(showLoader: false),
+                onRefresh: () => _load(showLoader: false, forceRefresh: true),
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(
                     16,
@@ -163,7 +163,10 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
       checkpoint.walletId: checkpoint,
   };
 
-  Future<void> _load({bool showLoader = true}) async {
+  Future<void> _load({
+    bool showLoader = true,
+    bool forceRefresh = false,
+  }) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
 
@@ -178,7 +181,10 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     }
 
     try {
-      final summaryFuture = repository.getWalletCheckpointSummary(wsId: wsId);
+      final summaryFuture = repository.getWalletCheckpointSummary(
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+      );
       final categoriesFuture = repository
           .getCategories(wsId)
           .catchError((_) => const <TransactionCategory>[]);
@@ -201,6 +207,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
           walletId: selectedWalletId,
           requestToken: requestToken,
           showLoader: showLoader,
+          forceRefresh: forceRefresh,
         );
       }
     } on Exception catch (error) {
@@ -234,6 +241,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     required String walletId,
     required int requestToken,
     bool showLoader = true,
+    bool forceRefresh = false,
   }) async {
     if (showLoader) {
       setState(() {
@@ -245,7 +253,11 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     try {
       final checkpoints = await context
           .read<FinanceRepository>()
-          .getWalletCheckpoints(wsId: wsId, walletId: walletId);
+          .getWalletCheckpoints(
+            wsId: wsId,
+            walletId: walletId,
+            forceRefresh: forceRefresh,
+          );
       if (!mounted || requestToken != _requestToken) return;
       setState(() {
         _selectedWalletCheckpoints = checkpoints;
@@ -316,7 +328,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
         );
       }
       FinanceCubit.clearWorkspaceCache(wsId);
-      await _load(showLoader: false);
+      await _load(showLoader: false, forceRefresh: true);
       if (!mounted || !toastContext.mounted) return;
       _showToast(toastContext, message: savedMessage);
     } on Exception catch (error) {
@@ -361,7 +373,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
         checkpointId: checkpoint.id,
       );
       FinanceCubit.clearWorkspaceCache(wsId);
-      await _load(showLoader: false);
+      await _load(showLoader: false, forceRefresh: true);
       if (!mounted || !toastContext.mounted) return;
       _showToast(toastContext, message: deletedMessage);
     } on Exception catch (error) {
@@ -418,7 +430,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
             description: result.description,
           );
       FinanceCubit.clearWorkspaceCache(wsId);
-      await _load(showLoader: false);
+      await _load(showLoader: false, forceRefresh: true);
       if (!mounted || !toastContext.mounted) return;
       _showToast(
         toastContext,
@@ -469,7 +481,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
         entries: result.entries,
       );
       FinanceCubit.clearWorkspaceCache(wsId);
-      await _load(showLoader: false);
+      await _load(showLoader: false, forceRefresh: true);
       if (!mounted || !toastContext.mounted) return;
       _showToast(toastContext, message: savedMessage);
     } on Exception catch (error) {

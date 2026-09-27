@@ -17,6 +17,11 @@ class CachePolicy {
 class CachePolicies {
   const CachePolicies._();
 
+  static const offlineCatalog = CachePolicy(
+    staleAfter: Duration(minutes: 15),
+    expireAfter: Duration(days: 365),
+  );
+
   static const metadata = CachePolicy(
     staleAfter: Duration(minutes: 30),
     expireAfter: Duration(days: 7),

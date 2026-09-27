@@ -611,6 +611,7 @@ class _WalletCard extends StatelessWidget {
               alignment: CrossAxisAlignment.start,
               forceColor: theme.colorScheme.foreground,
               style: theme.typography.h3,
+              fitToWidth: true,
             ),
             const shad.Gap(12),
             Wrap(

@@ -138,6 +138,7 @@ class WalletDetailSummaryCard extends StatelessWidget {
                     showPlus: false,
                     forceColor: colorScheme.foreground,
                     style: theme.typography.h4,
+                    fitToWidth: true,
                   ),
                 ],
               ),

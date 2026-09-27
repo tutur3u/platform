@@ -49,6 +49,29 @@ void main() {
     verify(() => apiClient.getJson(any())).called(1);
   });
 
+  test(
+    'keeps the complete product options ready for offline checkout',
+    () async {
+      final apiClient = _MockApiClient();
+      final repository = InventoryRepository(apiClient: apiClient);
+      when(() => apiClient.getJson(any())).thenAnswer(
+        (_) async => {
+          'data': [
+            {'id': 'product-1', 'name': 'Notebook'},
+            {'id': 'product-2', 'name': 'Pen'},
+          ],
+        },
+      );
+
+      final first = await repository.getProductOptions('ws-catalog');
+      final cached = await repository.getProductOptions('ws-catalog');
+
+      expect(first.map((item) => item.name), ['Notebook', 'Pen']);
+      expect(cached, first);
+      verify(() => apiClient.getJson(any())).called(1);
+    },
+  );
+
   test('does not reuse inventory data across workspaces', () async {
     final apiClient = _MockApiClient();
     final repository = InventoryRepository(apiClient: apiClient);

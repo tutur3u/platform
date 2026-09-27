@@ -28,6 +28,8 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+part 'finance_page_hero.dart';
+
 Future<void> _reload(BuildContext context) async {
   final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
   if (wsId != null) {
@@ -167,90 +169,6 @@ class _FinanceError extends StatelessWidget {
             child: Text(l10n.commonRetry),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _OverviewHero extends StatelessWidget {
-  const _OverviewHero({required this.state, required this.showAmounts});
-
-  final FinanceState state;
-  final bool showAmounts;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = FinancePalette.of(context);
-    final theme = shad.Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: palette.subtleBorder),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: palette.heroGradient,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: theme.brightness == Brightness.dark ? 0.22 : 0.06,
-            ),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: palette.accent.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Icon(
-                  Icons.account_balance_wallet_rounded,
-                  size: 26,
-                  color: palette.accent,
-                ),
-              ),
-              const shad.Gap(14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.l10n.financeNetBalance,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const shad.Gap(22),
-          Text(
-            maskFinanceValue(
-              '${state.hasCrossCurrencyWallets ? '≈ ' : ''}'
-              '${formatCurrency(state.totalBalance, state.workspaceCurrency)}',
-              showAmounts: showAmounts,
-            ),
-            style: theme.typography.h2.copyWith(
-              fontWeight: FontWeight.w900,
-              height: 1.05,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -474,6 +392,7 @@ class _WalletHighlightCard extends StatelessWidget {
                 alignment: CrossAxisAlignment.start,
                 forceColor: theme.colorScheme.foreground,
                 style: theme.typography.h4,
+                fitToWidth: true,
               ),
               if (showConverted) ...[
                 const shad.Gap(8),
