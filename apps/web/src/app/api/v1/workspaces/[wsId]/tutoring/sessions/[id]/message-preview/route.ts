@@ -1,3 +1,9 @@
+import {
+  getTutoringCampus,
+  readTutoringPolicy,
+  renderTutoringParentMessage,
+  TUTORING_POLICY_CONFIG_ID,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
@@ -56,6 +62,7 @@ export async function POST(request: Request, { params }: Params) {
       reason_type,
       session_date,
       start_time,
+      duration_minutes,
       group_id,
       student_user_id,
       teacher_user_id
@@ -84,29 +91,45 @@ export async function POST(request: Request, { params }: Params) {
         ? 'hỗ trợ học lực'
         : 'phụ đạo';
 
-  const [groupResult, studentResult, teacherResult] = await Promise.all([
-    sbAdmin
-      .from('workspace_user_groups')
-      .select('name')
-      .eq('id', data.group_id)
-      .maybeSingle(),
-    sbAdmin
-      .from('workspace_users')
-      .select('full_name,display_name,email')
-      .eq('id', data.student_user_id)
-      .maybeSingle(),
-    data.teacher_user_id
-      ? sbAdmin
-          .from('workspace_users')
-          .select('full_name,display_name,email')
-          .eq('id', data.teacher_user_id)
-          .maybeSingle()
-      : Promise.resolve({ data: null, error: null }),
-  ]);
+  const [groupResult, studentResult, teacherResult, policyResult] =
+    await Promise.all([
+      sbAdmin
+        .from('workspace_user_groups')
+        .select('name')
+        .eq('id', data.group_id)
+        .maybeSingle(),
+      sbAdmin
+        .from('workspace_users')
+        .select('full_name,display_name,email')
+        .eq('id', data.student_user_id)
+        .maybeSingle(),
+      data.teacher_user_id
+        ? sbAdmin
+            .from('workspace_users')
+            .select('full_name,display_name,email')
+            .eq('id', data.teacher_user_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      sbAdmin
+        .from('workspace_configs')
+        .select('value')
+        .eq('ws_id', normalizedWsId)
+        .eq('id', TUTORING_POLICY_CONFIG_ID)
+        .maybeSingle(),
+    ]);
 
-  if (groupResult.error || studentResult.error || teacherResult.error) {
+  if (
+    groupResult.error ||
+    studentResult.error ||
+    teacherResult.error ||
+    policyResult.error
+  ) {
     console.error('Failed to load tutoring preview relations', {
-      error: groupResult.error ?? studentResult.error ?? teacherResult.error,
+      error:
+        groupResult.error ??
+        studentResult.error ??
+        teacherResult.error ??
+        policyResult.error,
       sessionId: id,
       wsId: normalizedWsId,
     });
@@ -121,13 +144,18 @@ export async function POST(request: Request, { params }: Params) {
   const group = groupResult.data;
   const studentName = displayName(student);
 
-  const preview = [
-    `Xin chào phụ huynh ${studentName},`,
-    `${studentName} sẽ tham gia buổi ${reasonLabel} vào ${formatDateOnly(data.session_date)} lúc ${String(data.start_time).slice(0, 5)}.`,
-    `Lớp/Nhóm: ${group?.name ?? 'N/A'}.`,
-    `Giáo viên phụ trách: ${displayName(teacher)}.`,
-    'Xin cảm ơn.',
-  ].join(' ');
+  const policy = readTutoringPolicy(policyResult.data?.value);
+  const preview = renderTutoringParentMessage(policy.parentMessageTemplate, {
+    campus:
+      getTutoringCampus(policy, data.group_id, group?.name) ?? 'Chưa xác định',
+    date: formatDateOnly(data.session_date),
+    duration: String(data.duration_minutes),
+    group: group?.name ?? 'N/A',
+    reason: reasonLabel,
+    student: studentName,
+    teacher: displayName(teacher),
+    time: String(data.start_time).slice(0, 5),
+  });
 
   const { error: updateError } = await tutoringSessionsClient
     .from('workspace_tutoring_sessions')

@@ -120,6 +120,7 @@ export function TutoringSessionFiltersBar({
     month: t('range_month'),
     past: t('range_past'),
     today: t('range_today'),
+    tomorrow: t('range_tomorrow'),
     upcoming: t('range_upcoming'),
     week: t('range_week'),
   };

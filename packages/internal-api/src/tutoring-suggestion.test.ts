@@ -1,6 +1,15 @@
 import type { WorkspaceUserGroupSession } from '@tuturuuu/internal-api';
 import { describe, expect, it } from 'vitest';
-import { suggestTutoringBeforeNextClass } from './tutoring-suggestion';
+import {
+  EASY_CENTER_TUTORING_POLICY,
+  parseTutoringPolicy,
+  renderTutoringParentMessage,
+  STANDARD_TUTORING_POLICY,
+} from './tutoring-policy';
+import {
+  suggestTutoringBeforeNextClass,
+  suggestTutoringSlots,
+} from './tutoring-suggestion';
 
 function session(
   startsAt: string,
@@ -63,5 +72,74 @@ describe('next-class tutoring suggestion', () => {
       )
     ).toMatchObject({ sessionDate: '2026-10-01', startTime: '17:15' });
     expect(suggestTutoringBeforeNextClass([], '2026-09-28', now)).toBeNull();
+  });
+});
+
+describe('center scheduling policy', () => {
+  const now = new Date('2026-09-25T00:00:00Z');
+
+  it('spreads two absence recovery sessions across upcoming classes', () => {
+    expect(
+      suggestTutoringSlots(
+        [session('2026-09-27T11:00:00Z'), session('2026-10-03T11:00:00Z')],
+        '2026-09-26',
+        2,
+        EASY_CENTER_TUTORING_POLICY,
+        'separate',
+        now
+      )
+    ).toMatchObject([
+      { sessionDate: '2026-09-27', startTime: '17:15' },
+      { sessionDate: '2026-10-03', startTime: '17:15' },
+    ]);
+  });
+
+  it('uses the weekend morning exception after class', () => {
+    expect(
+      suggestTutoringSlots(
+        [session('2026-09-27T01:00:00Z')],
+        '2026-09-26',
+        1,
+        EASY_CENTER_TUTORING_POLICY,
+        'separate',
+        now
+      )
+    ).toMatchObject([
+      { sessionDate: '2026-09-27', startTime: '09:30', durationMinutes: 50 },
+    ]);
+  });
+
+  it('fits two weak-support sessions before one evening class', () => {
+    expect(
+      suggestTutoringSlots(
+        [session('2026-09-27T11:00:00Z')],
+        '2026-09-26',
+        2,
+        EASY_CENTER_TUTORING_POLICY,
+        'consecutive',
+        now
+      )
+    ).toMatchObject([
+      { startTime: '16:30', durationMinutes: 45 },
+      { startTime: '17:15', durationMinutes: 45 },
+    ]);
+  });
+
+  it('rejects an invalid policy and leaves tokens outside the template alone', () => {
+    expect(
+      parseTutoringPolicy({ ...STANDARD_TUTORING_POLICY, leadMinutes: -1 })
+    ).toBeNull();
+    expect(
+      renderTutoringParentMessage('Hello {{student}} {{unknown}}', {
+        student: 'Lan',
+        reason: '',
+        date: '',
+        time: '',
+        duration: '',
+        group: '',
+        campus: '',
+        teacher: '',
+      })
+    ).toBe('Hello Lan {{unknown}}');
   });
 });

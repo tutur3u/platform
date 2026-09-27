@@ -4,6 +4,7 @@ import {
   type InternalApiClientOptions,
   type InternalApiQuery,
 } from './client';
+import type { TutoringPolicy } from './tutoring-policy';
 
 export type TutoringReasonType = 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'CUSTOM';
 export type TutoringAttendanceStatus =
@@ -51,7 +52,9 @@ export interface TutoringQueueItem {
   student_name: string;
   reason_type: 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'BOTH';
   absence_deficit: number;
+  missed_class_dates: string[];
   feedback_content: string;
+  feedback_created_at: string | null;
   source_feedback_id: string | null;
 }
 
@@ -129,6 +132,31 @@ export interface UpdateTutoringSessionPayload {
 
 function basePath(workspaceId: string) {
   return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tutoring`;
+}
+
+export async function getTutoringPolicy(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    policy: TutoringPolicy;
+    isConfigured: boolean;
+  }>(`${basePath(workspaceId)}/policy`, { cache: 'no-store' });
+}
+
+export async function updateTutoringPolicy(
+  workspaceId: string,
+  policy: TutoringPolicy,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ policy: TutoringPolicy }>(
+    `${basePath(workspaceId)}/policy`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(policy),
+    }
+  );
 }
 
 export async function listTutoringSessions(

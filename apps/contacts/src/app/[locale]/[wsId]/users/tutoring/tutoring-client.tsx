@@ -7,21 +7,27 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { CalendarClock, LifeBuoy } from '@tuturuuu/icons';
+import { CalendarClock, LifeBuoy, Settings2 } from '@tuturuuu/icons';
 import {
   createTutoringSession,
   listAllWorkspaceUserGroups,
   listTutoringSessions,
+  listWorkspaceUserGroupSessions,
   markTutoringSession,
   type TutoringQueueItem,
 } from '@tuturuuu/internal-api';
+import { getTutoringPolicy } from '@tuturuuu/internal-api/tutoring';
+import { STANDARD_TUTORING_POLICY } from '@tuturuuu/internal-api/tutoring-policy';
+import { suggestTutoringSlots } from '@tuturuuu/internal-api/tutoring-suggestion';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useState } from 'react';
+import { getMissedLessonContent } from './tutoring-content';
 import {
+  addDaysToIsoDate,
   buildTutoringSessionQuery,
   buildTutoringStatQuery,
   DEFAULT_SESSION_FILTERS,
@@ -31,6 +37,7 @@ import {
   toIsoDate,
 } from './tutoring-filters';
 import { TutoringOverview } from './tutoring-overview';
+import { TutoringPolicyCard } from './tutoring-policy-card';
 import { TutoringQueueCard } from './tutoring-queue-card';
 import { TutoringSessionsCard } from './tutoring-sessions-card';
 import {
@@ -42,9 +49,10 @@ import {
 interface Props {
   wsId: string;
   canManage: boolean;
+  canConfigure: boolean;
 }
 
-export function TutoringClient({ wsId, canManage }: Props) {
+export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
   const t = useTranslations('ws-tutoring');
   const locale = useLocale();
   const queryClient = useQueryClient();
@@ -146,6 +154,13 @@ export function TutoringClient({ wsId, canManage }: Props) {
   );
   const [form, setForm] = useState<TutoringFormValues>(DEFAULT_FORM);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [schedulingKey, setSchedulingKey] = useState<string | null>(null);
+  const policyQuery = useQuery({
+    queryKey: ['tutoring-policy', wsId],
+    queryFn: () => getTutoringPolicy(wsId),
+    staleTime: 5 * 60_000,
+  });
+  const policy = policyQuery.data?.policy ?? STANDARD_TUTORING_POLICY;
 
   const filters: TutoringSessionFilters = {
     attendanceStatus: sessionAttendance,
@@ -287,7 +302,9 @@ export function TutoringClient({ wsId, canManage }: Props) {
 
   const sessions = sessionsQuery.data?.data ?? [];
 
-  const prefillFromQueue = (item: TutoringQueueItem) => {
+  const prefillFromQueue = async (item: TutoringQueueItem) => {
+    const key = `${item.group_id}:${item.student_user_id}`;
+    setSchedulingKey(key);
     // A group with a single manager has only one possible teacher, so assign it
     // now instead of leaving the prefilled form one required field short.
     const managerIds = (
@@ -298,29 +315,91 @@ export function TutoringClient({ wsId, canManage }: Props) {
       .filter((id): id is string => Boolean(id));
     const teacherUserId = managerIds.length === 1 ? (managerIds[0] ?? '') : '';
 
+    const count = Math.min(
+      50,
+      Math.max(
+        1,
+        item.absence_deficit,
+        item.reason_type !== 'ABSENT_RECOVERY' ? policy.weakSupportSessions : 1
+      )
+    );
+    let suggestions: ReturnType<typeof suggestTutoringSlots> = [];
+    let makeupContent = '';
+    const [futureSchedule, missedLessons] = await Promise.allSettled([
+      queryClient.fetchQuery({
+        queryKey: [
+          'tutoring-class-schedule',
+          wsId,
+          item.group_id,
+          today,
+          policy.schedulingHorizonDays,
+        ],
+        queryFn: () =>
+          listWorkspaceUserGroupSessions(wsId, {
+            from: today,
+            groupId: item.group_id,
+            to: addDaysToIsoDate(today, policy.schedulingHorizonDays),
+          }),
+        staleTime: 5 * 60_000,
+      }),
+      item.missed_class_dates.length
+        ? queryClient.fetchQuery({
+            queryKey: [
+              'tutoring-missed-lessons',
+              wsId,
+              item.group_id,
+              item.missed_class_dates,
+            ],
+            queryFn: () =>
+              listWorkspaceUserGroupSessions(wsId, {
+                from: item.missed_class_dates[0] ?? today,
+                groupId: item.group_id,
+                to: today,
+              }),
+            staleTime: 5 * 60_000,
+          })
+        : Promise.resolve(null),
+    ]);
+    if (futureSchedule.status === 'fulfilled') {
+      suggestions = suggestTutoringSlots(
+        futureSchedule.value.data ?? [],
+        addDaysToIsoDate(today, -1),
+        count,
+        policy,
+        item.reason_type === 'WEAK_SUPPORT' ? 'consecutive' : 'separate'
+      );
+    }
+    if (missedLessons.status === 'fulfilled' && missedLessons.value) {
+      makeupContent = getMissedLessonContent(
+        missedLessons.value.data ?? [],
+        item.missed_class_dates
+      );
+    }
     setForm((current) => ({
       ...current,
-      content: item.feedback_content,
+      content:
+        item.reason_type === 'WEAK_SUPPORT'
+          ? item.feedback_content
+          : makeupContent,
       groupId: item.group_id,
       reasonDetail: item.feedback_content,
       reasonType:
         item.reason_type === 'WEAK_SUPPORT'
           ? 'WEAK_SUPPORT'
           : 'ABSENT_RECOVERY',
-      sessionSlots: Array.from(
-        { length: Math.max(1, item.absence_deficit) },
-        () => ({
-          durationMinutes: 45,
-          sessionDate: '',
-          startTime: '18:00',
-          teacherUserId,
-        })
-      ),
+      sessionSlots: Array.from({ length: count }, (_, index) => ({
+        durationMinutes:
+          suggestions[index]?.durationMinutes ?? policy.durationMinutes,
+        sessionDate: suggestions[index]?.sessionDate ?? '',
+        startTime: suggestions[index]?.startTime ?? '18:00',
+        teacherUserId,
+      })),
       sourceFeedbackId: item.source_feedback_id,
       studentLabel: item.student_name,
       studentUserId: item.student_user_id,
     }));
     setCreateDialogOpen(true);
+    setSchedulingKey(null);
     void setTab('sessions');
   };
 
@@ -349,7 +428,7 @@ export function TutoringClient({ wsId, canManage }: Props) {
       <Tabs
         className="space-y-4"
         onValueChange={(value) => void setTab(value)}
-        value={tab === 'queue' ? 'queue' : 'sessions'}
+        value={tab === 'queue' || tab === 'policy' ? tab : 'sessions'}
       >
         <TabsList className="h-auto">
           <TabsTrigger className="gap-2" value="sessions">
@@ -359,6 +438,10 @@ export function TutoringClient({ wsId, canManage }: Props) {
           <TabsTrigger className="gap-2" value="queue">
             <LifeBuoy className="h-4 w-4" />
             {t('queue_tab')}
+          </TabsTrigger>
+          <TabsTrigger className="gap-2" value="policy">
+            <Settings2 className="h-4 w-4" />
+            {t('policy_tab')}
           </TabsTrigger>
         </TabsList>
 
@@ -422,6 +505,7 @@ export function TutoringClient({ wsId, canManage }: Props) {
               page: sessionsQuery.data?.page ?? sessionPage,
               pageSize: sessionsQuery.data?.pageSize ?? sessionPageSize,
             }}
+            policy={policy}
             sessions={sessions}
             students={sessions
               .map((session) => session.student)
@@ -465,6 +549,7 @@ export function TutoringClient({ wsId, canManage }: Props) {
             }}
             canManage={canManage}
             enabled={tab === 'queue'}
+            schedulingKey={schedulingKey}
             filters={{
               groupId: queueGroupId,
               reasonType: queueReasonType,
@@ -473,8 +558,35 @@ export function TutoringClient({ wsId, canManage }: Props) {
             }}
             groups={groupsQuery.data ?? []}
             pagination={{ page: queuePage, pageSize: queuePageSize }}
+            policy={policy}
             wsId={wsId}
           />
+        </TabsContent>
+        <TabsContent value="policy">
+          {policyQuery.isLoading ? (
+            <div className="space-y-3">
+              <div className="h-12 animate-pulse rounded-xl bg-muted" />
+              <div className="h-48 animate-pulse rounded-xl bg-muted" />
+            </div>
+          ) : policyQuery.isError ? (
+            <div className="rounded-xl border p-5">
+              <p className="text-sm">{t('policy_load_failed')}</p>
+              <button
+                className="mt-2 text-sm underline"
+                onClick={() => void policyQuery.refetch()}
+                type="button"
+              >
+                {t('retry')}
+              </button>
+            </div>
+          ) : (
+            <TutoringPolicyCard
+              canConfigure={canConfigure}
+              groups={groupsQuery.data ?? []}
+              policy={policy}
+              wsId={wsId}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </main>

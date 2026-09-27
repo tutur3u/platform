@@ -17,6 +17,7 @@ import type {
 import { updateTutoringSession } from '@tuturuuu/internal-api';
 import type { ListTutoringSessionsParams } from '@tuturuuu/internal-api/tutoring';
 import { deleteTutoringSession } from '@tuturuuu/internal-api/tutoring';
+import type { TutoringPolicy } from '@tuturuuu/internal-api/tutoring-policy';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
@@ -98,6 +99,7 @@ interface Props {
   onRetry: () => void;
   locale: string;
   pagination: TutoringSessionsPagination;
+  policy: TutoringPolicy;
   sessions: TutoringSessionRecord[];
   students: WorkspaceBasicUserRecord[];
   wsId: string;
@@ -159,6 +161,7 @@ export function TutoringSessionsCard({
   onRetry,
   locale,
   pagination,
+  policy,
   sessions,
   students,
   wsId,
@@ -226,6 +229,7 @@ export function TutoringSessionsCard({
       canManage,
       isMarking,
       locale,
+      policy,
       onEditContent: (session) => {
         setEditingSession(session);
         setDraftContent(session.content);
@@ -368,6 +372,7 @@ export function TutoringSessionsCard({
             isSubmitting={create.isSubmitting}
             onChange={actions.onCreateFormChange}
             onSubmit={actions.onCreate}
+            policy={policy}
             students={students}
             wsId={wsId}
           />

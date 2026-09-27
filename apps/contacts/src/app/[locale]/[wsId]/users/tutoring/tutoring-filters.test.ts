@@ -54,6 +54,10 @@ describe('resolveTutoringDateBounds', () => {
       fromDate: today,
       toDate: today,
     });
+    expect(resolveTutoringDateBounds('tomorrow', today)).toEqual({
+      fromDate: '2026-08-30',
+      toDate: '2026-08-30',
+    });
     expect(resolveTutoringDateBounds('upcoming', today)).toEqual({
       fromDate: today,
     });
@@ -121,7 +125,13 @@ describe('buildTutoringSessionQuery', () => {
 
 describe('resolveTutoringSortOrder', () => {
   it('lists the nearest session first for forward-looking ranges', () => {
-    for (const range of ['upcoming', 'today', 'week', 'month'] as const) {
+    for (const range of [
+      'upcoming',
+      'today',
+      'tomorrow',
+      'week',
+      'month',
+    ] as const) {
       expect(resolveTutoringSortOrder(range)).toBe('asc');
     }
   });

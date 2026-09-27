@@ -1,7 +1,7 @@
 ---
 title: 'Tutoring'
 description: 'Schedule make-up and remedial sessions, work the support queue, and enable the module per workspace.'
-updatedAt: '2026-09-26'
+updatedAt: '2026-09-27'
 ---
 
 Tutoring lives in the Contacts satellite at `/{wsId}/users/tutoring`. It turns
@@ -12,14 +12,26 @@ payroll.
 ## Surfaces
 
 - **Schedule** lists every session for a date-range preset (upcoming, today,
-  next 7 days, this month, past, all) and can be narrowed by status, group,
+  tomorrow, next 7 days, this month, past, all) and can be narrowed by status, group,
   learner, teacher, and reason. Filters drive both the table and the export.
   Forward-looking presets request `sortOrder=asc` so the nearest session is
   first; `past` and `all` keep the API default of newest-first.
-- **Needs support** is the queue of learners with an absence deficit
+- **Needs support** is the queue of learners with an absence deficit within the
+  configured recent attendance window
   (`ABSENT_RECOVERY`), a `require_attention` feedback (`WEAK_SUPPORT`), or both.
-  Scheduling from a queue row prefills the session form with the learner, the
-  group, the reason, and one slot per missing session.
+  Scheduling from a queue row fills the learner, group, reason, teacher when
+  unambiguous, and suggested times for the missing sessions. A pending recovery
+  session reserves one absence, so staff do not schedule the same make-up twice.
+  Feedback already linked to a pending support session also leaves this queue.
+  After a completed support session, still-flagged feedback returns for
+  reassessment after the configured interval. Older unscheduled feedback shows
+  a parent follow-up prompt.
+- **Settings** stores a workspace tutoring policy with standard and English
+  center presets. Operators can adjust session length, lead time, support
+  session count, absence lookback, reassessment and follow-up intervals, scheduling horizon,
+  class-time exceptions, named shifts, group-to-campus labels, and the parent
+  message template. Only members with
+  `manage_workspace_settings` can save it.
 - **Headline counts** run as bounded `count: exact` queries, so they stay
   correct on workspaces with more sessions than one page. The schedule loads
   first; counts then load behind it. The support queue is requested when its
@@ -62,7 +74,8 @@ full set of toggles and states.
 - `view_user_groups` — open tutoring and read sessions, the queue, and exports.
 - `update_user_groups_scores` — schedule, edit, and delete eligible sessions,
   mark attendance, and generate parent messages.
-- `manage_workspace_settings` — enable or disable the module.
+- `manage_workspace_settings` — enable or disable the module and edit tutoring
+  rules.
 
 Three non-404 states replace the old blanket 404 so an operator can tell the
 cases apart:
@@ -84,15 +97,42 @@ same teacher on both slots; a learner conflict needs only the same learner.
 Teachers are the managers of the selected group. Choosing a group with exactly
 one manager assigns that teacher to every slot.
 
-For an absence, staff can enter the missed class date and select **Use next
-class time**. The form reads the selected group's scheduled sessions over the
-next four weeks and proposes a 45-minute slot immediately before the first
-upcoming class after the absence. This follows the same next-class rule for a
-Monday-to-Wednesday, Saturday-to-Sunday, or Sunday-to-Saturday pattern. Staff
-must review the teacher and can edit the date and time before creating; the
-suggestion does not create a session. If the group has no upcoming scheduled
-class, staff enter the time manually. A group schedule must be set up for this
-suggestion to work.
+For an absence, staff enter the missed class date and select **Suggest all
+sessions**. The form scans the selected group's upcoming scheduled classes and
+proposes one slot for each missing session. This naturally handles a
+Monday-to-Wednesday, Saturday-to-Sunday, or Sunday-to-Saturday pattern. For
+weak-support feedback, the English center preset proposes two consecutive
+45-minute sessions before one class. Scheduling from the support queue loads
+these suggestions before opening the form. Staff still review the teacher,
+date, and time before creating any session. If too few scheduled classes are
+available, remaining slots stay blank for manual scheduling.
+
+The standard preset places a 45-minute session immediately before class. The
+Easy Center preset includes the seven named weekday and weekend shifts from
+the center's schedule, including a 09:30, 50-minute session after the weekend
+08:00 class. The schedule displays a matching shift name alongside the actual
+date and time. Staff can rename, add, or change each rule. Suggestions need an
+existing group schedule; they never create
+sessions or send parent messages automatically. The parent message is a draft
+that staff copy after reviewing it. Campus labels are configured per class
+group; a clear `CS1`, `CS2`, `Cơ sở 1`, or `Cơ sở 2` marker in the group name
+is inferred when no override exists. The existing generic `Lớp học` group tag
+does not identify a campus. Ambiguous groups show no campus on the schedule
+and `Chưa xác định` in the parent draft until staff set an override. The
+Easy Center template uses the resolved label in the parent draft. The
+center's tuition remains free to
+learners; payroll exports count completed teaching time.
+
+When scheduling from **Needs support**, a make-up draft copies the recorded
+lesson description from the missed class date. If that class has no recorded
+content, the field stays empty for staff to fill. A weak-support draft uses the
+teacher's flagged feedback content. Staff can review and edit either draft
+before saving; content is never invented from a class title or an unrelated
+lesson.
+
+Policies are validated at `GET/PUT /api/v1/workspaces/{wsId}/tutoring/policy`
+and stored under `TUTORING_POLICY` in `workspace_configs`. Unset or malformed
+values safely use the standard preset. Existing workspaces need no migration.
 
 ## Exports
 

@@ -13,6 +13,11 @@ import type {
   TutoringAttendanceStatus,
   TutoringSessionRecord,
 } from '@tuturuuu/internal-api';
+import {
+  getTutoringCampus,
+  getTutoringShiftLabel,
+  type TutoringPolicy,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import { Button } from '@tuturuuu/ui/button';
 import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
@@ -32,6 +37,7 @@ export interface TutoringSessionColumnActions {
   canManage: boolean;
   isMarking: boolean;
   locale: string;
+  policy: TutoringPolicy;
   onEditContent: (session: TutoringSessionRecord) => void;
   onDelete: (session: TutoringSessionRecord) => void;
   onMark: (id: string, status: TutoringAttendanceStatus) => void;
@@ -175,7 +181,7 @@ function SessionActionsCell({
 export function buildTutoringSessionColumns(
   actions: TutoringSessionColumnActions
 ) {
-  const { locale, t, tableT } = actions;
+  const { locale, policy, t, tableT } = actions;
 
   // Every column is server-ordered and server-paginated: client-side sorting
   // would silently reorder only the page in hand. Order is chosen through the
@@ -195,6 +201,19 @@ export function buildTutoringSessionColumns(
               {formatWeekday(row.original.session_date, locale)}
             </span>
           </p>
+          {getTutoringShiftLabel(
+            policy,
+            row.original.session_date,
+            row.original.start_time
+          ) ? (
+            <p className="text-primary text-xs">
+              {getTutoringShiftLabel(
+                policy,
+                row.original.session_date,
+                row.original.start_time
+              )}
+            </p>
+          ) : null}
           <p className="text-muted-foreground text-xs tabular-nums">
             {formatSessionTimeRange(
               row.original.start_time,
@@ -205,6 +224,22 @@ export function buildTutoringSessionColumns(
             </span>
           </p>
         </div>
+      ),
+    },
+    {
+      id: 'campus',
+      enableSorting: false,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} t={tableT} title={t('campus')} />
+      ),
+      cell: ({ row }) => (
+        <span className="text-sm">
+          {getTutoringCampus(
+            policy,
+            row.original.group_id,
+            row.original.group?.name
+          ) ?? '—'}
+        </span>
       ),
     },
     {
