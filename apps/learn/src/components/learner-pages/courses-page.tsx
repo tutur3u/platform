@@ -19,11 +19,11 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
-  BrutalCard,
   courseThemes,
   EmptyState,
   LoadingState,
   Section,
+  SurfaceCard,
   useStudentHref,
   useStudentId,
 } from './shared';
@@ -79,15 +79,15 @@ function CanvasCourseCard({
   const isComplete = course.progress >= 100;
 
   return (
-    <BrutalCard className="flex flex-col overflow-hidden p-0">
+    <SurfaceCard className="flex flex-col overflow-hidden p-0">
       {/* Canvas-style colored header band */}
       <div
         className={cn(
-          'relative flex items-center gap-3 border-border border-b-2 px-5 py-4',
+          'relative flex items-center gap-3 border-border border-b px-5 py-4',
           theme.surface
         )}
       >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-border bg-background shadow-[2px_2px_0_var(--border)]">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-background">
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
@@ -100,7 +100,7 @@ function CanvasCourseCard({
         </div>
         {isComplete ? (
           <Badge
-            className="shrink-0 border-2 border-border bg-dynamic-green/15 font-bold text-foreground shadow-[2px_2px_0_var(--border)]"
+            className="shrink-0 border border-border bg-dynamic-green/15 font-bold text-foreground"
             variant="secondary"
           >
             {t('common.completed')}
@@ -174,7 +174,7 @@ function CanvasCourseCard({
       </div>
 
       {/* Canvas-style footer action */}
-      <div className="mt-auto border-border border-t-2 px-5 py-3">
+      <div className="mt-auto border-border border-t px-5 py-3">
         <Link
           href={courseHref}
           className="group/btn flex w-full items-center gap-2 font-bold text-sm transition hover:text-primary"
@@ -183,10 +183,10 @@ function CanvasCourseCard({
           <span>
             {isComplete ? t('common.continue') : t('home.continueCourse')}
           </span>
-          <ChevronRight className="ml-auto h-4 w-4 transition group-hover/btn:translate-x-0.5" />
+          <ChevronRight className="ml-auto h-4 w-4 transition" />
         </Link>
       </div>
-    </BrutalCard>
+    </SurfaceCard>
   );
 }
 
@@ -200,10 +200,10 @@ function StatChip({
   value: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-0.5 border-2 border-border bg-muted/40 px-2 py-2 text-center">
+    <div className="flex flex-col items-center gap-0.5 rounded-lg border border-border bg-muted/40 px-2 py-2 text-center">
       <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-      <span className="font-bold text-sm leading-none">{value}</span>
-      <span className="text-[10px] text-muted-foreground leading-none">
+      <span className="font-bold text-sm leading-tight">{value}</span>
+      <span className="text-[10px] text-muted-foreground leading-tight">
         {label}
       </span>
     </div>

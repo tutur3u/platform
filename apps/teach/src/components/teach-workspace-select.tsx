@@ -32,7 +32,7 @@ export function TeachWorkspaceSelect({
       resolveNextPathname={({ nextSlug }) => `/${nextSlug}`}
       showTierBadges={false}
       standalone
-      triggerClassName="h-9 max-w-44 rounded-none border-2 border-border bg-card px-2 font-black text-xs shadow-[2px_2px_0_var(--border)]"
+      triggerClassName="h-9 max-w-44 rounded-lg border border-border bg-card px-2 font-semibold text-xs "
       wsId={wsId}
     />
   );

@@ -16,9 +16,9 @@ export function CoursePicker({
 
   return (
     <label className="grid gap-2">
-      <span className="font-black text-sm">{t('course')}</span>
+      <span className="font-semibold text-sm">{t('course')}</span>
       <select
-        className="h-11 border-2 border-border bg-background px-3 font-bold outline-none focus:border-primary"
+        className="h-11 rounded-lg border border-border bg-background px-3 font-bold outline-none focus:border-primary"
         onChange={(event) => onChange(event.target.value)}
         value={activeCourseId}
       >

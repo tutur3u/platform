@@ -77,7 +77,7 @@ export function LessonQuizSubmissionDetailDialog({
             </div>
 
             <button
-              className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-background shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background transition"
               onClick={() => onOpenChange(false)}
               type="button"
               aria-label={t('common.close') || 'Close'}
@@ -97,7 +97,7 @@ export function LessonQuizSubmissionDetailDialog({
         )}
 
         {isError && (
-          <div className="my-4 border-2 border-border border-dashed p-8 text-center shadow-[4px_4px_0_var(--border)]">
+          <div className="my-4 rounded-lg border border-border border-dashed p-8 text-center">
             <p className="font-bold text-muted-foreground text-sm">
               {t('teachModules.submissionDetailsLoadError')}
             </p>
@@ -164,7 +164,7 @@ function SubmissionContent({
       </div>
 
       <div className="space-y-6">
-        <h3 className="border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
+        <h3 className="border-border border-b pb-2 font-semibold text-lg uppercase tracking-wider">
           {t('teachModules.questionResponses')}
         </h3>
 
@@ -269,10 +269,10 @@ function QuizResponseCard({
   };
 
   return (
-    <div className="space-y-4 border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b-2 border-dashed pb-3">
+    <div className="space-y-4 rounded-lg border border-border bg-background p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b border-dashed pb-3">
         <div className="flex items-center gap-3">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border font-black text-xs shadow-[1px_1px_0_var(--border)]">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center border border-border font-semibold text-xs">
             {index + 1}
           </span>
           <h4 className="font-bold text-sm sm:text-base">{quiz.question}</h4>
@@ -284,7 +284,7 @@ function QuizResponseCard({
               type="button"
               onClick={handleAiFeedback}
               disabled={isAiLoading}
-              className="inline-flex cursor-pointer items-center gap-1 border border-border bg-background px-2 py-0.5 font-bold text-xs shadow-[1px_1px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50"
+              className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-2 py-0.5 font-bold text-xs transition disabled:opacity-50"
             >
               {isAiLoading ? (
                 <Loader2 className="h-3 w-3 animate-spin text-primary" />
@@ -295,17 +295,14 @@ function QuizResponseCard({
           )}
 
           <div
-            className={cn(
-              'border-2 px-2 py-0.5 font-bold text-xs shadow-[2px_2px_0_var(--border)]',
-              statusClass
-            )}
+            className={cn('border px-2 py-0.5 font-bold text-xs', statusClass)}
           >
             {statusLabel}
           </div>
         </div>
       </div>
 
-      <div className="border-2 border-border border-dashed bg-muted/10 p-3.5 text-sm">
+      <div className="rounded-lg border border-border border-dashed bg-muted/10 p-3.5 text-sm">
         <QuizSubmissionResponseViewer
           answer={
             quizAnswer ?? {
@@ -320,8 +317,8 @@ function QuizResponseCard({
       </div>
 
       {displayedAiFeedback && (
-        <div className="space-y-1 border-2 border-primary bg-primary/5 p-4 text-xs shadow-[2px_2px_0_var(--border)]">
-          <span className="block font-black text-[10px] text-primary uppercase tracking-wider">
+        <div className="space-y-1 border border-primary bg-primary/5 p-4 text-xs">
+          <span className="block font-semibold text-[10px] text-primary uppercase tracking-wider">
             \u2728 AI Feedback
           </span>
           <p className="font-medium leading-relaxed">{displayedAiFeedback}</p>
@@ -441,7 +438,7 @@ function FeedbackOnlyControls({
   }
 
   return (
-    <div className="mt-4 space-y-3 border-2 border-border bg-muted/20 p-4 shadow-[2px_2px_0_var(--border)]">
+    <div className="mt-4 space-y-3 rounded-lg border border-border bg-muted/20 p-4">
       <div className="space-y-1">
         <label className="block font-bold text-muted-foreground text-xs uppercase tracking-widest">
           {t('teachModules.feedback') || 'Teacher Feedback'}
@@ -455,7 +452,7 @@ function FeedbackOnlyControls({
             t('teachModules.feedbackPlaceholder') ||
             'Enter feedback for student...'
           }
-          className="w-full border-2 border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
       </div>
 
@@ -463,7 +460,7 @@ function FeedbackOnlyControls({
         <button
           onClick={handleSaveFeedback}
           disabled={isSaving || !feedback.trim()}
-          className="inline-flex items-center gap-1.5 border-2 border-border bg-background px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-bold text-xs transition disabled:opacity-50"
           type="button"
         >
           {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
@@ -581,7 +578,7 @@ function ParagraphGradeControls({
   };
 
   return (
-    <div className="mt-4 space-y-3 border-2 border-border bg-muted/20 p-4 shadow-[2px_2px_0_var(--border)]">
+    <div className="mt-4 space-y-3 rounded-lg border border-border bg-muted/20 p-4">
       <div className="space-y-1">
         <label className="block font-bold text-muted-foreground text-xs uppercase tracking-widest">
           {t('teachModules.feedback') || 'Teacher Feedback'}
@@ -595,7 +592,7 @@ function ParagraphGradeControls({
             t('teachModules.feedbackPlaceholder') ||
             'Enter feedback for student...'
           }
-          className="w-full border-2 border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
       </div>
 
@@ -604,7 +601,7 @@ function ParagraphGradeControls({
           onClick={() => handleGrade(true)}
           disabled={isGrading || isAiLoading}
           className={cn(
-            'inline-flex items-center gap-1.5 border-2 border-border px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5',
+            'inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 font-bold text-xs transition',
             currentIsCorrect === true
               ? 'bg-dynamic-green/20 text-dynamic-green'
               : 'bg-background hover:bg-muted/30'
@@ -619,7 +616,7 @@ function ParagraphGradeControls({
           onClick={() => handleGrade(false)}
           disabled={isGrading || isAiLoading}
           className={cn(
-            'inline-flex items-center gap-1.5 border-2 border-border px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5',
+            'inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 font-bold text-xs transition',
             currentIsCorrect === false
               ? 'bg-destructive/20 text-destructive'
               : 'bg-background hover:bg-muted/30'
@@ -633,7 +630,7 @@ function ParagraphGradeControls({
         <button
           onClick={handleAiGrade}
           disabled={isGrading || isAiLoading}
-          className="inline-flex cursor-pointer items-center gap-1.5 border-2 border-primary bg-primary/5 px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:bg-primary/10 disabled:opacity-50"
+          className="inline-flex cursor-pointer items-center gap-1.5 border border-primary bg-primary/5 px-3 py-1.5 font-bold text-xs transition hover:bg-primary/10 disabled:opacity-50"
           type="button"
         >
           {isAiLoading ? (
@@ -657,13 +654,13 @@ function StatCard({
   variant?: 'success' | 'warning';
 }) {
   return (
-    <div className="border-2 border-border bg-background p-4 text-center shadow-[3px_3px_0_var(--border)]">
-      <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+    <div className="rounded-lg border border-border bg-background p-4 text-center">
+      <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
         {label}
       </span>
       <span
         className={cn(
-          'mt-1 block font-black text-2xl',
+          'mt-1 block font-semibold text-2xl',
           variant === 'success' && 'text-dynamic-green',
           variant === 'warning' && 'text-dynamic-yellow'
         )}

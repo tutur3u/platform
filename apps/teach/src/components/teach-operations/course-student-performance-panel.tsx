@@ -123,7 +123,7 @@ export function CourseStudentPerformancePanel({
     : null;
 
   return (
-    <section className="border-2 border-border bg-background shadow-[4px_4px_0_var(--border)]">
+    <section className="rounded-lg border border-border bg-background">
       {/* Header */}
       <button
         className="flex w-full items-center justify-between gap-4 p-5 text-left"
@@ -131,11 +131,11 @@ export function CourseStudentPerformancePanel({
         type="button"
       >
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-border bg-dynamic-cyan/15">
             <Users className="h-5 w-5" />
           </span>
           <div>
-            <h2 className="font-black text-lg leading-none">
+            <h2 className="font-semibold text-lg leading-tight">
               {t('title') || 'Student Performance'}
             </h2>
             {summary && (
@@ -165,7 +165,7 @@ export function CourseStudentPerformancePanel({
       </button>
 
       {expanded && (
-        <div className="space-y-4 border-border border-t-2 p-5 pt-4">
+        <div className="space-y-4 border-border border-t p-5 pt-4">
           {/* Summary chips */}
           {summary && data && data.students.length > 0 && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -199,14 +199,14 @@ export function CourseStudentPerformancePanel({
           {/* Action Bar */}
           {data && data.students.length > 0 && (
             <div className="flex items-center justify-between border-border border-b pb-2">
-              <h3 className="font-black text-muted-foreground text-sm uppercase tracking-wider">
+              <h3 className="font-semibold text-muted-foreground text-sm uppercase tracking-wider">
                 {t('studentsTitle') || 'Students List'}
               </h3>
               <button
                 onClick={handleSendBulkReports}
                 disabled={isBulkSending}
                 className={cn(
-                  'inline-flex items-center gap-1.5 border-2 border-border bg-foreground px-3 py-1.5 font-bold text-background text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50'
+                  'inline-flex items-center gap-1.5 border border-border bg-foreground px-3 py-1.5 font-bold text-background text-xs transition disabled:opacity-50'
                 )}
                 type="button"
               >
@@ -228,17 +228,17 @@ export function CourseStudentPerformancePanel({
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-16 animate-pulse border-2 border-border bg-muted"
+                  className="h-16 animate-pulse rounded-lg border border-border bg-muted"
                 />
               ))}
             </div>
           ) : isError ? (
-            <div className="border-2 border-destructive/30 bg-destructive/5 p-4 text-center">
+            <div className="border border-destructive/30 bg-destructive/5 p-4 text-center">
               <p className="font-bold text-destructive text-sm">
                 {t('loadError') || 'Failed to load student data'}
               </p>
               <button
-                className="mt-2 border-2 border-border px-3 py-1 font-bold text-xs shadow-[2px_2px_0_var(--border)] hover:bg-muted"
+                className="mt-2 rounded-lg border border-border px-3 py-1 font-bold text-xs hover:bg-muted"
                 onClick={() => void refetch()}
                 type="button"
               >
@@ -246,8 +246,8 @@ export function CourseStudentPerformancePanel({
               </button>
             </div>
           ) : students.length === 0 ? (
-            <div className="border-2 border-border border-dashed p-8 text-center">
-              <p className="font-black text-lg">
+            <div className="rounded-lg border border-border border-dashed p-8 text-center">
+              <p className="font-semibold text-lg">
                 {t('noStudents') || 'No students enrolled'}
               </p>
               <p className="mt-2 text-muted-foreground text-sm">
@@ -259,8 +259,8 @@ export function CourseStudentPerformancePanel({
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="border-border border-b-2 text-left">
-                    <th className="pr-3 pb-2 font-black text-xs uppercase tracking-wider">
+                  <tr className="border-border border-b text-left">
+                    <th className="pr-3 pb-2 font-semibold text-xs uppercase tracking-wider">
                       {t('student') || 'Student'}
                     </th>
                     <SortableHeader
@@ -275,7 +275,7 @@ export function CourseStudentPerformancePanel({
                       label={t('progress') || 'Progress'}
                       onClick={() => toggleSort('progress')}
                     />
-                    <th className="pr-3 pb-2 font-black text-xs uppercase tracking-wider">
+                    <th className="pr-3 pb-2 font-semibold text-xs uppercase tracking-wider">
                       {t('quizTitle') || 'Quiz Practice'}
                     </th>
                     <SortableHeader
@@ -284,10 +284,10 @@ export function CourseStudentPerformancePanel({
                       label={t('lastActive') || 'Last Active'}
                       onClick={() => toggleSort('activity')}
                     />
-                    <th className="pb-2 font-black text-xs uppercase tracking-wider">
+                    <th className="pb-2 font-semibold text-xs uppercase tracking-wider">
                       {t('status') || 'Status'}
                     </th>
-                    <th className="pb-2 text-right font-black text-xs uppercase tracking-wider">
+                    <th className="pb-2 text-right font-semibold text-xs uppercase tracking-wider">
                       {t('actions') || 'Actions'}
                     </th>
                   </tr>
@@ -328,7 +328,7 @@ function SortableHeader({
     <th className="pr-3 pb-2">
       <button
         className={cn(
-          'flex items-center gap-1 font-black text-xs uppercase tracking-wider hover:text-foreground',
+          'flex items-center gap-1 font-semibold text-xs uppercase tracking-wider hover:text-foreground',
           active ? 'text-foreground' : 'text-muted-foreground'
         )}
         onClick={onClick}
@@ -417,7 +417,7 @@ function StudentRow({
         <div className="flex items-center gap-2">
           <span
             className={cn(
-              'flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border font-black text-[10px]',
+              'flex h-7 w-7 shrink-0 items-center justify-center border border-border font-semibold text-[10px]',
               rowRisk === 'danger' && 'border-dynamic-red/50 bg-dynamic-red/20',
               rowRisk === 'warning' &&
                 'border-dynamic-yellow/50 bg-dynamic-yellow/20',
@@ -427,7 +427,7 @@ function StudentRow({
             {name.slice(0, 2).toUpperCase()}
           </span>
           <div className="min-w-0">
-            <p className="truncate font-bold text-sm leading-none">{name}</p>
+            <p className="truncate font-bold text-sm leading-tight">{name}</p>
             {s.email && s.displayName && (
               <p className="truncate text-muted-foreground text-xs">
                 {s.email}
@@ -448,7 +448,7 @@ function StudentRow({
           </span>
         ) : (
           <div className="flex items-center gap-2">
-            <div className="h-1.5 w-16 overflow-hidden rounded-none border border-border bg-muted">
+            <div className="h-1.5 w-16 overflow-hidden rounded-lg border border-border bg-muted">
               <div
                 className={cn(
                   'h-full',
@@ -463,7 +463,7 @@ function StudentRow({
             </div>
             <span
               className={cn(
-                'font-black text-sm tabular-nums',
+                'font-semibold text-sm tabular-nums',
                 s.scorePercent >= 75
                   ? 'text-dynamic-green'
                   : s.scorePercent >= 50
@@ -480,7 +480,7 @@ function StudentRow({
       {/* Module progress */}
       <td className="py-3 pr-3">
         <div className="flex items-center gap-2">
-          <div className="h-1.5 w-16 overflow-hidden rounded-none border border-border bg-muted">
+          <div className="h-1.5 w-16 overflow-hidden rounded-lg border border-border bg-muted">
             <div
               className="h-full bg-dynamic-cyan"
               style={{ width: `${progressPct}%` }}
@@ -495,7 +495,7 @@ function StudentRow({
       {/* Quiz answered/total */}
       <td className="py-3 pr-3">
         <div className="text-xs">
-          <span className="font-black tabular-nums">{s.answeredCount}</span>
+          <span className="font-semibold tabular-nums">{s.answeredCount}</span>
           <span className="text-muted-foreground">/{s.totalQuizzes}</span>
           {s.pendingGradingCount > 0 && (
             <span className="ml-1 font-bold text-dynamic-yellow">
@@ -564,7 +564,7 @@ function StudentRow({
             onClick={handleSendReport}
             disabled={isSending}
             className={cn(
-              'inline-flex items-center gap-1.5 border-2 border-border bg-background px-2.5 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50',
+              'inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 font-bold text-xs transition disabled:opacity-50',
               isSuccess &&
                 'pointer-events-none border-dynamic-green bg-dynamic-green/5 text-dynamic-green shadow-none'
             )}
@@ -604,7 +604,7 @@ function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 border px-1.5 py-0.5 font-bold text-[10px] leading-none',
+        'inline-flex items-center gap-1 border px-1.5 py-0.5 font-bold text-[10px] leading-tight',
         styles[variant]
       )}
     >
@@ -632,9 +632,7 @@ function SummaryChip({
     info: 'border-dynamic-cyan/40 bg-dynamic-cyan/10',
   };
   return (
-    <div
-      className={cn('flex items-center gap-3 border-2 p-3', styles[variant])}
-    >
+    <div className={cn('flex items-center gap-3 border p-3', styles[variant])}>
       <Icon
         className={cn(
           'h-5 w-5 shrink-0',
@@ -645,7 +643,9 @@ function SummaryChip({
         )}
       />
       <div>
-        <p className="font-black text-xl tabular-nums leading-none">{value}</p>
+        <p className="font-semibold text-xl tabular-nums leading-tight">
+          {value}
+        </p>
         <p className="mt-0.5 text-muted-foreground text-xs">{label}</p>
       </div>
     </div>

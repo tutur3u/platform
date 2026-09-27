@@ -5,7 +5,7 @@ import type { TulearnCourseSummary } from '@tuturuuu/internal-api';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { BrutalCard, courseThemes } from './shared';
+import { courseThemes, SurfaceCard } from './shared';
 
 export function CourseCard({
   course,
@@ -22,7 +22,7 @@ export function CourseCard({
   const nodes = Math.max(1, Math.min(course.totalModules || 1, 6));
 
   return (
-    <BrutalCard
+    <SurfaceCard
       className={cn(
         'group p-5 md:p-6',
         index % 2 === 0 ? 'bg-card' : 'bg-muted/60'
@@ -34,7 +34,7 @@ export function CourseCard({
           <div className="mb-5 flex items-center gap-3">
             <div
               className={cn(
-                'flex h-14 w-14 items-center justify-center border-2 border-border shadow-[3px_3px_0_var(--border)]',
+                'flex h-14 w-14 items-center justify-center border border-border',
                 theme.surface,
                 theme.text
               )}
@@ -69,7 +69,7 @@ export function CourseCard({
             return (
               <div
                 className={cn(
-                  'flex aspect-square min-h-11 items-center justify-center border-2 border-border transition duration-300 group-hover:scale-105',
+                  'flex aspect-square min-h-11 items-center justify-center border border-border transition duration-300 group-hover:scale-105',
                   completed && 'bg-primary text-primary-foreground',
                   current && 'bg-background text-foreground',
                   !completed && !current && 'bg-muted/50 text-muted-foreground'
@@ -88,6 +88,6 @@ export function CourseCard({
           })}
         </div>
       </div>
-    </BrutalCard>
+    </SurfaceCard>
   );
 }

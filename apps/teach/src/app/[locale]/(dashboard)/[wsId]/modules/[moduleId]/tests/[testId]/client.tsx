@@ -114,8 +114,8 @@ export function TestDetailClient({
     return (
       <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
         <div className="mx-auto max-w-4xl space-y-6">
-          <div className="h-40 animate-pulse border-2 border-border bg-card shadow-[8px_8px_0_var(--border)]" />
-          <div className="h-96 animate-pulse border-2 border-border bg-card shadow-[8px_8px_0_var(--border)]" />
+          <div className="h-40 animate-pulse rounded-lg border border-border bg-card" />
+          <div className="h-96 animate-pulse rounded-lg border border-border bg-card" />
         </div>
       </main>
     );
@@ -124,7 +124,7 @@ export function TestDetailClient({
   if (!test) {
     return (
       <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
-        <div className="mx-auto max-w-4xl border-2 border-border border-dashed bg-background p-8 text-center shadow-[8px_8px_0_var(--border)]">
+        <div className="mx-auto max-w-4xl rounded-lg border border-border border-dashed bg-background p-8 text-center">
           <h2 className="font-bold text-xl">
             {t('teachModules.testNotFound')}
           </h2>
@@ -133,7 +133,7 @@ export function TestDetailClient({
           </p>
           <Link
             href={`/${wsId}/modules/${courseId}`}
-            className="mt-4 inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm transition"
           >
             <ArrowLeft className="h-4 w-4" />
             {t('teachModules.backToModules')}
@@ -147,10 +147,10 @@ export function TestDetailClient({
     <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
       <div className="mx-auto max-w-4xl space-y-6">
         {/* Page Header */}
-        <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
+        <div className="rounded-lg border border-border bg-background p-6 md:p-8">
           <Link
             href={`/${wsId}/modules/${courseId}`}
-            className="mb-5 inline-flex items-center gap-2 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+            className="mb-5 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition"
           >
             <ArrowLeft className="h-4 w-4" />
             {t('teachModules.backToModules')}
@@ -158,15 +158,15 @@ export function TestDetailClient({
 
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div className="flex items-start gap-4">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[4px_4px_0_var(--border)]">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center border border-border bg-dynamic-cyan/15">
                 <BookOpenCheck className="h-7 w-7" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="mb-2 inline-flex items-center gap-1.5 border-2 border-border bg-dynamic-yellow/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+                <p className="mb-2 inline-flex items-center gap-1.5 border border-border bg-dynamic-yellow/15 px-3 py-1 font-semibold text-xs">
                   <GraduationCap className="h-3.5 w-3.5" />
                   {workspaceName ?? 'Workspace'}
                 </p>
-                <h1 className="break-words font-black text-[clamp(1.75rem,3.5vw,3rem)] leading-none tracking-normal">
+                <h1 className="break-words font-semibold text-3xl leading-tight tracking-normal md:text-4xl">
                   {test.name}
                 </h1>
               </div>
@@ -177,7 +177,7 @@ export function TestDetailClient({
                 onClick={handleTogglePublished}
                 disabled={updateTestMutation.isPending}
                 className={cn(
-                  'inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border px-5 py-3 font-bold text-base shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)] disabled:opacity-50',
+                  'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-5 py-3 font-bold text-base transition disabled:opacity-50',
                   test.is_published
                     ? 'bg-dynamic-green/15 text-foreground'
                     : 'bg-muted text-muted-foreground'
@@ -199,7 +199,7 @@ export function TestDetailClient({
 
               <button
                 onClick={() => setEditDialogOpen(true)}
-                className="inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border bg-card px-5 py-3 font-bold text-base shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)]"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-card px-5 py-3 font-bold text-base transition"
                 type="button"
               >
                 <Pencil className="h-5 w-5" />
@@ -210,7 +210,7 @@ export function TestDetailClient({
                 onClick={() => {
                   toast.success('Starting test session...');
                 }}
-                className="inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border bg-primary px-5 py-3 font-bold text-base text-primary-foreground shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)]"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-primary px-5 py-3 font-bold text-base text-primary-foreground transition"
                 type="button"
               >
                 <Play className="h-5 w-5" />
@@ -221,13 +221,13 @@ export function TestDetailClient({
         </div>
 
         {/* Metadata Details Row */}
-        <div className="grid grid-cols-1 gap-4 border-2 border-border bg-background p-5 shadow-[6px_6px_0_var(--border)] md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 rounded-lg border border-border bg-background p-5 md:grid-cols-3">
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-muted/40">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40">
               <Calendar className="h-5 w-5" />
             </span>
             <div>
-              <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+              <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                 {t('teachModules.testDetailsStartAt')}
               </span>
               <span className="font-bold text-sm">
@@ -242,11 +242,11 @@ export function TestDetailClient({
           </div>
 
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-muted/40">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40">
               <Clock className="h-5 w-5" />
             </span>
             <div>
-              <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+              <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                 {t('teachModules.testDetailsDuration')}
               </span>
               <span className="font-bold text-sm">
@@ -260,11 +260,11 @@ export function TestDetailClient({
           </div>
 
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-muted/40">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40">
               <Layers className="h-5 w-5" />
             </span>
             <div>
-              <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+              <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                 {t('teachModules.submittingType')}
               </span>
               <span className="font-bold text-sm">
@@ -275,7 +275,7 @@ export function TestDetailClient({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-0 border-2 border-border bg-background shadow-[4px_4px_0_var(--border)]">
+        <div className="flex gap-0 rounded-lg border border-border bg-background">
           {(['overview', 'questions', 'submissions'] as const).map((tab) => (
             <button
               key={tab}
@@ -302,8 +302,8 @@ export function TestDetailClient({
         {activeTab === 'overview' && (
           <>
             {/* Description / Instructions */}
-            <div className="space-y-4 border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
-              <h2 className="border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
+            <div className="space-y-4 rounded-lg border border-border bg-background p-6">
+              <h2 className="border-border border-b pb-2 font-semibold text-lg uppercase tracking-wider">
                 {t('teachModules.assessmentOverview')}
               </h2>
               <div className="whitespace-pre-wrap text-muted-foreground text-sm leading-relaxed">
@@ -312,8 +312,8 @@ export function TestDetailClient({
             </div>
 
             {/* Learning Objectives Assessed */}
-            <div className="space-y-4 border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
-              <h2 className="border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
+            <div className="space-y-4 rounded-lg border border-border bg-background p-6">
+              <h2 className="border-border border-b pb-2 font-semibold text-lg uppercase tracking-wider">
                 {t('teachModules.learningObjectivesAssessed')}
               </h2>
               <p className="text-muted-foreground text-xs leading-relaxed">
@@ -328,7 +328,7 @@ export function TestDetailClient({
                   {testModules.map((m) => (
                     <div
                       key={m.id}
-                      className="flex items-center gap-2.5 border-2 border-border bg-muted/10 p-3 shadow-[2px_2px_0_var(--border)]"
+                      className="flex items-center gap-2.5 rounded-lg border border-border bg-muted/10 p-3"
                     >
                       <span className="h-2 w-2 rounded-full bg-primary" />
                       <span className="font-bold text-sm">{m.name}</span>

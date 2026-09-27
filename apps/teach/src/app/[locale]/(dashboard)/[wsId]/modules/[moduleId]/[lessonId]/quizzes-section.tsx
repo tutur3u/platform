@@ -78,18 +78,18 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
   };
 
   return (
-    <section className="mt-8 space-y-4 border-2 border-border bg-background p-6 shadow-[5px_5px_0_var(--border)]">
+    <section className="mt-8 space-y-4 rounded-lg border border-border bg-background p-6">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <ListTodo className="h-5 w-5 text-dynamic-purple" />
-          <h2 className="font-black text-lg">
+          <h2 className="font-semibold text-lg">
             {t('ws-quizzes.plural')} ({quizzes.length})
           </h2>
         </div>
         {!creating && (
           <div className="flex items-center gap-2">
             <button
-              className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition disabled:opacity-50"
               onClick={() => setShowAiDialog(true)}
               disabled={isGenerating}
               type="button"
@@ -108,7 +108,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
             </button>
 
             <button
-              className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm transition disabled:opacity-50"
               onClick={() => setCreating(true)}
               disabled={isGenerating}
               type="button"
@@ -120,11 +120,11 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
         )}
       </div>
 
-      <Separator className="border-border border-b-2" />
+      <Separator className="border-border border-b" />
 
       {creating && (
-        <div className="border-2 border-border bg-card p-5 shadow-[4px_4px_0_var(--border)]">
-          <h3 className="mb-4 font-black text-md">
+        <div className="rounded-lg border border-border bg-card p-5">
+          <h3 className="mb-4 font-semibold text-md">
             {t('ws-quizzes.manual_create')}
           </h3>
           <DynamicQuizForm
@@ -283,7 +283,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
 
           <DialogFooter>
             <button
-              className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+              className="rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm disabled:opacity-40"
               onClick={() => setShowAiDialog(false)}
               disabled={isGenerating}
               type="button"
@@ -291,7 +291,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
               {t('common.cancel')}
             </button>
             <button
-              className="inline-flex items-center gap-1.5 border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm disabled:opacity-40"
               onClick={handleGenerate}
               disabled={isGenerating}
               type="button"

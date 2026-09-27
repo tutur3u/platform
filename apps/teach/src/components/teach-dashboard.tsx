@@ -84,13 +84,13 @@ export async function TeachDashboard({
   const coursesUrl = `/${wsId}/courses`;
 
   return (
-    <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
-      <section className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
-          <p className="mb-4 inline-flex border-2 border-border bg-dynamic-yellow/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+    <main className="min-h-screen bg-root-background px-4 py-5 text-foreground md:px-6 md:py-8">
+      <section className="mx-auto grid max-w-7xl gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <div className="rounded-2xl border border-border bg-card p-6 md:p-8">
+          <p className="mb-4 text-muted-foreground text-sm">
             {t('eyebrow', { name: profileName })}
           </p>
-          <h1 className="max-w-4xl text-balance font-black text-[clamp(2.25rem,5vw,4.75rem)] leading-[0.92]">
+          <h1 className="max-w-4xl text-balance font-semibold text-3xl leading-tight md:text-4xl">
             {t('title')}
           </h1>
           <p className="mt-5 max-w-2xl text-muted-foreground leading-7">
@@ -99,16 +99,16 @@ export async function TeachDashboard({
           <p className="mt-2 font-bold text-muted-foreground text-sm">
             {workspaceName}
           </p>
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-7 flex flex-wrap gap-2">
             <a
-              className="inline-flex h-11 items-center gap-2 border-2 border-border bg-primary px-4 font-black text-primary-foreground shadow-[4px_4px_0_var(--border)]"
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               href={coursesUrl}
             >
               {t('manageInPlatform')}
               <ArrowRight className="h-4 w-4" />
             </a>
             <a
-              className="inline-flex h-11 items-center gap-2 border-2 border-border bg-background px-4 font-black shadow-[4px_4px_0_var(--border)]"
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-background px-4 font-medium text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               href={`/${wsId}/attendance`}
             >
               {t('checkAttendance')}
@@ -116,7 +116,7 @@ export async function TeachDashboard({
           </div>
         </div>
 
-        <aside className="grid gap-3">
+        <aside className="grid grid-cols-2 gap-3">
           <TeachMetricTile
             accentClassName="bg-dynamic-yellow/15"
             icon={UsersRound}
@@ -156,11 +156,11 @@ export async function TeachDashboard({
         <div className="space-y-4">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h2 className="font-black text-3xl">{t('groupsTitle')}</h2>
+              <h2 className="font-semibold text-3xl">{t('groupsTitle')}</h2>
               <p className="mt-2 text-muted-foreground">{t('groupsLead')}</p>
             </div>
             <a
-              className="hidden h-10 items-center gap-2 border-2 border-border bg-background px-3 font-black text-xs shadow-[2px_2px_0_var(--border)] md:inline-flex"
+              className="hidden h-10 items-center gap-2 rounded-lg border border-border bg-background px-3 font-semibold text-xs md:inline-flex"
               href={coursesUrl}
             >
               {t('allGroups')}
@@ -180,8 +180,8 @@ export async function TeachDashboard({
               ))}
             </div>
           ) : (
-            <div className="border-2 border-border border-dashed bg-muted/60 p-8 shadow-[6px_6px_0_var(--border)]">
-              <p className="font-black text-2xl">{t('emptyGroupsTitle')}</p>
+            <div className="rounded-lg border border-border border-dashed bg-muted/60 p-8">
+              <p className="font-semibold text-2xl">{t('emptyGroupsTitle')}</p>
               <p className="mt-3 text-muted-foreground leading-7">
                 {t('emptyGroupsBody')}
               </p>
@@ -192,23 +192,23 @@ export async function TeachDashboard({
         <aside className="space-y-4">
           {workflowItems.map(({ accent, icon: Icon, key }, index) => (
             <article
-              className="border-2 border-foreground/70 bg-card p-5 shadow-[5px_5px_0_var(--foreground)]"
+              className="rounded-lg border border-border bg-card p-5"
               key={key}
             >
               <div className="flex items-start gap-4">
                 <span
                   className={cn(
-                    'flex h-11 w-11 shrink-0 items-center justify-center border-2 border-border',
+                    'flex h-11 w-11 shrink-0 items-center justify-center border border-border',
                     accent
                   )}
                 >
                   <Icon className="h-5 w-5" />
                 </span>
                 <div>
-                  <p className="font-black text-muted-foreground text-xs tabular-nums">
+                  <p className="font-semibold text-muted-foreground text-xs tabular-nums">
                     0{index + 1}
                   </p>
-                  <h3 className="font-black text-xl">
+                  <h3 className="font-semibold text-xl">
                     {t(`workflow.${key}.title`)}
                   </h3>
                   <p className="mt-2 text-muted-foreground text-sm leading-6">
@@ -223,20 +223,20 @@ export async function TeachDashboard({
 
       <TeachRealtimePanel stats={dashboardStats} wsId={wsId} />
 
-      <section className="mx-auto mt-8 max-w-7xl border-2 border-foreground/70 bg-background p-5 shadow-[8px_8px_0_var(--foreground)] md:p-6">
+      <section className="mx-auto mt-8 max-w-7xl rounded-lg border border-border bg-background p-5 md:p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="mb-3 inline-flex items-center gap-2 border-2 border-border bg-dynamic-yellow/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+            <p className="mb-3 inline-flex items-center gap-2 text-muted-foreground text-sm">
               <Activity className="h-3.5 w-3.5" />
               {t('operationsEyebrow')}
             </p>
-            <h2 className="font-black text-3xl">{t('operationsTitle')}</h2>
+            <h2 className="font-semibold text-3xl">{t('operationsTitle')}</h2>
             <p className="mt-2 max-w-2xl text-muted-foreground leading-7">
               {t('operationsLead')}
             </p>
           </div>
           <a
-            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 border-2 border-border bg-primary px-3 font-black text-primary-foreground text-xs shadow-[2px_2px_0_var(--border)]"
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-primary px-3 font-semibold text-primary-foreground text-xs"
             href={`/${wsId}/reports`}
           >
             {t('openReports')}
@@ -296,9 +296,9 @@ function CourseUserGroupCard({
     t('unassigned');
 
   return (
-    <article className="grid gap-4 border-2 border-border bg-background p-4 shadow-[5px_5px_0_var(--border)] md:grid-cols-[minmax(0,1fr)_22rem]">
+    <article className="grid gap-4 rounded-lg border border-border bg-background p-4 md:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="min-w-0">
-        <p className="truncate font-black text-2xl">{group.name}</p>
+        <p className="truncate font-semibold text-2xl">{group.name}</p>
         <p className="mt-1 text-muted-foreground text-sm">
           {t('manager', { name: manager })}
         </p>
@@ -332,8 +332,8 @@ function CourseUserGroupCard({
 
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="border-2 border-border bg-muted/60 px-3 py-2">
-      <p className="font-black tabular-nums">{value}</p>
+    <div className="rounded-lg border border-border bg-muted/60 px-3 py-2">
+      <p className="font-semibold tabular-nums">{value}</p>
       <p className="truncate text-muted-foreground text-xs">{label}</p>
     </div>
   );
@@ -342,7 +342,7 @@ function MiniStat({ label, value }: { label: string; value: number }) {
 function DashboardLink({ href, label }: { href: string; label: string }) {
   return (
     <a
-      className="inline-flex min-h-10 items-center justify-between gap-2 border-2 border-border bg-card px-3 py-2 font-black text-xs shadow-[2px_2px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
+      className="inline-flex min-h-10 items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 font-semibold text-xs transition"
       href={href}
     >
       {label}

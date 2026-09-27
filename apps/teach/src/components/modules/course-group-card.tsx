@@ -13,7 +13,7 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { BrutalCard, courseThemes } from './modules-shared';
+import { courseThemes, SurfaceCard } from './modules-shared';
 
 export interface CourseGroupItem {
   archived?: boolean;
@@ -39,10 +39,10 @@ function StatChip({
   value: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-0.5 border-2 border-border bg-muted/40 px-2 py-2 text-center">
+    <div className="flex flex-col items-center gap-0.5 rounded-lg border border-border bg-muted/40 px-2 py-2 text-center">
       <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-      <span className="font-bold text-sm leading-none">{value}</span>
-      <span className="text-[10px] text-muted-foreground leading-none">
+      <span className="font-bold text-sm leading-tight">{value}</span>
+      <span className="text-[10px] text-muted-foreground leading-tight">
         {label}
       </span>
     </div>
@@ -74,15 +74,15 @@ export function CourseGroupCard({
   const isPublished = Boolean(course.is_course_published);
 
   return (
-    <BrutalCard className="flex flex-col overflow-hidden p-0">
+    <SurfaceCard className="flex flex-col overflow-hidden p-0">
       {/* Canvas-style colored header band */}
       <div
         className={cn(
-          'relative flex items-center gap-3 border-border border-b-2 px-5 py-4',
+          'relative flex items-center gap-3 border-border border-b px-5 py-4',
           theme.surface
         )}
       >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-border bg-background shadow-[2px_2px_0_var(--border)]">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-background">
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
@@ -94,7 +94,7 @@ export function CourseGroupCard({
           </p>
         </div>
         {isPublished ? (
-          <span className="shrink-0 border-2 border-border bg-dynamic-green/15 px-2 py-0.5 font-bold text-foreground text-xs shadow-[2px_2px_0_var(--border)]">
+          <span className="shrink-0 border border-border bg-dynamic-green/15 px-2 py-0.5 font-bold text-foreground text-xs">
             {t('teachModules.published')}
           </span>
         ) : null}
@@ -163,11 +163,11 @@ export function CourseGroupCard({
       </div>
 
       {/* Canvas-style footer action */}
-      <div className="mt-auto space-y-3 border-border border-t-2 px-5 py-3">
+      <div className="mt-auto space-y-3 border-border border-t px-5 py-3">
         <div className="grid grid-cols-2 gap-2">
           <button
             className={cn(
-              'inline-flex min-h-9 items-center justify-center gap-2 border-2 border-border px-2 font-black text-xs shadow-[2px_2px_0_var(--border)]',
+              'inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-border px-2 font-semibold text-xs',
               isPublished ? 'bg-dynamic-green/15' : 'bg-dynamic-yellow/15'
             )}
             onClick={() => onPublish?.(!isPublished)}
@@ -183,7 +183,7 @@ export function CourseGroupCard({
               : t('teachModules.publish')}
           </button>
           <button
-            className="inline-flex min-h-9 items-center justify-center gap-2 border-2 border-border bg-muted px-2 font-black text-xs shadow-[2px_2px_0_var(--border)]"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-border bg-muted px-2 font-semibold text-xs"
             onClick={onArchive}
             type="button"
           >
@@ -201,9 +201,9 @@ export function CourseGroupCard({
               ? t('teachModules.reviewCourse')
               : t('teachModules.openModules')}
           </span>
-          <ArrowRight className="ml-auto h-4 w-4 transition group-hover/btn:translate-x-0.5" />
+          <ArrowRight className="ml-auto h-4 w-4 transition" />
         </Link>
       </div>
-    </BrutalCard>
+    </SurfaceCard>
   );
 }

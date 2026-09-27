@@ -484,7 +484,7 @@
     "emptyGroupsTitle": "No course user groups yet",
     "eyebrow": "Teacher workspace for {name}",
     "featureGrid": {
-      "eyebrow": "Teacher control deck",
+      "eyebrow": "Teaching tools",
       "items": {
         "attendance": {
           "body": "Open the centralized attendance surface for the selected workspace groups.",
@@ -511,15 +511,15 @@
           "title": "Report studio"
         }
       },
-      "lead": "Six high-frequency teaching paths stay visible so Teach feels like a classroom operations dashboard, not a landing page.",
+      "lead": "Open the tools you use to run your courses.",
       "previewValue": "Live",
       "primaryAction": "Open groups",
-      "title": "Course group command center"
+      "title": "Course groups"
     },
     "gradeNow": "Grade Now",
-    "groupsLead": "In apps/web these are workspace user groups. In Teach, treat each one as a course group with learners, modules, attendance, reports, and metrics.",
+    "groupsLead": "Open a course group to see learners, modules, attendance, reports, and metrics.",
     "groupsTitle": "Course user groups",
-    "lead": "Manage the teaching loop without turning Teach into a second platform admin. The dashboard focuses on groups, modules, centralized attendance, reports, and score metrics.",
+    "lead": "Review your courses, attendance, assignments, and reports for this workspace.",
     "lowScorers": "Low Scorers (<50%)",
     "manageInPlatform": "Manage courses",
     "manager": "Manager: {name}",
@@ -548,8 +548,8 @@
         "title": "Report prep"
       }
     },
-    "operationsEyebrow": "Workspace command queue",
-    "operationsLead": "A focused board for the next teaching actions that usually happen after opening course groups.",
+    "operationsEyebrow": "Next actions",
+    "operationsLead": "Continue the work that needs your attention.",
     "operationsTitle": "Teaching operations",
     "pendingGrading": "Pending Grading",
     "realtimeEyebrow": "Real-time Overview",
@@ -560,7 +560,7 @@
     "statsUnavailableBody": "Try again shortly to see pending grading, missing submissions, and low-scorer alerts.",
     "statsUnavailableTitle": "Course stats unavailable",
     "teacher": "Teacher",
-    "title": "Run today’s teaching dashboard.",
+    "title": "Teaching overview",
     "unassigned": "Unassigned",
     "viewMetrics": "View Metrics",
     "workflow": {
@@ -935,7 +935,7 @@
       "education": "Education",
       "metrics": "Metrics",
       "reports": "Reports",
-      "settings": "Settings"
+      "settings": "Teach settings"
     },
     "navigationLabel": "Teacher workspace navigation",
     "workspaceFallback": "Education workspace"

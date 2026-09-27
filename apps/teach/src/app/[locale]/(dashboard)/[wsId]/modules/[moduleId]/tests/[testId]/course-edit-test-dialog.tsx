@@ -134,7 +134,7 @@ export function CourseEditTestDialog({
             </div>
 
             <button
-              className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-background shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background transition"
               onClick={() => onOpenChange(false)}
               type="button"
               aria-label={t('common.close') || 'Close'}
@@ -148,13 +148,13 @@ export function CourseEditTestDialog({
           <div className="space-y-2">
             <label
               htmlFor="edit-test-name-input"
-              className="block font-black text-muted-foreground text-xs uppercase tracking-wider"
+              className="block font-semibold text-muted-foreground text-xs uppercase tracking-wider"
             >
               {t('teachModules.testName')}
             </label>
             <input
               id="edit-test-name-input"
-              className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               placeholder={
                 t('teachModules.testNamePlaceholder') || 'e.g. Midterm Exam'
               }
@@ -168,14 +168,14 @@ export function CourseEditTestDialog({
             <div className="space-y-2">
               <label
                 htmlFor="edit-test-start-at"
-                className="block font-black text-muted-foreground text-xs uppercase tracking-wider"
+                className="block font-semibold text-muted-foreground text-xs uppercase tracking-wider"
               >
                 {t('teachModules.testStartAt')}
               </label>
               <input
                 id="edit-test-start-at"
                 type="datetime-local"
-                className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                 value={startAt}
                 onChange={(e) => setStartAt(e.target.value)}
                 disabled={updateTestMutation.isPending}
@@ -185,7 +185,7 @@ export function CourseEditTestDialog({
             <div className="space-y-2">
               <label
                 htmlFor="edit-test-duration"
-                className="block font-black text-muted-foreground text-xs uppercase tracking-wider"
+                className="block font-semibold text-muted-foreground text-xs uppercase tracking-wider"
               >
                 {t('teachModules.testDuration')}
               </label>
@@ -194,7 +194,7 @@ export function CourseEditTestDialog({
                 type="number"
                 min="1"
                 max="1440"
-                className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                 placeholder={t('teachModules.testDurationPlaceholder')}
                 value={durationInMinutes}
                 onChange={(e) => setDurationInMinutes(e.target.value)}
@@ -206,14 +206,14 @@ export function CourseEditTestDialog({
           <div className="space-y-2">
             <label
               htmlFor="edit-test-description-input"
-              className="block font-black text-muted-foreground text-xs uppercase tracking-wider"
+              className="block font-semibold text-muted-foreground text-xs uppercase tracking-wider"
             >
               {t('teachModules.testDescription')}
             </label>
             <textarea
               id="edit-test-description-input"
               rows={3}
-              className="w-full resize-none border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               placeholder={t('teachModules.testDescriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -223,7 +223,7 @@ export function CourseEditTestDialog({
 
           <div className="flex justify-end gap-3 pt-2">
             <button
-              className="border-2 border-border bg-card px-4 py-2 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+              className="rounded-lg border border-border bg-card px-4 py-2 font-bold text-sm transition"
               onClick={() => onOpenChange(false)}
               type="button"
               disabled={updateTestMutation.isPending}
@@ -231,7 +231,7 @@ export function CourseEditTestDialog({
               {t('common.cancel') || 'Cancel'}
             </button>
             <button
-              className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm transition disabled:opacity-50"
               type="submit"
               disabled={updateTestMutation.isPending || !testName.trim()}
             >

@@ -107,7 +107,7 @@ export function StructuredQuizPreview({
 
   return (
     <div className="mt-6 space-y-4">
-      <div className="flex gap-2 rounded-sm border-2 border-dynamic-yellow/30 bg-dynamic-yellow/10 p-3 text-dynamic-yellow text-xs">
+      <div className="flex gap-2 rounded-sm border border-dynamic-yellow/30 bg-dynamic-yellow/10 p-3 text-dynamic-yellow text-xs">
         <AlertCircle className="h-4 w-4 shrink-0" />
         <span>{notice}</span>
       </div>
@@ -117,7 +117,7 @@ export function StructuredQuizPreview({
           {matchingPairs.map((pair, index) => (
             <div
               key={`${pair.left}-${index}`}
-              className="grid gap-3 border-2 border-border bg-muted/20 p-3 text-sm shadow-[2px_2px_0_var(--border)] md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-center"
+              className="grid gap-3 rounded-lg border border-border bg-muted/20 p-3 text-sm md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-center"
             >
               <span className="min-w-0 font-bold">{pair.left}</span>
               <Select
@@ -125,7 +125,7 @@ export function StructuredQuizPreview({
                 onValueChange={(value) => handleMatchingChange(index, value)}
                 value={selectedMatchingPairs[index]?.right || undefined}
               >
-                <SelectTrigger className="min-w-0 max-w-full border-2 border-border bg-background font-bold shadow-[2px_2px_0_var(--border)] [&>span]:min-w-0 [&>span]:flex-1 [&>span]:truncate [&>span]:text-left">
+                <SelectTrigger className="min-w-0 max-w-full rounded-lg border border-border bg-background font-bold [&>span]:min-w-0 [&>span]:flex-1 [&>span]:truncate [&>span]:text-left">
                   <SelectValue placeholder={matchingPlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
@@ -151,7 +151,7 @@ export function StructuredQuizPreview({
               onDragOver={(e) => handleDragOver(e, index)}
               onDragEnd={handleDragEnd}
               className={cn(
-                'flex select-none items-center justify-between border-2 border-border p-3 text-sm shadow-[2px_2px_0_var(--border)] transition-all',
+                'flex select-none items-center justify-between rounded-lg border border-border p-3 text-sm transition-all',
                 isSubmitted
                   ? 'bg-muted/20'
                   : 'cursor-grab bg-background hover:bg-muted/10 active:cursor-grabbing',
@@ -162,7 +162,7 @@ export function StructuredQuizPreview({
                 {!isSubmitted && (
                   <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground" />
                 )}
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border border-border bg-primary font-semibold text-[10px] text-primary-foreground">
                   {index + 1}
                 </span>
                 <span className="font-bold">{item}</span>
@@ -176,7 +176,7 @@ export function StructuredQuizPreview({
                     size="icon"
                     disabled={index === 0}
                     onClick={() => moveItem(index, 'up')}
-                    className="h-8 w-8 border border-border p-0 shadow-[1px_1px_0_var(--border)] hover:bg-muted/10 active:translate-y-0"
+                    className="h-8 w-8 rounded-lg border border-border p-0 hover:bg-muted/10"
                   >
                     <ChevronUp className="h-4 w-4" />
                   </Button>
@@ -186,7 +186,7 @@ export function StructuredQuizPreview({
                     size="icon"
                     disabled={index === items.length - 1}
                     onClick={() => moveItem(index, 'down')}
-                    className="h-8 w-8 border border-border p-0 shadow-[1px_1px_0_var(--border)] hover:bg-muted/10 active:translate-y-0"
+                    className="h-8 w-8 rounded-lg border border-border p-0 hover:bg-muted/10"
                   >
                     <ChevronDown className="h-4 w-4" />
                   </Button>

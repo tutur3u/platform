@@ -27,9 +27,9 @@ export function CourseCreatePanel({
   }
 
   return (
-    <div className="grid gap-3 border-2 border-border bg-card p-4 shadow-[5px_5px_0_var(--border)] md:grid-cols-[minmax(12rem,1fr)_minmax(14rem,2fr)_auto]">
+    <div className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-[minmax(12rem,1fr)_minmax(14rem,2fr)_auto]">
       <input
-        className="h-11 border-2 border-border bg-background px-3 font-bold outline-none focus:border-primary"
+        className="h-11 rounded-lg border border-border bg-background px-3 font-bold outline-none focus:border-primary"
         onChange={(event) => setName(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === 'Enter') submit();
@@ -39,7 +39,7 @@ export function CourseCreatePanel({
         value={name}
       />
       <input
-        className="h-11 border-2 border-border bg-background px-3 outline-none focus:border-primary"
+        className="h-11 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary"
         onChange={(event) => setDescription(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === 'Enter') submit();
@@ -49,7 +49,7 @@ export function CourseCreatePanel({
         value={description}
       />
       <button
-        className="inline-flex h-11 items-center justify-center gap-2 border-2 border-border bg-primary px-4 font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-primary px-4 font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
         disabled={!name.trim() || isPending}
         onClick={submit}
         type="button"

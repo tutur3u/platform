@@ -110,13 +110,13 @@ export function AttendanceSchedulePanel({
   };
 
   return (
-    <section className="space-y-4 border-2 border-border bg-background p-4 shadow-[4px_4px_0_var(--border)]">
+    <section className="space-y-4 rounded-lg border border-border bg-background p-4">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-dynamic-blue/10">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-dynamic-blue/10">
           <CalendarDays className="h-5 w-5" />
         </span>
         <div>
-          <h2 className="font-black text-lg">{t('scheduleTitle')}</h2>
+          <h2 className="font-semibold text-lg">{t('scheduleTitle')}</h2>
           <p className="text-muted-foreground text-sm">{t('scheduleLead')}</p>
         </div>
       </div>
@@ -125,7 +125,7 @@ export function AttendanceSchedulePanel({
         <label className="grid gap-1 text-sm">
           <span className="font-bold">{t('startDate')}</span>
           <input
-            className="h-10 border-2 border-border bg-card px-3 font-bold outline-none focus:border-primary"
+            className="h-10 rounded-lg border border-border bg-card px-3 font-bold outline-none focus:border-primary"
             onChange={(event) => setStartingDate(event.target.value)}
             type="date"
             value={startingDate}
@@ -134,7 +134,7 @@ export function AttendanceSchedulePanel({
         <label className="grid gap-1 text-sm">
           <span className="font-bold">{t('endDate')}</span>
           <input
-            className="h-10 border-2 border-border bg-card px-3 font-bold outline-none focus:border-primary"
+            className="h-10 rounded-lg border border-border bg-card px-3 font-bold outline-none focus:border-primary"
             min={startingDate}
             onChange={(event) => setEndingDate(event.target.value)}
             type="date"
@@ -152,7 +152,7 @@ export function AttendanceSchedulePanel({
               <button
                 aria-pressed={selected}
                 className={cn(
-                  'h-10 border-2 border-border bg-card font-black text-xs',
+                  'h-10 rounded-lg border border-border bg-card font-semibold text-xs',
                   selected &&
                     'border-dynamic-blue/50 bg-dynamic-blue/15 text-dynamic-blue'
                 )}
@@ -167,9 +167,9 @@ export function AttendanceSchedulePanel({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 border-2 border-border border-dashed bg-muted/40 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-lg border border-border border-dashed bg-muted/40 p-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="font-black">{t('generatedSessions')}</p>
+          <p className="font-semibold">{t('generatedSessions')}</p>
           <p className="text-muted-foreground text-sm">
             {t('generatedSessionsDescription', {
               count: generatedSessions.length,

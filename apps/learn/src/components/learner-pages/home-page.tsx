@@ -95,7 +95,7 @@ export function HomePage({ wsId }: { wsId: string }) {
   ];
 
   return (
-    <div className="space-y-20" ref={scopeRef}>
+    <div className="space-y-8" ref={scopeRef}>
       <HomeHero
         coursesHref={coursesHref}
         hearts={state.hearts}
@@ -160,7 +160,7 @@ export function HomePage({ wsId }: { wsId: string }) {
           className="min-w-0 space-y-3 self-start xl:sticky xl:top-24"
           data-learn-reveal
         >
-          <h2 className="font-black text-2xl tracking-normal">
+          <h2 className="font-semibold text-xl tracking-tight">
             {t('home.dailyQuests')}
           </h2>
           {quests.map((quest) => (
@@ -182,7 +182,7 @@ export function HomePage({ wsId }: { wsId: string }) {
         data-journey
       >
         <div className="h-fit" data-pin-title>
-          <h2 className="font-black text-[clamp(2rem,4vw,3.75rem)] leading-none tracking-normal">
+          <h2 className="font-semibold text-2xl leading-tight tracking-tight">
             {t('home.learningPath')}
           </h2>
           <p className="mt-4 text-muted-foreground leading-7">

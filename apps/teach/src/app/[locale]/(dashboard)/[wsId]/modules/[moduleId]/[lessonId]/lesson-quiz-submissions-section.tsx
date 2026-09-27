@@ -91,12 +91,12 @@ export function LessonQuizSubmissionsSection({
       : '—';
 
   return (
-    <section className="mt-8 space-y-4 border-2 border-border bg-background p-6 shadow-[5px_5px_0_var(--border)]">
+    <section className="mt-8 space-y-4 rounded-lg border border-border bg-background p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Users className="h-5 w-5 text-dynamic-green" />
           <div>
-            <h2 className="font-black text-lg">
+            <h2 className="font-semibold text-lg">
               {t('teachModules.quizSubmissions')}
             </h2>
             <p className="text-muted-foreground text-sm">
@@ -107,7 +107,7 @@ export function LessonQuizSubmissionsSection({
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Quiz Deadline setting */}
-          <div className="flex items-center gap-2 border-2 border-border bg-card px-2.5 py-1.5 text-xs shadow-[2px_2px_0_var(--border)]">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs">
             <span className="font-bold text-muted-foreground">
               {t('teachModules.quizDeadline') || 'Deadline'}:
             </span>
@@ -134,7 +134,7 @@ export function LessonQuizSubmissionsSection({
                       parsedDate ? parsedDate.toISOString() : null
                     );
                   }}
-                  className="cursor-pointer font-black text-dynamic-green hover:underline disabled:opacity-50"
+                  className="cursor-pointer font-semibold text-dynamic-green hover:underline disabled:opacity-50"
                 >
                   Save
                 </button>
@@ -156,7 +156,7 @@ export function LessonQuizSubmissionsSection({
             onClick={() => onToggleQuizScorePublished?.(!isQuizScorePublished)}
             type="button"
             className={cn(
-              'inline-flex items-center gap-1.5 border-2 border-border px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5',
+              'inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 font-bold text-xs transition',
               isQuizScorePublished
                 ? 'bg-dynamic-green/15 text-foreground'
                 : 'bg-muted text-muted-foreground'
@@ -182,14 +182,14 @@ export function LessonQuizSubmissionsSection({
           {[...Array(3)].map((_, index) => (
             <div
               key={index}
-              className="h-20 animate-pulse border-2 border-border bg-card shadow-[4px_4px_0_var(--border)]"
+              className="h-20 animate-pulse rounded-lg border border-border bg-card"
             />
           ))}
         </div>
       )}
 
       {!isLoading && isError && submissions.length === 0 && (
-        <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
+        <div className="rounded-lg border border-border border-dashed bg-background p-8 text-center">
           <p className="font-bold text-muted-foreground text-sm">
             {t('teachModules.submissionsLoadError')}
           </p>
@@ -197,7 +197,7 @@ export function LessonQuizSubmissionsSection({
       )}
 
       {!isLoading && !isError && submissions.length === 0 && (
-        <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
+        <div className="rounded-lg border border-border border-dashed bg-background p-8 text-center">
           <User className="mx-auto mb-3 h-8 w-8 text-muted-foreground/50" />
           <p className="font-bold text-muted-foreground text-sm">
             {t('teachModules.noSubmissions')}
@@ -296,11 +296,11 @@ function SubmissionRow({
     <button
       onClick={onClick}
       type="button"
-      className="flex w-full cursor-pointer select-none items-center gap-4 border-2 border-border bg-background p-4 text-left shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+      className="flex w-full cursor-pointer select-none items-center gap-4 rounded-lg border border-border bg-background p-4 text-left transition"
     >
       <span
         className={cn(
-          'flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border',
+          'flex h-10 w-10 shrink-0 items-center justify-center border border-border',
           isCompleted
             ? hasUnmarked
               ? 'bg-dynamic-yellow/15'
@@ -374,7 +374,7 @@ function SubmissionRow({
 
       <div
         className={cn(
-          'flex h-12 w-12 shrink-0 items-center justify-center border-2 border-border font-black text-sm',
+          'flex h-12 w-12 shrink-0 items-center justify-center border border-border font-semibold text-sm',
           isCompleted
             ? 'bg-dynamic-green/15 text-dynamic-green'
             : completionPercent >= 50
@@ -398,13 +398,13 @@ function StatCard({
   variant?: 'success' | 'warning';
 }) {
   return (
-    <div className="border-2 border-border bg-background p-3 shadow-[2px_2px_0_var(--border)]">
-      <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+    <div className="rounded-lg border border-border bg-background p-3">
+      <span className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
         {label}
       </span>
       <span
         className={cn(
-          'mt-0.5 block font-black text-xl',
+          'mt-0.5 block font-semibold text-xl',
           variant === 'success' && 'text-dynamic-green',
           variant === 'warning' && 'text-dynamic-yellow'
         )}

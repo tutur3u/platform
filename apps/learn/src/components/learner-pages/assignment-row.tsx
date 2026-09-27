@@ -6,7 +6,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { BrutalCard } from './shared';
+import { SurfaceCard } from './shared';
 
 export function AssignmentRow({
   action,
@@ -20,12 +20,12 @@ export function AssignmentRow({
   const t = useTranslations();
 
   return (
-    <BrutalCard className="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+    <SurfaceCard className="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <div
             className={cn(
-              'flex h-10 w-10 items-center justify-center border-2 border-border',
+              'flex h-10 w-10 items-center justify-center border border-border',
               assignment.is_completed
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-background text-foreground'
@@ -41,7 +41,7 @@ export function AssignmentRow({
             {assignment.title ?? t('assignments.untitled')}
           </h3>
           {assignment.is_completed ? (
-            <Badge className="rounded-none border-2 border-border bg-primary text-primary-foreground hover:bg-primary">
+            <Badge className="rounded-lg border border-border bg-primary text-primary-foreground hover:bg-primary">
               {completedLabel}
             </Badge>
           ) : null}
@@ -51,6 +51,6 @@ export function AssignmentRow({
         </p>
       </div>
       {action}
-    </BrutalCard>
+    </SurfaceCard>
   );
 }

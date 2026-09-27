@@ -65,14 +65,6 @@ export function usePageMotion() {
         y: 22,
       });
 
-      gsap.to('[data-ink-float]', {
-        duration: 2.6,
-        ease: 'sine.inOut',
-        repeat: -1,
-        y: -7,
-        yoyo: true,
-      });
-
       const journey = scopeRef.current?.querySelector('[data-journey]');
       const pinTitle = scopeRef.current?.querySelector('[data-pin-title]');
 
@@ -126,7 +118,7 @@ function SkeletonBlock({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'animate-pulse border-2 border-border bg-card shadow-[7px_7px_0_var(--border)]',
+        'animate-pulse rounded-lg border border-border bg-card',
         className
       )}
     />
@@ -142,10 +134,10 @@ export function EmptyState({
 }) {
   return (
     <div
-      className="border-2 border-border border-dashed bg-muted/60 p-8 text-center shadow-[8px_8px_0_var(--border)]"
+      className="rounded-lg border border-border border-dashed bg-muted/60 p-8 text-center"
       data-learn-reveal
     >
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center border-2 border-border bg-background shadow-[4px_4px_0_var(--border)]">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-border bg-background">
         <Sparkles className="h-7 w-7" />
       </div>
       <p className="mx-auto max-w-md text-muted-foreground leading-7">
@@ -172,16 +164,14 @@ export function Section({
   return (
     <div className="space-y-8" ref={refValue}>
       <section
-        className="grid gap-6 border-2 border-border bg-background p-5 shadow-[9px_9px_0_var(--border)] md:grid-cols-[minmax(0,1fr)_16rem] md:p-8"
+        className="rounded-xl border border-border bg-card p-6 md:p-8"
         data-learn-reveal
       >
         <div>
           {eyebrow ? (
-            <p className="mb-4 inline-flex border-2 border-border bg-dynamic-yellow/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
-              {eyebrow}
-            </p>
+            <p className="mb-3 text-muted-foreground text-sm">{eyebrow}</p>
           ) : null}
-          <h1 className="max-w-5xl text-balance font-black text-[clamp(2rem,4vw,3.8rem)] leading-none tracking-normal">
+          <h1 className="max-w-5xl text-balance font-semibold text-3xl leading-tight tracking-normal md:text-4xl">
             {title}
           </h1>
           {description ? (
@@ -190,16 +180,13 @@ export function Section({
             </p>
           ) : null}
         </div>
-        <div className="hidden border-2 border-border bg-muted/60 p-4 shadow-[5px_5px_0_var(--border)] md:block">
-          <div className="h-full border-2 border-border border-dashed bg-background/80" />
-        </div>
       </section>
       {children}
     </div>
   );
 }
 
-export function BrutalCard({
+export function SurfaceCard({
   children,
   className,
   reveal = true,
@@ -213,7 +200,7 @@ export function BrutalCard({
   return (
     <article
       className={cn(
-        'border-2 border-border bg-card shadow-[7px_7px_0_var(--border)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[9px_9px_0_var(--border)]',
+        'rounded-xl border border-border bg-card transition-colors duration-200 hover:bg-muted/30',
         className
       )}
       data-stack-card={stacked ? '' : undefined}
@@ -224,7 +211,7 @@ export function BrutalCard({
   );
 }
 
-export function BrutalIcon({
+export function SurfaceIcon({
   className,
   icon: Icon,
 }: {
@@ -234,7 +221,7 @@ export function BrutalIcon({
   return (
     <div
       className={cn(
-        'flex h-12 w-12 shrink-0 items-center justify-center border-2 border-border bg-dynamic-yellow/15 shadow-[3px_3px_0_var(--border)]',
+        'flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-muted',
         className
       )}
     >
@@ -243,7 +230,7 @@ export function BrutalIcon({
   );
 }
 
-export function InkLink({
+export function PrimaryLink({
   children,
   className,
   href,
@@ -255,7 +242,7 @@ export function InkLink({
   return (
     <a
       className={cn(
-        'inline-flex h-11 items-center justify-center gap-2 border-2 border-border bg-primary px-4 font-black text-primary-foreground shadow-[4px_4px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none',
+        'inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         className
       )}
       href={href}

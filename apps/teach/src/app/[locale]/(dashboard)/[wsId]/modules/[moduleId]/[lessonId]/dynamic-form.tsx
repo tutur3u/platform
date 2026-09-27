@@ -284,7 +284,7 @@ export default function DynamicQuizForm({
         {type === 'paragraph' && (
           <div className="space-y-3">
             <Label>{t('ws-quizzes.correct_answer')}</Label>
-            <div className="border-2 border-border border-dashed bg-muted/20 p-4 text-center text-muted-foreground text-sm italic shadow-[2px_2px_0_var(--border)]">
+            <div className="rounded-lg border border-border border-dashed bg-muted/20 p-4 text-center text-muted-foreground text-sm italic">
               {t('ws-quizzes.paragraph_response_area_hint')}
             </div>
           </div>

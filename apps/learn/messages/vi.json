@@ -18,7 +18,7 @@
     "title": "AI Chat"
   },
   "assignments": {
-    "description": "{count, plural, =0 {Bảng nhiệm vụ đã trống.} one {Còn một nhiệm vụ đang chờ bạn.} other {Còn # nhiệm vụ đang chờ bạn.}}",
+    "description": "{count, plural, =0 {Bài tập đã trống.} one {Còn một nhiệm vụ đang chờ bạn.} other {Còn # nhiệm vụ đang chờ bạn.}}",
     "empty": "Hiện chưa có bài tập cần làm.",
     "markDone": "Đánh dấu xong",
     "title": "Bài tập",
@@ -444,10 +444,10 @@
     "assignments": "Bài tập cần làm",
     "continueCourse": "Tiếp tục khóa học",
     "dailyGoal": "Mục tiêu hôm nay",
-    "dailyQuests": "Nhiệm vụ hôm nay",
+    "dailyQuests": "Bước tiếp theo",
     "hearts": "Tim",
-    "heroDescription": "Chọn một nhiệm vụ nhỏ, giữ tim và duy trì chuỗi học tập của bạn.",
-    "heroTitle": "Sẵn sàng chưa, {name}?",
+    "heroDescription": "Tiếp tục bài đang học hoặc bắt đầu một lượt luyện tập ngắn.",
+    "heroTitle": "Chào mừng trở lại, {name}",
     "learningPath": "Lộ trình học",
     "learningPathDescription": "Mỗi khóa học trở thành một lộ trình có điểm mốc, bài hiện tại và thành quả dễ thấy.",
     "marks": "Điểm gần đây",
@@ -473,12 +473,12 @@
     "studentMode": "Chế độ học viên",
     "title": "Trang chủ",
     "todayPlan": "Kế hoạch học hôm nay",
-    "todayPlanDescription": "Một lộ trình gọn qua luyện tập, bài tập và tiến độ khóa học của workspace hiện tại.",
+    "todayPlanDescription": "Luyện tập, bài tập và bài học tiếp theo ở cùng một nơi.",
     "toolkitAi": "Hỏi trợ lý học tập",
     "toolkitAiBody": "Mở chat học viên để nhận gợi ý có dẫn dắt, không phải rẽ sang dashboard lớn.",
     "toolkitAssignments": "Hộp bài tập",
     "toolkitAssignmentsBody": "Xem mọi việc cần làm khi ngữ cảnh khóa học vẫn còn ngay bên cạnh.",
-    "toolkitBadge": "Bộ công cụ vui",
+    "toolkitBadge": "Truy cập nhanh",
     "toolkitCourses": "Bản đồ khóa học",
     "toolkitCoursesBody": "Quay lại điểm mốc, module và các bài đang khóa.",
     "toolkitDescription": "Các công cụ nhanh cho luyện tập, AI hỗ trợ, tiến độ khóa học, bài tập và báo cáo.",
@@ -486,7 +486,7 @@
     "toolkitPracticeBody": "Làm một lượt khởi động ngắn trước module tiếp theo của giáo viên.",
     "toolkitReports": "Báo cáo tiến độ",
     "toolkitReportsBody": "Đọc điểm gần đây, tín hiệu điểm danh và ghi chú giáo viên trong một nơi.",
-    "toolkitTitle": "Bộ công cụ học vui",
+    "toolkitTitle": "Công cụ học tập",
     "xp": "XP"
   },
   "landing": {
@@ -590,7 +590,7 @@
     "marks": "Điểm",
     "practice": "Luyện tập",
     "reports": "Báo cáo",
-    "settings": "Cài đặt"
+    "settings": "Cài đặt Learn"
   },
   "notifications": {
     "accept": "Chấp nhận",

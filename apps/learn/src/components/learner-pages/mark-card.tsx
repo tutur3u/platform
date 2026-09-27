@@ -4,7 +4,7 @@ import { Trophy } from '@tuturuuu/icons';
 import type { TulearnMarkSummary } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { BrutalCard, BrutalIcon, courseThemes } from './shared';
+import { courseThemes, SurfaceCard, SurfaceIcon } from './shared';
 
 export function MarkCard({
   index,
@@ -16,10 +16,10 @@ export function MarkCard({
   const t = useTranslations();
   const theme = courseThemes[index % courseThemes.length] ?? courseThemes[0];
   return (
-    <BrutalCard
+    <SurfaceCard
       className={cn('p-6', index % 2 === 0 ? 'bg-card' : 'bg-muted/60')}
     >
-      <BrutalIcon className={cn('mb-5', theme.text)} icon={Trophy} />
+      <SurfaceIcon className={cn('mb-5', theme.text)} icon={Trophy} />
       <p className="text-muted-foreground text-sm">
         {mark.metric.name ?? t('marks.untitled')}
       </p>
@@ -36,6 +36,6 @@ export function MarkCard({
           {mark.course.name ?? t('courses.untitled')}
         </p>
       ) : null}
-    </BrutalCard>
+    </SurfaceCard>
   );
 }

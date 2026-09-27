@@ -46,9 +46,9 @@ export function PostsPanel({
   return (
     <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <div className="space-y-3">
-        <div className="flex flex-col gap-2 border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)] sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-black">{t('learnerAssignmentPreview')}</p>
+            <p className="font-semibold">{t('learnerAssignmentPreview')}</p>
             <p className="text-muted-foreground text-sm">
               {t('learnerAssignmentPreviewLead')}
             </p>
@@ -62,10 +62,10 @@ export function PostsPanel({
         </div>
         {(postsQuery.data?.data ?? []).map((post) => (
           <article
-            className="border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)]"
+            className="rounded-lg border border-border bg-card p-4"
             key={post.id}
           >
-            <p className="font-black text-lg">
+            <p className="font-semibold text-lg">
               {post.title ?? t('untitledPost')}
             </p>
             <p className="mt-2 whitespace-pre-wrap text-muted-foreground text-sm">
@@ -74,21 +74,21 @@ export function PostsPanel({
           </article>
         ))}
       </div>
-      <div className="space-y-3 border-2 border-border bg-background p-4 shadow-[5px_5px_0_var(--border)]">
+      <div className="space-y-3 rounded-lg border border-border bg-background p-4">
         <input
-          className="h-11 w-full border-2 border-border bg-card px-3 font-bold outline-none focus:border-primary"
+          className="h-11 w-full rounded-lg border border-border bg-card px-3 font-bold outline-none focus:border-primary"
           onChange={(event) => setTitle(event.target.value)}
           placeholder={t('postTitle')}
           value={title}
         />
         <textarea
-          className="min-h-40 w-full resize-y border-2 border-border bg-card p-3 outline-none focus:border-primary"
+          className="min-h-40 w-full resize-y rounded-lg border border-border bg-card p-3 outline-none focus:border-primary"
           onChange={(event) => setContent(event.target.value)}
           placeholder={t('postContent')}
           value={content}
         />
         <button
-          className="inline-flex h-11 items-center border-2 border-border bg-primary px-4 font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] disabled:opacity-60"
+          className="inline-flex h-11 items-center rounded-lg border border-border bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-60"
           disabled={createPost.isPending || (!title.trim() && !content.trim())}
           onClick={() => createPost.mutate()}
           type="button"

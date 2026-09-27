@@ -29,11 +29,11 @@ export function CoachSidebar() {
 
   return (
     <aside className="space-y-4">
-      <section className="border-2 border-border bg-dynamic-yellow/15 p-5 shadow-[7px_7px_0_var(--border)]">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center border-2 border-border bg-background shadow-[3px_3px_0_var(--border)]">
+      <section className="border border-border bg-dynamic-yellow/15 p-5">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-background">
           <Bot className="h-6 w-6" />
         </div>
-        <h2 className="font-black text-2xl tracking-normal">
+        <h2 className="font-semibold text-2xl tracking-normal">
           {t('aiChat.coachTitle')}
         </h2>
         <p className="mt-3 text-muted-foreground text-sm leading-6">
@@ -46,7 +46,7 @@ export function CoachSidebar() {
           const Icon = feature.icon;
           return (
             <div
-              className="flex items-center gap-3 border-2 border-border bg-card p-4 font-black text-sm shadow-[5px_5px_0_var(--border)]"
+              className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 font-semibold text-sm"
               key={feature.label}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -72,12 +72,12 @@ export function EmptyChat({
   ];
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center gap-5 border-2 border-border border-dashed bg-dynamic-yellow/10 p-8 text-center">
-      <div className="flex h-16 w-16 items-center justify-center border-2 border-border bg-dynamic-yellow/15 shadow-[5px_5px_0_var(--border)]">
+    <div className="flex min-h-full flex-col items-center justify-center gap-5 rounded-lg border border-border border-dashed bg-dynamic-yellow/10 p-8 text-center">
+      <div className="flex h-16 w-16 items-center justify-center border border-border bg-dynamic-yellow/15">
         <Sparkles className="h-8 w-8" />
       </div>
       <div>
-        <h2 className="font-black text-3xl tracking-normal">
+        <h2 className="font-semibold text-3xl tracking-normal">
           {t('aiChat.emptyTitle')}
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-muted-foreground leading-7">
@@ -87,7 +87,7 @@ export function EmptyChat({
       <div className="grid w-full max-w-2xl gap-2 sm:grid-cols-3">
         {prompts.map((prompt) => (
           <button
-            className="border-2 border-border bg-background px-4 py-3 text-left font-black text-sm shadow-[3px_3px_0_var(--border)] transition hover:bg-muted active:translate-x-1 active:translate-y-1 active:shadow-none"
+            className="rounded-lg border border-border bg-background px-4 py-3 text-left font-semibold text-sm transition hover:bg-muted"
             key={prompt}
             onClick={() => onPickPrompt(prompt)}
             type="button"
@@ -103,7 +103,7 @@ export function EmptyChat({
 export function ThinkingIndicator() {
   const t = useTranslations();
   return (
-    <div className="flex items-center gap-2 border-2 border-border bg-dynamic-yellow/15 px-4 py-3 font-black text-sm shadow-[4px_4px_0_var(--border)]">
+    <div className="flex items-center gap-2 border border-border bg-dynamic-yellow/15 px-4 py-3 font-semibold text-sm">
       <LoaderCircle className="h-4 w-4 animate-spin" />
       {t('aiChat.thinking')}
     </div>
@@ -124,7 +124,7 @@ export function MessageBubble({ message }: { message: UIMessage }) {
       {!isUser ? <MessageAvatar icon={Icon} tone="assistant" /> : null}
       <div
         className={cn(
-          'max-w-[min(42rem,85%)] whitespace-pre-wrap border-2 border-border px-4 py-3 text-sm leading-7 shadow-[4px_4px_0_var(--border)]',
+          'max-w-[min(42rem,85%)] whitespace-pre-wrap rounded-lg border border-border px-4 py-3 text-sm leading-7',
           isUser
             ? 'bg-primary text-primary-foreground'
             : 'bg-card text-foreground'
@@ -147,7 +147,7 @@ function MessageAvatar({
   return (
     <div
       className={cn(
-        'flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border shadow-[3px_3px_0_var(--border)]',
+        'flex h-10 w-10 shrink-0 items-center justify-center border border-border',
         tone === 'assistant'
           ? 'bg-background'
           : 'bg-primary text-primary-foreground'

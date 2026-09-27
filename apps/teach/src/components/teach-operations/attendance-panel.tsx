@@ -243,7 +243,7 @@ export function AttendancePanel({
               return (
                 <article
                   className={cn(
-                    'relative space-y-4 border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)]',
+                    'relative space-y-4 rounded-lg border border-border bg-card p-4',
                     pending && 'border-dynamic-blue/50 bg-dynamic-blue/5'
                   )}
                   key={member.id}
@@ -254,7 +254,7 @@ export function AttendancePanel({
                     </Badge>
                   ) : null}
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12 border-2 border-border">
+                    <Avatar className="h-12 w-12 border border-border">
                       <AvatarImage src={member.avatar_url ?? undefined} />
                       <AvatarFallback>
                         {(
@@ -268,7 +268,7 @@ export function AttendancePanel({
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <p className="truncate font-black">
+                      <p className="truncate font-semibold">
                         {member.full_name ??
                           member.display_name ??
                           member.email}
@@ -287,7 +287,7 @@ export function AttendancePanel({
                         <Button
                           aria-pressed={active}
                           className={cn(
-                            'h-auto flex-col gap-1 border-2 py-3',
+                            'h-auto flex-col gap-1 border py-3',
                             status === 'PRESENT' &&
                               'border-dynamic-green/30 text-dynamic-green',
                             status === 'ABSENT' &&
@@ -314,7 +314,7 @@ export function AttendancePanel({
                           variant="ghost"
                         >
                           <Icon className="h-4 w-4" />
-                          <span className="font-black text-xs">
+                          <span className="font-semibold text-xs">
                             {t(`attendanceStatus.${status}`)}
                           </span>
                         </Button>
@@ -337,7 +337,7 @@ export function AttendancePanel({
                   ) : null}
 
                   <Textarea
-                    className="min-h-20 border-2 border-border"
+                    className="min-h-20 border border-border"
                     onChange={(event) =>
                       setDraftEntry(member.id, { notes: event.target.value })
                     }
@@ -349,15 +349,15 @@ export function AttendancePanel({
             })}
           </div>
         ) : (
-          <div className="border-2 border-border border-dashed bg-muted/50 p-8 text-center">
-            <p className="font-black text-2xl">{t('noSessionTitle')}</p>
+          <div className="rounded-lg border border-border border-dashed bg-muted/50 p-8 text-center">
+            <p className="font-semibold text-2xl">{t('noSessionTitle')}</p>
             <p className="mx-auto mt-2 max-w-xl text-muted-foreground">
               {t('noSessionBody')}
             </p>
           </div>
         )}
 
-        <div className="sticky bottom-4 flex flex-col gap-3 border-2 border-border bg-background p-3 shadow-[5px_5px_0_var(--border)] sm:flex-row sm:items-center sm:justify-between">
+        <div className="sticky bottom-4 flex flex-col gap-3 rounded-lg border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-bold text-sm">
             {t('pendingChanges', { count: Object.keys(draft).length })}
           </p>
@@ -398,12 +398,12 @@ function SummaryTile({
   return (
     <div
       className={cn(
-        'border-2 border-border bg-card p-3 text-center shadow-[2px_2px_0_var(--border)]',
+        'rounded-lg border border-border bg-card p-3 text-center',
         className
       )}
     >
       <p className="font-bold text-xs">{label}</p>
-      <p className="font-black text-2xl">{value}</p>
+      <p className="font-semibold text-2xl">{value}</p>
     </div>
   );
 }

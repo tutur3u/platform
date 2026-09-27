@@ -18,27 +18,27 @@ export function TeachOperationCard({
 }) {
   return (
     <a
-      className="group grid min-h-44 gap-4 border-2 border-border bg-card p-4 shadow-[5px_5px_0_var(--border)] transition duration-200 hover:-translate-y-0.5 hover:border-foreground/70 hover:shadow-[7px_7px_0_var(--foreground)]"
+      className="group grid min-h-44 gap-4 rounded-lg border border-border bg-card p-4 transition duration-200 hover:bg-muted/30"
       href={href}
     >
       <div className="flex items-start justify-between gap-3">
         <span
           className={cn(
-            'flex h-11 w-11 items-center justify-center border-2 border-border shadow-[3px_3px_0_var(--border)]',
+            'flex h-11 w-11 items-center justify-center border border-border',
             accentClassName
           )}
         >
           <Icon className="h-5 w-5" />
         </span>
-        <span className="border-2 border-border bg-background px-3 py-1 font-black text-xl tabular-nums shadow-[2px_2px_0_var(--border)]">
+        <span className="rounded-lg border border-border bg-background px-3 py-1 font-semibold text-xl tabular-nums">
           {count}
         </span>
       </div>
       <div>
-        <h3 className="font-black text-xl">{label}</h3>
+        <h3 className="font-semibold text-xl">{label}</h3>
         <p className="mt-2 text-muted-foreground text-sm leading-6">{text}</p>
       </div>
-      <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-foreground" />
+      <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:text-foreground" />
     </a>
   );
 }

@@ -26,16 +26,16 @@ export function LearnerVocabularyReview({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-border bg-background p-4 shadow-[3px_3px_0_var(--border)]">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background p-4">
         <div>
-          <p className="font-black text-base">{t('reviewTitle')}</p>
+          <p className="font-semibold text-base">{t('reviewTitle')}</p>
           <p className="text-muted-foreground text-sm">
             {t('reviewDescription')}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-black text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-primary px-4 py-2 font-semibold text-primary-foreground text-sm transition disabled:cursor-not-allowed disabled:opacity-50"
             disabled={vocabulary.length < 2}
             onClick={() => startPractice('match')}
             title={vocabulary.length < 2 ? t('practiceRequiresTwo') : undefined}
@@ -44,7 +44,7 @@ export function LearnerVocabularyReview({
             {t('practiceMatch')}
           </button>
           <button
-            className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-cyan px-4 py-2 font-black text-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 border border-border bg-dynamic-cyan px-4 py-2 font-semibold text-foreground text-sm transition disabled:cursor-not-allowed disabled:opacity-50"
             disabled={vocabulary.length < 2}
             onClick={() => startPractice('quiz')}
             title={vocabulary.length < 2 ? t('practiceRequiresTwo') : undefined}
@@ -53,7 +53,7 @@ export function LearnerVocabularyReview({
             {t('practiceQuiz')}
           </button>
           <button
-            className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-yellow px-4 py-2 font-black text-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+            className="inline-flex items-center gap-2 border border-border bg-dynamic-yellow px-4 py-2 font-semibold text-foreground text-sm transition"
             onClick={() => startPractice('pronunciation')}
             type="button"
           >
@@ -65,13 +65,13 @@ export function LearnerVocabularyReview({
       <div className="grid gap-3 md:grid-cols-2">
         {vocabulary.map((entry) => (
           <article
-            className="border-2 border-border bg-background p-4 shadow-[3px_3px_0_var(--border)]"
+            className="rounded-lg border border-border bg-background p-4"
             key={entry.id}
           >
             {entry.imageUrl ? (
               <Image
                 alt={t('imageAlt', { word: entry.word })}
-                className="mb-4 aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)]"
+                className="mb-4 aspect-video w-full border border-border object-cover"
                 height={360}
                 unoptimized
                 referrerPolicy="no-referrer"
@@ -81,7 +81,7 @@ export function LearnerVocabularyReview({
             ) : null}
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="font-black text-base">{entry.word}</h3>
+                <h3 className="font-semibold text-base">{entry.word}</h3>
                 {entry.pronunciation ? (
                   <p className="text-muted-foreground text-xs">
                     {entry.pronunciation}
@@ -92,7 +92,7 @@ export function LearnerVocabularyReview({
             </div>
             <button
               aria-label={t('playWordLabel', { word: entry.word })}
-              className="mt-3 border-2 border-border bg-card px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
+              className="mt-3 rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-xs disabled:opacity-50"
               disabled={playingKey !== null}
               onClick={() => playSpeech(entry.word, 'word', `${entry.id}-word`)}
               type="button"
@@ -115,7 +115,7 @@ export function LearnerVocabularyReview({
                           example,
                           word: entry.word,
                         })}
-                        className="border border-border bg-card px-2 py-0.5 font-bold text-[10px] text-foreground shadow-[1px_1px_0_var(--border)] disabled:opacity-50"
+                        className="rounded-lg border border-border bg-card px-2 py-0.5 font-bold text-[10px] text-foreground disabled:opacity-50"
                         disabled={playingKey !== null}
                         onClick={() =>
                           playSpeech(example, 'example', speechKey)

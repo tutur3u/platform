@@ -14,9 +14,9 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ModuleDetailView } from './module-detail-view';
 import {
-  BrutalCard,
   EmptyState,
   LoadingState,
+  SurfaceCard,
   useStudentHref,
   useStudentId,
 } from './shared';
@@ -69,7 +69,7 @@ export function CourseDetailPage({
       <EmptyState
         action={
           <button
-            className="border-2 border-border bg-background px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+            className="rounded-lg border border-border bg-background px-4 py-2 font-bold text-sm transition"
             onClick={() => course.refetch()}
             type="button"
           >
@@ -99,7 +99,7 @@ export function CourseDetailPage({
         <EmptyState
           action={
             <button
-              className="border-2 border-border bg-background px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+              className="rounded-lg border border-border bg-background px-4 py-2 font-bold text-sm transition"
               onClick={() => setSelectedModuleId(null)}
               type="button"
             >
@@ -117,7 +117,7 @@ export function CourseDetailPage({
         <EmptyState
           action={
             <button
-              className="border-2 border-border bg-background px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+              className="rounded-lg border border-border bg-background px-4 py-2 font-bold text-sm transition"
               onClick={() => selectedModuleDetail.refetch()}
               type="button"
             >
@@ -148,7 +148,7 @@ export function CourseDetailPage({
   return (
     <div className="space-y-6">
       <Link
-        className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 font-bold text-sm transition"
         href={coursesHref}
       >
         <ChevronLeft className="h-4 w-4" />
@@ -157,20 +157,20 @@ export function CourseDetailPage({
 
       <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
         <aside className="space-y-4">
-          <BrutalCard className="p-5">
-            <Badge className="mb-3 border-2 border-border bg-dynamic-yellow/15 font-bold text-foreground shadow-[2px_2px_0_var(--border)]">
+          <SurfaceCard className="p-5">
+            <Badge className="mb-3 border border-border bg-dynamic-yellow/15 font-bold text-foreground">
               <BookOpen className="mr-1.5 h-3 w-3" />
               {t('courses.sharedCourse')}
             </Badge>
-            <h2 className="font-black text-xl leading-tight">
+            <h2 className="font-semibold text-xl leading-tight">
               {group.name ?? t('courses.untitled')}
             </h2>
             <p className="mt-1 text-muted-foreground text-sm">
               {t('courses.publishedModules', { count: modules.length })}
             </p>
-          </BrutalCard>
+          </SurfaceCard>
 
-          <BrutalCard className="p-5">
+          <SurfaceCard className="p-5">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-sm">
                 {t('courses.courseOutline')}
@@ -193,7 +193,7 @@ export function CourseDetailPage({
                   onClick={() => setSelectedModuleId(courseModule.id)}
                   type="button"
                 >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center border border-border bg-muted font-bold text-[10px]">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border border-border bg-muted font-bold text-[10px]">
                     {index + 1}
                   </span>
                   <span className="truncate">
@@ -207,7 +207,7 @@ export function CourseDetailPage({
                 </button>
               ))}
             </div>
-          </BrutalCard>
+          </SurfaceCard>
         </aside>
 
         <div className="space-y-5">
@@ -215,7 +215,7 @@ export function CourseDetailPage({
             <p className="font-bold text-muted-foreground text-xs uppercase tracking-widest">
               {t('courses.modules')}
             </p>
-            <h1 className="mt-1 font-black text-3xl leading-tight tracking-normal">
+            <h1 className="mt-1 font-semibold text-3xl leading-tight tracking-normal">
               {group.name ?? t('courses.untitled')}
             </h1>
             <p className="mt-1 text-muted-foreground text-sm">
@@ -226,7 +226,7 @@ export function CourseDetailPage({
           <div className="space-y-3">
             {modules.map((courseModule, index) => {
               return (
-                <BrutalCard key={courseModule.id} className="p-0">
+                <SurfaceCard key={courseModule.id} className="p-0">
                   <button
                     className={cn(
                       'flex w-full items-center gap-4 px-5 py-4 text-left transition',
@@ -238,7 +238,7 @@ export function CourseDetailPage({
                     onClick={() => setSelectedModuleId(courseModule.id)}
                     type="button"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-primary font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-primary font-bold text-primary-foreground text-sm">
                       {index + 1}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -274,7 +274,7 @@ export function CourseDetailPage({
                       ) : null}
                     </span>
                   </button>
-                </BrutalCard>
+                </SurfaceCard>
               );
             })}
           </div>
@@ -288,7 +288,7 @@ export function CourseDetailPage({
                 <p className="font-bold text-muted-foreground text-xs uppercase tracking-widest">
                   {t('courses.tests')}
                 </p>
-                <h2 className="mt-1 font-black text-2xl leading-tight tracking-normal">
+                <h2 className="mt-1 font-semibold text-2xl leading-tight tracking-normal">
                   {t('courses.courseAssessments')}
                 </h2>
               </div>
@@ -296,9 +296,9 @@ export function CourseDetailPage({
               <div className="space-y-3">
                 {tests.map((test, index) => {
                   return (
-                    <BrutalCard key={test.id} className="p-0">
+                    <SurfaceCard key={test.id} className="p-0">
                       <div className="flex w-full items-center gap-4 px-5 py-4 text-left">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 font-bold text-foreground text-sm shadow-[2px_2px_0_var(--border)]">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-dynamic-cyan/15 font-bold text-foreground text-sm">
                           T{index + 1}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -338,13 +338,13 @@ export function CourseDetailPage({
                               ? `/${wsId}/courses/${courseId}/tests/${test.id}?studentId=${studentId}`
                               : `/${wsId}/courses/${courseId}/tests/${test.id}`
                           }
-                          className="inline-flex cursor-pointer items-center justify-center gap-1.5 border-2 border-border bg-primary px-3.5 py-1.5 font-bold text-primary-foreground text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)]"
+                          className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-primary px-3.5 py-1.5 font-bold text-primary-foreground text-xs transition"
                         >
                           <Play className="h-3.5 w-3.5" />
                           {t('courses.startTest')}
                         </Link>
                       </div>
-                    </BrutalCard>
+                    </SurfaceCard>
                   );
                 })}
               </div>

@@ -3,7 +3,7 @@
 import { RefreshCw, Sparkles } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
-import { BrutalCard } from '../shared';
+import { SurfaceCard } from '../shared';
 
 export function QuizCompletionCard({
   correctCount,
@@ -28,11 +28,11 @@ export function QuizCompletionCard({
   const showResults = isQuizScorePublished && !hasUnmarked;
 
   return (
-    <BrutalCard className="bg-background p-8 text-center">
-      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border-2 border-border bg-dynamic-yellow text-foreground shadow-[3px_3px_0_var(--border)]">
+    <SurfaceCard className="bg-background p-8 text-center">
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border border-border bg-dynamic-yellow text-foreground">
         <Sparkles className="h-8 w-8" />
       </div>
-      <h2 className="font-black text-3xl leading-tight tracking-normal">
+      <h2 className="font-semibold text-3xl leading-tight tracking-normal">
         {t('courses.done')}
       </h2>
       <p className="mt-2 text-muted-foreground text-sm">
@@ -40,8 +40,8 @@ export function QuizCompletionCard({
       </p>
 
       {showResults ? (
-        <div className="my-6 border-2 border-border bg-muted/20 p-5 shadow-[4px_4px_0_var(--border)]">
-          <div className="font-black text-3xl text-primary">
+        <div className="my-6 rounded-lg border border-border bg-muted/20 p-5">
+          <div className="font-semibold text-3xl text-primary">
             {t('courses.quizCorrectCount', {
               correct: correctCount,
               total: totalCount,
@@ -55,8 +55,8 @@ export function QuizCompletionCard({
           </div>
         </div>
       ) : (
-        <div className="my-6 space-y-1.5 border-2 border-border bg-muted/20 p-5 shadow-[4px_4px_0_var(--border)]">
-          <div className="font-black text-primary text-xl">
+        <div className="my-6 space-y-1.5 rounded-lg border border-border bg-muted/20 p-5">
+          <div className="font-semibold text-primary text-xl">
             {t('courses.quizScorePending') || 'Results Pending Teacher Review'}
           </div>
           <p className="mx-auto max-w-sm text-muted-foreground text-xs leading-relaxed">
@@ -67,7 +67,7 @@ export function QuizCompletionCard({
       )}
 
       {isDeadlinePassed ? (
-        <div className="mt-4 border-2 border-destructive border-dashed bg-destructive/10 p-4 text-center shadow-[3px_3px_0_var(--border)]">
+        <div className="mt-4 border border-destructive border-dashed bg-destructive/10 p-4 text-center">
           <p className="font-bold text-destructive text-sm">
             {t('courses.quizDeadlinePassedMessage') ||
               'The deadline for this quiz has passed. You can no longer retry.'}
@@ -76,12 +76,12 @@ export function QuizCompletionCard({
       ) : (
         <Button
           onClick={onRetry}
-          className="h-12 border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[3px_3px_0_var(--border)]"
+          className="h-12 rounded-lg border border-border bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
         >
           <RefreshCw className="mr-2 h-4 w-4" />
           {t('courses.quizRetryPractice')}
         </Button>
       )}
-    </BrutalCard>
+    </SurfaceCard>
   );
 }

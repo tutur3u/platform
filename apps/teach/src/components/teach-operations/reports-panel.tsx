@@ -155,8 +155,8 @@ export function ReportsPanel({
             />
           ))}
           {!reports.length ? (
-            <div className="border-2 border-border border-dashed bg-muted/50 p-6">
-              <p className="font-black">{t('noReportsYet')}</p>
+            <div className="rounded-lg border border-border border-dashed bg-muted/50 p-6">
+              <p className="font-semibold">{t('noReportsYet')}</p>
               <p className="mt-1 text-muted-foreground text-sm">
                 {t('noReportsYetBody')}
               </p>
@@ -165,13 +165,13 @@ export function ReportsPanel({
         </div>
       </div>
 
-      <aside className="space-y-4 border-2 border-border bg-background p-4 shadow-[5px_5px_0_var(--border)]">
+      <aside className="space-y-4 rounded-lg border border-border bg-background p-4">
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-dynamic-pink/10">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-dynamic-pink/10">
             <FilePlus2 className="h-5 w-5" />
           </span>
           <div>
-            <h2 className="font-black text-lg">{t('reportComposer')}</h2>
+            <h2 className="font-semibold text-lg">{t('reportComposer')}</h2>
             <p className="text-muted-foreground text-sm">
               {t('reportComposerLead')}
             </p>
@@ -181,7 +181,7 @@ export function ReportsPanel({
         <label className="grid gap-1 text-sm">
           <span className="font-bold">{t('learner')}</span>
           <select
-            className="h-11 w-full border-2 border-border bg-card px-3 font-bold outline-none focus:border-primary"
+            className="h-11 w-full rounded-lg border border-border bg-card px-3 font-bold outline-none focus:border-primary"
             onChange={(event) => {
               setUserId(event.target.value);
               setSelectedReportId('');
@@ -198,19 +198,19 @@ export function ReportsPanel({
         </label>
 
         <Input
-          className="h-11 border-2 border-border bg-card font-bold"
+          className="h-11 rounded-lg border border-border bg-card font-bold"
           onChange={(event) => updateDraftField(setTitle, event.target.value)}
           placeholder={t('reportTitle')}
           value={title}
         />
         <Textarea
-          className="min-h-36 border-2 border-border bg-card"
+          className="min-h-36 rounded-lg border border-border bg-card"
           onChange={(event) => updateDraftField(setContent, event.target.value)}
           placeholder={t('reportContent')}
           value={content}
         />
         <Textarea
-          className="min-h-28 border-2 border-border bg-card"
+          className="min-h-28 rounded-lg border border-border bg-card"
           onChange={(event) =>
             updateDraftField(setFeedback, event.target.value)
           }
@@ -218,7 +218,7 @@ export function ReportsPanel({
           value={feedback}
         />
         <Input
-          className="h-11 border-2 border-border bg-card"
+          className="h-11 rounded-lg border border-border bg-card"
           onChange={(event) => updateDraftField(setScore, event.target.value)}
           placeholder={t('reportScore')}
           type="number"
@@ -262,7 +262,7 @@ function ReportCard({
   return (
     <button
       className={cn(
-        'space-y-3 border-2 border-border bg-card p-4 text-left shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5',
+        'space-y-3 rounded-lg border border-border bg-card p-4 text-left transition',
         active && 'border-primary bg-primary/5'
       )}
       onClick={onSelect}
@@ -270,7 +270,7 @@ function ReportCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-black text-lg">{report.title}</p>
+          <p className="truncate font-semibold text-lg">{report.title}</p>
           <p className="truncate text-muted-foreground text-xs">
             {learnerName}
           </p>

@@ -43,16 +43,16 @@ function choiceStyle({
 }) {
   if (isSubmitted) {
     if (isCorrect) {
-      return 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green shadow-[4px_4px_0_var(--border)]';
+      return 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green ';
     }
     if (isSelected) {
-      return 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red shadow-[4px_4px_0_var(--border)]';
+      return 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red ';
     }
     return 'opacity-40 border-border bg-background';
   }
 
   return isSelected
-    ? 'border-primary bg-primary/5 text-primary shadow-[4px_4px_0_var(--border)]'
+    ? 'border-primary bg-primary/5 text-primary '
     : 'bg-background hover:bg-muted/10';
 }
 
@@ -76,7 +76,7 @@ export function ChoiceOptions(props: ChoiceOptionsProps) {
               onClick={() => props.onSelect(value)}
               disabled={props.isSubmitted}
               className={cn(
-                'flex flex-col items-center justify-center border-2 border-border p-6 font-bold shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0_var(--border)]',
+                'flex flex-col items-center justify-center rounded-lg border border-border p-6 font-bold transition',
                 choiceStyle({
                   isSelected,
                   isSubmitted: props.isSubmitted,
@@ -115,7 +115,7 @@ export function ChoiceOptions(props: ChoiceOptionsProps) {
             onClick={() => props.onSelect(index)}
             disabled={props.isSubmitted}
             className={cn(
-              'w-full border-2 border-border p-4 text-left font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0_var(--border)]',
+              'w-full rounded-lg border border-border p-4 text-left font-bold text-sm transition',
               choiceStyle({
                 isSelected,
                 isSubmitted: props.isSubmitted,
@@ -124,7 +124,7 @@ export function ChoiceOptions(props: ChoiceOptionsProps) {
             )}
             type="button"
           >
-            <span className="mr-3 inline-flex h-6 w-6 items-center justify-center border-2 border-border bg-muted text-xs">
+            <span className="mr-3 inline-flex h-6 w-6 items-center justify-center rounded-lg border border-border bg-muted text-xs">
               {String.fromCharCode(65 + index)}
             </span>
             {option.value}

@@ -44,6 +44,7 @@ export function Structure({
       }
       appId="teach"
       brandHref={WEB_APP_URL}
+      childContainerClassName="mx-auto w-full max-w-[1500px]"
       defaultCollapsed={defaultCollapsed}
       links={links}
       notificationPopover={notificationPopover}

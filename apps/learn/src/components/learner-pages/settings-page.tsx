@@ -15,10 +15,10 @@ import { useTheme } from 'next-themes';
 import { type ReactNode, useState } from 'react';
 import { LanguageSwitcher } from '../language-switcher';
 import {
-  BrutalCard,
-  BrutalIcon,
   type IconComponent,
   Section,
+  SurfaceCard,
+  SurfaceIcon,
   usePageMotion,
 } from './shared';
 
@@ -45,7 +45,7 @@ export function SettingsPage() {
       title={t('settings.title')}
     >
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
-        <BrutalCard className="p-6">
+        <SurfaceCard className="p-6">
           <h2 className="font-bold text-2xl tracking-normal">
             {t('settings.profile')}
           </h2>
@@ -53,7 +53,7 @@ export function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="display-name">{t('settings.displayName')}</Label>
               <Input
-                className="h-12 rounded-none border-2 border-border"
+                className="h-12 rounded-lg border border-border"
                 id="display-name"
                 onChange={(event) => setDisplayName(event.target.value)}
                 placeholder={bootstrap.data?.profile.display_name ?? ''}
@@ -63,7 +63,7 @@ export function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="email">{t('settings.email')}</Label>
               <Input
-                className="h-12 rounded-none border-2 border-border"
+                className="h-12 rounded-lg border border-border"
                 id="email"
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder={bootstrap.data?.profile.email ?? ''}
@@ -73,17 +73,17 @@ export function SettingsPage() {
             </div>
           </div>
           <Button
-            className="mt-6 h-12 rounded-none border-2 border-border bg-primary font-black text-primary-foreground shadow-[4px_4px_0_var(--border)] hover:bg-primary active:translate-x-1 active:translate-y-1 active:shadow-none"
+            className="mt-6 h-12 rounded-lg border border-border bg-primary font-semibold text-primary-foreground hover:bg-primary"
             disabled={save.isPending}
             onClick={() => save.mutate()}
           >
             {save.isPending ? t('common.saving') : t('common.save')}
           </Button>
-        </BrutalCard>
+        </SurfaceCard>
 
         <div className="space-y-5 lg:sticky lg:top-24">
           <SettingsPanel
-            className="!border-foreground/70 !bg-background !shadow-[7px_7px_0_var(--foreground)]"
+            className="!border-border !bg-background !"
             icon={Sun}
             title={t('settings.theme')}
           >
@@ -110,7 +110,7 @@ export function SettingsPage() {
           </SettingsPanel>
 
           <SettingsPanel
-            className="!border-foreground/70 !bg-card !shadow-[7px_7px_0_var(--foreground)]"
+            className="!border-border !bg-card !"
             icon={Target}
             title={t('settings.focusMode')}
           >
@@ -118,7 +118,7 @@ export function SettingsPage() {
               {['light', 'balanced', 'challenge'].map((mode) => (
                 <button
                   className={cn(
-                    'min-h-11 border-2 border-border px-4 py-3 text-left font-black shadow-[3px_3px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none',
+                    'min-h-11 rounded-lg border border-border px-4 py-3 text-left font-semibold transition',
                     focusMode === mode
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-background hover:bg-muted'
@@ -134,7 +134,7 @@ export function SettingsPage() {
           </SettingsPanel>
 
           <SettingsPanel
-            className="!border-foreground/70 !bg-background !shadow-[7px_7px_0_var(--foreground)]"
+            className="!border-border !bg-background !"
             icon={Languages}
             title={t('settings.language')}
           >
@@ -143,7 +143,7 @@ export function SettingsPage() {
         </div>
       </div>
 
-      <BrutalCard className="bg-muted/60 p-6">
+      <SurfaceCard className="bg-muted/60 p-6">
         <h2 className="font-bold text-2xl tracking-normal">
           {t('settings.linkedStudents')}
         </h2>
@@ -151,7 +151,7 @@ export function SettingsPage() {
           {bootstrap.data?.linkedStudents.length ? (
             bootstrap.data.linkedStudents.map((student) => (
               <span
-                className="border-2 border-border bg-background px-4 py-2 font-black text-sm shadow-[3px_3px_0_var(--border)]"
+                className="rounded-lg border border-border bg-background px-4 py-2 font-semibold text-sm"
                 key={student.id}
               >
                 {student.name ?? t('common.learner')}
@@ -161,7 +161,7 @@ export function SettingsPage() {
             <p className="text-muted-foreground">{t('common.empty')}</p>
           )}
         </div>
-      </BrutalCard>
+      </SurfaceCard>
     </Section>
   );
 }
@@ -178,13 +178,13 @@ function SettingsPanel({
   title: string;
 }) {
   return (
-    <BrutalCard className={cn('p-5', className)} reveal={false}>
+    <SurfaceCard className={cn('p-5', className)} reveal={false}>
       <div className="mb-4 flex items-center gap-3">
-        <BrutalIcon className="h-10 w-10" icon={Icon} />
+        <SurfaceIcon className="h-10 w-10" icon={Icon} />
         <h2 className="font-bold text-xl tracking-normal">{title}</h2>
       </div>
       {children}
-    </BrutalCard>
+    </SurfaceCard>
   );
 }
 
@@ -203,7 +203,7 @@ function ThemeChoice({
     <Button
       aria-pressed={active}
       className={cn(
-        'h-12 justify-start rounded-none border-2 border-border font-black shadow-[3px_3px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none',
+        'h-12 justify-start rounded-lg border border-border font-semibold transition',
         active
           ? '!bg-primary !text-primary-foreground hover:!bg-primary'
           : '!bg-background !text-foreground hover:!bg-muted'

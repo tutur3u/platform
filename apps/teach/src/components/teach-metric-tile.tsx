@@ -13,17 +13,19 @@ export function TeachMetricTile({
   value: number;
 }) {
   return (
-    <article className="border-2 border-foreground/70 bg-card p-4 shadow-[5px_5px_0_var(--foreground)]">
+    <article className="flex min-h-32 flex-col justify-between rounded-xl border border-border bg-card p-4">
       <span
         className={cn(
-          'mb-3 flex h-10 w-10 items-center justify-center border-2 border-border shadow-[2px_2px_0_var(--border)]',
+          'flex h-8 w-8 items-center justify-center rounded-md',
           accentClassName
         )}
       >
-        <Icon className="h-5 w-5" />
+        <Icon className="h-4 w-4" />
       </span>
-      <p className="font-black text-3xl tabular-nums">{value}</p>
-      <p className="text-muted-foreground text-sm">{label}</p>
+      <div>
+        <p className="font-semibold text-2xl tabular-nums">{value}</p>
+        <p className="text-muted-foreground text-xs">{label}</p>
+      </div>
     </article>
   );
 }

@@ -25,7 +25,7 @@ export default async function NewQuizPage({ params }: Props) {
           {t('ws-quizzes.manual_create')}
         </h1>
       </div>
-      <div className="rounded-xl border border-border bg-card p-6 shadow-md">
+      <div className="rounded-lg rounded-xl border border-border bg-card p-6 shadow-md">
         <NewQuizClient
           wsId={resolvedWsId}
           moduleId={moduleId}

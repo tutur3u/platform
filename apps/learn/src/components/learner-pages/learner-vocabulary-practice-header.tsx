@@ -16,7 +16,7 @@ export function LearnerVocabularyPracticeHeader({
     <div className="flex flex-wrap items-center justify-between gap-3">
       <p className="font-bold text-sm">{label}</p>
       <button
-        className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 font-bold text-sm"
         onClick={resetPractice}
         type="button"
       >
@@ -30,8 +30,8 @@ export function LearnerVocabularyPracticeHeader({
 export function LearnerVocabularyLoading() {
   return (
     <div className="space-y-3">
-      <div className="h-20 animate-pulse border-2 border-border bg-muted/60 shadow-[3px_3px_0_var(--border)] motion-reduce:animate-none" />
-      <div className="h-20 animate-pulse border-2 border-border bg-muted/60 shadow-[3px_3px_0_var(--border)] motion-reduce:animate-none" />
+      <div className="h-20 animate-pulse rounded-lg border border-border bg-muted/60 motion-reduce:animate-none" />
+      <div className="h-20 animate-pulse rounded-lg border border-border bg-muted/60 motion-reduce:animate-none" />
     </div>
   );
 }

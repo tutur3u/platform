@@ -484,7 +484,7 @@
     "emptyGroupsTitle": "Chưa có nhóm học theo khóa",
     "eyebrow": "Workspace giáo viên cho {name}",
     "featureGrid": {
-      "eyebrow": "Bộ điều phối giáo viên",
+      "eyebrow": "Công cụ giảng dạy",
       "items": {
         "attendance": {
           "body": "Mở bề mặt điểm danh tập trung cho các nhóm trong workspace đã chọn.",
@@ -511,15 +511,15 @@
           "title": "Xưởng báo cáo"
         }
       },
-      "lead": "Sáu luồng giảng dạy thường dùng luôn hiện rõ để Teach giống dashboard điều phối lớp học, không phải landing page.",
+      "lead": "Mở các công cụ bạn dùng để quản lý khóa học.",
       "previewValue": "Live",
       "primaryAction": "Mở nhóm",
-      "title": "Trung tâm điều phối nhóm học"
+      "title": "Nhóm khóa học"
     },
     "gradeNow": "Chấm ngay",
-    "groupsLead": "Trong apps/web đây là workspace user groups. Trong Teach, hãy hiểu mỗi nhóm là một nhóm học theo khóa có học viên, module, điểm danh, báo cáo và metrics.",
+    "groupsLead": "Mở nhóm khóa học để xem học viên, module, điểm danh, báo cáo và chỉ số.",
     "groupsTitle": "Nhóm học theo khóa",
-    "lead": "Quản lý vòng dạy học mà không biến Teach thành một bản sao quản trị nền tảng. Dashboard tập trung vào nhóm, module, điểm danh tập trung, báo cáo và score metrics.",
+    "lead": "Xem khóa học, điểm danh, bài tập và báo cáo trong workspace này.",
     "lowScorers": "Điểm thấp (<50%)",
     "manageInPlatform": "Quản lý khóa học",
     "manager": "Quản lý: {name}",
@@ -548,8 +548,8 @@
         "title": "Chuẩn bị báo cáo"
       }
     },
-    "operationsEyebrow": "Hàng đợi điều phối workspace",
-    "operationsLead": "Một bảng tập trung cho các hành động giảng dạy thường diễn ra sau khi mở nhóm học.",
+    "operationsEyebrow": "Việc tiếp theo",
+    "operationsLead": "Tiếp tục các việc đang cần xử lý.",
     "operationsTitle": "Điều phối dạy học",
     "pendingGrading": "Chờ chấm điểm",
     "realtimeEyebrow": "Tổng quan thời gian thực",
@@ -560,7 +560,7 @@
     "statsUnavailableBody": "Hãy thử lại sau để xem bài chờ chấm, bài chưa nộp và cảnh báo học viên điểm thấp.",
     "statsUnavailableTitle": "Chưa tải được thống kê khóa học",
     "teacher": "Giáo viên",
-    "title": "Điều phối dashboard dạy học hôm nay.",
+    "title": "Tổng quan giảng dạy",
     "unassigned": "Chưa phân công",
     "viewMetrics": "Xem chỉ số",
     "workflow": {
@@ -935,7 +935,7 @@
       "education": "Giáo dục",
       "metrics": "Metrics",
       "reports": "Báo cáo",
-      "settings": "Cài đặt"
+      "settings": "Cài đặt Teach"
     },
     "navigationLabel": "Điều hướng không gian giảng dạy",
     "workspaceFallback": "Workspace giáo dục"

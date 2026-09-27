@@ -54,7 +54,7 @@ function StudentSelect({
       <span className="sr-only">{t('settings.linkedStudents')}</span>
       <select
         aria-label={t('settings.linkedStudents')}
-        className="h-9 w-full min-w-0 rounded-md border border-border bg-background px-2 text-xs"
+        className="h-9 w-full min-w-0 rounded-lg rounded-md border border-border bg-background px-2 text-xs"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
