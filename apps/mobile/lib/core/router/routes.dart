@@ -64,6 +64,9 @@ abstract final class Routes {
   static const taskDetail = '/tasks/:taskId';
   static const taskCreate = '/tasks/create';
   static const calendarEventDetail = '/calendar/:eventId';
+
+  static String calendarEventDetailPath(String eventId) =>
+      '/calendar/${Uri.encodeComponent(eventId)}';
   static const wallets = '/finance/wallets';
   static const walletDetail = '/finance/wallets/:walletId';
   static const transactions = '/finance/transactions';

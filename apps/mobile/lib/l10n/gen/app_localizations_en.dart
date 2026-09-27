@@ -8563,6 +8563,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get remindersEventTitle => 'Calendar events';
 
   @override
+  String remindersCalendarTiming(String when) {
+    return 'Calendar: $when';
+  }
+
+  @override
+  String get calendarEventUnavailable => 'This event is no longer available.';
+
+  @override
   String remindersAllDayEvent(String title) {
     return 'All-day event: $title';
   }

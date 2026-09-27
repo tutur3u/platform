@@ -16417,6 +16417,18 @@ abstract class AppLocalizations {
   /// **'Calendar events'**
   String get remindersEventTitle;
 
+  /// No description provided for @remindersCalendarTiming.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar: {when}'**
+  String remindersCalendarTiming(String when);
+
+  /// No description provided for @calendarEventUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This event is no longer available.'**
+  String get calendarEventUnavailable;
+
   /// No description provided for @remindersAllDayEvent.
   ///
   /// In en, this message translates to:

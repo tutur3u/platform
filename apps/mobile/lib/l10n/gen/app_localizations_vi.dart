@@ -8533,6 +8533,14 @@ class AppLocalizationsVi extends AppLocalizations {
   String get remindersEventTitle => 'Sự kiện lịch';
 
   @override
+  String remindersCalendarTiming(String when) {
+    return 'Lịch: $when';
+  }
+
+  @override
+  String get calendarEventUnavailable => 'Sự kiện này không còn khả dụng.';
+
+  @override
   String remindersAllDayEvent(String title) {
     return 'Sự kiện cả ngày: $title';
   }

@@ -92,6 +92,13 @@ cancelling them on sign-out. An all-day event uses 9 a.m. local time as its
 reminder anchor. Android boot/package-replacement receivers restore pending
 alarms after a restart or update.
 
+Calendar alerts use a localized timing title (for example, “Calendar: In 3
+days”) and the event name as the description, including for all-day events.
+Tapping one opens that event in the mobile Calendar detail sheet. If the event
+was removed or cannot be loaded, the app returns to Calendar and shows a brief
+message. This behavior applies to device-scheduled reminders on iOS and Android;
+task reminders keep their existing title and description.
+
 The Reminders page shows the last successful fetch, the number of alerts still
 pending in the operating system, the next scheduled alert, notification
 permission, and a manual refresh action. A scheduled count is local state,
