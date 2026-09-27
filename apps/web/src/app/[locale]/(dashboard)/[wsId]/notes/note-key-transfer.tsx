@@ -16,11 +16,21 @@ export async function recoverNoteKeyWithPasskey(wsId: string, noteId: string) {
   const { data, error } = await authClient.auth.signInWithPasskey();
   if (error) throw error;
   if (!owner.user || data.user?.id !== owner.user.id) {
-    if (previous.session) {
-      await authClient.auth.setSession({
-        access_token: previous.session.access_token,
-        refresh_token: previous.session.refresh_token,
-      });
+    let restoredOwner = false;
+    if (previous.session && owner.user) {
+      try {
+        const restored = await authClient.auth.setSession({
+          access_token: previous.session.access_token,
+          refresh_token: previous.session.refresh_token,
+        });
+        restoredOwner =
+          !restored.error && restored.data.user?.id === owner.user.id;
+      } catch {
+        // A rotated or revoked refresh token cannot restore the prior account.
+      }
+    }
+    if (!restoredOwner) {
+      await authClient.auth.signOut({ scope: 'local' });
     }
     throw new Error('Passkey account mismatch');
   }

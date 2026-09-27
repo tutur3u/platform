@@ -162,7 +162,7 @@ extension NotesPageActions on NotesPageState {
       wsId: wsId,
       noteId: note.id,
       onSheetContext: (value) => _activeSheetContext = value,
-      onDismissed: _returnToNotesList,
+      onDismissed: _returnToNotesListIfBackRequested,
     );
     if (payload == null || !mounted || _selected?.id != note.id) return;
     String? pin;
@@ -171,7 +171,7 @@ extension NotesPageActions on NotesPageState {
       pin = await showNotePinSheet(
         context,
         onSheetContext: (value) => _activeSheetContext = value,
-        onDismissed: _returnToNotesList,
+        onDismissed: _returnToNotesListIfBackRequested,
       );
       if (pin == null) return;
     }

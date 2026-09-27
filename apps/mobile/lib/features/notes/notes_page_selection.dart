@@ -22,9 +22,19 @@ extension NotesPageSelection on NotesPageState {
               PasskeyAuthenticator(),
             );
             if (response.user?.id != accountId) {
+              var restoredOwner = false;
               if (priorSession?.refreshToken != null) {
-                await supabase.auth.setSession(priorSession!.refreshToken!);
+                try {
+                  final restored = await supabase.auth.setSession(
+                    priorSession!.refreshToken!,
+                    accessToken: priorSession.accessToken,
+                  );
+                  restoredOwner = restored.user?.id == accountId;
+                } on Object {
+                  // A revoked session cannot restore the previous account.
+                }
               }
+              if (!restoredOwner) await supabase.auth.signOut();
               throw StateError('Passkey account mismatch');
             }
             passphrase = await _repository.recoverKeyWithPasskey(wsId, note.id);
@@ -43,7 +53,7 @@ extension NotesPageSelection on NotesPageState {
             pin = await showNotePinSheet(
               context,
               onSheetContext: (value) => _activeSheetContext = value,
-              onDismissed: _returnToNotesList,
+              onDismissed: _returnToNotesListIfBackRequested,
             );
             if (pin == null) return;
           }
@@ -68,7 +78,7 @@ extension NotesPageSelection on NotesPageState {
           context,
           create: false,
           onSheetContext: (value) => _activeSheetContext = value,
-          onDismissed: _returnToNotesList,
+          onDismissed: _returnToNotesListIfBackRequested,
         );
       }
       if (passphrase == null ||

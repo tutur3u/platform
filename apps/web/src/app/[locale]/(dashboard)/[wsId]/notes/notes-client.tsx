@@ -310,6 +310,7 @@ export function NotesClient({ wsId }: { wsId: string }) {
       });
       if (!secret || token !== transferToken.current) return;
       const decoded = await decryptNote(selectedNote.content, secret);
+      if (token !== transferToken.current) return;
       passphraseRef.current = secret;
       setContent(decoded);
     } catch {

@@ -27,7 +27,7 @@ extension NotesPageLock on NotesPageState {
       context,
       deviceAvailable: deviceAvailable,
       onSheetContext: (value) => _activeSheetContext = value,
-      onDismissed: _returnToNotesList,
+      onDismissed: _returnToNotesListIfBackRequested,
     );
     if (choice == null || !mounted || _selected?.id != note.id) return;
     final deviceOnly = choice.method != NoteLockMethod.passphrase;

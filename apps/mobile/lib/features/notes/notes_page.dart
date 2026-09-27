@@ -83,6 +83,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   int _requestVersion = 0;
   int _selectionVersion = 0;
   BuildContext? _activeSheetContext;
+  bool _backRequestedFromSheet = false;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -103,11 +104,18 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
           return builder(sheetContext);
         },
       );
-      if (result == null) await _returnToNotesList();
+      if (result == null) await _returnToNotesListIfBackRequested();
       return result;
     } finally {
+      _backRequestedFromSheet = false;
       _activeSheetContext = previous;
     }
+  }
+
+  Future<void> _returnToNotesListIfBackRequested() async {
+    if (!_backRequestedFromSheet) return;
+    _backRequestedFromSheet = false;
+    await _returnToNotesList();
   }
 
   Future<void> _returnToNotesList() async {
@@ -123,7 +131,10 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   Future<void> _goBack() async {
     final sheetContext = _activeSheetContext;
     if (sheetContext != null && sheetContext.mounted) {
-      await Navigator.of(sheetContext).maybePop();
+      _backRequestedFromSheet = true;
+      if (!await Navigator.of(sheetContext).maybePop()) {
+        _backRequestedFromSheet = false;
+      }
       return;
     }
     if (!mounted || !(await _save())) return;

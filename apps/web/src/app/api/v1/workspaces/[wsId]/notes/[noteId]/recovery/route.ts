@@ -1,13 +1,10 @@
-import {
-  decryptWorkspaceKey,
-  encryptWorkspaceKey,
-  getMasterKey,
-} from '@tuturuuu/utils/encryption';
+import { getMasterKey } from '@tuturuuu/utils/encryption';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { hasRecentPasskeyClaim } from './passkey-claim';
+import { unwrapNoteRecoveryKey, wrapNoteRecoveryKey } from './recovery-wrap';
 
 const secretSchema = z.string().regex(/^[A-Za-z0-9+/]{43}=$/);
 type Params = { params: Promise<{ wsId: string; noteId: string }> };
@@ -68,15 +65,15 @@ export async function POST(request: NextRequest, { params }: Params) {
   try {
     const secret = Buffer.from(parsed.data.secret, 'base64');
     if (secret.length !== 32) throw new Error('Invalid key length');
-    const payload = Buffer.from(
-      JSON.stringify({
+    const wrapped = await wrapNoteRecoveryKey(
+      parsed.data.secret,
+      getMasterKey(),
+      {
         wsId,
         noteId,
         userId: authorized.auth.user.id,
-        secret: parsed.data.secret,
-      })
+      }
     );
-    const wrapped = await encryptWorkspaceKey(payload, getMasterKey());
     return NextResponse.json(
       { wrapped },
       { headers: { 'Cache-Control': 'no-store' } }
@@ -135,19 +132,15 @@ export async function GET(request: NextRequest, { params }: Params) {
     );
   }
   try {
-    const payload = JSON.parse(
-      (await decryptWorkspaceKey(wrapped, getMasterKey())).toString('utf8')
-    ) as { wsId?: string; noteId?: string; userId?: string; secret?: string };
-    if (
-      payload.wsId !== wsId ||
-      payload.noteId !== noteId ||
-      payload.userId !== authorized.auth.user.id ||
-      !secretSchema.safeParse(payload.secret).success
-    ) {
-      throw new Error('Recovery key binding mismatch');
-    }
+    const secret = await unwrapNoteRecoveryKey(wrapped, getMasterKey(), {
+      wsId,
+      noteId,
+      userId: authorized.auth.user.id,
+    });
+    if (!secretSchema.safeParse(secret).success)
+      throw new Error('Invalid recovery key');
     return NextResponse.json(
-      { secret: payload.secret },
+      { secret },
       { headers: { 'Cache-Control': 'private, no-store' } }
     );
   } catch {
