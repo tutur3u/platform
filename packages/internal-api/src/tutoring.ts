@@ -27,6 +27,9 @@ export interface TutoringSessionRecord {
   attendance_status: TutoringAttendanceStatus;
   parent_message_preview: string;
   source_feedback_id: string | null;
+  content_review_due: boolean;
+  content_unchanged_since: string | null;
+  review_only: boolean;
   resolved_at: string | null;
   created_at: string;
   updated_at: string;
@@ -61,6 +64,7 @@ export interface TutoringQueueItem {
 export interface TutoringQueueSummary {
   absent: number;
   weak: number;
+  review_due: number;
 }
 
 export interface TutoringDetailedExportRow {

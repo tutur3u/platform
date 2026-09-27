@@ -1,4 +1,9 @@
 // @vitest-environment node
+
+import {
+  EASY_CENTER_TUTORING_POLICY,
+  serializeTutoringPolicyConfigRows,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const wsId = '5d23287f-9094-4714-b8e0-dcce877464a0';
@@ -10,6 +15,7 @@ const mocks = vi.hoisted(() => ({
 let attendanceRows: unknown[] = [];
 let reservedRows: unknown[] = [];
 let feedbackRows: unknown[] = [];
+let configRows: unknown[] = [];
 
 function query(rows: () => unknown[]) {
   return {
@@ -72,6 +78,7 @@ beforeEach(() => {
   attendanceRows = [];
   reservedRows = [];
   feedbackRows = [];
+  configRows = [];
   mocks.resolveAccess.mockResolvedValue({
     normalizedWsId: wsId,
     permissions: { withoutPermission: () => false },
@@ -82,7 +89,7 @@ beforeEach(() => {
       if (name === 'user_feedbacks') return query(() => feedbackRows);
       if (name === 'workspace_configs')
         return {
-          ...query(() => []),
+          ...query(() => configRows),
           maybeSingle: async () => ({ data: null, error: null }),
         };
       throw new Error(`Unexpected table ${name}`);
@@ -179,5 +186,105 @@ describe('tutoring support queue', () => {
       { ...(reservedRows[0] as object), attendance_status: 'PENDING' },
     ];
     expect((await (await listQueue()).json()).count).toBe(0);
+  });
+
+  it('excludes DDT from all tutoring by default and respects a narrower scope', async () => {
+    configRows = serializeTutoringPolicyConfigRows(EASY_CENTER_TUTORING_POLICY);
+    attendanceRows = [
+      {
+        group_id: 'ddt-group',
+        user_id: 'student',
+        date: new Date().toISOString().slice(0, 10),
+        group: { name: 'Kindergarten DDT' },
+        user: { full_name: 'Lan' },
+      },
+    ];
+    feedbackRows = [
+      {
+        id: 'feedback',
+        group_id: 'ddt-group',
+        user_id: 'student',
+        content: 'Needs practice',
+        created_at: new Date().toISOString(),
+        group: { name: 'Kindergarten DDT' },
+        user: { full_name: 'Lan' },
+      },
+    ];
+    expect((await (await listQueue()).json()).count).toBe(0);
+    attendanceRows = [
+      { ...(attendanceRows[0] as object), group: { name: 'Kindergarten ABC' } },
+    ];
+    feedbackRows = [
+      { ...(feedbackRows[0] as object), group: { name: 'Kindergarten ABC' } },
+    ];
+    expect((await (await listQueue()).json()).data).toMatchObject([
+      { reason_type: 'BOTH', absence_deficit: 1 },
+    ]);
+    attendanceRows = [
+      { ...(attendanceRows[0] as object), group: { name: 'Kindergarten DDT' } },
+    ];
+    feedbackRows = [
+      { ...(feedbackRows[0] as object), group: { name: 'Kindergarten DDT' } },
+    ];
+    configRows = serializeTutoringPolicyConfigRows({
+      ...EASY_CENTER_TUTORING_POLICY,
+      groupExclusions: [
+        { scope: 'weak_support', match: 'contains', value: 'DDT' },
+      ],
+    });
+    const body = await (await listQueue()).json();
+    expect(body.data).toMatchObject([
+      { reason_type: 'ABSENT_RECOVERY', absence_deficit: 1 },
+    ]);
+    expect(body.summary).toMatchObject({ absent: 1, weak: 0 });
+  });
+
+  it('raises an office review when weak content is unchanged for two weeks', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T12:00:00Z'));
+    configRows = serializeTutoringPolicyConfigRows(EASY_CENTER_TUTORING_POLICY);
+    feedbackRows = [
+      {
+        id: 'latest',
+        group_id: 'group',
+        user_id: 'student',
+        content: 'Practice Unit 3',
+        created_at: '2026-09-26T12:00:00Z',
+        group: { name: 'Class 246' },
+        user: { full_name: 'Lan' },
+      },
+      {
+        id: 'older',
+        group_id: 'group',
+        user_id: 'student',
+        content: 'Practice  Unit 3',
+        created_at: '2026-09-12T12:00:00Z',
+        group: { name: 'Class 246' },
+        user: { full_name: 'Lan' },
+      },
+    ];
+    const body = await (await listQueue()).json();
+    expect(body.data).toMatchObject([
+      {
+        reason_type: 'WEAK_SUPPORT',
+        content_review_due: true,
+        content_unchanged_since: '2026-09-12T12:00:00Z',
+      },
+    ]);
+    expect(body.summary.review_due).toBe(1);
+    reservedRows = [
+      {
+        group_id: 'group',
+        student_user_id: 'student',
+        reason_type: 'WEAK_SUPPORT',
+        attendance_status: 'PENDING',
+        source_feedback_id: 'latest',
+      },
+    ];
+    const pending = await (await listQueue()).json();
+    expect(pending.data).toMatchObject([
+      { review_only: true, content_review_due: true },
+    ]);
+    expect(pending.summary).toMatchObject({ weak: 0, review_due: 1 });
   });
 });

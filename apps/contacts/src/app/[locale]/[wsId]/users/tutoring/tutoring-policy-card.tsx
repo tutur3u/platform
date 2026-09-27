@@ -18,6 +18,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { TutoringWeakRules } from './tutoring-weak-rules';
 
 interface Props {
   canConfigure: boolean;
@@ -52,6 +53,9 @@ export function TutoringPolicyCard({
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ['tutoring-policy', wsId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['tutoring-queue', wsId],
       });
       toast.success(t('policy_saved'));
     },
@@ -322,6 +326,12 @@ export function TutoringPolicyCard({
           </div>
         ))}
       </div>
+
+      <TutoringWeakRules
+        canConfigure={canConfigure}
+        onChange={edit}
+        policy={draft}
+      />
 
       <div className="space-y-3 rounded-xl border bg-card p-4">
         <div>

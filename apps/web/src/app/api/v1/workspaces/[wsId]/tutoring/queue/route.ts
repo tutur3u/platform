@@ -1,7 +1,13 @@
 import {
+  isTutoringGroupExcluded,
   readTutoringPolicyConfigRows,
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
+import {
+  isWeakContentReviewDue,
+  type TutoringFeedbackSnapshot,
+  unchangedFeedbackSince,
+} from '@tuturuuu/internal-api/tutoring-queue-rules';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import {
@@ -26,11 +32,15 @@ type QueueItem = {
   feedback_content: string;
   feedback_created_at: string | null;
   source_feedback_id: string | null;
+  content_review_due: boolean;
+  content_unchanged_since: string | null;
+  review_only: boolean;
 };
 
 type QueueSummary = {
   absent: number;
   weak: number;
+  review_due: number;
 };
 
 type IdentityRow = {
@@ -61,12 +71,16 @@ function summarizeQueue(queue: QueueItem[]): QueueSummary {
       ) {
         summary.absent += 1;
       }
-      if (item.reason_type === 'WEAK_SUPPORT' || item.reason_type === 'BOTH') {
+      if (
+        !item.review_only &&
+        (item.reason_type === 'WEAK_SUPPORT' || item.reason_type === 'BOTH')
+      ) {
         summary.weak += 1;
       }
+      if (item.content_review_due) summary.review_due += 1;
       return summary;
     },
-    { absent: 0, weak: 0 }
+    { absent: 0, weak: 0, review_due: 0 }
   );
 }
 
@@ -268,12 +282,16 @@ async function getTutoringData(request: Request, { params }: Params) {
     string,
     { id: string; content: string; createdAt: string }
   >();
+  const feedbackHistoryMap = new Map<string, TutoringFeedbackSnapshot[]>();
   for (const row of feedbackRows ?? []) {
     if (!isPresentId(row.group_id) || !isPresentId(row.user_id)) {
       continue;
     }
 
     const key = `${row.group_id}:${row.user_id}`;
+    const history = feedbackHistoryMap.get(key) ?? [];
+    history.push({ content: row.content, createdAt: row.created_at });
+    feedbackHistoryMap.set(key, history);
     if (!latestFeedbackMap.has(key)) {
       latestFeedbackMap.set(key, {
         id: row.id,
@@ -300,18 +318,30 @@ async function getTutoringData(request: Request, { params }: Params) {
       (absenceCountMap.get(key) ?? 0) - (reservedCountMap.get(key) ?? 0)
     );
     const feedback = latestFeedbackMap.get(key);
-    const hasAbsent = deficit > 0;
+    const groupName = groupNameMap.get(groupId) ?? 'Unknown group';
+    const hasAbsent =
+      deficit > 0 && !isTutoringGroupExcluded(policy, groupName, 'make_up');
     const completedDay = feedback
       ? completedFeedbackDays.get(feedback.id)
       : undefined;
     const hasWeak = Boolean(
       feedback &&
+        !isTutoringGroupExcluded(policy, groupName, 'weak_support') &&
         !scheduledFeedbackIds.has(feedback.id) &&
         (completedDay === undefined ||
           todayNumber - completedDay >= reassessmentDays)
     );
 
-    if (!hasAbsent && !hasWeak) return null;
+    const contentUnchangedSince =
+      feedback && !isTutoringGroupExcluded(policy, groupName, 'weak_support')
+        ? unchangedFeedbackSince(feedbackHistoryMap.get(key) ?? [])
+        : null;
+    const contentReviewDue = isWeakContentReviewDue(
+      policy,
+      contentUnchangedSince
+    );
+    if (!hasAbsent && !hasWeak && !contentReviewDue) return null;
+    const reviewOnly = !hasAbsent && !hasWeak;
 
     const reasonType: QueueItem['reason_type'] = hasAbsent
       ? hasWeak
@@ -322,16 +352,21 @@ async function getTutoringData(request: Request, { params }: Params) {
     return {
       group_id: groupId,
       student_user_id: studentId,
-      group_name: groupNameMap.get(groupId) ?? 'Unknown group',
+      group_name: groupName,
       student_name: studentNameMap.get(studentId) ?? studentId,
       reason_type: reasonType,
-      absence_deficit: deficit,
-      missed_class_dates: (missedClassDatesMap.get(key) ?? [])
-        .sort()
-        .slice(-deficit),
-      feedback_content: hasWeak ? (feedback?.content ?? '') : '',
-      feedback_created_at: hasWeak ? (feedback?.createdAt ?? null) : null,
+      absence_deficit: hasAbsent ? deficit : 0,
+      missed_class_dates: hasAbsent
+        ? (missedClassDatesMap.get(key) ?? []).sort().slice(-deficit)
+        : [],
+      feedback_content:
+        hasWeak || contentReviewDue ? (feedback?.content ?? '') : '',
+      feedback_created_at:
+        hasWeak || contentReviewDue ? (feedback?.createdAt ?? null) : null,
       source_feedback_id: hasWeak ? (feedback?.id ?? null) : null,
+      content_review_due: contentReviewDue,
+      content_unchanged_since: contentUnchangedSince,
+      review_only: reviewOnly,
     };
   };
 

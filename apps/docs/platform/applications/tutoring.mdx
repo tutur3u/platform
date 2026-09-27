@@ -22,16 +22,27 @@ payroll.
   Scheduling from a queue row fills the learner, group, reason, teacher when
   unambiguous, and suggested times for the missing sessions. A pending recovery
   session reserves one absence, so staff do not schedule the same make-up twice.
-  Feedback already linked to a pending support session also leaves this queue.
+  Feedback already linked to a pending support session does not create another
+  scheduling suggestion. It can still appear as an office-review-only row when
+  its lesson content has remained unchanged for the configured interval.
   After a completed support session, still-flagged feedback returns for
   reassessment after the configured interval. Older unscheduled feedback shows
-  a parent follow-up prompt.
+  a parent follow-up prompt. If flagged feedback keeps the same content across
+  the configured review interval, the queue shows an office-review alert and
+  count. The alert compares consecutive feedback entries for that learner and
+  group; edits made in place to an existing entry have no separate timestamp.
 - **Settings** stores a workspace tutoring policy with standard and English
   center presets. Operators can adjust session length, lead time, support
   session count, absence lookback, reassessment and follow-up intervals, scheduling horizon,
-  class-time exceptions, named shifts, group-to-campus labels, and the parent
+  class-time exceptions, named shifts, scoped group-name exclusion rules,
+  the unchanged-content review interval, group-to-campus labels, and the parent
   message template. Only members with
   `manage_workspace_settings` can save it.
+  The English center preset excludes group names containing `DDT` from all
+  tutoring suggestions. Rule scope (all, make-up, or weak support), name match
+  type, and text are editable;
+  an interval of 0 disables office-review alerts. Older saved English center
+  policies inherit these defaults until staff customize them.
 - **Headline counts** run as bounded `count: exact` queries, so they stay
   correct on workspaces with more sessions than one page. The schedule loads
   first; counts then load behind it. The support queue is requested when its

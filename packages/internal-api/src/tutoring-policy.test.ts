@@ -3,6 +3,7 @@ import {
   EASY_CENTER_TUTORING_POLICY,
   getTutoringCampus,
   getTutoringShiftLabel,
+  isTutoringGroupExcluded,
   parseTutoringPolicy,
   readTutoringPolicyConfigRows,
   renderTutoringParentMessage,
@@ -88,6 +89,52 @@ describe('Easy Center tutoring shifts', () => {
         'Kids CS2'
       )
     ).toBe('CS1');
+  });
+
+  it('uses configurable group eligibility scopes', () => {
+    expect(
+      isTutoringGroupExcluded(
+        EASY_CENTER_TUTORING_POLICY,
+        'Kindergarten DDT',
+        'make_up'
+      )
+    ).toBe(true);
+    expect(
+      isTutoringGroupExcluded(
+        EASY_CENTER_TUTORING_POLICY,
+        'Class 246',
+        'weak_support'
+      )
+    ).toBe(false);
+    expect(
+      isTutoringGroupExcluded(
+        {
+          ...EASY_CENTER_TUTORING_POLICY,
+          groupExclusions: [
+            { scope: 'weak_support', match: 'suffix', value: ' junior' },
+          ],
+        },
+        'Kids Junior',
+        'weak_support'
+      )
+    ).toBe(true);
+    expect(
+      parseTutoringPolicy({
+        ...EASY_CENTER_TUTORING_POLICY,
+        groupExclusions: [{ scope: 'all', match: 'contains', value: '' }],
+      })
+    ).toBeNull();
+  });
+
+  it('fills new rules when reading an older saved policy', () => {
+    const { weakContentReviewDays, groupExclusions, ...legacy } =
+      EASY_CENTER_TUTORING_POLICY;
+    expect(weakContentReviewDays).toBe(14);
+    expect(groupExclusions).toHaveLength(1);
+    expect(parseTutoringPolicy(legacy)).toMatchObject({
+      weakContentReviewDays: 14,
+      groupExclusions: [{ scope: 'all', match: 'contains', value: 'DDT' }],
+    });
   });
 });
 
