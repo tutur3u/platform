@@ -34,6 +34,9 @@ export function Structure({
 }: StructureProps) {
   const studentId = useSearchParams().get('studentId');
   const activeWorkspace = bootstrap.workspaces.find((item) => item.id === wsId);
+  const hasLinkedStudents = bootstrap.linkedStudents.some(
+    (student) => student.workspace_id === wsId
+  );
   const studentLinks = useMemo(
     () =>
       studentId
@@ -53,9 +56,13 @@ export function Structure({
   return (
     <SidebarStructure
       actions={
-        <div className="flex w-full min-w-0 items-center gap-2">
-          <LearnerStudentSelect bootstrap={bootstrap} wsId={wsId} />
-          {footerActions}
+        <div className="flex w-full min-w-0 flex-col gap-2">
+          {hasLinkedStudents && (
+            <LearnerStudentSelect bootstrap={bootstrap} wsId={wsId} />
+          )}
+          <div className="flex w-full min-w-0 items-center gap-1">
+            {footerActions}
+          </div>
         </div>
       }
       appId="learn"
@@ -91,9 +98,7 @@ export function Structure({
       )}
       wsId={wsId}
     >
-      {bootstrap.linkedStudents.some(
-        (student) => student.workspace_id === wsId
-      ) ? (
+      {hasLinkedStudents ? (
         <div className="mb-5 md:hidden">
           <LearnerStudentSelect bootstrap={bootstrap} wsId={wsId} />
         </div>

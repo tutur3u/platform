@@ -37,9 +37,11 @@ export function Structure({
   return (
     <SidebarStructure
       actions={
-        <div className="flex w-full items-center gap-2">
+        <div className="flex w-full min-w-0 flex-col gap-2">
           <TeachThemeControl compact />
-          {footerActions}
+          <div className="flex w-full min-w-0 items-center gap-1">
+            {footerActions}
+          </div>
         </div>
       }
       appId="teach"
