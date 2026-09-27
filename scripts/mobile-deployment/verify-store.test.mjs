@@ -7,11 +7,13 @@ import { join } from 'node:path';
 import test from 'node:test';
 import {
   distributeTestFlightBuild,
+  expireSupersededTestFlightBuilds,
   latestReadyTestFlightBuild,
   playReleaseReady,
   retryDeferredTestFlightReview,
   selectBetaGroups,
   submitExternalBetaReview,
+  supersededTestFlightBuildIds,
   testFlightReady,
   verifyPlay,
 } from './verify-store.mjs';
@@ -85,12 +87,22 @@ test('external beta review creates test notes, enables notification, and submits
   let submitted = false;
   const apple = async (path, options = {}) => {
     calls.push({ path, options });
+    if (path === '/v1/builds/build?include=preReleaseVersion') {
+      return {
+        data: {
+          relationships: { preReleaseVersion: { data: { id: 'version-2' } } },
+        },
+      };
+    }
     if (path.startsWith('/v1/betaAppReviewSubmissions?')) {
       return {
         data: submitted
           ? [{ attributes: { betaReviewState: 'WAITING_FOR_REVIEW' } }]
           : [],
       };
+    }
+    if (path.includes('filter%5BbetaAppReviewSubmission.betaReviewState%5D=')) {
+      return { data: [] };
     }
     if (path.includes('/betaBuildLocalizations?')) return { data: [] };
     if (path.endsWith('/buildBetaDetail')) return { data: { id: 'detail' } };
@@ -120,17 +132,33 @@ test('external beta review creates test notes, enables notification, and submits
   );
 });
 
-test('external beta review waits for another build without withdrawing it', async () => {
+test('external beta review waits only for another build of the same version', async () => {
   const calls = [];
   const apple = async (path, options = {}) => {
     calls.push({ path, options });
     if (path.startsWith('/v1/betaAppReviewSubmissions?')) return { data: [] };
+    if (path === '/v1/builds/new-build?include=preReleaseVersion') {
+      return {
+        data: {
+          relationships: { preReleaseVersion: { data: { id: 'version-2' } } },
+        },
+      };
+    }
     if (
       path.includes(
         'filter%5BbetaAppReviewSubmission.betaReviewState%5D=WAITING_FOR_REVIEW'
       )
     ) {
-      return { data: [{ id: 'earlier-build' }] };
+      return {
+        data: [
+          {
+            id: 'earlier-build',
+            relationships: {
+              preReleaseVersion: { data: { id: 'version-2' } },
+            },
+          },
+        ],
+      };
     }
     throw new Error(`Unexpected App Store Connect request: ${path}`);
   };
@@ -154,7 +182,114 @@ test('external beta review waits for another build without withdrawing it', asyn
   );
 });
 
-test('latest ready build skips expired and non-internal TestFlight builds', () => {
+test('external beta review proceeds while an older app version is waiting', async () => {
+  const calls = [];
+  let submitted = false;
+  const apple = async (path, options = {}) => {
+    calls.push({ path, options });
+    if (path === '/v1/builds/new-build?include=preReleaseVersion') {
+      return {
+        data: {
+          relationships: { preReleaseVersion: { data: { id: 'new-version' } } },
+        },
+      };
+    }
+    if (path.startsWith('/v1/betaAppReviewSubmissions?')) {
+      return {
+        data: submitted
+          ? [{ attributes: { betaReviewState: 'WAITING_FOR_REVIEW' } }]
+          : [],
+      };
+    }
+    if (path.includes('betaReviewState%5D=WAITING_FOR_REVIEW')) {
+      return {
+        data: [
+          {
+            id: 'older-build',
+            relationships: {
+              preReleaseVersion: { data: { id: 'older-version' } },
+            },
+          },
+        ],
+      };
+    }
+    if (path.includes('betaReviewState%5D=IN_REVIEW')) return { data: [] };
+    if (path.endsWith('/betaBuildLocalizations?limit=200')) return { data: [] };
+    if (path.endsWith('/buildBetaDetail')) return { data: { id: 'detail' } };
+    if (path === '/v1/betaAppReviewSubmissions') submitted = true;
+    return { data: {} };
+  };
+  assert.equal(
+    await submitExternalBetaReview(apple, 'app', 'new-build', 'Test latest'),
+    'WAITING_FOR_REVIEW'
+  );
+  assert.equal(submitted, true);
+});
+
+test('superseded builds expire only after a newer approved build and a grace period', async () => {
+  const now = Date.parse('2026-09-27T00:00:00Z');
+  const build = (id, uploadedDate, reviewId, extra = {}) => ({
+    id,
+    attributes: {
+      version: id,
+      uploadedDate,
+      processingState: 'VALID',
+      expired: false,
+    },
+    relationships: {
+      betaAppReviewSubmission: { data: { id: reviewId } },
+      ...extra,
+    },
+  });
+  const page = {
+    data: [
+      build('new', '2026-09-26T00:00:00Z', 'new-review'),
+      build('approved', '2026-09-24T00:00:00Z', 'approved-review'),
+      build('fallback', '2026-09-20T00:00:00Z', 'fallback-review'),
+      build('old', '2026-09-01T00:00:00Z', 'old-review'),
+      build('app-store', '2026-08-01T00:00:00Z', 'old-review', {
+        appStoreVersion: { data: { id: 'release' } },
+      }),
+    ],
+    included: [
+      {
+        id: 'new-review',
+        type: 'betaAppReviewSubmissions',
+        attributes: { betaReviewState: 'WAITING_FOR_REVIEW' },
+      },
+      {
+        id: 'approved-review',
+        type: 'betaAppReviewSubmissions',
+        attributes: { betaReviewState: 'APPROVED' },
+      },
+      {
+        id: 'fallback-review',
+        type: 'betaAppReviewSubmissions',
+        attributes: { betaReviewState: 'APPROVED' },
+      },
+      {
+        id: 'old-review',
+        type: 'betaAppReviewSubmissions',
+        attributes: { betaReviewState: 'APPROVED' },
+      },
+    ],
+  };
+  assert.deepEqual(supersededTestFlightBuildIds(page, now), ['old']);
+  const calls = [];
+  const apple = async (path, options = {}) => {
+    calls.push({ path, options });
+    return { ...page, data: page.data };
+  };
+  assert.equal(await expireSupersededTestFlightBuilds(apple, 'app'), 1);
+  assert.deepEqual(
+    calls
+      .filter(({ options }) => options.method === 'PATCH')
+      .map(({ path }) => path),
+    ['/v1/builds/old']
+  );
+});
+
+test('latest ready build never falls back past a newer unready build', () => {
   const ready = {
     id: 'latest-ready',
     attributes: { version: '203001', processingState: 'VALID' },
@@ -168,6 +303,22 @@ test('latest ready build skips expired and non-internal TestFlight builds', () =
           id: 'unready',
           attributes: { version: '203999', processingState: 'VALID' },
         },
+        ready,
+      ],
+      included: [
+        {
+          id: 'ready-detail',
+          type: 'buildBetaDetails',
+          attributes: { internalBuildState: 'IN_BETA_TESTING' },
+        },
+      ],
+    }),
+    null
+  );
+  assert.equal(
+    latestReadyTestFlightBuild({
+      data: [
+        { id: 'expired', attributes: { version: '204001', expired: true } },
         ready,
       ],
       included: [
@@ -240,6 +391,16 @@ test('review retry submits the newest ready build after the prior review ends', 
           relationships: {
             betaGroups: { data: [{ id: 'internal' }, { id: 'external' }] },
           },
+        },
+      };
+    }
+    if (
+      url.pathname === '/v1/builds/latest' &&
+      url.searchParams.get('include') === 'preReleaseVersion'
+    ) {
+      return {
+        data: {
+          relationships: { preReleaseVersion: { data: { id: 'version-2' } } },
         },
       };
     }
