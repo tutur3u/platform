@@ -54,6 +54,14 @@ test('invalidates cached availability and preserves the shared storefront shell'
     expect(streamedProductPage.ok()).toBe(true);
     expect(await streamedProductPage.text()).toContain('data-storefront-shell');
 
+    // Compile the destination route before freezing an instant navigation.
+    // The contract here is client-side shell persistence, not cold dev compile.
+    const streamedBrowsePage = await request.get(
+      `${STOREFRONT_URL}/${fixture.slug}`
+    );
+    expect(streamedBrowsePage.ok()).toBe(true);
+    expect(await streamedBrowsePage.text()).toContain('Cache Test Product');
+
     let documentRequests = 0;
     page.on('request', (requestEvent) => {
       if (requestEvent.resourceType() === 'document') documentRequests += 1;
@@ -77,6 +85,16 @@ test('invalidates cached availability and preserves the shared storefront shell'
       await expect(page.locator('main[aria-busy="true"]')).toBeVisible();
     });
     await expect(page).toHaveURL(new RegExp(`/${fixture.slug}/?$`, 'u'));
+    if (
+      await page
+        .getByRole('heading', { name: 'This view could not load' })
+        .isVisible()
+    ) {
+      console.error(
+        'Storefront recovery details:',
+        await page.locator('details pre').textContent()
+      );
+    }
     await expect(
       page.getByText('Cache Test Product').filter({ visible: true })
     ).toBeVisible();
