@@ -1,5 +1,7 @@
+mod policy;
 mod query;
 
+use policy::{current_utc_day, load_reassessment_days, reassessment_due};
 use query::{QueryParseError, TutoringQueueQuery, parse_query};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -48,9 +50,13 @@ struct AttendanceRow {
 }
 
 #[derive(Deserialize)]
-struct CompletedSessionRow {
+struct ReservedSessionRow {
     group_id: Option<String>,
     student_user_id: Option<String>,
+    reason_type: Option<String>,
+    attendance_status: Option<String>,
+    source_feedback_id: Option<String>,
+    resolved_at: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -62,6 +68,7 @@ struct FeedbackGroupEmbed {
 struct FeedbackRow {
     id: Option<String>,
     content: Option<String>,
+    created_at: Option<String>,
     user_id: Option<String>,
     group_id: Option<String>,
     user: Option<IdentityEmbed>,
@@ -81,6 +88,7 @@ struct QueueItem {
     reason_type: String,
     absence_deficit: u32,
     feedback_content: String,
+    feedback_created_at: Option<String>,
     source_feedback_id: Option<String>,
 }
 
@@ -168,7 +176,7 @@ async fn tutoring_queue_response(
         Err(()) => return message_response(500, FAILED_TO_LOAD_MESSAGE),
     };
 
-    let completed_rows = match load_completed_rows(contact_data, outbound, &ws_id, &query).await {
+    let reserved_rows = match load_reserved_rows(contact_data, outbound, &ws_id, &query).await {
         Ok(rows) => rows,
         Err(()) => return message_response(500, FAILED_TO_LOAD_MESSAGE),
     };
@@ -178,7 +186,19 @@ async fn tutoring_queue_response(
         Err(()) => return message_response(500, FAILED_TO_LOAD_MESSAGE),
     };
 
-    let response = build_queue_response(&query, attendance_rows, completed_rows, feedback_rows);
+    let reassessment_days = match load_reassessment_days(contact_data, outbound, &ws_id).await {
+        Ok(days) => days,
+        Err(()) => return message_response(500, FAILED_TO_LOAD_MESSAGE),
+    };
+
+    let response = build_queue_response(
+        &query,
+        attendance_rows,
+        reserved_rows,
+        feedback_rows,
+        reassessment_days,
+        current_utc_day(),
+    );
 
     no_store_response(json_response(200, response))
 }
@@ -225,17 +245,20 @@ async fn load_attendance_rows(
     response.json::<Vec<AttendanceRow>>().map_err(|_| ())
 }
 
-async fn load_completed_rows(
+async fn load_reserved_rows(
     contact_data: &contact::ContactDataConfig,
     outbound: &impl OutboundHttpClient,
     ws_id: &str,
     query: &TutoringQueueQuery,
-) -> Result<Vec<CompletedSessionRow>, ()> {
+) -> Result<Vec<ReservedSessionRow>, ()> {
     let mut params: Vec<(&str, String)> = vec![
-        ("select", "group_id,student_user_id".to_owned()),
+        (
+            "select",
+            "group_id,student_user_id,reason_type,attendance_status,source_feedback_id,resolved_at"
+                .to_owned(),
+        ),
         ("ws_id", format!("eq.{ws_id}")),
-        ("reason_type", "eq.ABSENT_RECOVERY".to_owned()),
-        ("attendance_status", "eq.DONE".to_owned()),
+        ("attendance_status", "in.(DONE,PENDING)".to_owned()),
     ];
     if let Some(group_id) = &query.group_id {
         params.push(("group_id", format!("eq.{group_id}")));
@@ -255,7 +278,7 @@ async fn load_completed_rows(
         return Err(());
     }
 
-    response.json::<Vec<CompletedSessionRow>>().map_err(|_| ())
+    response.json::<Vec<ReservedSessionRow>>().map_err(|_| ())
 }
 
 async fn load_feedback_rows(
@@ -326,8 +349,10 @@ async fn send_service_role_request(
 fn build_queue_response(
     query: &TutoringQueueQuery,
     attendance_rows: Vec<AttendanceRow>,
-    completed_rows: Vec<CompletedSessionRow>,
+    reserved_rows: Vec<ReservedSessionRow>,
     feedback_rows: Vec<FeedbackRow>,
+    reassessment_days: i64,
+    today: i64,
 ) -> QueueResponse {
     let mut absence_count: BTreeMap<String, u32> = BTreeMap::new();
     let mut group_name: BTreeMap<String, String> = BTreeMap::new();
@@ -348,8 +373,10 @@ fn build_queue_response(
         }
     }
 
-    let mut completed_count: BTreeMap<String, u32> = BTreeMap::new();
-    for row in &completed_rows {
+    let mut reserved_count: BTreeMap<String, u32> = BTreeMap::new();
+    let mut scheduled_feedback_ids: BTreeSet<String> = BTreeSet::new();
+    let mut completed_feedback_dates: BTreeMap<String, String> = BTreeMap::new();
+    for row in &reserved_rows {
         let (Some(group_id), Some(student_user_id)) = (&row.group_id, &row.student_user_id) else {
             // group_id/student_user_id missing -> key is "undefined"-ish; legacy
             // builds the key verbatim. Skip rows without both ids to avoid
@@ -357,7 +384,22 @@ fn build_queue_response(
             continue;
         };
         let key = format!("{group_id}:{student_user_id}");
-        *completed_count.entry(key).or_insert(0) += 1;
+        if row.reason_type.as_deref() == Some("ABSENT_RECOVERY") {
+            *reserved_count.entry(key).or_insert(0) += 1;
+        }
+        if row.attendance_status.as_deref() == Some("PENDING")
+            && let Some(id) = &row.source_feedback_id
+        {
+            scheduled_feedback_ids.insert(id.clone());
+        }
+        if row.attendance_status.as_deref() == Some("DONE")
+            && let (Some(id), Some(resolved_at)) = (&row.source_feedback_id, &row.resolved_at)
+        {
+            let latest = completed_feedback_dates.entry(id.clone()).or_default();
+            if resolved_at > latest {
+                *latest = resolved_at.clone();
+            }
+        }
     }
 
     // Key universe: every attendance key plus every present feedback key.
@@ -374,7 +416,8 @@ fn build_queue_response(
     }
 
     // Latest feedback per key (rows already ordered created_at desc).
-    let mut latest_feedback: BTreeMap<String, (Option<String>, String)> = BTreeMap::new();
+    let mut latest_feedback: BTreeMap<String, (Option<String>, String, Option<String>)> =
+        BTreeMap::new();
     for row in &feedback_rows {
         if !is_present_id(row.group_id.as_deref()) || !is_present_id(row.user_id.as_deref()) {
             continue;
@@ -382,9 +425,13 @@ fn build_queue_response(
         let group_id = row.group_id.as_deref().unwrap_or_default();
         let user_id = row.user_id.as_deref().unwrap_or_default();
         let key = format!("{group_id}:{user_id}");
-        latest_feedback
-            .entry(key)
-            .or_insert_with(|| (row.id.clone(), row.content.clone().unwrap_or_default()));
+        latest_feedback.entry(key).or_insert_with(|| {
+            (
+                row.id.clone(),
+                row.content.clone().unwrap_or_default(),
+                row.created_at.clone(),
+            )
+        });
 
         if let Some(name) = row.group.as_ref().and_then(|group| group.name.as_ref()) {
             group_name.insert(group_id.to_owned(), name.clone());
@@ -407,10 +454,19 @@ fn build_queue_response(
             .get(key)
             .copied()
             .unwrap_or(0)
-            .saturating_sub(completed_count.get(key).copied().unwrap_or(0));
+            .saturating_sub(reserved_count.get(key).copied().unwrap_or(0));
         let feedback = latest_feedback.get(key);
         let has_absent = deficit > 0;
-        let has_weak = feedback.is_some();
+        let has_weak = feedback
+            .and_then(|(id, _, _)| id.as_ref())
+            .is_some_and(|id| {
+                !scheduled_feedback_ids.contains(id)
+                    && reassessment_due(
+                        completed_feedback_dates.get(id).map(String::as_str),
+                        reassessment_days,
+                        today,
+                    )
+            });
 
         if !has_absent && !has_weak {
             continue;
@@ -435,10 +491,23 @@ fn build_queue_response(
                 .unwrap_or_else(|| student_id.to_owned()),
             reason_type: reason_type.to_owned(),
             absence_deficit: deficit,
-            feedback_content: feedback
-                .map(|(_, content)| content.clone())
-                .unwrap_or_default(),
-            source_feedback_id: feedback.and_then(|(id, _)| id.clone()),
+            feedback_content: if has_weak {
+                feedback
+                    .map(|(_, content, _)| content.clone())
+                    .unwrap_or_default()
+            } else {
+                String::new()
+            },
+            feedback_created_at: if has_weak {
+                feedback.and_then(|(_, _, created_at)| created_at.clone())
+            } else {
+                None
+            },
+            source_feedback_id: if has_weak {
+                feedback.and_then(|(id, _, _)| id.clone())
+            } else {
+                None
+            },
         });
     }
 
@@ -586,3 +655,6 @@ fn message_response(status: u16, message: &str) -> BackendResponse {
 fn is_success_status(status: u16) -> bool {
     (200..300).contains(&status)
 }
+
+#[cfg(test)]
+mod tests;

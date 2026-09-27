@@ -4,6 +4,7 @@ import type { ListTutoringSessionsParams } from '@tuturuuu/internal-api/tutoring
 export const TUTORING_DATE_RANGES = [
   'upcoming',
   'today',
+  'tomorrow',
   'week',
   'month',
   'past',
@@ -75,6 +76,10 @@ export function resolveTutoringDateBounds(
   switch (range) {
     case 'today':
       return { fromDate: today, toDate: today };
+    case 'tomorrow': {
+      const tomorrow = addDaysToIsoDate(today, 1);
+      return { fromDate: tomorrow, toDate: tomorrow };
+    }
     case 'upcoming':
       return { fromDate: today };
     case 'week':

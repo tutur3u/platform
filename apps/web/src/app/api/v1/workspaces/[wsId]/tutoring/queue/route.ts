@@ -1,3 +1,7 @@
+import {
+  readTutoringPolicy,
+  TUTORING_POLICY_CONFIG_ID,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import {
@@ -19,6 +23,7 @@ type QueueItem = {
   reason_type: 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'BOTH';
   absence_deficit: number;
   feedback_content: string;
+  feedback_created_at: string | null;
   source_feedback_id: string | null;
 };
 
@@ -115,44 +120,21 @@ async function getTutoringData(request: Request, { params }: Params) {
     attendanceQuery = attendanceQuery.eq('user_id', parsed.data.studentUserId);
   }
 
-  const { data: attendanceRows, error: attendanceError } =
-    await attendanceQuery;
-
-  if (attendanceError) {
-    console.error(
-      'Failed to load attendance deficits for tutoring queue',
-      attendanceError
-    );
-    return NextResponse.json(
-      { message: 'Failed to load queue' },
-      { status: 500 }
-    );
-  }
-
-  let completedQuery = tutoringSessionsClient
+  let reservedQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
-    .select('group_id,student_user_id')
+    .select(
+      'group_id,student_user_id,reason_type,attendance_status,source_feedback_id,resolved_at'
+    )
     .eq('ws_id', normalizedWsId)
-    .eq('reason_type', 'ABSENT_RECOVERY')
-    .eq('attendance_status', 'DONE');
+    .in('attendance_status', ['DONE', 'PENDING']);
 
   if (parsed.data.groupId) {
-    completedQuery = completedQuery.eq('group_id', parsed.data.groupId);
+    reservedQuery = reservedQuery.eq('group_id', parsed.data.groupId);
   }
   if (parsed.data.studentUserId) {
-    completedQuery = completedQuery.eq(
+    reservedQuery = reservedQuery.eq(
       'student_user_id',
       parsed.data.studentUserId
-    );
-  }
-
-  const { data: completedRows, error: completedError } = await completedQuery;
-
-  if (completedError) {
-    console.error('Failed to load completed tutoring sessions', completedError);
-    return NextResponse.json(
-      { message: 'Failed to load queue' },
-      { status: 500 }
     );
   }
 
@@ -173,18 +155,42 @@ async function getTutoringData(request: Request, { params }: Params) {
   if (parsed.data.studentUserId)
     feedbackQuery = feedbackQuery.eq('user_id', parsed.data.studentUserId);
 
-  const { data: feedbackRows, error: feedbackError } = await feedbackQuery;
+  const policyQuery = sbAdmin
+    .from('workspace_configs')
+    .select('value')
+    .eq('ws_id', normalizedWsId)
+    .eq('id', TUTORING_POLICY_CONFIG_ID)
+    .maybeSingle();
 
-  if (feedbackError) {
-    console.error(
-      'Failed to load attention feedback for tutoring queue',
-      feedbackError
-    );
+  // These reads are independent; the queue should wait for one database round
+  // trip rather than stacking four round trips in series.
+  const [attendanceResult, reservedResult, feedbackResult, policyResult] =
+    await Promise.all([
+      attendanceQuery,
+      reservedQuery,
+      feedbackQuery,
+      policyQuery,
+    ]);
+  for (const [source, error] of [
+    ['attendance', attendanceResult.error],
+    ['sessions', reservedResult.error],
+    ['feedback', feedbackResult.error],
+    ['policy', policyResult.error],
+  ] as const) {
+    if (!error) continue;
+    console.error(`Failed to load tutoring queue ${source}`, error);
     return NextResponse.json(
       { message: 'Failed to load queue' },
       { status: 500 }
     );
   }
+  const attendanceRows = attendanceResult.data;
+  const reservedRows = reservedResult.data;
+  const feedbackRows = feedbackResult.data;
+  const reassessmentDays = readTutoringPolicy(
+    policyResult.data?.value
+  ).reassessmentDays;
+  const todayNumber = Math.floor(Date.now() / 86_400_000);
 
   const absenceCountMap = new Map<string, number>();
   const groupNameMap = new Map<string, string>();
@@ -202,10 +208,30 @@ async function getTutoringData(request: Request, { params }: Params) {
     }
   }
 
-  const completedCountMap = new Map<string, number>();
-  for (const row of completedRows ?? []) {
+  const reservedCountMap = new Map<string, number>();
+  const scheduledFeedbackIds = new Set<string>();
+  const completedFeedbackDays = new Map<string, number>();
+  for (const row of reservedRows ?? []) {
     const key = `${row.group_id}:${row.student_user_id}`;
-    completedCountMap.set(key, (completedCountMap.get(key) ?? 0) + 1);
+    if (row.reason_type === 'ABSENT_RECOVERY')
+      reservedCountMap.set(key, (reservedCountMap.get(key) ?? 0) + 1);
+    if (row.attendance_status === 'PENDING' && row.source_feedback_id)
+      scheduledFeedbackIds.add(row.source_feedback_id);
+    if (
+      row.attendance_status === 'DONE' &&
+      row.source_feedback_id &&
+      row.resolved_at
+    ) {
+      const resolvedDay = Math.floor(Date.parse(row.resolved_at) / 86_400_000);
+      if (Number.isFinite(resolvedDay))
+        completedFeedbackDays.set(
+          row.source_feedback_id,
+          Math.max(
+            completedFeedbackDays.get(row.source_feedback_id) ?? -Infinity,
+            resolvedDay
+          )
+        );
+    }
   }
 
   const keySet = new Set<string>();
@@ -221,7 +247,10 @@ async function getTutoringData(request: Request, { params }: Params) {
     return { groupId, studentId, key };
   });
 
-  const latestFeedbackMap = new Map<string, { id: string; content: string }>();
+  const latestFeedbackMap = new Map<
+    string,
+    { id: string; content: string; createdAt: string }
+  >();
   for (const row of feedbackRows ?? []) {
     if (!isPresentId(row.group_id) || !isPresentId(row.user_id)) {
       continue;
@@ -229,7 +258,11 @@ async function getTutoringData(request: Request, { params }: Params) {
 
     const key = `${row.group_id}:${row.user_id}`;
     if (!latestFeedbackMap.has(key)) {
-      latestFeedbackMap.set(key, { id: row.id, content: row.content });
+      latestFeedbackMap.set(key, {
+        id: row.id,
+        content: row.content,
+        createdAt: row.created_at,
+      });
     }
 
     if (row.group_id && row.group?.name) {
@@ -247,11 +280,19 @@ async function getTutoringData(request: Request, { params }: Params) {
   ): QueueItem | null => {
     const deficit = Math.max(
       0,
-      (absenceCountMap.get(key) ?? 0) - (completedCountMap.get(key) ?? 0)
+      (absenceCountMap.get(key) ?? 0) - (reservedCountMap.get(key) ?? 0)
     );
     const feedback = latestFeedbackMap.get(key);
     const hasAbsent = deficit > 0;
-    const hasWeak = Boolean(feedback);
+    const completedDay = feedback
+      ? completedFeedbackDays.get(feedback.id)
+      : undefined;
+    const hasWeak = Boolean(
+      feedback &&
+        !scheduledFeedbackIds.has(feedback.id) &&
+        (completedDay === undefined ||
+          todayNumber - completedDay >= reassessmentDays)
+    );
 
     if (!hasAbsent && !hasWeak) return null;
 
@@ -268,8 +309,9 @@ async function getTutoringData(request: Request, { params }: Params) {
       student_name: studentNameMap.get(studentId) ?? studentId,
       reason_type: reasonType,
       absence_deficit: deficit,
-      feedback_content: feedback?.content ?? '',
-      source_feedback_id: feedback?.id ?? null,
+      feedback_content: hasWeak ? (feedback?.content ?? '') : '',
+      feedback_created_at: hasWeak ? (feedback?.createdAt ?? null) : null,
+      source_feedback_id: hasWeak ? (feedback?.id ?? null) : null,
     };
   };
 

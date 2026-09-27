@@ -7,7 +7,8 @@ import type {
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
 import { listWorkspaceUserGroupSessions } from '@tuturuuu/internal-api';
-import { suggestTutoringBeforeNextClass } from '@tuturuuu/internal-api/tutoring-suggestion';
+import type { TutoringPolicy } from '@tuturuuu/internal-api/tutoring-policy';
+import { suggestTutoringSlots } from '@tuturuuu/internal-api/tutoring-suggestion';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
@@ -39,6 +40,7 @@ interface Props {
   students: WorkspaceBasicUserRecord[];
   onChange: (next: TutoringFormValues) => void;
   onSubmit: () => void;
+  policy: TutoringPolicy;
   wsId: string;
 }
 
@@ -49,6 +51,7 @@ export function TutoringCreateCard({
   students,
   onChange,
   onSubmit,
+  policy,
   wsId,
 }: Props) {
   const t = useTranslations('ws-tutoring');
@@ -57,14 +60,22 @@ export function TutoringCreateCard({
   const today = toIsoDate(new Date());
   const classSchedule = useQuery({
     enabled: Boolean(
-      form.groupId && missedDate && form.reasonType === 'ABSENT_RECOVERY'
+      form.groupId &&
+        (form.reasonType === 'WEAK_SUPPORT' ||
+          (form.reasonType === 'ABSENT_RECOVERY' && missedDate))
     ),
-    queryKey: ['tutoring-class-schedule', wsId, form.groupId, today],
+    queryKey: [
+      'tutoring-class-schedule',
+      wsId,
+      form.groupId,
+      today,
+      policy.schedulingHorizonDays,
+    ],
     queryFn: () =>
       listWorkspaceUserGroupSessions(wsId, {
         from: today,
         groupId: form.groupId,
-        to: addDaysToIsoDate(today, 28),
+        to: addDaysToIsoDate(today, policy.schedulingHorizonDays),
       }),
     staleTime: 5 * 60_000,
   });
@@ -243,7 +254,7 @@ export function TutoringCreateCard({
         </div>
       </div>
 
-      {form.reasonType === 'ABSENT_RECOVERY' ? (
+      {form.reasonType !== 'CUSTOM' ? (
         <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
           <div>
             <h3 className="font-semibold text-sm">{t('suggestion_title')}</h3>
@@ -252,25 +263,27 @@ export function TutoringCreateCard({
             </p>
           </div>
           <div className="flex flex-wrap items-end gap-2">
-            <div className="min-w-40 flex-1 space-y-1">
-              <Label htmlFor="missed-class-date">
-                {t('missed_class_date')}
-              </Label>
-              <Input
-                id="missed-class-date"
-                max={today}
-                onChange={(event) => {
-                  setMissedDate(event.target.value);
-                  setScheduleMessage('');
-                }}
-                type="date"
-                value={missedDate}
-              />
-            </div>
+            {form.reasonType === 'ABSENT_RECOVERY' ? (
+              <div className="min-w-40 flex-1 space-y-1">
+                <Label htmlFor="missed-class-date">
+                  {t('missed_class_date')}
+                </Label>
+                <Input
+                  id="missed-class-date"
+                  max={today}
+                  onChange={(event) => {
+                    setMissedDate(event.target.value);
+                    setScheduleMessage('');
+                  }}
+                  type="date"
+                  value={missedDate}
+                />
+              </div>
+            ) : null}
             <Button
               disabled={
                 !form.groupId ||
-                !missedDate ||
+                (form.reasonType === 'ABSENT_RECOVERY' && !missedDate) ||
                 classSchedule.isFetching ||
                 (!classSchedule.isSuccess && !classSchedule.isError)
               }
@@ -279,29 +292,35 @@ export function TutoringCreateCard({
                   void classSchedule.refetch();
                   return;
                 }
-                const suggestion = suggestTutoringBeforeNextClass(
+                const suggestions = suggestTutoringSlots(
                   classSchedule.data?.data ?? [],
-                  missedDate
+                  form.reasonType === 'ABSENT_RECOVERY'
+                    ? missedDate
+                    : addDaysToIsoDate(today, -1),
+                  form.sessionSlots.length,
+                  policy,
+                  form.reasonType === 'WEAK_SUPPORT'
+                    ? 'consecutive'
+                    : 'separate'
                 );
-                if (!suggestion) {
+                if (suggestions.length !== form.sessionSlots.length) {
                   setScheduleMessage(t('suggestion_unavailable'));
                   return;
                 }
                 onChange({
                   ...form,
-                  sessionSlots: form.sessionSlots.map((slot, index) =>
-                    index === 0
-                      ? {
-                          ...slot,
-                          durationMinutes: 45,
-                          sessionDate: suggestion.sessionDate,
-                          startTime: suggestion.startTime,
-                        }
-                      : slot
-                  ),
+                  sessionSlots: form.sessionSlots.map((slot, index) => ({
+                    ...slot,
+                    durationMinutes:
+                      suggestions[index]?.durationMinutes ??
+                      policy.durationMinutes,
+                    sessionDate:
+                      suggestions[index]?.sessionDate ?? slot.sessionDate,
+                    startTime: suggestions[index]?.startTime ?? slot.startTime,
+                  })),
                 });
                 setScheduleMessage(
-                  t('suggestion_applied', { time: suggestion.classStartsAt })
+                  t('smart_suggestion_applied', { count: suggestions.length })
                 );
               }}
               type="button"
@@ -312,7 +331,7 @@ export function TutoringCreateCard({
               ) : (
                 <CalendarPlus className="h-4 w-4" />
               )}
-              {t('suggest_next_class')}
+              {t('suggest_all_sessions')}
             </Button>
           </div>
           {classSchedule.isError ? (

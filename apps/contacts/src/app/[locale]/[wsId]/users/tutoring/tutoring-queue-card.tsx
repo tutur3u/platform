@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/icons';
 import type { TutoringQueueItem } from '@tuturuuu/internal-api';
 import { listTutoringQueue } from '@tuturuuu/internal-api';
+import type { TutoringPolicy } from '@tuturuuu/internal-api/tutoring-policy';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -48,6 +49,8 @@ interface Props {
   filters: TutoringQueueFilters;
   groups: UserGroup[];
   pagination: { page: number; pageSize: number };
+  policy: TutoringPolicy;
+  schedulingKey: string | null;
   wsId: string;
 }
 
@@ -82,6 +85,8 @@ export function TutoringQueueCard({
   filters,
   groups,
   pagination,
+  policy,
+  schedulingKey,
   wsId,
 }: Props) {
   const t = useTranslations('ws-tutoring');
@@ -211,9 +216,21 @@ export function TutoringQueueCard({
           />
         ),
         cell: ({ row }) => (
-          <p className="line-clamp-2 max-w-80 text-sm">
-            {row.original.feedback_content || '-'}
-          </p>
+          <div className="max-w-80 space-y-1">
+            <p className="line-clamp-2 text-sm">
+              {row.original.feedback_content || '-'}
+            </p>
+            {row.original.feedback_created_at &&
+            Date.parse(row.original.feedback_created_at) <=
+              Date.now() - policy.followUpDays * 86_400_000 ? (
+              <Badge
+                className="border-dynamic-orange/25 bg-dynamic-orange/10 text-dynamic-orange"
+                variant="outline"
+              >
+                {t('follow_up_due')}
+              </Badge>
+            ) : null}
+          </div>
         ),
       },
       {
@@ -223,10 +240,16 @@ export function TutoringQueueCard({
           canManage ? (
             <div className="flex justify-end">
               <Button
+                disabled={schedulingKey !== null}
                 onClick={() => actions.onSchedule(row.original)}
                 size="sm"
               >
-                <CalendarPlus className="h-4 w-4" />
+                {schedulingKey ===
+                `${row.original.group_id}:${row.original.student_user_id}` ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CalendarPlus className="h-4 w-4" />
+                )}
                 {t('schedule_support')}
               </Button>
             </div>

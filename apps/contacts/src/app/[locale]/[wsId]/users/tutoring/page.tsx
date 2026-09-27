@@ -70,7 +70,15 @@ export default async function TutoringPage({ params }: PageProps) {
           );
         }
 
-        return <TutoringClient wsId={wsId} canManage={access.canManage} />;
+        return (
+          <TutoringClient
+            wsId={wsId}
+            canManage={access.canManage}
+            canConfigure={Boolean(
+              permissions?.containsPermission('manage_workspace_settings')
+            )}
+          />
+        );
       }}
     </WorkspaceWrapper>
   );
