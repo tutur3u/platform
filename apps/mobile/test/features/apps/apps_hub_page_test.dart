@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -88,6 +90,64 @@ void main() {
       ),
       findsOneWidget,
     );
+
+    final semantics = tester.ensureSemantics();
+    expect(find.bySemanticsLabel('List'), findsOneWidget);
+    expect(find.bySemanticsLabel('Grid'), findsOneWidget);
+    expect(
+      tester
+          .getSemantics(find.text('List'))
+          .getSemanticsData()
+          .flagsCollection
+          .isSelected,
+      Tristate.isTrue,
+    );
+
+    await tester.tap(find.text('Grid'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .getSemantics(find.text('Grid'))
+          .getSemanticsData()
+          .flagsCollection
+          .isSelected,
+      Tristate.isTrue,
+    );
+    final tasksSemantics = tester
+        .getSemantics(find.text('Tasks'))
+        .getSemanticsData();
+    expect(tasksSemantics.label, 'Tasks');
+    expect(tasksSemantics.flagsCollection.isButton, isTrue);
+    expect(find.text('Tasks'), findsOneWidget);
+    expect(find.text('Chat'), findsOneWidget);
+    expect(
+      find.text(
+        'Keep team conversations, direct messages, files, '
+        'and AI chats together.',
+      ),
+      findsNothing,
+    );
+    expect(
+      tester.getTopLeft(find.text('Tasks')).dy,
+      tester.getTopLeft(find.text('Chat')).dy,
+    );
+
+    tester.view.physicalSize = const Size(200, 2400);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    tester.view.physicalSize = const Size(430, 2400);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('List'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Keep team conversations, direct messages, files, '
+        'and AI chats together.',
+      ),
+      findsOneWidget,
+    );
+    semantics.dispose();
   });
 
   testWidgets('Apps hub shows enabled experimental apps after core apps', (

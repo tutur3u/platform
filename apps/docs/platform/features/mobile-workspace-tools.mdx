@@ -20,6 +20,12 @@ The mobile Apps hub uses the v0.9.2 colored cards with consistent icons and clea
 - A compact overview with a small number of relevant metrics
 - The v0.9.2 AppCardPalette gradient cards, consistent icon blocks, readable labels, and shared theme colors
 
+The Apps screen defaults to a descriptive list. A right-aligned List/Grid switch
+changes the same visible, ordered modules into a compact icon-and-name grid. The
+choice stays in the mounted Apps screen while navigating within the mobile shell;
+search, pins, and workspace access rules apply to both layouts. Descriptions remain
+searchable in grid mode even though they are hidden from the tiles.
+
 Background warmups for optional products should also respect access state before fetching. Do not let Apps hub or boot-time cache warmups call product endpoints blindly; skip the warmup when the corresponding access cubit is not loaded and enabled, and fail soft on opportunistic `404` responses.
 
 Meet is a standard launcher module, with meeting search, scheduling, editing, and deletion. Workspace visibility flags still apply. Every launcher module includes an English and Vietnamese description.

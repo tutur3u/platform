@@ -278,6 +278,8 @@
     "appsHubFeatured": "Featured",
     "appsHubMoreTools": "More tools",
     "appsHubSearchResults": "Search results",
+    "appsHubListView": "List",
+    "appsHubGridView": "Grid",
     "appsHubOpenApp": "Open",
     "appsHubTasksDescription": "Assignments, boards, estimates, and portfolio planning.",
     "appsHubHabitsDescription": "Track shared routines, streaks, and recurring progress.",

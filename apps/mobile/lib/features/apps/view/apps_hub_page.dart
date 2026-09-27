@@ -34,8 +34,11 @@ class AppsHubPage extends StatefulWidget {
 }
 
 class _AppsHubPageState extends State<AppsHubPage> {
+  bool _showGrid = false;
+
   @override
   Widget build(BuildContext context) {
+    final showViewLabels = MediaQuery.sizeOf(context).width >= 300;
     final modules =
         arrangeApps(AppRegistry.modules(context), context.watch<AppTabCubit>())
             .where(
@@ -62,6 +65,44 @@ class _AppsHubPageState extends State<AppsHubPage> {
               SliverToBoxAdapter(
                 child: SizedBox(height: floatingShellHeaderInset(context)),
               ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    ResponsivePadding.horizontal(context.deviceClass),
+                    10,
+                    ResponsivePadding.horizontal(context.deviceClass),
+                    0,
+                  ),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: SegmentedButton<bool>(
+                      showSelectedIcon: false,
+                      segments: [
+                        ButtonSegment(
+                          value: false,
+                          icon: const Icon(Icons.view_agenda_rounded),
+                          label: showViewLabels
+                              ? Text(context.l10n.appsHubListView)
+                              : null,
+                          tooltip: context.l10n.appsHubListView,
+                        ),
+                        ButtonSegment(
+                          value: true,
+                          icon: const Icon(Icons.grid_view_rounded),
+                          label: showViewLabels
+                              ? Text(context.l10n.appsHubGridView)
+                              : null,
+                          tooltip: context.l10n.appsHubGridView,
+                        ),
+                      ],
+                      selected: {_showGrid},
+                      onSelectionChanged: (selection) {
+                        setState(() => _showGrid = selection.single);
+                      },
+                    ),
+                  ),
+                ),
+              ),
               if (modules.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
@@ -76,6 +117,36 @@ class _AppsHubPageState extends State<AppsHubPage> {
                 ),
                 sliver: SliverLayoutBuilder(
                   builder: (context, constraints) {
+                    if (_showGrid) {
+                      final columns = (constraints.crossAxisExtent / 96)
+                          .floor()
+                          .clamp(1, 6);
+                      final labelStyle = Theme.of(
+                        context,
+                      ).textTheme.labelMedium;
+                      final labelHeight =
+                          MediaQuery.textScalerOf(
+                            context,
+                          ).scale(labelStyle?.fontSize ?? 14) *
+                          (labelStyle?.height ?? 1.2) *
+                          2;
+                      return SliverGrid(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          mainAxisExtent: 64 + 8 + labelHeight + 12,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => _AppGridTile(
+                            module: modules[index],
+                            index: index,
+                            onSelected: widget.onSelected,
+                          ),
+                          childCount: modules.length,
+                        ),
+                      );
+                    }
                     final columns = (constraints.crossAxisExtent / 280)
                         .floor()
                         .clamp(1, 3);
@@ -115,6 +186,69 @@ class _AppsHubPageState extends State<AppsHubPage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AppGridTile extends StatelessWidget {
+  const _AppGridTile({
+    required this.module,
+    required this.index,
+    this.onSelected,
+  });
+
+  final AppModule module;
+  final int index;
+  final ValueChanged<AppModule>? onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppCardPalette.resolve(
+      context,
+      index: index,
+      moduleId: module.id,
+    );
+
+    return Semantics(
+      button: true,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => onSelected != null
+            ? onSelected!(module)
+            : _openModule(context, module),
+        child: Column(
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: palette.background,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: palette.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: palette.shadow,
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Icon(module.icon, color: palette.iconColor, size: 30),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              module.label(context.l10n),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                height: 1.12,
+              ),
+            ),
+          ],
         ),
       ),
     );
