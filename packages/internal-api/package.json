@@ -227,6 +227,11 @@
       "import": "./dist/tasks.js",
       "require": "./dist/tasks.js"
     },
+    "./task-media-cleanup": {
+      "types": "./dist/task-media-cleanup.d.ts",
+      "import": "./dist/task-media-cleanup.js",
+      "require": "./dist/task-media-cleanup.js"
+    },
     "./task-history": {
       "types": "./dist/task-history.d.ts",
       "import": "./dist/task-history.js",

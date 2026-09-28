@@ -7,7 +7,6 @@ import {
   createWorkspaceTask,
   createWorkspaceTaskSuggestions,
   updateWorkspaceCalendarEvent,
-  uploadWorkspaceTaskFile,
 } from '@tuturuuu/internal-api';
 import type { WorkspaceTaskSuggestionTask } from '@tuturuuu/internal-api/tasks';
 import { getWorkspaceTaskHistory } from '@tuturuuu/internal-api/tasks';
@@ -94,6 +93,7 @@ import { useTaskDialogClose } from './task-edit-dialog/hooks/use-task-dialog-clo
 import { useTaskDialogKeyboardShortcuts } from './task-edit-dialog/hooks/use-task-dialog-keyboard-shortcuts';
 import { useTaskFormReset } from './task-edit-dialog/hooks/use-task-form-reset';
 import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
+import { useTaskMediaUpload } from './task-edit-dialog/hooks/use-task-media-upload';
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
 import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
@@ -1427,51 +1427,16 @@ export function TaskEditDialog({
     }
   }, [saveNameToDatabase]);
 
-  // Image upload handler
-  const handleImageUpload = useCallback(
-    async (file: File): Promise<string> => {
-      if (!effectiveTaskWsId) {
-        throw new Error(t('error'));
-      }
-
-      if (disabled) {
-        throw Object.assign(new Error(t('insufficient_permissions')), {
-          code: 'INSUFFICIENT_PERMISSIONS',
-        });
-      }
-
-      let uploadResult: Awaited<ReturnType<typeof uploadWorkspaceTaskFile>>;
-      try {
-        uploadResult = await uploadWorkspaceTaskFile(effectiveTaskWsId, file, {
-          taskId: isCreateMode ? undefined : task?.id,
-        });
-      } catch (error) {
-        const permissionError = error as {
-          code?: string;
-          status?: number;
-          statusCode?: number;
-          taskMediaAccess?: TaskMediaPermissionAccess | null;
-        };
-        if (
-          permissionError.code === 'TASK_MEDIA_PERMISSION_DENIED' ||
-          permissionError.status === 403 ||
-          permissionError.statusCode === 403
-        ) {
-          setTaskMediaAccess(permissionError.taskMediaAccess ?? null);
-          setShowTaskMediaPermissionDialog(true);
-        }
-        throw error;
-      }
-
-      const query = new URLSearchParams({ path: uploadResult.path });
-      if (!isCreateMode && task?.id) {
-        query.set('taskId', task.id);
-      }
-
-      return `/api/v1/workspaces/${encodeURIComponent(effectiveTaskWsId)}/storage/share?${query.toString()}`;
-    },
-    [disabled, effectiveTaskWsId, isCreateMode, task?.id, t]
-  );
+  const { upload: handleImageUpload, cleanUpDiscarded } = useTaskMediaUpload({
+    workspaceId: effectiveTaskWsId,
+    taskId: task?.id,
+    isCreateMode,
+    disabled,
+    errorMessage: t('error'),
+    permissionMessage: t('insufficient_permissions'),
+    setTaskMediaAccess,
+    setShowTaskMediaPermissionDialog,
+  });
 
   const imageUploadHandler =
     !effectiveTaskWsId || disabled ? undefined : handleImageUpload;
@@ -2120,8 +2085,16 @@ export function TaskEditDialog({
       setShowUnsavedWarning(true);
       return false;
     }
-    return handleClose();
-  }, [isCreateMode, hasUnsavedChanges, formState.name, handleClose]);
+    const closed = await handleClose();
+    if (closed && isCreateMode) void cleanUpDiscarded();
+    return closed;
+  }, [
+    isCreateMode,
+    hasUnsavedChanges,
+    formState.name,
+    handleClose,
+    cleanUpDiscarded,
+  ]);
 
   const handleConfirmCloseWithOverflow = useCallback(async () => {
     closeBlockedByOverflowRef.current = false;
@@ -2179,8 +2152,10 @@ export function TaskEditDialog({
   // Unsaved changes warning handlers
   const handleWarningDiscard = useCallback(() => {
     setShowUnsavedWarning(false);
-    handleClose();
-  }, [handleClose]);
+    void handleClose().then((closed) => {
+      if (closed) void cleanUpDiscarded();
+    });
+  }, [handleClose, cleanUpDiscarded]);
 
   const handleWarningSaveAsDraft = useCallback(() => {
     setShowUnsavedWarning(false);

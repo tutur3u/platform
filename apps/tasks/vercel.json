@@ -3,6 +3,12 @@
   "buildCommand": "cd ../.. && bun turbo:local run build --filter=@tuturuuu/tasks",
   "installCommand": "cd ../.. && bun install --frozen-lockfile --minimum-release-age=0",
   "regions": ["sin1"],
+  "crons": [
+    {
+      "path": "/api/cron/tasks/cleanup-media",
+      "schedule": "17 3 * * *"
+    }
+  ],
   "git": {
     "deploymentEnabled": false
   },
