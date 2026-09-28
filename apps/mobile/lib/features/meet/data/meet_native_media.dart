@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/features/meet/data/meet_peer_negotiation.dart';
 import 'package:mobile/features/meet/data/meet_signaling.dart';
 
@@ -350,6 +351,18 @@ class MeetNativeMedia extends ChangeNotifier {
         throw StateError('Local media capture is not sending packets');
       }
       _published.addAll(pending.map((entry) => entry.$1));
+      final hasAudio = pending.any((entry) => entry.$2.kind == 'audio');
+      final hasVideo = pending.any((entry) => entry.$2.kind == 'video');
+      MobileObservability.instance.logMeetEvent(
+        'meet_media_published',
+        media: hasAudio && hasVideo
+            ? 'audio_video'
+            : hasAudio
+            ? 'audio'
+            : hasVideo
+            ? 'video'
+            : 'unknown',
+      );
       debugPrint(
         'Meet publisher connected with ${pending.length} local tracks',
       );
@@ -573,6 +586,10 @@ class MeetNativeMedia extends ChangeNotifier {
     }
     renderer.srcObject = stream;
     remoteRenderers[owner] = renderer;
+    MobileObservability.instance.logMeetEvent(
+      'meet_media_received',
+      media: event.track.kind ?? 'unknown',
+    );
     if (event.track.kind == 'audio') {
       try {
         await Helper.setSpeakerphoneOn(true);

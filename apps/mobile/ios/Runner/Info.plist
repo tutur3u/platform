@@ -6,6 +6,10 @@
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
+		<key>FirebaseCrashlyticsCollectionEnabled</key>
+		<false/>
+		<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
+		<false/>
 		<key>CFBundleDisplayName</key>
 		<string>$(FLAVOR_APP_NAME)</string>
 		<key>CFBundleExecutable</key>

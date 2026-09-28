@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:ui';
 
 import 'package:bloc/bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -11,6 +12,7 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/config/firebase_options_selector.dart';
+import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -18,17 +20,22 @@ import 'package:mobile/features/notifications/push/push_background_handler.dart'
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppBlocObserver extends BlocObserver {
-  const AppBlocObserver();
+  const AppBlocObserver({required this.logChanges});
+
+  final bool logChanges;
 
   @override
   void onChange(BlocBase<dynamic> bloc, Change<dynamic> change) {
     super.onChange(bloc, change);
-    log('onChange(${bloc.runtimeType}, $change)');
+    if (logChanges) log('onChange(${bloc.runtimeType}, $change)');
   }
 
   @override
   void onError(BlocBase<dynamic> bloc, Object error, StackTrace stackTrace) {
-    log('onError(${bloc.runtimeType}, $error, $stackTrace)');
+    MobileObservability.instance.recordNonFatal('bloc', error, stackTrace);
+    if (logChanges) {
+      log('onError(${bloc.runtimeType}, $error, $stackTrace)');
+    }
     super.onError(bloc, error, stackTrace);
   }
 }
@@ -65,15 +72,24 @@ Future<void> bootstrap(
   );
 
   FlutterError.onError = (details) {
-    log(details.exceptionAsString(), stackTrace: details.stack);
+    MobileObservability.instance.recordFatal(
+      'flutter_framework',
+      details.exception,
+      details.stack,
+    );
   };
 
-  Bloc.observer = const AppBlocObserver();
+  Bloc.observer = AppBlocObserver(
+    logChanges: appFlavor != AppFlavor.production,
+  );
 
   // Initialize Supabase with secure storage
   try {
     await Firebase.initializeApp(options: firebaseOptionsForFlavor(appFlavor));
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    await MobileObservability.instance.initialize(appFlavor);
+    PlatformDispatcher.instance.onError = (error, stack) =>
+        MobileObservability.instance.recordFatal('platform', error, stack);
   } on Object catch (e, st) {
     log('Failed to initialize Firebase: $e', stackTrace: st);
   }
