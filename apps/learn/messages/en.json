@@ -590,7 +590,8 @@
     "marks": "Marks",
     "practice": "Practice",
     "reports": "Reports",
-    "settings": "Learn settings"
+    "settings": "Learn settings",
+    "coding": "Coding Lab"
   },
   "notifications": {
     "accept": "Accept",
@@ -937,5 +938,67 @@
     "remove_account": "Remove account",
     "switch_account": "Switch Account",
     "unknown_user": "Unknown User"
+  },
+  "coding": {
+    "eyebrow": "Algorithms and data structures",
+    "title": "Coding Lab",
+    "description": "Solve focused coding challenges and get feedback from a platform Judge machine.",
+    "challengeList": "Coding challenges",
+    "sample": "Example",
+    "input": "Input",
+    "output": "Output",
+    "editor": "Your solution",
+    "submit": "Submit solution",
+    "submitting": "Submitting…",
+    "judgeUnavailable": "Judge is not ready yet. Ask a platform administrator to enable a verified machine.",
+    "judging": "Running your solution in the sandbox…",
+    "judgeFailed": "Judge could not complete this submission. Try again later.",
+    "passed": "{passed} of {total} cases passed",
+    "case": "Case {number}",
+    "topics": {
+      "arrays": "Arrays",
+      "search": "Search",
+      "stacks": "Stacks"
+    },
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium"
+    },
+    "result": {
+      "passed": "Passed",
+      "wrong_answer": "Wrong answer",
+      "runtime_error": "Runtime error",
+      "time_limit": "Time limit",
+      "output_limit": "Output limit",
+      "compile_error": "Compilation error"
+    },
+    "challenges": {
+      "two-sum": {
+        "title": "Two Sum",
+        "prompt": "Given a list of integers and a target, print the two zero-based indices whose values add up to the target, in ascending order. Exactly one answer exists.\n\nInput: n, then n space-separated integers, then the target."
+      },
+      "binary-search": {
+        "title": "Binary Search",
+        "prompt": "Given a sorted list of distinct integers and a target, print its zero-based index or -1 if it is absent.\n\nInput: n, then n space-separated integers, then the target."
+      },
+      "balanced-brackets": {
+        "title": "Balanced Brackets",
+        "prompt": "Given a string containing only (), [], and {}, print YES if every opening bracket is closed in the correct order. Otherwise print NO."
+      }
+    },
+    "language": "Language",
+    "languages": {
+      "python": "Python",
+      "javascript": "JavaScript",
+      "typescript": "TypeScript",
+      "c": "C",
+      "cpp": "C++",
+      "java": "Java",
+      "rust": "Rust",
+      "go": "Go",
+      "ruby": "Ruby",
+      "php": "PHP"
+    },
+    "parentReadOnly": "Parents can review challenges, but only learners can submit solutions."
   }
 }
