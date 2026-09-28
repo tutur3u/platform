@@ -1,7 +1,7 @@
 import { appendFileSync } from 'node:fs';
 import {
+  cloudflareProductionTargets,
   getWorkflowDecision,
-  type VercelWorkflowTarget,
   vercelWorkflowTargets,
   type WorkspaceManifest,
 } from '../../tuturuuu.ts';
@@ -24,7 +24,7 @@ type ResolveProductionTargetsInput = {
   headSha?: string;
   refName?: string;
   rootDir: string;
-  targets?: readonly VercelWorkflowTarget[];
+  targets?: readonly { productionWorkflow: string }[];
   workspaceManifests?: WorkspaceManifest[];
 };
 
@@ -59,7 +59,7 @@ function appendStepSummary(
   appendFileSync(
     summaryPath,
     [
-      '## Production Vercel deployment plan',
+      '## Production deployment plan: Vercel and Cloudflare',
       '',
       '| Workflow | Decision | Baseline | Reason |',
       '| --- | --- | --- | --- |',
@@ -74,7 +74,7 @@ export async function resolveProductionVercelTargets({
   headSha = process.env.GITHUB_SHA,
   refName = process.env.GITHUB_REF_NAME,
   rootDir,
-  targets = vercelWorkflowTargets,
+  targets = [...vercelWorkflowTargets, ...cloudflareProductionTargets],
   workspaceManifests = readWorkspaceManifests(rootDir),
 }: ResolveProductionTargetsInput): Promise<ProductionTargetDecision[]> {
   return Promise.all(

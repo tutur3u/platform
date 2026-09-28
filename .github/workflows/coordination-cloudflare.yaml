@@ -8,7 +8,7 @@ on:
       - '.github/workflows/coordination-cloudflare.yaml'
       - 'tuturuuu.ci.ts'
   push:
-    branches: [main, production]
+    branches: [main]
     paths:
       - 'apps/coordination/**'
       - 'packages/utils/src/coordination*'
@@ -16,6 +16,7 @@ on:
       - '.github/workflows/coordination-cloudflare.yaml'
       - 'tuturuuu.ci.ts'
   workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
   deployments: read
@@ -25,6 +26,9 @@ concurrency:
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
     with:
       workflow_name: coordination-cloudflare.yaml
   validate:
@@ -49,6 +53,9 @@ jobs:
   deploy:
     needs: validate
     if: github.ref == 'refs/heads/production'
+    permissions:
+      contents: read
+      deployments: write
     runs-on: ubuntu-latest
     environment: coordination-production
     env:
@@ -74,3 +81,10 @@ jobs:
       - run: bun x --no-install wrangler deploy -c apps/coordination/wrangler.jsonc --message "$GITHUB_SHA"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+      - name: Record successful Cloudflare deployment
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYMENT_MARKER_SHA: ${{ github.sha }}
+          DEPLOYMENT_MARKER_WORKFLOW_NAME: coordination-cloudflare.yaml
+        run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts

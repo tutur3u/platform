@@ -54,15 +54,18 @@ Affected Vercel rules:
 - If changed files cannot be computed, the Vercel gate defaults open.
 
 Production pushes run `.github/workflows/vercel-production.yaml` once. That
-planner evaluates all targets from their individual deployment markers and
-calls only the affected `vercel-production-<app>.yaml` workflows as reusable
-jobs. This keeps every automatic deployment attached to the original push SHA
+planner evaluates Vercel and Cloudflare targets from their individual successful
+deployment markers and calls only affected reusable workflows. Cloudflare
+targets are Colab, Coordination, Lettin, Meet, and Parley. Meet can select both
+Vercel and Cloudflare for the same source change. Automatic deployments stay
+attached to the original push SHA
 instead of creating `workflow_dispatch` runs. Do not restore per-app `push`
-triggers or `check-ci` jobs; doing so recreates the queued preflight fan-out the
-planner replaces.
+triggers for production; doing so recreates the queued preflight fan-out the
+planner replaces. Cloudflare workflows retain their `main` and pull request
+validation triggers and can still be manually dispatched for recovery.
 
-Each reusable production workflow uses a static per-app concurrency prefix plus
-the Git ref. Do not derive this key from reusable-workflow caller context: that
+Each reusable Vercel production workflow uses a static per-app concurrency prefix
+plus the Git ref. Do not derive this key from reusable-workflow caller context: that
 can make sibling app jobs share one group, cancel one another, and surface red X
 statuses where unselected jobs should be skipped. Enable `cancel-in-progress`
 only when the inherited event is a push to `refs/heads/production`; `main`
@@ -640,7 +643,7 @@ must therefore hold a personal access token (`repo` + `workflow` scopes) owned
 by an organization admin. Granting the Actions app a ruleset bypass is **not**
 an alternative: pushes made with `GITHUB_TOKEN` do not trigger `push`
 workflows, so the `production` push would silently skip
-`Vercel Production Deployment Planner` and the next `Release Please` run and
+`Production Deployment Planner` and the next `Release Please` run and
 stall the release chain. A run that would need to push checks for the secret up
 front and fails with an actionable error, rather than discovering it after
 `bun check`.

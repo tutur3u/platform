@@ -99,8 +99,8 @@ The shared logic is organized in four pieces:
 3. **`.github/workflows/ci-check.yml`** — the reusable gate for non-Vercel
    workflows that still need an individual `should_run` output.
 4. **`.github/workflows/vercel-production.yaml`** — the single production
-   planner. It resolves every app against that app's last successful deployment
-   marker in one runner, then calls only affected production workflows as
+   planner. It resolves Vercel and Cloudflare apps against each app's last
+   successful deployment marker in one runner, then calls affected workflows as
    reusable jobs in the same commit-associated push run.
 
 ### Reusable and inline gates
@@ -163,12 +163,12 @@ same preview cancels stale work, while different preview refs remain independent
 ### The production planner
 
 A `production` push starts one `plan` job instead of starting one
-`check-ci` runner per app. `resolve-production-vercel-targets.ts` reads the
+`check-ci` runner per Vercel app. `resolve-production-vercel-targets.ts` reads the
 workspace graph once, memoizes dependency closures, resolves each target from
 its own successful deployment marker, and emits a reviewable Actions summary.
-Static reusable jobs call only the selected `vercel-production-<app>.yaml`
-workflows, so deployments stay attached to the original push SHA instead of
-appearing as detached `workflow_dispatch` runs.
+Static reusable jobs call selected Vercel and Cloudflare workflows, so
+deployments stay attached to the original push SHA instead of appearing as
+detached `workflow_dispatch` runs.
 
 Per-app production workflows remain independently protected by their GitHub
 Environment and a static per-app concurrency group. The group must include the
@@ -181,6 +181,14 @@ jobs and retain `workflow_dispatch` for deliberate operator reruns. Their
 A missing or untrusted marker fails open for that app without forcing every
 other app's gate open.
 
+Colab, Coordination, Lettin, Meet, and Parley use the same per-app marker
+baseline. Their production push deployments are called by the planner; their
+`main` and pull request validation runs remain independent. Markers are recorded
+only after deployment verification, so a failed Cloudflare deploy is selected
+again on the next production push. Coordination uses its worker and coordination
+utility paths; the other apps use their workspace dependency closure and any
+explicitly shared runtime paths.
+
 ### The decision function
 
 `getWorkflowDecision()` in `tuturuuu.ts` resolves to `should_run` using this
@@ -189,20 +197,25 @@ order of precedence:
 1. **Global toggle.** If the workflow is `false` in the `ci` map, it never runs.
 2. **`workflow_dispatch` bypass.** Manual runs always proceed (affected-path
    gating is skipped), so you can force a deploy from the Actions UI.
-3. **Non-Vercel workflows.** Workflows without an entry in
-   `vercelWorkflowTargets` fall back to their static `ci` toggle.
+3. **Other workflows.** Workflows without an entry in
+   `vercelWorkflowTargets` or `cloudflareProductionTargets` fall back to their
+   static `ci` toggle.
 4. **Unavailable change data.** If the changed-file set cannot be resolved, the
    gate stays **open** (`should_run = true`) to fail safe.
-5. **Affected-path matching (Vercel workflows).** The workflow runs only if at
+5. **Affected-path matching (deployment workflows).** The workflow runs only if at
    least one changed file matches one of:
    - a **global affecting path** (`bun.lock`, `package.json`, `turbo.json`,
-     `tuturuuu.ts`, `.github/workflows/ci-check.yml`, the shared Bun/remote-cache
-     actions, or the deterministic metadata generator);
+     the shared Bun/remote-cache actions, or Vercel's deterministic metadata
+     generator);
    - the workflow's **own** workflow file;
    - the target app's directory (e.g. `apps/web/**` for the platform target);
    - any package inside the target app's **workspace dependency closure**. The
      closure is built from `workspace:*` dependencies, so editing a shared
      package only triggers the apps that actually depend on it.
+
+Cloudflare Meet also watches its signaling Worker and meeting API paths.
+Coordination has no workspace package manifest, so its worker and coordination
+utility paths are explicit.
 
 If nothing matches, the decision is `should_run = false` and the heavy job is
 skipped.

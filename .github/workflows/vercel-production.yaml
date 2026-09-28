@@ -1,4 +1,4 @@
-name: Vercel Production Deployment Planner
+name: Production Deployment Planner
 on:
   push:
     branches:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: vercel-production-planner-${{ github.ref }}
+  group: production-deployment-planner-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'push' && github.ref == 'refs/heads/production' }}
 
 permissions:
@@ -36,6 +36,36 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node --experimental-strip-types scripts/ci/resolve-production-vercel-targets.ts --step-summary "${GITHUB_STEP_SUMMARY}"
+
+  deploy-colab-cloudflare:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'colab-cloudflare.yaml')
+    uses: ./.github/workflows/colab-cloudflare.yaml
+    secrets: inherit
+
+  deploy-coordination-cloudflare:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'coordination-cloudflare.yaml')
+    uses: ./.github/workflows/coordination-cloudflare.yaml
+    secrets: inherit
+
+  deploy-lettin-cloudflare:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'lettin-cloudflare.yaml')
+    uses: ./.github/workflows/lettin-cloudflare.yaml
+    secrets: inherit
+
+  deploy-meet-cloudflare:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'meet-cloudflare.yaml')
+    uses: ./.github/workflows/meet-cloudflare.yaml
+    secrets: inherit
+
+  deploy-parley-cloudflare:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'parley-cloudflare.yaml')
+    uses: ./.github/workflows/parley-cloudflare.yaml
+    secrets: inherit
 
   deploy-apps:
     needs: plan

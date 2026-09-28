@@ -14,7 +14,7 @@ on:
       - ".github/actions/**"
       - ".github/workflows/lettin-cloudflare.yaml"
   push:
-    branches: [main, production]
+    branches: [main]
     paths:
       - "apps/lettin/**"
       - "packages/**"
@@ -27,6 +27,7 @@ on:
       - ".github/actions/**"
       - ".github/workflows/lettin-cloudflare.yaml"
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -39,6 +40,9 @@ concurrency:
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
     with:
       workflow_name: lettin-cloudflare.yaml
   release-relevance:
@@ -109,6 +113,9 @@ jobs:
   deploy:
     needs: validate
     if: github.ref == 'refs/heads/production'
+    permissions:
+      contents: read
+      deployments: write
     runs-on: ubuntu-latest
     environment: lettin-production
     env:
@@ -165,3 +172,10 @@ jobs:
         env:
           EXPECTED_VERSION_TAG: ${{ github.sha }}
         run: bun apps/lettin/scripts/verify-deployment.ts
+      - name: Record successful Cloudflare deployment
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYMENT_MARKER_SHA: ${{ github.sha }}
+          DEPLOYMENT_MARKER_WORKFLOW_NAME: lettin-cloudflare.yaml
+        run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts

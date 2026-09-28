@@ -152,7 +152,7 @@ test('production Vercel planner resolves once and calls affected apps in the pus
   assert.match(workflow, /\n {2}workflow_dispatch:/);
   assert.ok(
     workflow.includes(
-      `\nconcurrency:\n  group: vercel-production-planner-\${{ github.ref }}\n  ${PRODUCTION_PUSH_CANCEL_PREDICATE}\n`
+      `\nconcurrency:\n  group: production-deployment-planner-\${{ github.ref }}\n  ${PRODUCTION_PUSH_CANCEL_PREDICATE}\n`
     ),
     'the production planner must not be canceled by main commits or manual recovery runs'
   );
@@ -182,6 +182,35 @@ test('production Vercel planner resolves once and calls affected apps in the pus
         `if: contains\\(fromJSON\\(needs\\.plan\\.outputs\\.workflows_json\\), '${productionWorkflow.replaceAll('.', '\\.')}'\\)`
       ),
       `${productionWorkflow} must stay skipped when the planner does not select it`
+    );
+  }
+  for (const appId of ['colab', 'coordination', 'lettin', 'meet', 'parley']) {
+    const productionWorkflow = `${appId}-cloudflare.yaml`;
+    const reusableJob = readWorkflowJobBlock(
+      workflowName,
+      `deploy-${appId}-cloudflare`
+    );
+    const cloudflareWorkflow = fs.readFileSync(
+      path.join(repoRoot, '.github', 'workflows', productionWorkflow),
+      'utf8'
+    );
+
+    assert.match(
+      reusableJob,
+      new RegExp(`uses: \\.\\/\\.github\\/workflows\\/${productionWorkflow}`)
+    );
+    assert.match(
+      reusableJob,
+      new RegExp(
+        `if: contains\\(fromJSON\\(needs\\.plan\\.outputs\\.workflows_json\\), '${productionWorkflow}'\\)`
+      )
+    );
+    assert.match(cloudflareWorkflow, /\n {2}workflow_call:/);
+    assert.doesNotMatch(cloudflareWorkflow, /branches: \[main, production\]/);
+    assert.match(cloudflareWorkflow, /DEPLOYMENT_MARKER_WORKFLOW_NAME:/);
+    assert.match(
+      cloudflareWorkflow,
+      /\n {2}deploy:\n(?:.|\n)*? {4}permissions:\n {6}contents: read\n {6}deployments: write\n/
     );
   }
   assert.doesNotMatch(
@@ -1299,7 +1328,7 @@ test('Supabase production migration requires production platform deploy and succ
 
   assert.match(
     workflow,
-    /workflows:\n {6}- "Vercel Production Deployment Planner"\n {6}- "Supabase Staging Migration"\n/
+    /workflows:\n {6}- "Production Deployment Planner"\n {6}- "Supabase Staging Migration"\n/
   );
   assert.match(workflow, /\n {4}branches:\n {6}- production\n/);
   assert.match(workflow, /\n {6}- main\n/);
@@ -1315,7 +1344,7 @@ test('Supabase production migration requires production platform deploy and succ
   );
   assert.match(
     evaluateJob,
-    /TRIGGER_WORKFLOW" = "Vercel Production Deployment Planner"/
+    /TRIGGER_WORKFLOW" = "Production Deployment Planner"/
   );
   assert.match(evaluateJob, /TRIGGER_WORKFLOW" = "Supabase Staging Migration"/);
   assert.match(
