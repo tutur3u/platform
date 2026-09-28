@@ -45,18 +45,7 @@ class MeetNativeMedia extends ChangeNotifier {
 
   Future<void> setAudioEnabled({required bool enabled}) => _serialize(() async {
     if (enabled && _audio == null) {
-      failureStage = 'capture';
-      final stream = await navigator.mediaDevices.getUserMedia({
-        'audio': true,
-        'video': false,
-      });
-      _streams.add(stream);
-      _audio = stream.getAudioTracks().first;
-      try {
-        await Helper.setSpeakerphoneOn(true);
-      } on Object {
-        // Audio capture can still work when the OS keeps its current route.
-      }
+      await _captureAudio();
     }
     _audio?.enabled = enabled;
     audioEnabled = enabled;
@@ -67,21 +56,7 @@ class MeetNativeMedia extends ChangeNotifier {
 
   Future<void> setVideoEnabled({required bool enabled}) => _serialize(() async {
     if (enabled && _video == null) {
-      failureStage = 'capture';
-      final stream = await navigator.mediaDevices.getUserMedia({
-        'audio': false,
-        'video': {
-          'facingMode': 'user',
-          // flutter_webrtc's iOS bridge reads numeric values here; numeric
-          // `ideal` values are ignored and can select an unsuitable default.
-          'width': 1280,
-          'height': 720,
-          'frameRate': 24,
-        },
-      });
-      _streams.add(stream);
-      _video = stream.getVideoTracks().first;
-      localRenderer.srcObject = stream;
+      await _captureVideo();
     }
     _video?.enabled = enabled;
     videoEnabled = enabled;
@@ -112,8 +87,29 @@ class MeetNativeMedia extends ChangeNotifier {
     _admitted = admitted;
     _remoteTracks = tracks;
     if (!_admitted) return;
+    Object? captureFailure;
+    if (_participants >= 2) {
+      if (audioEnabled && _audio == null) {
+        try {
+          await _captureAudio();
+        } on Object catch (error) {
+          captureFailure = error;
+        }
+      }
+      if (videoEnabled && _video == null) {
+        try {
+          await _captureVideo();
+        } on Object catch (error) {
+          captureFailure ??= error;
+        }
+      }
+    }
     await _publishPending();
     await _subscribePending();
+    if (captureFailure != null) {
+      failureStage = 'capture';
+      throw StateError('Local media capture failed: $captureFailure');
+    }
     failureStage = null;
   });
 
@@ -157,6 +153,69 @@ class MeetNativeMedia extends ChangeNotifier {
     }
     _remoteStreams.clear();
     _remoteTrackIds.clear();
+    notifyListeners();
+  }
+
+  Future<void> _captureAudio() async {
+    failureStage = 'capture';
+    final stream = await navigator.mediaDevices.getUserMedia({
+      'audio': true,
+      'video': false,
+    });
+    _streams.add(stream);
+    _audio = stream.getAudioTracks().first;
+    try {
+      await Helper.setSpeakerphoneOn(true);
+    } on Object {
+      // Audio capture can still work when the OS keeps its current route.
+    }
+  }
+
+  Future<void> _captureVideo() async {
+    failureStage = 'capture';
+    MediaStream stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        'audio': false,
+        'video': {
+          'facingMode': 'user',
+          'width': 1280,
+          'height': 720,
+          'frameRate': 24,
+        },
+      });
+    } on Object {
+      // A device may support the front camera without this exact capture mode.
+      stream = await navigator.mediaDevices.getUserMedia({
+        'audio': false,
+        'video': {'facingMode': 'user'},
+      });
+    }
+    _streams.add(stream);
+    _video = stream.getVideoTracks().first;
+    localRenderer.srcObject = stream;
+  }
+
+  Future<void> _discardLocalCapture({required Set<String> kinds}) async {
+    final audioId = kinds.contains('audio') ? _audio?.id : null;
+    final videoId = kinds.contains('video') ? _video?.id : null;
+    if (audioId != null) _audio = null;
+    if (videoId != null) {
+      _video = null;
+      localRenderer.srcObject = null;
+    }
+    final streams = _streams.where((stream) {
+      return stream.getTracks().any(
+        (track) => track.id == audioId || track.id == videoId,
+      );
+    }).toList();
+    _streams.removeWhere(streams.contains);
+    for (final stream in streams) {
+      for (final track in stream.getTracks()) {
+        await track.stop();
+      }
+      await stream.dispose();
+    }
     notifyListeners();
   }
 
@@ -220,6 +279,7 @@ class MeetNativeMedia extends ChangeNotifier {
     if (pending.isEmpty) return;
     debugPrint('Meet publisher starting ${pending.length} local tracks');
     final (pc, sessionId) = await _openSession(publish: true);
+    var stalledKinds = <String>{};
     try {
       failureStage = 'publish';
       if (await pc.getRemoteDescription() != null) {
@@ -278,14 +338,60 @@ class MeetNativeMedia extends ChangeNotifier {
       );
       failureStage = 'connect';
       await waitForMeetPeerConnection(pc);
+      final stalled = await _waitForOutgoingPackets(
+        transceivers.map((entry) => (entry.$1, entry.$3.sender)),
+      );
+      if (stalled.isNotEmpty) {
+        stalledKinds = {
+          for (final (name, track, _) in transceivers)
+            if (stalled.contains(name)) track.kind ?? '',
+        };
+        failureStage = 'send';
+        throw StateError('Local media capture is not sending packets');
+      }
       _published.addAll(pending.map((entry) => entry.$1));
       debugPrint(
         'Meet publisher connected with ${pending.length} local tracks',
       );
     } on Object {
       await _resetPublisher();
+      if (failureStage == 'send') {
+        await _discardLocalCapture(kinds: stalledKinds);
+      }
       rethrow;
     }
+  }
+
+  Future<Set<String>> _waitForOutgoingPackets(
+    Iterable<(String, RTCRtpSender)> senders,
+  ) async {
+    final stalled = {for (final (name, _) in senders) name};
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
+    do {
+      for (final (name, sender) in senders) {
+        if (!stalled.contains(name)) continue;
+        final stats = await sender.getStats().timeout(
+          const Duration(seconds: 2),
+        );
+        final packets = stats
+            .where((entry) => entry.type == 'outbound-rtp')
+            .fold<int>(0, (total, entry) {
+              final value = entry.values['packetsSent'];
+              return total +
+                  (value is num ? value.toInt() : int.tryParse('$value') ?? 0);
+            });
+        if (packets > 0) stalled.remove(name);
+      }
+      if (stalled.isEmpty) return stalled;
+      if (DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      }
+    } while (DateTime.now().isBefore(deadline));
+    debugPrint(
+      'Meet publisher connected but did not send ${stalled.join(',')}; '
+      'audioMuted=${_audio?.muted} videoMuted=${_video?.muted}',
+    );
+    return stalled;
   }
 
   Future<void> _subscribePending() async {
@@ -395,15 +501,16 @@ class MeetNativeMedia extends ChangeNotifier {
         const Duration(seconds: 2),
       );
       final outbound = stats.where((entry) => entry.type == 'outbound-rtp');
-      final packets = outbound.fold<int>(
-        0,
-        (total, entry) =>
-            total + ((entry.values['packetsSent'] as num?)?.toInt() ?? 0),
-      );
+      final packets = outbound.fold<int>(0, (total, entry) {
+        final value = entry.values['packetsSent'];
+        return total +
+            (value is num ? value.toInt() : int.tryParse('$value') ?? 0);
+      });
       debugPrint(
         'Meet publisher health: state=${await publisher.getConnectionState()} '
         'outboundStreams=${outbound.length} packetsSent=$packets '
-        'audioEnabled=${_audio?.enabled} videoEnabled=${_video?.enabled}',
+        'audioEnabled=${_audio?.enabled} audioMuted=${_audio?.muted} '
+        'videoEnabled=${_video?.enabled} videoMuted=${_video?.muted}',
       );
     } on Object {
       // Diagnostics must never interrupt a media retry.

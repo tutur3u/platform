@@ -1,4 +1,3 @@
-// biome-ignore-all lint/a11y/noNoninteractiveTabindex: long meeting details must be keyboard scrollable
 'use client';
 
 import {
@@ -103,9 +102,9 @@ export function Lobby({
   }, [stream]);
 
   return (
-    <div className="grid h-dvh min-h-0 place-items-center overflow-hidden bg-background px-4 py-3 sm:py-5">
-      <div className="grid max-h-full min-h-0 w-full max-w-5xl grid-rows-[minmax(0,auto)_minmax(0,1fr)] gap-4 md:h-full md:max-h-[32rem] md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] md:grid-rows-1 md:items-center md:gap-6">
-        <div className="relative aspect-video max-h-[38dvh] overflow-hidden rounded-2xl bg-foreground/5 ring-1 ring-border md:max-h-[min(70dvh,28rem)] md:justify-self-stretch">
+    <div className="grid min-h-dvh items-center overflow-y-auto bg-background px-4 py-6 sm:px-6 lg:px-10">
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-7 lg:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)] lg:gap-10">
+        <div className="relative aspect-video w-full min-w-0 overflow-hidden rounded-2xl bg-foreground/5 ring-1 ring-border">
           {stream ? (
             <video
               autoPlay
@@ -168,14 +167,10 @@ export function Lobby({
           </div>
         </div>
 
-        <div className="flex max-h-full min-h-0 min-w-0 flex-col">
-          <section
-            aria-labelledby="meeting-details-title"
-            className="min-h-0 overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            tabIndex={0}
-          >
+        <div className="flex min-w-0 flex-col">
+          <section aria-labelledby="meeting-details-title" className="min-w-0">
             <h1
-              className="text-balance font-semibold text-2xl tracking-tight"
+              className="text-balance font-semibold text-2xl tracking-tight sm:text-3xl"
               id="meeting-details-title"
             >
               {meetingName}

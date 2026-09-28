@@ -155,7 +155,7 @@ function ParticipantTileImpl({
       ref={tileRef}
       data-testid={`participant-${participant.userId}-${kind}`}
       className={cn(
-        'group relative isolate min-h-0 overflow-hidden rounded-2xl bg-dynamic-surface ring-1 ring-border',
+        'group relative isolate min-h-0 overflow-hidden rounded-2xl bg-muted/40 ring-1 ring-border',
         isSpeaking && 'ring-2 ring-dynamic-green',
         handRaised &&
           kind === 'camera' &&
@@ -181,7 +181,7 @@ function ParticipantTileImpl({
         )}
       />
       {!showVideo && (
-        <div className="absolute inset-0 grid size-full place-items-center bg-dynamic-surface">
+        <div className="absolute inset-0 grid size-full place-items-center bg-muted/40">
           {MEETING_APP === 'parley' && participant.assistantAudio ? (
             <LiveAvatar size={120} />
           ) : (

@@ -7864,6 +7864,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetMediaCaptureFailed => 'Microphone or camera could not start. Check app permissions.';
 
   @override
+  String get meetMediaSendFailed => 'Your microphone or camera connected but is not sending media. Check the device input, then retry.';
+
+  @override
   String get meetMediaSessionFailed => 'The call could not start a media session.';
 
   @override
