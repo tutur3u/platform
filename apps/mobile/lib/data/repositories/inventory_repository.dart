@@ -2,11 +2,14 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 part 'inventory_repository_cache.dart';
+part 'inventory_repository_product_mutations.dart';
 
 class InventoryRepository {
   InventoryRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
@@ -137,112 +140,75 @@ class InventoryRepository {
     int page = 1,
     int pageSize = 20,
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryMap(
-      namespace: 'products',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      tags: const ['inventory:catalog'],
-      params: {
-        'query': query?.trim() ?? '',
-        'status': status,
-        'page': '$page',
-        'pageSize': '$pageSize',
-      },
-      fetch: () => _api.getJson(
-        InventoryEndpoints.products(
-          wsId,
-          query: query,
-          status: status,
-          page: page,
-          pageSize: pageSize,
-        ),
-      ),
-      decode: (response) => (
-        data: (response['data'] as List<dynamic>? ?? const <dynamic>[])
-            .whereType<Map<String, dynamic>>()
-            .map(InventoryProduct.fromJson)
-            .toList(growable: false),
-        count: (response['count'] as num?)?.toInt() ?? 0,
-      ),
+  }) async {
+    final result =
+        await _cachedInventoryMap<({List<InventoryProduct> data, int count})>(
+          namespace: 'products',
+          wsId: wsId,
+          forceRefresh: forceRefresh,
+          tags: const ['inventory:catalog'],
+          params: {
+            'query': query?.trim() ?? '',
+            'status': status,
+            'page': '$page',
+            'pageSize': '$pageSize',
+          },
+          fetch: () => _api.getJson(
+            InventoryEndpoints.products(
+              wsId,
+              query: query,
+              status: status,
+              page: page,
+              pageSize: pageSize,
+            ),
+          ),
+          decode: (response) => (
+            data: (response['data'] as List<dynamic>? ?? const <dynamic>[])
+                .whereType<Map<String, dynamic>>()
+                .map(InventoryProduct.fromJson)
+                .toList(growable: false),
+            count: (response['count'] as num?)?.toInt() ?? 0,
+          ),
+        );
+    final data = overlayPendingProducts(
+      wsId,
+      result.data,
+      await OfflineMutationQueue.instance.listPending(),
+      query: query?.trim(),
+      includeCreates: page == 1 && status == 'active',
     );
+    return (data: data, count: result.count + data.length - result.data.length);
   }
 
   Future<InventoryProduct?> getProduct(
     String wsId,
     String productId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryMap(
-      namespace: 'product',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      tags: const ['inventory:catalog'],
-      params: {'productId': productId},
-      fetch: () => _api.getJson(InventoryEndpoints.product(wsId, productId)),
-      decode: InventoryProduct.fromJson,
-    );
-  }
-
-  Future<void> createProduct({
-    required String wsId,
-    required String name,
-    required String categoryId,
-    required String ownerId,
-    required List<InventoryStockEntry> inventory,
-    String? manufacturerId,
-    String? description,
-    String? usage,
-    String? financeCategoryId,
   }) async {
-    await _api.postJson(
-      InventoryEndpoints.createProduct(wsId),
-      _buildProductPayload(
-        name: name,
-        categoryId: categoryId,
-        ownerId: ownerId,
-        inventory: inventory,
-        manufacturerId: manufacturerId,
-        description: description,
-        usage: usage,
-        financeCategoryId: financeCategoryId,
-      ),
-    );
-    await _invalidateInventory(wsId, const [
-      'inventory:overview',
-      'inventory:catalog',
-    ]);
-  }
-
-  Future<void> updateProduct({
-    required String wsId,
-    required String productId,
-    required String name,
-    required String categoryId,
-    required String ownerId,
-    required List<InventoryStockEntry> inventory,
-    String? manufacturerId,
-    String? description,
-    String? usage,
-    String? financeCategoryId,
-  }) async {
-    await _api.patchJson(
-      InventoryEndpoints.product(wsId, productId),
-      _buildProductPayload(
-        name: name,
-        categoryId: categoryId,
-        ownerId: ownerId,
-        inventory: inventory,
-        manufacturerId: manufacturerId,
-        description: description,
-        usage: usage,
-        financeCategoryId: financeCategoryId,
-      ),
-    );
-    await _invalidateInventory(wsId, const [
-      'inventory:overview',
-      'inventory:catalog',
-    ]);
+    InventoryProduct? product;
+    ApiException? offlineError;
+    try {
+      product = await _cachedInventoryMap(
+        namespace: 'product',
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+        tags: const ['inventory:catalog'],
+        params: {'productId': productId},
+        fetch: () => _api.getJson(InventoryEndpoints.product(wsId, productId)),
+        decode: InventoryProduct.fromJson,
+      );
+    } on ApiException catch (error) {
+      if (error.statusCode != 0) rethrow;
+      offlineError = error;
+    }
+    final rows = overlayPendingProducts(wsId, [
+      if (product != null) product,
+    ], await OfflineMutationQueue.instance.listPending());
+    for (final row in rows) {
+      if (row.id == productId) return row;
+    }
+    if (offlineError != null) throw offlineError;
+    return product;
   }
 
   Future<List<InventoryProduct>> getProductOptions(

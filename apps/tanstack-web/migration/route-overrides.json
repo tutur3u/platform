@@ -3,7 +3,7 @@
     "api:/api/v1/workspaces/:wsId/notes:apps/web/src/app/api/v1/workspaces/[wsId]/notes/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class Notes list and create with workspace membership and creator scoping, including mobile app-session auth. Rust GET retains Supabase JWT parity and falls through for app sessions; POST remains on Next.js."
+      "note": "First-class Notes list and create with workspace membership and creator scoping, including mobile app-session auth. POST accepts a stable client UUID and returns an existing creator-owned note on replay for offline mobile creation. Rust GET retains Supabase JWT parity and falls through for app sessions; POST remains on Next.js."
     },
     "api:/api/v1/workspaces/:wsId/notes/:noteId:apps/web/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/route.ts": {
       "status": "legacy-next",
@@ -2513,6 +2513,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Private-by-default profile activity; viewer and subject membership, explicit workspace consent, no personal aggregates, bounded pagination, and no-store responses. Next-owned pending Rust parity."
+    },
+    "api:/api/v1/workspaces/:wsId/mobile-activity:apps/web/src/app/api/v1/workspaces/[wsId]/mobile-activity/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Mobile profile activity: authenticated workspace member, private user-owned tasks, transactions and notes, plus clearly scoped workspace calendar events. Rust parity pending."
     },
     "api:/api/v1/auth/cross-app-return:apps/web/src/app/api/v1/auth/cross-app-return/route.ts": {
       "status": "legacy-next",

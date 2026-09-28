@@ -51,7 +51,7 @@ extension _ShellPageInteractions on _ShellPageState {
           'current=${_normalizeRouteLocation(widget.matchedLocation)}',
     );
     if (key == _ShellPageState._backToRootKey) {
-      await _returnToAppOrigin();
+      await _runBackNavigation(context);
       return;
     }
 

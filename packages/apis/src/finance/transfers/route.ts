@@ -7,11 +7,16 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
 } from '../request-access';
+import {
+  MigrateTransferSchema,
+  TransferSchema,
+  UpdateTransferSchema,
+} from './schemas';
+import { checkTransferReplay } from './transfer-replay';
 
 interface Params {
   params: Promise<{
@@ -32,48 +37,6 @@ function notifyTransferIntegrityIncident(incident: TransferIntegrityIncident) {
   process.emit('finance-transfer-integrity-incident', incident);
 }
 
-const TransferSchema = z
-  .object({
-    origin_wallet_id: z.guid(),
-    destination_wallet_id: z.guid(),
-    amount: z.number().positive(),
-    destination_amount: z.number().positive().optional(),
-    description: z.string().optional(),
-    taken_at: z.union([z.string(), z.date()]),
-    report_opt_in: z.boolean().optional(),
-    tag_ids: z.array(z.guid()).optional(),
-  })
-  .refine((data) => data.origin_wallet_id !== data.destination_wallet_id, {
-    message: 'Source and destination wallets must be different',
-    path: ['destination_wallet_id'],
-  });
-
-const UpdateTransferSchema = z
-  .object({
-    origin_transaction_id: z.guid(),
-    destination_transaction_id: z.guid(),
-    origin_wallet_id: z.guid(),
-    destination_wallet_id: z.guid(),
-    amount: z.number().positive(),
-    destination_amount: z.number().positive().optional(),
-    description: z.string().optional(),
-    taken_at: z.union([z.string(), z.date()]),
-    report_opt_in: z.boolean().optional(),
-    tag_ids: z.array(z.guid()).optional(),
-  })
-  .refine(
-    (data) => data.origin_transaction_id !== data.destination_transaction_id,
-    {
-      message: 'Source and destination transactions must be different',
-      path: ['destination_transaction_id'],
-    }
-  )
-  .refine((data) => data.origin_wallet_id !== data.destination_wallet_id, {
-    message: 'Source and destination wallets must be different',
-    path: ['destination_wallet_id'],
-  });
-
-const MigrateTransferSchema = UpdateTransferSchema;
 const CONFIDENTIAL_TRANSACTION_SELECT =
   'id, wallet_id, is_amount_confidential, is_description_confidential, is_category_confidential';
 
@@ -792,10 +755,19 @@ export async function POST(
     ? data.destination_amount!
     : data.amount;
 
+  const replayResponse = await checkTransferReplay({
+    context: access.context,
+    data,
+  });
+  if (replayResponse) return replayResponse;
+
   // Create "from" transaction (negative amount = outflow)
   const { data: fromTx, error: fromErr } = await sbAdmin
     .from('wallet_transactions')
     .insert({
+      ...(data.client_origin_transaction_id && {
+        id: data.client_origin_transaction_id,
+      }),
       amount: -Math.abs(data.amount),
       description: data.description,
       wallet_id: data.origin_wallet_id,
@@ -803,6 +775,7 @@ export async function POST(
       taken_at: takenAt,
       report_opt_in: data.report_opt_in ?? false,
       creator_id: wsUser.virtual_user_id,
+      platform_creator_id: user.id,
     })
     .select('id')
     .single();
@@ -819,6 +792,9 @@ export async function POST(
   const { data: toTx, error: toErr } = await sbAdmin
     .from('wallet_transactions')
     .insert({
+      ...(data.client_destination_transaction_id && {
+        id: data.client_destination_transaction_id,
+      }),
       amount: Math.abs(destinationAmount),
       description: data.description,
       wallet_id: data.destination_wallet_id,
@@ -826,6 +802,7 @@ export async function POST(
       taken_at: takenAt,
       report_opt_in: data.report_opt_in ?? false,
       creator_id: wsUser.virtual_user_id,
+      platform_creator_id: user.id,
     })
     .select('id')
     .single();

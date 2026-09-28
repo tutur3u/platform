@@ -4221,6 +4221,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeWallets => 'Wallets';
 
   @override
+  String financeOverviewWalletCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallets',
+      one: '1 wallet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String financeOverviewRecentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count recent transactions',
+      one: '1 recent transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get financeTransactions => 'Transactions';
 
   @override
@@ -5658,6 +5680,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsFinanceAmounts => 'Finance amounts';
+
+  @override
+  String get settingsHaptics => 'Haptic feedback';
 
   @override
   String get settingsFinanceAmountsDescription => 'Show or hide balances and transaction amounts across finance screens.';
@@ -8692,6 +8717,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profilePrivateActivity => 'Your private activity';
 
   @override
+  String get profileTimelineTitle => 'Activity timeline';
+
+  @override
+  String get profileTimelineToday => 'Today';
+
+  @override
+  String get profileTimelineYesterday => 'Yesterday';
+
+  @override
+  String get profileTimelineEmpty => 'No recent activity in this workspace';
+
+  @override
+  String profileTimelineTasks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Created $count tasks',
+      one: 'Created 1 task',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String profileTimelineTransactions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Created $count transactions',
+      one: 'Created 1 transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String profileTimelineNotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Added $count notes',
+      one: 'Added 1 note',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String profileTimelineWorkspaceEvents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count workspace events added',
+      one: '1 workspace event added',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String profileTrackedMinutes(int minutes) {
     return '$minutes min tracked';
   }
@@ -9228,4 +9309,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cacheCategoryOther => 'Other data';
+
+  @override
+  String get offlineEditQueued => 'Waiting to sync';
+
+  @override
+  String get offlineEditConflict => 'Needs review before syncing';
+
+  @override
+  String get offlineEditFailed => 'Sync failed';
+
+  @override
+  String get offlineChangesTitle => 'Offline changes';
+
+  @override
+  String get offlineChangesEmpty => 'Everything is synced';
+
+  @override
+  String get offlineChangesReview => 'Check this action on another device before retrying. It may have reached the server already.';
+
+  @override
+  String get offlineChangesRetry => 'Retry';
+
+  @override
+  String get offlineChangesDiscard => 'Discard local change';
 }

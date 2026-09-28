@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_cache.dart';
 import 'package:mobile/features/mail/data/mail_media_cache.dart';
+import 'package:mobile/features/mail/data/mail_pending_overlay.dart';
 
 /// Uses the same authenticated, workspace-scoped contract as apps/mail.
 class MailRepository {
@@ -23,16 +26,30 @@ class MailRepository {
       _cache.saveSnapshot(wsId, 'view-state', view);
   Future<void> denyAccess(String wsId) => _cache.denyAccess(wsId);
 
-  Map<String, dynamic>? cachedList(String wsId, String path) =>
-      _cache.peek(wsId, path);
+  Map<String, dynamic>? cachedList(String wsId, String path) {
+    final cached = _cache.peek(wsId, path);
+    if (cached == null) return null;
+    final segments = Uri.parse(path).pathSegments;
+    final mailboxIndex = segments.indexOf('mailboxes');
+    if (mailboxIndex < 0 || mailboxIndex + 1 >= segments.length) return cached;
+    return overlayPendingMail(
+      workspaceId: wsId,
+      mailboxId: segments[mailboxIndex + 1],
+      path: path,
+      source: cached,
+      pending: OfflineMutationQueue.instance.pending.value,
+    );
+  }
 
   static String workspacePath(String wsId) =>
       '/api/v1/workspaces/${Uri.encodeComponent(wsId)}/mail';
   static String mailboxPath(String wsId, String mailboxId) =>
       '${workspacePath(wsId)}/mailboxes/${Uri.encodeComponent(mailboxId)}';
 
-  Future<Map<String, dynamic>> bootstrap(String wsId) =>
-      _api.getJson('${workspacePath(wsId)}/bootstrap');
+  Future<Map<String, dynamic>> bootstrap(String wsId) {
+    final path = '${workspacePath(wsId)}/bootstrap';
+    return _cache.read(wsId, path, () => _api.getJson(path));
+  }
 
   Future<Map<String, dynamic>> list(
     String wsId,
@@ -43,7 +60,7 @@ class MailRepository {
     String? label,
     String? folderId,
     bool forceRefresh = false,
-  }) {
+  }) async {
     final kind = folder == 'drafts' || folder == 'sent'
         ? 'messages'
         : 'threads';
@@ -58,11 +75,32 @@ class MailRepository {
       },
     ).query;
     final path = '${mailboxPath(wsId, mailboxId)}/$kind?$params';
-    return _cache.read(
-      wsId,
-      path,
-      () => _api.getJson(path),
-      forceRefresh: forceRefresh,
+    Map<String, dynamic> result;
+    try {
+      result = await _cache.read(
+        wsId,
+        path,
+        () => _api.getJson(path),
+        forceRefresh: forceRefresh,
+      );
+    } on ApiException catch (error) {
+      if (error.statusCode != 0 ||
+          !OfflineMutationQueue.instance.pending.value.any(
+            (item) => item.feature == 'mail' && item.workspaceId == wsId,
+          )) {
+        rethrow;
+      }
+      result = {
+        kind: <Object>[],
+        'pagination': {'hasMore': false, 'total': 0},
+      };
+    }
+    return overlayPendingMail(
+      workspaceId: wsId,
+      mailboxId: mailboxId,
+      path: path,
+      source: result,
+      pending: OfflineMutationQueue.instance.pending.value,
     );
   }
 
@@ -71,12 +109,10 @@ class MailRepository {
     String mailboxId,
     String id, {
     required bool thread,
-  }) {
+  }) async {
     final path =
         '${mailboxPath(wsId, mailboxId)}/${thread ? 'threads' : 'messages'}/${Uri.encodeComponent(id)}';
-    // Editable drafts always use the network.
-    if (!thread) return _api.getJson(path);
-    return _cache.read(wsId, path, () => _api.getJson(path));
+    return await _cache.read(wsId, path, () => _api.getJson(path));
   }
 
   Future<Map<String, dynamic>?> cachedThread(
@@ -113,13 +149,24 @@ class MailRepository {
   }) async {
     final path =
         '${mailboxPath(wsId, mailboxId)}/${thread ? 'threads' : 'messages'}/${Uri.encodeComponent(id)}';
+    final payload = <String, dynamic>{
+      'action': action,
+      if (snoozedUntil != null)
+        'snoozedUntil': snoozedUntil.toUtc().toIso8601String(),
+    };
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: 'PATCH',
+      path: thread ? path : '$path/state',
+      workspaceId: wsId,
+      payload: payload,
+      entityId: id,
+    )) {
+      return;
+    }
     await _cache.mutate(
       wsId,
-      () => _api.patchJson(thread ? path : '$path/state', {
-        'action': action,
-        if (snoozedUntil != null)
-          'snoozedUntil': snoozedUntil.toUtc().toIso8601String(),
-      }),
+      () => _api.patchJson(thread ? path : '$path/state', payload),
     );
     if (thread && (action == 'archive' || action == 'trash')) {
       await _mediaCache.clearThread(wsId, mailboxId, id);
@@ -131,41 +178,124 @@ class MailRepository {
     String mailboxId,
     Map<String, dynamic> payload, {
     String? draftId,
-  }) => draftId == null
-      ? _cache.mutate(
-          wsId,
-          () =>
-              _api.postJson('${mailboxPath(wsId, mailboxId)}/drafts', payload),
-        )
-      : _cache.mutate(
-          wsId,
-          () => _api.patchJson(
-            '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}',
-            payload,
-          ),
-        );
+  }) async {
+    final id = draftId ?? newLocalMutationId();
+    final path = draftId == null
+        ? '${mailboxPath(wsId, mailboxId)}/drafts'
+        : '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(id)}';
+    final queuedPayload = draftId == null
+        ? <String, dynamic>{...payload, 'clientMessageId': id}
+        : payload;
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: draftId == null ? 'POST' : 'PATCH',
+      path: path,
+      workspaceId: wsId,
+      payload: queuedPayload,
+      entityId: id,
+      replaySafe: draftId == null,
+    )) {
+      final message = {
+        'id': id,
+        ...payload,
+        'status': 'draft',
+        'recipients': [
+          for (final kind in ['to', 'cc', 'bcc'])
+            for (final address in payload[kind] as List<dynamic>? ?? [])
+              {'kind': kind, 'address': address},
+        ],
+        'attachments': <Object>[],
+      };
+      await _cache.saveSnapshot(
+        wsId,
+        '${mailboxPath(wsId, mailboxId)}/messages/${Uri.encodeComponent(id)}',
+        message,
+      );
+      return {'message': message};
+    }
+    final result = await _cache.mutate(
+      wsId,
+      () => draftId == null
+          ? _api.postJson(path, payload)
+          : _api.patchJson(path, payload),
+    );
+    final message = result['message'];
+    if (message is Map<String, dynamic> && message['id'] is String) {
+      await _cache.saveSnapshot(
+        wsId,
+        '${mailboxPath(wsId, mailboxId)}/messages/${Uri.encodeComponent(message['id'] as String)}',
+        message,
+      );
+    }
+    return result;
+  }
 
   Future<void> deleteDraft(
     String wsId,
     String mailboxId,
     String draftId,
   ) async {
-    await _cache.mutate(
-      wsId,
-      () => _api.deleteJson(
-        '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}',
-      ),
-    );
+    final path =
+        '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}';
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: draftId,
+    )) {
+      return;
+    }
+    await _cache.mutate(wsId, () => _api.deleteJson(path));
   }
 
   Future<Map<String, dynamic>> send(
     String wsId,
     String mailboxId,
     Map<String, dynamic> payload,
-  ) => _cache.mutate(
-    wsId,
-    () => _api.postJson('${mailboxPath(wsId, mailboxId)}/messages', payload),
-  );
+  ) async {
+    final id = payload['draftId'] as String? ?? newLocalMutationId();
+    final path = '${mailboxPath(wsId, mailboxId)}/messages';
+    final queuedPayload = {
+      ...payload,
+      if (payload['draftId'] == null) 'clientMessageId': id,
+    };
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: queuedPayload,
+      entityId: id,
+      replaySafe: true,
+    )) {
+      return {
+        'message': {'id': id, 'status': 'queued'},
+      };
+    }
+    try {
+      return await _cache.mutate(
+        wsId,
+        () => _api.postJson(path, queuedPayload),
+      );
+    } on ApiException catch (error) {
+      if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+        error: error,
+        feature: 'mail',
+        method: 'POST',
+        path: path,
+        workspaceId: wsId,
+        payload: queuedPayload,
+        entityId: id,
+        replaySafe: true,
+      )) {
+        return {
+          'message': {'id': id, 'status': 'queued'},
+        };
+      }
+      rethrow;
+    }
+  }
 
   Future<Map<String, dynamic>> uploadAttachment(
     String wsId,
@@ -173,13 +303,40 @@ class MailRepository {
     String draftId,
     Uint8List bytes,
     String filename,
-  ) => _api.sendMultipart(
-    'POST',
-    '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}/attachments',
-    files: [
-      ApiMultipartFile.bytes(field: 'file', bytes: bytes, filename: filename),
-    ],
-  );
+  ) async {
+    final path =
+        '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}/attachments';
+    final id = newLocalMutationId();
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: 'MULTIPART_POST',
+      path: path,
+      workspaceId: wsId,
+      payload: {
+        'clientAttachmentId': id,
+        'filename': filename,
+        'bytes': base64Encode(bytes),
+      },
+      entityId: draftId,
+    )) {
+      return {
+        'attachment': {
+          'id': id,
+          'filename': filename,
+          'sizeBytes': bytes.length,
+          'contentType': 'application/octet-stream',
+          'disposition': 'attachment',
+        },
+      };
+    }
+    return await _api.sendMultipart(
+      'POST',
+      path,
+      files: [
+        ApiMultipartFile.bytes(field: 'file', bytes: bytes, filename: filename),
+      ],
+    );
+  }
 
   Future<void> removeAttachment(
     String wsId,
@@ -187,12 +344,18 @@ class MailRepository {
     String draftId,
     String attachmentId,
   ) async {
-    await _cache.mutate(
-      wsId,
-      () => _api.deleteJson(
-        '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}/attachments/${Uri.encodeComponent(attachmentId)}',
-      ),
-    );
+    final path =
+        '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}/attachments/${Uri.encodeComponent(attachmentId)}';
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: draftId,
+    )) {
+      return;
+    }
+    await _cache.mutate(wsId, () => _api.deleteJson(path));
   }
 
   Future<Map<String, dynamic>> settings(String wsId, String mailboxId) =>
@@ -203,10 +366,18 @@ class MailRepository {
     String mailboxId,
     Map<String, dynamic> payload,
   ) async {
-    await _cache.mutate(
-      wsId,
-      () => _api.patchJson('${mailboxPath(wsId, mailboxId)}/settings', payload),
-    );
+    final path = '${mailboxPath(wsId, mailboxId)}/settings';
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: 'PATCH',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      entityId: mailboxId,
+    )) {
+      return;
+    }
+    await _cache.mutate(wsId, () => _api.patchJson(path, payload));
   }
 
   Future<Map<String, dynamic>> organization(String wsId, String mailboxId) {
@@ -243,6 +414,15 @@ class MailRepository {
       };
       final path =
           '${mailboxPath(wsId, mailboxId)}/${threads ? 'threads' : 'messages'}/bulk';
+      if (await OfflineMutationQueue.instance.enqueueIfOffline(
+        feature: 'mail',
+        method: threads ? 'POST' : 'PATCH',
+        path: path,
+        workspaceId: wsId,
+        payload: body,
+      )) {
+        continue;
+      }
       if (threads) {
         await _cache.mutate(wsId, () => _api.postJson(path, body));
       } else {
@@ -263,15 +443,25 @@ class MailRepository {
     String mailboxId,
     String folder,
   ) async {
+    final path = '${mailboxPath(wsId, mailboxId)}/read-all';
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: 'MAIL_READ_ALL',
+      path: path,
+      workspaceId: wsId,
+      payload: {'folder': folder},
+      entityId: mailboxId,
+    )) {
+      return;
+    }
     String? cursor;
     String? before;
     do {
-      final result = await _api
-          .postJson('${mailboxPath(wsId, mailboxId)}/read-all', {
-            'folder': folder,
-            if (cursor != null) 'cursor': cursor,
-            if (before != null) 'before': before,
-          });
+      final result = await _api.postJson(path, {
+        'folder': folder,
+        if (cursor != null) 'cursor': cursor,
+        if (before != null) 'before': before,
+      });
       cursor = result['nextCursor'] as String?;
       before = result['before'] as String;
     } while (cursor != null);
@@ -285,6 +475,16 @@ class MailRepository {
     String? id,
   }) async {
     final path = '${mailboxPath(wsId, mailboxId)}/$kind';
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: id == null ? 'POST' : 'PATCH',
+      path: id == null ? path : '$path/${Uri.encodeComponent(id)}',
+      workspaceId: wsId,
+      payload: payload,
+      entityId: id,
+    )) {
+      return;
+    }
     if (id == null) {
       await _cache.mutate(wsId, () => _api.postJson(path, payload));
     } else {
@@ -301,12 +501,18 @@ class MailRepository {
     String kind,
     String id,
   ) async {
-    await _cache.mutate(
-      wsId,
-      () => _api.deleteJson(
-        '${mailboxPath(wsId, mailboxId)}/$kind/${Uri.encodeComponent(id)}',
-      ),
-    );
+    final path =
+        '${mailboxPath(wsId, mailboxId)}/$kind/${Uri.encodeComponent(id)}';
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: id,
+    )) {
+      return;
+    }
+    await _cache.mutate(wsId, () => _api.deleteJson(path));
   }
 
   Future<Map<String, dynamic>> members(String wsId, String mailboxId) =>
@@ -317,13 +523,19 @@ class MailRepository {
     String email,
     String role,
   ) async {
-    await _cache.mutate(
-      wsId,
-      () => _api.postJson('${mailboxPath(wsId, mailboxId)}/members', {
-        'email': email,
-        'role': role,
-      }),
-    );
+    final path = '${mailboxPath(wsId, mailboxId)}/members';
+    final payload = {'email': email, 'role': role};
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      entityId: mailboxId,
+    )) {
+      return;
+    }
+    await _cache.mutate(wsId, () => _api.postJson(path, payload));
   }
 
   Future<void> removeMember(
@@ -331,12 +543,18 @@ class MailRepository {
     String mailboxId,
     String userId,
   ) async {
-    await _cache.mutate(
-      wsId,
-      () => _api.deleteJson(
-        '${mailboxPath(wsId, mailboxId)}/members/${Uri.encodeComponent(userId)}',
-      ),
-    );
+    final path =
+        '${mailboxPath(wsId, mailboxId)}/members/${Uri.encodeComponent(userId)}';
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: userId,
+    )) {
+      return;
+    }
+    await _cache.mutate(wsId, () => _api.deleteJson(path));
   }
 
   Future<Uint8List> attachment(
@@ -379,13 +597,22 @@ class MailRepository {
     String draftId,
     String sourceMessageId,
     List<String> ids,
-  ) => _cache.mutate(
-    wsId,
-    () => _api.postJson(
-      '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}/attachments',
-      {'sourceMessageId': sourceMessageId, 'attachmentIds': ids},
-    ),
-  );
+  ) async {
+    final path =
+        '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}/attachments';
+    final payload = {'sourceMessageId': sourceMessageId, 'attachmentIds': ids};
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'mail',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      entityId: draftId,
+    )) {
+      return {'attachments': <Object>[]};
+    }
+    return await _cache.mutate(wsId, () => _api.postJson(path, payload));
+  }
 
   Future<Map<String, dynamic>> aiDraft(
     String wsId,

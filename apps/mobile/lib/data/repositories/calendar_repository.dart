@@ -1,4 +1,10 @@
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/data/repositories/calendar_pending_overlay.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 /// Repository for calendar event operations.
@@ -14,6 +20,19 @@ class CalendarRepository {
 
   static String _basePath(String wsId) =>
       '/api/v1/workspaces/$wsId/calendar/events';
+
+  CacheKey _listKey(String wsId, String query) => CacheKey(
+    namespace: 'calendar.events',
+    userId: currentCacheUserId(),
+    workspaceId: wsId,
+    params: {'query': query},
+  );
+
+  static List<CalendarEvent> _decodeEvents(Object? payload) =>
+      (payload as List<Object?>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(CalendarEvent.fromJson)
+          .toList(growable: false);
 
   Future<List<CalendarEvent>> getEvents(
     String wsId, {
@@ -32,20 +51,60 @@ class CalendarRepository {
       query = '?${pairs.join('&')}';
     }
 
-    final response = await _api.getJson('${_basePath(wsId)}$query');
-
-    final data = response['data'] as List<dynamic>? ?? [];
-    return data
-        .map((e) => CalendarEvent.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final cached = await CacheStore.instance.prefetch<List<CalendarEvent>>(
+      key: _listKey(wsId, query),
+      policy: CachePolicies.moduleData,
+      decode: _decodeEvents,
+      fetch: () async {
+        final response = await _api.getJson('${_basePath(wsId)}$query');
+        return response['data'] as List<dynamic>? ?? const [];
+      },
+      tags: ['module:calendar', 'workspace:$wsId'],
+    );
+    return overlayPendingCalendarEvents(
+      wsId,
+      cached.data ?? const [],
+      await OfflineMutationQueue.instance.listPending(),
+      start: start,
+      end: end,
+    );
   }
 
   Future<CalendarEvent?> getEventById(String wsId, String eventId) async {
     try {
-      final response = await _api.getJson('${_basePath(wsId)}/$eventId');
-      return CalendarEvent.fromJson(response);
+      final result = await CacheStore.instance.prefetch<CalendarEvent>(
+        key: CacheKey(
+          namespace: 'calendar.event.detail',
+          userId: currentCacheUserId(),
+          workspaceId: wsId,
+          params: {'id': eventId},
+        ),
+        policy: CachePolicies.detail,
+        decode: (payload) => CalendarEvent.fromJson(
+          (payload! as Map<String, dynamic>).cast<String, dynamic>(),
+        ),
+        fetch: () => _api.getJson('${_basePath(wsId)}/$eventId'),
+        tags: ['module:calendar', 'workspace:$wsId'],
+      );
+      final events = overlayPendingCalendarEvents(wsId, [
+        if (result.data != null) result.data!,
+      ], await OfflineMutationQueue.instance.listPending());
+      for (final event in events) {
+        if (event.id == eventId) return event;
+      }
+      return null;
     } on ApiException catch (e) {
       if (e.statusCode == 404) return null;
+      if (e.statusCode == 0) {
+        final local = overlayPendingCalendarEvents(
+          wsId,
+          const [],
+          await OfflineMutationQueue.instance.listPending(),
+        );
+        for (final event in local) {
+          if (event.id == eventId) return event;
+        }
+      }
       rethrow;
     }
   }
@@ -54,8 +113,40 @@ class CalendarRepository {
     String wsId,
     Map<String, dynamic> data,
   ) async {
-    final response = await _api.postJson(_basePath(wsId), data);
-    return CalendarEvent.fromJson(response);
+    final id = newLocalMutationId();
+    final path = _basePath(wsId);
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'calendar',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: data,
+      entityId: id,
+    )) {
+      return CalendarEvent.fromJson({...data, 'id': id, 'ws_id': wsId});
+    }
+    try {
+      final response = await _api.postJson(path, data);
+      await CacheStore.instance.invalidateTags({
+        'module:calendar',
+        'workspace:$wsId',
+      });
+      return CalendarEvent.fromJson(response);
+    } on ApiException catch (error) {
+      if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+        error: error,
+        feature: 'calendar',
+        method: 'POST',
+        path: path,
+        workspaceId: wsId,
+        payload: data,
+        entityId: id,
+        replaySafe: false,
+      )) {
+        return CalendarEvent.fromJson({...data, 'id': id, 'ws_id': wsId});
+      }
+      rethrow;
+    }
   }
 
   Future<void> updateEvent(
@@ -63,12 +154,72 @@ class CalendarRepository {
     String eventId,
     Map<String, dynamic> data,
   ) async {
-    await _api.putJson('${_basePath(wsId)}/$eventId', data);
+    final path = '${_basePath(wsId)}/$eventId';
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'calendar',
+      method: 'PUT',
+      path: path,
+      workspaceId: wsId,
+      payload: data,
+      entityId: eventId,
+    )) {
+      return;
+    }
+    try {
+      await _api.putJson(path, data);
+    } on ApiException catch (error) {
+      if (!await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+        error: error,
+        feature: 'calendar',
+        method: 'PUT',
+        path: path,
+        workspaceId: wsId,
+        payload: data,
+        entityId: eventId,
+        replaySafe: false,
+      )) {
+        rethrow;
+      }
+    }
+    await CacheStore.instance.invalidateTags({
+      'module:calendar',
+      'workspace:$wsId',
+    });
   }
 
   Future<void> deleteEvent(String wsId, String eventId) async {
     // An explicit JSON body keeps DELETE compatible with the signed gateway.
-    await _api.deleteJson('${_basePath(wsId)}/$eventId', body: {});
+    final path = '${_basePath(wsId)}/$eventId';
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'calendar',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      payload: {},
+      entityId: eventId,
+    )) {
+      return;
+    }
+    try {
+      await _api.deleteJson(path, body: {});
+    } on ApiException catch (error) {
+      if (!await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+        error: error,
+        feature: 'calendar',
+        method: 'DELETE',
+        path: path,
+        workspaceId: wsId,
+        payload: {},
+        entityId: eventId,
+        replaySafe: false,
+      )) {
+        rethrow;
+      }
+    }
+    await CacheStore.instance.invalidateTags({
+      'module:calendar',
+      'workspace:$wsId',
+    });
   }
 
   void dispose() => _api.dispose();

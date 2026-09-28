@@ -97,6 +97,7 @@ extension _ShellPageLayout on _ShellPageState {
                           onNotification: (notification) =>
                               _trackPageScroll(_lastRootLocation, notification),
                           child: LazyIndexedStack(
+                            animate: true,
                             index: _ShellPageState._calculateSelectedIndex(
                               _lastRootLocation,
                             ),

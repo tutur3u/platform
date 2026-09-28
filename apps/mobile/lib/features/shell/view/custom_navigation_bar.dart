@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'morphing_navigation_bar.dart';
@@ -66,7 +69,10 @@ class CustomNavigationBar extends StatelessWidget {
                   theme: theme,
                   isDark: isDark,
                   compact: compact,
-                  onTap: () => onSelected?.call(itemKey),
+                  onTap: () {
+                    if (!isSelected) unawaited(AppHaptics.selection());
+                    onSelected?.call(itemKey);
+                  },
                   child: child,
                 ),
               );

@@ -245,6 +245,7 @@ export interface MailThreadsResponse {
 
 export interface CreateMailDraftPayload {
   bcc?: string[];
+  clientMessageId?: string;
   bodyHtml?: string | null;
   bodyText?: string | null;
   cc?: string[];

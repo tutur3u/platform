@@ -7,14 +7,15 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/data/repositories/finance_pending_overlay.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/features/finance/finance_cache.dart';
 import 'package:mobile/features/finance/utils/wallet_ordering.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
@@ -28,6 +29,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 class WalletsPage extends StatelessWidget {
   const WalletsPage({super.key});
@@ -177,7 +179,19 @@ class _WalletsViewState extends State<_WalletsView> {
             ),
             NovaRefreshIndicator(
               onRefresh: () => _loadWallets(forceRefresh: true),
-              child: _buildBody(listBottomPadding, showAmounts: showAmounts),
+              child: ValueListenableBuilder(
+                valueListenable: OfflineMutationQueue.instance.pending,
+                builder: (context, records, _) => _buildBody(
+                  listBottomPadding,
+                  showAmounts: showAmounts,
+                  wallets: overlayPendingWallets(
+                    context.read<WorkspaceCubit>().state.currentWorkspace?.id ??
+                        '',
+                    _wallets,
+                    records,
+                  ),
+                ),
+              ),
             ),
             ExtendedFab(
               icon: Icons.add,
@@ -191,25 +205,29 @@ class _WalletsViewState extends State<_WalletsView> {
     );
   }
 
-  Widget _buildBody(double listBottomPadding, {required bool showAmounts}) {
+  Widget _buildBody(
+    double listBottomPadding, {
+    required bool showAmounts,
+    required List<Wallet> wallets,
+  }) {
     final l10n = context.l10n;
 
-    if (_isLoading) {
+    if (_isLoading && wallets.isEmpty) {
       return const Center(child: NovaLoadingIndicator());
     }
 
-    if (_wallets.isNotEmpty &&
+    if (wallets.isNotEmpty &&
         (_workspaceCurrency == null || _workspaceCurrency!.trim().isEmpty)) {
       return ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
-        itemCount: _wallets.length.clamp(1, 4),
+        itemCount: wallets.length.clamp(1, 4),
         separatorBuilder: (context, index) => const shad.Gap(12),
         itemBuilder: (context, index) => const _WalletCardSkeleton(),
       );
     }
 
-    if (_error != null) {
+    if (_error != null && wallets.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
@@ -227,7 +245,7 @@ class _WalletsViewState extends State<_WalletsView> {
       );
     }
 
-    if (_wallets.isEmpty) {
+    if (wallets.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
@@ -248,16 +266,22 @@ class _WalletsViewState extends State<_WalletsView> {
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
-      itemCount: _wallets.length,
+      itemCount: wallets.length,
       separatorBuilder: (context, index) => const shad.Gap(12),
       itemBuilder: (context, index) {
-        final wallet = _wallets[index];
-        return _WalletCard(
-          wallet: wallet,
-          showAmounts: showAmounts,
-          onTap: () => _openWallet(wallet),
-          onEdit: () => _onEdit(wallet),
-          onDelete: () => _onDelete(wallet),
+        final wallet = wallets[index];
+        return PendingSyncFrame(
+          workspaceId:
+              context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '',
+          entityId: wallet.id,
+          feature: 'finance',
+          child: _WalletCard(
+            wallet: wallet,
+            showAmounts: showAmounts,
+            onTap: () => _openWallet(wallet),
+            onEdit: () => _onEdit(wallet),
+            onDelete: () => _onDelete(wallet),
+          ),
         );
       },
     );
@@ -370,10 +394,6 @@ class _WalletsViewState extends State<_WalletsView> {
         _isLoading = false;
         _error = null;
       });
-      if ((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
-          diskCached.isFresh) {
-        return;
-      }
     } else if (!hasVisibleData) {
       if (!mounted || requestToken != _currentWalletsRequestToken) {
         return;

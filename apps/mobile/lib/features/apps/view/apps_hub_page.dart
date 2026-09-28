@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -20,7 +21,7 @@ class AppsHubPage extends StatefulWidget {
   const AppsHubPage({
     this.replayToken = 0,
     this.query = '',
-    this.showGrid = false,
+    this.showGrid = true,
     this.onSelected,
     super.key,
   });
@@ -36,6 +37,21 @@ class AppsHubPage extends StatefulWidget {
 }
 
 class _AppsHubPageState extends State<AppsHubPage> {
+  void _reorder(List<AppModule> modules, AppModule dragged, AppModule target) {
+    if (dragged.id == target.id || widget.query.trim().isNotEmpty) return;
+    final from = modules.indexWhere((module) => module.id == dragged.id);
+    final to = modules.indexWhere((module) => module.id == target.id);
+    if (from < 0 || to < 0) return;
+    final ordered = [...modules]
+      ..removeAt(from)
+      ..insert(to, dragged);
+    unawaited(
+      context.read<AppTabCubit>().setAppOrder(
+        ordered.map((module) => module.id).toList(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final modules =
@@ -72,7 +88,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(
                   ResponsivePadding.horizontal(context.deviceClass),
-                  10,
+                  widget.showGrid ? 22 : 10,
                   ResponsivePadding.horizontal(context.deviceClass),
                   24 + MediaQuery.paddingOf(context).bottom,
                 ),
@@ -103,6 +119,10 @@ class _AppsHubPageState extends State<AppsHubPage> {
                             module: modules[index],
                             index: index,
                             onSelected: widget.onSelected,
+                            onReorder: widget.query.trim().isEmpty
+                                ? (dragged) =>
+                                      _reorder(modules, dragged, modules[index])
+                                : null,
                           ),
                           childCount: modules.length,
                         ),
@@ -158,11 +178,13 @@ class _AppGridTile extends StatelessWidget {
     required this.module,
     required this.index,
     this.onSelected,
+    this.onReorder,
   });
 
   final AppModule module;
   final int index;
   final ValueChanged<AppModule>? onSelected;
+  final ValueChanged<AppModule>? onReorder;
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +194,7 @@ class _AppGridTile extends StatelessWidget {
       moduleId: module.id,
     );
 
-    return Semantics(
+    final tile = Semantics(
       button: true,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -210,6 +232,30 @@ class _AppGridTile extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+    if (onReorder == null) return tile;
+    return DragTarget<AppModule>(
+      onWillAcceptWithDetails: (details) => details.data.id != module.id,
+      onAcceptWithDetails: (details) {
+        unawaited(AppHaptics.drop());
+        onReorder!(details.data);
+      },
+      builder: (context, candidates, rejected) => AnimatedScale(
+        scale: candidates.isEmpty ? 1 : 1.08,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        child: LongPressDraggable<AppModule>(
+          data: module,
+          delay: const Duration(milliseconds: 280),
+          onDragStarted: AppHaptics.pickup,
+          feedback: Material(
+            color: Colors.transparent,
+            child: SizedBox(width: 104, child: tile),
+          ),
+          childWhenDragging: Opacity(opacity: 0.35, child: tile),
+          child: tile,
         ),
       ),
     );

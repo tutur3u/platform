@@ -167,6 +167,45 @@ void main() {
     );
   });
 
+  test(
+    'startup consolidates legacy aliases and keeps the newest record',
+    () async {
+      await cacheStore.write(
+        key: key,
+        policy: CachePolicies.detail,
+        payload: 'older data',
+      );
+      final box = Hive.box<dynamic>('offline_cache_v1');
+      final original = Map<String, dynamic>.from(
+        box.get(key.value) as Map<dynamic, dynamic>,
+      );
+      final newer = DateTime.parse(
+        original['fetchedAt'] as String,
+      ).add(const Duration(minutes: 1));
+      await box.put('legacy-mail-alias', {
+        ...original,
+        'key': 'legacy-mail-alias',
+        'jsonPayload': jsonEncode('newer data'),
+        'fetchedAt': newer.toIso8601String(),
+      });
+      await box.put('damaged-entry', {'key': 'damaged-entry'});
+
+      await cacheStore.closeForTesting();
+      cacheStore = CacheStore.forTesting(
+        secureStorage: secureStorage,
+        directoryResolver: () async => tempDir,
+      );
+      expect(
+        (await cacheStore.read(key: key, decode: decode)).data,
+        'newer data',
+      );
+      final reopened = Hive.box<dynamic>('offline_cache_v1');
+      expect(reopened.containsKey('legacy-mail-alias'), isFalse);
+      expect(reopened.containsKey('damaged-entry'), isFalse);
+      expect(reopened.containsKey(key.value), isTrue);
+    },
+  );
+
   test('concurrent startup and requests share one fetch', () async {
     final gate = Completer<Object?>();
     var requests = 0;
@@ -273,7 +312,7 @@ void main() {
   });
 
   test(
-    'expired data waits for replacement rather than appearing fresh',
+    'expired data appears immediately and revalidates in the background',
     () async {
       await cacheStore.write(
         key: key,
@@ -289,8 +328,16 @@ void main() {
         decode: decode,
         fetch: () async => 'new',
       );
-      expect(result.data, 'new');
-      expect(result.isFromCache, isFalse);
+      expect(result.data, 'old');
+      expect(result.isFromCache, isTrue);
+      final refreshed = await cacheStore.prefetch(
+        key: key,
+        policy: CachePolicies.detail,
+        decode: decode,
+        fetch: () async => 'new',
+        forceRefresh: true,
+      );
+      expect(refreshed.data, 'new');
     },
   );
 

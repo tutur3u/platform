@@ -7,8 +7,10 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/profile/view/profile_account_actions.dart';
 import 'package:mobile/features/profile/view/profile_activity_section.dart';
+import 'package:mobile/features/profile/view/profile_timeline_section.dart';
 import 'package:mobile/features/profile/view/workspace_activity_section.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -93,7 +95,13 @@ class ProfileOverviewPage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(24),
                             child: SizedBox.square(
                               dimension: 68,
-                              child: state.avatarUrl == null
+                              child:
+                                  state.profile == null && state.error == null
+                                  ? const FinanceSkeletonBlock(
+                                      height: 68,
+                                      radius: 24,
+                                    )
+                                  : state.avatarUrl == null
                                   ? const Icon(Icons.person_outline, size: 48)
                                   : Image.network(
                                       state.avatarUrl!,
@@ -111,12 +119,19 @@ class ProfileOverviewPage extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  name,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.headlineSmall,
-                                ),
+                                if (state.profile == null &&
+                                    state.error == null)
+                                  const FinanceSkeletonBlock(
+                                    height: 24,
+                                    width: 150,
+                                  )
+                                else
+                                  Text(
+                                    name,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.headlineSmall,
+                                  ),
                                 if (profile?.email != null)
                                   Text(
                                     profile!.email!,
@@ -138,6 +153,7 @@ class ProfileOverviewPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 14),
+                    ProfileTimelineSection(replayToken: replayToken),
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final activity = ProfileActivitySection(

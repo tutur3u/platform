@@ -32,6 +32,10 @@ List<AppModule> arrangeApps(List<AppModule> modules, AppTabCubit cubit) {
   }
 
   return [...modules]..sort((a, b) {
+    final aOrdered = order.contains(a.id);
+    final bOrdered = order.contains(b.id);
+    if (aOrdered && bOrdered) return rank(a.id).compareTo(rank(b.id));
+    if (aOrdered != bOrdered) return aOrdered ? -1 : 1;
     final aPinned = pinned.contains(a.id);
     final bPinned = pinned.contains(b.id);
     if (aPinned != bPinned) return aPinned ? -1 : 1;

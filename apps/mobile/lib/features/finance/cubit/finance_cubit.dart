@@ -118,20 +118,11 @@ class FinanceCubit extends Cubit<FinanceState> {
     if (shouldShowDiskSnapshot) {
       _loadedWorkspaceId = wsId;
       emit(diskCached.data!);
-      if (!forceRefresh &&
-          diskCached.isFresh &&
-          diskCached.data!.hasWorkspaceCurrency) {
-        return;
-      }
     }
 
     if (!forceRefresh && cached != null) {
       _loadedWorkspaceId = wsId;
       emit(cached.state);
-      if (isFinanceCacheFresh(cached.fetchedAt) &&
-          cached.state.hasWorkspaceCurrency) {
-        return;
-      }
     } else if (!hasVisibleData && !shouldShowDiskSnapshot) {
       emit(
         state.copyWith(

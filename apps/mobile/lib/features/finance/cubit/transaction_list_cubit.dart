@@ -4,10 +4,11 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
+import 'package:mobile/data/repositories/finance_pending_overlay.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
-import 'package:mobile/features/finance/finance_cache.dart';
 
 part 'transaction_list_state.dart';
 
@@ -74,11 +75,6 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     if (!forceRefresh && hasResolvedCache) {
       _loadedWorkspaceId = wsId;
       emit(resolvedCached);
-      if (((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
-              diskCached.isFresh) &&
-          resolvedCached.hasWorkspaceCurrency) {
-        return;
-      }
       emit(
         resolvedCached.copyWith(
           status: TransactionListStatus.loading,
@@ -148,11 +144,6 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     final resolvedCached = cached?.state ?? diskCached.data;
     if (resolvedCached != null) {
       emit(resolvedCached);
-      if (((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
-              diskCached.isFresh) &&
-          resolvedCached.hasWorkspaceCurrency) {
-        return;
-      }
       emit(
         resolvedCached.copyWith(
           status: TransactionListStatus.loading,
@@ -222,6 +213,22 @@ class TransactionListCubit extends Cubit<TransactionListState> {
       _loadedWorkspaceId = _wsId;
       emit(nextState);
     } on Exception catch (e) {
+      final visible = overlayPendingTransactions(
+        _wsId,
+        state.transactions,
+        OfflineMutationQueue.instance.pending.value,
+        search: state.search,
+      );
+      if (visible.isNotEmpty) {
+        emit(
+          state.copyWith(
+            status: TransactionListStatus.loaded,
+            transactions: visible,
+            error: e.toString(),
+          ),
+        );
+        return;
+      }
       if (state.transactions.isNotEmpty) {
         emit(
           state.copyWith(

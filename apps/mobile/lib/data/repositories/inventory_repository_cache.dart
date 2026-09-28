@@ -10,23 +10,33 @@ extension InventoryCacheSnapshot on InventoryRepository {
     String wsId, {
     String query = '',
     int pageSize = 20,
-  }) => _peekInventory(
-    'products',
-    wsId,
-    (json) => (
-      data: (json['data'] as List<dynamic>? ?? [])
-          .whereType<Map<String, dynamic>>()
-          .map(InventoryProduct.fromJson)
-          .toList(),
-      count: (json['count'] as num?)?.toInt() ?? 0,
-    ),
-    params: {
-      'query': query.trim(),
-      'status': 'active',
-      'page': '1',
-      'pageSize': '$pageSize',
-    },
-  );
+  }) {
+    final cached = _peekInventory(
+      'products',
+      wsId,
+      (json) => (
+        data: (json['data'] as List<dynamic>? ?? [])
+            .whereType<Map<String, dynamic>>()
+            .map(InventoryProduct.fromJson)
+            .toList(),
+        count: (json['count'] as num?)?.toInt() ?? 0,
+      ),
+      params: {
+        'query': query.trim(),
+        'status': 'active',
+        'page': '1',
+        'pageSize': '$pageSize',
+      },
+    );
+    if (cached == null) return null;
+    final data = overlayPendingProducts(
+      wsId,
+      cached.data,
+      OfflineMutationQueue.instance.pending.value,
+      query: query.trim(),
+    );
+    return (data: data, count: cached.count + data.length - cached.data.length);
+  }
 
   T? _peekInventory<T>(
     String namespace,
@@ -38,7 +48,7 @@ extension InventoryCacheSnapshot on InventoryRepository {
       key: _inventoryCacheKey(namespace, wsId, params: params),
       decode: (json) => decode(Map<String, dynamic>.from(json! as Map)),
     );
-    return cached.isExpired ? null : cached.data;
+    return cached.data;
   }
 }
 

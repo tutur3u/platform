@@ -333,6 +333,21 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
 
   Future<void> _handleBackNavigation(BuildContext context) async {
     final currentLocation = _normalizeRouteLocation(widget.matchedLocation);
+    final isMeetList =
+        currentLocation == Routes.meet &&
+        GoRouter.of(
+              context,
+            ).routeInformationProvider.value.uri.queryParameters['room'] ==
+            null;
+    final onBack = isMeetList
+        ? null
+        : context.read<ShellChromeActionsCubit?>()?.state.backForLocation(
+            currentLocation,
+          );
+    if (onBack != null) {
+      await onBack();
+      return;
+    }
     final miniAppRoot = Routes.miniAppRootForLocation(currentLocation);
     final injectedDeepLinkBackRoute = lookupShellMiniNavCubit(
       context,
@@ -371,7 +386,22 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       return;
     }
 
-    if (Routes.isMiniAppRootLocation(currentLocation)) {
+    if (currentLocation == Routes.settings ||
+        currentLocation == Routes.settingsWorkspace) {
+      final previousSettingsRoute = _peekPreviousRoute(currentLocation);
+      if (previousSettingsRoute != null &&
+          Routes.isSettingsHubLocation(previousSettingsRoute)) {
+        final previous = _takePreviousRoute(currentLocation);
+        if (previous != null) {
+          _isHandlingBackNavigation = true;
+          context.go(previous);
+          return;
+        }
+      }
+    }
+
+    if (Routes.isMiniAppRootLocation(currentLocation) &&
+        currentLocation != Routes.profileRoot) {
       await _returnToAppOrigin();
       return;
     }

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/router/app_router_access_redirects.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/api_verification.dart';
@@ -70,31 +71,11 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/view/workspace_select_page.dart';
 
-bool shouldRedirectPersonalTimerRequests(
-  String matchedLocation,
-  WorkspaceState workspaceState,
-) {
-  return matchedLocation == Routes.timerRequests &&
-      (workspaceState.currentWorkspace?.personal ?? false);
-}
-
-bool shouldRedirectDisabledHabitsRoutes(
-  String matchedLocation,
-  HabitsAccessState habitsAccessState,
-) {
-  return Routes.miniAppRootForLocation(matchedLocation) == Routes.habits &&
-      (habitsAccessState.status != HabitsAccessStatus.loaded ||
-          !habitsAccessState.enabled);
-}
-
-bool shouldRedirectDisabledEducationRoutes(
-  String matchedLocation,
-  EducationAccessState educationAccessState,
-) {
-  return Routes.miniAppRootForLocation(matchedLocation) == Routes.education &&
-      (educationAccessState.status != EducationAccessStatus.loaded ||
-          !educationAccessState.enabled);
-}
+export 'package:mobile/core/router/app_router_access_redirects.dart'
+    show
+        shouldRedirectDisabledEducationRoutes,
+        shouldRedirectDisabledHabitsRoutes,
+        shouldRedirectPersonalTimerRequests;
 
 String? resolveUnauthenticatedRedirect({
   required String matchedLocation,
@@ -500,7 +481,9 @@ GoRouter createAppRouter(
           ),
           GoRoute(
             path: Routes.transactions,
-            builder: (context, state) => const TransactionListPage(),
+            builder: (context, state) => TransactionListPage(
+              initialTransactionId: state.uri.queryParameters['transactionId'],
+            ),
           ),
           GoRoute(
             path: Routes.categories,

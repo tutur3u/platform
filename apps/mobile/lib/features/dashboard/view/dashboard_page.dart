@@ -4,16 +4,21 @@ import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/responsive/sliver_responsive_cards.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/meet/meet_meeting.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
+import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
@@ -21,8 +26,10 @@ import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/notes/note_repository.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_suggestion.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
@@ -43,6 +50,7 @@ part 'dashboard_communication_cards.dart';
 part 'dashboard_sections.dart';
 
 part 'dashboard_rows.dart';
+part 'dashboard_resource_cards.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({this.replayToken = 0, super.key});
@@ -137,6 +145,8 @@ class _DashboardView extends StatefulWidget {
 class _DashboardViewState extends State<_DashboardView> {
   final _mailCardKey = GlobalKey<_DashboardMailCardState>();
   final _meetCardKey = GlobalKey<_DashboardMeetCardState>();
+  final _financeCardKey = GlobalKey<_DashboardFinanceCardState>();
+  final _notesCardKey = GlobalKey<_DashboardNotesCardState>();
 
   @override
   Widget build(BuildContext context) {
@@ -212,18 +222,6 @@ class _DashboardViewState extends State<_DashboardView> {
                   final upcomingEvents = _upcomingEvents(calendarState.events);
                   final user = context.read<AuthCubit>().state.user;
                   final visibleModules = AppRegistry.modules(context);
-                  final showInitialLoading =
-                      !taskState.hasLoadedOnce &&
-                      taskState.status == TaskListStatus.loading &&
-                      !calendarState.hasLoadedOnce &&
-                      calendarState.status == CalendarStatus.loading;
-
-                  if (showInitialLoading) {
-                    return const shad.Scaffold(
-                      child: Center(child: NovaLoadingIndicator()),
-                    );
-                  }
-
                   return shad.Scaffold(
                     child: NovaRefreshIndicator(
                       onRefresh: () => _refresh(context, workspace),
@@ -325,6 +323,22 @@ class _DashboardViewState extends State<_DashboardView> {
                                         workspaceId: workspace.id,
                                         userId: user?.id,
                                       ),
+                                    if (visibleModules.any(
+                                      (module) => module.id == 'finance',
+                                    ))
+                                      _DashboardFinanceCard(
+                                        key: _financeCardKey,
+                                        workspaceId: workspace.id,
+                                        userId: user?.id,
+                                      ),
+                                    if (visibleModules.any(
+                                      (module) => module.id == 'notes',
+                                    ))
+                                      _DashboardNotesCard(
+                                        key: _notesCardKey,
+                                        workspaceId: workspace.id,
+                                        userId: user?.id,
+                                      ),
                                     StaggeredEntrance(
                                       replayKey: widget.replayToken,
                                       child: _TodaySummaryCard(
@@ -368,6 +382,10 @@ class _DashboardViewState extends State<_DashboardView> {
         _mailCardKey.currentState!._load(forceRefresh: true),
       if (_meetCardKey.currentState != null)
         _meetCardKey.currentState!._load(forceRefresh: true),
+      if (_financeCardKey.currentState != null)
+        _financeCardKey.currentState!._load(forceRefresh: true),
+      if (_notesCardKey.currentState != null)
+        _notesCardKey.currentState!._load(forceRefresh: true),
     ]);
   }
 

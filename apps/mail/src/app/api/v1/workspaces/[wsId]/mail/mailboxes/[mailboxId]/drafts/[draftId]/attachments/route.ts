@@ -62,6 +62,17 @@ export async function POST(
     );
   }
   const bytes = new Uint8Array(await file.arrayBuffer());
+  const rawClientAttachmentId = formData.get('clientAttachmentId');
+  const clientAttachmentId =
+    typeof rawClientAttachmentId === 'string'
+      ? z.string().uuid().safeParse(rawClientAttachmentId)
+      : null;
+  if (clientAttachmentId && !clientAttachmentId.success) {
+    return NextResponse.json(
+      { error: 'Invalid attachment ID' },
+      { status: 400 }
+    );
+  }
   const disposition =
     formData.get('disposition') === 'inline' ? 'inline' : 'attachment';
   const rawContentId = formData.get('contentId');
@@ -73,6 +84,7 @@ export async function POST(
   return withMailContext(request, wsId, async (ctx) => {
     const attachment = await uploadDraftAttachment({
       bytes,
+      clientAttachmentId: clientAttachmentId?.data,
       contentId,
       contentType: file.type || 'application/octet-stream',
       ctx,

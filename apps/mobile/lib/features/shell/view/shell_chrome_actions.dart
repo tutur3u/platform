@@ -19,6 +19,7 @@ class ShellChromeActions extends StatefulWidget {
     required this.locations,
     required this.actions,
     this.immersive = false,
+    this.onBack,
     super.key,
   });
 
@@ -26,6 +27,7 @@ class ShellChromeActions extends StatefulWidget {
   final String ownerId;
   final Set<String> locations;
   final List<ShellActionSpec> actions;
+  final Future<void> Function()? onBack;
 
   @override
   State<ShellChromeActions> createState() => _ShellChromeActionsState();
@@ -52,6 +54,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
     super.didUpdateWidget(oldWidget);
     if (!setEquals(oldWidget.locations, widget.locations) ||
         oldWidget.ownerId != widget.ownerId ||
+        oldWidget.onBack != widget.onBack ||
         oldWidget.immersive != widget.immersive ||
         !listEquals(oldWidget.actions, widget.actions)) {
       _syncRegistration();
@@ -65,6 +68,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
       immersive: widget.immersive,
       locations: widget.locations,
       actions: widget.actions,
+      onBack: widget.onBack,
     );
   }
 

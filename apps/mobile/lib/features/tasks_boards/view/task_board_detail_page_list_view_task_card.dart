@@ -54,7 +54,10 @@ class _TaskCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: isBulkSelectMode ? onToggleSelected : onTap,
-          onLongPress: onToggleSelected,
+          onLongPress: () {
+            unawaited(AppHaptics.pickup());
+            onToggleSelected();
+          },
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: isSelected

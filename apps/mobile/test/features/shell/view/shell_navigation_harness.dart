@@ -114,6 +114,11 @@ GoRouter _buildRouter({
             builder: (context, state) => const _RoutePage(label: 'settings'),
           ),
           GoRoute(
+            path: Routes.settingsWorkspace,
+            builder: (context, state) =>
+                const _RoutePage(label: 'workspace-settings'),
+          ),
+          GoRoute(
             path: Routes.tasks,
             builder: (context, state) => const _RoutePage(label: 'tasks'),
           ),

@@ -84,6 +84,16 @@ class ShellChromeActionsState extends Equatable {
         registration.immersive && registration.locations.contains(location),
   );
 
+  Future<void> Function()? backForLocation(String location) {
+    for (final registration in registrations.values.toList().reversed) {
+      if (registration.locations.contains(location) &&
+          registration.onBack != null) {
+        return registration.onBack;
+      }
+    }
+    return null;
+  }
+
   ShellChromeActionsState copyWith({
     Map<String, ShellChromeActionRegistration>? registrations,
   }) {
@@ -102,12 +112,14 @@ class ShellChromeActionRegistration extends Equatable {
     required this.locations,
     required this.actions,
     this.immersive = false,
+    this.onBack,
   });
 
   final bool immersive;
   final String ownerId;
   final Set<String> locations;
   final List<ShellActionSpec> actions;
+  final Future<void> Function()? onBack;
 
   @override
   List<Object?> get props => [
@@ -115,6 +127,7 @@ class ShellChromeActionRegistration extends Equatable {
     locations.toList(growable: false)..sort(),
     actions,
     immersive,
+    onBack,
   ];
 }
 
@@ -133,6 +146,7 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
     required Set<String> locations,
     required List<ShellActionSpec> actions,
     bool immersive = false,
+    Future<void> Function()? onBack,
   }) {
     if (isClosed) return;
     final nextRegistration = ShellChromeActionRegistration(
@@ -140,6 +154,7 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
       immersive: immersive,
       locations: Set<String>.from(locations),
       actions: List<ShellActionSpec>.from(actions),
+      onBack: onBack,
     );
     final currentRegistration = state.registrations[registrationId];
     if (currentRegistration == nextRegistration) {

@@ -88,6 +88,7 @@ export async function getAuthorizedAttachment({
 
 export async function uploadDraftAttachment({
   bytes,
+  clientAttachmentId,
   contentId,
   contentType,
   ctx,
@@ -97,6 +98,7 @@ export async function uploadDraftAttachment({
   mailboxId,
 }: {
   bytes: Uint8Array;
+  clientAttachmentId?: string;
   contentId?: string | null;
   contentType: string;
   ctx: MailRouteContext;
@@ -126,6 +128,19 @@ export async function uploadDraftAttachment({
   if (draftError)
     throw new Error(`Failed to load draft: ${draftError.message}`);
   if (!draft) return null;
+
+  if (clientAttachmentId) {
+    const { data: previous, error: previousError } = await privateTable(
+      access.admin,
+      'mail_attachments'
+    )
+      .select('*')
+      .eq('id', clientAttachmentId)
+      .eq('message_id', draftId)
+      .maybeSingle();
+    if (previousError) throw new Error(previousError.message);
+    if (previous) return previous;
+  }
 
   const { data: existing, error: existingError } = await privateTable(
     access.admin,
@@ -184,6 +199,7 @@ export async function uploadDraftAttachment({
       'mail_attachments'
     )
       .insert({
+        ...(clientAttachmentId && { id: clientAttachmentId }),
         content_id: contentId ?? null,
         content_type: contentType,
         disposition,

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide AlertDialog;
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
@@ -62,6 +65,7 @@ class _AsyncDeleteConfirmationDialogState
   }
 
   Future<void> _handleConfirm() async {
+    unawaited(AppHaptics.warning());
     final toastContext = widget.toastContext ?? context;
     setState(() => _isDeleting = true);
     try {

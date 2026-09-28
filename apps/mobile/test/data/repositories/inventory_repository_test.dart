@@ -15,7 +15,7 @@ void main() {
     await CacheStore.instance.clearScope();
   });
 
-  test('reuses fresh workspace-scoped overview data from cache', () async {
+  test('shows fresh workspace-scoped overview while revalidating', () async {
     final apiClient = _MockApiClient();
     final repository = InventoryRepository(apiClient: apiClient);
     when(() => apiClient.getJson(any())).thenAnswer(
@@ -46,7 +46,7 @@ void main() {
 
     expect(first, second);
     expect(second.totals.inventorySalesRevenue, 150);
-    verify(() => apiClient.getJson(any())).called(1);
+    verify(() => apiClient.getJson(any())).called(2);
   });
 
   test(
@@ -68,7 +68,7 @@ void main() {
 
       expect(first.map((item) => item.name), ['Notebook', 'Pen']);
       expect(cached, first);
-      verify(() => apiClient.getJson(any())).called(1);
+      verify(() => apiClient.getJson(any())).called(2);
     },
   );
 
@@ -113,7 +113,7 @@ void main() {
 
     final refreshed = await repository.getOverview('ws-swr');
     expect(refreshed.totals.inventorySalesRevenue, 225);
-    expect(requestCount, 2);
+    expect(requestCount, 3);
   });
 
   test(

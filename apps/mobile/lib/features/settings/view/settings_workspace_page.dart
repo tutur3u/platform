@@ -46,6 +46,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
   bool _isWorkspacePermissionLoading = false;
   bool _isWorkspaceCurrencyLoading = true;
   String? _workspaceDefaultCurrency;
+  String? _permissionWorkspaceId;
 
   @override
   void initState() {
@@ -147,6 +148,16 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
     final workspaceId = workspace?.id;
     final isPersonalWorkspace = workspace?.personal ?? false;
     final token = ++_workspacePermissionLoadToken;
+    if (_permissionWorkspaceId != workspaceId) {
+      _permissionWorkspaceId = workspaceId;
+      setState(() {
+        _canManageWorkspaceSettings = false;
+        _canManageWorkspaceMembers = false;
+        _canManageWorkspaceSecrets = false;
+        _canManageWorkspaceRoles = false;
+        _isWorkspacePermissionLoading = workspaceId != null;
+      });
+    }
 
     if (workspaceId == null || workspaceId.isEmpty) {
       if (!mounted) {
@@ -235,24 +246,37 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
       return;
     }
 
-    if (mounted) {
-      setState(() {
-        _isWorkspaceCurrencyLoading = true;
-      });
-    }
-
-    final currency = await _financeRepository.getWorkspaceDefaultCurrency(
+    final immediate = _financeRepository.peekWorkspaceDefaultCurrency(
       workspaceId,
     );
-
-    if (!mounted || token != _workspaceCurrencyLoadToken) {
-      return;
-    }
-
     setState(() {
-      _workspaceDefaultCurrency = currency;
-      _isWorkspaceCurrencyLoading = false;
+      _workspaceDefaultCurrency = immediate;
+      _isWorkspaceCurrencyLoading = immediate == null;
     });
+    try {
+      final stored = await _financeRepository
+          .readWorkspaceDefaultCurrencyFromCache(workspaceId);
+      if (!mounted || token != _workspaceCurrencyLoadToken) return;
+      if (stored != null) {
+        setState(() {
+          _workspaceDefaultCurrency = stored;
+          _isWorkspaceCurrencyLoading = false;
+        });
+      }
+      final fresh = await _financeRepository.getWorkspaceDefaultCurrency(
+        workspaceId,
+        forceRefresh: true,
+      );
+      if (!mounted || token != _workspaceCurrencyLoadToken) return;
+      setState(() {
+        _workspaceDefaultCurrency = fresh;
+        _isWorkspaceCurrencyLoading = false;
+      });
+    } on Exception {
+      if (mounted && token == _workspaceCurrencyLoadToken) {
+        setState(() => _isWorkspaceCurrencyLoading = false);
+      }
+    }
   }
 
   Future<void> _showWorkspacePropertiesDialog(Workspace workspace) async {

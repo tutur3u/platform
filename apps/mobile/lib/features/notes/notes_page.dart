@@ -82,6 +82,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   int _queuedRevision = -1;
   int _requestVersion = 0;
   int _selectionVersion = 0;
+  String? _requestedSelectionId;
   BuildContext? _activeSheetContext;
   bool _backRequestedFromSheet = false;
 
@@ -157,6 +158,24 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final noteId = GoRouterState.of(context).uri.queryParameters['noteId'];
+    if (noteId == null || noteId == _requestedSelectionId) return;
+    _requestedSelectionId = noteId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_openRequestedNote());
+    });
+  }
+
+  Future<void> _openRequestedNote() async {
+    final noteId = _requestedSelectionId;
+    if (noteId == null || _selected?.id == noteId) return;
+    final note = _notes.where((item) => item.id == noteId).firstOrNull;
+    if (note != null) await _select(note);
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) unawaited(_refresh());
     if (state == AppLifecycleState.inactive) {
@@ -194,6 +213,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
       _notes = cached;
       _loading = cached.isEmpty;
     });
+    await _openRequestedNote();
     await _refresh(version: version);
   }
 
@@ -212,6 +232,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
         _notes = fresh;
         _error = null;
       });
+      await _openRequestedNote();
     } on Object {
       if (mounted &&
           requestVersion == _requestVersion &&
@@ -590,6 +611,7 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
                                             onRefresh: _refresh,
                                             child: NoteList(
                                               notes: visible,
+                                              workspaceId: _wsId ?? '',
                                               archived:
                                                   _tab == NotesTab.archive,
                                               selectedId: _selected?.id,

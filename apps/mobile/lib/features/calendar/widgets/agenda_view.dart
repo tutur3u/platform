@@ -9,6 +9,7 @@ import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/working_location_icon.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 part 'agenda_event_cards.dart';
 
@@ -171,19 +172,27 @@ class _AgendaViewState extends State<AgendaView> {
             onDaySelected: widget.onDaySelected,
           );
         } else if (item is _EventItem) {
-          if (item.event.isAllDay) {
-            return _AllDayBanner(
-              event: item.event,
-              isPast: item.isPast,
-              displayDate: item.displayDate,
-              onTap: () => widget.onEventTap(item.event),
-            );
-          }
-          return _AgendaEventCard(
-            event: item.event,
-            isPast: item.isPast,
-            onTap: () => widget.onEventTap(item.event),
-          );
+          final eventCard = item.event.isAllDay
+              ? _AllDayBanner(
+                  event: item.event,
+                  isPast: item.isPast,
+                  displayDate: item.displayDate,
+                  onTap: () => widget.onEventTap(item.event),
+                )
+              : _AgendaEventCard(
+                  event: item.event,
+                  isPast: item.isPast,
+                  onTap: () => widget.onEventTap(item.event),
+                );
+          final wsId = item.event.wsId;
+          return wsId == null
+              ? eventCard
+              : PendingSyncFrame(
+                  workspaceId: wsId,
+                  entityId: item.event.id,
+                  feature: 'calendar',
+                  child: eventCard,
+                );
         } else if (item is _NowIndicatorItem) {
           return const _NowIndicator();
         } else if (item is _DividerItem) {

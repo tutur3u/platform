@@ -4197,6 +4197,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeWallets => 'Ví';
 
   @override
+  String financeOverviewWalletCount(int count) {
+    return '$count ví';
+  }
+
+  @override
+  String financeOverviewRecentCount(int count) {
+    return '$count giao dịch gần đây';
+  }
+
+  @override
   String get financeTransactions => 'Giao dịch';
 
   @override
@@ -5628,6 +5638,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsFinanceAmounts => 'Số tiền tài chính';
+
+  @override
+  String get settingsHaptics => 'Phản hồi rung';
 
   @override
   String get settingsFinanceAmountsDescription => 'Hiện hoặc ẩn số dư và số tiền giao dịch trên toàn bộ màn hình tài chính.';
@@ -8662,6 +8675,38 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profilePrivateActivity => 'Hoạt động riêng tư của bạn';
 
   @override
+  String get profileTimelineTitle => 'Dòng thời gian hoạt động';
+
+  @override
+  String get profileTimelineToday => 'Hôm nay';
+
+  @override
+  String get profileTimelineYesterday => 'Hôm qua';
+
+  @override
+  String get profileTimelineEmpty => 'Không có hoạt động gần đây trong không gian này';
+
+  @override
+  String profileTimelineTasks(int count) {
+    return 'Đã tạo $count công việc';
+  }
+
+  @override
+  String profileTimelineTransactions(int count) {
+    return 'Đã tạo $count giao dịch';
+  }
+
+  @override
+  String profileTimelineNotes(int count) {
+    return 'Đã thêm $count ghi chú';
+  }
+
+  @override
+  String profileTimelineWorkspaceEvents(int count) {
+    return 'Đã thêm $count sự kiện vào không gian';
+  }
+
+  @override
   String profileTrackedMinutes(int minutes) {
     return 'Đã theo dõi $minutes phút';
   }
@@ -9198,4 +9243,28 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get cacheCategoryOther => 'Dữ liệu khác';
+
+  @override
+  String get offlineEditQueued => 'Đang chờ đồng bộ';
+
+  @override
+  String get offlineEditConflict => 'Cần xem lại trước khi đồng bộ';
+
+  @override
+  String get offlineEditFailed => 'Đồng bộ thất bại';
+
+  @override
+  String get offlineChangesTitle => 'Thay đổi ngoại tuyến';
+
+  @override
+  String get offlineChangesEmpty => 'Mọi thay đổi đã được đồng bộ';
+
+  @override
+  String get offlineChangesReview => 'Hãy kiểm tra thao tác này trên thiết bị khác trước khi thử lại. Có thể máy chủ đã nhận được thao tác.';
+
+  @override
+  String get offlineChangesRetry => 'Thử lại';
+
+  @override
+  String get offlineChangesDiscard => 'Bỏ thay đổi trên máy';
 }

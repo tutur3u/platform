@@ -51,8 +51,13 @@ class InventoryHeroCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: theme.colorScheme.card,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: palette.subtleBorder.withValues(alpha: 0.8)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: palette.heroGradient,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

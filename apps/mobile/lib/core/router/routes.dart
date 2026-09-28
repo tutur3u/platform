@@ -39,6 +39,8 @@ abstract final class Routes {
   static const drive = '/drive';
   static const documents = '/documents';
   static const notes = '/notes';
+  static String noteDetailPath(String noteId) =>
+      Uri(path: notes, queryParameters: {'noteId': noteId}).toString();
   static const cms = '/cms';
   static const crm = '/crm';
   static const meet = '/meet';

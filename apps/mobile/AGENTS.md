@@ -8,6 +8,24 @@ Flutter/Dart toolchain and app package configuration.
   Analysis info-level diagnostics fail CI. Documentation-only edits need no Flutter suite.
 - Preserve user/workspace isolation in caches and permission checks. Pass request
   context through mobile Bearer-auth APIs; cookie-only helpers are insufficient.
+- Cache-backed screens should show a scoped stored snapshot immediately and
+  revalidate on entry, including a snapshot still marked fresh. Keep explicit
+  refresh awaitable, and clear visible data on account or workspace switches.
+  Use stable skeleton geometry for a cold load; avoid full-screen spinners when
+  the content can retain its last authorized snapshot.
+- The Profile timeline must attribute actions to the signed-in user. Calendar
+  rows currently lack a reliable creator and must be labeled as workspace
+  activity. Keep note content and private activity out of shared profile reads.
+- Keep the shell top bar on mini-app detail screens and handle back through the
+  shell or a floating content action. Test both Android system back and dock back.
+- Use `AppHaptics` for semantic pickup, selection, drop, success, and warning
+  feedback. Respect the persisted Preferences toggle and throttle repeated
+  gesture feedback; do not vibrate for background refreshes or replay.
+- Queue adapters should provide an optimistic item and stable client identifiers
+  for non-idempotent writes, especially money and messages. When an endpoint
+  cannot deduplicate uncertain attempts, retain the edit as a manual conflict
+  instead of replaying it automatically. Show unsynchronized rows through
+  `PendingSyncFrame` until confirmed.
 - Release Please owns release versions. Keep iOS Podfile.lock aligned after changes
   to dependencies with native iOS components.
 - Follow root source-size limits; split cohesive widgets/modules without changing

@@ -24,6 +24,23 @@ export async function sendMailMessage({
   ]);
   if (!access) return null;
 
+  if (payload.draftId) {
+    const previous = await getMailMessage({
+      ctx,
+      mailboxId,
+      messageId: payload.draftId,
+    });
+    if (previous && previous.status !== 'draft') return previous;
+  }
+  if (payload.clientMessageId) {
+    const previous = await getMailMessage({
+      ctx,
+      mailboxId,
+      messageId: payload.clientMessageId,
+    });
+    if (previous && previous.status !== 'draft') return previous;
+  }
+
   const message =
     payload.draftId != null
       ? await updateMailDraft({
@@ -35,6 +52,7 @@ export async function sendMailMessage({
       : await createMailDraft({ ctx, mailboxId, payload });
 
   if (!message) return null;
+  if (message.status !== 'draft') return message;
 
   const { data: mailboxProvider, error: mailboxProviderError } =
     await privateTable(access.admin, 'mail_mailboxes')

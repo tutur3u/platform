@@ -103,7 +103,7 @@ class SettingsSection extends StatelessWidget {
             ),
           ),
         ],
-        const shad.Gap(12),
+        const shad.Gap(8),
         ..._withSpacing(children),
       ],
     );
@@ -117,7 +117,7 @@ class SettingsSection extends StatelessWidget {
     final widgets = <Widget>[];
     for (var index = 0; index < children.length; index++) {
       if (index > 0) {
-        widgets.add(const shad.Gap(8));
+        widgets.add(const shad.Gap(6));
       }
       widgets.add(children[index]);
     }
@@ -165,7 +165,7 @@ class SettingsTile extends StatelessWidget {
         child: Ink(
           padding: EdgeInsets.symmetric(
             horizontal: grouped ? 14 : 13,
-            vertical: grouped ? 11 : 12,
+            vertical: grouped ? 8 : 10,
           ),
           decoration: grouped
               ? null
@@ -180,13 +180,13 @@ class SettingsTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: accentColor.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(icon, size: 20, color: accentColor),
+                child: Icon(icon, size: 18, color: accentColor),
               ),
               const shad.Gap(11),
               Expanded(
@@ -287,12 +287,6 @@ class SettingsWorkspaceSection extends StatelessWidget {
     final workspaceState = context.watch<WorkspaceCubit>().state;
     final currentWorkspace = workspaceState.currentWorkspace;
 
-    final workspacePropertiesSubtitle = isWorkspacePermissionLoading
-        ? l10n.settingsWorkspacePropertiesPermissionLoading
-        : canEditWorkspaceProperties
-        ? l10n.settingsWorkspacePropertiesDescription
-        : l10n.settingsWorkspacePropertiesNoAccess;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -305,7 +299,6 @@ class SettingsWorkspaceSection extends StatelessWidget {
               SettingsTile(
                 icon: Icons.apartment_rounded,
                 title: l10n.settingsCurrentWorkspace,
-                subtitle: l10n.settingsCurrentWorkspaceDescription,
                 value:
                     currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
                 onTap: onSelectCurrentWorkspace,
@@ -313,7 +306,6 @@ class SettingsWorkspaceSection extends StatelessWidget {
               SettingsTile(
                 icon: Icons.home_work_outlined,
                 title: l10n.settingsDefaultWorkspace,
-                subtitle: l10n.settingsDefaultWorkspaceDescription,
                 value:
                     workspaceState.defaultWorkspace?.name ??
                     l10n.settingsNoWorkspaceSelected,
@@ -322,11 +314,8 @@ class SettingsWorkspaceSection extends StatelessWidget {
               SettingsTile(
                 icon: Icons.attach_money_rounded,
                 title: l10n.settingsWorkspaceDefaultCurrencyTitle,
-                subtitle: canEditWorkspaceDefaultCurrency
-                    ? l10n.settingsWorkspaceDefaultCurrencyDescription
-                    : l10n.settingsWorkspacePropertiesNoAccess,
                 value: isWorkspaceCurrencyLoading
-                    ? l10n.settingsWorkspacePropertiesPermissionLoading
+                    ? '…'
                     : (defaultCurrency ?? ''),
                 onTap:
                     canEditWorkspaceDefaultCurrency &&
@@ -337,7 +326,6 @@ class SettingsWorkspaceSection extends StatelessWidget {
               SettingsTile(
                 icon: Icons.drive_file_rename_outline_rounded,
                 title: l10n.settingsWorkspacePropertiesTitle,
-                subtitle: workspacePropertiesSubtitle,
                 value:
                     currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
                 onTap:
@@ -347,13 +335,13 @@ class SettingsWorkspaceSection extends StatelessWidget {
                     ? () => onEditWorkspaceProperties(currentWorkspace)
                     : null,
               ),
-              if (canManageWorkspaceSecrets)
-                SettingsTile(
-                  icon: Icons.key_rounded,
-                  title: l10n.settingsWorkspaceSecretsTitle,
-                  subtitle: l10n.settingsWorkspaceSecretsSubtitle,
-                  onTap: onOpenWorkspaceSecrets,
-                ),
+              SettingsTile(
+                icon: Icons.key_rounded,
+                title: l10n.settingsWorkspaceSecretsTitle,
+                onTap: canManageWorkspaceSecrets
+                    ? onOpenWorkspaceSecrets
+                    : null,
+              ),
             ],
           ),
         ),
@@ -368,9 +356,6 @@ class SettingsWorkspaceSection extends StatelessWidget {
                 SettingsTile(
                   icon: Icons.group_outlined,
                   title: l10n.settingsWorkspaceMembersTitle,
-                  subtitle: canManageWorkspaceMembers
-                      ? l10n.settingsWorkspaceMembersSubtitle
-                      : l10n.settingsWorkspaceMembersAccessDenied,
                   onTap: canManageWorkspaceMembers
                       ? onOpenWorkspaceMembers
                       : null,
@@ -378,9 +363,6 @@ class SettingsWorkspaceSection extends StatelessWidget {
                 SettingsTile(
                   icon: Icons.admin_panel_settings_outlined,
                   title: l10n.settingsWorkspaceRolesTitle,
-                  subtitle: canManageWorkspaceRoles
-                      ? l10n.settingsWorkspaceRolesSubtitle
-                      : l10n.settingsWorkspaceRolesAccessDenied,
                   onTap: canManageWorkspaceRoles ? onOpenWorkspaceRoles : null,
                 ),
               ],
