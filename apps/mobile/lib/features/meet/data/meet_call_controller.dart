@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/meet/data/meet_native_media.dart';
 import 'package:mobile/features/meet/data/meet_personal_chat.dart';
@@ -337,9 +338,14 @@ class MeetCallController extends ChangeNotifier {
             error = null;
             notifyListeners();
           })
-          .catchError((Object failure) {
+          .catchError((Object failure, StackTrace stack) {
             if (_disposed) return;
             debugPrint('Meet media negotiation failed: $failure');
+            MobileObservability.instance.recordNonFatal(
+              'meet_media_${media.failureStage ?? 'unknown'}',
+              failure,
+              stack,
+            );
             error = 'media';
             notifyListeners();
             final seconds = 1 << min(_mediaFailures, 3);
@@ -393,7 +399,12 @@ class MeetCallController extends ChangeNotifier {
     try {
       await media.setAudioEnabled(enabled: enabled);
       _sendPresence();
-    } on Object {
+    } on Object catch (failure, stack) {
+      MobileObservability.instance.recordNonFatal(
+        'meet_microphone_toggle',
+        failure,
+        stack,
+      );
       error = 'media';
       notifyListeners();
       rethrow;
@@ -404,7 +415,12 @@ class MeetCallController extends ChangeNotifier {
     try {
       await media.setVideoEnabled(enabled: enabled);
       _sendPresence();
-    } on Object {
+    } on Object catch (failure, stack) {
+      MobileObservability.instance.recordNonFatal(
+        'meet_camera_toggle',
+        failure,
+        stack,
+      );
       error = 'media';
       notifyListeners();
       rethrow;

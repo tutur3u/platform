@@ -1,7 +1,7 @@
 ---
 title: "Mobile Store Deployment Vault"
 description: "What every Mobile Deployment vault field is, what it does in the store release workflow, and where to obtain its value."
-updatedAt: "2026-09-18"
+updatedAt: "2026-09-28"
 ---
 
 This runbook explains each field on the **Infrastructure → Mobile Deployment**
@@ -74,6 +74,33 @@ the separately scoped CI token and GitHub OIDC identity.
 | --- | --- | --- |
 | `android_google_services_json` (file) | Firebase Android config (`google-services.json`). | [Firebase Console](https://console.firebase.google.com) → Project settings → Android app. |
 | `ios_google_service_info_plist` (file) | Firebase iOS config (`GoogleService-Info.plist`). | Firebase Console → Project settings → iOS app. |
+
+## Production mobile diagnostics
+
+The production Flutter flavor uses the existing Firebase configuration for
+[Crashlytics](https://console.firebase.google.com/) and Google Analytics.
+Development and staging flavors disable collection. Crashlytics captures native
+crashes, uncaught Flutter and platform errors, and throttled nonfatal Bloc and
+Meet media failures. Analytics records automatic app usage plus `mobile_error`,
+`meet_media_published`, and `meet_media_received` events. Meet failure sources
+identify capture, publish, send, receive, or connection stages without recording
+room IDs, user IDs, SDP, ICE credentials, message contents, or media.
+
+For a failed call, filter Crashlytics nonfatal issues by `meet_media_*`,
+`meet_camera_toggle`, or `meet_microphone_toggle`, then compare the same build's
+Analytics events. A successful publisher event means its WebRTC sender reported
+outgoing packets, while a received event means the remote track reached Flutter's
+rendering path. Neither event proves that a person saw or heard the media.
+Confirm reception with a physical two-device call. Crashlytics nonfatal reports
+may appear on a later app launch; a missing immediate issue is not proof that
+the failure was never reported.
+
+Before relying on an iOS crash stack, check the signed build's Xcode log for
+Crashlytics dSYM upload. The project's upload phase skips unsigned simulator
+builds and skips when the FlutterFire CLI is unavailable; either case can leave
+an iOS production crash unsymbolicated. Use Firebase DebugView on an internal
+production-flavor build to verify event delivery without injecting a crash into
+the public release.
 
 ## App Environment Variables
 
