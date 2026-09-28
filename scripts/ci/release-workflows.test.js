@@ -819,6 +819,15 @@ test('E2E runs only for matching commit changes or explicit dispatch', () => {
   );
   assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
   assert.doesNotMatch(workflow, /needs\.check-ci/);
+  const cacheContractJob = readWorkflowJobBlock(
+    'e2e-tests.yaml',
+    'inventory-storefront-cache-e2e'
+  );
+  assert.match(cacheContractJob, /^ {4}needs: relevance$/m);
+  assert.match(
+    cacheContractJob,
+    /needs\.relevance\.outputs\.run_e2e == 'true'/
+  );
 
   const config = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
   assert.doesNotMatch(config, /['"]e2e-tests\.yaml['"]\s*:/);
