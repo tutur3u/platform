@@ -87,6 +87,11 @@ describe('task draft recovery', () => {
     });
     act(() => result.current.clearDraftState());
     act(() => vi.runAllTimers());
+    act(() => result.current.setName('Fresh task'));
+    act(() => vi.runAllTimers());
+    expect(JSON.parse(localStorage.getItem(key)!).name).toBe('Fresh task');
+
+    act(() => result.current.clearDraftState());
     rerender({ isOpen: false });
     rerender({ isOpen: true });
 

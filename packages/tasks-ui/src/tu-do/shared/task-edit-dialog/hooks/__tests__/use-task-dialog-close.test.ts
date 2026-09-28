@@ -1,7 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getDraftStorageKey } from '../../utils';
 import { beginTaskDraftSave } from '../task-draft-save-session';
 import { useTaskDialogClose } from '../use-task-dialog-close';
+import { useTaskFormState } from '../use-task-form-state';
 
 function createDeferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -19,6 +21,7 @@ describe('useTaskDialogClose', () => {
   afterEach(() => {
     finishSave?.();
     finishSave = undefined;
+    vi.useRealTimers();
   });
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -58,26 +61,41 @@ describe('useTaskDialogClose', () => {
   });
 
   it('clears a discarded creation draft before closing', async () => {
-    localStorage.setItem('draft-key', 'Unsaved media references');
-    const onClose = vi.fn();
-    const { result } = renderHook(() =>
-      useTaskDialogClose({
+    vi.useFakeTimers();
+    const key = getDraftStorageKey('board-1');
+    const onClose = vi.fn(() => expect(localStorage.getItem(key)).toBeNull());
+    const { result } = renderHook(() => {
+      const form = useTaskFormState({
+        boardId: 'board-1',
+        isOpen: true,
+        isCreateMode: true,
+        isSaving: false,
+      });
+      const close = useTaskDialogClose({
         isCreateMode: true,
         collaborationMode: false,
         synced: true,
         connected: true,
-        draftStorageKey: 'draft-key',
+        draftStorageKey: key,
         onClose,
         flushNameUpdate: vi.fn(),
         setShowSyncWarning: vi.fn(),
-      })
-    );
-
-    await act(async () => {
-      expect(await result.current.handleClose()).toBe(true);
+      });
+      return { form, close };
     });
 
-    expect(localStorage.getItem('draft-key')).toBeNull();
+    act(() => {
+      result.current.form.setName('Unsaved task');
+      result.current.form.setDescription({ type: 'doc', content: [] });
+    });
+    localStorage.setItem(key, 'Unsaved media references');
+
+    await act(async () => {
+      expect(await result.current.close.handleClose()).toBe(true);
+    });
+    act(() => vi.runAllTimers());
+
+    expect(localStorage.getItem(key)).toBeNull();
     expect(onClose).toHaveBeenCalledOnce();
   });
 

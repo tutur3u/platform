@@ -3,7 +3,10 @@
 import { useCallback, useRef } from 'react';
 import type { PendingRelationship } from '../types/pending-relationship';
 import { clearDraft } from '../utils';
-import { isTaskDraftSaving } from './task-draft-save-session';
+import {
+  cancelPendingTaskDraftSaves,
+  isTaskDraftSaving,
+} from './task-draft-save-session';
 
 export interface UseTaskDialogCloseProps {
   taskId?: string;
@@ -92,7 +95,10 @@ export function useTaskDialogClose({
         }
       }
 
-      if (isCreateMode) clearDraft(draftStorageKey);
+      if (isCreateMode) {
+        cancelPendingTaskDraftSaves(draftStorageKey);
+        clearDraft(draftStorageKey);
+      }
       onClose();
       return true;
     } catch (error) {

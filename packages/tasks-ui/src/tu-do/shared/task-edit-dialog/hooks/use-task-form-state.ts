@@ -12,6 +12,7 @@ import {
   loadDraft,
   saveDraft,
 } from '../utils';
+import { registerPendingTaskDraftSaveCancellation } from './task-draft-save-session';
 
 interface UseTaskFormStateProps {
   task?: Task;
@@ -85,6 +86,16 @@ export function useTaskFormState({
   const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftStorageKey = getDraftStorageKey(boardId, draftId);
   const skipDraftSaveRef = useRef(false);
+
+  useEffect(
+    () =>
+      registerPendingTaskDraftSaveCancellation(draftStorageKey, () => {
+        if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+        draftSaveTimerRef.current = null;
+        skipDraftSaveRef.current = true;
+      }),
+    [draftStorageKey]
+  );
 
   // Get current form state
   const getFormState = useCallback(
@@ -295,7 +306,6 @@ export function useTaskFormState({
   const clearDraftState = useCallback(() => {
     if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
     draftSaveTimerRef.current = null;
-    skipDraftSaveRef.current = true;
     clearDraft(draftStorageKey);
     setHasDraft(false);
     resetFormState();
