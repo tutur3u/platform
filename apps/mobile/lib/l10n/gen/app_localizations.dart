@@ -15019,6 +15019,12 @@ abstract class AppLocalizations {
   /// **'Microphone or camera could not start. Check app permissions.'**
   String get meetMediaCaptureFailed;
 
+  /// No description provided for @meetMediaSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your microphone or camera connected but is not sending media. Check the device input, then retry.'**
+  String get meetMediaSendFailed;
+
   /// No description provided for @meetMediaSessionFailed.
   ///
   /// In en, this message translates to:

@@ -3216,6 +3216,7 @@
     "meetMicrophone": "Microphone",
     "meetMediaUnavailable": "Call audio or video could not connect.",
     "meetMediaCaptureFailed": "Microphone or camera could not start. Check app permissions.",
+    "meetMediaSendFailed": "Your microphone or camera connected but is not sending media. Check the device input, then retry.",
     "meetMediaSessionFailed": "The call could not start a media session.",
     "meetMediaPublishFailed": "Your microphone or camera could not connect to the call.",
     "meetMediaReceiveFailed": "Other participants' audio or video could not connect.",

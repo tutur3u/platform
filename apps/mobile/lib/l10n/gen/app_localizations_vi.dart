@@ -7834,6 +7834,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetMediaCaptureFailed => 'Không thể bật micro hoặc camera. Hãy kiểm tra quyền của ứng dụng.';
 
   @override
+  String get meetMediaSendFailed => 'Micro hoặc camera đã kết nối nhưng chưa gửi âm thanh hoặc hình ảnh. Hãy kiểm tra thiết bị rồi thử lại.';
+
+  @override
   String get meetMediaSessionFailed => 'Không thể bắt đầu phiên âm thanh và video của cuộc gọi.';
 
   @override
