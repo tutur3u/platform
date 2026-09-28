@@ -2,6 +2,7 @@ import {
   BarChart3,
   BookOpen,
   ClipboardCheck,
+  Code2,
   HeartPulse,
   Home,
   LineChart,
@@ -26,6 +27,11 @@ export async function getNavigationLinks(wsId: string): Promise<NavLink[]> {
       title: t('practice'),
       href: `${base}/practice`,
       icon: <HeartPulse className="size-4" />,
+    },
+    {
+      title: t('coding'),
+      href: `${base}/coding`,
+      icon: <Code2 className="size-4" />,
     },
     {
       title: t('aiChat'),

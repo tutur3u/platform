@@ -65,6 +65,27 @@ XP awards and heart loss must go through the database RPCs `award_tulearn_xp` an
 
 Courses, modules, quiz sets, flashcards, assignments, monthly reports, and marks continue to reuse existing education and user-group tables.
 
+## Coding Lab
+
+Learn owns the learner-facing Coding Lab at `/[wsId]/coding`. It starts with
+curated array, search, and stack exercises. Students in a workspace with
+`ENABLE_EDUCATION=true` can submit solutions; parents with read-only learner
+access cannot. The initial challenge catalog is platform-authored and shared
+across eligible education workspaces. Python, JavaScript, TypeScript, C, C++,
+Java, Rust, Go, Ruby, and PHP use the same standard-input/standard-output
+exercise contract. The selected language only becomes runnable when a platform
+Judge runner reports a cached pinned image for it.
+
+Submissions are stored in `private.learn_coding_submissions` and queued
+atomically with a private Devbox lease and typed Judge run. The default is at
+most 20 submissions per learner per hour. Learn reads only that learner's
+submission, displays aggregate pass counts and visible case outcomes, and does
+not award XP or affect hearts yet. Hidden cases remain server-owned. If no
+eligible Judge machine is ready, the editor remains available and submission
+is disabled. Workspace members consume platform capacity; they do not control
+the machines. Root administrators manage runner feature toggles and Judge
+resource limits in Infrastructure > Devboxes.
+
 ## Code organization
 
 Learn learner pages keep the public `apps/learn/src/components/learner-pages.tsx` entrypoint as a thin barrel export. Route-level screens live under `apps/learn/src/components/learner-pages/*`, with shared page motion, loading, empty state, and section primitives in `shared.tsx`.

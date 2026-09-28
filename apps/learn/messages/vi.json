@@ -590,7 +590,8 @@
     "marks": "Điểm",
     "practice": "Luyện tập",
     "reports": "Báo cáo",
-    "settings": "Cài đặt Learn"
+    "settings": "Cài đặt Learn",
+    "coding": "Luyện lập trình"
   },
   "notifications": {
     "accept": "Chấp nhận",
@@ -937,5 +938,67 @@
     "remove_account": "Xóa tài khoản",
     "switch_account": "Chuyển tài khoản",
     "unknown_user": "Người dùng không xác định"
+  },
+  "coding": {
+    "eyebrow": "Thuật toán và cấu trúc dữ liệu",
+    "title": "Phòng luyện lập trình",
+    "description": "Giải các bài tập lập trình và nhận phản hồi từ máy Judge của nền tảng.",
+    "challengeList": "Danh sách bài tập lập trình",
+    "sample": "Ví dụ",
+    "input": "Đầu vào",
+    "output": "Đầu ra",
+    "editor": "Lời giải của bạn",
+    "submit": "Nộp bài",
+    "submitting": "Đang nộp…",
+    "judgeUnavailable": "Judge chưa sẵn sàng. Hãy nhờ quản trị viên nền tảng bật một máy đã được xác minh.",
+    "judging": "Đang chạy lời giải trong sandbox…",
+    "judgeFailed": "Judge không thể chấm bài này. Vui lòng thử lại sau.",
+    "passed": "Đạt {passed}/{total} bộ kiểm thử",
+    "case": "Bộ kiểm thử {number}",
+    "topics": {
+      "arrays": "Mảng",
+      "search": "Tìm kiếm",
+      "stacks": "Ngăn xếp"
+    },
+    "difficulty": {
+      "easy": "Dễ",
+      "medium": "Trung bình"
+    },
+    "result": {
+      "passed": "Đạt",
+      "wrong_answer": "Sai kết quả",
+      "runtime_error": "Lỗi khi chạy",
+      "time_limit": "Quá thời gian",
+      "output_limit": "Quá giới hạn đầu ra",
+      "compile_error": "Lỗi biên dịch"
+    },
+    "challenges": {
+      "two-sum": {
+        "title": "Tổng hai số",
+        "prompt": "Cho một danh sách số nguyên và một số đích. In ra hai chỉ số bắt đầu từ 0 có tổng bằng số đích, theo thứ tự tăng dần. Luôn có đúng một đáp án.\n\nĐầu vào: n, tiếp theo là n số nguyên cách nhau bằng dấu cách, rồi đến số đích."
+      },
+      "binary-search": {
+        "title": "Tìm kiếm nhị phân",
+        "prompt": "Cho một danh sách số nguyên phân biệt đã sắp xếp và một số đích. In ra chỉ số bắt đầu từ 0 của số đó, hoặc -1 nếu không có.\n\nĐầu vào: n, tiếp theo là n số nguyên cách nhau bằng dấu cách, rồi đến số đích."
+      },
+      "balanced-brackets": {
+        "title": "Dấu ngoặc cân bằng",
+        "prompt": "Cho một chuỗi chỉ gồm (), [] và {}. In YES nếu mọi dấu ngoặc mở được đóng đúng thứ tự. Ngược lại in NO."
+      }
+    },
+    "language": "Ngôn ngữ",
+    "languages": {
+      "python": "Python",
+      "javascript": "JavaScript",
+      "typescript": "TypeScript",
+      "c": "C",
+      "cpp": "C++",
+      "java": "Java",
+      "rust": "Rust",
+      "go": "Go",
+      "ruby": "Ruby",
+      "php": "PHP"
+    },
+    "parentReadOnly": "Phụ huynh có thể xem bài tập; chỉ học viên mới có thể nộp lời giải."
   }
 }
