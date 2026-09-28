@@ -12,7 +12,7 @@ export function getTaskDropOver({
   originalListId: string | null;
   preview: DragPreviewPosition | null;
   columns: TaskList[];
-}): DragEndEvent['over'] {
+}): Pick<NonNullable<DragEndEvent['over']>, 'id' | 'data'> | null {
   if (event.over) return event.over;
 
   const fallbackListId =
@@ -24,11 +24,11 @@ export function getTaskDropOver({
       : null;
 
   return fallbackListId
-    ? ({
+    ? {
         id: fallbackListId,
         data: {
           current: { type: 'ColumnSurface', columnId: fallbackListId },
         },
-      } as DragEndEvent['over'])
+      }
     : null;
 }

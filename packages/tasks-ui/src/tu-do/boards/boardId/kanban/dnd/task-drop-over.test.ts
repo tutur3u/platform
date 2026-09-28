@@ -7,7 +7,7 @@ it('keeps a valid cross-column target when collision is lost at release', () => 
   const event = {
     active: { id: 'task', data: { current: { type: 'Task' } } },
     over: null,
-  } as DragEndEvent;
+  } as unknown as DragEndEvent;
   const columns = [{ id: 'source' }, { id: 'target' }] as TaskList[];
   const preview = {
     task: { id: 'task' },
