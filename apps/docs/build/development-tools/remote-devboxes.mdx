@@ -151,10 +151,12 @@ at most 50% of host CPU and 25% of host memory, with one sandbox and one
 instance at a time. Each sandbox defaults to 1 GB, 30 seconds, and 64
 processes. Administrators can adjust these limits per machine. These settings
 are enforced on each Judge container by Docker cgroups, with a conservative
-free-memory check before each case. The agent currently processes one Judge job
-at a time; higher configured sandbox and instance maxima are capacity ceilings,
-not a request to start more workers. These settings do not limit the current
-trusted host commands, builds, previews, or tunnels.
+free-memory check before each case. The platform claim function caps concurrent
+Judge runs on a runner at the lower of its sandbox and instance maxima. Each
+container receives a share of the host CPU and memory budget divided by that
+ceiling. A single managed agent currently processes one Judge job at a time;
+additional agent processes can use the configured capacity. These settings do
+not limit the current trusted host commands, builds, previews, or tunnels.
 
 ## Judge setup
 

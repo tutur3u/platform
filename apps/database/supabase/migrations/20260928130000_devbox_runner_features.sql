@@ -257,6 +257,8 @@ security definer
 set search_path = private, public, pg_temp
 as $$
 begin
+    -- Serialize claims sharing one runner token before checking its capacity.
+    perform pg_advisory_xact_lock(hashtextextended(p_runner_id::text, 1));
     return query
     with next_run as (
         select run.id
@@ -269,6 +271,15 @@ begin
             and lease.status = 'active'
             and lease.expires_at > now()
             and runner.status = 'online'
+            and (run.workload <> 'judge' or (
+                select count(*) from private.devbox_runs active
+                where active.runner_id = p_runner_id
+                    and active.workload = 'judge'
+                    and active.status = 'running'
+            ) < least(
+                (runner.resource_limits ->> 'max_sandboxes')::integer,
+                (runner.resource_limits ->> 'max_instances')::integer
+            ))
             and (run.workload <> 'judge' or (
                 run.command[1] = '__ttr_judge_v1__'
                 and array_length(run.command, 1) = 2

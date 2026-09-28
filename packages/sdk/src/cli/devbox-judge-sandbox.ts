@@ -239,17 +239,24 @@ export function createJudgeDockerArgs({
   if (!IMAGE_REFERENCE.test(image)) {
     throw new Error('Judge image must be pinned to a sha256 digest.');
   }
+  const parallelLimit = Math.min(limits.max_sandboxes, limits.max_instances);
   const budgetMb = Math.floor(
-    (hostMemoryBytes / MEBIBYTE) * (limits.max_memory_percent / 100)
+    ((hostMemoryBytes / MEBIBYTE) * (limits.max_memory_percent / 100)) /
+      parallelLimit
   );
-  const availableMb = Math.floor(freeMemoryBytes / MEBIBYTE) - 256;
+  const availableMb = Math.floor(
+    (freeMemoryBytes / MEBIBYTE - 256) / parallelLimit
+  );
   const memoryMb = Math.min(limits.sandbox_memory_mb, budgetMb, availableMb);
   if (memoryMb < minimumJudgeMemoryMb(language)) {
     throw new Error('Judge host has insufficient free memory.');
   }
   const cpuQuota = Math.max(
-    0.1,
-    Math.min(1, (hostCpus * limits.max_cpu_percent) / 100)
+    0.01,
+    Math.floor(
+      Math.min(1, (hostCpus * limits.max_cpu_percent) / 100 / parallelLimit) *
+        1000
+    ) / 1000
   );
   const tmpfsMb = Math.min(512, Math.max(64, Math.floor(memoryMb / 2)));
 
@@ -270,7 +277,7 @@ export function createJudgeDockerArgs({
     '--env=HOME=/tmp',
     '--env=TMPDIR=/tmp',
     '--workdir=/tmp',
-    `--cpus=${cpuQuota.toFixed(2)}`,
+    `--cpus=${cpuQuota.toFixed(3)}`,
     `--memory=${memoryMb}m`,
     `--memory-swap=${memoryMb}m`,
     `--pids-limit=${limits.sandbox_pids}`,

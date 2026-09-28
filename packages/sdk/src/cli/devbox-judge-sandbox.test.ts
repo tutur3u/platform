@@ -32,11 +32,30 @@ describe('Judge sandbox', () => {
     expect(args).toContain('--network=none');
     expect(args).toContain('--read-only');
     expect(args).toContain('--cap-drop=ALL');
-    expect(args).toContain('--cpus=1.00');
+    expect(args).toContain('--cpus=1.000');
     expect(args).toContain('--memory=256m');
     expect(args).toContain('--memory-swap=256m');
     expect(args).toContain('--pids-limit=64');
     expect(args.some((arg) => arg.startsWith('--volume'))).toBe(false);
+  });
+
+  it('splits host budgets across configured concurrent sandboxes', () => {
+    const args = createJudgeDockerArgs({
+      image,
+      limits: {
+        ...limits,
+        max_instances: 2,
+        max_sandboxes: 2,
+        sandbox_memory_mb: 1024,
+      },
+      name: 'ttr-judge-parallel-test',
+      source: 'print(1)',
+      hostCpus: 2,
+      hostMemoryBytes: 4096 * 1024 * 1024,
+      freeMemoryBytes: 2048 * 1024 * 1024,
+    });
+    expect(args).toContain('--cpus=0.500');
+    expect(args).toContain('--memory=512m');
   });
 
   it('rejects insufficient host memory and mutable images', () => {
