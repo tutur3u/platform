@@ -52,12 +52,13 @@ user has `manage_drive_tasks_directory`, the same permission required to upload
 them. General Drive access is not required for task media, and a Tasks session
 cannot read unrelated Drive or Finance files through the share route.
 Uploads made while creating a task remain available when the task is created or
-saved as a draft. Discarding the new-task dialog requests immediate deletion of
-its uploads. A daily Tasks cleanup job removes task media older than 30 days
-when no current task or saved task draft references it. This includes media
-removed from an existing description and uploads left behind when a browser
-closes before the discard request completes. References in task version history
-do not retain media after they have been removed from the current description.
+saved as a draft. Discarding the new-task dialog clears its local draft and
+requests immediate deletion of its uploads. A daily Tasks cleanup job removes
+task media older than 30 days when no current task or saved task draft references
+it. This includes media removed from an existing description and uploads left
+behind when a browser closes before the discard request completes. References
+in task version history do not retain media after removal from the current
+description.
 The Tasks Vercel project schedules `/api/cron/tasks/cleanup-media` at 03:17 UTC;
 the route requires `CRON_SECRET` or `VERCEL_CRON_SECRET`.
 

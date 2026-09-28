@@ -2,6 +2,7 @@
 
 import { useCallback, useRef } from 'react';
 import type { PendingRelationship } from '../types/pending-relationship';
+import { clearDraft } from '../utils';
 import { isTaskDraftSaving } from './task-draft-save-session';
 
 export interface UseTaskDialogCloseProps {
@@ -91,6 +92,7 @@ export function useTaskDialogClose({
         }
       }
 
+      if (isCreateMode) clearDraft(draftStorageKey);
       onClose();
       return true;
     } catch (error) {
