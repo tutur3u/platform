@@ -43,12 +43,17 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 
 import { POST } from './route';
 
-function createPermissionsResult(membershipType: 'GUEST' | 'MEMBER') {
+function createPermissionsResult(
+  membershipType: 'GUEST' | 'MEMBER',
+  permissions = ['manage_workspace_roles']
+) {
   return {
     membershipType,
-    permissions: ['manage_workspace_roles'],
-    containsPermission: () => true,
-    withoutPermission: () => false,
+    permissions,
+    containsPermission: (permission: string) =>
+      permissions.includes(permission),
+    withoutPermission: (permission: string) =>
+      !permissions.includes(permission),
   };
 }
 
@@ -188,6 +193,40 @@ describe('devbox runs route', () => {
 
     expect(response.status).toBe(400);
     expect(createAdminClientMock).not.toHaveBeenCalled();
+  });
+
+  it('restricts remote runner maintenance to infrastructure admins', async () => {
+    resolveAuthenticatedSessionUserMock.mockResolvedValue({
+      user: { id: 'user-1' },
+    });
+    getPermissionsMock.mockResolvedValue(createPermissionsResult('MEMBER', []));
+
+    const response = await POST(
+      createRunRequest({
+        command: ['__ttr_restart_agent_v1__'],
+        workload: 'maintenance',
+      })
+    );
+
+    expect(response.status).toBe(403);
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+  });
+
+  it('allows an infrastructure admin to restart a runner', async () => {
+    resolveAuthenticatedSessionUserMock.mockResolvedValue({
+      user: { id: 'user-1' },
+    });
+    getPermissionsMock.mockResolvedValue(createPermissionsResult('MEMBER'));
+
+    const response = await POST(
+      createRunRequest({
+        command: ['__ttr_restart_agent_v1__'],
+        workload: 'maintenance',
+      })
+    );
+
+    expect(response.status).toBe(201);
+    expect(fromMock).toHaveBeenCalledWith('devbox_runs');
   });
 
   it('rejects Docker host-mount escape commands before storage writes', async () => {

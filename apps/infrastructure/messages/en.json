@@ -6043,11 +6043,15 @@
   },
   "devbox-control": {
     "actions": {
+      "disable": "Disable",
       "disable_heartbeat": "Disable heartbeat",
+      "enable": "Enable",
       "enable_heartbeat": "Enable heartbeat",
       "release": "Release",
       "revoke": "Revoke",
-      "stop": "Stop"
+      "stop": "Stop",
+      "update_restart": "Update CLI",
+      "restart_agent": "Restart agent"
     },
     "capabilities": {
       "bun": "Bun",
@@ -6063,7 +6067,10 @@
       "os": "OS",
       "ram": "RAM",
       "unreported": "Not reported",
-      "uptime": "Uptime"
+      "uptime": "Uptime",
+      "judge": "Judge",
+      "judge_ready": "Ready",
+      "judge_unavailable": "Unavailable"
     },
     "columns": {
       "actions": "Actions",
@@ -6074,6 +6081,7 @@
       "duration": "Duration",
       "environment": "Environment",
       "event": "Event",
+      "features": "Services",
       "exit_code": "Exit code",
       "expires": "Expires",
       "health": "Health",
@@ -6087,7 +6095,8 @@
       "size": "Size",
       "status": "Status",
       "tokens": "Tokens",
-      "updated": "Updated"
+      "updated": "Updated",
+      "resources": "Resources"
     },
     "description": "Observe remote devbox runners, queued work, leases, logs, cache state, and token health from one root-only operations surface.",
     "empty": {
@@ -6098,6 +6107,14 @@
       "leases": "No devbox leases found.",
       "runners": "No devbox runners found.",
       "runs": "No devbox runs found."
+    },
+    "features": {
+      "build": "Builds",
+      "run": "Commands",
+      "serve": "Previews",
+      "tunnel": "Tunnels",
+      "unavailable": "Apply the Devbox features migration to manage services.",
+      "judge": "Judge"
     },
     "health": {
       "never_seen": "Registered, no heartbeat",
@@ -6163,7 +6180,19 @@
       "setup_only": "ttr box setup without --agent prepares the checkout, dependencies, Supabase, and env files, but it does not create a runner row.",
       "title": "Why a setup machine may be missing"
     },
-    "title": "Devbox Control"
+    "title": "Devbox Control",
+    "resources": {
+      "save": "Save limits",
+      "sandboxes": "sandboxes",
+      "max_cpu_percent": "Host CPU budget (%)",
+      "max_memory_percent": "Host memory budget (%)",
+      "max_sandboxes": "Maximum sandboxes",
+      "max_instances": "Maximum instances",
+      "sandbox_memory_mb": "Memory per sandbox (MB)",
+      "sandbox_timeout_seconds": "Time per sandbox (seconds)",
+      "sandbox_pids": "Processes per sandbox",
+      "scope": "Reserved for Judge sandboxes. Trusted host commands are not constrained by these settings."
+    }
   },
   "documents": {
     "back-to-documents": "Back to documents",

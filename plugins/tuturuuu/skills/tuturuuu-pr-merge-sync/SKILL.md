@@ -7,7 +7,8 @@ description: "Complete authorized Tuturuuu PR merges or main-to-production sync 
 
 Complete the requested integration through review resolution, the quiet window,
 merge, exact-SHA main CI, `bun git-sync`, and production verification. Keep open
-PR work in an isolated `.worktrees/` checkout with immediate `bun setup`.
+PR work in an isolated `.worktrees/` checkout with immediate `bun install`.
+Use exact-head CI for builds; do not run builds or build-triggering setup locally.
 
 Read `references/merge-procedure.md` for Required Gates, watcher commands, and
 failure recovery when preparing a merge or sync. For a stack, inspect its stack

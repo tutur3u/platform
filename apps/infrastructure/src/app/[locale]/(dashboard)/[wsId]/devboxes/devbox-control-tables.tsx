@@ -1,6 +1,7 @@
 import {
   Activity,
   CircleStop,
+  Download,
   KeyRound,
   RotateCcw,
   Server,
@@ -19,12 +20,16 @@ import type {
   DevboxAdminRun,
   DevboxAdminRunner,
   DevboxAdminRunnerToken,
+  DevboxRunnerFeature,
 } from '@/lib/devboxes/admin-store';
 import {
   releaseDevboxLeaseAction,
+  restartDevboxRunnerAction,
   revokeDevboxRunnerAction,
+  setDevboxRunnerFeatureAction,
   setDevboxRunnerHeartbeatEnabledAction,
   stopDevboxRunAction,
+  updateDevboxRunnerAction,
 } from './actions';
 import {
   type DevboxControlTranslator,
@@ -40,6 +45,7 @@ import {
   getRunnerTokenCounts,
   getRunTone,
 } from './devbox-control-utils';
+import { DevboxResourceLimits } from './devbox-resource-limits';
 import {
   getRunnerCapabilitySummary,
   RunnerCapabilitiesCell,
@@ -47,6 +53,20 @@ import {
 
 const actionButtonClassName =
   'inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background px-3 font-medium text-sm shadow-xs transition-[color,box-shadow] hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0';
+
+const managedFeatures: DevboxRunnerFeature[] = [
+  'run',
+  'build',
+  'serve',
+  'tunnel',
+  'judge',
+];
+
+function isJudgeReady(capabilities: unknown) {
+  if (!capabilities || typeof capabilities !== 'object') return false;
+  const judge = (capabilities as { judge?: { ready?: boolean } }).judge;
+  return judge?.ready === true;
+}
 
 export function RunnersTable({
   canManage,
@@ -85,6 +105,8 @@ export function RunnersTable({
               <TableHead>{t('columns.heartbeat')}</TableHead>
               <TableHead>{t('columns.last_heartbeat')}</TableHead>
               <TableHead>{t('columns.environment')}</TableHead>
+              <TableHead>{t('columns.features')}</TableHead>
+              <TableHead>{t('columns.resources')}</TableHead>
               <TableHead>{t('columns.tokens')}</TableHead>
               {canManage ? <TableHead>{t('columns.actions')}</TableHead> : null}
             </TableRow>
@@ -92,7 +114,7 @@ export function RunnersTable({
           <TableBody>
             {runners.length === 0 ? (
               <EmptyRow
-                colSpan={canManage ? 7 : 6}
+                colSpan={canManage ? 9 : 8}
                 label={t('empty.runners')}
               />
             ) : (
@@ -105,7 +127,7 @@ export function RunnersTable({
                 );
 
                 return (
-                  <TableRow key={runner.id}>
+                  <TableRow id={`runner-${runner.id}`} key={runner.id}>
                     <TableCell className="min-w-72">
                       <div className="flex items-center gap-2">
                         <Server className="h-4 w-4 text-muted-foreground" />
@@ -157,6 +179,68 @@ export function RunnersTable({
                         t={t}
                       />
                     </TableCell>
+                    <TableCell className="min-w-48">
+                      {runner.enabled_features ? (
+                        <div className="flex flex-wrap gap-1">
+                          {managedFeatures.map((feature) => {
+                            const enabled =
+                              runner.enabled_features?.[feature] === true;
+                            const label = t(`features.${feature}`);
+                            return canManage ? (
+                              <form
+                                action={setDevboxRunnerFeatureAction.bind(
+                                  null,
+                                  wsId,
+                                  runner.id,
+                                  feature,
+                                  !enabled
+                                )}
+                                key={feature}
+                              >
+                                <button
+                                  aria-label={`${enabled ? t('actions.disable') : t('actions.enable')} ${label}`}
+                                  className={actionButtonClassName}
+                                  disabled={
+                                    runner.status === 'revoked' ||
+                                    (feature === 'judge' &&
+                                      !enabled &&
+                                      !isJudgeReady(runner.capabilities))
+                                  }
+                                  type="submit"
+                                >
+                                  {label}:{' '}
+                                  {enabled
+                                    ? t('labels.heartbeat_enabled')
+                                    : t('labels.heartbeat_disabled')}
+                                </button>
+                              </form>
+                            ) : (
+                              <ToneBadge
+                                key={feature}
+                                tone={enabled ? 'green' : 'muted'}
+                              >
+                                {label}:{' '}
+                                {enabled
+                                  ? t('labels.heartbeat_enabled')
+                                  : t('labels.heartbeat_disabled')}
+                              </ToneBadge>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">
+                          {t('features.unavailable')}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <DevboxResourceLimits
+                        canManage={canManage}
+                        runner={runner}
+                        t={t}
+                        wsId={wsId}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <KeyRound className="h-4 w-4 text-muted-foreground" />
@@ -173,6 +257,44 @@ export function RunnersTable({
                     {canManage ? (
                       <TableCell>
                         <div className="flex flex-wrap gap-2">
+                          <form
+                            action={updateDevboxRunnerAction.bind(
+                              null,
+                              wsId,
+                              runner.id
+                            )}
+                          >
+                            <button
+                              className={actionButtonClassName}
+                              disabled={
+                                runner.status !== 'online' ||
+                                !runner.enabled_features
+                              }
+                              type="submit"
+                            >
+                              <Download className="h-4 w-4" />
+                              {t('actions.update_restart')}
+                            </button>
+                          </form>
+                          <form
+                            action={restartDevboxRunnerAction.bind(
+                              null,
+                              wsId,
+                              runner.id
+                            )}
+                          >
+                            <button
+                              className={actionButtonClassName}
+                              disabled={
+                                runner.status !== 'online' ||
+                                !runner.enabled_features
+                              }
+                              type="submit"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                              {t('actions.restart_agent')}
+                            </button>
+                          </form>
                           <form
                             action={setDevboxRunnerHeartbeatEnabledAction.bind(
                               null,

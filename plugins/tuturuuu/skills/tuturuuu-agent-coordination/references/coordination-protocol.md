@@ -67,10 +67,9 @@ the shared main checkout.
 
 1. Verify `.worktrees` is ignored, fetch the PR head and base, and create a
    focused local task branch in `.worktrees/<pr-or-task-slug>`.
-2. Run `bun setup` immediately in the new worktree. In a non-interactive shell
-   where Portless would require sudo for port 443, use the supported
-   `SKIP_PORTLESS_SETUP=1 bun setup` path so dependency installation and required
-   workspace builds still complete.
+2. Run `bun install` immediately in the new worktree. Do not run `bun setup`
+   on this machine because it invokes workspace builds. Verify builds through
+   CI on the exact PR head commit.
 3. Keep all PR edits, commits, validation, and merge preparation in that
    worktree. Push the verified local branch to the PR's actual remote head branch.
 4. Keep the worktree and local task branch until GitHub confirms the PR commit is

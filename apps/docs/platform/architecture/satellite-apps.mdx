@@ -97,8 +97,9 @@ vi.mock('next/server', async (importOriginal) => ({
 ```
 
 <Note>
-`bun check` does not compile Next apps, so it cannot see any of this. Always run
-the app's real `bun run build` when you change its routes, pages, or deps.
+`bun check` does not compile Next apps, so it cannot see any of this. Require
+the app's real build in CI on the exact PR head when you change routes, pages,
+or dependencies. Do not run builds on this machine.
 </Note>
 
 ## Auth: resolve the actor from the app session

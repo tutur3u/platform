@@ -168,12 +168,12 @@ describe('devbox CLI helpers', () => {
       argv: ['box', 'build', '--cwd', 'apps/web'],
       flags: { cwd: 'apps/web' },
     });
-
     expect(payload).toMatchObject({
       command: ['bun', 'run', '--cwd', 'apps/web', 'build'],
       keep: false,
       leaseMode: 'auto',
       previewPorts: [],
+      workload: 'build',
     });
     expect(payload).not.toHaveProperty('timeoutSeconds');
   });
@@ -191,7 +191,6 @@ describe('devbox CLI helpers', () => {
       },
     });
     const script = payload.command[2] ?? '';
-
     expect(payload).toMatchObject({
       env: {
         CLOUDFLARED_TOKEN: 'cloudflare-secret-token',
@@ -200,6 +199,7 @@ describe('devbox CLI helpers', () => {
       keep: true,
       leaseMode: 'auto',
       previewPorts: [7803],
+      workload: 'serve',
     });
     expect(payload).not.toHaveProperty('timeoutSeconds');
     expect(payload.command.slice(0, 2)).toEqual(['bash', '-c']);
@@ -218,7 +218,6 @@ describe('devbox CLI helpers', () => {
       flags: { 'cloudflared-token-env': 'DEVBOX_CLOUDFLARED_TOKEN' },
     });
     const script = payload.command[2] ?? '';
-
     expect(payload).toMatchObject({
       env: {
         CLOUDFLARED_TOKEN: 'cloudflare-secret-token',
@@ -226,6 +225,7 @@ describe('devbox CLI helpers', () => {
       keep: true,
       leaseMode: 'auto',
       previewPorts: [],
+      workload: 'tunnel',
     });
     expect(payload).not.toHaveProperty('timeoutSeconds');
     expect(script).toContain('docker run --rm --network host');
@@ -423,13 +423,13 @@ describe('devbox CLI helpers', () => {
       flags: { runner: 'runner-1', timeout: '2m' },
       json: true,
     });
-
     expect(client.devboxes.createRun).toHaveBeenCalledWith({
       command: ['bun', 'i', '-g', 'tuturuuu'],
       keep: false,
       leaseMode: 'auto',
       runnerId: 'runner-1',
       timeoutSeconds: 120,
+      workload: 'maintenance',
     });
   });
 

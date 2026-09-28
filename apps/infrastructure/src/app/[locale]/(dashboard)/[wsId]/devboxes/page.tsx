@@ -85,7 +85,7 @@ export default async function InfrastructureDevboxesPage({ params }: Props) {
   const needsAttention = neverSeenRunners + staleRunners;
   const latestRun = snapshot.runs[0];
   const setupCommand =
-    'ttr box setup --dir . --agent --service --runner-name "$(hostname)-devbox" --yes';
+    'ttr box connect --service --runner-name "$(hostname)-devbox"';
 
   return (
     <div className="space-y-4">

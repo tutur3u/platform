@@ -7,7 +7,7 @@ stack for every edit.
 ## Before Editing
 
 - For an open Tuturuuu pull request, create or reuse its isolated worktree under
-  `.worktrees/` and run `bun setup` there immediately. Do not check out the PR in
+  `.worktrees/` and run `bun install` there immediately. Do not check out the PR in
   the shared main checkout.
 - Run `git status --short` and identify dirty or untracked paths that predate
   your work.

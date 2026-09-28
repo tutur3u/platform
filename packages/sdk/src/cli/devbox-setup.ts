@@ -28,6 +28,7 @@ import {
 import {
   type DevboxRunnerSetupResult,
   type DevboxServiceManager,
+  getDevboxRunnerDashboardUrl,
   setupDevboxRunner,
 } from './devbox-setup-service';
 
@@ -151,6 +152,9 @@ function printSetupReport(
       `Env files: ${report.env.targets.length} target(s), ${changedTargets.length} changed; values redacted`,
       report.runner
         ? `Runner: ${report.runner.runner.name} (${report.runner.runner.id}); token stored at ${report.runner.tokenFile}`
+        : null,
+      report.runner
+        ? `Verify and manage: ${getDevboxRunnerDashboardUrl(report.runner.runner.id)}`
         : null,
       report.runner?.service
         ? `Runner service: ${report.runner.service.manager} installed at ${report.runner.service.definitionPath}`

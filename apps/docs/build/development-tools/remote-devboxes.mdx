@@ -1,14 +1,20 @@
 ---
 title: "Remote Devboxes"
-description: "Run heavy Tuturuuu development workflows on containerized self-hosted remote runners."
+description: "Run heavy Tuturuuu development workflows on self-hosted remote runners."
 ---
 
 ## Overview
 
 Remote devboxes let internal root workspace members offload expensive local work
 to self-hosted runner machines. A runner connects outbound to `tuturuuu.com`,
-receives a synced dirty checkout, runs commands in an isolated container, streams
-logs, stores artifacts, and releases the lease automatically for one-off work.
+receives queued work, executes it on its host, streams logs, stores artifacts,
+and releases the lease automatically for one-off work.
+
+The current `ttr box agent` executes claimed commands as child processes on its
+host. Its command policy and environment filtering are operational controls,
+not an isolation boundary for untrusted learner code. Do not route Learn coding
+submissions to ordinary Devbox runs. Judge needs a separate sandbox executor
+and readiness checks before its capability can be enabled.
 
 V1 is intentionally self-hosted. It does not provision cloud machines. Any
 runner host should have Node.js, Bun, Docker, and Git available.
@@ -25,6 +31,7 @@ ttr box agent register --name "ci-lab-1"
 ttr box agent start --token <runner-token>
 ttr box repair --dir .
 ttr box upgrade --runner <runner-id>
+ttr box restart --runner <runner-id>
 TUTURUUU_DEVBOX_RUNNER_TOKEN=<runner-token> ttr box shutdown
 ```
 
@@ -56,6 +63,14 @@ non-interactive command after login:
 ```bash
 ttr box setup --agent --service --runner-name "$(hostname)-devbox" --yes
 ```
+
+For a platform runner that does not need a Tuturuuu checkout or local Supabase,
+use `ttr box connect --service --runner-name "$(hostname)-devbox"` instead.
+This registers the machine, writes its runner token to a mode-0600 file, and
+installs the same boot-starting service. The CLI prints a direct Infrastructure
+dashboard link for that runner. The dashboard shows the heartbeat's CLI version
+and machine identity so an administrator can verify the connection before
+enabling workloads.
 
 The setup command stores the runner token in a restricted local env file and
 installs a system-level runner service on Linux systemd or macOS launchd. The
@@ -109,7 +124,75 @@ ttr box upgrade --runner <runner-id>
 ```
 
 The upgrade command queues `bun i -g tuturuuu` for the selected runner, waits
-for completion, and returns the remote command logs and exit code.
+for completion, and returns the remote command logs and exit code. After a
+successful CLI update, the agent exits; a runner installed with `--service`
+restarts under systemd or launchd and reports its new CLI version on the next
+heartbeat. A manually started agent must be restarted by its operator. The run
+completion and the subsequent heartbeat are separate verification steps.
+
+Infrastructure > Devboxes lets root administrators enable or disable command,
+build, preview, and tunnel workloads per runner. New runners default to those
+four workload types enabled. Disabling a type stops new matching jobs from being
+claimed on that runner; it does not interrupt a running job or act as a
+security permission for root workspace members who can submit generic commands.
+The dashboard keeps switches unavailable until the
+`20260928130000_devbox_runner_features.sql` migration is applied. Its Update CLI
+action queues an update for an online runner, then the agent restarts as above.
+The Restart agent action and `ttr box restart` queue a typed maintenance job
+that exits the agent after successful acknowledgement; the installed service
+manager starts it again. These actions restart the agent process, not the
+operating system.
+Judge defaults off. Enabling it requires a recent heartbeat reporting a
+verified sandbox runtime and at least one pinned, cached language image.
+Existing Devbox host commands remain separate from Judge submissions.
+
+The same dashboard stores a runner's Judge capacity budget. Defaults reserve
+at most 50% of host CPU and 25% of host memory, with one sandbox and one
+instance at a time. Each sandbox defaults to 1 GB, 30 seconds, and 64
+processes. Administrators can adjust these limits per machine. These settings
+are enforced on each Judge container by Docker cgroups, with a conservative
+free-memory check before each case. The platform claim function caps concurrent
+Judge runs on a runner at the lower of its sandbox and instance maxima. Each
+container receives a share of the host CPU and memory budget divided by that
+ceiling. A single managed agent currently processes one Judge job at a time;
+additional agent processes can use the configured capacity. These settings do
+not limit the current trusted host commands, builds, previews, or tunnels.
+
+## Judge setup
+
+The Judge executor requires a Docker engine with the `runsc` gVisor runtime
+registered, working CPU/memory/process cgroup limits, and locally cached OCI
+images pinned to SHA-256 digests. The CLI fails readiness when these are absent
+or the Docker engine is rootless with resource enforcement not verified. gVisor
+currently requires a Linux host or Linux VM. Do not enable Judge on a machine
+that has only the default Docker runtime.
+
+Configure the languages you want with a JSON map of language names to pinned
+image references. Supported adapters are Python, JavaScript, TypeScript, C,
+C++, Java, Rust, Go, Ruby, and PHP. The chosen image must contain that
+language's runtime or compiler plus a POSIX shell and `base64` for compiled
+languages. Pull each digest on the host before connecting. Then run:
+
+```bash
+export TUTURUUU_JUDGE_IMAGES='{"python":"python@sha256:<digest>","cpp":"gcc@sha256:<digest>"}'
+ttr box judge doctor --images "$TUTURUUU_JUDGE_IMAGES"
+ttr box connect --service --judge-images "$TUTURUUU_JUDGE_IMAGES"
+```
+
+Replace the placeholder digests with full verified 64-character values. The
+connect command saves the map with the runner token in the restricted local
+environment file used by the service. Its dashboard link opens the exact
+runner row in Infrastructure. After the heartbeat reports Judge readiness,
+review the host budget and enable Judge. Workspaces consume the platform Judge
+capacity through Learn; they do not register or control the physical runner.
+
+The executor runs one case at a time without network access or host mounts,
+with a read-only image, dropped capabilities, no new privileges, a non-root
+user, bounded temporary storage, and per-case CPU, memory, process, time, and
+output limits. Compiled languages compile inside the same sandbox. Source and
+hidden cases are stored in the private platform schema; learner results expose
+only the aggregate pass count and visible case outcomes. A failed or missing
+sandbox readiness check leaves Judge unavailable.
 
 Remove a runner from the cluster from the runner host with its runner token:
 
@@ -187,10 +270,10 @@ into commands.
 
 ## Container Boundary
 
-Commands run in a per-lease Docker container or Compose project. The runner
-mounts only the synced workspace and named cache volumes. Host execution is not
-exposed in v1, and arbitrary host path mounts are blocked unless an operator
-explicitly allowlists them.
+The current agent starts brokered commands directly on the host. The command
+policy blocks several destructive command forms, but is not a sandbox. These
+machines must be operated as trusted infrastructure. Docker-backed commands
+create their own containers only when the requested command does so.
 
 Allowed remote workflows include:
 

@@ -10,6 +10,12 @@ import {
   type DevboxAgentJob,
   recordDevboxAgentEvents,
 } from '../platform-devbox';
+import {
+  parseJudgeImages,
+  parseJudgePayload,
+  parseJudgeResourceLimits,
+  runJudgeCases,
+} from './devbox-judge-sandbox';
 
 type DevboxAgentCompletionStatus = 'cancelled' | 'failed' | 'succeeded';
 
@@ -166,16 +172,77 @@ export async function executeDevboxAgentJob(
 ) {
   const cwd = options.cwd ?? process.cwd();
   const command = job.command.filter(Boolean);
+  const eventOptions = { ...options, cwd, runId: job.runId };
+
+  if (command.length === 1 && command[0] === '__ttr_restart_agent_v1__') {
+    await postAgentCompletion({
+      ...eventOptions,
+      exitCode: 0,
+      status: 'succeeded',
+    });
+    return { exitCode: 0, status: 'succeeded' as const };
+  }
+
+  if (command[0] === '__ttr_judge_v1__') {
+    try {
+      if (command.length !== 2 || job.envFiles?.length) {
+        throw new Error('Invalid Judge job envelope.');
+      }
+      const rawLimits = job.env?.__TTR_RESOURCE_LIMITS;
+      const images = parseJudgeImages(
+        (options.env ?? process.env).TUTURUUU_JUDGE_IMAGES
+      );
+      if (!rawLimits) {
+        throw new Error('Judge runner is missing its resource limits.');
+      }
+      const result = await runJudgeCases({
+        images,
+        limits: parseJudgeResourceLimits(rawLimits),
+        payload: parseJudgePayload(command[1]!),
+      });
+      await postAgentEvents({
+        ...eventOptions,
+        events: [
+          {
+            eventType: 'judge_result',
+            message: JSON.stringify({
+              passed: result.passed,
+              results: result.results,
+              total: result.results.length,
+            }),
+          },
+        ],
+      });
+      await postAgentCompletion({
+        ...eventOptions,
+        exitCode: 0,
+        status: 'succeeded',
+      });
+      return { exitCode: 0, status: 'succeeded' as const };
+    } catch (error) {
+      await postAgentEvents({
+        ...eventOptions,
+        events: [
+          {
+            eventType: 'error',
+            message: error instanceof Error ? error.message : 'Judge failed.',
+          },
+        ],
+      });
+      await postAgentCompletion({
+        ...eventOptions,
+        exitCode: 1,
+        status: 'failed',
+      });
+      return { exitCode: 1, status: 'failed' as const };
+    }
+  }
+
   const policy = evaluateDevboxCommandPolicy(command);
   const envFromFiles = await readEnvFiles(job.envFiles ?? [], cwd);
   const jobEnv = {
     ...envFromFiles,
     ...(job.env ?? {}),
-  };
-  const eventOptions = {
-    ...options,
-    cwd,
-    runId: job.runId,
   };
 
   await postAgentEvents({

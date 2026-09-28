@@ -7,6 +7,7 @@ import {
 
 export interface DevboxRunPayload {
   command: string[];
+  workload?: 'run' | 'build' | 'serve' | 'tunnel' | 'maintenance';
   env?: DevboxEnv;
   envFiles?: string[];
   keep?: boolean;

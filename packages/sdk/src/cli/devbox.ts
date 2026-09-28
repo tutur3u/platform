@@ -13,17 +13,21 @@ import { type FlagValue, getFlag } from './args';
 import { normalizeBaseUrl } from './config';
 import { runDevboxAgentLoop } from './devbox-agent';
 import {
+  createBuildCommand,
+  createCloudflaredDockerCommand,
+  createServeScript,
+} from './devbox-command-templates';
+import { runDevboxConnect } from './devbox-connect';
+import {
   createDevboxDoctorReport,
   printDevboxDoctorReport,
 } from './devbox-doctor';
+import { getJudgeReadiness } from './devbox-judge-sandbox';
 import { runDevboxRepairCommand } from './devbox-repair';
 import { runDevboxSetupCommand } from './devbox-setup';
 
 const DEFAULT_ONE_OFF_TIMEOUT_SECONDS = 30 * 60;
 const DEFAULT_UPGRADE_TIMEOUT_SECONDS = 10 * 60;
-const DEFAULT_WEB_CWD = 'apps/web';
-const DEFAULT_WEB_PORT = 7803;
-const DEFAULT_CLOUDFLARED_IMAGE = 'cloudflare/cloudflared:latest';
 const DEVBOX_RUN_POLL_INTERVAL_MS = 1000;
 const DEVBOX_RUN_POLL_GRACE_MS = 30_000;
 
@@ -87,29 +91,6 @@ function parseEnvFiles(flags: Record<string, FlagValue>) {
     ?.split(',')
     .map((entry) => entry.trim())
     .filter(Boolean);
-}
-
-function shellQuote(value: string) {
-  return `'${value.replace(/'/gu, "'\\''")}'`;
-}
-
-function parsePositiveIntegerFlag({
-  defaultValue,
-  flagName,
-  value,
-}: {
-  defaultValue: number;
-  flagName: string;
-  value: string | undefined;
-}) {
-  if (!value) return defaultValue;
-
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error(`Invalid --${flagName} value: ${value}`);
-  }
-
-  return parsed;
 }
 
 function getRequiredEnvironmentValue({
@@ -245,15 +226,6 @@ export function createDevboxRunPayload({
   });
 }
 
-function createBuildCommand(flags: Record<string, FlagValue>) {
-  const cwd = getFlag(flags, 'cwd');
-  const buildCommand = getFlag(flags, 'build-command');
-
-  if (buildCommand) return ['bash', '-c', buildCommand];
-  if (cwd) return ['bun', 'run', '--cwd', cwd, 'build'];
-  return ['bun', 'run', 'build'];
-}
-
 export function createDevboxBuildPayload({
   argv,
   flags,
@@ -261,60 +233,13 @@ export function createDevboxBuildPayload({
   argv: string[];
   flags: Record<string, FlagValue>;
 }): DevboxRunPayload {
-  return createDevboxCommandPayload({
-    command: createBuildCommand(flags),
-    env: collectDevboxEnv({ argv, flags }),
-    flags,
-  });
-}
-
-function createCloudflaredDockerCommand(flags: Record<string, FlagValue>) {
-  const image =
-    getFlag(flags, 'cloudflared-image') ?? DEFAULT_CLOUDFLARED_IMAGE;
-  return `docker run --rm --network host ${shellQuote(
-    image
-  )} tunnel run --token "$CLOUDFLARED_TOKEN"`;
-}
-
-function createServeScript(flags: Record<string, FlagValue>) {
-  const cwd = getFlag(flags, 'cwd') ?? DEFAULT_WEB_CWD;
-  const port = parsePositiveIntegerFlag({
-    defaultValue: DEFAULT_WEB_PORT,
-    flagName: 'port',
-    value: getFlag(flags, 'port'),
-  });
-  const buildCommand =
-    flags['no-build'] === true
-      ? undefined
-      : (getFlag(flags, 'build-command') ??
-        `bun run --cwd ${shellQuote(cwd)} build`);
-  const serveCommand =
-    getFlag(flags, 'serve-command') ??
-    `PORT=${port} bun run --cwd ${shellQuote(cwd)} start:app`;
-  const cloudflaredCommand =
-    flags.cloudflared === true ||
-    getFlag(flags, 'cloudflared-token-env') ||
-    getFlag(flags, 'token-env')
-      ? createCloudflaredDockerCommand(flags)
-      : undefined;
-  const lines = [
-    'set -euo pipefail',
-    buildCommand,
-    `${serveCommand} &`,
-    'APP_PID=$!',
-    'cleanup() {',
-    `  kill "$APP_PID" "\${TUNNEL_PID:-}" 2>/dev/null || true`,
-    '}',
-    'trap cleanup INT TERM EXIT',
-    cloudflaredCommand ? `${cloudflaredCommand} &` : undefined,
-    cloudflaredCommand ? 'TUNNEL_PID=$!' : undefined,
-    cloudflaredCommand ? 'wait -n "$APP_PID" "$TUNNEL_PID"' : 'wait "$APP_PID"',
-  ].filter(Boolean);
-
   return {
-    command: ['bash', '-c', lines.join('\n')],
-    port,
-    usesCloudflared: Boolean(cloudflaredCommand),
+    ...createDevboxCommandPayload({
+      command: createBuildCommand(flags),
+      env: collectDevboxEnv({ argv, flags }),
+      flags,
+    }),
+    workload: 'build',
   };
 }
 
@@ -326,17 +251,20 @@ export function createDevboxServePayload({
   flags: Record<string, FlagValue>;
 }): DevboxRunPayload {
   const serve = createServeScript(flags);
-  return createDevboxCommandPayload({
-    command: serve.command,
-    defaultKeep: true,
-    defaultPreviewPorts: [serve.port],
-    env: collectDevboxEnv({
-      argv,
+  return {
+    ...createDevboxCommandPayload({
+      command: serve.command,
+      defaultKeep: true,
+      defaultPreviewPorts: [serve.port],
+      env: collectDevboxEnv({
+        argv,
+        flags,
+        requireCloudflaredToken: serve.usesCloudflared,
+      }),
       flags,
-      requireCloudflaredToken: serve.usesCloudflared,
     }),
-    flags,
-  });
+    workload: 'serve',
+  };
 }
 
 export function createDevboxTunnelPayload({
@@ -346,16 +274,19 @@ export function createDevboxTunnelPayload({
   argv: string[];
   flags: Record<string, FlagValue>;
 }): DevboxRunPayload {
-  return createDevboxCommandPayload({
-    command: ['bash', '-c', createCloudflaredDockerCommand(flags)],
-    defaultKeep: true,
-    env: collectDevboxEnv({
-      argv,
+  return {
+    ...createDevboxCommandPayload({
+      command: ['bash', '-c', createCloudflaredDockerCommand(flags)],
+      defaultKeep: true,
+      env: collectDevboxEnv({
+        argv,
+        flags,
+        requireCloudflaredToken: true,
+      }),
       flags,
-      requireCloudflaredToken: true,
     }),
-    flags,
-  });
+    workload: 'tunnel',
+  };
 }
 
 function printJson(value: unknown) {
@@ -443,6 +374,20 @@ function createDevboxUpgradePayload(flags: Record<string, FlagValue>) {
     timeoutSeconds:
       parseDurationSeconds(getFlag(flags, 'timeout')) ??
       DEFAULT_UPGRADE_TIMEOUT_SECONDS,
+    workload: 'maintenance' as const,
+  };
+}
+
+function createDevboxRestartPayload(flags: Record<string, FlagValue>) {
+  const runnerId = getFlag(flags, 'runner');
+  if (!runnerId) throw new Error('Restart requires --runner <id>.');
+  return {
+    command: ['__ttr_restart_agent_v1__'],
+    keep: false,
+    leaseMode: 'auto' as const,
+    runnerId,
+    timeoutSeconds: 60,
+    workload: 'maintenance' as const,
   };
 }
 
@@ -547,6 +492,16 @@ export async function runDevboxCommand({
     return;
   }
 
+  if (resolvedAction === 'judge' && argv[2] === 'doctor') {
+    const readiness = await getJudgeReadiness(getFlag(flags, 'images'));
+    if (json) printJson(readiness);
+    else process.stdout.write(`${JSON.stringify(readiness, null, 2)}\n`);
+    if (!readiness.ready) {
+      throw new Error(readiness.reason ?? 'Judge is unavailable.');
+    }
+    return;
+  }
+
   if (resolvedAction === 'repair') {
     await runDevboxRepairCommand({ flags, json });
     return;
@@ -568,6 +523,11 @@ export async function runDevboxCommand({
 
   if (!client) {
     throw new Error('Not logged in. Run `ttr login` first.');
+  }
+
+  if (resolvedAction === 'connect') {
+    await runDevboxConnect({ client, flags, json });
+    return;
   }
 
   if (resolvedAction === 'run') {
@@ -607,6 +567,15 @@ export async function runDevboxCommand({
   if (resolvedAction === 'upgrade') {
     const payload = createDevboxUpgradePayload(flags);
     await createAndPrintDevboxRun({ client, json, payload });
+    return;
+  }
+
+  if (resolvedAction === 'restart') {
+    await createAndPrintDevboxRun({
+      client,
+      json,
+      payload: createDevboxRestartPayload(flags),
+    });
     return;
   }
 

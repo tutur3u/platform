@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import type { TuturuuuUserClient } from '../platform';
 import type { DevboxAgentRegistrationResponse } from '../platform-devbox';
 import { getDefaultConfigPath } from './config';
+import { parseJudgeImages } from './devbox-judge-sandbox';
 import {
   canPromptDevboxSetup,
   confirmDevboxSetupQuestion,
@@ -52,11 +53,16 @@ export interface SetupDevboxRunnerOptions {
     serviceManager?: DevboxServiceManager;
     serviceUser?: string;
     tokenFile?: string;
+    judgeImages?: string;
   };
 }
 
 export function getDefaultRunnerName() {
   return `${hostname() || 'tuturuuu'}-devbox`;
+}
+
+export function getDevboxRunnerDashboardUrl(runnerId: string) {
+  return `https://infrastructure.tuturuuu.com/00000000-0000-0000-0000-000000000000/devboxes#runner-${encodeURIComponent(runnerId)}`;
 }
 
 export function getDefaultRunnerTokenFile(configPath = getDefaultConfigPath()) {
@@ -104,20 +110,23 @@ function getCurrentTtrCommand() {
 }
 
 export async function writeRunnerTokenFile({
+  judgeImages,
   token,
   tokenFile,
 }: {
+  judgeImages?: string;
   token: string;
   tokenFile?: string;
 }) {
   const resolvedTokenFile = resolve(
     tokenFile?.trim() || getDefaultRunnerTokenFile()
   );
+  if (judgeImages) parseJudgeImages(judgeImages);
 
   await mkdir(dirname(resolvedTokenFile), { mode: 0o700, recursive: true });
   await writeFile(
     resolvedTokenFile,
-    `TUTURUUU_DEVBOX_RUNNER_TOKEN=${token}\n`,
+    `TUTURUUU_DEVBOX_RUNNER_TOKEN=${shellQuote(token)}\n${judgeImages ? `TUTURUUU_JUDGE_IMAGES=${shellQuote(judgeImages)}\n` : ''}`,
     {
       mode: 0o600,
     }
@@ -371,6 +380,7 @@ export async function setupDevboxRunner({
     name: runnerName,
   });
   const tokenFile = await writeRunnerTokenFile({
+    judgeImages: options.judgeImages,
     token: registration.token,
     tokenFile: options.tokenFile,
   });
