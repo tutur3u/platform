@@ -7831,6 +7831,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetMediaUnavailable => 'Âm thanh hoặc video của cuộc gọi chưa kết nối được.';
 
   @override
+  String get meetMediaCaptureFailed => 'Không thể bật micro hoặc camera. Hãy kiểm tra quyền của ứng dụng.';
+
+  @override
+  String get meetMediaSessionFailed => 'Không thể bắt đầu phiên âm thanh và video của cuộc gọi.';
+
+  @override
+  String get meetMediaPublishFailed => 'Không thể kết nối micro hoặc camera của bạn với cuộc gọi.';
+
+  @override
+  String get meetMediaReceiveFailed => 'Không thể kết nối âm thanh hoặc video của người tham gia khác.';
+
+  @override
+  String get meetMediaConnectFailed => 'Kết nối âm thanh và video đã quá thời gian chờ. Hãy thử lại.';
+
+  @override
   String get meetCamera => 'Máy ảnh';
 
   @override
@@ -7994,6 +8009,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get meetParticipants => 'Người tham gia';
+
+  @override
+  String get meetParticipantsAndInvite => 'Người tham gia và lời mời';
+
+  @override
+  String get meetInvitePeople => 'Mời mọi người';
+
+  @override
+  String get meetInvitePeopleHint => 'Chia sẻ liên kết đến cuộc họp này';
 
   @override
   String get meetYou => 'Bạn';

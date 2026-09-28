@@ -67,6 +67,10 @@ class MeetCallController extends ChangeNotifier {
   Future<void>? _mediaPreparation;
   bool _disposed = false;
   bool _connectedBefore = false;
+  bool _mediaSyncInFlight = false;
+  bool _mediaSyncQueued = false;
+  int _mediaFailures = 0;
+  Timer? _mediaRetryTimer;
   final participants = <String, Map<String, dynamic>>{};
   final waiting = <Map<String, dynamic>>[];
   final messages = <Map<String, dynamic>>[];
@@ -202,12 +206,16 @@ class MeetCallController extends ChangeNotifier {
           if (raw is Map) _rememberTrack(Map<String, dynamic>.from(raw));
         }
       case 'track.closed':
+        var removedRemoteTrack = false;
         for (final raw in message['tracks'] as List? ?? []) {
           if (raw is Map) {
-            tracks.remove('${raw['sessionId']}:${raw['trackName']}');
+            removedRemoteTrack =
+                tracks.remove('${raw['sessionId']}:${raw['trackName']}') !=
+                    null ||
+                removedRemoteTrack;
           }
         }
-        unawaited(media.resetPeers());
+        if (removedRemoteTrack) unawaited(media.resetReceiver());
       case 'admission.pending':
         waiting
           ..clear()
@@ -234,7 +242,7 @@ class MeetCallController extends ChangeNotifier {
         } else if (id != null) {
           participants.remove(id);
           tracks.removeWhere((_, track) => track['userId'] == id);
-          unawaited(media.resetPeers());
+          unawaited(media.resetReceiver());
         }
       case 'participant.muted':
         if (message['userId'] == selfUserId) {
@@ -308,6 +316,12 @@ class MeetCallController extends ChangeNotifier {
 
   void _syncMedia() {
     if (_disposed || admission != 'admitted') return;
+    if (_mediaRetryTimer != null) return;
+    if (_mediaSyncInFlight) {
+      _mediaSyncQueued = true;
+      return;
+    }
+    _mediaSyncInFlight = true;
     unawaited(
       media
           .updateRoom(
@@ -317,27 +331,46 @@ class MeetCallController extends ChangeNotifier {
             tracks: tracks.values.toList(),
           )
           .then((_) {
-            if (!_disposed && error == 'media') {
-              error = null;
-              notifyListeners();
-            }
+            if (_disposed) return;
+            _mediaFailures = 0;
+            if (error != 'media') return;
+            error = null;
+            notifyListeners();
           })
           .catchError((Object failure) {
-            if (!_disposed) {
-              debugPrint('Meet media negotiation failed: $failure');
-              error = 'media';
-              notifyListeners();
+            if (_disposed) return;
+            debugPrint('Meet media negotiation failed: $failure');
+            error = 'media';
+            notifyListeners();
+            final seconds = 1 << min(_mediaFailures, 3);
+            _mediaFailures++;
+            _mediaRetryTimer = Timer(Duration(seconds: seconds), () {
+              _mediaRetryTimer = null;
+              _syncMedia();
+            });
+          })
+          .whenComplete(() {
+            _mediaSyncInFlight = false;
+            if (_mediaSyncQueued && _mediaRetryTimer == null) {
+              _mediaSyncQueued = false;
+              _syncMedia();
+            } else {
+              _mediaSyncQueued = false;
             }
           }),
     );
   }
 
   Future<void> retryMedia() async {
+    _mediaRetryTimer?.cancel();
+    _mediaRetryTimer = null;
+    _mediaFailures = 0;
     try {
       await media.resetPeers();
       if (_disposed) return;
       if (error == 'media') error = null;
       notifyListeners();
+      _syncMedia();
     } on Object {
       if (_disposed) return;
       error = 'media';
@@ -467,6 +500,7 @@ class MeetCallController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _mediaRetryTimer?.cancel();
     media
       ..removeListener(_notify)
       ..dispose();

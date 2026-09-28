@@ -18,6 +18,7 @@ class MeetNativeMedia extends ChangeNotifier {
   final _remoteTrackIds = <String, Set<String>>{};
   final _midOwners = <String, String>{};
   final _subscribed = <String>{};
+  String? _lastSubscribeSummary;
   final _published = <String>{};
   final _streams = <MediaStream>[];
   RTCPeerConnection? _publisher;
@@ -36,6 +37,7 @@ class MeetNativeMedia extends ChangeNotifier {
 
   bool audioEnabled = false;
   bool videoEnabled = false;
+  String? failureStage;
 
   Future<void> initialize() async {
     await localRenderer.initialize();
@@ -43,6 +45,7 @@ class MeetNativeMedia extends ChangeNotifier {
 
   Future<void> setAudioEnabled({required bool enabled}) => _serialize(() async {
     if (enabled && _audio == null) {
+      failureStage = 'capture';
       final stream = await navigator.mediaDevices.getUserMedia({
         'audio': true,
         'video': false,
@@ -59,17 +62,21 @@ class MeetNativeMedia extends ChangeNotifier {
     audioEnabled = enabled;
     notifyListeners();
     await _publishPending();
+    failureStage = null;
   });
 
   Future<void> setVideoEnabled({required bool enabled}) => _serialize(() async {
     if (enabled && _video == null) {
+      failureStage = 'capture';
       final stream = await navigator.mediaDevices.getUserMedia({
         'audio': false,
         'video': {
           'facingMode': 'user',
-          'width': {'ideal': 1280},
-          'height': {'ideal': 720},
-          'frameRate': {'ideal': 24},
+          // flutter_webrtc's iOS bridge reads numeric values here; numeric
+          // `ideal` values are ignored and can select an unsuitable default.
+          'width': 1280,
+          'height': 720,
+          'frameRate': 24,
         },
       });
       _streams.add(stream);
@@ -80,6 +87,7 @@ class MeetNativeMedia extends ChangeNotifier {
     videoEnabled = enabled;
     notifyListeners();
     await _publishPending();
+    failureStage = null;
   });
 
   Future<void> switchCamera() async {
@@ -93,6 +101,12 @@ class MeetNativeMedia extends ChangeNotifier {
     required bool admitted,
     required List<MeetRoomTrack> tracks,
   }) => _serialize(() async {
+    if (_participants != participants) {
+      debugPrint(
+        'Meet media participants=$participants audio=$audioEnabled '
+        'video=$videoEnabled remoteTracks=${tracks.length}',
+      );
+    }
     _selfUserId = selfUserId;
     _participants = participants;
     _admitted = admitted;
@@ -100,20 +114,29 @@ class MeetNativeMedia extends ChangeNotifier {
     if (!_admitted) return;
     await _publishPending();
     await _subscribePending();
+    failureStage = null;
   });
 
   Future<void> resetPeers() => _serialize(() async {
     await _resetPublisher();
     await _resetSubscriber();
-    await _publishPending();
-    await _subscribePending();
+    failureStage = null;
+  });
+
+  Future<void> resetReceiver() => _serialize(() async {
+    await _resetSubscriber();
+    failureStage = null;
   });
 
   Future<void> _resetPublisher() async {
     final peer = _publisher;
+    final session = _publishSession;
     _publisher = null;
     _publishSession = null;
     _published.clear();
+    if (session != null) {
+      signaling.send({'type': 'media.idle', 'sessionId': session});
+    }
     await peer?.dispose();
   }
 
@@ -153,16 +176,23 @@ class MeetNativeMedia extends ChangeNotifier {
     if (current != null && session != null) return (current, session);
     final pc = await createPeerConnection({
       'sdpSemantics': 'unified-plan',
+      'bundlePolicy': 'max-bundle',
       'iceServers': [
         {'urls': 'stun:stun.cloudflare.com:3478'},
       ],
     });
     try {
+      failureStage = 'session';
       final response = await signaling.request({'type': 'sfu.session.create'});
       final id = response['sessionId'] as String?;
       if (id == null) throw StateError('SFU session unavailable');
       final ice = response['iceServers'];
-      if (ice is List) await pc.setConfiguration({'iceServers': ice});
+      if (ice is List) {
+        await pc.setConfiguration({
+          'bundlePolicy': 'max-bundle',
+          'iceServers': ice,
+        });
+      }
       if (publish) {
         _publisher = pc;
         _publishSession = id;
@@ -188,8 +218,10 @@ class MeetNativeMedia extends ChangeNotifier {
         ('$self-video', _video!),
     ];
     if (pending.isEmpty) return;
+    debugPrint('Meet publisher starting ${pending.length} local tracks');
     final (pc, sessionId) = await _openSession(publish: true);
     try {
+      failureStage = 'publish';
       if (await pc.getRemoteDescription() != null) {
         await waitForMeetPeerConnection(pc);
       }
@@ -203,7 +235,9 @@ class MeetNativeMedia extends ChangeNotifier {
       }
       final offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      failureStage = 'connect';
       final localDescription = await gatheredLocalDescription(pc);
+      failureStage = 'publish';
       // flutter_webrtc snapshots MID when addTransceiver returns. Read the
       // negotiated transceivers again after setLocalDescription. The iOS
       // transceiver ID itself changes with MID, so match stable sender IDs.
@@ -242,8 +276,12 @@ class MeetNativeMedia extends ChangeNotifier {
       await pc.setRemoteDescription(
         RTCSessionDescription(answer['sdp'] as String, 'answer'),
       );
+      failureStage = 'connect';
       await waitForMeetPeerConnection(pc);
       _published.addAll(pending.map((entry) => entry.$1));
+      debugPrint(
+        'Meet publisher connected with ${pending.length} local tracks',
+      );
     } on Object {
       await _resetPublisher();
       rethrow;
@@ -267,6 +305,7 @@ class MeetNativeMedia extends ChangeNotifier {
     if (pending.isEmpty) return;
     final (pc, sessionId) = await _openSession(publish: false);
     try {
+      failureStage = 'receive';
       if (await pc.getRemoteDescription() != null) {
         await waitForMeetPeerConnection(pc);
       }
@@ -285,8 +324,25 @@ class MeetNativeMedia extends ChangeNotifier {
       if (response['errorCode'] != null) {
         throw StateError('SFU subscribe failed');
       }
+      final resultTracks = response['tracks'] as List? ?? [];
+      final summary = resultTracks
+          .map((value) {
+            if (value is! Map) return 'invalid';
+            return '${value['errorCode'] ?? 'ok'}:'
+                '${value['mid'] != null}:${value['trackName'] != null}';
+          })
+          .join(',');
+      if (_lastSubscribeSummary != summary) {
+        _lastSubscribeSummary = summary;
+        debugPrint('Meet subscribe results: $summary');
+        if (resultTracks.any(
+          (value) => value is Map && value['errorCode'] != null,
+        )) {
+          await _logPublisherHealth();
+        }
+      }
       var accepted = 0;
-      for (final value in response['tracks'] as List? ?? []) {
+      for (final value in resultTracks) {
         if (value is! Map || value['errorCode'] != null) continue;
         final mid = value['mid'] as String?;
         final name = value['trackName'] as String?;
@@ -309,7 +365,9 @@ class MeetNativeMedia extends ChangeNotifier {
         );
         final answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
+        failureStage = 'connect';
         final localDescription = await gatheredLocalDescription(pc);
+        failureStage = 'receive';
         final answerResponse = await signaling.request({
           'type': 'sfu.renegotiate',
           'sessionId': sessionId,
@@ -318,6 +376,7 @@ class MeetNativeMedia extends ChangeNotifier {
         if (answerResponse['errorCode'] != null) {
           throw StateError('SFU negotiation failed');
         }
+        failureStage = 'connect';
         await waitForMeetPeerConnection(pc);
       } else {
         throw StateError('SFU remote offer missing');
@@ -325,6 +384,29 @@ class MeetNativeMedia extends ChangeNotifier {
     } on Object {
       await _resetSubscriber();
       rethrow;
+    }
+  }
+
+  Future<void> _logPublisherHealth() async {
+    final publisher = _publisher;
+    if (publisher == null) return;
+    try {
+      final stats = await publisher.getStats().timeout(
+        const Duration(seconds: 2),
+      );
+      final outbound = stats.where((entry) => entry.type == 'outbound-rtp');
+      final packets = outbound.fold<int>(
+        0,
+        (total, entry) =>
+            total + ((entry.values['packetsSent'] as num?)?.toInt() ?? 0),
+      );
+      debugPrint(
+        'Meet publisher health: state=${await publisher.getConnectionState()} '
+        'outboundStreams=${outbound.length} packetsSent=$packets '
+        'audioEnabled=${_audio?.enabled} videoEnabled=${_video?.enabled}',
+      );
+    } on Object {
+      // Diagnostics must never interrupt a media retry.
     }
   }
 

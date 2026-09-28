@@ -15013,6 +15013,36 @@ abstract class AppLocalizations {
   /// **'Call audio or video could not connect.'**
   String get meetMediaUnavailable;
 
+  /// No description provided for @meetMediaCaptureFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone or camera could not start. Check app permissions.'**
+  String get meetMediaCaptureFailed;
+
+  /// No description provided for @meetMediaSessionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The call could not start a media session.'**
+  String get meetMediaSessionFailed;
+
+  /// No description provided for @meetMediaPublishFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your microphone or camera could not connect to the call.'**
+  String get meetMediaPublishFailed;
+
+  /// No description provided for @meetMediaReceiveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Other participants\' audio or video could not connect.'**
+  String get meetMediaReceiveFailed;
+
+  /// No description provided for @meetMediaConnectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The media connection timed out. Try again.'**
+  String get meetMediaConnectFailed;
+
   /// No description provided for @meetCamera.
   ///
   /// In en, this message translates to:
@@ -15342,6 +15372,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Participants'**
   String get meetParticipants;
+
+  /// No description provided for @meetParticipantsAndInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Participants and invites'**
+  String get meetParticipantsAndInvite;
+
+  /// No description provided for @meetInvitePeople.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite people'**
+  String get meetInvitePeople;
+
+  /// No description provided for @meetInvitePeopleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Share a link to this meeting'**
+  String get meetInvitePeopleHint;
 
   /// No description provided for @meetYou.
   ///

@@ -7861,6 +7861,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetMediaUnavailable => 'Call audio or video could not connect.';
 
   @override
+  String get meetMediaCaptureFailed => 'Microphone or camera could not start. Check app permissions.';
+
+  @override
+  String get meetMediaSessionFailed => 'The call could not start a media session.';
+
+  @override
+  String get meetMediaPublishFailed => 'Your microphone or camera could not connect to the call.';
+
+  @override
+  String get meetMediaReceiveFailed => 'Other participants\' audio or video could not connect.';
+
+  @override
+  String get meetMediaConnectFailed => 'The media connection timed out. Try again.';
+
+  @override
   String get meetCamera => 'Camera';
 
   @override
@@ -8024,6 +8039,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meetParticipants => 'Participants';
+
+  @override
+  String get meetParticipantsAndInvite => 'Participants and invites';
+
+  @override
+  String get meetInvitePeople => 'Invite people';
+
+  @override
+  String get meetInvitePeopleHint => 'Share a link to this meeting';
 
   @override
   String get meetYou => 'You';

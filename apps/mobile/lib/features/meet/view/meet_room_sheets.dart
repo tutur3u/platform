@@ -3,11 +3,40 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
+import 'package:mobile/features/meet/data/meet_room_code.dart';
 import 'package:mobile/features/meet/view/meet_assistant_review_card.dart';
 import 'package:mobile/features/meet/view/meet_personal_chat_panel.dart';
 import 'package:mobile/features/meet/view/meet_room_message_body.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
+import 'package:share_plus/share_plus.dart';
+
+Future<void> _shareMeetInvite(
+  BuildContext context,
+  MeetCallController call,
+) async {
+  try {
+    final code = encodeMeetRoomCode(call.meetingId);
+    final box = context.findRenderObject() as RenderBox?;
+    await SharePlus.instance.share(
+      ShareParams(
+        // Invitees may belong to another workspace. The native Meet portal
+        // currently needs a selected workspace, while the web room resolves
+        // access from the room code for every signed-in invitee.
+        text: 'https://meet.tuturuuu.com/r/$code?openInBrowser=1',
+        subject: call.title ?? context.l10n.meetTitle,
+        sharePositionOrigin: box == null
+            ? null
+            : box.localToGlobal(Offset.zero) & box.size,
+      ),
+    );
+  } on Object {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.commonSomethingWentWrong)),
+    );
+  }
+}
 
 Future<void> showMeetChatSheet(
   BuildContext context,
@@ -191,6 +220,15 @@ Future<void> showMeetParticipantsSheet(
         animation: call,
         builder: (context, _) => ListView(
           children: [
+            Builder(
+              builder: (inviteContext) => ListTile(
+                leading: const Icon(Icons.person_add_outlined),
+                title: Text(inviteContext.l10n.meetInvitePeople),
+                subtitle: Text(inviteContext.l10n.meetInvitePeopleHint),
+                onTap: () => unawaited(_shareMeetInvite(inviteContext, call)),
+              ),
+            ),
+            const Divider(height: 1),
             for (final person in call.participants.values)
               ListTile(
                 leading: const Icon(Icons.person_outline),
