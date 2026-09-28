@@ -1396,6 +1396,7 @@ export async function runCli(argv = process.argv.slice(2)) {
     const client =
       action === 'doctor' ||
       action === 'repair' ||
+      (action === 'judge' && firstId === 'doctor') ||
       (action === 'agent' && firstId === 'start')
         ? undefined
         : action === 'setup'

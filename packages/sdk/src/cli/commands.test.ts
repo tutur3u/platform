@@ -81,6 +81,25 @@ describe('CLI commands', () => {
     ).rejects.toThrow('Not logged in. Run `ttr login` first.');
   });
 
+  it('runs the local Judge doctor without a CLI login', async () => {
+    vi.stubEnv(
+      'TUTURUUU_CONFIG',
+      '/tmp/tuturuuu-cli-judge-doctor-no-login/config.json'
+    );
+    vi.stubEnv('TUTURUUU_JUDGE_IMAGES', '');
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await expect(
+      runCli(['box', 'judge', 'doctor', '--json', '--no-update-check'])
+    ).rejects.toThrow('Pinned Judge images are not configured.');
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('"ready": false')
+    );
+  });
+
   it('normalizes task label color names to backend hex values', () => {
     expect(normalizeLabelColor()).toBe('#6B7280');
     expect(normalizeLabelColor('red')).toBe('#DC2626');

@@ -541,7 +541,9 @@ Builds run in CI on this machine's workflow. Open a PR, wait for the relevant
 app build checks on its exact head commit, and inspect the preview deployment
 when runtime behavior needs verification. `bun setup` also invokes package
 builds, so use `bun install` for a new local worktree. Do not run `bun run build`
-or app-level build scripts locally.
+or app-level build scripts locally. Run focused tests locally if needed;
+`bun check` can build workspace dependencies through Turbo, so require it to
+pass in CI for the PR's exact head commit rather than running it here.
 
 ## Test
 
