@@ -57,6 +57,30 @@ describe('useTaskDialogClose', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it('clears a discarded creation draft before closing', async () => {
+    localStorage.setItem('draft-key', 'Unsaved media references');
+    const onClose = vi.fn();
+    const { result } = renderHook(() =>
+      useTaskDialogClose({
+        isCreateMode: true,
+        collaborationMode: false,
+        synced: true,
+        connected: true,
+        draftStorageKey: 'draft-key',
+        onClose,
+        flushNameUpdate: vi.fn(),
+        setShowSyncWarning: vi.fn(),
+      })
+    );
+
+    await act(async () => {
+      expect(await result.current.handleClose()).toBe(true);
+    });
+
+    expect(localStorage.getItem('draft-key')).toBeNull();
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('waits for description persistence verification before closing', async () => {
     localStorage.setItem('draft-key', 'Unsubmitted task draft');
     const onClose = vi.fn();
