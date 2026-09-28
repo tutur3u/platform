@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { listCodingChallenges } from '@/lib/coding/challenges';
 import {
   CODING_LANGUAGES,
@@ -12,6 +12,11 @@ import {
 import { getCodingSubmission, submitCodingSolution } from './actions';
 
 type PublicChallenge = ReturnType<typeof listCodingChallenges>[number];
+type Attempt = {
+  challenge: string;
+  language: CodingLanguage;
+  source: string;
+};
 
 export function CodingLab({
   availableLanguages,
@@ -36,10 +41,19 @@ export function CodingLab({
     starterCode(availableLanguages[0] ?? 'python', challenge?.starterCode ?? '')
   );
   const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const activeAttempt = useRef<Attempt | null>(null);
   const submit = useMutation({
-    mutationFn: () =>
-      submitCodingSolution(wsId, studentId, selected, language, source),
-    onSuccess: (id) => setSubmissionId(id),
+    mutationFn: (attempt: Attempt) =>
+      submitCodingSolution(
+        wsId,
+        studentId,
+        attempt.challenge,
+        attempt.language,
+        attempt.source
+      ),
+    onSuccess: (id, attempt) => {
+      if (activeAttempt.current === attempt) setSubmissionId(id);
+    },
   });
   const submission = useQuery({
     enabled: Boolean(submissionId),
@@ -51,18 +65,34 @@ export function CodingLab({
     },
   });
 
-  function selectChallenge(next: PublicChallenge) {
-    setSelected(next.slug);
-    setSource(starterCode(language, next.starterCode));
+  function clearAttempt() {
+    activeAttempt.current = null;
     setSubmissionId(null);
     submit.reset();
   }
 
+  function selectChallenge(next: PublicChallenge) {
+    clearAttempt();
+    setSelected(next.slug);
+    setSource(starterCode(language, next.starterCode));
+  }
+
   function selectLanguage(next: CodingLanguage) {
+    clearAttempt();
     setLanguage(next);
     setSource(starterCode(next, challenge?.starterCode ?? ''));
-    setSubmissionId(null);
-    submit.reset();
+  }
+
+  function editSource(next: string) {
+    clearAttempt();
+    setSource(next);
+  }
+
+  function submitSource() {
+    const attempt = { challenge: selected, language, source };
+    clearAttempt();
+    activeAttempt.current = attempt;
+    submit.mutate(attempt);
   }
 
   const judgeReady = availableLanguages.includes(language);
@@ -165,7 +195,7 @@ export function CodingLab({
               <textarea
                 className="min-h-80 w-full resize-y rounded-md border border-input bg-muted/30 p-4 font-mono text-sm leading-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 id="coding-source"
-                onChange={(event) => setSource(event.target.value)}
+                onChange={(event) => editSource(event.target.value)}
                 spellCheck={false}
                 value={source}
               />
@@ -178,7 +208,7 @@ export function CodingLab({
                     submit.isPending ||
                     !source.trim()
                   }
-                  onClick={() => submit.mutate()}
+                  onClick={submitSource}
                   type="button"
                 >
                   {submit.isPending ? t('submitting') : t('submit')}
@@ -193,7 +223,7 @@ export function CodingLab({
                   </p>
                 ) : null}
               </div>
-              {submit.error ? (
+              {submit.error && submit.variables === activeAttempt.current ? (
                 <p className="text-destructive text-sm" role="alert">
                   {submit.error.message}
                 </p>

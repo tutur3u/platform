@@ -6,7 +6,9 @@ import { CODING_LANGUAGES, type CodingLanguage } from './languages';
 type StorageError = { message: string } | null;
 type QueryResult<T> = Promise<{ data: T[] | null; error: StorageError }>;
 type SelectQuery<T> = {
+  contains: (column: string, value: Record<string, unknown>) => SelectQuery<T>;
   eq: (column: string, value: string) => SelectQuery<T>;
+  gt: (column: string, value: string) => SelectQuery<T>;
   order: (column: string, options?: { ascending?: boolean }) => SelectQuery<T>;
   limit: (count: number) => QueryResult<T>;
 };
@@ -53,10 +55,14 @@ function assertRows<T>(result: { data: T[] | null; error: StorageError }) {
 
 async function listReadyJudgeRunners() {
   const client = await privateClient();
+  const cutoff = new Date(Date.now() - 120_000).toISOString();
   const result = await client
     .from<RunnerRow>('devbox_runners')
     .select('id,enabled_features,capabilities,last_heartbeat_at')
     .eq('status', 'online')
+    .contains('enabled_features', { judge: true })
+    .contains('capabilities', { judge: { ready: true } })
+    .gt('last_heartbeat_at', cutoff)
     .order('last_heartbeat_at', { ascending: false })
     .limit(50);
   if (
@@ -66,13 +72,12 @@ async function listReadyJudgeRunners() {
     return [];
   }
   const runners = assertRows(result);
-  const cutoff = Date.now() - 120_000;
   return runners.filter(
     (runner) =>
       runner.enabled_features?.judge === true &&
       runner.capabilities?.judge?.ready === true &&
       !!runner.last_heartbeat_at &&
-      new Date(runner.last_heartbeat_at).getTime() > cutoff
+      new Date(runner.last_heartbeat_at).getTime() > Date.parse(cutoff)
   );
 }
 
