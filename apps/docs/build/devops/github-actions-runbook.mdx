@@ -454,8 +454,9 @@ runner scripts. Normal application source-only commits do not create the image
 bundle and its downstream Playwright jobs. A small relevance job also compares
 matching pushes against their previous SHA. It skips image builds and Playwright
 when only Release Please versions, changelogs, and release badge metadata
-changed. Dependency edits, unknown changes, and unavailable comparison history
-run E2E. Run `node --test scripts/ci/release-only-changes.test.js` to check this gate.
+changed. This also skips the Inventory / Storefront cache contract job.
+Dependency edits, unknown changes, and unavailable comparison history run E2E.
+Run `node --test scripts/ci/release-only-changes.test.js` to check this gate.
 E2E has no cron trigger; maintainers can still dispatch an intentional full run.
 `docker-setup-check.yaml`, `turbo-unit-tests.yaml`, `codecov.yaml`, and
 `type-check.yaml` use the same gate before their expensive jobs, so version-only
