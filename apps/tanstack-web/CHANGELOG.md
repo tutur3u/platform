@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.36.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.35.0...tanstack-web-v0.36.0) (2026-09-28)
+
+
+### Features
+
+* **devbox:** add platform Judge and fleet controls ([#5608](https://github.com/tutur3u/platform/issues/5608)) ([e83b9f2](https://github.com/tutur3u/platform/commit/e83b9f2025eedf7fd63df0a751b70134216c9b0a))
+* **devbox:** add sandboxed judge and runner controls ([787bbaa](https://github.com/tutur3u/platform/commit/787bbaa549b400771d34beeebcebc2a110b44c60))
+
 ## [0.35.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.34.0...tanstack-web-v0.35.0) (2026-09-27)
 
 

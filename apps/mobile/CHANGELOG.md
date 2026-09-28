@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/mobile-v0.16.0...mobile-v0.17.0) (2026-09-28)
+
+
+### Features
+
+* **mobile:** report production crashes and Meet media health ([4382096](https://github.com/tutur3u/platform/commit/43820967b5a4ef281e87b394b8a1ace4d4b21d4a)) ([#5597](https://github.com/tutur3u/platform/issues/5597)) ([94668a3](https://github.com/tutur3u/platform/commit/94668a38ecdcade89323d8913f1a2ca75a9d8ee4))
+
+
+### Bug Fixes
+
+* **mobile:** handle unknown remote media kind ([ab54c16](https://github.com/tutur3u/platform/commit/ab54c167a9d1d081df07072365f6525f2eb7dc0c))
+* **mobile:** improve Meet media diagnosis and room invites ([#5584](https://github.com/tutur3u/platform/issues/5584)) ([fea48a7](https://github.com/tutur3u/platform/commit/fea48a7b3cf0c1ed8db2d6e34939080035528080))
+* **mobile:** recover Meet publishers without outgoing media ([4a799d8](https://github.com/tutur3u/platform/commit/4a799d819002e937b9649a5eda4895911f4c3d82)) ([#5594](https://github.com/tutur3u/platform/issues/5594)) ([5b01446](https://github.com/tutur3u/platform/commit/5b014464fe5d745d4f8c210f2ce4200059d079bb))
+* **mobile:** report Meet media capture failures safely ([01f36a9](https://github.com/tutur3u/platform/commit/01f36a93cd72e3663f00f3c2fd6f375fa875e2de))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/mobile-v0.15.0...mobile-v0.16.0) (2026-09-27)
 
 

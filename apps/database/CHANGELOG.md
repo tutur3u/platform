@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.36.0](https://github.com/tutur3u/platform/compare/database-v1.35.0...database-v1.36.0) (2026-09-28)
+
+
+### Features
+
+* **devbox:** add platform Judge and fleet controls ([#5608](https://github.com/tutur3u/platform/issues/5608)) ([e83b9f2](https://github.com/tutur3u/platform/commit/e83b9f2025eedf7fd63df0a751b70134216c9b0a))
+* **devbox:** add sandboxed judge and runner controls ([787bbaa](https://github.com/tutur3u/platform/commit/787bbaa549b400771d34beeebcebc2a110b44c60))
+
+
+### Bug Fixes
+
+* **devbox:** enforce judge concurrency budgets ([f46ab79](https://github.com/tutur3u/platform/commit/f46ab798e4aae330bc6b2fe7d80de41f0f64715a))
+* **devbox:** restrict maintenance and validate judge results ([884bc77](https://github.com/tutur3u/platform/commit/884bc77cb01a85953cd11e85c937db62712ddccf))
+
 ## [1.35.0](https://github.com/tutur3u/platform/compare/database-v1.34.0...database-v1.35.0) (2026-09-25)
 
 

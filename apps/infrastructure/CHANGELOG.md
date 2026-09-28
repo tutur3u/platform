@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/infra-v0.27.1...infra-v0.28.0) (2026-09-28)
+
+
+### Features
+
+* **devbox:** add platform Judge and fleet controls ([#5608](https://github.com/tutur3u/platform/issues/5608)) ([e83b9f2](https://github.com/tutur3u/platform/commit/e83b9f2025eedf7fd63df0a751b70134216c9b0a))
+* **devbox:** add sandboxed judge and runner controls ([787bbaa](https://github.com/tutur3u/platform/commit/787bbaa549b400771d34beeebcebc2a110b44c60))
+
+
+### Bug Fixes
+
+* **devbox:** restrict maintenance and validate judge results ([884bc77](https://github.com/tutur3u/platform/commit/884bc77cb01a85953cd11e85c937db62712ddccf))
+* **mobile:** allow parallel iOS release vault reads ([#5605](https://github.com/tutur3u/platform/issues/5605)) ([c2d414c](https://github.com/tutur3u/platform/commit/c2d414c7862b894eeba35d9bfeadafc9e290a4b4))
+* **mobile:** allow two iOS vault fetches for parallel store release ([8f3c7d6](https://github.com/tutur3u/platform/commit/8f3c7d6749aee9b4387519692ed3db2bc113ff61))
+
 ## [0.27.1](https://github.com/tutur3u/platform/compare/infra-v0.27.0...infra-v0.27.1) (2026-09-26)
 
 

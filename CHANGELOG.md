@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.60.0](https://github.com/tutur3u/platform/compare/platform-v0.59.0...platform-v0.60.0) (2026-09-28)
+
+
+### Features
+
+* **ci:** plan Vercel and Cloudflare production deploys ([f453ea8](https://github.com/tutur3u/platform/commit/f453ea884310c44867657f0b738bdcc27de0e7ce)) ([#5599](https://github.com/tutur3u/platform/issues/5599)) ([866a406](https://github.com/tutur3u/platform/commit/866a4060963e50303300a69d397ff3ee14520b78))
+* **devbox:** add platform Judge and fleet controls ([#5608](https://github.com/tutur3u/platform/issues/5608)) ([e83b9f2](https://github.com/tutur3u/platform/commit/e83b9f2025eedf7fd63df0a751b70134216c9b0a))
+* **devbox:** add sandboxed judge and runner controls ([787bbaa](https://github.com/tutur3u/platform/commit/787bbaa549b400771d34beeebcebc2a110b44c60))
+* **learn:** add multilingual coding lab ([491e49f](https://github.com/tutur3u/platform/commit/491e49fa28c208c6093ba873affcd58de6608a8a)) ([#5609](https://github.com/tutur3u/platform/issues/5609)) ([02d9424](https://github.com/tutur3u/platform/commit/02d942496bdf9df2f1491f243d4a51dd8df6a09a))
+* **mobile:** report production crashes and Meet media health ([4382096](https://github.com/tutur3u/platform/commit/43820967b5a4ef281e87b394b8a1ace4d4b21d4a)) ([#5597](https://github.com/tutur3u/platform/issues/5597)) ([94668a3](https://github.com/tutur3u/platform/commit/94668a38ecdcade89323d8913f1a2ca75a9d8ee4))
+
+
+### Bug Fixes
+
+* **backend:** clear stable Clippy warnings ([#5601](https://github.com/tutur3u/platform/issues/5601)) ([3625335](https://github.com/tutur3u/platform/commit/36253354f74909a8c44e04c0b09acf08435be0be))
+* **backend:** satisfy stable Clippy in existing handlers ([527a5cc](https://github.com/tutur3u/platform/commit/527a5ccfe46ffe075294eff7de72713fbd05c54a))
+* **ci:** keep release workflow tests within size gate ([f57d068](https://github.com/tutur3u/platform/commit/f57d068556ef07ed9667c35c9ee2155242016d1e)) ([#5604](https://github.com/tutur3u/platform/issues/5604)) ([c61d219](https://github.com/tutur3u/platform/commit/c61d2195cc80b1f1a862b3dbb6138d0b766c76e8))
+* **ci:** keep TestFlight upload independent of artifact storage ([c1a4ef8](https://github.com/tutur3u/platform/commit/c1a4ef84eb9d109a7078dabbf5de31a3fce9d34d)) ([#5592](https://github.com/tutur3u/platform/issues/5592)) ([a067fb4](https://github.com/tutur3u/platform/commit/a067fb4859f4bc02f375296be9c06820fa6961e4))
+* **ci:** skip Cloudflare builds for release-only PRs ([14248b4](https://github.com/tutur3u/platform/commit/14248b470755b3591c99858da4486112869a5463)) ([#5595](https://github.com/tutur3u/platform/issues/5595)) ([96f5ab5](https://github.com/tutur3u/platform/commit/96f5ab5011e0e67f9bb8615451301cee6ead6a00))
+* **ci:** skip release-only inventory E2E ([ef6d5d8](https://github.com/tutur3u/platform/commit/ef6d5d8a6c979479ef7e1321f8d7dee5a78bb026)) ([#5600](https://github.com/tutur3u/platform/issues/5600)) ([0d3613b](https://github.com/tutur3u/platform/commit/0d3613b9b66990b64631200ab048c66c25385eca))
+* **devbox:** enforce judge concurrency budgets ([f46ab79](https://github.com/tutur3u/platform/commit/f46ab798e4aae330bc6b2fe7d80de41f0f64715a))
+* **devbox:** restrict maintenance and validate judge results ([884bc77](https://github.com/tutur3u/platform/commit/884bc77cb01a85953cd11e85c937db62712ddccf))
+* **learn:** bind judge results to active editor attempt ([476933c](https://github.com/tutur3u/platform/commit/476933cae52b517c3de097258fcb765c82fb534c))
+* **meet:** restore shared call styling and responsive lobby ([cc05c81](https://github.com/tutur3u/platform/commit/cc05c8154bc13c7bbee1945eb1170b4ff2283386)) ([#5591](https://github.com/tutur3u/platform/issues/5591)) ([5bdb763](https://github.com/tutur3u/platform/commit/5bdb763144391742e7dc8faa36d83df352fe868e))
+* **mobile:** allow parallel iOS release vault reads ([#5605](https://github.com/tutur3u/platform/issues/5605)) ([c2d414c](https://github.com/tutur3u/platform/commit/c2d414c7862b894eeba35d9bfeadafc9e290a4b4))
+* **mobile:** allow two iOS vault fetches for parallel store release ([8f3c7d6](https://github.com/tutur3u/platform/commit/8f3c7d6749aee9b4387519692ed3db2bc113ff61))
+* **mobile:** handle unknown remote media kind ([ab54c16](https://github.com/tutur3u/platform/commit/ab54c167a9d1d081df07072365f6525f2eb7dc0c))
+* **mobile:** improve Meet media diagnosis and room invites ([#5584](https://github.com/tutur3u/platform/issues/5584)) ([fea48a7](https://github.com/tutur3u/platform/commit/fea48a7b3cf0c1ed8db2d6e34939080035528080))
+* **mobile:** recover Meet publishers without outgoing media ([4a799d8](https://github.com/tutur3u/platform/commit/4a799d819002e937b9649a5eda4895911f4c3d82)) ([#5594](https://github.com/tutur3u/platform/issues/5594)) ([5b01446](https://github.com/tutur3u/platform/commit/5b014464fe5d745d4f8c210f2ce4200059d079bb))
+* **mobile:** report Meet media capture failures safely ([01f36a9](https://github.com/tutur3u/platform/commit/01f36a93cd72e3663f00f3c2fd6f375fa875e2de))
+* **tasks:** allow media uploads in task creation ([644a1cb](https://github.com/tutur3u/platform/commit/644a1cb82e1658c1f1d5c21eccb9fa0a97a68ccc)) ([#5593](https://github.com/tutur3u/platform/issues/5593)) ([f26cee0](https://github.com/tutur3u/platform/commit/f26cee0c531525e832bd3c173c9c1541306fb916))
+* **tasks:** authorize task media embeds in satellite sessions ([a7f7f05](https://github.com/tutur3u/platform/commit/a7f7f0502da24c715250414e61856e49fdfe196c))
+* **tasks:** cancel drags without persisting preview moves ([3d803ec](https://github.com/tutur3u/platform/commit/3d803ecf7b3fd18d9b3444b27858ea93db055b1b))
+* **tasks:** cancel pending autosave when discarding media ([ca20918](https://github.com/tutur3u/platform/commit/ca209189a90a85e14c44d125376291b0a1eb7fd2))
+* **tasks:** clean up abandoned description media ([#5598](https://github.com/tutur3u/platform/issues/5598)) ([5ecc444](https://github.com/tutur3u/platform/commit/5ecc44436424947abb013d4dcd8f747eddeaf230))
+* **tasks:** clear discarded media draft state ([6024045](https://github.com/tutur3u/platform/commit/6024045435f161c567044d14a487aca39204e21d)) ([#5607](https://github.com/tutur3u/platform/issues/5607)) ([6a0fa75](https://github.com/tutur3u/platform/commit/6a0fa7558abb8afb583b11873cb60550ccc6db8d))
+* **tasks:** keep cross-column drop targets through release ([7fe11d7](https://github.com/tutur3u/platform/commit/7fe11d7614121241f96db327a4d2c9ec46539bcb))
+* **tasks:** preserve cross-column card drops ([#5596](https://github.com/tutur3u/platform/issues/5596)) ([256d35d](https://github.com/tutur3u/platform/commit/256d35d51c1d3606ce9db54ef01e2d6a0e347038))
+* **tasks:** reclaim abandoned description media ([5759b86](https://github.com/tutur3u/platform/commit/5759b869328448c12c2d46a07c3aa208d22c4c66))
+* **tasks:** render task media in Tasks satellite ([#5602](https://github.com/tutur3u/platform/issues/5602)) ([408a539](https://github.com/tutur3u/platform/commit/408a539134a810f0b307903cf19b8aab8e8aca4e))
+* **tasks:** type narrowed cross-column drop target ([d144f3d](https://github.com/tutur3u/platform/commit/d144f3d54e7c924c4cf6a76091438374f7c349b3))
+* **tasks:** use typed Supabase client for media cleanup ([809ee3b](https://github.com/tutur3u/platform/commit/809ee3bd8ca519f289b83721b6ea63d8b7e337f8))
+
+
+### Performance Improvements
+
+* **ci:** publish mobile beta platforms concurrently ([2c2ffc1](https://github.com/tutur3u/platform/commit/2c2ffc1dda27a8cabeae4702eae92ba67f2fa487)) ([#5603](https://github.com/tutur3u/platform/issues/5603)) ([6d47693](https://github.com/tutur3u/platform/commit/6d4769307d807e2dfe5183a726bf77434d8a4ffd))
+* **tasks:** scope media reference scans to workspace ([d7928fa](https://github.com/tutur3u/platform/commit/d7928fa4332e8055d3f0daf6a6ec9720c6ed64f8))
+
 ## [0.59.0](https://github.com/tutur3u/platform/compare/platform-v0.58.0...platform-v0.59.0) (2026-09-27)
 
 
