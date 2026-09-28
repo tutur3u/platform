@@ -47,6 +47,10 @@ Tasks provides:
 ## Task description media retention
 
 Task descriptions in the Tasks app accept pasted or selected images and videos.
+The Tasks app session can read embeds from the task-images directory when the
+user has `manage_drive_tasks_directory`, the same permission required to upload
+them. General Drive access is not required for task media, and a Tasks session
+cannot read unrelated Drive or Finance files through the share route.
 Uploads made while creating a task remain available when the task is created or
 saved as a draft. Discarding the new-task dialog requests immediate deletion of
 its uploads. A daily Tasks cleanup job removes task media older than 30 days
