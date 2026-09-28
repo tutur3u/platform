@@ -3220,6 +3220,7 @@
     "meetMicrophone": "Micrô",
     "meetMediaUnavailable": "Âm thanh hoặc video của cuộc gọi chưa kết nối được.",
     "meetMediaCaptureFailed": "Không thể bật micro hoặc camera. Hãy kiểm tra quyền của ứng dụng.",
+    "meetMediaSendFailed": "Micro hoặc camera đã kết nối nhưng chưa gửi âm thanh hoặc hình ảnh. Hãy kiểm tra thiết bị rồi thử lại.",
     "meetMediaSessionFailed": "Không thể bắt đầu phiên âm thanh và video của cuộc gọi.",
     "meetMediaPublishFailed": "Không thể kết nối micro hoặc camera của bạn với cuộc gọi.",
     "meetMediaReceiveFailed": "Không thể kết nối âm thanh hoặc video của người tham gia khác.",

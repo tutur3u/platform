@@ -13,6 +13,7 @@ class MeetMediaStatusBanner extends StatelessWidget {
 
   String _message(BuildContext context) => switch (failureStage) {
     'capture' => context.l10n.meetMediaCaptureFailed,
+    'send' => context.l10n.meetMediaSendFailed,
     'session' => context.l10n.meetMediaSessionFailed,
     'publish' => context.l10n.meetMediaPublishFailed,
     'receive' => context.l10n.meetMediaReceiveFailed,
