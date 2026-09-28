@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.45.1](https://github.com/tutur3u/platform/compare/internal-api-v0.45.0...internal-api-v0.45.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **tasks:** clean up abandoned description media ([#5598](https://github.com/tutur3u/platform/issues/5598)) ([5ecc444](https://github.com/tutur3u/platform/commit/5ecc44436424947abb013d4dcd8f747eddeaf230))
+* **tasks:** reclaim abandoned description media ([5759b86](https://github.com/tutur3u/platform/commit/5759b869328448c12c2d46a07c3aa208d22c4c66))
+
 ## [0.45.0](https://github.com/tutur3u/platform/compare/internal-api-v0.44.0...internal-api-v0.45.0) (2026-09-27)
 
 

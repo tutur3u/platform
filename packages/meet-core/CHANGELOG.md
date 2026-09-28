@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/tutur3u/platform/compare/meet-core-v1.2.0...meet-core-v1.2.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **meet:** restore shared call styling and responsive lobby ([cc05c81](https://github.com/tutur3u/platform/commit/cc05c8154bc13c7bbee1945eb1170b4ff2283386)) ([#5591](https://github.com/tutur3u/platform/issues/5591)) ([5bdb763](https://github.com/tutur3u/platform/commit/5bdb763144391742e7dc8faa36d83df352fe868e))
+
 ## [1.2.0](https://github.com/tutur3u/platform/compare/meet-core-v1.1.0...meet-core-v1.2.0) (2026-09-26)
 
 

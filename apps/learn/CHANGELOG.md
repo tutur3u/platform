@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/learn-v0.25.1...learn-v0.26.0) (2026-09-28)
+
+
+### Features
+
+* **learn:** add multilingual coding lab ([491e49f](https://github.com/tutur3u/platform/commit/491e49fa28c208c6093ba873affcd58de6608a8a)) ([#5609](https://github.com/tutur3u/platform/issues/5609)) ([02d9424](https://github.com/tutur3u/platform/commit/02d942496bdf9df2f1491f243d4a51dd8df6a09a))
+
+
+### Bug Fixes
+
+* **learn:** bind judge results to active editor attempt ([476933c](https://github.com/tutur3u/platform/commit/476933cae52b517c3de097258fcb765c82fb534c))
+
 ## [0.25.1](https://github.com/tutur3u/platform/compare/learn-v0.25.0...learn-v0.25.1) (2026-09-27)
 
 

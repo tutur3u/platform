@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.16.3](https://github.com/tutur3u/platform/compare/tasks-ui-v0.16.2...tasks-ui-v0.16.3) (2026-09-28)
+
+
+### Bug Fixes
+
+* **tasks:** allow media uploads in task creation ([644a1cb](https://github.com/tutur3u/platform/commit/644a1cb82e1658c1f1d5c21eccb9fa0a97a68ccc)) ([#5593](https://github.com/tutur3u/platform/issues/5593)) ([f26cee0](https://github.com/tutur3u/platform/commit/f26cee0c531525e832bd3c173c9c1541306fb916))
+* **tasks:** cancel drags without persisting preview moves ([3d803ec](https://github.com/tutur3u/platform/commit/3d803ecf7b3fd18d9b3444b27858ea93db055b1b))
+* **tasks:** cancel pending autosave when discarding media ([ca20918](https://github.com/tutur3u/platform/commit/ca209189a90a85e14c44d125376291b0a1eb7fd2))
+* **tasks:** clean up abandoned description media ([#5598](https://github.com/tutur3u/platform/issues/5598)) ([5ecc444](https://github.com/tutur3u/platform/commit/5ecc44436424947abb013d4dcd8f747eddeaf230))
+* **tasks:** clear discarded media draft state ([6024045](https://github.com/tutur3u/platform/commit/6024045435f161c567044d14a487aca39204e21d)) ([#5607](https://github.com/tutur3u/platform/issues/5607)) ([6a0fa75](https://github.com/tutur3u/platform/commit/6a0fa7558abb8afb583b11873cb60550ccc6db8d))
+* **tasks:** keep cross-column drop targets through release ([7fe11d7](https://github.com/tutur3u/platform/commit/7fe11d7614121241f96db327a4d2c9ec46539bcb))
+* **tasks:** preserve cross-column card drops ([#5596](https://github.com/tutur3u/platform/issues/5596)) ([256d35d](https://github.com/tutur3u/platform/commit/256d35d51c1d3606ce9db54ef01e2d6a0e347038))
+* **tasks:** reclaim abandoned description media ([5759b86](https://github.com/tutur3u/platform/commit/5759b869328448c12c2d46a07c3aa208d22c4c66))
+* **tasks:** type narrowed cross-column drop target ([d144f3d](https://github.com/tutur3u/platform/commit/d144f3d54e7c924c4cf6a76091438374f7c349b3))
+
 ## [0.16.2](https://github.com/tutur3u/platform/compare/tasks-ui-v0.16.1...tasks-ui-v0.16.2) (2026-09-20)
 
 

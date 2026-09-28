@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.36.2](https://github.com/tutur3u/platform/compare/tasks-v0.36.1...tasks-v0.36.2) (2026-09-28)
+
+
+### Bug Fixes
+
+* **tasks:** clean up abandoned description media ([#5598](https://github.com/tutur3u/platform/issues/5598)) ([5ecc444](https://github.com/tutur3u/platform/commit/5ecc44436424947abb013d4dcd8f747eddeaf230))
+* **tasks:** reclaim abandoned description media ([5759b86](https://github.com/tutur3u/platform/commit/5759b869328448c12c2d46a07c3aa208d22c4c66))
+* **tasks:** use typed Supabase client for media cleanup ([809ee3b](https://github.com/tutur3u/platform/commit/809ee3bd8ca519f289b83721b6ea63d8b7e337f8))
+
+
+### Performance Improvements
+
+* **tasks:** scope media reference scans to workspace ([d7928fa](https://github.com/tutur3u/platform/commit/d7928fa4332e8055d3f0daf6a6ec9720c6ed64f8))
+
 ## [0.36.1](https://github.com/tutur3u/platform/compare/tasks-v0.36.0...tasks-v0.36.1) (2026-09-26)
 
 
