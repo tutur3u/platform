@@ -2,6 +2,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { notifyDevboxRun } from '@tuturuuu/utils/devbox-control';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import {
   createPrivateDevboxClient,
@@ -202,6 +203,8 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
   if (error) {
     throw getDevboxStorageError(error);
   }
+
+  await notifyDevboxRun(runId);
 
   return {
     lease: {

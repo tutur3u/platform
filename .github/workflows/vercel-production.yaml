@@ -55,6 +55,12 @@ jobs:
     uses: ./.github/workflows/cron-control-cloudflare.yaml
     secrets: inherit
 
+  deploy-devbox-control-cloudflare:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'devbox-control-cloudflare.yaml')
+    uses: ./.github/workflows/devbox-control-cloudflare.yaml
+    secrets: inherit
+
   deploy-lettin-cloudflare:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'lettin-cloudflare.yaml')

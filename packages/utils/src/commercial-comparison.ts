@@ -17,6 +17,13 @@ const advanced: ComparisonFeature[] = [
     values: ['internal', 'internal', 'internal', 'internal'],
   },
   {
+    id: 'devboxControl',
+    app: 'devbox-control',
+    category: 'internal',
+    detail: 'standard',
+    values: ['internal', 'internal', 'internal', 'internal'],
+  },
+  {
     id: 'parley_0',
     app: 'parley',
     category: 'internal',

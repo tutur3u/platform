@@ -85,6 +85,30 @@ starting or repairing runners. When the flag is absent, agent poll and heartbeat
 requests return `403` before runner tokens are authenticated or runner state is
 updated.
 
+### Cloudflare control plane
+
+`ttr box agent start` uses the existing web API until
+`TUTURUUU_DEVBOX_CONTROL_URL` is set on the runner host. Point this variable
+at the deployed `tuturuuu-devbox-control` Worker to send heartbeats, job claims,
+and an authenticated wake connection through Cloudflare. The agent still sends
+job events and completion to the web API. It polls the Worker every 30 seconds
+when idle, even with a wake connection, so a missed signal cannot strand work.
+The Worker checks the runner token, token revocation, runner status, and root
+workspace membership before each heartbeat or claim. Disabling heartbeats on
+a runner continues to reject heartbeat requests. Worker traffic requires TLS.
+
+The production workflow installs Worker secrets from the repository's
+`PRODUCTION_SUPABASE_URL`, `PRODUCTION_SUPABASE_SECRET_KEY`, and
+`DEVBOX_CONTROL_INTERNAL_TOKEN` secrets. It uses
+`COLAB_CLOUDFLARE_API_TOKEN` for Cloudflare deployment. Set
+`TUTURUUU_DEVBOX_CONTROL_URL` and `TUTURUUU_DEVBOX_CONTROL_TOKEN` on web and
+Learn to wake an assigned runner immediately after enqueuing work. Use the
+same internal token as the Worker secret; never put it in the runner's env file.
+Missing or failed wake calls do not fail enqueue, and the fallback poll catches
+the job. Verify `/health`, then a real runner heartbeat, claim, completion,
+revocation rejection, and Learn submission before moving additional runners.
+The old web API remains available until all runners are migrated.
+
 If a host completed `ttr box setup` but does not appear in Infrastructure >
 Devboxes, confirm it was registered as a runner. Plain setup prepares the
 checkout, dependencies, local Supabase, and ignored env files only; it does not

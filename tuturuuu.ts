@@ -305,6 +305,16 @@ export const cloudflareProductionTargets = [
     productionWorkflow: 'coordination-cloudflare.yaml',
   },
   {
+    app: 'devbox-control',
+    appPath: 'apps/devbox-control',
+    additionalPaths: [
+      'packages/sdk/src/cli/devbox-agent',
+      'packages/sdk/src/platform-devbox',
+      'packages/utils/src/devbox-control',
+    ],
+    productionWorkflow: 'devbox-control-cloudflare.yaml',
+  },
+  {
     app: 'lettin',
     appPath: 'apps/lettin',
     packageName: '@tuturuuu/lettin',
