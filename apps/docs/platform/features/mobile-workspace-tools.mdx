@@ -148,8 +148,9 @@ and namespace; they can overlay the matching queued edits without a network
 call. Storage limits include the indexed entity payloads. This is the database
 foundation for module read adapters, rather than evidence that every module is
 already locally readable or writable.
-Mail and Meet keep an explicit request path for authorization cleanup on 401/403;
-their screens still render the scoped snapshot before awaiting that request.
+Mail keeps an explicit request path for authorization cleanup on 401/403.
+Meet now returns the scoped meeting snapshot immediately, refreshes in the
+background, and purges denied data if the refresh returns 401/403.
 Pending Notes, Mail, Finance, Calendar, and Inventory product edits are stored in the account-scoped encrypted
 mutation queue and replayed in order per module and workspace on reconnect. A
 conflict holds dependent edits in that scope while other modules continue. A queued item uses a dashed
@@ -185,6 +186,20 @@ folder create, rename, folder and file delete use path-scoped
 queued edits with pending rows. Habit trackers, entries, and streak actions
 also queue edits, with pending cards and activity rows. File uploads and
 create responses that omit a server ID still need dedicated replay support.
+Meet meeting create, edit, and delete also queue offline with a pending list
+treatment. Live room access, realtime tokens, and assistant actions remain
+network-dependent and must not be represented as queued calls.
+Task summaries, board lists, and board task pages read scoped snapshots while
+revalidating. Core task create, edit, description, delete and restore, plus
+board create and lifecycle edits, enter the outbox offline. Task and board
+cards expose pending status. Bulk task actions and richer board, project,
+initiative, label, and relationship mutations still need dedicated adapters.
+Chat conversation and message lists also return scoped snapshots while
+revalidating. Conversation create, edit, and delete and user message sends enter
+the encrypted outbox offline. A queued message appears immediately with a
+dimmed dashed frame. Each send carries a stable client request ID so replay can
+use the server's idempotency check. Assistant generation, file upload, and
+other conversation actions still need separate offline handling.
 Invalidation and logout prevent older
 in-flight requests from writing back into the cache. Keys must include user,
 workspace, and all query filters.

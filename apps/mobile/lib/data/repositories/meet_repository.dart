@@ -1,3 +1,6 @@
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
+import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/meet/meet_meeting.dart';
 import 'package:mobile/data/repositories/meet_cache.dart';
@@ -34,7 +37,37 @@ class MeetRepository {
       () => _api.getJson(path),
       forceRefresh: forceRefresh,
     );
-    return MeetMeetingsPage.fromJson(response);
+    final source = (response['meetings'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .toList(growable: false);
+    final base = MeetEndpoints.meetings(wsId);
+    final rows = overlayPendingCollection(
+      workspaceId: wsId,
+      feature: 'meet',
+      pathContains: base,
+      source: source,
+      pending: (await OfflineMutationQueue.instance.listPending())
+          .where(
+            (item) =>
+                item.path == base ||
+                item.path == MeetEndpoints.meeting(wsId, item.entityId ?? ''),
+          )
+          .toList(growable: false),
+      includeCreates: page == 1 && (search == null || search.isEmpty),
+      matchesQuery: search == null || search.isEmpty
+          ? null
+          : (row) => (row['name'] as String? ?? '').toLowerCase().contains(
+              search.toLowerCase(),
+            ),
+    );
+    return MeetMeetingsPage.fromJson({
+      ...response,
+      'meetings': rows,
+      'totalCount':
+          (response['totalCount'] as int? ?? source.length) +
+          rows.length -
+          source.length,
+    });
   }
 
   Future<MeetMeeting> createMeeting(
@@ -43,16 +76,30 @@ class MeetRepository {
     required DateTime time,
     DateTime? scheduleEndTime,
   }) async {
-    final response = await _api.postJson(MeetEndpoints.meetings(wsId), {
+    final path = MeetEndpoints.meetings(wsId);
+    final payload = <String, dynamic>{
       'name': name,
       'time': time.toUtc().toIso8601String(),
       if (scheduleEndTime != null)
         'schedule': {'endTime': scheduleEndTime.toUtc().toIso8601String()},
-    });
-    await _cache.invalidate(wsId);
-    return MeetMeeting.fromJson(
-      response['meeting'] as Map<String, dynamic>? ?? const <String, dynamic>{},
+    };
+    final result = await queueOrSendValue<MeetMeeting>(
+      feature: 'meet',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      pendingValue: (id) => MeetMeeting.fromJson({...payload, 'id': id}),
+      send: () async {
+        final response = await _api.postJson(path, payload);
+        return MeetMeeting.fromJson(
+          response['meeting'] as Map<String, dynamic>? ??
+              const <String, dynamic>{},
+        );
+      },
     );
+    await _cache.invalidate(wsId);
+    return result;
   }
 
   Future<MeetMeeting> updateMeeting(
@@ -61,18 +108,40 @@ class MeetRepository {
     required String name,
     required DateTime time,
   }) async {
-    final response = await _api.putJson(
-      MeetEndpoints.meeting(wsId, meetingId),
-      {'name': name, 'time': time.toUtc().toIso8601String()},
+    final path = MeetEndpoints.meeting(wsId, meetingId);
+    final payload = {'name': name, 'time': time.toUtc().toIso8601String()};
+    final result = await queueOrSendValue<MeetMeeting>(
+      feature: 'meet',
+      method: 'PUT',
+      path: path,
+      workspaceId: wsId,
+      entityId: meetingId,
+      payload: payload,
+      pendingValue: (id) => MeetMeeting.fromJson({...payload, 'id': id}),
+      send: () async {
+        final response = await _api.putJson(path, payload);
+        return MeetMeeting.fromJson(
+          response['meeting'] as Map<String, dynamic>? ??
+              const <String, dynamic>{},
+        );
+      },
     );
     await _cache.invalidate(wsId);
-    return MeetMeeting.fromJson(
-      response['meeting'] as Map<String, dynamic>? ?? const <String, dynamic>{},
-    );
+    return result;
   }
 
   Future<void> deleteMeeting(String wsId, String meetingId) async {
-    await _api.deleteJson(MeetEndpoints.meeting(wsId, meetingId));
+    final path = MeetEndpoints.meeting(wsId, meetingId);
+    await queueOrSendVoid(
+      feature: 'meet',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: meetingId,
+      send: () async {
+        await _api.deleteJson(path);
+      },
+    );
     await _cache.invalidate(wsId);
   }
 

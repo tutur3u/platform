@@ -2,6 +2,11 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_read_through.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
+import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/data/models/task.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
@@ -21,6 +26,8 @@ import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 
+part 'task_repository_helpers.dart';
+
 /// Repository for task operations.
 class TaskRepository {
   TaskRepository({ApiClient? apiClient, http.Client? httpClient})
@@ -29,6 +36,49 @@ class TaskRepository {
 
   final ApiClient _apiClient;
   final http.Client _httpClient;
+
+  Future<Map<String, dynamic>> _read(
+    String wsId,
+    String namespace,
+    String path,
+  ) => readThroughJson(
+    api: _apiClient,
+    namespace: 'tasks.$namespace',
+    workspaceId: wsId,
+    path: path,
+  );
+
+  Future<void> _writeTaskVoid(
+    String wsId,
+    String method,
+    String path, {
+    Map<String, dynamic>? payload,
+    String? entityId,
+  }) async {
+    await queueOrSendVoid(
+      feature: 'tasks',
+      method: method,
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      entityId: entityId,
+      send: () async {
+        switch (method) {
+          case 'POST':
+            await _apiClient.postJson(path, payload);
+          case 'PUT':
+            await _apiClient.putJson(path, payload ?? {});
+          case 'PATCH':
+            await _apiClient.patchJson(path, payload ?? {});
+          case 'DELETE':
+            await _apiClient.deleteJson(path, body: payload);
+        }
+      },
+    );
+    await CacheStore.instance.invalidateTags({
+      'module:tasks',
+    }, workspaceId: wsId);
+  }
 
   String _filenameFromPath(String path) {
     final normalized = path.replaceAll(RegExp(r'\\'), '/');
@@ -105,97 +155,17 @@ class TaskRepository {
       'completedLimit': completedLimit.toString(),
     });
 
-    final response = await _apiClient.getJson('/api/v1/users/me/tasks?$query');
+    final response = await _read(wsId, 'mine', '/api/v1/users/me/tasks?$query');
     return UserTasksPage.fromJson(response);
   }
 
-  String _encodeQueryParameters(Map<String, String> params) {
-    return Uri(queryParameters: params).query;
-  }
-
-  DateTime _startOfDay(DateTime date) {
-    return DateTime(date.year, date.month, date.day);
-  }
-
-  DateTime _endOfDay(DateTime date) {
-    return DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
-  }
-
-  String _taskStartDateIso(DateTime date) {
-    return _startOfDay(date).toUtc().toIso8601String();
-  }
-
-  String _taskEndDateIso(DateTime date) {
-    return _endOfDay(date).toUtc().toIso8601String();
-  }
-
-  Task _taskFromApiJson(Map<String, dynamic> json) {
-    final priority = switch (json['priority']) {
-      'low' => 1,
-      'normal' => 2,
-      'high' => 3,
-      'critical' => 4,
-      final int value => value,
-      final num value => value.toInt(),
-      _ => null,
-    };
-
-    return Task(
-      id: json['id'] as String,
-      name: json['name'] as String?,
-      description: json['description'] as String?,
-      priority: priority,
-      completed: json['completed'] as bool?,
-      startDate: json['start_date'] != null
-          ? DateTime.tryParse(json['start_date'] as String)?.toLocal()
-          : null,
-      endDate: json['end_date'] != null
-          ? DateTime.tryParse(json['end_date'] as String)?.toLocal()
-          : null,
-      boardId: json['board_id'] as String?,
-      listId: json['list_id'] as String?,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'] as String)?.toLocal()
-          : null,
-    );
-  }
-
-  String? _priorityToApiValue(Object? value) {
-    return switch (value) {
-      'low' => 'low',
-      'normal' => 'normal',
-      'high' => 'high',
-      'critical' => 'critical',
-      1 => 'low',
-      2 => 'normal',
-      3 => 'high',
-      4 => 'critical',
-      final num number when number.toInt() >= 1 && number.toInt() <= 4 =>
-        _priorityToApiValue(number.toInt()),
-      _ => null,
-    };
-  }
-
-  Map<String, dynamic> _normalizeTaskPayload(Map<String, dynamic> data) {
-    return {
-      if (data['name'] != null) 'name': data['name'],
-      if (data.containsKey('description')) 'description': data['description'],
-      if (_priorityToApiValue(data['priority']) != null)
-        'priority': _priorityToApiValue(data['priority']),
-      if (data['start_date'] != null) 'start_date': data['start_date'],
-      if (data['startDate'] != null) 'start_date': data['startDate'],
-      if (data['end_date'] != null) 'end_date': data['end_date'],
-      if (data['endDate'] != null) 'end_date': data['endDate'],
-      if (data['list_id'] != null) 'list_id': data['list_id'],
-      if (data['listId'] != null) 'list_id': data['listId'],
-      if (data['completed'] != null) 'completed': data['completed'],
-      if (data['deleted'] != null) 'deleted': data['deleted'],
-    };
-  }
-
   Future<List<Task>> getTasks(String wsId) async {
-    final response = await _apiClient.getJson('/api/v1/workspaces/$wsId/tasks');
-    final tasks = response['tasks'] as List<dynamic>? ?? const [];
+    final path = '/api/v1/workspaces/$wsId/tasks';
+    final response = await _read(wsId, 'list', path);
+    final tasks = await _overlayTaskRows(
+      wsId,
+      response['tasks'] as List<dynamic>? ?? const <dynamic>[],
+    );
 
     return tasks
         .whereType<Map<String, dynamic>>()
@@ -204,13 +174,34 @@ class TaskRepository {
   }
 
   Future<Task?> getTaskById(String taskId, {required String wsId}) async {
+    final pending = await OfflineMutationQueue.instance.listPending();
+    for (final item in pending) {
+      if (item.feature == 'tasks' &&
+          item.workspaceId == wsId &&
+          item.entityId == taskId &&
+          item.method == 'POST' &&
+          item.payload != null) {
+        return _taskFromApiJson({...item.payload!, 'id': taskId});
+      }
+    }
     try {
-      final response = await _apiClient.getJson(
+      final response = await _read(
+        wsId,
+        'detail',
         '/api/v1/workspaces/$wsId/tasks/$taskId',
       );
       final task = response['task'];
       if (task is! Map<String, dynamic>) return null;
-      return _taskFromApiJson(task);
+      final rows = overlayPendingCollection(
+        workspaceId: wsId,
+        feature: 'tasks',
+        pathContains: '/api/v1/workspaces/$wsId/tasks',
+        source: [task],
+        pending: pending,
+        includeCreates: false,
+        matchesQuery: (row) => row['deleted'] != true,
+      );
+      return rows.isEmpty ? null : _taskFromApiJson(rows.single);
     } on ApiException catch (error) {
       if (error.statusCode == 404) {
         return null;
@@ -220,19 +211,31 @@ class TaskRepository {
   }
 
   Future<Task> createTask(String wsId, Map<String, dynamic> data) async {
-    final response = await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/tasks',
-      _normalizeTaskPayload(data),
+    final path = '/api/v1/workspaces/$wsId/tasks';
+    final payload = _normalizeTaskPayload(data);
+    final result = await queueOrSendValue<Task>(
+      feature: 'tasks',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      pendingValue: (id) => _taskFromApiJson({...payload, 'id': id}),
+      send: () async {
+        final response = await _apiClient.postJson(path, payload);
+        final task = response['task'];
+        if (task is! Map<String, dynamic>) {
+          throw const ApiException(
+            message: 'Invalid task create response',
+            statusCode: 0,
+          );
+        }
+        return _taskFromApiJson(task);
+      },
     );
-    final task = response['task'];
-    if (task is! Map<String, dynamic>) {
-      throw const ApiException(
-        message: 'Invalid task create response',
-        statusCode: 0,
-      );
-    }
-
-    return _taskFromApiJson(task);
+    await CacheStore.instance.invalidateTags({
+      'module:tasks',
+    }, workspaceId: wsId);
+    return result;
   }
 
   Future<void> updateTask(
@@ -240,10 +243,9 @@ class TaskRepository {
     Map<String, dynamic> data, {
     required String wsId,
   }) async {
-    await _apiClient.putJson(
-      '/api/v1/workspaces/$wsId/tasks/$taskId',
-      _normalizeTaskPayload(data),
-    );
+    final path = '/api/v1/workspaces/$wsId/tasks/$taskId';
+    final payload = _normalizeTaskPayload(data);
+    await _writeTaskVoid(wsId, 'PUT', path, payload: payload, entityId: taskId);
   }
 
   Future<void> updateTaskDescription({
@@ -258,32 +260,41 @@ class TaskRepository {
         'description_yjs_state': descriptionYjsState,
     };
 
-    await _apiClient.patchJson(
-      '/api/v1/workspaces/$wsId/tasks/$taskId/description',
-      payload,
+    final path = '/api/v1/workspaces/$wsId/tasks/$taskId/description';
+    await _writeTaskVoid(
+      wsId,
+      'PATCH',
+      path,
+      payload: payload,
+      entityId: taskId,
     );
   }
 
   Future<void> deleteTask(String taskId, {required String wsId}) async {
-    await _apiClient.putJson('/api/v1/workspaces/$wsId/tasks/$taskId', {
-      'deleted': true,
-    });
+    await updateTask(taskId, {'deleted': true}, wsId: wsId);
   }
 
   Future<void> restoreTask({
     required String wsId,
     required String taskId,
   }) async {
-    await _apiClient.patchJson('/api/v1/workspaces/$wsId/tasks/$taskId', {
-      'restore': true,
-    });
+    final path = '/api/v1/workspaces/$wsId/tasks/$taskId';
+    const payload = {'restore': true};
+    await _writeTaskVoid(
+      wsId,
+      'PATCH',
+      path,
+      payload: payload,
+      entityId: taskId,
+    );
   }
 
   Future<void> permanentlyDeleteTask({
     required String wsId,
     required String taskId,
   }) async {
-    await _apiClient.deleteJson('/api/v1/workspaces/$wsId/tasks/$taskId');
+    final path = '/api/v1/workspaces/$wsId/tasks/$taskId';
+    await _writeTaskVoid(wsId, 'DELETE', path, entityId: taskId);
   }
 
   Future<TaskBulkResult> bulkBoardTasks({
@@ -312,7 +323,9 @@ class TaskRepository {
   }
 
   Future<List<TaskEstimateBoard>> getTaskEstimateBoards(String wsId) async {
-    final response = await _apiClient.getJson(
+    final response = await _read(
+      wsId,
+      'estimation',
       '/api/v1/workspaces/$wsId/boards/estimation',
     );
     final boardsData = response['boards'] as List<dynamic>? ?? const [];
@@ -340,16 +353,36 @@ class TaskRepository {
       'status': status,
     });
 
-    final response = await _apiClient.getJson(
+    final response = await _read(
+      wsId,
+      'boards',
       '/api/v1/workspaces/$wsId/task-boards?$query',
     );
+    final base = '/api/v1/workspaces/$wsId/task-boards';
     final boardsData = response['boards'] as List<dynamic>? ?? const [];
-    final pageBoards = boardsData
-        .whereType<Map<String, dynamic>>()
+    final rows = overlayPendingCollection(
+      workspaceId: wsId,
+      feature: 'tasks',
+      pathContains: base,
+      source: boardsData.whereType<Map<String, dynamic>>().toList(
+        growable: false,
+      ),
+      pending: (await OfflineMutationQueue.instance.listPending())
+          .where(
+            (item) =>
+                item.path == base || item.path == '$base/${item.entityId}',
+          )
+          .toList(growable: false),
+      normalizeCreate: (payload) => {...payload, 'ws_id': wsId},
+      includeCreates: normalizedPage == 1 && status == 'all',
+    );
+    final pageBoards = rows
         .map(TaskBoardSummary.fromSummaryJson)
         .toList(growable: false);
     final totalCount =
-        (response['count'] as num?)?.toInt() ?? pageBoards.length;
+        ((response['count'] as num?)?.toInt() ?? boardsData.length) +
+        rows.length -
+        boardsData.length;
 
     return TaskBoardsPage(
       boards: List.unmodifiable(pageBoards),
@@ -364,7 +397,7 @@ class TaskRepository {
     String boardId,
   ) async {
     final results = await Future.wait<dynamic>([
-      _getTaskBoardMetadata(wsId, boardId),
+      _getTaskBoardMetadata(this, wsId, boardId),
       getBoardLists(wsId, boardId),
       getTaskLabels(wsId),
       getWorkspaceUsers(wsId),
@@ -415,14 +448,18 @@ class TaskRepository {
       'offset': normalizedOffset.toString(),
     });
 
-    final response = await _apiClient.getJson(
+    final response = await _read(
+      wsId,
+      'boardTasks',
       '/api/v1/workspaces/$wsId/tasks?$query',
     );
     final taskRows = response['tasks'] as List<dynamic>? ?? const [];
-    final pageTasks = taskRows
-        .whereType<Map<String, dynamic>>()
-        .map(TaskBoardTask.fromJson)
-        .toList(growable: false);
+    final pageTasks = (await _overlayTaskRows(
+      wsId,
+      taskRows,
+      listId: listId,
+      offset: normalizedOffset,
+    )).map(TaskBoardTask.fromJson).toList(growable: false);
 
     if (members.isEmpty && labels.isEmpty && projects.isEmpty) {
       return List.unmodifiable(pageTasks);
@@ -455,14 +492,18 @@ class TaskRepository {
       'offset': normalizedOffset.toString(),
     });
 
-    final response = await _apiClient.getJson(
+    final response = await _read(
+      wsId,
+      'deletedTasks',
       '/api/v1/workspaces/$wsId/tasks?$query',
     );
     final taskRows = response['tasks'] as List<dynamic>? ?? const [];
-    final pageTasks = taskRows
-        .whereType<Map<String, dynamic>>()
-        .map(TaskBoardTask.fromJson)
-        .toList(growable: false);
+    final pageTasks = (await _overlayTaskRows(
+      wsId,
+      taskRows,
+      deletedOnly: true,
+      offset: normalizedOffset,
+    )).map(TaskBoardTask.fromJson).toList(growable: false);
 
     if (labels.isEmpty && projects.isEmpty) {
       return List.unmodifiable(pageTasks);
@@ -476,61 +517,6 @@ class TaskRepository {
         projects: projects,
       ),
     );
-  }
-
-  List<TaskBoardTask> _hydrateTaskRelations({
-    required List<TaskBoardTask> tasks,
-    required List<WorkspaceUserOption> members,
-    required List<TaskLabel> labels,
-    required List<TaskProjectSummary> projects,
-  }) {
-    final membersById = {for (final member in members) member.id: member};
-    final labelsById = {for (final label in labels) label.id: label};
-    final projectsById = {for (final project in projects) project.id: project};
-
-    return tasks
-        .map((task) {
-          final hydratedAssignees = task.assigneeIds
-              .map((id) => membersById[id])
-              .whereType<WorkspaceUserOption>()
-              .map(
-                (member) => TaskBoardTaskAssignee(
-                  id: member.id,
-                  displayName: member.displayName,
-                  email: member.email,
-                  avatarUrl: member.avatarUrl,
-                ),
-              )
-              .toList(growable: false);
-
-          final hydratedLabels = task.labelIds
-              .map((id) => labelsById[id])
-              .whereType<TaskLabel>()
-              .map(
-                (label) => TaskBoardTaskLabel(
-                  id: label.id,
-                  name: label.name,
-                  color: normalizeTaskLabelColor(label.color),
-                ),
-              )
-              .toList(growable: false);
-
-          final hydratedProjects = task.projectIds
-              .map((id) => projectsById[id])
-              .whereType<TaskProjectSummary>()
-              .map(
-                (project) =>
-                    TaskBoardTaskProject(id: project.id, name: project.name),
-              )
-              .toList(growable: false);
-
-          return task.copyWith(
-            assignees: hydratedAssignees,
-            labels: hydratedLabels,
-            projects: hydratedProjects,
-          );
-        })
-        .toList(growable: false);
   }
 
   Future<List<TaskBoardTask>> getBoardTasks(
@@ -559,14 +545,18 @@ class TaskRepository {
         'offset': offset.toString(),
       });
 
-      final response = await _apiClient.getJson(
+      final response = await _read(
+        wsId,
+        'boardTasks',
         '/api/v1/workspaces/$wsId/tasks?$query',
       );
       final taskRows = response['tasks'] as List<dynamic>? ?? const [];
-      final pageTasks = taskRows
-          .whereType<Map<String, dynamic>>()
-          .map(TaskBoardTask.fromJson)
-          .toList(growable: false);
+      final pageTasks = (await _overlayTaskRows(
+        wsId,
+        taskRows,
+        includeCreates: false,
+        offset: offset,
+      )).map(TaskBoardTask.fromJson).toList(growable: false);
 
       tasks.addAll(pageTasks);
       if (pageTasks.length < normalizedPageSize) break;
@@ -577,7 +567,9 @@ class TaskRepository {
   }
 
   Future<List<TaskBoardList>> getBoardLists(String wsId, String boardId) async {
-    final response = await _apiClient.getJson(
+    final response = await _read(
+      wsId,
+      'boardLists',
       '/api/v1/workspaces/$wsId/task-boards/$boardId/lists',
     );
     final lists = response['lists'] as List<dynamic>? ?? const [];
@@ -794,80 +786,17 @@ class TaskRepository {
     return TaskBoardList.fromJson(list);
   }
 
-  Future<TaskBoardDetail> _getTaskBoardMetadata(
-    String wsId,
-    String boardId,
-  ) async {
-    try {
-      final response = await _apiClient.getJson(
-        '/api/v1/workspaces/$wsId/task-boards/$boardId',
-      );
-      final board = response['board'];
-      if (board is! Map<String, dynamic>) {
-        throw const ApiException(message: 'Board not found', statusCode: 404);
-      }
-
-      return TaskBoardDetail.fromJson(board);
-    } on ApiException catch (error) {
-      if (error.statusCode != 404) {
-        rethrow;
-      }
-    }
-
-    var page = 1;
-    const maxPages = 50;
-
-    while (true) {
-      if (page > maxPages) {
-        throw const ApiException(
-          message: 'Board search pagination limit exceeded',
-          statusCode: 500,
-        );
-      }
-
-      final boardsPage = await getTaskBoards(wsId, page: page, pageSize: 200);
-
-      TaskBoardSummary? targetBoard;
-      for (final board in boardsPage.boards) {
-        if (board.id == boardId) {
-          targetBoard = board;
-          break;
-        }
-      }
-
-      if (targetBoard != null) {
-        return TaskBoardDetail(
-          id: targetBoard.id,
-          wsId: targetBoard.wsId,
-          name: targetBoard.name,
-          icon: targetBoard.icon,
-          ticketPrefix: targetBoard.ticketPrefix,
-          createdAt: targetBoard.createdAt,
-          archivedAt: targetBoard.archivedAt,
-          deletedAt: targetBoard.deletedAt,
-        );
-      }
-
-      final loadedCount = page * boardsPage.pageSize;
-      if (boardsPage.boards.isEmpty || loadedCount >= boardsPage.totalCount) {
-        break;
-      }
-
-      page += 1;
-    }
-
-    throw const ApiException(message: 'Board not found', statusCode: 404);
-  }
-
   Future<void> createTaskBoard({
     required String wsId,
     required String name,
     String? icon,
   }) async {
-    await _apiClient.postJson('/api/v1/workspaces/$wsId/task-boards', {
-      'name': name,
-      'icon': icon,
-    });
+    await _writeTaskVoid(
+      wsId,
+      'POST',
+      '/api/v1/workspaces/$wsId/task-boards',
+      payload: {'name': name, 'icon': icon},
+    );
   }
 
   Future<void> updateTaskBoard({
@@ -876,10 +805,13 @@ class TaskRepository {
     required String name,
     String? icon,
   }) async {
-    await _apiClient.putJson('/api/v1/workspaces/$wsId/task-boards/$boardId', {
-      'name': name,
-      'icon': icon,
-    });
+    await _writeTaskVoid(
+      wsId,
+      'PUT',
+      '/api/v1/workspaces/$wsId/task-boards/$boardId',
+      entityId: boardId,
+      payload: {'name': name, 'icon': icon},
+    );
   }
 
   Future<void> duplicateTaskBoard({
@@ -887,56 +819,79 @@ class TaskRepository {
     required String boardId,
     String? newBoardName,
   }) async {
-    await _apiClient
-        .postJson('/api/v1/workspaces/$wsId/task-boards/$boardId/copy', {
-          'targetWorkspaceId': wsId,
-          if (newBoardName != null && newBoardName.trim().isNotEmpty)
-            'newBoardName': newBoardName.trim(),
-        });
+    await _writeTaskVoid(
+      wsId,
+      'POST',
+      '/api/v1/workspaces/$wsId/task-boards/$boardId/copy',
+      payload: {
+        'targetWorkspaceId': wsId,
+        if (newBoardName != null && newBoardName.trim().isNotEmpty)
+          'newBoardName': newBoardName.trim(),
+      },
+    );
   }
 
   Future<void> archiveTaskBoard({
     required String wsId,
     required String boardId,
   }) async {
-    await _apiClient.putJson('/api/v1/workspaces/$wsId/task-boards/$boardId', {
-      'archived': true,
-    });
+    await _writeTaskVoid(
+      wsId,
+      'PUT',
+      '/api/v1/workspaces/$wsId/task-boards/$boardId',
+      entityId: boardId,
+      payload: {'archived': true},
+    );
   }
 
   Future<void> unarchiveTaskBoard({
     required String wsId,
     required String boardId,
   }) async {
-    await _apiClient.putJson('/api/v1/workspaces/$wsId/task-boards/$boardId', {
-      'archived': false,
-    });
+    await _writeTaskVoid(
+      wsId,
+      'PUT',
+      '/api/v1/workspaces/$wsId/task-boards/$boardId',
+      entityId: boardId,
+      payload: {'archived': false},
+    );
   }
 
   Future<void> softDeleteTaskBoard({
     required String wsId,
     required String boardId,
   }) async {
-    await _apiClient.putJson('/api/v1/workspaces/$wsId/task-boards/$boardId', {
-      'deleted': true,
-    });
+    await _writeTaskVoid(
+      wsId,
+      'PUT',
+      '/api/v1/workspaces/$wsId/task-boards/$boardId',
+      entityId: boardId,
+      payload: {'deleted': true},
+    );
   }
 
   Future<void> restoreTaskBoard({
     required String wsId,
     required String boardId,
   }) async {
-    await _apiClient.putJson('/api/v1/workspaces/$wsId/task-boards/$boardId', {
-      'restore': true,
-    });
+    await _writeTaskVoid(
+      wsId,
+      'PUT',
+      '/api/v1/workspaces/$wsId/task-boards/$boardId',
+      entityId: boardId,
+      payload: {'restore': true},
+    );
   }
 
   Future<void> permanentlyDeleteTaskBoard({
     required String wsId,
     required String boardId,
   }) async {
-    await _apiClient.deleteJson(
+    await _writeTaskVoid(
+      wsId,
+      'DELETE',
       '/api/v1/workspaces/$wsId/task-boards/$boardId',
+      entityId: boardId,
     );
   }
 

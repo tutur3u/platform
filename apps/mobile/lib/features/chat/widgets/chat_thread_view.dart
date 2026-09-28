@@ -6,6 +6,7 @@ import 'package:mobile/features/chat/widgets/chat_attachment_preview.dart';
 import 'package:mobile/features/chat/widgets/chat_composer.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'chat_thread_message_list.dart';
@@ -80,6 +81,7 @@ class ChatThreadView extends StatelessWidget {
                       description: context.l10n.chatMessagesLoadError,
                     ),
                     _ => _MessageList(
+                      workspaceId: selected.wsId,
                       messages: messages,
                       currentUserId: currentUserId,
                       streamingAssistantText: streamingAssistantText,

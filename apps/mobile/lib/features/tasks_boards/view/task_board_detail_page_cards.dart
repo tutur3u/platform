@@ -41,233 +41,241 @@ class _BoardTaskTile extends StatelessWidget {
         ? theme.colorScheme.primary
         : listStyle.surfaceBorder;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: Material(
-        color: Colors.transparent,
+    return PendingSyncFrame(
+      workspaceId: board.wsId,
+      feature: 'tasks',
+      entityId: task.id,
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: InkWell(
+        child: Material(
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          onTap: isBulkSelectMode ? onToggleSelected : onTap,
-          onLongPress: () {
-            unawaited(AppHaptics.pickup());
-            onToggleSelected();
-          },
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Container(
-                  color: listStyle.accent.withValues(alpha: 0.07),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: isBulkSelectMode ? onToggleSelected : onTap,
+            onLongPress: () {
+              unawaited(AppHaptics.pickup());
+              onToggleSelected();
+            },
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Container(
+                    color: listStyle.accent.withValues(alpha: 0.07),
+                  ),
                 ),
-              ),
-              Positioned(
-                left: 0,
-                top: 0,
-                bottom: 0,
-                child: Container(
-                  width: 4,
-                  color: listStyle.accent.withValues(alpha: 0.7),
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 4,
+                    color: listStyle.accent.withValues(alpha: 0.7),
+                  ),
                 ),
-              ),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
-                decoration: BoxDecoration(
-                  border: Border.all(color: borderColor),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top row: [badge + title | assignees]
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  shad.OutlineBadge(
-                                    child: Text(_taskReference(task, board)),
-                                  ),
-                                  if (isBulkSelectMode) ...[
-                                    const shad.Gap(6),
-                                    Icon(
-                                      isSelected
-                                          ? Icons.check_box
-                                          : Icons.check_box_outline_blank,
-                                      size: 18,
-                                      color: isSelected
-                                          ? theme.colorScheme.primary
-                                          : theme.colorScheme.mutedForeground,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: borderColor),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top row: [badge + title | assignees]
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    shad.OutlineBadge(
+                                      child: Text(_taskReference(task, board)),
                                     ),
+                                    if (isBulkSelectMode) ...[
+                                      const shad.Gap(6),
+                                      Icon(
+                                        isSelected
+                                            ? Icons.check_box
+                                            : Icons.check_box_outline_blank,
+                                        size: 18,
+                                        color: isSelected
+                                            ? theme.colorScheme.primary
+                                            : theme.colorScheme.mutedForeground,
+                                      ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                              const shad.Gap(4),
-                              Text(
-                                title,
-                                style: theme.typography.small.copyWith(
-                                  fontWeight: FontWeight.w600,
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (task.assignees.isNotEmpty) ...[
-                          const shad.Gap(8),
-                          _AssigneeAvatarStack(assignees: task.assignees),
-                        ],
-                      ],
-                    ),
-                    // Start date (future only)
-                    if (startLabel != null) ...[
-                      const shad.Gap(4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.schedule_outlined,
-                            size: 11,
-                            color: theme.colorScheme.mutedForeground,
-                          ),
-                          const shad.Gap(3),
-                          Text(
-                            startLabel,
-                            style: theme.typography.small.copyWith(
-                              fontSize: 11,
-                              color: theme.colorScheme.mutedForeground,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    // Due date
-                    if (dueLabel != null) ...[
-                      const shad.Gap(4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 11,
-                            color: isOverdue
-                                ? kTaskBoardOverdueColor
-                                : theme.colorScheme.mutedForeground,
-                          ),
-                          const shad.Gap(3),
-                          Text(
-                            dueLabel,
-                            style: theme.typography.small.copyWith(
-                              fontSize: 11,
-                              color: isOverdue
-                                  ? kTaskBoardOverdueColor
-                                  : theme.colorScheme.mutedForeground,
-                              fontWeight: isOverdue
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                          if (isOverdue) ...[
-                            const shad.Gap(4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                                vertical: 1,
-                              ),
-                              decoration: BoxDecoration(
-                                color: kTaskBoardOverdueColor,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                context.l10n.taskBoardDetailOverdue,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.2,
+                                const shad.Gap(4),
+                                Text(
+                                  title,
+                                  style: theme.typography.small.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
+                          ),
+                          if (task.assignees.isNotEmpty) ...[
+                            const shad.Gap(8),
+                            _AssigneeAvatarStack(assignees: task.assignees),
                           ],
                         ],
                       ),
-                    ],
-                    if (relationshipIndicators.isNotEmpty) ...[
-                      const shad.Gap(8),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: relationshipIndicators
-                            .map(
-                              (indicator) => _TaskRelationshipIndicatorBadge(
-                                indicator: indicator,
+                      // Start date (future only)
+                      if (startLabel != null) ...[
+                        const shad.Gap(4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.schedule_outlined,
+                              size: 11,
+                              color: theme.colorScheme.mutedForeground,
+                            ),
+                            const shad.Gap(3),
+                            Text(
+                              startLabel,
+                              style: theme.typography.small.copyWith(
+                                fontSize: 11,
+                                color: theme.colorScheme.mutedForeground,
                               ),
-                            )
-                            .toList(growable: false),
-                      ),
-                    ],
-                    // Chips row: priority, estimation, project, labels
-                    if (_hasChips(
-                      estimationLabel,
-                      task,
-                      hasDescription: hasDescription,
-                    )) ...[
-                      const shad.Gap(8),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          _TaskPriorityChip(priority: task.priority),
-                          if (estimationLabel != null)
-                            shad.OutlineBadge(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(shad.LucideIcons.timer, size: 12),
-                                  const shad.Gap(3),
-                                  Text(
-                                    estimationLabel,
-                                    style: theme.typography.small.copyWith(
-                                      fontSize: 11,
-                                    ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      // Due date
+                      if (dueLabel != null) ...[
+                        const shad.Gap(4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 11,
+                              color: isOverdue
+                                  ? kTaskBoardOverdueColor
+                                  : theme.colorScheme.mutedForeground,
+                            ),
+                            const shad.Gap(3),
+                            Text(
+                              dueLabel,
+                              style: theme.typography.small.copyWith(
+                                fontSize: 11,
+                                color: isOverdue
+                                    ? kTaskBoardOverdueColor
+                                    : theme.colorScheme.mutedForeground,
+                                fontWeight: isOverdue
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                            if (isOverdue) ...[
+                              const shad.Gap(4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: kTaskBoardOverdueColor,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  context.l10n.taskBoardDetailOverdue,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.2,
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
-                          ...task.projects
-                              .take(1)
+                            ],
+                          ],
+                        ),
+                      ],
+                      if (relationshipIndicators.isNotEmpty) ...[
+                        const shad.Gap(8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: relationshipIndicators
                               .map(
-                                (project) => _ProjectBadge(
-                                  label: _taskProjectLabel(project),
+                                (indicator) => _TaskRelationshipIndicatorBadge(
+                                  indicator: indicator,
+                                ),
+                              )
+                              .toList(growable: false),
+                        ),
+                      ],
+                      // Chips row: priority, estimation, project, labels
+                      if (_hasChips(
+                        estimationLabel,
+                        task,
+                        hasDescription: hasDescription,
+                      )) ...[
+                        const shad.Gap(8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            _TaskPriorityChip(priority: task.priority),
+                            if (estimationLabel != null)
+                              shad.OutlineBadge(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      shad.LucideIcons.timer,
+                                      size: 12,
+                                    ),
+                                    const shad.Gap(3),
+                                    Text(
+                                      estimationLabel,
+                                      style: theme.typography.small.copyWith(
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                          ...task.labels.take(2).map(_TaskLabelBadge.new),
-                          if (task.labels.length > 2)
-                            shad.OutlineBadge(
-                              child: Text('+${task.labels.length - 2}'),
-                            ),
-                          if (hasDescription)
-                            Tooltip(
-                              message: context
-                                  .l10n
-                                  .taskBoardDetailTaskDescriptionLabel,
-                              child: shad.OutlineBadge(
-                                child: Icon(
-                                  Icons.notes_outlined,
-                                  size: 14,
-                                  color: theme.colorScheme.mutedForeground,
+                            ...task.projects
+                                .take(1)
+                                .map(
+                                  (project) => _ProjectBadge(
+                                    label: _taskProjectLabel(project),
+                                  ),
+                                ),
+                            ...task.labels.take(2).map(_TaskLabelBadge.new),
+                            if (task.labels.length > 2)
+                              shad.OutlineBadge(
+                                child: Text('+${task.labels.length - 2}'),
+                              ),
+                            if (hasDescription)
+                              Tooltip(
+                                message: context
+                                    .l10n
+                                    .taskBoardDetailTaskDescriptionLabel,
+                                child: shad.OutlineBadge(
+                                  child: Icon(
+                                    Icons.notes_outlined,
+                                    size: 14,
+                                    color: theme.colorScheme.mutedForeground,
+                                  ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

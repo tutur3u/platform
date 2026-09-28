@@ -4,6 +4,10 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_read_through.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
+import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
@@ -23,6 +27,17 @@ class ChatRepository {
   final http.Client _httpClient;
   final bool _ownsApiClient;
 
+  Future<Map<String, dynamic>> _read(
+    String wsId,
+    String namespace,
+    String path,
+  ) => readThroughJson(
+    api: _apiClient,
+    namespace: 'chat.$namespace',
+    workspaceId: wsId,
+    path: path,
+  );
+
   Future<ChatConversationPage> listConversations(
     String wsId, {
     ChatArchivedFilter archived = ChatArchivedFilter.active,
@@ -36,10 +51,29 @@ class ChatRepository {
         'offset': offset.toString(),
       },
     ).query;
-    final response = await _apiClient.getJson(
-      '/api/v1/workspaces/$wsId/chat/conversations?$query',
+    final base = '/api/v1/workspaces/$wsId/chat/conversations';
+    final response = await _read(wsId, 'conversations', '$base?$query');
+    final rows = overlayPendingCollection(
+      workspaceId: wsId,
+      feature: 'chat',
+      pathContains: base,
+      source: (response['conversations'] as List<dynamic>? ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .toList(growable: false),
+      pending: (await OfflineMutationQueue.instance.listPending())
+          .where(
+            (item) =>
+                item.path == base || item.path == '$base/${item.entityId}',
+          )
+          .toList(growable: false),
+      normalizeCreate: (payload) => {
+        ...payload,
+        'ws_id': wsId,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      includeCreates: offset == 0 && archived != ChatArchivedFilter.archived,
     );
-    return ChatConversationPage.fromJson(response);
+    return ChatConversationPage.fromJson({...response, 'conversations': rows});
   }
 
   Future<ChatConversation> createConversation(
@@ -53,21 +87,36 @@ class ChatRepository {
     String? modelId,
     String? systemPrompt,
   }) async {
-    final response = await _apiClient
-        .postJson('/api/v1/workspaces/$wsId/chat/conversations', {
-          'type': type.name,
-          if (title != null) 'title': title,
-          if (description != null) 'description': description,
-          if (participantUserIds.isNotEmpty)
-            'participantUserIds': participantUserIds,
-          if (aiEnabled != null) 'aiEnabled': aiEnabled,
-          if (autoReply != null) 'autoReply': autoReply,
-          if (modelId != null) 'modelId': modelId,
-          if (systemPrompt != null) 'systemPrompt': systemPrompt,
-        });
-    return ChatConversation.fromJson(
-      response['conversation'] as Map<String, dynamic>? ??
-          const <String, dynamic>{},
+    final path = '/api/v1/workspaces/$wsId/chat/conversations';
+    final payload = <String, dynamic>{
+      'type': type.name,
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+      if (participantUserIds.isNotEmpty)
+        'participantUserIds': participantUserIds,
+      if (aiEnabled != null) 'aiEnabled': aiEnabled,
+      if (autoReply != null) 'autoReply': autoReply,
+      if (modelId != null) 'modelId': modelId,
+      if (systemPrompt != null) 'systemPrompt': systemPrompt,
+    };
+    return await queueOrSendValue(
+      feature: 'chat',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      send: () async {
+        final response = await _apiClient.postJson(path, payload);
+        return ChatConversation.fromJson(
+          response['conversation'] as Map<String, dynamic>? ?? const {},
+        );
+      },
+      pendingValue: (id) => ChatConversation.fromJson({
+        ...payload,
+        'id': id,
+        'ws_id': wsId,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }),
     );
   }
 
@@ -78,20 +127,46 @@ class ChatRepository {
     String? description,
     bool? pinned,
   }) async {
-    final response = await _apiClient
-        .patchJson(_conversationPath(wsId, conversationId), {
-          if (title != null) 'title': title,
-          if (description != null) 'description': description,
-          if (pinned != null) 'pinned': pinned,
-        });
-    return ChatConversation.fromJson(
-      response['conversation'] as Map<String, dynamic>? ??
-          const <String, dynamic>{},
+    final path = _conversationPath(wsId, conversationId);
+    final payload = <String, dynamic>{
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+      if (pinned != null) 'pinned': pinned,
+    };
+    return await queueOrSendValue(
+      feature: 'chat',
+      method: 'PATCH',
+      path: path,
+      workspaceId: wsId,
+      entityId: conversationId,
+      payload: payload,
+      send: () async {
+        final response = await _apiClient.patchJson(path, payload);
+        return ChatConversation.fromJson(
+          response['conversation'] as Map<String, dynamic>? ?? const {},
+        );
+      },
+      pendingValue: (id) => ChatConversation.fromJson({
+        ...payload,
+        'id': id,
+        'ws_id': wsId,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }),
     );
   }
 
   Future<void> deleteConversation(String wsId, String conversationId) async {
-    await _apiClient.deleteJson(_conversationPath(wsId, conversationId));
+    final path = _conversationPath(wsId, conversationId);
+    await queueOrSendVoid(
+      feature: 'chat',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: conversationId,
+      send: () async {
+        await _apiClient.deleteJson(path);
+      },
+    );
   }
 
   Future<List<ChatMessage>> listMessages(
@@ -106,13 +181,26 @@ class ChatRepository {
         if (before != null) 'before': before,
       },
     ).query;
-    final response = await _apiClient.getJson(
-      '${_conversationPath(wsId, conversationId)}/messages?$query',
+    final path = '${_conversationPath(wsId, conversationId)}/messages';
+    final response = await _read(wsId, 'messages', '$path?$query');
+    final rows = overlayPendingCollection(
+      workspaceId: wsId,
+      feature: 'chat',
+      pathContains: path,
+      source: (response['messages'] as List<dynamic>? ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .toList(growable: false),
+      pending: (await OfflineMutationQueue.instance.listPending())
+          .where((item) => item.path == path || item.path.startsWith('$path/'))
+          .toList(growable: false),
+      normalizeCreate: (payload) => {
+        ...payload,
+        'conversation_id': conversationId,
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      includeCreates: before == null,
     );
-    return (response['messages'] as List<dynamic>? ?? const [])
-        .whereType<Map<String, dynamic>>()
-        .map(ChatMessage.fromJson)
-        .toList(growable: false);
+    return rows.map(ChatMessage.fromJson).toList(growable: false);
   }
 
   Future<String> attachmentReadUrl(
@@ -143,21 +231,63 @@ class ChatRepository {
     String? clientRequestId,
     bool miraMode = false,
   }) async* {
-    final response = await _apiClient.sendJsonStream(
-      'POST',
-      '${_conversationPath(wsId, conversationId)}/messages',
-      {
-        'content': content,
-        'kind': kind.name,
-        'attachments': attachments
-            .map((attachment) => attachment.toJson())
-            .toList(growable: false),
-        if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
-        if (clientRequestId != null) 'clientRequestId': clientRequestId,
-        if (miraMode) 'miraMode': true,
-      },
-      accept: 'application/x-ndjson',
-    );
+    final path = '${_conversationPath(wsId, conversationId)}/messages';
+    final requestId = clientRequestId ?? newLocalMutationId();
+    final localId = newLocalMutationId();
+    final payload = <String, dynamic>{
+      'content': content,
+      'kind': kind.name,
+      'attachments': attachments
+          .map((attachment) => attachment.toJson())
+          .toList(growable: false),
+      if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
+      'clientRequestId': requestId,
+      if (miraMode) 'miraMode': true,
+    };
+    ChatMessage pendingMessage() => ChatMessage.fromJson({
+      ...payload,
+      'id': localId,
+      'conversation_id': conversationId,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+    });
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'chat',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      entityId: localId,
+      replaySafe: kind == ChatMessageKind.user && !miraMode,
+    )) {
+      yield ChatStreamMessageEvent(pendingMessage());
+      yield const ChatStreamDoneEvent();
+      return;
+    }
+    late final http.StreamedResponse response;
+    try {
+      response = await _apiClient.sendJsonStream(
+        'POST',
+        path,
+        payload,
+        accept: 'application/x-ndjson',
+      );
+    } on ApiException catch (error) {
+      if (!await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+        error: error,
+        feature: 'chat',
+        method: 'POST',
+        path: path,
+        workspaceId: wsId,
+        payload: payload,
+        entityId: localId,
+        replaySafe: kind == ChatMessageKind.user && !miraMode,
+      )) {
+        rethrow;
+      }
+      yield ChatStreamMessageEvent(pendingMessage());
+      yield const ChatStreamDoneEvent();
+      return;
+    }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = await response.stream.bytesToString();
