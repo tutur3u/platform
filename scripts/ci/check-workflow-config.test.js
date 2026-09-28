@@ -846,8 +846,8 @@ test('Inventory and Storefront cache invalidation stays protected by E2E', () =>
   const job = workflow.jobs?.['inventory-storefront-cache-e2e'];
 
   assert.ok(job, 'e2e-tests.yaml must define the cross-app cache E2E job');
-  assert.equal(job.needs, undefined);
-  assert.match(job.if, /github\.ref != 'refs\/heads\/production'/u);
+  assert.equal(job.needs, 'relevance');
+  assert.match(job.if, /production'.*needs\.relevance\.outputs\.run_e2e/u);
   assert.equal(job['timeout-minutes'], 30);
   assert.equal(job.permissions?.contents, 'read');
 
