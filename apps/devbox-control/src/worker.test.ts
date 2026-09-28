@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-(globalThis as unknown as { DurableObject: unknown }).DurableObject = class {};
+vi.mock('cloudflare:workers', () => ({ DurableObject: class {} }));
 const { default: worker } = await import('./worker');
 
 const token = `tdbx_${'a'.repeat(64)}`;

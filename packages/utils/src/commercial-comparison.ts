@@ -10,6 +10,13 @@ import { features2 } from './commercial-comparison-2';
 const gateOrder = ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'];
 const advanced: ComparisonFeature[] = [
   {
+    id: 'devboxControl',
+    app: 'devbox-control',
+    category: 'internal',
+    detail: 'standard',
+    values: ['internal', 'internal', 'internal', 'internal'],
+  },
+  {
     id: 'parley_0',
     app: 'parley',
     category: 'internal',

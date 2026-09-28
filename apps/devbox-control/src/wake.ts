@@ -1,3 +1,5 @@
+import { DurableObject } from 'cloudflare:workers';
+
 export class RunnerWake extends DurableObject {
   async fetch(request: Request): Promise<Response> {
     if (request.method === 'POST') {
