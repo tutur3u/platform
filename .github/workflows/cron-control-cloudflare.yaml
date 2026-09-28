@@ -1,0 +1,93 @@
+name: Cron Control Cloudflare
+on:
+  pull_request:
+    paths:
+      - 'apps/cron-control/**'
+      - '.github/workflows/cron-control-cloudflare.yaml'
+      - 'apps/web/vercel.json'
+      - 'bun.lock'
+      - 'tuturuuu.ts'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/cron-control/**'
+      - '.github/workflows/cron-control-cloudflare.yaml'
+      - 'apps/web/vercel.json'
+      - 'bun.lock'
+      - 'tuturuuu.ts'
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+  deployments: read
+concurrency:
+  group: cron-control-cloudflare-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: cron-control-cloudflare.yaml
+  validate:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - run: bun x --no-install wrangler types --env-interface CronControlEnv apps/cron-control/worker-configuration.d.ts -c apps/cron-control/wrangler.jsonc
+      - run: bun x --no-install tsc --project apps/cron-control/tsconfig.json
+      - run: bun x --no-install vitest run apps/cron-control/src/worker.test.ts
+      - run: bun x --no-install wrangler deploy --dry-run -c apps/cron-control/wrangler.jsonc
+  deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/production'
+    permissions:
+      contents: read
+      deployments: write
+    runs-on: ubuntu-latest
+    environment: cron-control-production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - name: Install Worker secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
+          CRON_CONTROL_DELIVERY_TOKEN: ${{ secrets.CRON_CONTROL_DELIVERY_TOKEN }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" && test -n "$SUPABASE_URL" && test -n "$SUPABASE_SECRET_KEY" && test -n "$CRON_CONTROL_DELIVERY_TOKEN" || { echo 'Missing Cron Control credential'; exit 1; }
+          node -e 'const fs = require("node:fs"); const names = ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "CRON_CONTROL_DELIVERY_TOKEN"]; fs.writeFileSync(process.env.RUNNER_TEMP + "/cron-control-secrets.json", JSON.stringify(Object.fromEntries(names.map((name) => [name, process.env[name]]))), { mode: 0o600 });'
+          bun x --no-install wrangler secret bulk "$RUNNER_TEMP/cron-control-secrets.json" -c apps/cron-control/wrangler.jsonc
+      - run: bun x --no-install wrangler deploy -c apps/cron-control/wrangler.jsonc --message "$GITHUB_SHA"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+      - name: Record successful Cloudflare deployment
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYMENT_MARKER_SHA: ${{ github.sha }}
+          DEPLOYMENT_MARKER_WORKFLOW_NAME: cron-control-cloudflare.yaml
+        run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts

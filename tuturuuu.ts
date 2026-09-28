@@ -288,6 +288,11 @@ export const vercelWorkflowTargets = [
 
 export const cloudflareProductionTargets = [
   {
+    app: 'cron-control',
+    appPath: 'apps/cron-control',
+    productionWorkflow: 'cron-control-cloudflare.yaml',
+  },
+  {
     app: 'colab',
     appPath: 'apps/colab',
     packageName: '@tuturuuu/colab',

@@ -49,6 +49,12 @@ jobs:
     uses: ./.github/workflows/coordination-cloudflare.yaml
     secrets: inherit
 
+  deploy-cron-control-cloudflare:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'cron-control-cloudflare.yaml')
+    uses: ./.github/workflows/cron-control-cloudflare.yaml
+    secrets: inherit
+
   deploy-lettin-cloudflare:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'lettin-cloudflare.yaml')

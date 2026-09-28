@@ -15,10 +15,6 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/cron/process-immediate-notifications",
-      "schedule": "*/5 * * * *"
-    },
-    {
       "path": "/api/cron/process-post-email-queue",
       "schedule": "*/30 * * * *"
     },
