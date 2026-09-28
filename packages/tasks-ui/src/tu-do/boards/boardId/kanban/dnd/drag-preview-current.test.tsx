@@ -13,8 +13,9 @@ vi.mock('../../../../shared/board-broadcast-context', () => ({
   useBoardBroadcast: () => null,
 }));
 
-it('exposes the latest target before React renders the drag preview', () => {
+it('exposes the latest target before render and clears it on cancel', () => {
   const queryClient = new QueryClient();
+  const mutate = vi.fn();
   const columns = [
     { id: 'source', status: 'not_started' },
     { id: 'target', status: 'not_started' },
@@ -49,7 +50,7 @@ it('exposes the latest target before React renders the drag preview', () => {
         isMultiSelectMode: false,
         clearSelection: vi.fn(),
         persistListPositions: vi.fn(),
-        reorderTaskMutation: {},
+        reorderTaskMutation: { mutate },
         taskHeightsRef: { current: new Map() },
         scrollContainerRef: { current: null },
       }),
@@ -77,4 +78,8 @@ it('exposes the latest target before React renders the drag preview', () => {
 
     expect(readLatestPreview()?.listId).toBe('target');
   });
+
+  act(() => result.current.onDragCancel());
+  expect(readLatestPreview()).toBeNull();
+  expect(mutate).not.toHaveBeenCalled();
 });

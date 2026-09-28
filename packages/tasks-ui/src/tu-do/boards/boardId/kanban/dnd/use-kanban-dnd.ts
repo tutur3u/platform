@@ -857,6 +857,11 @@ export function useKanbanDnd({
     processTaskDragPreview(event);
   }
 
+  function onDragCancel() {
+    restoreDragStartCache();
+    resetDragState(true);
+  }
+
   async function onDragEnd(event: DragEndEvent) {
     stopAutoScroll();
     const { active } = event;
@@ -870,13 +875,7 @@ export function useKanbanDnd({
       columns,
     });
 
-    if (!over) {
-      if (activeType === 'Task') {
-        restoreDragStartCache();
-      }
-      resetDragState(true);
-      return;
-    }
+    if (!over) return onDragCancel();
 
     if (!activeType) {
       resetDragState(true);
@@ -1632,6 +1631,7 @@ export function useKanbanDnd({
     onDragStart,
     onDragMove,
     onDragOver,
+    onDragCancel,
     onDragEnd,
   };
 }

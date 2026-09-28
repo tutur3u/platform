@@ -397,6 +397,7 @@ export function KanbanBoard({
     onDragStart,
     onDragMove,
     onDragOver,
+    onDragCancel,
     onDragEnd,
   } = useKanbanDnd({
     wsId: workspaceId,
@@ -452,14 +453,14 @@ export function KanbanBoard({
       });
 
       if (blockManualOrdering) {
-        await onDragEnd({ ...event, over: null });
+        onDragCancel();
         setManualOrderingDialogOpen(true);
         return;
       }
 
       await onDragEnd(event);
     },
-    [disableSort, getDragPreviewPosition, onDragEnd]
+    [disableSort, getDragPreviewPosition, onDragCancel, onDragEnd]
   );
 
   const estimationOptions = useMemo(() => {
@@ -576,7 +577,7 @@ export function KanbanBoard({
           onDragMove={onDragMove}
           onDragOver={onDragOver}
           onDragEnd={handleDragEnd}
-          onDragCancel={(event) => void onDragEnd({ ...event, over: null })}
+          onDragCancel={onDragCancel}
           measuring={{
             droppable: {
               strategy: MeasuringStrategy.WhileDragging,
