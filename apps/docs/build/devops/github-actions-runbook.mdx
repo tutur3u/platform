@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-07-21"
+updatedAt: "2026-09-28"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -788,6 +788,9 @@ from a build log and reproduce the native build failure on that toolchain.
   publishes it to the Google Play `internal` track.
 - iOS builds the production flavor IPA from `apps/mobile/.env.github` and
   uploads it to TestFlight.
+- The iOS job verifies the signed local IPA before upload. It also tries to
+  retain an IPA artifact for debugging, but a GitHub artifact storage timeout
+  does not stop the TestFlight upload or beta-group verification.
 - CI requests a signed GitHub OIDC token for the
   `tuturuuu-mobile-deployment` audience, then fetches an Android or iOS bundle
   from `https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle` with the issued
