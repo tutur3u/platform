@@ -211,7 +211,8 @@ Timer approvals, goals, comments, and request image uploads still need
 dedicated offline handling. Running session state applies queued lifecycle edits
 over the latest snapshot.
 Finance category and tag lists also read scoped snapshots while revalidating;
-their create, edit, and delete actions queue offline. An uncertain transaction
+their create, edit, and delete actions queue offline, and queued cards use the
+dimmed dashed treatment. An uncertain transaction
 update or delete enters manual review rather than automatic replay. Once a
 transaction or transfer update is acknowledged, failure to refresh its detail
 does not invite another money write.
