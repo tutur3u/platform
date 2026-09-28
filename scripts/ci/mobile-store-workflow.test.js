@@ -49,14 +49,14 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   const preflight = parsed.jobs['mobile-credentials-preflight'];
   assert.equal(preflight.environment, 'mobile-store-beta');
   assert.equal(preflight.outputs.has_ci_token, undefined);
-  assert.equal(preflight.outputs.build_name, undefined);
-  assert.equal(preflight.steps.length, 3);
-  assert.doesNotMatch(
-    preflight.steps.map((entry) => entry.run ?? '').join('\n'),
-    /mobile-deployment\/bundle/
-  );
   assert.equal(
-    preflight.steps[0].run,
+    preflight.outputs.build_name,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    '${{ steps.version_name.outputs.build_name }}'
+  );
+  assert.equal(preflight.defaults.run['working-directory'], 'apps/mobile');
+  assert.equal(
+    preflight.steps[1].run,
     'test "$GITHUB_REF" = refs/heads/production'
   );
   const step = (job, name) => {
@@ -64,13 +64,42 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     assert.equal(matches.length, 1, `Expected exactly one ${name} step`);
     return matches[0];
   };
+  assert.equal(
+    step(preflight, 'Cleanup release metadata credentials').if,
+    'always()'
+  );
+  assert.match(
+    step(preflight, 'Fetch iOS release metadata credentials').run,
+    /mobile-deployment\/bundle\?environment=production&platform=ios/
+  );
+  assert.match(
+    step(preflight, 'Calculate next mobile app version').run,
+    /build-name\.mjs/
+  );
+  assert.match(
+    step(preflight, 'Bundle mobile beta release history').run,
+    /release-history\.mjs/
+  );
+  assert.equal(
+    step(preflight, 'Share beta release history with both stores').with.name,
+    'mobile-beta-release-history'
+  );
   for (const [platform, jobId] of [
     ['android', 'publish-android-internal'],
     ['ios', 'publish-ios-testflight'],
   ]) {
     const job = parsed.jobs[jobId];
+    assert.deepEqual(job.needs, ['check-ci', 'mobile-credentials-preflight']);
+    assert.equal(
+      job.if,
+      "github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'"
+    );
     assert.equal(job.environment, 'mobile-store-beta');
     assert.equal(job.defaults.run['working-directory'], 'apps/mobile');
+    assert.equal(
+      step(job, 'Use prepared beta release history').with.name,
+      'mobile-beta-release-history'
+    );
     assert.equal(
       job.permissions,
       undefined,
@@ -98,38 +127,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   }
   const android = parsed.jobs['publish-android-internal'];
   const ios = parsed.jobs['publish-ios-testflight'];
-  assert.deepEqual(android.needs, [
-    'check-ci',
-    'mobile-credentials-preflight',
-    'publish-ios-testflight',
-  ]);
-  assert.match(android.if, /^\$\{\{ !cancelled\(\) && /);
-  assert.match(
-    android.if,
-    /needs\.publish-ios-testflight\.outputs\.build_name != ''/
-  );
-  assert.deepEqual(ios.needs, ['check-ci', 'mobile-credentials-preflight']);
-  assert.equal(
-    ios.if,
-    "github.event_name == 'push' && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'"
-  );
-  assert.equal(
-    ios.outputs.build_name,
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
-    '${{ steps.version_name.outputs.build_name }}'
-  );
-  assert.ok(
-    ios.steps.findIndex(
-      (entry) => entry.name === 'Fetch iOS deployment bundle from Tuturuuu'
-    ) <
-      ios.steps.findIndex(
-        (entry) => entry.name === 'Calculate next mobile app version'
-      )
-  );
-  assert.match(
-    step(ios, 'Calculate next mobile app version').run,
-    /build-name\.mjs/
-  );
+  assert.equal(ios.outputs, undefined);
   const publish = step(
     android,
     'Publish Android App Bundle to Google Play internal'
@@ -232,11 +230,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.match(workflow, /--build-number=/);
   assert.match(
     workflow,
-    /--build-name=\$\{\{ steps\.version_name\.outputs\.build_name \}\}/
-  );
-  assert.match(
-    workflow,
-    /--build-name=\$\{\{ needs\.publish-ios-testflight\.outputs\.build_name \}\}/
+    /--build-name=\$\{\{ needs\.mobile-credentials-preflight\.outputs\.build_name \}\}/
   );
   assert.match(workflow, /CFBundleShortVersionString/);
   assert.doesNotMatch(workflow, /tracks?:\s*production/i);
