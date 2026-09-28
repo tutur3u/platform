@@ -1,6 +1,4 @@
-import type { createAdminClient } from '@tuturuuu/supabase/next/server';
-
-type AdminClient = Awaited<ReturnType<typeof createAdminClient>>;
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 const MEDIA_FILENAME =
   /^\d{13}_[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}_.+\.(?:png|jpe?g|gif|webp|avif|svg|mp4|mov|webm|m4v)$/i;
@@ -20,7 +18,7 @@ export function taskMediaFilename(path: string): string | null {
 }
 
 export async function taskMediaIsReferenced(
-  admin: AdminClient,
+  admin: TypedSupabaseClient,
   workspaceId: string,
   filename: string
 ): Promise<boolean> {
@@ -53,7 +51,7 @@ export async function taskMediaIsReferenced(
 }
 
 export async function removeUnreferencedTaskMedia(
-  admin: AdminClient,
+  admin: TypedSupabaseClient,
   path: string
 ): Promise<boolean> {
   const filename = taskMediaFilename(path);
