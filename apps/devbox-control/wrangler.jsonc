@@ -1,0 +1,20 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tuturuuu-devbox-control",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-09-28",
+  "account_id": "e8912e2867beecc673d171907bf09649",
+  "workers_dev": true,
+  "observability": { "enabled": true, "head_sampling_rate": 0.05 },
+  "durable_objects": {
+    "bindings": [{ "name": "RUNNER_WAKE", "class_name": "RunnerWake" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RunnerWake"] }],
+  "secrets": {
+    "required": [
+      "SUPABASE_URL",
+      "SUPABASE_SECRET_KEY",
+      "DEVBOX_CONTROL_INTERNAL_TOKEN"
+    ]
+  }
+}

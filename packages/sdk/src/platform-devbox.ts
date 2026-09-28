@@ -187,20 +187,19 @@ export class DevboxesClient {
 export async function pollDevboxAgentJobs({
   baseUrl,
   fetch: fetchImpl = globalThis.fetch,
+  path = '/api/v1/devboxes/agents/poll',
   token,
 }: {
   baseUrl: string;
   fetch?: typeof fetch;
+  path?: string;
   token: string;
 }) {
-  const response = await fetchImpl(
-    new URL('/api/v1/devboxes/agents/poll', baseUrl),
-    {
-      headers: {
-        'X-Devbox-Runner-Token': token,
-      },
-    }
-  );
+  const response = await fetchImpl(new URL(path, baseUrl), {
+    headers: {
+      'X-Devbox-Runner-Token': token,
+    },
+  });
   if (!response.ok) return { ok: false as const, response };
 
   const payload = (await response.json()) as { jobs?: DevboxAgentJob[] };

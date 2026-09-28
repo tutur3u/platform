@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { executeJob, pollJobs } = vi.hoisted(() => ({
   executeJob: vi.fn(),
@@ -18,8 +18,32 @@ import { runDevboxAgentLoop } from './devbox-agent';
 describe('Devbox agent upgrade handoff', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.stubEnv('TUTURUUU_DEVBOX_CONTROL_URL', '');
     vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'));
+  });
+
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('routes heartbeat and claims to the configured Cloudflare control plane', async () => {
+    vi.stubEnv('TUTURUUU_DEVBOX_CONTROL_URL', 'https://control.example.test');
+    pollJobs.mockResolvedValue({ jobs: [], ok: true });
+
+    await runDevboxAgentLoop({
+      baseUrl: 'https://example.test',
+      once: true,
+      token: 'runner-token',
+    });
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      new URL('https://control.example.test/v1/heartbeat'),
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(pollJobs).toHaveBeenCalledWith({
+      baseUrl: 'https://control.example.test',
+      path: '/v1/poll',
+      token: 'runner-token',
+    });
   });
 
   it('exits after a successful CLI update so the service manager restarts it', async () => {
