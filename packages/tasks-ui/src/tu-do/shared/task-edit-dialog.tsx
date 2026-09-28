@@ -1443,7 +1443,7 @@ export function TaskEditDialog({
       let uploadResult: Awaited<ReturnType<typeof uploadWorkspaceTaskFile>>;
       try {
         uploadResult = await uploadWorkspaceTaskFile(effectiveTaskWsId, file, {
-          taskId: task?.id,
+          taskId: isCreateMode ? undefined : task?.id,
         });
       } catch (error) {
         const permissionError = error as {
@@ -1464,13 +1464,13 @@ export function TaskEditDialog({
       }
 
       const query = new URLSearchParams({ path: uploadResult.path });
-      if (task?.id) {
+      if (!isCreateMode && task?.id) {
         query.set('taskId', task.id);
       }
 
       return `/api/v1/workspaces/${encodeURIComponent(effectiveTaskWsId)}/storage/share?${query.toString()}`;
     },
-    [disabled, effectiveTaskWsId, task?.id, t]
+    [disabled, effectiveTaskWsId, isCreateMode, task?.id, t]
   );
 
   const imageUploadHandler =
