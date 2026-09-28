@@ -64,4 +64,39 @@ describe('task draft recovery', () => {
     rerender({ isCreateMode: false });
     expect(JSON.parse(localStorage.getItem(key)!).name).toBe('Unsaved task');
   });
+
+  it('does not restore a discarded media draft from a pending debounce', () => {
+    const key = getDraftStorageKey('board-1');
+    const { result, rerender } = renderHook(
+      ({ isOpen }) =>
+        useTaskFormState({
+          boardId: 'board-1',
+          isOpen,
+          isCreateMode: true,
+          isSaving: false,
+        }),
+      { initialProps: { isOpen: true } }
+    );
+
+    act(() => {
+      result.current.setName('Unsaved task');
+      result.current.setDescription({
+        type: 'doc',
+        content: [{ type: 'image', attrs: { src: 'task-images/test.png' } }],
+      });
+    });
+    act(() => result.current.clearDraftState());
+    act(() => vi.runAllTimers());
+    act(() => result.current.setName('Fresh task'));
+    act(() => vi.runAllTimers());
+    expect(JSON.parse(localStorage.getItem(key)!).name).toBe('Fresh task');
+
+    act(() => result.current.clearDraftState());
+    rerender({ isOpen: false });
+    rerender({ isOpen: true });
+
+    expect(localStorage.getItem(key)).toBeNull();
+    expect(result.current.name).toBe('');
+    expect(result.current.description).toBeNull();
+  });
 });
