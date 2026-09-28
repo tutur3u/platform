@@ -392,10 +392,12 @@ export function KanbanBoard({
     activeColumn,
     activeTask,
     dragPreviewPosition,
+    getDragPreviewPosition,
     optimisticUpdateInProgress,
     onDragStart,
     onDragMove,
     onDragOver,
+    onDragCancel,
     onDragEnd,
   } = useKanbanDnd({
     wsId: workspaceId,
@@ -436,28 +438,29 @@ export function KanbanBoard({
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
+      const latestPreview = getDragPreviewPosition();
       const blockManualOrdering = shouldBlockManualTaskOrdering({
         activeData: event.active.data.current,
         criteriaSortingActive: disableSort,
         overData: event.over?.data.current,
         overId: event.over?.id,
-        preview: dragPreviewPosition
+        preview: latestPreview
           ? {
-              listId: dragPreviewPosition.listId,
-              taskId: dragPreviewPosition.task.id,
+              listId: latestPreview.listId,
+              taskId: latestPreview.task.id,
             }
           : null,
       });
 
       if (blockManualOrdering) {
-        await onDragEnd({ ...event, over: null });
+        onDragCancel();
         setManualOrderingDialogOpen(true);
         return;
       }
 
       await onDragEnd(event);
     },
-    [disableSort, dragPreviewPosition, onDragEnd]
+    [disableSort, getDragPreviewPosition, onDragCancel, onDragEnd]
   );
 
   const estimationOptions = useMemo(() => {
@@ -574,7 +577,7 @@ export function KanbanBoard({
           onDragMove={onDragMove}
           onDragOver={onDragOver}
           onDragEnd={handleDragEnd}
-          onDragCancel={(event) => void onDragEnd({ ...event, over: null })}
+          onDragCancel={onDragCancel}
           measuring={{
             droppable: {
               strategy: MeasuringStrategy.WhileDragging,

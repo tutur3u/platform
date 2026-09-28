@@ -69,6 +69,7 @@ import type {
   TaskRect,
   VerticalRect,
 } from './task-drag-types';
+import { getTaskDropOver } from './task-drop-over';
 import {
   compareTasksByEffectiveSortKey,
   getEffectiveTaskSortKey,
@@ -279,9 +280,6 @@ export function useKanbanDnd({
   const broadcast = useBoardBroadcast();
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [hoverTargetListId, setHoverTargetListId] = useState<string | null>(
-    null
-  );
   const [dragPreviewPosition, setDragPreviewPositionState] =
     useState<DragPreviewPosition | null>(null);
   const [optimisticUpdateInProgress, setOptimisticUpdateInProgress] = useState<
@@ -307,6 +305,10 @@ export function useKanbanDnd({
       dragPreviewPositionRef.current = position;
       setDragPreviewPositionState(position);
     },
+    []
+  );
+  const getDragPreviewPosition = useCallback(
+    () => dragPreviewPositionRef.current,
     []
   );
 
@@ -601,7 +603,6 @@ export function useKanbanDnd({
     (clearOptimisticUpdates = false) => {
       setActiveColumn(null);
       setActiveTask(null);
-      setHoverTargetListId(null);
       setDragPreviewPosition(null);
       pickedUpTaskColumn.current = null;
       lastTargetListIdRef.current = null;
@@ -643,7 +644,6 @@ export function useKanbanDnd({
 
       if (activeType === 'Task') {
         if (!wsId) {
-          setHoverTargetListId(null);
           setDragPreviewPosition(null);
           return;
         }
@@ -663,7 +663,6 @@ export function useKanbanDnd({
           );
 
           if (!targetListExists) {
-            setHoverTargetListId(null);
             setDragPreviewPosition(null);
             return;
           }
@@ -675,9 +674,6 @@ export function useKanbanDnd({
           });
 
           setDragPreviewPosition(nextPreviewPosition);
-          setHoverTargetListId((current) =>
-            current === targetListId ? current : targetListId
-          );
           lastTargetListIdRef.current = targetListId;
           return;
         }
@@ -750,9 +746,6 @@ export function useKanbanDnd({
           return;
         }
         lastTargetListIdRef.current = targetListId;
-        setHoverTargetListId((current) =>
-          current === targetListId ? current : targetListId
-        );
       }
     },
     [
@@ -852,7 +845,6 @@ export function useKanbanDnd({
 
       pickedUpTaskColumn.current = sourceListId;
       lastTargetListIdRef.current = sourceListId;
-      setHoverTargetListId(sourceListId);
       return;
     }
   }
@@ -865,20 +857,25 @@ export function useKanbanDnd({
     processTaskDragPreview(event);
   }
 
+  function onDragCancel() {
+    restoreDragStartCache();
+    resetDragState(true);
+  }
+
   async function onDragEnd(event: DragEndEvent) {
     stopAutoScroll();
-    const { active, over } = event;
+    const { active } = event;
 
     const originalListId = pickedUpTaskColumn.current;
     const activeType = active.data?.current?.type;
+    const over = getTaskDropOver({
+      event,
+      originalListId,
+      preview: dragPreviewPositionRef.current,
+      columns,
+    });
 
-    if (!over) {
-      if (activeType === 'Task') {
-        restoreDragStartCache();
-      }
-      resetDragState(true);
-      return;
-    }
+    if (!over) return onDragCancel();
 
     if (!activeType) {
       resetDragState(true);
@@ -1628,12 +1625,13 @@ export function useKanbanDnd({
   return {
     activeColumn,
     activeTask,
-    hoverTargetListId,
     dragPreviewPosition,
+    getDragPreviewPosition,
     optimisticUpdateInProgress,
     onDragStart,
     onDragMove,
     onDragOver,
+    onDragCancel,
     onDragEnd,
   };
 }
