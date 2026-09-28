@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/notifications/widgets/notifications_action_button.dart';
@@ -286,7 +287,7 @@ class _ShellActionSegments extends StatelessWidget {
               button: true,
               enabled: action.enabled,
               excludeSemantics: true,
-              onTap: action.enabled ? action.onPressed : null,
+              onTap: action.enabled ? () => _invokeShellAction(action) : null,
               label: action.tooltip,
               child: Tooltip(
                 message: action.tooltip ?? '',
@@ -316,7 +317,9 @@ class _ShellActionSegments extends StatelessWidget {
                           ? colors.primaryForeground
                           : colors.mutedForeground,
                     ),
-                    onPressed: action.enabled ? action.onPressed : null,
+                    onPressed: action.enabled
+                        ? () => _invokeShellAction(action)
+                        : null,
                   ),
                 ),
               ),
@@ -382,7 +385,7 @@ class _ShellActionsOverflow extends StatelessWidget {
         }
         for (final action in actions) {
           if (action.id == id && action.enabled && !action.isLoading) {
-            action.onPressed?.call();
+            _invokeShellAction(action);
             return;
           }
         }
@@ -405,6 +408,11 @@ ShellChromeActionsCubit? _lookupShellChromeActionsCubit(BuildContext context) {
   }
 
   return BlocProvider.of<ShellChromeActionsCubit>(context);
+}
+
+void _invokeShellAction(ShellActionSpec action) {
+  unawaited(AppHaptics.selection());
+  action.onPressed?.call();
 }
 
 class _ShellActionButton extends StatelessWidget {
@@ -449,7 +457,7 @@ class _ShellActionButton extends StatelessWidget {
         opacity: action.enabled && !action.isLoading ? 1 : 0.6,
         child: shad.IconButton.ghost(
           onPressed: action.enabled && !action.isLoading
-              ? action.onPressed
+              ? () => _invokeShellAction(action)
               : null,
           icon: iconChild,
         ),

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -60,6 +63,7 @@ Future<bool> openTransactionDetailSheet(
             isCategoryConfidential: isCategoryConfidential,
           );
           await invalidateFinanceMutationCaches(wsId);
+          unawaited(AppHaptics.drop());
           return updated;
         },
     onDelete: (transactionId) async {
@@ -68,6 +72,7 @@ Future<bool> openTransactionDetailSheet(
         transactionId: transactionId,
       );
       await invalidateFinanceMutationCaches(wsId);
+      unawaited(AppHaptics.drop());
     },
   );
 }
@@ -118,6 +123,7 @@ Future<bool> openCreateTransactionSheet(
             isCategoryConfidential: isCategoryConfidential,
           );
           await invalidateFinanceMutationCaches(wsId);
+          unawaited(AppHaptics.drop());
           return transactionId;
         },
   );

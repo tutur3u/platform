@@ -33,6 +33,10 @@ produces a selection tick, and completing a drop produces a light confirmation.
 The floating dock uses the same semantic feedback. Haptics are enabled by default
 on iOS and Android, can be disabled in Preferences, follow system haptic policy,
 and throttle repeated feedback during a continuous gesture.
+Shell actions and standalone primary actions give a selection tick, and a
+speed dial distinguishes opening from choosing an action. Finance transaction
+actions give a light completion tap after the local edit is accepted; this tap
+does not claim that a queued offline edit has synchronized.
 
 Background warmups for optional products should also respect access state before fetching. Do not let Apps hub or boot-time cache warmups call product endpoints blindly; skip the warmup when the corresponding access cubit is not loaded and enabled, and fail soft on opportunistic `404` responses.
 
@@ -200,6 +204,12 @@ the encrypted outbox offline. A queued message appears immediately with a
 dimmed dashed frame. Each send carries a stable client request ID so replay can
 use the server's idempotency check. Assistant generation, file upload, and
 other conversation actions still need separate offline handling.
+Timer sessions, history, categories, goals, requests, and summaries use scoped
+snapshots while revalidating. Session start, stop, pause, resume, edit, missed
+entry creation, and deletion queue offline, with dimmed dashed session cards.
+Timer approvals, goals, comments, and request image uploads still need
+dedicated offline handling. Running session state applies queued lifecycle edits
+over the latest snapshot.
 Invalidation and logout prevent older
 in-flight requests from writing back into the cache. Keys must include user,
 workspace, and all query filters.

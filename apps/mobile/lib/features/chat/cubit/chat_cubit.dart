@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/chat/data/chat_realtime_client.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
@@ -39,6 +40,14 @@ class ChatCubit extends Cubit<ChatState> {
   void _emitState(ChatState nextState) {
     if (!isClosed) emit(nextState);
   }
+
+  bool _isPendingChatItem(String wsId, String entityId) =>
+      OfflineMutationQueue.instance.pending.value.any(
+        (record) =>
+            record.feature == 'chat' &&
+            record.workspaceId == wsId &&
+            record.entityId == entityId,
+      );
 
   Future<void> setWorkspace(
     String wsId, {
@@ -180,6 +189,16 @@ class ChatCubit extends Cubit<ChatState> {
     );
 
     final selected = state.selectedConversation;
+    if (_isPendingChatItem(wsId, conversationId) &&
+        state.messages[conversationId] == null) {
+      emit(
+        state.copyWith(
+          messageStatus: ChatMessageStatus.loaded,
+          messages: {...state.messages, conversationId: const <ChatMessage>[]},
+        ),
+      );
+      return;
+    }
     if (selected?.isReadOnlyAgent ?? false) {
       emit(
         state.copyWith(
