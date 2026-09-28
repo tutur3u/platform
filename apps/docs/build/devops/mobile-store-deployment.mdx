@@ -33,6 +33,13 @@ the separately scoped CI token and GitHub OIDC identity.
   vault. Each token value is shown only once, at issue time.
 - **Overview** — readiness checks plus draft activation and rollback.
 
+Each store release uses one protected CI token and a GitHub OIDC identity. The
+vault allows one Android bundle fetch per workflow run. It allows two iOS
+fetches: the shared preflight reads App Store Connect release metadata, then
+the macOS job retrieves signing assets. Further requests in the same run and
+attempt receive `replay_detected`. If the macOS fetch returns HTTP 401 after a
+successful preflight, check the vault replay policy before rerunning the job.
+
 ## Android Signing
 
 | Field | What it is | Where to get it |
