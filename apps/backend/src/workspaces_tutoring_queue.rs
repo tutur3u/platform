@@ -333,11 +333,11 @@ fn build_queue_response(
     let mut student_name: BTreeMap<String, String> = BTreeMap::new();
 
     for row in &attendance_rows {
-        if !row
+        if row
             .date
             .as_deref()
             .and_then(iso_day)
-            .is_some_and(|day| day >= absence_cutoff)
+            .is_none_or(|day| day < absence_cutoff)
         {
             continue;
         }

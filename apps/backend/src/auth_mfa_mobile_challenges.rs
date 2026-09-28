@@ -140,10 +140,9 @@ async fn poll_response(
     if let Some(requester) = as_object(row.request_metadata.as_ref())
         .get("requesterSessionId")
         .and_then(Value::as_str)
+        && current_session_id(&access_token).as_deref() != Some(requester)
     {
-        if current_session_id(&access_token).as_deref() != Some(requester) {
-            return invalid_challenge_response(404);
-        }
+        return invalid_challenge_response(404);
     }
     let status = challenge_status(row.status.as_deref());
 
