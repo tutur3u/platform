@@ -21,6 +21,7 @@ export function taskMediaFilename(path: string): string | null {
 
 export async function taskMediaIsReferenced(
   admin: AdminClient,
+  workspaceId: string,
   filename: string
 ): Promise<boolean> {
   // The generated UUID is unique across workspaces and remains unchanged in
@@ -30,10 +31,16 @@ export async function taskMediaIsReferenced(
   const pattern = `%${marker}%`;
 
   const [tasks, drafts] = await Promise.all([
-    admin.from('tasks').select('id').ilike('description', pattern).limit(1),
+    admin
+      .from('tasks')
+      .select('id, task_lists!inner(workspace_boards!inner(ws_id))')
+      .eq('task_lists.workspace_boards.ws_id', workspaceId)
+      .ilike('description', pattern)
+      .limit(1),
     admin
       .from('task_drafts')
       .select('id')
+      .eq('ws_id', workspaceId)
       .ilike('description', pattern)
       .limit(1),
   ]);
@@ -51,7 +58,8 @@ export async function removeUnreferencedTaskMedia(
 ): Promise<boolean> {
   const filename = taskMediaFilename(path);
   if (!filename) throw new Error('Invalid task media path');
-  if (await taskMediaIsReferenced(admin, filename)) return false;
+  if (await taskMediaIsReferenced(admin, path.split('/')[0] ?? '', filename))
+    return false;
 
   const { error } = await admin.storage.from('workspaces').remove([path]);
   if (error) throw error;

@@ -16,7 +16,7 @@ function adminWithReferences(referenced: boolean) {
   });
   const admin = {
     from: vi.fn(() => ({
-      select: () => ({ ilike: () => ({ limit }) }),
+      select: () => ({ eq: () => ({ ilike: () => ({ limit }) }) }),
     })),
     storage: { from: () => ({ remove }) },
   };
