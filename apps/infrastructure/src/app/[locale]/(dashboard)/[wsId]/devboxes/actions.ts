@@ -1,5 +1,6 @@
 'use server';
 
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   enforceRootWorkspaceAdmin,
@@ -7,13 +8,23 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 import {
+  type DevboxRunnerFeature,
   revokeDevboxRunner,
+  setDevboxRunnerFeature,
   setDevboxRunnerHeartbeatEnabled,
+  setDevboxRunnerResourceLimits,
 } from '@/lib/devboxes/admin-store';
-import { releaseDevboxLease, stopDevboxRun } from '@/lib/devboxes/store';
+import {
+  createDevboxRun,
+  releaseDevboxLease,
+  stopDevboxRun,
+} from '@/lib/devboxes/store';
 
 async function requireDevboxInfrastructureAdmin(wsId: string) {
+  const user = await getSatelliteAppSessionUser('infra');
+  if (!user) redirect(`/${wsId}/settings`);
   await enforceRootWorkspaceAdmin(wsId, {
     redirectTo: `/${wsId}/settings`,
   });
@@ -26,6 +37,7 @@ async function requireDevboxInfrastructureAdmin(wsId: string) {
   ) {
     redirect(`/${wsId}/settings`);
   }
+  return user;
 }
 
 function revalidateDevboxPage(wsId: string) {
@@ -51,6 +63,72 @@ export async function setDevboxRunnerHeartbeatEnabledAction(
 ) {
   await requireDevboxInfrastructureAdmin(wsId);
   await setDevboxRunnerHeartbeatEnabled(runnerId, enabled);
+  revalidateDevboxPage(wsId);
+}
+
+export async function setDevboxRunnerFeatureAction(
+  wsId: string,
+  runnerId: string,
+  feature: DevboxRunnerFeature,
+  enabled: boolean
+) {
+  await requireDevboxInfrastructureAdmin(wsId);
+  await setDevboxRunnerFeature(runnerId, feature, enabled);
+  revalidateDevboxPage(wsId);
+}
+
+const ResourceLimitsSchema = z.object({
+  max_cpu_percent: z.coerce.number().int().min(10).max(80),
+  max_memory_percent: z.coerce.number().int().min(10).max(80),
+  max_sandboxes: z.coerce.number().int().min(1).max(16),
+  max_instances: z.coerce.number().int().min(1).max(8),
+  sandbox_memory_mb: z.coerce.number().int().min(128).max(4096),
+  sandbox_timeout_seconds: z.coerce.number().int().min(1).max(120),
+  sandbox_pids: z.coerce.number().int().min(16).max(256),
+});
+
+export async function setDevboxRunnerResourceLimitsAction(
+  wsId: string,
+  runnerId: string,
+  formData: FormData
+) {
+  await requireDevboxInfrastructureAdmin(wsId);
+  const limits = ResourceLimitsSchema.parse(
+    Object.fromEntries(
+      Object.keys(ResourceLimitsSchema.shape).map((key) => [
+        key,
+        formData.get(key),
+      ])
+    )
+  );
+  await setDevboxRunnerResourceLimits(runnerId, limits);
+  revalidateDevboxPage(wsId);
+}
+
+export async function updateDevboxRunnerAction(wsId: string, runnerId: string) {
+  const user = await requireDevboxInfrastructureAdmin(wsId);
+  await createDevboxRun({
+    actorId: user.id,
+    command: ['bun', 'i', '-g', 'tuturuuu'],
+    runnerId,
+    timeoutSeconds: 300,
+    workload: 'maintenance',
+  });
+  revalidateDevboxPage(wsId);
+}
+
+export async function restartDevboxRunnerAction(
+  wsId: string,
+  runnerId: string
+) {
+  const user = await requireDevboxInfrastructureAdmin(wsId);
+  await createDevboxRun({
+    actorId: user.id,
+    command: ['__ttr_restart_agent_v1__'],
+    runnerId,
+    timeoutSeconds: 60,
+    workload: 'maintenance',
+  });
   revalidateDevboxPage(wsId);
 }
 

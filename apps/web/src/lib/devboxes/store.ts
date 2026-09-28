@@ -69,6 +69,7 @@ export interface CreateDevboxRunInput {
   reuse?: boolean;
   runnerId?: string;
   timeoutSeconds?: number;
+  workload?: 'run' | 'build' | 'serve' | 'tunnel' | 'maintenance' | 'judge';
 }
 
 export interface CreateDevboxLeaseInput {
@@ -167,7 +168,7 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
     }
   }
 
-  const { error } = await getPrivateTable(privateClient, 'devbox_runs').insert({
+  const runInsert = {
     actor_id: input.actorId,
     command: input.command,
     created_at: now,
@@ -179,7 +180,22 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
     status: 'queued',
     timeout_seconds: input.timeoutSeconds ?? null,
     updated_at: now,
-  });
+    workload: input.workload ?? 'run',
+  };
+  let { error } = await getPrivateTable(privateClient, 'devbox_runs').insert(
+    runInsert
+  );
+  if (
+    error?.message?.toLowerCase().includes('workload') &&
+    (error.message.includes('schema cache') ||
+      error.message.includes('does not exist') ||
+      error.message.includes('could not find'))
+  ) {
+    const { workload: _workload, ...legacyRunInsert } = runInsert;
+    ({ error } = await getPrivateTable(privateClient, 'devbox_runs').insert(
+      legacyRunInsert
+    ));
+  }
 
   if (error) {
     throw getDevboxStorageError(error);

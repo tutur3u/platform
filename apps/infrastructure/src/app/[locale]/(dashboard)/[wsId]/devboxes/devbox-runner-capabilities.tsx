@@ -24,6 +24,7 @@ export interface RunnerCapabilitySummary {
   docker: string | null;
   git: string | null;
   hostname: string | null;
+  judge: string | null;
   load: string | null;
   memoryUsedPercent: number | null;
   node: string | null;
@@ -81,6 +82,7 @@ export function getRunnerCapabilitySummary(
   const memory = asRecord(resources.memory);
   const runtimes = asRecord(root.runtimes);
   const tools = asRecord(root.tools);
+  const judge = asRecord(root.judge);
   const freeBytes = asNumber(memory.freeBytes);
   const totalBytes = asNumber(memory.totalBytes);
   const usedBytes =
@@ -110,6 +112,12 @@ export function getRunnerCapabilitySummary(
     docker: asString(tools.docker),
     git: asString(tools.git),
     hostname: asString(os.hostname),
+    judge:
+      typeof judge.ready === 'boolean'
+        ? judge.ready
+          ? t('capabilities.judge_ready')
+          : (asString(judge.reason) ?? t('capabilities.judge_unavailable'))
+        : null,
     load: formatLoadAverage(resources.loadAverage),
     memoryUsedPercent,
     node: asString(runtimes.node),
@@ -147,6 +155,10 @@ export function getRunnerCapabilityRows(
     {
       label: t('capabilities.docker'),
       value: summary.docker,
+    },
+    {
+      label: t('capabilities.judge'),
+      value: summary.judge,
     },
     {
       label: t('capabilities.git'),
@@ -252,6 +264,7 @@ export function RunnerCapabilitiesCell({
         />
         <DetailRow label={t('capabilities.load')} value={summary.load} />
         <DetailRow label={t('capabilities.docker')} value={summary.docker} />
+        <DetailRow label={t('capabilities.judge')} value={summary.judge} />
       </div>
     </div>
   );

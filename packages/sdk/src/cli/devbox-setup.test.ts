@@ -323,7 +323,7 @@ describe('devbox setup checkout and runner service', () => {
 
     const serviceFile = join(configDir, 'tuturuuu-devbox-runner.service');
     await expect(readFile(tokenFile, 'utf8')).resolves.toContain(
-      'TUTURUUU_DEVBOX_RUNNER_TOKEN=secret-token'
+      "TUTURUUU_DEVBOX_RUNNER_TOKEN='secret-token'"
     );
     expect((await stat(tokenFile)).mode & 0o777).toBe(0o600);
     await expect(readFile(serviceFile, 'utf8')).resolves.toContain(

@@ -465,6 +465,16 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/devboxes/cache by accepting CLI app-session Bearer tokens for the platform target with cli:access or browser/non-app-session Supabase credentials, requiring root workspace MEMBER access, and returning the legacy { caches: [] } body. Other devbox mutation routes remain legacy-owned."
     },
+    "api:/api/v1/devboxes/runs:apps/web/src/legacy-api-routes/v1/devboxes/runs/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Devbox run creation now records a typed workload so the database claim function can enforce each runner's enabled services. Rust mutation parity is pending; Next.js remains the live owner."
+    },
+    "api:/api/v1/devboxes/agents/heartbeat:apps/web/src/legacy-api-routes/v1/devboxes/agents/heartbeat/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Agent heartbeat accepts Judge sandbox readiness alongside host capability metrics. Rust parity is pending; Next.js remains the live owner."
+    },
     "api:/api/v1/devboxes/cache/prune:apps/web/src/legacy-api-routes/v1/devboxes/cache/prune/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

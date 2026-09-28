@@ -12,6 +12,7 @@ import {
   uptime,
 } from 'node:os';
 import packageJson from '../../package.json';
+import { getJudgeReadiness } from './devbox-judge-sandbox';
 
 const VERSION_TIMEOUT_MS = 1500;
 let staticCapabilitiesPromise: Promise<{
@@ -32,6 +33,10 @@ let staticCapabilitiesPromise: Promise<{
     git: string | null;
   };
 }> | null = null;
+let judgeReadinessPromise: Promise<
+  Awaited<ReturnType<typeof getJudgeReadiness>>
+> | null = null;
+let judgeReadinessAt = 0;
 
 function firstLine(value: string) {
   return value.trim().split(/\r?\n/u)[0]?.trim() || null;
@@ -105,10 +110,18 @@ async function readStaticCapabilities() {
 
 export async function createDevboxAgentCapabilities() {
   staticCapabilitiesPromise ??= readStaticCapabilities();
-  const staticCapabilities = await staticCapabilitiesPromise;
+  if (!judgeReadinessPromise || Date.now() - judgeReadinessAt > 60_000) {
+    judgeReadinessAt = Date.now();
+    judgeReadinessPromise = getJudgeReadiness();
+  }
+  const [staticCapabilities, judge] = await Promise.all([
+    staticCapabilitiesPromise,
+    judgeReadinessPromise,
+  ]);
 
   return {
     ...staticCapabilities,
+    judge,
     reportedAt: new Date().toISOString(),
     resources: {
       cpu: {

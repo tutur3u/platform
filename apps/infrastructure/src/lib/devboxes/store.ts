@@ -69,6 +69,7 @@ export interface CreateDevboxRunInput {
   reuse?: boolean;
   runnerId?: string;
   timeoutSeconds?: number;
+  workload?: 'run' | 'build' | 'serve' | 'tunnel' | 'maintenance' | 'judge';
 }
 
 export interface CreateDevboxLeaseInput {
@@ -179,6 +180,7 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
     status: 'queued',
     timeout_seconds: input.timeoutSeconds ?? null,
     updated_at: now,
+    workload: input.workload ?? 'run',
   });
 
   if (error) {

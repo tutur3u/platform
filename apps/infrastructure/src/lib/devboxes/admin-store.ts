@@ -38,12 +38,24 @@ export interface DevboxAdminRunner {
   actor_id: string;
   capabilities: unknown;
   created_at: string;
+  enabled_features: Record<string, boolean> | null;
   heartbeat_enabled: boolean;
   id: string;
   last_heartbeat_at: string | null;
   name: string;
+  resource_limits: DevboxRunnerResourceLimits | null;
   status: string;
   updated_at: string;
+}
+
+export interface DevboxRunnerResourceLimits {
+  max_cpu_percent: number;
+  max_memory_percent: number;
+  max_sandboxes: number;
+  max_instances: number;
+  sandbox_memory_mb: number;
+  sandbox_timeout_seconds: number;
+  sandbox_pids: number;
 }
 
 export interface DevboxAdminLease {
@@ -148,26 +160,64 @@ function isMissingHeartbeatEnabledColumn(error: DevboxStorageErrorLike) {
   );
 }
 
+function isMissingEnabledFeaturesColumn(error: DevboxStorageErrorLike) {
+  const normalized = error?.message?.toLowerCase() ?? '';
+  return (
+    (normalized.includes('enabled_features') ||
+      normalized.includes('resource_limits')) &&
+    (normalized.includes('schema cache') ||
+      normalized.includes('does not exist') ||
+      normalized.includes('could not find'))
+  );
+}
+
 async function listDevboxAdminRunners(client: DevboxPrivateSchemaClient) {
   const runnersResult = await getPrivateAdminTable<DevboxAdminRunner>(
     client,
     'devbox_runners'
   )
     .select(
-      'id,actor_id,name,status,capabilities,heartbeat_enabled,last_heartbeat_at,created_at,updated_at'
+      'id,actor_id,name,status,capabilities,heartbeat_enabled,enabled_features,resource_limits,last_heartbeat_at,created_at,updated_at'
     )
     .order('updated_at', { ascending: false })
     .limit(50);
 
-  if (
-    !runnersResult.error ||
-    !isMissingHeartbeatEnabledColumn(runnersResult.error)
-  ) {
+  if (!runnersResult.error) {
+    return runnersResult;
+  }
+
+  if (isMissingEnabledFeaturesColumn(runnersResult.error)) {
+    const legacyFeaturesResult = await getPrivateAdminTable<
+      Omit<DevboxAdminRunner, 'enabled_features' | 'resource_limits'>
+    >(client, 'devbox_runners')
+      .select(
+        'id,actor_id,name,status,capabilities,heartbeat_enabled,last_heartbeat_at,created_at,updated_at'
+      )
+      .order('updated_at', { ascending: false })
+      .limit(50);
+    if (!legacyFeaturesResult.error) {
+      return {
+        data:
+          legacyFeaturesResult.data?.map((runner) => ({
+            ...runner,
+            enabled_features: null,
+            resource_limits: null,
+          })) ?? null,
+        error: null,
+      };
+    }
+    if (!isMissingHeartbeatEnabledColumn(legacyFeaturesResult.error)) {
+      return { data: null, error: legacyFeaturesResult.error };
+    }
+  } else if (!isMissingHeartbeatEnabledColumn(runnersResult.error)) {
     return runnersResult;
   }
 
   const fallbackResult = await getPrivateAdminTable<
-    Omit<DevboxAdminRunner, 'heartbeat_enabled'>
+    Omit<
+      DevboxAdminRunner,
+      'heartbeat_enabled' | 'enabled_features' | 'resource_limits'
+    >
   >(client, 'devbox_runners')
     .select(
       'id,actor_id,name,status,capabilities,last_heartbeat_at,created_at,updated_at'
@@ -180,9 +230,44 @@ async function listDevboxAdminRunners(client: DevboxPrivateSchemaClient) {
       fallbackResult.data?.map((runner) => ({
         ...runner,
         heartbeat_enabled: false,
+        enabled_features: null,
+        resource_limits: null,
       })) ?? null,
     error: fallbackResult.error,
   };
+}
+
+export type DevboxRunnerFeature =
+  | 'run'
+  | 'build'
+  | 'serve'
+  | 'tunnel'
+  | 'judge';
+
+export async function setDevboxRunnerFeature(
+  runnerId: string,
+  feature: DevboxRunnerFeature,
+  enabled: boolean
+) {
+  const client = await createPrivateDevboxClient();
+  const { error } = await client.rpc('set_devbox_runner_feature', {
+    p_enabled: enabled,
+    p_feature: feature,
+    p_runner_id: runnerId,
+  });
+  if (error) throw getDevboxStorageError(error);
+}
+
+export async function setDevboxRunnerResourceLimits(
+  runnerId: string,
+  limits: DevboxRunnerResourceLimits
+) {
+  const client = await createPrivateDevboxClient();
+  const { error } = await client.rpc('set_devbox_runner_resource_limits', {
+    p_limits: limits,
+    p_runner_id: runnerId,
+  });
+  if (error) throw getDevboxStorageError(error);
 }
 
 export async function listDevboxControlSnapshot(): Promise<DevboxControlSnapshot> {

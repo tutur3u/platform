@@ -6043,11 +6043,15 @@
   },
   "devbox-control": {
     "actions": {
+      "disable": "Tắt",
       "disable_heartbeat": "Tắt heartbeat",
+      "enable": "Bật",
       "enable_heartbeat": "Bật heartbeat",
       "release": "Giải phóng",
       "revoke": "Thu hồi",
-      "stop": "Dừng"
+      "stop": "Dừng",
+      "update_restart": "Cập nhật CLI",
+      "restart_agent": "Khởi động lại agent"
     },
     "capabilities": {
       "bun": "Bun",
@@ -6063,7 +6067,10 @@
       "os": "HĐH",
       "ram": "RAM",
       "unreported": "Chưa báo cáo",
-      "uptime": "Uptime"
+      "uptime": "Uptime",
+      "judge": "Chấm bài",
+      "judge_ready": "Sẵn sàng",
+      "judge_unavailable": "Chưa sẵn sàng"
     },
     "columns": {
       "actions": "Thao tác",
@@ -6074,6 +6081,7 @@
       "duration": "Thời lượng",
       "environment": "Môi trường",
       "event": "Sự kiện",
+      "features": "Dịch vụ",
       "exit_code": "Mã thoát",
       "expires": "Hết hạn",
       "health": "Sức khỏe",
@@ -6087,7 +6095,8 @@
       "size": "Dung lượng",
       "status": "Trạng thái",
       "tokens": "Token",
-      "updated": "Đã cập nhật"
+      "updated": "Đã cập nhật",
+      "resources": "Tài nguyên"
     },
     "description": "Theo dõi runner devbox từ xa, công việc đang chờ, lease, log, trạng thái cache và token trong một bề mặt vận hành chỉ dành cho root.",
     "empty": {
@@ -6098,6 +6107,14 @@
       "leases": "Chưa có lease devbox.",
       "runners": "Chưa có runner devbox.",
       "runs": "Chưa có run devbox."
+    },
+    "features": {
+      "build": "Bản dựng",
+      "run": "Lệnh",
+      "serve": "Xem trước",
+      "tunnel": "Tunnel",
+      "unavailable": "Áp dụng migration tính năng Devbox để quản lý dịch vụ.",
+      "judge": "Chấm bài"
     },
     "health": {
       "never_seen": "Đã đăng ký, chưa heartbeat",
@@ -6163,7 +6180,19 @@
       "setup_only": "ttr box setup không có --agent chỉ chuẩn bị checkout, dependency, Supabase và env file; nó không tạo row runner.",
       "title": "Vì sao máy đã setup có thể chưa hiện"
     },
-    "title": "Điều khiển Devbox"
+    "title": "Điều khiển Devbox",
+    "resources": {
+      "save": "Lưu giới hạn",
+      "sandboxes": "sandbox",
+      "max_cpu_percent": "Ngân sách CPU máy chủ (%)",
+      "max_memory_percent": "Ngân sách bộ nhớ máy chủ (%)",
+      "max_sandboxes": "Số sandbox tối đa",
+      "max_instances": "Số instance tối đa",
+      "sandbox_memory_mb": "Bộ nhớ mỗi sandbox (MB)",
+      "sandbox_timeout_seconds": "Thời gian mỗi sandbox (giây)",
+      "sandbox_pids": "Số tiến trình mỗi sandbox",
+      "scope": "Dành cho sandbox của Judge. Các lệnh tin cậy chạy trên máy chủ chưa bị giới hạn bởi các cài đặt này."
+    }
   },
   "documents": {
     "back-to-documents": "Quay lại tài liệu",

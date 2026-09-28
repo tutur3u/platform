@@ -17,6 +17,9 @@ const CreateRunSchema = z.object({
   reuse: z.boolean().optional(),
   runnerId: z.string().trim().min(1).optional(),
   timeoutSeconds: z.number().int().positive().optional(),
+  workload: z
+    .enum(['run', 'build', 'serve', 'tunnel', 'maintenance'])
+    .optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -48,8 +51,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const maintenance = parsed.data.workload === 'maintenance';
+  if (
+    maintenance &&
+    !(
+      parsed.data.command.join('\0') === 'bun\0i\0-g\0tuturuuu' ||
+      parsed.data.command.join('\0') === '__ttr_restart_agent_v1__'
+    )
+  ) {
+    return NextResponse.json(
+      { message: 'Unsupported maintenance command' },
+      { status: 400 }
+    );
+  }
   const policy = evaluateDevboxCommandPolicy(parsed.data.command);
-  if (!policy.allowed) {
+  if (!maintenance && !policy.allowed) {
     return NextResponse.json(
       { message: policy.reason ?? 'Command is blocked' },
       { status: 400 }

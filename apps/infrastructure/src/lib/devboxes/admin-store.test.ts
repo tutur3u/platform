@@ -8,7 +8,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: createAdminClientMock,
 }));
 
-import { setDevboxRunnerHeartbeatEnabled } from './admin-store';
+import {
+  setDevboxRunnerFeature,
+  setDevboxRunnerHeartbeatEnabled,
+  setDevboxRunnerResourceLimits,
+} from './admin-store';
 
 describe('devbox admin store', () => {
   const fromMock = vi.fn();
@@ -18,6 +22,7 @@ describe('devbox admin store', () => {
   const runnerUpdateEqMock = vi.fn();
   const runnerUpdateMock = vi.fn();
   const schemaMock = vi.fn();
+  const rpcMock = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,7 +45,11 @@ describe('devbox admin store', () => {
       throw new Error(`Unexpected table: ${table}`);
     });
     schemaMock.mockReturnValue({ from: fromMock });
-    createAdminClientMock.mockResolvedValue({ schema: schemaMock });
+    rpcMock.mockResolvedValue({ data: { build: false }, error: null });
+    createAdminClientMock.mockResolvedValue({
+      schema: schemaMock,
+    });
+    schemaMock.mockReturnValue({ from: fromMock, rpc: rpcMock });
   });
 
   it('enables runner heartbeat without changing runner status', async () => {
@@ -85,6 +94,34 @@ describe('devbox admin store', () => {
     expect(runnerUpdateMock).toHaveBeenCalledWith({
       heartbeat_enabled: false,
       updated_at: expect.any(String),
+    });
+  });
+
+  it('updates one runner feature atomically through the private RPC', async () => {
+    await setDevboxRunnerFeature('runner-1', 'build', false);
+
+    expect(rpcMock).toHaveBeenCalledWith('set_devbox_runner_feature', {
+      p_enabled: false,
+      p_feature: 'build',
+      p_runner_id: 'runner-1',
+    });
+  });
+
+  it('saves runner resource limits through the private RPC', async () => {
+    const limits = {
+      max_cpu_percent: 50,
+      max_memory_percent: 25,
+      max_sandboxes: 1,
+      max_instances: 1,
+      sandbox_memory_mb: 256,
+      sandbox_timeout_seconds: 10,
+      sandbox_pids: 64,
+    };
+    await setDevboxRunnerResourceLimits('runner-1', limits);
+
+    expect(rpcMock).toHaveBeenCalledWith('set_devbox_runner_resource_limits', {
+      p_limits: limits,
+      p_runner_id: 'runner-1',
     });
   });
 });

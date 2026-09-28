@@ -17,6 +17,28 @@ const RunnerCapabilitiesSchema = z
         version: z.string().trim().max(100),
       })
       .optional(),
+    judge: z
+      .object({
+        languages: z
+          .array(
+            z.enum([
+              'python',
+              'javascript',
+              'typescript',
+              'c',
+              'cpp',
+              'java',
+              'rust',
+              'go',
+              'ruby',
+              'php',
+            ])
+          )
+          .max(10),
+        ready: z.boolean(),
+        reason: NullableStringSchema,
+      })
+      .optional(),
     os: z
       .object({
         arch: z.string().trim().max(50).optional(),

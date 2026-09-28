@@ -64,10 +64,33 @@ export async function runDevboxAgentLoop({
         `Received ${pollResponse.jobs.length} devbox job(s).\n`
       );
       for (const job of pollResponse.jobs) {
-        await executeDevboxAgentJob(job, {
+        const result = await executeDevboxAgentJob(job, {
           baseUrl: origin,
           token,
         });
+        if (
+          result.status === 'succeeded' &&
+          job.command.length === 1 &&
+          job.command[0] === '__ttr_restart_agent_v1__'
+        ) {
+          process.stdout.write(
+            'Restart requested. Exiting for service manager restart.\n'
+          );
+          return;
+        }
+        if (
+          result.status === 'succeeded' &&
+          job.command.length === 4 &&
+          job.command[0] === 'bun' &&
+          job.command[1] === 'i' &&
+          job.command[2] === '-g' &&
+          job.command[3] === 'tuturuuu'
+        ) {
+          process.stdout.write(
+            'Devbox CLI updated. Exiting for service manager restart.\n'
+          );
+          return;
+        }
       }
     }
 
