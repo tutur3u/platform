@@ -588,7 +588,7 @@ class MeetNativeMedia extends ChangeNotifier {
     remoteRenderers[owner] = renderer;
     MobileObservability.instance.logMeetEvent(
       'meet_media_received',
-      media: event.track.kind,
+      media: event.track.kind ?? 'unknown',
     );
     if (event.track.kind == 'audio') {
       try {
