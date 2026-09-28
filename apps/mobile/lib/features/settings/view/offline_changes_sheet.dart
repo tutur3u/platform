@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 Future<void> showOfflineChangesSheet(BuildContext context) =>
@@ -63,6 +66,7 @@ class _PendingChangeCard extends StatelessWidget {
 
   Future<void> _retry(BuildContext context) async {
     if (record.status == PendingMutationStatus.conflict) {
+      unawaited(AppHaptics.warning());
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
@@ -85,6 +89,37 @@ class _PendingChangeCard extends StatelessWidget {
       if (confirmed != true) return;
     }
     await OfflineMutationQueue.instance.retry(record.id);
+    if (!OfflineMutationQueue.instance.pending.value.any(
+      (item) => item.id == record.id,
+    )) {
+      unawaited(AppHaptics.success());
+    }
+  }
+
+  Future<void> _discard(BuildContext context) async {
+    unawaited(AppHaptics.warning());
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.offlineChangesDiscard),
+        content: Text(dialogContext.l10n.offlineChangesDiscardConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              MaterialLocalizations.of(dialogContext).cancelButtonLabel,
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(dialogContext.l10n.offlineChangesDiscard),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await OfflineMutationQueue.instance.cancel(record.id);
+    unawaited(AppHaptics.drop());
   }
 
   @override
@@ -125,8 +160,7 @@ class _PendingChangeCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () =>
-                        OfflineMutationQueue.instance.cancel(record.id),
+                    onPressed: () => _discard(context),
                     child: Text(l10n.offlineChangesDiscard),
                   ),
                   if (record.status != PendingMutationStatus.queued)

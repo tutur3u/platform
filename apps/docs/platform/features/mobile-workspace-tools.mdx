@@ -159,7 +159,10 @@ Pending Notes, Mail, Finance, Calendar, and Inventory product edits are stored i
 mutation queue and replayed in order per module and workspace on reconnect. A
 conflict holds dependent edits in that scope while other modules continue. A queued item uses a dashed
 border and lower opacity until the server confirms it; conflicts and failed
-writes remain visible in Settings > Offline changes for retry or removal. Finance
+writes remain visible in Settings > Offline changes for retry or removal.
+Removing a queued change requires confirmation and does not undo a write that
+may already have reached the server. A user-initiated retry gives a completion
+haptic only when that specific outbox entry is removed after replay. Finance
 creates and transfers, Mail sends and attachments, and Notes creates use stable
 client IDs so replay can recognize a prior successful write. Other modules still
 need individual offline mutation adapters before this is an app-wide write replica.
