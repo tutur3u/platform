@@ -1,10 +1,6 @@
-import '@tuturuuu/meet-core/styles.css';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
-import { siteConfig } from '@/constants/configs';
-import { supportedLocales } from '@/i18n/routing';
-import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
@@ -13,10 +9,13 @@ import type { Metadata } from 'next';
 import { locale as getRootLocale } from 'next/root-params';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
+import { siteConfig } from '@/constants/configs';
 import { MeetLoading } from '@/features/loading/meet-loading';
+import { supportedLocales } from '@/i18n/routing';
 import enMessages from '../../../messages/en.json';
 import viMessages from '../../../messages/vi.json';
 import { Providers } from './providers';
+import './meet.css';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 

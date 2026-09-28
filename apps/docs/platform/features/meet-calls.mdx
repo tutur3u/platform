@@ -47,6 +47,12 @@ meeting overages. Internal or sponsored workspaces do not bypass these ceilings.
 | Call client and UI | `apps/meet/src/features/call/` |
 | Call route (full-bleed, no sidebar) | `apps/meet/src/app/[locale]/r/[code]` |
 
+Meet's pre-join preview and in-call controls are rendered from
+`packages/meet-core/src/features/call`. Keep that package in the Tailwind source
+scan of `apps/meet/src/app/[locale]/meet.css` when moving shared call UI. The scan
+must be in the stylesheet that imports the shared UI theme; a separate CSS import
+containing only `@source` does not generate those utilities for Meet.
+
 `room.ts` is a pure reducer: it returns the next room snapshot plus the messages
 to fan out and any Cloudflare work to perform. Both transports run the same
 reducer, so the Bun server and the Durable Object cannot drift.

@@ -1,0 +1,5 @@
+@import "@tuturuuu/ui/globals.css";
+
+/* Tailwind processes source directives with the stylesheet that imports it. */
+@source "../../../../../packages/meet-core/src/features";
+@source "../../../../../packages/meet-core/src/parley";
