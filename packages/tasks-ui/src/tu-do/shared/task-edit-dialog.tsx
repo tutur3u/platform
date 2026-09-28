@@ -307,7 +307,6 @@ export function TaskEditDialog({
     isSaving,
   });
 
-  // Refs
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const richTextEditorRef = useRef<HTMLDivElement>(null);
@@ -352,7 +351,6 @@ export function TaskEditDialog({
     [formState.setName, isHydratingTask]
   );
 
-  // User state
   const [user, setUser] = useState<TaskDialogUserIdentity | null>(
     propsCurrentUser ? normalizeTaskDialogCurrentUser(propsCurrentUser) : null
   );
@@ -1437,6 +1435,10 @@ export function TaskEditDialog({
     setTaskMediaAccess,
     setShowTaskMediaPermissionDialog,
   });
+  const discardCreateDraft = useCallback(() => {
+    formState.clearDraftState();
+    void cleanUpDiscarded();
+  }, [formState.clearDraftState, cleanUpDiscarded]);
 
   const imageUploadHandler =
     !effectiveTaskWsId || disabled ? undefined : handleImageUpload;
@@ -2079,21 +2081,20 @@ export function TaskEditDialog({
       setShowSyncWarning,
     });
 
-  // Attempt close — intercepts in create mode with unsaved changes
   const handleAttemptClose = useCallback(async () => {
     if (isCreateMode && hasUnsavedChanges && formState.name.trim()) {
       setShowUnsavedWarning(true);
       return false;
     }
     const closed = await handleClose();
-    if (closed && isCreateMode) void cleanUpDiscarded();
+    if (closed && isCreateMode) discardCreateDraft();
     return closed;
   }, [
     isCreateMode,
     hasUnsavedChanges,
     formState.name,
     handleClose,
-    cleanUpDiscarded,
+    discardCreateDraft,
   ]);
 
   const handleConfirmCloseWithOverflow = useCallback(async () => {
@@ -2149,13 +2150,12 @@ export function TaskEditDialog({
     };
   }, [handleAttemptClose, isOpen, registerCloseRequestHandler]);
 
-  // Unsaved changes warning handlers
   const handleWarningDiscard = useCallback(() => {
     setShowUnsavedWarning(false);
     void handleClose().then((closed) => {
-      if (closed) void cleanUpDiscarded();
+      if (closed) discardCreateDraft();
     });
-  }, [handleClose, cleanUpDiscarded]);
+  }, [handleClose, discardCreateDraft]);
 
   const handleWarningSaveAsDraft = useCallback(() => {
     setShowUnsavedWarning(false);
@@ -2760,7 +2760,7 @@ export function TaskEditDialog({
                     setCreateMultiple={setCreateMultiple}
                     handleClose={handleAttemptClose}
                     setShowDeleteConfirm={setShowDeleteConfirm}
-                    clearDraftState={formState.clearDraftState}
+                    clearDraftState={discardCreateDraft}
                     handleSave={handleSave}
                     onNavigateBack={
                       isCreateMode && (pendingRelationship || parentTaskId)

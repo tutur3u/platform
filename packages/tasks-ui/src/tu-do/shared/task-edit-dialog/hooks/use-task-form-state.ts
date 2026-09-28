@@ -293,6 +293,9 @@ export function useTaskFormState({
   ]);
 
   const clearDraftState = useCallback(() => {
+    if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+    draftSaveTimerRef.current = null;
+    skipDraftSaveRef.current = true;
     clearDraft(draftStorageKey);
     setHasDraft(false);
     resetFormState();
