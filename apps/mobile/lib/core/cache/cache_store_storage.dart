@@ -9,8 +9,16 @@ extension CacheStoreStorage on CacheStore {
       final category = CacheStorageCategory.forNamespace(record.namespace);
       categories[category] = (categories[category] ?? 0) + bytes;
     }
+    for (final raw in _entityBox.values) {
+      if (raw is! Map || raw['payload'] == null) continue;
+      final bytes = utf8.encode(jsonEncode(raw['payload'])).length;
+      final category = CacheStorageCategory.forNamespace(
+        raw['namespace'] as String? ?? '',
+      );
+      categories[category] = (categories[category] ?? 0) + bytes;
+    }
     return CacheStorageSnapshot(
-      totalBytes: _resourceBytes,
+      totalBytes: _resourceBytes + _entityBytes,
       maxBytes: _maxBytes,
       categoryBytes: Map.unmodifiable(categories),
     );
@@ -32,7 +40,7 @@ extension CacheStoreStorage on CacheStore {
   Future<void> clearResourceCache() => clearScope(resourceOnly: true);
 
   Future<void> _pruneResourceCache() async {
-    if (_resourceBytes <= _maxBytes) return;
+    if (_resourceBytes + _entityBytes <= _maxBytes) return;
     final now = DateTime.now();
     final surviving = <CachedResourceRecord>[];
     for (final record in _memory.values.toList(growable: false)) {
@@ -40,17 +48,21 @@ extension CacheStoreStorage on CacheStore {
         _advanceKey(record.key);
         _dropRecord(record.key);
         await _resourceBox.delete(record.key);
+        await _replicaMigration;
+        await _removeReplicaSource(record.key);
       } else {
         surviving.add(record);
       }
     }
-    if (_resourceBytes <= _maxBytes) return;
+    if (_resourceBytes + _entityBytes <= _maxBytes) return;
     surviving.sort((a, b) => a.fetchedAt.compareTo(b.fetchedAt));
     for (final record in surviving) {
-      if (_resourceBytes <= _maxBytes) break;
+      if (_resourceBytes + _entityBytes <= _maxBytes) break;
       _advanceKey(record.key);
       _dropRecord(record.key);
       await _resourceBox.delete(record.key);
+      await _replicaMigration;
+      await _removeReplicaSource(record.key);
     }
   }
 }

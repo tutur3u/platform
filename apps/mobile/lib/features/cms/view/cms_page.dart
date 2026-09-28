@@ -21,9 +21,11 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'cms_page_widgets.dart';
+part 'cms_overview.dart';
 
 class CmsPage extends StatefulWidget {
   const CmsPage({super.key, this.repository});
@@ -626,37 +628,8 @@ class _CmsPageState extends State<CmsPage> {
     );
   }
 
-  Widget _buildOverview(BuildContext context) {
-    final summary = _summary;
-    if (summary == null) {
-      return _CmsMessageCard(message: context.l10n.cmsNoAccess);
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _CmsMetricsGrid(summary: summary),
-        const SizedBox(height: 16),
-        _AttentionSection(
-          title: context.l10n.cmsNeedsAttention,
-          items: summary.draftsMissingMedia,
-          emptyText: context.l10n.cmsQueueEmpty,
-        ),
-        const SizedBox(height: 12),
-        _AttentionSection(
-          title: context.l10n.cmsScheduledSoon,
-          items: summary.scheduledSoon,
-          emptyText: context.l10n.cmsQueueEmpty,
-        ),
-        const SizedBox(height: 12),
-        _AttentionSection(
-          title: context.l10n.cmsArchivedBacklog,
-          items: summary.archivedBacklog,
-          emptyText: context.l10n.cmsQueueEmpty,
-        ),
-      ],
-    );
-  }
+  Widget _buildOverview(BuildContext context) =>
+      _buildCmsOverview(this, context);
 
   Widget _buildLibrary(BuildContext context) {
     return Column(
@@ -693,10 +666,15 @@ class _CmsPageState extends State<CmsPage> {
           ..._collections.map(
             (collection) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _CollectionTile(
-                collection: collection,
-                onEdit: () => _showCollectionEditor(collection),
-                onDelete: () => _deleteCollection(collection),
+              child: PendingSyncFrame(
+                workspaceId: _wsId ?? '',
+                feature: 'cms',
+                entityId: collection.id,
+                child: _CollectionTile(
+                  collection: collection,
+                  onEdit: () => _showCollectionEditor(collection),
+                  onDelete: () => _deleteCollection(collection),
+                ),
               ),
             ),
           ),
@@ -712,15 +690,22 @@ class _CmsPageState extends State<CmsPage> {
           ..._entries.map(
             (entry) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _EntryTile(
-                entry: entry,
-                collectionTitle: _collections
-                    .where((collection) => collection.id == entry.collectionId)
-                    .map((collection) => collection.title)
-                    .firstOrNull,
-                statusLabel: _statusLabel(context, entry.status),
-                onEdit: () => _showEntryEditor(entry),
-                onDelete: () => _deleteEntry(entry),
+              child: PendingSyncFrame(
+                workspaceId: _wsId ?? '',
+                feature: 'cms',
+                entityId: entry.id,
+                child: _EntryTile(
+                  entry: entry,
+                  collectionTitle: _collections
+                      .where(
+                        (collection) => collection.id == entry.collectionId,
+                      )
+                      .map((collection) => collection.title)
+                      .firstOrNull,
+                  statusLabel: _statusLabel(context, entry.status),
+                  onEdit: () => _showEntryEditor(entry),
+                  onDelete: () => _deleteEntry(entry),
+                ),
               ),
             ),
           ),

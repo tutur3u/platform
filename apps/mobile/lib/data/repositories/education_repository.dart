@@ -1,4 +1,8 @@
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
+import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/education/education_models.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -8,30 +12,75 @@ class EducationRepository {
 
   final ApiClient _api;
 
+  Future<Map<String, dynamic>> _read(
+    String wsId,
+    String collection,
+    String path,
+  ) => readThroughJson(
+    api: _api,
+    namespace: 'education.$collection',
+    workspaceId: wsId,
+    path: path,
+  );
+
+  Future<List<Map<String, dynamic>>> _rows(
+    String wsId,
+    String segment,
+    Map<String, dynamic> response, {
+    String query = '',
+    int page = 1,
+    String? textField,
+    Map<String, dynamic> Function(Map<String, dynamic>)? normalizeCreate,
+  }) async {
+    final source = (response['data'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .toList(growable: false);
+    final pending = await OfflineMutationQueue.instance.listPending();
+    return overlayPendingCollection(
+      workspaceId: wsId,
+      feature: 'education',
+      pathContains: '/$segment',
+      source: source,
+      pending: pending,
+      normalizeCreate: normalizeCreate,
+      includeCreates: page == 1,
+      matchesQuery: query.trim().isEmpty || textField == null
+          ? null
+          : (row) => (row[textField] as String? ?? '').toLowerCase().contains(
+              query.trim().toLowerCase(),
+            ),
+    );
+  }
+
   Future<void> _write(
     String wsId,
     String method,
     String path, {
     Map<String, dynamic>? payload,
     String? entityId,
-  }) => queueOrSendVoid(
-    feature: 'education',
-    method: method,
-    path: path,
-    workspaceId: wsId,
-    payload: payload,
-    entityId: entityId,
-    send: () async {
-      switch (method) {
-        case 'POST':
-          await _api.postJson(path, payload);
-        case 'PUT':
-          await _api.putJson(path, payload ?? {});
-        case 'DELETE':
-          await _api.deleteJson(path);
-      }
-    },
-  );
+  }) async {
+    await queueOrSendVoid(
+      feature: 'education',
+      method: method,
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      entityId: entityId,
+      send: () async {
+        switch (method) {
+          case 'POST':
+            await _api.postJson(path, payload);
+          case 'PUT':
+            await _api.putJson(path, payload ?? {});
+          case 'DELETE':
+            await _api.deleteJson(path);
+        }
+      },
+    );
+    await CacheStore.instance.invalidateTags({
+      'module:education',
+    }, workspaceId: wsId);
+  }
 
   Future<EducationPagedResult<EducationCourse>> getCourses(
     String wsId, {
@@ -39,7 +88,9 @@ class EducationRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
-    final response = await _api.getJson(
+    final response = await _read(
+      wsId,
+      'courses',
       EducationEndpoints.courses(
         wsId,
         query: query,
@@ -47,12 +98,18 @@ class EducationRepository {
         pageSize: pageSize,
       ),
     );
+    final rows = await _rows(
+      wsId,
+      'courses',
+      response,
+      query: query,
+      page: page,
+      textField: 'name',
+    );
+    final sourceCount = (response['data'] as List<dynamic>? ?? const []).length;
     return EducationPagedResult<EducationCourse>(
-      items: (response['data'] as List<dynamic>? ?? const <dynamic>[])
-          .whereType<Map<String, dynamic>>()
-          .map(EducationCourse.fromJson)
-          .toList(growable: false),
-      count: educationAsInt(response['count']),
+      items: rows.map(EducationCourse.fromJson).toList(growable: false),
+      count: educationAsInt(response['count']) + rows.length - sourceCount,
       page: educationAsInt(response['page']),
       pageSize: educationAsInt(response['pageSize']),
     );
@@ -101,7 +158,9 @@ class EducationRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
-    final response = await _api.getJson(
+    final response = await _read(
+      wsId,
+      'quizSets',
       EducationEndpoints.quizSets(
         wsId,
         query: query,
@@ -109,12 +168,18 @@ class EducationRepository {
         pageSize: pageSize,
       ),
     );
+    final rows = await _rows(
+      wsId,
+      'quiz-sets',
+      response,
+      query: query,
+      page: page,
+      textField: 'name',
+    );
+    final sourceCount = (response['data'] as List<dynamic>? ?? const []).length;
     return EducationPagedResult<EducationQuizSet>(
-      items: (response['data'] as List<dynamic>? ?? const <dynamic>[])
-          .whereType<Map<String, dynamic>>()
-          .map(EducationQuizSet.fromJson)
-          .toList(growable: false),
-      count: educationAsInt(response['count']),
+      items: rows.map(EducationQuizSet.fromJson).toList(growable: false),
+      count: educationAsInt(response['count']) + rows.length - sourceCount,
       page: educationAsInt(response['page']),
       pageSize: educationAsInt(response['pageSize']),
     );
@@ -158,7 +223,9 @@ class EducationRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
-    final response = await _api.getJson(
+    final response = await _read(
+      wsId,
+      'quizzes',
       EducationEndpoints.quizzes(
         wsId,
         query: query,
@@ -166,12 +233,20 @@ class EducationRepository {
         pageSize: pageSize,
       ),
     );
+    final rows = await _rows(
+      wsId,
+      'quizzes',
+      response,
+      query: query,
+      page: page,
+      textField: 'question',
+      normalizeCreate: (payload) =>
+          (payload['quizzes'] as List<dynamic>).first as Map<String, dynamic>,
+    );
+    final sourceCount = (response['data'] as List<dynamic>? ?? const []).length;
     return EducationPagedResult<EducationQuiz>(
-      items: (response['data'] as List<dynamic>? ?? const <dynamic>[])
-          .whereType<Map<String, dynamic>>()
-          .map(EducationQuiz.fromJson)
-          .toList(growable: false),
-      count: educationAsInt(response['count']),
+      items: rows.map(EducationQuiz.fromJson).toList(growable: false),
+      count: educationAsInt(response['count']) + rows.length - sourceCount,
       page: educationAsInt(response['page']),
       pageSize: educationAsInt(response['pageSize']),
     );
@@ -224,7 +299,9 @@ class EducationRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
-    final response = await _api.getJson(
+    final response = await _read(
+      wsId,
+      'flashcards',
       EducationEndpoints.flashcards(
         wsId,
         query: query,
@@ -232,12 +309,18 @@ class EducationRepository {
         pageSize: pageSize,
       ),
     );
+    final rows = await _rows(
+      wsId,
+      'flashcards',
+      response,
+      query: query,
+      page: page,
+      textField: 'front',
+    );
+    final sourceCount = (response['data'] as List<dynamic>? ?? const []).length;
     return EducationPagedResult<EducationFlashcard>(
-      items: (response['data'] as List<dynamic>? ?? const <dynamic>[])
-          .whereType<Map<String, dynamic>>()
-          .map(EducationFlashcard.fromJson)
-          .toList(growable: false),
-      count: educationAsInt(response['count']),
+      items: rows.map(EducationFlashcard.fromJson).toList(growable: false),
+      count: educationAsInt(response['count']) + rows.length - sourceCount,
       page: educationAsInt(response['page']),
       pageSize: educationAsInt(response['pageSize']),
     );
@@ -289,7 +372,9 @@ class EducationRepository {
     String sortBy = 'newest',
     String sortDirection = 'desc',
   }) async {
-    final response = await _api.getJson(
+    final response = await _read(
+      wsId,
+      'attempts',
       EducationEndpoints.attempts(
         wsId,
         page: page,
@@ -307,7 +392,9 @@ class EducationRepository {
     String wsId,
     String attemptId,
   ) async {
-    final response = await _api.getJson(
+    final response = await _read(
+      wsId,
+      'attempt',
       EducationEndpoints.attempt(wsId, attemptId),
     );
     return EducationAttemptDetail.fromJson(response);

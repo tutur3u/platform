@@ -6,6 +6,7 @@ import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/features/habits/view/habits_page_chrome.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 class HabitsActivitySection extends StatelessWidget {
   const HabitsActivitySection({
@@ -73,9 +74,14 @@ class HabitsActivitySection extends StatelessWidget {
             ),
           ),
           for (final item in group.items) ...[
-            _ActivityEntryCard(
-              item: item,
-              onTap: () => onOpenTracker(item.tracker.id),
+            PendingSyncFrame(
+              workspaceId: item.tracker.wsId,
+              feature: 'habits',
+              entityId: item.entry.id,
+              child: _ActivityEntryCard(
+                item: item,
+                onTap: () => onOpenTracker(item.tracker.id),
+              ),
             ),
             if (item != group.items.last) const SizedBox(height: 10),
           ],

@@ -140,6 +140,14 @@ revalidation, even past their expiry window. Explicit refresh waits for the netw
 On startup, the encrypted
 store consolidates legacy aliases into canonical scoped keys and retains the newest
 snapshot for each identity. Pending offline mutations remain separate and intact.
+An encrypted entity index now materializes rows with stable IDs from scoped
+snapshots. It is rebuilt automatically from existing snapshots when its schema
+version is absent, updates alongside new snapshots, and removes rows when their
+source is cleared or evicted. Local queries require a user ID, workspace scope,
+and namespace; they can overlay the matching queued edits without a network
+call. Storage limits include the indexed entity payloads. This is the database
+foundation for module read adapters, rather than evidence that every module is
+already locally readable or writable.
 Mail and Meet keep an explicit request path for authorization cleanup on 401/403;
 their screens still render the scoped snapshot before awaiting that request.
 Pending Notes, Mail, Finance, Calendar, and Inventory product edits are stored in the account-scoped encrypted
@@ -156,8 +164,27 @@ external calendar provider.
 Inventory product lists overlay queued creates and updates on their cached
 catalog; an uncertain product create also requires manual review.
 Education course, quiz, and flashcard edits and basic CRM user and feedback
-edits use the same encrypted queue. Their list views still require local read
-adapters and pending row treatments before they meet the full replica contract.
+edits use the same encrypted queue. Education course, quiz-set, quiz, flashcard,
+and attempt reads and CRM user, group, feedback, and audit reads use scoped
+snapshots while revalidating. Education authored cards and CRM user and feedback
+cards show queued edits with the pending treatment. Other Education and CRM
+actions still need individual mutation adapters before those modules meet the
+full replica contract.
+Documents lists and details use scoped snapshots. Document create, update, and
+delete enter the encrypted outbox when offline, and list rows expose their
+pending state. A newly created offline document uses a local ID for navigation;
+its create must finish syncing before edits to that document can be replayed
+against a server ID. The outbox persists a scoped local-to-server ID mapping
+when the create response supplies an ID and rewrites dependent queued paths and
+structured payload fields before replay.
+Drive directory and analytics, CMS collections and entries, and Habit tracker
+lists and details also read scoped snapshots while revalidating. CMS collection
+and entry CRUD uses the outbox and marks pending tiles. CMS entries targeting a
+locally created collection use the persisted ID mapping during replay. Drive
+folder create, rename, folder and file delete use path-scoped
+queued edits with pending rows. Habit trackers, entries, and streak actions
+also queue edits, with pending cards and activity rows. File uploads and
+create responses that omit a server ID still need dedicated replay support.
 Invalidation and logout prevent older
 in-flight requests from writing back into the cache. Keys must include user,
 workspace, and all query filters.

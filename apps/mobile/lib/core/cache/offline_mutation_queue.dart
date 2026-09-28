@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_id_reconciliation.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -135,9 +136,19 @@ class OfflineMutationQueue {
   Future<void> _dispatchHttpMutation(PendingMutationRecord record) async {
     final api = ApiClient();
     try {
+      final userId = record.userId;
+      final workspaceId = record.workspaceId;
+      final ids = userId == null || workspaceId == null
+          ? const <String, String>{}
+          : await CacheStore.instance.localIdMappings(
+              userId: userId,
+              workspaceId: workspaceId,
+              feature: record.feature,
+            );
+      final resolved = reconcileOfflineIds(record.path, record.payload, ids);
       switch (record.method.toUpperCase()) {
         case 'POST':
-          final response = await api.postJson(record.path, record.payload);
+          final response = await api.postJson(resolved.path, resolved.payload);
           if (record.feature == 'mail' &&
               record.path.endsWith('/messages') &&
               (response['message'] as Map<String, dynamic>?)?['status'] !=
@@ -147,18 +158,34 @@ class OfflineMutationQueue {
               statusCode: 409,
             );
           }
+          final localId = record.entityId;
+          final serverId = createdServerId(response);
+          if (userId != null &&
+              workspaceId != null &&
+              record.feature != 'drive' &&
+              localId != null &&
+              serverId != null &&
+              localId != serverId) {
+            await CacheStore.instance.saveLocalIdMapping(
+              userId: userId,
+              workspaceId: workspaceId,
+              feature: record.feature,
+              localId: localId,
+              serverId: serverId,
+            );
+          }
         case 'PUT':
-          await api.putJson(record.path, record.payload ?? {});
+          await api.putJson(resolved.path, resolved.payload ?? {});
         case 'PATCH':
-          await api.patchJson(record.path, record.payload ?? {});
+          await api.patchJson(resolved.path, resolved.payload ?? {});
         case 'DELETE':
-          await api.deleteJson(record.path, body: record.payload);
+          await api.deleteJson(resolved.path, body: resolved.payload);
         case 'MAIL_READ_ALL':
           String? cursor;
           String? before;
           do {
-            final response = await api.postJson(record.path, {
-              ...?record.payload,
+            final response = await api.postJson(resolved.path, {
+              ...?resolved.payload,
               if (cursor != null) 'cursor': cursor,
               if (before != null) 'before': before,
             });
@@ -166,10 +193,10 @@ class OfflineMutationQueue {
             before = response['before'] as String?;
           } while (cursor != null);
         case 'MULTIPART_POST':
-          final payload = record.payload ?? {};
+          final payload = resolved.payload ?? {};
           await api.sendMultipart(
             'POST',
-            record.path,
+            resolved.path,
             fields: {
               'clientAttachmentId': payload['clientAttachmentId'] as String,
             },

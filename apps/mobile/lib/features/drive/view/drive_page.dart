@@ -23,9 +23,13 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:share_plus/share_plus.dart';
+
 import 'package:url_launcher/url_launcher.dart';
+
+part 'drive_grid.dart';
 
 class DrivePage extends StatefulWidget {
   const DrivePage({super.key});
@@ -752,6 +756,8 @@ class _DrivePageState extends State<DrivePage> {
                           else if (_showGrid)
                             _DriveGrid(
                               entries: _entries,
+                              workspaceId: _wsId ?? '',
+                              directoryPath: _path,
                               selectedNames: _selectedNames,
                               onTap: _openEntry,
                               onToggleSelection: (entry) {
@@ -774,35 +780,42 @@ class _DrivePageState extends State<DrivePage> {
                             )
                           else
                             ..._entries.map(
-                              (entry) => _DriveListTile(
-                                entry: entry,
-                                selected: _selectedNames.contains(entry.name),
-                                onTap: () => _openEntry(entry),
-                                onLongPress: () {
-                                  setState(() {
-                                    if (_selectedNames.contains(entry.name)) {
-                                      _selectedNames.remove(entry.name);
-                                    } else {
-                                      _selectedNames.add(entry.name);
-                                    }
-                                  });
-                                },
-                                onRename: _canManageDrive
-                                    ? () => _renameEntry(entry)
-                                    : null,
-                                onDelete: _canManageDrive
-                                    ? () => _deleteEntries([entry])
-                                    : null,
-                                onShare: entry.isFolder
-                                    ? null
-                                    : () => _shareEntry(entry),
-                                onCopyPath: () => _copyEntryPath(entry),
-                                onOpenExternal: entry.isFolder
-                                    ? null
-                                    : () => _openExternal(entry),
-                                onExportLinks: entry.isFolder
-                                    ? () => _showExportLinks(entry)
-                                    : null,
+                              (entry) => PendingSyncFrame(
+                                workspaceId: _wsId ?? '',
+                                feature: 'drive',
+                                entityId: _path.isEmpty
+                                    ? entry.name
+                                    : '$_path/${entry.name}',
+                                child: _DriveListTile(
+                                  entry: entry,
+                                  selected: _selectedNames.contains(entry.name),
+                                  onTap: () => _openEntry(entry),
+                                  onLongPress: () {
+                                    setState(() {
+                                      if (_selectedNames.contains(entry.name)) {
+                                        _selectedNames.remove(entry.name);
+                                      } else {
+                                        _selectedNames.add(entry.name);
+                                      }
+                                    });
+                                  },
+                                  onRename: _canManageDrive
+                                      ? () => _renameEntry(entry)
+                                      : null,
+                                  onDelete: _canManageDrive
+                                      ? () => _deleteEntries([entry])
+                                      : null,
+                                  onShare: entry.isFolder
+                                      ? null
+                                      : () => _shareEntry(entry),
+                                  onCopyPath: () => _copyEntryPath(entry),
+                                  onOpenExternal: entry.isFolder
+                                      ? null
+                                      : () => _openExternal(entry),
+                                  onExportLinks: entry.isFolder
+                                      ? () => _showExportLinks(entry)
+                                      : null,
+                                ),
                               ),
                             ),
                           if (_hasMore) ...[
@@ -1037,161 +1050,6 @@ class _DriveListTile extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _DriveGrid extends StatelessWidget {
-  const _DriveGrid({
-    required this.entries,
-    required this.selectedNames,
-    required this.onTap,
-    required this.onToggleSelection,
-    this.onRename,
-    this.onDelete,
-    this.onShare,
-    this.onCopyPath,
-    this.onOpenExternal,
-    this.onExportLinks,
-  });
-
-  final List<DriveEntry> entries;
-  final Set<String> selectedNames;
-  final ValueChanged<DriveEntry> onTap;
-  final ValueChanged<DriveEntry> onToggleSelection;
-  final ValueChanged<DriveEntry>? onRename;
-  final ValueChanged<DriveEntry>? onDelete;
-  final ValueChanged<DriveEntry>? onShare;
-  final ValueChanged<DriveEntry>? onCopyPath;
-  final ValueChanged<DriveEntry>? onOpenExternal;
-  final ValueChanged<DriveEntry>? onExportLinks;
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: entries.length,
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 280,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.1,
-      ),
-      itemBuilder: (context, index) {
-        final entry = entries[index];
-        final selected = selectedNames.contains(entry.name);
-        final theme = shad.Theme.of(context);
-        const accent = Color(0xFF3FA36A);
-
-        return GestureDetector(
-          onLongPress: () => onToggleSelection(entry),
-          child: FinancePanel(
-            onTap: () => onTap(entry),
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        entry.isFolder
-                            ? Icons.folder_outlined
-                            : Icons.insert_drive_file_outlined,
-                        color: accent,
-                      ),
-                    ),
-                    const Spacer(),
-                    Checkbox(
-                      value: selected,
-                      onChanged: (_) => onToggleSelection(entry),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                Text(
-                  entry.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.large.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  entry.isFolder
-                      ? context.l10n.driveFolderLabel
-                      : _formatBytes(entry.size),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.textSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'rename') {
-                        onRename?.call(entry);
-                      } else if (value == 'delete') {
-                        onDelete?.call(entry);
-                      } else if (value == 'share') {
-                        onShare?.call(entry);
-                      } else if (value == 'copy') {
-                        onCopyPath?.call(entry);
-                      } else if (value == 'open') {
-                        onOpenExternal?.call(entry);
-                      } else if (value == 'export') {
-                        onExportLinks?.call(entry);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      if (onRename != null)
-                        PopupMenuItem(
-                          value: 'rename',
-                          child: Text(context.l10n.commonRename),
-                        ),
-                      if (onCopyPath != null)
-                        PopupMenuItem(
-                          value: 'copy',
-                          child: Text(context.l10n.driveCopyPath),
-                        ),
-                      if (onShare != null)
-                        PopupMenuItem(
-                          value: 'share',
-                          child: Text(context.l10n.commonShare),
-                        ),
-                      if (onOpenExternal != null)
-                        PopupMenuItem(
-                          value: 'open',
-                          child: Text(context.l10n.commonOpen),
-                        ),
-                      if (onExportLinks != null)
-                        PopupMenuItem(
-                          value: 'export',
-                          child: Text(context.l10n.driveExportLinksTitle),
-                        ),
-                      if (onDelete != null)
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Text(context.l10n.commonDelete),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

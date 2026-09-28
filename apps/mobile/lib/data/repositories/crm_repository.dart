@@ -1,7 +1,11 @@
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
+import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
@@ -15,30 +19,44 @@ class CrmRepository {
   final ApiClient _api;
   final http.Client _http;
 
+  Future<Map<String, dynamic>> _read(
+    String wsId,
+    String collection,
+    String path,
+  ) => readThroughJson(
+    api: _api,
+    namespace: 'crm.$collection',
+    workspaceId: wsId,
+    path: path,
+  );
+
   Future<void> _write(
     String wsId,
     String method,
     String path, {
     Map<String, dynamic>? payload,
     String? entityId,
-  }) => queueOrSendVoid(
-    feature: 'crm',
-    method: method,
-    path: path,
-    workspaceId: wsId,
-    payload: payload,
-    entityId: entityId,
-    send: () async {
-      switch (method) {
-        case 'POST':
-          await _api.postJson(path, payload);
-        case 'PUT':
-          await _api.putJson(path, payload ?? {});
-        case 'DELETE':
-          await _api.deleteJson(path);
-      }
-    },
-  );
+  }) async {
+    await queueOrSendVoid(
+      feature: 'crm',
+      method: method,
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      entityId: entityId,
+      send: () async {
+        switch (method) {
+          case 'POST':
+            await _api.postJson(path, payload);
+          case 'PUT':
+            await _api.putJson(path, payload ?? {});
+          case 'DELETE':
+            await _api.deleteJson(path);
+        }
+      },
+    );
+    await CacheStore.instance.invalidateTags({'module:crm'}, workspaceId: wsId);
+  }
 
   Future<CrmUsersResult> getUsers(
     String wsId, {
@@ -53,7 +71,9 @@ class CrmRepository {
     String groupMembership = 'all',
     bool withPromotions = false,
   }) async {
-    final response = await _api.getJson(
+    final response = await _read(
+      wsId,
+      'users',
       CrmEndpoints.usersDatabase(
         wsId,
         query: query,
@@ -68,7 +88,35 @@ class CrmRepository {
         withPromotions: withPromotions,
       ),
     );
-    return CrmUsersResult.fromJson(response);
+    final source = (response['data'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .toList(growable: false);
+    final rows = overlayPendingCollection(
+      workspaceId: wsId,
+      feature: 'crm',
+      pathContains: '/users',
+      source: source,
+      pending: await OfflineMutationQueue.instance.listPending(),
+      normalizeCreate: (payload) => {...payload, 'ws_id': wsId},
+      includeCreates:
+          page == 1 &&
+          query.isEmpty &&
+          status == 'active' &&
+          includedGroups.isEmpty &&
+          excludedGroups.isEmpty,
+      matchesQuery: query.isEmpty
+          ? null
+          : (row) => [row['full_name'], row['display_name'], row['email']]
+                .whereType<String>()
+                .any(
+                  (value) => value.toLowerCase().contains(query.toLowerCase()),
+                ),
+    );
+    return CrmUsersResult.fromJson({
+      ...response,
+      'data': rows,
+      'count': crmAsInt(response['count']) + rows.length - source.length,
+    });
   }
 
   Future<void> createUser(String wsId, Map<String, dynamic> payload) async {
@@ -104,7 +152,9 @@ class CrmRepository {
     int page = 1,
     int pageSize = 200,
   }) async {
-    final response = await _api.getJson(
+    final response = await _read(
+      wsId,
+      'groups',
       CrmEndpoints.userGroups(wsId, ids: ids, page: page, pageSize: pageSize),
     );
     return (response['data'] as List<dynamic>? ?? const <dynamic>[])
@@ -123,7 +173,9 @@ class CrmRepository {
     String? groupId,
     String? creatorId,
   }) async {
-    final response = await _api.getJson(
+    final response = await _read(
+      wsId,
+      'feedbacks',
       CrmEndpoints.feedbacks(
         wsId,
         query: query,
@@ -135,7 +187,45 @@ class CrmRepository {
         creatorId: creatorId,
       ),
     );
-    return CrmFeedbackResult.fromJson(response);
+    final source = (response['data'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .toList(growable: false);
+    final rows = overlayPendingCollection(
+      workspaceId: wsId,
+      feature: 'crm',
+      pathContains: '/feedbacks',
+      source: source,
+      pending: await OfflineMutationQueue.instance.listPending(),
+      normalizeCreate: (payload) => {
+        ...payload,
+        'user_id': payload['userId'],
+        'group_id': payload['groupId'],
+      },
+      includeCreates: page == 1 && creatorId == null,
+      matchesQuery: (row) {
+        if (userId != null && row['user_id'] != userId) return false;
+        if (groupId != null && row['group_id'] != groupId) return false;
+        if (query != null && query.isNotEmpty) {
+          if (!(row['content'] as String? ?? '').toLowerCase().contains(
+            query.toLowerCase(),
+          )) {
+            return false;
+          }
+        }
+        if (requireAttention == 'yes' && row['require_attention'] != true) {
+          return false;
+        }
+        if (requireAttention == 'no' && row['require_attention'] != false) {
+          return false;
+        }
+        return true;
+      },
+    );
+    return CrmFeedbackResult.fromJson({
+      ...response,
+      'data': rows,
+      'count': crmAsInt(response['count']) + rows.length - source.length,
+    });
   }
 
   Future<void> createFeedback(
@@ -193,7 +283,9 @@ class CrmRepository {
     int offset = 0,
     int limit = 100,
   }) async {
-    final response = await _api.getJson(
+    final response = await _read(
+      wsId,
+      'audit',
       CrmEndpoints.auditLogs(
         wsId,
         start: start,

@@ -13,6 +13,14 @@ Flutter/Dart toolchain and app package configuration.
   refresh awaitable, and clear visible data on account or workspace switches.
   Use stable skeleton geometry for a cold load; avoid full-screen spinners when
   the content can retain its last authorized snapshot.
+- The encrypted entity index in `CacheStore` is scoped by user, workspace,
+  namespace, and source snapshot. Keep snapshot migration and entity removal
+  in step with cache writes, eviction, and logout. Query with the current user
+  and workspace, and overlay pending edits only for the owning path.
+- Model-returning mobile writes may use `queueOrSendValue`; the pending model
+  must have a stable local ID and the owning list must render its queued status.
+  Keep operations that depend on a newly created server ID blocked or reconcile
+  the ID before replay. Ambiguous non-idempotent writes require manual review.
 - The Profile timeline must attribute actions to the signed-in user. Calendar
   rows currently lack a reliable creator and must be labeled as workspace
   activity. Keep note content and private activity out of shared profile reads.

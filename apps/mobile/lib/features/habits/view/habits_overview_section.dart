@@ -3,6 +3,7 @@ import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mobile/features/habits/view/habits_page_chrome.dart';
 import 'package:mobile/features/habits/widgets/habit_tracker_card.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 class HabitsOverviewSection extends StatelessWidget {
   const HabitsOverviewSection({
@@ -33,13 +34,18 @@ class HabitsOverviewSection extends StatelessWidget {
           .map(
             (tracker) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: HabitTrackerCard(
-                summary: tracker,
-                scope: state.selectedScope,
-                selected: tracker.tracker.id == state.selectedTrackerId,
-                onQuickLog: () => onQuickLog(tracker),
-                onSelect: () => onOpenTracker(tracker.tracker.id),
-                onEdit: () => onEditTracker(tracker.tracker),
+              child: PendingSyncFrame(
+                workspaceId: tracker.tracker.wsId,
+                feature: 'habits',
+                entityId: tracker.tracker.id,
+                child: HabitTrackerCard(
+                  summary: tracker,
+                  scope: state.selectedScope,
+                  selected: tracker.tracker.id == state.selectedTrackerId,
+                  onQuickLog: () => onQuickLog(tracker),
+                  onSelect: () => onOpenTracker(tracker.tracker.id),
+                  onEdit: () => onEditTracker(tracker.tracker),
+                ),
               ),
             ),
           )

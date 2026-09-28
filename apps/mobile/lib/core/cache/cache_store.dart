@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -12,9 +13,11 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/cache/replica_entity_record.dart';
 import 'package:path_provider/path_provider.dart';
 
 part 'cache_store_storage.dart';
+part 'cache_store_replica.dart';
 
 typedef CacheJsonDecoder<T> = T Function(Object? json);
 typedef CacheDirectoryResolver = Future<Directory> Function();
@@ -37,6 +40,7 @@ class CacheStore {
 
   static const _resourceBoxName = 'offline_cache_v1';
   static const _mutationBoxName = 'offline_mutations_v1';
+  static const _entityBoxName = 'offline_entities_v1';
   static const _encryptionKeyStorageKey = 'offline-cache-hive-key-v1';
   static const _maxBytesStorageKey = 'offline-cache-max-bytes-v1';
   static const allowedMaxBytes = <int>[
@@ -55,6 +59,9 @@ class CacheStore {
   int _resourceBytes = 0;
   late Box<dynamic> _resourceBox;
   late Box<dynamic> _mutationBox;
+  late Box<dynamic> _entityBox;
+  int _entityBytes = 0;
+  Future<void>? _replicaMigration;
   bool _initialized = false;
   int _maxBytes = allowedMaxBytes[1];
   Future<void>? _initialization;
@@ -129,6 +136,8 @@ class CacheStore {
     final encryptionCipher = await _resolveEncryptionCipher();
     _resourceBox = await _openEncryptedBox(_resourceBoxName, encryptionCipher);
     _mutationBox = await _openEncryptedBox(_mutationBoxName, encryptionCipher);
+    _entityBox = await _openEncryptedBox(_entityBoxName, encryptionCipher);
+    _entityBytes = _countReplicaBytes();
     try {
       final storedMaxBytes = int.tryParse(
         await _secureStorage.read(key: _maxBytesStorageKey) ?? '',
@@ -187,6 +196,12 @@ class CacheStore {
       }
     }
     _initialized = true;
+    _replicaMigration = _migrateReplicaFromSnapshots();
+    unawaited(
+      _replicaMigration!.catchError((Object error) {
+        debugPrint('CacheStore: entity migration unavailable: $error');
+      }),
+    );
     await _pruneResourceCache();
   }
 
@@ -323,17 +338,6 @@ class CacheStore {
     }
   }
 
-  @visibleForTesting
-  Future<void> closeForTesting() async {
-    if (!_initialized) return;
-    await _resourceBox.close();
-    await _mutationBox.close();
-    _memory.clear();
-    _resourceBytes = 0;
-    _initialized = false;
-    _initialization = null;
-  }
-
   Future<CacheReadResult<T>> read<T>({
     required CacheKey key,
     required CacheJsonDecoder<T> decode,
@@ -434,6 +438,8 @@ class CacheStore {
     );
     _putRecord(record);
     await _resourceBox.put(key.value, record.toJson());
+    await _replicaMigration;
+    await _replaceReplicaSource(record);
     await _pruneResourceCache();
   }
 
@@ -442,6 +448,8 @@ class CacheStore {
     await init();
     _dropRecord(key.value);
     await _resourceBox.delete(key.value);
+    await _replicaMigration;
+    await _removeReplicaSource(key.value);
   }
 
   Future<void> invalidateTags(
@@ -505,6 +513,8 @@ class CacheStore {
       for (final key in keysToDelete) {
         _dropRecord(key);
         await _resourceBox.delete(key);
+        await _replicaMigration;
+        await _removeReplicaSource(key);
       }
 
       // Resource-only purges must preserve unrelated queued offline changes.
@@ -524,6 +534,7 @@ class CacheStore {
       for (final id in mutationIds) {
         await _mutationBox.delete(id);
       }
+      await _clearReplicaMappingsScope(userId, workspaceId);
     } finally {
       _scopeRevisions[scope] = ++_revision;
       final remaining = _clearingScopes[scope]! - 1;
