@@ -1,4 +1,6 @@
 import { evaluateDevboxCommandPolicy } from '@tuturuuu/devbox';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -52,6 +54,20 @@ export async function POST(request: NextRequest) {
   }
 
   const maintenance = parsed.data.workload === 'maintenance';
+  if (maintenance) {
+    const permissions = await getPermissions({
+      request,
+      user: authorization.user,
+      wsId: ROOT_WORKSPACE_ID,
+    });
+    if (
+      !permissions ||
+      (permissions.withoutPermission('manage_workspace_secrets') &&
+        permissions.withoutPermission('manage_workspace_roles'))
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+  }
   if (
     maintenance &&
     !(

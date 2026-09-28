@@ -9,8 +9,13 @@ alter table private.devbox_runs
     add column if not exists workload text not null default 'run';
 
 alter table private.devbox_runs
+    drop constraint if exists devbox_runs_workload_check;
+
+alter table private.devbox_runs
     add constraint devbox_runs_workload_check
-    check (workload in ('run', 'build', 'serve', 'tunnel', 'maintenance', 'judge'));
+    check (workload in ('run', 'build', 'serve', 'tunnel', 'maintenance', 'judge')) not valid;
+
+alter table private.devbox_runs validate constraint devbox_runs_workload_check;
 
 create index if not exists idx_devbox_runs_workload_queue
     on private.devbox_runs(workload, created_at)

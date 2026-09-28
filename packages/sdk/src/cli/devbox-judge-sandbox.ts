@@ -321,7 +321,7 @@ async function runDocker(
       code,
       errorOutput: errorOutput.slice(0, 4096),
       exceededOutput,
-      output: output.slice(0, 4096),
+      output,
       timedOut,
     };
   } finally {

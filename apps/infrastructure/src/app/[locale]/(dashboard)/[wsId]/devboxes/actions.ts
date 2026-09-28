@@ -73,7 +73,11 @@ export async function setDevboxRunnerFeatureAction(
   enabled: boolean
 ) {
   await requireDevboxInfrastructureAdmin(wsId);
-  await setDevboxRunnerFeature(runnerId, feature, enabled);
+  await setDevboxRunnerFeature(
+    runnerId,
+    z.enum(['run', 'build', 'serve', 'tunnel', 'judge']).parse(feature),
+    z.boolean().parse(enabled)
+  );
   revalidateDevboxPage(wsId);
 }
 

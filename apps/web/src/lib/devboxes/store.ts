@@ -185,11 +185,13 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
   let { error } = await getPrivateTable(privateClient, 'devbox_runs').insert(
     runInsert
   );
+  const storageMessage = error?.message?.toLowerCase() ?? '';
   if (
-    error?.message?.toLowerCase().includes('workload') &&
-    (error.message.includes('schema cache') ||
-      error.message.includes('does not exist') ||
-      error.message.includes('could not find'))
+    (input.workload ?? 'run') === 'run' &&
+    storageMessage.includes('workload') &&
+    (storageMessage.includes('schema cache') ||
+      storageMessage.includes('does not exist') ||
+      storageMessage.includes('could not find'))
   ) {
     const { workload: _workload, ...legacyRunInsert } = runInsert;
     ({ error } = await getPrivateTable(privateClient, 'devbox_runs').insert(

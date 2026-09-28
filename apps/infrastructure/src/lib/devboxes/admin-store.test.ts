@@ -44,7 +44,6 @@ describe('devbox admin store', () => {
       }
       throw new Error(`Unexpected table: ${table}`);
     });
-    schemaMock.mockReturnValue({ from: fromMock });
     rpcMock.mockResolvedValue({ data: { build: false }, error: null });
     createAdminClientMock.mockResolvedValue({
       schema: schemaMock,
