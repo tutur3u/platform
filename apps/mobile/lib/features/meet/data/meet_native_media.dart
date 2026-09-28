@@ -108,7 +108,7 @@ class MeetNativeMedia extends ChangeNotifier {
     await _subscribePending();
     if (captureFailure != null) {
       failureStage = 'capture';
-      throw captureFailure;
+      throw StateError('Local media capture failed: $captureFailure');
     }
     failureStage = null;
   });
