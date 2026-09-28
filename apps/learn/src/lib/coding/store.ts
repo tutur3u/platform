@@ -1,5 +1,6 @@
 import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { notifyDevboxRun } from '@tuturuuu/utils/devbox-control';
 import type { CodingChallenge } from './challenges';
 import { CODING_LANGUAGES, type CodingLanguage } from './languages';
 
@@ -127,6 +128,14 @@ export async function enqueueCodingSubmission({
   );
   if (error || !data)
     throw new Error(error?.message ?? 'Could not queue submission.');
+  const submitted = await client
+    .from<Pick<SubmissionRow, 'run_id'>>('learn_coding_submissions')
+    .select('run_id')
+    .eq('id', data)
+    .limit(1);
+  if (!submitted.error && submitted.data?.[0]?.run_id) {
+    await notifyDevboxRun(submitted.data[0].run_id);
+  }
   return data;
 }
 

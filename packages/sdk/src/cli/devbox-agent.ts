@@ -7,6 +7,48 @@ function formatResponseStatus(response: Response) {
   return `${response.status}${response.statusText ? ` ${response.statusText}` : ''}`;
 }
 
+function controlPlaneOrigin() {
+  const configured = process.env.TUTURUUU_DEVBOX_CONTROL_URL?.trim();
+  if (!configured) return null;
+  const url = new URL(configured);
+  if (url.protocol !== 'https:') {
+    throw new Error('TUTURUUU_DEVBOX_CONTROL_URL must use HTTPS.');
+  }
+  return url.origin;
+}
+
+function connectWake(origin: string, token: string): WebSocket {
+  const url = new URL('/v1/connect', origin);
+  url.protocol = 'wss:';
+  const AgentWebSocket = WebSocket as unknown as new (
+    url: string,
+    options: { headers: Record<string, string> }
+  ) => WebSocket;
+  return new AgentWebSocket(url.toString(), {
+    headers: { 'X-Devbox-Runner-Token': token },
+  });
+}
+
+function waitForWake(socket: WebSocket | null, timeoutMs: number) {
+  return new Promise<void>((resolve) => {
+    if (!socket || socket.readyState === WebSocket.CLOSED) {
+      setTimeout(resolve, timeoutMs);
+      return;
+    }
+    const finish = () => {
+      clearTimeout(timeout);
+      socket.removeEventListener('message', finish);
+      socket.removeEventListener('close', finish);
+      socket.removeEventListener('error', finish);
+      resolve();
+    };
+    const timeout = setTimeout(finish, timeoutMs);
+    socket.addEventListener('message', finish, { once: true });
+    socket.addEventListener('close', finish, { once: true });
+    socket.addEventListener('error', finish, { once: true });
+  });
+}
+
 export async function runDevboxAgentLoop({
   baseUrl,
   once,
@@ -23,6 +65,7 @@ export async function runDevboxAgentLoop({
   }
 
   const origin = normalizeBaseUrl(baseUrl);
+  const controlOrigin = controlPlaneOrigin();
   const headers = {
     'X-Devbox-Runner-Token': token,
   };
@@ -30,10 +73,14 @@ export async function runDevboxAgentLoop({
   process.stdout.write('Starting Tuturuuu devbox agent.\n');
 
   let running = true;
+  let wakeSocket: WebSocket | null = null;
   while (running) {
     const capabilities = await createDevboxAgentCapabilities();
     const heartbeatResponse = await fetch(
-      new URL('/api/v1/devboxes/agents/heartbeat', origin),
+      new URL(
+        controlOrigin ? '/v1/heartbeat' : '/api/v1/devboxes/agents/heartbeat',
+        controlOrigin ?? origin
+      ),
       {
         body: JSON.stringify({ capabilities }),
         headers: {
@@ -49,8 +96,16 @@ export async function runDevboxAgentLoop({
       );
     }
 
+    if (
+      controlOrigin &&
+      !once &&
+      (!wakeSocket || wakeSocket.readyState === WebSocket.CLOSED)
+    ) {
+      wakeSocket = connectWake(controlOrigin, token);
+    }
     const pollResponse = await pollDevboxAgentJobs({
-      baseUrl: origin,
+      baseUrl: controlOrigin ?? origin,
+      path: controlOrigin ? '/v1/poll' : undefined,
       token,
     });
     if (!pollResponse.ok) {
@@ -76,6 +131,7 @@ export async function runDevboxAgentLoop({
           process.stdout.write(
             'Restart requested. Exiting for service manager restart.\n'
           );
+          wakeSocket?.close();
           return;
         }
         if (
@@ -89,6 +145,7 @@ export async function runDevboxAgentLoop({
           process.stdout.write(
             'Devbox CLI updated. Exiting for service manager restart.\n'
           );
+          wakeSocket?.close();
           return;
         }
       }
@@ -98,6 +155,8 @@ export async function runDevboxAgentLoop({
       running = false;
       continue;
     }
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    if (controlOrigin) await waitForWake(wakeSocket, 30_000);
+    else await new Promise((resolve) => setTimeout(resolve, 5000));
   }
+  wakeSocket?.close();
 }
