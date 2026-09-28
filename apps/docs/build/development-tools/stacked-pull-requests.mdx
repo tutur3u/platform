@@ -114,14 +114,14 @@ Run the usual gates in the child's worktree, not just at the top of the stack:
 bun check
 ```
 
-`bun check` does not compile Next apps, so a slice that touches routes, pages
-or dependencies also needs the affected app's real build before it can be
-called verified.
+`bun check` does not compile Next apps. For a slice that touches routes, pages,
+or dependencies, require the affected app's real build to pass in CI on that
+PR's exact head commit before calling it verified.
 
 <Warning>
-  Agents must not run `bun run build` on their own — the repo-wide prohibition
-  on long-running build commands applies inside a stack too. Report that the
-  build is required and ask; run it only once the user says so.
+  Do not run builds on this machine, including `bun setup`, which invokes package
+  builds. Run `bun install` when creating each worktree, then use CI build results
+  for the exact head commit. Repeat the CI check after a child is retargeted.
 </Warning>
 
 ## Merging the stack

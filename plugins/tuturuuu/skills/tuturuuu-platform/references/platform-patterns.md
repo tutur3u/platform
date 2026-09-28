@@ -235,7 +235,8 @@ Rules:
 - Unit tests invoke pages/handlers outside a request scope, where `connection()`
   throws. Stub it in the app's vitest setup, keeping the real module:
   `vi.mock('next/server', async (o) => ({ ...(await o()), connection: vi.fn() }))`.
-- `bun check` cannot see any of this. Run the app's real `bun run build`.
+- `bun check` cannot see any of this. Require the app's real CI build on the
+  exact PR head; do not run builds on this machine.
 
 ## Satellite Apps (contacts, pay, tasks, …)
 

@@ -25,7 +25,7 @@
    advanced. See `/build/development-tools/stacked-pull-requests` in
    `apps/docs`.
 1. Perform all open-PR work in an isolated `.worktrees/` checkout and run
-   `bun setup` immediately after creating it.
+   `bun install` immediately after creating it. Use CI for builds.
 2. Confirm GitHub auth and rate limits:
    - `gh auth status`
    - `gh api rate_limit`

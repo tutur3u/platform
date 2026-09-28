@@ -12,7 +12,7 @@ ownership merely because a note is old. Archives are historical context, not loc
 
 Notes and commit windows are per-checkout. Separate worktrees coordinate through
 branches and the remote. Open PR work belongs in `.worktrees/` with immediate
-`SKIP_PORTLESS_SETUP=1 bun setup` in non-interactive shells.
+`bun install`. `bun setup` runs builds; use CI build checks instead.
 
 Read the relevant section of `references/coordination-protocol.md` for overlap,
 handoffs, delegated lanes, generated-output isolation, or cleanup. Create a note

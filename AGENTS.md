@@ -25,8 +25,9 @@ merge, or production evidence only when that delivery is authorized.
 ## 2. Hard Prohibitions
 
 - Start long-lived development servers only when requested or needed for an
-  explicitly requested runtime verification. Finite local setup, tests, and builds
-  needed to validate the authorized change may run without repeated confirmation.
+  explicitly requested runtime verification. Finite local setup and tests needed
+  to validate the authorized change may run without repeated confirmation.
+  Do not run builds on this machine; use CI builds for the exact commit instead.
   This does not authorize deployments or production database writes.
 - Do not run `bun sb:push` or `bun sb:linkpush`; prepare migrations and let the
   user apply production Supabase changes.
@@ -70,8 +71,9 @@ merge, or production evidence only when that delivery is authorized.
   overlap, handoffs, or changes to agent/tooling/deployment rules.
 - For every open Tuturuuu pull request, perform review, fixes, validation, and
   merge preparation in an isolated worktree under `.worktrees/`; do not switch
-  the shared main checkout onto the PR branch. Run `bun setup` immediately after
-  creating the worktree. After the PR is confirmed merged into `main`, remove
+  the shared main checkout onto the PR branch. Run `bun install` immediately after
+  creating the worktree; `bun setup` includes local builds and must not run on
+  this machine. After the PR is confirmed merged into `main`, remove
   the completed worktree and delete its local task branch.
 - Split reviewable dependent work into stacked PRs; keep independent changes on
   separate branches. Merge stacks bottom-up. For base-chained stacks, merge parents
@@ -166,7 +168,8 @@ merge, or production evidence only when that delivery is authorized.
 - `bun check` does NOT compile Next apps or run migrations, so it cannot see
   `cacheComponents` violations, unresolved dynamic/side-effect imports, or a
   broken FK in a new migration. When you change an app's routes, pages, or
-  dependencies, also run that app's real `bun run build`; when you add a
+  dependencies, require that app's real build to pass in CI for the exact commit;
+  do not run it on this machine. When you add a
   migration, apply it locally (`bun sb:reset`/`sb:up`) before trusting it.
 - For new or substantially edited TypeScript server/service orchestration,
   prefer `@tuturuuu/utils/effect` when typed expected errors, dependency
@@ -175,7 +178,7 @@ merge, or production evidence only when that delivery is authorized.
   or tests.
 
 - Before heavy local validation, use `ttr resources status --json` and load
-  `$tuturuuu-cli-resources`. Queue builds, broad tests/type checks, Supabase setup,
+  `$tuturuuu-cli-resources`. Queue broad tests/type checks, Supabase setup,
   and browser suites with `ttr resources run -- <command>`; sequence heavy
   stages across sessions. Prefer a verified remote devbox when available.
   Do not bypass a live queue or kill another session's work to free resources.

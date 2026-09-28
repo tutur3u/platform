@@ -24,7 +24,7 @@ Use this skill when the user asks to check, re-check, revalidate, fix, resolve, 
    - `gh auth status`
    - `gh pr view --json number,url,headRefName,baseRefName,title,state`
 4. Use an isolated `.worktrees/` checkout for open-PR review, fixes, and merge
-   preparation. Run `SKIP_PORTLESS_SETUP=1 bun setup` immediately after creation;
+   preparation. Run `bun install` immediately after creation and use CI for builds;
    do not run `gh pr checkout` in the shared checkout.
 
 Run `gh` commands with network access if sandboxing blocks GitHub.
