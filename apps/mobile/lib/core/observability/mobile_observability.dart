@@ -5,7 +5,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 
-/// Reports production failures without sending user content or room identifiers.
+/// Reports production failures without user content or room identifiers.
 class MobileObservability {
   MobileObservability._();
 
