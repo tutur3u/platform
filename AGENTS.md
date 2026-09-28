@@ -162,9 +162,11 @@ merge, or production evidence only when that delivery is authorized.
   app surfaces, and intentional exceptions; check that existing docs and the
   live and migration paths agree before delivery. Keep AGENTS.md for this
   cross-cutting requirement, not copies of individual product decisions.
-- For TypeScript, JavaScript, root script, or repo config changes, finish with
-  `bun check` unless an unrelated pre-existing blocker prevents it. Run focused
-  tests first.
+- For TypeScript, JavaScript, root script, or repo config changes, run focused
+  non-build tests locally, then require the applicable test, type-check, lint,
+  and build workflows to pass in CI for the exact commit. Do not run `bun check`
+  on this machine: its Turbo task graph can build workspace dependencies.
+  Report any unrelated pre-existing CI blocker.
 - `bun check` does NOT compile Next apps or run migrations, so it cannot see
   `cacheComponents` violations, unresolved dynamic/side-effect imports, or a
   broken FK in a new migration. When you change an app's routes, pages, or
