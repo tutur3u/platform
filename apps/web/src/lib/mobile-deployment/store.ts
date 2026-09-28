@@ -1092,6 +1092,8 @@ async function assertNoReplay({
   platform: MobileDeploymentPlatform;
   tokenId: string;
 }) {
+  // One iOS fetch prepares the shared version, and the other signs the IPA.
+  const allowedFetches = platform === 'ios' ? 2 : 1;
   const { data, error } = await privateDb(db)
     .from('mobile_deployment_bundle_fetches')
     .select('id')
@@ -1101,10 +1103,10 @@ async function assertNoReplay({
     .eq('github_run_id', claims.runId)
     .eq('github_run_attempt', claims.runAttempt)
     .eq('success', true)
-    .limit(1);
+    .limit(allowedFetches);
   assertNoError(error, 'Failed to inspect mobile deployment bundle fetches');
 
-  if (data?.length) {
+  if ((data?.length ?? 0) >= allowedFetches) {
     throw new MobileDeploymentStoreError(
       'Unauthorized',
       401,
