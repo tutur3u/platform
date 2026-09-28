@@ -374,6 +374,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                               )
                             : CommentsSection(
                                 comments: _comments,
+                                workspaceId: widget.wsId,
                                 commentController: _commentController,
                                 isAddingComment: _isAddingComment,
                                 currentUserId: _currentUserId,

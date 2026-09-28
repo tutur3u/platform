@@ -210,9 +210,12 @@ other conversation actions still need separate offline handling.
 Timer sessions, history, categories, goals, requests, and summaries use scoped
 snapshots while revalidating. Session start, stop, pause, resume, edit, missed
 entry creation, and deletion queue offline, with dimmed dashed session cards.
-Timer approvals, goals, comments, and request image uploads still need
-dedicated offline handling. Running session state applies queued lifecycle edits
-over the latest snapshot.
+Timer category creation, goal create, edit, and delete, request approval changes,
+comments, and threshold updates queue too. Category, goal, request, and comment
+cards show pending sync state. Local ID reconciliation supports edits made
+before a create syncs; ambiguous sends remain in manual review. Request image
+uploads still need encrypted offline staging. Running session state applies
+queued lifecycle edits over the latest snapshot.
 Finance category and tag lists also read scoped snapshots while revalidating;
 their create, edit, and delete actions queue offline, and queued cards use the
 dimmed dashed treatment. An uncertain transaction

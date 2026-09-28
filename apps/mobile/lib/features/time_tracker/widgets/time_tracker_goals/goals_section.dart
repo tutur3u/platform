@@ -17,6 +17,7 @@ import 'package:mobile/features/time_tracker/widgets/time_tracker_goals/goal_for
 import 'package:mobile/features/time_tracker/widgets/time_tracker_goals/goals_empty_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimeTrackerGoalsSection extends StatefulWidget {
@@ -88,13 +89,18 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
                               final progressSeconds =
                                   _resolveGoalProgressSeconds(state, goal);
 
-                              return GoalCard(
-                                goal: goal,
-                                categoryTodaySeconds: progressSeconds.$1,
-                                categoryWeekSeconds: progressSeconds.$2,
-                                onTap: _isSubmitting
-                                    ? null
-                                    : () => _openGoalDetailSheet(state, goal),
+                              return PendingSyncFrame(
+                                workspaceId: widget.wsId,
+                                entityId: goal.id,
+                                feature: 'time_tracker',
+                                child: GoalCard(
+                                  goal: goal,
+                                  categoryTodaySeconds: progressSeconds.$1,
+                                  categoryWeekSeconds: progressSeconds.$2,
+                                  onTap: _isSubmitting
+                                      ? null
+                                      : () => _openGoalDetailSheet(state, goal),
+                                ),
                               );
                             },
                           ),

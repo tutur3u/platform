@@ -10,6 +10,7 @@ List<Map<String, dynamic>> overlayPendingCollection({
   required List<Map<String, dynamic>> source,
   required List<PendingMutationRecord> pending,
   Map<String, dynamic> Function(Map<String, dynamic>)? normalizeCreate,
+  Map<String, dynamic> Function(Map<String, dynamic>)? normalizeUpdate,
   bool Function(Map<String, dynamic>)? matchesQuery,
   bool includeCreates = true,
 }) {
@@ -34,9 +35,11 @@ List<Map<String, dynamic>> overlayPendingCollection({
     final payload = mutation.payload;
     if (payload == null) continue;
     if (mutation.method != 'POST' && !rows.containsKey(id)) continue;
-    final normalized = mutation.method == 'POST' && normalizeCreate != null
-        ? normalizeCreate(payload)
-        : payload;
+    final normalized = switch (mutation.method) {
+      'POST' when normalizeCreate != null => normalizeCreate(payload),
+      'PUT' || 'PATCH' when normalizeUpdate != null => normalizeUpdate(payload),
+      _ => payload,
+    };
     final next = <String, dynamic>{...?rows[id], ...normalized, 'id': id};
     if (matchesQuery != null && !matchesQuery(next)) {
       rows.remove(id);

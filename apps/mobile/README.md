@@ -56,6 +56,13 @@ GoogleService-Info.plist unless you explicitly override it)
 You still need to ensure each non-production flavor has its own matching
 Firebase app registration and native config files.
 
+For local iOS simulator verification, provide the development flavor's ignored
+`ios/Runner/GoogleService-Info.plist`, then run
+`flutter build ios --simulator --debug --flavor development --target lib/main_development.dart`.
+Simulator builds skip Crashlytics symbol upload; signed device and release builds
+retain it. The simulator can launch without a local web API, but signing in and
+testing authenticated screens requires the API at `API_BASE_URL`.
+
 ---
 
 ## Running Tests 🧪

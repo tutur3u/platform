@@ -71,4 +71,24 @@ void main() {
       isEmpty,
     );
   });
+
+  test('normalizes queued update fields without losing stored fields', () {
+    final rows = overlayPendingCollection(
+      workspaceId: 'ws_1',
+      feature: 'education',
+      pathContains: '/courses',
+      source: const [
+        {'id': 'course_1', 'daily_goal_minutes': 30, 'name': 'Saved'},
+      ],
+      pending: [
+        mutation('PATCH', 'course_1', payload: {'dailyGoalMinutes': 45}),
+      ],
+      normalizeUpdate: (payload) => {
+        'daily_goal_minutes': payload['dailyGoalMinutes'],
+      },
+    );
+    expect(rows.single['daily_goal_minutes'], 45);
+    expect(rows.single['name'], 'Saved');
+    expect(rows.single.containsKey('dailyGoalMinutes'), isFalse);
+  });
 }

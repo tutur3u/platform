@@ -3,6 +3,9 @@ import 'dart:math';
 
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
@@ -25,6 +28,9 @@ import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+part 'time_tracker_repository_categories.dart';
+part 'time_tracker_repository_goals.dart';
+part 'time_tracker_repository_requests.dart';
 part 'time_tracker_repository_helpers.dart';
 
 const _pomodoroKey = 'pomodoro_settings';
@@ -451,16 +457,8 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
   }
 
   @override
-  Future<List<TimeTrackingCategory>> getCategories(String wsId) async {
-    final data = await _read(
-      wsId,
-      '/api/v1/workspaces/$wsId/time-tracking/categories',
-    );
-    final categories = data['categories'] as List<dynamic>? ?? [];
-    return categories
-        .map((e) => TimeTrackingCategory.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
+  Future<List<TimeTrackingCategory>> getCategories(String wsId) =>
+      _getCategories(wsId);
 
   @override
   Future<TimeTrackingCategory> createCategory(
@@ -468,18 +466,7 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String name, {
     String? color,
     String? description,
-  }) async {
-    final data = await _api
-        .postJson('/api/v1/workspaces/$wsId/time-tracking/categories', {
-          'name': name,
-          if (color != null) 'color': color,
-          if (description != null) 'description': description,
-        });
-
-    return TimeTrackingCategory.fromJson(
-      data['category'] as Map<String, dynamic>,
-    );
-  }
+  }) => _createCategory(wsId, name, color: color, description: description);
 
   @override
   Future<TimeTrackingBreak?> getActiveBreak(
@@ -555,19 +542,8 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
   }
 
   @override
-  Future<List<TimeTrackingGoal>> getGoals(String wsId, {String? userId}) async {
-    final data = await _read(
-      wsId,
-      _withQuery('/api/v1/workspaces/$wsId/time-tracking/goals', {
-        if (userId != null && userId.isNotEmpty) 'userId': userId,
-      }),
-    );
-
-    final goals = data['goals'] as List<dynamic>? ?? [];
-    return goals
-        .map((e) => TimeTrackingGoal.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
+  Future<List<TimeTrackingGoal>> getGoals(String wsId, {String? userId}) =>
+      _getGoals(wsId, userId: userId);
 
   @override
   Future<TimeTrackingGoal> createGoal(
@@ -576,21 +552,13 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String? categoryId,
     int? weeklyGoalMinutes,
     bool isActive = true,
-  }) async {
-    final body = <String, dynamic>{
-      'dailyGoalMinutes': dailyGoalMinutes,
-      'isActive': isActive,
-      if (categoryId != null) 'categoryId': categoryId,
-      if (weeklyGoalMinutes != null) 'weeklyGoalMinutes': weeklyGoalMinutes,
-    };
-
-    final data = await _api.postJson(
-      '/api/v1/workspaces/$wsId/time-tracking/goals',
-      body,
-    );
-
-    return TimeTrackingGoal.fromJson(data['goal'] as Map<String, dynamic>);
-  }
+  }) => _createGoal(
+    wsId,
+    dailyGoalMinutes: dailyGoalMinutes,
+    categoryId: categoryId,
+    weeklyGoalMinutes: weeklyGoalMinutes,
+    isActive: isActive,
+  );
 
   @override
   Future<TimeTrackingGoal> updateGoal(
@@ -602,29 +570,20 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     int? dailyGoalMinutes,
     int? weeklyGoalMinutes,
     bool? isActive,
-  }) async {
-    final body = <String, dynamic>{
-      if (includeCategoryId || categoryId != null) 'categoryId': categoryId,
-      if (dailyGoalMinutes != null) 'dailyGoalMinutes': dailyGoalMinutes,
-      if (includeWeeklyGoalMinutes || weeklyGoalMinutes != null)
-        'weeklyGoalMinutes': weeklyGoalMinutes,
-      if (isActive != null) 'isActive': isActive,
-    };
-
-    final data = await _api.patchJson(
-      '/api/v1/workspaces/$wsId/time-tracking/goals/$goalId',
-      body,
-    );
-
-    return TimeTrackingGoal.fromJson(data['goal'] as Map<String, dynamic>);
-  }
+  }) => _updateGoal(
+    wsId,
+    goalId,
+    categoryId: categoryId,
+    includeCategoryId: includeCategoryId,
+    includeWeeklyGoalMinutes: includeWeeklyGoalMinutes,
+    dailyGoalMinutes: dailyGoalMinutes,
+    weeklyGoalMinutes: weeklyGoalMinutes,
+    isActive: isActive,
+  );
 
   @override
-  Future<void> deleteGoal(String wsId, String goalId) async {
-    await _api.deleteJson(
-      '/api/v1/workspaces/$wsId/time-tracking/goals/$goalId',
-    );
-  }
+  Future<void> deleteGoal(String wsId, String goalId) =>
+      _deleteGoal(wsId, goalId);
 
   @override
   Future<List<TimeTrackingRequest>> getRequests(
@@ -633,22 +592,13 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String? userId,
     int limit = 50,
     int offset = 0,
-  }) async {
-    final data = await _read(
-      wsId,
-      _withQuery('/api/v1/workspaces/$wsId/time-tracking/requests', {
-        'limit': '$limit',
-        'page': '${(offset ~/ limit) + 1}',
-        if (status != null) 'status': status,
-        if (userId != null && userId.isNotEmpty) 'userId': userId,
-      }),
-    );
-
-    final requests = data['requests'] as List<dynamic>? ?? [];
-    return requests
-        .map((e) => TimeTrackingRequest.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
+  }) => _getRequests(
+    wsId,
+    status: status,
+    userId: userId,
+    limit: limit,
+    offset: offset,
+  );
 
   @override
   Future<List<WorkspaceUserOption>> getRequestUsers(String wsId) async {
@@ -759,9 +709,16 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
       body['statusChangeGracePeriodMinutes'] = statusChangeGracePeriodMinutes;
     }
 
-    await _api.putJson(
-      '/api/v1/workspaces/$wsId/time-tracking/threshold',
-      body,
+    final path = '/api/v1/workspaces/$wsId/time-tracking/threshold';
+    await queueOrSendVoid(
+      feature: 'time_tracker',
+      method: 'PUT',
+      path: path,
+      workspaceId: wsId,
+      payload: body,
+      send: () async {
+        await _api.putJson(path, body);
+      },
     );
   }
 
@@ -771,77 +728,20 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String requestId, {
     required ApprovalStatus status,
     String? reason,
-  }) async {
-    final body = <String, dynamic>{
-      'action': switch (status) {
-        ApprovalStatus.approved => 'approve',
-        ApprovalStatus.rejected => 'reject',
-        ApprovalStatus.needsInfo => 'needs_info',
-        ApprovalStatus.pending => 'resubmit',
-      },
-    };
-
-    if (status == ApprovalStatus.rejected && reason != null) {
-      body['rejection_reason'] = reason;
-    }
-    if (status == ApprovalStatus.needsInfo && reason != null) {
-      body['needs_info_reason'] = reason;
-    }
-
-    final data = await _api.patchJson(
-      '/api/v1/workspaces/$wsId/time-tracking/requests/$requestId',
-      body,
-    );
-
-    // Some actions return the full request, others return a success envelope.
-    // Since callers ignore the return value and reload the list, we just need
-    // to ensure the response indicates success.
-    final request = data['request'];
-    final isSuccess = data['success'] == true;
-    final hasId =
-        data.containsKey('id') || (request is Map && request.containsKey('id'));
-
-    if (isSuccess || hasId || request != null) {
-      return;
-    }
-
-    throw const ApiException(
-      message: 'Invalid response from updateRequestStatus',
-      statusCode: 0,
-    );
-  }
+  }) => _updateRequestStatus(wsId, requestId, status: status, reason: reason);
 
   @override
   Future<List<TimeTrackingRequestComment>> getRequestComments(
     String wsId,
     String requestId,
-  ) async {
-    final data = await _read(
-      wsId,
-      '/api/v1/workspaces/$wsId/time-tracking/requests/$requestId/comments',
-    );
-
-    final comments = data['comments'] as List<dynamic>? ?? [];
-    return comments
-        .map(
-          (e) => TimeTrackingRequestComment.fromJson(e as Map<String, dynamic>),
-        )
-        .toList();
-  }
+  ) => _getRequestComments(wsId, requestId);
 
   @override
   Future<TimeTrackingRequestComment> addRequestComment(
     String wsId,
     String requestId,
     String content,
-  ) async {
-    final data = await _api.postJson(
-      '/api/v1/workspaces/$wsId/time-tracking/requests/$requestId/comments',
-      {'content': content},
-    );
-
-    return TimeTrackingRequestComment.fromJson(data);
-  }
+  ) => _addRequestComment(wsId, requestId, content);
 
   @override
   Future<TimeTrackingRequest> updateRequest(
@@ -886,25 +786,14 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String requestId,
     String commentId,
     String content,
-  ) async {
-    final data = await _api.patchJson(
-      '/api/v1/workspaces/$wsId/time-tracking/requests/$requestId/comments/$commentId',
-      {'content': content},
-    );
-
-    return TimeTrackingRequestComment.fromJson(data);
-  }
+  ) => _updateRequestComment(wsId, requestId, commentId, content);
 
   @override
   Future<void> deleteRequestComment(
     String wsId,
     String requestId,
     String commentId,
-  ) async {
-    await _api.deleteJson(
-      '/api/v1/workspaces/$wsId/time-tracking/requests/$requestId/comments/$commentId',
-    );
-  }
+  ) => _deleteRequestComment(wsId, requestId, commentId);
 
   @override
   Future<TimeTrackingRequestActivityResponse> getRequestActivities(

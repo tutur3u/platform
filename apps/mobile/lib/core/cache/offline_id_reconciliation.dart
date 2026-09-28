@@ -46,6 +46,9 @@ String? createdServerId(Map<String, dynamic> response) {
     'document',
     'user',
     'feedback',
+    'transaction',
+    'wallet',
+    'message',
     'course',
     'board',
     'list',
@@ -56,6 +59,10 @@ String? createdServerId(Map<String, dynamic> response) {
     'quiz',
     'quizSet',
     'flashcard',
+    'goal',
+    'request',
+    'comment',
+    'category',
   ]) {
     final value = response[key];
     if (value is Map) {

@@ -28,5 +28,17 @@ void main() {
       'nested',
     );
     expect(createdServerId({'status': 'ok'}), isNull);
+    expect(
+      createdServerId({
+        'goal': {'id': 'goal-server-id'},
+      }),
+      'goal-server-id',
+    );
+    expect(
+      createdServerId({
+        'category': {'id': 'category-server-id'},
+      }),
+      'category-server-id',
+    );
   });
 }

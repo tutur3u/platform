@@ -6,6 +6,7 @@ import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/features/time_tracker/widgets/create_category_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Opens [CategorySheet] as an adaptive bottom sheet/dialog.
@@ -146,17 +147,23 @@ class CategorySheet extends StatelessWidget {
                     onTap: () => unawaited(_selectCategory(context, null)),
                   ),
                   ...categories.map(
-                    (cat) => _CategoryTile(
-                      color: cat.color != null
-                          ? resolveTimeTrackingCategoryColor(
-                              context,
-                              cat.color,
-                              fallback: colorScheme.mutedForeground,
-                            )
-                          : null,
-                      label: cat.name ?? '',
-                      isSelected: cat.id == selectedCategoryId,
-                      onTap: () => unawaited(_selectCategory(context, cat.id)),
+                    (cat) => PendingSyncFrame(
+                      workspaceId: cat.wsId ?? '',
+                      entityId: cat.id,
+                      feature: 'time_tracker',
+                      child: _CategoryTile(
+                        color: cat.color != null
+                            ? resolveTimeTrackingCategoryColor(
+                                context,
+                                cat.color,
+                                fallback: colorScheme.mutedForeground,
+                              )
+                            : null,
+                        label: cat.name ?? '',
+                        isSelected: cat.id == selectedCategoryId,
+                        onTap: () =>
+                            unawaited(_selectCategory(context, cat.id)),
+                      ),
                     ),
                   ),
                 ],

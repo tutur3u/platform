@@ -7,10 +7,12 @@ import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/time_tracking/request_comment.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 class CommentsSection extends StatelessWidget {
   const CommentsSection({
     required this.comments,
+    required this.workspaceId,
     required this.commentController,
     required this.isAddingComment,
     required this.currentUserId,
@@ -22,6 +24,7 @@ class CommentsSection extends StatelessWidget {
   });
 
   final List<TimeTrackingRequestComment> comments;
+  final String workspaceId;
   final TextEditingController commentController;
   final bool isAddingComment;
   final String? currentUserId;
@@ -56,11 +59,16 @@ class CommentsSection extends StatelessWidget {
           )
         else
           ...comments.map(
-            (comment) => _CommentTile(
-              comment: comment,
-              currentUserId: currentUserId,
-              onEditComment: onEditComment,
-              onDeleteComment: onDeleteComment,
+            (comment) => PendingSyncFrame(
+              workspaceId: workspaceId,
+              entityId: comment.id,
+              feature: 'time_tracker',
+              child: _CommentTile(
+                comment: comment,
+                currentUserId: currentUserId,
+                onEditComment: onEditComment,
+                onDeleteComment: onDeleteComment,
+              ),
             ),
           ),
         if (canAddComments) ...[
