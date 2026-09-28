@@ -58,24 +58,25 @@ async function resolveSignedUrl(
   }
 ) {
   const { wsId } = await params;
+  const sanitizedPath = sanitizePath(input.path);
+  if (!sanitizedPath) {
+    return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
+  }
+  const isTaskImagesPath =
+    sanitizedPath === 'task-images' || sanitizedPath.startsWith('task-images/');
   const auth = await resolveWorkspaceStorageRouteAuth(request, wsId, {
-    appSessionTargets: FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
+    appSessionTargets: isTaskImagesPath
+      ? [...FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS, 'tasks']
+      : FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
   });
   if (!auth.ok) {
     return auth.response;
   }
   const { normalizedWsId, permissions, supabase, userId } = auth.context;
 
-  const sanitizedPath = sanitizePath(input.path);
-  if (!sanitizedPath) {
-    return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
-  }
   if (isReservedMobileDeploymentDrivePath(normalizedWsId, sanitizedPath)) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
-
-  const isTaskImagesPath =
-    sanitizedPath === 'task-images' || sanitizedPath.startsWith('task-images/');
 
   const canReadFinanceTransactionFile =
     await canAccessFinanceTransactionStoragePath({
@@ -88,19 +89,18 @@ async function resolveSignedUrl(
     });
 
   const canViewDrive = !permissions.withoutPermission('view_drive');
+  const canReadTaskMedia =
+    isTaskImagesPath &&
+    !permissions.withoutPermission('manage_drive_tasks_directory');
 
-  if (!canViewDrive && !canReadFinanceTransactionFile) {
+  if (!canViewDrive && !canReadFinanceTransactionFile && !canReadTaskMedia) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }
     );
   }
 
-  if (
-    canViewDrive &&
-    isTaskImagesPath &&
-    permissions.withoutPermission('manage_drive_tasks_directory')
-  ) {
+  if (isTaskImagesPath && !canReadTaskMedia) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }

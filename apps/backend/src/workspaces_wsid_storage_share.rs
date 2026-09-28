@@ -5,7 +5,7 @@
 //!
 //! The GET handler validates query params, authenticates the caller via the
 //! `resolveWorkspaceStorageRouteAuth` flow (accepting `drive` and `finance`
-//! app-session tokens), normalizes the workspace ID, sanitizes the path,
+//! app-session tokens, plus `tasks` for task images), normalizes the workspace ID, sanitizes the path,
 //! enforces drive/finance-transaction permission checks, calls the Supabase
 //! Storage sign API, and returns a `307 Temporary Redirect` to the signed URL.
 //!
@@ -40,6 +40,7 @@ use crate::{
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STORAGE_SHARE_APP_SESSION_TARGETS: [&str; 2] = ["drive", "finance"];
+const TASK_MEDIA_STORAGE_SHARE_APP_SESSION_TARGETS: [&str; 3] = ["drive", "finance", "tasks"];
 const HAS_WORKSPACE_PERMISSION_RPC: &str = "has_workspace_permission";
 const GET_WALLET_TRANSACTIONS_RPC: &str = "get_wallet_transactions_with_permissions";
 const VIEW_DRIVE_PERMISSION: &str = "view_drive";
@@ -163,8 +164,16 @@ async fn storage_share_get_response(
         Err(msg) => return message_response(400, msg),
     };
 
-    // Authenticate caller (Supabase session or drive/finance app-session token).
-    let Some(user) = authenticated_user(config, request, outbound).await else {
+    let Some(sanitized_path) = sanitize_path(&query.path) else {
+        return message_response(400, "Invalid path");
+    };
+    if sanitized_path.is_empty() {
+        return message_response(400, "Invalid path");
+    }
+
+    // Tasks app sessions may only request media from the task-images directory.
+    let targets = storage_share_app_session_targets(&sanitized_path);
+    let Some(user) = authenticated_user(config, request, outbound, targets).await else {
         return message_response(401, "Unauthorized");
     };
 
@@ -175,14 +184,6 @@ async fn storage_share_get_response(
             Ok(None) => return message_response(401, "Unauthorized"),
             Err(()) => return message_response(500, "Internal server error"),
         };
-
-    // Sanitize the requested path.
-    let Some(sanitized_path) = sanitize_path(&query.path) else {
-        return message_response(400, "Invalid path");
-    };
-    if sanitized_path.is_empty() {
-        return message_response(400, "Invalid path");
-    }
 
     // Guard reserved mobile-deployment paths.
     if is_reserved_mobile_deployment_drive_path(&normalized_ws_id, &sanitized_path) {
@@ -206,9 +207,9 @@ async fn storage_share_get_response(
     let is_task_images_path =
         sanitized_path == "task-images" || sanitized_path.starts_with("task-images/");
 
-    // Additional check: task-images requires manage_drive_tasks_directory.
-    if can_view_drive && is_task_images_path {
-        let can_manage = match has_workspace_permission(
+    // Task media uses the same permission for reads as for uploads.
+    let can_read_task_media = if is_task_images_path {
+        match has_workspace_permission(
             &config.contact_data,
             outbound,
             &normalized_ws_id,
@@ -219,14 +220,15 @@ async fn storage_share_get_response(
         {
             Ok(v) => v,
             Err(()) => return message_response(500, "Internal server error"),
-        };
-
-        if !can_manage {
-            return message_response(403, "Insufficient permissions");
         }
+    } else {
+        false
+    };
+    if is_task_images_path && !can_read_task_media {
+        return message_response(403, "Insufficient permissions");
     }
 
-    if !can_view_drive {
+    if !can_view_drive && !can_read_task_media {
         // Check finance-transaction access as fallback.
         let can_finance = match can_access_finance_transaction_storage_path(
             config,
@@ -341,17 +343,23 @@ fn storage_base_url(contact_data: &contact::ContactDataConfig) -> Option<String>
 
 // ── Authentication ────────────────────────────────────────────────────────────
 
+fn storage_share_app_session_targets(path: &str) -> &'static [&'static str] {
+    if path == "task-images" || path.starts_with("task-images/") {
+        &TASK_MEDIA_STORAGE_SHARE_APP_SESSION_TARGETS
+    } else {
+        &STORAGE_SHARE_APP_SESSION_TARGETS
+    }
+}
+
 async fn authenticated_user(
     config: &BackendConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
+    targets: &[&str],
 ) -> Option<AuthenticatedUser> {
     if contact::request_has_app_session_token(request) {
-        if let Ok(identity) = contact::resolve_app_session_identity(
-            config,
-            request,
-            &STORAGE_SHARE_APP_SESSION_TARGETS,
-        ) && let Some(id) = non_empty(identity.id)
+        if let Ok(identity) = contact::resolve_app_session_identity(config, request, targets)
+            && let Some(id) = non_empty(identity.id)
         {
             return Some(AuthenticatedUser {
                 access_token: None,
@@ -604,397 +612,8 @@ fn decode_first_row<T: for<'de> Deserialize<'de>>(
         .map_err(|_| ())
 }
 
-// ── Pure helpers ──────────────────────────────────────────────────────────────
-
-/// Extract the `:wsId` segment for `/api/v1/workspaces/:wsId/storage/share`.
-fn storage_share_path_param(path: &str) -> Option<&str> {
-    let segments = path_segments(path);
-
-    if segments.len() == 6
-        && segments[0] == "api"
-        && segments[1] == "v1"
-        && segments[2] == "workspaces"
-        && !segments[3].is_empty()
-        && segments[4] == "storage"
-        && segments[5] == "share"
-    {
-        segments.get(3).copied()
-    } else {
-        None
-    }
-}
-
-fn path_segments(path: &str) -> Vec<&str> {
-    path.trim_matches('/')
-        .split('/')
-        .filter(|s| !s.is_empty())
-        .collect()
-}
-
-/// Parse and validate the GET query parameters.
-fn parse_share_query(url: Option<&url::Url>) -> Result<ShareQuery, &'static str> {
-    let get = |key: &str| -> Option<String> {
-        url?.query_pairs()
-            .find_map(|(name, value)| (name == key).then(|| value.into_owned()))
-            .filter(|v| !v.is_empty())
-    };
-
-    // `path` is required.
-    let path = get("path").ok_or("Invalid query params")?;
-    if path.len() > MAX_PATH_LENGTH {
-        return Err("Invalid query params");
-    }
-
-    // Optional `expiresIn` — coerce to u64 and clamp.
-    let expires_in = if let Some(raw) = get("expiresIn") {
-        let n: u64 = raw.parse().map_err(|_| "Invalid query params")?;
-        if !(MIN_EXPIRES_IN..=MAX_EXPIRES_IN).contains(&n) {
-            return Err("Invalid query params");
-        }
-        Some(n)
-    } else {
-        None
-    };
-
-    // Optional image transform fields.
-    let width = if let Some(raw) = get("width") {
-        let n: u64 = raw.parse().map_err(|_| "Invalid query params")?;
-        if !(MIN_DIMENSION..=MAX_DIMENSION).contains(&n) {
-            return Err("Invalid query params");
-        }
-        Some(n)
-    } else {
-        None
-    };
-
-    let height = if let Some(raw) = get("height") {
-        let n: u64 = raw.parse().map_err(|_| "Invalid query params")?;
-        if !(MIN_DIMENSION..=MAX_DIMENSION).contains(&n) {
-            return Err("Invalid query params");
-        }
-        Some(n)
-    } else {
-        None
-    };
-
-    let resize = if let Some(raw) = get("resize") {
-        match raw.as_str() {
-            "cover" | "contain" | "fill" => Some(raw),
-            _ => return Err("Invalid query params"),
-        }
-    } else {
-        None
-    };
-
-    let quality = if let Some(raw) = get("quality") {
-        let n: u64 = raw.parse().map_err(|_| "Invalid query params")?;
-        if !(MIN_QUALITY..=MAX_QUALITY).contains(&n) {
-            return Err("Invalid query params");
-        }
-        Some(n)
-    } else {
-        None
-    };
-
-    let format = if let Some(raw) = get("format") {
-        if raw != "origin" {
-            return Err("Invalid query params");
-        }
-        Some(raw)
-    } else {
-        None
-    };
-
-    // Mirror the legacy `superRefine`: if any transform is present, width or
-    // height must also be present.
-    let has_transform = width.is_some()
-        || height.is_some()
-        || resize.is_some()
-        || quality.is_some()
-        || format.is_some();
-
-    if has_transform && width.is_none() && height.is_none() {
-        return Err("Invalid query params");
-    }
-
-    Ok(ShareQuery {
-        path,
-        expires_in,
-        width,
-        height,
-        resize,
-        quality,
-        format,
-    })
-}
-
-fn sanitize_path(path: &str) -> Option<String> {
-    if path.is_empty() {
-        return Some(String::new());
-    }
-
-    let normalized = path.replace('\\', "/");
-    let trimmed = normalized.trim().trim_matches('/');
-
-    let segments: Vec<&str> = trimmed.split('/').filter(|s| !s.is_empty()).collect();
-
-    for segment in &segments {
-        if *segment == ".." || *segment == "." || segment.is_empty() {
-            return None;
-        }
-        if segment.contains("..") {
-            return None;
-        }
-    }
-
-    Some(segments.join("/"))
-}
-
-fn is_reserved_mobile_deployment_drive_path(ws_id: &str, sanitized_path: &str) -> bool {
-    if resolve_workspace_id(ws_id) != ROOT_WORKSPACE_ID {
-        return false;
-    }
-
-    let Some(normalized) = sanitize_path(sanitized_path) else {
-        return false;
-    };
-
-    normalized == MOBILE_DEPLOYMENT_DRIVE_PREFIX
-        || normalized.starts_with(&format!("{MOBILE_DEPLOYMENT_DRIVE_PREFIX}/"))
-        || (!normalized.is_empty()
-            && MOBILE_DEPLOYMENT_DRIVE_PREFIX.starts_with(&format!("{normalized}/")))
-}
-
-fn finance_transaction_id_from_storage_path(path: &str) -> Option<&str> {
-    let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
-
-    if segments.first() == Some(&"finance")
-        && segments.get(1) == Some(&"transactions")
-        && segments.get(2).is_some_and(|id| !id.is_empty())
-    {
-        segments.get(2).copied()
-    } else {
-        None
-    }
-}
-
-fn resolve_workspace_id(identifier: &str) -> String {
-    if identifier.eq_ignore_ascii_case(INTERNAL_WORKSPACE_SLUG) {
-        ROOT_WORKSPACE_ID.to_owned()
-    } else {
-        identifier.to_owned()
-    }
-}
-
-fn is_uuid_literal(value: &str) -> bool {
-    let value = value.trim();
-    value.len() == 36
-        && value.chars().enumerate().all(|(i, c)| match i {
-            8 | 13 | 18 | 23 => c == '-',
-            _ => c.is_ascii_hexdigit(),
-        })
-}
-
-fn is_workspace_handle(value: &str) -> bool {
-    let len = value.len();
-    if len == 0 || len > 64 {
-        return false;
-    }
-    value.chars().enumerate().all(|(i, c)| {
-        let is_edge = i == 0 || i + 1 == len;
-        c.is_ascii_lowercase() || c.is_ascii_digit() || (!is_edge && matches!(c, '_' | '-'))
-    })
-}
-
-fn non_empty(value: String) -> Option<String> {
-    (!value.trim().is_empty()).then_some(value)
-}
-
-fn message_response(status: u16, message: &str) -> BackendResponse {
-    no_store_response(json_response(status, json!({ "message": message })))
-}
-
-// ── Tests (pure/sync helpers only) ───────────────────────────────────────────
+mod validation;
+use validation::*;
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    // ── storage_share_path_param ──────────────────────────────────────────────
-
-    #[test]
-    fn path_param_matches_exact_route() {
-        let ws = storage_share_path_param("/api/v1/workspaces/abc-123/storage/share");
-        assert_eq!(ws, Some("abc-123"));
-    }
-
-    #[test]
-    fn path_param_matches_uuid_ws_id() {
-        let id = "00000000-0000-0000-0000-000000000001";
-        let path = format!("/api/v1/workspaces/{id}/storage/share");
-        assert_eq!(storage_share_path_param(&path), Some(id));
-    }
-
-    #[test]
-    fn path_param_rejects_extra_segments() {
-        assert!(storage_share_path_param("/api/v1/workspaces/abc/storage/share/extra").is_none());
-    }
-
-    #[test]
-    fn path_param_rejects_wrong_tail() {
-        assert!(storage_share_path_param("/api/v1/workspaces/abc/storage/object").is_none());
-    }
-
-    #[test]
-    fn path_param_rejects_missing_ws_id() {
-        assert!(storage_share_path_param("/api/v1/workspaces//storage/share").is_none());
-    }
-
-    // ── sanitize_path ─────────────────────────────────────────────────────────
-
-    #[test]
-    fn sanitize_path_simple() {
-        assert_eq!(sanitize_path("foo/bar"), Some("foo/bar".to_owned()));
-    }
-
-    #[test]
-    fn sanitize_path_strips_leading_slash() {
-        assert_eq!(sanitize_path("/foo/bar"), Some("foo/bar".to_owned()));
-    }
-
-    #[test]
-    fn sanitize_path_rejects_dotdot() {
-        assert!(sanitize_path("foo/../bar").is_none());
-    }
-
-    #[test]
-    fn sanitize_path_rejects_dotdot_segment() {
-        assert!(sanitize_path("..").is_none());
-    }
-
-    #[test]
-    fn sanitize_path_empty_returns_empty() {
-        assert_eq!(sanitize_path(""), Some(String::new()));
-    }
-
-    // ── is_reserved_mobile_deployment_drive_path ──────────────────────────────
-
-    #[test]
-    fn reserved_path_blocked_for_root_ws() {
-        assert!(is_reserved_mobile_deployment_drive_path(
-            ROOT_WORKSPACE_ID,
-            ".tuturuuu/mobile-deployment-vault"
-        ));
-    }
-
-    #[test]
-    fn reserved_path_blocked_sub_path_for_root_ws() {
-        assert!(is_reserved_mobile_deployment_drive_path(
-            ROOT_WORKSPACE_ID,
-            ".tuturuuu/mobile-deployment-vault/foo"
-        ));
-    }
-
-    #[test]
-    fn reserved_path_not_blocked_for_non_root_ws() {
-        assert!(!is_reserved_mobile_deployment_drive_path(
-            "some-other-ws-id",
-            ".tuturuuu/mobile-deployment-vault"
-        ));
-    }
-
-    // ── finance_transaction_id_from_storage_path ──────────────────────────────
-
-    #[test]
-    fn finance_tx_id_extracted() {
-        assert_eq!(
-            finance_transaction_id_from_storage_path("finance/transactions/tx-abc-123/receipt.pdf"),
-            Some("tx-abc-123")
-        );
-    }
-
-    #[test]
-    fn finance_tx_id_not_extracted_for_other_paths() {
-        assert!(finance_transaction_id_from_storage_path("task-images/img.png").is_none());
-    }
-
-    // ── parse_share_query ─────────────────────────────────────────────────────
-
-    fn make_url(qs: &str) -> url::Url {
-        url::Url::parse(&format!(
-            "https://example.com/api/v1/workspaces/ws/storage/share?{qs}"
-        ))
-        .unwrap()
-    }
-
-    #[test]
-    fn parse_query_path_only() {
-        let url = make_url("path=foo%2Fbar");
-        let q = parse_share_query(Some(&url)).unwrap();
-        assert_eq!(q.path, "foo/bar");
-        assert!(q.expires_in.is_none());
-        assert!(q.width.is_none());
-    }
-
-    #[test]
-    fn parse_query_missing_path_errors() {
-        let url = make_url("expiresIn=3600");
-        assert!(parse_share_query(Some(&url)).is_err());
-    }
-
-    #[test]
-    fn parse_query_expires_in_valid() {
-        let url = make_url("path=foo&expiresIn=3600");
-        let q = parse_share_query(Some(&url)).unwrap();
-        assert_eq!(q.expires_in, Some(3600));
-    }
-
-    #[test]
-    fn parse_query_expires_in_too_small() {
-        let url = make_url("path=foo&expiresIn=10");
-        assert!(parse_share_query(Some(&url)).is_err());
-    }
-
-    #[test]
-    fn parse_query_transform_requires_dimension() {
-        // resize present but no width/height — should fail the superRefine rule.
-        let url = make_url("path=foo&resize=cover");
-        assert!(parse_share_query(Some(&url)).is_err());
-    }
-
-    #[test]
-    fn parse_query_transform_with_width() {
-        let url = make_url("path=foo&width=800&resize=cover");
-        let q = parse_share_query(Some(&url)).unwrap();
-        assert_eq!(q.width, Some(800));
-        assert_eq!(q.resize.as_deref(), Some("cover"));
-    }
-
-    #[test]
-    fn parse_query_invalid_resize_value() {
-        let url = make_url("path=foo&width=800&resize=stretch");
-        assert!(parse_share_query(Some(&url)).is_err());
-    }
-
-    // ── storage_base_url ──────────────────────────────────────────────────────
-
-    #[test]
-    fn storage_base_url_derived() {
-        let cd =
-            contact::ContactDataConfig::new("https://proj.supabase.co", "service-role-key-value");
-        let base = storage_base_url(&cd);
-        assert_eq!(base.as_deref(), Some("https://proj.supabase.co/storage/v1"));
-    }
-
-    // ── is_uuid_literal ───────────────────────────────────────────────────────
-
-    #[test]
-    fn uuid_literal_valid() {
-        assert!(is_uuid_literal("00000000-0000-0000-0000-000000000000"));
-    }
-
-    #[test]
-    fn uuid_literal_invalid_short() {
-        assert!(!is_uuid_literal("00000000-0000-0000-0000"));
-    }
-}
+mod tests;
