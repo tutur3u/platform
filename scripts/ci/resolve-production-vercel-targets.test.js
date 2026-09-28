@@ -10,6 +10,13 @@ const {
 
 const testTargets = [
   {
+    app: 'meet',
+    appPath: 'apps/meet',
+    additionalPaths: ['apps/meet-realtime/'],
+    packageName: '@tuturuuu/meet',
+    productionWorkflow: 'meet-cloudflare.yaml',
+  },
+  {
     app: 'calendar',
     appPath: 'apps/calendar',
     packageName: '@tuturuuu/calendar',
@@ -76,6 +83,10 @@ test('production planner evaluates every app from its deployment baseline in one
   assert.deepEqual(decisions, [
     {
       shouldRun: false,
+      workflowName: 'meet-cloudflare.yaml',
+    },
+    {
+      shouldRun: false,
       workflowName: 'vercel-production-calendar.yaml',
     },
     {
@@ -83,4 +94,36 @@ test('production planner evaluates every app from its deployment baseline in one
       workflowName: 'vercel-production-storefront.yaml',
     },
   ]);
+});
+
+test('production planner includes Cloudflare for shared Meet runtime changes', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'apps/meet-realtime/src/worker.ts',
+    'export const changed = true;\n',
+    'meet realtime change'
+  );
+
+  assert.deepEqual(resolveFixtureTargets({ baseSha, headSha, rootDir }), [
+    { shouldRun: true, workflowName: 'meet-cloudflare.yaml' },
+    { shouldRun: false, workflowName: 'vercel-production-calendar.yaml' },
+    { shouldRun: false, workflowName: 'vercel-production-storefront.yaml' },
+  ]);
+});
+
+test('production planner retries Cloudflare when no successful marker exists', () => {
+  const rootDir = createFixtureRoot();
+  initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'apps/docs/build/devops/notes.mdx',
+    'docs only\n',
+    'docs change'
+  );
+
+  const decisions = resolveFixtureTargets({ baseSha: '', headSha, rootDir });
+  assert.equal(decisions[0].workflowName, 'meet-cloudflare.yaml');
+  assert.equal(decisions[0].shouldRun, true);
 });

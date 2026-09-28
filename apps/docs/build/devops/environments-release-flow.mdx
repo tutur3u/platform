@@ -81,8 +81,8 @@ No package version, dependency resolution or published changelog is rewritten.
 ### Production
 
 - Satellite production web deploys run through `vercel-production-<app>.yaml`.
-- A production push first runs `vercel-production.yaml`, which computes all
-  affected apps in one runner and dispatches only the necessary per-app
+- A production push first runs `vercel-production.yaml`, which computes affected
+  Vercel and Cloudflare apps in one runner and calls only the necessary per-app
   workflows. Each target uses its own last successful deployment marker, so an
   app skipped on an earlier commit still receives any undeployed changes.
 - Hosted `apps/web` production deploys run through

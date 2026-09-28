@@ -3,7 +3,7 @@ name: Supabase Production Migration
 on:
   workflow_run:
     workflows:
-      - "Vercel Production Deployment Planner"
+      - "Production Deployment Planner"
       - "Supabase Staging Migration"
     types:
       - completed
@@ -85,7 +85,7 @@ jobs:
               TARGET_SHA="$CURRENT_SHA"
               echo "Manual dispatch detected on production. Checking production migration prerequisites for $TARGET_SHA."
             fi
-          elif [ "$TRIGGER_WORKFLOW" = "Vercel Production Deployment Planner" ]; then
+          elif [ "$TRIGGER_WORKFLOW" = "Production Deployment Planner" ]; then
             if [ "$TRIGGER_BRANCH" != "production" ]; then
               echo "::notice::Skipping production migration because the production deployment planner ran on '$TRIGGER_BRANCH' instead of production."
             elif [ "$TRIGGER_CONCLUSION" != "success" ]; then

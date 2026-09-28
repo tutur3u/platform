@@ -261,6 +261,14 @@ function isVercelWorkflow(workflowName?: string): workflowName is string {
   return /^vercel-(preview|production)-.+\.ya?ml$/.test(workflowName ?? '');
 }
 
+function isCloudflareProductionWorkflow(
+  workflowName?: string
+): workflowName is string {
+  return /^(colab|coordination|lettin|meet|parley)-cloudflare\.yaml$/.test(
+    workflowName ?? ''
+  );
+}
+
 function isSupabaseMigrationWorkflow(
   workflowName?: string
 ): workflowName is string {
@@ -285,7 +293,9 @@ export async function resolveChangedFiles({
   }
 
   const usesDeploymentMarkerRange =
-    (eventName === 'push' && isVercelWorkflow(workflowName)) ||
+    (eventName === 'push' &&
+      (isVercelWorkflow(workflowName) ||
+        isCloudflareProductionWorkflow(workflowName))) ||
     (eventName === 'workflow_run' && isSupabaseMigrationWorkflow(workflowName));
 
   if (usesDeploymentMarkerRange) {

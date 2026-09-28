@@ -286,12 +286,54 @@ export const vercelWorkflowTargets = [
   },
 ] satisfies VercelWorkflowTarget[];
 
+export const cloudflareProductionTargets = [
+  {
+    app: 'colab',
+    appPath: 'apps/colab',
+    packageName: '@tuturuuu/colab',
+    productionWorkflow: 'colab-cloudflare.yaml',
+  },
+  {
+    app: 'coordination',
+    appPath: 'apps/coordination',
+    additionalPaths: ['packages/utils/src/coordination'],
+    productionWorkflow: 'coordination-cloudflare.yaml',
+  },
+  {
+    app: 'lettin',
+    appPath: 'apps/lettin',
+    packageName: '@tuturuuu/lettin',
+    productionWorkflow: 'lettin-cloudflare.yaml',
+  },
+  {
+    app: 'meet',
+    appPath: 'apps/meet',
+    packageName: '@tuturuuu/meet',
+    additionalPaths: ['apps/meet-realtime/', 'apps/web/src/lib/meet/'],
+    productionWorkflow: 'meet-cloudflare.yaml',
+  },
+  {
+    app: 'parley',
+    appPath: 'apps/parley',
+    packageName: '@tuturuuu/parley',
+    productionWorkflow: 'parley-cloudflare.yaml',
+  },
+] as const;
+
 const globalVercelAffectingPaths = new Set([
   '.github/actions/run-with-turbo-remote-cache/action.yml',
   '.github/actions/setup-bun-with-retry/action.yml',
   'bun.lock',
   'package.json',
   'scripts/ci/generate-build-metadata.ts',
+  'turbo.json',
+]);
+
+const globalCloudflareAffectingPaths = new Set([
+  '.github/actions/run-with-turbo-remote-cache/action.yml',
+  '.github/actions/setup-bun-with-retry/action.yml',
+  'bun.lock',
+  'package.json',
   'turbo.json',
 ]);
 
@@ -325,6 +367,12 @@ const vercelTargetsByWorkflow = new Map(
   vercelWorkflowTargets.flatMap((target) => [
     [target.previewWorkflow, target],
     [target.productionWorkflow, target],
+  ])
+);
+const cloudflareTargetsByWorkflow = new Map(
+  cloudflareProductionTargets.map((target) => [
+    target.productionWorkflow,
+    target,
   ])
 );
 
@@ -564,7 +612,10 @@ export function getWorkflowDecision({
     };
   }
 
-  const target = vercelTargetsByWorkflow.get(workflowName);
+  const target =
+    vercelTargetsByWorkflow.get(workflowName) ??
+    cloudflareTargetsByWorkflow.get(workflowName);
+  const isCloudflareTarget = cloudflareTargetsByWorkflow.has(workflowName);
 
   if (!target) {
     return {
@@ -580,7 +631,7 @@ export function getWorkflowDecision({
   if (!normalizedChangedFiles || normalizedChangedFiles.length === 0) {
     return {
       matchedPaths: [],
-      reason: 'changed-file state is unavailable, so Vercel gating is open',
+      reason: 'changed-file state is unavailable, so deployment gating is open',
       shouldRun: true,
     };
   }
@@ -597,15 +648,15 @@ export function getWorkflowDecision({
     }
   }
 
-  const dependencyClosure = buildWorkspaceDependencyClosure(
-    target.packageName,
-    workspaceManifests
-  );
+  const dependencyClosure =
+    'packageName' in target
+      ? buildWorkspaceDependencyClosure(target.packageName, workspaceManifests)
+      : new Set<string>();
 
   if (!dependencyClosure) {
     return {
       matchedPaths: [],
-      reason: `workspace manifest for ${target.packageName} is unavailable`,
+      reason: `workspace manifest for ${'packageName' in target ? target.packageName : target.app} is unavailable`,
       shouldRun: true,
     };
   }
@@ -617,11 +668,26 @@ export function getWorkflowDecision({
       return scopedOwners.has(target.app);
     }
 
-    if (globalVercelAffectingPaths.has(filePath)) {
+    if (
+      (isCloudflareTarget
+        ? globalCloudflareAffectingPaths
+        : globalVercelAffectingPaths
+      ).has(filePath)
+    ) {
       return true;
     }
 
     if (isOwnWorkflowChange(filePath, workflowName)) {
+      return true;
+    }
+
+    if (
+      ('additionalPaths' in target &&
+        target.additionalPaths.some((prefix) => filePath.startsWith(prefix))) ||
+      (target.app === 'meet' &&
+        filePath.startsWith('apps/web/src/app/api/v1/workspaces/') &&
+        filePath.includes('/meetings/'))
+    ) {
       return true;
     }
 

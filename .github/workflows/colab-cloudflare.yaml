@@ -2,7 +2,7 @@ name: Colab Cloudflare
 
 on:
   push:
-    branches: [main, production]
+    branches: [main]
     paths:
       - 'apps/colab/**'
       - 'packages/multiplayer/**'
@@ -16,6 +16,7 @@ on:
       - 'tuturuuu.ts'
       - '.github/workflows/colab-cloudflare.yaml'
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -28,6 +29,9 @@ concurrency:
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
     with:
       workflow_name: colab-cloudflare.yaml
   validate:
@@ -57,6 +61,9 @@ jobs:
   deploy:
     needs: validate
     if: github.ref == 'refs/heads/production'
+    permissions:
+      contents: read
+      deployments: write
     runs-on: ubuntu-latest
     environment: colab-production
     steps:
@@ -64,6 +71,9 @@ jobs:
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
       - run: bun install --frozen-lockfile
       - uses: actions/download-artifact@v8
         with:
@@ -79,3 +89,10 @@ jobs:
       - name: Verify canonical health and deployed assets
         working-directory: apps/colab
         run: node scripts/verify-deployment.mjs
+      - name: Record successful Cloudflare deployment
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYMENT_MARKER_SHA: ${{ github.sha }}
+          DEPLOYMENT_MARKER_WORKFLOW_NAME: colab-cloudflare.yaml
+        run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts
