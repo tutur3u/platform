@@ -85,6 +85,27 @@ void main() {
     expect((await mail.snapshot('ws', 'view-state'))?['mailboxId'], 'box');
   });
 
+  test('background denial revokes only its workspace snapshot', () async {
+    final store = await createStore();
+    final mail = MailCache(store: store, currentUserId: () => 'a');
+    await mail.read('ws', 'inbox', () async => {'value': 'private'});
+    await mail.read('other', 'inbox', () async => {'value': 'other'});
+    final revoked = Completer<void>();
+    mail.accessRevoked.addListener(() {
+      if (mail.accessRevoked.value == 'ws' && !revoked.isCompleted) {
+        revoked.complete();
+      }
+    });
+
+    final visible = await mail.read('ws', 'inbox', () async {
+      throw const ApiException(message: 'Denied', statusCode: 403);
+    });
+    expect(visible['value'], 'private');
+    await revoked.future.timeout(const Duration(seconds: 2));
+    expect(mail.peek('ws', 'inbox'), isNull);
+    expect(mail.peek('other', 'inbox')?['value'], 'other');
+  });
+
   test(
     'denied access clears snapshots and suppresses queued late writes',
     () async {
@@ -165,6 +186,27 @@ void main() {
       await media.clearThread('ws', 'box', 'thread');
       expect(
         await media.read('ws', 'box', 'thread', 'message', 'image'),
+        isNull,
+      );
+    },
+  );
+
+  test(
+    'Mail access revocation purges inline media for one workspace',
+    () async {
+      final store = await createStore();
+      final media = MailMediaCache(store: store, currentUserId: () => 'a');
+      final bytes = Uint8List.fromList([1, 2]);
+      await media.save('ws', 'box', 'thread', 'msg', 'image', bytes);
+      await media.save('other', 'box', 'thread', 'msg', 'image', bytes);
+
+      await media.clearWorkspace('ws');
+
+      expect(await media.read('ws', 'box', 'thread', 'msg', 'image'), isNull);
+      expect(await media.read('other', 'box', 'thread', 'msg', 'image'), bytes);
+      final reopened = MailMediaCache(store: store, currentUserId: () => 'a');
+      expect(
+        await reopened.read('ws', 'box', 'thread', 'msg', 'image'),
         isNull,
       );
     },

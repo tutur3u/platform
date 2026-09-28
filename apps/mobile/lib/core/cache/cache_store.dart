@@ -18,6 +18,7 @@ import 'package:path_provider/path_provider.dart';
 
 part 'cache_store_storage.dart';
 part 'cache_store_replica.dart';
+part 'cache_store_scopes.dart';
 
 typedef CacheJsonDecoder<T> = T Function(Object? json);
 typedef CacheDirectoryResolver = Future<Directory> Function();

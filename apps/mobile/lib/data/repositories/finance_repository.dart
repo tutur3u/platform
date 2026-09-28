@@ -8,6 +8,9 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_read_through.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
+import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
@@ -24,10 +27,14 @@ part 'finance_repository_checkpoints.dart';
 part 'finance_repository_attachments.dart';
 part 'finance_repository_transaction_lookup.dart';
 part 'finance_repository_mutations.dart';
+part 'finance_repository_taxonomy.dart';
 
 /// Repository for finance operations (wallets, transactions, categories).
 class FinanceRepository
-    with FinanceRepositoryAttachments, FinanceRepositoryMutations {
+    with
+        FinanceRepositoryAttachments,
+        FinanceRepositoryMutations,
+        FinanceRepositoryTaxonomy {
   FinanceRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
 
   @override
@@ -487,97 +494,6 @@ class FinanceRepository
     return (response as List<dynamic>)
         .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
         .toList();
-  }
-
-  // ── Categories ──────────────────────────────────
-
-  Future<List<TransactionCategory>> getCategories(String wsId) async {
-    final response = await _api.getJsonList(FinanceEndpoints.categories(wsId));
-
-    return response
-        .map((e) => TransactionCategory.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
-
-  Future<void> createCategory({
-    required String wsId,
-    required String name,
-    required bool isExpense,
-    String? icon,
-    String? color,
-  }) async {
-    await _api.postJson(FinanceEndpoints.categories(wsId), {
-      'name': name,
-      'is_expense': isExpense,
-      'icon': icon,
-      'color': color,
-    });
-  }
-
-  Future<void> updateCategory({
-    required String wsId,
-    required String categoryId,
-    required String name,
-    required bool isExpense,
-    String? icon,
-    String? color,
-  }) async {
-    final body = <String, dynamic>{
-      'name': name,
-      'is_expense': isExpense,
-      'icon': icon,
-      'color': color,
-    };
-
-    await _api.putJson(FinanceEndpoints.category(wsId, categoryId), body);
-  }
-
-  Future<void> deleteCategory({
-    required String wsId,
-    required String categoryId,
-  }) async {
-    await _api.deleteJson(FinanceEndpoints.category(wsId, categoryId));
-  }
-
-  // ── Tags ────────────────────────────────────────
-
-  Future<List<FinanceTag>> getTags(String wsId) async {
-    final response = await _api.getJsonList(FinanceEndpoints.tags(wsId));
-
-    return response
-        .map((e) => FinanceTag.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
-
-  Future<void> createTag({
-    required String wsId,
-    required String name,
-    required String color,
-    String? description,
-  }) async {
-    await _api.postJson(FinanceEndpoints.tags(wsId), {
-      'name': name,
-      'color': color,
-      'description': description,
-    });
-  }
-
-  Future<void> updateTag({
-    required String wsId,
-    required String tagId,
-    required String name,
-    required String color,
-    String? description,
-  }) async {
-    await _api.putJson(FinanceEndpoints.tag(wsId, tagId), {
-      'name': name,
-      'color': color,
-      'description': description,
-    });
-  }
-
-  Future<void> deleteTag({required String wsId, required String tagId}) async {
-    await _api.deleteJson(FinanceEndpoints.tag(wsId, tagId));
   }
 }
 

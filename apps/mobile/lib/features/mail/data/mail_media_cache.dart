@@ -19,12 +19,12 @@ class MailMediaCache {
   static const _policy = CachePolicy(
     staleAfter: Duration(days: 1),
     expireAfter: Duration(days: 3),
-    allowBackgroundRefresh: false,
   );
 
   final CacheStore _store;
   final String? Function() _currentUserId;
   final String? _userId;
+  final Set<String> _deniedWorkspaces = {};
 
   bool get _usable => _userId != null && _userId == _currentUserId();
 
@@ -51,13 +51,13 @@ class MailMediaCache {
     String messageId,
     String attachmentId,
   ) async {
-    if (!_usable) return null;
+    if (!_usable || _deniedWorkspaces.contains(wsId)) return null;
     try {
       final result = await _store.read<String>(
         key: _key(wsId, mailboxId, threadId, messageId, attachmentId),
         decode: (json) => json! as String,
       );
-      if (!_usable || result.isExpired || !result.hasValue) return null;
+      if (!_usable || !result.hasValue) return null;
       final bytes = base64Decode(result.data!);
       return bytes.length <= maxImageBytes ? bytes : null;
     } on Object {
@@ -73,7 +73,12 @@ class MailMediaCache {
     String attachmentId,
     Uint8List bytes,
   ) async {
-    if (!_usable || bytes.isEmpty || bytes.length > maxImageBytes) return;
+    if (!_usable ||
+        _deniedWorkspaces.contains(wsId) ||
+        bytes.isEmpty ||
+        bytes.length > maxImageBytes) {
+      return;
+    }
     try {
       await _store.write(
         key: _key(wsId, mailboxId, threadId, messageId, attachmentId),
@@ -100,6 +105,20 @@ class MailMediaCache {
       );
     } on Object {
       // The server action succeeded even if local cleanup was unavailable.
+    }
+  }
+
+  Future<void> clearWorkspace(String wsId) async {
+    if (!_usable) return;
+    _deniedWorkspaces.add(wsId);
+    try {
+      await _store.clearNamespacePrefix(
+        prefix: 'mail.media.',
+        workspaceId: wsId,
+        userId: _userId,
+      );
+    } on Object {
+      // A denied workspace can no longer serve these bytes in this session.
     }
   }
 }
