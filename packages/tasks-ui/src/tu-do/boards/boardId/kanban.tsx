@@ -392,6 +392,7 @@ export function KanbanBoard({
     activeColumn,
     activeTask,
     dragPreviewPosition,
+    getDragPreviewPosition,
     optimisticUpdateInProgress,
     onDragStart,
     onDragMove,
@@ -436,15 +437,16 @@ export function KanbanBoard({
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
+      const latestPreview = getDragPreviewPosition();
       const blockManualOrdering = shouldBlockManualTaskOrdering({
         activeData: event.active.data.current,
         criteriaSortingActive: disableSort,
         overData: event.over?.data.current,
         overId: event.over?.id,
-        preview: dragPreviewPosition
+        preview: latestPreview
           ? {
-              listId: dragPreviewPosition.listId,
-              taskId: dragPreviewPosition.task.id,
+              listId: latestPreview.listId,
+              taskId: latestPreview.task.id,
             }
           : null,
       });
@@ -457,7 +459,7 @@ export function KanbanBoard({
 
       await onDragEnd(event);
     },
-    [disableSort, dragPreviewPosition, onDragEnd]
+    [disableSort, getDragPreviewPosition, onDragEnd]
   );
 
   const estimationOptions = useMemo(() => {
