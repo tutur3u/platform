@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.59.0](https://github.com/tutur3u/platform/compare/platform-v0.58.0...platform-v0.59.0) (2026-09-27)
+
+
+### Features
+
+* **mobile:** align Apps and Mira Live navigation ([#5580](https://github.com/tutur3u/platform/issues/5580)) ([350774f](https://github.com/tutur3u/platform/commit/350774f179a58ae7e9c00c5f2c5a642d129cdaf9))
+* **mobile:** align Apps and Mira Live with shell navigation ([8c63228](https://github.com/tutur3u/platform/commit/8c632282f95eac1c2fb577da5cc38c6ff0a9d9a8))
+* **notes:** add device lock with passkey and QR recovery ([f8ad1f9](https://github.com/tutur3u/platform/commit/f8ad1f9b3e6a2008411337aced706227d732f068)) ([#5583](https://github.com/tutur3u/platform/issues/5583)) ([7f9372b](https://github.com/tutur3u/platform/commit/7f9372bd37886d73f93ab0f732d7603d17811115))
+* **tutoring:** configure eligibility and content reviews ([1a85645](https://github.com/tutur3u/platform/commit/1a85645cdc1402389cd2c590958c8ec5c9f22671)) ([#5582](https://github.com/tutur3u/platform/issues/5582)) ([05f24fc](https://github.com/tutur3u/platform/commit/05f24fc78f6b474a35b11a8c7647388be53e7240))
+* **tutoring:** exclude kindergarten groups in center preset ([40b6acd](https://github.com/tutur3u/platform/commit/40b6acdd1cd81cfcbaf3f06af0d73e2245d7b19e)) ([#5588](https://github.com/tutur3u/platform/issues/5588)) ([4eba095](https://github.com/tutur3u/platform/commit/4eba095b781d48410c6051fc121c773eb56fcb73))
+
+
+### Bug Fixes
+
+* **ci:** skip heavy checks for generated releases ([17648e9](https://github.com/tutur3u/platform/commit/17648e9d4229b6c4bcaa0e909a19c23a1e67c6c3)) ([#5579](https://github.com/tutur3u/platform/issues/5579)) ([7d39bed](https://github.com/tutur3u/platform/commit/7d39bed42ae67984d522e9244d75f7e8efdfd5c1))
+* **contacts:** preserve Unicode in tutoring policy chunks ([4924886](https://github.com/tutur3u/platform/commit/4924886660933b5087ec2913450f87168c0bbb5e))
+* **contacts:** store tutoring policies within config limits ([#5577](https://github.com/tutur3u/platform/issues/5577)) ([071c7c5](https://github.com/tutur3u/platform/commit/071c7c52c0ed60209006140fb2251a644009ee12))
+* **mobile:** defer TestFlight review at Apple quota ([d0c0019](https://github.com/tutur3u/platform/commit/d0c0019257392b7ed4ad2b6ab70601d5d191cd2d)) ([#5587](https://github.com/tutur3u/platform/issues/5587)) ([66df3b3](https://github.com/tutur3u/platform/commit/66df3b3ac525af6e411201c915511edc9422401e))
+* **mobile:** expose safe store review error codes ([830a8dd](https://github.com/tutur3u/platform/commit/830a8dd8513bf858c8d5f698557d9aba5bd84f6d)) ([#5586](https://github.com/tutur3u/platform/issues/5586)) ([48335d5](https://github.com/tutur3u/platform/commit/48335d5dfd2ce15c3e5a4eb244731d308ea46c5f))
+* **mobile:** open calendar reminder events and clarify alerts ([76f144c](https://github.com/tutur3u/platform/commit/76f144c8ff27d3f144aba33299249cd33bd882c7))
+* **mobile:** open calendar reminders and clarify alerts ([#5589](https://github.com/tutur3u/platform/issues/5589)) ([efecc5b](https://github.com/tutur3u/platform/commit/efecc5ba30644037ca942a44607e07b55ab06bf9))
+* **notes:** ignore stale web unlock responses ([3794125](https://github.com/tutur3u/platform/commit/379412534cd2af0195515af2a9417394c8eae5f4))
+* **notes:** tighten lock navigation and recovery boundaries ([4f2960c](https://github.com/tutur3u/platform/commit/4f2960c2ca0f5e3d06ff440ef462f3f1e5027672))
+* **notes:** verify mobile passkey bearer claims ([22443e0](https://github.com/tutur3u/platform/commit/22443e063abc02d4437e5727b4bfcca3b9215d18))
+* **tutoring:** declare review fields on queue items ([0d7b22d](https://github.com/tutur3u/platform/commit/0d7b22d090da0461c679b972511917f77e7201f7))
+
 ## [0.58.0](https://github.com/tutur3u/platform/compare/platform-v0.57.0...platform-v0.58.0) (2026-09-27)
 
 
