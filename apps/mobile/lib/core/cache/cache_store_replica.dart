@@ -217,6 +217,7 @@ extension CacheStoreReplica on CacheStore {
     required String namespace,
     required String userId,
     String? workspaceId,
+    Set<String>? sourceKeys,
     String? pendingFeature,
     String? pendingPathContains,
     int? limit,
@@ -229,7 +230,8 @@ extension CacheStoreReplica on CacheStore {
       final row = ReplicaEntityRecord.fromJson(raw);
       if (row.namespace != namespace ||
           row.userId != userId ||
-          row.workspaceId != workspaceId) {
+          row.workspaceId != workspaceId ||
+          (sourceKeys != null && !sourceKeys.contains(row.sourceKey))) {
         continue;
       }
       final previous = byId[row.id];

@@ -151,6 +151,46 @@ void main() {
   );
 
   test(
+    'scopes replica rows before deduplicating IDs across request paths',
+    () async {
+      const firstPage = CacheKey(
+        namespace: 'calendar.events',
+        userId: 'user_1',
+        workspaceId: 'ws_1',
+        params: {'path': '/events?start=1'},
+      );
+      const secondPage = CacheKey(
+        namespace: 'calendar.events',
+        userId: 'user_1',
+        workspaceId: 'ws_1',
+        params: {'path': '/events?start=2'},
+      );
+      await store.write(
+        key: firstPage,
+        policy: CachePolicies.moduleData,
+        payload: [
+          {'id': 'event_1', 'title': 'First window'},
+        ],
+      );
+      await store.write(
+        key: secondPage,
+        policy: CachePolicies.moduleData,
+        payload: [
+          {'id': 'event_1', 'title': 'Second window'},
+        ],
+      );
+
+      final rows = await store.queryReplica(
+        namespace: 'calendar.events',
+        userId: 'user_1',
+        workspaceId: 'ws_1',
+        sourceKeys: {firstPage.value},
+      );
+      expect(rows.single.payload['title'], 'First window');
+    },
+  );
+
+  test(
     'persists local ID mappings and removes them with their account',
     () async {
       await store.saveLocalIdMapping(

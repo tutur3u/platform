@@ -1,10 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_read_through.dart';
+import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 enum NoteLinkKind { task, event, finance, note, meeting }
 
@@ -73,6 +79,82 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
     );
   }
 
+  Future<List<dynamic>> _readRows({
+    required String namespace,
+    required String path,
+    required String rowKey,
+    required String pendingPath,
+    bool listResponse = false,
+    bool overlayPending = true,
+  }) async {
+    List<dynamic>? fetched;
+    Object? fetchError;
+    try {
+      if (listResponse) {
+        fetched = await readThroughJsonList(
+          api: _api,
+          namespace: namespace,
+          workspaceId: widget.wsId,
+          path: path,
+        );
+      } else {
+        final response = await readThroughJson(
+          api: _api,
+          namespace: namespace,
+          workspaceId: widget.wsId,
+          path: path,
+        );
+        fetched = response[rowKey] as List<dynamic>? ?? const [];
+      }
+    } on Object catch (error) {
+      fetchError = error;
+    }
+    final userId = currentCacheUserId();
+    var rows = fetched ?? <dynamic>[];
+    var hasFallback = false;
+    if (fetchError != null && userId != null) {
+      final sourceKeys = {
+        CacheKey(
+          namespace: namespace,
+          userId: userId,
+          workspaceId: widget.wsId,
+          params: {'path': path},
+        ).value,
+        if (namespace.startsWith('notes.'))
+          CacheKey(
+            namespace: namespace,
+            userId: userId,
+            workspaceId: widget.wsId,
+          ).value,
+      };
+      final local = await CacheStore.instance.queryReplica(
+        namespace: namespace,
+        userId: userId,
+        workspaceId: widget.wsId,
+        sourceKeys: sourceKeys,
+      );
+      rows = local.map((row) => row.payload).toList(growable: false);
+      hasFallback = rows.isNotEmpty;
+    }
+    if (overlayPending && userId != null) {
+      final pending = (await CacheStore.instance.listPendingMutations())
+          .where((mutation) => mutation.userId == userId)
+          .toList(growable: false);
+      rows = overlayPendingCollection(
+        workspaceId: widget.wsId,
+        feature: namespace.split('.').first,
+        pathContains: pendingPath,
+        source: rows.whereType<Map<String, dynamic>>().toList(growable: false),
+        pending: pending,
+      );
+    }
+    if (fetchError != null && !hasFallback && rows.isEmpty) {
+      if (fetchError case final Exception error) throw error;
+      throw StateError(fetchError.toString());
+    }
+    return rows;
+  }
+
   Future<void> _load() async {
     final requestId = ++_requestId;
     final wsId = Uri.encodeComponent(widget.wsId);
@@ -92,10 +174,13 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
               if (search.isNotEmpty) 'q': search,
             },
           ).query;
-          final response = await _api.getJson(
-            '/api/v1/workspaces/$wsId/tasks?$query',
+          final rows = await _readRows(
+            namespace: 'tasks.list',
+            path: '/api/v1/workspaces/$wsId/tasks?$query',
+            rowKey: 'tasks',
+            pendingPath: '/tasks',
           );
-          options = (response['tasks'] as List<dynamic>? ?? const [])
+          options = rows
               .whereType<Map<String, dynamic>>()
               .map(
                 (task) => NoteLinkOption(
@@ -106,7 +191,11 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
                       'https://tasks.tuturuuu.com/$language/$wsId/tasks/${task['id']}',
                 ),
               )
-              .where((option) => option.title.isNotEmpty)
+              .where(
+                (option) =>
+                    option.title.toLowerCase().contains(search.toLowerCase()),
+              )
+              .take(30)
               .toList();
         case NoteLinkKind.event:
           final now = DateTime.now().toUtc();
@@ -118,10 +207,13 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
               'end_at': now.add(const Duration(days: 180)).toIso8601String(),
             },
           ).query;
-          final response = await _api.getJson(
-            '/api/v1/workspaces/$wsId/calendar/events?$query',
+          final rows = await _readRows(
+            namespace: 'calendar.events',
+            path: '/api/v1/workspaces/$wsId/calendar/events?$query',
+            rowKey: 'data',
+            pendingPath: '/events',
           );
-          options = (response['data'] as List<dynamic>? ?? const [])
+          options = rows
               .whereType<Map<String, dynamic>>()
               .map(
                 (event) => NoteLinkOption(
@@ -139,8 +231,12 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
               .take(30)
               .toList();
         case NoteLinkKind.finance:
-          final response = await _api.getJsonList(
-            '/api/v1/workspaces/$wsId/wallets',
+          final response = await _readRows(
+            namespace: 'finance.wallets',
+            path: '/api/v1/workspaces/$wsId/wallets',
+            rowKey: '',
+            pendingPath: '/wallets',
+            listResponse: true,
           );
           options = response
               .whereType<Map<String, dynamic>>()
@@ -161,8 +257,22 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
               .toList();
         case NoteLinkKind.note:
           final responses = await Future.wait([
-            _api.getJsonList('/api/v1/workspaces/$wsId/notes'),
-            _api.getJsonList('/api/v1/workspaces/$wsId/notes?archived=true'),
+            _readRows(
+              namespace: 'notes.list',
+              path: '/api/v1/workspaces/$wsId/notes',
+              rowKey: '',
+              pendingPath: '/notes',
+              listResponse: true,
+              overlayPending: false,
+            ),
+            _readRows(
+              namespace: 'notes.archive',
+              path: '/api/v1/workspaces/$wsId/notes?archived=true',
+              rowKey: '',
+              pendingPath: '/notes',
+              listResponse: true,
+              overlayPending: false,
+            ),
           ]);
           options = responses
               .expand((notes) => notes)
@@ -190,10 +300,13 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
               if (search.isNotEmpty) 'search': search,
             },
           ).query;
-          final response = await _api.getJson(
-            '/api/v1/workspaces/$wsId/meetings?$query',
+          final rows = await _readRows(
+            namespace: 'meet.list',
+            path: '/api/v1/workspaces/$wsId/meetings?$query',
+            rowKey: 'meetings',
+            pendingPath: '/meetings',
           );
-          options = (response['meetings'] as List<dynamic>? ?? const [])
+          options = rows
               .whereType<Map<String, dynamic>>()
               .map(
                 (meeting) => NoteLinkOption(
@@ -204,7 +317,11 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
                       'https://meet.tuturuuu.com/$language/$wsId/meetings/${meeting['id']}',
                 ),
               )
-              .where((option) => option.title.isNotEmpty)
+              .where(
+                (option) =>
+                    option.title.toLowerCase().contains(search.toLowerCase()),
+              )
+              .take(30)
               .toList();
       }
       if (!mounted || requestId != _requestId) return;
@@ -271,7 +388,10 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
                                 : scheme.onSurface,
                           ),
                           onSelected: (_) {
-                            setState(() => _kind = kind);
+                            setState(() {
+                              _kind = kind;
+                              _options = const [];
+                            });
                             unawaited(_load());
                           },
                         ),
@@ -290,9 +410,9 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: _loading
+                child: _loading && _options.isEmpty
                     ? const Center(child: NovaLoadingIndicator())
-                    : _failed
+                    : _failed && _options.isEmpty
                     ? Center(child: Text(context.l10n.notesLoadError))
                     : _options.isEmpty
                     ? Center(child: Text(context.l10n.notesNoLinkResults))
@@ -300,13 +420,24 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
                         itemCount: _options.length,
                         itemBuilder: (context, index) {
                           final option = _options[index];
-                          return ListTile(
-                            title: Text(
-                              option.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                          return PendingSyncFrame(
+                            workspaceId: widget.wsId,
+                            entityId: option.id,
+                            feature: switch (option.kind) {
+                              NoteLinkKind.task => 'tasks',
+                              NoteLinkKind.event => 'calendar',
+                              NoteLinkKind.finance => 'finance',
+                              NoteLinkKind.note => 'notes',
+                              NoteLinkKind.meeting => 'meet',
+                            },
+                            child: ListTile(
+                              title: Text(
+                                option.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              onTap: () => Navigator.of(context).pop(option),
                             ),
-                            onTap: () => Navigator.of(context).pop(option),
                           );
                         },
                       ),
