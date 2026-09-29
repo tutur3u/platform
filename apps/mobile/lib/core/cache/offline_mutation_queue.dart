@@ -4,9 +4,11 @@ import 'dart:math';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/drive_upload_delivery.dart';
 import 'package:mobile/core/cache/offline_id_reconciliation.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -158,6 +160,14 @@ class OfflineMutationQueue {
               statusCode: 409,
             );
           }
+          if (record.feature == 'tasks' &&
+              record.path.endsWith('/tasks/bulk') &&
+              (response['failCount'] as num? ?? 0) > 0) {
+            throw const ApiException(
+              message: 'Bulk task edit partially applied; review required',
+              statusCode: 409,
+            );
+          }
           final localId = record.entityId;
           final serverId = createdServerId(response);
           if (userId != null &&
@@ -208,6 +218,25 @@ class OfflineMutationQueue {
               ),
             ],
           );
+        case 'DRIVE_UPLOAD':
+          if (workspaceId == null) {
+            throw StateError('Drive upload has no workspace');
+          }
+          final payload = resolved.payload ?? const <String, dynamic>{};
+          final httpClient = http.Client();
+          try {
+            await deliverDriveUpload(
+              api: api,
+              httpClient: httpClient,
+              workspaceId: workspaceId,
+              filename: payload['filename'] as String,
+              bytes: base64Decode(payload['bytes'] as String),
+              contentType: payload['contentType'] as String,
+              directoryPath: payload['directoryPath'] as String?,
+            );
+          } finally {
+            httpClient.close();
+          }
         default:
           throw StateError('Unsupported queued method: ${record.method}');
       }

@@ -29,6 +29,10 @@ class PendingSyncFrame extends StatelessWidget {
           continue;
         }
         if (record.entityId == entityId ||
+            (record.feature == 'tasks' &&
+                record.path.endsWith('/tasks/bulk') &&
+                (record.payload?['taskIds'] as List?)?.contains(entityId) ==
+                    true) ||
             record.payload?['client_destination_transaction_id'] == entityId ||
             Uri.tryParse(record.path)?.pathSegments.contains(entityId) ==
                 true) {

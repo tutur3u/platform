@@ -34,6 +34,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'task_planning_actions.dart';

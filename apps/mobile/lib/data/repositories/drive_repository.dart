@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/drive_upload_delivery.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
@@ -66,6 +68,20 @@ class DriveRepository {
           continue;
         }
         final payload = mutation.payload ?? const <String, dynamic>{};
+        if (mutation.method == 'DRIVE_UPLOAD' &&
+            (payload['directoryPath'] ?? '') == (path ?? '')) {
+          final filename = payload['filename'] as String?;
+          if (filename != null) {
+            rows[filename] = {
+              'id': mutation.entityId,
+              'name': filename,
+              'metadata': {
+                'size': payload['size'],
+                'mimetype': payload['contentType'],
+              },
+            };
+          }
+        }
         if (mutation.path == DriveEndpoints.folders(wsId)) {
           if (payload['path'] != (path ?? '')) continue;
           final name = payload['name'] as String?;
@@ -234,66 +250,34 @@ class DriveRepository {
     required String contentType,
     String? directoryPath,
   }) async {
-    final uploadPayload = await _api.postJson(DriveEndpoints.uploadUrl(wsId), {
-      'filename': filename,
-      'path': directoryPath ?? '',
-      'size': bytes.length,
-    });
-
-    final signedUrl = uploadPayload['signedUrl'] as String?;
-    final token = uploadPayload['token'] as String?;
-    final headers = <String, String>{
-      ...((uploadPayload['headers'] as Map<dynamic, dynamic>? ??
-              const <dynamic, dynamic>{})
-          .map((key, value) => MapEntry(key.toString(), value.toString()))),
-      if (contentType.isNotEmpty) 'Content-Type': contentType,
-      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-    };
-
-    if (signedUrl == null || signedUrl.isEmpty) {
-      throw const ApiException(
-        message: 'Failed to generate upload URL',
-        statusCode: 0,
-      );
-    }
-
-    var uploadResponse = await _http.put(
-      Uri.parse(signedUrl),
-      headers: headers,
-      body: bytes,
-    );
-
-    if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
-      final fallbackHeaders = <String, String>{...headers}
-        ..remove('Content-Type');
-      uploadResponse = await _http.put(
-        Uri.parse(signedUrl),
-        headers: fallbackHeaders,
-        body: bytes,
-      );
-    }
-
-    if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
-      throw ApiException(
-        message: 'Failed to upload file',
-        statusCode: uploadResponse.statusCode,
-      );
-    }
-
-    final finalize = await _api.postJson(DriveEndpoints.finalizeUpload(wsId), {
-      'path': uploadPayload['path'],
-      'contentType': contentType,
-      'originalFilename': filename,
-    });
-    final autoExtract =
-        finalize['autoExtract'] as Map<String, dynamic>? ??
-        const <String, dynamic>{};
-
-    return DriveUploadResult(
-      path: uploadPayload['path'] as String? ?? '',
-      fullPath: uploadPayload['fullPath'] as String?,
-      autoExtractStatus: autoExtract['status'] as String?,
-      autoExtractMessage: autoExtract['message'] as String?,
+    final fullPath = [
+      if (directoryPath != null && directoryPath.isNotEmpty) directoryPath,
+      filename,
+    ].join('/');
+    return await queueOrSendValue<DriveUploadResult>(
+      feature: 'drive',
+      method: 'DRIVE_UPLOAD',
+      path: DriveEndpoints.uploadUrl(wsId),
+      workspaceId: wsId,
+      entityId: fullPath,
+      payload: {
+        'filename': filename,
+        'directoryPath': directoryPath ?? '',
+        'contentType': contentType,
+        'bytes': base64Encode(bytes),
+        'size': bytes.length,
+      },
+      pendingValue: (_) =>
+          DriveUploadResult(path: fullPath, fullPath: fullPath),
+      send: () => deliverDriveUpload(
+        api: _api,
+        httpClient: _http,
+        workspaceId: wsId,
+        filename: filename,
+        bytes: bytes,
+        contentType: contentType,
+        directoryPath: directoryPath,
+      ),
     );
   }
 

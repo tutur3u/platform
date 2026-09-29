@@ -7,21 +7,67 @@ Future<List<Map<String, dynamic>>> _overlayTaskRows(
   bool deletedOnly = false,
   bool includeCreates = true,
   int offset = 0,
-}) async => overlayPendingCollection(
-  workspaceId: wsId,
-  feature: 'tasks',
-  pathContains: '/api/v1/workspaces/$wsId/tasks',
-  source: source.whereType<Map<String, dynamic>>().toList(growable: false),
-  pending: await OfflineMutationQueue.instance.listPending(),
-  includeCreates: offset == 0 && includeCreates && !deletedOnly,
-  normalizeCreate: (payload) => {
-    ...payload,
-    if (payload['listId'] != null) 'list_id': payload['listId'],
-  },
-  matchesQuery: (row) =>
-      (listId == null || row['list_id'] == listId) &&
-      (deletedOnly ? row['deleted'] == true : row['deleted'] != true),
-);
+}) async {
+  final path = '/api/v1/workspaces/$wsId/tasks';
+  final pending = await OfflineMutationQueue.instance.listPending();
+  final rows = overlayPendingCollection(
+    workspaceId: wsId,
+    feature: 'tasks',
+    pathContains: path,
+    source: source.whereType<Map<String, dynamic>>().toList(growable: false),
+    pending: pending
+        .where((item) {
+          if (item.path == path) return true;
+          if (!item.path.startsWith('$path/')) return false;
+          final suffix = item.path.substring(path.length + 1).split('/');
+          return suffix.isNotEmpty &&
+              suffix.first != 'bulk' &&
+              (suffix.length == 1 ||
+                  suffix.length == 2 && suffix.last == 'description');
+        })
+        .toList(growable: false),
+    includeCreates: offset == 0 && includeCreates && !deletedOnly,
+    normalizeCreate: (payload) => {
+      ...payload,
+      if (payload['listId'] != null) 'list_id': payload['listId'],
+    },
+    matchesQuery: (row) =>
+        (listId == null || row['list_id'] == listId) &&
+        (deletedOnly ? row['deleted'] == true : row['deleted'] != true),
+  );
+  final byId = {for (final row in rows) row['id'] as String: row};
+  for (final item in pending) {
+    if (item.feature != 'tasks' ||
+        item.workspaceId != wsId ||
+        item.path != '$path/bulk' ||
+        item.method != 'POST') {
+      continue;
+    }
+    final payload = item.payload ?? const <String, dynamic>{};
+    final operation = payload['operation'];
+    if (operation is! Map<String, dynamic>) continue;
+    final taskIds = payload['taskIds'];
+    if (taskIds is! List) continue;
+    for (final id in taskIds.whereType<String>()) {
+      final row = byId[id];
+      if (row == null) continue;
+      switch (operation['type']) {
+        case 'update_fields':
+          final updates = operation['updates'];
+          if (updates is Map<String, dynamic>) row.addAll(updates);
+        case 'move_to_list':
+          row['list_id'] = operation['listId'];
+      }
+    }
+  }
+  return byId.values
+      .where(
+        (row) =>
+            (listId == null || row['list_id'] == listId) &&
+            (deletedOnly ? row['deleted'] == true : row['deleted'] != true),
+      )
+      .toList(growable: false);
+}
 
 String _encodeQueryParameters(Map<String, String> params) {
   return Uri(queryParameters: params).query;

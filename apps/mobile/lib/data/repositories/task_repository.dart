@@ -27,6 +27,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 
 part 'task_repository_helpers.dart';
+part 'task_repository_planning.dart';
 
 /// Repository for task operations.
 class TaskRepository {
@@ -192,15 +193,7 @@ class TaskRepository {
       );
       final task = response['task'];
       if (task is! Map<String, dynamic>) return null;
-      final rows = overlayPendingCollection(
-        workspaceId: wsId,
-        feature: 'tasks',
-        pathContains: '/api/v1/workspaces/$wsId/tasks',
-        source: [task],
-        pending: pending,
-        includeCreates: false,
-        matchesQuery: (row) => row['deleted'] != true,
-      );
+      final rows = await _overlayTaskRows(wsId, [task], includeCreates: false);
       return rows.isEmpty ? null : _taskFromApiJson(rows.single);
     } on ApiException catch (error) {
       if (error.statusCode == 404) {
@@ -315,11 +308,30 @@ class TaskRepository {
       );
     }
 
-    final response = await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/tasks/bulk',
-      {'taskIds': normalizedTaskIds, 'operation': operation.toJson()},
+    final path = '/api/v1/workspaces/$wsId/tasks/bulk';
+    final payload = {
+      'taskIds': normalizedTaskIds,
+      'operation': operation.toJson(),
+    };
+    return await queueOrSendValue<TaskBulkResult>(
+      feature: 'tasks',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      entityId: normalizedTaskIds.first,
+      pendingValue: (_) => TaskBulkResult(
+        successCount: 0,
+        failCount: 0,
+        taskIds: normalizedTaskIds,
+        succeededTaskIds: normalizedTaskIds,
+        failures: const [],
+        taskMetaById: const {},
+        queued: true,
+      ),
+      send: () async =>
+          TaskBulkResult.fromJson(await _apiClient.postJson(path, payload)),
     );
-    return TaskBulkResult.fromJson(response);
   }
 
   Future<List<TaskEstimateBoard>> getTaskEstimateBoards(String wsId) async {
@@ -914,71 +926,29 @@ class TaskRepository {
     return TaskEstimateBoard.fromJson(response);
   }
 
-  Future<List<TaskLabel>> getTaskLabels(String wsId) async {
-    final response = await _apiClient.getJsonList(
-      '/api/v1/workspaces/$wsId/labels',
-    );
-
-    return response
-        .whereType<Map<String, dynamic>>()
-        .map(TaskLabel.fromJson)
-        .toList(growable: false);
-  }
+  Future<List<TaskLabel>> getTaskLabels(String wsId) => _getTaskLabels(wsId);
 
   Future<TaskLabel> createTaskLabel({
     required String wsId,
     required String name,
     required String color,
-  }) async {
-    final normalizedColor = normalizeTaskLabelColor(color);
-    if (normalizedColor == null) {
-      throw const FormatException('Invalid task label color');
-    }
-
-    final response = await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/labels',
-      {'name': name, 'color': normalizedColor},
-    );
-
-    return TaskLabel.fromJson(response);
-  }
+  }) => _createTaskLabel(wsId: wsId, name: name, color: color);
 
   Future<TaskLabel> updateTaskLabel({
     required String wsId,
     required String labelId,
     required String name,
     required String color,
-  }) async {
-    final normalizedColor = normalizeTaskLabelColor(color);
-    if (normalizedColor == null) {
-      throw const FormatException('Invalid task label color');
-    }
-
-    final response = await _apiClient.patchJson(
-      '/api/v1/workspaces/$wsId/labels/$labelId',
-      {'name': name, 'color': normalizedColor},
-    );
-
-    return TaskLabel.fromJson(response);
-  }
+  }) =>
+      _updateTaskLabel(wsId: wsId, labelId: labelId, name: name, color: color);
 
   Future<void> deleteTaskLabel({
     required String wsId,
     required String labelId,
-  }) async {
-    await _apiClient.deleteJson('/api/v1/workspaces/$wsId/labels/$labelId');
-  }
+  }) => _deleteTaskLabel(wsId: wsId, labelId: labelId);
 
-  Future<List<TaskProjectSummary>> getTaskProjects(String wsId) async {
-    final response = await _apiClient.getJsonList(
-      '/api/v1/workspaces/$wsId/task-projects',
-    );
-
-    return response
-        .whereType<Map<String, dynamic>>()
-        .map(TaskProjectSummary.fromJson)
-        .toList(growable: false);
-  }
+  Future<List<TaskProjectSummary>> getTaskProjects(String wsId) =>
+      _getTaskProjects(wsId);
 
   Future<List<TaskLinkOption>> getWorkspaceTasksForProjectLinking(
     String wsId,
@@ -1040,12 +1010,7 @@ class TaskRepository {
   Future<TaskRelationshipsResponse> getTaskRelationships({
     required String wsId,
     required String taskId,
-  }) async {
-    final response = await _apiClient.getJson(
-      '/api/v1/workspaces/$wsId/tasks/$taskId/relationships',
-    );
-    return TaskRelationshipsResponse.fromJson(response);
-  }
+  }) => _getTaskRelationships(wsId: wsId, taskId: taskId);
 
   Future<void> createTaskRelationship({
     required String wsId,
@@ -1053,14 +1018,13 @@ class TaskRepository {
     required String sourceTaskId,
     required String targetTaskId,
     required TaskRelationshipType type,
-  }) async {
-    await _apiClient
-        .postJson('/api/v1/workspaces/$wsId/tasks/$taskId/relationships', {
-          'source_task_id': sourceTaskId,
-          'target_task_id': targetTaskId,
-          'type': type.apiValue,
-        });
-  }
+  }) => _createTaskRelationship(
+    wsId: wsId,
+    taskId: taskId,
+    sourceTaskId: sourceTaskId,
+    targetTaskId: targetTaskId,
+    type: type,
+  );
 
   Future<void> deleteTaskRelationship({
     required String wsId,
@@ -1068,29 +1032,19 @@ class TaskRepository {
     required String sourceTaskId,
     required String targetTaskId,
     required TaskRelationshipType type,
-  }) async {
-    final payload = {
-      'source_task_id': sourceTaskId,
-      'target_task_id': targetTaskId,
-      'type': type.apiValue,
-    };
-
-    await _apiClient.deleteJson(
-      '/api/v1/workspaces/$wsId/tasks/$taskId/relationships',
-      body: payload,
-    );
-  }
+  }) => _deleteTaskRelationship(
+    wsId: wsId,
+    taskId: taskId,
+    sourceTaskId: sourceTaskId,
+    targetTaskId: targetTaskId,
+    type: type,
+  );
 
   Future<void> createTaskProject({
     required String wsId,
     required String name,
     String? description,
-  }) async {
-    await _apiClient.postJson('/api/v1/workspaces/$wsId/task-projects', {
-      'name': name,
-      if (description != null) 'description': description,
-    });
-  }
+  }) => _createTaskProject(wsId: wsId, name: name, description: description);
 
   Future<void> updateTaskProject({
     required String wsId,
@@ -1104,53 +1058,39 @@ class TaskRepository {
     DateTime? startDate,
     DateTime? endDate,
     bool? archived,
-  }) async {
-    await _apiClient
-        .putJson('/api/v1/workspaces/$wsId/task-projects/$projectId', {
-          'name': name,
-          'description': description,
-          if (status != null) 'status': status,
-          if (priority != null) 'priority': priority,
-          'health_status': healthStatus,
-          'lead_id': leadId,
-          'start_date': startDate?.toUtc().toIso8601String(),
-          'end_date': endDate?.toUtc().toIso8601String(),
-          'archived': archived,
-        });
-  }
+  }) => _updateTaskProject(
+    wsId: wsId,
+    projectId: projectId,
+    name: name,
+    status: status,
+    priority: priority,
+    healthStatus: healthStatus,
+    description: description,
+    leadId: leadId,
+    startDate: startDate,
+    endDate: endDate,
+    archived: archived,
+  );
 
   Future<void> deleteTaskProject({
     required String wsId,
     required String projectId,
-  }) async {
-    await _apiClient.deleteJson(
-      '/api/v1/workspaces/$wsId/task-projects/$projectId',
-    );
-  }
+  }) => _deleteTaskProject(wsId: wsId, projectId: projectId);
 
-  Future<List<TaskInitiativeSummary>> getTaskInitiatives(String wsId) async {
-    final response = await _apiClient.getJsonList(
-      '/api/v1/workspaces/$wsId/task-initiatives',
-    );
-
-    return response
-        .whereType<Map<String, dynamic>>()
-        .map(TaskInitiativeSummary.fromJson)
-        .toList(growable: false);
-  }
+  Future<List<TaskInitiativeSummary>> getTaskInitiatives(String wsId) =>
+      _getTaskInitiatives(wsId);
 
   Future<void> createTaskInitiative({
     required String wsId,
     required String name,
     required String status,
     String? description,
-  }) async {
-    await _apiClient.postJson('/api/v1/workspaces/$wsId/task-initiatives', {
-      'name': name,
-      if (description != null) 'description': description,
-      'status': status,
-    });
-  }
+  }) => _createTaskInitiative(
+    wsId: wsId,
+    name: name,
+    status: status,
+    description: description,
+  );
 
   Future<void> updateTaskInitiative({
     required String wsId,
@@ -1158,65 +1098,51 @@ class TaskRepository {
     required String name,
     required String status,
     String? description,
-  }) async {
-    await _apiClient
-        .putJson('/api/v1/workspaces/$wsId/task-initiatives/$initiativeId', {
-          'name': name,
-          if (description != null) 'description': description,
-          'status': status,
-        });
-  }
+  }) => _updateTaskInitiative(
+    wsId: wsId,
+    initiativeId: initiativeId,
+    name: name,
+    status: status,
+    description: description,
+  );
 
   Future<void> deleteTaskInitiative({
     required String wsId,
     required String initiativeId,
-  }) async {
-    await _apiClient.deleteJson(
-      '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId',
-    );
-  }
+  }) => _deleteTaskInitiative(wsId: wsId, initiativeId: initiativeId);
 
   Future<void> linkProjectToInitiative({
     required String wsId,
     required String initiativeId,
     required String projectId,
-  }) async {
-    await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId/projects',
-      {'projectId': projectId},
-    );
-  }
+  }) => _linkProjectToInitiative(
+    wsId: wsId,
+    initiativeId: initiativeId,
+    projectId: projectId,
+  );
 
   Future<void> unlinkProjectFromInitiative({
     required String wsId,
     required String initiativeId,
     required String projectId,
-  }) async {
-    await _apiClient.deleteJson(
-      '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId/projects/$projectId',
-    );
-  }
+  }) => _unlinkProjectFromInitiative(
+    wsId: wsId,
+    initiativeId: initiativeId,
+    projectId: projectId,
+  );
 
   Future<void> linkTaskToProject({
     required String wsId,
     required String projectId,
     required String taskId,
-  }) async {
-    await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/task-projects/$projectId/tasks',
-      {'taskId': taskId},
-    );
-  }
+  }) => _linkTaskToProject(wsId: wsId, projectId: projectId, taskId: taskId);
 
   Future<void> unlinkTaskFromProject({
     required String wsId,
     required String projectId,
     required String taskId,
-  }) async {
-    await _apiClient.deleteJson(
-      '/api/v1/workspaces/$wsId/task-projects/$projectId/tasks/$taskId',
-    );
-  }
+  }) =>
+      _unlinkTaskFromProject(wsId: wsId, projectId: projectId, taskId: taskId);
 
   Future<List<TaskProjectUpdate>> getTaskProjectUpdates({
     required String wsId,

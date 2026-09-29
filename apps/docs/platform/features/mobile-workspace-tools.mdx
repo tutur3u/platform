@@ -190,17 +190,27 @@ lists and details also read scoped snapshots while revalidating. CMS collection
 and entry CRUD uses the outbox and marks pending tiles. CMS entries targeting a
 locally created collection use the persisted ID mapping during replay. Drive
 folder create, rename, folder and file delete use path-scoped
-queued edits with pending rows. Habit trackers, entries, and streak actions
-also queue edits, with pending cards and activity rows. File uploads and
-create responses that omit a server ID still need dedicated replay support.
+queued edits with pending rows. Drive uploads also queue encrypted file bytes;
+replay requests a fresh signed URL, uploads the bytes, and finalizes the file.
+An uncertain upload remains in manual review to avoid overwriting a file twice.
+Habit trackers, entries, and streak actions also queue edits, with pending
+cards and activity rows. Create responses that omit a server ID still need
+dedicated replay support.
 Meet meeting create, edit, and delete also queue offline with a pending list
 treatment. Live room access, realtime tokens, and assistant actions remain
 network-dependent and must not be represented as queued calls.
 Task summaries, board lists, and board task pages read scoped snapshots while
 revalidating. Core task create, edit, description, delete and restore, plus
 board create and lifecycle edits, enter the outbox offline. Task and board
-cards expose pending status. Bulk task actions and richer board, project,
-initiative, label, and relationship mutations still need dedicated adapters.
+cards expose pending status. Label, project, and initiative lists revalidate
+from scoped snapshots. Their
+create, edit, and delete actions queue offline with pending cards. Task
+relationships and task/project/initiative links queue as scoped edits. Bulk
+task actions queue as one ordered edit with every affected card marked pending;
+the bulk action reports a queued result without claiming server success.
+Partial bulk replay stays in manual conflict review so successful tasks are not
+silently retried with failed ones.
+Richer board mutations still need dedicated adapters.
 Chat conversation and message lists also return scoped snapshots while
 revalidating. Conversation create, edit, and delete and user message sends enter
 the encrypted outbox offline. A queued message appears immediately with a

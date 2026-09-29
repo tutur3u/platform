@@ -2281,7 +2281,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           clearError: true,
         ),
       );
-
+      if (result.queued) return result;
       await _invalidateBoardCaches(wsId: wsId);
 
       final affectedListIds = <String>{
