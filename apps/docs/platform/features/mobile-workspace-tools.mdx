@@ -80,6 +80,16 @@ Notification Inbox and Archive actions share a bordered segmented control with
 primary selected colors and accessibility selection state. Use `segmentGroup`
 on related `ShellActionSpec` entries instead of unrelated highlighted icons.
 
+Mobile notifications use `App: item title` as the title and put the event detail
+or timing below it. This is the default for every module that sends mobile push,
+for the mobile notification inbox, and for locally scheduled Task and Calendar
+reminders. The app label follows the device language in the inbox and local
+reminders; server-sent push currently uses English module names. An unknown
+notification type uses `Tuturuuu`. Existing stored notification records keep
+their original fields; display formatting does not change routing or read state.
+Security approval pushes use `Security` while retaining their challenge data
+and approval safeguards.
+
 Mail owns folder, mailbox, and filter selectors through `ShellMiniNav`. Opening
 a message replaces the shell title with its subject and reuses the dock back
 action. Child composers and attachment previews suspend reader chrome. Background

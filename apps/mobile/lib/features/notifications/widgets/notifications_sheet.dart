@@ -10,6 +10,7 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
+import 'package:mobile/features/notifications/notification_display_copy.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/notifications/widgets/notification_destination.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';

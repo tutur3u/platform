@@ -8567,6 +8567,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get remindersDescription => 'Hạn công việc và sự kiện lịch được chuẩn bị trên thiết bị này.';
 
   @override
+  String get notificationTaskAppLabel => 'Công việc';
+
+  @override
+  String get notificationWorkspaceAppLabel => 'Không gian làm việc';
+
+  @override
+  String get notificationSecurityAppLabel => 'Bảo mật';
+
+  @override
   String get remindersTaskTitle => 'Hạn công việc';
 
   @override

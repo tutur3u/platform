@@ -16477,6 +16477,24 @@ abstract class AppLocalizations {
   /// **'Task deadlines and calendar events, kept ready on this device.'**
   String get remindersDescription;
 
+  /// No description provided for @notificationTaskAppLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Task'**
+  String get notificationTaskAppLabel;
+
+  /// No description provided for @notificationWorkspaceAppLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get notificationWorkspaceAppLabel;
+
+  /// No description provided for @notificationSecurityAppLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get notificationSecurityAppLabel;
+
   /// No description provided for @remindersTaskTitle.
   ///
   /// In en, this message translates to:
