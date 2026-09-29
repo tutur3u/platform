@@ -750,7 +750,6 @@
     "status": {
       "deployed": "Deployed",
       "disabled": "Disabled",
-      "legacy_disabled": "Disabled · Replace with a non-staff reviewer account",
       "draft": "Draft",
       "enabled": "Enabled",
       "error": "Error",
@@ -8622,6 +8621,7 @@
     "status": {
       "active": "Active",
       "disabled": "Disabled",
+      "legacy_disabled": "Disabled · Replace with a non-staff reviewer account",
       "unconfirmed": "Email unconfirmed",
       "you": "You"
     },
