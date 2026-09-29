@@ -73,6 +73,8 @@ import {
 type AdminClient = SupabaseClient<Database>;
 type MobileDeploymentSecretKind = MobileDeploymentSecretValueRow['kind'];
 
+export { getProductionEnvironment, getVersionById, listSecretsForVersion };
+
 function toInfrastructureJsonValue(value: unknown): InfrastructureJsonValue {
   if (value == null) {
     return null;
@@ -231,7 +233,7 @@ function buildSecretValueRow({
   };
 }
 
-export async function getProductionEnvironment(db: AdminClient) {
+async function getProductionEnvironment(db: AdminClient) {
   const schema = privateDb(db);
   const { data, error } = await schema
     .from('mobile_deployment_environments')
@@ -253,7 +255,6 @@ export async function getProductionEnvironment(db: AdminClient) {
     insertError,
     'Failed to initialize mobile deployment environment'
   );
-
   return inserted as MobileDeploymentEnvironmentRow;
 }
 
@@ -275,14 +276,10 @@ async function getLatestVersionByStatus(
   return (data as MobileDeploymentVersionRow | null) ?? null;
 }
 
-export async function getVersionById(
-  db: AdminClient,
-  versionId: string | null
-) {
+async function getVersionById(db: AdminClient, versionId: string | null) {
   if (!versionId) {
     return null;
   }
-
   const { data, error } = await privateDb(db)
     .from('mobile_deployment_versions')
     .select('*')
@@ -293,10 +290,7 @@ export async function getVersionById(
   return (data as MobileDeploymentVersionRow | null) ?? null;
 }
 
-export async function listSecretsForVersion(
-  db: AdminClient,
-  versionId: string
-) {
+async function listSecretsForVersion(db: AdminClient, versionId: string) {
   const { data, error } = await privateDb(db)
     .from('mobile_deployment_secret_values')
     .select('*')
