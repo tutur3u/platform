@@ -7,6 +7,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
+import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 const mailModule = AppModule(
@@ -33,6 +34,10 @@ Widget _page(BuildContext context) => MailPage(
   ),
 );
 bool _visible(BuildContext context) {
+  final enabled = context.select<ExperimentalAppsCubit?, bool>(
+    (cubit) => cubit?.state.isEnabled('mail') ?? false,
+  );
+  if (!enabled) return false;
   final user = context
       .select<AuthCubit?, ({String? email, Map<String, dynamic>? metadata})>(
         (cubit) => (

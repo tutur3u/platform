@@ -29,6 +29,40 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  testWidgets('new experiments require opt-in and retain Mail access', (
+    tester,
+  ) async {
+    final experiments = ExperimentalAppsCubit(
+      settingsRepository: SettingsRepository(),
+    );
+    addTearDown(experiments.close);
+    late List<String> visible;
+    await tester.pumpApp(
+      BlocProvider.value(
+        value: experiments,
+        child: Builder(
+          builder: (context) {
+            visible = AppRegistry.modules(
+              context,
+            ).map((module) => module.id).toList();
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+    for (final id in ['mail', 'meet', 'chat', 'notes']) {
+      expect(visible, isNot(contains(id)));
+    }
+    for (final id in ['meet', 'chat', 'notes', 'mail']) {
+      await experiments.setModuleEnabled(moduleId: id, enabled: true);
+    }
+    await tester.pumpAndSettle();
+    for (final id in ['meet', 'chat', 'notes']) {
+      expect(visible, contains(id));
+    }
+    expect(visible, isNot(contains('mail')));
+  });
+
   group('AppRegistry timer mini nav visibility', () {
     testWidgets('hides requests in personal workspace', (tester) async {
       final workspaceCubit = _MockWorkspaceCubit();

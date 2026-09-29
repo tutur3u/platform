@@ -47,17 +47,13 @@ class AppRegistry {
     ),
   ];
 
-  static const Set<String> coreModuleIds = {
-    'mail',
-    'tasks',
-    'chat',
-    'calendar',
-    'finance',
-    'meet',
-    'notes',
-  };
+  static const Set<String> coreModuleIds = {'tasks', 'calendar', 'finance'};
 
   static const Set<String> experimentalModuleIds = {
+    'mail',
+    'chat',
+    'meet',
+    'notes',
     'habits',
     'drive',
     'documents',
@@ -94,6 +90,7 @@ class AppRegistry {
       labelBuilder: _labelChat,
       pageBuilder: _pageChat,
       miniAppNavItems: _chatMiniNav,
+      isVisible: _showChatModule,
     ),
     AppModule(
       id: 'calendar',
@@ -136,6 +133,7 @@ class AppRegistry {
       labelBuilder: _labelNotes,
       pageBuilder: _pageNotes,
       miniAppNavItems: _notesMiniNav,
+      isVisible: _showNotesModule,
     ),
     AppModule(
       id: 'cms',
@@ -494,7 +492,13 @@ class AppRegistry {
       _isExperimentalModuleAvailable(context, 'crm');
 
   static bool _showMeetModule(BuildContext context) =>
-      !_isModuleHiddenByWorkspaceSecret(context, 'meet');
+      _isExperimentalModuleAvailable(context, 'meet');
+
+  static bool _showChatModule(BuildContext context) =>
+      _isExperimentalModuleAvailable(context, 'chat');
+
+  static bool _showNotesModule(BuildContext context) =>
+      _isExperimentalModuleAvailable(context, 'notes');
 
   static bool _showHabitsModule(BuildContext context) {
     if (!_isExperimentalModuleAvailable(context, 'habits')) {

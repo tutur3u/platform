@@ -67,12 +67,22 @@ void main() {
     }
     await tester.pumpAndSettle();
 
-    final labels = <String>['Tasks', 'Chat', 'Calendar', 'Finance'];
+    final labels = <String>['Tasks', 'Calendar', 'Finance'];
 
     for (final label in labels) {
       expect(find.text(label), findsOneWidget);
     }
-    for (final label in ['Timer', 'Drive', 'Education', 'Inventory', 'CRM']) {
+    for (final label in [
+      'Mail',
+      'Chat',
+      'Meet',
+      'Notes',
+      'Timer',
+      'Drive',
+      'Education',
+      'Inventory',
+      'CRM',
+    ]) {
       expect(find.text(label), findsNothing);
     }
 
@@ -87,10 +97,7 @@ void main() {
     expect(find.text('Open'), findsNothing);
     expect(find.byType(TextField), findsNothing);
     expect(
-      find.text(
-        'Keep team conversations, direct messages, files, '
-        'and AI chats together.',
-      ),
+      find.text('Assignments, boards, estimates, and portfolio planning.'),
       findsOneWidget,
     );
 
@@ -104,17 +111,14 @@ void main() {
     expect(tasksSemantics.label, 'Tasks');
     expect(tasksSemantics.flagsCollection.isButton, isTrue);
     expect(find.text('Tasks'), findsOneWidget);
-    expect(find.text('Chat'), findsOneWidget);
+    expect(find.text('Chat'), findsNothing);
     expect(
-      find.text(
-        'Keep team conversations, direct messages, files, '
-        'and AI chats together.',
-      ),
+      find.text('Assignments, boards, estimates, and portfolio planning.'),
       findsNothing,
     );
     expect(
       tester.getTopLeft(find.text('Tasks')).dy,
-      tester.getTopLeft(find.text('Chat')).dy,
+      tester.getTopLeft(find.text('Calendar')).dy,
     );
 
     tester.view.physicalSize = const Size(200, 2400);
@@ -126,10 +130,7 @@ void main() {
     showGrid.value = false;
     await tester.pumpAndSettle();
     expect(
-      find.text(
-        'Keep team conversations, direct messages, files, '
-        'and AI chats together.',
-      ),
+      find.text('Assignments, boards, estimates, and portfolio planning.'),
       findsOneWidget,
     );
     semantics.dispose();
@@ -171,7 +172,7 @@ void main() {
       ),
     );
     await experimentalAppsCubit.load();
-    for (final moduleId in ['timer', 'drive', 'inventory', 'crm']) {
+    for (final moduleId in ['chat', 'timer', 'drive', 'inventory', 'crm']) {
       await experimentalAppsCubit.setModuleEnabled(
         moduleId: moduleId,
         enabled: true,

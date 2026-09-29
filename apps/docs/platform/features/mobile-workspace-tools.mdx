@@ -40,7 +40,15 @@ does not claim that a queued offline edit has synchronized.
 
 Background warmups for optional products should also respect access state before fetching. Do not let Apps hub or boot-time cache warmups call product endpoints blindly; skip the warmup when the corresponding access cubit is not loaded and enabled, and fail soft on opportunistic `404` responses.
 
-Meet is a standard launcher module, with meeting search, scheduling, editing, and deletion. Workspace visibility flags still apply. Every launcher module includes an English and Vietnamese description.
+Tasks, Calendar, and Finance are the default launcher modules. Meet, Mail, Chat,
+and Notes join the existing opt-in apps in Settings → Experiments; all four are
+off until the user enables them. The choice is cached on the device and restored
+at launch. Turning a module on exposes it in Apps and its eligible Home card;
+turning it off removes those launch surfaces. Mail still requires its account
+access rule, and workspace visibility flags still apply. Deep links retain the
+existing route access rules. Meet includes meeting search, scheduling, editing,
+and deletion when enabled. Every launcher module has an English and Vietnamese
+description.
 
 ## Navigation preferences and recovery
 
@@ -67,9 +75,10 @@ choices persist on the device. Workspace permissions and experimental-app
 visibility still take precedence; a locally hidden app is only moved out of
 the shown launcher section, not disabled or removed from navigation.
 
-Home's task, calendar, Mail, Meet, Finance, Notes, and daily summary cards can
-be reordered or hidden in Customize Home. Existing cards are shown in their
-current order by default, and hidden cards remain in the editor for recovery.
+Home's task, calendar, Finance, daily summary, and eligible Mail, Meet, and Notes
+cards can be reordered or hidden in Customize Home. Available cards are shown
+in their current order by default, and hidden cards remain in the editor for
+recovery.
 Unavailable modules do not appear as Home cards or editor choices; their saved
 layout preferences remain intact if access returns. The workspace picker and
 security prompts remain outside customization.
