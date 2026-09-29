@@ -137,6 +137,11 @@ Home shows Finance wallets and recent Notes alongside its existing summary cards
 when those modules are available to the current account and workspace. Both cards
 use scoped snapshots while refreshing, and clear their displayed rows when the
 account or workspace changes. They link into their corresponding mobile screens.
+The Notes link picker uses scoped snapshots and the local entity index for
+Tasks, Calendar events, Finance wallets, Notes, and Meet rooms. It overlays
+queued edits and marks unsynchronized options. Reopening a cached category
+shows its rows while revalidating. A new category without any local entities
+still waits for its first response.
 
 `CacheStore` shares initialization and concurrent fetches for the same scoped key.
 Prefetch returns stored snapshots immediately and starts background
