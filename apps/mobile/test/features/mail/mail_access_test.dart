@@ -12,7 +12,7 @@ void main() {
       expect(canDiscoverMail(email), isTrue, reason: email);
     }
   });
-  test('Mail discovery includes only tagged reviewer accounts on the routed domain', () {
+  test('Mail discovery requires a reviewer tag on the routed domain', () {
     const reviewer = {
       'infrastructure_review_account': {'kind': 'review'},
     };
