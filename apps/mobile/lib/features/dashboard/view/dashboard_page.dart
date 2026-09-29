@@ -309,7 +309,10 @@ class _DashboardViewState extends State<_DashboardView> {
                                     if (visibleModules.any(
                                           (module) => module.id == 'mail',
                                         ) &&
-                                        canDiscoverMail(user?.email))
+                                        canDiscoverMail(
+                                          user?.email,
+                                          appMetadata: user?.appMetadata,
+                                        ))
                                       _DashboardMailCard(
                                         key: _mailCardKey,
                                         workspaceId: workspace.id,

@@ -76,7 +76,7 @@ describe('Apple reviewer metadata handoff', () => {
               id: 'detail',
               attributes: {
                 demoAccountRequired: true,
-                demoAccountName: 'review@tuturuuu.com',
+                demoAccountName: 'review@tutur3u.com',
                 notes: publishedNotes,
               },
             },
@@ -96,7 +96,7 @@ describe('Apple reviewer metadata handoff', () => {
           db: {} as never,
           actorUserId: 'actor',
           reviewerUserId: 'reviewer',
-          email: 'review@tuturuuu.com',
+          email: 'review@tutur3u.com',
           password,
         })
       ).resolves.toEqual({ configured: true });
@@ -125,7 +125,7 @@ describe('Apple reviewer metadata handoff', () => {
           db: {} as never,
           actorUserId: 'actor',
           reviewerUserId: 'reviewer',
-          email: 'review@tuturuuu.com',
+          email: 'review@tutur3u.com',
           password: 'private-review-password',
         })
       ).rejects.toThrow('Apple review metadata update failed (403)');

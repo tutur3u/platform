@@ -26,7 +26,7 @@ function request(origin = 'https://infrastructure.tuturuuu.com') {
     {
       body: JSON.stringify({
         displayName: 'App Reviewer',
-        email: 'review@tuturuuu.com',
+        email: 'review@tutur3u.com',
         kind: 'review',
       }),
       headers: {
@@ -49,7 +49,7 @@ describe('review account API boundary', () => {
     });
     mocks.create.mockResolvedValue({
       id: 'review-1',
-      email: 'review@tuturuuu.com',
+      email: 'review@tutur3u.com',
       kind: 'review',
       password: 'hidden',
     });

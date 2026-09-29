@@ -10,9 +10,12 @@ The Tuturuuu platform uses Supabase Auth for user authentication with support fo
 
 The Infrastructure root workspace's Account Security screen lets operators with
 `manage_internal_accounts` provision two ordinary-user account types. A review
-account uses a new organization-controlled `@tuturuuu.com` email, confirmed by
-the administrator, and a generated password shown only once. It is intended for
-app-store review and production QA. An external quick-create sends an email
+account uses a new organization-controlled `@tutur3u.com` email with a verified
+inbound route, confirmed by the administrator, and a generated password shown
+only once. Staff domains such as `@tuturuuu.com` and `@xwf.tuturuuu.com` are
+not eligible because legacy features grant them internal access based on email
+alone. Existing staff-domain review accounts must stay disabled. The account is
+intended for app-store review and production QA. An external quick-create sends an email
 invitation instead; the recipient must accept it before the account can sign in.
 Both types get a personal workspace from the normal signup trigger, with no
 extra platform or workspace permissions. Existing users are never overwritten.
@@ -23,7 +26,12 @@ exact email. Password rotation does not claim to revoke all existing sessions.
 The default is an active reviewer account and an unconfirmed external invitation;
 these rules apply to the Infrastructure admin panel and the mobile and web
 sign-in surfaces. The external invitation intentionally has no administrator-
-visible password, so it cannot serve as an unaccepted App Review login.
+visible password, so it cannot serve as an unaccepted App Review login. For
+mobile password sign-in, enter the email, continue to the code screen, then
+choose **Use password instead**. The Apple demo account fields contain the
+credential; Review Notes contain these steps without the password. Mail access
+for review is scoped to the account's personal workspace and does not grant
+staff mailbox or root-workspace access.
 
 <Note>
   The server helpers in `@tuturuuu/supabase/next/server` resolve cookies (and an

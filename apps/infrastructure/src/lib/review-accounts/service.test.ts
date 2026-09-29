@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createReviewAccount,
+  isSafeReviewerEmail,
   listReviewAccounts,
   ReviewAccountError,
   updateReviewAccount,
@@ -40,17 +41,17 @@ describe('review account administration', () => {
     const created = await createReviewAccount({
       actorUserId,
       displayName: 'App Reviewer',
-      email: 'Review@tuturuuu.com',
+      email: 'Review@tutur3u.com',
       kind: 'review',
       sbAdmin: db,
     });
-    expect(created.email).toBe('review@tuturuuu.com');
+    expect(created.email).toBe('review@tutur3u.com');
     expect(created.password).toMatch(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{24}$/
     );
     expect(admin.auth.admin.createUser).toHaveBeenCalledWith(
       expect.objectContaining({
-        email: 'review@tuturuuu.com',
+        email: 'review@tutur3u.com',
         email_confirm: true,
         password: created.password,
         app_metadata: {
@@ -107,16 +108,35 @@ describe('review account administration', () => {
     expect(admin.auth.admin.createUser).not.toHaveBeenCalled();
   });
 
+  it.each([
+    'review@tuturuuu.com',
+    'review@xwf.tuturuuu.com',
+    'review@review.tuturuuu.com',
+    'review@tutur3u.com.evil.example',
+  ])('rejects privileged or unapproved reviewer domain %s', async (email) => {
+    expect(isSafeReviewerEmail(email)).toBe(false);
+    await expect(
+      createReviewAccount({
+        actorUserId,
+        displayName: 'Reviewer',
+        email,
+        kind: 'review',
+        sbAdmin: db,
+      })
+    ).rejects.toMatchObject({ status: 400 });
+    expect(admin.auth.admin.createUser).not.toHaveBeenCalled();
+  });
+
   it('refuses a pre-provisioned platform role address', async () => {
     roleLookup.mockResolvedValueOnce({
-      data: { email: 'review@tuturuuu.com' },
+      data: { email: 'review@tutur3u.com' },
       error: null,
     });
     await expect(
       createReviewAccount({
         actorUserId,
         displayName: 'Reviewer',
-        email: 'review@tuturuuu.com',
+        email: 'review@tutur3u.com',
         kind: 'review',
         sbAdmin: db,
       })
@@ -140,6 +160,22 @@ describe('review account administration', () => {
     ).rejects.toMatchObject({ status: 409 });
     expect(admin.auth.admin.inviteUserByEmail).not.toHaveBeenCalled();
   });
+
+  it.each(['guest@tuturuuu.com', 'guest@xwf.tuturuuu.com'])(
+    'refuses a staff-domain external invite %s',
+    async (email) => {
+      await expect(
+        createReviewAccount({
+          actorUserId,
+          displayName: 'External tester',
+          email,
+          kind: 'external',
+          sbAdmin: db,
+        })
+      ).rejects.toMatchObject({ status: 400 });
+      expect(admin.auth.admin.inviteUserByEmail).not.toHaveBeenCalled();
+    }
+  );
 
   it('lists only tagged accounts and omits credentials', async () => {
     admin.auth.admin.listUsers.mockResolvedValue({
@@ -198,7 +234,7 @@ describe('review account administration', () => {
       data: {
         user: {
           id: 'review-1',
-          email: 'review@tuturuuu.com',
+          email: 'review@tutur3u.com',
           app_metadata: { infrastructure_review_account: { kind: 'review' } },
         },
       },
@@ -213,6 +249,31 @@ describe('review account administration', () => {
         userId: 'review-1',
       })
     ).rejects.toMatchObject({ status: 400 });
+    expect(admin.auth.admin.updateUserById).not.toHaveBeenCalled();
+  });
+
+  it('keeps a legacy staff-domain reviewer disabled', async () => {
+    admin.auth.admin.getUserById.mockResolvedValue({
+      data: {
+        user: {
+          id: 'legacy-reviewer',
+          email: 'review@tuturuuu.com',
+          app_metadata: { infrastructure_review_account: { kind: 'review' } },
+        },
+      },
+      error: null,
+    });
+    for (const action of ['enable', 'rotate_password'] as const) {
+      await expect(
+        updateReviewAccount({
+          actorUserId,
+          action,
+          confirmationEmail: 'review@tuturuuu.com',
+          sbAdmin: db,
+          userId: 'legacy-reviewer',
+        })
+      ).rejects.toMatchObject({ status: 403 });
+    }
     expect(admin.auth.admin.updateUserById).not.toHaveBeenCalled();
   });
 });

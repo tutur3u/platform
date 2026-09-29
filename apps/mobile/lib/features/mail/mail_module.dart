@@ -33,8 +33,12 @@ Widget _page(BuildContext context) => MailPage(
   ),
 );
 bool _visible(BuildContext context) {
-  final email = context.select<AuthCubit?, String?>(
-    (cubit) => cubit?.state.user?.email,
-  );
-  return canDiscoverMail(email);
+  final user = context
+      .select<AuthCubit?, ({String? email, Map<String, dynamic>? metadata})>(
+        (cubit) => (
+          email: cubit?.state.user?.email,
+          metadata: cubit?.state.user?.appMetadata,
+        ),
+      );
+  return canDiscoverMail(user.email, appMetadata: user.metadata);
 }

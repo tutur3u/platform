@@ -12,11 +12,13 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import {
+  getWorkspace,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { isManagedMailReviewer } from './reviewer-access';
 import type { MailRouteContext } from './types';
 
 export const MAIL_APP_SESSION_AUTH = {
@@ -83,13 +85,14 @@ export async function resolveMailRouteContext(
     return { ok: false, response: auth.response };
   }
 
-  if (!isExactTuturuuuDotComEmail(auth.user.email)) {
+  const isStaff = isExactTuturuuuDotComEmail(auth.user.email);
+  if (!isStaff && !(await isManagedMailReviewer(auth.user))) {
     return {
       ok: false,
       response: NextResponse.json(
         {
           error: 'Forbidden',
-          message: 'Mail is available only to exact @tuturuuu.com accounts.',
+          message: 'Mail is not available to this account.',
         },
         { status: 403 }
       ),
@@ -126,6 +129,22 @@ export async function resolveMailRouteContext(
         { status: 403 }
       ),
     };
+  }
+
+  if (!isStaff) {
+    const workspace = await getWorkspace(normalizedWsId, {
+      useAdmin: true,
+      user: auth.user,
+    });
+    if (!workspace?.joined || !workspace.personal) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { error: 'Mail review access is limited to a personal workspace' },
+          { status: 403 }
+        ),
+      };
+    }
   }
 
   return {

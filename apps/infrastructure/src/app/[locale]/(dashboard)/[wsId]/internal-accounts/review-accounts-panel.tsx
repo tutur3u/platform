@@ -29,6 +29,12 @@ import { useState } from 'react';
 const QUERY_KEY = ['infrastructure', 'review-accounts'];
 type Action = 'rotate_password' | 'disable' | 'enable';
 
+function isLegacyReviewer(account: ReviewAccount) {
+  return (
+    account.kind === 'review' && !/^[^\s@]+@tutur3u\.com$/i.test(account.email)
+  );
+}
+
 export function ReviewAccountsPanel() {
   const t = useTranslations('internal-accounts.review_accounts');
   const queryClient = useQueryClient();
@@ -172,14 +178,16 @@ export function ReviewAccountsPanel() {
                 : t('external_kind')}
               {' · '}
               {account.isDisabled
-                ? t('disabled')
+                ? isLegacyReviewer(account)
+                  ? t('legacy_disabled')
+                  : t('disabled')
                 : account.emailConfirmed
                   ? t('ready')
                   : t('pending_invite')}
             </p>
           </div>
           <div className="flex gap-2">
-            {account.kind === 'review' ? (
+            {account.kind === 'review' && !isLegacyReviewer(account) ? (
               <Button
                 onClick={() =>
                   setSelected({ account, action: 'rotate_password' })
@@ -190,18 +198,20 @@ export function ReviewAccountsPanel() {
                 {t('rotate')}
               </Button>
             ) : null}
-            <Button
-              onClick={() =>
-                setSelected({
-                  account,
-                  action: account.isDisabled ? 'enable' : 'disable',
-                })
-              }
-              size="sm"
-              variant="outline"
-            >
-              {account.isDisabled ? t('enable') : t('disable')}
-            </Button>
+            {!account.isDisabled || !isLegacyReviewer(account) ? (
+              <Button
+                onClick={() =>
+                  setSelected({
+                    account,
+                    action: account.isDisabled ? 'enable' : 'disable',
+                  })
+                }
+                size="sm"
+                variant="outline"
+              >
+                {account.isDisabled ? t('enable') : t('disable')}
+              </Button>
+            ) : null}
           </div>
         </div>
       ))}

@@ -12,6 +12,25 @@ void main() {
       expect(canDiscoverMail(email), isTrue, reason: email);
     }
   });
+  test('Mail discovery requires a reviewer tag on the routed domain', () {
+    const reviewer = {
+      'infrastructure_review_account': {'kind': 'review'},
+    };
+    expect(
+      canDiscoverMail('app-review-ios@tutur3u.com', appMetadata: reviewer),
+      isTrue,
+    );
+    expect(canDiscoverMail('app-review-ios@tutur3u.com'), isFalse);
+    expect(
+      canDiscoverMail(
+        'tester@tutur3u.com',
+        appMetadata: {
+          'infrastructure_review_account': {'kind': 'external'},
+        },
+      ),
+      isFalse,
+    );
+  });
   test('Mail discovery rejects anonymous, external and spoofed domains', () {
     for (final email in [
       null,
