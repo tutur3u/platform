@@ -4,7 +4,6 @@ import 'package:bloc/bloc.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
-import 'package:mobile/features/profile/profile_cache.dart';
 
 /// Cubit for managing user profile state.
 class ProfileCubit extends Cubit<ProfileState> {
@@ -60,14 +59,6 @@ class ProfileCubit extends Cubit<ProfileState> {
               : persistedCache.fetchedAt,
         ),
       );
-    }
-
-    if (!forceRefresh &&
-        visibleProfile != null &&
-        persistedProfile != null &&
-        persistedCache.fetchedAt != null &&
-        isProfileCacheFresh(persistedCache.fetchedAt!)) {
-      return;
     }
 
     if (emitLoading && visibleProfile == null) {
@@ -158,6 +149,10 @@ class ProfileCubit extends Cubit<ProfileState> {
     final result = await update();
 
     if (result.success) {
+      final cached = await _repository.getCachedProfile();
+      if (cached.profile != null) {
+        emit(state.copyWith(profile: cached.profile));
+      }
       // Reload profile to get updated data
       await loadProfile(forceRefresh: true, emitLoading: false);
       emit(state.copyWith(isLoading: false));
@@ -171,6 +166,11 @@ class ProfileCubit extends Cubit<ProfileState> {
   /// Uploads avatar.
   Future<bool> uploadAvatar(File file) async {
     emit(state.copyWith(isLoading: true));
+
+    if (await _repository.queueAvatarUploadIfOffline(file)) {
+      emit(state.copyWith(isLoading: false));
+      return true;
+    }
 
     // Get upload URL
     final urlResult = await _repository.getAvatarUploadUrl(

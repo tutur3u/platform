@@ -18,6 +18,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class StorefrontsPage extends StatefulWidget {
@@ -228,7 +229,12 @@ class _StorefrontsPageState extends State<StorefrontsPage> {
                   ..._storefronts.map(
                     (storefront) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: _StorefrontCard(storefront: storefront),
+                      child: PendingSyncFrame(
+                        workspaceId: _wsId ?? '',
+                        entityId: storefront.id,
+                        feature: 'storefront',
+                        child: _StorefrontCard(storefront: storefront),
+                      ),
                     ),
                   ),
               ],

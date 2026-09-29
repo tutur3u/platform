@@ -27,11 +27,45 @@ extension _TimeTrackerRepositoryRequests on TimeTrackerRepository {
     for (final mutation in await OfflineMutationQueue.instance.listPending()) {
       if (mutation.feature != 'time_tracker' ||
           mutation.workspaceId != wsId ||
-          mutation.method != 'PATCH' ||
-          !mutation.path.startsWith('$path/') ||
-          mutation.path.substring(path.length + 1).contains('/')) {
+          (mutation.path != path &&
+              (!mutation.path.startsWith('$path/') ||
+                  mutation.path.substring(path.length + 1).contains('/')))) {
         continue;
       }
+      if (mutation.method == 'TIME_REQUEST_CREATE' &&
+          mutation.entityId != null &&
+          offset == 0) {
+        final fields = mutation.payload?['fields'];
+        if (fields is Map<String, dynamic>) {
+          rows[mutation.entityId!] = {
+            'id': mutation.entityId,
+            'ws_id': wsId,
+            'user_id': currentCacheUserId(),
+            'title': fields['title'],
+            'description': fields['description'],
+            'category_id': fields['categoryId'],
+            'start_time': fields['startTime'],
+            'end_time': fields['endTime'],
+            'created_at': mutation.createdAt.toIso8601String(),
+          };
+        }
+        continue;
+      }
+      if (mutation.method == 'TIME_REQUEST_UPDATE') {
+        final row = rows[mutation.entityId];
+        final fields = mutation.payload?['fields'];
+        if (row != null && fields is Map<String, dynamic>) {
+          row.addAll({
+            'title': fields['title'],
+            if (fields.containsKey('description'))
+              'description': fields['description'],
+            'start_time': fields['startTime'],
+            'end_time': fields['endTime'],
+          });
+        }
+        continue;
+      }
+      if (mutation.method != 'PATCH') continue;
       final row = rows[mutation.entityId];
       if (row == null) continue;
       final action = mutation.payload?['action'];

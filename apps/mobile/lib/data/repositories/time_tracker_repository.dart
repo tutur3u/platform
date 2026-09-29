@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -10,6 +11,7 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
+import 'package:mobile/core/cache/time_request_image_delivery.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
@@ -633,12 +635,40 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     );
 
     final requests = data['requests'] as List<dynamic>? ?? const <dynamic>[];
-    final raw = requests.firstOrNull;
-    if (raw is! Map<String, dynamic>) {
-      return null;
+    final first = requests.firstOrNull;
+    var raw = first is Map<String, dynamic> ? {...first} : null;
+    for (final mutation in await OfflineMutationQueue.instance.listPending()) {
+      if (mutation.feature != 'time_tracker' ||
+          mutation.workspaceId != wsId ||
+          mutation.entityId != normalizedRequestId) {
+        continue;
+      }
+      final fields = mutation.payload?['fields'];
+      if (fields is! Map<String, dynamic>) continue;
+      if (mutation.method == 'TIME_REQUEST_CREATE') {
+        raw = {
+          'id': normalizedRequestId,
+          'ws_id': wsId,
+          'user_id': currentCacheUserId(),
+          'title': fields['title'],
+          'description': fields['description'],
+          'category_id': fields['categoryId'],
+          'start_time': fields['startTime'],
+          'end_time': fields['endTime'],
+        };
+      } else if (mutation.method == 'TIME_REQUEST_UPDATE') {
+        raw = {
+          ...?raw,
+          'id': normalizedRequestId,
+          'title': fields['title'],
+          if (fields.containsKey('description'))
+            'description': fields['description'],
+          'start_time': fields['startTime'],
+          'end_time': fields['endTime'],
+        };
+      }
     }
-
-    return TimeTrackingRequest.fromJson(raw);
+    return raw == null ? null : TimeTrackingRequest.fromJson(raw);
   }
 
   @override
@@ -653,11 +683,7 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
   }) async {
     final localPaths = imageLocalPaths ?? const <String>[];
     final requestId = _generateUuidV4();
-    final uploadedImagePaths = await _uploadRequestImages(
-      wsId,
-      requestId,
-      localPaths,
-    );
+    final images = await _stageRequestImages(localPaths);
 
     final fields = <String, dynamic>{
       'requestId': requestId,
@@ -666,16 +692,43 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
       if (categoryId != null) 'categoryId': categoryId,
       if (startTime != null) 'startTime': _toApiIso(startTime),
       if (endTime != null) 'endTime': _toApiIso(endTime),
-      if (uploadedImagePaths.isNotEmpty) 'imagePaths': uploadedImagePaths,
     };
 
-    final data = await _api.postJson(
-      '/api/v1/workspaces/$wsId/time-tracking/requests',
-      fields,
-    );
-
-    return TimeTrackingRequest.fromJson(
-      data['request'] as Map<String, dynamic>,
+    final path = '/api/v1/workspaces/$wsId/time-tracking/requests';
+    return await queueOrSendValue<TimeTrackingRequest>(
+      feature: 'time_tracker',
+      method: 'TIME_REQUEST_CREATE',
+      path: path,
+      workspaceId: wsId,
+      entityId: requestId,
+      payload: {'requestId': requestId, 'fields': fields, 'images': images},
+      pendingValue: (_) => TimeTrackingRequest.fromJson({
+        'id': requestId,
+        'ws_id': wsId,
+        'user_id': currentCacheUserId(),
+        'title': title,
+        'description': description,
+        'category_id': categoryId,
+        'start_time': startTime?.toUtc().toIso8601String(),
+        'end_time': endTime?.toUtc().toIso8601String(),
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+      }),
+      send: () async {
+        final uploaded = await deliverTimeRequestImages(
+          api: _api,
+          httpClient: _httpClient,
+          workspaceId: wsId,
+          requestId: requestId,
+          images: images,
+        );
+        final data = await _api.postJson(path, {
+          ...fields,
+          if (uploaded.isNotEmpty) 'imagePaths': uploaded,
+        });
+        return TimeTrackingRequest.fromJson(
+          data['request'] as Map<String, dynamic>,
+        );
+      },
     );
   }
 
@@ -754,9 +807,7 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     List<String>? removedImages,
     List<String>? newImageLocalPaths,
   }) async {
-    final uploadedImagePaths = await _uploadRequestImages(
-      wsId,
-      requestId,
+    final images = await _stageRequestImages(
       newImageLocalPaths ?? const <String>[],
     );
 
@@ -767,16 +818,40 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
       if (description != null) 'description': description,
       if (removedImages != null && removedImages.isNotEmpty)
         'removedImages': removedImages,
-      if (uploadedImagePaths.isNotEmpty) 'newImagePaths': uploadedImagePaths,
     };
 
-    final data = await _api.putJson(
-      '/api/v1/workspaces/$wsId/time-tracking/requests/$requestId',
-      body,
-    );
-
-    return TimeTrackingRequest.fromJson(
-      data['request'] as Map<String, dynamic>,
+    final path = '/api/v1/workspaces/$wsId/time-tracking/requests/$requestId';
+    return await queueOrSendValue<TimeTrackingRequest>(
+      feature: 'time_tracker',
+      method: 'TIME_REQUEST_UPDATE',
+      path: path,
+      workspaceId: wsId,
+      entityId: requestId,
+      payload: {'requestId': requestId, 'fields': body, 'images': images},
+      pendingValue: (_) => TimeTrackingRequest.fromJson({
+        'id': requestId,
+        'ws_id': wsId,
+        'title': title,
+        'description': description,
+        'start_time': startTime.toUtc().toIso8601String(),
+        'end_time': endTime.toUtc().toIso8601String(),
+      }),
+      send: () async {
+        final uploaded = await deliverTimeRequestImages(
+          api: _api,
+          httpClient: _httpClient,
+          workspaceId: wsId,
+          requestId: requestId,
+          images: images,
+        );
+        final data = await _api.putJson(path, {
+          ...body,
+          if (uploaded.isNotEmpty) 'newImagePaths': uploaded,
+        });
+        return TimeTrackingRequest.fromJson(
+          data['request'] as Map<String, dynamic>,
+        );
+      },
     );
   }
 

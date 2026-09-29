@@ -55,19 +55,14 @@ class HabitsAccessRepository {
     );
   }
 
-  Future<void> _saveCachedHabitsAccess(String wsId, bool enabled) {
-    return CacheStore.instance.write(
+  Future<bool> isHabitsEnabled(String wsId) async {
+    final result = await CacheStore.instance.prefetch<bool>(
       key: _cacheKey(wsId),
       policy: _cachePolicy,
-      payload: {'enabled': enabled},
+      decode: _decodeEnabled,
+      fetch: () => _api.getJson(HabitsEndpoints.access(wsId)),
       tags: const [_cacheTag],
     );
-  }
-
-  Future<bool> isHabitsEnabled(String wsId) async {
-    final response = await _api.getJson(HabitsEndpoints.access(wsId));
-    final enabled = _decodeEnabled(response);
-    await _saveCachedHabitsAccess(wsId, enabled);
-    return enabled;
+    return result.data ?? false;
   }
 }

@@ -10,6 +10,7 @@ import 'package:mobile/features/calendar/cubit/calendar_connections_cubit.dart';
 import 'package:mobile/features/calendar/cubit/calendar_connections_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 const _kGoogleColor = Color(0xFF4285F4);
@@ -41,6 +42,7 @@ Future<void> showCalendarConnectionsSheet(
 
 class _AccountTile extends StatelessWidget {
   const _AccountTile({
+    required this.wsId,
     required this.account,
     required this.connections,
     required this.togglingIds,
@@ -51,6 +53,7 @@ class _AccountTile extends StatelessWidget {
     required this.onDisconnect,
   });
 
+  final String wsId;
   final CalendarAccount account;
   final List<CalendarConnection> connections;
   final Set<String> togglingIds;
@@ -69,105 +72,115 @@ class _AccountTile extends StatelessWidget {
         ? _kGoogleColor
         : _kMicrosoftColor;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        children: [
-          // Account header.
-          ListTile(
-            leading: CircleAvatar(
-              backgroundColor: providerColor.withValues(alpha: 0.15),
-              child: Icon(
-                account.provider == 'google'
-                    ? Icons.g_mobiledata
-                    : Icons.window,
-                color: providerColor,
-              ),
-            ),
-            title: Text(
-              account.displayName,
-              style: textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            subtitle: account.accountEmail != null
-                ? Text(
-                    account.accountEmail!,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  )
-                : null,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Provider badge.
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: providerColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    account.provider == 'google' ? 'Google' : 'Microsoft',
-                    style: textTheme.labelSmall?.copyWith(
-                      color: providerColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+    return PendingSyncFrame(
+      workspaceId: wsId,
+      entityId: account.id,
+      feature: 'calendar',
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          children: [
+            // Account header.
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: providerColor.withValues(alpha: 0.15),
+                child: Icon(
+                  account.provider == 'google'
+                      ? Icons.g_mobiledata
+                      : Icons.window,
+                  color: providerColor,
                 ),
-                Icon(
-                  isExpanded
-                      ? Icons.keyboard_arrow_up
-                      : Icons.keyboard_arrow_down,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ],
-            ),
-            onTap: onToggleExpand,
-          ),
-          // Expanded calendar list.
-          if (isExpanded) ...[
-            const Divider(height: 1, indent: 16, endIndent: 16),
-            for (final conn in connections)
-              _ConnectionToggle(
-                connection: conn,
-                isToggling: togglingIds.contains(conn.id),
-                onChanged: (enabled) =>
-                    onToggleConnection(conn, enabled: enabled),
               ),
-            // Disconnect option.
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: isDisconnecting
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(8),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: NovaLoadingIndicator(size: 20),
-                        ),
+              title: Text(
+                account.displayName,
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: account.accountEmail != null
+                  ? Text(
+                      account.accountEmail!,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     )
-                  : TextButton.icon(
-                      onPressed: onDisconnect,
-                      icon: Icon(
-                        Icons.link_off,
-                        size: 18,
-                        color: colorScheme.error,
-                      ),
-                      label: Text(
-                        context.l10n.calendarConnectionsDisconnect,
-                        style: TextStyle(color: colorScheme.error),
+                  : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Provider badge.
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: providerColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      account.provider == 'google' ? 'Google' : 'Microsoft',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: providerColor,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
+                  ),
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+              onTap: onToggleExpand,
             ),
+            // Expanded calendar list.
+            if (isExpanded) ...[
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              for (final conn in connections)
+                PendingSyncFrame(
+                  workspaceId: conn.wsId,
+                  entityId: conn.id,
+                  feature: 'calendar',
+                  child: _ConnectionToggle(
+                    connection: conn,
+                    isToggling: togglingIds.contains(conn.id),
+                    onChanged: (enabled) =>
+                        onToggleConnection(conn, enabled: enabled),
+                  ),
+                ),
+              // Disconnect option.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: isDisconnecting
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8),
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: NovaLoadingIndicator(size: 20),
+                          ),
+                        ),
+                      )
+                    : TextButton.icon(
+                        onPressed: onDisconnect,
+                        icon: Icon(
+                          Icons.link_off,
+                          size: 18,
+                          color: colorScheme.error,
+                        ),
+                        label: Text(
+                          context.l10n.calendarConnectionsDisconnect,
+                          style: TextStyle(color: colorScheme.error),
+                        ),
+                      ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -405,6 +418,7 @@ class _LoadedBodyState extends State<_LoadedBody> {
           _SectionHeader(label: l10n.calendarConnectionsAccounts),
           for (final account in state.accounts)
             _AccountTile(
+              wsId: widget.wsId,
               account: account,
               connections: state.connectionsByAccount[account.id] ?? [],
               togglingIds: state.togglingIds,

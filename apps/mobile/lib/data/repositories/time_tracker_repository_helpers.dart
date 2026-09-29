@@ -179,80 +179,17 @@ extension _TimeTrackerRepositoryHelpers on TimeTrackerRepository {
         '${hex(bytes[15])}';
   }
 
-  Future<List<String>> _uploadRequestImages(
-    String wsId,
-    String requestId,
+  Future<List<Map<String, dynamic>>> _stageRequestImages(
     List<String> localImagePaths,
   ) async {
-    if (localImagePaths.isEmpty) {
-      return const <String>[];
+    final staged = <Map<String, dynamic>>[];
+    for (final path in localImagePaths) {
+      staged.add({
+        'filename': _filenameFromPath(path),
+        'contentType': lookupMimeType(path) ?? 'application/octet-stream',
+        'bytes': base64Encode(await File(path).readAsBytes()),
+      });
     }
-
-    final signedUploadResponse = await _api.postJson(
-      '/api/v1/workspaces/$wsId/time-tracking/requests/upload-url',
-      {
-        'requestId': requestId,
-        'files': localImagePaths
-            .map((path) => {'filename': _filenameFromPath(path)})
-            .toList(),
-      },
-    );
-
-    final uploads = signedUploadResponse['uploads'];
-    if (uploads is! List || uploads.length != localImagePaths.length) {
-      throw const ApiException(
-        message: 'Invalid upload URL response',
-        statusCode: 0,
-      );
-    }
-
-    final uploadedPaths = <String>[];
-
-    for (var i = 0; i < uploads.length; i++) {
-      final upload = uploads[i];
-      if (upload is! Map<String, dynamic>) {
-        throw const ApiException(
-          message: 'Invalid upload URL response',
-          statusCode: 0,
-        );
-      }
-
-      final signedUrl = upload['signedUrl'] as String?;
-      final token = upload['token'] as String?;
-      final storagePath = upload['path'] as String?;
-      if (signedUrl == null || token == null || storagePath == null) {
-        throw const ApiException(
-          message: 'Invalid upload URL response',
-          statusCode: 0,
-        );
-      }
-
-      final localPath = localImagePaths[i];
-      final fileBytes = await File(localPath).readAsBytes();
-      final contentType =
-          lookupMimeType(localPath) ?? 'application/octet-stream';
-
-      final uploadResponse = await _httpClient
-          .put(
-            Uri.parse(signedUrl),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': contentType,
-            },
-            body: fileBytes,
-          )
-          .timeout(const Duration(seconds: 60));
-
-      if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
-        throw ApiException(
-          message: 'Failed to upload image (${uploadResponse.statusCode})',
-          statusCode: uploadResponse.statusCode,
-        );
-      }
-
-      uploadedPaths.add(storagePath);
-    }
-
-    return uploadedPaths;
+    return staged;
   }
 }

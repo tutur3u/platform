@@ -16,6 +16,7 @@ import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -356,7 +357,6 @@ class _NotificationsViewState extends State<NotificationsView> {
     if (route == null) {
       return;
     }
-
     final workspaceCubit = widget.parentContext.read<WorkspaceCubit>();
     final targetWorkspaceId = notification.workspaceId;
     if (targetWorkspaceId != null &&

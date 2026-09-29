@@ -10,12 +10,14 @@ class PendingSyncFrame extends StatelessWidget {
     required this.entityId,
     required this.child,
     this.feature,
+    this.relatedEntityIds = const [],
     super.key,
   });
 
   final String workspaceId;
   final String entityId;
   final String? feature;
+  final List<String> relatedEntityIds;
   final Widget child;
 
   @override
@@ -24,11 +26,16 @@ class PendingSyncFrame extends StatelessWidget {
     builder: (context, records, _) {
       PendingMutationRecord? mutation;
       for (final record in records) {
-        if (record.workspaceId != workspaceId ||
+        if ((record.workspaceId != workspaceId &&
+                record.feature != 'notifications') ||
             (feature != null && record.feature != feature)) {
           continue;
         }
         if (record.entityId == entityId ||
+            relatedEntityIds.contains(record.entityId) ||
+            (record.feature == 'notifications' &&
+                record.path == '/api/v1/notifications' &&
+                record.payload?['action'] == 'mark_all_read') ||
             (record.feature == 'tasks' &&
                 record.path.endsWith('/tasks/bulk') &&
                 (record.payload?['taskIds'] as List?)?.contains(entityId) ==

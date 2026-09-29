@@ -169,8 +169,15 @@ need individual offline mutation adapters before this is an app-wide write repli
 Calendar event lists use scoped snapshots and overlay pending edits. An uncertain
 Calendar create stays in manual review because it may have already reached an
 external calendar provider.
+Connected Calendar accounts and visibility settings also read encrypted snapshots
+while revalidating. Offline disconnects and visibility toggles remain queued and
+visibly marked until confirmed. Provider OAuth URLs still require a live request.
 Inventory product lists overlay queued creates and updates on their cached
 catalog; an uncertain product create also requires manual review.
+Storefronts and their listings use the same scoped read and write path. A newly
+created offline storefront keeps a local ID so queued listings can reference it;
+replay maps that ID to the server storefront before sending dependent edits.
+Queued storefront and listing cards retain the dashed, dimmed treatment.
 Education course, quiz, and flashcard edits and basic CRM user and feedback
 edits use the same encrypted queue. Education course, quiz-set, quiz, flashcard,
 and attempt reads and CRM user, group, feedback, and audit reads use scoped
@@ -223,14 +230,26 @@ reactions, AI settings, and friend requests also queue offline. Attachments
 stage encrypted bytes in the outbox, request a fresh signed URL on replay,
 and rewrite dependent queued message paths after upload. An ambiguous upload
 remains in manual review. Assistant generation remains network-dependent.
+Notification feeds and unread counts also return scoped snapshots while
+revalidating. Read state, metadata, viewed Mail thread archiving, and workspace
+invite decisions queue offline. Pending read state is applied to the feed and
+unsynchronized notification tiles use the dashed treatment.
+Profile's former preferences snapshot migrates into the encrypted account-scoped
+replica on first read. The visible cached profile stays in place during each
+refresh. Profile text edits and activity sharing queue offline; identity and
+sharing controls show the pending treatment until acknowledged.
+Avatar changes stage encrypted image bytes offline and request a fresh signed
+upload URL on replay. A lost upload connection remains reviewable because the
+server may already have accepted the image.
 Timer sessions, history, categories, goals, requests, and summaries use scoped
 snapshots while revalidating. Session start, stop, pause, resume, edit, missed
 entry creation, and deletion queue offline, with dimmed dashed session cards.
-Timer category creation, goal create, edit, and delete, request approval changes,
-comments, and threshold updates queue too. Category, goal, request, and comment
+Timer category creation, goal create, edit, and delete, request create and edit,
+approval changes, comments, and threshold updates queue too. Request images
+stage encrypted bytes, obtain fresh signed URLs during replay, then submit the
+request with the resulting storage paths. Category, goal, request, and comment
 cards show pending sync state. Local ID reconciliation supports edits made
-before a create syncs; ambiguous sends remain in manual review. Request image
-uploads still need encrypted offline staging. Running session state applies
+before a create syncs; ambiguous sends remain in manual review. Running session state applies
 queued lifecycle edits over the latest snapshot.
 Finance category and tag lists also read scoped snapshots while revalidating;
 their create, edit, and delete actions queue offline, and queued cards use the

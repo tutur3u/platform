@@ -53,14 +53,6 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
       );
     }
 
-    if (!forceRefresh &&
-        state.userId == user.id &&
-        state.profile != null &&
-        state.lastUpdatedAt != null &&
-        _isFresh(state.lastUpdatedAt!)) {
-      return;
-    }
-
     final cachedResult = await _repository.getCachedProfile();
     final cachedProfile = cachedResult.profile?.id == user.id
         ? cachedResult.profile
@@ -78,10 +70,6 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
           error: null,
         ),
       );
-    }
-
-    if (!forceRefresh && cachedAt != null && _isFresh(cachedAt)) {
-      return;
     }
 
     emit(state.copyWith(isRefreshing: true, error: null));

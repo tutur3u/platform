@@ -1,3 +1,6 @@
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_read_through.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/storefront/storefront_models.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -13,37 +16,99 @@ class StorefrontRepository {
     String status = 'all',
     String? query,
   }) async {
-    final response = await _api.getJson(
-      StorefrontEndpoints.storefronts(wsId, status: status, query: query),
+    final response = await readThroughJson(
+      api: _api,
+      namespace: 'storefront.list',
+      workspaceId: wsId,
+      path: StorefrontEndpoints.storefronts(wsId, status: status, query: query),
     );
+    final rows = (response['data'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(Map<String, dynamic>.from)
+        .toList();
+    for (final item in await OfflineMutationQueue.instance.listPending()) {
+      if (item.feature != 'storefront' || item.workspaceId != wsId) continue;
+      final id = item.entityId;
+      if (id == null || item.path.contains('/listings')) continue;
+      if (item.method == 'POST' && item.path.contains('/storefronts?')) {
+        rows.insert(0, {...?item.payload, 'id': id});
+      } else if (item.method == 'PATCH') {
+        final index = rows.indexWhere((row) => row['id'] == id);
+        if (index >= 0) rows[index].addAll(item.payload ?? const {});
+      }
+    }
+    final storefronts = rows
+        .map(Storefront.fromJson)
+        .where((storefront) {
+          if (status != 'all' && storefront.status != status) return false;
+          if (query != null && query.trim().isNotEmpty) {
+            return storefront.name.toLowerCase().contains(query.toLowerCase());
+          }
+          return true;
+        })
+        .toList(growable: false);
     return (
-      data: (response['data'] as List<dynamic>? ?? const <dynamic>[])
-          .whereType<Map<String, dynamic>>()
-          .map(Storefront.fromJson)
-          .toList(growable: false),
-      count: (response['count'] as num?)?.toInt() ?? 0,
+      data: storefronts,
+      count: (response['count'] as num?)?.toInt() ?? storefronts.length,
     );
   }
 
   Future<Storefront> getStorefront(String wsId, String storefrontId) async {
-    final response = await _api.getJson(
-      StorefrontEndpoints.storefront(wsId, storefrontId),
+    final pending = (await OfflineMutationQueue.instance.listPending())
+        .where(
+          (item) => item.feature == 'storefront' && item.workspaceId == wsId,
+        )
+        .toList();
+    final created = pending
+        .where(
+          (item) =>
+              item.method == 'POST' &&
+              !item.path.contains('/listings') &&
+              item.entityId == storefrontId,
+        )
+        .firstOrNull;
+    if (created != null) {
+      final row = <String, dynamic>{...?created.payload, 'id': storefrontId};
+      for (final item in pending) {
+        if (item.entityId == storefrontId && item.method == 'PATCH') {
+          row.addAll(item.payload ?? const {});
+        }
+      }
+      return Storefront.fromJson(row);
+    }
+    final response = await readThroughJson(
+      api: _api,
+      namespace: 'storefront.detail',
+      workspaceId: wsId,
+      path: StorefrontEndpoints.storefront(wsId, storefrontId),
     );
-    return Storefront.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
+    final row = Map<String, dynamic>.from(response['data'] as Map);
+    for (final item in pending) {
+      if (item.entityId == storefrontId && item.method == 'PATCH') {
+        row.addAll(item.payload ?? const {});
+      }
+    }
+    return Storefront.fromJson(row);
   }
 
   Future<Storefront> createStorefront(
     String wsId,
     Map<String, dynamic> payload,
   ) async {
-    final response = await _api.postJson(
-      StorefrontEndpoints.storefronts(wsId),
-      payload,
-    );
-    return Storefront.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
+    final path = StorefrontEndpoints.storefronts(wsId);
+    return await queueOrSendValue<Storefront>(
+      feature: 'storefront',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      pendingValue: (id) => Storefront.fromJson({...payload, 'id': id}),
+      send: () async {
+        final response = await _api.postJson(path, payload);
+        return Storefront.fromJson(
+          Map<String, dynamic>.from(response['data'] as Map),
+        );
+      },
     );
   }
 
@@ -52,30 +117,78 @@ class StorefrontRepository {
     String storefrontId,
     Map<String, dynamic> payload,
   ) async {
-    final response = await _api.patchJson(
-      StorefrontEndpoints.storefront(wsId, storefrontId),
-      payload,
-    );
-    return Storefront.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
+    final path = StorefrontEndpoints.storefront(wsId, storefrontId);
+    return await queueOrSendValue<Storefront>(
+      feature: 'storefront',
+      method: 'PATCH',
+      path: path,
+      workspaceId: wsId,
+      entityId: storefrontId,
+      payload: payload,
+      pendingValue: (id) => Storefront.fromJson({...payload, 'id': id}),
+      send: () async {
+        final response = await _api.patchJson(path, payload);
+        return Storefront.fromJson(
+          Map<String, dynamic>.from(response['data'] as Map),
+        );
+      },
     );
   }
 
   Future<void> deleteStorefront(String wsId, String storefrontId) async {
-    await _api.deleteJson(StorefrontEndpoints.storefront(wsId, storefrontId));
+    final path = StorefrontEndpoints.storefront(wsId, storefrontId);
+    await queueOrSendVoid(
+      feature: 'storefront',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: storefrontId,
+      send: () async {
+        await _api.deleteJson(path);
+      },
+    );
   }
 
   Future<List<StorefrontListing>> listListings(
     String wsId,
     String storefrontId,
   ) async {
-    final response = await _api.getJson(
-      StorefrontEndpoints.listings(wsId, storefrontId),
+    final pending = await OfflineMutationQueue.instance.listPending();
+    final localParent = pending.any(
+      (item) =>
+          item.feature == 'storefront' &&
+          item.method == 'POST' &&
+          !item.path.contains('/listings') &&
+          item.entityId == storefrontId,
     );
-    return (response['data'] as List<dynamic>? ?? const <dynamic>[])
+    final response = localParent
+        ? <String, dynamic>{'data': <dynamic>[]}
+        : await readThroughJson(
+            api: _api,
+            namespace: 'storefront.listings',
+            workspaceId: wsId,
+            path: StorefrontEndpoints.listings(wsId, storefrontId),
+          );
+    final rows = (response['data'] as List<dynamic>? ?? const <dynamic>[])
         .whereType<Map<String, dynamic>>()
-        .map(StorefrontListing.fromJson)
-        .toList(growable: false);
+        .map(Map<String, dynamic>.from)
+        .toList();
+    for (final item in pending) {
+      if (item.feature != 'storefront' ||
+          item.workspaceId != wsId ||
+          !item.path.contains('/$storefrontId/listings')) {
+        continue;
+      }
+      final id = item.entityId;
+      if (id == null) continue;
+      if (item.method == 'POST') {
+        rows.add({...?item.payload, 'id': id, 'storefrontId': storefrontId});
+      } else if (item.method == 'PATCH') {
+        final index = rows.indexWhere((row) => row['id'] == id);
+        if (index >= 0) rows[index].addAll(item.payload ?? const {});
+      }
+    }
+    return rows.map(StorefrontListing.fromJson).toList(growable: false);
   }
 
   Future<StorefrontListing> createListing(
@@ -83,12 +196,24 @@ class StorefrontRepository {
     String storefrontId,
     Map<String, dynamic> payload,
   ) async {
-    final response = await _api.postJson(
-      StorefrontEndpoints.listings(wsId, storefrontId),
-      payload,
-    );
-    return StorefrontListing.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
+    final path = StorefrontEndpoints.listings(wsId, storefrontId);
+    return await queueOrSendValue<StorefrontListing>(
+      feature: 'storefront',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      pendingValue: (id) => StorefrontListing.fromJson({
+        ...payload,
+        'id': id,
+        'storefrontId': storefrontId,
+      }),
+      send: () async {
+        final response = await _api.postJson(path, payload);
+        return StorefrontListing.fromJson(
+          Map<String, dynamic>.from(response['data'] as Map),
+        );
+      },
     );
   }
 
@@ -98,12 +223,25 @@ class StorefrontRepository {
     String listingId,
     Map<String, dynamic> payload,
   ) async {
-    final response = await _api.patchJson(
-      StorefrontEndpoints.listing(wsId, storefrontId, listingId),
-      payload,
-    );
-    return StorefrontListing.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
+    final path = StorefrontEndpoints.listing(wsId, storefrontId, listingId);
+    return await queueOrSendValue<StorefrontListing>(
+      feature: 'storefront',
+      method: 'PATCH',
+      path: path,
+      workspaceId: wsId,
+      entityId: listingId,
+      payload: payload,
+      pendingValue: (id) => StorefrontListing.fromJson({
+        ...payload,
+        'id': id,
+        'storefrontId': storefrontId,
+      }),
+      send: () async {
+        final response = await _api.patchJson(path, payload);
+        return StorefrontListing.fromJson(
+          Map<String, dynamic>.from(response['data'] as Map),
+        );
+      },
     );
   }
 
@@ -112,8 +250,16 @@ class StorefrontRepository {
     String storefrontId,
     String listingId,
   ) async {
-    await _api.deleteJson(
-      StorefrontEndpoints.listing(wsId, storefrontId, listingId),
+    final path = StorefrontEndpoints.listing(wsId, storefrontId, listingId);
+    await queueOrSendVoid(
+      feature: 'storefront',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: listingId,
+      send: () async {
+        await _api.deleteJson(path);
+      },
     );
   }
 

@@ -3,6 +3,11 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -36,6 +41,68 @@ class ProfileRepository {
   String _cachedProfileFetchedAtKeyFor(String userId) =>
       '$_cachedProfileFetchedAtKey:$userId';
 
+  CacheKey _replicaKey(String userId) => CacheKey(
+    namespace: 'profile.user',
+    userId: userId,
+    workspaceId: 'personal',
+    params: const {'path': ProfileEndpoints.profile},
+  );
+
+  Future<UserProfile> _overlayPendingProfile(UserProfile profile) async {
+    final json = profile.toJson();
+    for (final item in await OfflineMutationQueue.instance.listPending()) {
+      if (item.feature != 'profile' || item.workspaceId != 'personal') continue;
+      if (item.path == ProfileEndpoints.avatar && item.method == 'DELETE') {
+        json['avatar_url'] = null;
+      } else if (item.path == ProfileEndpoints.email) {
+        json['new_email'] = item.payload?['email'];
+      } else if (item.path == ProfileEndpoints.fullName ||
+          item.path == ProfileEndpoints.profile) {
+        json.addAll(item.payload ?? const {});
+      }
+    }
+    return UserProfile.fromJson(json);
+  }
+
+  Future<void> _writeProfile(
+    String method,
+    String path, {
+    Map<String, dynamic>? payload,
+  }) async {
+    final userId = getCurrentUserIdSync();
+    await queueOrSendVoid(
+      feature: 'profile',
+      method: method,
+      path: path,
+      workspaceId: 'personal',
+      entityId: userId,
+      payload: payload,
+      send: () async {
+        if (method == 'DELETE') {
+          await _apiClient.deleteJson(path);
+        } else {
+          await _apiClient.patchJson(path, payload ?? {});
+        }
+      },
+    );
+    final pending = await OfflineMutationQueue.instance.listPending();
+    if (pending.any(
+      (item) =>
+          item.feature == 'profile' &&
+          item.workspaceId == 'personal' &&
+          item.path == path,
+    )) {
+      final cached = await getCachedProfile();
+      if (cached.profile != null) {
+        await saveCachedProfile(cached.profile!);
+      }
+    } else {
+      await CacheStore.instance.invalidateTags({
+        'module:profile',
+      }, workspaceId: 'personal');
+    }
+  }
+
   void dispose() {
     if (_ownsApiClient) {
       _apiClient.dispose();
@@ -43,6 +110,23 @@ class ProfileRepository {
     if (_ownsHttpClient) {
       _httpClient.close();
     }
+  }
+
+  /// Stages avatar bytes when the device has no connection.
+  Future<bool> queueAvatarUploadIfOffline(File file) async {
+    final bytes = await file.readAsBytes();
+    return await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'profile',
+      method: 'PROFILE_AVATAR_UPLOAD',
+      path: ProfileEndpoints.avatarUploadUrl,
+      workspaceId: 'personal',
+      entityId: getCurrentUserIdSync(),
+      payload: {
+        'filename': file.uri.pathSegments.last,
+        'contentType': lookupMimeType(file.path) ?? 'application/octet-stream',
+        'bytes': base64Encode(bytes),
+      },
+    );
   }
 
   /// Gets signed upload URL for avatar.
@@ -69,7 +153,10 @@ class ProfileRepository {
   Future<({UserProfile? profile, String? error})> getProfile() async {
     try {
       final json = await _apiClient.getJson(ProfileEndpoints.profile);
-      return (profile: UserProfile.fromJson(json), error: null);
+      return (
+        profile: await _overlayPendingProfile(UserProfile.fromJson(json)),
+        error: null,
+      );
     } on ApiException catch (e) {
       return (profile: null, error: e.message);
     } on Exception catch (e) {
@@ -84,19 +171,31 @@ class ProfileRepository {
       return (profile: null, fetchedAt: null);
     }
 
+    final cached = await CacheStore.instance.read<UserProfile>(
+      key: _replicaKey(userId),
+      decode: (data) =>
+          UserProfile.fromJson(Map<String, dynamic>.from(data! as Map)),
+    );
+    if (cached.data != null) {
+      return (
+        profile: await _overlayPendingProfile(cached.data!),
+        fetchedAt: cached.fetchedAt,
+      );
+    }
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_cachedProfileKeyFor(userId));
-    final fetchedAtRaw = prefs.getString(_cachedProfileFetchedAtKeyFor(userId));
-    if (raw == null) {
-      return (profile: null, fetchedAt: null);
-    }
-
+    if (raw == null) return (profile: null, fetchedAt: null);
     try {
+      final profile = UserProfile.fromJson(
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
+      final legacyFetchedAt = DateTime.tryParse(
+        prefs.getString(_cachedProfileFetchedAtKeyFor(userId)) ?? '',
+      );
+      await saveCachedProfile(profile);
       return (
-        profile: UserProfile.fromJson(jsonDecode(raw) as Map<String, dynamic>),
-        fetchedAt: fetchedAtRaw == null
-            ? null
-            : DateTime.tryParse(fetchedAtRaw),
+        profile: await _overlayPendingProfile(profile),
+        fetchedAt: legacyFetchedAt,
       );
     } on Object {
       return (profile: null, fetchedAt: null);
@@ -104,21 +203,22 @@ class ProfileRepository {
   }
 
   Future<void> saveCachedProfile(UserProfile profile) async {
+    await CacheStore.instance.write(
+      key: _replicaKey(profile.id),
+      policy: CachePolicies.offlineCatalog,
+      payload: profile.toJson(),
+      tags: const ['module:profile', 'workspace:personal'],
+    );
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _cachedProfileKeyFor(profile.id),
-      jsonEncode(profile.toJson()),
-    );
-    await prefs.setString(
-      _cachedProfileFetchedAtKeyFor(profile.id),
-      DateTime.now().toIso8601String(),
-    );
+    await prefs.remove(_cachedProfileKeyFor(profile.id));
+    await prefs.remove(_cachedProfileFetchedAtKeyFor(profile.id));
   }
 
   Future<void> clearCachedProfile() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = getCurrentUserIdSync();
     if (userId != null && userId.isNotEmpty) {
+      await CacheStore.instance.remove(_replicaKey(userId));
       await prefs.remove(_cachedProfileKeyFor(userId));
       await prefs.remove(_cachedProfileFetchedAtKeyFor(userId));
     }
@@ -129,7 +229,7 @@ class ProfileRepository {
   /// Removes avatar.
   Future<({bool success, String? error})> removeAvatar() async {
     try {
-      await _apiClient.deleteJson(ProfileEndpoints.avatar);
+      await _writeProfile('DELETE', ProfileEndpoints.avatar);
       return (success: true, error: null);
     } on ApiException catch (e) {
       return (success: false, error: e.message);
@@ -143,9 +243,11 @@ class ProfileRepository {
     String? avatarUrl,
   ) async {
     try {
-      await _apiClient.patchJson(ProfileEndpoints.profile, {
-        'avatar_url': avatarUrl,
-      });
+      await _writeProfile(
+        'PATCH',
+        ProfileEndpoints.profile,
+        payload: {'avatar_url': avatarUrl},
+      );
 
       return (success: true, error: null);
     } on ApiException catch (e) {
@@ -160,9 +262,11 @@ class ProfileRepository {
     String displayName,
   ) async {
     try {
-      await _apiClient.patchJson(ProfileEndpoints.profile, {
-        'display_name': displayName,
-      });
+      await _writeProfile(
+        'PATCH',
+        ProfileEndpoints.profile,
+        payload: {'display_name': displayName},
+      );
 
       return (success: true, error: null);
     } on ApiException catch (e) {
@@ -175,7 +279,11 @@ class ProfileRepository {
   /// Updates email.
   Future<({bool success, String? error})> updateEmail(String email) async {
     try {
-      await _apiClient.patchJson(ProfileEndpoints.email, {'email': email});
+      await _writeProfile(
+        'PATCH',
+        ProfileEndpoints.email,
+        payload: {'email': email},
+      );
 
       return (success: true, error: null);
     } on ApiException catch (e) {
@@ -190,9 +298,11 @@ class ProfileRepository {
     String fullName,
   ) async {
     try {
-      await _apiClient.patchJson(ProfileEndpoints.fullName, {
-        'full_name': fullName,
-      });
+      await _writeProfile(
+        'PATCH',
+        ProfileEndpoints.fullName,
+        payload: {'full_name': fullName},
+      );
 
       return (success: true, error: null);
     } on ApiException catch (e) {

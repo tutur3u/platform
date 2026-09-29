@@ -1,3 +1,4 @@
+import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
@@ -33,7 +34,12 @@ class EducationAccessRepository {
   }
 
   Future<bool> isEducationEnabled(String wsId) async {
-    final response = await _api.getJson(EducationEndpoints.access(wsId));
+    final response = await readThroughJson(
+      api: _api,
+      namespace: 'education.access',
+      workspaceId: wsId,
+      path: EducationEndpoints.access(wsId),
+    );
     return _decodeEnabled(response);
   }
 }

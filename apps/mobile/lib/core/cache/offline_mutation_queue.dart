@@ -12,6 +12,8 @@ import 'package:mobile/core/cache/chat_attachment_delivery.dart';
 import 'package:mobile/core/cache/drive_upload_delivery.dart';
 import 'package:mobile/core/cache/offline_id_reconciliation.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/cache/profile_avatar_delivery.dart';
+import 'package:mobile/core/cache/time_request_image_delivery.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
@@ -269,6 +271,71 @@ class OfflineMutationQueue {
                 serverId: serverPath,
               );
             }
+          } finally {
+            httpClient.close();
+          }
+        case 'TIME_REQUEST_CREATE' || 'TIME_REQUEST_UPDATE':
+          if (workspaceId == null) {
+            throw StateError('Timer request has no workspace');
+          }
+          final payload = resolved.payload ?? const <String, dynamic>{};
+          final requestId = payload['requestId'] as String;
+          final fields = Map<String, dynamic>.from(payload['fields'] as Map);
+          final images = (payload['images'] as List<dynamic>? ?? const [])
+              .map((image) => Map<String, dynamic>.from(image as Map))
+              .toList(growable: false);
+          final httpClient = http.Client();
+          try {
+            final uploaded = await deliverTimeRequestImages(
+              api: api,
+              httpClient: httpClient,
+              workspaceId: workspaceId,
+              requestId: requestId,
+              images: images,
+            );
+            final response = record.method == 'TIME_REQUEST_CREATE'
+                ? await api.postJson(resolved.path, {
+                    ...fields,
+                    if (uploaded.isNotEmpty) 'imagePaths': uploaded,
+                  })
+                : await api.putJson(resolved.path, {
+                    ...fields,
+                    if (uploaded.isNotEmpty) 'newImagePaths': uploaded,
+                  });
+            if (record.method == 'TIME_REQUEST_CREATE') {
+              final serverId = createdServerId(response);
+              if (serverId == null) {
+                throw const ApiException(
+                  message: 'Missing created timer request ID',
+                  statusCode: 0,
+                );
+              }
+              if (userId != null &&
+                  record.entityId != null &&
+                  serverId != record.entityId) {
+                await CacheStore.instance.saveLocalIdMapping(
+                  userId: userId,
+                  workspaceId: workspaceId,
+                  feature: record.feature,
+                  localId: record.entityId!,
+                  serverId: serverId,
+                );
+              }
+            }
+          } finally {
+            httpClient.close();
+          }
+        case 'PROFILE_AVATAR_UPLOAD':
+          final payload = resolved.payload ?? const <String, dynamic>{};
+          final httpClient = http.Client();
+          try {
+            await deliverProfileAvatar(
+              api: api,
+              httpClient: httpClient,
+              filename: payload['filename'] as String,
+              contentType: payload['contentType'] as String,
+              encodedBytes: payload['bytes'] as String,
+            );
           } finally {
             httpClient.close();
           }
