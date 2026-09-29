@@ -6,7 +6,13 @@ import {
   updateReviewAccount,
 } from './service';
 
+const roleLookup = vi.fn().mockResolvedValue({ data: null, error: null });
 const admin = {
+  from: vi.fn(() => ({
+    select: () => ({
+      eq: () => ({ maybeSingle: roleLookup }),
+    }),
+  })),
   auth: {
     admin: {
       createUser: vi.fn(),
@@ -21,7 +27,10 @@ const db = admin as never;
 const actorUserId = 'admin-user';
 
 describe('review account administration', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    roleLookup.mockResolvedValue({ data: null, error: null });
+  });
 
   it('creates a confirmed, ordinary reviewer with an unrecoverable generated password', async () => {
     admin.auth.admin.createUser.mockResolvedValue({
@@ -95,6 +104,23 @@ describe('review account administration', () => {
         sbAdmin: db,
       })
     ).rejects.toMatchObject({ status: 400 });
+    expect(admin.auth.admin.createUser).not.toHaveBeenCalled();
+  });
+
+  it('refuses a pre-provisioned platform role address', async () => {
+    roleLookup.mockResolvedValueOnce({
+      data: { email: 'review@tuturuuu.com' },
+      error: null,
+    });
+    await expect(
+      createReviewAccount({
+        actorUserId,
+        displayName: 'Reviewer',
+        email: 'review@tuturuuu.com',
+        kind: 'review',
+        sbAdmin: db,
+      })
+    ).rejects.toMatchObject({ status: 409 });
     expect(admin.auth.admin.createUser).not.toHaveBeenCalled();
   });
 
