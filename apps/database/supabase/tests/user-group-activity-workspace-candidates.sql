@@ -61,6 +61,10 @@ select ok(
       '00000000-0000-0000-0000-000000000000',
       now() - interval '1 hour', now() + interval '1 hour', null::uuid
     ) where table_name = 'user_indicators'
+      and audit_record_id in (
+        select id from audit.record_version
+        where record_id = '20000000-0000-0000-0000-000000000204'
+      )
   ),
   'workspace user candidates retain indicator history after metric deletion'
 );
@@ -71,6 +75,10 @@ select ok(
       '00000000-0000-0000-0000-000000000000',
       now() - interval '1 hour', now() + interval '1 hour', null::uuid
     ) where table_name = 'user_group_metric_category_links'
+      and audit_record_id in (
+        select id from audit.record_version
+        where record_id = '20000000-0000-0000-0000-000000000205'
+      )
   ),
   'workspace category candidates retain links after metric deletion'
 );

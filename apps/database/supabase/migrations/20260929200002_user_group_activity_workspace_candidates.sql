@@ -153,10 +153,10 @@ as $function$
         or (audit_log.table_schema = 'public' and audit_log.table_name = 'user_indicators'
           and not exists (
             select 1 from public.user_group_metrics metric_record
-            where metric_record.id::text = coalesce(
+            where metric_record.id = public.try_parse_uuid(coalesce(
               audit_log.record->>'metric_id', audit_log.old_record->>'metric_id',
               audit_log.record->>'indicator_id', audit_log.old_record->>'indicator_id'
-            )
+            ))
           ))
       )
     union all
@@ -179,9 +179,9 @@ as $function$
       and audit_log.table_name = 'user_group_metric_category_links'
       and not exists (
         select 1 from public.user_group_metrics metric_record
-        where metric_record.id::text = coalesce(
+        where metric_record.id = public.try_parse_uuid(coalesce(
           audit_log.record->>'metric_id', audit_log.old_record->>'metric_id'
-        )
+        ))
       )
   ),
   normalized as (
