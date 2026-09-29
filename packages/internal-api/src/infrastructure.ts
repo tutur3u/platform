@@ -10,5 +10,6 @@ export * from './infrastructure/mobile';
 export * from './infrastructure/monitoring';
 export * from './infrastructure/native-settings';
 export * from './infrastructure/realtime';
+export * from './infrastructure/review-accounts';
 export * from './infrastructure/types';
 export * from './infrastructure/workspace';

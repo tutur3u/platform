@@ -22,6 +22,7 @@ import { type FormEvent, useCallback, useRef, useState } from 'react';
 import { AccountPasswordRecovery } from './account-password-recovery';
 import { InternalAccountRow } from './internal-account-row';
 import { InternalAccountsToolbar } from './internal-accounts-toolbar';
+import { ReviewAccountsPanel } from './review-accounts-panel';
 
 const QUERY_KEY = ['infrastructure', 'internal-accounts'] as const;
 
@@ -101,6 +102,7 @@ export function InternalAccountsClient() {
 
   return (
     <div className="space-y-4">
+      <ReviewAccountsPanel />
       <AccountPasswordRecovery />
 
       <div>
