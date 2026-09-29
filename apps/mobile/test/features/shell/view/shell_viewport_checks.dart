@@ -70,7 +70,7 @@ void registerShellViewportChecks(
             of: find.byType(MorphingNavigationBar),
             matching: find.byType(AnimatedScale),
           );
-          expect(tester.widget<AnimatedScale>(scale).scale, 1.045);
+          expect(tester.widget<AnimatedScale>(scale).scale, 1.055);
           expect(
             find.byKey(const ValueKey('navigation-drag-preview')),
             findsOneWidget,
