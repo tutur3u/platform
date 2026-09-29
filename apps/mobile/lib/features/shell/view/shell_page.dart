@@ -358,6 +358,12 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
           'injectedBack=$injectedDeepLinkBackRoute',
     );
     if (miniAppRoot != null && miniAppRoot != currentLocation) {
+      if (_isPrimaryMiniAppDestination(currentLocation) &&
+          _routeHistory.isNotEmpty &&
+          !Routes.isSettingsHubLocation(currentLocation)) {
+        await _returnToAppOrigin();
+        return;
+      }
       final previousMiniAppLocation = _peekPreviousRoute(currentLocation);
       if (previousMiniAppLocation != null &&
           _isSameMiniAppFamily(currentLocation, previousMiniAppLocation)) {
@@ -487,7 +493,17 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       return;
     }
 
-    _routeHistory.add(previous);
+    if (!Routes.isSettingsHubLocation(current) &&
+        _isPrimaryMiniAppDestination(current) &&
+        _isSameMiniAppFamily(previous, current)) {
+      // A dock section replaces its sibling. Only detail routes form a
+      // drill-down history within a mini app.
+      _routeHistory.removeWhere(
+        (route) => _isSameMiniAppFamily(route, current),
+      );
+    } else {
+      _routeHistory.add(previous);
+    }
     if (_routeHistory.length > 50) {
       _routeHistory.removeAt(0);
     }
@@ -524,6 +540,15 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     final rootA = Routes.miniAppRootForLocation(locationA);
     final rootB = Routes.miniAppRootForLocation(locationB);
     return rootA != null && rootA == rootB;
+  }
+
+  bool _isPrimaryMiniAppDestination(String location) {
+    final normalized = _normalizeRouteLocation(location);
+    return AppRegistry.allModules.any(
+      (module) => module.miniAppNavItems.any(
+        (item) => _normalizeRouteLocation(item.route) == normalized,
+      ),
+    );
   }
 
   bool _isExitLocation(String location) {

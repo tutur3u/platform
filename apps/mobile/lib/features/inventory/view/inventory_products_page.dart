@@ -58,6 +58,16 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
     super.initState();
     _inventoryRepository = InventoryRepository();
     _financeRepository = FinanceRepository();
+    final workspaceId = context
+        .read<WorkspaceCubit>()
+        .state
+        .currentWorkspace
+        ?.id;
+    if (workspaceId != null) {
+      _currency =
+          _financeRepository.peekWorkspaceDefaultCurrency(workspaceId) ??
+          _currency;
+    }
     _permissionsRepository = WorkspacePermissionsRepository();
     _searchController = TextEditingController();
     _scrollController.addListener(_onScroll);
@@ -89,6 +99,8 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
     setState(() {
       _products = cached?.data ?? [];
       _count = cached?.count ?? 0;
+      _currency =
+          _financeRepository.peekWorkspaceDefaultCurrency(wsId) ?? 'USD';
       _canManageCatalog = false;
       _isLoadingInitial = true;
       _isLoadingMore = false;

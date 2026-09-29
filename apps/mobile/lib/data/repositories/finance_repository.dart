@@ -77,7 +77,23 @@ class FinanceRepository
 
   String? peekWorkspaceDefaultCurrency(String wsId) {
     final cached = _workspaceCurrencyCache[_workspaceCurrencyMemoryKey(wsId)];
-    return cached?.currency;
+    if (cached != null) return cached.currency;
+
+    // CacheStore hydrates its encrypted snapshot at app startup. Keep the
+    // synchronous path useful across launches so price cards render with the
+    // correct symbol on their first frame.
+    final stored = CacheStore.instance.peek<String>(
+      key: _workspaceCurrencyCacheKey(wsId),
+      decode: _decodeWorkspaceCurrency,
+    );
+    if (!stored.hasValue || stored.data == null) return null;
+    _workspaceCurrencyCache[_workspaceCurrencyMemoryKey(
+      wsId,
+    )] = _WorkspaceCurrencyCacheEntry(
+      currency: stored.data!,
+      fetchedAt: stored.fetchedAt ?? DateTime.now(),
+    );
+    return stored.data;
   }
 
   Future<String?> readWorkspaceDefaultCurrencyFromCache(String wsId) async {

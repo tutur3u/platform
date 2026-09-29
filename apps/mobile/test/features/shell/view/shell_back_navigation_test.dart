@@ -34,6 +34,7 @@ import '../../../helpers/helpers.dart';
 import 'shell_viewport_checks.dart';
 
 part 'shell_navigation_harness.dart';
+part 'shell_peer_section_checks.dart';
 part 'shell_profile_navigation_checks.dart';
 
 void main() {
@@ -121,11 +122,8 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      expect(router.routeInformationProvider.value.uri.path, Routes.tasks);
-
-      await tester.binding.handlePopRoute();
-      await _pumpForTransitions(tester);
       expect(router.routeInformationProvider.value.uri.path, Routes.home);
+
       expect(
         find.byKey(const ValueKey('apps-picker-fullscreen')),
         findsNothing,
@@ -724,10 +722,10 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      expect(router.routeInformationProvider.value.uri.path, Routes.tasks);
+      expect(router.routeInformationProvider.value.uri.path, Routes.home);
     });
 
-    testWidgets('timer requests back returns to timer then apps', (
+    testWidgets('timer requests back returns to the opening tab', (
       tester,
     ) async {
       tester.view.devicePixelRatio = 1;
@@ -764,16 +762,18 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      expect(router.routeInformationProvider.value.uri.path, Routes.timer);
-
-      await tester.binding.handlePopRoute();
-      await _pumpForTransitions(tester);
       expect(router.routeInformationProvider.value.uri.path, Routes.apps);
       expect(
         find.byKey(const ValueKey('apps-picker-fullscreen')),
         findsNothing,
       );
     });
+
+    registerShellPeerSectionChecks(
+      appTabCubit: () => appTabCubit,
+      authCubit: () => authCubit,
+      workspaceCubit: () => workspaceCubit,
+    );
 
     testWidgets(
       'system back falls back to mini-app root for deep-linked routes',

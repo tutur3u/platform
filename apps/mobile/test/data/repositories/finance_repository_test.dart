@@ -36,6 +36,26 @@ void main() {
         ),
       ).called(2);
     });
+    test(
+      'workspace currency is available synchronously after memory reset',
+      () async {
+        when(
+          () => apiClient.getJson(
+            '/api/v1/workspaces/ws_currency_snapshot/settings/DEFAULT_CURRENCY',
+          ),
+        ).thenAnswer((_) async => {'value': 'VND'});
+
+        expect(
+          await repository.getWorkspaceDefaultCurrency('ws_currency_snapshot'),
+          'VND',
+        );
+        debugClearFinanceRepositoryWorkspaceCurrencyCache();
+        expect(
+          repository.peekWorkspaceDefaultCurrency('ws_currency_snapshot'),
+          'VND',
+        );
+      },
+    );
     test('getWallets maps list response', () async {
       when(
         () => apiClient.getJsonList('/api/workspaces/ws_1/wallets'),

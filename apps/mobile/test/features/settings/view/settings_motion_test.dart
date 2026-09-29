@@ -218,7 +218,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(StaggeredEntry), findsOneWidget);
-      expect(find.text('Preferences'), findsOneWidget);
+      // The shell owns the section title, so it is absent in a standalone page.
+      expect(find.text('Preferences'), findsNothing);
       expect(find.text('Theme'), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
       expect(find.text('Open Tasks board by default'), findsOneWidget);

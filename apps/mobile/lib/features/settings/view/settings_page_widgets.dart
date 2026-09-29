@@ -125,8 +125,7 @@ class _AboutSection extends StatelessWidget {
     final l10n = context.l10n;
 
     return SettingsSection(
-      title: l10n.settingsAboutSectionTitle,
-      description: l10n.settingsAboutSectionDescription,
+      title: '',
       children: [
         SettingsTile(
           icon: Icons.auto_awesome_outlined,
@@ -154,8 +153,7 @@ class _InfrastructureSection extends StatelessWidget {
     final l10n = context.l10n;
 
     return SettingsSection(
-      title: l10n.settingsInfrastructureSectionTitle,
-      description: l10n.settingsInfrastructureSectionDescription,
+      title: '',
       children: [
         SettingsTile(
           icon: Icons.admin_panel_settings_outlined,
@@ -192,8 +190,7 @@ class _ExperimentalAppsSection extends StatelessWidget {
     final l10n = context.l10n;
 
     return SettingsSection(
-      title: l10n.settingsExperimentalAppsSectionTitle,
-      description: l10n.settingsExperimentalAppsSectionDescription,
+      title: '',
       children: [
         for (final module in AppRegistry.experimentalModules)
           SettingsTile(
@@ -328,8 +325,7 @@ class _PreferencesSection extends StatelessWidget {
     ];
     return LayoutBuilder(
       builder: (context, constraints) => SettingsSection(
-        title: l10n.settingsPreferencesSectionTitle,
-        description: l10n.settingsPreferencesSectionDescription,
+        title: '',
         children: constraints.maxWidth < 840
             ? tiles
             : [

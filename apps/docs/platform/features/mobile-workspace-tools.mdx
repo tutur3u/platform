@@ -48,6 +48,10 @@ Phones and tablets share a compact floating icon dock. Leaving a mini-app return
 to its Home or Apps launch screen. Root screens remain mounted with hidden
 animations paused, preserving search and scroll state. The brand control opens
 the Apps screen within the normal shell, with compact search and arrange actions.
+Switching between peer sections in any mini-app replaces the previous section in
+navigation history. Back from a peer section returns to the screen that opened
+the mini-app; a detail screen still returns to its parent section first. A deep
+link without an opening screen falls back to the mini-app root.
 Apps is always available in the root dock. In the picker, Customize exposes pin and
 drag controls; pinned apps sort first. Order and pins persist on the device and
 never bypass each module's visibility rules.
@@ -84,7 +88,12 @@ profile or its image is loading.
 
 Settings tiles center a single title with the icon. For tiles with a value or
 supporting line, the first title line aligns with the icon. Workspace settings
-use the shell's Workspace title and omit a second in-content heading.
+use the shell's Workspace title and omit a second in-content heading. Settings
+subpages likewise use the shell title once, without a repeated introduction.
+Finance and Inventory read the workspace currency from the encrypted local
+snapshot before their first frame. Inventory product and sales lists likewise
+show cached rows and periods while background revalidation runs; a cold workspace
+still fetches its first snapshot normally.
 
 Notification Inbox and Archive actions share a bordered segmented control with
 primary selected colors and accessibility selection state. Use `segmentGroup`
