@@ -47,7 +47,12 @@ export async function processImmediateNotifications(env: Env) {
     new URL('/api/notifications/send-immediate', env.WEB_ORIGIN),
     {
       method: 'POST',
-      headers: { Authorization: `Bearer ${env.CRON_CONTROL_DELIVERY_TOKEN}` },
+      headers: {
+        Authorization: `Bearer ${env.CRON_CONTROL_DELIVERY_TOKEN}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Tuturuuu-Cron-Control/1.0',
+      },
+      body: '{}',
       redirect: 'manual',
       signal: AbortSignal.timeout(180_000),
     }
