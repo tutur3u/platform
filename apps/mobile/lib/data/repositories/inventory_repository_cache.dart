@@ -38,6 +38,39 @@ extension InventoryCacheSnapshot on InventoryRepository {
     return (data: data, count: cached.count + data.length - cached.data.length);
   }
 
+  ({List<InventorySaleSummary> data, int count, bool realtimeEnabled})?
+  peekSales(String wsId, {int limit = 20, String? periodId}) {
+    final cached = _peekInventory(
+      'sales',
+      wsId,
+      (json) => (
+        data: (json['data'] as List<dynamic>? ?? const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(InventorySaleSummary.fromJson)
+            .toList(growable: false),
+        count: (json['count'] as num?)?.toInt() ?? 0,
+        realtimeEnabled: json['realtime_enabled'] as bool? ?? false,
+      ),
+      params: {'limit': '$limit', 'offset': '0', 'periodId': periodId ?? ''},
+    );
+    if (cached == null) return null;
+    return _overlayPendingInventorySales(
+      wsId,
+      cached,
+      periodId: periodId,
+    );
+  }
+
+  List<InventorySalesPeriod>? peekSalesPeriods(String wsId) => _peekInventory(
+    'sales-periods',
+    wsId,
+    (json) => (json['data'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(InventorySalesPeriod.fromJson)
+        .toList(growable: false),
+    params: const {'includeArchived': 'true'},
+  );
+
   T? _peekInventory<T>(
     String namespace,
     String wsId,

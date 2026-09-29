@@ -178,6 +178,11 @@ GoRouter _buildRouter({
             builder: (context, state) => const _RoutePage(label: 'wallets'),
           ),
           GoRoute(
+            path: Routes.transactions,
+            builder: (context, state) =>
+                const _RoutePage(label: 'transactions'),
+          ),
+          GoRoute(
             path: Routes.walletDetail,
             builder: (context, state) =>
                 _RoutePage(label: 'wallet-${state.pathParameters['walletId']}'),

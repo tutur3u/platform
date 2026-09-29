@@ -136,8 +136,7 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
         : _pendingApprovals.first;
 
     return SettingsSection(
-      title: l10n.settingsDangerSectionTitle,
-      description: l10n.settingsDangerSectionDescription,
+      title: '',
       children: [
         SettingsTile(
           icon: Icons.phonelink_lock_rounded,

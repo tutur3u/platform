@@ -68,6 +68,16 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
     super.initState();
     _inventoryRepository = InventoryRepository();
     _financeRepository = FinanceRepository();
+    final workspaceId = context
+        .read<WorkspaceCubit>()
+        .state
+        .currentWorkspace
+        ?.id;
+    if (workspaceId != null) {
+      _currency =
+          _financeRepository.peekWorkspaceDefaultCurrency(workspaceId) ??
+          _currency;
+    }
     _permissionsRepository = WorkspacePermissionsRepository();
     _scrollController.addListener(_onScroll);
     unawaited(Future<void>.delayed(Duration.zero, _loadInitial));
@@ -88,7 +98,20 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
     }
     final requestToken = ++_requestToken;
 
+    final cached = _inventoryRepository.peekSales(
+      wsId,
+      limit: _pageSize,
+      periodId: _selectedPeriodId,
+    );
+    final cachedPeriods = _inventoryRepository.peekSalesPeriods(wsId);
+
     setState(() {
+      _sales = cached?.data ?? const [];
+      _count = cached?.count ?? 0;
+      _salesPeriods = cachedPeriods ?? _salesPeriods;
+      _currency =
+          _financeRepository.peekWorkspaceDefaultCurrency(wsId) ?? 'USD';
+      _hasMore = _sales.length < _count;
       _isLoadingInitial = true;
       _isLoadingMore = false;
       _error = null;
