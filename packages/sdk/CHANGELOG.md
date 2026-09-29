@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/sdk-v0.24.0...sdk-v0.25.0) (2026-09-29)
+
+
+### Features
+
+* **devbox:** add platform Judge and fleet controls ([#5608](https://github.com/tutur3u/platform/issues/5608)) ([e83b9f2](https://github.com/tutur3u/platform/commit/e83b9f2025eedf7fd63df0a751b70134216c9b0a))
+* **devbox:** add sandboxed judge and runner controls ([787bbaa](https://github.com/tutur3u/platform/commit/787bbaa549b400771d34beeebcebc2a110b44c60))
+* **devboxes:** route agent control through Cloudflare ([98d4580](https://github.com/tutur3u/platform/commit/98d4580b39308fdd835e1762ebad102fe6ca3f02)) ([#5614](https://github.com/tutur3u/platform/issues/5614)) ([cbd18fa](https://github.com/tutur3u/platform/commit/cbd18fa70ee2d88c8b7e607ab56631c581b723c9))
+
+
+### Bug Fixes
+
+* **cli:** run Judge doctor without login ([fe344b8](https://github.com/tutur3u/platform/commit/fe344b88a4429300d296b5063baf7b34cd41cb86)) ([#5613](https://github.com/tutur3u/platform/issues/5613)) ([176f96f](https://github.com/tutur3u/platform/commit/176f96fdabfeb37f8930478c1b8d80267c1a8489))
+* **devbox:** enforce judge concurrency budgets ([f46ab79](https://github.com/tutur3u/platform/commit/f46ab798e4aae330bc6b2fe7d80de41f0f64715a))
+* **devbox:** restrict maintenance and validate judge results ([884bc77](https://github.com/tutur3u/platform/commit/884bc77cb01a85953cd11e85c937db62712ddccf))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/sdk-v0.23.0...sdk-v0.24.0) (2026-09-29)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/apis-v0.12.0...apis-v0.13.0) (2026-09-29)
+
+
+### Features
+
+* **mobile:** refresh workspace experience and offline edit foundation ([#5610](https://github.com/tutur3u/platform/issues/5610)) ([55a25b0](https://github.com/tutur3u/platform/commit/55a25b08d5fc14701dd8499bdc0eebdee094ae2f))
+* **mobile:** refresh workspace UX and build offline edit foundation ([b1a26c2](https://github.com/tutur3u/platform/commit/b1a26c2a918bdd9fcc0a460f0adbea7c914b44fc))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/apis-v0.11.4...apis-v0.12.0) (2026-09-29)
 
 

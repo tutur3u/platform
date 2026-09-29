@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.47.0](https://github.com/tutur3u/platform/compare/internal-api-v0.46.0...internal-api-v0.47.0) (2026-09-29)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **contacts:** automate tutoring scheduling and center policies ([4558b42](https://github.com/tutur3u/platform/commit/4558b426700615c5ca2839d43a658b476ca8ad81)) ([#5574](https://github.com/tutur3u/platform/issues/5574)) ([b5361e8](https://github.com/tutur3u/platform/commit/b5361e83c4975367cca24cccc474f2b463b42af6))
+* **contacts:** draft tutoring content from learning records ([786d7d7](https://github.com/tutur3u/platform/commit/786d7d70dc56fe408ec85de27777f46707b165a3))
+* **contacts:** improve tutoring workflow and scheduling ([5ee943f](https://github.com/tutur3u/platform/commit/5ee943fa61ff43086496fbcb72ad28f232e02803)) ([#5537](https://github.com/tutur3u/platform/issues/5537)) ([3a3b978](https://github.com/tutur3u/platform/commit/3a3b9785aa5e523aded2c2d03b7de56b864d1b6f))
+* **contacts:** let managers delete unmarked tutoring sessions ([08a8137](https://github.com/tutur3u/platform/commit/08a81378ceb7eb1a21eeb5aee05dc5f745f043d2))
+* **infrastructure:** export active mobile Dart defines for admins ([321888b](https://github.com/tutur3u/platform/commit/321888b2b40de076c14879a8989dca512a07a9bd)) ([#5620](https://github.com/tutur3u/platform/issues/5620)) ([d1bf607](https://github.com/tutur3u/platform/commit/d1bf60784ad27486484a7cfd449dd04f5dd04bd2))
+* **infrastructure:** provision reviewer and external QA accounts ([34b02e9](https://github.com/tutur3u/platform/commit/34b02e98d630c8a11300fba389c374e7e73acb6d)) ([#5624](https://github.com/tutur3u/platform/issues/5624)) ([d3e934e](https://github.com/tutur3u/platform/commit/d3e934e643006b2a1770677255f370eb610518a7))
+* **infrastructure:** publish reviewer credentials to Apple securely ([7008142](https://github.com/tutur3u/platform/commit/70081425c2e13db60aec41a2cf1989f1ac86104d))
+* **mobile:** refresh workspace experience and offline edit foundation ([#5610](https://github.com/tutur3u/platform/issues/5610)) ([55a25b0](https://github.com/tutur3u/platform/commit/55a25b08d5fc14701dd8499bdc0eebdee094ae2f))
+* **mobile:** refresh workspace UX and build offline edit foundation ([b1a26c2](https://github.com/tutur3u/platform/commit/b1a26c2a918bdd9fcc0a460f0adbea7c914b44fc))
+* **notes:** add archive views and structured editing ([1c78aa2](https://github.com/tutur3u/platform/commit/1c78aa292ebca25660c1ec7464cd6cc02144c82a))
+* **notes:** add device lock with passkey and QR recovery ([f8ad1f9](https://github.com/tutur3u/platform/commit/f8ad1f9b3e6a2008411337aced706227d732f068)) ([#5583](https://github.com/tutur3u/platform/issues/5583)) ([7f9372b](https://github.com/tutur3u/platform/commit/7f9372bd37886d73f93ab0f732d7603d17811115))
+* **notes:** add synced workspace notes on web and mobile ([47adf2e](https://github.com/tutur3u/platform/commit/47adf2e9a353e8f5f20f003570f0166b92f9a89b))
+* **notes:** add workspace Notes on web and mobile ([#5535](https://github.com/tutur3u/platform/issues/5535)) ([eeee849](https://github.com/tutur3u/platform/commit/eeee8494ba1198fc098d03cee34276dd40d39103))
+* **notes:** archive views and structured editing ([#5576](https://github.com/tutur3u/platform/issues/5576)) ([a67b186](https://github.com/tutur3u/platform/commit/a67b186318153cad8b10b71bbfc9335b80d0768a))
+* **tutoring:** configure eligibility and content reviews ([1a85645](https://github.com/tutur3u/platform/commit/1a85645cdc1402389cd2c590958c8ec5c9f22671)) ([#5582](https://github.com/tutur3u/platform/issues/5582)) ([05f24fc](https://github.com/tutur3u/platform/commit/05f24fc78f6b474a35b11a8c7647388be53e7240))
+* **tutoring:** exclude kindergarten groups in center preset ([40b6acd](https://github.com/tutur3u/platform/commit/40b6acdd1cd81cfcbaf3f06af0d73e2245d7b19e)) ([#5588](https://github.com/tutur3u/platform/issues/5588)) ([4eba095](https://github.com/tutur3u/platform/commit/4eba095b781d48410c6051fc121c773eb56fcb73))
+
+
+### Bug Fixes
+
+* **contacts:** honor workspace manager visibility in attendance ([60c2c4d](https://github.com/tutur3u/platform/commit/60c2c4ddd44465431291d5fe53c76332f2de0a27)) ([#5532](https://github.com/tutur3u/platform/issues/5532)) ([300eb11](https://github.com/tutur3u/platform/commit/300eb11bbf7753cdad9ada9f4dc2c4640c1a4509))
+* **contacts:** preserve Unicode in tutoring policy chunks ([4924886](https://github.com/tutur3u/platform/commit/4924886660933b5087ec2913450f87168c0bbb5e))
+* **contacts:** refine tutoring shifts and campus planning ([e12c60a](https://github.com/tutur3u/platform/commit/e12c60a71708c2c91b09bad7246c514663748a5f))
+* **contacts:** store tutoring policies within config limits ([a4cd184](https://github.com/tutur3u/platform/commit/a4cd1840ac145abc1f83682277ce26a77fccb44e)) ([#5577](https://github.com/tutur3u/platform/issues/5577)) ([071c7c5](https://github.com/tutur3u/platform/commit/071c7c52c0ed60209006140fb2251a644009ee12))
+* **finance:** count recurring sessions in subscription previews ([94119f5](https://github.com/tutur3u/platform/commit/94119f5126e2c48d7e096a572c5957610ce67724)) ([#5541](https://github.com/tutur3u/platform/issues/5541)) ([e645a51](https://github.com/tutur3u/platform/commit/e645a51b0c9006cc1baf66e9846c5656b2063220))
+* **finance:** respect class join dates in pending tuition ([1aaaff0](https://github.com/tutur3u/platform/commit/1aaaff054d9b87c8ada88af6bdcadb840e54a186)) ([#5618](https://github.com/tutur3u/platform/issues/5618)) ([4a0d26c](https://github.com/tutur3u/platform/commit/4a0d26ca1246cd4075e9fcc6ad3dd7a093861766))
+* **notes:** satisfy migration and source size gates ([d719d26](https://github.com/tutur3u/platform/commit/d719d2627520a466e62d7c2a45eb8c0c1a37b8e3))
+* **tasks:** clean up abandoned description media ([#5598](https://github.com/tutur3u/platform/issues/5598)) ([5ecc444](https://github.com/tutur3u/platform/commit/5ecc44436424947abb013d4dcd8f747eddeaf230))
+* **tasks:** reclaim abandoned description media ([5759b86](https://github.com/tutur3u/platform/commit/5759b869328448c12c2d46a07c3aa208d22c4c66))
+* **tutoring:** declare review fields on queue items ([0d7b22d](https://github.com/tutur3u/platform/commit/0d7b22d090da0461c679b972511917f77e7201f7))
+
 ## [0.46.0](https://github.com/tutur3u/platform/compare/internal-api-v0.45.1...internal-api-v0.46.0) (2026-09-29)
 
 

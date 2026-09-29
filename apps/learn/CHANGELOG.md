@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/learn-v0.27.0...learn-v0.28.0) (2026-09-29)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **devboxes:** route agent control through Cloudflare ([98d4580](https://github.com/tutur3u/platform/commit/98d4580b39308fdd835e1762ebad102fe6ca3f02)) ([#5614](https://github.com/tutur3u/platform/issues/5614)) ([cbd18fa](https://github.com/tutur3u/platform/commit/cbd18fa70ee2d88c8b7e607ab56631c581b723c9))
+* **education:** adopt satellite shells for Learn and Teach ([4e88589](https://github.com/tutur3u/platform/commit/4e88589bbee5def0d9d1b8d8882f93c18334c825)) ([#5533](https://github.com/tutur3u/platform/issues/5533)) ([e1dba1e](https://github.com/tutur3u/platform/commit/e1dba1e2ce2a85b84bd3e69253698d2f37694e6a))
+* **learn:** add multilingual coding lab ([491e49f](https://github.com/tutur3u/platform/commit/491e49fa28c208c6093ba873affcd58de6608a8a)) ([#5609](https://github.com/tutur3u/platform/issues/5609)) ([02d9424](https://github.com/tutur3u/platform/commit/02d942496bdf9df2f1491f243d4a51dd8df6a09a))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
+
+### Bug Fixes
+
+* **education:** label satellite navigation in Learn and Teach ([7728149](https://github.com/tutur3u/platform/commit/77281496b86def6f02afaaabea0fb39a89557717)) ([#5536](https://github.com/tutur3u/platform/issues/5536)) ([d76aa49](https://github.com/tutur3u/platform/commit/d76aa49d93303156d900c872ada803c43e1c8530))
+* **education:** show account and workspace in satellite sidebar ([6086530](https://github.com/tutur3u/platform/commit/608653081d22ea208bf3b153dfd29e322cd9c067)) ([#5572](https://github.com/tutur3u/platform/issues/5572)) ([7d12d14](https://github.com/tutur3u/platform/commit/7d12d14937bd980ed63acbfeee83d0134191d41b))
+* **education:** translate satellite shell controls ([4ebe6f7](https://github.com/tutur3u/platform/commit/4ebe6f7c213d82a903f56c257aea9f04ab7676e0)) ([#5538](https://github.com/tutur3u/platform/issues/5538)) ([ea043e5](https://github.com/tutur3u/platform/commit/ea043e5f42f157eb1eded660bc55b0752e6514f5))
+* **learn:** bind judge results to active editor attempt ([476933c](https://github.com/tutur3u/platform/commit/476933cae52b517c3de097258fcb765c82fb534c))
+* **learn:** show keyboard focus on test answers ([ebfa3ef](https://github.com/tutur3u/platform/commit/ebfa3ef6e95e69dde00ef083d665f19314fd91c5))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/learn-v0.26.0...learn-v0.27.0) (2026-09-29)
 
 

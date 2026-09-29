@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.30.0](https://github.com/tutur3u/platform/compare/infra-v0.29.0...infra-v0.30.0) (2026-09-29)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **devbox:** add platform Judge and fleet controls ([#5608](https://github.com/tutur3u/platform/issues/5608)) ([e83b9f2](https://github.com/tutur3u/platform/commit/e83b9f2025eedf7fd63df0a751b70134216c9b0a))
+* **devbox:** add sandboxed judge and runner controls ([787bbaa](https://github.com/tutur3u/platform/commit/787bbaa549b400771d34beeebcebc2a110b44c60))
+* **infrastructure:** export active mobile Dart defines for admins ([321888b](https://github.com/tutur3u/platform/commit/321888b2b40de076c14879a8989dca512a07a9bd)) ([#5620](https://github.com/tutur3u/platform/issues/5620)) ([d1bf607](https://github.com/tutur3u/platform/commit/d1bf60784ad27486484a7cfd449dd04f5dd04bd2))
+* **infrastructure:** provision reviewer and external QA accounts ([34b02e9](https://github.com/tutur3u/platform/commit/34b02e98d630c8a11300fba389c374e7e73acb6d)) ([#5624](https://github.com/tutur3u/platform/issues/5624)) ([d3e934e](https://github.com/tutur3u/platform/commit/d3e934e643006b2a1770677255f370eb610518a7))
+* **infrastructure:** publish reviewer credentials to Apple securely ([7008142](https://github.com/tutur3u/platform/commit/70081425c2e13db60aec41a2cf1989f1ac86104d))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
+
+### Bug Fixes
+
+* **devbox:** restrict maintenance and validate judge results ([884bc77](https://github.com/tutur3u/platform/commit/884bc77cb01a85953cd11e85c937db62712ddccf))
+* **infrastructure:** authorize satellite API clients ([4f2a3d1](https://github.com/tutur3u/platform/commit/4f2a3d1886669cae83d64d2b0c53669f2fe31674)) ([#5547](https://github.com/tutur3u/platform/issues/5547)) ([d877c6b](https://github.com/tutur3u/platform/commit/d877c6bc7b47b22e6f234adee7598a26ea7c3357))
+* **infrastructure:** block privileged external invite addresses ([00f8ae3](https://github.com/tutur3u/platform/commit/00f8ae398d27e3abdd87d3602bc985aa67dfc544))
+* **infrastructure:** honor app sessions across authorization helpers ([cc0de17](https://github.com/tutur3u/platform/commit/cc0de17d00cf2859b587d62d65f758dd2103df3f)) ([#5556](https://github.com/tutur3u/platform/issues/5556)) ([f67ad63](https://github.com/tutur3u/platform/commit/f67ad6369040b473490af0b1bacdeb0d1a09b464))
+* **infrastructure:** log safe mobile bundle denial codes ([f09d985](https://github.com/tutur3u/platform/commit/f09d985b21f28e92490d24ba53bd3ba16d851eac)) ([#5491](https://github.com/tutur3u/platform/issues/5491)) ([58c806c](https://github.com/tutur3u/platform/commit/58c806c6cb9005badf6df4facb484f5096975b0c))
+* **infrastructure:** prevent reviewer role inheritance ([4295f69](https://github.com/tutur3u/platform/commit/4295f694d00e84437df8bc082425d4cb104bf083))
+* **infrastructure:** tolerate slow GitHub OIDC key fetches ([ffcd795](https://github.com/tutur3u/platform/commit/ffcd795f81b32827842ac709224e9f3d45e81061)) ([#5493](https://github.com/tutur3u/platform/issues/5493)) ([fa1e3e1](https://github.com/tutur3u/platform/commit/fa1e3e199d4ea82db16e5ec8e704d80af13f2248))
+* **mobile:** allow parallel iOS release vault reads ([#5605](https://github.com/tutur3u/platform/issues/5605)) ([c2d414c](https://github.com/tutur3u/platform/commit/c2d414c7862b894eeba35d9bfeadafc9e290a4b4))
+* **mobile:** allow two iOS vault fetches for parallel store release ([8f3c7d6](https://github.com/tutur3u/platform/commit/8f3c7d6749aee9b4387519692ed3db2bc113ff61))
+* **mobile:** defer external TestFlight review while prior build is pending ([99c4cb4](https://github.com/tutur3u/platform/commit/99c4cb4e6aa413ea7df102b21c66f02aa2415291)) ([#5469](https://github.com/tutur3u/platform/issues/5469)) ([c617b62](https://github.com/tutur3u/platform/commit/c617b62a35ab7803639ac4d4309a3029f2c6a49d))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/infra-v0.28.0...infra-v0.29.0) (2026-09-29)
 
 

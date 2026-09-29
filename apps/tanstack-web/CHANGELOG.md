@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.38.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.37.0...tanstack-web-v0.38.0) (2026-09-29)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **contacts:** automate tutoring scheduling and center policies ([4558b42](https://github.com/tutur3u/platform/commit/4558b426700615c5ca2839d43a658b476ca8ad81)) ([#5574](https://github.com/tutur3u/platform/issues/5574)) ([b5361e8](https://github.com/tutur3u/platform/commit/b5361e83c4975367cca24cccc474f2b463b42af6))
+* **contacts:** improve tutoring workflow and scheduling ([5ee943f](https://github.com/tutur3u/platform/commit/5ee943fa61ff43086496fbcb72ad28f232e02803)) ([#5537](https://github.com/tutur3u/platform/issues/5537)) ([3a3b978](https://github.com/tutur3u/platform/commit/3a3b9785aa5e523aded2c2d03b7de56b864d1b6f))
+* **contacts:** let managers delete unmarked tutoring sessions ([08a8137](https://github.com/tutur3u/platform/commit/08a81378ceb7eb1a21eeb5aee05dc5f745f043d2))
+* **devbox:** add platform Judge and fleet controls ([#5608](https://github.com/tutur3u/platform/issues/5608)) ([e83b9f2](https://github.com/tutur3u/platform/commit/e83b9f2025eedf7fd63df0a751b70134216c9b0a))
+* **devbox:** add sandboxed judge and runner controls ([787bbaa](https://github.com/tutur3u/platform/commit/787bbaa549b400771d34beeebcebc2a110b44c60))
+* **meet:** improve mobile meeting entry and ended review ([a889bd1](https://github.com/tutur3u/platform/commit/a889bd13ecf417fdfb308e1fce8d09443d715329))
+* **meet:** improve tablet prejoin, listing, and ended review ([#5477](https://github.com/tutur3u/platform/issues/5477)) ([e507a8f](https://github.com/tutur3u/platform/commit/e507a8f5e45a6c308499090ab4ce0008369ac831))
+* **meet:** show speaker-attributed mobile transcripts ([f078fb4](https://github.com/tutur3u/platform/commit/f078fb422ef2461801054a87304948ac058e7a7d)) ([#5498](https://github.com/tutur3u/platform/issues/5498)) ([7c4dd5a](https://github.com/tutur3u/platform/commit/7c4dd5a44cd161ff30c7bf5b65b7cdcadea2dd96))
+* **mobile:** add native Meet Mira reviews ([#5468](https://github.com/tutur3u/platform/issues/5468)) ([db3b60a](https://github.com/tutur3u/platform/commit/db3b60a374642342ff538c04965ad61537419e04))
+* **mobile:** archive opened notifications quietly ([9685b0d](https://github.com/tutur3u/platform/commit/9685b0dd80ff5ba2349c915f9672ab5f5ae5b3b3)) ([#5467](https://github.com/tutur3u/platform/issues/5467)) ([e31cae8](https://github.com/tutur3u/platform/commit/e31cae8c430e849d6eb3bc9109abbea8fe785848))
+* **mobile:** bring public Mira reviews into native Meet ([ea5fb63](https://github.com/tutur3u/platform/commit/ea5fb6377527b7357db63493e84560facd8f75d6))
+* **mobile:** refresh workspace experience and offline edit foundation ([#5610](https://github.com/tutur3u/platform/issues/5610)) ([55a25b0](https://github.com/tutur3u/platform/commit/55a25b08d5fc14701dd8499bdc0eebdee094ae2f))
+* **mobile:** refresh workspace UX and build offline edit foundation ([b1a26c2](https://github.com/tutur3u/platform/commit/b1a26c2a918bdd9fcc0a460f0adbea7c914b44fc))
+* **notes:** add device lock with passkey and QR recovery ([f8ad1f9](https://github.com/tutur3u/platform/commit/f8ad1f9b3e6a2008411337aced706227d732f068)) ([#5583](https://github.com/tutur3u/platform/issues/5583)) ([7f9372b](https://github.com/tutur3u/platform/commit/7f9372bd37886d73f93ab0f732d7603d17811115))
+* **notes:** add synced workspace notes on web and mobile ([47adf2e](https://github.com/tutur3u/platform/commit/47adf2e9a353e8f5f20f003570f0166b92f9a89b))
+* **notes:** add workspace Notes on web and mobile ([#5535](https://github.com/tutur3u/platform/issues/5535)) ([eeee849](https://github.com/tutur3u/platform/commit/eeee8494ba1198fc098d03cee34276dd40d39103))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **web:** tell the ecosystem story and showcase company capabilities ([652636f](https://github.com/tutur3u/platform/commit/652636fa1bde776b42c2e630fe4cbc8b26ffe8a1)) ([#5512](https://github.com/tutur3u/platform/issues/5512)) ([7385173](https://github.com/tutur3u/platform/commit/7385173b45022653336d1a7d10c2087ebb8f49eb))
+
+
+### Bug Fixes
+
+* **contacts:** authenticate tutoring APIs from satellite ([aecb534](https://github.com/tutur3u/platform/commit/aecb534064a42ea963003b76d25608674044832b)) ([#5545](https://github.com/tutur3u/platform/issues/5545)) ([7162021](https://github.com/tutur3u/platform/commit/71620216c1387c226091c109b8d839fb041f6a69))
+* **contacts:** guard tutoring suggestions and content saves ([3dffdba](https://github.com/tutur3u/platform/commit/3dffdba7e21e7f1f3f5f3c626c012140af18b287))
+* **contacts:** honor workspace manager visibility in attendance ([60c2c4d](https://github.com/tutur3u/platform/commit/60c2c4ddd44465431291d5fe53c76332f2de0a27)) ([#5532](https://github.com/tutur3u/platform/issues/5532)) ([300eb11](https://github.com/tutur3u/platform/commit/300eb11bbf7753cdad9ada9f4dc2c4640c1a4509))
+* **mobile:** improve Assistant voice and gallery attachments ([#5534](https://github.com/tutur3u/platform/issues/5534)) ([fab87d7](https://github.com/tutur3u/platform/commit/fab87d7e51ba0ef36a9d53d89a748407942e89d0))
+* **mobile:** improve assistant voice and media attachments ([f733f5b](https://github.com/tutur3u/platform/commit/f733f5b981fd90bcbedb438e4b4ae7eb3cc4551c))
+* **mobile:** keep Mira Live scoped and stable across screens ([8aee732](https://github.com/tutur3u/platform/commit/8aee732b14142e6e185384a0e2f9cd2c83864934))
+* **mobile:** load profile activity with scoped access ([9f72637](https://github.com/tutur3u/platform/commit/9f72637e1e45581ab4ef9367716f32849b03f7a2))
+* **mobile:** restore Profile timeline on production ([#5627](https://github.com/tutur3u/platform/issues/5627)) ([3a5eb8d](https://github.com/tutur3u/platform/commit/3a5eb8d778c6cbcaa021adb90582dfa8c13c7bbe))
+* **mobile:** simplify Mira Live and require explicit connection ([#5573](https://github.com/tutur3u/platform/issues/5573)) ([8d3f52b](https://github.com/tutur3u/platform/commit/8d3f52be217d049ebd35ba003b29eaa79c0696ab))
+* **notifications:** run task deadline reminders in web cron ([d07db6c](https://github.com/tutur3u/platform/commit/d07db6c81eb69291b53bf43eb2aeb23215205037)) ([#5489](https://github.com/tutur3u/platform/issues/5489)) ([e37f45c](https://github.com/tutur3u/platform/commit/e37f45c43a8bd3fc40dbe068ff333e76d6e22698))
+* **parley:** complete workspace and deployment setup ([52e979f](https://github.com/tutur3u/platform/commit/52e979fef43a447aadf42b7ccf09e9579e0eee37))
+
 ## [0.37.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.36.0...tanstack-web-v0.37.0) (2026-09-29)
 
 

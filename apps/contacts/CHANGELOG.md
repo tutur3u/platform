@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/contacts-v0.25.1...contacts-v0.26.0) (2026-09-29)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **contacts:** automate tutoring scheduling and center policies ([4558b42](https://github.com/tutur3u/platform/commit/4558b426700615c5ca2839d43a658b476ca8ad81)) ([#5574](https://github.com/tutur3u/platform/issues/5574)) ([b5361e8](https://github.com/tutur3u/platform/commit/b5361e83c4975367cca24cccc474f2b463b42af6))
+* **contacts:** draft tutoring content from learning records ([786d7d7](https://github.com/tutur3u/platform/commit/786d7d70dc56fe408ec85de27777f46707b165a3))
+* **contacts:** improve tutoring workflow and scheduling ([5ee943f](https://github.com/tutur3u/platform/commit/5ee943fa61ff43086496fbcb72ad28f232e02803)) ([#5537](https://github.com/tutur3u/platform/issues/5537)) ([3a3b978](https://github.com/tutur3u/platform/commit/3a3b9785aa5e523aded2c2d03b7de56b864d1b6f))
+* **contacts:** let managers delete unmarked tutoring sessions ([08a8137](https://github.com/tutur3u/platform/commit/08a81378ceb7eb1a21eeb5aee05dc5f745f043d2))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+* **tutoring:** configure eligibility and content reviews ([1a85645](https://github.com/tutur3u/platform/commit/1a85645cdc1402389cd2c590958c8ec5c9f22671)) ([#5582](https://github.com/tutur3u/platform/issues/5582)) ([05f24fc](https://github.com/tutur3u/platform/commit/05f24fc78f6b474a35b11a8c7647388be53e7240))
+
+
+### Bug Fixes
+
+* **contacts:** guard tutoring suggestions and content saves ([3dffdba](https://github.com/tutur3u/platform/commit/3dffdba7e21e7f1f3f5f3c626c012140af18b287))
+* **contacts:** honor workspace manager visibility in attendance ([60c2c4d](https://github.com/tutur3u/platform/commit/60c2c4ddd44465431291d5fe53c76332f2de0a27)) ([#5532](https://github.com/tutur3u/platform/issues/5532)) ([300eb11](https://github.com/tutur3u/platform/commit/300eb11bbf7753cdad9ada9f4dc2c4640c1a4509))
+* **contacts:** refine tutoring shifts and campus planning ([e12c60a](https://github.com/tutur3u/platform/commit/e12c60a71708c2c91b09bad7246c514663748a5f))
+* **contacts:** report audit feed failures explicitly ([6e4107b](https://github.com/tutur3u/platform/commit/6e4107bfde2ae60a3703ab8449ba074973b99894))
+* **contacts:** restore feedback attention actions ([06fd5f3](https://github.com/tutur3u/platform/commit/06fd5f381547d4788fb08b660744b1f74aaa3212)) ([#5478](https://github.com/tutur3u/platform/issues/5478)) ([ad8f3ec](https://github.com/tutur3u/platform/commit/ad8f3ec12306fac967790dce0d072b43985f9248))
+* **contacts:** surface audit feed failures ([#5623](https://github.com/tutur3u/platform/issues/5623)) ([d16735d](https://github.com/tutur3u/platform/commit/d16735d82442e58d481084f5de21c5ac58803d43))
+* **finance:** respect class join dates in pending tuition ([1aaaff0](https://github.com/tutur3u/platform/commit/1aaaff054d9b87c8ada88af6bdcadb840e54a186)) ([#5618](https://github.com/tutur3u/platform/issues/5618)) ([4a0d26c](https://github.com/tutur3u/platform/commit/4a0d26ca1246cd4075e9fcc6ad3dd7a093861766))
+
 ## [0.25.1](https://github.com/tutur3u/platform/compare/contacts-v0.25.0...contacts-v0.25.1) (2026-09-29)
 
 
