@@ -16396,26 +16396,68 @@ abstract class AppLocalizations {
   /// No description provided for @appsCustomize.
   ///
   /// In en, this message translates to:
-  /// **'Arrange apps'**
+  /// **'Customize apps'**
   String get appsCustomize;
 
-  /// No description provided for @appsPin.
+  /// No description provided for @appsHide.
   ///
   /// In en, this message translates to:
-  /// **'Pin app'**
-  String get appsPin;
+  /// **'Hide app'**
+  String get appsHide;
 
-  /// No description provided for @appsUnpin.
+  /// No description provided for @appsShow.
   ///
   /// In en, this message translates to:
-  /// **'Unpin app'**
-  String get appsUnpin;
+  /// **'Show app'**
+  String get appsShow;
+
+  /// No description provided for @appsHiddenSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden apps'**
+  String get appsHiddenSection;
+
+  /// No description provided for @appsHideConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide this app?'**
+  String get appsHideConfirmTitle;
+
+  /// No description provided for @appsHideConfirmDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'It will move below your shown apps. You can show it again at any time.'**
+  String get appsHideConfirmDescription;
 
   /// No description provided for @appsReorder.
   ///
   /// In en, this message translates to:
   /// **'Drag to reorder'**
   String get appsReorder;
+
+  /// No description provided for @homeCustomize.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize Home'**
+  String get homeCustomize;
+
+  /// No description provided for @homeHideWidget.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide widget'**
+  String get homeHideWidget;
+
+  /// No description provided for @homeShowWidget.
+  ///
+  /// In en, this message translates to:
+  /// **'Show widget'**
+  String get homeShowWidget;
+
+  /// No description provided for @homeHiddenWidgets.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden widgets'**
+  String get homeHiddenWidgets;
 
   /// No description provided for @voiceMessage.
   ///

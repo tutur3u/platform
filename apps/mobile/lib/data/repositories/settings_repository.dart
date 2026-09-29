@@ -32,8 +32,20 @@ class SettingsRepository {
   Future<List<String>> getAppOrder() async =>
       (await SharedPreferences.getInstance()).getStringList('apps-order') ?? [];
 
-  Future<List<String>> getPinnedApps() async =>
-      (await SharedPreferences.getInstance()).getStringList('apps-pinned') ??
+  Future<List<String>> getHiddenApps() async =>
+      (await SharedPreferences.getInstance()).getStringList('apps-hidden') ??
+      [];
+
+  Future<List<String>> getHomeWidgetOrder() async =>
+      (await SharedPreferences.getInstance()).getStringList(
+        'home-widget-order',
+      ) ??
+      [];
+
+  Future<List<String>> getHiddenHomeWidgets() async =>
+      (await SharedPreferences.getInstance()).getStringList(
+        'home-widgets-hidden',
+      ) ??
       [];
 
   Future<void> setAppOrder(List<String> ids) async {
@@ -43,9 +55,23 @@ class SettingsRepository {
     );
   }
 
-  Future<void> setPinnedApps(List<String> ids) async {
+  Future<void> setHiddenApps(List<String> ids) async {
     await (await SharedPreferences.getInstance()).setStringList(
-      'apps-pinned',
+      'apps-hidden',
+      ids,
+    );
+  }
+
+  Future<void> setHomeWidgetOrder(List<String> ids) async {
+    await (await SharedPreferences.getInstance()).setStringList(
+      'home-widget-order',
+      ids,
+    );
+  }
+
+  Future<void> setHiddenHomeWidgets(List<String> ids) async {
+    await (await SharedPreferences.getInstance()).setStringList(
+      'home-widgets-hidden',
       ids,
     );
   }

@@ -8525,16 +8525,37 @@ class AppLocalizationsVi extends AppLocalizations {
   String get securityCheckTitle => 'Kiểm tra bảo mật';
 
   @override
-  String get appsCustomize => 'Sắp xếp ứng dụng';
+  String get appsCustomize => 'Tùy chỉnh ứng dụng';
 
   @override
-  String get appsPin => 'Ghim ứng dụng';
+  String get appsHide => 'Ẩn ứng dụng';
 
   @override
-  String get appsUnpin => 'Bỏ ghim ứng dụng';
+  String get appsShow => 'Hiện ứng dụng';
+
+  @override
+  String get appsHiddenSection => 'Ứng dụng đã ẩn';
+
+  @override
+  String get appsHideConfirmTitle => 'Ẩn ứng dụng này?';
+
+  @override
+  String get appsHideConfirmDescription => 'Ứng dụng sẽ chuyển xuống dưới các ứng dụng đang hiện. Bạn có thể hiện lại bất cứ lúc nào.';
 
   @override
   String get appsReorder => 'Kéo để sắp xếp';
+
+  @override
+  String get homeCustomize => 'Tùy chỉnh Trang chủ';
+
+  @override
+  String get homeHideWidget => 'Ẩn tiện ích';
+
+  @override
+  String get homeShowWidget => 'Hiện tiện ích';
+
+  @override
+  String get homeHiddenWidgets => 'Tiện ích đã ẩn';
 
   @override
   String get voiceMessage => 'Tin nhắn thoại';

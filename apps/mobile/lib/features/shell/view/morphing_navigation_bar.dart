@@ -37,17 +37,12 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
   Key? _settlingTarget;
   Timer? _settlingTimer;
 
-  void _updateDrag(
-    Offset position,
-    double width,
-    double scale, {
-    bool feedback = true,
-  }) {
+  void _updateDrag(Offset position, double width, double scale) {
     final target = _dragTarget(position, width, scale);
     setState(() => _dragPosition = position);
     if (target == _previewTarget) return;
     _previewTarget = target;
-    if (feedback && target != null) unawaited(AppHaptics.selection());
+    if (target != null) unawaited(AppHaptics.selection());
   }
 
   void _clearDrag() {
@@ -229,19 +224,8 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                   width: width,
                   height: 52,
                   child: Listener(
-                    onPointerDown: (event) {
-                      _updateDrag(
-                        event.localPosition,
-                        width,
-                        scale,
-                        feedback: false,
-                      );
+                    onPointerDown: (_) {
                       setState(() => _pressed = true);
-                    },
-                    onPointerMove: (event) {
-                      if (_pressed) {
-                        _updateDrag(event.localPosition, width, scale);
-                      }
                     },
                     onPointerUp: (_) => setState(() => _pressed = false),
                     onPointerCancel: (_) => _clearDrag(),

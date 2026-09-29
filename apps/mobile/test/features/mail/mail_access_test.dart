@@ -3,9 +3,9 @@ import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 
 void main() {
-  test('Mail is a core app without an experimental toggle', () {
-    expect(AppRegistry.coreModuleIds, contains('mail'));
-    expect(AppRegistry.experimentalModuleIds, isNot(contains('mail')));
+  test('Mail requires an experimental toggle in addition to access', () {
+    expect(AppRegistry.coreModuleIds, isNot(contains('mail')));
+    expect(AppRegistry.experimentalModuleIds, contains('mail'));
   });
   test('Mail discovery accepts exact Tuturuuu accounts', () {
     for (final email in ['phucvo@tuturuuu.com', 'NAME@TUTURUUU.COM']) {

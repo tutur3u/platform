@@ -129,6 +129,9 @@ class _CustomNavItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: _resolvedBorderRadius(context),
+        splashFactory: compact ? NoSplash.splashFactory : null,
+        splashColor: compact ? Colors.transparent : null,
+        highlightColor: compact ? Colors.transparent : null,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,

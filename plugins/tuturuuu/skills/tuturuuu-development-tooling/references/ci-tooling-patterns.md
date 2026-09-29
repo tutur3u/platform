@@ -26,6 +26,10 @@ formatting behavior, or repo-wide verification.
 - For TypeScript, JavaScript, root scripts, or repo config changes, finish with
   `bun check` unless a documented unrelated blocker prevents it.
 - Use focused package-local tests first, then repo checks.
+- Normally run the applicable check, lint, test, and build workflows in CI for
+  the exact authored commit, then inspect their terminal results. A demonstrably
+  stuck queue can defer this proof; record pending jobs and local evidence, and
+  finish exact-commit CI before calling the change release-ready.
 - For single-package validation, prefer package-local commands such as
   `bun --cwd packages/ai vitest run ...` instead of root commands that fan out
   through Turbo.

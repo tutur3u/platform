@@ -54,6 +54,56 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('tap glides the highlight without a button splash', (
+    tester,
+  ) async {
+    Key? selected = const ValueKey('home');
+    late StateSetter rebuild;
+    await tester.pumpApp(
+      StatefulBuilder(
+        builder: (context, setState) {
+          rebuild = setState;
+          return Center(
+            child: MorphingNavigationBar(
+              selectedKey: selected,
+              onSelected: (key) => rebuild(() => selected = key),
+              children: const [
+                shad.NavigationItem(key: ValueKey('home'), child: Text('Home')),
+                shad.NavigationItem(key: ValueKey('apps'), child: Text('Apps')),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    final pill = find.byKey(const ValueKey('navigation-selection-indicator'));
+    final homeX = tester.getCenter(pill).dx;
+    final appsX = tester.getCenter(find.text('Apps')).dx;
+    final appsInk = tester.widget<InkWell>(
+      find
+          .ancestor(of: find.text('Apps'), matching: find.byType(InkWell))
+          .first,
+    );
+    expect(appsInk.splashFactory, NoSplash.splashFactory);
+    expect(appsInk.highlightColor, Colors.transparent);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Apps')),
+    );
+    await tester.pump();
+    expect(tester.getCenter(pill).dx, closeTo(homeX, 1));
+    expect(find.byKey(const ValueKey('navigation-drag-preview')), findsNothing);
+    await gesture.up();
+    await tester.pump();
+    expect(tester.getCenter(pill).dx, closeTo(homeX, 1));
+    await tester.pump(const Duration(milliseconds: 140));
+    expect(tester.getCenter(pill).dx, greaterThan(homeX));
+    expect(tester.getCenter(pill).dx, lessThan(appsX));
+    await tester.pumpAndSettle();
+    expect(tester.getCenter(pill).dx, closeTo(appsX, 1));
+  });
+
   testWidgets('background rebuild retains drag and uses the current callback', (
     tester,
   ) async {

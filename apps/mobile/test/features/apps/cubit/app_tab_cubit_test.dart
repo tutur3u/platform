@@ -64,10 +64,10 @@ void main() {
     });
   }
 
-  test('app order, pins and tab visibility survive a restart', () async {
+  test('app order, hidden apps and tab visibility survive a restart', () async {
     final first = AppTabCubit(settingsRepository: SettingsRepository());
     await first.setAppOrder(['calendar', 'mail', 'tasks']);
-    await first.togglePinnedApp('mail');
+    await first.setAppHidden('mail', hidden: true);
     await first.setShowAppsTab(value: true);
     await first.recordAppOrigin(Routes.apps);
     await first.close();
@@ -75,34 +75,31 @@ void main() {
     addTearDown(restored.close);
     await restored.loadLastApp();
     expect(restored.state.appOrder, ['calendar', 'mail', 'tasks']);
-    expect(restored.state.pinnedApps, ['mail']);
+    expect(restored.state.hiddenAppIds, ['mail']);
     expect(restored.state.showAppsTab, isTrue);
     expect(restored.state.appOrigin, Routes.apps);
-    await restored.togglePinnedApp('mail');
-    expect(restored.state.pinnedApps, isEmpty);
+    await restored.setAppHidden('mail', hidden: false);
+    expect(restored.state.hiddenAppIds, isEmpty);
   });
 
-  test(
-    'picker and editor share default order and honor pins and saved order',
-    () async {
-      final cubit = AppTabCubit(settingsRepository: SettingsRepository());
-      addTearDown(cubit.close);
-      final modules = [
-        'mail',
-        'calendar',
-        'tasks',
-      ].map((id) => AppRegistry.moduleById(id)!).toList();
-      List<String> ids() =>
-          arrangeApps(modules, cubit).map((app) => app.id).toList();
-      expect(ids(), ['tasks', 'calendar', 'mail']);
-      await cubit.setAppOrder(['calendar', 'tasks', 'mail']);
-      expect(ids(), ['calendar', 'tasks', 'mail']);
-      await cubit.togglePinnedApp('mail');
-      expect(ids(), ['calendar', 'tasks', 'mail']);
-      await cubit.togglePinnedApp('mail');
-      expect(ids(), ['calendar', 'tasks', 'mail']);
-    },
-  );
+  test('picker and editor keep hidden apps below shown apps', () async {
+    final cubit = AppTabCubit(settingsRepository: SettingsRepository());
+    addTearDown(cubit.close);
+    final modules = [
+      'mail',
+      'calendar',
+      'tasks',
+    ].map((id) => AppRegistry.moduleById(id)!).toList();
+    List<String> ids() =>
+        arrangeApps(modules, cubit).map((app) => app.id).toList();
+    expect(ids(), ['tasks', 'calendar', 'mail']);
+    await cubit.setAppOrder(['calendar', 'tasks', 'mail']);
+    expect(ids(), ['calendar', 'tasks', 'mail']);
+    await cubit.setAppHidden('calendar', hidden: true);
+    expect(ids(), ['tasks', 'mail', 'calendar']);
+    await cubit.setAppHidden('calendar', hidden: false);
+    expect(ids(), ['calendar', 'tasks', 'mail']);
+  });
 
   test('clearSelection cancels stale loadLastApp result', () async {
     final settings = _DelayedSettingsRepository(Routes.timer);

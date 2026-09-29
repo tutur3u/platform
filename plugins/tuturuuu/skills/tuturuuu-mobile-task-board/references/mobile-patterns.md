@@ -9,6 +9,10 @@ localization changes.
   `flutter analyze` or tests. Generated localization files are tracked.
 - Use Dart formatting or `bun check:mobile` for Dart files. `bun ff` does not
   format Dart and may fail with "No files were processed."
+- Run applicable mobile tests and native builds in CI for the exact authored
+  commit as the normal branch verification path. A demonstrably stuck CI queue
+  can defer that proof; record pending jobs and local results, then resume CI
+  before calling the change release-ready.
 - Do not manually bump `apps/mobile/pubspec.yaml` for ordinary authored mobile
   behavior changes. Release Please owns mobile version updates.
 - Keep `mobile-build-ios.yaml` on CocoaPods by disabling Flutter Swift Package

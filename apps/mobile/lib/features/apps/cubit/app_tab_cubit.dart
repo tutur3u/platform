@@ -63,15 +63,23 @@ class AppTabCubit extends Cubit<AppTabState> {
   }
 
   Future<void> setAppOrder(List<String> ids) async {
-    if (!isClosed) emit(state.copyWith(appOrder: List.unmodifiable(ids)));
-    await _settings.setAppOrder(ids);
+    final ordered = [
+      ...ids.toSet(),
+      ...state.appOrder.where((id) => !ids.contains(id)),
+    ];
+    if (!isClosed) emit(state.copyWith(appOrder: List.unmodifiable(ordered)));
+    await _settings.setAppOrder(ordered);
   }
 
-  Future<void> togglePinnedApp(String id) async {
-    final ids = [...state.pinnedApps];
-    if (!ids.remove(id)) ids.add(id);
-    await _settings.setPinnedApps(ids);
-    if (!isClosed) emit(state.copyWith(pinnedApps: List.unmodifiable(ids)));
+  Future<void> setAppHidden(String id, {required bool hidden}) async {
+    final ids = [...state.hiddenAppIds];
+    if (hidden) {
+      if (!ids.contains(id)) ids.add(id);
+    } else {
+      ids.remove(id);
+    }
+    if (!isClosed) emit(state.copyWith(hiddenAppIds: List.unmodifiable(ids)));
+    await _settings.setHiddenApps(ids);
   }
 
   Future<void> loadLastApp() async {
@@ -88,8 +96,10 @@ class AppTabCubit extends Cubit<AppTabState> {
         emit(state.copyWith(appOrigin: _rootOrigin(origin)));
       }
       final order = await _settings.getAppOrder();
-      final pins = await _settings.getPinnedApps();
-      if (!isClosed) emit(state.copyWith(appOrder: order, pinnedApps: pins));
+      final hidden = await _settings.getHiddenApps();
+      if (!isClosed) {
+        emit(state.copyWith(appOrder: order, hiddenAppIds: hidden));
+      }
     } on Object {
       // Preferences are optional; keep the default app order on read failure.
     }

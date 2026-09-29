@@ -47,17 +47,13 @@ class AppRegistry {
     ),
   ];
 
-  static const Set<String> coreModuleIds = {
-    'mail',
-    'tasks',
-    'chat',
-    'calendar',
-    'finance',
-    'meet',
-    'notes',
-  };
+  static const Set<String> coreModuleIds = {'tasks', 'calendar', 'finance'};
 
   static const Set<String> experimentalModuleIds = {
+    'mail',
+    'chat',
+    'meet',
+    'notes',
     'habits',
     'drive',
     'documents',
@@ -77,7 +73,6 @@ class AppRegistry {
       labelBuilder: _labelHabits,
       pageBuilder: _pageHabits,
       miniAppNavItems: _habitsMiniNav,
-      isPinned: true,
       isVisible: _showHabitsModule,
     ),
     AppModule(
@@ -87,7 +82,6 @@ class AppRegistry {
       labelBuilder: _labelTasks,
       pageBuilder: _pageTasks,
       miniAppNavItems: _tasksMiniNav,
-      isPinned: true,
     ),
     AppModule(
       id: 'chat',
@@ -96,7 +90,7 @@ class AppRegistry {
       labelBuilder: _labelChat,
       pageBuilder: _pageChat,
       miniAppNavItems: _chatMiniNav,
-      isPinned: true,
+      isVisible: _showChatModule,
     ),
     AppModule(
       id: 'calendar',
@@ -105,7 +99,6 @@ class AppRegistry {
       labelBuilder: _labelCalendar,
       pageBuilder: _pageCalendar,
       miniAppNavItems: _calendarMiniNav,
-      isPinned: true,
     ),
     AppModule(
       id: 'finance',
@@ -114,7 +107,6 @@ class AppRegistry {
       labelBuilder: _labelFinance,
       pageBuilder: _pageFinance,
       miniAppNavItems: _financeMiniNav,
-      isPinned: true,
     ),
     AppModule(
       id: 'drive',
@@ -141,7 +133,7 @@ class AppRegistry {
       labelBuilder: _labelNotes,
       pageBuilder: _pageNotes,
       miniAppNavItems: _notesMiniNav,
-      isPinned: true,
+      isVisible: _showNotesModule,
     ),
     AppModule(
       id: 'cms',
@@ -186,7 +178,6 @@ class AppRegistry {
       labelBuilder: _labelInventory,
       pageBuilder: _pageInventory,
       miniAppNavItems: _inventoryMiniNav,
-      isPinned: true,
       isVisible: _showInventoryModule,
     ),
     AppModule(
@@ -196,7 +187,6 @@ class AppRegistry {
       labelBuilder: _labelTimer,
       pageBuilder: _pageTimer,
       miniAppNavItems: _timerMiniNav,
-      isPinned: true,
       isVisible: _showTimerModule,
     ),
     AppModule(
@@ -502,7 +492,13 @@ class AppRegistry {
       _isExperimentalModuleAvailable(context, 'crm');
 
   static bool _showMeetModule(BuildContext context) =>
-      !_isModuleHiddenByWorkspaceSecret(context, 'meet');
+      _isExperimentalModuleAvailable(context, 'meet');
+
+  static bool _showChatModule(BuildContext context) =>
+      _isExperimentalModuleAvailable(context, 'chat');
+
+  static bool _showNotesModule(BuildContext context) =>
+      _isExperimentalModuleAvailable(context, 'notes');
 
   static bool _showHabitsModule(BuildContext context) {
     if (!_isExperimentalModuleAvailable(context, 'habits')) {
@@ -564,12 +560,6 @@ class AppRegistry {
     return allModules
         .where((module) => experimentalModuleIds.contains(module.id))
         .toList(growable: false);
-  }
-
-  static List<AppModule> pinnedModules(BuildContext context) {
-    return modules(
-      context,
-    ).where((module) => module.isPinned).toList(growable: false);
   }
 
   static AppModule? moduleById(String? id) {

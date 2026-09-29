@@ -344,8 +344,12 @@ five-minute submission time.
 Run focused release checks with `node --test scripts/mobile-deployment/*.test.mjs
 scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun check`
 for repository validation and `ttr resources run -- bun check:mobile` for the
-Flutter checks. Store availability still requires an authenticated release run
-with the active production vault and real signing assets.
+Flutter checks. Normally run the applicable mobile tests and native builds in
+CI on the exact branch commit, even when local checks pass. If the CI queue is
+demonstrably stuck, record the pending jobs and local evidence, then finish the
+exact-commit CI checks before treating the release as ready. Store availability
+still requires an authenticated release run with the active production vault
+and real signing assets.
 
 ## Device authenticator smoke checks
 

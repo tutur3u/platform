@@ -8567,16 +8567,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get securityCheckTitle => 'Security check';
 
   @override
-  String get appsCustomize => 'Arrange apps';
+  String get appsCustomize => 'Customize apps';
 
   @override
-  String get appsPin => 'Pin app';
+  String get appsHide => 'Hide app';
 
   @override
-  String get appsUnpin => 'Unpin app';
+  String get appsShow => 'Show app';
+
+  @override
+  String get appsHiddenSection => 'Hidden apps';
+
+  @override
+  String get appsHideConfirmTitle => 'Hide this app?';
+
+  @override
+  String get appsHideConfirmDescription => 'It will move below your shown apps. You can show it again at any time.';
 
   @override
   String get appsReorder => 'Drag to reorder';
+
+  @override
+  String get homeCustomize => 'Customize Home';
+
+  @override
+  String get homeHideWidget => 'Hide widget';
+
+  @override
+  String get homeShowWidget => 'Show widget';
+
+  @override
+  String get homeHiddenWidgets => 'Hidden widgets';
 
   @override
   String get voiceMessage => 'Voice message';
