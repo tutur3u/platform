@@ -282,9 +282,9 @@ class _DockActionsState extends State<_DockActions> {
                         style: FilledButton.styleFrom(
                           backgroundColor: index == 0
                               ? Theme.of(context).colorScheme.onSurface
-                              : Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHigh,
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHigh,
                           foregroundColor: index == 0
                               ? Theme.of(context).colorScheme.surface
                               : Theme.of(context).colorScheme.onSurface,

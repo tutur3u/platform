@@ -109,12 +109,15 @@ void main() {
       when(() => profileRepository.getCachedProfile()).thenAnswer(
         (_) async => (profile: _cachedProfile, fetchedAt: DateTime.now()),
       );
-      when(() => profileRepository.getProfile())
-          .thenAnswer((_) async => (profile: _cachedProfile, error: null));
-      when(() => profileRepository.saveCachedProfile(any()))
-          .thenAnswer((_) async {});
-      when(() => profileRepository.clearCachedProfile())
-          .thenAnswer((_) async {});
+      when(
+        () => profileRepository.getProfile(),
+      ).thenAnswer((_) async => (profile: _cachedProfile, error: null));
+      when(
+        () => profileRepository.saveCachedProfile(any()),
+      ).thenAnswer((_) async {});
+      when(
+        () => profileRepository.clearCachedProfile(),
+      ).thenAnswer((_) async {});
     });
 
     testWidgets('app settings renders compact top-level sections', (

@@ -56,14 +56,7 @@ void main() {
           selectedKey: const ValueKey('home'),
           onSelected: (key) => selected = key,
           children: const [
-            shad.NavigationItem(
-              key: ValueKey('home'),
-              child: Tooltip(
-                message: 'Home preview',
-                triggerMode: TooltipTriggerMode.manual,
-                child: Text('Home'),
-              ),
-            ),
+            shad.NavigationItem(key: ValueKey('home'), child: Text('Home')),
             shad.NavigationItem(key: ValueKey('apps'), child: Text('Apps')),
             shad.NavigationItem(
               key: ValueKey('notifications'),
@@ -81,7 +74,7 @@ void main() {
       find.byKey(const ValueKey('navigation-drag-preview')),
       findsOneWidget,
     );
-    expect(find.text('Home preview'), findsOneWidget);
+    expect(find.byType(Tooltip), findsNothing);
     await gesture.moveTo(tester.getCenter(find.text('Notifications')));
     await tester.pump();
     expect(selected, isNull);
