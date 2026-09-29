@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions, audit, private;
 
-select plan(13);
+select plan(17);
 
 select ok(
   not exists (
@@ -64,13 +64,41 @@ values (
 )
 on conflict (id) do nothing;
 
-insert into public.workspace_user_groups_users (group_id, user_id, role)
+insert into public.workspace_user_groups_users (group_id, user_id, role, created_at)
 values (
   '00000000-0000-0000-0000-000000030101',
   '00000000-0000-0000-0000-000000030201',
-  'STUDENT'
+  'STUDENT',
+  '2026-01-15 08:00:00+07'
 )
 on conflict (group_id, user_id) do nothing;
+
+do $$ begin
+  perform private.admin_upsert_workspace_user_group_members_with_audit_actor(
+    '00000000-0000-0000-0000-000000030010',
+    '00000000-0000-0000-0000-000000030101',
+    array['00000000-0000-0000-0000-000000030201'::uuid],
+    'TEACHER',
+    null
+  );
+end $$;
+
+select is(
+  (select created_at from public.workspace_user_groups_users where group_id = '00000000-0000-0000-0000-000000030101' and user_id = '00000000-0000-0000-0000-000000030201'),
+  '2026-01-15 08:00:00+07'::timestamptz,
+  'changing membership role preserves the original join timestamp'
+);
+
+select ok(
+  exists (
+    select 1 from audit.record_version log
+    where log.table_schema = 'public'
+      and log.table_name = 'workspace_user_groups_users'
+      and log.op = 'UPDATE'
+      and log.record->>'user_id' = '00000000-0000-0000-0000-000000030201'
+  ),
+  'the membership role change is recorded in the audit history'
+);
 
 insert into public.user_group_attendance (
   id,
@@ -158,6 +186,34 @@ select is(
   ),
   1,
   'historical attendance remains visible after re-adding membership'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from audit.record_version log
+    where log.table_schema = 'public'
+      and log.table_name = 'workspace_user_groups_users'
+      and coalesce(log.record, log.old_record)->>'user_id' = '00000000-0000-0000-0000-000000030201'
+      and coalesce(log.record, log.old_record)->>'group_id' = '00000000-0000-0000-0000-000000030101'
+      and log.op in ('INSERT', 'DELETE')
+  ),
+  3,
+  'membership audit retains the initial join, departure, and rejoin'
+);
+
+select ok(
+  exists (
+    select 1
+    from audit.record_version log
+    where log.table_schema = 'public'
+      and log.table_name = 'workspace_user_groups_users'
+      and log.op = 'INSERT'
+      and log.record->>'user_id' = '00000000-0000-0000-0000-000000030201'
+      and log.record->>'group_id' = '00000000-0000-0000-0000-000000030101'
+      and log.record->>'created_at' is not null
+  ),
+  'each recorded join preserves its membership timestamp for analytics'
 );
 
 insert into audit.record_version (

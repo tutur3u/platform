@@ -9350,6 +9350,7 @@
     "generate_module_error": "Failed to generate module",
     "generate_module_success": "Course module(s) generated successfully!",
     "generate_module_with_ai": "Generate course module with AI",
+    "joined_on": "Joined on",
     "link_copied": "Link copied to clipboard",
     "manager": "Manager",
     "managers": "Managers",

@@ -334,3 +334,26 @@ shows an error and produces no partial download. This catches incomplete reads;
 it cannot reconstruct a historical omission without the original export or
 its date and filters. Pending eligibility still depends on configured group
 exclusions, class schedules and attendance calculation settings.
+
+Pending tuition begins no earlier than the student's recorded class membership
+date or the class start date, whichever is later. A class's earlier scheduled
+sessions and attendance are never assigned to a student who joined later,
+including earlier days in the joining month. Membership dates
+are read in the workspace's Ho Chi Minh time zone. Contacts group member cards
+show the current membership's join date. Adding, removing, and re-adding a
+member creates separate membership events in the existing group audit feed;
+the active membership timestamp is stable when a member's role is changed.
+Analytics can use that event history for joins and departures without treating
+a newly added membership as if it existed when the class started. Legacy null
+timestamps and activity before audit tracking began are unknown, not inferred
+from a receipt or the person's name. For a null join timestamp, automated
+scheduled-session billing starts no earlier than today; staff must reconcile
+earlier months from source records. Existing completed invoices
+cover only their recorded tuition months (or the legacy coverage cutoff); a
+September receipt does not by itself settle July or August if the student was
+already enrolled in those months. Correct historical membership dates and
+payments at their source rather than hiding disputed rows by name. The pending
+tab badge, table pagination and CSV/Excel export all count the same all-month,
+student-class rows, including older unpaid months. This behavior applies to
+the shared Finance UI in web and Finance; grouped-by-student mode instead
+counts one row per student in each surface.

@@ -1199,7 +1199,10 @@ function buildInvoiceAnalyticsSearchParams(query: InvoiceAnalyticsQuery) {
 }
 
 function buildPendingFinanceInvoicesSearchParams(
-  query: PendingFinanceInvoicesQuery & { currentMonthOnly?: boolean }
+  query: PendingFinanceInvoicesQuery & {
+    countOnly?: boolean;
+    currentMonthOnly?: boolean;
+  }
 ) {
   const searchParams = new URLSearchParams();
 
@@ -1211,6 +1214,9 @@ function buildPendingFinanceInvoicesSearchParams(
   }
   if (query.currentMonthOnly !== undefined) {
     searchParams.set('currentMonthOnly', String(query.currentMonthOnly));
+  }
+  if (query.countOnly !== undefined) {
+    searchParams.set('countOnly', String(query.countOnly));
   }
 
   appendFinanceArrayParam(searchParams, 'userIds', query.userIds);
@@ -1389,6 +1395,19 @@ export async function getPendingFinanceInvoicesCurrentMonthCount(
     {
       cache: 'no-store',
     }
+  );
+}
+
+/** The unfiltered total used by the pending table and its export. */
+export async function getPendingFinanceInvoicesCount(
+  workspaceId: string,
+  query: Pick<PendingFinanceInvoicesQuery, 'groupByUser'> = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
+  return client.json<number>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices/pending${buildPendingFinanceInvoicesSearchParams({ ...query, countOnly: true })}`,
+    { cache: 'no-store' }
   );
 }
 

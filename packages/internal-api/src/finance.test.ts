@@ -9,6 +9,7 @@ import {
   deleteInvoice,
   deleteWalletCheckpoint,
   getInvoiceAnalytics,
+  getPendingFinanceInvoicesCount,
   getPendingFinanceInvoicesCurrentMonthCount,
   getSubscriptionInvoiceContext,
   getWalletCheckpointHistory,
@@ -420,11 +421,12 @@ describe('finance internal API helpers', () => {
     );
   });
 
-  it('lists pending invoices and current-month counts through invoice helpers', async () => {
+  it('lists pending invoices and exposes both all-month and current-month counts', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(createJsonResponse({ count: 0, data: [] }))
-      .mockResolvedValueOnce(createJsonResponse(3));
+      .mockResolvedValueOnce(createJsonResponse(3))
+      .mockResolvedValueOnce(createJsonResponse(5));
 
     const options = {
       baseUrl: 'https://internal.example.com',
@@ -446,6 +448,11 @@ describe('finance internal API helpers', () => {
       { groupByUser: true },
       options
     );
+    await getPendingFinanceInvoicesCount(
+      'workspace 1',
+      { groupByUser: true },
+      options
+    );
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -460,6 +467,11 @@ describe('finance internal API helpers', () => {
       expect.objectContaining({
         cache: 'no-store',
       })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/finance/invoices/pending?groupByUser=true&countOnly=true',
+      expect.objectContaining({ cache: 'no-store' })
     );
   });
 

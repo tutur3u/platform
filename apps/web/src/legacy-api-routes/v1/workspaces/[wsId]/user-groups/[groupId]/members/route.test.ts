@@ -101,6 +101,7 @@ describe('workspace user group members route', () => {
     const membersQuery = createQuery({
       data: [
         {
+          created_at: '2026-09-27T02:00:00+00:00',
           role: 'STUDENT',
           workspace_users: {
             archived: false,
@@ -145,13 +146,14 @@ describe('workspace user group members route', () => {
           display_name: 'Learner',
           id: '11111111-1111-4111-8111-111111111111',
           isGuest: false,
+          joined_at: '2026-09-27T02:00:00+00:00',
           role: 'STUDENT',
         },
       ],
       count: 1,
     });
     expect(membersQuery.select).toHaveBeenCalledWith(
-      'workspace_users!workspace_user_roles_users_user_id_fkey!inner(id, display_name, full_name, avatar_url, archived, archived_until, note, birthday, gender, email, phone), role',
+      'workspace_users!workspace_user_roles_users_user_id_fkey!inner(id, display_name, full_name, avatar_url, archived, archived_until, note, birthday, gender, email, phone), role, created_at',
       { count: 'exact' }
     );
     expect(membersQuery.eq).toHaveBeenCalledWith('group_id', 'group-1');

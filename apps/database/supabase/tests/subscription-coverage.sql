@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(13);
+select plan(17);
 select has_column('public', 'finance_invoices', 'subscription_months', 'Invoices retain explicit tuition months');
 select ok(private.valid_subscription_months(null), 'Unknown legacy coverage is allowed');
 select ok(private.valid_subscription_months(array['2026-07-01','2026-09-01']::date[]), 'Noncontiguous tuition months retain gaps');
@@ -17,7 +17,7 @@ insert into private.workspace_wallets(id, ws_id, name) values ('00000000-0000-40
 insert into public.transaction_categories(id, ws_id, name, is_expense) values ('00000000-0000-4000-8000-000000099003', '00000000-0000-4000-8000-000000099001', 'Tuition', false);
 insert into public.workspace_users(id, ws_id, full_name) values ('00000000-0000-4000-8000-000000099004', '00000000-0000-4000-8000-000000099001', 'Coverage student');
 insert into public.workspace_user_groups(id, ws_id, name, starting_date) values ('00000000-0000-4000-8000-000000099005', '00000000-0000-4000-8000-000000099001', 'Coverage class', date_trunc('month', current_date) - interval '2 months');
-insert into public.workspace_user_groups_users(user_id, group_id, role) values ('00000000-0000-4000-8000-000000099004', '00000000-0000-4000-8000-000000099005', 'STUDENT');
+insert into public.workspace_user_groups_users(user_id, group_id, role, created_at) values ('00000000-0000-4000-8000-000000099004', '00000000-0000-4000-8000-000000099005', 'STUDENT', date_trunc('month', current_date) - interval '2 months');
 insert into private.workspace_user_group_sessions(ws_id, group_id, starts_at, ends_at)
 select '00000000-0000-4000-8000-000000099001', '00000000-0000-4000-8000-000000099005', month + interval '4 days 12 hours', month + interval '4 days 13 hours'
 from generate_series(date_trunc('month', current_date) - interval '2 months', date_trunc('month', current_date), interval '1 month') month;
@@ -30,5 +30,20 @@ select is((select month from public.get_pending_invoices_base('00000000-0000-400
 select is((select (jsonb_populate_record(null::public.finance_invoices,to_jsonb(fi))).subscription_months from public.finance_invoices fi where id='00000000-0000-4000-8000-000000099006'), array[(date_trunc('month',current_date) - interval '2 months')::date,date_trunc('month',current_date)::date], 'Recovery snapshots retain exact coverage');
 update public.finance_invoices set completed_at=null where id='00000000-0000-4000-8000-000000099006';
 select is((select count(*)::int from public.get_pending_invoices_base('00000000-0000-4000-8000-000000099001',false)), 3, 'Uncompleted invoices do not cover months');
+update public.workspace_user_groups_users set created_at = date_trunc('month', current_date)
+where user_id = '00000000-0000-4000-8000-000000099004' and group_id = '00000000-0000-4000-8000-000000099005';
+select is((select count(*)::int from public.get_pending_invoices_base('00000000-0000-4000-8000-000000099001',false)), 1, 'A new student does not owe sessions before joining an older class');
+update public.finance_invoices set completed_at = now(), subscription_months = array[date_trunc('month', current_date)::date] where id='00000000-0000-4000-8000-000000099006';
+select is((select count(*)::int from public.get_pending_invoices_base('00000000-0000-4000-8000-000000099001',false)), 0, 'The enrolled month disappears after its completed payment');
+update public.finance_invoices set completed_at = null where id='00000000-0000-4000-8000-000000099006';
+update public.workspace_user_groups_users set created_at = date_trunc('month', current_date) + interval '5 days'
+where user_id = '00000000-0000-4000-8000-000000099004' and group_id = '00000000-0000-4000-8000-000000099005';
+select is((select count(*)::int from public.get_pending_invoices_base('00000000-0000-4000-8000-000000099001',false)), 0, 'Sessions before the join day do not create debt in the join month');
+update public.workspace_user_groups_users set created_at = null
+where user_id = '00000000-0000-4000-8000-000000099004' and group_id = '00000000-0000-4000-8000-000000099005';
+select ok(not exists(
+  select 1 from public.get_pending_invoices_base('00000000-0000-4000-8000-000000099001',false)
+  where month < to_char(current_date, 'YYYY-MM')
+), 'Unknown join dates do not create historical debt from a class start date');
 select * from finish();
 rollback;

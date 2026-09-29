@@ -9,6 +9,7 @@ it('refreshes coverage and analytics after invoice changes without invalidating 
     'subscription-invoice-context',
     'invoice-analytics',
     'pending-invoices',
+    'pending-invoices-count',
   ];
   for (const root of roots)
     for (const ws of ['ws1', 'ws2'])
