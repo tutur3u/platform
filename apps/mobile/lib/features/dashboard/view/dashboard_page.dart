@@ -20,12 +20,14 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
+import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/dashboard/cubit/dashboard_layout_cubit.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
@@ -51,6 +53,7 @@ part 'dashboard_sections.dart';
 
 part 'dashboard_rows.dart';
 part 'dashboard_resource_cards.dart';
+part 'dashboard_customization.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({this.replayToken = 0, super.key});
@@ -61,6 +64,15 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider(
+          create: (_) {
+            final cubit = DashboardLayoutCubit(
+              settingsRepository: SettingsRepository(),
+            );
+            unawaited(cubit.load());
+            return cubit;
+          },
+        ),
         BlocProvider(
           create: (context) {
             final workspace = context
@@ -220,8 +232,6 @@ class _DashboardViewState extends State<_DashboardView> {
                 builder: (context, calendarState) {
                   final focusTasks = _focusTasks(taskState);
                   final upcomingEvents = _upcomingEvents(calendarState.events);
-                  final user = context.read<AuthCubit>().state.user;
-                  final visibleModules = AppRegistry.modules(context);
                   return shad.Scaffold(
                     child: NovaRefreshIndicator(
                       onRefresh: () => _refresh(context, workspace),
@@ -245,6 +255,25 @@ class _DashboardViewState extends State<_DashboardView> {
                               const SliverToBoxAdapter(
                                 child: DeviceMfaSuggestion(),
                               ),
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: ResponsivePadding.horizontal(
+                                      context.deviceClass,
+                                    ),
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton.icon(
+                                      key: const ValueKey('home-customize'),
+                                      onPressed: () =>
+                                          _showHomeCustomization(context),
+                                      icon: const Icon(Icons.tune_rounded),
+                                      label: Text(context.l10n.homeCustomize),
+                                    ),
+                                  ),
+                                ),
+                              ),
                               SliverPadding(
                                 padding: EdgeInsets.fromLTRB(
                                   ResponsivePadding.horizontal(
@@ -262,96 +291,14 @@ class _DashboardViewState extends State<_DashboardView> {
                                     child:
                                         const _DashboardWorkspacePickerCard(),
                                   ),
-                                  children: [
-                                    StaggeredEntrance(
-                                      replayKey: widget.replayToken,
-                                      child: _SectionCard(
-                                        accentModuleId: _dashboardModuleId(3),
-                                        title:
-                                            context.l10n.dashboardAssignedToMe,
-                                        icon: Icons.checklist_rounded,
-                                        actionLabel:
-                                            context.l10n.dashboardOpenTasks,
-                                        onTap: () => context.go(Routes.tasks),
-                                        child: _AssignedTasksBlock(
-                                          state: taskState,
-                                          tasks: focusTasks,
-                                          paletteModuleId: _dashboardModuleId(
-                                            3,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    StaggeredEntrance(
-                                      replayKey: widget.replayToken,
-                                      child: _SectionCard(
-                                        accentModuleId: _dashboardModuleId(4),
-                                        title: context
-                                            .l10n
-                                            .dashboardUpcomingEvents,
-                                        icon: Icons.event_rounded,
-                                        actionLabel:
-                                            context.l10n.dashboardOpenCalendar,
-                                        onTap: () =>
-                                            context.go(Routes.calendar),
-                                        child: _UpcomingEventsBlock(
-                                          status: calendarState.status,
-                                          hasLoadedOnce:
-                                              calendarState.hasLoadedOnce,
-                                          error: calendarState.error,
-                                          events: upcomingEvents,
-                                          paletteModuleId: _dashboardModuleId(
-                                            4,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    if (visibleModules.any(
-                                          (module) => module.id == 'mail',
-                                        ) &&
-                                        canDiscoverMail(
-                                          user?.email,
-                                          appMetadata: user?.appMetadata,
-                                        ))
-                                      _DashboardMailCard(
-                                        key: _mailCardKey,
-                                        workspaceId: workspace.id,
-                                        userId: user?.id,
-                                      ),
-                                    if (visibleModules.any(
-                                      (module) => module.id == 'meet',
-                                    ))
-                                      _DashboardMeetCard(
-                                        key: _meetCardKey,
-                                        workspaceId: workspace.id,
-                                        userId: user?.id,
-                                      ),
-                                    if (visibleModules.any(
-                                      (module) => module.id == 'finance',
-                                    ))
-                                      _DashboardFinanceCard(
-                                        key: _financeCardKey,
-                                        workspaceId: workspace.id,
-                                        userId: user?.id,
-                                      ),
-                                    if (visibleModules.any(
-                                      (module) => module.id == 'notes',
-                                    ))
-                                      _DashboardNotesCard(
-                                        key: _notesCardKey,
-                                        workspaceId: workspace.id,
-                                        userId: user?.id,
-                                      ),
-                                    StaggeredEntrance(
-                                      replayKey: widget.replayToken,
-                                      child: _TodaySummaryCard(
-                                        activeTasks: taskState.totalActiveTasks,
-                                        overdueTasks:
-                                            taskState.overdueTasks.length,
-                                        nextEvents: upcomingEvents.length,
-                                      ),
-                                    ),
-                                  ],
+                                  children: _dashboardWidgets(
+                                    context,
+                                    workspace,
+                                    taskState,
+                                    calendarState,
+                                    focusTasks,
+                                    upcomingEvents,
+                                  ),
                                 ),
                               ),
                             ],

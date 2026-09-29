@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -12,7 +11,9 @@ import 'package:mobile/features/apps/models/app_description.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
+import 'package:mobile/features/apps/widgets/app_visibility_button.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
+import 'package:mobile/features/apps/widgets/apps_reorder_grid.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/staggered_entrance.dart';
@@ -37,33 +38,33 @@ class AppsHubPage extends StatefulWidget {
 }
 
 class _AppsHubPageState extends State<AppsHubPage> {
-  void _reorder(List<AppModule> modules, AppModule dragged, AppModule target) {
-    if (dragged.id == target.id || widget.query.trim().isNotEmpty) return;
-    final from = modules.indexWhere((module) => module.id == dragged.id);
-    final to = modules.indexWhere((module) => module.id == target.id);
-    if (from < 0 || to < 0) return;
-    final ordered = [...modules]
-      ..removeAt(from)
-      ..insert(to, dragged);
+  void _reorder(List<String> shownIds, List<AppModule> hidden) {
     unawaited(
-      context.read<AppTabCubit>().setAppOrder(
-        ordered.map((module) => module.id).toList(),
-      ),
+      context.read<AppTabCubit>().setAppOrder([
+        ...shownIds,
+        ...hidden.map((module) => module.id),
+      ]),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final modules =
-        arrangeApps(AppRegistry.modules(context), context.watch<AppTabCubit>())
-            .where(
-              (module) =>
-                  '${module.label(context.l10n)} '
-                          '${appDescription(context, module.id)} ${module.id}'
-                      .toLowerCase()
-                      .contains(widget.query.trim().toLowerCase()),
-            )
-            .toList();
+    final cubit = context.watch<AppTabCubit>();
+    final modules = arrangeApps(AppRegistry.modules(context), cubit)
+        .where(
+          (module) =>
+              '${module.label(context.l10n)} '
+                      '${appDescription(context, module.id)} ${module.id}'
+                  .toLowerCase()
+                  .contains(widget.query.trim().toLowerCase()),
+        )
+        .toList();
+    final shown = modules
+        .where((module) => !cubit.state.hiddenAppIds.contains(module.id))
+        .toList();
+    final hidden = modules
+        .where((module) => cubit.state.hiddenAppIds.contains(module.id))
+        .toList();
 
     return SafeArea(
       top: false,
@@ -85,179 +86,110 @@ class _AppsHubPageState extends State<AppsHubPage> {
                   hasScrollBody: false,
                   child: Center(child: Text(context.l10n.appsNoMatches)),
                 ),
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  ResponsivePadding.horizontal(context.deviceClass),
-                  widget.showGrid ? 22 : 10,
-                  ResponsivePadding.horizontal(context.deviceClass),
-                  24 + MediaQuery.paddingOf(context).bottom,
-                ),
-                sliver: SliverLayoutBuilder(
-                  builder: (context, constraints) {
-                    if (widget.showGrid) {
-                      final columns = (constraints.crossAxisExtent / 96)
-                          .floor()
-                          .clamp(1, 6);
-                      final labelStyle = Theme.of(
-                        context,
-                      ).textTheme.labelMedium;
-                      final labelHeight =
-                          MediaQuery.textScalerOf(
-                            context,
-                          ).scale(labelStyle?.fontSize ?? 14) *
-                          (labelStyle?.height ?? 1.2) *
-                          2;
-                      return SliverGrid(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: columns,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          mainAxisExtent: 64 + 8 + labelHeight + 12,
-                        ),
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) => _AppGridTile(
-                            module: modules[index],
-                            index: index,
-                            onSelected: widget.onSelected,
-                            onReorder: widget.query.trim().isEmpty
-                                ? (dragged) =>
-                                      _reorder(modules, dragged, modules[index])
-                                : null,
+              if (shown.isNotEmpty)
+                _modulesSliver(shown, hidden: false, hiddenModules: hidden),
+              if (hidden.isNotEmpty)
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ResponsivePadding.horizontal(
+                      context.deviceClass,
+                    ),
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 16, 0, 4),
+                      child: Row(
+                        children: [
+                          const Expanded(child: Divider()),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: Text(
+                              context.l10n.appsHiddenSection,
+                              style: Theme.of(context).textTheme.labelLarge,
+                            ),
                           ),
-                          childCount: modules.length,
-                        ),
-                      );
-                    }
-                    final columns = (constraints.crossAxisExtent / 280)
-                        .floor()
-                        .clamp(1, 3);
-                    return SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              for (
-                                var column = 0;
-                                column < columns;
-                                column++
-                              ) ...[
-                                if (column > 0) const SizedBox(width: 14),
-                                Expanded(
-                                  child:
-                                      index * columns + column < modules.length
-                                      ? _AppEditorialCard(
-                                          module:
-                                              modules[index * columns + column],
-                                          index: index * columns + column,
-                                          replayToken: widget.replayToken,
-                                          onSelected: widget.onSelected,
-                                        )
-                                      : const SizedBox.shrink(),
-                                ),
-                              ],
-                            ],
-                          ),
-                        );
-                      }, childCount: (modules.length / columns).ceil()),
-                    );
-                  },
+                          const Expanded(child: Divider()),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              if (hidden.isNotEmpty)
+                _modulesSliver(hidden, hidden: true, hiddenModules: hidden),
             ],
           ),
         ),
       ),
     );
   }
-}
 
-class _AppGridTile extends StatelessWidget {
-  const _AppGridTile({
-    required this.module,
-    required this.index,
-    this.onSelected,
-    this.onReorder,
-  });
-
-  final AppModule module;
-  final int index;
-  final ValueChanged<AppModule>? onSelected;
-  final ValueChanged<AppModule>? onReorder;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = AppCardPalette.resolve(
-      context,
-      index: index,
-      moduleId: module.id,
-    );
-
-    final tile = Semantics(
-      button: true,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => onSelected != null
-            ? onSelected!(module)
-            : _openModule(context, module),
-        child: Column(
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: palette.background,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: palette.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: palette.shadow,
-                    blurRadius: 12,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Icon(module.icon, color: palette.iconColor, size: 30),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              module.label(context.l10n),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                height: 1.12,
-              ),
-            ),
-          ],
-        ),
+  Widget _modulesSliver(
+    List<AppModule> modules, {
+    required bool hidden,
+    required List<AppModule> hiddenModules,
+  }) {
+    final cubit = context.read<AppTabCubit>();
+    return SliverPadding(
+      padding: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context.deviceClass),
+        widget.showGrid ? 22 : 10,
+        ResponsivePadding.horizontal(context.deviceClass),
+        24 + MediaQuery.paddingOf(context).bottom,
       ),
-    );
-    if (onReorder == null) return tile;
-    return DragTarget<AppModule>(
-      onWillAcceptWithDetails: (details) => details.data.id != module.id,
-      onAcceptWithDetails: (details) {
-        unawaited(AppHaptics.drop());
-        onReorder!(details.data);
-      },
-      builder: (context, candidates, rejected) => AnimatedScale(
-        scale: candidates.isEmpty ? 1 : 1.08,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        child: LongPressDraggable<AppModule>(
-          data: module,
-          delay: const Duration(milliseconds: 280),
-          onDragStarted: AppHaptics.pickup,
-          feedback: Material(
-            color: Colors.transparent,
-            child: SizedBox(width: 104, child: tile),
-          ),
-          childWhenDragging: Opacity(opacity: 0.35, child: tile),
-          child: tile,
-        ),
-      ),
+      sliver: widget.showGrid
+          ? SliverToBoxAdapter(
+              child: AppsReorderGrid(
+                modules: modules,
+                hidden: hidden,
+                canReorder: !hidden && widget.query.trim().isEmpty,
+                onSelected: widget.onSelected,
+                onOrderChanged: (ids) => _reorder(ids, hiddenModules),
+                onVisibilityPressed: (module) => unawaited(
+                  changeAppVisibility(context, cubit, module, hidden: hidden),
+                ),
+              ),
+            )
+          : SliverLayoutBuilder(
+              builder: (context, constraints) {
+                final columns = (constraints.crossAxisExtent / 280)
+                    .floor()
+                    .clamp(1, 3);
+                return SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (var column = 0; column < columns; column++) ...[
+                            if (column > 0) const SizedBox(width: 14),
+                            Expanded(
+                              child: index * columns + column < modules.length
+                                  ? _AppEditorialCard(
+                                      module: modules[index * columns + column],
+                                      index: index * columns + column,
+                                      replayToken: widget.replayToken,
+                                      onSelected: widget.onSelected,
+                                      hidden: hidden,
+                                      onVisibilityPressed: () => unawaited(
+                                        changeAppVisibility(
+                                          context,
+                                          cubit,
+                                          modules[index * columns + column],
+                                          hidden: hidden,
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  }, childCount: (modules.length / columns).ceil()),
+                );
+              },
+            ),
     );
   }
 }
@@ -267,6 +199,8 @@ class _AppEditorialCard extends StatelessWidget {
     required this.module,
     required this.index,
     required this.replayToken,
+    required this.hidden,
+    required this.onVisibilityPressed,
     this.onSelected,
   });
 
@@ -274,6 +208,8 @@ class _AppEditorialCard extends StatelessWidget {
   final ValueChanged<AppModule>? onSelected;
   final int index;
   final int replayToken;
+  final bool hidden;
+  final VoidCallback onVisibilityPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -363,6 +299,10 @@ class _AppEditorialCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
+                AppVisibilityButton(
+                  hidden: hidden,
+                  onPressed: onVisibilityPressed,
                 ),
               ],
             ),

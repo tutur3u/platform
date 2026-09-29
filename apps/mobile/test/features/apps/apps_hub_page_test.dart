@@ -220,12 +220,20 @@ void main() {
       lessThan(tester.getTopLeft(find.text('Timer')).dy),
     );
 
+    final chatStartX = tester.getTopLeft(find.text('Chat')).dx;
     final drag = await tester.startGesture(
       tester.getCenter(find.text('Tasks')),
     );
     await tester.pump(const Duration(milliseconds: 350));
     await drag.moveTo(tester.getCenter(find.text('Finance')));
-    await tester.pump(const Duration(milliseconds: 220));
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(cubit.state.appOrder, isEmpty);
+    final chatReflowX = tester.getTopLeft(find.text('Chat')).dx;
+    expect(
+      chatReflowX,
+      lessThan(chatStartX),
+      reason: 'Chat should fill the drag gap ($chatStartX -> $chatReflowX)',
+    );
     await drag.up();
     await tester.pumpAndSettle();
     expect(cubit.state.appOrder.take(4), [
@@ -234,5 +242,49 @@ void main() {
       'finance',
       'tasks',
     ]);
+  });
+
+  testWidgets('hide asks for confirmation and moves app below divider', (
+    tester,
+  ) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(430, 2400);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final cubit = AppTabCubit(settingsRepository: SettingsRepository());
+    final experimental = ExperimentalAppsCubit(
+      settingsRepository: SettingsRepository(),
+    );
+    await experimental.load();
+    addTearDown(cubit.close);
+    addTearDown(experimental.close);
+    await tester.pumpApp(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: cubit),
+          BlocProvider.value(value: experimental),
+        ],
+        child: const AppsHubPage(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Hide app').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Hide this app?'), findsOneWidget);
+    expect(cubit.state.hiddenAppIds, isEmpty);
+    await tester.tap(find.widgetWithText(FilledButton, 'Hide app'));
+    await tester.pumpAndSettle();
+    expect(cubit.state.hiddenAppIds, ['tasks']);
+    expect(find.text('Hidden apps'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Tasks')).dy,
+      greaterThan(tester.getTopLeft(find.text('Finance')).dy),
+    );
+    await tester.tap(find.byTooltip('Show app'));
+    await tester.pumpAndSettle();
+    expect(cubit.state.hiddenAppIds, isEmpty);
   });
 }

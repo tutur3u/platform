@@ -7,7 +7,7 @@ class AppTabState extends Equatable {
     this.shouldAutoFocus = false,
     this.showAppsTab = false,
     this.appOrder = const [],
-    this.pinnedApps = const [],
+    this.hiddenAppIds = const [],
   });
 
   final String? selectedId;
@@ -15,7 +15,7 @@ class AppTabState extends Equatable {
   final bool shouldAutoFocus;
   final bool showAppsTab;
   final List<String> appOrder;
-  final List<String> pinnedApps;
+  final List<String> hiddenAppIds;
 
   bool get hasSelection => selectedId != null;
 
@@ -25,7 +25,7 @@ class AppTabState extends Equatable {
     bool? shouldAutoFocus,
     bool? showAppsTab,
     List<String>? appOrder,
-    List<String>? pinnedApps,
+    List<String>? hiddenAppIds,
   }) {
     return AppTabState(
       selectedId: selectedId != null ? selectedId() : this.selectedId,
@@ -33,7 +33,7 @@ class AppTabState extends Equatable {
       shouldAutoFocus: shouldAutoFocus ?? this.shouldAutoFocus,
       showAppsTab: showAppsTab ?? this.showAppsTab,
       appOrder: appOrder ?? this.appOrder,
-      pinnedApps: pinnedApps ?? this.pinnedApps,
+      hiddenAppIds: hiddenAppIds ?? this.hiddenAppIds,
     );
   }
 
@@ -44,6 +44,6 @@ class AppTabState extends Equatable {
     shouldAutoFocus,
     showAppsTab,
     appOrder,
-    pinnedApps,
+    hiddenAppIds,
   ];
 }

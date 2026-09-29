@@ -53,9 +53,22 @@ navigation history. Back follows the current context's outer layer: a detail
 returns to its parent section, a peer section returns to the mini-app root, and
 the mini-app root returns to the Home or Apps launch screen. This also applies
 to deep links, so Back never visits a sibling section by accident.
-Apps is always available in the root dock. In the picker, Customize exposes pin and
-drag controls; pinned apps sort first. Order and pins persist on the device and
-never bypass each module's visibility rules.
+Apps is always available in the root dock. The Apps grid supports long-press
+reordering: nearby icons shift across rows during the drag, with a subtle
+motion cue, and the new order is saved on release. The list editor provides
+drag handles. Each app has a compact hide control with confirmation. Hidden
+apps remain accessible at the bottom of Apps, separated from shown apps by a
+divider, and can be shown again without a confirmation. App order and hidden
+choices persist on the device. Workspace permissions and experimental-app
+visibility still take precedence; a locally hidden app is only moved out of
+the shown launcher section, not disabled or removed from navigation.
+
+Home's task, calendar, Mail, Meet, Finance, Notes, and daily summary cards can
+be reordered or hidden in Customize Home. Existing cards are shown in their
+current order by default, and hidden cards remain in the editor for recovery.
+Unavailable modules do not appear as Home cards or editor choices; their saved
+layout preferences remain intact if access returns. The workspace picker and
+security prompts remain outside customization.
 
 The shell reserves physical bottom clearance, including for lists with explicit
 padding. Screens inside the shell must not add another dock inset. The dock hides

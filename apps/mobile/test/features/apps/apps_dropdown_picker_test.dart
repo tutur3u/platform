@@ -5,6 +5,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
+import 'package:mobile/features/apps/widgets/apps_reorder_grid.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -64,7 +65,7 @@ void main() {
       expect(listAction.segmentGroup, 'apps-view');
       expect(gridAction.segmentGroup, 'apps-view');
       expect(gridAction.highlighted, isTrue);
-      expect(find.byType(SliverGrid), findsOneWidget);
+      expect(find.byType(AppsReorderGrid), findsOneWidget);
       final listControl = find.byWidgetPredicate(
         (widget) => widget is Semantics && widget.properties.label == 'List',
       );
@@ -85,7 +86,7 @@ void main() {
       );
       await tester.tap(gridControl);
       await tester.pumpAndSettle();
-      expect(find.byType(SliverGrid), findsOneWidget);
+      expect(find.byType(AppsReorderGrid), findsOneWidget);
       expect(find.byType(SegmentedButton<bool>), findsNothing);
       searchAction.onPressed!();
       await tester.pumpAndSettle();

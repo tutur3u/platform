@@ -38,7 +38,6 @@ class AppModule {
     required this.labelBuilder,
     required this.pageBuilder,
     required this.miniAppNavItems,
-    this.isPinned = false,
     this.isVisible,
   });
 
@@ -48,7 +47,6 @@ class AppModule {
   final AppLabelBuilder labelBuilder;
   final AppPageBuilder pageBuilder;
   final List<MiniAppNavItem> miniAppNavItems;
-  final bool isPinned;
   final AppVisibility? isVisible;
 
   String label(AppLocalizations l10n) => labelBuilder(l10n);

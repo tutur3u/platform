@@ -77,7 +77,6 @@ class AppRegistry {
       labelBuilder: _labelHabits,
       pageBuilder: _pageHabits,
       miniAppNavItems: _habitsMiniNav,
-      isPinned: true,
       isVisible: _showHabitsModule,
     ),
     AppModule(
@@ -87,7 +86,6 @@ class AppRegistry {
       labelBuilder: _labelTasks,
       pageBuilder: _pageTasks,
       miniAppNavItems: _tasksMiniNav,
-      isPinned: true,
     ),
     AppModule(
       id: 'chat',
@@ -96,7 +94,6 @@ class AppRegistry {
       labelBuilder: _labelChat,
       pageBuilder: _pageChat,
       miniAppNavItems: _chatMiniNav,
-      isPinned: true,
     ),
     AppModule(
       id: 'calendar',
@@ -105,7 +102,6 @@ class AppRegistry {
       labelBuilder: _labelCalendar,
       pageBuilder: _pageCalendar,
       miniAppNavItems: _calendarMiniNav,
-      isPinned: true,
     ),
     AppModule(
       id: 'finance',
@@ -114,7 +110,6 @@ class AppRegistry {
       labelBuilder: _labelFinance,
       pageBuilder: _pageFinance,
       miniAppNavItems: _financeMiniNav,
-      isPinned: true,
     ),
     AppModule(
       id: 'drive',
@@ -141,7 +136,6 @@ class AppRegistry {
       labelBuilder: _labelNotes,
       pageBuilder: _pageNotes,
       miniAppNavItems: _notesMiniNav,
-      isPinned: true,
     ),
     AppModule(
       id: 'cms',
@@ -186,7 +180,6 @@ class AppRegistry {
       labelBuilder: _labelInventory,
       pageBuilder: _pageInventory,
       miniAppNavItems: _inventoryMiniNav,
-      isPinned: true,
       isVisible: _showInventoryModule,
     ),
     AppModule(
@@ -196,7 +189,6 @@ class AppRegistry {
       labelBuilder: _labelTimer,
       pageBuilder: _pageTimer,
       miniAppNavItems: _timerMiniNav,
-      isPinned: true,
       isVisible: _showTimerModule,
     ),
     AppModule(
@@ -564,12 +556,6 @@ class AppRegistry {
     return allModules
         .where((module) => experimentalModuleIds.contains(module.id))
         .toList(growable: false);
-  }
-
-  static List<AppModule> pinnedModules(BuildContext context) {
-    return modules(
-      context,
-    ).where((module) => module.isPinned).toList(growable: false);
   }
 
   static AppModule? moduleById(String? id) {
