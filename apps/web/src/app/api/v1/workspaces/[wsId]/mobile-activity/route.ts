@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
@@ -33,8 +34,14 @@ export async function GET(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers });
 
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  // Tasks are deliberately not SELECT-granted to authenticated in production.
+  // Membership is checked with the caller's client before this scoped read.
+  const admin = await createAdminClient({
+    noCookie: true,
+    auditActorId: user.id,
+  });
   const [tasks, transactions, notes, events] = await Promise.all([
-    supabase
+    admin
       .from('tasks')
       .select(
         'id,name,created_at,task_lists!inner(board_id,workspace_boards!inner(ws_id))'
@@ -45,14 +52,14 @@ export async function GET(
       .gte('created_at', since)
       .order('created_at', { ascending: false })
       .limit(200),
-    supabase
-      .from('wallet_transactions')
-      .select('id,created_at,workspace_wallets!inner(ws_id)')
-      .eq('workspace_wallets.ws_id', wsId)
-      .eq('platform_creator_id', user.id)
-      .gte('created_at', since)
-      .order('created_at', { ascending: false })
-      .limit(200),
+    // The finance RPC applies wallet visibility and confidentiality permissions.
+    supabase.rpc('get_wallet_transactions_with_permissions', {
+      p_ws_id: wsId,
+      p_user_id: user.id,
+      p_creator_ids: [user.id],
+      p_order_by: 'created_at',
+      p_limit: 200,
+    }),
     supabase
       .from('notes')
       .select('id,title,created_at,updated_at')
@@ -91,12 +98,19 @@ export async function GET(
       createdAt: task.created_at,
       scope: 'personal',
     })),
-    ...(transactions.data ?? []).map((transaction) => ({
-      id: transaction.id,
-      type: 'transaction',
-      createdAt: transaction.created_at,
-      scope: 'personal',
-    })),
+    ...(transactions.data ?? [])
+      .filter(
+        (transaction) =>
+          transaction.platform_creator_id === user.id &&
+          typeof transaction.created_at === 'string' &&
+          transaction.created_at >= since
+      )
+      .map((transaction) => ({
+        id: transaction.id,
+        type: 'transaction',
+        createdAt: transaction.created_at,
+        scope: 'personal',
+      })),
     ...(notes.data ?? []).map((note) => ({
       id: note.id,
       type: 'note',

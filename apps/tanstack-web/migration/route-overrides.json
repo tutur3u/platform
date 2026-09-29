@@ -2527,7 +2527,7 @@
     "api:/api/v1/workspaces/:wsId/mobile-activity:apps/web/src/app/api/v1/workspaces/[wsId]/mobile-activity/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Mobile profile activity: authenticated workspace member, private user-owned tasks, transactions and notes, plus clearly scoped workspace calendar events. Rust parity pending."
+      "note": "Mobile profile activity: request-scoped workspace membership before admin-backed, workspace-scoped user-created task reads; permission-aware finance RPC for the caller's own transactions; request-scoped notes and workspace calendar events. Private no-store response. Rust parity pending."
     },
     "api:/api/v1/auth/cross-app-return:apps/web/src/app/api/v1/auth/cross-app-return/route.ts": {
       "status": "legacy-next",
