@@ -9,6 +9,10 @@
   "triggers": { "crons": ["*/5 * * * *"] },
   "vars": { "WEB_ORIGIN": "https://tuturuuu.com" },
   "secrets": {
-    "required": ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "CRON_CONTROL_DELIVERY_TOKEN"]
+    "required": [
+      "SUPABASE_URL",
+      "SUPABASE_SECRET_KEY",
+      "CRON_CONTROL_DELIVERY_TOKEN"
+    ]
   }
 }
