@@ -444,6 +444,21 @@ jobs:
           APPLE_LIVE_SCREEN_GROUP_REQUIRED=true swift ../../scripts/mobile-deployment/verify-profile.swift "$verify_dir/profile.plist"
           test ! -e "$app_path/PlugIns/LiveScreenBroadcast.appex"
 
+      - name: Verify and upload iOS Crashlytics symbols
+        shell: bash
+        run: bash ../../scripts/mobile-deployment/upload-ios-symbols.sh build/ios/archive/Runner.xcarchive ios/Runner/GoogleService-Info-production.plist ios/Pods/FirebaseCrashlytics/upload-symbols
+
+      - name: Preserve iOS dSYM artifact
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ios-production-dsyms
+          path: apps/mobile/build/ios/archive/Runner.xcarchive/dSYMs
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
       - name: Upload iOS IPA artifact
         # TestFlight uses the verified local IPA. GitHub artifact storage is
         # diagnostic only and must not block distribution when it times out.
