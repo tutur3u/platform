@@ -3,8 +3,10 @@
 import { resolveCodingSubject } from '@/lib/coding/access';
 import { getCodingChallenge } from '@/lib/coding/challenges';
 import { isCodingLanguage } from '@/lib/coding/languages';
+import type { CodingExecutionKind } from '@/lib/coding/results';
 import {
-  enqueueCodingSubmission,
+  enqueueCodingExecution,
+  listCodingExecutions as listStoredCodingExecutions,
   readCodingSubmission,
 } from '@/lib/coding/store';
 
@@ -19,7 +21,9 @@ export async function submitCodingSolution(
   studentId: string | undefined,
   challengeSlug: string,
   language: string,
-  source: string
+  source: string,
+  kind: CodingExecutionKind = 'submit',
+  customCase?: { input: string; expected: string }
 ) {
   const subject = await requireCodingLearner(wsId, studentId);
   const challenge = getCodingChallenge(challengeSlug);
@@ -28,8 +32,20 @@ export async function submitCodingSolution(
   if (!source.trim() || source.length > 16_000) {
     throw new Error('Code must be between 1 and 16,000 characters.');
   }
-  return enqueueCodingSubmission({
+  if (kind !== 'submit' && kind !== 'test') {
+    throw new Error('Invalid execution kind.');
+  }
+  if (
+    customCase &&
+    (typeof customCase.input !== 'string' ||
+      typeof customCase.expected !== 'string')
+  ) {
+    throw new Error('Invalid custom test case.');
+  }
+  return enqueueCodingExecution({
     challenge,
+    customCase,
+    kind,
     language,
     source,
     userId: subject.studentPlatformUserId,
@@ -42,10 +58,31 @@ export async function getCodingSubmission(
   studentId: string | undefined,
   submissionId: string
 ) {
-  const subject = await requireCodingLearner(wsId, studentId);
+  const subject = await resolveCodingSubject(wsId, studentId);
   if (!/^[0-9a-f-]{36}$/iu.test(submissionId)) return null;
   return readCodingSubmission({
     id: submissionId,
+    userId: subject.studentPlatformUserId,
+    wsId: subject.wsId,
+  });
+}
+
+export async function listCodingExecutions(
+  wsId: string,
+  studentId: string | undefined,
+  challengeSlug: string,
+  before?: string
+) {
+  const subject = await resolveCodingSubject(wsId, studentId);
+  if (!getCodingChallenge(challengeSlug)) {
+    throw new Error('Challenge not found.');
+  }
+  if (before && !/^[^|(),]+\|[0-9a-f-]{36}$/iu.test(before)) {
+    throw new Error('Invalid history cursor.');
+  }
+  return listStoredCodingExecutions({
+    before,
+    challengeSlug,
     userId: subject.studentPlatformUserId,
     wsId: subject.wsId,
   });

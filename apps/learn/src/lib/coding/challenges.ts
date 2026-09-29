@@ -19,7 +19,7 @@ const challenges: CodingChallenge[] = [
     samples: [{ input: '4\n2 7 11 15\n9\n', output: '0 1\n' }],
     cases: [
       { input: '4\n2 7 11 15\n9\n', expected: '0 1\n', visible: true },
-      { input: '3\n3 2 4\n6\n', expected: '1 2\n', visible: false },
+      { input: '3\n3 2 4\n6\n', expected: '1 2\n', visible: true },
       { input: '2\n3 3\n6\n', expected: '0 1\n', visible: false },
       { input: '5\n-4 8 10 -1 3\n-5\n', expected: '0 3\n', visible: false },
     ],
@@ -33,7 +33,7 @@ const challenges: CodingChallenge[] = [
     samples: [{ input: '5\n1 3 5 7 9\n7\n', output: '3\n' }],
     cases: [
       { input: '5\n1 3 5 7 9\n7\n', expected: '3\n', visible: true },
-      { input: '5\n1 3 5 7 9\n2\n', expected: '-1\n', visible: false },
+      { input: '5\n1 3 5 7 9\n2\n', expected: '-1\n', visible: true },
       { input: '1\n42\n42\n', expected: '0\n', visible: false },
       { input: '1\n42\n0\n', expected: '-1\n', visible: false },
     ],
@@ -47,7 +47,7 @@ const challenges: CodingChallenge[] = [
     samples: [{ input: '([]{})\n', output: 'YES\n' }],
     cases: [
       { input: '([]{})\n', expected: 'YES\n', visible: true },
-      { input: '([)]\n', expected: 'NO\n', visible: false },
+      { input: '([)]\n', expected: 'NO\n', visible: true },
       { input: '((()))\n', expected: 'YES\n', visible: false },
       { input: '(()\n', expected: 'NO\n', visible: false },
       { input: '([{}])\n', expected: 'YES\n', visible: false },
@@ -56,7 +56,12 @@ const challenges: CodingChallenge[] = [
 ];
 
 export function listCodingChallenges() {
-  return challenges.map(({ cases: _cases, ...challenge }) => challenge);
+  return challenges.map(({ cases, ...challenge }) => ({
+    ...challenge,
+    publicCases: cases
+      .filter((testCase) => testCase.visible)
+      .map(({ input, expected }) => ({ input, output: expected })),
+  }));
 }
 
 export function getCodingChallenge(slug: string) {

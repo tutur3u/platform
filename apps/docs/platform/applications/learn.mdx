@@ -19,6 +19,36 @@ and vocabulary support. These handlers live under `apps/learn/src/app/api/v1`.
 Next.js fallback rewrites send only unmatched `/api/v1/*` and `/api/ai/*` paths
 to Web; they do not proxy a path that Learn implements locally.
 
+## Coding Lab
+
+The Learn Coding Lab is available inside eligible education workspaces. Its
+default layout fills the available dashboard viewport: a compact challenge and
+language picker sits above a resizable problem pane, code editor, and test
+console. Narrow screens use vertically resizable panes. Monaco runs in the
+browser with syntax highlighting for supported languages, and local JavaScript
+and TypeScript diagnostics and definition lookup. Local editor checks are
+guidance; only the platform Judge determines the result.
+
+Students can run public cases and one optional custom input/expected-output pair
+without consuming hidden cases. Submitting runs the public and private cases.
+Public inputs, expected outputs, actual outputs, diagnostics, and timing are
+visible to the learner. Private cases disclose only pass/fail and an aggregate
+count; their input, output, errors, and individual timing stay private. The
+default Judge feature is off on a newly connected Devbox until an administrator
+enables it and the machine reports a verified sandbox with cached pinned images.
+An unavailable language remains editable for learning but cannot run there.
+Parents may read the challenge and a linked learner's execution history but
+cannot run or submit code.
+
+Each test run and submission records the source, language, timestamp, verdicts,
+and public case wall times in private platform tables. History is scoped to the
+learner, workspace, and challenge and can restore earlier source into the
+editor. The displayed median and range use the same monotonic wall-clock
+measurement for each public case. They include container startup and, where
+needed, compilation, so repeated runs may differ; the UI does not claim a
+hardware-normalized benchmark or rank users by these numbers. Hidden-case
+timings are omitted from learner responses.
+
 `packages/education-core` contains reusable server-only education domain logic;
 it does not own HTTP traffic. The Tulearn helpers in
 `packages/internal-api/src/tulearn.ts` select the Learn origin for learner

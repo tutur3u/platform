@@ -2,14 +2,29 @@ import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { notifyDevboxRun } from '@tuturuuu/utils/devbox-control';
 import type { CodingChallenge } from './challenges';
-import { CODING_LANGUAGES, type CodingLanguage } from './languages';
+import {
+  CODING_LANGUAGES,
+  type CodingLanguage,
+  isCodingLanguage,
+} from './languages';
+import {
+  type CodingExecutionKind,
+  type CodingExecutionSummary,
+  summarizeJudgeResult,
+} from './results';
 
 type StorageError = { message: string } | null;
 type QueryResult<T> = Promise<{ data: T[] | null; error: StorageError }>;
-type SelectQuery<T> = {
+type SelectQuery<T> = PromiseLike<{
+  data: T[] | null;
+  error: StorageError;
+}> & {
   contains: (column: string, value: Record<string, unknown>) => SelectQuery<T>;
   eq: (column: string, value: string) => SelectQuery<T>;
   gt: (column: string, value: string) => SelectQuery<T>;
+  in: (column: string, values: string[]) => SelectQuery<T>;
+  lt: (column: string, value: string) => SelectQuery<T>;
+  or: (filters: string) => SelectQuery<T>;
   order: (column: string, options?: { ascending?: boolean }) => SelectQuery<T>;
   limit: (count: number) => QueryResult<T>;
 };
@@ -35,12 +50,18 @@ type SubmissionRow = {
   challenge_slug: string;
   created_at: string;
   id: string;
+  kind?: CodingExecutionKind;
+  language?: string | null;
   run_id: string;
   source: string;
 };
 
-type RunRow = { status: string };
-type EventRow = { event_type: string; message: string | null };
+type RunRow = { id: string; status: string };
+type EventRow = {
+  event_type: string;
+  message: string | null;
+  run_id: string;
+};
 
 async function privateClient(): Promise<PrivateClient> {
   const admin = await createAdminClient();
@@ -91,35 +112,65 @@ export async function listReadyJudgeLanguages(): Promise<CodingLanguage[]> {
   );
 }
 
-export async function enqueueCodingSubmission({
+export async function enqueueCodingExecution({
   challenge,
+  customCase,
+  kind,
   language,
   source,
   userId,
   wsId,
 }: {
   challenge: CodingChallenge;
+  customCase?: { input: string; expected: string };
+  kind: CodingExecutionKind;
   language: CodingLanguage;
   source: string;
   userId: string;
   wsId: string;
 }) {
   const client = await privateClient();
+  if (
+    customCase &&
+    (kind !== 'test' ||
+      typeof customCase.input !== 'string' ||
+      typeof customCase.expected !== 'string' ||
+      customCase.input.length > 4096 ||
+      customCase.expected.length > 4096)
+  ) {
+    throw new Error('Invalid custom test case.');
+  }
+  const cases =
+    kind === 'submit'
+      ? challenge.cases
+      : [
+          ...challenge.cases.filter((testCase) => testCase.visible),
+          ...(customCase
+            ? [
+                {
+                  input: customCase.input,
+                  expected: customCase.expected,
+                  visible: true,
+                },
+              ]
+            : []),
+        ];
   const command = [
     '__ttr_judge_v1__',
     Buffer.from(
       JSON.stringify({
-        cases: challenge.cases,
+        cases,
         language,
         source,
       })
     ).toString('base64url'),
   ];
   const { data, error } = await client.rpc<string>(
-    'enqueue_learn_coding_submission',
+    'enqueue_learn_coding_execution',
     {
       p_challenge_slug: challenge.slug,
       p_command: command,
+      p_kind: kind,
       p_language: language,
       p_source: source,
       p_user_id: userId,
@@ -139,6 +190,57 @@ export async function enqueueCodingSubmission({
   return data;
 }
 
+function toExecution(
+  submission: SubmissionRow,
+  run: RunRow | undefined,
+  event: EventRow | undefined
+): CodingExecutionSummary {
+  return {
+    challengeSlug: submission.challenge_slug,
+    createdAt: submission.created_at,
+    id: submission.id,
+    kind: submission.kind === 'test' ? 'test' : 'submit',
+    language: isCodingLanguage(submission.language)
+      ? submission.language
+      : null,
+    result: summarizeJudgeResult(event?.message ?? null),
+    source: submission.source,
+    status: run?.status ?? 'failed',
+  };
+}
+
+async function hydrateExecutions(
+  client: PrivateClient,
+  submissions: SubmissionRow[]
+) {
+  if (!submissions.length) return [];
+  const runIds = submissions.map((submission) => submission.run_id);
+  const [runResult, eventResult] = await Promise.all([
+    client
+      .from<RunRow>('devbox_runs')
+      .select('id,status')
+      .in('id', runIds)
+      .limit(runIds.length),
+    client
+      .from<EventRow>('devbox_run_events')
+      .select('run_id,event_type,message')
+      .in('run_id', runIds)
+      .eq('event_type', 'judge_result')
+      .order('created_at', { ascending: true }),
+  ]);
+  const runs = new Map(assertRows(runResult).map((run) => [run.id, run]));
+  const events = new Map(
+    assertRows(eventResult).map((event) => [event.run_id, event])
+  );
+  return submissions.map((submission) =>
+    toExecution(
+      submission,
+      runs.get(submission.run_id),
+      events.get(submission.run_id)
+    )
+  );
+}
+
 export async function readCodingSubmission({
   id,
   userId,
@@ -152,62 +254,58 @@ export async function readCodingSubmission({
   const submission = assertRows(
     await client
       .from<SubmissionRow>('learn_coding_submissions')
-      .select('id,challenge_slug,source,run_id,created_at')
+      .select('id,challenge_slug,source,run_id,created_at,kind,language')
       .eq('id', id)
       .eq('user_id', userId)
       .eq('ws_id', wsId)
       .limit(1)
   )[0];
   if (!submission) return null;
+  return (await hydrateExecutions(client, [submission]))[0] ?? null;
+}
 
-  const [run, events] = await Promise.all([
-    client
-      .from<RunRow>('devbox_runs')
-      .select('status')
-      .eq('id', submission.run_id)
-      .limit(1),
-    client
-      .from<EventRow>('devbox_run_events')
-      .select('event_type,message')
-      .eq('run_id', submission.run_id)
-      .limit(100),
-  ]);
-  const status = assertRows(run)[0]?.status ?? 'failed';
-  const resultEvent = assertRows(events).find(
-    (event) => event.event_type === 'judge_result'
-  );
-  let result: {
-    passed: number;
-    total: number;
-    results: {
-      index: number;
-      passed: boolean;
-      visible: boolean;
-      reason: string;
-    }[];
-  } | null = null;
-  if (resultEvent?.message) {
-    try {
-      const parsed = JSON.parse(resultEvent.message);
-      if (typeof parsed.passed === 'number' && Array.isArray(parsed.results)) {
-        result = {
-          passed: parsed.passed,
-          total: parsed.total,
-          results: parsed.results.filter(
-            (entry: { visible?: boolean }) => entry.visible === true
-          ),
-        };
-      }
-    } catch {
-      result = null;
+export async function listCodingExecutions({
+  before,
+  challengeSlug,
+  userId,
+  wsId,
+}: {
+  before?: string;
+  challengeSlug: string;
+  userId: string;
+  wsId: string;
+}) {
+  const client = await privateClient();
+  let query = client
+    .from<SubmissionRow>('learn_coding_submissions')
+    .select('id,challenge_slug,source,run_id,created_at,kind,language')
+    .eq('user_id', userId)
+    .eq('ws_id', wsId)
+    .eq('challenge_slug', challengeSlug);
+  if (before) {
+    const [createdAt, id] = before.split('|');
+    if (
+      !createdAt ||
+      !Number.isFinite(Date.parse(createdAt)) ||
+      !/^[0-9T:.+\-Z]+$/u.test(createdAt) ||
+      !id ||
+      !/^[0-9a-f-]{36}$/iu.test(id)
+    ) {
+      throw new Error('Invalid history cursor.');
     }
+    query = query.or(
+      `created_at.lt.${createdAt},and(created_at.eq.${createdAt},id.lt.${id})`
+    );
   }
+  const rows = assertRows(
+    await query
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(26)
+  );
   return {
-    challengeSlug: submission.challenge_slug,
-    createdAt: submission.created_at,
-    id: submission.id,
-    result,
-    source: submission.source,
-    status,
+    items: await hydrateExecutions(client, rows.slice(0, 25)),
+    nextCursor:
+      rows.length > 25 ? `${rows[24]?.created_at}|${rows[24]?.id}` : null,
   };
 }

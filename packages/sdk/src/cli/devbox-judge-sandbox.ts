@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { cpus, freemem, totalmem } from 'node:os';
+import { performance } from 'node:perf_hooks';
 import {
   createJudgeLanguageCommand,
   isJudgeLanguage,
@@ -291,6 +292,7 @@ async function runDocker(
   input: string,
   timeoutSeconds: number
 ) {
+  const startedAt = performance.now();
   const child = spawn('docker', args, { shell: false, stdio: 'pipe' });
   let output = '';
   let errorOutput = '';
@@ -326,6 +328,7 @@ async function runDocker(
     });
     return {
       code,
+      durationMs: Math.max(0, Math.round(performance.now() - startedAt)),
       errorOutput: errorOutput.slice(0, 4096),
       exceededOutput,
       output,
@@ -378,6 +381,13 @@ export async function runJudgeCases({
       index,
       passed,
       visible: testCase.visible,
+      durationMs: run.durationMs,
+      ...(testCase.visible
+        ? {
+            output: run.output.slice(0, 4096),
+            stderr: run.errorOutput,
+          }
+        : {}),
       reason: run.timedOut
         ? 'time_limit'
         : run.exceededOutput

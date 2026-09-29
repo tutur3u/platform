@@ -5,7 +5,7 @@ import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types/db';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { LearnerStudentSelect } from '@/components/learner-shell-parts';
@@ -33,6 +33,7 @@ export function Structure({
   wsId,
 }: StructureProps) {
   const studentId = useSearchParams().get('studentId');
+  const isCodingLab = usePathname().endsWith('/coding');
   const activeWorkspace = bootstrap.workspaces.find((item) => item.id === wsId);
   const hasLinkedStudents = bootstrap.linkedStudents.some(
     (student) => student.workspace_id === wsId
@@ -67,7 +68,11 @@ export function Structure({
       }
       appId="learn"
       brandHref={WEB_APP_URL}
-      childContainerClassName="mx-auto w-full max-w-[1500px] px-4 py-5 md:px-6 md:py-8"
+      childContainerClassName={
+        isCodingLab
+          ? 'h-[calc(100dvh-5.5rem)] min-h-[30rem] w-full md:h-[calc(100dvh-2rem)]'
+          : 'mx-auto w-full max-w-[1500px] px-4 py-5 md:px-6 md:py-8'
+      }
       defaultCollapsed={defaultCollapsed}
       links={studentLinks}
       notificationPopover={notificationPopover}

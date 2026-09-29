@@ -299,7 +299,7 @@
     },
     "apps/contacts": {
       "name": "@tuturuuu/contacts",
-      "version": "0.25.1",
+      "version": "0.26.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@hookform/resolvers": "^5.9.1",
@@ -363,7 +363,7 @@
     },
     "apps/database": {
       "name": "@tuturuuu/database",
-      "version": "1.36.1",
+      "version": "1.37.0",
       "devDependencies": {
         "supabase": "2.117.0",
         "typescript": "7.0.2",
@@ -685,7 +685,7 @@
     },
     "apps/infrastructure": {
       "name": "@tuturuuu/infrastructure",
-      "version": "0.29.0",
+      "version": "0.30.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@aws-sdk/client-s3": "3.1131.0",
@@ -805,10 +805,11 @@
     },
     "apps/learn": {
       "name": "@tuturuuu/learn",
-      "version": "0.27.0",
+      "version": "0.28.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@gsap/react": "^2.1.2",
+        "@monaco-editor/react": "^4.7.0",
         "@tanstack/react-query": "^5.102.8",
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
@@ -824,6 +825,7 @@
         "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/vercel": "workspace:*",
         "gsap": "^3.15.0",
+        "monaco-editor": "^0.57.0",
         "negotiator": "^1.1.0",
         "next": "^16.3.5",
         "next-intl": "^4.14.4",
@@ -892,7 +894,7 @@
     },
     "apps/mail": {
       "name": "@tuturuuu/mail",
-      "version": "0.25.0",
+      "version": "0.26.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@aws-sdk/client-s3": "3.1131.0",
@@ -1429,7 +1431,7 @@
     },
     "apps/tanstack-web": {
       "name": "@tuturuuu/tanstack-web",
-      "version": "0.37.0",
+      "version": "0.38.0",
       "dependencies": {
         "@hookform/resolvers": "^5.9.1",
         "@react-email/render": "^2.1.0",
@@ -1972,7 +1974,7 @@
     },
     "packages/apis": {
       "name": "@tuturuuu/apis",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
@@ -2227,7 +2229,7 @@
     },
     "packages/internal-api": {
       "name": "@tuturuuu/internal-api",
-      "version": "0.46.0",
+      "version": "0.47.0",
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -2537,7 +2539,7 @@
     },
     "packages/sdk": {
       "name": "tuturuuu",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "bin": {
         "ttr": "./dist/cli/index.js",
         "tuturuuu": "./dist/cli/index.js",
@@ -2742,7 +2744,7 @@
     },
     "packages/ui": {
       "name": "@tuturuuu/ui",
-      "version": "0.36.1",
+      "version": "0.37.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -2909,7 +2911,7 @@
     },
     "packages/users-core": {
       "name": "@tuturuuu/users-core",
-      "version": "0.9.2",
+      "version": "0.9.3",
       "dependencies": {
         "@tuturuuu/apis": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
@@ -2969,7 +2971,7 @@
     },
     "packages/utils": {
       "name": "@tuturuuu/utils",
-      "version": "0.32.0",
+      "version": "0.33.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@noble/ciphers": "^2.4.0",
@@ -3773,6 +3775,10 @@
     "@microsoft/teams.graph-endpoints": ["@microsoft/teams.graph-endpoints@2.0.16", "", {}, "sha512-yNqxdr/elYyzL0xcrGF5/muZniFLbel4QIQgGalwyropRzupasBuaWmIgFU4RVOG9i1dlvRAIq3sLj8E2OhVQQ=="],
 
     "@mixmark-io/domino": ["@mixmark-io/domino@2.2.0", "", {}, "sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw=="],
+
+    "@monaco-editor/loader": ["@monaco-editor/loader@1.7.0", "", { "dependencies": { "state-local": "^1.0.6" } }, "sha512-gIwR1HrJrrx+vfyOhYmCZ0/JcWqG5kbfG7+d3f/C1LXk2EvzAbHSg3MQ5lO2sMlo9izoAZ04shohfKLVT6crVA=="],
+
+    "@monaco-editor/react": ["@monaco-editor/react@4.7.0", "", { "dependencies": { "@monaco-editor/loader": "^1.5.0" }, "peerDependencies": { "monaco-editor": ">= 0.25.0 < 1", "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-cyzXQCtO47ydzxpQtCGSQGOC8Gk3ZUeBXFAxD+CWXYFo5OqZyZUonFl0DwUlTyAfRHntBfw2p3w4s9R6oe1eCA=="],
 
     "@mongodb-js/zstd": ["@mongodb-js/zstd@7.0.0", "", { "dependencies": { "node-addon-api": "^8.5.0", "prebuild-install": "^7.1.3" } }, "sha512-mQ2s0pYYiav+tzCDR05Zptem8Ey2v8s11lri5RKGhTtL4COVCvVCk5vtyRYNT+9L8qSfyOqqefF9UtnW8mC5jA=="],
 
@@ -6422,6 +6428,8 @@
 
     "moment": ["moment@2.30.1", "", {}, "sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how=="],
 
+    "monaco-editor": ["monaco-editor@0.57.0", "", { "dependencies": { "dompurify": "3.4.15", "marked": "14.0.0" } }, "sha512-5BkI9KGoqrNvBGUe15/QlZq3OooZ8WLg1AxTpaqHRCP3HNpzPPZKE2EDz8M7c+VRmCeUw1Brp4cx/PWm3kI/5A=="],
+
     "motion": ["motion@13.2.0", "", { "dependencies": { "framer-motion": "^13.2.0", "tslib": "^2.4.0" }, "peerDependencies": { "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["react", "react-dom"] }, "sha512-4Hrb5vD6HhjFstLUiCmWvtpsw+WTpP4R+QXfSDYZBz7+uxE/LrRg3aV0ReJxHrTRffHhbIE6svEqnotngXvesQ=="],
 
     "motion-dom": ["motion-dom@13.2.0", "", { "dependencies": { "motion-utils": "^13.0.0" } }, "sha512-N6gdSoWRDk0Rh/fVtlqUtLs+fEN3ELFZI3cn3IQE9Mnf3E+Mh8wjO6MstzCOPFh4Yf0L1as5m2eUyYWj8ylVSQ=="],
@@ -7081,6 +7089,8 @@
     "standard-as-callback": ["standard-as-callback@2.1.0", "", {}, "sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A=="],
 
     "standardwebhooks": ["standardwebhooks@1.1.1", "", { "dependencies": { "@stablelib/base64": "^1.0.0", "fast-sha256": "^1.3.0" } }, "sha512-bCbX9ZEyFkWPsRz7Bl3NuQUJohmwGSev/yhr7vhaGPlc4AfIrspIRa6cPTBuI1ItmrTDJ4d/S2hCsfe4+vQGnQ=="],
+
+    "state-local": ["state-local@1.0.7", "", {}, "sha512-HTEHMNieakEnoe33shBYcZ7NX83ACUjCu8c40iOGEZsngj9zRnkqS9j1pqQPXwobB0ZcVTk27REb7COQ0UR59w=="],
 
     "stats-gl": ["stats-gl@2.4.2", "", { "dependencies": { "@types/three": "*", "three": "^0.170.0" } }, "sha512-g5O9B0hm9CvnM36+v7SFl39T7hmAlv541tU81ME8YeSb3i1CIP5/QdDeSB3A0la0bKNHpxpwxOVRo2wFTYEosQ=="],
 
@@ -8021,6 +8031,8 @@
     "miniflare/workerd": ["workerd@1.20260730.1", "", { "optionalDependencies": { "@cloudflare/workerd-darwin-64": "1.20260730.1", "@cloudflare/workerd-darwin-arm64": "1.20260730.1", "@cloudflare/workerd-linux-64": "1.20260730.1", "@cloudflare/workerd-linux-arm64": "1.20260730.1", "@cloudflare/workerd-windows-64": "1.20260730.1" }, "bin": { "workerd": "bin/workerd" } }, "sha512-zmfNIjwYSWFY5chGBOjWtH3xAE7p97FTC6vR4Ep98290ho6AeAR/NVcBD274YCLEUYzqm8yxdtZlxMybU8a3jA=="],
 
     "miniflare/ws": ["ws@8.21.0", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": ">=5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g=="],
+
+    "monaco-editor/marked": ["marked@14.0.0", "", { "bin": { "marked": "bin/marked.js" } }, "sha512-uIj4+faQ+MgHgwUW1l2PsPglZLOLOT1uErt06dAPtx2kjteLAkbsd/0FiYg/MGS+i7ZKLb7w2WClxHkzOOuryQ=="],
 
     "nano-css/css-tree": ["css-tree@1.1.3", "", { "dependencies": { "mdn-data": "2.0.14", "source-map": "^0.6.1" } }, "sha512-tRpdppF7TRazZrjJ6v3stzv93qxRcSsFmW6cX0Zm2NVKpxE1WV1HblnghVv9TreireHkqI/VDEsfolRF1p6y7Q=="],
 
