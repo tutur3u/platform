@@ -3,6 +3,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
@@ -10,6 +11,7 @@ import 'package:mobile/data/sources/api_client.dart';
 
 part 'inventory_repository_cache.dart';
 part 'inventory_repository_product_mutations.dart';
+part 'inventory_repository_setup_pending.dart';
 
 class InventoryRepository {
   InventoryRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
@@ -234,24 +236,36 @@ class InventoryRepository {
   Future<List<InventoryOwner>> getOwners(
     String wsId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryMap(
-      namespace: 'owners',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      policy: CachePolicies.metadata,
-      tags: const ['inventory:setup'],
-      fetch: () => _api.getJson(InventoryEndpoints.owners(wsId)),
-      decode: (response) =>
-          (response['data'] as List<dynamic>? ?? const <dynamic>[])
-              .whereType<Map<String, dynamic>>()
-              .map(InventoryOwner.fromJson)
-              .toList(growable: false),
+  }) async {
+    final owners = await _setupRows(
+      _cachedInventoryMap<List<InventoryOwner>>(
+        namespace: 'owners',
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+        policy: CachePolicies.metadata,
+        tags: const ['inventory:setup'],
+        fetch: () => _api.getJson(InventoryEndpoints.owners(wsId)),
+        decode: (response) =>
+            (response['data'] as List<dynamic>? ?? const <dynamic>[])
+                .whereType<Map<String, dynamic>>()
+                .map(InventoryOwner.fromJson)
+                .toList(growable: false),
+      ),
+    );
+    return _overlayPendingInventorySetup(
+      wsId,
+      InventoryEndpoints.owners(wsId),
+      owners,
+      (id, name) => InventoryOwner(id: id, name: name),
     );
   }
 
   Future<void> createOwner(String wsId, String name) async {
-    await _api.postJson(InventoryEndpoints.owners(wsId), {'name': name});
+    await _queueInventorySetupCreate(
+      wsId,
+      InventoryEndpoints.owners(wsId),
+      name,
+    );
     await _invalidateInventory(wsId, const [
       'inventory:setup',
       'inventory:catalog',
@@ -261,41 +275,64 @@ class InventoryRepository {
   Future<List<InventoryLookupItem>> getManufacturers(
     String wsId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryMap(
-      namespace: 'manufacturers',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      policy: CachePolicies.metadata,
-      tags: const ['inventory:setup'],
-      fetch: () => _api.getJson(InventoryEndpoints.manufacturers(wsId)),
-      decode: _decodeLookupMap,
+  }) async {
+    final rows = await _setupRows(
+      _cachedInventoryMap<List<InventoryLookupItem>>(
+        namespace: 'manufacturers',
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+        policy: CachePolicies.metadata,
+        tags: const ['inventory:setup'],
+        fetch: () => _api.getJson(InventoryEndpoints.manufacturers(wsId)),
+        decode: _decodeLookupMap,
+      ),
+    );
+    return _overlayPendingInventorySetup(
+      wsId,
+      InventoryEndpoints.manufacturers(wsId),
+      rows,
+      (id, name) => InventoryLookupItem(id: id, name: name),
     );
   }
 
   Future<void> createManufacturer(String wsId, String name) async {
-    await _api.postJson(InventoryEndpoints.manufacturers(wsId), {'name': name});
+    await _queueInventorySetupCreate(
+      wsId,
+      InventoryEndpoints.manufacturers(wsId),
+      name,
+    );
     await _invalidateInventory(wsId, const ['inventory:setup']);
   }
 
   Future<List<InventoryLookupItem>> getProductCategories(
     String wsId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryList(
-      namespace: 'product-categories',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      tags: const ['inventory:setup'],
-      fetch: () => _api.getJsonList(InventoryEndpoints.productCategories(wsId)),
-      decode: _decodeLookupList,
+  }) async {
+    final rows = await _setupRows(
+      _cachedInventoryList<List<InventoryLookupItem>>(
+        namespace: 'product-categories',
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+        tags: const ['inventory:setup'],
+        fetch: () =>
+            _api.getJsonList(InventoryEndpoints.productCategories(wsId)),
+        decode: _decodeLookupList,
+      ),
+    );
+    return _overlayPendingInventorySetup(
+      wsId,
+      InventoryEndpoints.productCategories(wsId),
+      rows,
+      (id, name) => InventoryLookupItem(id: id, name: name),
     );
   }
 
   Future<void> createProductCategory(String wsId, String name) async {
-    await _api.postJson(InventoryEndpoints.productCategories(wsId), {
-      'name': name,
-    });
+    await _queueInventorySetupCreate(
+      wsId,
+      InventoryEndpoints.productCategories(wsId),
+      name,
+    );
     await _invalidateInventory(wsId, const [
       'inventory:setup',
       'inventory:catalog',
@@ -305,40 +342,63 @@ class InventoryRepository {
   Future<List<InventoryLookupItem>> getProductUnits(
     String wsId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryList(
-      namespace: 'product-units',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      tags: const ['inventory:setup'],
-      fetch: () => _api.getJsonList(InventoryEndpoints.productUnits(wsId)),
-      decode: _decodeLookupList,
+  }) async {
+    final rows = await _setupRows(
+      _cachedInventoryList<List<InventoryLookupItem>>(
+        namespace: 'product-units',
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+        tags: const ['inventory:setup'],
+        fetch: () => _api.getJsonList(InventoryEndpoints.productUnits(wsId)),
+        decode: _decodeLookupList,
+      ),
+    );
+    return _overlayPendingInventorySetup(
+      wsId,
+      InventoryEndpoints.productUnits(wsId),
+      rows,
+      (id, name) => InventoryLookupItem(id: id, name: name),
     );
   }
 
   Future<void> createProductUnit(String wsId, String name) async {
-    await _api.postJson(InventoryEndpoints.productUnits(wsId), {'name': name});
+    await _queueInventorySetupCreate(
+      wsId,
+      InventoryEndpoints.productUnits(wsId),
+      name,
+    );
     await _invalidateInventory(wsId, const ['inventory:setup']);
   }
 
   Future<List<InventoryLookupItem>> getProductWarehouses(
     String wsId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryList(
-      namespace: 'product-warehouses',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      tags: const ['inventory:setup'],
-      fetch: () => _api.getJsonList(InventoryEndpoints.productWarehouses(wsId)),
-      decode: _decodeLookupList,
+  }) async {
+    final rows = await _setupRows(
+      _cachedInventoryList<List<InventoryLookupItem>>(
+        namespace: 'product-warehouses',
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+        tags: const ['inventory:setup'],
+        fetch: () =>
+            _api.getJsonList(InventoryEndpoints.productWarehouses(wsId)),
+        decode: _decodeLookupList,
+      ),
+    );
+    return _overlayPendingInventorySetup(
+      wsId,
+      InventoryEndpoints.productWarehouses(wsId),
+      rows,
+      (id, name) => InventoryLookupItem(id: id, name: name),
     );
   }
 
   Future<void> createProductWarehouse(String wsId, String name) async {
-    await _api.postJson(InventoryEndpoints.productWarehouses(wsId), {
-      'name': name,
-    });
+    await _queueInventorySetupCreate(
+      wsId,
+      InventoryEndpoints.productWarehouses(wsId),
+      name,
+    );
     await _invalidateInventory(wsId, const ['inventory:setup']);
   }
 

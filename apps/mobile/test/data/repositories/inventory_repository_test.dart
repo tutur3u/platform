@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mocktail/mocktail.dart';
@@ -13,7 +15,106 @@ void main() {
 
   setUp(() async {
     await CacheStore.instance.clearScope();
+    OfflineMutationQueue.instance.pending.value = [];
   });
+
+  test(
+    'shows queued inventory setup choices only in their workspace',
+    () async {
+      final apiClient = _MockApiClient();
+      final repository = InventoryRepository(apiClient: apiClient);
+      when(
+        () => apiClient.getJson(any()),
+      ).thenAnswer((_) async => {'data': <dynamic>[]});
+      OfflineMutationQueue.instance.pending.value = [
+        PendingMutationRecord(
+          id: 'edit-1',
+          feature: 'inventory',
+          method: 'POST',
+          path: '/api/v1/workspaces/ws-1/inventory/owners',
+          createdAt: DateTime.utc(2026, 9, 29),
+          userId: 'user-1',
+          workspaceId: 'ws-1',
+          payload: const {'name': 'Local owner'},
+          optimisticPatch: const {'entityId': 'local-owner'},
+        ),
+      ];
+
+      expect((await repository.getOwners('ws-1')).map((owner) => owner.name), [
+        'Local owner',
+      ]);
+      expect(await repository.getOwners('ws-2'), isEmpty);
+      expect(await repository.getManufacturers('ws-1'), isEmpty);
+    },
+  );
+
+  test(
+    'shows a queued setup choice before any server snapshot exists',
+    () async {
+      final apiClient = _MockApiClient();
+      final repository = InventoryRepository(apiClient: apiClient);
+      when(
+        () => apiClient.getJson(any()),
+      ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+      OfflineMutationQueue.instance.pending.value = [
+        PendingMutationRecord(
+          id: 'edit-3',
+          feature: 'inventory',
+          method: 'POST',
+          path: '/api/v1/workspaces/ws-1/inventory/owners',
+          createdAt: DateTime.utc(2026, 9, 29),
+          userId: 'user-1',
+          workspaceId: 'ws-1',
+          payload: const {'name': 'Offline owner'},
+          optimisticPatch: const {'entityId': 'local-owner'},
+        ),
+      ];
+
+      expect((await repository.getOwners('ws-1')).map((owner) => owner.name), [
+        'Offline owner',
+      ]);
+    },
+  );
+
+  test(
+    'keeps confirmed and queued setup rows during an offline refresh',
+    () async {
+      final apiClient = _MockApiClient();
+      final repository = InventoryRepository(apiClient: apiClient);
+      var requests = 0;
+      when(() => apiClient.getJson(any())).thenAnswer((_) async {
+        requests++;
+        if (requests == 1) {
+          return {
+            'data': [
+              {'id': 'owner-1', 'name': 'Confirmed owner'},
+            ],
+          };
+        }
+        throw const ApiException(message: 'Offline', statusCode: 0);
+      });
+      await repository.getOwners('ws-1');
+      OfflineMutationQueue.instance.pending.value = [
+        PendingMutationRecord(
+          id: 'edit-2',
+          feature: 'inventory',
+          method: 'POST',
+          path: '/api/v1/workspaces/ws-1/inventory/owners',
+          createdAt: DateTime.utc(2026, 9, 29),
+          userId: 'user-1',
+          workspaceId: 'ws-1',
+          payload: const {'name': 'Queued owner'},
+          optimisticPatch: const {'entityId': 'local-owner'},
+        ),
+      ];
+
+      final owners = await repository.getOwners('ws-1', forceRefresh: true);
+      expect(owners.map((owner) => owner.name), [
+        'Confirmed owner',
+        'Queued owner',
+      ]);
+    },
+  );
 
   test('shows fresh workspace-scoped overview while revalidating', () async {
     final apiClient = _MockApiClient();

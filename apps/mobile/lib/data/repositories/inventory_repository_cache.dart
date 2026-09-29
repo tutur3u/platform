@@ -77,20 +77,42 @@ extension _InventoryRepositoryCache on InventoryRepository {
     CachePolicy policy = CachePolicies.moduleData,
     bool forceRefresh = false,
   }) async {
-    final result = await CacheStore.instance.prefetch<T>(
-      key: _inventoryCacheKey(namespace, wsId, params: params),
-      policy: policy,
-      decode: (json) {
-        if (json is! Map) {
-          throw const FormatException('Invalid inventory cache payload.');
-        }
-        return decode(Map<String, dynamic>.from(json));
-      },
-      fetch: fetch,
-      forceRefresh: forceRefresh,
-      tags: [_inventoryModuleTag, 'workspace:$wsId', ...tags],
-    );
-    final data = result.data;
+    final key = _inventoryCacheKey(namespace, wsId, params: params);
+    T decodePayload(Object? json) {
+      if (json is! Map) {
+        throw const FormatException('Invalid inventory cache payload.');
+      }
+      return decode(Map<String, dynamic>.from(json));
+    }
+
+    T? data;
+    try {
+      final result = await CacheStore.instance.prefetch<T>(
+        key: key,
+        policy: policy,
+        decode: decodePayload,
+        fetch: () async {
+          try {
+            return await fetch();
+          } on ApiException catch (error) {
+            if (error.statusCode == 401 || error.statusCode == 403) {
+              await CacheStore.instance.remove(key);
+            }
+            rethrow;
+          }
+        },
+        forceRefresh: forceRefresh,
+        tags: [_inventoryModuleTag, 'workspace:$wsId', ...tags],
+      );
+      data = result.data;
+    } on ApiException catch (error) {
+      if (error.statusCode != 0) rethrow;
+      data = (await CacheStore.instance.read<T>(
+        key: key,
+        decode: decodePayload,
+      )).data;
+      if (data == null) rethrow;
+    }
     if (data == null) {
       throw StateError('Inventory cache returned no data for $namespace.');
     }
@@ -107,20 +129,42 @@ extension _InventoryRepositoryCache on InventoryRepository {
     CachePolicy policy = CachePolicies.metadata,
     bool forceRefresh = false,
   }) async {
-    final result = await CacheStore.instance.prefetch<T>(
-      key: _inventoryCacheKey(namespace, wsId, params: params),
-      policy: policy,
-      decode: (json) {
-        if (json is! List) {
-          throw const FormatException('Invalid inventory cache payload.');
-        }
-        return decode(List<dynamic>.from(json));
-      },
-      fetch: fetch,
-      forceRefresh: forceRefresh,
-      tags: [_inventoryModuleTag, 'workspace:$wsId', ...tags],
-    );
-    final data = result.data;
+    final key = _inventoryCacheKey(namespace, wsId, params: params);
+    T decodePayload(Object? json) {
+      if (json is! List) {
+        throw const FormatException('Invalid inventory cache payload.');
+      }
+      return decode(List<dynamic>.from(json));
+    }
+
+    T? data;
+    try {
+      final result = await CacheStore.instance.prefetch<T>(
+        key: key,
+        policy: policy,
+        decode: decodePayload,
+        fetch: () async {
+          try {
+            return await fetch();
+          } on ApiException catch (error) {
+            if (error.statusCode == 401 || error.statusCode == 403) {
+              await CacheStore.instance.remove(key);
+            }
+            rethrow;
+          }
+        },
+        forceRefresh: forceRefresh,
+        tags: [_inventoryModuleTag, 'workspace:$wsId', ...tags],
+      );
+      data = result.data;
+    } on ApiException catch (error) {
+      if (error.statusCode != 0) rethrow;
+      data = (await CacheStore.instance.read<T>(
+        key: key,
+        decode: decodePayload,
+      )).data;
+      if (data == null) rethrow;
+    }
     if (data == null) {
       throw StateError('Inventory cache returned no data for $namespace.');
     }
