@@ -738,6 +738,12 @@ send permissions are never trusted. A denied access response clears the cached
 view and prevents late requests from restoring it. Draft editing and attachment
 downloads continue to use authenticated network requests.
 
+Opening a mobile message keeps its request active while the inbox revalidates.
+Cached thread detail opens immediately; transient detail failures get one
+bounded retry. If opening still fails, the inbox shows a Retry action above the
+floating dock. The reader leaves enough bottom scroll space to reveal the end
+of long messages above that dock.
+
 ## Mobile incoming-mail notifications
 
 Incoming SES and Cloudflare messages create durable `mail_received` push notifications

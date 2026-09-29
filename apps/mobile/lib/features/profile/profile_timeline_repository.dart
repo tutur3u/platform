@@ -69,7 +69,7 @@ class ProfileTimelineRepository {
     return result.data;
   }
 
-  Future<List<ProfileTimelineItem>> refresh(
+  Future<({List<ProfileTimelineItem> items, bool partial})> refresh(
     String workspaceId,
     String userId,
   ) async {
@@ -77,13 +77,17 @@ class ProfileTimelineRepository {
       '/api/v1/workspaces/$workspaceId/mobile-activity',
     );
     final items = _decode(response['items']);
-    await CacheStore.instance.write(
-      key: _key(workspaceId, userId),
-      policy: CachePolicies.summary,
-      payload: items.map((item) => item.toJson()).toList(),
-      tags: ['module:profile', 'workspace:$workspaceId'],
-    );
-    return items;
+    try {
+      await CacheStore.instance.write(
+        key: _key(workspaceId, userId),
+        policy: CachePolicies.summary,
+        payload: items.map((item) => item.toJson()).toList(),
+        tags: ['module:profile', 'workspace:$workspaceId'],
+      );
+    } on Object {
+      // A failed snapshot write must not hide activity returned by the API.
+    }
+    return (items: items, partial: response['partial'] == true);
   }
 
   void dispose() => _api.dispose();

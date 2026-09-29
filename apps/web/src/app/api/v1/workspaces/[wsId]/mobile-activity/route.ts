@@ -78,11 +78,17 @@ export async function GET(
       .limit(200),
   ]);
 
-  const failure = [tasks, transactions, notes, events].find(
-    (result) => result.error
+  const sources = { tasks, transactions, notes, events };
+  const failedSources = Object.entries(sources).filter(
+    ([, result]) => result.error
   );
-  if (failure?.error) {
-    console.error('Could not load mobile profile activity', failure.error);
+  for (const [source, result] of failedSources) {
+    console.error('Could not load mobile profile activity source', {
+      source,
+      code: result.error?.code,
+    });
+  }
+  if (failedSources.length === Object.keys(sources).length) {
     return NextResponse.json(
       { error: 'Could not load activity' },
       { status: 500, headers }
@@ -90,7 +96,7 @@ export async function GET(
   }
 
   const items = [
-    ...(tasks.data ?? []).map((task) => ({
+    ...(!tasks.error ? (tasks.data ?? []) : []).map((task) => ({
       id: task.id,
       type: 'task',
       title: task.name,
@@ -98,7 +104,7 @@ export async function GET(
       createdAt: task.created_at,
       scope: 'personal',
     })),
-    ...(transactions.data ?? [])
+    ...(!transactions.error ? (transactions.data ?? []) : [])
       .filter(
         (transaction) =>
           transaction.platform_creator_id === user.id &&
@@ -111,14 +117,14 @@ export async function GET(
         createdAt: transaction.created_at,
         scope: 'personal',
       })),
-    ...(notes.data ?? []).map((note) => ({
+    ...(!notes.error ? (notes.data ?? []) : []).map((note) => ({
       id: note.id,
       type: 'note',
       title: note.title,
       createdAt: note.created_at,
       scope: 'personal',
     })),
-    ...(events.data ?? []).map((event) => ({
+    ...(!events.error ? (events.data ?? []) : []).map((event) => ({
       id: event.id,
       type: 'calendar',
       createdAt: event.created_at,
@@ -130,6 +136,7 @@ export async function GET(
   return NextResponse.json(
     {
       items,
+      partial: failedSources.length > 0,
       limited: [tasks, transactions, notes, events].some(
         (result) => (result.data?.length ?? 0) === 200
       ),

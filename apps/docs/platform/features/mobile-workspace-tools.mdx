@@ -75,6 +75,15 @@ state. Destination actions remain disabled until their mounted page registers
 current handlers; missing destinations discard previews after a short handoff.
 Long-press navigation supports dragging between enabled destinations and commits
 only on release. Releasing outside the dock cancels the change.
+The dock's translucent surface blurs content behind it. Pressing anywhere on
+the navigation island immediately enlarges and brightens it; the selection
+follows a held finger and animates between tabs. Dock controls use accessibility
+labels without hover tooltips. The Profile avatar shows a skeleton while the
+profile or its image is loading.
+
+Settings tiles center a single title with the icon. For tiles with a value or
+supporting line, the first title line aligns with the icon. Workspace settings
+use the shell's Workspace title and omit a second in-content heading.
 
 Notification Inbox and Archive actions share a bordered segmented control with
 primary selected colors and accessibility selection state. Use `segmentGroup`
@@ -712,6 +721,10 @@ local day, expands to individual items, and links to their native mobile views.
 Its snapshot is encrypted and scoped by user and workspace; opening Profile returns
 it first and then revalidates. Timeline data is private and never follows the
 tracked-time sharing preference.
+If one activity source is unavailable, Profile keeps the other sources visible,
+labels the result as partial, and offers retry. An unreadable local snapshot
+does not prevent the network refresh. If every source fails, the existing retry
+state remains.
 
 Profile shows your own tracked-time totals and activity. Nothing is shared by
 default. In a team workspace, **Share activity** asks for confirmation before

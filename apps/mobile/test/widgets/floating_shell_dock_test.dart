@@ -342,7 +342,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpAndSettle();
     expect(find.text('Compose'), findsNothing);
-    expect(find.byTooltip('Compose'), findsOneWidget);
+    expect(find.byIcon(Icons.edit), findsOneWidget);
+    await tester.tap(find.byType(FilledButton));
+    expect(calls, 1);
     tester.view.physicalSize = const Size(844, 390);
     await tester.pumpAndSettle();
     expect(find.text('Compose'), findsNothing);
@@ -350,7 +352,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Compose'), findsOneWidget);
     await tester.tap(find.byType(FilledButton));
-    expect(calls, 1);
+    expect(calls, 2);
     expect(tester.takeException(), isNull);
   });
 }

@@ -23,22 +23,13 @@ class MeetRoomContentHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!joinRequested || call.ended) return const SizedBox.shrink();
     final l10n = context.l10n;
-    final remaining = joinRequested && !call.ended
-        ? formatMeetRemainingTime(call.roomExpiresAt)
-        : null;
+    final remaining = formatMeetRemainingTime(call.roomExpiresAt);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Row(
         children: [
-          FloatingActionButton.small(
-            heroTag: 'meet-room-back',
-            tooltip: l10n.meetLeave,
-            onPressed: onLeave,
-            elevation: 0,
-            child: const Icon(Icons.arrow_back_rounded),
-          ),
-          const SizedBox(width: 12),
           Expanded(
             child: Text(
               call.title ?? fallbackTitle ?? l10n.meetTitle,
@@ -55,14 +46,13 @@ class MeetRoomContentHeader extends StatelessWidget {
                 child: Text(remaining),
               ),
             ),
-          if (joinRequested && !call.ended)
-            IconButton(
-              tooltip: l10n.meetParticipantsAndInvite,
-              onPressed: () =>
-                  unawaited(showMeetParticipantsSheet(context, call)),
-              icon: const Icon(Icons.group_add_outlined),
-            ),
-          if (joinRequested && !call.ended && call.role == 'host')
+          IconButton(
+            tooltip: l10n.meetParticipantsAndInvite,
+            onPressed: () =>
+                unawaited(showMeetParticipantsSheet(context, call)),
+            icon: const Icon(Icons.group_add_outlined),
+          ),
+          if (call.role == 'host')
             MeetHostActionsMenu(
               onLeaveOrEnd: onLeave,
               onCosts: () => unawaited(showMeetCostsSheet(context, call)),

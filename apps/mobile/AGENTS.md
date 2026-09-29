@@ -36,6 +36,8 @@ Flutter/Dart toolchain and app package configuration.
   `PendingSyncFrame` until confirmed.
 - Release Please owns release versions. Keep iOS Podfile.lock aligned after changes
   to dependencies with native iOS components.
+- Store CI must verify archived iOS dSYM UUIDs and upload symbols to Crashlytics
+  before TestFlight distribution. Preserve the dSYM artifact for recovery.
 - Follow root source-size limits; split cohesive widgets/modules without changing
   public imports merely for a cosmetic line-count target.
 

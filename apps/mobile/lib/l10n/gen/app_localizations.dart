@@ -15703,6 +15703,12 @@ abstract class AppLocalizations {
   /// **'Could not complete the action. Your draft is retained; please try again.'**
   String get mailActionFailed;
 
+  /// No description provided for @mailOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open this message. Please try again.'**
+  String get mailOpenFailed;
+
   /// No description provided for @mailInvalidRecipient.
   ///
   /// In en, this message translates to:
@@ -16710,6 +16716,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No recent activity in this workspace'**
   String get profileTimelineEmpty;
+
+  /// No description provided for @profileTimelinePartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Some activity is unavailable. Retry'**
+  String get profileTimelinePartial;
 
   /// No description provided for @profileTimelineTasks.
   ///

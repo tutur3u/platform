@@ -110,11 +110,37 @@ describe('mobile profile activity', () => {
     expect(tables.notes.eq).toHaveBeenCalledWith('creator_id', 'viewer');
     const body = await response.json();
     expect(body.items).toHaveLength(2);
+    expect(body.partial).toBe(false);
     expect(body).toMatchObject({
       items: [
         { id: 'task-1', type: 'task', scope: 'personal', boardId: 'board-1' },
         { id: 'transaction-1', type: 'transaction', scope: 'personal' },
       ],
     });
+  });
+
+  it('keeps available activity when one source fails', async () => {
+    tables.notes.limit.mockResolvedValueOnce({
+      data: null,
+      error: { code: 'permission_denied' },
+    });
+    const response = await GET(request(), params);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      partial: true,
+      items: [
+        { id: 'task-1', type: 'task' },
+        { id: 'transaction-1', type: 'transaction' },
+      ],
+    });
+  });
+
+  it('offers retry when every activity source fails', async () => {
+    const failure = { data: null, error: { code: 'unavailable' } };
+    tables.tasks.limit.mockResolvedValueOnce(failure);
+    tables.notes.limit.mockResolvedValueOnce(failure);
+    tables.workspace_calendar_events.limit.mockResolvedValueOnce(failure);
+    rpc.mockResolvedValueOnce(failure);
+    expect((await GET(request(), params)).status).toBe(500);
   });
 });

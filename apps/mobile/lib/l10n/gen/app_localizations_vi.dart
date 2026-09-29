@@ -8180,6 +8180,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailActionFailed => 'Không thể hoàn tất thao tác. Thư nháp vẫn được giữ lại, vui lòng thử lại.';
 
   @override
+  String get mailOpenFailed => 'Không thể mở thư này. Vui lòng thử lại.';
+
+  @override
   String get mailInvalidRecipient => 'Vui lòng nhập địa chỉ email người nhận hợp lệ.';
 
   @override
@@ -8694,6 +8697,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileTimelineEmpty => 'Không có hoạt động gần đây trong không gian này';
+
+  @override
+  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị. Thử lại';
 
   @override
   String profileTimelineTasks(int count) {

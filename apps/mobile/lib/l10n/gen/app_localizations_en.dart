@@ -8222,6 +8222,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailActionFailed => 'Could not complete the action. Your draft is retained; please try again.';
 
   @override
+  String get mailOpenFailed => 'Could not open this message. Please try again.';
+
+  @override
   String get mailInvalidRecipient => 'Enter valid recipient email addresses.';
 
   @override
@@ -8736,6 +8739,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileTimelineEmpty => 'No recent activity in this workspace';
+
+  @override
+  String get profileTimelinePartial => 'Some activity is unavailable. Retry';
 
   @override
   String profileTimelineTasks(int count) {

@@ -102,10 +102,13 @@ Confirm reception with a physical two-device call. Crashlytics nonfatal reports
 may appear on a later app launch; a missing immediate issue is not proof that
 the failure was never reported.
 
-Before relying on an iOS crash stack, check the signed build's Xcode log for
-Crashlytics dSYM upload. The project's upload phase skips unsigned simulator
-builds and skips when the FlutterFire CLI is unavailable; either case can leave
-an iOS production crash unsymbolicated. Use Firebase DebugView on an internal
+Before relying on an iOS crash stack, check the store workflow's
+Crashlytics symbol upload step. Store CI checks the archived Runner binary against its
+dSYM UUID and uploads the archive's dSYMs before sending the IPA to TestFlight.
+The `ios-production-dsyms` workflow artifact is retained for 14 days for manual
+recovery if Firebase later reports missing symbols. Historical builds that
+skipped Xcode's optional FlutterFire upload may still need manual symbol recovery.
+Use Firebase DebugView on an internal
 production-flavor build to verify event delivery without injecting a crash into
 the public release.
 
