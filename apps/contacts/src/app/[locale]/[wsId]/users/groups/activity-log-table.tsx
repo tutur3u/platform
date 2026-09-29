@@ -63,6 +63,7 @@ export async function UserGroupActivityLogTable({
 
   let data: UserGroupActivityEvent[] = [];
   let count = 0;
+  let loadFailed = false;
 
   try {
     const response = await listUserGroupActivityEventsForRange({
@@ -81,9 +82,9 @@ export async function UserGroupActivityLogTable({
 
     data = response.data;
     count = response.count;
-  } catch {
-    data = [];
-    count = 0;
+  } catch (error) {
+    console.error('Failed to load user group activity', error);
+    loadFailed = true;
   }
 
   return (
@@ -92,6 +93,7 @@ export async function UserGroupActivityLogTable({
       groupId={resolvedGroupId}
       data={data}
       count={count}
+      loadFailed={loadFailed}
       page={page}
       pageSize={pageSize}
       compact={compact}

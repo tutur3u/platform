@@ -9281,6 +9281,8 @@
     "empty": "Chưa có hoạt động nhóm nào.",
     "group": "Nhóm",
     "group_panel_description": "Các thay đổi gần đây của riêng nhóm này.",
+    "load_error_title": "Không thể tải nhật ký kiểm tra",
+    "load_error_description": "Không tải được hoạt động. Đừng xem đây là lịch sử trống. Hãy thử lại hoặc liên hệ hỗ trợ.",
     "next": "Tiếp",
     "open_full_log": "Mở nhật ký đầy đủ",
     "page_summary": "Trang {page} trên {totalPages} · {count} sự kiện",
