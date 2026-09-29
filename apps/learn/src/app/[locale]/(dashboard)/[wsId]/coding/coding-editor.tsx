@@ -19,17 +19,14 @@ if (typeof window !== 'undefined') {
       if (label === 'typescript' || label === 'javascript') {
         return new Worker(
           new URL(
-            'monaco-editor/esm/vs/language/typescript/ts.worker.js',
+            'monaco-editor/language/typescript/ts.worker.js',
             import.meta.url
           ),
           { type: 'module' }
         );
       }
       return new Worker(
-        new URL(
-          'monaco-editor/esm/vs/editor/editor.worker.js',
-          import.meta.url
-        ),
+        new URL('monaco-editor/editor/editor.worker.js', import.meta.url),
         { type: 'module' }
       );
     },
