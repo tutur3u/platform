@@ -3,7 +3,18 @@ import 'dart:developer';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile/core/config/app_flavor.dart';
+
+/// Distinguish native plugin failures without reporting sensitive messages.
+String mobileCrashSignature(Object error) {
+  if (error is! PlatformException) return error.runtimeType.toString();
+  final code = error.code;
+  if (!RegExp(r'^[a-zA-Z][a-zA-Z0-9_.-]{0,39}$').hasMatch(code)) {
+    return 'PlatformException:unknown';
+  }
+  return 'PlatformException:$code';
+}
 
 /// Reports production failures without user content or room identifiers.
 class MobileObservability {
@@ -37,7 +48,7 @@ class MobileObservability {
   void recordNonFatal(String source, Object error, StackTrace? stack) {
     final code = _code(source);
     if (!_enabled) return;
-    final key = '$code:${error.runtimeType}';
+    final key = '$code:${mobileCrashSignature(error)}';
     final now = DateTime.now();
     final previous = _lastNonFatal[key];
     if (previous != null &&
@@ -70,7 +81,7 @@ class MobileObservability {
     StackTrace? stack, {
     required bool fatal,
   }) async {
-    final type = error.runtimeType.toString();
+    final type = mobileCrashSignature(error);
     try {
       // Preserve the original stack while excluding exception messages, which
       // can contain attachment names, message text, or session credentials.
