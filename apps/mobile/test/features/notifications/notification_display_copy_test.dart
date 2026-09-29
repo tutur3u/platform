@@ -22,10 +22,13 @@ void main() {
     for (final (type, app) in [
       ('mail_received', 'Mail'),
       ('task_mention', 'Task'),
+      ('tasks', 'Task'),
       ('calendar_event', 'Calendar'),
       ('finance_transaction', 'Finance'),
       ('inventory_stock', 'Inventory'),
       ('note_shared', 'Notes'),
+      ('notes', 'Notes'),
+      ('documents', 'Documents'),
       ('chat_message', 'Chat'),
       ('meet_invite', 'Meet'),
       ('drive_file', 'Drive'),
@@ -33,9 +36,11 @@ void main() {
       ('cms_content', 'CMS'),
       ('crm_contact', 'CRM'),
       ('habit_reminder', 'Habits'),
+      ('habits', 'Habits'),
       ('timer_finished', 'Timer'),
       ('workspace_invite', 'Workspace'),
       ('security_alert', 'Security'),
+      ('settings_app', 'Settings'),
     ]) {
       final copy = notificationDisplayCopy(notification(type), l10n);
       expect(copy.title, '$app: Cloudflare Registrar', reason: type);

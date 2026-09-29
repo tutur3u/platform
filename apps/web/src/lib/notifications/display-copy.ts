@@ -11,6 +11,7 @@ const APP_PREFIXES: ReadonlyArray<readonly [string, string]> = [
   ['mail', 'Mail'],
   ['email', 'Mail'],
   ['task', 'Task'],
+  ['tasks', 'Task'],
   ['deadline', 'Task'],
   ['calendar', 'Calendar'],
   ['event', 'Calendar'],
@@ -23,7 +24,9 @@ const APP_PREFIXES: ReadonlyArray<readonly [string, string]> = [
   ['stock', 'Inventory'],
   ['checkout', 'Inventory'],
   ['note', 'Notes'],
+  ['notes', 'Notes'],
   ['document', 'Documents'],
+  ['documents', 'Documents'],
   ['chat', 'Chat'],
   ['meet', 'Meet'],
   ['drive', 'Drive'],
@@ -37,6 +40,7 @@ const APP_PREFIXES: ReadonlyArray<readonly [string, string]> = [
   ['crm', 'CRM'],
   ['contact', 'CRM'],
   ['habit', 'Habits'],
+  ['habits', 'Habits'],
   ['timer', 'Timer'],
   ['time_tracking', 'Timer'],
   ['storefront', 'Storefront'],
@@ -47,6 +51,7 @@ const APP_PREFIXES: ReadonlyArray<readonly [string, string]> = [
   ['security', 'Security'],
   ['mfa', 'Security'],
   ['login', 'Security'],
+  ['settings', 'Settings'],
 ];
 
 function nonEmpty(value: unknown): string | null {

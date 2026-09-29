@@ -7,6 +7,7 @@ const _appPrefixes = <(String, String)>[
   ('mail', 'mail'),
   ('email', 'mail'),
   ('task', 'task'),
+  ('tasks', 'task'),
   ('deadline', 'task'),
   ('calendar', 'calendar'),
   ('event', 'calendar'),
@@ -19,7 +20,9 @@ const _appPrefixes = <(String, String)>[
   ('stock', 'inventory'),
   ('checkout', 'inventory'),
   ('note', 'notes'),
+  ('notes', 'notes'),
   ('document', 'documents'),
+  ('documents', 'documents'),
   ('chat', 'chat'),
   ('meet', 'meet'),
   ('drive', 'drive'),
@@ -33,6 +36,7 @@ const _appPrefixes = <(String, String)>[
   ('crm', 'crm'),
   ('contact', 'crm'),
   ('habit', 'habits'),
+  ('habits', 'habits'),
   ('timer', 'timer'),
   ('time_tracking', 'timer'),
   ('storefront', 'storefront'),
@@ -43,6 +47,7 @@ const _appPrefixes = <(String, String)>[
   ('security', 'security'),
   ('mfa', 'security'),
   ('login', 'security'),
+  ('settings', 'settings'),
 ];
 
 String? _nonEmpty(Object? value) {
@@ -86,6 +91,7 @@ String notificationAppLabel(
   'assistant' => l10n.navAssistant,
   'workspace' => l10n.notificationWorkspaceAppLabel,
   'security' => l10n.notificationSecurityAppLabel,
+  'settings' => l10n.navSettings,
   _ => l10n.appTitle,
 };
 
