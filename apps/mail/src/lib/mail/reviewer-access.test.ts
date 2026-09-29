@@ -65,7 +65,6 @@ describe('Mail reviewer access', () => {
     mocks.getUserById.mockResolvedValue({
       data: {
         user: {
-          email: identity.email,
           email_confirmed_at: '2026-09-29T00:00:00Z',
           banned_until: null,
           ...override,

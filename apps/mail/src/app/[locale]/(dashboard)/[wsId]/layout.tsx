@@ -20,11 +20,11 @@ import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
+import { isManagedMailReviewer } from '@/lib/mail/reviewer-access';
 import { DEFAULT_MAIL_FOLDER, getMailFolderHref } from './mail-folders';
 import { MailWorkspace } from './mail-workspace';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
-import { isManagedMailReviewer } from '@/lib/mail/reviewer-access';
 
 interface LayoutProps {
   children: ReactNode;

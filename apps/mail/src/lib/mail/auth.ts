@@ -18,8 +18,8 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import type { MailRouteContext } from './types';
 import { isManagedMailReviewer } from './reviewer-access';
+import type { MailRouteContext } from './types';
 
 export const MAIL_APP_SESSION_AUTH = {
   targetApp: ['mail', 'platform'],
