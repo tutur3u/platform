@@ -54,11 +54,7 @@ extension InventoryCacheSnapshot on InventoryRepository {
       params: {'limit': '$limit', 'offset': '0', 'periodId': periodId ?? ''},
     );
     if (cached == null) return null;
-    return _overlayPendingInventorySales(
-      wsId,
-      cached,
-      periodId: periodId,
-    );
+    return _overlayPendingInventorySales(wsId, cached, periodId: periodId);
   }
 
   List<InventorySalesPeriod>? peekSalesPeriods(String wsId) => _peekInventory(
