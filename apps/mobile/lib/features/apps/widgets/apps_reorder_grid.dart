@@ -16,6 +16,8 @@ class AppsReorderGrid extends StatefulWidget {
     required this.modules,
     required this.hidden,
     required this.canReorder,
+    required this.isOrdering,
+    required this.onOrderingStarted,
     required this.onOrderChanged,
     required this.onVisibilityPressed,
     this.onSelected,
@@ -25,6 +27,8 @@ class AppsReorderGrid extends StatefulWidget {
   final List<AppModule> modules;
   final bool hidden;
   final bool canReorder;
+  final bool isOrdering;
+  final VoidCallback onOrderingStarted;
   final ValueChanged<List<String>> onOrderChanged;
   final ValueChanged<AppModule> onVisibilityPressed;
   final ValueChanged<AppModule>? onSelected;
@@ -47,6 +51,15 @@ class _AppsReorderGridState extends State<AppsReorderGrid>
   void didUpdateWidget(covariant AppsReorderGrid oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_draggingId == null) _preview = [...widget.modules];
+    if (oldWidget.isOrdering != widget.isOrdering) {
+      if (widget.isOrdering && !MediaQuery.disableAnimationsOf(context)) {
+        _wiggle.repeat();
+      } else {
+        _wiggle
+          ..stop()
+          ..reset();
+      }
+    }
   }
 
   @override
@@ -58,7 +71,7 @@ class _AppsReorderGridState extends State<AppsReorderGrid>
   void _startDrag(AppModule module) {
     if (!widget.canReorder) return;
     setState(() => _draggingId = module.id);
-    if (!MediaQuery.disableAnimationsOf(context)) _wiggle.repeat();
+    widget.onOrderingStarted();
     unawaited(AppHaptics.pickup());
   }
 
@@ -93,9 +106,6 @@ class _AppsReorderGridState extends State<AppsReorderGrid>
 
   void _finishDrag() {
     if (_draggingId == null) return;
-    _wiggle
-      ..stop()
-      ..reset();
     final changed =
         _preview.map((module) => module.id).join(',') !=
         widget.modules.map((module) => module.id).join(',');
@@ -116,7 +126,7 @@ class _AppsReorderGridState extends State<AppsReorderGrid>
           MediaQuery.textScalerOf(context).scale(labelStyle?.fontSize ?? 14) *
           (labelStyle?.height ?? 1.2) *
           2;
-      final cellHeight = 64 + 8 + labelHeight + 12;
+      final cellHeight = 84 + 8 + labelHeight + 12;
       final rows = (_preview.length / columns).ceil();
       return SizedBox(
         key: _gridKey,
@@ -142,7 +152,7 @@ class _AppsReorderGridState extends State<AppsReorderGrid>
                   height: cellHeight,
                   child: Transform.rotate(
                     angle:
-                        _draggingId == null ||
+                        !widget.isOrdering ||
                             MediaQuery.disableAnimationsOf(context)
                         ? 0
                         : math.sin(
@@ -178,6 +188,7 @@ class _AppsReorderGridState extends State<AppsReorderGrid>
       module: module,
       index: index,
       hidden: widget.hidden,
+      showVisibility: widget.hidden || widget.isOrdering,
       onSelected: widget.onSelected,
       onVisibilityPressed: () => widget.onVisibilityPressed(module),
     );
@@ -210,6 +221,7 @@ class _AppGridTile extends StatelessWidget {
     required this.module,
     required this.index,
     required this.hidden,
+    required this.showVisibility,
     required this.onVisibilityPressed,
     this.onSelected,
   });
@@ -217,6 +229,7 @@ class _AppGridTile extends StatelessWidget {
   final AppModule module;
   final int index;
   final bool hidden;
+  final bool showVisibility;
   final VoidCallback onVisibilityPressed;
   final ValueChanged<AppModule>? onSelected;
 
@@ -232,6 +245,7 @@ class _AppGridTile extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
+          unawaited(AppHaptics.selection());
           if (onSelected != null) {
             onSelected!(module);
           } else {
@@ -243,11 +257,12 @@ class _AppGridTile extends StatelessWidget {
           children: [
             SizedBox(
               width: 82,
-              height: 68,
+              height: 84,
               child: Stack(
+                clipBehavior: Clip.none,
                 children: [
                   Align(
-                    alignment: Alignment.bottomLeft,
+                    alignment: Alignment.bottomCenter,
                     child: Container(
                       width: 64,
                       height: 64,
@@ -270,18 +285,16 @@ class _AppGridTile extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Material(
-                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                      shape: const CircleBorder(),
+                  if (showVisibility)
+                    Positioned(
+                      top: 0,
+                      right: 0,
                       child: AppVisibilityButton(
                         hidden: hidden,
+                        cornerAligned: true,
                         onPressed: onVisibilityPressed,
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

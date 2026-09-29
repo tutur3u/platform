@@ -8579,6 +8579,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsHiddenSection => 'Hidden apps';
 
   @override
+  String get appsHiddenExperimentsSection => 'Hidden experiments';
+
+  @override
+  String get appsUnavailableWithCurrentAccess => 'Unavailable with current access';
+
+  @override
   String get appsHideConfirmTitle => 'Hide this app?';
 
   @override
