@@ -7,8 +7,6 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
-import 'package:mobile/core/input/platform_text_context_menu.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -37,6 +35,9 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
 
   late final ITimeTrackerRepository _repo;
   final _searchCtrl = TextEditingController();
+  Timer? _searchDebounce;
+  bool _searchVisible = false;
+  int _loadRequestVersion = 0;
 
   _ManagementPeriod _period = _ManagementPeriod.week;
   List<TimeTrackingSession> _sessions = const [];
@@ -84,6 +85,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -106,11 +108,21 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
             actions: [
               ShellActionSpec(
                 id: 'time-tracker-stats-workspace-search',
-                icon: Icons.search,
+                icon: _searchVisible ? Icons.close_rounded : Icons.search,
                 tooltip: l10n.timerSearchSessions,
-                callbackToken: _searchCtrl.text.trim(),
-                highlighted: hasActiveSearch,
-                onPressed: _showSearchSheet,
+                callbackToken: (_searchVisible, _searchCtrl.text.trim()),
+                highlighted: _searchVisible || hasActiveSearch,
+                searchController: _searchVisible ? _searchCtrl : null,
+                searchHint: l10n.timerSearchSessions,
+                onSearchChanged: _onSearchChanged,
+                onCloseSearch: _closeSearch,
+                onPressed: () {
+                  if (_searchVisible) {
+                    _closeSearch();
+                  } else {
+                    setState(() => _searchVisible = true);
+                  }
+                },
               ),
             ],
           ),
@@ -241,28 +253,24 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
     );
   }
 
-  Future<void> _showSearchSheet() async {
-    final appliedQuery = await showAdaptiveSheet<String>(
-      context: context,
-      useRootNavigator: true,
-      builder: (sheetContext) =>
-          _WorkspaceSearchSheet(initialQuery: _searchCtrl.text.trim()),
-    );
-    if (appliedQuery == null || !mounted) {
-      return;
-    }
-
-    final nextQuery = appliedQuery.trim();
-    if (_searchCtrl.text.trim() == nextQuery) {
-      return;
-    }
-
-    _searchCtrl.text = nextQuery;
+  void _onSearchChanged(String _) {
     setState(() {});
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 300),
+      () => unawaited(_load(forceRefresh: true)),
+    );
+  }
+
+  void _closeSearch() {
+    _searchDebounce?.cancel();
+    _searchCtrl.clear();
+    setState(() => _searchVisible = false);
     unawaited(_load(forceRefresh: true));
   }
 
   Future<void> _load({bool forceRefresh = false}) async {
+    final requestVersion = ++_loadRequestVersion;
     final wsId =
         context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
     final search = _searchCtrl.text.trim().isEmpty
@@ -279,7 +287,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
           );
 
     if (cached != null && cached.hasValue && cached.data != null) {
-      if (!mounted) {
+      if (!mounted || requestVersion != _loadRequestVersion) {
         return;
       }
       setState(() {
@@ -307,7 +315,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
         dateFrom: range.start,
         dateTo: range.end,
       );
-      if (!mounted) return;
+      if (!mounted || requestVersion != _loadRequestVersion) return;
       await CacheStore.instance.write(
         key: cacheKey,
         policy: _cachePolicy,
@@ -323,7 +331,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
           'period:${_period.name}',
         ],
       );
-      if (!mounted) {
+      if (!mounted || requestVersion != _loadRequestVersion) {
         return;
       }
       setState(() {
@@ -333,7 +341,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
         _error = null;
       });
     } on Exception catch (e) {
-      if (!mounted) return;
+      if (!mounted || requestVersion != _loadRequestVersion) return;
       setState(() {
         _error = e.toString();
         _loading = cached == null || !cached.hasValue;
@@ -659,114 +667,6 @@ class _RangeHeroCard extends StatelessWidget {
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _WorkspaceSearchSheet extends StatefulWidget {
-  const _WorkspaceSearchSheet({required this.initialQuery});
-
-  final String initialQuery;
-
-  @override
-  State<_WorkspaceSearchSheet> createState() => _WorkspaceSearchSheetState();
-}
-
-class _WorkspaceSearchSheetState extends State<_WorkspaceSearchSheet> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialQuery);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    Navigator.of(context).pop(_controller.text);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        16,
-        16,
-        MediaQuery.viewInsetsOf(context).bottom + 16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.timerSearchSessions,
-                  style: theme.typography.h4.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              shad.IconButton.ghost(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(shad.LucideIcons.x, size: 18),
-              ),
-            ],
-          ),
-          const shad.Gap(12),
-          shad.TextField(
-            contextMenuBuilder: platformTextContextMenuBuilder(),
-            controller: _controller,
-            autofocus: true,
-            hintText: l10n.timerSearchSessions,
-            onChanged: (_) => setState(() {}),
-            onSubmitted: (_) => _submit(),
-            features: [
-              const shad.InputFeature.leading(
-                Icon(shad.LucideIcons.search, size: 18),
-              ),
-              if (_controller.text.isNotEmpty)
-                shad.InputFeature.trailing(
-                  shad.IconButton.ghost(
-                    onPressed: () {
-                      _controller.clear();
-                      setState(() {});
-                    },
-                    icon: const Icon(shad.LucideIcons.x, size: 16),
-                  ),
-                ),
-            ],
-          ),
-          const shad.Gap(12),
-          Row(
-            children: [
-              Expanded(
-                child: shad.OutlineButton(
-                  onPressed: () => Navigator.of(context).pop(''),
-                  child: Text(l10n.commonClearSearch),
-                ),
-              ),
-              const shad.Gap(8),
-              Expanded(
-                child: shad.PrimaryButton(
-                  onPressed: _submit,
-                  child: const Icon(shad.LucideIcons.search, size: 18),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );

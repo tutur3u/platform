@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
@@ -206,41 +205,6 @@ class HabitsMemberPicker extends StatelessWidget {
           labelText: context.l10n.habitsMemberPickerLabel,
         ),
       ),
-    );
-  }
-}
-
-class HabitsSearchField extends StatelessWidget {
-  const HabitsSearchField({
-    required this.controller,
-    required this.isVisible,
-    required this.onChanged,
-    super.key,
-  });
-
-  final TextEditingController controller;
-  final bool isVisible;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 180),
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeInCubic,
-      child: isVisible
-          ? FinancePanel(
-              key: const ValueKey('habits-search-visible'),
-              padding: const EdgeInsets.all(12),
-              radius: 22,
-              child: shad.TextField(
-                contextMenuBuilder: platformTextContextMenuBuilder(),
-                controller: controller,
-                hintText: context.l10n.habitsSearchHint,
-                onChanged: onChanged,
-              ),
-            )
-          : const SizedBox(key: ValueKey('habits-search-hidden'), height: 12),
     );
   }
 }

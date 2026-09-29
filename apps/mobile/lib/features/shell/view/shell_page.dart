@@ -24,6 +24,7 @@ import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_search_field.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -358,10 +359,20 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
           'injectedBack=$injectedDeepLinkBackRoute',
     );
     if (miniAppRoot != null && miniAppRoot != currentLocation) {
+      final parentRoute = _parentRouteFor(currentLocation, miniAppRoot);
+      final hasExplicitParent =
+          injectedDeepLinkBackRoute != null &&
+          injectedDeepLinkBackRoute != Routes.apps;
+      if (parentRoute == null &&
+          !hasExplicitParent &&
+          (_isPrimaryMiniAppDestination(currentLocation) ||
+              injectedDeepLinkBackRoute == Routes.apps)) {
+        // Peer sections exit their app; explicit parents remain reachable.
+        await _returnToAppOrigin();
+        return;
+      }
       final fallbackRoute =
-          _parentRouteFor(currentLocation, miniAppRoot) ??
-          injectedDeepLinkBackRoute ??
-          miniAppRoot;
+          parentRoute ?? injectedDeepLinkBackRoute ?? miniAppRoot;
       _debugBack('handleBackNavigation.toMiniAppRoot', fallbackRoute);
       _debugShellNav(
         '[ShellNav] go $fallbackRoute from back mini-app root fallback',
@@ -373,21 +384,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
 
     if (currentLocation == Routes.settings ||
         currentLocation == Routes.settingsWorkspace) {
-      if (currentLocation == Routes.settingsWorkspace) {
-        _isHandlingBackNavigation = true;
-        context.go(Routes.settings);
-        return;
-      }
-      final previousSettingsRoute = _peekPreviousRoute(currentLocation);
-      if (previousSettingsRoute != null &&
-          Routes.isSettingsHubLocation(previousSettingsRoute)) {
-        final previous = _takePreviousRoute(currentLocation);
-        if (previous != null) {
-          _isHandlingBackNavigation = true;
-          context.go(previous);
-          return;
-        }
-      }
+      await _returnToAppOrigin();
+      return;
     }
 
     if (Routes.isMiniAppRootLocation(currentLocation) &&
@@ -505,17 +503,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     return null;
   }
 
-  String? _peekPreviousRoute(String currentLocation) {
-    for (var i = _routeHistory.length - 1; i >= 0; i--) {
-      final candidate = _normalizeRouteLocation(_routeHistory[i]);
-      if (candidate == currentLocation) {
-        continue;
-      }
-      return candidate;
-    }
-    return null;
-  }
-
   bool _isSameMiniAppFamily(String locationA, String locationB) {
     if (Routes.isSettingsHubLocation(locationA) &&
         Routes.isSettingsHubLocation(locationB)) {
@@ -544,7 +531,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       }
       return root;
     }
-    if (_isPrimaryMiniAppDestination(location)) return root;
     final module = AppRegistry.moduleFromLocation(location);
     final candidates =
         module?.miniAppNavItems.map((item) => item.route) ??

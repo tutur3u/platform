@@ -24,6 +24,7 @@ class ChatCubit extends Cubit<ChatState> {
   StreamSubscription<ChatRealtimeEvent>? _realtimeSubscription;
   StreamSubscription<ChatMessageStreamEvent>? _sendSubscription;
   int _loadToken = 0;
+  int _searchRequestVersion = 0;
 
   Future<String> attachmentReadUrl(ChatAttachment attachment) async {
     final wsId = state.wsId;

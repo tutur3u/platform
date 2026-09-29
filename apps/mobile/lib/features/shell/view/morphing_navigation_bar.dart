@@ -37,12 +37,17 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
   Key? _settlingTarget;
   Timer? _settlingTimer;
 
-  void _updateDrag(Offset position, double width, double scale) {
+  void _updateDrag(
+    Offset position,
+    double width,
+    double scale, {
+    bool feedback = true,
+  }) {
     final target = _dragTarget(position, width, scale);
     setState(() => _dragPosition = position);
     if (target == _previewTarget) return;
     _previewTarget = target;
-    if (target != null) unawaited(AppHaptics.selection());
+    if (feedback && target != null) unawaited(AppHaptics.selection());
   }
 
   void _clearDrag() {
@@ -191,16 +196,14 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                 : Directionality.of(context) == TextDirection.rtl
                 ? width - 2 - (selectedFrame.x + _slot) * scale
                 : 2 + selectedFrame.x * scale;
-            final previewFrame = _frames()[_previewTarget];
+            final pillWidth = _slot * scale;
+            const minX = 2.0;
+            final maxX = (width - 2 - pillWidth).clamp(minX, double.infinity);
             final highlightX = _dragPosition == null
                 ? selectedX
-                : previewFrame == null
-                ? selectedX
-                : Directionality.of(context) == TextDirection.rtl
-                ? width - 2 - (previewFrame.x + _slot) * scale
-                : 2 + previewFrame.x * scale;
+                : (_dragPosition!.dx - pillWidth / 2).clamp(minX, maxX);
             return AnimatedScale(
-              scale: _pressed ? 1.055 : 1,
+              scale: _pressed ? 1.018 : 1,
               duration: MediaQuery.disableAnimationsOf(context)
                   ? Duration.zero
                   : Duration(milliseconds: _pressed ? 105 : 240),
@@ -219,13 +222,6 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                       blurRadius: 24,
                       offset: const Offset(0, 8),
                     ),
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withValues(
-                        alpha: _pressed ? 0.38 : 0,
-                      ),
-                      blurRadius: _pressed ? 32 : 12,
-                      spreadRadius: _pressed ? 4 : 0,
-                    ),
                   ],
                 ),
                 child: SizedBox(
@@ -234,7 +230,12 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                   height: 52,
                   child: Listener(
                     onPointerDown: (event) {
-                      _updateDrag(event.localPosition, width, scale);
+                      _updateDrag(
+                        event.localPosition,
+                        width,
+                        scale,
+                        feedback: false,
+                      );
                       setState(() => _pressed = true);
                     },
                     onPointerMove: (event) {
@@ -279,127 +280,170 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                         );
                         _finishDrag(target);
                       },
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Positioned.fill(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(26),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(26),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
                               child: BackdropFilter(
                                 filter: ImageFilter.blur(
-                                  sigmaX: 18,
-                                  sigmaY: 18,
+                                  sigmaX: 24,
+                                  sigmaY: 24,
                                 ),
                                 child: DecoratedBox(
                                   decoration: BoxDecoration(
                                     color: theme.colorScheme.background
-                                        .withValues(alpha: 0.82),
-                                    border: Border.all(
-                                      color: theme.colorScheme.foreground
-                                          .withValues(
-                                            alpha: _pressed ? 0.28 : 0.13,
-                                          ),
-                                    ),
-                                    borderRadius: BorderRadius.circular(26),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (highlightX != null)
-                            AnimatedPositioned(
-                              duration: MediaQuery.disableAnimationsOf(context)
-                                  ? Duration.zero
-                                  : _dragPosition != null
-                                  ? const Duration(milliseconds: 65)
-                                  : const Duration(milliseconds: 390),
-                              curve: Curves.easeOutCubic,
-                              left: highlightX,
-                              top: 2,
-                              width: _slot * scale,
-                              height: 48,
-                              child: IgnorePointer(
-                                child: AnimatedContainer(
-                                  duration:
-                                      MediaQuery.disableAnimationsOf(context)
-                                      ? Duration.zero
-                                      : const Duration(milliseconds: 220),
-                                  curve: Curves.easeInOutCubic,
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.foreground
                                         .withValues(
-                                          alpha: _dragPosition == null
-                                              ? 0.14
-                                              : 0.22,
+                                          alpha:
+                                              MediaQuery.highContrastOf(context)
+                                              ? 1
+                                              : 0.72,
                                         ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: theme.colorScheme.primary
-                                            .withValues(
-                                              alpha: _dragPosition == null
-                                                  ? 0.08
-                                                  : 0.25,
-                                            ),
-                                        blurRadius: _dragPosition == null
-                                            ? 12
-                                            : 24,
-                                        spreadRadius: _dragPosition == null
-                                            ? 0
-                                            : 2,
-                                      ),
-                                    ],
-                                    // Outer 26px radius minus the 2px inset.
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                  child: SizedBox.expand(
-                                    key: _dragPosition == null
-                                        ? const ValueKey(
-                                            'navigation-selection-indicator',
-                                          )
-                                        : const ValueKey(
-                                            'navigation-drag-preview',
-                                          ),
                                   ),
                                 ),
                               ),
                             ),
-                          for (final (key, frame) in _frames().entries.map(
-                            (entry) => (entry.key, entry.value),
-                          ))
-                            if (frame.opacity > 0)
-                              PositionedDirectional(
-                                key: key,
-                                start: 2 + frame.x * scale,
+                            if (highlightX != null)
+                              AnimatedPositioned(
+                                duration:
+                                    MediaQuery.disableAnimationsOf(context)
+                                    ? Duration.zero
+                                    : _dragPosition != null
+                                    ? Duration.zero
+                                    : const Duration(milliseconds: 390),
+                                curve: Curves.easeOutCubic,
+                                left: highlightX - 30,
+                                top: -36,
+                                width: pillWidth + 60,
+                                height: 124,
+                                child: IgnorePointer(
+                                  child: AnimatedContainer(
+                                    duration:
+                                        MediaQuery.disableAnimationsOf(context)
+                                        ? Duration.zero
+                                        : const Duration(milliseconds: 280),
+                                    decoration: BoxDecoration(
+                                      gradient: RadialGradient(
+                                        colors: [
+                                          theme.colorScheme.primary.withValues(
+                                            alpha: _dragPosition == null
+                                                ? 0.13
+                                                : 0.31,
+                                          ),
+                                          theme.colorScheme.primary.withValues(
+                                            alpha: 0,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            if (highlightX != null)
+                              AnimatedPositioned(
+                                duration:
+                                    MediaQuery.disableAnimationsOf(context)
+                                    ? Duration.zero
+                                    : _dragPosition != null
+                                    ? Duration.zero
+                                    : const Duration(milliseconds: 390),
+                                curve: Curves.easeOutCubic,
+                                left: highlightX,
                                 top: 2,
                                 width: _slot * scale,
                                 height: 48,
-                                child: ExcludeSemantics(
-                                  excluding: !_to.containsKey(key),
-                                  child: IgnorePointer(
-                                    ignoring:
-                                        !_to.containsKey(key) ||
-                                        frame.item.enabled == false,
-                                    child: Opacity(
-                                      opacity: frame.opacity,
-                                      child: _CustomNavItem(
-                                        isFirst: false,
-                                        isLast: false,
-                                        isSelected: false,
-                                        theme: theme,
-                                        isDark:
-                                            theme.brightness == Brightness.dark,
-                                        compact: true,
-                                        onTap: () {
-                                          _clearDrag();
-                                          widget.onSelected(key);
-                                        },
-                                        child: frame.item,
+                                child: IgnorePointer(
+                                  child: AnimatedContainer(
+                                    duration:
+                                        MediaQuery.disableAnimationsOf(context)
+                                        ? Duration.zero
+                                        : const Duration(milliseconds: 220),
+                                    curve: Curves.easeInOutCubic,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          theme.colorScheme.foreground
+                                              .withValues(alpha: 0.2),
+                                          theme.colorScheme.foreground
+                                              .withValues(alpha: 0.08),
+                                        ],
                                       ),
+                                      border: Border.all(
+                                        color: theme.colorScheme.foreground
+                                            .withValues(alpha: 0.2),
+                                      ),
+                                      // Outer 26px radius minus the 2px inset.
+                                      borderRadius: BorderRadius.circular(24),
+                                    ),
+                                    child: SizedBox.expand(
+                                      key: _dragPosition == null
+                                          ? const ValueKey(
+                                              'navigation-selection-indicator',
+                                            )
+                                          : const ValueKey(
+                                              'navigation-drag-preview',
+                                            ),
                                     ),
                                   ),
                                 ),
                               ),
-                        ],
+                            for (final (key, frame) in _frames().entries.map(
+                              (entry) => (entry.key, entry.value),
+                            ))
+                              if (frame.opacity > 0)
+                                PositionedDirectional(
+                                  key: key,
+                                  start: 2 + frame.x * scale,
+                                  top: 2,
+                                  width: _slot * scale,
+                                  height: 48,
+                                  child: ExcludeSemantics(
+                                    excluding: !_to.containsKey(key),
+                                    child: IgnorePointer(
+                                      ignoring:
+                                          !_to.containsKey(key) ||
+                                          frame.item.enabled == false,
+                                      child: Opacity(
+                                        opacity: frame.opacity,
+                                        child: _CustomNavItem(
+                                          isFirst: false,
+                                          isLast: false,
+                                          isSelected: false,
+                                          theme: theme,
+                                          isDark:
+                                              theme.brightness ==
+                                              Brightness.dark,
+                                          compact: true,
+                                          onTap: () {
+                                            _clearDrag();
+                                            unawaited(AppHaptics.selection());
+                                            widget.onSelected(key);
+                                          },
+                                          child: frame.item,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(26),
+                                    border: Border.all(
+                                      color: theme.colorScheme.foreground
+                                          .withValues(
+                                            alpha: _pressed ? 0.26 : 0.16,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

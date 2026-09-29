@@ -504,28 +504,9 @@ extension _ShellPageLayout on _ShellPageState {
         height: mobileSectionAppBarHeight,
         padding: mobileSectionAppBarPadding,
         backgroundColor: Colors.transparent,
-        trailing: [
-          IconButton(
-            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-            onPressed: searchAction.onCloseSearch,
-            icon: const Icon(Icons.close_rounded),
-          ),
-        ],
-        child: TextField(
-          key: const ValueKey('shell-search-query'),
-          controller: searchAction.searchController,
-          autofocus: true,
-          textAlignVertical: TextAlignVertical.center,
-          onChanged: searchAction.onSearchChanged,
-          textInputAction: TextInputAction.search,
-          decoration: InputDecoration(
-            hintText: searchAction.searchHint,
-            prefixIcon: const Icon(Icons.search_rounded),
-            border: InputBorder.none,
-            isDense: true,
-            contentPadding: EdgeInsets.zero,
-            prefixIconConstraints: const BoxConstraints(minWidth: 36),
-          ),
+        child: ShellSearchField(
+          key: ValueKey(searchAction.id),
+          action: searchAction,
         ),
       );
     }
