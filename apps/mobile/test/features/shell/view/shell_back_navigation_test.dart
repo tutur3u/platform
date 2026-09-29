@@ -89,7 +89,7 @@ void main() {
       );
       await _pumpForTransitions(tester);
     });
-    testWidgets('system back navigates through in-session route history', (
+    testWidgets('system back returns to the current mini-app parent', (
       tester,
     ) async {
       tester.view.devicePixelRatio = 1;
@@ -122,7 +122,7 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      expect(router.routeInformationProvider.value.uri.path, Routes.home);
+      expect(router.routeInformationProvider.value.uri.path, Routes.tasks);
 
       expect(
         find.byKey(const ValueKey('apps-picker-fullscreen')),
@@ -722,7 +722,7 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      expect(router.routeInformationProvider.value.uri.path, Routes.home);
+      expect(router.routeInformationProvider.value.uri.path, Routes.tasks);
     });
 
     testWidgets('timer requests back returns to the opening tab', (
@@ -762,7 +762,7 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+      expect(router.routeInformationProvider.value.uri.path, Routes.timer);
       expect(
         find.byKey(const ValueKey('apps-picker-fullscreen')),
         findsNothing,
@@ -853,7 +853,7 @@ void main() {
     });
 
     testWidgets(
-      'system back falls back to finance root for deep-linked wallet detail',
+      'system back returns to wallets for deep-linked wallet detail',
       (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(390, 844);
@@ -885,7 +885,7 @@ void main() {
         await tester.binding.handlePopRoute();
         await _pumpForTransitions(tester);
 
-        expect(router.routeInformationProvider.value.uri.path, Routes.finance);
+        expect(router.routeInformationProvider.value.uri.path, Routes.wallets);
       },
     );
 
