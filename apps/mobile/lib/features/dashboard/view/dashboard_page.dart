@@ -166,6 +166,7 @@ class _DashboardViewState extends State<_DashboardView> {
   Widget build(BuildContext context) {
     const workspacePicker = _DashboardWorkspacePickerCard();
     return Stack(
+      fit: StackFit.expand,
       children: [
         MultiBlocListener(
           listeners: [
