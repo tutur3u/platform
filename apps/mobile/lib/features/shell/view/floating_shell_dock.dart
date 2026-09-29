@@ -278,52 +278,49 @@ class _DockActionsState extends State<_DockActions> {
                       in actions.take(visibleCount).indexed)
                     Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: Tooltip(
-                        message: action.tooltip ?? '',
-                        child: FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: index == 0
-                                ? Theme.of(context).colorScheme.onSurface
-                                : Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHigh,
-                            foregroundColor: index == 0
-                                ? Theme.of(context).colorScheme.surface
-                                : Theme.of(context).colorScheme.onSurface,
-                            minimumSize: const Size(48, 48),
-                            padding: EdgeInsets.symmetric(
-                              horizontal:
-                                  MediaQuery.sizeOf(context).shortestSide >= 600
-                                  ? 16
-                                  : 12,
-                            ),
-                            shape: const StadiumBorder(),
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: index == 0
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHigh,
+                          foregroundColor: index == 0
+                              ? Theme.of(context).colorScheme.surface
+                              : Theme.of(context).colorScheme.onSurface,
+                          minimumSize: const Size(48, 48),
+                          padding: EdgeInsets.symmetric(
+                            horizontal:
+                                MediaQuery.sizeOf(context).shortestSide >= 600
+                                ? 16
+                                : 12,
                           ),
-                          onPressed: action.enabled && !action.isLoading
-                              ? action.onPressed
-                              : null,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (action.isLoading)
-                                const NovaLoadingIndicator(size: 24)
-                              else
-                                AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 220),
-                                  child: Icon(
-                                    action.icon,
-                                    key: ValueKey((action.id, action.icon)),
-                                    size: 24,
-                                    semanticLabel: action.tooltip,
-                                  ),
+                          shape: const StadiumBorder(),
+                        ),
+                        onPressed: action.enabled && !action.isLoading
+                            ? action.onPressed
+                            : null,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (action.isLoading)
+                              const NovaLoadingIndicator(size: 24)
+                            else
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 220),
+                                child: Icon(
+                                  action.icon,
+                                  key: ValueKey((action.id, action.icon)),
+                                  size: 24,
+                                  semanticLabel: action.tooltip,
                                 ),
-                              if (MediaQuery.sizeOf(context).shortestSide >=
-                                  600) ...[
-                                const SizedBox(width: 8),
-                                Text(action.tooltip ?? ''),
-                              ],
+                              ),
+                            if (MediaQuery.sizeOf(context).shortestSide >=
+                                600) ...[
+                              const SizedBox(width: 8),
+                              Text(action.tooltip ?? ''),
                             ],
-                          ),
+                          ],
                         ),
                       ),
                     ),
@@ -331,9 +328,7 @@ class _DockActionsState extends State<_DockActions> {
                     Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: PopupMenuButton<ShellActionSpec>(
-                        tooltip: MaterialLocalizations.of(
-                          context,
-                        ).showMenuTooltip,
+                        tooltip: '',
                         icon: const Icon(Icons.more_horiz),
                         onSelected: (action) => action.onPressed?.call(),
                         itemBuilder: (context) => [

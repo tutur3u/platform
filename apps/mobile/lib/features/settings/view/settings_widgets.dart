@@ -91,10 +91,11 @@ class SettingsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: theme.typography.large.copyWith(fontWeight: FontWeight.w800),
-        ),
+        if (title.trim().isNotEmpty)
+          Text(
+            title,
+            style: theme.typography.large.copyWith(fontWeight: FontWeight.w800),
+          ),
         if (description?.trim().isNotEmpty ?? false) ...[
           const shad.Gap(6),
           Text(
@@ -104,7 +105,8 @@ class SettingsSection extends StatelessWidget {
             ),
           ),
         ],
-        const shad.Gap(8),
+        if (title.trim().isNotEmpty || description?.trim().isNotEmpty == true)
+          const shad.Gap(8),
         ..._withSpacing(children),
       ],
     );
@@ -157,6 +159,9 @@ class SettingsTile extends StatelessWidget {
         ? theme.colorScheme.destructive
         : theme.colorScheme.primary;
     final textColor = isDestructive ? theme.colorScheme.destructive : null;
+    final hasSupportingLine =
+        (value?.trim().isNotEmpty ?? false) ||
+        (subtitle?.trim().isNotEmpty ?? false);
 
     return Material(
       color: Colors.transparent,
@@ -178,7 +183,9 @@ class SettingsTile extends StatelessWidget {
                   ),
                 ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: hasSupportingLine
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
             children: [
               Container(
                 width: 32,
@@ -191,51 +198,60 @@ class SettingsTile extends StatelessWidget {
               ),
               const shad.Gap(11),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: textColor,
-                      ),
-                    ),
-                    if (value?.trim().isNotEmpty ?? false) ...[
-                      const shad.Gap(4),
+                child: Padding(
+                  padding: EdgeInsets.only(top: hasSupportingLine ? 5 : 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        value!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.base.copyWith(
-                          color: textColor ?? theme.colorScheme.foreground,
+                        title,
+                        style: theme.typography.small.copyWith(
                           fontWeight: FontWeight.w700,
+                          color: textColor,
                         ),
                       ),
-                    ],
-                    if (subtitle?.trim().isNotEmpty ?? false) ...[
-                      const shad.Gap(2),
-                      Text(
-                        subtitle!,
-                        maxLines: onTap != null ? 1 : null,
-                        overflow: onTap != null ? TextOverflow.ellipsis : null,
-                        style: theme.typography.textSmall.copyWith(
-                          color: theme.colorScheme.mutedForeground,
+                      if (value?.trim().isNotEmpty ?? false) ...[
+                        const shad.Gap(4),
+                        Text(
+                          value!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.base.copyWith(
+                            color: textColor ?? theme.colorScheme.foreground,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
+                      ],
+                      if (subtitle?.trim().isNotEmpty ?? false) ...[
+                        const shad.Gap(2),
+                        Text(
+                          subtitle!,
+                          maxLines: onTap != null ? 1 : null,
+                          overflow: onTap != null
+                              ? TextOverflow.ellipsis
+                              : null,
+                          style: theme.typography.textSmall.copyWith(
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
               const shad.Gap(8),
-              trailing ??
-                  (showChevron
-                      ? Icon(
-                          Icons.chevron_right,
-                          size: 20,
-                          color: theme.colorScheme.mutedForeground,
-                        )
-                      : const SizedBox.shrink()),
+              Padding(
+                padding: EdgeInsets.only(top: hasSupportingLine ? 6 : 0),
+                child:
+                    trailing ??
+                    (showChevron
+                        ? Icon(
+                            Icons.chevron_right,
+                            size: 20,
+                            color: theme.colorScheme.mutedForeground,
+                          )
+                        : const SizedBox.shrink()),
+              ),
             ],
           ),
         ),
@@ -295,7 +311,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
           index: 1,
           playOnceKey: 'settings-workspace-context',
           child: SettingsSection(
-            title: l10n.settingsWorkspaceSectionManageTitle,
+            title: '',
             children: [
               PendingSyncFrame(
                 workspaceId: currentWorkspace?.id ?? 'personal',

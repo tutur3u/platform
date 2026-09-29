@@ -6,6 +6,31 @@ void _registerProfileNavigationChecks(
   WorkspaceCubit Function() workspaceCubit,
   ShellProfileCubit Function() shellProfileCubit,
 ) {
+  testWidgets('profile dock avatar shows a skeleton while its URL loads', (
+    tester,
+  ) async {
+    final cubit = shellProfileCubit();
+    const loading = ShellProfileState(
+      profile: UserProfile(id: 'user-1'),
+      isRefreshing: true,
+    );
+    whenListen(
+      cubit,
+      const Stream<ShellProfileState>.empty(),
+      initialState: loading,
+    );
+    await tester.pumpApp(
+      BlocProvider<ShellProfileCubit>.value(
+        value: cubit,
+        child: const ProfileNavigationAvatar(),
+      ),
+    );
+    expect(
+      find.byKey(const ValueKey('profile-avatar-loading')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets(
     'root dock owns Profile and Notifications without duplicate headers',
     (tester) async {
@@ -66,7 +91,7 @@ void _registerProfileNavigationChecks(
     router.go(Routes.settings);
     await _pumpForTransitions(tester);
     expect(appTabCubit().state.appOrigin, Routes.profileRoot);
-    await tester.tap(find.byTooltip('Back'));
+    await tester.tap(find.bySemanticsLabel('Back'));
     await _pumpForTransitions(tester);
     expect(router.routeInformationProvider.value.uri.path, Routes.profileRoot);
     expect(tester.takeException(), isNull);

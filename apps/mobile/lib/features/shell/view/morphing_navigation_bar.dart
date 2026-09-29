@@ -34,7 +34,6 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
   Offset? _dragPosition;
   bool _pressed = false;
   Key? _previewTarget;
-  final _tooltipKeys = <Key, GlobalKey<TooltipState>>{};
 
   void _updateDrag(Offset position, double width, double scale) {
     final target = _dragTarget(position, width, scale);
@@ -42,29 +41,14 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
     if (target == _previewTarget) return;
     _previewTarget = target;
     if (target != null) unawaited(AppHaptics.selection());
-    Tooltip.dismissAllToolTips();
-    _tooltipKeys[target]?.currentState?.ensureTooltipVisible();
   }
 
   void _clearDrag() {
-    Tooltip.dismissAllToolTips();
     setState(() {
       _dragPosition = null;
       _previewTarget = null;
       _pressed = false;
     });
-  }
-
-  Widget _navigationChild(Key key, shad.NavigationItem item) {
-    final child = item.child;
-    if (child is! Tooltip) return item;
-    return Tooltip(
-      key: _tooltipKeys.putIfAbsent(key, GlobalKey<TooltipState>.new),
-      message: child.message,
-      triggerMode: TooltipTriggerMode.manual,
-      excludeFromSemantics: true,
-      child: child.child,
-    );
   }
 
   Key? _dragTarget(Offset position, double width, double scale) {
@@ -124,7 +108,6 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
         oldWidget.selectedKey != widget.selectedKey) {
       _dragPosition = null;
       _previewTarget = null;
-      Tooltip.dismissAllToolTips();
     }
     if (listEquals(oldKeys, newKeys)) {
       // Update callbacks, icons and enabled state without restarting motion.
@@ -179,23 +162,23 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                     (width - _slot * scale - 2).clamp(2.0, double.infinity),
                   );
             return AnimatedScale(
-              scale: _pressed ? 1.055 : 1,
+              scale: _pressed ? 1.045 : 1,
               duration: MediaQuery.disableAnimationsOf(context)
                   ? Duration.zero
-                  : const Duration(milliseconds: 170),
+                  : const Duration(milliseconds: 95),
               curve: Curves.easeOutCubic,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 170),
+                duration: const Duration(milliseconds: 95),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(26),
                   boxShadow: _pressed
                       ? [
                           BoxShadow(
                             color: theme.colorScheme.primary.withValues(
-                              alpha: 0.24,
+                              alpha: 0.32,
                             ),
-                            blurRadius: 22,
-                            spreadRadius: 2,
+                            blurRadius: 30,
+                            spreadRadius: 4,
                           ),
                         ]
                       : const [],
@@ -204,133 +187,159 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                   key: const ValueKey('navigation-morph-bounds'),
                   width: width,
                   height: 52,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTapDown: (details) {
+                  child: Listener(
+                    onPointerDown: (event) {
+                      _updateDrag(event.localPosition, width, scale);
                       setState(() => _pressed = true);
-                      final target = _dragTarget(
-                        details.localPosition,
-                        width,
-                        scale,
-                      );
-                      if (target != null && target != widget.selectedKey) {
-                        unawaited(AppHaptics.selection());
+                    },
+                    onPointerMove: (event) {
+                      if (_pressed) {
+                        _updateDrag(event.localPosition, width, scale);
                       }
                     },
-                    onTapUp: (_) => setState(() => _pressed = false),
-                    onTapCancel: () => setState(() => _pressed = false),
-                    onPanStart: (details) {
-                      unawaited(AppHaptics.pickup());
-                      setState(() => _pressed = true);
-                      _updateDrag(details.localPosition, width, scale);
-                    },
-                    onPanUpdate: (details) =>
-                        _updateDrag(details.localPosition, width, scale),
-                    onPanCancel: _clearDrag,
-                    onPanEnd: (_) {
-                      final position = _dragPosition;
-                      final target = position == null
-                          ? null
-                          : _dragTarget(position, width, scale);
-                      _clearDrag();
-                      if (target != null) {
-                        unawaited(AppHaptics.drop());
-                        widget.onSelected(target);
-                      }
-                    },
-                    onLongPressStart: (details) {
-                      unawaited(AppHaptics.pickup());
-                      setState(() => _pressed = true);
-                      _updateDrag(details.localPosition, width, scale);
-                    },
-                    onLongPressMoveUpdate: (details) =>
-                        _updateDrag(details.localPosition, width, scale),
-                    onLongPressCancel: _clearDrag,
-                    onLongPressEnd: (details) {
-                      final target = _dragTarget(
-                        details.localPosition,
-                        width,
-                        scale,
-                      );
-                      _clearDrag();
-                      if (target != null) {
-                        unawaited(AppHaptics.drop());
-                        widget.onSelected(target);
-                      }
-                    },
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        if (highlightX != null)
-                          AnimatedPositioned(
-                            duration:
-                                _dragPosition != null ||
-                                    MediaQuery.disableAnimationsOf(context)
-                                ? Duration.zero
-                                : const Duration(milliseconds: 300),
-                            curve: Curves.easeOutCubic,
-                            left: highlightX,
-                            top: 2,
-                            width: _slot * scale,
-                            height: 48,
-                            child: IgnorePointer(
-                              child: DecoratedBox(
-                                key: _dragPosition == null
-                                    ? const ValueKey(
-                                        'navigation-selection-indicator',
-                                      )
-                                    : const ValueKey('navigation-drag-preview'),
-                                decoration: BoxDecoration(
-                                  color: _dragPosition == null
-                                      ? (theme.brightness == Brightness.dark
-                                            ? Colors.white.withValues(
-                                                alpha: 0.12,
-                                              )
-                                            : Colors.black.withValues(
-                                                alpha: 0.08,
-                                              ))
-                                      : theme.colorScheme.primary.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                  borderRadius: BorderRadius.circular(21),
+                    onPointerUp: (_) => setState(() => _pressed = false),
+                    onPointerCancel: (_) => _clearDrag(),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapUp: (_) => _clearDrag(),
+                      onTapCancel: _clearDrag,
+                      onPanStart: (details) {
+                        unawaited(AppHaptics.pickup());
+                        setState(() => _pressed = true);
+                        _updateDrag(details.localPosition, width, scale);
+                      },
+                      onPanUpdate: (details) =>
+                          _updateDrag(details.localPosition, width, scale),
+                      onPanCancel: _clearDrag,
+                      onPanEnd: (_) {
+                        final position = _dragPosition;
+                        final target = position == null
+                            ? null
+                            : _dragTarget(position, width, scale);
+                        _clearDrag();
+                        if (target != null) {
+                          unawaited(AppHaptics.drop());
+                          widget.onSelected(target);
+                        }
+                      },
+                      onLongPressStart: (details) {
+                        unawaited(AppHaptics.pickup());
+                        setState(() => _pressed = true);
+                        _updateDrag(details.localPosition, width, scale);
+                      },
+                      onLongPressMoveUpdate: (details) =>
+                          _updateDrag(details.localPosition, width, scale),
+                      onLongPressCancel: _clearDrag,
+                      onLongPressEnd: (details) {
+                        final target = _dragTarget(
+                          details.localPosition,
+                          width,
+                          scale,
+                        );
+                        _clearDrag();
+                        if (target != null) {
+                          unawaited(AppHaptics.drop());
+                          widget.onSelected(target);
+                        }
+                      },
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned.fill(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(26),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(
+                                  sigmaX: 18,
+                                  sigmaY: 18,
                                 ),
-                              ),
-                            ),
-                          ),
-                        for (final (key, frame) in _frames().entries.map(
-                          (entry) => (entry.key, entry.value),
-                        ))
-                          if (frame.opacity > 0)
-                            PositionedDirectional(
-                              key: key,
-                              start: 2 + frame.x * scale,
-                              top: 2,
-                              width: _slot * scale,
-                              height: 48,
-                              child: ExcludeSemantics(
-                                excluding: !_to.containsKey(key),
-                                child: IgnorePointer(
-                                  ignoring:
-                                      !_to.containsKey(key) ||
-                                      frame.item.enabled == false,
-                                  child: Opacity(
-                                    opacity: frame.opacity,
-                                    child: _CustomNavItem(
-                                      isFirst: false,
-                                      isLast: false,
-                                      isSelected: false,
-                                      theme: theme,
-                                      isDark:
-                                          theme.brightness == Brightness.dark,
-                                      compact: true,
-                                      onTap: () => widget.onSelected(key),
-                                      child: _navigationChild(key, frame.item),
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.background
+                                        .withValues(alpha: 0.82),
+                                    border: Border.all(
+                                      color: theme.colorScheme.foreground
+                                          .withValues(
+                                            alpha: _pressed ? 0.28 : 0.13,
+                                          ),
                                     ),
+                                    borderRadius: BorderRadius.circular(26),
                                   ),
                                 ),
                               ),
                             ),
-                      ],
+                          ),
+                          if (highlightX != null)
+                            AnimatedPositioned(
+                              duration: MediaQuery.disableAnimationsOf(context)
+                                  ? Duration.zero
+                                  : _dragPosition != null
+                                  ? const Duration(milliseconds: 90)
+                                  : const Duration(milliseconds: 300),
+                              curve: Curves.easeOutCubic,
+                              left: highlightX,
+                              top: 2,
+                              width: _slot * scale,
+                              height: 48,
+                              child: IgnorePointer(
+                                child: DecoratedBox(
+                                  key: _dragPosition == null
+                                      ? const ValueKey(
+                                          'navigation-selection-indicator',
+                                        )
+                                      : const ValueKey(
+                                          'navigation-drag-preview',
+                                        ),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.foreground
+                                        .withValues(
+                                          alpha: _dragPosition == null
+                                              ? 0.14
+                                              : 0.22,
+                                        ),
+                                    borderRadius: BorderRadius.circular(21),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          for (final (key, frame) in _frames().entries.map(
+                            (entry) => (entry.key, entry.value),
+                          ))
+                            if (frame.opacity > 0)
+                              PositionedDirectional(
+                                key: key,
+                                start: 2 + frame.x * scale,
+                                top: 2,
+                                width: _slot * scale,
+                                height: 48,
+                                child: ExcludeSemantics(
+                                  excluding: !_to.containsKey(key),
+                                  child: IgnorePointer(
+                                    ignoring:
+                                        !_to.containsKey(key) ||
+                                        frame.item.enabled == false,
+                                    child: Opacity(
+                                      opacity: frame.opacity,
+                                      child: _CustomNavItem(
+                                        isFirst: false,
+                                        isLast: false,
+                                        isSelected: false,
+                                        theme: theme,
+                                        isDark:
+                                            theme.brightness == Brightness.dark,
+                                        compact: true,
+                                        onTap: () {
+                                          _clearDrag();
+                                          widget.onSelected(key);
+                                        },
+                                        child: frame.item,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

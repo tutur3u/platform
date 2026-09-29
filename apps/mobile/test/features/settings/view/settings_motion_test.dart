@@ -109,15 +109,12 @@ void main() {
       when(() => profileRepository.getCachedProfile()).thenAnswer(
         (_) async => (profile: _cachedProfile, fetchedAt: DateTime.now()),
       );
-      when(
-        () => profileRepository.getProfile(),
-      ).thenAnswer((_) async => (profile: _cachedProfile, error: null));
-      when(
-        () => profileRepository.saveCachedProfile(any()),
-      ).thenAnswer((_) async {});
-      when(
-        () => profileRepository.clearCachedProfile(),
-      ).thenAnswer((_) async {});
+      when(() => profileRepository.getProfile())
+          .thenAnswer((_) async => (profile: _cachedProfile, error: null));
+      when(() => profileRepository.saveCachedProfile(any()))
+          .thenAnswer((_) async {});
+      when(() => profileRepository.clearCachedProfile())
+          .thenAnswer((_) async {});
     });
 
     testWidgets('app settings renders compact top-level sections', (
@@ -256,7 +253,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(StaggeredEntry), findsOneWidget);
-        expect(find.text('Workspace setup'), findsOneWidget);
+        expect(find.text('Workspace setup'), findsNothing);
         expect(find.text('Current workspace'), findsOneWidget);
         expect(find.text('Default workspace'), findsOneWidget);
         expect(find.text('Workspace information'), findsOneWidget);
