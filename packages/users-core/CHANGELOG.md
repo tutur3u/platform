@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.3](https://github.com/tutur3u/platform/compare/users-core-v0.9.2...users-core-v0.9.3) (2026-09-29)
+
+
+### Bug Fixes
+
+* **finance:** count recurring sessions in subscription previews ([94119f5](https://github.com/tutur3u/platform/commit/94119f5126e2c48d7e096a572c5957610ce67724)) ([#5541](https://github.com/tutur3u/platform/issues/5541)) ([e645a51](https://github.com/tutur3u/platform/commit/e645a51b0c9006cc1baf66e9846c5656b2063220))
+* **finance:** respect class join dates in pending tuition ([1aaaff0](https://github.com/tutur3u/platform/commit/1aaaff054d9b87c8ada88af6bdcadb840e54a186)) ([#5618](https://github.com/tutur3u/platform/issues/5618)) ([4a0d26c](https://github.com/tutur3u/platform/commit/4a0d26ca1246cd4075e9fcc6ad3dd7a093861766))
+
 ## [0.9.2](https://github.com/tutur3u/platform/compare/users-core-v0.9.1...users-core-v0.9.2) (2026-09-29)
 
 

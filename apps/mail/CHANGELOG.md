@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/mail-v0.25.0...mail-v0.26.0) (2026-09-29)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **mobile:** refresh workspace experience and offline edit foundation ([#5610](https://github.com/tutur3u/platform/issues/5610)) ([55a25b0](https://github.com/tutur3u/platform/commit/55a25b08d5fc14701dd8499bdc0eebdee094ae2f))
+* **mobile:** refresh workspace UX and build offline edit foundation ([b1a26c2](https://github.com/tutur3u/platform/commit/b1a26c2a918bdd9fcc0a460f0adbea7c914b44fc))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/mail-v0.24.0...mail-v0.25.0) (2026-09-29)
 
 

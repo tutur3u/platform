@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/ui-v0.36.1...ui-v0.37.0) (2026-09-29)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **notes:** add archive views and structured editing ([1c78aa2](https://github.com/tutur3u/platform/commit/1c78aa292ebca25660c1ec7464cd6cc02144c82a))
+* **notes:** archive views and structured editing ([#5576](https://github.com/tutur3u/platform/issues/5576)) ([a67b186](https://github.com/tutur3u/platform/commit/a67b186318153cad8b10b71bbfc9335b80d0768a))
+
+
+### Bug Fixes
+
+* **calendar:** treat working locations as non-reminder events ([454e666](https://github.com/tutur3u/platform/commit/454e666a6465e3debd06260aedc1de7b96ab5d67)) ([#5511](https://github.com/tutur3u/platform/issues/5511)) ([6508ad6](https://github.com/tutur3u/platform/commit/6508ad681aaa174b186022fcbd526e20be682973))
+* **education:** label satellite navigation in Learn and Teach ([7728149](https://github.com/tutur3u/platform/commit/77281496b86def6f02afaaabea0fb39a89557717)) ([#5536](https://github.com/tutur3u/platform/issues/5536)) ([d76aa49](https://github.com/tutur3u/platform/commit/d76aa49d93303156d900c872ada803c43e1c8530))
+* **finance:** count recurring sessions in subscription previews ([94119f5](https://github.com/tutur3u/platform/commit/94119f5126e2c48d7e096a572c5957610ce67724)) ([#5541](https://github.com/tutur3u/platform/issues/5541)) ([e645a51](https://github.com/tutur3u/platform/commit/e645a51b0c9006cc1baf66e9846c5656b2063220))
+* **finance:** respect class join dates in pending tuition ([1aaaff0](https://github.com/tutur3u/platform/commit/1aaaff054d9b87c8ada88af6bdcadb840e54a186)) ([#5618](https://github.com/tutur3u/platform/issues/5618)) ([4a0d26c](https://github.com/tutur3u/platform/commit/4a0d26ca1246cd4075e9fcc6ad3dd7a093861766))
+
 ## [0.36.1](https://github.com/tutur3u/platform/compare/ui-v0.36.0...ui-v0.36.1) (2026-09-29)
 
 

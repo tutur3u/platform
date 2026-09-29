@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.37.0](https://github.com/tutur3u/platform/compare/database-v1.36.1...database-v1.37.0) (2026-09-29)
+
+
+### Features
+
+* **auth:** enforce required account MFA lifecycle ([#5448](https://github.com/tutur3u/platform/issues/5448)) ([d7a5ed4](https://github.com/tutur3u/platform/commit/d7a5ed453963e619bd1dc3bd8c8a18c5e027317c))
+* **database:** add private Parley research and AI usage attribution ([1031b88](https://github.com/tutur3u/platform/commit/1031b8872a835f33d853f802027e55aa3deb58dd)) ([#5504](https://github.com/tutur3u/platform/issues/5504)) ([5375b61](https://github.com/tutur3u/platform/commit/5375b6139a3200e0298f3c5f18c9d853a8dd1e39))
+* **devbox:** add platform Judge and fleet controls ([#5608](https://github.com/tutur3u/platform/issues/5608)) ([e83b9f2](https://github.com/tutur3u/platform/commit/e83b9f2025eedf7fd63df0a751b70134216c9b0a))
+* **devbox:** add sandboxed judge and runner controls ([787bbaa](https://github.com/tutur3u/platform/commit/787bbaa549b400771d34beeebcebc2a110b44c60))
+* **parley:** add private multiplayer training and shared AI Hub billing ([#5505](https://github.com/tutur3u/platform/issues/5505)) ([038e05c](https://github.com/tutur3u/platform/commit/038e05c69a0e4a080f62d6441ae4dd2b15721dba))
+* **parley:** share Meet runtime and integrate private training with AI Hub billing ([66d40e2](https://github.com/tutur3u/platform/commit/66d40e23a8110bd43be652e1181205cf50e506ab))
+
+
+### Bug Fixes
+
+* **database:** order chat usage migration after auth prerequisite ([da35870](https://github.com/tutur3u/platform/commit/da35870fbd62b679c6bdb448e499f2b1b603fd33))
+* **database:** preserve anonymous handoffs through MFA hook ([a450779](https://github.com/tutur3u/platform/commit/a4507790fc9ce591e1fcd93e3bffe75661a078cd))
+* **database:** reject missing meeting billing provenance ([005aa98](https://github.com/tutur3u/platform/commit/005aa980e69741358a652a4b965d151be597b992))
+* **devbox:** enforce judge concurrency budgets ([f46ab79](https://github.com/tutur3u/platform/commit/f46ab798e4aae330bc6b2fe7d80de41f0f64715a))
+* **devbox:** restrict maintenance and validate judge results ([884bc77](https://github.com/tutur3u/platform/commit/884bc77cb01a85953cd11e85c937db62712ddccf))
+* **finance:** respect class join dates in pending tuition ([1aaaff0](https://github.com/tutur3u/platform/commit/1aaaff054d9b87c8ada88af6bdcadb840e54a186)) ([#5618](https://github.com/tutur3u/platform/issues/5618)) ([4a0d26c](https://github.com/tutur3u/platform/commit/4a0d26ca1246cd4075e9fcc6ad3dd7a093861766))
+
+
+### Performance Improvements
+
+* **database:** index current group audit resources ([2fbdc63](https://github.com/tutur3u/platform/commit/2fbdc639609970c42061c13b78a1afc3dce4a296))
+* **database:** restore current group audit index ([#5629](https://github.com/tutur3u/platform/issues/5629)) ([6cb5fa6](https://github.com/tutur3u/platform/commit/6cb5fa63e8d1e87545e40e48399fcec0293ecb22))
+
 ## [1.36.1](https://github.com/tutur3u/platform/compare/database-v1.36.0...database-v1.36.1) (2026-09-29)
 
 
