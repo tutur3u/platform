@@ -712,6 +712,10 @@ local day, expands to individual items, and links to their native mobile views.
 Its snapshot is encrypted and scoped by user and workspace; opening Profile returns
 it first and then revalidates. Timeline data is private and never follows the
 tracked-time sharing preference.
+If one activity source is unavailable, Profile keeps the other sources visible,
+labels the result as partial, and offers retry. An unreadable local snapshot
+does not prevent the network refresh. If every source fails, the existing retry
+state remains.
 
 Profile shows your own tracked-time totals and activity. Nothing is shared by
 default. In a team workspace, **Share activity** asks for confirmation before

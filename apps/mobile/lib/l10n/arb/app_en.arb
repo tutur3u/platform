@@ -3506,6 +3506,7 @@
     "profileTimelineToday": "Today",
     "profileTimelineYesterday": "Yesterday",
     "profileTimelineEmpty": "No recent activity in this workspace",
+    "profileTimelinePartial": "Some activity is unavailable. Retry",
     "profileTimelineTasks": "{count, plural, one{Created 1 task} other{Created {count} tasks}}",
     "@profileTimelineTasks": {"placeholders": {"count": {"type": "int"}}},
     "profileTimelineTransactions": "{count, plural, one{Created 1 transaction} other{Created {count} transactions}}",
