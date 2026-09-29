@@ -48,7 +48,7 @@ export async function processImmediateNotifications(env: Env) {
     {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.CRON_CONTROL_DELIVERY_TOKEN}` },
-      redirect: 'error',
+      redirect: 'manual',
       signal: AbortSignal.timeout(180_000),
     }
   );
