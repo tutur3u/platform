@@ -10760,6 +10760,8 @@
     "editSecret": "Edit secret",
     "editSecretDescription": "Replace this secret without displaying the current value.",
     "error": "Error",
+    "exportDartDefines": "Export production app configuration",
+    "exportDartDefinesDownloaded": "Production app configuration downloaded.",
     "filesTitle": "File resources",
     "fingerprint": "SHA-256 {value}",
     "guidance": {

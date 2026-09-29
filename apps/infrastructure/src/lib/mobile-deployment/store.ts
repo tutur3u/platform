@@ -231,7 +231,7 @@ function buildSecretValueRow({
   };
 }
 
-async function getProductionEnvironment(db: AdminClient) {
+export async function getProductionEnvironment(db: AdminClient) {
   const schema = privateDb(db);
   const { data, error } = await schema
     .from('mobile_deployment_environments')
@@ -275,7 +275,10 @@ async function getLatestVersionByStatus(
   return (data as MobileDeploymentVersionRow | null) ?? null;
 }
 
-async function getVersionById(db: AdminClient, versionId: string | null) {
+export async function getVersionById(
+  db: AdminClient,
+  versionId: string | null
+) {
   if (!versionId) {
     return null;
   }
@@ -290,7 +293,10 @@ async function getVersionById(db: AdminClient, versionId: string | null) {
   return (data as MobileDeploymentVersionRow | null) ?? null;
 }
 
-async function listSecretsForVersion(db: AdminClient, versionId: string) {
+export async function listSecretsForVersion(
+  db: AdminClient,
+  versionId: string
+) {
   const { data, error } = await privateDb(db)
     .from('mobile_deployment_secret_values')
     .select('*')

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   activateMobileDeploymentDraft,
   clearMobileDeploymentSecret,
+  exportActiveMobileDartDefines,
   getMobileDeploymentState,
   issueMobileDeploymentCiToken,
   type MobileDeploymentFileKind,
@@ -45,6 +46,24 @@ export function MobileDeploymentClient({
     initialData,
     queryFn: () => getMobileDeploymentState(),
     queryKey: QUERY_KEY,
+  });
+
+  const exportMutation = useMutation({
+    mutationFn: () => exportActiveMobileDartDefines(),
+    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
+    onSuccess: ({ envFile }) => {
+      const url = URL.createObjectURL(
+        new Blob([envFile], { type: 'text/plain;charset=utf-8' })
+      );
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'tuturuuu-mobile-production.env';
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast({ title: t('exportDartDefinesDownloaded') });
+    },
   });
 
   const refresh = (state?: MobileDeploymentState) => {
@@ -173,6 +192,17 @@ export function MobileDeploymentClient({
       </TabsList>
 
       <TabsContent className="mt-0 space-y-4" value="overview">
+        {data.activeVersion && (
+          <div className="flex justify-end">
+            <Button
+              disabled={exportMutation.isPending}
+              onClick={() => exportMutation.mutate()}
+              variant="outline"
+            >
+              {t('exportDartDefines')}
+            </Button>
+          </div>
+        )}
         {data.draftVersion && data.activeVersion && (
           <div className="flex flex-wrap items-center gap-3 rounded-lg border p-4">
             <p className="flex-1 text-muted-foreground text-sm">

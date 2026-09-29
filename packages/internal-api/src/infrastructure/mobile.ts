@@ -82,6 +82,24 @@ export async function getMobileDeploymentState(
   });
 }
 
+export async function exportActiveMobileDartDefines(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{
+    environment: 'production';
+    envFile: string;
+    versionNumber: number;
+  }>('/api/v1/mobile-deployment/env-export', {
+    body: '{}',
+    cache: 'no-store',
+    headers: mobileDeploymentMutationHeaders({
+      'Content-Type': 'application/json',
+    }),
+    method: 'POST',
+  });
+}
+
 export async function repairMobileDeploymentDraft(
   options?: InternalApiClientOptions
 ) {
