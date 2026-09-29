@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.46.0](https://github.com/tutur3u/platform/compare/internal-api-v0.45.1...internal-api-v0.46.0) (2026-09-29)
+
+
+### Features
+
+* **infrastructure:** export active mobile Dart defines for admins ([321888b](https://github.com/tutur3u/platform/commit/321888b2b40de076c14879a8989dca512a07a9bd)) ([#5620](https://github.com/tutur3u/platform/issues/5620)) ([d1bf607](https://github.com/tutur3u/platform/commit/d1bf60784ad27486484a7cfd449dd04f5dd04bd2))
+* **mobile:** refresh workspace experience and offline edit foundation ([#5610](https://github.com/tutur3u/platform/issues/5610)) ([55a25b0](https://github.com/tutur3u/platform/commit/55a25b08d5fc14701dd8499bdc0eebdee094ae2f))
+
+
+### Bug Fixes
+
+* **finance:** respect class join dates in pending tuition ([1aaaff0](https://github.com/tutur3u/platform/commit/1aaaff054d9b87c8ada88af6bdcadb840e54a186)) ([#5618](https://github.com/tutur3u/platform/issues/5618)) ([4a0d26c](https://github.com/tutur3u/platform/commit/4a0d26ca1246cd4075e9fcc6ad3dd7a093861766))
+
 ## [0.45.1](https://github.com/tutur3u/platform/compare/internal-api-v0.45.0...internal-api-v0.45.1) (2026-09-28)
 
 

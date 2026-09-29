@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.32.0](https://github.com/tutur3u/platform/compare/utils-v0.31.0...utils-v0.32.0) (2026-09-29)
+
+
+### Features
+
+* **cron:** gate immediate recovery on Cloudflare ([546f389](https://github.com/tutur3u/platform/commit/546f3899143c09d52dfa198698b1c4310b860db2)) ([#5615](https://github.com/tutur3u/platform/issues/5615)) ([8eac476](https://github.com/tutur3u/platform/commit/8eac47606da1e1295cb3e6c80c96e5b4d3750068))
+* **devboxes:** route agent control through Cloudflare ([98d4580](https://github.com/tutur3u/platform/commit/98d4580b39308fdd835e1762ebad102fe6ca3f02)) ([#5614](https://github.com/tutur3u/platform/issues/5614)) ([cbd18fa](https://github.com/tutur3u/platform/commit/cbd18fa70ee2d88c8b7e607ab56631c581b723c9))
+
+
+### Bug Fixes
+
+* **devboxes:** load Durable Object base and register internal app ([50a4ed0](https://github.com/tutur3u/platform/commit/50a4ed0dd5f639c44f513e6d7e2ca663452b76bb))
+
 ## [0.31.0](https://github.com/tutur3u/platform/compare/utils-v0.30.0...utils-v0.31.0) (2026-09-25)
 
 

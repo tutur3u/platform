@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/learn-v0.26.0...learn-v0.27.0) (2026-09-29)
+
+
+### Features
+
+* **devboxes:** route agent control through Cloudflare ([98d4580](https://github.com/tutur3u/platform/commit/98d4580b39308fdd835e1762ebad102fe6ca3f02)) ([#5614](https://github.com/tutur3u/platform/issues/5614)) ([cbd18fa](https://github.com/tutur3u/platform/commit/cbd18fa70ee2d88c8b7e607ab56631c581b723c9))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/learn-v0.25.1...learn-v0.26.0) (2026-09-28)
 
 
