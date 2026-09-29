@@ -47,6 +47,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   final Map<String, double> _savedScrollOffsets = <String, double>{};
   final Map<String, int> _savedKanbanPages = <String, int>{};
   late final TextEditingController _searchController;
+  bool _searchVisible = false;
   late final ScrollController _listScrollController;
   late final ScrollController _kanbanVerticalScrollController;
   late final PageController _kanbanHorizontalPageController;
@@ -207,11 +208,24 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               ),
               ShellActionSpec(
                 id: 'task-board-detail-search',
-                icon: Icons.search,
+                icon: _searchVisible ? Icons.close_rounded : Icons.search,
                 tooltip: context.l10n.taskBoardDetailSearchTitle,
-                highlighted: state.searchQuery.trim().isNotEmpty,
+                highlighted:
+                    _searchVisible || state.searchQuery.trim().isNotEmpty,
                 enabled: detail != null,
-                onPressed: () => unawaited(_openSearchSheet(context)),
+                searchController: _searchVisible ? _searchController : null,
+                searchHint: context.l10n.taskBoardDetailSearchPlaceholder,
+                onSearchChanged: context
+                    .read<TaskBoardDetailCubit>()
+                    .setSearchQuery,
+                onCloseSearch: _closeSearch,
+                onPressed: () {
+                  if (_searchVisible) {
+                    _closeSearch();
+                  } else {
+                    setState(() => _searchVisible = true);
+                  }
+                },
               ),
               ShellActionSpec(
                 id: 'task-board-detail-filter',
@@ -1266,73 +1280,10 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     await showAdaptiveDrawer(context: context, builder: (_) => content);
   }
 
-  Future<void> _openSearchSheet(BuildContext context) async {
-    final cubit = context.read<TaskBoardDetailCubit>();
-    if (_searchController.text != cubit.state.searchQuery) {
-      _searchController.value = TextEditingValue(
-        text: cubit.state.searchQuery,
-        selection: TextSelection.collapsed(
-          offset: cubit.state.searchQuery.length,
-        ),
-      );
-    }
-
-    await showAdaptiveDrawer(
-      context: context,
-      builder: (drawerContext) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.l10n.taskBoardDetailSearchTitle,
-                      style: shad.Theme.of(
-                        context,
-                      ).typography.large.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const shad.Gap(12),
-                    shad.TextField(
-                      contextMenuBuilder: platformTextContextMenuBuilder(),
-                      controller: _searchController,
-                      hintText: context.l10n.taskBoardDetailSearchPlaceholder,
-                      onChanged: (value) {
-                        cubit.setSearchQuery(value);
-                        setModalState(() {});
-                      },
-                    ),
-                    const shad.Gap(12),
-                    Row(
-                      children: [
-                        if (_searchController.text.trim().isNotEmpty)
-                          shad.OutlineButton(
-                            onPressed: () {
-                              _searchController.clear();
-                              cubit.setSearchQuery('');
-                              setModalState(() {});
-                            },
-                            child: Text(context.l10n.commonClearSearch),
-                          ),
-                        const Spacer(),
-                        shad.PrimaryButton(
-                          onPressed: () => Navigator.of(drawerContext).pop(),
-                          child: Text(context.l10n.taskBoardDetailSearchDone),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
+  void _closeSearch() {
+    _searchController.clear();
+    context.read<TaskBoardDetailCubit>().setSearchQuery('');
+    setState(() => _searchVisible = false);
   }
 
   Future<void> _commitTimelineTaskChange(

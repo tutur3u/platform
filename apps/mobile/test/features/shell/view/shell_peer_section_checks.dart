@@ -5,7 +5,7 @@ void registerShellPeerSectionChecks({
   required AuthCubit Function() authCubit,
   required WorkspaceCubit Function() workspaceCubit,
 }) {
-  testWidgets('workspace settings back returns to settings hub', (
+  testWidgets('workspace settings back exits its peer settings tabs', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -27,7 +27,39 @@ void registerShellPeerSectionChecks({
     await _pumpForTransitions(tester);
     await tester.binding.handlePopRoute();
     await _pumpForTransitions(tester);
-    expect(router.routeInformationProvider.value.uri.path, Routes.settings);
+    expect(router.routeInformationProvider.value.uri.path, Routes.home);
+  });
+
+  testWidgets('dock back from workspace settings returns to its root origin', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final router = _buildRouter(initialLocation: Routes.profileRoot);
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      _buildTestApp(
+        router: router,
+        appTabCubit: appTabCubit(),
+        authCubit: authCubit(),
+        workspaceCubit: workspaceCubit(),
+      ),
+    );
+    await _pumpForTransitions(tester);
+    router.go(Routes.settings);
+    await _pumpForTransitions(tester);
+    router.go(Routes.settingsWorkspace);
+    await _pumpForTransitions(tester);
+    await tester.tap(find.bySemanticsLabel('Back'));
+    await _pumpForTransitions(tester);
+    expect(router.routeInformationProvider.value.uri.path, Routes.profileRoot);
+    await tester.binding.handlePopRoute();
+    await _pumpForTransitions(tester);
+    expect(router.routeInformationProvider.value.uri.path, Routes.home);
   });
 
   testWidgets('peer sections in Finance and Inventory do not stack', (
@@ -62,9 +94,6 @@ void registerShellPeerSectionChecks({
     await _pumpForTransitions(tester);
     await tester.binding.handlePopRoute();
     await _pumpForTransitions(tester);
-    expect(router.routeInformationProvider.value.uri.path, Routes.finance);
-    await tester.binding.handlePopRoute();
-    await _pumpForTransitions(tester);
     expect(router.routeInformationProvider.value.uri.path, Routes.apps);
 
     router.go(Routes.inventory);
@@ -75,8 +104,36 @@ void registerShellPeerSectionChecks({
     await _pumpForTransitions(tester);
     await tester.binding.handlePopRoute();
     await _pumpForTransitions(tester);
-    expect(router.routeInformationProvider.value.uri.path, Routes.inventory);
-    await tester.binding.handlePopRoute();
+    expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+  });
+
+  testWidgets('dock back leaves a peer section for the app origin', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final router = _buildRouter(initialLocation: Routes.apps);
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      _buildTestApp(
+        router: router,
+        appTabCubit: appTabCubit(),
+        authCubit: authCubit(),
+        workspaceCubit: workspaceCubit(),
+      ),
+    );
+    await _pumpForTransitions(tester);
+    router.go(Routes.finance);
+    await _pumpForTransitions(tester);
+    router.go(Routes.transactions);
+    await _pumpForTransitions(tester);
+    router.go(Routes.wallets);
+    await _pumpForTransitions(tester);
+    await tester.tap(find.bySemanticsLabel('Back'));
     await _pumpForTransitions(tester);
     expect(router.routeInformationProvider.value.uri.path, Routes.apps);
   });

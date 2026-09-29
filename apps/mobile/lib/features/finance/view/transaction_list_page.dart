@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
@@ -177,6 +176,13 @@ class _TransactionListViewState extends State<_TransactionListView> {
     });
   }
 
+  void _closeSearch() {
+    _debounce?.cancel();
+    _searchController.clear();
+    unawaited(context.read<TransactionListCubit>().setSearch(''));
+    setState(() => _isSearchVisible = false);
+  }
+
   Future<void> _onCreateTransaction() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) {
@@ -235,8 +241,17 @@ class _TransactionListViewState extends State<_TransactionListView> {
                       ? l10n.financeActivityClearSearch
                       : l10n.financeSearchTransactions,
                   highlighted: _isSearchVisible,
-                  onPressed: () =>
-                      setState(() => _isSearchVisible = !_isSearchVisible),
+                  searchController: _isSearchVisible ? _searchController : null,
+                  searchHint: l10n.financeSearchTransactions,
+                  onSearchChanged: _onSearchChanged,
+                  onCloseSearch: _closeSearch,
+                  onPressed: () {
+                    if (_isSearchVisible) {
+                      _closeSearch();
+                    } else {
+                      setState(() => _isSearchVisible = true);
+                    }
+                  },
                 ),
                 financeAmountVisibilityAction(
                   context,
@@ -286,12 +301,6 @@ class _TransactionListViewState extends State<_TransactionListView> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
                     children: [
-                      _ActivityHeaderCard(
-                        searchController: _searchController,
-                        onChanged: _onSearchChanged,
-                        isSearchVisible: _isSearchVisible,
-                        state: state,
-                      ),
                       const shad.Gap(14),
                       FinanceEmptyState(
                         icon: state.search.isNotEmpty
@@ -346,14 +355,6 @@ class _TransactionListViewState extends State<_TransactionListView> {
                     emphasizeTransactionRows: true,
                     collapseBreakdownByDefault: true,
                     showAmounts: showAmounts,
-                    headerChildren: [
-                      _ActivityHeaderCard(
-                        searchController: _searchController,
-                        onChanged: _onSearchChanged,
-                        isSearchVisible: _isSearchVisible,
-                        state: state,
-                      ),
-                    ],
                     onTransactionTap: (transaction) async {
                       final wsId = context
                           .read<WorkspaceCubit>()
@@ -391,52 +392,6 @@ class _TransactionListViewState extends State<_TransactionListView> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ActivityHeaderCard extends StatelessWidget {
-  const _ActivityHeaderCard({
-    required this.searchController,
-    required this.onChanged,
-    required this.isSearchVisible,
-    required this.state,
-  });
-
-  final TextEditingController searchController;
-  final ValueChanged<String> onChanged;
-  final bool isSearchVisible;
-  final TransactionListState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    if (!isSearchVisible) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: shad.TextField(
-        contextMenuBuilder: platformTextContextMenuBuilder(),
-        controller: searchController,
-        hintText: l10n.financeSearchTransactions,
-        onChanged: onChanged,
-        features: [
-          const shad.InputFeature.leading(Icon(Icons.search_rounded, size: 18)),
-          if (state.search.isNotEmpty)
-            shad.InputFeature.trailing(
-              shad.IconButton.ghost(
-                onPressed: () {
-                  searchController.clear();
-                  onChanged('');
-                },
-                icon: const Icon(Icons.close_rounded, size: 16),
-              ),
-            ),
-        ],
       ),
     );
   }

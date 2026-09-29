@@ -1,11 +1,59 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../helpers/helpers.dart';
 
 void main() {
+  testWidgets('tapping a floating tab requests selection haptics', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    final originalEnabled = AppHaptics.enabled;
+    AppHaptics.enabled = true;
+    final calls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'HapticFeedback.vibrate') calls.add(call);
+        return null;
+      },
+    );
+    addTearDown(() {
+      debugDefaultTargetPlatformOverride = null;
+      AppHaptics.enabled = originalEnabled;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      );
+    });
+    await tester.pumpApp(
+      Center(
+        child: MorphingNavigationBar(
+          selectedKey: const ValueKey('home'),
+          onSelected: (_) {},
+          children: const [
+            shad.NavigationItem(key: ValueKey('home'), child: Text('Home')),
+            shad.NavigationItem(key: ValueKey('apps'), child: Text('Apps')),
+          ],
+        ),
+      ),
+    );
+    await tester.tap(find.text('Apps'));
+    await tester.pump();
+    expect(
+      calls.any(
+        (call) => call.arguments == 'HapticFeedbackType.selectionClick',
+      ),
+      isTrue,
+    );
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('background rebuild retains drag and uses the current callback', (
     tester,
   ) async {
@@ -160,7 +208,7 @@ void main() {
       tester
           .getCenter(find.byKey(const ValueKey('navigation-drag-preview')))
           .dx,
-      closeTo(bounds.left + 28, 3),
+      closeTo(bounds.right - 28, 3),
     );
     await outside.up();
     await tester.pumpAndSettle();
@@ -197,7 +245,12 @@ void main() {
     final profile = tester.getCenter(find.text('Profile'));
     final gesture = await tester.startGesture(home);
     await tester.pump(const Duration(milliseconds: 600));
-    await gesture.moveTo(Offset(profile.dx - 18, profile.dy));
+    final freeformPosition = Offset(profile.dx - 18, profile.dy);
+    await gesture.moveTo(freeformPosition);
+    await tester.pump();
+    final preview = find.byKey(const ValueKey('navigation-drag-preview'));
+    expect(tester.getCenter(preview).dx, closeTo(freeformPosition.dx, 1));
+    expect(selected, const ValueKey('home'));
     await gesture.up();
     await tester.pumpAndSettle();
     expect(selected, const ValueKey('profile'));

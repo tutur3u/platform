@@ -138,7 +138,7 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
           duration: const Duration(milliseconds: 220),
           reverseDuration: const Duration(milliseconds: 220),
           curve: Curves.easeInOutCubic,
-          child: _searchVisible || _search.text.isNotEmpty
+          child: !sharedShell && (_searchVisible || _search.text.isNotEmpty)
               ? TextField(
                   controller: _search,
                   focusNode: _searchFocus,

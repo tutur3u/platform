@@ -89,7 +89,7 @@ void main() {
       );
       await _pumpForTransitions(tester);
     });
-    testWidgets('system back returns to the current mini-app parent', (
+    testWidgets('system back leaves a peer section for its app origin', (
       tester,
     ) async {
       tester.view.devicePixelRatio = 1;
@@ -122,7 +122,7 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      expect(router.routeInformationProvider.value.uri.path, Routes.tasks);
+      expect(router.routeInformationProvider.value.uri.path, Routes.home);
 
       expect(
         find.byKey(const ValueKey('apps-picker-fullscreen')),
@@ -722,10 +722,10 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      expect(router.routeInformationProvider.value.uri.path, Routes.tasks);
+      expect(router.routeInformationProvider.value.uri.path, Routes.home);
     });
 
-    testWidgets('timer requests back returns to the opening tab', (
+    testWidgets('timer requests back exits its peer navigation level', (
       tester,
     ) async {
       tester.view.devicePixelRatio = 1;
@@ -762,7 +762,7 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      expect(router.routeInformationProvider.value.uri.path, Routes.timer);
+      expect(router.routeInformationProvider.value.uri.path, Routes.apps);
       expect(
         find.byKey(const ValueKey('apps-picker-fullscreen')),
         findsNothing,

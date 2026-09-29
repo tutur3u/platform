@@ -1,6 +1,13 @@
 part of 'mail_page.dart';
 
 extension _MailShellActions on _MailWorkspaceState {
+  void _closeShellSearch() {
+    _searchDebounce?.cancel();
+    _search.clear();
+    _updateState(() => _searchVisible = false);
+    unawaited(_load(forceRefresh: false));
+  }
+
   Widget _buildMailShellActions() {
     final l10n = context.l10n;
     return ShellChromeActions(
@@ -23,9 +30,22 @@ extension _MailShellActions on _MailWorkspaceState {
           tooltip: l10n.mailSearch,
           highlighted: _searchVisible,
           callbackToken: _searchVisible,
+          searchController: _searchVisible ? _search : null,
+          searchHint: l10n.mailSearch,
+          onSearchChanged: (_) {
+            _searchDebounce?.cancel();
+            _searchDebounce = Timer(
+              const Duration(milliseconds: 300),
+              () => unawaited(_load(forceRefresh: false)),
+            );
+          },
+          onCloseSearch: _closeShellSearch,
           onPressed: () {
-            _updateState(() => _searchVisible = !_searchVisible);
-            if (_searchVisible) _searchFocus.requestFocus();
+            if (_searchVisible) {
+              _closeShellSearch();
+            } else {
+              _updateState(() => _searchVisible = true);
+            }
           },
         ),
         if (_mailboxId != null && ['inbox', 'archive'].contains(_folder))

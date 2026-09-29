@@ -6,7 +6,7 @@ void _registerProfileNavigationChecks(
   WorkspaceCubit Function() workspaceCubit,
   ShellProfileCubit Function() shellProfileCubit,
 ) {
-  testWidgets('profile dock avatar shows a skeleton while its URL loads', (
+  testWidgets('profile dock avatar keeps a placeholder until it has a URL', (
     tester,
   ) async {
     final cubit = shellProfileCubit();
@@ -26,10 +26,41 @@ void _registerProfileNavigationChecks(
       ),
     );
     expect(
-      find.byKey(const ValueKey('profile-avatar-loading')),
+      find.byKey(const ValueKey('profile-avatar-placeholder')),
       findsOneWidget,
     );
+    expect(find.byKey(const ValueKey('profile-avatar-loading')), findsNothing);
   });
+
+  testWidgets(
+    'profile dock reserves an image skeleton and uses the avatar cache',
+    (tester) async {
+      final cubit = shellProfileCubit();
+      const loading = ShellProfileState(
+        userId: 'user-1',
+        profile: UserProfile(id: 'user-1'),
+        avatarUrl: 'https://example.test/avatar.png?token=one',
+        avatarIdentityKey: 'https://example.test/avatar.png',
+      );
+      whenListen(
+        cubit,
+        const Stream<ShellProfileState>.empty(),
+        initialState: loading,
+      );
+      await tester.pumpApp(
+        BlocProvider<ShellProfileCubit>.value(
+          value: cubit,
+          child: const ProfileNavigationAvatar(),
+        ),
+      );
+      final image = tester.widget<Image>(find.byType(Image));
+      expect(image.image, isNot(isA<NetworkImage>()));
+      expect(
+        find.byKey(const ValueKey('profile-avatar-loading')),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets(
     'root dock owns Profile and Notifications without duplicate headers',
@@ -97,7 +128,7 @@ void _registerProfileNavigationChecks(
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Workspace settings back returns through Settings', (
+  testWidgets('Workspace settings back returns to the opening root tab', (
     tester,
   ) async {
     final router = _buildRouter(initialLocation: Routes.profileRoot);
@@ -118,6 +149,6 @@ void _registerProfileNavigationChecks(
     await _pumpForTransitions(tester);
     await tester.binding.handlePopRoute();
     await _pumpForTransitions(tester);
-    expect(router.routeInformationProvider.value.uri.path, Routes.settings);
+    expect(router.routeInformationProvider.value.uri.path, Routes.profileRoot);
   });
 }

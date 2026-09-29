@@ -78,14 +78,22 @@ server error. Verify the next reload as well as the immediate rollback.
 Dock action handoffs retain presentation only, never callbacks or permission
 state. Destination actions remain disabled until their mounted page registers
 current handlers; missing destinations discard previews after a short handoff.
-Long-press navigation supports dragging between destinations. The highlighted
-pill resolves to the nearest enabled tab even when the pointer leaves the dock;
-release selects the highlighted tab. The dock's single outlined translucent
-surface blurs content behind it. Pressing anywhere scales the entire island and
-smoothly brightens its glow, which fades again on release. The pill keeps the
-same inset from the outer capsule as it moves between tabs. Dock controls use accessibility
-labels without hover tooltips. The Profile avatar shows a skeleton while the
-profile or its image is loading.
+Long-press navigation supports freeform dragging between destinations, including
+when the pointer leaves the dock. The pill stays under the pointer within the
+capsule; crossing the nearest enabled tab gives selection feedback, and release
+snaps to and selects that tab. The floating surface blurs content behind it,
+uses one translucent outline, and contains the moving glow inside the capsule.
+Pressing gently scales the island and smoothly brightens that internal glow,
+which fades on release. Dock controls use accessibility labels without hover
+tooltips. The Profile dock reserves its avatar space with a default placeholder,
+shows a skeleton while an image downloads, and displays the cached image when
+ready. Back from a peer navigation section, including a Settings tab, exits to
+the root tab that opened that context; back from a detail page returns to its
+parent section. Shell search actions across Apps, Chat, Finance, Habits, Mail,
+Meet, Notes, task boards, and Timer focus the top search input on entry. The
+search icon, input, and close control share one vertical center; submitting an
+empty or whitespace-only query closes search mode. Chat shows message matches
+in the page, while task boards and Timer keep filtering their current lists.
 
 Settings tiles center a single title with the icon. For tiles with a value or
 supporting line, the first title line aligns with the icon. Workspace settings

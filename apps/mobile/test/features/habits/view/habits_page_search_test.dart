@@ -254,11 +254,24 @@ void main() {
     await tester.tap(find.byIcon(Icons.search_rounded));
     await pumpUi(tester);
 
-    expect(find.byType(shad.TextField), findsOneWidget);
+    final searchAction = tester
+        .element(find.byType(HabitsPage))
+        .read<ShellChromeActionsCubit>()
+        .state
+        .resolveForLocation('/habits')
+        .firstWhere((action) => action.id == 'habits-search');
+    expect(searchAction.searchController, isNotNull);
+    expect(find.byType(shad.TextField), findsNothing);
 
     await tester.tap(find.byIcon(Icons.close_rounded));
     await pumpUi(tester);
 
-    expect(find.byType(shad.TextField), findsNothing);
+    final closedAction = tester
+        .element(find.byType(HabitsPage))
+        .read<ShellChromeActionsCubit>()
+        .state
+        .resolveForLocation('/habits')
+        .firstWhere((action) => action.id == 'habits-search');
+    expect(closedAction.searchController, isNull);
   });
 }

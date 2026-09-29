@@ -36,6 +36,8 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   late final ChatCubit _chatCubit = ChatCubit();
+  final TextEditingController _searchController = TextEditingController();
+  bool _searchVisible = false;
   String? _loadedWorkspaceId;
   String? _openedInitialConversationId;
 
@@ -47,6 +49,7 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     unawaited(_chatCubit.close());
     super.dispose();
   }
@@ -129,7 +132,21 @@ class _ChatPageState extends State<ChatPage> {
               children: [
                 shellActions,
                 miniNav,
-                _ChatSurface(state: state),
+                if (_searchVisible)
+                  ChatSearchResults(
+                    state: state,
+                    onSelect: (conversationId) {
+                      unawaited(
+                        _chatCubit.selectConversation(
+                          conversationId,
+                          forceRefresh: true,
+                        ),
+                      );
+                      _closeSearch();
+                    },
+                  )
+                else
+                  _ChatSurface(state: state),
               ],
             );
           },
@@ -143,6 +160,9 @@ class _ChatPageState extends State<ChatPage> {
     return ShellMiniNav(
       ownerId: 'chat-navigation',
       locations: const {Routes.chat},
+      deepLinkBackRoute: state.selectedConversationId == null
+          ? Routes.apps
+          : null,
       items: [
         ShellMiniNavItemSpec(
           id: 'back',
@@ -176,20 +196,29 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _backFromChat() {
-    if (_chatCubit.state.selectedConversationId != null &&
-        MediaQuery.sizeOf(context).width < 700) {
+    if (_searchVisible) {
+      _closeSearch();
+      return;
+    }
+    if (_chatCubit.state.selectedConversationId != null) {
       _chatCubit.clearSelection();
       context.go(Routes.chat);
-    } else {
-      context.go(Routes.apps);
     }
   }
+
+  Future<void> _handleChatBack() async => _backFromChat();
 
   void _selectWorkspace() => _selectScope(ChatScope.workspaces);
 
   void _selectPersonal() => _selectScope(ChatScope.personal);
 
   void _openFilters() => unawaited(_showFilters(context));
+
+  void _closeSearch() {
+    _searchController.clear();
+    unawaited(_chatCubit.searchMessages(''));
+    setState(() => _searchVisible = false);
+  }
 
   void _selectScope(ChatScope scope) {
     _chatCubit.setScope(scope);
@@ -219,6 +248,9 @@ class _ChatPageState extends State<ChatPage> {
     return ShellChromeActions(
       ownerId: 'chat-root',
       locations: const {Routes.chat},
+      onBack: _searchVisible || state.selectedConversationId != null
+          ? _handleChatBack
+          : null,
       actions: [
         ShellActionSpec(
           id: 'chat-new',
@@ -233,11 +265,20 @@ class _ChatPageState extends State<ChatPage> {
         ),
         ShellActionSpec(
           id: 'chat-search',
-          icon: shad.LucideIcons.search,
+          icon: _searchVisible ? Icons.close_rounded : shad.LucideIcons.search,
           tooltip: l10n.chatSearch,
-          onPressed: () => unawaited(
-            showChatSearchSheet(context: context, cubit: _chatCubit),
-          ),
+          searchController: _searchVisible ? _searchController : null,
+          searchHint: l10n.chatSearch,
+          onSearchChanged: (query) =>
+              unawaited(_chatCubit.searchMessages(query)),
+          onCloseSearch: _closeSearch,
+          onPressed: () {
+            if (_searchVisible) {
+              _closeSearch();
+            } else {
+              setState(() => _searchVisible = true);
+            }
+          },
         ),
         ShellActionSpec(
           id: 'chat-directory',

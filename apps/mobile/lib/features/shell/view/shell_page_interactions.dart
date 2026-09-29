@@ -24,9 +24,8 @@ extension _ShellPageInteractions on _ShellPageState {
       return;
     }
 
-    if (selected.id == 'back' &&
-        registration.deepLinkBackRoute == Routes.apps) {
-      unawaited(_returnToAppOrigin());
+    if (selected.id == 'back' && registration.deepLinkBackRoute != null) {
+      unawaited(_runBackNavigation(context));
       return;
     }
     if (selected.selected && !selected.dropdown) {
@@ -152,11 +151,18 @@ extension _ShellPageInteractions on _ShellPageState {
   }
 
   Future<void> _returnToAppOrigin() async {
+    final current = _normalizeRouteLocation(widget.matchedLocation);
     final tabs = context.read<AppTabCubit>();
     final origin = tabs.state.appOrigin;
     await tabs.clearSelection();
     await tabs.setLastTabRoute(origin);
-    if (mounted) context.go(origin);
+    if (!mounted ||
+        _normalizeRouteLocation(widget.matchedLocation) != current) {
+      return;
+    }
+    _routeHistory.removeWhere((route) => _isSameMiniAppFamily(route, current));
+    _isHandlingBackNavigation = true;
+    context.go(origin);
   }
 
   Future<void> _openAppsDrawerFromAppsTab() => showAppsPicker(context);

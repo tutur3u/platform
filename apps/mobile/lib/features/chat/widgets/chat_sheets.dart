@@ -44,18 +44,6 @@ Future<void> showChatDirectorySheet({
   );
 }
 
-Future<void> showChatSearchSheet({
-  required BuildContext context,
-  required ChatCubit cubit,
-}) {
-  return showAdaptiveSheet<void>(
-    context: context,
-    useRootNavigator: true,
-    builder: (_) =>
-        BlocProvider.value(value: cubit, child: const ChatSearchSheet()),
-  );
-}
-
 Future<void> showChatDetailsSheet({
   required BuildContext context,
   required ChatCubit cubit,

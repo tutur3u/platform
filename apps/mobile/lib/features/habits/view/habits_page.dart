@@ -162,6 +162,13 @@ class _HabitsViewState extends State<_HabitsView> {
                               : context.l10n.habitsSearchHint,
                           highlighted:
                               _isSearchVisible || state.searchQuery.isNotEmpty,
+                          searchController: _isSearchVisible
+                              ? _searchController
+                              : null,
+                          searchHint: context.l10n.habitsSearchHint,
+                          onSearchChanged: (value) =>
+                              context.read<HabitsCubit>().setSearchQuery(value),
+                          onCloseSearch: _toggleSearch,
                           onPressed: _toggleSearch,
                         ),
                       ShellActionSpec(
@@ -261,17 +268,7 @@ class _HabitsViewState extends State<_HabitsView> {
                                   },
                                 ),
                               ],
-                              if (_supportsSearch) ...[
-                                const SizedBox(height: 10),
-                                HabitsSearchField(
-                                  controller: _searchController,
-                                  isVisible: _isSearchVisible,
-                                  onChanged: (value) => context
-                                      .read<HabitsCubit>()
-                                      .setSearchQuery(value),
-                                ),
-                              ] else
-                                const SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               if (state.isRefreshing &&
                                   widget.initialSection !=
                                       HabitsSection.activity) ...[
