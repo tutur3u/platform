@@ -15,12 +15,16 @@ import {
 
 type StorageError = { message: string } | null;
 type QueryResult<T> = Promise<{ data: T[] | null; error: StorageError }>;
-type SelectQuery<T> = {
+type SelectQuery<T> = PromiseLike<{
+  data: T[] | null;
+  error: StorageError;
+}> & {
   contains: (column: string, value: Record<string, unknown>) => SelectQuery<T>;
   eq: (column: string, value: string) => SelectQuery<T>;
   gt: (column: string, value: string) => SelectQuery<T>;
   in: (column: string, values: string[]) => SelectQuery<T>;
   lt: (column: string, value: string) => SelectQuery<T>;
+  or: (filters: string) => SelectQuery<T>;
   order: (column: string, options?: { ascending?: boolean }) => SelectQuery<T>;
   limit: (count: number) => QueryResult<T>;
 };
@@ -129,6 +133,8 @@ export async function enqueueCodingExecution({
   if (
     customCase &&
     (kind !== 'test' ||
+      typeof customCase.input !== 'string' ||
+      typeof customCase.expected !== 'string' ||
       customCase.input.length > 4096 ||
       customCase.expected.length > 4096)
   ) {
@@ -220,7 +226,7 @@ async function hydrateExecutions(
       .select('run_id,event_type,message')
       .in('run_id', runIds)
       .eq('event_type', 'judge_result')
-      .limit(runIds.length),
+      .order('created_at', { ascending: true }),
   ]);
   const runs = new Map(assertRows(runResult).map((run) => [run.id, run]));
   const events = new Map(
@@ -276,12 +282,30 @@ export async function listCodingExecutions({
     .eq('user_id', userId)
     .eq('ws_id', wsId)
     .eq('challenge_slug', challengeSlug);
-  if (before) query = query.lt('created_at', before);
+  if (before) {
+    const [createdAt, id] = before.split('|');
+    if (
+      !createdAt ||
+      !Number.isFinite(Date.parse(createdAt)) ||
+      !/^[0-9T:.+\-Z]+$/u.test(createdAt) ||
+      !id ||
+      !/^[0-9a-f-]{36}$/iu.test(id)
+    ) {
+      throw new Error('Invalid history cursor.');
+    }
+    query = query.or(
+      `created_at.lt.${createdAt},and(created_at.eq.${createdAt},id.lt.${id})`
+    );
+  }
   const rows = assertRows(
-    await query.order('created_at', { ascending: false }).limit(26)
+    await query
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(26)
   );
   return {
     items: await hydrateExecutions(client, rows.slice(0, 25)),
-    nextCursor: rows.length > 25 ? (rows[24]?.created_at ?? null) : null,
+    nextCursor:
+      rows.length > 25 ? `${rows[24]?.created_at}|${rows[24]?.id}` : null,
   };
 }

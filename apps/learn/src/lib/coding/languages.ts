@@ -23,7 +23,7 @@ export function starterCode(language: CodingLanguage, pythonStarter: string) {
     javascript:
       "const fs = require('node:fs');\nconst input = fs.readFileSync(0, 'utf8');\n// Read input and print your answer.\n",
     typescript:
-      'const input = await Bun.stdin.text();\n// Read input and print your answer.\n',
+      'async function main() {\n  const input = await Bun.stdin.text();\n  // Read input and print your answer.\n}\n\nvoid main();\n',
     c: '#include <stdio.h>\n\nint main(void) {\n  // Read input and print your answer.\n  return 0;\n}\n',
     cpp: '#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n  // Read input and print your answer.\n  return 0;\n}\n',
     java: 'import java.util.*;\n\npublic class Main {\n  public static void main(String[] args) {\n    Scanner in = new Scanner(System.in);\n    // Read input and print your answer.\n  }\n}\n',

@@ -35,6 +35,13 @@ export async function submitCodingSolution(
   if (kind !== 'submit' && kind !== 'test') {
     throw new Error('Invalid execution kind.');
   }
+  if (
+    customCase &&
+    (typeof customCase.input !== 'string' ||
+      typeof customCase.expected !== 'string')
+  ) {
+    throw new Error('Invalid custom test case.');
+  }
   return enqueueCodingExecution({
     challenge,
     customCase,
@@ -70,7 +77,7 @@ export async function listCodingExecutions(
   if (!getCodingChallenge(challengeSlug)) {
     throw new Error('Challenge not found.');
   }
-  if (before && !Number.isFinite(Date.parse(before))) {
+  if (before && !/^[^|(),]+\|[0-9a-f-]{36}$/iu.test(before)) {
     throw new Error('Invalid history cursor.');
   }
   return listStoredCodingExecutions({

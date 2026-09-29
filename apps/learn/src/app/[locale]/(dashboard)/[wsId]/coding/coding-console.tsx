@@ -52,7 +52,7 @@ export function CodingConsole({
       <div className="flex shrink-0 items-center gap-1 border-b px-3 py-1.5">
         {(['cases', 'result', 'history'] as const).map((entry) => (
           <button
-            aria-selected={tab === entry}
+            aria-pressed={tab === entry}
             className={`rounded-md px-3 py-1.5 font-medium text-xs transition-colors ${
               tab === entry
                 ? 'bg-accent text-foreground'
@@ -60,7 +60,6 @@ export function CodingConsole({
             }`}
             key={entry}
             onClick={() => setTab(entry)}
-            role="tab"
             type="button"
           >
             {t(`tabs.${entry}`)}

@@ -122,6 +122,7 @@ export function CodingLab({
     queryFn: () => getCodingSubmission(wsId, studentId, submissionId!),
     queryKey: ['coding-execution', wsId, studentId, submissionId],
     refetchInterval: (query) => {
+      if (query.state.data === null) return false;
       const status = query.state.data?.status;
       return status === 'queued' || status === 'running' || !status
         ? 1500

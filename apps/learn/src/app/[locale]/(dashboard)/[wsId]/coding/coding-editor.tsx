@@ -46,6 +46,9 @@ declare const process: {
   stdin: { setEncoding(encoding: string): void };
   stdout: { write(value: string): void };
 };
+declare const Bun: {
+  stdin: { text(): Promise<string> };
+};
 `;
 
 monaco.typescript.javascriptDefaults.setCompilerOptions({
