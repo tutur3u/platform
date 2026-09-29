@@ -166,7 +166,7 @@ class _InventoryPageState extends State<InventoryPage> {
                         InventoryActionTile(
                           onPressed: () => context.go(Routes.inventorySales),
                           icon: Icons.calendar_view_month_outlined,
-                          label: l10n.inventorySalesPeriodOpen,
+                          label: l10n.inventorySalesPeriodsTitle,
                         ),
                         InventoryActionTile(
                           onPressed: () => context.go(Routes.inventoryManage),
