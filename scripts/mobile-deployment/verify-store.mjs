@@ -241,6 +241,17 @@ export async function submitExternalBetaReview(
       );
       return 'deferred';
     }
+    const reviewDetail = await apple(`/v1/apps/${appId}/betaAppReviewDetail`);
+    const reviewAttributes = reviewDetail.data?.attributes;
+    if (
+      reviewAttributes?.demoAccountRequired !== true ||
+      !reviewAttributes.demoAccountName?.trim() ||
+      !reviewAttributes.demoAccountPassword?.trim()
+    ) {
+      throw new Error(
+        'TestFlight reviewer access is missing. Set the private demo account fields in App Store Connect Test Information before external submission.'
+      );
+    }
     const localizations = await listAppleResources(
       apple,
       `/v1/builds/${buildId}/betaBuildLocalizations?limit=200`

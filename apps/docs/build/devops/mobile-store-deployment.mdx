@@ -242,6 +242,66 @@ app's beta review contact and app description current there. Missing export
 compliance, processing failures, and internal distribution must also be
 resolved in App Store Connect.
 
+### Reviewer sign-in and QA accounts
+
+Apple [requires an active demo account or a fully featured demo mode](https://developer.apple.com/app-store/review/guidelines/)
+for an app whose features require sign-in. In App Store Connect, go to **Apps →
+Tuturuuu → TestFlight → Additional → Test Information**. Set **Demo Account
+Required** and put the working email and password in the separate **Demo Account
+Name** and **Demo Account Password** fields. Put sign-in steps and feature
+configuration in **Review Notes**, without credentials. Apple documents these
+as [separate fields](https://developer.apple.com/documentation/appstoreconnectapi/betaappreviewdetail/attributes-data.dictionary),
+and says review notes should not contain the demo account details. Keep the
+backend and credentials active throughout review. App Store release review has
+its own App Review Information fields; update those separately when submitting
+the app itself.
+
+In the production Infrastructure app, open the root workspace's **Account
+Security → Review and QA accounts** panel. A platform administrator with
+`manage_internal_accounts` can create a reviewer account at a new,
+organization-controlled `@tuturuuu.com` address. Infrastructure confirms its
+email and generates a strong password, then displays credentials once and
+credential-free review steps separately. Copy them to the corresponding private
+App Store Connect fields; never place credentials in source, an issue, CI
+output, review notes, or a public TestFlight description. The account has
+ordinary user permissions and a
+personal workspace from the standard signup triggers. Creating an account does
+not seed data or grant workspace administrator permissions.
+
+Before resubmitting an external beta, sign out of a test device, use **Email and
+password** on the production mobile build with the reviewer credentials, and
+verify Home, Apps, Profile, Tasks, Calendar, Finance, and Notes in the account's
+personal workspace. Add representative non-sensitive sample data through the
+app if the review needs it. Record the tested build number and any non-obvious
+navigation steps in the private review notes. Keep the account enabled and the
+password stable until Apple finishes reviewing that build. If the password is
+lost, rotate it in the same panel, repeat the device sign-in check, and update
+App Store Connect before resubmitting.
+
+For a rejected TestFlight build such as `0.16.1 (272001)`, first correct the
+Test Information and verify the reviewer login on the production app. Then use
+the next eligible uploaded build through the existing production TestFlight
+workflow. `scripts/mobile-deployment/verify-store.mjs ios-pending` intentionally
+does not resubmit a latest build whose beta review state is `REJECTED`; it waits
+for a newer build. If the existing binary should be reconsidered without a new
+upload, use Apple's TestFlight App Review appeal/contact path rather than
+assuming the retry workflow will resubmit it. Confirm the newly submitted
+build reaches `WAITING_FOR_REVIEW`, `IN_REVIEW`, or `APPROVED` in App Store
+Connect; an upload or metadata save alone does not reopen a rejected review.
+The store workflow now checks Apple's private `demoAccountRequired`,
+`demoAccountName`, and `demoAccountPassword` fields before a new external beta
+submission. It reports only whether access is configured, never credential
+values. A missing field stops external submission while the uploaded build can
+still be used for internal testing; fill the fields and dispatch the production
+**Retry latest eligible TestFlight review** workflow when a newer build is
+ready.
+
+The same panel can send an **External invite** to an address outside the
+organization. The recipient must accept the emailed invitation and verify the
+address. Pending invitations do not work as Apple reviewer credentials. The
+panel lists managed accounts and can disable or re-enable them; disabling a
+review account during an active review will prevent Apple from reaching the app.
+
 Apple allows at most six TestFlight beta review submissions in a 24-hour
 period ([Apple's TestFlight guidance](https://developer.apple.com/help/app-store-connect/test-a-beta-version/invite-external-testers)).
 If Apple returns `ENTITY_UNPROCESSABLE.SUBMISSION_LIMIT_REACHED`, CI

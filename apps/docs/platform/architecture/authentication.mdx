@@ -6,6 +6,25 @@ updatedAt: "2026-06-28"
 
 The Tuturuuu platform uses Supabase Auth for user authentication with support for email/password, OAuth providers, multi-factor authentication (MFA), and cross-app token authentication.
 
+## Managed review and external accounts
+
+The Infrastructure root workspace's Account Security screen lets operators with
+`manage_internal_accounts` provision two ordinary-user account types. A review
+account uses a new organization-controlled `@tuturuuu.com` email, confirmed by
+the administrator, and a generated password shown only once. It is intended for
+app-store review and production QA. An external quick-create sends an email
+invitation instead; the recipient must accept it before the account can sign in.
+Both types get a personal workspace from the normal signup trigger, with no
+extra platform or workspace permissions. Existing users are never overwritten.
+
+The panel lists only accounts tagged by this workflow. Operators may rotate a
+review password and disable or re-enable a managed account after confirming its
+exact email. Password rotation does not claim to revoke all existing sessions.
+The default is an active reviewer account and an unconfirmed external invitation;
+these rules apply to the Infrastructure admin panel and the mobile and web
+sign-in surfaces. The external invitation intentionally has no administrator-
+visible password, so it cannot serve as an unaccepted App Review login.
+
 <Note>
   The server helpers in `@tuturuuu/supabase/next/server` resolve cookies (and an
   optional `request` argument) asynchronously, so `createClient()` and
