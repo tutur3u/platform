@@ -73,6 +73,10 @@ void registerShellViewportChecks(
           expect(tester.widget<AnimatedScale>(scale).scale, 1.018);
           expect(
             find.byKey(const ValueKey('navigation-drag-preview')),
+            findsNothing,
+          );
+          expect(
+            find.byKey(const ValueKey('navigation-selection-indicator')),
             findsOneWidget,
           );
           await press.cancel();
