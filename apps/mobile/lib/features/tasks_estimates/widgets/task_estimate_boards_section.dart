@@ -9,7 +9,9 @@ import 'package:mobile/features/tasks_estimates/cubit/task_estimates_cubit.dart'
 import 'package:mobile/features/tasks_estimates/utils/estimation_type_meta.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimate_dialog.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimates_feedback.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 class TaskEstimateBoardsSection extends StatelessWidget {
   const TaskEstimateBoardsSection({
@@ -34,9 +36,20 @@ class TaskEstimateBoardsSection extends StatelessWidget {
             children: [
               for (var index = 0; index < boards.length; index++) ...[
                 if (index > 0) const shad.Gap(10),
-                _TaskEstimateBoardTile(
-                  board: boards[index],
-                  enabled: !isUpdating,
+                PendingSyncFrame(
+                  workspaceId:
+                      context
+                          .read<WorkspaceCubit>()
+                          .state
+                          .currentWorkspace
+                          ?.id ??
+                      '',
+                  entityId: boards[index].id,
+                  feature: 'tasks',
+                  child: _TaskEstimateBoardTile(
+                    board: boards[index],
+                    enabled: !isUpdating,
+                  ),
                 ),
               ],
             ],

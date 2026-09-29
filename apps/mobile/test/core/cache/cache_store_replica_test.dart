@@ -160,6 +160,13 @@ void main() {
         localId: 'local_1',
         serverId: 'server_1',
       );
+      await store.saveLocalIdMapping(
+        userId: 'user_1',
+        workspaceId: 'ws_1',
+        feature: 'tasks',
+        localId: 'local_task',
+        serverId: 'server_task',
+      );
       await store.closeForTesting();
       store = CacheStore.forTesting(
         secureStorage: secureStorage,
@@ -174,6 +181,20 @@ void main() {
         {'local_1': 'server_1'},
       );
       expect(
+        await store.localIdMappingsForScope(
+          userId: 'user_1',
+          workspaceId: 'ws_1',
+        ),
+        {'local_1': 'server_1', 'local_task': 'server_task'},
+      );
+      expect(
+        await store.localIdMappingsForScope(
+          userId: 'user_1',
+          workspaceId: 'ws_2',
+        ),
+        isEmpty,
+      );
+      expect(
         await store.localIdMappings(
           userId: 'user_2',
           workspaceId: 'ws_1',
@@ -182,6 +203,13 @@ void main() {
         isEmpty,
       );
       await store.clearScope(userId: 'user_1', workspaceId: 'ws_1');
+      expect(
+        await store.localIdMappingsForScope(
+          userId: 'user_1',
+          workspaceId: 'ws_1',
+        ),
+        isEmpty,
+      );
       expect(
         await store.localIdMappings(
           userId: 'user_1',

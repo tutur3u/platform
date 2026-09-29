@@ -48,4 +48,21 @@ void main() {
       'role-server-id',
     );
   });
+
+  test('replaces queued task image markers only inside descriptions', () {
+    const marker = 'offline-task-image-12345678-1234-1234-1234-123456789abc';
+    final resolved = reconcileOfflineIds(
+      '/api/tasks',
+      {
+        'description': 'Photo ![]($marker) and $marker',
+        'content': 'Keep $marker in prose',
+      },
+      {marker: '/api/shared/image.png'},
+    );
+    expect(
+      resolved.payload?['description'],
+      'Photo ![](/api/shared/image.png) and /api/shared/image.png',
+    );
+    expect(resolved.payload?['content'], 'Keep $marker in prose');
+  });
 }

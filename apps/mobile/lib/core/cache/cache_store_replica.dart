@@ -46,6 +46,27 @@ extension CacheStoreReplica on CacheStore {
     return ids;
   }
 
+  /// Resolves references that cross modules, such as a Note mentioning a
+  /// locally created Task, within the same account and workspace only.
+  Future<Map<String, String>> localIdMappingsForScope({
+    required String userId,
+    required String workspaceId,
+  }) async {
+    await init();
+    final ids = <String, String>{};
+    for (final raw in _entityBox.values) {
+      if (raw is Map &&
+          raw['kind'] == 'id-map' &&
+          raw['userId'] == userId &&
+          raw['workspaceId'] == workspaceId &&
+          raw['localId'] is String &&
+          raw['serverId'] is String) {
+        ids[raw['localId'] as String] = raw['serverId'] as String;
+      }
+    }
+    return ids;
+  }
+
   Future<void> _clearReplicaMappingsScope(
     String? userId,
     String? workspaceId,

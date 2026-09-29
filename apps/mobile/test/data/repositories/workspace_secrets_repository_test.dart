@@ -1,4 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/repositories/workspace_secrets_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mocktail/mocktail.dart';
@@ -47,5 +50,28 @@ void main() {
         ).called(2);
       },
     );
+
+    test('shows a queued secret only in its workspace', () async {
+      when(
+        () => apiClient.getJsonList(any()),
+      ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+      OfflineMutationQueue.instance.pending.value = [
+        PendingMutationRecord(
+          id: 'secret-edit',
+          feature: 'settings',
+          method: 'WORKSPACE_SECRET_CREATE',
+          path: WorkspaceSettingsEndpoints.secrets('ws-offline'),
+          createdAt: DateTime.utc(2026, 9, 29),
+          userId: 'user-1',
+          workspaceId: 'ws-offline',
+          payload: const {'name': 'API_KEY', 'value': 'test-value'},
+          optimisticPatch: const {'entityId': 'local-secret'},
+        ),
+      ];
+      final secrets = await repository.getSecrets('ws-offline');
+      expect(secrets.single.name, 'API_KEY');
+      expect(await repository.getSecrets('ws-other'), isEmpty);
+      OfflineMutationQueue.instance.pending.value = [];
+    });
   });
 }

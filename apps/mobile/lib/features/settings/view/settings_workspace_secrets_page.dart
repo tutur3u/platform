@@ -21,6 +21,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 part 'settings_workspace_secrets_page_widgets.dart';
 
@@ -191,26 +192,32 @@ class _SettingsWorkspaceSecretsPageState
                                 .map(
                                   (secret) => Padding(
                                     padding: const EdgeInsets.only(bottom: 12),
-                                    child: _WorkspaceSecretCard(
-                                      secret: secret,
-                                      isUpdating:
-                                          secret.id != null &&
-                                          _updatingSecretIds.contains(
-                                            secret.id,
-                                          ),
-                                      onToggleBoolean: _isBooleanSecret(secret)
-                                          ? (value) => unawaited(
-                                              _toggleBooleanSecret(
-                                                secret,
-                                                value,
-                                              ),
-                                            )
-                                          : null,
-                                      onEdit: () => unawaited(
-                                        _openSecretEditor(secret: secret),
+                                    child: PendingSyncFrame(
+                                      workspaceId: workspace?.id ?? '',
+                                      entityId: secret.id ?? '',
+                                      feature: 'settings',
+                                      child: _WorkspaceSecretCard(
+                                        secret: secret,
+                                        isUpdating:
+                                            secret.id != null &&
+                                            _updatingSecretIds.contains(
+                                              secret.id,
+                                            ),
+                                        onToggleBoolean:
+                                            _isBooleanSecret(secret)
+                                            ? (value) => unawaited(
+                                                _toggleBooleanSecret(
+                                                  secret,
+                                                  value,
+                                                ),
+                                              )
+                                            : null,
+                                        onEdit: () => unawaited(
+                                          _openSecretEditor(secret: secret),
+                                        ),
+                                        onDelete: () =>
+                                            unawaited(_deleteSecret(secret)),
                                       ),
-                                      onDelete: () =>
-                                          unawaited(_deleteSecret(secret)),
                                     ),
                                   ),
                                 )

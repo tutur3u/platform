@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -8,6 +9,7 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
+import 'package:mobile/core/cache/task_description_image_delivery.dart';
 import 'package:mobile/data/models/task.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
@@ -30,6 +32,8 @@ import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 part 'task_repository_helpers.dart';
 part 'task_repository_planning.dart';
 part 'task_repository_project_updates.dart';
+part 'task_repository_estimation.dart';
+part 'task_repository_uploads.dart';
 
 /// Repository for task operations.
 class TaskRepository {
@@ -81,67 +85,6 @@ class TaskRepository {
     await CacheStore.instance.invalidateTags({
       'module:tasks',
     }, workspaceId: wsId);
-  }
-
-  String _filenameFromPath(String path) {
-    final normalized = path.replaceAll(RegExp(r'\\'), '/');
-    final parts = normalized.split('/');
-    final last = parts.isNotEmpty ? parts.last.trim() : '';
-    if (last.isNotEmpty) {
-      return last;
-    }
-
-    return 'task-image-${DateTime.now().millisecondsSinceEpoch}.jpg';
-  }
-
-  Future<String> uploadTaskDescriptionImage({
-    required String wsId,
-    required String localFilePath,
-    String? taskId,
-  }) async {
-    final filename = _filenameFromPath(localFilePath);
-    final uploadResponse = await _apiClient
-        .postJson('/api/v1/workspaces/$wsId/tasks/upload-url', {
-          'filename': filename,
-          if (taskId != null && taskId.trim().isNotEmpty) 'taskId': taskId,
-        });
-
-    final signedUrl = uploadResponse['signedUrl'] as String?;
-    final token = uploadResponse['token'] as String?;
-    final path = uploadResponse['path'] as String?;
-
-    if (signedUrl == null || token == null || path == null) {
-      throw const ApiException(
-        message: 'Invalid task upload URL response',
-        statusCode: 0,
-      );
-    }
-
-    final fileBytes = await File(localFilePath).readAsBytes();
-    final contentType =
-        lookupMimeType(localFilePath) ?? 'application/octet-stream';
-
-    final putResponse = await _httpClient
-        .put(
-          Uri.parse(signedUrl),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': contentType,
-          },
-          body: fileBytes,
-        )
-        .timeout(const Duration(seconds: 60));
-
-    if (putResponse.statusCode < 200 || putResponse.statusCode >= 300) {
-      throw ApiException(
-        message: 'Failed to upload image (${putResponse.statusCode})',
-        statusCode: putResponse.statusCode,
-      );
-    }
-
-    final encodedWsId = Uri.encodeComponent(wsId);
-    final query = Uri(queryParameters: {'path': path}).query;
-    return '/api/v1/workspaces/$encodedWsId/storage/share?$query';
   }
 
   /// Fetches the current user's task buckets from the shared web API.
@@ -334,23 +277,6 @@ class TaskRepository {
       send: () async =>
           TaskBulkResult.fromJson(await _apiClient.postJson(path, payload)),
     );
-  }
-
-  Future<List<TaskEstimateBoard>> getTaskEstimateBoards(String wsId) async {
-    final response = await _read(
-      wsId,
-      'estimation',
-      '/api/v1/workspaces/$wsId/boards/estimation',
-    );
-    final boardsData = response['boards'] as List<dynamic>? ?? const [];
-
-    return boardsData
-        .map(
-          (board) => TaskEstimateBoard.fromJson(
-            Map<String, dynamic>.from(board as Map),
-          ),
-        )
-        .toList(growable: false);
   }
 
   Future<TaskBoardsPage> getTaskBoards(
@@ -1000,25 +926,6 @@ class TaskRepository {
       '/api/v1/workspaces/$wsId/task-boards/$boardId',
       entityId: boardId,
     );
-  }
-
-  Future<TaskEstimateBoard> updateBoardEstimation({
-    required String wsId,
-    required String boardId,
-    required String? estimationType,
-    required bool extendedEstimation,
-    required bool allowZeroEstimates,
-    required bool countUnestimatedIssues,
-  }) async {
-    final response = await _apiClient
-        .patchJson('/api/v1/workspaces/$wsId/boards/$boardId/estimation', {
-          'estimation_type': estimationType,
-          'extended_estimation': extendedEstimation,
-          'allow_zero_estimates': allowZeroEstimates,
-          'count_unestimated_issues': countUnestimatedIssues,
-        });
-
-    return TaskEstimateBoard.fromJson(response);
   }
 
   Future<List<TaskLabel>> getTaskLabels(String wsId) => _getTaskLabels(wsId);

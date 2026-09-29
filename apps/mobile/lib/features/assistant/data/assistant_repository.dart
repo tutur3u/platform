@@ -9,6 +9,8 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
@@ -19,6 +21,8 @@ import '../models/assistant_chat_identity.dart';
 import '../models/assistant_models.dart';
 import 'assistant_calendar_insight.dart';
 import 'assistant_stream_parser.dart';
+
+part 'assistant_repository_preferences.dart';
 
 class AssistantRepository {
   AssistantRepository({
@@ -139,12 +143,7 @@ class AssistantRepository {
   }
 
   Future<Set<String>> fetchModelFavorites(String wsId) async {
-    final payload = await _apiClient.getJson(
-      '/api/v1/workspaces/${Uri.encodeComponent(wsId)}/ai/model-favorites',
-    );
-    return (payload['favoriteIds'] as List<dynamic>? ?? const [])
-        .whereType<String>()
-        .toSet();
+    return await fetchAssistantModelFavorites(this, wsId);
   }
 
   Future<void> toggleModelFavorite(
@@ -152,9 +151,11 @@ class AssistantRepository {
     String modelId, {
     required bool isFavorited,
   }) async {
-    await _apiClient.patchJson(
-      '/api/v1/workspaces/${Uri.encodeComponent(wsId)}/ai/model-favorites',
-      {'modelId': modelId, 'isFavorited': isFavorited},
+    await toggleAssistantModelFavorite(
+      this,
+      wsId,
+      modelId,
+      isFavorited: isFavorited,
     );
   }
 
@@ -205,36 +206,11 @@ class AssistantRepository {
   }
 
   Future<AssistantSoul> fetchSoul({bool forceRefresh = false}) async {
-    final result = await CacheStore.instance.prefetch<AssistantSoul>(
-      key: _assistantMetadataCacheKey(namespace: 'assistant.soul'),
-      policy: _assistantMetadataCachePolicy,
-      decode: _decodeSoulCache,
-      forceRefresh: forceRefresh,
-      tags: [_assistantMetadataCacheTag, 'module:assistant'],
-      fetch: () async {
-        final response = await _apiClient.getJson('/api/v1/mira/soul');
-        return AssistantSoul.fromJson(
-          response['soul'] as Map<String, dynamic>?,
-        ).toJson();
-      },
-    );
-    return result.data ?? const AssistantSoul();
+    return await fetchAssistantSoul(this, forceRefresh: forceRefresh);
   }
 
   Future<AssistantSoul> updateSoulName(String name) async {
-    final response = await _apiClient.patchJson('/api/v1/mira/soul', {
-      'name': name,
-    });
-    final soul = AssistantSoul.fromJson(
-      response['soul'] as Map<String, dynamic>?,
-    );
-    await CacheStore.instance.write(
-      key: _assistantMetadataCacheKey(namespace: 'assistant.soul'),
-      policy: _assistantMetadataCachePolicy,
-      payload: soul.toJson(),
-      tags: [_assistantMetadataCacheTag, 'module:assistant'],
-    );
-    return soul;
+    return await updateAssistantSoulName(this, name);
   }
 
   Future<AssistantTasksInsight> fetchTasksInsight({

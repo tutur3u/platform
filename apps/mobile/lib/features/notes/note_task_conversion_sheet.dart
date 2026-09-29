@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
@@ -21,7 +21,7 @@ class NoteTaskConversionSheet extends StatefulWidget {
 }
 
 class _NoteTaskConversionSheetState extends State<NoteTaskConversionSheet> {
-  final _api = ApiClient();
+  final _tasks = TaskRepository();
   List<(String, String)> _boards = const [];
   List<(String, String)> _lists = const [];
   String? _boardId;
@@ -41,24 +41,20 @@ class _NoteTaskConversionSheetState extends State<NoteTaskConversionSheet> {
   @override
   void dispose() {
     _requestVersion++;
-    _api.dispose();
     super.dispose();
   }
 
   Future<void> _loadBoards() async {
     try {
-      final response = await _api.getJson(
-        '/api/v1/workspaces/${widget.wsId}/task-boards?page=1&pageSize=100&status=active',
+      final response = await _tasks.getTaskBoards(
+        widget.wsId,
+        pageSize: 100,
+        status: 'active',
       );
       if (!mounted) return;
-      final boards = (response['boards'] as List<dynamic>? ?? const [])
-          .whereType<Map<String, dynamic>>()
-          .map(
-            (item) =>
-                (item['id'] as String? ?? '', item['name'] as String? ?? ''),
-          )
-          .where((item) => item.$1.isNotEmpty)
-          .toList();
+      final boards = response.boards
+          .map((item) => (item.id, item.name ?? ''))
+          .toList(growable: false);
       setState(() {
         _boards = boards;
         _loading = false;
@@ -84,18 +80,11 @@ class _NoteTaskConversionSheetState extends State<NoteTaskConversionSheet> {
       _error = null;
     });
     try {
-      final response = await _api.getJson(
-        '/api/v1/workspaces/${widget.wsId}/task-boards/$boardId/lists',
-      );
+      final response = await _tasks.getBoardLists(widget.wsId, boardId);
       if (!mounted || version != _requestVersion) return;
-      final lists = (response['lists'] as List<dynamic>? ?? const [])
-          .whereType<Map<String, dynamic>>()
-          .map(
-            (item) =>
-                (item['id'] as String? ?? '', item['name'] as String? ?? ''),
-          )
-          .where((item) => item.$1.isNotEmpty)
-          .toList();
+      final lists = response
+          .map((item) => (item.id, item.name ?? ''))
+          .toList(growable: false);
       setState(() {
         _lists = lists;
         _listId = lists.length == 1 ? lists.first.$1 : null;
@@ -119,16 +108,11 @@ class _NoteTaskConversionSheetState extends State<NoteTaskConversionSheet> {
       _error = null;
     });
     try {
-      final response = await _api.postJson(
-        '/api/v1/workspaces/${widget.wsId}/tasks',
-        {'name': widget.taskName, 'listId': listId},
-      );
-      final task = response['task'];
-      final taskId = task is Map<String, dynamic>
-          ? task['id'] as String?
-          : null;
-      if (taskId == null || taskId.isEmpty) throw StateError('Missing task ID');
-      if (mounted) Navigator.of(context).pop(taskId);
+      final task = await _tasks.createTask(widget.wsId, {
+        'name': widget.taskName,
+        'listId': listId,
+      });
+      if (mounted) Navigator.of(context).pop(task.id);
     } on Object {
       if (mounted) {
         setState(() {

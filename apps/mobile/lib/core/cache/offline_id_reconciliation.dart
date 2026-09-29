@@ -1,5 +1,6 @@
 /// Rewrites exact local IDs in queued paths and structured payloads after a
-/// create returns its server ID. Free text and partial matches remain intact.
+/// create returns its server ID. Free text and partial matches remain intact;
+/// the dedicated task image marker in a description is the sole text exception.
 ({String path, Map<String, dynamic>? payload}) reconcileOfflineIds(
   String path,
   Map<String, dynamic>? payload,
@@ -18,11 +19,27 @@
             (key, value) => MapEntry(key, ids[value] ?? value),
           ),
   );
-  Object? rewrite(Object? value) {
-    if (value is String) return ids[value] ?? value;
-    if (value is List) return value.map(rewrite).toList(growable: false);
+  Object? rewrite(Object? value, {String? field}) {
+    if (value is String) {
+      if (field == 'description') {
+        return value.replaceAllMapped(
+          RegExp(
+            'offline-task-image-[0-9a-f]{8}-[0-9a-f]{4}-'
+            '[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',
+          ),
+          (match) => ids[match.group(0)] ?? match.group(0)!,
+        );
+      }
+      return ids[value] ?? value;
+    }
+    if (value is List) {
+      return value.map(rewrite).toList(growable: false);
+    }
     if (value is Map) {
-      return value.map((key, item) => MapEntry(key.toString(), rewrite(item)));
+      return value.map(
+        (key, item) =>
+            MapEntry(key.toString(), rewrite(item, field: key.toString())),
+      );
     }
     return value;
   }

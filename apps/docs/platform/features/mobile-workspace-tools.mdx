@@ -168,8 +168,12 @@ Removing a queued change requires confirmation and does not undo a write that
 may already have reached the server. A user-initiated retry gives a completion
 haptic only when that specific outbox entry is removed after replay. Finance
 creates and transfers, Mail sends and attachments, and Notes creates use stable
-client IDs so replay can recognize a prior successful write. Other modules still
-need individual offline mutation adapters before this is an app-wide write replica.
+client IDs so replay can recognize a prior successful write. The queue checks
+structured local ID references across modules and holds a dependent edit until
+its source create has synced. The replica stores account/workspace-scoped ID
+mappings across module namespaces, so a queued Note mention can resolve a Task
+created offline. Operational actions that require a live server calculation or
+fresh authentication remain explicit online paths.
 Calendar event lists use scoped snapshots and overlay pending edits. An uncertain
 Calendar create stays in manual review because it may have already reached an
 external calendar provider.
@@ -190,9 +194,19 @@ Education course, quiz, and flashcard edits and basic CRM user and feedback
 edits use the same encrypted queue. Education course, quiz-set, quiz, flashcard,
 and attempt reads and CRM user, group, feedback, and audit reads use scoped
 snapshots while revalidating. Education authored cards and CRM user and feedback
-cards show queued edits with the pending treatment. Other Education and CRM
-actions still need individual mutation adapters before those modules meet the
-full replica contract.
+cards show queued edits with the pending treatment. Education attempts are
+read-only in the mobile app and use scoped snapshots.
+CRM user merges and bulk imports enter the outbox as ordered commands. A queued
+merge marks its source user pending; a bulk import reports queued instead of
+claiming users were imported. User avatars stage encrypted bytes, obtain a new
+upload token at replay, and map their local placeholder to the returned URL
+before the dependent user edit runs. Duplicate detection remains a live server
+calculation and does not represent a local edit.
+Workspace secret create, edit, and delete queue in the encrypted settings
+outbox; pending secret cards are dimmed and dashed. A newly created secret is
+matched to its server ID after replay before dependent edits run. Ambiguous
+secret writes stop for manual review. Storage migration remains an online
+operational command and is never represented as a completed offline change.
 Documents lists and details use scoped snapshots. Document create, update, and
 delete enter the encrypted outbox when offline, and list rows expose their
 pending state. A newly created offline document uses a local ID for navigation;
@@ -212,8 +226,10 @@ Habit trackers, entries, and streak actions also queue edits, with pending
 cards and activity rows. Create responses that omit a server ID still need
 dedicated replay support.
 Meet meeting create, edit, and delete also queue offline with a pending list
-treatment. Live room access, realtime tokens, and assistant actions remain
-network-dependent and must not be represented as queued calls.
+treatment. Assistant model favorites and name changes now queue offline and
+overlay pending values on their scoped cached reads. Live room access,
+realtime tokens, and assistant generation remain network-dependent and must not
+be represented as queued calls.
 Task summaries, board lists, and board task pages read scoped snapshots while
 revalidating. Core task create, edit, description, delete and restore, plus
 board create and lifecycle edits, enter the outbox offline. Task and board
@@ -229,6 +245,16 @@ Board task create, edit, and move and board list create, edit, and reorder
 also queue offline. Their list reads overlay pending edits; task cards and
 list headers distinguish unsynchronized rows. Project updates read scoped
 snapshots and queue create, edit, and delete with pending cards.
+Board estimation settings also queue offline, overlay pending choices on the
+cached board list, and mark the board tile until the edit is acknowledged.
+Task description images stage encrypted bytes and request a fresh signed upload
+URL during replay. Their unique local image markers are replaced only in queued
+task description fields after upload; arbitrary prose is never rewritten. An
+ambiguous upload remains in manual review before its dependent description edit.
+Converting a Note checklist item to a Task uses the cached board/list reads and
+Tasks outbox. The Note mention carries the local Task ID until replay maps it;
+tapping an unsynced mention shows its queued state, and a synced mention opens
+the resolved Task.
 Chat conversation and message lists also return scoped snapshots while
 revalidating. Conversation create, edit, and delete and user message sends enter
 the encrypted outbox offline. A queued message appears immediately with a

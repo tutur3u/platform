@@ -31,11 +31,33 @@ extension NotesPageLinks on NotesPageState {
       return;
     }
     if (!mounted || _wsId != wsId) return;
+    var resolvedId = target.id;
+    final userId = currentCacheUserId();
+    if (userId != null) {
+      final ids = await CacheStore.instance.localIdMappingsForScope(
+        userId: userId,
+        workspaceId: wsId,
+      );
+      resolvedId = ids[target.id] ?? target.id;
+    }
+    if (resolvedId == target.id &&
+        OfflineMutationQueue.instance.pending.value.any(
+          (edit) => edit.workspaceId == wsId && edit.entityId == target.id,
+        )) {
+      if (!mounted) return;
+      shad.showToast(
+        context: context,
+        builder: (context, overlay) =>
+            shad.SurfaceCard(child: Text(context.l10n.offlineEditQueued)),
+      );
+      return;
+    }
+    if (!mounted || _wsId != wsId) return;
     final route = switch (target.kind) {
-      'task' => '/tasks/${target.id}',
-      'event' => '/calendar/${target.id}',
-      'finance' => '/finance/wallets/${target.id}',
-      'meeting' => '/meet?room=${target.id}',
+      'task' => '/tasks/$resolvedId',
+      'event' => '/calendar/$resolvedId',
+      'finance' => '/finance/wallets/$resolvedId',
+      'meeting' => '/meet?room=$resolvedId',
       _ => null,
     };
     if (route != null) await context.push<void>(route);
