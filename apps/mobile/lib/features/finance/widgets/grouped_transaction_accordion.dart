@@ -10,6 +10,7 @@ import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'grouped_transaction_accordion_widgets.dart';
@@ -22,6 +23,7 @@ class GroupedTransactionAccordion extends StatefulWidget {
     required this.workspaceCurrency,
     required this.exchangeRates,
     required this.onTransactionTap,
+    this.workspaceId,
     this.showLoadingMore = false,
     this.lazy = false,
     this.headerChildren = const [],
@@ -41,6 +43,7 @@ class GroupedTransactionAccordion extends StatefulWidget {
   final String workspaceCurrency;
   final List<ExchangeRate> exchangeRates;
   final TransactionTapCallback onTransactionTap;
+  final String? workspaceId;
   final bool showLoadingMore;
   final bool lazy;
   final List<Widget> headerChildren;
@@ -186,6 +189,7 @@ class _GroupedTransactionAccordionState
             workspaceCurrency: widget.workspaceCurrency,
             exchangeRates: widget.exchangeRates,
             onTransactionTap: widget.onTransactionTap,
+            workspaceId: widget.workspaceId,
             usePanelChrome: widget.usePanelChrome,
             emphasizeTransactionRows: widget.emphasizeTransactionRows,
             collapseBreakdownByDefault: widget.collapseBreakdownByDefault,
@@ -210,6 +214,7 @@ class _GroupedTransactionAccordionState
             workspaceCurrency: widget.workspaceCurrency,
             exchangeRates: widget.exchangeRates,
             onTransactionTap: widget.onTransactionTap,
+            workspaceId: widget.workspaceId,
             usePanelChrome: widget.usePanelChrome,
             emphasizeTransactionRows: widget.emphasizeTransactionRows,
             collapseBreakdownByDefault: widget.collapseBreakdownByDefault,
@@ -355,6 +360,7 @@ class _DayGroup extends StatelessWidget {
     required this.workspaceCurrency,
     required this.exchangeRates,
     required this.onTransactionTap,
+    required this.workspaceId,
     required this.usePanelChrome,
     required this.emphasizeTransactionRows,
     required this.collapseBreakdownByDefault,
@@ -370,6 +376,7 @@ class _DayGroup extends StatelessWidget {
   final String workspaceCurrency;
   final List<ExchangeRate> exchangeRates;
   final TransactionTapCallback onTransactionTap;
+  final String? workspaceId;
   final bool usePanelChrome;
   final bool emphasizeTransactionRows;
   final bool collapseBreakdownByDefault;
@@ -510,7 +517,7 @@ class _DayGroup extends StatelessWidget {
                   ),
                   itemBuilder: (context, index) {
                     final transaction = group.transactions[index];
-                    return _TransactionTile(
+                    final tile = _TransactionTile(
                       transaction: transaction,
                       workspaceCurrency: workspaceCurrency,
                       exchangeRates: exchangeRates,
@@ -519,6 +526,14 @@ class _DayGroup extends StatelessWidget {
                       emphasizeTransactionRows: emphasizeTransactionRows,
                       showAmounts: showAmounts,
                     );
+                    return workspaceId == null
+                        ? tile
+                        : PendingSyncFrame(
+                            workspaceId: workspaceId!,
+                            entityId: transaction.id,
+                            feature: 'finance',
+                            child: tile,
+                          );
                   },
                   separatorBuilder: (context, index) =>
                       SizedBox(height: usePanelChrome ? 10 : 12),

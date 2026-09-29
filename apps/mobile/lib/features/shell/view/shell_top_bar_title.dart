@@ -31,11 +31,14 @@ class ShellTopBarTitle extends StatelessWidget {
       return const AssistantModeTitle();
     }
     final config = ShellChromeConfig.forLocation(context, matchedLocation);
+    final resolvedFallback = Routes.isSettingsHubLocation(matchedLocation)
+        ? null
+        : fallbackTitle;
     final titleOverrideCubit = lookupShellTitleOverrideCubit(context);
 
     if (titleOverrideCubit == null) {
       return _ShellTopBarTitleContent(
-        title: fallbackTitle ?? config.title,
+        title: resolvedFallback ?? config.title,
         showLeadingBrand: true,
       );
     }
@@ -52,7 +55,7 @@ class ShellTopBarTitle extends StatelessWidget {
       builder: (context, state) {
         final title =
             state.resolveForLocation(matchedLocation) ??
-            fallbackTitle ??
+            resolvedFallback ??
             config.title;
         return _ShellTopBarTitleContent(
           title: title,

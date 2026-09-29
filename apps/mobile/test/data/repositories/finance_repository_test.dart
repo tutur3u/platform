@@ -18,8 +18,7 @@ void main() {
     });
 
     tearDown(debugClearFinanceRepositoryWorkspaceCurrencyCache);
-
-    test('getWorkspaceDefaultCurrency uses shared cache when fresh', () async {
+    test('getWorkspaceDefaultCurrency revalidates a fresh snapshot', () async {
       when(
         () => apiClient.getJson(
           '/api/v1/workspaces/ws_1/settings/DEFAULT_CURRENCY',
@@ -35,9 +34,8 @@ void main() {
         () => apiClient.getJson(
           '/api/v1/workspaces/ws_1/settings/DEFAULT_CURRENCY',
         ),
-      ).called(1);
+      ).called(2);
     });
-
     test('getWallets maps list response', () async {
       when(
         () => apiClient.getJsonList('/api/workspaces/ws_1/wallets'),
@@ -56,7 +54,6 @@ void main() {
         () => apiClient.getJsonList('/api/workspaces/ws_1/wallets'),
       ).called(1);
     });
-
     test('getWalletById returns wallet for existing id', () async {
       when(
         () => apiClient.getJson('/api/workspaces/ws_1/wallets/wallet_1'),
@@ -81,7 +78,6 @@ void main() {
         () => apiClient.getJson('/api/workspaces/ws_1/wallets/wallet_1'),
       ).called(1);
     });
-
     test('getWalletById returns null on 404', () async {
       when(
         () => apiClient.getJson('/api/workspaces/ws_1/wallets/wallet_404'),
@@ -94,7 +90,6 @@ void main() {
 
       expect(wallet, isNull);
     });
-
     test(
       'getWalletCheckpointSummary maps latest checkpoints and totals',
       () async {
@@ -145,17 +140,14 @@ void main() {
         expect(cached.latestCheckpoints.single.id, 'checkpoint_1');
         verify(
           () => apiClient.getJson('/api/workspaces/ws_1/wallets/checkpoints'),
-        ).called(1);
-        await repository.getWalletCheckpointSummary(
+        ).called(2);
+        final refreshed = await repository.getWalletCheckpointSummary(
           wsId: 'ws_1',
           forceRefresh: true,
         );
-        verify(
-          () => apiClient.getJson('/api/workspaces/ws_1/wallets/checkpoints'),
-        ).called(1);
+        expect(refreshed.latestCheckpoints.single.id, 'checkpoint_1');
       },
     );
-
     test(
       'getWalletCheckpoints includes limit query and maps intervals',
       () async {
@@ -214,7 +206,6 @@ void main() {
         ).called(1);
       },
     );
-
     test('createWalletCheckpoint posts checkpoint payload', () async {
       when(() => apiClient.postJson(any(), any())).thenAnswer(
         (_) async => {
@@ -255,7 +246,6 @@ void main() {
         'note': 'Bank app check',
       });
     });
-
     test('reconcileWalletCheckpoint posts interval basis', () async {
       when(() => apiClient.postJson(any(), any())).thenAnswer(
         (_) async => {
@@ -293,7 +283,6 @@ void main() {
         'description': 'Audit adjustment',
       });
     });
-
     test(
       'getTransactionsInfinite includes cursor and walletId query params',
       () async {
@@ -332,7 +321,6 @@ void main() {
         ).called(1);
       },
     );
-
     test('getTransactionsInfinite parses tags from the list payload', () async {
       when(
         () => apiClient.getJson(
@@ -369,7 +357,6 @@ void main() {
         ),
       ).called(1);
     });
-
     test(
       'getTransactionStats maps stats response with wallet currency key',
       () async {
@@ -404,7 +391,6 @@ void main() {
         ).called(1);
       },
     );
-
     test('createWallet posts payload to wallets endpoint', () async {
       when(
         () => apiClient.postJson(any(), any()),
@@ -422,19 +408,26 @@ void main() {
         paymentDate: 20,
       );
 
-      verify(
-        () => apiClient.postJson('/api/workspaces/ws_1/wallets', {
-          'name': 'Main wallet',
-          'description': 'Everyday spending',
-          'type': 'CREDIT',
-          'currency': 'USD',
-          'icon': 'Wallet',
-          'image_src': null,
-          'limit': 1000,
-          'statement_date': 10,
-          'payment_date': 20,
-        }),
-      ).called(1);
+      final payload =
+          verify(
+                () => apiClient.postJson(
+                  '/api/workspaces/ws_1/wallets',
+                  captureAny(),
+                ),
+              ).captured.single
+              as Map<String, dynamic>;
+      expect(payload['id'], isA<String>());
+      expect(payload..remove('id'), {
+        'name': 'Main wallet',
+        'description': 'Everyday spending',
+        'type': 'CREDIT',
+        'currency': 'USD',
+        'icon': 'Wallet',
+        'image_src': null,
+        'limit': 1000,
+        'statement_date': 10,
+        'payment_date': 20,
+      });
     });
 
     test('updateWallet puts payload to wallet endpoint', () async {
@@ -830,7 +823,6 @@ void main() {
         expect(sentBody!['report_opt_in'], true);
 
         expect(transaction.id, 'tx_1');
-
         verify(
           () => apiClient.putJson('/api/workspaces/ws_1/transfers', any()),
         ).called(1);

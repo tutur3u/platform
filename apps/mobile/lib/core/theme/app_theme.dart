@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/colors.dart';
@@ -5,6 +6,17 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Material 3 theme data for light and dark modes.
 abstract final class AppTheme {
+  static const _pageTransitions = PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: _SmoothPageTransitionsBuilder(),
+      TargetPlatform.fuchsia: _SmoothPageTransitionsBuilder(),
+      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.linux: _SmoothPageTransitionsBuilder(),
+      TargetPlatform.windows: _SmoothPageTransitionsBuilder(),
+    },
+  );
+
   static Brightness resolveBrightness(
     shad.ThemeMode themeMode,
     Brightness systemBrightness,
@@ -104,6 +116,7 @@ abstract final class AppTheme {
 
   static final ThemeData light = ThemeData(
     useMaterial3: true,
+    pageTransitionsTheme: _pageTransitions,
     brightness: Brightness.light,
     colorScheme: _lightScheme,
     scaffoldBackgroundColor: AppColors.backgroundLight,
@@ -138,6 +151,7 @@ abstract final class AppTheme {
 
   static final ThemeData dark = ThemeData(
     useMaterial3: true,
+    pageTransitionsTheme: _pageTransitions,
     brightness: Brightness.dark,
     colorScheme: _darkScheme,
     scaffoldBackgroundColor: AppColors.backgroundDark,
@@ -169,4 +183,39 @@ abstract final class AppTheme {
       elevation: 0,
     ),
   );
+}
+
+class _SmoothPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _SmoothPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    final enter = animation.drive(CurveTween(curve: Curves.easeOutCubic));
+    final exit = secondaryAnimation.drive(
+      CurveTween(curve: Curves.easeOutCubic),
+    );
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: Offset.zero,
+        end: const Offset(-0.025, 0),
+      ).animate(exit),
+      child: FadeTransition(
+        opacity: Tween<double>(begin: 0.88, end: 1).animate(enter),
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.045, 0),
+            end: Offset.zero,
+          ).animate(enter),
+          child: child,
+        ),
+      ),
+    );
+  }
 }

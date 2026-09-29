@@ -12,6 +12,7 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/config/firebase_options_selector.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -51,6 +52,7 @@ Future<void> bootstrap(
 ) async {
   WidgetsFlutterBinding.ensureInitialized();
   ApiConfig.configure(appFlavor);
+  await AppHaptics.initialize();
 
   final settingsRepository = SettingsRepository();
   shad.ThemeMode initialThemeMode;

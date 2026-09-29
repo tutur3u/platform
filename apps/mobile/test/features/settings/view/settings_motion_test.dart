@@ -120,7 +120,7 @@ void main() {
       ).thenAnswer((_) async {});
     });
 
-    testWidgets('app settings renders staggered top-level sections', (
+    testWidgets('app settings renders compact top-level sections', (
       tester,
     ) async {
       const state = WorkspaceState(status: WorkspaceStatus.loaded);
@@ -158,8 +158,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(StaggeredEntry), findsAtLeastNWidgets(2));
-      expect(find.text('Settings'), findsOneWidget);
+      expect(find.byType(StaggeredEntry), findsWidgets);
+      expect(find.text('Settings'), findsNothing);
       expect(find.text('Preferences'), findsOneWidget);
       expect(find.text('Experiments'), findsOneWidget);
       expect(find.text('Open Tasks board by default'), findsNothing);

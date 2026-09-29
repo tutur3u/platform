@@ -13,6 +13,21 @@ describe('mail composition schemas', () => {
     ).toEqual([]);
   });
 
+  it('accepts a stable client message ID for offline draft replay', () => {
+    const payload = {
+      clientMessageId: '6c9b30b1-770d-4196-921b-ad21e25f9864',
+      subject: 'Offline draft',
+      to: [],
+    };
+    expect(mailDraftPayloadSchema.parse(payload).clientMessageId).toBe(
+      payload.clientMessageId
+    );
+    expect(
+      mailDraftPayloadSchema.safeParse({ ...payload, clientMessageId: 'bad' })
+        .success
+    ).toBe(false);
+  });
+
   it('requires at least one combined recipient before sending', () => {
     expect(
       sendMailPayloadSchema.safeParse({ subject: '', to: [] }).success

@@ -71,4 +71,28 @@ void _registerProfileNavigationChecks(
     expect(router.routeInformationProvider.value.uri.path, Routes.profileRoot);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Workspace settings back returns through Settings', (
+    tester,
+  ) async {
+    final router = _buildRouter(initialLocation: Routes.profileRoot);
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      _buildTestApp(
+        router: router,
+        appTabCubit: appTabCubit(),
+        authCubit: authCubit(),
+        workspaceCubit: workspaceCubit(),
+        shellProfileCubit: shellProfileCubit(),
+      ),
+    );
+    await _pumpForTransitions(tester);
+    router.go(Routes.settings);
+    await _pumpForTransitions(tester);
+    router.go(Routes.settingsWorkspace);
+    await _pumpForTransitions(tester);
+    await tester.binding.handlePopRoute();
+    await _pumpForTransitions(tester);
+    expect(router.routeInformationProvider.value.uri.path, Routes.settings);
+  });
 }

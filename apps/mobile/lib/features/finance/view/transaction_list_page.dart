@@ -33,7 +33,9 @@ Future<void> _loadFromWorkspace(
 }
 
 class TransactionListPage extends StatelessWidget {
-  const TransactionListPage({super.key});
+  const TransactionListPage({this.initialTransactionId, super.key});
+
+  final String? initialTransactionId;
 
   @override
   Widget build(BuildContext context) {
@@ -55,14 +57,39 @@ class TransactionListPage extends StatelessWidget {
           unawaited(_loadFromWorkspace(context, cubit));
           return cubit;
         },
-        child: const _TransactionListView(),
+        child: _TransactionListView(initialTransactionId: initialTransactionId),
       ),
     );
   }
 }
 
+class _TransactionListSkeleton extends StatelessWidget {
+  const _TransactionListSkeleton();
+
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: EdgeInsets.fromLTRB(
+      16,
+      12,
+      16,
+      96 + MediaQuery.paddingOf(context).bottom,
+    ),
+    children: const [
+      FinanceSkeletonBlock(height: 108, radius: 22),
+      SizedBox(height: 16),
+      FinanceSkeletonBlock(height: 68, radius: 18),
+      SizedBox(height: 8),
+      FinanceSkeletonBlock(height: 68, radius: 18),
+      SizedBox(height: 8),
+      FinanceSkeletonBlock(height: 68, radius: 18),
+    ],
+  );
+}
+
 class _TransactionListView extends StatefulWidget {
-  const _TransactionListView();
+  const _TransactionListView({this.initialTransactionId});
+
+  final String? initialTransactionId;
 
   @override
   State<_TransactionListView> createState() => _TransactionListViewState();
@@ -80,6 +107,38 @@ class _TransactionListViewState extends State<_TransactionListView> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    if (widget.initialTransactionId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_openInitialTransaction());
+      });
+    }
+  }
+
+  Future<void> _openInitialTransaction() async {
+    final transactionId = widget.initialTransactionId;
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (transactionId == null || wsId == null) return;
+    final repository = context.read<FinanceRepository>();
+    final state = context.read<TransactionListCubit>().state;
+    final cached = state.transactions
+        .where((transaction) => transaction.id == transactionId)
+        .firstOrNull;
+    final transaction =
+        cached ??
+        await repository.getTransactionById(
+          wsId: wsId,
+          transactionId: transactionId,
+        );
+    if (!mounted || transaction == null) return;
+    await openTransactionDetailSheet(
+      context,
+      wsId: wsId,
+      transaction: transaction,
+      repository: repository,
+      workspaceCurrency: state.workspaceCurrency,
+      exchangeRates: state.exchangeRates,
+    );
+    if (mounted) await _onRefresh();
   }
 
   @override
@@ -196,7 +255,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
 
                 if (state.status == TransactionListStatus.loading &&
                     state.transactions.isEmpty) {
-                  return const Center(child: NovaLoadingIndicator());
+                  return const _TransactionListSkeleton();
                 }
 
                 if (state.status == TransactionListStatus.error &&
@@ -219,7 +278,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
                 }
 
                 if (!state.hasWorkspaceCurrency) {
-                  return const Center(child: NovaLoadingIndicator());
+                  return const _TransactionListSkeleton();
                 }
 
                 if (state.transactions.isEmpty) {
@@ -265,6 +324,11 @@ class _TransactionListViewState extends State<_TransactionListView> {
                 return NovaRefreshIndicator(
                   onRefresh: _onRefresh,
                   child: GroupedTransactionAccordion(
+                    workspaceId: context
+                        .read<WorkspaceCubit>()
+                        .state
+                        .currentWorkspace
+                        ?.id,
                     lazy: true,
                     scrollController: _scrollController,
                     listPadding: EdgeInsets.fromLTRB(

@@ -1,3 +1,4 @@
+import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/education/education_models.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -6,6 +7,31 @@ class EducationRepository {
   EducationRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
 
   final ApiClient _api;
+
+  Future<void> _write(
+    String wsId,
+    String method,
+    String path, {
+    Map<String, dynamic>? payload,
+    String? entityId,
+  }) => queueOrSendVoid(
+    feature: 'education',
+    method: method,
+    path: path,
+    workspaceId: wsId,
+    payload: payload,
+    entityId: entityId,
+    send: () async {
+      switch (method) {
+        case 'POST':
+          await _api.postJson(path, payload);
+        case 'PUT':
+          await _api.putJson(path, payload ?? {});
+        case 'DELETE':
+          await _api.deleteJson(path);
+      }
+    },
+  );
 
   Future<EducationPagedResult<EducationCourse>> getCourses(
     String wsId, {
@@ -37,10 +63,12 @@ class EducationRepository {
     required String name,
     String? description,
   }) async {
-    await _api.postJson(EducationEndpoints.courses(wsId), {
-      'name': name,
-      'description': description,
-    });
+    await _write(
+      wsId,
+      'POST',
+      EducationEndpoints.courses(wsId),
+      payload: {'name': name, 'description': description},
+    );
   }
 
   Future<void> updateCourse(
@@ -49,14 +77,22 @@ class EducationRepository {
     required String name,
     String? description,
   }) async {
-    await _api.putJson(EducationEndpoints.course(wsId, courseId), {
-      'name': name,
-      'description': description,
-    });
+    await _write(
+      wsId,
+      'PUT',
+      EducationEndpoints.course(wsId, courseId),
+      entityId: courseId,
+      payload: {'name': name, 'description': description},
+    );
   }
 
   Future<void> deleteCourse(String wsId, String courseId) async {
-    await _api.deleteJson(EducationEndpoints.course(wsId, courseId));
+    await _write(
+      wsId,
+      'DELETE',
+      EducationEndpoints.course(wsId, courseId),
+      entityId: courseId,
+    );
   }
 
   Future<EducationPagedResult<EducationQuizSet>> getQuizSets(
@@ -85,7 +121,12 @@ class EducationRepository {
   }
 
   Future<void> createQuizSet(String wsId, {required String name}) async {
-    await _api.postJson(EducationEndpoints.quizSets(wsId), {'name': name});
+    await _write(
+      wsId,
+      'POST',
+      EducationEndpoints.quizSets(wsId),
+      payload: {'name': name},
+    );
   }
 
   Future<void> updateQuizSet(
@@ -93,11 +134,22 @@ class EducationRepository {
     String setId, {
     required String name,
   }) async {
-    await _api.putJson(EducationEndpoints.quizSet(wsId, setId), {'name': name});
+    await _write(
+      wsId,
+      'PUT',
+      EducationEndpoints.quizSet(wsId, setId),
+      entityId: setId,
+      payload: {'name': name},
+    );
   }
 
   Future<void> deleteQuizSet(String wsId, String setId) async {
-    await _api.deleteJson(EducationEndpoints.quizSet(wsId, setId));
+    await _write(
+      wsId,
+      'DELETE',
+      EducationEndpoints.quizSet(wsId, setId),
+      entityId: setId,
+    );
   }
 
   Future<EducationPagedResult<EducationQuiz>> getQuizzes(
@@ -130,11 +182,16 @@ class EducationRepository {
     required String question,
     required List<Map<String, dynamic>> options,
   }) async {
-    await _api.postJson(EducationEndpoints.quizzes(wsId), {
-      'quizzes': [
-        {'question': question, 'quiz_options': options},
-      ],
-    });
+    await _write(
+      wsId,
+      'POST',
+      EducationEndpoints.quizzes(wsId),
+      payload: {
+        'quizzes': [
+          {'question': question, 'quiz_options': options},
+        ],
+      },
+    );
   }
 
   Future<void> updateQuiz(
@@ -143,14 +200,22 @@ class EducationRepository {
     required String question,
     required List<Map<String, dynamic>> options,
   }) async {
-    await _api.putJson(EducationEndpoints.quiz(wsId, quizId), {
-      'question': question,
-      'quiz_options': options,
-    });
+    await _write(
+      wsId,
+      'PUT',
+      EducationEndpoints.quiz(wsId, quizId),
+      entityId: quizId,
+      payload: {'question': question, 'quiz_options': options},
+    );
   }
 
   Future<void> deleteQuiz(String wsId, String quizId) async {
-    await _api.deleteJson(EducationEndpoints.quiz(wsId, quizId));
+    await _write(
+      wsId,
+      'DELETE',
+      EducationEndpoints.quiz(wsId, quizId),
+      entityId: quizId,
+    );
   }
 
   Future<EducationPagedResult<EducationFlashcard>> getFlashcards(
@@ -183,10 +248,12 @@ class EducationRepository {
     required String front,
     required String back,
   }) async {
-    await _api.postJson(EducationEndpoints.flashcards(wsId), {
-      'front': front,
-      'back': back,
-    });
+    await _write(
+      wsId,
+      'POST',
+      EducationEndpoints.flashcards(wsId),
+      payload: {'front': front, 'back': back},
+    );
   }
 
   Future<void> updateFlashcard(
@@ -195,14 +262,22 @@ class EducationRepository {
     required String front,
     required String back,
   }) async {
-    await _api.putJson(EducationEndpoints.flashcard(wsId, flashcardId), {
-      'front': front,
-      'back': back,
-    });
+    await _write(
+      wsId,
+      'PUT',
+      EducationEndpoints.flashcard(wsId, flashcardId),
+      entityId: flashcardId,
+      payload: {'front': front, 'back': back},
+    );
   }
 
   Future<void> deleteFlashcard(String wsId, String flashcardId) async {
-    await _api.deleteJson(EducationEndpoints.flashcard(wsId, flashcardId));
+    await _write(
+      wsId,
+      'DELETE',
+      EducationEndpoints.flashcard(wsId, flashcardId),
+      entityId: flashcardId,
+    );
   }
 
   Future<EducationAttemptListResult> getAttempts(

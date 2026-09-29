@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/notes/note_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 class NoteList extends StatelessWidget {
   const NoteList({
     required this.notes,
     required this.selectedId,
     required this.onSelect,
+    required this.workspaceId,
     this.archived = false,
     super.key,
   });
@@ -14,6 +16,7 @@ class NoteList extends StatelessWidget {
   final List<NoteRecord> notes;
   final String? selectedId;
   final ValueChanged<NoteRecord> onSelect;
+  final String workspaceId;
   final bool archived;
 
   @override
@@ -95,10 +98,15 @@ class NoteList extends StatelessWidget {
                         endIndent: 14,
                         color: scheme.outlineVariant,
                       ),
-                    _NoteRow(
-                      note: entry.value[index],
-                      selected: entry.value[index].id == selectedId,
-                      onTap: () => onSelect(entry.value[index]),
+                    PendingSyncFrame(
+                      workspaceId: workspaceId,
+                      entityId: entry.value[index].id,
+                      feature: 'notes',
+                      child: _NoteRow(
+                        note: entry.value[index],
+                        selected: entry.value[index].id == selectedId,
+                        onTap: () => onSelect(entry.value[index]),
+                      ),
                     ),
                   ],
                 ],

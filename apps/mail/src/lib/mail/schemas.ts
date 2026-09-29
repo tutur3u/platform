@@ -5,6 +5,7 @@ import { mailGroupPolicySchema } from './groups/policy';
 const emailAddressSchema = z.string().trim().toLowerCase().email().max(254);
 
 export const mailDraftPayloadSchema = z.object({
+  clientMessageId: z.string().uuid().optional(),
   bodyHtml: z
     .string()
     .max(10 * 1024 * 1024)

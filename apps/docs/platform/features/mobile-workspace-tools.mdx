@@ -20,12 +20,19 @@ The mobile Apps hub uses the v0.9.2 colored cards with consistent icons and clea
 - A compact overview with a small number of relevant metrics
 - The v0.9.2 AppCardPalette gradient cards, consistent icon blocks, readable labels, and shared theme colors
 
-The Apps screen defaults to a descriptive list. A List/Grid switch in the top
+The Apps screen defaults to the compact grid. A List/Grid switch in the top
 shell header sits beside Customize and changes the same visible, ordered modules
-into a compact icon-and-name grid. The
+between icon-and-name tiles and descriptive cards. Grid tiles have more space below
+the shell header and can be held and dragged to reorder without entering Customize.
+The
 choice stays in the mounted Apps screen while navigating within the mobile shell;
 search, pins, and workspace access rules apply to both layouts. Descriptions remain
 searchable in grid mode even though they are hidden from the tiles.
+Holding a tile produces a pickup haptic, moving onto a new navigation target
+produces a selection tick, and completing a drop produces a light confirmation.
+The floating dock uses the same semantic feedback. Haptics are enabled by default
+on iOS and Android, can be disabled in Preferences, follow system haptic policy,
+and throttle repeated feedback during a continuous gesture.
 
 Background warmups for optional products should also respect access state before fetching. Do not let Apps hub or boot-time cache warmups call product endpoints blindly; skip the warmup when the corresponding access cubit is not loaded and enabled, and fail soft on opportunistic `404` responses.
 
@@ -119,11 +126,41 @@ completed tasks.
 Root tabs initialize on their first visit and retain their state afterward. Hidden
 tabs stop ticking animations. Page content and navigation no longer wait for
 staggered entrance animations. Opening Apps does not prefetch every product.
+Screen routes use subtle fade and horizontal motion on Android and desktop;
+iOS retains the native swipe-back transition. Reduced-motion settings skip the
+custom transition. The floating shell tabs animate their content in place.
+Home shows Finance wallets and recent Notes alongside its existing summary cards
+when those modules are available to the current account and workspace. Both cards
+use scoped snapshots while refreshing, and clear their displayed rows when the
+account or workspace changes. They link into their corresponding mobile screens.
 
 `CacheStore` shares initialization and concurrent fetches for the same scoped key.
-Expired entries wait for replacement; eligible stale entries can refresh in the
-background. Invalidation and logout prevent older in-flight requests from writing
-back into the cache. Keys must include user, workspace, and all query filters.
+Prefetch returns stored snapshots immediately and starts background
+revalidation, even past their expiry window. Explicit refresh waits for the network.
+On startup, the encrypted
+store consolidates legacy aliases into canonical scoped keys and retains the newest
+snapshot for each identity. Pending offline mutations remain separate and intact.
+Mail and Meet keep an explicit request path for authorization cleanup on 401/403;
+their screens still render the scoped snapshot before awaiting that request.
+Pending Notes, Mail, Finance, Calendar, and Inventory product edits are stored in the account-scoped encrypted
+mutation queue and replayed in order per module and workspace on reconnect. A
+conflict holds dependent edits in that scope while other modules continue. A queued item uses a dashed
+border and lower opacity until the server confirms it; conflicts and failed
+writes remain visible in Settings > Offline changes for retry or removal. Finance
+creates and transfers, Mail sends and attachments, and Notes creates use stable
+client IDs so replay can recognize a prior successful write. Other modules still
+need individual offline mutation adapters before this is an app-wide write replica.
+Calendar event lists use scoped snapshots and overlay pending edits. An uncertain
+Calendar create stays in manual review because it may have already reached an
+external calendar provider.
+Inventory product lists overlay queued creates and updates on their cached
+catalog; an uncertain product create also requires manual review.
+Education course, quiz, and flashcard edits and basic CRM user and feedback
+edits use the same encrypted queue. Their list views still require local read
+adapters and pending row treatments before they meet the full replica contract.
+Invalidation and logout prevent older
+in-flight requests from writing back into the cache. Keys must include user,
+workspace, and all query filters.
 Failed disk writes do not hide successful network responses. Mail and Meet retain
 the original authorization error and disable their cache if denied-data cleanup fails.
 Keys longer than Hive's 255-byte UTF-8 limit use a SHA-256 digest of the complete
@@ -176,6 +213,8 @@ through the attachment actions.
 Meet uses cached, account/workspace/query-scoped pages, explicit refresh, and
 mutation invalidation. Workspace changes must invalidate pending UI requests even
 when the new workspace is absent. A 401/403 clears the cached and displayed data.
+The native Meet room keeps the shell's top bar and places its leave/back control in
+the room content, so the route title and dock follow the rest of the app.
 
 Verify at least 768×1024, 1024×768, and 1366×1024, plus a compact split window,
 larger text, and an open keyboard. Check dock height and taps, multiple Kanban
@@ -486,6 +525,15 @@ For Drive, CRM, or Education mobile changes:
 3. Run `bun check:mobile`.
 
 ## Profile activity privacy
+
+The Profile timeline shows the signed-in user's task creations, transaction
+creations, and notes from the current workspace for the most recent 30 days.
+Calendar rows are explicitly labeled as **workspace events** because the calendar
+table does not record a reliable creator. The timeline groups rows by the device's
+local day, expands to individual items, and links to their native mobile views.
+Its snapshot is encrypted and scoped by user and workspace; opening Profile returns
+it first and then revalidates. Timeline data is private and never follows the
+tracked-time sharing preference.
 
 Profile shows your own tracked-time totals and activity. Nothing is shared by
 default. In a team workspace, **Share activity** asks for confirmation before

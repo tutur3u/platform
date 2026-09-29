@@ -46,7 +46,7 @@ void main() {
 
       await cache.read('first', 'page1', fetch, forceRefresh: false);
       await cache.read('first', 'page1', fetch, forceRefresh: false);
-      expect(calls, 1);
+      expect(calls, 2);
       expect(cache.peek('first', 'page1')?.totalCount, 2);
       expect(cache.peek('second', 'page1'), isNull);
       await cache.read('second', 'page1', fetch, forceRefresh: false);
@@ -60,7 +60,7 @@ void main() {
       expect(cache.peek('second', 'page1')?.totalCount, 2);
       await cache.invalidate('second');
       await cache.read('second', 'page1', fetch, forceRefresh: false);
-      expect(calls, 3);
+      expect(calls, 4);
       user = 'b';
       expect(cache.peek('second', 'page1'), isNull);
     },

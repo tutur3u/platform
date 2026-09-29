@@ -137,20 +137,54 @@ class CacheStore {
     } on Object {
       // Cache initialization should not depend on an optional size setting.
     }
-    final nonPersistentKeys = <dynamic>[];
+    final keysToRemove = <dynamic>[];
+    final consolidated = <String, CachedResourceRecord>{};
     for (final key in _resourceBox.keys) {
       final raw = _resourceBox.get(key);
-      if (raw is Map<dynamic, dynamic>) {
+      if (raw is! Map<dynamic, dynamic>) {
+        keysToRemove.add(key);
+        continue;
+      }
+      try {
         final record = CachedResourceRecord.fromJson(raw);
         if (_nonPersistentResourceNamespaces.contains(record.namespace)) {
-          nonPersistentKeys.add(key);
+          keysToRemove.add(key);
           continue;
         }
-        _putRecord(record);
+        final canonicalKey = CacheKey(
+          namespace: record.namespace,
+          userId: record.userId,
+          workspaceId: record.workspaceId,
+          locale: record.locale,
+          schemaVersion: record.schemaVersion,
+          params: record.params,
+        ).value;
+        final normalized = record.key == canonicalKey
+            ? record
+            : record.copyWith(key: canonicalKey);
+        final previous = consolidated[canonicalKey];
+        if (previous == null ||
+            normalized.fetchedAt.isAfter(previous.fetchedAt)) {
+          consolidated[canonicalKey] = normalized;
+        }
+        if (key != canonicalKey) keysToRemove.add(key);
+      } on Object {
+        // A damaged snapshot must not block the rest of the local replica.
+        keysToRemove.add(key);
       }
     }
-    for (final key in nonPersistentKeys) {
+    for (final key in keysToRemove) {
       await _resourceBox.delete(key);
+    }
+    for (final entry in consolidated.entries) {
+      _putRecord(entry.value);
+      final persisted = _resourceBox.get(entry.key);
+      if (persisted is! Map<dynamic, dynamic> ||
+          (persisted['fetchedAt'] as String?) !=
+              entry.value.fetchedAt.toIso8601String() ||
+          persisted['key'] != entry.key) {
+        await _resourceBox.put(entry.key, entry.value.toJson());
+      }
     }
     _initialized = true;
     await _pruneResourceCache();
@@ -501,6 +535,9 @@ class CacheStore {
     }
   }
 
+  Future<void> clearResources({String? userId}) =>
+      clearScope(userId: userId, resourceOnly: true);
+
   Future<void> savePendingMutation(PendingMutationRecord record) async {
     await init();
     await _mutationBox.put(record.id, record.toJson());
@@ -540,11 +577,6 @@ class CacheStore {
     if (_isClearing(key) || revision != _revisionFor(key)) {
       return CacheReadResult<T>(state: CacheEntryState.missing);
     }
-    final shouldFetch = forceRefresh || !cached.hasValue || !cached.isFresh;
-    if (!shouldFetch) {
-      return cached;
-    }
-
     final flightKey = '$revision:${key.value}';
     Future<Object?> refresh() => _inFlight.putIfAbsent(flightKey, () {
       _flightScopes[flightKey] = (key: key, tags: tags);
@@ -576,10 +608,10 @@ class CacheStore {
           });
     });
 
-    if (cached.hasValue &&
-        !cached.isExpired &&
-        !forceRefresh &&
-        policy.allowBackgroundRefresh) {
+    // Auth-sensitive resources handle permission failures in their callers.
+    // Preserve their explicit refresh contract so a background 403 cannot
+    // leave a denied snapshot visible without triggering caller cleanup.
+    if (cached.hasValue && !forceRefresh && policy.allowBackgroundRefresh) {
       unawaited(refresh().then<void>((_) {}, onError: (Object _) {}));
       return cached;
     }

@@ -30,6 +30,29 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'finance_page_hero.dart';
 
+class FinanceOverviewSkeleton extends StatelessWidget {
+  const FinanceOverviewSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: EdgeInsets.fromLTRB(
+      16,
+      12,
+      16,
+      28 + MediaQuery.paddingOf(context).bottom,
+    ),
+    children: const [
+      FinanceSkeletonBlock(height: 180, radius: 24),
+      SizedBox(height: 16),
+      FinanceSkeletonBlock(height: 96, radius: 20),
+      SizedBox(height: 12),
+      FinanceSkeletonBlock(height: 96, radius: 20),
+      SizedBox(height: 20),
+      FinanceSkeletonBlock(height: 56, radius: 18),
+    ],
+  );
+}
+
 Future<void> _reload(BuildContext context) async {
   final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
   if (wsId != null) {
@@ -91,7 +114,7 @@ class _FinanceView extends StatelessWidget {
         child: BlocBuilder<FinanceCubit, FinanceState>(
           builder: (context, state) {
             if (state.status == FinanceStatus.loading) {
-              return const Center(child: NovaLoadingIndicator());
+              return const FinanceOverviewSkeleton();
             }
 
             if (state.status == FinanceStatus.error) {
@@ -99,7 +122,7 @@ class _FinanceView extends StatelessWidget {
             }
 
             if (!state.hasWorkspaceCurrency) {
-              return const Center(child: NovaLoadingIndicator());
+              return const FinanceOverviewSkeleton();
             }
 
             return Stack(

@@ -9,9 +9,9 @@ import 'package:mobile/features/meet/data/meet_call_controller.dart';
 import 'package:mobile/features/meet/view/meet_ended_review.dart';
 import 'package:mobile/features/meet/view/meet_media_status_banner.dart';
 import 'package:mobile/features/meet/view/meet_participant_tile.dart';
+import 'package:mobile/features/meet/view/meet_room_content_header.dart';
 import 'package:mobile/features/meet/view/meet_room_exit_actions.dart';
 import 'package:mobile/features/meet/view/meet_room_sheets.dart';
-import 'package:mobile/features/meet/view/meet_time_format.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -378,59 +378,22 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
           .toList();
       return Stack(
         children: [
-          const ShellChromeActions(
+          ShellChromeActions(
             ownerId: 'meet-native-room',
-            locations: {Routes.meet},
-            actions: [],
-            immersive: true,
+            locations: const {Routes.meet},
+            actions: const [],
+            onBack: _leave,
           ),
           Scaffold(
-            appBar: AppBar(
-              title: Text(
-                _call.title ?? widget.title ?? l10n.meetTitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              leading: IconButton(
-                tooltip: l10n.meetLeave,
-                onPressed: () => unawaited(_leave()),
-                icon: const Icon(Icons.arrow_back),
-              ),
-              actions: [
-                if (_joinRequested &&
-                    !_call.ended &&
-                    formatMeetRemainingTime(_call.roomExpiresAt) != null)
-                  Center(
-                    child: Semantics(
-                      label: l10n.meetTimeRemaining,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(
-                          formatMeetRemainingTime(_call.roomExpiresAt)!,
-                        ),
-                      ),
-                    ),
-                  ),
-                if (_joinRequested && !_call.ended)
-                  IconButton(
-                    tooltip: l10n.meetParticipantsAndInvite,
-                    onPressed: () =>
-                        unawaited(showMeetParticipantsSheet(context, _call)),
-                    icon: const Icon(Icons.group_add_outlined),
-                  ),
-                if (_joinRequested && !_call.ended && _call.role == 'host')
-                  MeetHostActionsMenu(
-                    onLeaveOrEnd: () => unawaited(_leave()),
-                    onCosts: () =>
-                        unawaited(showMeetCostsSheet(context, _call)),
-                    onSettings: () =>
-                        unawaited(showMeetSettingsSheet(context, _call)),
-                  ),
-              ],
-            ),
             body: SafeArea(
               child: Column(
                 children: [
+                  MeetRoomContentHeader(
+                    call: _call,
+                    joinRequested: _joinRequested,
+                    onLeave: () => unawaited(_leave()),
+                    fallbackTitle: widget.title,
+                  ),
                   if (_call.waiting.isNotEmpty && _call.role == 'host')
                     ListTile(
                       leading: const Icon(Icons.person_add_alt_1_outlined),

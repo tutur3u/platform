@@ -135,6 +135,11 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                             ],
                           )
                         : GroupedTransactionAccordion(
+                            workspaceId: context
+                                .read<WorkspaceCubit>()
+                                .state
+                                .currentWorkspace
+                                ?.id,
                             transactions: _transactions,
                             workspaceCurrency: _workspaceCurrency,
                             exchangeRates: _exchangeRates,

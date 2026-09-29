@@ -345,6 +345,13 @@ class _BreakdownList extends StatelessWidget {
       return _InventoryEmptyPanel(body: context.l10n.inventoryNoBreakdownData);
     }
 
+    final maximum = entries
+        .take(5)
+        .fold<double>(
+          0,
+          (current, entry) => entry.revenue > current ? entry.revenue : current,
+        );
+
     return Column(
       children: entries
           .take(5)
@@ -352,22 +359,38 @@ class _BreakdownList extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: FinancePanel(
-                child: Row(
+                child: Column(
                   children: [
-                    Expanded(
-                      child: Text(
-                        entry.label,
-                        style: shad.Theme.of(context).typography.large.copyWith(
-                          fontWeight: FontWeight.w700,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            entry.label,
+                            style: shad.Theme.of(context).typography.small
+                                .copyWith(fontWeight: FontWeight.w700),
+                          ),
                         ),
-                      ),
+                        const shad.Gap(12),
+                        Text(
+                          formatCurrency(entry.revenue, 'VND'),
+                          style: shad.Theme.of(context).typography.small
+                              .copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ],
                     ),
-                    const shad.Gap(12),
-                    Text(
-                      formatCurrency(entry.revenue, 'VND'),
-                      style: shad.Theme.of(
-                        context,
-                      ).typography.small.copyWith(fontWeight: FontWeight.w800),
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        minHeight: 5,
+                        value: maximum <= 0
+                            ? 0
+                            : (entry.revenue / maximum).clamp(0.0, 1.0),
+                        backgroundColor: FinancePalette.of(
+                          context,
+                        ).accent.withValues(alpha: 0.10),
+                        color: FinancePalette.of(context).accent,
+                      ),
                     ),
                   ],
                 ),

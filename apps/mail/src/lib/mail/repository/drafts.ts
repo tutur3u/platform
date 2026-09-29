@@ -138,6 +138,7 @@ async function persistMessage(
   );
   const { data: message, error } = await privateTable(admin, 'mail_messages')
     .insert({
+      ...(payload.clientMessageId && { id: payload.clientMessageId }),
       body_html: bodyHtml,
       body_text: bodyText,
       created_by: ctx.user.id,
@@ -180,6 +181,19 @@ export async function createMailDraft({
     'sender',
   ]);
   if (!access) return null;
+
+  if (payload.clientMessageId) {
+    const { data: existing, error } = await mailMessageTable(access, ctx)
+      .select('id')
+      .eq('id', payload.clientMessageId)
+      .eq('mailbox_id', mailboxId)
+      .eq('created_by', ctx.user.id)
+      .maybeSingle();
+    if (error) throw new Error(`Failed to find draft: ${error.message}`);
+    if (existing) {
+      return getMailMessage({ ctx, mailboxId, messageId: existing.id });
+    }
+  }
 
   const message = await persistMessage(
     access.admin,

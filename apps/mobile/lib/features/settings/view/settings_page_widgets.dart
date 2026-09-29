@@ -23,22 +23,29 @@ class _SettingsOverviewSection extends StatelessWidget {
               grouped: true,
               icon: Icons.tune_rounded,
               title: l10n.settingsPreferencesSectionTitle,
-              subtitle: l10n.settingsPreferencesSectionDescription,
               onTap: () => context.push(Routes.settingsPreferences),
             ),
             SettingsTile(
               grouped: true,
               icon: Icons.science_outlined,
               title: l10n.settingsExperimentalAppsSectionTitle,
-              subtitle: l10n.settingsExperimentalAppsSectionDescription,
               onTap: () => context.push(Routes.settingsExperiments),
+            ),
+            ValueListenableBuilder(
+              valueListenable: OfflineMutationQueue.instance.pending,
+              builder: (context, records, _) => SettingsTile(
+                grouped: true,
+                icon: Icons.sync_rounded,
+                title: l10n.offlineChangesTitle,
+                value: records.isEmpty ? null : '${records.length}',
+                onTap: () => unawaited(showOfflineChangesSheet(context)),
+              ),
             ),
             if (showInfrastructure)
               SettingsTile(
                 grouped: true,
                 icon: Icons.dns_outlined,
                 title: l10n.settingsInfrastructureSectionTitle,
-                subtitle: l10n.settingsInfrastructureSectionDescription,
                 onTap: () => context.push(Routes.settingsInfrastructure),
               ),
           ],
@@ -59,14 +66,12 @@ class _SettingsOverviewSection extends StatelessWidget {
               grouped: true,
               icon: Icons.auto_awesome_outlined,
               title: l10n.settingsWhatsNew,
-              subtitle: l10n.settingsWhatsNewDescription,
               onTap: () => context.push(Routes.settingsWhatsNew),
             ),
             SettingsTile(
               grouped: true,
               icon: Icons.explore_outlined,
               title: l10n.connectedOnboardingSettingsTitle,
-              subtitle: l10n.connectedOnboardingSettingsDescription,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const OnboardingPage(replay: true),
@@ -77,14 +82,12 @@ class _SettingsOverviewSection extends StatelessWidget {
               grouped: true,
               icon: Icons.info_outline_rounded,
               title: l10n.settingsAboutSectionTitle,
-              subtitle: l10n.settingsAboutSectionDescription,
               onTap: () => context.push(Routes.settingsAbout),
             ),
             SettingsTile(
               grouped: true,
               icon: Icons.logout_rounded,
               title: l10n.settingsDangerSectionTitle,
-              subtitle: l10n.settingsDangerSectionDescription,
               onTap: () => context.push(Routes.settingsSession),
             ),
           ],
@@ -228,6 +231,8 @@ class _PreferencesSection extends StatelessWidget {
     required this.onToggleDefaultTaskBoardNavigation,
     required this.onChangeTheme,
     required this.onChangeFirstDayOfWeek,
+    required this.hapticsEnabled,
+    required this.onToggleHaptics,
   });
 
   final String themeLabel;
@@ -240,6 +245,8 @@ class _PreferencesSection extends StatelessWidget {
   final VoidCallback onToggleDefaultTaskBoardNavigation;
   final VoidCallback onChangeTheme;
   final VoidCallback onChangeFirstDayOfWeek;
+  final bool hapticsEnabled;
+  final VoidCallback onToggleHaptics;
 
   @override
   Widget build(BuildContext context) {
@@ -285,6 +292,16 @@ class _PreferencesSection extends StatelessWidget {
         title: l10n.remindersTitle,
         subtitle: l10n.remindersDescription,
         onTap: () => context.push(Routes.settingsReminders),
+      ),
+      SettingsTile(
+        icon: Icons.vibration_rounded,
+        title: l10n.settingsHaptics,
+        value: hapticsEnabled ? l10n.commonOn : l10n.commonOff,
+        onTap: onToggleHaptics,
+        showChevron: false,
+        trailing: IgnorePointer(
+          child: shad.Switch(value: hapticsEnabled, onChanged: (_) {}),
+        ),
       ),
       SettingsTile(
         icon: Icons.storage_outlined,
@@ -342,49 +359,6 @@ Widget _settingsTileColumn(List<Widget> tiles) => Column(
     ],
   ],
 );
-
-class _SettingsHeroCard extends StatelessWidget {
-  const _SettingsHeroCard({required this.isRefreshing});
-
-  final bool isRefreshing;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final l10n = context.l10n;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.settingsTitle,
-                style: theme.typography.large.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const shad.Gap(3),
-              Text(
-                l10n.settingsHeroDescription,
-                style: theme.typography.textSmall.copyWith(
-                  color: theme.colorScheme.mutedForeground,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (isRefreshing)
-          const SizedBox.square(
-            dimension: 16,
-            child: NovaLoadingIndicator(size: 20),
-          ),
-      ],
-    );
-  }
-}
 
 String _formatVersionLabel(PackageInfo? packageInfo) {
   if (packageInfo == null) {

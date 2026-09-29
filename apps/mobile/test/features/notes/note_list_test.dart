@@ -39,6 +39,7 @@ void main() {
             height: 400,
             child: NoteList(
               notes: notes,
+              workspaceId: 'ws-1',
               selectedId: null,
               onSelect: (note) => selected = note,
             ),
@@ -85,7 +86,12 @@ void main() {
           body: SizedBox(
             width: 360,
             height: 400,
-            child: NoteList(notes: notes, selectedId: null, onSelect: (_) {}),
+            child: NoteList(
+              notes: notes,
+              workspaceId: 'ws-1',
+              selectedId: null,
+              onSelect: (_) {},
+            ),
           ),
         ),
       ),

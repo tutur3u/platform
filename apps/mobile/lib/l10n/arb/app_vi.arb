@@ -1721,6 +1721,10 @@
         }
     },
     "financeWallets": "Ví",
+    "financeOverviewWalletCount": "{count} ví",
+    "@financeOverviewWalletCount": {"placeholders": {"count": {"type": "int"}}},
+    "financeOverviewRecentCount": "{count} giao dịch gần đây",
+    "@financeOverviewRecentCount": {"placeholders": {"count": {"type": "int"}}},
     "financeTransactions": "Giao dịch",
     "financeCategories": "Danh mục",
     "financeRecentTransactions": "Giao dịch gần đây",
@@ -2352,6 +2356,7 @@
     "settingsThemeSystem": "Hệ thống",
     "settingsThemeSystemDescription": "Tự động theo giao diện của thiết bị.",
     "settingsFinanceAmounts": "Số tiền tài chính",
+    "settingsHaptics": "Phản hồi rung",
     "settingsFinanceAmountsDescription": "Hiện hoặc ẩn số dư và số tiền giao dịch trên toàn bộ màn hình tài chính.",
     "settingsSwitchWorkspace": "Chuyển không gian làm việc",
     "settingsSwitchWorkspaceDescription": "Di chuyển giữa ngữ cảnh cá nhân và nhóm.",
@@ -3498,6 +3503,18 @@
     "settingsGeneralGroup": "Cá nhân hóa",
     "settingsSupportGroup": "Trợ giúp và tài khoản",
     "profilePrivateActivity": "Hoạt động riêng tư của bạn",
+    "profileTimelineTitle": "Dòng thời gian hoạt động",
+    "profileTimelineToday": "Hôm nay",
+    "profileTimelineYesterday": "Hôm qua",
+    "profileTimelineEmpty": "Không có hoạt động gần đây trong không gian này",
+    "profileTimelineTasks": "Đã tạo {count} công việc",
+    "@profileTimelineTasks": {"placeholders": {"count": {"type": "int"}}},
+    "profileTimelineTransactions": "Đã tạo {count} giao dịch",
+    "@profileTimelineTransactions": {"placeholders": {"count": {"type": "int"}}},
+    "profileTimelineNotes": "Đã thêm {count} ghi chú",
+    "@profileTimelineNotes": {"placeholders": {"count": {"type": "int"}}},
+    "profileTimelineWorkspaceEvents": "Đã thêm {count} sự kiện vào không gian",
+    "@profileTimelineWorkspaceEvents": {"placeholders": {"count": {"type": "int"}}},
     "profileTrackedMinutes": "Đã theo dõi {minutes} phút",
     "@profileTrackedMinutes": {
         "placeholders": {
@@ -3702,5 +3719,13 @@
     "cacheCategoryTasks": "Công việc",
     "cacheCategoryCalendar": "Lịch",
     "cacheCategoryFinance": "Tài chính",
-    "cacheCategoryOther": "Dữ liệu khác"
+    "cacheCategoryOther": "Dữ liệu khác",
+    "offlineEditQueued": "Đang chờ đồng bộ",
+    "offlineEditConflict": "Cần xem lại trước khi đồng bộ",
+    "offlineEditFailed": "Đồng bộ thất bại",
+    "offlineChangesTitle": "Thay đổi ngoại tuyến",
+    "offlineChangesEmpty": "Mọi thay đổi đã được đồng bộ",
+    "offlineChangesReview": "Hãy kiểm tra thao tác này trên thiết bị khác trước khi thử lại. Có thể máy chủ đã nhận được thao tác.",
+    "offlineChangesRetry": "Thử lại",
+    "offlineChangesDiscard": "Bỏ thay đổi trên máy"
 }

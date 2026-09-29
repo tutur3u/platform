@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
@@ -13,6 +14,31 @@ class CrmRepository {
 
   final ApiClient _api;
   final http.Client _http;
+
+  Future<void> _write(
+    String wsId,
+    String method,
+    String path, {
+    Map<String, dynamic>? payload,
+    String? entityId,
+  }) => queueOrSendVoid(
+    feature: 'crm',
+    method: method,
+    path: path,
+    workspaceId: wsId,
+    payload: payload,
+    entityId: entityId,
+    send: () async {
+      switch (method) {
+        case 'POST':
+          await _api.postJson(path, payload);
+        case 'PUT':
+          await _api.putJson(path, payload ?? {});
+        case 'DELETE':
+          await _api.deleteJson(path);
+      }
+    },
+  );
 
   Future<CrmUsersResult> getUsers(
     String wsId, {
@@ -46,7 +72,7 @@ class CrmRepository {
   }
 
   Future<void> createUser(String wsId, Map<String, dynamic> payload) async {
-    await _api.postJson(CrmEndpoints.users(wsId), payload);
+    await _write(wsId, 'POST', CrmEndpoints.users(wsId), payload: payload);
   }
 
   Future<void> updateUser(
@@ -54,11 +80,22 @@ class CrmRepository {
     String userId,
     Map<String, dynamic> payload,
   ) async {
-    await _api.putJson(CrmEndpoints.user(wsId, userId), payload);
+    await _write(
+      wsId,
+      'PUT',
+      CrmEndpoints.user(wsId, userId),
+      payload: payload,
+      entityId: userId,
+    );
   }
 
   Future<void> deleteUser(String wsId, String userId) async {
-    await _api.deleteJson(CrmEndpoints.user(wsId, userId));
+    await _write(
+      wsId,
+      'DELETE',
+      CrmEndpoints.user(wsId, userId),
+      entityId: userId,
+    );
   }
 
   Future<List<CrmGroup>> getGroups(
@@ -108,12 +145,17 @@ class CrmRepository {
     required String content,
     required bool requireAttention,
   }) async {
-    await _api.postJson(CrmEndpoints.feedbacks(wsId), {
-      'userId': userId,
-      'groupId': groupId,
-      'content': content,
-      'require_attention': requireAttention,
-    });
+    await _write(
+      wsId,
+      'POST',
+      CrmEndpoints.feedbacks(wsId),
+      payload: {
+        'userId': userId,
+        'groupId': groupId,
+        'content': content,
+        'require_attention': requireAttention,
+      },
+    );
   }
 
   Future<void> updateFeedback(
@@ -122,15 +164,21 @@ class CrmRepository {
     required String content,
     required bool requireAttention,
   }) async {
-    await _api.putJson(
+    await _write(
+      wsId,
+      'PUT',
       '${CrmEndpoints.feedbacks(wsId)}?feedbackId=$feedbackId',
-      {'content': content, 'require_attention': requireAttention},
+      entityId: feedbackId,
+      payload: {'content': content, 'require_attention': requireAttention},
     );
   }
 
   Future<void> deleteFeedback(String wsId, {required String feedbackId}) async {
-    await _api.deleteJson(
+    await _write(
+      wsId,
+      'DELETE',
       '${CrmEndpoints.feedbacks(wsId)}?feedbackId=$feedbackId',
+      entityId: feedbackId,
     );
   }
 

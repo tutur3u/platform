@@ -18,7 +18,6 @@ import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/features/finance/finance_cache.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
@@ -585,10 +584,6 @@ class _TransactionCategoriesViewState
         _categoriesLoading = false;
         _categoriesError = null;
       });
-      if ((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
-          diskCached.isFresh) {
-        return;
-      }
     } else if (!hasVisibleData) {
       setState(() {
         _categories = const [];
@@ -686,10 +681,6 @@ class _TransactionCategoriesViewState
         _tagsLoading = false;
         _tagsError = null;
       });
-      if ((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
-          diskCached.isFresh) {
-        return;
-      }
     } else if (!hasVisibleData) {
       setState(() {
         _tags = const [];

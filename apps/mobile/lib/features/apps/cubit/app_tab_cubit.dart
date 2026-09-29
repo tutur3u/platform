@@ -1,4 +1,5 @@
 import 'dart:developer';
+
 import 'package:bloc/bloc.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -62,8 +63,8 @@ class AppTabCubit extends Cubit<AppTabState> {
   }
 
   Future<void> setAppOrder(List<String> ids) async {
-    await _settings.setAppOrder(ids);
     if (!isClosed) emit(state.copyWith(appOrder: List.unmodifiable(ids)));
+    await _settings.setAppOrder(ids);
   }
 
   Future<void> togglePinnedApp(String id) async {

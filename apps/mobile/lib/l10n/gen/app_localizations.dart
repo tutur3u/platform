@@ -8179,6 +8179,18 @@ abstract class AppLocalizations {
   /// **'Wallets'**
   String get financeWallets;
 
+  /// No description provided for @financeOverviewWalletCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 wallet} other{{count} wallets}}'**
+  String financeOverviewWalletCount(int count);
+
+  /// No description provided for @financeOverviewRecentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 recent transaction} other{{count} recent transactions}}'**
+  String financeOverviewRecentCount(int count);
+
   /// No description provided for @financeTransactions.
   ///
   /// In en, this message translates to:
@@ -10746,6 +10758,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finance amounts'**
   String get settingsFinanceAmounts;
+
+  /// No description provided for @settingsHaptics.
+  ///
+  /// In en, this message translates to:
+  /// **'Haptic feedback'**
+  String get settingsHaptics;
 
   /// No description provided for @settingsFinanceAmountsDescription.
   ///
@@ -16651,6 +16669,54 @@ abstract class AppLocalizations {
   /// **'Your private activity'**
   String get profilePrivateActivity;
 
+  /// No description provided for @profileTimelineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity timeline'**
+  String get profileTimelineTitle;
+
+  /// No description provided for @profileTimelineToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get profileTimelineToday;
+
+  /// No description provided for @profileTimelineYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get profileTimelineYesterday;
+
+  /// No description provided for @profileTimelineEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent activity in this workspace'**
+  String get profileTimelineEmpty;
+
+  /// No description provided for @profileTimelineTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Created 1 task} other{Created {count} tasks}}'**
+  String profileTimelineTasks(int count);
+
+  /// No description provided for @profileTimelineTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Created 1 transaction} other{Created {count} transactions}}'**
+  String profileTimelineTransactions(int count);
+
+  /// No description provided for @profileTimelineNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Added 1 note} other{Added {count} notes}}'**
+  String profileTimelineNotes(int count);
+
+  /// No description provided for @profileTimelineWorkspaceEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 workspace event added} other{{count} workspace events added}}'**
+  String profileTimelineWorkspaceEvents(int count);
+
   /// No description provided for @profileTrackedMinutes.
   ///
   /// In en, this message translates to:
@@ -17706,6 +17772,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Other data'**
   String get cacheCategoryOther;
+
+  /// No description provided for @offlineEditQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to sync'**
+  String get offlineEditQueued;
+
+  /// No description provided for @offlineEditConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs review before syncing'**
+  String get offlineEditConflict;
+
+  /// No description provided for @offlineEditFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed'**
+  String get offlineEditFailed;
+
+  /// No description provided for @offlineChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline changes'**
+  String get offlineChangesTitle;
+
+  /// No description provided for @offlineChangesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything is synced'**
+  String get offlineChangesEmpty;
+
+  /// No description provided for @offlineChangesReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Check this action on another device before retrying. It may have reached the server already.'**
+  String get offlineChangesReview;
+
+  /// No description provided for @offlineChangesRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get offlineChangesRetry;
+
+  /// No description provided for @offlineChangesDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard local change'**
+  String get offlineChangesDiscard;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

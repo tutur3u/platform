@@ -91,6 +91,54 @@ class _OverviewHero extends StatelessWidget {
               ),
             ),
           ),
+          const shad.Gap(18),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _FinanceHeroChip(
+                icon: Icons.account_balance_wallet_outlined,
+                label: context.l10n.financeOverviewWalletCount(
+                  state.wallets.length,
+                ),
+              ),
+              _FinanceHeroChip(
+                icon: Icons.swap_horiz_rounded,
+                label: context.l10n.financeOverviewRecentCount(
+                  state.recentTransactions.length,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FinanceHeroChip extends StatelessWidget {
+  const _FinanceHeroChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = FinancePalette.of(context);
+    final theme = shad.Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+      decoration: BoxDecoration(
+        color: palette.accent.withValues(alpha: 0.10),
+        border: Border.all(color: palette.subtleBorder),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: palette.accent),
+          const SizedBox(width: 6),
+          Text(label, style: theme.typography.xSmall),
         ],
       ),
     );

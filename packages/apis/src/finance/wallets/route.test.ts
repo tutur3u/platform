@@ -438,6 +438,39 @@ describe('wallets route', () => {
     ]);
   });
 
+  it('rejects a replay ID owned by another workspace', async () => {
+    mocks.walletEq.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { ws_id: 'another-workspace' },
+        error: null,
+      }),
+    });
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: withPermissions(['create_wallets']),
+        sbAdmin: createAdminClient(),
+        user: { id: 'user-1' },
+      },
+    });
+
+    const { POST } = await import('./route.js');
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/wallets', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: '12e8cc40-1b85-477d-94a6-6a13f9aa6151',
+          name: 'Cash',
+          type: 'STANDARD',
+        }),
+      }),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(409);
+    expect(mocks.privateWalletUpsert).not.toHaveBeenCalled();
+  });
+
   it('rejects unsupported explicit wallet currencies', async () => {
     mocks.getFinanceRouteContext.mockResolvedValue({
       context: {

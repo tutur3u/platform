@@ -364,6 +364,27 @@ export async function POST(
     ? resolveSupportedCurrency(requestedCurrency)
     : workspaceCurrency;
 
+  if (data.id) {
+    const { data: existing, error: lookupError } = await sbAdmin
+      .schema('private')
+      .from('workspace_wallets')
+      .select('ws_id')
+      .eq('id', data.id)
+      .maybeSingle();
+    if (lookupError) {
+      return NextResponse.json(
+        { message: 'Error checking wallet ID' },
+        { status: 500 }
+      );
+    }
+    if (existing && existing.ws_id !== normalizedWsId) {
+      return NextResponse.json(
+        { message: 'Wallet ID conflict' },
+        { status: 409 }
+      );
+    }
+  }
+
   // Extract only fields that exist in the database schema
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const walletData: { ws_id: string } & Record<string, any> = {

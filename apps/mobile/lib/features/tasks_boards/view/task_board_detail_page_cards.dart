@@ -49,7 +49,10 @@ class _BoardTaskTile extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
           onTap: isBulkSelectMode ? onToggleSelected : onTap,
-          onLongPress: onToggleSelected,
+          onLongPress: () {
+            unawaited(AppHaptics.pickup());
+            onToggleSelected();
+          },
           child: Stack(
             children: [
               Positioned.fill(

@@ -7,6 +7,7 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
@@ -15,15 +16,21 @@ import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/finance/wallet_checkpoint.dart';
+import 'package:mobile/data/repositories/finance_pending_overlay.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 
 part 'finance_repository_checkpoints.dart';
+part 'finance_repository_attachments.dart';
+part 'finance_repository_transaction_lookup.dart';
+part 'finance_repository_mutations.dart';
 
 /// Repository for finance operations (wallets, transactions, categories).
-class FinanceRepository {
+class FinanceRepository
+    with FinanceRepositoryAttachments, FinanceRepositoryMutations {
   FinanceRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
 
+  @override
   final ApiClient _api;
   static const CachePolicy _workspaceCurrencyCachePolicy =
       CachePolicies.metadata;
@@ -49,11 +56,6 @@ class FinanceRepository {
       throw const FormatException('Invalid workspace currency cache payload.');
     }
     return json.trim().toUpperCase();
-  }
-
-  static bool _isWorkspaceCurrencyFresh(DateTime fetchedAt) {
-    return DateTime.now().difference(fetchedAt) <
-        _workspaceCurrencyCachePolicy.staleAfter;
   }
 
   static String _normalizeWorkspaceCurrencyValue(String? value) {
@@ -128,6 +130,23 @@ class FinanceRepository {
     return _workspaceCurrencyInFlight.putIfAbsent(memoryKey, () async {
       try {
         final currency = await _fetchWorkspaceDefaultCurrencyRemote(wsId);
+        final pending = OfflineMutationQueue.instance.pending.value
+            .where(
+              (record) =>
+                  record.feature == 'finance' &&
+                  record.workspaceId == wsId &&
+                  record.path ==
+                      FinanceEndpoints.workspaceConfig(
+                        wsId,
+                        'DEFAULT_CURRENCY',
+                      ),
+            )
+            .lastOrNull;
+        if (pending != null) {
+          return _normalizeWorkspaceCurrencyValue(
+            pending.payload?['value'] as String?,
+          );
+        }
         await _storeWorkspaceDefaultCurrencyCache(
           wsId: wsId,
           currency: currency,
@@ -144,9 +163,14 @@ class FinanceRepository {
   Future<List<Wallet>> getWallets(String wsId) async {
     final response = await _api.getJsonList(FinanceEndpoints.wallets(wsId));
 
-    return response
+    final wallets = response
         .map((e) => Wallet.fromJson(e as Map<String, dynamic>))
         .toList();
+    return overlayPendingWallets(
+      wsId,
+      wallets,
+      OfflineMutationQueue.instance.pending.value,
+    );
   }
 
   Future<String> getWorkspaceDefaultCurrency(
@@ -157,9 +181,6 @@ class FinanceRepository {
       final memoryCached =
           _workspaceCurrencyCache[_workspaceCurrencyMemoryKey(wsId)];
       if (memoryCached != null) {
-        if (_isWorkspaceCurrencyFresh(memoryCached.fetchedAt)) {
-          return memoryCached.currency;
-        }
         unawaited(_refreshWorkspaceDefaultCurrency(wsId));
         return memoryCached.currency;
       }
@@ -175,10 +196,6 @@ class FinanceRepository {
           currency: diskCached.data!,
           fetchedAt: diskCached.fetchedAt ?? DateTime.now(),
         );
-        if (diskCached.fetchedAt != null &&
-            _isWorkspaceCurrencyFresh(diskCached.fetchedAt!)) {
-          return diskCached.data!;
-        }
         unawaited(_refreshWorkspaceDefaultCurrency(wsId));
         return diskCached.data!;
       }
@@ -191,6 +208,17 @@ class FinanceRepository {
     required String wsId,
     required String currency,
   }) async {
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'finance',
+      method: 'PUT',
+      path: FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+      workspaceId: wsId,
+      payload: {'value': currency.trim().toUpperCase()},
+      entityId: wsId,
+    )) {
+      await _storeWorkspaceDefaultCurrencyCache(wsId: wsId, currency: currency);
+      return;
+    }
     await _api.putJson(
       FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
       {'value': currency.trim().toUpperCase()},
@@ -236,7 +264,7 @@ class FinanceRepository {
     int? statementDate,
     int? paymentDate,
   }) async {
-    await _api.postJson(FinanceEndpoints.wallets(wsId), {
+    final body = <String, dynamic>{
       'name': name,
       'description': description,
       'type': type,
@@ -246,7 +274,35 @@ class FinanceRepository {
       'limit': limit,
       'statement_date': statementDate,
       'payment_date': paymentDate,
-    });
+    };
+    final id = newLocalMutationId();
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'finance',
+      method: 'POST',
+      path: FinanceEndpoints.wallets(wsId),
+      workspaceId: wsId,
+      payload: {...body, 'id': id},
+      entityId: id,
+      replaySafe: true,
+    )) {
+      return;
+    }
+    try {
+      await _api.postJson(FinanceEndpoints.wallets(wsId), {...body, 'id': id});
+    } on ApiException catch (error) {
+      if (!await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+        error: error,
+        feature: 'finance',
+        method: 'POST',
+        path: FinanceEndpoints.wallets(wsId),
+        workspaceId: wsId,
+        payload: {...body, 'id': id},
+        entityId: id,
+        replaySafe: true,
+      )) {
+        rethrow;
+      }
+    }
   }
 
   Future<void> updateWallet({
@@ -274,6 +330,16 @@ class FinanceRepository {
       'payment_date': paymentDate,
     };
 
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'finance',
+      method: 'PUT',
+      path: FinanceEndpoints.wallet(wsId, walletId),
+      workspaceId: wsId,
+      payload: payload,
+      entityId: walletId,
+    )) {
+      return;
+    }
     await _api.putJson(FinanceEndpoints.wallet(wsId, walletId), payload);
   }
 
@@ -281,6 +347,15 @@ class FinanceRepository {
     required String wsId,
     required String walletId,
   }) async {
+    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+      feature: 'finance',
+      method: 'DELETE',
+      path: FinanceEndpoints.wallet(wsId, walletId),
+      workspaceId: wsId,
+      entityId: walletId,
+    )) {
+      return;
+    }
     await _api.deleteJson(FinanceEndpoints.wallet(wsId, walletId));
   }
 
@@ -335,7 +410,20 @@ class FinanceRepository {
       '${FinanceEndpoints.infiniteTransactions(wsId)}?$query',
     );
 
-    return InfiniteTransactionResponse.fromJson(response);
+    final page = InfiniteTransactionResponse.fromJson(response);
+    return InfiniteTransactionResponse(
+      data: cursor == null
+          ? overlayPendingTransactions(
+              wsId,
+              page.data,
+              OfflineMutationQueue.instance.pending.value,
+              walletId: walletId,
+              search: search,
+            )
+          : page.data,
+      hasMore: page.hasMore,
+      nextCursor: page.nextCursor,
+    );
   }
 
   Future<TransactionStats> getTransactionStats({
@@ -399,279 +487,6 @@ class FinanceRepository {
     return (response as List<dynamic>)
         .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
         .toList();
-  }
-
-  Future<Transaction> updateTransaction({
-    required String wsId,
-    required String transactionId,
-    required double amount,
-    String? description,
-    DateTime? takenAt,
-    String? walletId,
-    String? categoryId,
-    List<String>? tagIds,
-    bool? reportOptIn,
-    bool? isAmountConfidential,
-    bool? isDescriptionConfidential,
-    bool? isCategoryConfidential,
-  }) async {
-    final body = <String, dynamic>{'amount': amount};
-
-    if (description != null) {
-      body['description'] = description;
-    }
-
-    if (takenAt != null) {
-      body['taken_at'] = takenAt.toUtc().toIso8601String();
-    }
-
-    if (walletId != null) {
-      body['origin_wallet_id'] = walletId;
-    }
-
-    if (categoryId != null) {
-      body['category_id'] = categoryId;
-    }
-
-    if (tagIds != null) {
-      body['tag_ids'] = tagIds;
-    }
-
-    if (reportOptIn != null) {
-      body['report_opt_in'] = reportOptIn;
-    }
-
-    if (isAmountConfidential != null) {
-      body['is_amount_confidential'] = isAmountConfidential;
-    }
-
-    if (isDescriptionConfidential != null) {
-      body['is_description_confidential'] = isDescriptionConfidential;
-    }
-
-    if (isCategoryConfidential != null) {
-      body['is_category_confidential'] = isCategoryConfidential;
-    }
-
-    await _api.putJson(FinanceEndpoints.transaction(wsId, transactionId), body);
-
-    final refreshed = await _api.getJson(
-      FinanceEndpoints.transaction(wsId, transactionId),
-    );
-
-    return Transaction.fromJson(refreshed);
-  }
-
-  Future<String?> createTransaction({
-    required String wsId,
-    required double amount,
-    required DateTime takenAt,
-    required String walletId,
-    String? description,
-    String? categoryId,
-    List<String>? tagIds,
-    bool? reportOptIn,
-    bool? isAmountConfidential,
-    bool? isDescriptionConfidential,
-    bool? isCategoryConfidential,
-  }) async {
-    final body = <String, dynamic>{
-      'amount': amount,
-      'origin_wallet_id': walletId,
-      'taken_at': takenAt.toUtc().toIso8601String(),
-    };
-
-    if (description != null) {
-      body['description'] = description;
-    }
-
-    if (categoryId != null) {
-      body['category_id'] = categoryId;
-    }
-
-    if (tagIds != null) {
-      body['tag_ids'] = tagIds;
-    }
-
-    if (reportOptIn != null) {
-      body['report_opt_in'] = reportOptIn;
-    }
-
-    if (isAmountConfidential != null) {
-      body['is_amount_confidential'] = isAmountConfidential;
-    }
-
-    if (isDescriptionConfidential != null) {
-      body['is_description_confidential'] = isDescriptionConfidential;
-    }
-
-    if (isCategoryConfidential != null) {
-      body['is_category_confidential'] = isCategoryConfidential;
-    }
-
-    final response = await _api.postJson(
-      FinanceEndpoints.transactions(wsId),
-      body,
-    );
-    return response['transaction_id'] as String?;
-  }
-
-  Future<String?> createTransfer({
-    required String wsId,
-    required String originWalletId,
-    required String destinationWalletId,
-    required double amount,
-    DateTime? takenAt,
-    String? description,
-    double? destinationAmount,
-    bool? reportOptIn,
-    List<String>? tagIds,
-  }) async {
-    final body = <String, dynamic>{
-      'origin_wallet_id': originWalletId,
-      'destination_wallet_id': destinationWalletId,
-      'amount': amount,
-      'taken_at': (takenAt ?? DateTime.now()).toUtc().toIso8601String(),
-    };
-
-    if (description != null) {
-      body['description'] = description;
-    }
-
-    if (destinationAmount != null) {
-      body['destination_amount'] = destinationAmount;
-    }
-
-    if (reportOptIn != null) {
-      body['report_opt_in'] = reportOptIn;
-    }
-
-    if (tagIds != null) {
-      body['tag_ids'] = tagIds;
-    }
-
-    final response = await _api.postJson(
-      FinanceEndpoints.transfers(wsId),
-      body,
-    );
-    return response['from_transaction_id'] as String?;
-  }
-
-  Future<void> uploadTransactionAttachment({
-    required String wsId,
-    required String transactionId,
-    required String filename,
-    required Uint8List bytes,
-    String? contentType,
-  }) async {
-    final resolvedContentType =
-        contentType ??
-        lookupMimeType(filename, headerBytes: bytes.take(12).toList()) ??
-        'application/octet-stream';
-    final uploadPayload = await _api.postJson(DriveEndpoints.uploadUrl(wsId), {
-      'filename': filename,
-      'path': 'finance/transactions/$transactionId',
-      'size': bytes.length,
-    });
-
-    final signedUrl = uploadPayload['signedUrl'] as String?;
-    final token = uploadPayload['token'] as String?;
-    final path = uploadPayload['path'] as String?;
-
-    if (signedUrl == null || signedUrl.isEmpty || path == null) {
-      throw const ApiException(
-        message: 'Failed to generate upload URL',
-        statusCode: 0,
-      );
-    }
-
-    final headers = <String, String>{
-      ...((uploadPayload['headers'] as Map<dynamic, dynamic>? ??
-              const <dynamic, dynamic>{})
-          .map((key, value) => MapEntry(key.toString(), value.toString()))),
-      'Content-Type': resolvedContentType,
-      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-    };
-
-    var uploadResponse = await http
-        .put(Uri.parse(signedUrl), headers: headers, body: bytes)
-        .timeout(const Duration(seconds: 60));
-
-    if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
-      final fallbackHeaders = <String, String>{...headers}
-        ..remove('Content-Type');
-      uploadResponse = await http
-          .put(Uri.parse(signedUrl), headers: fallbackHeaders, body: bytes)
-          .timeout(const Duration(seconds: 60));
-    }
-
-    if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
-      throw ApiException(
-        message: 'Failed to upload file',
-        statusCode: uploadResponse.statusCode,
-      );
-    }
-
-    await _api.postJson(DriveEndpoints.finalizeUpload(wsId), {
-      'path': path,
-      'contentType': resolvedContentType,
-      'originalFilename': filename,
-    });
-  }
-
-  Future<Transaction> updateTransfer({
-    required String wsId,
-    required String originTransactionId,
-    required String destinationTransactionId,
-    required String originWalletId,
-    required String destinationWalletId,
-    required double amount,
-    required DateTime takenAt,
-    required String refreshedTransactionId,
-    String? description,
-    double? destinationAmount,
-    bool? reportOptIn,
-    List<String>? tagIds,
-  }) async {
-    final body = <String, dynamic>{
-      'origin_transaction_id': originTransactionId,
-      'destination_transaction_id': destinationTransactionId,
-      'origin_wallet_id': originWalletId,
-      'destination_wallet_id': destinationWalletId,
-      'amount': amount,
-      'taken_at': takenAt.toUtc().toIso8601String(),
-    };
-
-    if (description != null) {
-      body['description'] = description;
-    }
-
-    if (destinationAmount != null) {
-      body['destination_amount'] = destinationAmount;
-    }
-
-    if (reportOptIn != null) {
-      body['report_opt_in'] = reportOptIn;
-    }
-
-    if (tagIds != null) {
-      body['tag_ids'] = tagIds;
-    }
-
-    await _api.putJson(FinanceEndpoints.transfers(wsId), body);
-
-    final refreshed = await _api.getJson(
-      FinanceEndpoints.transaction(wsId, refreshedTransactionId),
-    );
-
-    return Transaction.fromJson(refreshed);
-  }
-
-  Future<void> deleteTransaction({
-    required String wsId,
-    required String transactionId,
-  }) async {
-    await _api.deleteJson(FinanceEndpoints.transaction(wsId, transactionId));
   }
 
   // ── Categories ──────────────────────────────────

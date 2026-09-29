@@ -20,6 +20,7 @@ interface Params {
 }
 
 const TransactionSchema = z.object({
+  client_transaction_id: z.guid().optional(),
   description: z.string().optional(),
   amount: z.number(),
   origin_wallet_id: z.guid(),
@@ -267,6 +268,35 @@ export async function POST(
     return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
   }
 
+  if (data.client_transaction_id) {
+    const { data: existing, error: existingError } = await sbAdmin
+      .from('wallet_transactions')
+      .select('id, wallet_id, platform_creator_id')
+      .eq('id', data.client_transaction_id)
+      .maybeSingle();
+    if (existingError) {
+      return NextResponse.json(
+        { message: 'Error checking transaction replay' },
+        { status: 500 }
+      );
+    }
+    if (existing) {
+      if (
+        existing.wallet_id !== data.origin_wallet_id ||
+        existing.platform_creator_id !== user.id
+      ) {
+        return NextResponse.json(
+          { message: 'Transaction ID conflict' },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json({
+        message: 'success',
+        transaction_id: existing.id,
+      });
+    }
+  }
+
   const defaultWalletId = await getWorkspaceConfig(
     normalizedWsId,
     'default_wallet_id'
@@ -337,6 +367,7 @@ export async function POST(
   const { data: transaction, error } = await sbAdmin
     .from('wallet_transactions')
     .insert({
+      ...(data.client_transaction_id && { id: data.client_transaction_id }),
       amount: data.amount,
       description: data.description,
       wallet_id: data.origin_wallet_id,

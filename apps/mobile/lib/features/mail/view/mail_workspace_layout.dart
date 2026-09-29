@@ -296,6 +296,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                           onAction: (action) => _swipeMessage(item, action),
                           child: MailMessageTile(
                             item: item,
+                            workspaceId: widget.workspaceId,
                             thread: _threads,
                             selected: _selected.contains(item['id']),
                             onSelect: () {

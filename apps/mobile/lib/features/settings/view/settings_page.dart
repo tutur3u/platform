@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -22,6 +24,7 @@ import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/view/cache_storage_sheet.dart';
 import 'package:mobile/features/settings/view/internal_accounts_page.dart';
+import 'package:mobile/features/settings/view/offline_changes_sheet.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_session_section.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
@@ -215,18 +218,6 @@ class _SettingsViewState extends State<_SettingsView> {
         return [
           StaggeredEntry(
             index: 0,
-            playOnceKey: 'settings-hero',
-            child: BlocBuilder<ProfileCubit, ProfileState>(
-              builder: (context, profileState) {
-                return _SettingsHeroCard(
-                  isRefreshing: profileState.isRefreshing,
-                );
-              },
-            ),
-          ),
-          const shad.Gap(20),
-          StaggeredEntry(
-            index: 1,
             playOnceKey: 'settings-section-overview',
             child: _SettingsOverviewSection(
               showInfrastructure: _canManageMobileVersions,
@@ -311,6 +302,11 @@ class _SettingsViewState extends State<_SettingsView> {
       onToggleDefaultTaskBoardNavigation: _toggleDefaultTaskBoardNavigation,
       onChangeTheme: () => unawaited(_showThemeDialog()),
       onChangeFirstDayOfWeek: () => unawaited(_showCalendarDialog()),
+      hapticsEnabled: AppHaptics.enabled,
+      onToggleHaptics: () {
+        setState(() => AppHaptics.enabled = !AppHaptics.enabled);
+        unawaited(AppHaptics.setEnabled(value: AppHaptics.enabled));
+      },
     );
   }
 

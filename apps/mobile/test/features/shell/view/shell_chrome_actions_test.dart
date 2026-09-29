@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 
@@ -103,6 +104,26 @@ class _ShellChromeActionsHarnessState
 }
 
 void main() {
+  test('room back callback is scoped to its active registration', () async {
+    final cubit = ShellChromeActionsCubit();
+    var leaves = 0;
+    cubit.register(
+      registrationId: 'room',
+      ownerId: 'meet-room',
+      locations: {Routes.meet},
+      actions: const [],
+      onBack: () async {
+        leaves++;
+      },
+    );
+    await cubit.state.backForLocation(Routes.meet)?.call();
+    expect(leaves, 1);
+    expect(cubit.state.backForLocation(Routes.home), isNull);
+    cubit.unregister('room');
+    expect(cubit.state.backForLocation(Routes.meet), isNull);
+    await cubit.close();
+  });
+
   test(
     'immersive registrations apply only while their route is active',
     () async {

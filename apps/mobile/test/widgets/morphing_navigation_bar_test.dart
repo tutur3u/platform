@@ -91,6 +91,38 @@ void main() {
     expect(find.byKey(const ValueKey('navigation-drag-preview')), findsNothing);
   });
 
+  testWidgets('a swipe tracks the finger without waiting for a hold', (
+    tester,
+  ) async {
+    Key? selected;
+    await tester.pumpApp(
+      Center(
+        child: MorphingNavigationBar(
+          selectedKey: const ValueKey('home'),
+          onSelected: (key) => selected = key,
+          children: const [
+            shad.NavigationItem(key: ValueKey('home'), child: Text('Home')),
+            shad.NavigationItem(key: ValueKey('apps'), child: Text('Apps')),
+          ],
+        ),
+      ),
+    );
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Home')),
+    );
+    await gesture.moveBy(const Offset(20, 0));
+    await gesture.moveTo(tester.getCenter(find.text('Apps')));
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('navigation-drag-preview')),
+      findsOneWidget,
+    );
+    expect(selected, isNull);
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(selected, const ValueKey('apps'));
+  });
+
   testWidgets('releasing outside or over disabled items cancels navigation', (
     tester,
   ) async {

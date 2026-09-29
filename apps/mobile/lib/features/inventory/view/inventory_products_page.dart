@@ -19,6 +19,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class InventoryProductsPage extends StatefulWidget {
@@ -333,12 +334,17 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
                           ..._products.map(
                             (product) => Padding(
                               padding: const EdgeInsets.only(bottom: 12),
-                              child: _InventoryProductCard(
-                                product: product,
-                                currency: _currency,
-                                onTap: _canManageCatalog
-                                    ? () => _openEditor(productId: product.id)
-                                    : null,
+                              child: PendingSyncFrame(
+                                workspaceId: _wsId ?? product.wsId,
+                                entityId: product.id,
+                                feature: 'inventory',
+                                child: _InventoryProductCard(
+                                  product: product,
+                                  currency: _currency,
+                                  onTap: _canManageCatalog
+                                      ? () => _openEditor(productId: product.id)
+                                      : null,
+                                ),
                               ),
                             ),
                           ),

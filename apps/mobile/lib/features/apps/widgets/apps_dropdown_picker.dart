@@ -82,7 +82,7 @@ class _AppsScreenState extends State<AppsScreen> {
   final _search = TextEditingController();
   bool _searching = false;
   bool _editing = false;
-  bool _showGrid = false;
+  bool _showGrid = true;
 
   @override
   void initState() {

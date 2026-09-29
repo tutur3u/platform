@@ -11,6 +11,8 @@ class PendingMutationRecord {
     this.optimisticPatch,
     this.attemptCount = 0,
     this.lastError,
+    this.status = PendingMutationStatus.queued,
+    this.replaySafe = false,
   });
 
   factory PendingMutationRecord.fromJson(Map<dynamic, dynamic> json) {
@@ -30,6 +32,11 @@ class PendingMutationRecord {
       ),
       attemptCount: (json['attemptCount'] as num?)?.toInt() ?? 0,
       lastError: json['lastError'] as String?,
+      status: PendingMutationStatus.values.firstWhere(
+        (value) => value.name == json['status'],
+        orElse: () => PendingMutationStatus.queued,
+      ),
+      replaySafe: json['replaySafe'] == true,
     );
   }
 
@@ -44,8 +51,18 @@ class PendingMutationRecord {
   final Map<String, dynamic>? optimisticPatch;
   final int attemptCount;
   final String? lastError;
+  final PendingMutationStatus status;
 
-  PendingMutationRecord copyWith({int? attemptCount, String? lastError}) {
+  /// True only when the server deduplicates retries with this record's ID.
+  final bool replaySafe;
+
+  String? get entityId => optimisticPatch?['entityId'] as String?;
+
+  PendingMutationRecord copyWith({
+    int? attemptCount,
+    String? lastError,
+    PendingMutationStatus? status,
+  }) {
     return PendingMutationRecord(
       id: id,
       feature: feature,
@@ -58,6 +75,8 @@ class PendingMutationRecord {
       optimisticPatch: optimisticPatch,
       attemptCount: attemptCount ?? this.attemptCount,
       lastError: lastError ?? this.lastError,
+      status: status ?? this.status,
+      replaySafe: replaySafe,
     );
   }
 
@@ -73,5 +92,9 @@ class PendingMutationRecord {
     'optimisticPatch': optimisticPatch,
     'attemptCount': attemptCount,
     'lastError': lastError,
+    'status': status.name,
+    'replaySafe': replaySafe,
   };
 }
+
+enum PendingMutationStatus { queued, conflict, failed }

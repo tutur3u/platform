@@ -1720,6 +1720,10 @@
         }
     },
     "financeWallets": "Wallets",
+    "financeOverviewWalletCount": "{count, plural, one{1 wallet} other{{count} wallets}}",
+    "@financeOverviewWalletCount": {"placeholders": {"count": {"type": "int"}}},
+    "financeOverviewRecentCount": "{count, plural, one{1 recent transaction} other{{count} recent transactions}}",
+    "@financeOverviewRecentCount": {"placeholders": {"count": {"type": "int"}}},
     "financeTransactions": "Transactions",
     "financeCategories": "Categories",
     "financeRecentTransactions": "Recent transactions",
@@ -2348,6 +2352,7 @@
     "settingsThemeSystem": "System",
     "settingsThemeSystemDescription": "Match your device appearance automatically.",
     "settingsFinanceAmounts": "Finance amounts",
+    "settingsHaptics": "Haptic feedback",
     "settingsFinanceAmountsDescription": "Show or hide balances and transaction amounts across finance screens.",
     "settingsSwitchWorkspace": "Switch workspace",
     "settingsSwitchWorkspaceDescription": "Move between personal and team contexts.",
@@ -3494,6 +3499,18 @@
     "settingsGeneralGroup": "Personalize",
     "settingsSupportGroup": "Help and account",
     "profilePrivateActivity": "Your private activity",
+    "profileTimelineTitle": "Activity timeline",
+    "profileTimelineToday": "Today",
+    "profileTimelineYesterday": "Yesterday",
+    "profileTimelineEmpty": "No recent activity in this workspace",
+    "profileTimelineTasks": "{count, plural, one{Created 1 task} other{Created {count} tasks}}",
+    "@profileTimelineTasks": {"placeholders": {"count": {"type": "int"}}},
+    "profileTimelineTransactions": "{count, plural, one{Created 1 transaction} other{Created {count} transactions}}",
+    "@profileTimelineTransactions": {"placeholders": {"count": {"type": "int"}}},
+    "profileTimelineNotes": "{count, plural, one{Added 1 note} other{Added {count} notes}}",
+    "@profileTimelineNotes": {"placeholders": {"count": {"type": "int"}}},
+    "profileTimelineWorkspaceEvents": "{count, plural, one{1 workspace event added} other{{count} workspace events added}}",
+    "@profileTimelineWorkspaceEvents": {"placeholders": {"count": {"type": "int"}}},
     "profileTrackedMinutes": "{minutes} min tracked",
     "@profileTrackedMinutes": {
         "placeholders": {
@@ -3698,5 +3715,13 @@
     "cacheCategoryTasks": "Tasks",
     "cacheCategoryCalendar": "Calendar",
     "cacheCategoryFinance": "Finance",
-    "cacheCategoryOther": "Other data"
+    "cacheCategoryOther": "Other data",
+    "offlineEditQueued": "Waiting to sync",
+    "offlineEditConflict": "Needs review before syncing",
+    "offlineEditFailed": "Sync failed",
+    "offlineChangesTitle": "Offline changes",
+    "offlineChangesEmpty": "Everything is synced",
+    "offlineChangesReview": "Check this action on another device before retrying. It may have reached the server already.",
+    "offlineChangesRetry": "Retry",
+    "offlineChangesDiscard": "Discard local change"
 }

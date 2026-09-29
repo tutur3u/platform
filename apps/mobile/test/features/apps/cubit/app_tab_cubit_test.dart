@@ -98,7 +98,7 @@ void main() {
       await cubit.setAppOrder(['calendar', 'tasks', 'mail']);
       expect(ids(), ['calendar', 'tasks', 'mail']);
       await cubit.togglePinnedApp('mail');
-      expect(ids(), ['mail', 'calendar', 'tasks']);
+      expect(ids(), ['calendar', 'tasks', 'mail']);
       await cubit.togglePinnedApp('mail');
       expect(ids(), ['calendar', 'tasks', 'mail']);
     },

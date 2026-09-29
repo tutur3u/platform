@@ -211,10 +211,28 @@ void main() {
       expect(find.text(label), findsOneWidget);
     }
 
-    for (var index = 1; index < labels.length; index += 1) {
-      final previousY = tester.getTopLeft(find.text(labels[index - 1])).dy;
-      final currentY = tester.getTopLeft(find.text(labels[index])).dy;
-      expect(previousY, lessThan(currentY));
-    }
+    expect(
+      tester.getTopLeft(find.text('Tasks')).dy,
+      tester.getTopLeft(find.text('Chat')).dy,
+    );
+    expect(
+      tester.getTopLeft(find.text('Tasks')).dy,
+      lessThan(tester.getTopLeft(find.text('Timer')).dy),
+    );
+
+    final drag = await tester.startGesture(
+      tester.getCenter(find.text('Tasks')),
+    );
+    await tester.pump(const Duration(milliseconds: 350));
+    await drag.moveTo(tester.getCenter(find.text('Finance')));
+    await tester.pump(const Duration(milliseconds: 220));
+    await drag.up();
+    await tester.pumpAndSettle();
+    expect(cubit.state.appOrder.take(4), [
+      'chat',
+      'calendar',
+      'finance',
+      'tasks',
+    ]);
   });
 }

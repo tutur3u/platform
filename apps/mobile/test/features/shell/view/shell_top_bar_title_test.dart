@@ -47,5 +47,31 @@ void main() {
       );
       expect(find.text('Home'), findsOneWidget);
     });
+
+    testWidgets('settings title ignores the selected mini app label', (
+      tester,
+    ) async {
+      const state = WorkspaceState(status: WorkspaceStatus.loaded);
+      when(() => workspaceCubit.state).thenReturn(state);
+      whenListen(
+        workspaceCubit,
+        const Stream<WorkspaceState>.empty(),
+        initialState: state,
+      );
+      await tester.pumpApp(
+        BlocProvider.value(
+          value: workspaceCubit,
+          child: const Scaffold(
+            body: ShellTopBarTitle(
+              matchedLocation: Routes.settings,
+              fallbackTitle: 'App',
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Settings'), findsOneWidget);
+      expect(find.text('App'), findsNothing);
+    });
   });
 }

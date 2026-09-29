@@ -20,6 +20,7 @@ const jsonContentSchema: z.ZodType<any> = z.lazy(() =>
 );
 
 const createNoteSchema = z.object({
+  id: z.string().uuid().optional(),
   title: z.string().max(MAX_NOTE_TITLE_LENGTH).nullable().optional(),
   content: jsonContentSchema.refine(
     (val) => val.type === 'doc',
@@ -128,12 +129,32 @@ export async function POST(
 
     // Parse and validate request body
     const body = await request.json();
-    const { title, content } = createNoteSchema.parse(body);
+    const { id, title, content } = createNoteSchema.parse(body);
+
+    // Mobile may create a note offline and replay its stable client ID. A
+    // repeated request must return that note without inserting a duplicate.
+    if (id) {
+      const { data: existing, error: existingError } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('id', id)
+        .eq('ws_id', wsId)
+        .eq('creator_id', user.id)
+        .maybeSingle();
+      if (existingError) {
+        return NextResponse.json(
+          { error: 'Failed to find note' },
+          { status: 500 }
+        );
+      }
+      if (existing) return NextResponse.json(existing);
+    }
 
     // Create note
     const { data: note, error: noteError } = await supabase
       .from('notes')
       .insert({
+        ...(id && { id }),
         title,
         content,
         ws_id: wsId,

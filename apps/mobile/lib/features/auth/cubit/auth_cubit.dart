@@ -435,7 +435,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> signOut() async {
     _isInAddAccountFlow = false;
     emit(state.copyWith(isLoading: true));
-    await CacheStore.instance.clearScope(userId: state.user?.id);
+    await CacheStore.instance.clearResources(userId: state.user?.id);
     await clearAuthFeatureCaches(userId: state.user?.id);
     await _onBeforeSignOut?.call();
     if (isClosed) return;
@@ -635,7 +635,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
 
     if (previousUserId != null && previousUserId != accountId) {
-      await CacheStore.instance.clearScope(userId: previousUserId);
+      await CacheStore.instance.clearResources(userId: previousUserId);
     }
 
     final newUser = await _repo.getCurrentUser();
@@ -745,7 +745,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
 
     if (previousUserId != null) {
-      await CacheStore.instance.clearScope(userId: previousUserId);
+      await CacheStore.instance.clearResources(userId: previousUserId);
     }
 
     final newUser = await _repo.getCurrentUser();
