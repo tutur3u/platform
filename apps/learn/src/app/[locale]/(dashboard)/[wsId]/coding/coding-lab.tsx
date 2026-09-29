@@ -1,22 +1,68 @@
 'use client';
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@tuturuuu/ui/resizable';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { listCodingChallenges } from '@/lib/coding/challenges';
 import {
   CODING_LANGUAGES,
   type CodingLanguage,
   starterCode,
 } from '@/lib/coding/languages';
-import { getCodingSubmission, submitCodingSolution } from './actions';
+import type {
+  CodingExecutionKind,
+  CodingExecutionSummary,
+} from '@/lib/coding/results';
+import {
+  getCodingSubmission,
+  listCodingExecutions,
+  submitCodingSolution,
+} from './actions';
+import { CodingConsole, type ConsoleTab } from './coding-console';
+import { CodingProblem } from './coding-problem';
+
+const CodingEditor = dynamic(
+  () => import('./coding-editor').then((module) => module.CodingEditor),
+  {
+    loading: () => <div className="h-full animate-pulse bg-muted/30" />,
+    ssr: false,
+  }
+);
 
 type PublicChallenge = ReturnType<typeof listCodingChallenges>[number];
+type CodingHistoryPage = Awaited<ReturnType<typeof listCodingExecutions>>;
 type Attempt = {
   challenge: string;
+  customCase?: { input: string; expected: string };
+  kind: CodingExecutionKind;
   language: CodingLanguage;
   source: string;
 };
+
+function subscribeToWidth(callback: () => void) {
+  const media = window.matchMedia('(min-width: 1024px)');
+  media.addEventListener('change', callback);
+  return () => media.removeEventListener('change', callback);
+}
+
+function useWideLayout() {
+  return useSyncExternalStore(
+    subscribeToWidth,
+    () => window.matchMedia('(min-width: 1024px)').matches,
+    () => true
+  );
+}
 
 export function CodingLab({
   availableLanguages,
@@ -32,6 +78,8 @@ export function CodingLab({
   wsId: string;
 }) {
   const t = useTranslations('coding');
+  const wide = useWideLayout();
+  const queryClient = useQueryClient();
   const [selected, setSelected] = useState(challenges[0]?.slug ?? '');
   const [language, setLanguage] = useState<CodingLanguage>(
     availableLanguages[0] ?? 'python'
@@ -40,8 +88,16 @@ export function CodingLab({
   const [source, setSource] = useState(
     starterCode(availableLanguages[0] ?? 'python', challenge?.starterCode ?? '')
   );
+  const drafts = useRef(new Map<string, string>());
+  const [customInput, setCustomInput] = useState('');
+  const [customExpected, setCustomExpected] = useState('');
+  const [diagnostics, setDiagnostics] = useState(0);
+  const [tab, setTab] = useState<ConsoleTab>('cases');
   const [submissionId, setSubmissionId] = useState<string | null>(null);
-  const activeAttempt = useRef<Attempt | null>(null);
+  const [inspectedId, setInspectedId] = useState<string | null>(null);
+  const [lastAttempt, setLastAttempt] = useState<Attempt | null>(null);
+  const historyKey = ['coding-executions', wsId, studentId, selected];
+
   const submit = useMutation({
     mutationFn: (attempt: Attempt) =>
       submitCodingSolution(
@@ -49,222 +105,266 @@ export function CodingLab({
         studentId,
         attempt.challenge,
         attempt.language,
-        attempt.source
+        attempt.source,
+        attempt.kind,
+        attempt.customCase
       ),
     onSuccess: (id, attempt) => {
-      if (activeAttempt.current === attempt) setSubmissionId(id);
+      setLastAttempt(attempt);
+      setSubmissionId(id);
+      setInspectedId(null);
+      setTab('result');
+      void queryClient.invalidateQueries({ queryKey: historyKey });
     },
   });
   const submission = useQuery({
     enabled: Boolean(submissionId),
     queryFn: () => getCodingSubmission(wsId, studentId, submissionId!),
-    queryKey: ['coding-submission', wsId, studentId, submissionId],
+    queryKey: ['coding-execution', wsId, studentId, submissionId],
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      return status === 'queued' || status === 'running' ? 1500 : false;
+      return status === 'queued' || status === 'running' || !status
+        ? 1500
+        : false;
     },
   });
+  const history = useInfiniteQuery({
+    enabled: Boolean(selected),
+    getNextPageParam: (lastPage: CodingHistoryPage) => lastPage.nextCursor,
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }): Promise<CodingHistoryPage> =>
+      listCodingExecutions(
+        wsId,
+        studentId,
+        selected,
+        typeof pageParam === 'string' ? pageParam : undefined
+      ),
+    queryKey: historyKey,
+    refetchInterval:
+      submission.data?.status === 'queued' ||
+      submission.data?.status === 'running'
+        ? 3000
+        : false,
+  });
+  const executions = useMemo(
+    () =>
+      history.data?.pages.flatMap((page: CodingHistoryPage) => page.items) ??
+      [],
+    [history.data]
+  );
+  const optimisticExecution: CodingExecutionSummary | null =
+    submissionId && lastAttempt
+      ? {
+          challengeSlug: lastAttempt.challenge,
+          createdAt: new Date().toISOString(),
+          id: submissionId,
+          kind: lastAttempt.kind,
+          language: lastAttempt.language,
+          result: null,
+          source: lastAttempt.source,
+          status: 'queued',
+        }
+      : null;
+  const activeExecution = inspectedId
+    ? (executions.find((entry) => entry.id === inspectedId) ?? null)
+    : (submission.data ?? optimisticExecution);
+  const judgeReady = availableLanguages.includes(language);
+  const isBusy =
+    submit.isPending ||
+    submission.data?.status === 'queued' ||
+    submission.data?.status === 'running';
 
-  function clearAttempt() {
-    activeAttempt.current = null;
+  function draftKey(challengeSlug: string, nextLanguage: CodingLanguage) {
+    return `${challengeSlug}:${nextLanguage}`;
+  }
+
+  function openDraft(
+    nextChallenge: PublicChallenge,
+    nextLanguage: CodingLanguage
+  ) {
+    setSource(
+      drafts.current.get(draftKey(nextChallenge.slug, nextLanguage)) ??
+        starterCode(nextLanguage, nextChallenge.starterCode)
+    );
     setSubmissionId(null);
+    setInspectedId(null);
+    setDiagnostics(0);
+    setTab('cases');
     submit.reset();
   }
 
-  function selectChallenge(next: PublicChallenge) {
-    clearAttempt();
-    setSelected(next.slug);
-    setSource(starterCode(language, next.starterCode));
+  function selectChallenge(slug: string) {
+    const next = challenges.find((entry) => entry.slug === slug);
+    if (!next) return;
+    setSelected(slug);
+    openDraft(next, language);
   }
 
   function selectLanguage(next: CodingLanguage) {
-    clearAttempt();
     setLanguage(next);
-    setSource(starterCode(next, challenge?.starterCode ?? ''));
+    if (challenge) openDraft(challenge, next);
   }
 
   function editSource(next: string) {
-    clearAttempt();
+    drafts.current.set(draftKey(selected, language), next);
     setSource(next);
   }
 
-  function submitSource() {
-    const attempt = { challenge: selected, language, source };
-    clearAttempt();
-    activeAttempt.current = attempt;
-    submit.mutate(attempt);
+  function execute(kind: CodingExecutionKind) {
+    if (readOnly || !judgeReady || isBusy || !source.trim() || !challenge)
+      return;
+    const customCase =
+      kind === 'test' && customInput.trim()
+        ? { input: customInput, expected: customExpected }
+        : undefined;
+    setInspectedId(null);
+    submit.mutate({ challenge: selected, customCase, kind, language, source });
   }
 
-  const judgeReady = availableLanguages.includes(language);
+  function restoreCode(execution: CodingExecutionSummary) {
+    if (execution.language) setLanguage(execution.language);
+    const nextLanguage = execution.language ?? language;
+    drafts.current.set(draftKey(selected, nextLanguage), execution.source);
+    setSource(execution.source);
+    setInspectedId(execution.id);
+    setTab('result');
+  }
+
+  if (!challenge) return null;
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <p className="font-medium text-primary text-sm">{t('eyebrow')}</p>
-        <h1 className="font-semibold text-3xl tracking-tight">{t('title')}</h1>
-        <p className="max-w-2xl text-muted-foreground">{t('description')}</p>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-background text-foreground shadow-sm">
+      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2">
+        <label className="min-w-36 flex-1 sm:max-w-64">
+          <span className="sr-only">{t('challengeList')}</span>
+          <select
+            className="h-9 w-full rounded-md border bg-background px-2 font-medium text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onChange={(event) => selectChallenge(event.target.value)}
+            value={selected}
+          >
+            {challenges.map((entry) => (
+              <option key={entry.slug} value={entry.slug}>
+                {t(`challenges.${entry.slug}.title`)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <span className="hidden rounded-md bg-muted px-2 py-1 text-muted-foreground text-xs sm:inline-flex">
+          {t(`topics.${challenge.topic}`)} ·{' '}
+          {t(`difficulty.${challenge.difficulty}`)}
+        </span>
+        <span className="flex-1" />
+        <label>
+          <span className="sr-only">{t('language')}</span>
+          <select
+            className="h-9 rounded-md border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onChange={(event) =>
+              selectLanguage(event.target.value as CodingLanguage)
+            }
+            value={language}
+          >
+            {CODING_LANGUAGES.map((entry) => (
+              <option key={entry} value={entry}>
+                {t(`languages.${entry}`)}
+                {availableLanguages.includes(entry) ? '' : ` · ${t('offline')}`}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          className="h-9 rounded-md border px-3 font-medium text-sm hover:bg-accent disabled:opacity-50"
+          disabled={readOnly || !judgeReady || isBusy || !source.trim()}
+          onClick={() => execute('test')}
+          type="button"
+        >
+          {t('runTests')}
+        </button>
+        <button
+          className="h-9 rounded-md bg-primary px-3 font-medium text-primary-foreground text-sm disabled:opacity-50"
+          disabled={readOnly || !judgeReady || isBusy || !source.trim()}
+          onClick={() => execute('submit')}
+          type="button"
+        >
+          {submit.isPending ? t('submitting') : t('submit')}
+        </button>
       </header>
 
-      <div className="grid gap-5 xl:grid-cols-[18rem_minmax(0,1fr)]">
-        <nav aria-label={t('challengeList')} className="space-y-2">
-          {challenges.map((entry) => (
-            <button
-              aria-current={entry.slug === selected ? 'page' : undefined}
-              className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent ${
-                entry.slug === selected
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-background'
-              }`}
-              key={entry.slug}
-              onClick={() => selectChallenge(entry)}
-              type="button"
-            >
-              <span className="block font-medium">
-                {t(`challenges.${entry.slug}.title`)}
-              </span>
-              <span className="mt-1 block text-muted-foreground text-xs">
-                {t(`topics.${entry.topic}`)} ·{' '}
-                {t(`difficulty.${entry.difficulty}`)}
-              </span>
-            </button>
-          ))}
-        </nav>
-
-        {challenge ? (
-          <div className="grid gap-5 2xl:grid-cols-2">
-            <section className="space-y-5 rounded-lg border border-border bg-background p-5">
-              <div className="space-y-2">
-                <p className="text-muted-foreground text-xs uppercase tracking-wide">
-                  {t(`topics.${challenge.topic}`)}
-                </p>
-                <h2 className="font-semibold text-2xl">
-                  {t(`challenges.${challenge.slug}.title`)}
-                </h2>
-                <p className="whitespace-pre-line text-sm leading-6">
-                  {t(`challenges.${challenge.slug}.prompt`)}
-                </p>
-              </div>
-              <div className="space-y-3">
-                <h3 className="font-medium text-sm">{t('sample')}</h3>
-                {challenge.samples.map((sample) => (
-                  <div className="grid gap-3 sm:grid-cols-2" key={sample.input}>
-                    <div>
-                      <p className="mb-1 text-muted-foreground text-xs">
-                        {t('input')}
-                      </p>
-                      <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
-                        {sample.input}
-                      </pre>
-                    </div>
-                    <div>
-                      <p className="mb-1 text-muted-foreground text-xs">
-                        {t('output')}
-                      </p>
-                      <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
-                        {sample.output}
-                      </pre>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="space-y-4 rounded-lg border border-border bg-background p-5">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="font-semibold text-lg">{t('editor')}</h2>
-                <label className="text-sm">
-                  <span className="sr-only">{t('language')}</span>
-                  <select
-                    className="h-9 rounded-md border border-input bg-background px-2"
-                    onChange={(event) =>
-                      selectLanguage(event.target.value as CodingLanguage)
-                    }
-                    value={language}
-                  >
-                    {CODING_LANGUAGES.map((entry) => (
-                      <option key={entry} value={entry}>
-                        {t(`languages.${entry}`)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <label className="sr-only" htmlFor="coding-source">
-                {t('editor')}
-              </label>
-              <textarea
-                className="min-h-80 w-full resize-y rounded-md border border-input bg-muted/30 p-4 font-mono text-sm leading-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                id="coding-source"
-                onChange={(event) => editSource(event.target.value)}
-                spellCheck={false}
-                value={source}
-              />
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  className="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={
-                    readOnly ||
-                    !judgeReady ||
-                    submit.isPending ||
-                    !source.trim()
-                  }
-                  onClick={submitSource}
-                  type="button"
-                >
-                  {submit.isPending ? t('submitting') : t('submit')}
-                </button>
-                {readOnly ? (
-                  <p className="text-muted-foreground text-sm">
-                    {t('parentReadOnly')}
-                  </p>
-                ) : !judgeReady ? (
-                  <p className="text-muted-foreground text-sm">
-                    {t('judgeUnavailable')}
-                  </p>
-                ) : null}
-              </div>
-              {submit.error && submit.variables === activeAttempt.current ? (
-                <p className="text-destructive text-sm" role="alert">
-                  {submit.error.message}
-                </p>
-              ) : null}
-              {submissionId ? (
-                <div
-                  aria-live="polite"
-                  className="rounded-md border border-border p-3 text-sm"
-                >
-                  {submission.data?.result ? (
-                    <>
-                      <p className="font-medium">
-                        {t('passed', {
-                          passed: submission.data.result.passed,
-                          total: submission.data.result.total,
-                        })}
-                      </p>
-                      <ul className="mt-2 space-y-1 text-muted-foreground">
-                        {submission.data.result.results.map((result) => (
-                          <li key={result.index}>
-                            {t('case', { number: result.index + 1 })}:{' '}
-                            {t(`result.${result.reason}`)}
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  ) : submission.error ||
-                    (submission.data?.status &&
-                      !['queued', 'running'].includes(
-                        submission.data.status
-                      )) ? (
-                    <p>{t('judgeFailed')}</p>
-                  ) : (
-                    <p>{t('judging')}</p>
-                  )}
+      <ResizablePanelGroup
+        className="min-h-0 flex-1"
+        direction={wide ? 'horizontal' : 'vertical'}
+        key={wide ? 'wide' : 'narrow'}
+      >
+        <ResizablePanel
+          defaultSize={wide ? 40 : 28}
+          id="coding-problem"
+          minSize={wide ? 25 : 15}
+        >
+          <CodingProblem challenge={challenge} />
+        </ResizablePanel>
+        <ResizableHandle aria-label={t('resizeProblem')} withHandle />
+        <ResizablePanel
+          defaultSize={wide ? 60 : 72}
+          id="coding-workspace"
+          minSize={wide ? 35 : 50}
+        >
+          <ResizablePanelGroup direction="vertical">
+            <ResizablePanel defaultSize={62} id="coding-editor" minSize={25}>
+              <div className="flex h-full min-h-0 flex-col">
+                <div className="flex shrink-0 items-center justify-between border-b px-3 py-2 text-xs">
+                  <span className="font-medium">{t('editor')}</span>
+                  <span className="text-muted-foreground">
+                    {language === 'javascript' || language === 'typescript'
+                      ? t('localChecks', { count: diagnostics })
+                      : t('syntaxHighlighting')}
+                  </span>
                 </div>
-              ) : null}
-            </section>
-          </div>
-        ) : null}
-      </div>
+                <div className="min-h-0 flex-1">
+                  <CodingEditor
+                    challenge={selected}
+                    language={language}
+                    onChange={editSource}
+                    onDiagnostics={setDiagnostics}
+                    onRun={() => execute('test')}
+                    source={source}
+                  />
+                </div>
+              </div>
+            </ResizablePanel>
+            <ResizableHandle aria-label={t('resizeConsole')} withHandle />
+            <ResizablePanel defaultSize={38} id="coding-console" minSize={20}>
+              <CodingConsole
+                activeExecution={activeExecution}
+                customExpected={customExpected}
+                customInput={customInput}
+                executions={executions}
+                hasMore={Boolean(history.hasNextPage)}
+                historyLoading={history.isFetching}
+                onCustomExpectedChange={setCustomExpected}
+                onCustomInputChange={setCustomInput}
+                onLoadMore={() => void history.fetchNextPage()}
+                onRestore={restoreCode}
+                onSelectExecution={setInspectedId}
+                publicCases={challenge.publicCases}
+                selectedId={inspectedId ?? submissionId}
+                setTab={setTab}
+                tab={tab}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+      {readOnly || !judgeReady || submit.error || submission.error ? (
+        <p
+          className="shrink-0 border-t px-3 py-1.5 text-destructive text-xs"
+          role="alert"
+        >
+          {readOnly
+            ? t('parentReadOnly')
+            : !judgeReady
+              ? t('judgeUnavailable')
+              : (submit.error?.message ?? submission.error?.message)}
+        </p>
+      ) : null}
     </div>
   );
 }

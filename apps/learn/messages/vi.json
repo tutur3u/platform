@@ -1,4 +1,13 @@
 {
+  "account_switcher": {
+    "accounts": "Tài khoản",
+    "current_account": "Tài khoản hiện tại",
+    "manage_accounts": "Quản lý tài khoản",
+    "please_wait": "Vui lòng đợi...",
+    "remove_account": "Xóa tài khoản",
+    "switch_account": "Chuyển tài khoản",
+    "unknown_user": "Người dùng không xác định"
+  },
   "aiChat": {
     "coachDescription": "Hỏi gợi ý, cách giải thích nhẹ nhàng hơn hoặc một bài quiz nhỏ mà không rời lộ trình học.",
     "coachTitle": "Huấn luyện viên Learn",
@@ -78,6 +87,113 @@
     "visitor_email": "Email",
     "visitor_name": "Tên",
     "visitor_phone": "Số điện thoại"
+  },
+  "coding": {
+    "actualOutput": "Đầu ra của bạn",
+    "case": "Bộ kiểm thử {number}",
+    "caseTime": "Thời gian bộ kiểm thử",
+    "challengeList": "Danh sách bài tập lập trình",
+    "challenges": {
+      "balanced-brackets": {
+        "prompt": "Cho một chuỗi chỉ gồm (), [] và {}. In YES nếu mọi dấu ngoặc mở được đóng đúng thứ tự. Ngược lại in NO.",
+        "title": "Dấu ngoặc cân bằng"
+      },
+      "binary-search": {
+        "prompt": "Cho một danh sách số nguyên phân biệt đã sắp xếp và một số đích. In ra chỉ số bắt đầu từ 0 của số đó, hoặc -1 nếu không có.\n\nĐầu vào: n, tiếp theo là n số nguyên cách nhau bằng dấu cách, rồi đến số đích.",
+        "title": "Tìm kiếm nhị phân"
+      },
+      "two-sum": {
+        "prompt": "Cho một danh sách số nguyên và một số đích. In ra hai chỉ số bắt đầu từ 0 có tổng bằng số đích, theo thứ tự tăng dần. Luôn có đúng một đáp án.\n\nĐầu vào: n, tiếp theo là n số nguyên cách nhau bằng dấu cách, rồi đến số đích.",
+        "title": "Tổng hai số"
+      }
+    },
+    "console": "Bảng kiểm thử và chạy mã",
+    "customCase": "Bộ kiểm thử tùy chỉnh",
+    "customCaseHint": "Thêm đầu vào và đầu ra mong đợi để chạy cùng các bộ công khai. Bộ tùy chỉnh được lưu trong lịch sử chạy.",
+    "description": "Giải các bài tập lập trình và nhận phản hồi từ máy Judge của nền tảng.",
+    "difficulty": {
+      "easy": "Dễ",
+      "medium": "Trung bình"
+    },
+    "editor": "Lời giải của bạn",
+    "emptyHistory": "Chưa có lần chạy nào cho bài này.",
+    "emptyOutput": "Không có đầu ra",
+    "expectedOutput": "Đầu ra mong đợi",
+    "eyebrow": "Thuật toán và cấu trúc dữ liệu",
+    "hiddenCase": "Bộ ẩn {number}",
+    "hiddenCaseHint": "Các bộ kiểm thử riêng tư chạy khi nộp bài. Đầu vào và đầu ra được giữ kín; bạn vẫn xem được bộ nào đạt.",
+    "hiddenSummary": "Bộ ẩn đạt: {passed}/{total}",
+    "input": "Đầu vào",
+    "judgeFailed": "Judge không thể chấm bài này. Vui lòng thử lại sau.",
+    "judgeUnavailable": "Judge chưa sẵn sàng. Hãy nhờ quản trị viên nền tảng bật một máy đã được xác minh.",
+    "judging": "Đang chạy lời giải trong sandbox…",
+    "kinds": {
+      "submit": "Nộp bài",
+      "test": "Chạy thử"
+    },
+    "language": "Ngôn ngữ",
+    "languages": {
+      "c": "C",
+      "cpp": "C++",
+      "go": "Go",
+      "java": "Java",
+      "javascript": "JavaScript",
+      "php": "PHP",
+      "python": "Python",
+      "ruby": "Ruby",
+      "rust": "Rust",
+      "typescript": "TypeScript"
+    },
+    "loadingHistory": "Đang tải lịch sử…",
+    "loadMore": "Tải thêm",
+    "localChecks": "Kiểm tra JS/TS trên trình duyệt · {count} chẩn đoán · F12 xem định nghĩa",
+    "medianTime": "Trung vị thời gian mỗi bộ",
+    "noResult": "Chạy bộ công khai hoặc nộp bài để xem kết quả.",
+    "offline": "chưa khả dụng",
+    "output": "Đầu ra",
+    "parentReadOnly": "Phụ huynh có thể xem bài tập; chỉ học viên mới có thể nộp lời giải.",
+    "passed": "Đạt {passed}/{total} bộ kiểm thử",
+    "publicCase": "Bộ công khai {number}",
+    "publicTests": "Bộ kiểm thử công khai",
+    "resizeConsole": "Chỉnh kích thước bảng kiểm thử",
+    "resizeProblem": "Chỉnh kích thước khung đề bài",
+    "restoreCode": "Khôi phục mã",
+    "result": {
+      "compile_error": "Lỗi biên dịch",
+      "failed": "Chưa đạt",
+      "output_limit": "Quá giới hạn đầu ra",
+      "passed": "Đạt",
+      "runtime_error": "Lỗi khi chạy",
+      "time_limit": "Quá thời gian",
+      "wrong_answer": "Sai kết quả"
+    },
+    "runTests": "Chạy thử",
+    "sample": "Ví dụ",
+    "status": {
+      "cancel_requested": "Đã yêu cầu hủy",
+      "cancelled": "Đã hủy",
+      "failed": "Judge gặp lỗi",
+      "queued": "Đang chờ Judge…",
+      "running": "Đang chạy trong sandbox…",
+      "succeeded": "Đã hoàn tất"
+    },
+    "submit": "Nộp bài",
+    "submitting": "Đang nộp…",
+    "syntaxHighlighting": "Tô màu cú pháp · Ctrl/⌘ Enter để chạy",
+    "tabs": {
+      "cases": "Bộ kiểm thử",
+      "history": "Lịch sử",
+      "result": "Kết quả"
+    },
+    "timeRange": "Khoảng bộ công khai: {min}–{max}.",
+    "timingNote": "Thời gian gồm khởi động sandbox và biên dịch với ngôn ngữ cần biên dịch. Hãy so sánh cả khoảng thời gian giữa các lần chạy; dao động nhỏ là bình thường.",
+    "title": "Phòng luyện lập trình",
+    "topics": {
+      "arrays": "Mảng",
+      "search": "Tìm kiếm",
+      "stacks": "Ngăn xếp"
+    },
+    "unknownLanguage": "Ngôn ngữ không rõ"
   },
   "command_launcher": {
     "aliases_slot": "Cũng khớp: {aliases}",
@@ -585,13 +701,13 @@
   "navigation": {
     "aiChat": "AI Chat",
     "assignments": "Bài tập",
+    "coding": "Luyện lập trình",
     "courses": "Khóa học",
     "home": "Trang chủ",
     "marks": "Điểm",
     "practice": "Luyện tập",
     "reports": "Báo cáo",
-    "settings": "Cài đặt Learn",
-    "coding": "Luyện lập trình"
+    "settings": "Cài đặt Learn"
   },
   "notifications": {
     "accept": "Chấp nhận",
@@ -929,76 +1045,5 @@
       "private": "Riêng tư",
       "workspace": "Không gian làm việc"
     }
-  },
-  "account_switcher": {
-    "accounts": "Tài khoản",
-    "current_account": "Tài khoản hiện tại",
-    "manage_accounts": "Quản lý tài khoản",
-    "please_wait": "Vui lòng đợi...",
-    "remove_account": "Xóa tài khoản",
-    "switch_account": "Chuyển tài khoản",
-    "unknown_user": "Người dùng không xác định"
-  },
-  "coding": {
-    "eyebrow": "Thuật toán và cấu trúc dữ liệu",
-    "title": "Phòng luyện lập trình",
-    "description": "Giải các bài tập lập trình và nhận phản hồi từ máy Judge của nền tảng.",
-    "challengeList": "Danh sách bài tập lập trình",
-    "sample": "Ví dụ",
-    "input": "Đầu vào",
-    "output": "Đầu ra",
-    "editor": "Lời giải của bạn",
-    "submit": "Nộp bài",
-    "submitting": "Đang nộp…",
-    "judgeUnavailable": "Judge chưa sẵn sàng. Hãy nhờ quản trị viên nền tảng bật một máy đã được xác minh.",
-    "judging": "Đang chạy lời giải trong sandbox…",
-    "judgeFailed": "Judge không thể chấm bài này. Vui lòng thử lại sau.",
-    "passed": "Đạt {passed}/{total} bộ kiểm thử",
-    "case": "Bộ kiểm thử {number}",
-    "topics": {
-      "arrays": "Mảng",
-      "search": "Tìm kiếm",
-      "stacks": "Ngăn xếp"
-    },
-    "difficulty": {
-      "easy": "Dễ",
-      "medium": "Trung bình"
-    },
-    "result": {
-      "passed": "Đạt",
-      "wrong_answer": "Sai kết quả",
-      "runtime_error": "Lỗi khi chạy",
-      "time_limit": "Quá thời gian",
-      "output_limit": "Quá giới hạn đầu ra",
-      "compile_error": "Lỗi biên dịch"
-    },
-    "challenges": {
-      "two-sum": {
-        "title": "Tổng hai số",
-        "prompt": "Cho một danh sách số nguyên và một số đích. In ra hai chỉ số bắt đầu từ 0 có tổng bằng số đích, theo thứ tự tăng dần. Luôn có đúng một đáp án.\n\nĐầu vào: n, tiếp theo là n số nguyên cách nhau bằng dấu cách, rồi đến số đích."
-      },
-      "binary-search": {
-        "title": "Tìm kiếm nhị phân",
-        "prompt": "Cho một danh sách số nguyên phân biệt đã sắp xếp và một số đích. In ra chỉ số bắt đầu từ 0 của số đó, hoặc -1 nếu không có.\n\nĐầu vào: n, tiếp theo là n số nguyên cách nhau bằng dấu cách, rồi đến số đích."
-      },
-      "balanced-brackets": {
-        "title": "Dấu ngoặc cân bằng",
-        "prompt": "Cho một chuỗi chỉ gồm (), [] và {}. In YES nếu mọi dấu ngoặc mở được đóng đúng thứ tự. Ngược lại in NO."
-      }
-    },
-    "language": "Ngôn ngữ",
-    "languages": {
-      "python": "Python",
-      "javascript": "JavaScript",
-      "typescript": "TypeScript",
-      "c": "C",
-      "cpp": "C++",
-      "java": "Java",
-      "rust": "Rust",
-      "go": "Go",
-      "ruby": "Ruby",
-      "php": "PHP"
-    },
-    "parentReadOnly": "Phụ huynh có thể xem bài tập; chỉ học viên mới có thể nộp lời giải."
   }
 }

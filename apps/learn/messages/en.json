@@ -1,4 +1,13 @@
 {
+  "account_switcher": {
+    "accounts": "Accounts",
+    "current_account": "Current Account",
+    "manage_accounts": "Manage Accounts",
+    "please_wait": "Please wait...",
+    "remove_account": "Remove account",
+    "switch_account": "Switch Account",
+    "unknown_user": "Unknown User"
+  },
   "aiChat": {
     "coachDescription": "Ask for a hint, a gentler explanation, or a tiny quiz without leaving your learning path.",
     "coachTitle": "Learn coach",
@@ -78,6 +87,113 @@
     "visitor_email": "Email",
     "visitor_name": "Name",
     "visitor_phone": "Phone"
+  },
+  "coding": {
+    "actualOutput": "Your output",
+    "case": "Case {number}",
+    "caseTime": "Case wall time",
+    "challengeList": "Coding challenges",
+    "challenges": {
+      "balanced-brackets": {
+        "prompt": "Given a string containing only (), [], and {}, print YES if every opening bracket is closed in the correct order. Otherwise print NO.",
+        "title": "Balanced Brackets"
+      },
+      "binary-search": {
+        "prompt": "Given a sorted list of distinct integers and a target, print its zero-based index or -1 if it is absent.\n\nInput: n, then n space-separated integers, then the target.",
+        "title": "Binary Search"
+      },
+      "two-sum": {
+        "prompt": "Given a list of integers and a target, print the two zero-based indices whose values add up to the target, in ascending order. Exactly one answer exists.\n\nInput: n, then n space-separated integers, then the target.",
+        "title": "Two Sum"
+      }
+    },
+    "console": "Test and execution console",
+    "customCase": "Custom test case",
+    "customCaseHint": "Add an input and expected output to run it alongside the public cases. Custom cases are saved in your execution history.",
+    "description": "Solve focused coding challenges and get feedback from a platform Judge machine.",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium"
+    },
+    "editor": "Your solution",
+    "emptyHistory": "No executions for this challenge yet.",
+    "emptyOutput": "No output",
+    "expectedOutput": "Expected output",
+    "eyebrow": "Algorithms and data structures",
+    "hiddenCase": "Hidden case {number}",
+    "hiddenCaseHint": "Private cases run when you submit. Their inputs and outputs stay hidden; you can see whether each passed.",
+    "hiddenSummary": "Hidden cases passed: {passed} of {total}",
+    "input": "Input",
+    "judgeFailed": "Judge could not complete this submission. Try again later.",
+    "judgeUnavailable": "Judge is not ready yet. Ask a platform administrator to enable a verified machine.",
+    "judging": "Running your solution in the sandbox…",
+    "kinds": {
+      "submit": "Submission",
+      "test": "Test run"
+    },
+    "language": "Language",
+    "languages": {
+      "c": "C",
+      "cpp": "C++",
+      "go": "Go",
+      "java": "Java",
+      "javascript": "JavaScript",
+      "php": "PHP",
+      "python": "Python",
+      "ruby": "Ruby",
+      "rust": "Rust",
+      "typescript": "TypeScript"
+    },
+    "loadingHistory": "Loading executions…",
+    "loadMore": "Load more",
+    "localChecks": "Local JS/TS checks · {count} diagnostics · F12 definitions",
+    "medianTime": "Median case wall time",
+    "noResult": "Run public tests or submit a solution to see a verdict.",
+    "offline": "unavailable",
+    "output": "Output",
+    "parentReadOnly": "Parents can review challenges, but only learners can submit solutions.",
+    "passed": "{passed} of {total} cases passed",
+    "publicCase": "Public case {number}",
+    "publicTests": "Public test cases",
+    "resizeConsole": "Resize test console",
+    "resizeProblem": "Resize problem panel",
+    "restoreCode": "Restore code",
+    "result": {
+      "compile_error": "Compilation error",
+      "failed": "Did not pass",
+      "output_limit": "Output limit",
+      "passed": "Passed",
+      "runtime_error": "Runtime error",
+      "time_limit": "Time limit",
+      "wrong_answer": "Wrong answer"
+    },
+    "runTests": "Run tests",
+    "sample": "Example",
+    "status": {
+      "cancel_requested": "Cancellation requested",
+      "cancelled": "Cancelled",
+      "failed": "Judge failed",
+      "queued": "Queued for Judge…",
+      "running": "Running in the sandbox…",
+      "succeeded": "Completed"
+    },
+    "submit": "Submit solution",
+    "submitting": "Submitting…",
+    "syntaxHighlighting": "Syntax highlighting · Ctrl/⌘ Enter to run",
+    "tabs": {
+      "cases": "Test cases",
+      "history": "History",
+      "result": "Result"
+    },
+    "timeRange": "Visible case range: {min}–{max}.",
+    "timingNote": "Times include sandbox startup and, for compiled languages, compilation. Compare the range across runs; small differences are normal.",
+    "title": "Coding Lab",
+    "topics": {
+      "arrays": "Arrays",
+      "search": "Search",
+      "stacks": "Stacks"
+    },
+    "unknownLanguage": "Unknown language"
   },
   "command_launcher": {
     "aliases_slot": "Also matches: {aliases}",
@@ -585,13 +701,13 @@
   "navigation": {
     "aiChat": "AI Chat",
     "assignments": "Assignments",
+    "coding": "Coding Lab",
     "courses": "Courses",
     "home": "Home",
     "marks": "Marks",
     "practice": "Practice",
     "reports": "Reports",
-    "settings": "Learn settings",
-    "coding": "Coding Lab"
+    "settings": "Learn settings"
   },
   "notifications": {
     "accept": "Accept",
@@ -929,76 +1045,5 @@
       "private": "Private",
       "workspace": "Workspace"
     }
-  },
-  "account_switcher": {
-    "accounts": "Accounts",
-    "current_account": "Current Account",
-    "manage_accounts": "Manage Accounts",
-    "please_wait": "Please wait...",
-    "remove_account": "Remove account",
-    "switch_account": "Switch Account",
-    "unknown_user": "Unknown User"
-  },
-  "coding": {
-    "eyebrow": "Algorithms and data structures",
-    "title": "Coding Lab",
-    "description": "Solve focused coding challenges and get feedback from a platform Judge machine.",
-    "challengeList": "Coding challenges",
-    "sample": "Example",
-    "input": "Input",
-    "output": "Output",
-    "editor": "Your solution",
-    "submit": "Submit solution",
-    "submitting": "Submitting…",
-    "judgeUnavailable": "Judge is not ready yet. Ask a platform administrator to enable a verified machine.",
-    "judging": "Running your solution in the sandbox…",
-    "judgeFailed": "Judge could not complete this submission. Try again later.",
-    "passed": "{passed} of {total} cases passed",
-    "case": "Case {number}",
-    "topics": {
-      "arrays": "Arrays",
-      "search": "Search",
-      "stacks": "Stacks"
-    },
-    "difficulty": {
-      "easy": "Easy",
-      "medium": "Medium"
-    },
-    "result": {
-      "passed": "Passed",
-      "wrong_answer": "Wrong answer",
-      "runtime_error": "Runtime error",
-      "time_limit": "Time limit",
-      "output_limit": "Output limit",
-      "compile_error": "Compilation error"
-    },
-    "challenges": {
-      "two-sum": {
-        "title": "Two Sum",
-        "prompt": "Given a list of integers and a target, print the two zero-based indices whose values add up to the target, in ascending order. Exactly one answer exists.\n\nInput: n, then n space-separated integers, then the target."
-      },
-      "binary-search": {
-        "title": "Binary Search",
-        "prompt": "Given a sorted list of distinct integers and a target, print its zero-based index or -1 if it is absent.\n\nInput: n, then n space-separated integers, then the target."
-      },
-      "balanced-brackets": {
-        "title": "Balanced Brackets",
-        "prompt": "Given a string containing only (), [], and {}, print YES if every opening bracket is closed in the correct order. Otherwise print NO."
-      }
-    },
-    "language": "Language",
-    "languages": {
-      "python": "Python",
-      "javascript": "JavaScript",
-      "typescript": "TypeScript",
-      "c": "C",
-      "cpp": "C++",
-      "java": "Java",
-      "rust": "Rust",
-      "go": "Go",
-      "ruby": "Ruby",
-      "php": "PHP"
-    },
-    "parentReadOnly": "Parents can review challenges, but only learners can submit solutions."
   }
 }
