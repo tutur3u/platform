@@ -299,7 +299,7 @@ async function listSecretsForVersion(db: AdminClient, versionId: string) {
   return (data ?? []) as MobileDeploymentSecretValueRow[];
 }
 
-async function listFilesForVersion(db: AdminClient, versionId: string) {
+export async function listFilesForVersion(db: AdminClient, versionId: string) {
   const { data, error } = await privateDb(db)
     .from('mobile_deployment_file_artifacts')
     .select('*')

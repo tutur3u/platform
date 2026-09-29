@@ -8674,6 +8674,9 @@
       "review_notes": "Đăng nhập bằng Email và mật khẩu trên màn hình đầu tiên. Mở không gian làm việc cá nhân, sau đó dùng tab Ứng dụng để khám phá Công việc, Lịch, Tài chính, Ghi chú và các mô-đun khác. Trang chủ và Hồ sơ cũng có thể truy cập. Tài khoản này dùng hệ thống production.",
       "notes_label": "Ghi chú App Review (không có thông tin đăng nhập)",
       "copy_notes": "Sao chép ghi chú đánh giá",
+      "publish_apple": "Gửi lên Apple sau khi kiểm tra QA",
+      "apple_published": "Đã cập nhật quyền truy cập đánh giá trên Apple",
+      "apple_publish_error": "Không thể cập nhật quyền truy cập đánh giá trên Apple. Kiểm tra quyền kho bảo mật rồi thử lại.",
       "placement_help": "Trong App Store Connect → TestFlight → Additional → Test Information, nhập email và mật khẩu vào các trường tài khoản demo riêng. Đặt hướng dẫn không có mật khẩu bên dưới vào Ghi chú đánh giá."
     }
   },

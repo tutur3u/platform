@@ -57,6 +57,7 @@ test('only the Apple beta review submission quota defers external review', async
             demoAccountRequired: true,
             demoAccountName: 'review@tuturuuu.com',
             demoAccountPassword: 'configured',
+            notes: 'Sign in with Email and password',
           },
         },
       };

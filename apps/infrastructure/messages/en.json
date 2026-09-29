@@ -8674,6 +8674,9 @@
       "review_notes": "Sign in with Email and password on the first screen. Open the personal workspace, then use the Apps tab to explore Tasks, Calendar, Finance, Notes, and other modules. Home and Profile are also available. This account uses the live production backend.",
       "notes_label": "App Review notes (without credentials)",
       "copy_notes": "Copy review notes",
+      "publish_apple": "Publish to Apple after QA",
+      "apple_published": "Apple review access updated",
+      "apple_publish_error": "Apple review access could not be updated. Check vault access and retry.",
       "placement_help": "In App Store Connect → TestFlight → Additional → Test Information, put the email and password in the dedicated demo account fields. Put the credential-free steps below in Review Notes."
     }
   },

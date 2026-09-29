@@ -289,12 +289,23 @@ assuming the retry workflow will resubmit it. Confirm the newly submitted
 build reaches `WAITING_FOR_REVIEW`, `IN_REVIEW`, or `APPROVED` in App Store
 Connect; an upload or metadata save alone does not reopen a rejected review.
 The store workflow now checks Apple's private `demoAccountRequired`,
-`demoAccountName`, and `demoAccountPassword` fields before a new external beta
-submission. It reports only whether access is configured, never credential
-values. A missing field stops external submission while the uploaded build can
-still be used for internal testing; fill the fields and dispatch the production
-**Retry latest eligible TestFlight review** workflow when a newer build is
-ready.
+`demoAccountName`, `demoAccountPassword`, and credential-free `notes` fields
+before a new external beta submission. It reports only whether access is
+configured, never credential values. The production push uploads a new IPA
+before this check. A missing field defers external review, logs that it was
+not submitted, and leaves the store workflow green once internal distribution
+is verified. After Infrastructure deploys, create and sign in to the reviewer
+account. In Infrastructure → Internal Accounts → Account Security → Review and
+QA accounts, use **Publish to Apple after QA** while the one-time credential
+dialog is open. This action requires both internal account and mobile vault
+permissions, and writes Apple's dedicated demo fields and credential-free notes
+using the active vault API key. If the dialog was closed, rotate the reviewer
+password, verify sign-in again, and publish from the new one-time dialog. Then
+dispatch **Mobile Store Deployment** on the `production` branch (`gh workflow
+run mobile-deploy-stores.yaml --ref production`). Manual dispatch runs its
+**Retry latest eligible TestFlight review** job against the newest processed
+build; it does not upload another IPA. Confirm the new build reaches
+`WAITING_FOR_REVIEW`, `IN_REVIEW`, or `APPROVED` in App Store Connect.
 
 The same panel can send an **External invite** to an address outside the
 organization. The recipient must accept the emailed invitation and verify the

@@ -62,3 +62,21 @@ export async function updateReviewAccount(
     method: 'PATCH',
   });
 }
+
+export async function publishReviewerToApple(
+  input: { reviewerUserId: string; email: string; password: string },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ configured: true }>(
+    '/api/v1/infrastructure/review-accounts/apple-review',
+    {
+      body: JSON.stringify(input),
+      cache: 'no-store',
+      headers: {
+        ...mutationHeaders,
+        'X-Tuturuuu-Mobile-Deployment-Action': '1',
+      },
+      method: 'POST',
+    }
+  );
+}

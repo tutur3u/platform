@@ -246,11 +246,13 @@ export async function submitExternalBetaReview(
     if (
       reviewAttributes?.demoAccountRequired !== true ||
       !reviewAttributes.demoAccountName?.trim() ||
-      !reviewAttributes.demoAccountPassword?.trim()
+      !reviewAttributes.demoAccountPassword?.trim() ||
+      !reviewAttributes.notes?.trim()
     ) {
-      throw new Error(
-        'TestFlight reviewer access is missing. Set the private demo account fields in App Store Connect Test Information before external submission.'
+      console.log(
+        'External TestFlight review NOT submitted: reviewer access metadata is missing. Set the private demo account fields and credential-free review notes in App Store Connect Test Information; the review queue will retry.'
       );
+      return 'deferred';
     }
     const localizations = await listAppleResources(
       apple,

@@ -5,6 +5,7 @@ import { Check, Copy, Loader2, Plus, RefreshCw } from '@tuturuuu/icons';
 import {
   createReviewAccount,
   listReviewAccounts,
+  publishReviewerToApple,
   type ReviewAccount,
   updateReviewAccount,
 } from '@tuturuuu/internal-api/infrastructure';
@@ -37,6 +38,7 @@ export function ReviewAccountsPanel() {
   const [displayName, setDisplayName] = useState('');
   const [kind, setKind] = useState<'review' | 'external'>('review');
   const [handoff, setHandoff] = useState<{
+    id: string;
     email: string;
     password: string | null;
   } | null>(null);
@@ -46,6 +48,7 @@ export function ReviewAccountsPanel() {
   } | null>(null);
   const [confirmationEmail, setConfirmationEmail] = useState('');
   const [rotatedPassword, setRotatedPassword] = useState<string | null>(null);
+  const [applePublished, setApplePublished] = useState(false);
 
   const accounts = useQuery({
     queryFn: () => listReviewAccounts(),
@@ -60,7 +63,11 @@ export function ReviewAccountsPanel() {
         kind,
       }),
     onSuccess: async (result) => {
-      setHandoff({ email: result.email, password: result.password });
+      setHandoff({
+        id: result.id,
+        email: result.email,
+        password: result.password,
+      });
       await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     },
     onError: () => toast.error(t('create_error')),
@@ -79,6 +86,18 @@ export function ReviewAccountsPanel() {
     },
     onError: () => toast.error(t('update_error')),
   });
+  const publish = useMutation({
+    mutationFn: (input: {
+      reviewerUserId: string;
+      email: string;
+      password: string;
+    }) => publishReviewerToApple(input),
+    onSuccess: () => {
+      setApplePublished(true);
+      toast.success(t('apple_published'));
+    },
+    onError: () => toast.error(t('apple_publish_error')),
+  });
 
   function closeCreate() {
     setCreateOpen(false);
@@ -86,14 +105,18 @@ export function ReviewAccountsPanel() {
     setDisplayName('');
     setKind('review');
     setHandoff(null);
+    setApplePublished(false);
     create.reset();
+    publish.reset();
   }
 
   function closeAction() {
     setSelected(null);
     setConfirmationEmail('');
     setRotatedPassword(null);
+    setApplePublished(false);
     update.reset();
+    publish.reset();
   }
 
   const handoffText = handoff?.password
@@ -229,6 +252,21 @@ export function ReviewAccountsPanel() {
                     <Copy className="size-4" />
                     {t('copy_notes')}
                   </Button>
+                  <Button
+                    disabled={publish.isPending || applePublished}
+                    onClick={() => {
+                      if (handoff.password)
+                        publish.mutate({
+                          reviewerUserId: handoff.id,
+                          email: handoff.email,
+                          password: handoff.password,
+                        });
+                    }}
+                    type="button"
+                    variant="outline"
+                  >
+                    {applePublished ? t('apple_published') : t('publish_apple')}
+                  </Button>
                 </>
               ) : null}
             </div>
@@ -345,6 +383,21 @@ export function ReviewAccountsPanel() {
               >
                 <Copy className="size-4" />
                 {t('copy_notes')}
+              </Button>
+              <Button
+                disabled={publish.isPending || applePublished}
+                onClick={() => {
+                  if (selected)
+                    publish.mutate({
+                      reviewerUserId: selected.account.id,
+                      email: selected.account.email,
+                      password: rotatedPassword,
+                    });
+                }}
+                type="button"
+                variant="outline"
+              >
+                {applePublished ? t('apple_published') : t('publish_apple')}
               </Button>
             </div>
           ) : (

@@ -94,6 +94,7 @@ test('external beta review creates test notes, enables notification, and submits
             demoAccountRequired: true,
             demoAccountName: 'review@tuturuuu.com',
             demoAccountPassword: 'configured',
+            notes: 'Sign in with Email and password',
           },
         },
       };
@@ -143,8 +144,9 @@ test('external beta review creates test notes, enables notification, and submits
   );
 });
 
-test('external beta review refuses submission without private reviewer credentials', async () => {
+test('external beta review defers submission without private reviewer credentials', async () => {
   const calls = [];
+  let accountConfigured = false;
   const apple = async (path, options = {}) => {
     calls.push({ path, options });
     if (path.startsWith('/v1/betaAppReviewSubmissions?')) return { data: [] };
@@ -160,18 +162,24 @@ test('external beta review refuses submission without private reviewer credentia
       return {
         data: {
           attributes: {
-            demoAccountRequired: false,
-            demoAccountName: '',
-            demoAccountPassword: '',
+            demoAccountRequired: accountConfigured,
+            demoAccountName: accountConfigured ? 'review@tuturuuu.com' : '',
+            demoAccountPassword: accountConfigured ? 'configured' : '',
+            notes: '',
           },
         },
       };
     }
     throw new Error(`Unexpected App Store Connect request: ${path}`);
   };
-  await assert.rejects(
-    submitExternalBetaReview(apple, 'app', 'build', 'Test this release'),
-    /reviewer access is missing/
+  assert.equal(
+    await submitExternalBetaReview(apple, 'app', 'build', 'Test this release'),
+    'deferred'
+  );
+  accountConfigured = true;
+  assert.equal(
+    await submitExternalBetaReview(apple, 'app', 'build', 'Test this release'),
+    'deferred'
   );
   assert.equal(
     calls.some(({ options }) => options.method === 'POST'),
@@ -241,6 +249,7 @@ test('external beta review proceeds while an older app version is waiting', asyn
             demoAccountRequired: true,
             demoAccountName: 'review@tuturuuu.com',
             demoAccountPassword: 'configured',
+            notes: 'Sign in with Email and password',
           },
         },
       };
@@ -404,6 +413,7 @@ test('review retry submits the newest ready build after the prior review ends', 
             demoAccountRequired: true,
             demoAccountName: 'review@tuturuuu.com',
             demoAccountPassword: 'configured',
+            notes: 'Sign in with Email and password',
           },
         },
       };

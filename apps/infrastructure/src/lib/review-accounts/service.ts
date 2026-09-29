@@ -47,6 +47,26 @@ function accountKind(
   return kind === 'review' || kind === 'external' ? kind : null;
 }
 
+export async function assertActiveReviewerAccount(
+  sbAdmin: AdminClient,
+  userId: string,
+  email: string
+) {
+  const { data, error } = await sbAdmin.auth.admin.getUserById(userId);
+  const user = data.user;
+  if (
+    error ||
+    !user ||
+    user.email?.toLowerCase() !== email.trim().toLowerCase() ||
+    accountKind(user.app_metadata) !== 'review' ||
+    !user.email_confirmed_at ||
+    (user.banned_until && Date.parse(user.banned_until) > Date.now())
+  ) {
+    throw new ReviewAccountError('Active reviewer account not found', 404);
+  }
+  return user;
+}
+
 export async function listReviewAccounts(sbAdmin: AdminClient) {
   const accounts: Array<{
     id: string;
