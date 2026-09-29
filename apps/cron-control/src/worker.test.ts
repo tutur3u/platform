@@ -35,6 +35,7 @@ it('invokes the existing processor only when a pending batch exists', async () =
     path: string;
     method: string | undefined;
     authorization: string | null;
+    redirect: RequestRedirect | undefined;
   }[] = [];
   globalThis.fetch = vi.fn(
     async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -43,6 +44,7 @@ it('invokes the existing processor only when a pending batch exists', async () =
         path: url.pathname,
         method: init?.method,
         authorization: new Headers(init?.headers).get('authorization'),
+        redirect: init?.redirect,
       });
       return Response.json(
         url.pathname.endsWith('/notification_batches')
@@ -62,7 +64,29 @@ it('invokes the existing processor only when a pending batch exists', async () =
     path: '/api/notifications/send-immediate',
     method: 'POST',
     authorization: 'Bearer test-delivery-token',
+    redirect: 'manual',
   });
+});
+
+it('rejects a delivery redirect without forwarding the delivery token', async () => {
+  const paths: string[] = [];
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+    const path = new URL(String(input)).pathname;
+    paths.push(path);
+    if (path.endsWith('/notification_batches'))
+      return Response.json([{ id: 'batch' }]);
+    if (path === '/api/notifications/send-immediate')
+      return new Response(null, {
+        status: 302,
+        headers: { Location: 'https://other.example.test/' },
+      });
+    return Response.json(null);
+  }) as typeof fetch;
+
+  await expect(processImmediateNotifications(env)).rejects.toThrow(
+    'Immediate batch delivery failed: 302'
+  );
+  expect(paths).toHaveLength(3);
 });
 
 it('does not invoke delivery if stale-batch recovery fails', async () => {
