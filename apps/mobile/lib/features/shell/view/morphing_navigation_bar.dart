@@ -34,6 +34,8 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
   Offset? _dragPosition;
   bool _pressed = false;
   Key? _previewTarget;
+  Key? _settlingTarget;
+  Timer? _settlingTimer;
 
   void _updateDrag(Offset position, double width, double scale) {
     final target = _dragTarget(position, width, scale);
@@ -51,24 +53,51 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
     });
   }
 
+  void _finishDrag(Key? target) {
+    _settlingTimer?.cancel();
+    setState(() {
+      _dragPosition = null;
+      _previewTarget = null;
+      _pressed = false;
+      // Keep the pill at its release position until the parent selects the tab.
+      _settlingTarget = target == widget.selectedKey ? null : target;
+    });
+    if (target == null) return;
+    _settlingTimer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted && _settlingTarget == target) {
+        setState(() => _settlingTarget = null);
+      }
+    });
+    unawaited(AppHaptics.drop());
+    widget.onSelected(target);
+  }
+
   Key? _dragTarget(Offset position, double width, double scale) {
-    if (position.dy < -24 ||
-        position.dy > 76 ||
-        position.dx < 0 ||
-        position.dx > width) {
-      return null;
-    }
+    if (position.dy < -24 || position.dy > 76) return null;
     final x = Directionality.of(context) == TextDirection.rtl
         ? width - position.dx
         : position.dx;
+    final pillCenter = x.clamp(
+      2 + _slot * scale / 2,
+      (width - 2 - _slot * scale / 2).clamp(
+        2 + _slot * scale / 2,
+        double.infinity,
+      ),
+    );
+    Key? nearest;
+    var distance = double.infinity;
     for (final entry in _frames().entries) {
       if (!_to.containsKey(entry.key) || entry.value.item.enabled == false) {
         continue;
       }
-      final start = 2 + entry.value.x * scale;
-      if (x >= start && x < start + _slot * scale) return entry.key;
+      final center = 2 + (entry.value.x + _slot / 2) * scale;
+      final candidateDistance = (center - pillCenter).abs();
+      if (candidateDistance < distance) {
+        distance = candidateDistance;
+        nearest = entry.key;
+      }
     }
-    return null;
+    return nearest;
   }
 
   double get _progress => Curves.easeInOutCubic.transform(_controller.value);
@@ -108,6 +137,8 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
         oldWidget.selectedKey != widget.selectedKey) {
       _dragPosition = null;
       _previewTarget = null;
+      _settlingTimer?.cancel();
+      _settlingTarget = null;
     }
     if (listEquals(oldKeys, newKeys)) {
       // Update callbacks, icons and enabled state without restarting motion.
@@ -135,6 +166,7 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
 
   @override
   void dispose() {
+    _settlingTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -151,7 +183,8 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
             final scale = _width > 4
                 ? ((width - 4) / (_width - 4)).clamp(0.0, 1.0)
                 : 1.0;
-            final selectedFrame = _frames()[widget.selectedKey];
+            final selectedFrame =
+                _frames()[_settlingTarget ?? widget.selectedKey];
             final selectedX = selectedFrame == null
                 ? null
                 : 2 + selectedFrame.x * scale;
@@ -162,23 +195,25 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                     (width - _slot * scale - 2).clamp(2.0, double.infinity),
                   );
             return AnimatedScale(
-              scale: _pressed ? 1.045 : 1,
+              scale: _pressed ? 1.055 : 1,
               duration: MediaQuery.disableAnimationsOf(context)
                   ? Duration.zero
-                  : const Duration(milliseconds: 95),
+                  : Duration(milliseconds: _pressed ? 105 : 240),
               curve: Curves.easeOutCubic,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 95),
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : Duration(milliseconds: _pressed ? 105 : 240),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(26),
                   boxShadow: _pressed
                       ? [
                           BoxShadow(
                             color: theme.colorScheme.primary.withValues(
-                              alpha: 0.32,
+                              alpha: 0.5,
                             ),
-                            blurRadius: 30,
-                            spreadRadius: 4,
+                            blurRadius: 34,
+                            spreadRadius: 5,
                           ),
                         ]
                       : const [],
@@ -216,11 +251,7 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                         final target = position == null
                             ? null
                             : _dragTarget(position, width, scale);
-                        _clearDrag();
-                        if (target != null) {
-                          unawaited(AppHaptics.drop());
-                          widget.onSelected(target);
-                        }
+                        _finishDrag(target);
                       },
                       onLongPressStart: (details) {
                         unawaited(AppHaptics.pickup());
@@ -236,11 +267,7 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                           width,
                           scale,
                         );
-                        _clearDrag();
-                        if (target != null) {
-                          unawaited(AppHaptics.drop());
-                          widget.onSelected(target);
-                        }
+                        _finishDrag(target);
                       },
                       child: Stack(
                         clipBehavior: Clip.none,
@@ -274,8 +301,8 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                               duration: MediaQuery.disableAnimationsOf(context)
                                   ? Duration.zero
                                   : _dragPosition != null
-                                  ? const Duration(milliseconds: 90)
-                                  : const Duration(milliseconds: 300),
+                                  ? const Duration(milliseconds: 65)
+                                  : const Duration(milliseconds: 390),
                               curve: Curves.easeOutCubic,
                               left: highlightX,
                               top: 2,
@@ -297,7 +324,8 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                                               ? 0.14
                                               : 0.22,
                                         ),
-                                    borderRadius: BorderRadius.circular(21),
+                                    // Outer 26px radius minus the 2px inset.
+                                    borderRadius: BorderRadius.circular(24),
                                   ),
                                 ),
                               ),
