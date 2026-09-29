@@ -8738,6 +8738,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineEmpty => 'No recent activity in this workspace';
 
   @override
+  String get profileTimelinePartial => 'Some activity is unavailable. Retry';
+
+  @override
   String profileTimelineTasks(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

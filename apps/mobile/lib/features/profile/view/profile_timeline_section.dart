@@ -26,6 +26,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
   String? _scope;
   int _request = 0;
   bool _failed = false;
+  bool _partial = false;
 
   @override
   void didChangeDependencies() {
@@ -43,6 +44,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     _scope = scope;
     _items = null;
     _failed = false;
+    _partial = false;
     _request++;
     if (userId != null && workspaceId != null) {
       unawaited(_load(workspaceId, userId));
@@ -67,14 +69,20 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
   Future<void> _load(String workspaceId, String userId) async {
     final request = ++_request;
     try {
-      final cached = await _repository.cached(workspaceId, userId);
+      List<ProfileTimelineItem>? cached;
+      try {
+        cached = await _repository.cached(workspaceId, userId);
+      } on Object {
+        // A stale or unreadable local snapshot must not block revalidation.
+      }
       if (mounted && request == _request && cached != null) {
         setState(() => _items = cached);
       }
       final fresh = await _repository.refresh(workspaceId, userId);
       if (mounted && request == _request) {
         setState(() {
-          _items = fresh;
+          _items = fresh.items;
+          _partial = fresh.partial;
           _failed = false;
         });
       }
@@ -140,10 +148,26 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
             icon: const Icon(Icons.refresh_rounded),
             label: Text(l10n.commonRetry),
           )
-        else if (items.isEmpty)
+        else if (items.isEmpty && !_partial)
           Text(l10n.profileTimelineEmpty)
         else
           ..._buildDays(context, items),
+        if (_partial)
+          TextButton.icon(
+            onPressed: () {
+              final userId = context.read<AuthCubit>().state.user?.id;
+              final workspaceId = context
+                  .read<WorkspaceCubit>()
+                  .state
+                  .currentWorkspace
+                  ?.id;
+              if (userId != null && workspaceId != null) {
+                unawaited(_load(workspaceId, userId));
+              }
+            },
+            icon: const Icon(Icons.refresh_rounded),
+            label: Text(l10n.profileTimelinePartial),
+          ),
       ],
     );
   }

@@ -16711,6 +16711,12 @@ abstract class AppLocalizations {
   /// **'No recent activity in this workspace'**
   String get profileTimelineEmpty;
 
+  /// No description provided for @profileTimelinePartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Some activity is unavailable. Retry'**
+  String get profileTimelinePartial;
+
   /// No description provided for @profileTimelineTasks.
   ///
   /// In en, this message translates to:

@@ -8696,6 +8696,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineEmpty => 'Không có hoạt động gần đây trong không gian này';
 
   @override
+  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị. Thử lại';
+
+  @override
   String profileTimelineTasks(int count) {
     return 'Đã tạo $count công việc';
   }
