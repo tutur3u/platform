@@ -8180,6 +8180,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailActionFailed => 'Không thể hoàn tất thao tác. Thư nháp vẫn được giữ lại, vui lòng thử lại.';
 
   @override
+  String get mailOpenFailed => 'Không thể mở thư này. Vui lòng thử lại.';
+
+  @override
   String get mailInvalidRecipient => 'Vui lòng nhập địa chỉ email người nhận hợp lệ.';
 
   @override

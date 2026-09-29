@@ -3332,6 +3332,7 @@
     "mailAttach": "Attach file",
     "mailRemoveAttachment": "Remove attachment",
     "mailActionFailed": "Could not complete the action. Your draft is retained; please try again.",
+    "mailOpenFailed": "Could not open this message. Please try again.",
     "mailInvalidRecipient": "Enter valid recipient email addresses.",
     "mailMarkUnread": "Mark unread",
     "mailRestore": "Move to inbox",

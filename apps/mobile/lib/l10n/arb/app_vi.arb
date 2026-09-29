@@ -3336,6 +3336,7 @@
     "mailAttach": "Đính kèm tệp",
     "mailRemoveAttachment": "Xóa tệp đính kèm",
     "mailActionFailed": "Không thể hoàn tất thao tác. Thư nháp vẫn được giữ lại, vui lòng thử lại.",
+    "mailOpenFailed": "Không thể mở thư này. Vui lòng thử lại.",
     "mailInvalidRecipient": "Vui lòng nhập địa chỉ email người nhận hợp lệ.",
     "mailMarkUnread": "Đánh dấu chưa đọc",
     "mailRestore": "Chuyển về hộp thư đến",

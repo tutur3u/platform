@@ -34,6 +34,7 @@ part 'mail_workspace_controls.dart';
 part 'mail_shell_actions.dart';
 part 'mail_workspace_cache.dart';
 part 'mail_workspace_swipes.dart';
+part 'mail_workspace_open_retry.dart';
 
 class MailPage extends StatelessWidget {
   const MailPage({super.key, this.destination});
@@ -224,6 +225,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         _accessVerified &&
         !_mutating &&
         !_loading &&
+        _openingId == null &&
         !_childRouteOpen) {
       unawaited(_load());
     }
@@ -573,7 +575,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     _dismissSwipeFeedback();
     setState(() => _openingId = item['id'] as String);
     final box = _mailboxId!;
-    final generation = _generation;
+    final openedFolder = _folder;
     try {
       final cached = _threads && _accessVerified
           ? await _repository.cachedThread(
@@ -584,13 +586,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           : null;
       final detail =
           cached ??
-          await _repository.detail(
-            widget.workspaceId,
-            box,
-            item['id'] as String,
-            thread: _threads,
-          );
-      if (!mounted || generation != _generation) return;
+          await _readOpenDetailWithRetry(box, item['id'] as String, _threads);
+      if (!mounted || box != _mailboxId || openedFolder != _folder) return;
       if (_folder == 'drafts') {
         await _compose(detail);
         return;
@@ -617,7 +614,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
             detail: detail,
             refreshOnOpen: cached != null,
             onReadFailed: () {
-              if (mounted && generation == _generation && box == _mailboxId) {
+              if (mounted && box == _mailboxId && openedFolder == _folder) {
                 setState(() => _items = beforeRead);
               }
             },
@@ -657,13 +654,11 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       );
       if (mounted) setState(() => _openingId = null);
       await navigation;
-      if (mounted && generation == _generation) unawaited(_load());
-    } on Object {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.commonSomethingWentWrong)),
-        );
+      if (mounted && box == _mailboxId && openedFolder == _folder) {
+        unawaited(_load());
       }
+    } on Object {
+      if (mounted) _showOpenFailure(item);
     } finally {
       if (mounted) setState(() => _openingId = null);
     }
