@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(42);
+select plan(44);
 
 select ok(
   to_regclass('public.user_group_metric_categories') is null,
@@ -515,6 +515,35 @@ select ok(
       and activity.resource_id = '10000000-0000-0000-0000-000000000202'
   ),
   'user group activity feed includes private metric category audit rows'
+);
+
+select ok(
+  exists (
+    select 1
+    from private.user_group_activity_feed(
+      '00000000-0000-0000-0000-000000000000',
+      now() - interval '1 hour',
+      now() + interval '1 hour',
+      '10000000-0000-0000-0000-000000000201'
+    ) activity
+    where activity.table_name = 'workspace_user_groups'
+      and activity.group_id = '10000000-0000-0000-0000-000000000201'
+  ),
+  'scoped activity feed retains this workspace group creation'
+);
+
+select ok(
+  not exists (
+    select 1
+    from private.user_group_activity_feed(
+      '10000000-0000-0000-0000-000000000209',
+      now() - interval '1 hour',
+      now() + interval '1 hour',
+      '10000000-0000-0000-0000-000000000201'
+    ) activity
+    where activity.group_id = '10000000-0000-0000-0000-000000000201'
+  ),
+  'scoped activity feed does not cross workspace boundaries'
 );
 
 set local role service_role;
