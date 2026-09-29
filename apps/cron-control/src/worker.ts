@@ -50,6 +50,7 @@ export async function processImmediateNotifications(env: Env) {
       headers: {
         Authorization: `Bearer ${env.CRON_CONTROL_DELIVERY_TOKEN}`,
         'Content-Type': 'application/json',
+        'User-Agent': 'Tuturuuu-Cron-Control/1.0',
       },
       body: '{}',
       redirect: 'manual',

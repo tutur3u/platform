@@ -36,6 +36,7 @@ it('invokes the existing processor only when a pending batch exists', async () =
     method: string | undefined;
     authorization: string | null;
     contentType: string | null;
+    userAgent: string | null;
     body: BodyInit | null | undefined;
     redirect: RequestRedirect | undefined;
   }[] = [];
@@ -47,6 +48,7 @@ it('invokes the existing processor only when a pending batch exists', async () =
         method: init?.method,
         authorization: new Headers(init?.headers).get('authorization'),
         contentType: new Headers(init?.headers).get('content-type'),
+        userAgent: new Headers(init?.headers).get('user-agent'),
         body: init?.body,
         redirect: init?.redirect,
       });
@@ -69,6 +71,7 @@ it('invokes the existing processor only when a pending batch exists', async () =
     method: 'POST',
     authorization: 'Bearer test-delivery-token',
     contentType: 'application/json',
+    userAgent: 'Tuturuuu-Cron-Control/1.0',
     body: '{}',
     redirect: 'manual',
   });
