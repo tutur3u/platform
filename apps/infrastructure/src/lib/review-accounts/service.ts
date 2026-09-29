@@ -1,7 +1,11 @@
 import { randomInt } from 'node:crypto';
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import {
+  isExactTuturuuuDotComEmail,
+  isTuturuuuReviewEmail,
+  isValidTuturuuuEmail,
+} from '@tuturuuu/utils/email/client';
 
 type AdminClient = SupabaseClient<Database>;
 type ReviewAccountKind = 'review' | 'external';
@@ -16,6 +20,9 @@ export class ReviewAccountError extends Error {
 }
 
 const MARKER = 'infrastructure_review_account';
+// Staff email domains unlock legacy internal surfaces. Reviewers must use a
+// separately routed organization domain even though they have ordinary roles.
+const REVIEWER_EMAIL_DOMAIN = 'tutur3u.com';
 const ALPHABETS = [
   'abcdefghijkmnopqrstuvwxyz',
   'ABCDEFGHJKLMNPQRSTUVWXYZ',
@@ -47,6 +54,15 @@ function accountKind(
   return kind === 'review' || kind === 'external' ? kind : null;
 }
 
+export function isSafeReviewerEmail(email: string) {
+  const normalized = email.trim().toLowerCase();
+  return (
+    isTuturuuuReviewEmail(normalized) &&
+    !isValidTuturuuuEmail(normalized) &&
+    !isExactTuturuuuDotComEmail(normalized)
+  );
+}
+
 export async function assertActiveReviewerAccount(
   sbAdmin: AdminClient,
   userId: string,
@@ -59,6 +75,7 @@ export async function assertActiveReviewerAccount(
     !user ||
     user.email?.toLowerCase() !== email.trim().toLowerCase() ||
     accountKind(user.app_metadata) !== 'review' ||
+    !isSafeReviewerEmail(user.email ?? '') ||
     !user.email_confirmed_at ||
     (user.banned_until && Date.parse(user.banned_until) > Date.now())
   ) {
@@ -120,13 +137,13 @@ export async function createReviewAccount({
   sbAdmin: AdminClient;
 }) {
   const normalizedEmail = email.trim().toLowerCase();
-  if (kind === 'review' && !isExactTuturuuuDotComEmail(normalizedEmail)) {
+  if (kind === 'review' && !isSafeReviewerEmail(normalizedEmail)) {
     throw new ReviewAccountError(
-      'Reviewer accounts require an organization-controlled @tuturuuu.com email',
+      `Reviewer accounts require a routed @${REVIEWER_EMAIL_DOMAIN} email`,
       400
     );
   }
-  if (kind === 'external' && isExactTuturuuuDotComEmail(normalizedEmail)) {
+  if (kind === 'external' && isValidTuturuuuEmail(normalizedEmail)) {
     throw new ReviewAccountError(
       'Use reviewer account creation for organization-controlled email',
       400
@@ -241,6 +258,16 @@ export async function updateReviewAccount({
     throw new ReviewAccountError('Confirmation email does not match', 400);
   }
   const kind = accountKind(user.app_metadata);
+  if (
+    kind === 'review' &&
+    action !== 'disable' &&
+    !isSafeReviewerEmail(user.email)
+  ) {
+    throw new ReviewAccountError(
+      'Unsafe staff-domain reviewer account must remain disabled',
+      403
+    );
+  }
   if (action === 'rotate_password' && kind !== 'review') {
     throw new ReviewAccountError(
       'External invitees manage their own password',

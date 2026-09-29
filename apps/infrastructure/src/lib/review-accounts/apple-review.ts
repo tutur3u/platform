@@ -11,7 +11,7 @@ type AdminClient = SupabaseClient<Database>;
 const APPLE_ORIGIN = 'https://api.appstoreconnect.apple.com';
 const BUNDLE_ID = 'com.tuturuuu.app.mobile';
 const REVIEW_NOTES =
-  'Sign in with Email and password on the first screen. Open the personal workspace, then use the Apps tab to explore Tasks, Calendar, Finance, Notes, and other modules. Home and Profile are also available. This account uses the live production backend.';
+  "On the first screen, enter the demo email and tap Continue with email. On the code screen, tap Use password instead, then enter the demo password. Open the personal workspace and use Apps to explore Tasks, Calendar, Finance, Notes, and Mail. Home and Profile are also available. Mail is limited to this account's personal review workspace. This account uses the live production backend.";
 
 type AppleResource = {
   id: string;

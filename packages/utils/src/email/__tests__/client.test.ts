@@ -5,6 +5,7 @@ import {
   isEmail,
   isExactTuturuuuDotComEmail,
   isIncompleteEmail,
+  isTuturuuuReviewEmail,
   isValidTuturuuuEmail,
   suggestEmails,
 } from '../client';
@@ -87,6 +88,16 @@ describe('isExactTuturuuuDotComEmail', () => {
     expect(isExactTuturuuuDotComEmail('member@xwf.tuturuuu.com')).toBe(false);
     expect(isExactTuturuuuDotComEmail('member@sub.tuturuuu.com')).toBe(false);
     expect(isExactTuturuuuDotComEmail('member@example.com')).toBe(false);
+  });
+});
+
+describe('isTuturuuuReviewEmail', () => {
+  it('accepts only the routed non-staff review domain', () => {
+    expect(isTuturuuuReviewEmail('APP-REVIEW@TUTUR3U.COM')).toBe(true);
+    expect(isTuturuuuReviewEmail('review@tuturuuu.com')).toBe(false);
+    expect(isTuturuuuReviewEmail('review@xwf.tuturuuu.com')).toBe(false);
+    expect(isTuturuuuReviewEmail('review@sub.tutur3u.com')).toBe(false);
+    expect(isTuturuuuReviewEmail('review@tutur3u.com.evil.test')).toBe(false);
   });
 });
 

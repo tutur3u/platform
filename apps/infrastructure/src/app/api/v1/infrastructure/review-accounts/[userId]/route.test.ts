@@ -12,7 +12,7 @@ vi.mock('@/lib/review-accounts/service', () => ({
 }));
 
 function request(
-  email = 'review@tuturuuu.com',
+  email = 'review@tutur3u.com',
   origin = 'https://infrastructure.tuturuuu.com'
 ) {
   return new Request(
@@ -43,7 +43,7 @@ describe('review account action API', () => {
       sbAdmin: {},
     });
     mocks.update.mockResolvedValue({
-      email: 'review@tuturuuu.com',
+      email: 'review@tutur3u.com',
       password: 'new-secret',
     });
   });
@@ -71,7 +71,7 @@ describe('review account action API', () => {
       expect.objectContaining({
         userId: 'review-1',
         actorUserId: 'operator',
-        confirmationEmail: 'review@tuturuuu.com',
+        confirmationEmail: 'review@tutur3u.com',
       })
     );
   });

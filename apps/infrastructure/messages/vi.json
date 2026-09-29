@@ -8621,6 +8621,7 @@
     "status": {
       "active": "Đang hoạt động",
       "disabled": "Đã vô hiệu hóa",
+      "legacy_disabled": "Đã vô hiệu hóa · Thay bằng tài khoản đánh giá không thuộc miền nhân viên",
       "unconfirmed": "Email chưa xác nhận",
       "you": "Bạn"
     },
@@ -8653,7 +8654,7 @@
       "created_title": "Tài khoản đã sẵn sàng",
       "one_time": "Sao chép thông tin này ngay. Thông tin đăng nhập chỉ hiển thị một lần và không được lưu trong Infrastructure.",
       "create_description": "Chọn loại tài khoản và nhập danh tính. Tài khoản hiện có không bị ghi đè.",
-      "review_help": "Để Apple hoặc bên khác đánh giá ứng dụng, dùng địa chỉ @tuturuuu.com mới do tổ chức quản lý. Hệ thống tạo mật khẩu mạnh và xác nhận email để người đánh giá đăng nhập ngay.",
+      "review_help": "Dùng địa chỉ @tutur3u.com mới do tổ chức quản lý và có quy tắc chuyển tiếp email hoạt động. Miền không dành cho nhân viên này tránh các quyền nội bộ của @tuturuuu.com. Mật khẩu mạnh chỉ hiện một lần.",
       "external_help": "Người được mời bên ngoài nhận email và phải xác minh quyền sở hữu địa chỉ trước khi đăng nhập. Quản trị viên không thấy mật khẩu.",
       "name": "Tên hiển thị",
       "email": "Địa chỉ email",
@@ -8671,7 +8672,7 @@
       "confirm": "Xác nhận",
       "review_handoff": "Email: {email}\nMật khẩu: {password}",
       "external_handoff": "Đã gửi lời mời đến {email}. Người được mời phải mở liên kết email, hoàn tất thiết lập tài khoản rồi đăng nhập. Không dùng lời mời chưa được chấp nhận làm tài khoản App Review.",
-      "review_notes": "Đăng nhập bằng Email và mật khẩu trên màn hình đầu tiên. Mở không gian làm việc cá nhân, sau đó dùng tab Ứng dụng để khám phá Công việc, Lịch, Tài chính, Ghi chú và các mô-đun khác. Trang chủ và Hồ sơ cũng có thể truy cập. Tài khoản này dùng hệ thống production.",
+      "review_notes": "Ở màn hình đầu tiên, nhập email demo và chọn Tiếp tục bằng email. Trên màn hình mã, chọn Dùng mật khẩu thay thế rồi nhập mật khẩu demo. Mở không gian làm việc cá nhân và dùng Ứng dụng để khám phá Công việc, Lịch, Tài chính, Ghi chú và Thư. Trang chủ và Hồ sơ cũng có thể truy cập. Thư chỉ dùng trong không gian đánh giá cá nhân của tài khoản này. Tài khoản này dùng hệ thống production.",
       "notes_label": "Ghi chú App Review (không có thông tin đăng nhập)",
       "copy_notes": "Sao chép ghi chú đánh giá",
       "publish_apple": "Gửi lên Apple sau khi kiểm tra QA",

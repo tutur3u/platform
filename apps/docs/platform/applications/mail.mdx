@@ -12,7 +12,16 @@ must match its linked `private.mail_domains` row.
 
 ## Flutter Mail
 
-The mobile Apps hub exposes Mail to exact `@tuturuuu.com` accounts. Its API client
+The mobile Apps hub exposes Mail to exact `@tuturuuu.com` accounts and tagged
+reviewer accounts on the routed `@tutur3u.com` domain. Discovery from mobile
+session metadata is only a hint: the Mail API checks the live administrator
+reviewer tag, active account, workspace membership, and personal workspace on
+every request. Reviewers cannot access shared or staff mailboxes. The review
+domain has an active Mail domain row for personal mailbox bootstrap; the exact
+reviewer address is forwarded to the verified QA inbox for login codes. The
+Mail UI defaults to the reviewer's own personal workspace.
+
+Its API client
 routes workspace Mail requests directly to `mail.tuturuuu.com` (port 7820 in
 development), with an optional `MAIL_API_BASE_URL` build override. Bearer API
 requests skip browser-cookie refresh in the Mail proxy but still pass the API

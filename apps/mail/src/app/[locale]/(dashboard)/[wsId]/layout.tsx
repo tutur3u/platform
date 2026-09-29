@@ -24,6 +24,7 @@ import { DEFAULT_MAIL_FOLDER, getMailFolderHref } from './mail-folders';
 import { MailWorkspace } from './mail-workspace';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
+import { isManagedMailReviewer } from '@/lib/mail/reviewer-access';
 
 interface LayoutProps {
   children: ReactNode;
@@ -40,9 +41,14 @@ export default async function Layout({ children, params }: LayoutProps) {
   const user = await getSatelliteAppSessionUser('mail');
 
   if (!user?.id) redirect('/login');
-  if (!isExactTuturuuuDotComEmail(user.email)) redirect('/not-available');
-
   const workspace = await getWorkspace(id, { useAdmin: true, user });
+
+  if (
+    !isExactTuturuuuDotComEmail(user.email) &&
+    !(workspace?.personal && (await isManagedMailReviewer(user)))
+  ) {
+    redirect('/not-available');
+  }
 
   if (!workspace?.joined) {
     const invitation = await getPendingWorkspaceInvitation(id, requestHeaders);
