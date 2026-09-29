@@ -31,8 +31,7 @@ type Action = 'rotate_password' | 'disable' | 'enable';
 
 function isLegacyReviewer(account: ReviewAccount) {
   return (
-    account.kind === 'review' &&
-    !/^[^\s@]+@tutur3u\.com$/i.test(account.email)
+    account.kind === 'review' && !/^[^\s@]+@tutur3u\.com$/i.test(account.email)
   );
 }
 

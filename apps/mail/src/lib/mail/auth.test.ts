@@ -52,7 +52,10 @@ describe('Mail route reviewer boundary', () => {
     const result = await resolveMailRouteContext(request, 'personal');
     expect(result.ok).toBe(true);
     expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'reviewer-1', wsId: 'personal-workspace' })
+      expect.objectContaining({
+        userId: 'reviewer-1',
+        wsId: 'personal-workspace',
+      })
     );
     mocks.getWorkspace.mockResolvedValue({ joined: true, personal: false });
     const shared = await resolveMailRouteContext(request, 'shared-workspace');

@@ -43,10 +43,24 @@ describe('Mail reviewer access', () => {
 
   it.each([
     { app_metadata: {}, email: identity.email },
-    { app_metadata: { infrastructure_review_account: { kind: 'external' } }, email: identity.email },
-    { app_metadata: { infrastructure_review_account: { kind: 'review' } }, email: 'other@tutur3u.com' },
-    { app_metadata: { infrastructure_review_account: { kind: 'review' } }, email: identity.email, banned_until: '2099-01-01T00:00:00Z' },
-    { app_metadata: { infrastructure_review_account: { kind: 'review' } }, email: identity.email, email_confirmed_at: null },
+    {
+      app_metadata: { infrastructure_review_account: { kind: 'external' } },
+      email: identity.email,
+    },
+    {
+      app_metadata: { infrastructure_review_account: { kind: 'review' } },
+      email: 'other@tutur3u.com',
+    },
+    {
+      app_metadata: { infrastructure_review_account: { kind: 'review' } },
+      email: identity.email,
+      banned_until: '2099-01-01T00:00:00Z',
+    },
+    {
+      app_metadata: { infrastructure_review_account: { kind: 'review' } },
+      email: identity.email,
+      email_confirmed_at: null,
+    },
   ])('rejects a stale or ineligible reviewer record %#', async (override) => {
     mocks.getUserById.mockResolvedValue({
       data: {
