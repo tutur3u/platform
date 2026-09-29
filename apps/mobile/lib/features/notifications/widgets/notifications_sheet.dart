@@ -10,6 +10,7 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
+import 'package:mobile/features/notifications/notification_display_copy.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/notifications/widgets/notification_destination.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
@@ -21,6 +22,7 @@ import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'notifications_list.dart';
+part 'notifications_relative_time.dart';
 
 Future<void> showNotificationsSheet({
   required BuildContext context,
@@ -677,24 +679,4 @@ IconData _iconForType(String type) {
     'task_assigned' => Icons.assignment_ind_outlined,
     _ => Icons.notifications_none_rounded,
   };
-}
-
-String _formatRelativeTime(BuildContext context, DateTime timestamp) {
-  final now = DateTime.now();
-  final difference = now.difference(timestamp);
-  if (difference.inSeconds < 45) {
-    return context.l10n.notificationsJustNow;
-  }
-  if (difference.inMinutes < 60) {
-    return context.l10n.notificationsMinutesAgo(difference.inMinutes);
-  }
-  if (difference.inHours < 24) {
-    return context.l10n.notificationsHoursAgo(difference.inHours);
-  }
-  if (difference.inDays < 7) {
-    return context.l10n.notificationsDaysAgo(difference.inDays);
-  }
-  return DateFormat.MMMd(
-    Localizations.localeOf(context).toLanguageTag(),
-  ).format(timestamp);
 }

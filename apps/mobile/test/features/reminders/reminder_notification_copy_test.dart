@@ -21,18 +21,18 @@ void main() {
     isAllDay: allDay,
   );
 
-  test('calendar alerts put lead time in title and event name in body', () {
+  test('calendar alerts put event name in title and lead time in body', () {
     final l10n = AppLocalizationsEn();
     expect(reminderNotificationCopy(entry(ReminderKind.event, '3d'), l10n), (
-      title: 'Calendar: In 3 days',
-      body: 'Team planning',
+      title: 'Calendar: Team planning',
+      body: 'In 3 days',
     ));
     expect(
       reminderNotificationCopy(
         entry(ReminderKind.event, '1d', allDay: true),
         l10n,
       ),
-      (title: 'Calendar: Tomorrow', body: 'Team planning'),
+      (title: 'Calendar: Team planning', body: 'Tomorrow'),
     );
   });
 
@@ -42,15 +42,15 @@ void main() {
         entry(ReminderKind.event, '3d'),
         AppLocalizationsVi(),
       ),
-      (title: 'Lịch: Còn 3 ngày', body: 'Team planning'),
+      (title: 'Lịch: Team planning', body: 'Còn 3 ngày'),
     );
   });
 
-  test('task alert copy remains unchanged', () {
+  test('task alert uses the task name in the title', () {
     final l10n = AppLocalizationsEn();
     expect(reminderNotificationCopy(entry(ReminderKind.task, '3d'), l10n), (
-      title: l10n.remindersTaskTitle,
-      body: 'Team planning',
+      title: 'Task: Team planning',
+      body: l10n.remindersTaskTitle,
     ));
   });
 }

@@ -235,6 +235,7 @@ class _NotificationTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final theme = shad.Theme.of(context);
     final hasPrimaryAction = onAcceptInvite != null || onDeclineInvite != null;
+    final display = notificationDisplayCopy(notification, context.l10n);
 
     return Material(
       color: Colors.transparent,
@@ -297,15 +298,15 @@ class _NotificationTile extends StatelessWidget {
                     ),
                     const shad.Gap(3),
                     Text(
-                      notification.title,
+                      display.title,
                       style: theme.typography.small.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (notification.description?.isNotEmpty ?? false) ...[
+                    if (display.body case final String body) ...[
                       const shad.Gap(4),
                       Text(
-                        notification.description!,
+                        body,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: theme.typography.small.copyWith(

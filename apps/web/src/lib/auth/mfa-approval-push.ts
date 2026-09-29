@@ -25,8 +25,8 @@ export async function sendMfaApprovalPush(input: {
       devices,
       message: {
         title: vietnamese
-          ? 'Yêu cầu đăng nhập Tuturuuu'
-          : 'Tuturuuu sign-in request',
+          ? 'Bảo mật: Yêu cầu đăng nhập Tuturuuu'
+          : 'Security: Tuturuuu sign-in request',
         body: vietnamese
           ? 'Chạm để xem và xác minh. Chỉ phê duyệt yêu cầu do bạn tạo.'
           : 'Tap to review and verify. Only approve a sign-in you started.',
