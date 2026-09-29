@@ -110,7 +110,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
       fetchError = error;
     }
     final userId = currentCacheUserId();
-    List<dynamic> rows = fetched ?? const [];
+    var rows = fetched ?? <dynamic>[];
     var hasFallback = false;
     if (fetchError != null && userId != null) {
       final sourceKeys = {
