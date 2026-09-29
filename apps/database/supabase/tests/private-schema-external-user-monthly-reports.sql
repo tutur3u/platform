@@ -479,9 +479,9 @@ select ok(
 );
 
 select ok(
-  pg_get_functiondef('private.user_group_activity_feed(uuid,timestamptz,timestamptz)'::regprocedure)
+  pg_get_functiondef('private.user_group_activity_feed(uuid,timestamptz,timestamptz,uuid)'::regprocedure)
     like '%audit_log.table_schema = ''private''%'
-    and pg_get_functiondef('private.user_group_activity_feed(uuid,timestamptz,timestamptz)'::regprocedure)
+    and pg_get_functiondef('private.user_group_activity_feed(uuid,timestamptz,timestamptz,uuid)'::regprocedure)
       like '%private.external_user_monthly_reports report_record%',
   'user group activity feed reads private report audit rows and report metadata'
 );
