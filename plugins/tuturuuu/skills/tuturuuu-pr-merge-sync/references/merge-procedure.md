@@ -85,6 +85,12 @@ merging. A successful watcher exit alone does not prove those additional clocks.
 
 Use the branch watcher again for `production` after `bun git-sync`.
 
+If the user asks to pause during CI, stop active watcher processes and leave the
+PR, worktree, and task branch intact. Record the exact SHA, run IDs, pending
+gates, review activity, and promotion state in the coordination note, then
+pause without polling. Resume only after the user's reminder and recheck all
+gates against current refs before merging or syncing.
+
 ## Merge And Sync Flow
 
 After the PR watcher exits cleanly:
