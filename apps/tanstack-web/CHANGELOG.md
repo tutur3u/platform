@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.36.0...tanstack-web-v0.37.0) (2026-09-29)
+
+
+### Features
+
+* **mobile:** refresh workspace experience and offline edit foundation ([#5610](https://github.com/tutur3u/platform/issues/5610)) ([55a25b0](https://github.com/tutur3u/platform/commit/55a25b08d5fc14701dd8499bdc0eebdee094ae2f))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.35.0...tanstack-web-v0.36.0) (2026-09-28)
 
 

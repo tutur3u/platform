@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/infra-v0.28.0...infra-v0.29.0) (2026-09-29)
+
+
+### Features
+
+* **infrastructure:** export active mobile Dart defines for admins ([321888b](https://github.com/tutur3u/platform/commit/321888b2b40de076c14879a8989dca512a07a9bd)) ([#5620](https://github.com/tutur3u/platform/issues/5620)) ([d1bf607](https://github.com/tutur3u/platform/commit/d1bf60784ad27486484a7cfd449dd04f5dd04bd2))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/infra-v0.27.1...infra-v0.28.0) (2026-09-28)
 
 

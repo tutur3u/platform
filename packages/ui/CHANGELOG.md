@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.1](https://github.com/tutur3u/platform/compare/ui-v0.36.0...ui-v0.36.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* **finance:** respect class join dates in pending tuition ([1aaaff0](https://github.com/tutur3u/platform/commit/1aaaff054d9b87c8ada88af6bdcadb840e54a186)) ([#5618](https://github.com/tutur3u/platform/issues/5618)) ([4a0d26c](https://github.com/tutur3u/platform/commit/4a0d26ca1246cd4075e9fcc6ad3dd7a093861766))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/ui-v0.35.1...ui-v0.36.0) (2026-09-27)
 
 

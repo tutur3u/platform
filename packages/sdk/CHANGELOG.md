@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.24.0](https://github.com/tutur3u/platform/compare/sdk-v0.23.0...sdk-v0.24.0) (2026-09-29)
+
+
+### Features
+
+* **devboxes:** route agent control through Cloudflare ([98d4580](https://github.com/tutur3u/platform/commit/98d4580b39308fdd835e1762ebad102fe6ca3f02)) ([#5614](https://github.com/tutur3u/platform/issues/5614)) ([cbd18fa](https://github.com/tutur3u/platform/commit/cbd18fa70ee2d88c8b7e607ab56631c581b723c9))
+
+
+### Bug Fixes
+
+* **cli:** run Judge doctor without login ([fe344b8](https://github.com/tutur3u/platform/commit/fe344b88a4429300d296b5063baf7b34cd41cb86)) ([#5613](https://github.com/tutur3u/platform/issues/5613)) ([176f96f](https://github.com/tutur3u/platform/commit/176f96fdabfeb37f8930478c1b8d80267c1a8489))
+
 ## [0.23.0](https://github.com/tutur3u/platform/compare/sdk-v0.22.2...sdk-v0.23.0) (2026-09-28)
 
 

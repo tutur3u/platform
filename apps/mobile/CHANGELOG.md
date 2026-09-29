@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/mobile-v0.17.0...mobile-v0.18.0) (2026-09-29)
+
+
+### Features
+
+* **mobile:** complete offline workspace action queue ([5de0aa9](https://github.com/tutur3u/platform/commit/5de0aa91b82dd48c9999d13d60136270b3babce0))
+* **mobile:** complete workspace replica paths and cache revalidation ([3502b29](https://github.com/tutur3u/platform/commit/3502b29b8423bbe809dafb0181503763995b5bf4))
+* **mobile:** confirm discarding offline changes ([a90251d](https://github.com/tutur3u/platform/commit/a90251da3ff081ada55620cfc38ca53c348e50d8))
+* **mobile:** expand local replica across workspace modules ([#5611](https://github.com/tutur3u/platform/issues/5611)) ([f204336](https://github.com/tutur3u/platform/commit/f204336ef739e8cd225971b923d320bfbe3915ce))
+* **mobile:** extend offline finance and mail caching ([ab48c81](https://github.com/tutur3u/platform/commit/ab48c8102dab61cdee27f5b42b1f18ac3c88b9ea))
+* **mobile:** extend offline replica to profile and connected services ([507a0ec](https://github.com/tutur3u/platform/commit/507a0ecfe3086c11fc9d703c5d87c918ca885932))
+* **mobile:** mark queued finance taxonomy cards ([80dcd7e](https://github.com/tutur3u/platform/commit/80dcd7e8025152aa1a82e08c72b75b96d767cbaa))
+* **mobile:** queue board and chat edits offline ([9e88128](https://github.com/tutur3u/platform/commit/9e88128b2f1ec3b5413b0de6822a3aac99037717))
+* **mobile:** queue drive uploads and task planning edits ([85d1fcd](https://github.com/tutur3u/platform/commit/85d1fcdcb1d662da25635804cef9716bd8ffad81))
+* **mobile:** queue inventory sales and finance checkpoints offline ([a5a7ea4](https://github.com/tutur3u/platform/commit/a5a7ea4c1f3f9dcddbfc26cede629540982138ca))
+* **mobile:** queue inventory setup edits offline ([e32902c](https://github.com/tutur3u/platform/commit/e32902c9de00741ebf36939acbc939267cc5ce42))
+* **mobile:** queue timer approvals and comments offline ([b5f8960](https://github.com/tutur3u/platform/commit/b5f896007dffa673a8721c1208b179a3059b18b7))
+* **mobile:** refresh workspace experience and offline edit foundation ([#5610](https://github.com/tutur3u/platform/issues/5610)) ([55a25b0](https://github.com/tutur3u/platform/commit/55a25b08d5fc14701dd8499bdc0eebdee094ae2f))
+
+
+### Bug Fixes
+
+* **mobile:** read note links from local replica ([2fb98d4](https://github.com/tutur3u/platform/commit/2fb98d4dca07d37fd8b31921b11ad6227ef252f6)) ([#5617](https://github.com/tutur3u/platform/issues/5617)) ([491bf41](https://github.com/tutur3u/platform/commit/491bf41cc022fe8d3a64305581934c1d9e89389f))
+* **mobile:** scope note link replica fallback to request ([a2b2e26](https://github.com/tutur3u/platform/commit/a2b2e268f5c8de503624e346dfc519993506c063))
+
 ## [0.17.0](https://github.com/tutur3u/platform/compare/mobile-v0.16.0...mobile-v0.17.0) (2026-09-28)
 
 

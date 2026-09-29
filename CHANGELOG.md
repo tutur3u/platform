@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.61.0](https://github.com/tutur3u/platform/compare/platform-v0.60.0...platform-v0.61.0) (2026-09-29)
+
+
+### Features
+
+* **cron:** gate immediate recovery on Cloudflare ([546f389](https://github.com/tutur3u/platform/commit/546f3899143c09d52dfa198698b1c4310b860db2)) ([#5615](https://github.com/tutur3u/platform/issues/5615)) ([8eac476](https://github.com/tutur3u/platform/commit/8eac47606da1e1295cb3e6c80c96e5b4d3750068))
+* **devboxes:** route agent control through Cloudflare ([98d4580](https://github.com/tutur3u/platform/commit/98d4580b39308fdd835e1762ebad102fe6ca3f02)) ([#5614](https://github.com/tutur3u/platform/issues/5614)) ([cbd18fa](https://github.com/tutur3u/platform/commit/cbd18fa70ee2d88c8b7e607ab56631c581b723c9))
+* **infrastructure:** export active mobile Dart defines for admins ([321888b](https://github.com/tutur3u/platform/commit/321888b2b40de076c14879a8989dca512a07a9bd)) ([#5620](https://github.com/tutur3u/platform/issues/5620)) ([d1bf607](https://github.com/tutur3u/platform/commit/d1bf60784ad27486484a7cfd449dd04f5dd04bd2))
+* **mobile:** complete offline workspace action queue ([5de0aa9](https://github.com/tutur3u/platform/commit/5de0aa91b82dd48c9999d13d60136270b3babce0))
+* **mobile:** complete workspace replica paths and cache revalidation ([3502b29](https://github.com/tutur3u/platform/commit/3502b29b8423bbe809dafb0181503763995b5bf4))
+* **mobile:** confirm discarding offline changes ([a90251d](https://github.com/tutur3u/platform/commit/a90251da3ff081ada55620cfc38ca53c348e50d8))
+* **mobile:** expand local replica across workspace modules ([#5611](https://github.com/tutur3u/platform/issues/5611)) ([f204336](https://github.com/tutur3u/platform/commit/f204336ef739e8cd225971b923d320bfbe3915ce))
+* **mobile:** extend offline finance and mail caching ([ab48c81](https://github.com/tutur3u/platform/commit/ab48c8102dab61cdee27f5b42b1f18ac3c88b9ea))
+* **mobile:** extend offline replica to profile and connected services ([507a0ec](https://github.com/tutur3u/platform/commit/507a0ecfe3086c11fc9d703c5d87c918ca885932))
+* **mobile:** mark queued finance taxonomy cards ([80dcd7e](https://github.com/tutur3u/platform/commit/80dcd7e8025152aa1a82e08c72b75b96d767cbaa))
+* **mobile:** queue board and chat edits offline ([9e88128](https://github.com/tutur3u/platform/commit/9e88128b2f1ec3b5413b0de6822a3aac99037717))
+* **mobile:** queue drive uploads and task planning edits ([85d1fcd](https://github.com/tutur3u/platform/commit/85d1fcdcb1d662da25635804cef9716bd8ffad81))
+* **mobile:** queue inventory sales and finance checkpoints offline ([a5a7ea4](https://github.com/tutur3u/platform/commit/a5a7ea4c1f3f9dcddbfc26cede629540982138ca))
+* **mobile:** queue inventory setup edits offline ([e32902c](https://github.com/tutur3u/platform/commit/e32902c9de00741ebf36939acbc939267cc5ce42))
+* **mobile:** queue timer approvals and comments offline ([b5f8960](https://github.com/tutur3u/platform/commit/b5f896007dffa673a8721c1208b179a3059b18b7))
+* **mobile:** refresh workspace experience and offline edit foundation ([#5610](https://github.com/tutur3u/platform/issues/5610)) ([55a25b0](https://github.com/tutur3u/platform/commit/55a25b08d5fc14701dd8499bdc0eebdee094ae2f))
+
+
+### Bug Fixes
+
+* **cli:** run Judge doctor without login ([fe344b8](https://github.com/tutur3u/platform/commit/fe344b88a4429300d296b5063baf7b34cd41cb86)) ([#5613](https://github.com/tutur3u/platform/issues/5613)) ([176f96f](https://github.com/tutur3u/platform/commit/176f96fdabfeb37f8930478c1b8d80267c1a8489))
+* **cron:** use Worker-supported redirect handling ([2cc3ac7](https://github.com/tutur3u/platform/commit/2cc3ac702077e009d0ec928778b1add1267b29d6)) ([#5619](https://github.com/tutur3u/platform/issues/5619)) ([eaceda8](https://github.com/tutur3u/platform/commit/eaceda868f355d2227a468fe7bedb8fabe7a9967))
+* **devboxes:** load Durable Object base and register internal app ([50a4ed0](https://github.com/tutur3u/platform/commit/50a4ed0dd5f639c44f513e6d7e2ca663452b76bb))
+* **finance:** respect class join dates in pending tuition ([1aaaff0](https://github.com/tutur3u/platform/commit/1aaaff054d9b87c8ada88af6bdcadb840e54a186)) ([#5618](https://github.com/tutur3u/platform/issues/5618)) ([4a0d26c](https://github.com/tutur3u/platform/commit/4a0d26ca1246cd4075e9fcc6ad3dd7a093861766))
+* **mobile:** read note links from local replica ([2fb98d4](https://github.com/tutur3u/platform/commit/2fb98d4dca07d37fd8b31921b11ad6227ef252f6)) ([#5617](https://github.com/tutur3u/platform/issues/5617)) ([491bf41](https://github.com/tutur3u/platform/commit/491bf41cc022fe8d3a64305581934c1d9e89389f))
+* **mobile:** scope note link replica fallback to request ([a2b2e26](https://github.com/tutur3u/platform/commit/a2b2e268f5c8de503624e346dfc519993506c063))
+
 ## [0.60.0](https://github.com/tutur3u/platform/compare/platform-v0.59.0...platform-v0.60.0) (2026-09-28)
 
 

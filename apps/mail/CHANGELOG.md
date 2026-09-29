@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/mail-v0.24.0...mail-v0.25.0) (2026-09-29)
+
+
+### Features
+
+* **mobile:** refresh workspace experience and offline edit foundation ([#5610](https://github.com/tutur3u/platform/issues/5610)) ([55a25b0](https://github.com/tutur3u/platform/commit/55a25b08d5fc14701dd8499bdc0eebdee094ae2f))
+* **mobile:** refresh workspace UX and build offline edit foundation ([b1a26c2](https://github.com/tutur3u/platform/commit/b1a26c2a918bdd9fcc0a460f0adbea7c914b44fc))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/mail-v0.23.0...mail-v0.24.0) (2026-09-25)
 
 
