@@ -8621,7 +8621,6 @@
     "status": {
       "active": "Đang hoạt động",
       "disabled": "Đã vô hiệu hóa",
-      "legacy_disabled": "Đã vô hiệu hóa · Thay bằng tài khoản đánh giá không thuộc miền nhân viên",
       "unconfirmed": "Email chưa xác nhận",
       "you": "Bạn"
     },
@@ -8645,6 +8644,7 @@
       "review_kind": "Người đánh giá ứng dụng",
       "external_kind": "Lời mời bên ngoài",
       "disabled": "Đã vô hiệu hóa",
+      "legacy_disabled": "Đã vô hiệu hóa · Thay bằng tài khoản đánh giá không thuộc miền nhân viên",
       "ready": "Sẵn sàng đăng nhập",
       "pending_invite": "Đang chờ chấp nhận lời mời",
       "rotate": "Đổi mật khẩu",

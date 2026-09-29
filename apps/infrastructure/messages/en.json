@@ -8621,7 +8621,6 @@
     "status": {
       "active": "Active",
       "disabled": "Disabled",
-      "legacy_disabled": "Disabled · Replace with a non-staff reviewer account",
       "unconfirmed": "Email unconfirmed",
       "you": "You"
     },
@@ -8645,6 +8644,7 @@
       "review_kind": "App reviewer",
       "external_kind": "External invite",
       "disabled": "Disabled",
+      "legacy_disabled": "Disabled · Replace with a non-staff reviewer account",
       "ready": "Ready to sign in",
       "pending_invite": "Invitation pending",
       "rotate": "Rotate password",
