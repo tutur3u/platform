@@ -260,6 +260,25 @@ class OfflineMutationQueue {
           } finally {
             httpClient.close();
           }
+        case 'FINANCE_ATTACHMENT_UPLOAD':
+          if (workspaceId == null) {
+            throw StateError('Finance attachment has no workspace');
+          }
+          final payload = resolved.payload ?? const <String, dynamic>{};
+          final httpClient = http.Client();
+          try {
+            await deliverDriveUpload(
+              api: api,
+              httpClient: httpClient,
+              workspaceId: workspaceId,
+              filename: payload['filename'] as String,
+              bytes: base64Decode(payload['bytes'] as String),
+              contentType: payload['contentType'] as String,
+              directoryPath: 'finance/transactions/${payload['transactionId']}',
+            );
+          } finally {
+            httpClient.close();
+          }
         case 'CHAT_UPLOAD':
           if (workspaceId == null) {
             throw StateError('Chat upload has no workspace');

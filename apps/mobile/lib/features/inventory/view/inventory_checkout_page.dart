@@ -361,6 +361,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                 },
               )
               .toList(growable: false),
+          previous: sale,
         );
         await _inventoryRepository.setSalePeriod(
           wsId: wsId,
@@ -372,7 +373,6 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
           wsId,
           resolvedCategoryId,
         );
-
         if (!mounted) return;
         showInventoryToast(context, context.l10n.inventorySaleUpdated);
         context.pop(updated);

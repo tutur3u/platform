@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -26,6 +27,9 @@ import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
+
+part 'inventory_sales_card.dart';
 
 class InventorySalesPage extends StatefulWidget {
   const InventorySalesPage({super.key});
@@ -270,6 +274,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
       final updated = await _inventoryRepository.updateSalesPeriod(
         wsId: wsId,
         periodId: period.id,
+        previous: period,
         status: period.isArchived ? 'active' : 'archived',
       );
       if (!mounted) return;
@@ -395,6 +400,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
                       ),
                       children: [
                         InventorySalesPeriodBar(
+                          workspaceId: _wsId ?? '',
                           periods: _salesPeriods,
                           selectedPeriodId: _selectedPeriodId,
                           canManage: _canCreateSales || _canUpdateSales,
@@ -446,14 +452,36 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
                           ..._sales.map(
                             (sale) => Padding(
                               padding: const EdgeInsets.only(bottom: 12),
-                              child: _InventorySaleCard(
-                                sale: sale,
-                                currency: sale.currency ?? _currency,
-                                onTap: () => _openSaleDetail(
-                                  saleId: sale.id,
-                                  currency: sale.currency ?? _currency,
-                                  canUpdateSales: _canUpdateSales,
-                                  canDeleteSales: _canDeleteSales,
+                              child: PendingSyncFrame(
+                                workspaceId: _wsId ?? '',
+                                entityId: sale.id,
+                                feature: 'inventory',
+                                child: ValueListenableBuilder(
+                                  valueListenable:
+                                      OfflineMutationQueue.instance.pending,
+                                  builder: (context, edits, _) {
+                                    final pendingCreate = edits.any(
+                                      (edit) =>
+                                          edit.feature == 'inventory' &&
+                                          edit.workspaceId == _wsId &&
+                                          edit.entityId == sale.id &&
+                                          edit.method == 'POST',
+                                    );
+                                    return _InventorySaleCard(
+                                      sale: sale,
+                                      currency: sale.currency ?? _currency,
+                                      pendingCreate: pendingCreate,
+                                      onTap: pendingCreate
+                                          ? null
+                                          : () => _openSaleDetail(
+                                              saleId: sale.id,
+                                              currency:
+                                                  sale.currency ?? _currency,
+                                              canUpdateSales: _canUpdateSales,
+                                              canDeleteSales: _canDeleteSales,
+                                            ),
+                                    );
+                                  },
                                 ),
                               ),
                             ),
@@ -481,121 +509,6 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
             );
           },
         ),
-      ),
-    );
-  }
-}
-
-class _InventorySaleCard extends StatelessWidget {
-  const _InventorySaleCard({
-    required this.sale,
-    required this.currency,
-    required this.onTap,
-  });
-
-  final InventorySaleSummary sale;
-  final String currency;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final title = sale.notice?.trim().isNotEmpty == true
-        ? sale.notice!.trim()
-        : context.l10n.inventorySalesFallbackTitle;
-    final metadata = [
-      if (sale.walletName?.isNotEmpty ?? false) sale.walletName!,
-      if (sale.categoryName?.isNotEmpty ?? false) sale.categoryName!,
-      context.l10n.inventorySalesItemsCount(sale.itemsCount),
-    ].join(' • ');
-    final creator = sale.creatorName?.trim();
-    final customer = sale.customerName?.trim();
-
-    return FinancePanel(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.typography.large.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const shad.Gap(12),
-              Text(
-                formatCurrency(sale.paidAmount, currency),
-                style: theme.typography.large.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-          if (metadata.isNotEmpty) ...[
-            const shad.Gap(8),
-            Text(
-              metadata,
-              style: theme.typography.textSmall.copyWith(
-                color: theme.colorScheme.mutedForeground,
-              ),
-            ),
-          ],
-          const shad.Gap(10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (sale.period != null)
-                _SaleBadge(
-                  label: sale.period!.name,
-                  color: theme.colorScheme.primary,
-                ),
-              if (creator != null && creator.isNotEmpty)
-                _SaleBadge(
-                  label: context.l10n.inventorySalesCreatorBadge(creator),
-                  color: FinancePalette.of(context).accent,
-                ),
-              ...sale.owners
-                  .where((owner) => owner.trim().isNotEmpty)
-                  .map(
-                    (owner) => _SaleBadge(
-                      label: owner.trim(),
-                      color: FinancePalette.of(context).positive,
-                    ),
-                  ),
-              if (customer != null && customer.isNotEmpty)
-                _SaleBadge(
-                  label: customer,
-                  color: theme.colorScheme.mutedForeground,
-                ),
-            ],
-          ),
-          const shad.Gap(10),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  DateFormat.yMMMd().add_jm().format(
-                    sale.createdAt?.toLocal() ?? DateTime.now(),
-                  ),
-                  style: theme.typography.xSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: theme.colorScheme.mutedForeground,
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

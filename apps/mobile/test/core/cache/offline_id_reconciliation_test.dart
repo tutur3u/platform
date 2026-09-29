@@ -21,6 +21,7 @@ void main() {
 
   test('finds IDs in supported create response envelopes', () {
     expect(createdServerId({'id': 'top'}), 'top');
+    expect(createdServerId({'invoice_id': 'invoice-1'}), 'invoice-1');
     expect(
       createdServerId({
         'tracker': {'id': 'nested'},

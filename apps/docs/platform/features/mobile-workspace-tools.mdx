@@ -278,6 +278,18 @@ dimmed dashed treatment. An uncertain transaction
 update or delete enters manual review rather than automatic replay. Once a
 transaction or transfer update is acknowledged, failure to refresh its detail
 does not invite another money write.
+Wallet checkpoint create, batch create, edit, delete, and reconciliation also
+enter the finance outbox. The timeline overlays queued checkpoints while
+keeping server-confirmed latest balances and interval calculations separate;
+pending rows have the dashed treatment. Finance feedback says queued or needs
+review when the write has not been acknowledged. Transaction attachments stage
+encrypted bytes, request a new signed upload URL on replay, and show queued
+state until delivery. An ambiguous money write or upload waits for manual review.
+Inventory sales-period create and edit, sale create and edit, period assignment,
+and delete queue offline. Sales lists overlay local edits; pending sale cards do
+not show an unconfirmed amount or open a server-only detail. Invoice replay maps
+its returned ID before sending a queued period assignment. Pending period and
+sale cards use the dashed treatment, and unknown outcomes require manual review.
 Invalidation and logout prevent older
 in-flight requests from writing back into the cache. Keys must include user,
 workspace, and all query filters.

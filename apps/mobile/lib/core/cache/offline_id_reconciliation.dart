@@ -37,6 +37,7 @@
 
 String? createdServerId(Map<String, dynamic> response) {
   if (response['id'] case final String id when id.isNotEmpty) return id;
+  if (response['invoice_id'] case final String id when id.isNotEmpty) return id;
   for (final key in [
     'data',
     'collection',

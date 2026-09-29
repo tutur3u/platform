@@ -6,7 +6,10 @@ import 'package:mobile/data/models/finance/wallet_checkpoint.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+part 'wallet_checkpoint_timeline.dart';
 
 String formatFinanceCheckpointDate(BuildContext context, DateTime value) {
   final locale = Localizations.localeOf(context).toLanguageTag();
@@ -220,6 +223,7 @@ class WalletCheckpointSelector extends StatelessWidget {
 
 class WalletCheckpointDetailSections extends StatelessWidget {
   const WalletCheckpointDetailSections({
+    required this.workspaceId,
     required this.wallet,
     required this.response,
     required this.showAmounts,
@@ -230,6 +234,8 @@ class WalletCheckpointDetailSections extends StatelessWidget {
     required this.onReconcile,
     super.key,
   });
+
+  final String workspaceId;
 
   final Wallet wallet;
   final WalletCheckpointListResponse response;
@@ -260,6 +266,8 @@ class WalletCheckpointDetailSections extends StatelessWidget {
         ),
         const shad.Gap(16),
         _TimelineList(
+          workspaceId: workspaceId,
+          currency: wallet.currency ?? response.latest?.currency ?? 'USD',
           checkpoints: response.data,
           showAmounts: showAmounts,
           canMutate: canMutate,
@@ -585,104 +593,6 @@ class _IntervalTile extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-class _TimelineList extends StatelessWidget {
-  const _TimelineList({
-    required this.checkpoints,
-    required this.showAmounts,
-    required this.canMutate,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final List<WalletCheckpoint> checkpoints;
-  final bool showAmounts;
-  final bool canMutate;
-  final ValueChanged<WalletCheckpoint> onEdit;
-  final ValueChanged<WalletCheckpoint> onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    if (checkpoints.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final theme = shad.Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FinanceSectionHeader(title: context.l10n.financeCheckpointsTimeline),
-        const shad.Gap(10),
-        for (final checkpoint in checkpoints)
-          Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: FinancePalette.of(context).panel,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: FinancePalette.of(context).subtleBorder,
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        formatFinanceCheckpointDate(
-                          context,
-                          checkpoint.checkedAt,
-                        ),
-                        style: theme.typography.small.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const shad.Gap(4),
-                      Text(
-                        maskFinanceValue(
-                          formatCurrency(
-                            checkpoint.actualBalance,
-                            checkpoint.currency,
-                          ),
-                          showAmounts: showAmounts,
-                        ),
-                        style: theme.typography.textSmall.copyWith(
-                          color: theme.colorScheme.mutedForeground,
-                        ),
-                      ),
-                      if (checkpoint.note?.trim().isNotEmpty ?? false) ...[
-                        const shad.Gap(4),
-                        Text(
-                          checkpoint.note!.trim(),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.xSmall.copyWith(
-                            color: theme.colorScheme.mutedForeground,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (canMutate) ...[
-                  shad.GhostButton(
-                    onPressed: () => onEdit(checkpoint),
-                    child: const Icon(Icons.edit_outlined, size: 18),
-                  ),
-                  shad.GhostButton(
-                    onPressed: () => onDelete(checkpoint),
-                    child: const Icon(Icons.delete_outline, size: 18),
-                  ),
-                ],
-              ],
-            ),
-          ),
-      ],
     );
   }
 }

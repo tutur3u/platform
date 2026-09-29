@@ -49,6 +49,7 @@ void main() {
       Scaffold(
         body: SingleChildScrollView(
           child: WalletCheckpointDetailSections(
+            workspaceId: 'ws-1',
             wallet: const Wallet(id: 'wallet_1', name: 'Cash', currency: 'USD'),
             response: WalletCheckpointListResponse(
               latest: _checkpoint('checkpoint_2', actualBalance: 140),

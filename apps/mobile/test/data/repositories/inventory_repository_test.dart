@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mocktail/mocktail.dart';
@@ -256,6 +257,66 @@ void main() {
       });
     },
   );
+
+  test(
+    'keeps queued sales periods visible during an offline refresh',
+    () async {
+      final apiClient = _MockApiClient();
+      final repository = InventoryRepository(apiClient: apiClient);
+      when(
+        () => apiClient.getJson(any()),
+      ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+      OfflineMutationQueue.instance.pending.value = [
+        PendingMutationRecord(
+          id: 'period-edit',
+          feature: 'inventory',
+          method: 'POST',
+          path: InventoryEndpoints.salesPeriods('ws-1'),
+          createdAt: DateTime.utc(2026, 9, 29),
+          userId: 'user-1',
+          workspaceId: 'ws-1',
+          payload: const {'name': 'Offline season', 'product_scope': 'all'},
+          optimisticPatch: const {'entityId': 'local-period'},
+        ),
+      ];
+
+      final periods = await repository.getSalesPeriods('ws-1');
+      expect(periods.map((period) => period.name), ['Offline season']);
+      expect(await repository.getSalesPeriods('ws-2'), isEmpty);
+    },
+  );
+
+  test('shows a queued sale without a confirmed amount', () async {
+    final apiClient = _MockApiClient();
+    final repository = InventoryRepository(apiClient: apiClient);
+    when(
+      () => apiClient.getJson(any()),
+    ).thenThrow(const ApiException(message: 'Offline', statusCode: 0));
+    OfflineMutationQueue.instance.pending.value = [
+      PendingMutationRecord(
+        id: 'sale-edit',
+        feature: 'inventory',
+        method: 'POST',
+        path: InventoryEndpoints.invoices('ws-1'),
+        createdAt: DateTime.utc(2026, 9, 29),
+        userId: 'user-1',
+        workspaceId: 'ws-1',
+        payload: const {
+          'content': 'Offline order',
+          'products': [
+            {'product_id': 'product-1', 'quantity': 2, 'price': 99},
+          ],
+        },
+        optimisticPatch: const {'entityId': 'local-sale'},
+      ),
+    ];
+
+    final sales = await repository.getSales('ws-1');
+    expect(sales.data.single.notice, 'Offline order');
+    expect(sales.data.single.paidAmount, 0);
+    expect(sales.count, 1);
+    expect((await repository.getSales('ws-2')).data, isEmpty);
+  });
 }
 
 Map<String, dynamic> _overviewResponse({required num revenue}) => {

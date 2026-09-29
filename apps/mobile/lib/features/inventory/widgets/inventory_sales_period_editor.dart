@@ -215,6 +215,7 @@ class _SalesPeriodEditorState extends State<_SalesPeriodEditor> {
           ? await widget.repository.updateSalesPeriod(
               wsId: widget.wsId,
               periodId: widget.period!.id,
+              previous: widget.period,
               name: name,
               description: description.isEmpty ? null : description,
               startsAt: _startsAt,
