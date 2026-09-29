@@ -138,24 +138,20 @@ export async function createReviewAccount({
     created_by: actorUserId,
     created_at: new Date().toISOString(),
   };
+  // Signup can promote either account kind when its email is pre-provisioned.
+  const { data: reservedRole, error: roleError } = await sbAdmin
+    .from('platform_email_roles')
+    .select('email')
+    .eq('email', normalizedEmail)
+    .maybeSingle();
+  if (roleError)
+    throw new ReviewAccountError('Unable to verify account permissions', 503);
+  if (reservedRole)
+    throw new ReviewAccountError(
+      'This address is reserved for a platform role',
+      409
+    );
   if (kind === 'review') {
-    // Signup can promote a pre-provisioned email into platform_user_roles.
-    // A reviewer must never inherit such an assignment.
-    const { data: reservedRole, error: roleError } = await sbAdmin
-      .from('platform_email_roles')
-      .select('email')
-      .eq('email', normalizedEmail)
-      .maybeSingle();
-    if (roleError)
-      throw new ReviewAccountError(
-        'Unable to verify reviewer permissions',
-        503
-      );
-    if (reservedRole)
-      throw new ReviewAccountError(
-        'This address is reserved for a platform role',
-        409
-      );
     const password = generatedPassword();
     const { data, error } = await sbAdmin.auth.admin.createUser({
       email: normalizedEmail,

@@ -124,6 +124,23 @@ describe('review account administration', () => {
     expect(admin.auth.admin.createUser).not.toHaveBeenCalled();
   });
 
+  it('refuses an external invite with a pre-provisioned platform role', async () => {
+    roleLookup.mockResolvedValueOnce({
+      data: { email: 'tester@example.com' },
+      error: null,
+    });
+    await expect(
+      createReviewAccount({
+        actorUserId,
+        displayName: 'Tester',
+        email: 'tester@example.com',
+        kind: 'external',
+        sbAdmin: db,
+      })
+    ).rejects.toMatchObject({ status: 409 });
+    expect(admin.auth.admin.inviteUserByEmail).not.toHaveBeenCalled();
+  });
+
   it('lists only tagged accounts and omits credentials', async () => {
     admin.auth.admin.listUsers.mockResolvedValue({
       data: {
