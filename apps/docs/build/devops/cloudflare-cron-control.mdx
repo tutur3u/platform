@@ -11,6 +11,8 @@ The five-minute immediate-notification recovery timer runs in the
 `delivery_mode` is `immediate`. It invokes the existing web delivery processor
 only when such a batch exists. The web processor still applies the recipient,
 workspace, and delivery rules and atomically claims each pending batch. The
+Worker sends an explicit empty JSON object to the web processor so its POST
+body is unambiguous across Cloudflare and Vercel. The
 matching entry is removed from `apps/web/vercel.json`; the authenticated web
 cron route remains available for manual recovery. Other cron schedules remain
 on Vercel until their own processors have safe Cloudflare gates or ports.
@@ -30,3 +32,7 @@ Cloudflare logs for RPC or delivery errors. During the brief rollout overlap,
 both schedulers may run; the processor's pending-to-processing claim prevents
 duplicate delivery. To roll back, restore the Vercel cron entry and remove the
 Cloudflare trigger in a reviewed deployment.
+
+An `Immediate batch delivery failed: 400` log means the web processor rejected
+the delivery request before processing. Check the request body and content type
+first. A `401` points to the web and Worker delivery tokens being out of sync.

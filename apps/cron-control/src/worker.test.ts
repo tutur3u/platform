@@ -35,6 +35,8 @@ it('invokes the existing processor only when a pending batch exists', async () =
     path: string;
     method: string | undefined;
     authorization: string | null;
+    contentType: string | null;
+    body: BodyInit | null | undefined;
     redirect: RequestRedirect | undefined;
   }[] = [];
   globalThis.fetch = vi.fn(
@@ -44,6 +46,8 @@ it('invokes the existing processor only when a pending batch exists', async () =
         path: url.pathname,
         method: init?.method,
         authorization: new Headers(init?.headers).get('authorization'),
+        contentType: new Headers(init?.headers).get('content-type'),
+        body: init?.body,
         redirect: init?.redirect,
       });
       return Response.json(
@@ -64,6 +68,8 @@ it('invokes the existing processor only when a pending batch exists', async () =
     path: '/api/notifications/send-immediate',
     method: 'POST',
     authorization: 'Bearer test-delivery-token',
+    contentType: 'application/json',
+    body: '{}',
     redirect: 'manual',
   });
 });
