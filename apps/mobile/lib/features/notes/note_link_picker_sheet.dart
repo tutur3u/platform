@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
+import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -108,21 +110,49 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
       fetchError = error;
     }
     final userId = currentCacheUserId();
-    if (userId != null) {
+    List<dynamic> rows = fetched ?? const [];
+    var hasFallback = false;
+    if (fetchError != null && userId != null) {
+      final sourceKeys = {
+        CacheKey(
+          namespace: namespace,
+          userId: userId,
+          workspaceId: widget.wsId,
+          params: {'path': path},
+        ).value,
+        if (namespace.startsWith('notes.'))
+          CacheKey(
+            namespace: namespace,
+            userId: userId,
+            workspaceId: widget.wsId,
+          ).value,
+      };
       final local = await CacheStore.instance.queryReplica(
         namespace: namespace,
         userId: userId,
         workspaceId: widget.wsId,
-        pendingFeature: overlayPending ? namespace.split('.').first : null,
-        pendingPathContains: overlayPending ? pendingPath : null,
+        sourceKeys: sourceKeys,
       );
-      if (local.isNotEmpty) {
-        return local.map((row) => row.payload).toList(growable: false);
-      }
+      rows = local.map((row) => row.payload).toList(growable: false);
+      hasFallback = rows.isNotEmpty;
     }
-    if (fetchError case final Exception error) throw error;
-    if (fetchError != null) throw StateError(fetchError.toString());
-    return fetched ?? const [];
+    if (overlayPending && userId != null) {
+      final pending = (await CacheStore.instance.listPendingMutations())
+          .where((mutation) => mutation.userId == userId)
+          .toList(growable: false);
+      rows = overlayPendingCollection(
+        workspaceId: widget.wsId,
+        feature: namespace.split('.').first,
+        pathContains: pendingPath,
+        source: rows.whereType<Map<String, dynamic>>().toList(growable: false),
+        pending: pending,
+      );
+    }
+    if (fetchError != null && !hasFallback && rows.isEmpty) {
+      if (fetchError case final Exception error) throw error;
+      throw StateError(fetchError.toString());
+    }
+    return rows;
   }
 
   Future<void> _load() async {
@@ -241,6 +271,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
               rowKey: '',
               pendingPath: '/notes',
               listResponse: true,
+              overlayPending: false,
             ),
           ]);
           options = responses
