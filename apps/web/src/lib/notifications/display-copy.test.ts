@@ -24,7 +24,10 @@ describe('mobile notification display copy', () => {
         title: 'Cloudflare Registrar',
         description: '7 Day Domain Expiration Notice',
       })
-    ).toMatchObject({ title: expected, body: '7 Day Domain Expiration Notice' });
+    ).toMatchObject({
+      title: expected,
+      body: '7 Day Domain Expiration Notice',
+    });
   });
 
   it('puts a task item name in the title and its action below', () => {
@@ -43,8 +46,10 @@ describe('mobile notification display copy', () => {
 
   it('does not repeat an existing app prefix', () => {
     expect(
-      notificationDisplayCopy({ type: 'mail_received', title: 'Mail: Cloudflare' })
-        .title
+      notificationDisplayCopy({
+        type: 'mail_received',
+        title: 'Mail: Cloudflare',
+      }).title
     ).toBe('Mail: Cloudflare');
   });
 });
