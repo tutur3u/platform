@@ -1,5 +1,5 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createRecentNotificationWindow,
@@ -80,6 +80,7 @@ function createResolvedChain<T>(result: T) {
 import { POST } from './route';
 
 describe('send-immediate route', () => {
+  afterEach(() => vi.unstubAllEnvs());
   let batches: Array<{
     channel: string;
     email: string | null;
@@ -302,6 +303,18 @@ describe('send-immediate route', () => {
         title: 'Task mention',
       }),
     });
+  });
+
+  it('accepts the Cloudflare recovery token without exposing the database key', async () => {
+    vi.stubEnv('CRON_CONTROL_DELIVERY_TOKEN', 'cloudflare-recovery-secret');
+    const response = await POST(
+      new Request('http://localhost/api/notifications/send-immediate', {
+        headers: { authorization: 'Bearer cloudflare-recovery-secret' },
+        method: 'POST',
+      }) as any
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.sendPushNotificationBatchMock).toHaveBeenCalledTimes(1);
   });
 
   it('delivers push to a member outside the root workspace', async () => {

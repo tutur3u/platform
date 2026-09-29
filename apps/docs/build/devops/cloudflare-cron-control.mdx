@@ -1,0 +1,32 @@
+---
+title: "Cloudflare Cron Control"
+description: "Operate the immediate-notification recovery timer on Cloudflare."
+---
+
+## Immediate notifications
+
+The five-minute immediate-notification recovery timer runs in the
+`tuturuuu-cron-control` Cloudflare Worker. It first calls the private
+`requeue_mail_push_batches` RPC, then checks for a pending batch whose
+`delivery_mode` is `immediate`. It invokes the existing web delivery processor
+only when such a batch exists. The web processor still applies the recipient,
+workspace, and delivery rules and atomically claims each pending batch. The
+matching entry is removed from `apps/web/vercel.json`; the authenticated web
+cron route remains available for manual recovery. Other cron schedules remain
+on Vercel until their own processors have safe Cloudflare gates or ports.
+
+Production CI installs `SUPABASE_URL` and `SUPABASE_SECRET_KEY` on the Worker
+from `PRODUCTION_SUPABASE_URL` and `PRODUCTION_SUPABASE_SECRET_KEY` repository
+secrets. A separate `CRON_CONTROL_DELIVERY_TOKEN` repository secret is
+installed on the Worker and in the web app's production environment to
+authorize the delivery request. CI uses `COLAB_CLOUDFLARE_API_TOKEN` to deploy.
+The Supabase secret key goes only in the `apikey` header for database calls.
+Never add either credential to `wrangler.jsonc` or logs.
+
+Check the Worker `/health` endpoint and deployment marker after production
+sync. Verify an idle schedule skips the Vercel call, then queue a test
+immediate batch and confirm one delivery and a terminal batch status. Review
+Cloudflare logs for RPC or delivery errors. During the brief rollout overlap,
+both schedulers may run; the processor's pending-to-processing claim prevents
+duplicate delivery. To roll back, restore the Vercel cron entry and remove the
+Cloudflare trigger in a reviewed deployment.

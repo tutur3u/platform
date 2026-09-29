@@ -37,9 +37,11 @@ export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
+    const cronControlToken = process.env.CRON_CONTROL_DELIVERY_TOKEN;
     const supabaseServiceKey = process.env.SUPABASE_SECRET_KEY;
     const isAuthorized =
       (cronSecret && authHeader === `Bearer ${cronSecret}`) ||
+      (cronControlToken && authHeader === `Bearer ${cronControlToken}`) ||
       (supabaseServiceKey && authHeader === `Bearer ${supabaseServiceKey}`);
 
     if (!isAuthorized) {
