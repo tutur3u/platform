@@ -73,11 +73,12 @@ server error. Verify the next reload as well as the immediate rollback.
 Dock action handoffs retain presentation only, never callbacks or permission
 state. Destination actions remain disabled until their mounted page registers
 current handlers; missing destinations discard previews after a short handoff.
-Long-press navigation supports dragging between enabled destinations and commits
-only on release. Releasing outside the dock cancels the change.
-The dock's translucent surface blurs content behind it. Pressing anywhere on
-the navigation island immediately enlarges and brightens it; the selection
-follows a held finger and animates between tabs. Dock controls use accessibility
+Long-press navigation supports dragging between destinations. Releasing selects
+the enabled tab nearest the pill's final position; moving above or below the dock
+cancels the change. The dock's translucent surface blurs content behind it.
+Pressing anywhere scales the entire island and brightens its glow. The pill
+keeps the same inset from the outer capsule as it follows a finger or animates
+between tabs. Dock controls use accessibility
 labels without hover tooltips. The Profile avatar shows a skeleton while the
 profile or its image is loading.
 

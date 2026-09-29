@@ -116,7 +116,7 @@ void main() {
     expect(selected, const ValueKey('apps'));
   });
 
-  testWidgets('releasing outside or over disabled items cancels navigation', (
+  testWidgets('release picks the nearest enabled tab between slots', (
     tester,
   ) async {
     Key? selected;
@@ -136,19 +136,62 @@ void main() {
         ),
       ),
     );
-    for (final destination in [
-      tester.getCenter(find.text('Disabled')),
-      Offset.zero,
-    ]) {
-      final gesture = await tester.startGesture(
-        tester.getCenter(find.text('Home')),
-      );
-      await tester.pump(const Duration(milliseconds: 600));
-      await gesture.moveTo(destination);
-      await gesture.up();
-      await tester.pumpAndSettle();
-      expect(selected, isNull);
-    }
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Home')),
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+    await gesture.moveTo(tester.getCenter(find.text('Disabled')));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(selected, const ValueKey('home'));
+
+    selected = null;
+    final outside = await tester.startGesture(
+      tester.getCenter(find.text('Home')),
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+    await outside.moveTo(Offset.zero);
+    await outside.up();
+    await tester.pumpAndSettle();
+    expect(selected, isNull);
+  });
+
+  testWidgets('release between tabs follows the nearest highlight center', (
+    tester,
+  ) async {
+    Key? selected = const ValueKey('home');
+    late StateSetter rebuild;
+    await tester.pumpApp(
+      StatefulBuilder(
+        builder: (context, setState) {
+          rebuild = setState;
+          return Center(
+            child: MorphingNavigationBar(
+              selectedKey: selected,
+              onSelected: (key) => rebuild(() => selected = key),
+              children: const [
+                shad.NavigationItem(key: ValueKey('home'), child: Text('Home')),
+                shad.NavigationItem(key: ValueKey('apps'), child: Text('Apps')),
+                shad.NavigationItem(
+                  key: ValueKey('profile'),
+                  child: Text('Profile'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    final home = tester.getCenter(find.text('Home'));
+    final profile = tester.getCenter(find.text('Profile'));
+    final gesture = await tester.startGesture(home);
+    await tester.pump(const Duration(milliseconds: 600));
+    await gesture.moveTo(Offset(profile.dx - 18, profile.dy));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(selected, const ValueKey('profile'));
+    final pill = find.byKey(const ValueKey('navigation-selection-indicator'));
+    expect(tester.getCenter(pill).dx, closeTo(profile.dx, 1));
   });
 
   testWidgets('width and retained items interpolate on entry and exit', (
