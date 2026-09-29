@@ -79,6 +79,8 @@ When a product change touches attendance, check the settings UI, every roster en
 
 User group activity is exposed from the dashboard at `/users/groups?tab=audit-log` and on each group detail page. The feed is normalized from `audit.record_version` through private service-role RPCs so UI code receives one event shape with action, resource type, group, affected user, actor, timestamp, and before/after snapshots.
 
+The Contacts audit view must show a distinct error when the feed query fails. An unavailable feed is not evidence that no changes occurred. Investigate the server error and the `private.list_user_group_activity_logs` RPC before using an empty view to reconcile a student's history. Existing membership rows show their current join timestamp; an audit event is needed to establish a prior removal and rejoin. Neither a receipt for a different group nor membership history alone proves that tuition was transferred or credited to another class. Keep the original invoice and any explicit adjustment or transfer record when reconciling debt.
+
 ### Tracked Resources
 
 - Group metadata and status: `workspace_user_groups`.

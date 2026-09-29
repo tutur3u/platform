@@ -9281,6 +9281,8 @@
     "empty": "No user group activity found.",
     "group": "Group",
     "group_panel_description": "Recent changes scoped to this group.",
+    "load_error_title": "Audit log unavailable",
+    "load_error_description": "Activity could not be loaded. Do not treat this as an empty history. Try again or contact support.",
     "next": "Next",
     "open_full_log": "Open full log",
     "page_summary": "Page {page} of {totalPages} · {count} events",
