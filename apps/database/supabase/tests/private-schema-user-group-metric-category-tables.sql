@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(46);
+select plan(48);
 
 select ok(
   to_regclass('public.user_group_metric_categories') is null,
@@ -530,6 +530,36 @@ select ok(
       and activity.group_id = '10000000-0000-0000-0000-000000000201'
   ),
   'scoped activity feed retains this workspace group creation'
+);
+
+select ok(
+  exists (
+    select 1
+    from private.user_group_activity_feed(
+      '00000000-0000-0000-0000-000000000000',
+      now() - interval '1 hour',
+      now() + interval '1 hour',
+      '10000000-0000-0000-0000-000000000201'
+    ) activity
+    where activity.table_name = 'user_group_metrics'
+      and activity.group_id = '10000000-0000-0000-0000-000000000201'
+  ),
+  'indexed direct candidates retain metric creation'
+);
+
+select ok(
+  exists (
+    select 1
+    from private.user_group_activity_feed(
+      '00000000-0000-0000-0000-000000000000',
+      now() - interval '1 hour',
+      now() + interval '1 hour',
+      '10000000-0000-0000-0000-000000000201'
+    ) activity
+    where activity.table_name = 'user_group_metric_category_links'
+      and activity.group_id = '10000000-0000-0000-0000-000000000201'
+  ),
+  'indexed parent candidates retain metric category links'
 );
 
 select ok(

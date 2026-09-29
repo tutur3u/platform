@@ -339,7 +339,7 @@ select ok(
     select proc_row.prosrc like '%join private.user_group_posts post_record%'
     from pg_proc proc_row
     where proc_row.oid =
-      'private.user_group_activity_feed(uuid,timestamptz,timestamptz)'::regprocedure
+      'private.user_group_activity_feed(uuid,timestamptz,timestamptz,uuid)'::regprocedure
   ),
   'user-group activity feed resolves post records from private schema'
 );
@@ -351,7 +351,7 @@ select ok(
       and proc_row.prosrc like '%''user_group_post_checks''%'
     from pg_proc proc_row
     where proc_row.oid =
-      'private.user_group_activity_feed(uuid,timestamptz,timestamptz)'::regprocedure
+      'private.user_group_activity_feed(uuid,timestamptz,timestamptz,uuid)'::regprocedure
   ),
   'user-group activity feed includes migrated private audit tables'
 );
