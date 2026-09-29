@@ -48,6 +48,10 @@ Phones and tablets share a compact floating icon dock. Leaving a mini-app return
 to its Home or Apps launch screen. Root screens remain mounted with hidden
 animations paused, preserving search and scroll state. The brand control opens
 the Apps screen within the normal shell, with compact search and arrange actions.
+Tapping a dock item glides the inner highlight to the new position without a
+button splash. During a hold or drag, the highlight follows the finger freely;
+it snaps to the selected item only on release. Reduced-motion settings shorten
+these transitions to an immediate state change.
 Switching between peer sections in any mini-app replaces the previous section in
 navigation history. Back follows the current context's outer layer: a detail
 returns to its parent section, a peer section returns to the mini-app root, and
@@ -742,6 +746,10 @@ For Drive, CRM, or Education mobile changes:
 1. Update `apps/mobile/lib/l10n/arb/*.arb` for every new user-facing string.
 2. Run `flutter gen-l10n`.
 3. Run `bun check:mobile`.
+4. Run the applicable mobile test and native build workflows in CI on the exact
+   authored commit. Use CI for routine branch verification; if its queue is
+   demonstrably stuck, record the pending jobs and local evidence, then resume
+   exact-commit CI before claiming release readiness.
 
 ## Profile activity privacy
 
