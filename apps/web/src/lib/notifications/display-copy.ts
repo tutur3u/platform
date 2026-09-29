@@ -73,13 +73,15 @@ export function notificationDisplayCopy(input: NotificationDisplayInput): {
   const rawTitle = nonEmpty(input.title) ?? app;
   const rawBody = nonEmpty(input.description);
   const taskName = app === 'Task' ? nonEmpty(input.data?.task_name) : null;
-  const unprefixedTitle = rawTitle.toLowerCase().startsWith(`${app.toLowerCase()}:`)
+  const unprefixedTitle = rawTitle
+    .toLowerCase()
+    .startsWith(`${app.toLowerCase()}:`)
     ? rawTitle.slice(app.length + 1).trim()
     : rawTitle;
   const itemName =
     taskName ??
     (app === 'Calendar'
-      ? nonEmpty(input.data?.event_title) ?? nonEmpty(input.data?.event_name)
+      ? (nonEmpty(input.data?.event_title) ?? nonEmpty(input.data?.event_name))
       : null) ??
     (app === 'Meet' ? nonEmpty(input.data?.meeting_title) : null) ??
     unprefixedTitle;
