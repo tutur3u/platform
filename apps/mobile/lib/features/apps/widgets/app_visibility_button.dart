@@ -13,20 +13,26 @@ class AppVisibilityButton extends StatelessWidget {
   });
 
   final bool hidden;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool cornerAligned;
 
   @override
   Widget build(BuildContext context) => IconButton(
-    tooltip: hidden ? context.l10n.appsShow : context.l10n.appsHide,
+    tooltip: onPressed == null
+        ? context.l10n.appsUnavailableWithCurrentAccess
+        : hidden
+        ? context.l10n.appsShow
+        : context.l10n.appsHide,
     visualDensity: VisualDensity.compact,
     constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
     padding: EdgeInsets.zero,
     alignment: cornerAligned ? Alignment.centerRight : Alignment.center,
-    onPressed: () {
-      unawaited(AppHaptics.selection());
-      onPressed();
-    },
+    onPressed: onPressed == null
+        ? null
+        : () {
+            unawaited(AppHaptics.selection());
+            onPressed!();
+          },
     icon: Container(
       width: 27,
       height: 27,

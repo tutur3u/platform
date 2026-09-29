@@ -16423,6 +16423,12 @@ abstract class AppLocalizations {
   /// **'Hidden experiments'**
   String get appsHiddenExperimentsSection;
 
+  /// No description provided for @appsUnavailableWithCurrentAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable with current access'**
+  String get appsUnavailableWithCurrentAccess;
+
   /// No description provided for @appsHideConfirmTitle.
   ///
   /// In en, this message translates to:

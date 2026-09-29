@@ -343,5 +343,17 @@ void main() {
       tester.getTopLeft(find.text('Chat')).dy,
       lessThan(tester.getTopLeft(find.text('Hidden experiments')).dy),
     );
+    final inventory = find.byKey(const ValueKey('inventory'));
+    final unavailableShow = find.descendant(
+      of: inventory,
+      matching: find.byTooltip('Unavailable with current access'),
+    );
+    expect(unavailableShow, findsOneWidget);
+    final showButton = find.descendant(
+      of: inventory,
+      matching: find.byType(IconButton),
+    );
+    expect(tester.widget<IconButton>(showButton).onPressed, isNull);
+    expect(experiments.state.isEnabled('inventory'), isFalse);
   });
 }

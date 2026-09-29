@@ -91,6 +91,10 @@ class AppsPickerEditor extends StatelessWidget {
         .toList();
     final modules = [...shown, ...hiddenApps, ...hiddenExperiments];
     final shownCount = shown.length;
+    final experimentAccess = {
+      for (final module in hiddenExperiments)
+        module.id: AppRegistry.experimentalAccessAvailable(context, module.id),
+    };
     return ReorderableListView.builder(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -109,6 +113,10 @@ class AppsPickerEditor extends StatelessWidget {
       itemBuilder: (context, index) {
         final module = modules[index];
         final hidden = index >= shownCount;
+        final canShow =
+            !hidden ||
+            !AppRegistry.experimentalModuleIds.contains(module.id) ||
+            experimentAccess[module.id] == true;
         return Column(
           key: ValueKey(module.id),
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,15 +153,17 @@ class AppsPickerEditor extends StatelessWidget {
                 children: [
                   AppVisibilityButton(
                     hidden: hidden,
-                    onPressed: () => unawaited(
-                      _changeEditorVisibility(
-                        context: context,
-                        apps: cubit,
-                        experiments: experiments,
-                        module: module,
-                        hidden: hidden,
-                      ),
-                    ),
+                    onPressed: canShow
+                        ? () => unawaited(
+                            _changeEditorVisibility(
+                              context: context,
+                              apps: cubit,
+                              experiments: experiments,
+                              module: module,
+                              hidden: hidden,
+                            ),
+                          )
+                        : null,
                   ),
                   if (!hidden)
                     ReorderableDragStartListener(

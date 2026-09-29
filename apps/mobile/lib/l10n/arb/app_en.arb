@@ -3452,6 +3452,7 @@
   "appsShow": "Show app",
   "appsHiddenSection": "Hidden apps",
   "appsHiddenExperimentsSection": "Hidden experiments",
+  "appsUnavailableWithCurrentAccess": "Unavailable with current access",
   "appsHideConfirmTitle": "Hide this app?",
   "appsHideConfirmDescription": "It will move below your shown apps. You can show it again at any time.",
   "appsReorder": "Drag to reorder",

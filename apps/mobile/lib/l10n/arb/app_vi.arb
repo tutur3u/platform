@@ -3456,6 +3456,7 @@
   "appsShow": "Hiện ứng dụng",
   "appsHiddenSection": "Ứng dụng đã ẩn",
   "appsHiddenExperimentsSection": "Thử nghiệm đã ẩn",
+  "appsUnavailableWithCurrentAccess": "Không khả dụng với quyền truy cập hiện tại",
   "appsHideConfirmTitle": "Ẩn ứng dụng này?",
   "appsHideConfirmDescription": "Ứng dụng sẽ chuyển xuống dưới các ứng dụng đang hiện. Bạn có thể hiện lại bất cứ lúc nào.",
   "appsReorder": "Kéo để sắp xếp",

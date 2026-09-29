@@ -445,22 +445,8 @@ class AppRegistry {
     return !isPersonalWorkspace;
   }
 
-  static bool _showInventoryModule(BuildContext context) {
-    if (!_isExperimentalModuleAvailable(context, 'inventory')) {
-      return false;
-    }
-
-    final accessState = context
-        .select<InventoryAccessCubit?, InventoryAccessState?>(
-          (cubit) => cubit?.state,
-        );
-    if (accessState == null) {
-      return false;
-    }
-
-    return accessState.status == InventoryAccessStatus.loaded &&
-        accessState.enabled;
-  }
+  static bool _showInventoryModule(BuildContext context) =>
+      _isExperimentalModuleAvailable(context, 'inventory');
 
   static bool _showDriveModule(BuildContext context) =>
       _isExperimentalModuleAvailable(context, 'drive');
@@ -471,22 +457,8 @@ class AppRegistry {
   static bool _showCmsModule(BuildContext context) =>
       _isExperimentalModuleAvailable(context, 'cms');
 
-  static bool _showEducationModule(BuildContext context) {
-    if (!_isExperimentalModuleAvailable(context, 'education')) {
-      return false;
-    }
-
-    final accessState = context
-        .select<EducationAccessCubit?, EducationAccessState?>(
-          (cubit) => cubit?.state,
-        );
-    if (accessState == null) {
-      return false;
-    }
-
-    return accessState.status == EducationAccessStatus.loaded &&
-        accessState.enabled;
-  }
+  static bool _showEducationModule(BuildContext context) =>
+      _isExperimentalModuleAvailable(context, 'education');
 
   static bool _showCrmModule(BuildContext context) =>
       _isExperimentalModuleAvailable(context, 'crm');
@@ -500,21 +472,8 @@ class AppRegistry {
   static bool _showNotesModule(BuildContext context) =>
       _isExperimentalModuleAvailable(context, 'notes');
 
-  static bool _showHabitsModule(BuildContext context) {
-    if (!_isExperimentalModuleAvailable(context, 'habits')) {
-      return false;
-    }
-
-    final accessState = context.select<HabitsAccessCubit?, HabitsAccessState?>(
-      (cubit) => cubit?.state,
-    );
-    if (accessState == null) {
-      return false;
-    }
-
-    return accessState.status == HabitsAccessStatus.loaded &&
-        accessState.enabled;
-  }
+  static bool _showHabitsModule(BuildContext context) =>
+      _isExperimentalModuleAvailable(context, 'habits');
 
   static bool _showTimerModule(BuildContext context) =>
       _isExperimentalModuleAvailable(context, 'timer');
@@ -526,7 +485,34 @@ class AppRegistry {
     String moduleId,
   ) {
     return _isExperimentalModuleEnabled(context, moduleId) &&
-        !_isModuleHiddenByWorkspaceSecret(context, moduleId);
+        experimentalAccessAvailable(context, moduleId);
+  }
+
+  static bool experimentalAccessAvailable(
+    BuildContext context,
+    String moduleId,
+  ) {
+    if (!experimentalModuleIds.contains(moduleId)) return false;
+    if (moduleId == 'mail') return mailModuleAccessAvailable(context);
+    if (_isModuleHiddenByWorkspaceSecret(context, moduleId)) return false;
+    return switch (moduleId) {
+      'inventory' => context.select<InventoryAccessCubit?, bool>(
+        (cubit) =>
+            cubit?.state.status == InventoryAccessStatus.loaded &&
+            cubit?.state.enabled == true,
+      ),
+      'education' => context.select<EducationAccessCubit?, bool>(
+        (cubit) =>
+            cubit?.state.status == EducationAccessStatus.loaded &&
+            cubit?.state.enabled == true,
+      ),
+      'habits' => context.select<HabitsAccessCubit?, bool>(
+        (cubit) =>
+            cubit?.state.status == HabitsAccessStatus.loaded &&
+            cubit?.state.enabled == true,
+      ),
+      _ => true,
+    };
   }
 
   static bool _isExperimentalModuleEnabled(
