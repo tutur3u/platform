@@ -40,5 +40,11 @@ void main() {
       }),
       'category-server-id',
     );
+    expect(
+      createdServerId({
+        'role': {'id': 'role-server-id'},
+      }),
+      'role-server-id',
+    );
   });
 }

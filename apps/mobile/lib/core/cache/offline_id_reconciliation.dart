@@ -63,6 +63,7 @@ String? createdServerId(Map<String, dynamic> response) {
     'request',
     'comment',
     'category',
+    'role',
   ]) {
     final value = response[key];
     if (value is Map) {

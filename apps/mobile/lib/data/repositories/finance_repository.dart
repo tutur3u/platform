@@ -215,26 +215,30 @@ class FinanceRepository
     required String wsId,
     required String currency,
   }) async {
-    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+    final path = FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY');
+    final payload = {'value': currency.trim().toUpperCase()};
+    await queueOrSendVoid(
       feature: 'finance',
       method: 'PUT',
-      path: FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+      path: path,
       workspaceId: wsId,
-      payload: {'value': currency.trim().toUpperCase()},
+      payload: payload,
       entityId: wsId,
-    )) {
-      await _storeWorkspaceDefaultCurrencyCache(wsId: wsId, currency: currency);
-      return;
-    }
-    await _api.putJson(
-      FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
-      {'value': currency.trim().toUpperCase()},
+      send: () async {
+        await _api.putJson(path, payload);
+      },
     );
     await _storeWorkspaceDefaultCurrencyCache(wsId: wsId, currency: currency);
   }
 
   Future<List<ExchangeRate>> getExchangeRates() async {
-    final response = await _api.getJson(FinanceEndpoints.exchangeRates);
+    final response = await readThroughJson(
+      api: _api,
+      namespace: 'finance.exchangeRates',
+      workspaceId: 'global',
+      path: FinanceEndpoints.exchangeRates,
+      policy: CachePolicies.metadata,
+    );
     final data = response['data'];
     if (data is! List<dynamic>) return const [];
 
@@ -249,8 +253,11 @@ class FinanceRepository
     required String walletId,
   }) async {
     try {
-      final response = await _api.getJson(
-        FinanceEndpoints.wallet(wsId, walletId),
+      final response = await readThroughJson(
+        api: _api,
+        namespace: 'finance.walletDetail',
+        workspaceId: wsId,
+        path: FinanceEndpoints.wallet(wsId, walletId),
       );
       return Wallet.fromJson(response);
     } on ApiException catch (error) {
@@ -413,8 +420,11 @@ class FinanceRepository
     if (walletId != null && walletId.isNotEmpty) params['walletId'] = walletId;
 
     final query = Uri(queryParameters: params).query;
-    final response = await _api.getJson(
-      '${FinanceEndpoints.infiniteTransactions(wsId)}?$query',
+    final response = await readThroughJson(
+      api: _api,
+      namespace: 'finance.infiniteTransactions',
+      workspaceId: wsId,
+      path: '${FinanceEndpoints.infiniteTransactions(wsId)}?$query',
     );
 
     final page = InfiniteTransactionResponse.fromJson(response);
@@ -446,7 +456,12 @@ class FinanceRepository
     final endpoint = query.isEmpty
         ? FinanceEndpoints.transactionStats(wsId)
         : '${FinanceEndpoints.transactionStats(wsId)}?$query';
-    final response = await _api.getJson(endpoint);
+    final response = await readThroughJson(
+      api: _api,
+      namespace: 'finance.transactionStats',
+      workspaceId: wsId,
+      path: endpoint,
+    );
     return TransactionStats.fromJson(response);
   }
 

@@ -304,7 +304,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
                   .map(TimeTrackingRequest.fromJson)
                   .toList(growable: false),
           isFromCache: true,
-          isRefreshing: forceRefresh || !cached.isFresh,
+          isRefreshing: true,
           lastUpdatedAt: cached.fetchedAt,
           selectedStatus: selectedStatus,
           clearSelectedStatus: selectedStatus == null,
@@ -315,9 +315,6 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
           clearError: true,
         ),
       );
-      if (!forceRefresh && cached.isFresh) {
-        return;
-      }
     } else {
       emit(
         state.copyWith(

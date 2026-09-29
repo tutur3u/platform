@@ -435,21 +435,13 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           isHistoryLoadingMore: false,
           status: TimeTrackerStatus.loaded,
           isFromCache: true,
-          isRefreshing:
-              forceRefresh ||
-              !cachedRead.isFresh ||
-              shouldRefreshForHistoryContext,
+          isRefreshing: true,
           lastUpdatedAt: cachedRead.fetchedAt,
           clearError: true,
         ),
       );
-      if (!forceRefresh &&
-          cachedRead.isFresh &&
-          !shouldRefreshForHistoryContext) {
-        if (cached.runningSession != null && !cached.isPaused) {
-          _startTick();
-        }
-        return;
+      if (cached.runningSession != null && !cached.isPaused) {
+        _startTick();
       }
     } else {
       emit(

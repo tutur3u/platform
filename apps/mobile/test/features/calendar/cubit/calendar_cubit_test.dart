@@ -189,7 +189,7 @@ void main() {
       expect(cubit.state.viewMode, CalendarViewMode.agenda);
     });
 
-    test('reuses fresh cached state across cubit instances', () async {
+    test('revalidates fresh cached state across cubit instances', () async {
       when(
         () => repository.getEvents(
           'ws-1',
@@ -219,7 +219,7 @@ void main() {
           start: any(named: 'start'),
           end: any(named: 'end'),
         ),
-      ).called(1);
+      ).called(2);
     });
 
     test('force refresh keeps visible data while revalidating', () async {
@@ -333,15 +333,15 @@ void main() {
       await cubit.loadEvents('ws-2');
 
       expect(cubit.state.status, CalendarStatus.loaded);
-      expect(cubit.state.isFromCache, isTrue);
+      expect(cubit.state.isFromCache, isFalse);
       expect(cubit.state.events.single.id, 'event-ws-2');
-      verifyNever(
+      verify(
         () => repository.getEvents(
           'ws-2',
           start: any(named: 'start'),
           end: any(named: 'end'),
         ),
-      );
+      ).called(1);
     });
   });
 }

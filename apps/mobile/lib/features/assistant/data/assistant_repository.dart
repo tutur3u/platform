@@ -427,15 +427,13 @@ class AssistantRepository {
         decode: _decodeRestoredCache,
       );
       if (cached.hasValue && cached.data != null && !cached.isExpired) {
-        if (!cached.isFresh) {
-          unawaited(
-            restoreChat(
-              wsId: wsId,
-              chatId: chatId,
-              forceRefresh: true,
-            ).catchError((_) => null),
-          );
-        }
+        unawaited(
+          restoreChat(
+            wsId: wsId,
+            chatId: chatId,
+            forceRefresh: true,
+          ).catchError((_) => null),
+        );
         return cached.data;
       }
     }

@@ -10,7 +10,6 @@ import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
-import 'package:mobile/features/habits/habits_cache.dart';
 
 part 'habits_cache_json.dart';
 
@@ -224,25 +223,11 @@ class HabitsCubit extends Cubit<HabitsState> {
       );
       _latestCacheKeyByWorkspace[userScopedCacheKey(wsId)] = cacheKey;
       hasVisibleData = true;
-      if (!refresh && diskCached.isFresh) {
-        return;
-      }
     }
 
     if (cached != null && !hasVisibleData) {
       emit(_decorateCachedState(cached.state, fetchedAt: cached.fetchedAt));
       hasVisibleData = true;
-      if (!refresh && isHabitsCacheFresh(cached.fetchedAt)) {
-        return;
-      }
-    }
-
-    if (!refresh &&
-        hasVisibleData &&
-        state.status == HabitsStatus.loaded &&
-        cached != null &&
-        isHabitsCacheFresh(cached.fetchedAt)) {
-      return;
     }
 
     final requestToken = ++_listRequestToken;
@@ -390,24 +375,13 @@ class HabitsCubit extends Cubit<HabitsState> {
       _scopeUserIdFor(state.selectedScope, state),
     );
     final cached = _cache[cacheKey];
-    final hasVisibleEntries =
+    var hasVisibleEntries =
         state.activityEntries.isNotEmpty ||
         state.activityStatus == HabitsStatus.loaded;
 
     if (cached != null && !hasVisibleEntries) {
       emit(_applyCachedActivityState(state, cached.state, cached.fetchedAt));
-      if (!refresh &&
-          cached.state.activityStatus == HabitsStatus.loaded &&
-          isHabitsCacheFresh(cached.fetchedAt)) {
-        return;
-      }
-    }
-
-    if (!refresh &&
-        state.activityStatus == HabitsStatus.loaded &&
-        cached != null &&
-        isHabitsCacheFresh(cached.fetchedAt)) {
-      return;
+      hasVisibleEntries = true;
     }
     if (state.listResponse == null) {
       await loadWorkspace(wsId, refresh: refresh);
@@ -523,18 +497,9 @@ class HabitsCubit extends Cubit<HabitsState> {
     if (wsId == null || wsId.isEmpty) {
       return;
     }
-    if (!refresh &&
-        state.detailStatus == HabitsStatus.loaded &&
-        state.detail?.tracker.id == trackerId &&
-        state.detailScope == detailScope &&
-        state.detailScopeUserId == detailScopeUserId) {
-      emit(state.copyWith(selectedTrackerId: trackerId));
-      return;
-    }
-
     final cacheKey = _cacheKeyFor(wsId, detailScope, detailScopeUserId);
     final cached = _cache[cacheKey];
-    final hasVisibleDetail =
+    var hasVisibleDetail =
         state.detail?.tracker.id == trackerId &&
         state.detailScope == detailScope &&
         state.detailScopeUserId == detailScopeUserId &&
@@ -546,9 +511,7 @@ class HabitsCubit extends Cubit<HabitsState> {
           cached.state.detailScope == detailScope &&
           cached.state.detailScopeUserId == detailScopeUserId) {
         emit(_applyCachedDetailState(state, cached.state, cached.fetchedAt));
-        if (!refresh && isHabitsCacheFresh(cached.fetchedAt)) {
-          return;
-        }
+        hasVisibleDetail = true;
       }
     }
 

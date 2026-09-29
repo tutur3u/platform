@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
@@ -41,6 +45,27 @@ Future<void> queueOrSendVoid({
     )) {
       rethrow;
     }
+  } on Object catch (error) {
+    if (error is! SocketException &&
+        error is! TimeoutException &&
+        error is! http.ClientException) {
+      rethrow;
+    }
+    final queued = await OfflineMutationQueue.instance
+        .enqueueAfterNetworkFailure(
+          error: const ApiException(
+            message: 'Network unavailable',
+            statusCode: 0,
+          ),
+          feature: feature,
+          method: method,
+          path: path,
+          workspaceId: workspaceId,
+          payload: payload ?? const {},
+          entityId: localId,
+          replaySafe: replaySafe,
+        );
+    if (!queued) rethrow;
   }
 }
 
@@ -74,6 +99,25 @@ Future<T> queueOrSendValue<T>({
   } on ApiException catch (error) {
     if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
       error: error,
+      feature: feature,
+      method: method,
+      path: path,
+      workspaceId: workspaceId,
+      payload: payload ?? const {},
+      entityId: localId,
+      replaySafe: replaySafe,
+    )) {
+      return pendingValue(localId);
+    }
+    rethrow;
+  } on Object catch (error) {
+    if (error is! SocketException &&
+        error is! TimeoutException &&
+        error is! http.ClientException) {
+      rethrow;
+    }
+    if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+      error: const ApiException(message: 'Network unavailable', statusCode: 0),
       feature: feature,
       method: method,
       path: path,

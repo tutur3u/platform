@@ -339,20 +339,15 @@ class _SettingsWorkspaceSecretsPageState
         if (resolvedCachedSecrets == null || resolvedCachedRollout == null) {
           return;
         }
-        final shouldRefresh =
-            forceRefresh || !(cachedSecrets!.isFresh && cachedRollout!.isFresh);
         setState(() {
           _isLoading = false;
-          _isRefreshing = shouldRefresh;
+          _isRefreshing = true;
           _loadedWorkspaceId = workspaceId;
           _hasAccess = true;
           _error = null;
           _secrets = _sortedSecrets(resolvedCachedSecrets);
           _rolloutState = resolvedCachedRollout;
         });
-        if (!shouldRefresh) {
-          return;
-        }
       }
 
       final results = await Future.wait<dynamic>([

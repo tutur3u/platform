@@ -98,11 +98,15 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
           error: null,
         ),
       );
-      if (cached.isFresh) {
-        return;
-      }
     }
-    emit(state.copyWith(status: TaskEstimatesStatus.loading, error: null));
+    emit(
+      state.copyWith(
+        status: cached.hasValue
+            ? TaskEstimatesStatus.loaded
+            : TaskEstimatesStatus.loading,
+        error: null,
+      ),
+    );
 
     try {
       final boards = await _taskRepository.getTaskEstimateBoards(wsId);

@@ -10,8 +10,6 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
     : _repository = profileRepository,
       super(const ShellProfileState());
 
-  static const Duration staleAfter = Duration(minutes: 30);
-
   final ProfileRepository _repository;
 
   void primeFromAuthenticatedUser(User user) {
@@ -101,11 +99,7 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
       return;
     }
 
-    if (state.userId != user.id ||
-        state.lastUpdatedAt == null ||
-        !_isFresh(state.lastUpdatedAt!)) {
-      await loadFromAuthenticatedUser(user, forceRefresh: true);
-    }
+    await loadFromAuthenticatedUser(user, forceRefresh: true);
   }
 
   Future<void> applyExternalProfile(
@@ -159,9 +153,6 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
       error: error,
     );
   }
-
-  bool _isFresh(DateTime fetchedAt) =>
-      DateTime.now().difference(fetchedAt) < staleAfter;
 
   UserProfile _profileFromUser(User user) {
     final metadata = user.userMetadata;

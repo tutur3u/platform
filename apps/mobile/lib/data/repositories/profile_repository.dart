@@ -8,6 +8,7 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
+import 'package:mobile/core/cache/profile_avatar_delivery.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -112,21 +113,34 @@ class ProfileRepository {
     }
   }
 
-  /// Stages avatar bytes when the device has no connection.
-  Future<bool> queueAvatarUploadIfOffline(File file) async {
-    final bytes = await file.readAsBytes();
-    return await OfflineMutationQueue.instance.enqueueIfOffline(
-      feature: 'profile',
-      method: 'PROFILE_AVATAR_UPLOAD',
-      path: ProfileEndpoints.avatarUploadUrl,
-      workspaceId: 'personal',
-      entityId: getCurrentUserIdSync(),
-      payload: {
+  Future<({bool success, String? error})> saveAvatar(File file) async {
+    try {
+      final payload = {
         'filename': file.uri.pathSegments.last,
         'contentType': lookupMimeType(file.path) ?? 'application/octet-stream',
-        'bytes': base64Encode(bytes),
-      },
-    );
+        'bytes': base64Encode(await file.readAsBytes()),
+      };
+      await queueOrSendVoid(
+        feature: 'profile',
+        method: 'PROFILE_AVATAR_UPLOAD',
+        path: ProfileEndpoints.avatarUploadUrl,
+        workspaceId: 'personal',
+        entityId: getCurrentUserIdSync(),
+        payload: payload,
+        send: () => deliverProfileAvatar(
+          api: _apiClient,
+          httpClient: _httpClient,
+          filename: payload['filename']!,
+          contentType: payload['contentType']!,
+          encodedBytes: payload['bytes']!,
+        ),
+      );
+      return (success: true, error: null);
+    } on ApiException catch (error) {
+      return (success: false, error: error.message);
+    } on Exception catch (error) {
+      return (success: false, error: error.toString());
+    }
   }
 
   /// Gets signed upload URL for avatar.

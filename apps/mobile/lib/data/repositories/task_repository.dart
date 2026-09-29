@@ -1048,7 +1048,12 @@ class TaskRepository {
   Future<List<TaskLinkOption>> getWorkspaceTasksForProjectLinking(
     String wsId,
   ) async {
-    final response = await _apiClient.getJson('/api/v1/workspaces/$wsId/tasks');
+    final response = await readThroughJson(
+      api: _apiClient,
+      namespace: 'tasks.projectLinkOptions',
+      workspaceId: wsId,
+      path: '/api/v1/workspaces/$wsId/tasks',
+    );
     final tasks = response['tasks'] as List<dynamic>? ?? const [];
 
     return tasks
@@ -1077,8 +1082,11 @@ class TaskRepository {
       if (normalizedSearch != null && normalizedSearch.isNotEmpty)
         'q': normalizedSearch,
     });
-    final response = await _apiClient.getJson(
-      '/api/v1/workspaces/$wsId/tasks?$query',
+    final response = await readThroughJson(
+      api: _apiClient,
+      namespace: 'tasks.timeLinkOptions',
+      workspaceId: wsId,
+      path: '/api/v1/workspaces/$wsId/tasks?$query',
     );
     final tasksRaw = response['tasks'] as List<dynamic>? ?? const [];
     final tasks = tasksRaw
@@ -1091,8 +1099,11 @@ class TaskRepository {
   }
 
   Future<List<WorkspaceUserOption>> getWorkspaceUsers(String wsId) async {
-    final response = await _apiClient.getJson(
-      '/api/v1/workspaces/$wsId/members',
+    final response = await readThroughJson(
+      api: _apiClient,
+      namespace: 'tasks.workspaceMembers',
+      workspaceId: wsId,
+      path: '/api/v1/workspaces/$wsId/members',
     );
     final members = response['members'] as List<dynamic>? ?? const [];
 

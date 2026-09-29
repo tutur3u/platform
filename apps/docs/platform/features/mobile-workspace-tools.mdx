@@ -155,6 +155,10 @@ already locally readable or writable.
 Mail keeps an explicit request path for authorization cleanup on 401/403.
 Meet now returns the scoped meeting snapshot immediately, refreshes in the
 background, and purges denied data if the refresh returns 401/403.
+Meet room costs, ended-meeting reviews, and assistant review details use scoped
+snapshots. Assistant review decisions queue with revision conflicts surfaced for
+manual review; a queued review card uses the pending frame. Live call tokens and
+assistant generation still require a connection.
 Pending Notes, Mail, Finance, Calendar, and Inventory product edits are stored in the account-scoped encrypted
 mutation queue and replayed in order per module and workspace on reconnect. A
 conflict holds dependent edits in that scope while other modules continue. A queued item uses a dashed
@@ -241,6 +245,19 @@ sharing controls show the pending treatment until acknowledged.
 Avatar changes stage encrypted image bytes offline and request a fresh signed
 upload URL on replay. A lost upload connection remains reviewable because the
 server may already have accepted the image.
+Workspace member, role, and invite-link settings use scoped snapshots and queue
+edits while offline. Permission and invitation changes only become effective
+after server acknowledgment; uncertain writes require review in Offline changes.
+Workspace selection migrates from preferences into the encrypted replica, and a
+cached workspace list always triggers revalidation when loaded. Creation limits
+and module visibility metadata use the same read behavior. Finance exchange
+rates, wallet details, transaction pages, and stats retain snapshots during
+refresh, including the initial Finance screen load.
+Workspace creation, name and default changes, and avatar edits queue offline.
+New workspaces receive local IDs; replay maps those IDs before dependent edits.
+Workspace avatar bytes remain encrypted in the outbox until a fresh signed URL
+is requested. An uncertain creation or upload requires review to avoid a
+duplicate workspace or avatar operation.
 Timer sessions, history, categories, goals, requests, and summaries use scoped
 snapshots while revalidating. Session start, stop, pause, resume, edit, missed
 entry creation, and deletion queue offline, with dimmed dashed session cards.

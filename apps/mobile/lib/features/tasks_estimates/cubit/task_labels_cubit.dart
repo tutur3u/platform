@@ -107,17 +107,18 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
               .toList(growable: false),
         ),
       );
-      if (cached.isFresh) {
-        return;
-      }
     }
     emit(
       state.copyWith(
-        status: TaskLabelsStatus.loading,
+        status: cached.hasValue
+            ? TaskLabelsStatus.loaded
+            : TaskLabelsStatus.loading,
         error: null,
         wsId: wsId,
         requestToken: token,
-        labels: shouldReplaceLabels ? const <TaskLabel>[] : state.labels,
+        labels: shouldReplaceLabels && !cached.hasValue
+            ? const <TaskLabel>[]
+            : state.labels,
       ),
     );
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_summary.dart';
@@ -125,6 +126,10 @@ void main() {
     });
 
     setUp(() async {
+      await CacheStore.instance.clearScope(
+        workspaceId: 'ws-1',
+        resourceOnly: true,
+      );
       repository = _MockTaskRepository();
       cubit = TaskBoardDetailCubit(taskRepository: repository);
       repositoryTasks = [taskOne, taskTwo, taskDone, taskClosed, taskDocuments];

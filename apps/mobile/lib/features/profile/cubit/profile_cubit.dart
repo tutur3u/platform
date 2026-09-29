@@ -166,45 +166,14 @@ class ProfileCubit extends Cubit<ProfileState> {
   /// Uploads avatar.
   Future<bool> uploadAvatar(File file) async {
     emit(state.copyWith(isLoading: true));
-
-    if (await _repository.queueAvatarUploadIfOffline(file)) {
-      emit(state.copyWith(isLoading: false));
-      return true;
-    }
-
-    // Get upload URL
-    final urlResult = await _repository.getAvatarUploadUrl(
-      file.uri.pathSegments.last,
-    );
-
-    if (urlResult.response == null) {
-      emit(state.copyWith(isLoading: false, error: urlResult.error));
-      return false;
-    }
-
-    // Upload file
-    final uploadResult = await _repository.uploadAvatarFile(
-      urlResult.response!.uploadUrl,
-      file,
-    );
-
-    if (!uploadResult.success) {
-      emit(state.copyWith(isLoading: false, error: uploadResult.error));
-      return false;
-    }
-
-    // Update avatar URL
-    final updateResult = await _repository.updateAvatarUrl(
-      urlResult.response!.publicUrl,
-    );
-
-    if (updateResult.success) {
+    final result = await _repository.saveAvatar(file);
+    if (result.success) {
       // Reload profile to get updated data
       await loadProfile(forceRefresh: true, emitLoading: false);
       emit(state.copyWith(isLoading: false));
       return true;
     } else {
-      emit(state.copyWith(isLoading: false, error: updateResult.error));
+      emit(state.copyWith(isLoading: false, error: result.error));
       return false;
     }
   }

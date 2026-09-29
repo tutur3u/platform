@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -296,44 +297,66 @@ class SettingsWorkspaceSection extends StatelessWidget {
           child: SettingsSection(
             title: l10n.settingsWorkspaceSectionManageTitle,
             children: [
-              SettingsTile(
-                icon: Icons.apartment_rounded,
-                title: l10n.settingsCurrentWorkspace,
-                value:
-                    currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
-                onTap: onSelectCurrentWorkspace,
+              PendingSyncFrame(
+                workspaceId: currentWorkspace?.id ?? 'personal',
+                entityId: currentWorkspace?.id ?? '',
+                feature: 'workspace',
+                child: SettingsTile(
+                  icon: Icons.apartment_rounded,
+                  title: l10n.settingsCurrentWorkspace,
+                  value:
+                      currentWorkspace?.name ??
+                      l10n.settingsNoWorkspaceSelected,
+                  onTap: onSelectCurrentWorkspace,
+                ),
               ),
-              SettingsTile(
-                icon: Icons.home_work_outlined,
-                title: l10n.settingsDefaultWorkspace,
-                value:
-                    workspaceState.defaultWorkspace?.name ??
-                    l10n.settingsNoWorkspaceSelected,
-                onTap: onSelectDefaultWorkspace,
+              PendingSyncFrame(
+                workspaceId: workspaceState.defaultWorkspace?.id ?? 'personal',
+                entityId: workspaceState.defaultWorkspace?.id ?? '',
+                feature: 'workspace',
+                child: SettingsTile(
+                  icon: Icons.home_work_outlined,
+                  title: l10n.settingsDefaultWorkspace,
+                  value:
+                      workspaceState.defaultWorkspace?.name ??
+                      l10n.settingsNoWorkspaceSelected,
+                  onTap: onSelectDefaultWorkspace,
+                ),
               ),
-              SettingsTile(
-                icon: Icons.attach_money_rounded,
-                title: l10n.settingsWorkspaceDefaultCurrencyTitle,
-                value: isWorkspaceCurrencyLoading
-                    ? '…'
-                    : (defaultCurrency ?? ''),
-                onTap:
-                    canEditWorkspaceDefaultCurrency &&
-                        !isWorkspaceCurrencyLoading
-                    ? onEditWorkspaceDefaultCurrency
-                    : null,
+              PendingSyncFrame(
+                workspaceId: currentWorkspace?.id ?? 'personal',
+                entityId: currentWorkspace?.id ?? '',
+                feature: 'finance',
+                child: SettingsTile(
+                  icon: Icons.attach_money_rounded,
+                  title: l10n.settingsWorkspaceDefaultCurrencyTitle,
+                  value: isWorkspaceCurrencyLoading
+                      ? '…'
+                      : (defaultCurrency ?? ''),
+                  onTap:
+                      canEditWorkspaceDefaultCurrency &&
+                          !isWorkspaceCurrencyLoading
+                      ? onEditWorkspaceDefaultCurrency
+                      : null,
+                ),
               ),
-              SettingsTile(
-                icon: Icons.drive_file_rename_outline_rounded,
-                title: l10n.settingsWorkspacePropertiesTitle,
-                value:
-                    currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
-                onTap:
-                    currentWorkspace != null &&
-                        !isWorkspacePermissionLoading &&
-                        canEditWorkspaceProperties
-                    ? () => onEditWorkspaceProperties(currentWorkspace)
-                    : null,
+              PendingSyncFrame(
+                workspaceId: currentWorkspace?.id ?? 'personal',
+                entityId: currentWorkspace?.id ?? '',
+                feature: 'workspace',
+                child: SettingsTile(
+                  icon: Icons.drive_file_rename_outline_rounded,
+                  title: l10n.settingsWorkspacePropertiesTitle,
+                  value:
+                      currentWorkspace?.name ??
+                      l10n.settingsNoWorkspaceSelected,
+                  onTap:
+                      currentWorkspace != null &&
+                          !isWorkspacePermissionLoading &&
+                          canEditWorkspaceProperties
+                      ? () => onEditWorkspaceProperties(currentWorkspace)
+                      : null,
+                ),
               ),
               SettingsTile(
                 icon: Icons.key_rounded,

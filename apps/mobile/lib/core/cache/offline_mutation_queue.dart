@@ -14,6 +14,8 @@ import 'package:mobile/core/cache/offline_id_reconciliation.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/cache/profile_avatar_delivery.dart';
 import 'package:mobile/core/cache/time_request_image_delivery.dart';
+import 'package:mobile/core/cache/workspace_avatar_delivery.dart';
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
@@ -45,6 +47,7 @@ class OfflineMutationQueue {
   StreamSubscription<supa.AuthState>? _authSubscription;
   Timer? _retryTimer;
   bool _isDraining = false;
+  bool _drainRequested = false;
   bool _initialized = false;
 
   Future<void> init() async {
@@ -76,16 +79,25 @@ class OfflineMutationQueue {
     String? entityId,
     bool replaySafe = false,
   }) async {
+    final hasPendingDependency = pending.value.any(
+      (item) =>
+          item.workspaceId == workspaceId &&
+          (item.feature == feature ||
+              (item.feature == 'workspace' &&
+                  item.method == 'WORKSPACE_CREATE')),
+    );
     List<ConnectivityResult> connectivity;
-    try {
-      connectivity = await Connectivity().checkConnectivity();
-    } on Object {
-      // A missing platform signal must not silently turn an online write into
-      // a queued write (notably on desktop and in widget tests).
-      return false;
-    }
-    if (connectivity.any((result) => result != ConnectivityResult.none)) {
-      return false;
+    if (!hasPendingDependency) {
+      try {
+        connectivity = await Connectivity().checkConnectivity();
+      } on Object {
+        // A missing platform signal must not silently turn an online write into
+        // a queued write (notably on desktop and in widget tests).
+        return false;
+      }
+      if (connectivity.any((result) => result != ConnectivityResult.none)) {
+        return false;
+      }
     }
     await enqueue(
       PendingMutationRecord(
@@ -143,13 +155,21 @@ class OfflineMutationQueue {
     try {
       final userId = record.userId;
       final workspaceId = record.workspaceId;
-      final ids = userId == null || workspaceId == null
+      final featureIds = userId == null || workspaceId == null
           ? const <String, String>{}
           : await CacheStore.instance.localIdMappings(
               userId: userId,
               workspaceId: workspaceId,
               feature: record.feature,
             );
+      final workspaceIds = userId == null || workspaceId == null
+          ? const <String, String>{}
+          : await CacheStore.instance.localIdMappings(
+              userId: userId,
+              workspaceId: workspaceId,
+              feature: 'workspace',
+            );
+      final ids = {...workspaceIds, ...featureIds};
       final resolved = reconcileOfflineIds(record.path, record.payload, ids);
       switch (record.method.toUpperCase()) {
         case 'POST':
@@ -339,6 +359,76 @@ class OfflineMutationQueue {
           } finally {
             httpClient.close();
           }
+        case 'WORKSPACE_CREATE':
+          final payload = resolved.payload ?? const <String, dynamic>{};
+          var serverId = ids[record.entityId];
+          if (serverId == null) {
+            final created = await api.postJson(WorkspaceEndpoints.team, {
+              'name': payload['name'],
+            });
+            serverId = createdServerId(created);
+          }
+          if (serverId == null) {
+            throw const ApiException(
+              message: 'Missing created workspace ID',
+              statusCode: 0,
+            );
+          }
+          if (userId != null &&
+              workspaceId != null &&
+              record.entityId != null) {
+            await CacheStore.instance.saveLocalIdMapping(
+              userId: userId,
+              workspaceId: workspaceId,
+              feature: 'workspace',
+              localId: record.entityId!,
+              serverId: serverId,
+            );
+          }
+          if (payload['avatarBytes'] is String) {
+            final httpClient = http.Client();
+            try {
+              await deliverWorkspaceAvatar(
+                api: api,
+                httpClient: httpClient,
+                workspaceId: serverId,
+                filename: payload['avatarFilename'] as String,
+                contentType: payload['avatarContentType'] as String,
+                encodedBytes: payload['avatarBytes'] as String,
+              );
+            } finally {
+              httpClient.close();
+            }
+          }
+        case 'WORKSPACE_DEFAULT':
+          final client = maybeSupabase;
+          if (client == null || userId == null) {
+            throw StateError('Workspace default requires authentication');
+          }
+          await client
+              .from('user_private_details')
+              .update({
+                'default_workspace_id': resolved.payload?['workspaceId'],
+              })
+              .eq('user_id', userId);
+        case 'WORKSPACE_AVATAR_UPLOAD':
+          if (workspaceId == null) {
+            throw StateError('Workspace avatar has no workspace');
+          }
+          final payload = resolved.payload ?? const <String, dynamic>{};
+          final httpClient = http.Client();
+          try {
+            await deliverWorkspaceAvatar(
+              api: api,
+              httpClient: httpClient,
+              workspaceId: ids[workspaceId] ?? workspaceId,
+              filename: payload['filename'] as String,
+              contentType: payload['contentType'] as String,
+              encodedBytes: payload['bytes'] as String,
+            );
+          } finally {
+            httpClient.close();
+          }
         default:
           throw StateError('Unsupported queued method: ${record.method}');
       }
@@ -362,6 +452,11 @@ class OfflineMutationQueue {
     }
     await CacheStore.instance.savePendingMutation(record);
     await refresh();
+    if (_isDraining) {
+      _drainRequested = true;
+    } else {
+      unawaited(drain());
+    }
   }
 
   Future<void> cancel(String id) async {
@@ -397,7 +492,10 @@ class OfflineMutationQueue {
   }
 
   Future<void> drain() async {
-    if (_isDraining) return;
+    if (_isDraining) {
+      _drainRequested = true;
+      return;
+    }
     try {
       final connectivity = await Connectivity().checkConnectivity();
       if (connectivity.every((result) => result == ConnectivityResult.none)) {
@@ -465,6 +563,10 @@ class OfflineMutationQueue {
     } finally {
       await refresh();
       _isDraining = false;
+      if (_drainRequested) {
+        _drainRequested = false;
+        unawaited(drain());
+      }
     }
   }
 
