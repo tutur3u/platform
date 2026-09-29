@@ -16417,6 +16417,12 @@ abstract class AppLocalizations {
   /// **'Hidden apps'**
   String get appsHiddenSection;
 
+  /// No description provided for @appsHiddenExperimentsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden experiments'**
+  String get appsHiddenExperimentsSection;
+
   /// No description provided for @appsHideConfirmTitle.
   ///
   /// In en, this message translates to:

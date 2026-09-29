@@ -33,7 +33,9 @@ import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/notes/note_repository.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_suggestion.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -162,157 +164,158 @@ class _DashboardViewState extends State<_DashboardView> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocListener(
-      listeners: [
-        BlocListener<WorkspaceCubit, WorkspaceState>(
-          listenWhen: (previous, current) =>
-              previous.currentWorkspace?.id != current.currentWorkspace?.id,
-          listener: (context, state) {
-            final workspace = state.currentWorkspace;
-            if (workspace == null) return;
-            unawaited(
-              context.read<TaskListCubit>().loadTasks(
-                wsId: workspace.id,
-                isPersonal: workspace.personal,
-                userId: context.read<AuthCubit>().state.user?.id,
-              ),
-            );
-            unawaited(context.read<CalendarCubit>().loadEvents(workspace.id));
-          },
-        ),
-        BlocListener<AuthCubit, AuthState>(
-          listenWhen: (previous, current) =>
-              previous.user?.id != current.user?.id,
-          listener: (context, state) {
-            if (state.status != AuthStatus.authenticated ||
-                state.user == null) {
-              return;
-            }
-            final workspace = context
-                .read<WorkspaceCubit>()
-                .state
-                .currentWorkspace;
-            if (workspace == null) return;
-            unawaited(
-              context.read<TaskListCubit>().loadTasks(
-                wsId: workspace.id,
-                isPersonal: workspace.personal,
-                forceRefresh: true,
-                userId: state.user?.id,
-              ),
-            );
-            unawaited(
-              context.read<CalendarCubit>().loadEvents(
-                workspace.id,
-                forceRefresh: true,
-              ),
-            );
-          },
-        ),
-      ],
-      child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
-        builder: (context, workspaceState) {
-          final workspace = workspaceState.currentWorkspace;
-          if (workspace == null) {
-            final isWorkspaceLoading =
-                workspaceState.status == WorkspaceStatus.initial ||
-                workspaceState.status == WorkspaceStatus.loading;
-            if (isWorkspaceLoading) {
-              return const shad.Scaffold(
-                child: Center(child: NovaLoadingIndicator()),
-              );
-            }
+    const workspacePicker = _DashboardWorkspacePickerCard();
+    return Stack(
+      children: [
+        MultiBlocListener(
+          listeners: [
+            BlocListener<WorkspaceCubit, WorkspaceState>(
+              listenWhen: (previous, current) =>
+                  previous.currentWorkspace?.id != current.currentWorkspace?.id,
+              listener: (context, state) {
+                final workspace = state.currentWorkspace;
+                if (workspace == null) return;
+                unawaited(
+                  context.read<TaskListCubit>().loadTasks(
+                    wsId: workspace.id,
+                    isPersonal: workspace.personal,
+                    userId: context.read<AuthCubit>().state.user?.id,
+                  ),
+                );
+                unawaited(
+                  context.read<CalendarCubit>().loadEvents(workspace.id),
+                );
+              },
+            ),
+            BlocListener<AuthCubit, AuthState>(
+              listenWhen: (previous, current) =>
+                  previous.user?.id != current.user?.id,
+              listener: (context, state) {
+                if (state.status != AuthStatus.authenticated ||
+                    state.user == null) {
+                  return;
+                }
+                final workspace = context
+                    .read<WorkspaceCubit>()
+                    .state
+                    .currentWorkspace;
+                if (workspace == null) return;
+                unawaited(
+                  context.read<TaskListCubit>().loadTasks(
+                    wsId: workspace.id,
+                    isPersonal: workspace.personal,
+                    forceRefresh: true,
+                    userId: state.user?.id,
+                  ),
+                );
+                unawaited(
+                  context.read<CalendarCubit>().loadEvents(
+                    workspace.id,
+                    forceRefresh: true,
+                  ),
+                );
+              },
+            ),
+          ],
+          child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
+            builder: (context, workspaceState) {
+              final workspace = workspaceState.currentWorkspace;
+              if (workspace == null) {
+                final isWorkspaceLoading =
+                    workspaceState.status == WorkspaceStatus.initial ||
+                    workspaceState.status == WorkspaceStatus.loading;
+                if (isWorkspaceLoading) {
+                  return const shad.Scaffold(
+                    child: Center(child: NovaLoadingIndicator()),
+                  );
+                }
 
-            return _workspaceUnavailableState(context, workspaceState);
-          }
+                return _workspaceUnavailableState(context, workspaceState);
+              }
 
-          return BlocBuilder<TaskListCubit, TaskListState>(
-            builder: (context, taskState) {
-              return BlocBuilder<CalendarCubit, CalendarState>(
-                builder: (context, calendarState) {
-                  final focusTasks = _focusTasks(taskState);
-                  final upcomingEvents = _upcomingEvents(calendarState.events);
-                  return shad.Scaffold(
-                    child: NovaRefreshIndicator(
-                      onRefresh: () => _refresh(context, workspace),
-                      child: SafeArea(
-                        top: false,
-                        bottom: false,
-                        child: ResponsiveWrapper(
-                          maxWidth: ResponsivePadding.rootContentWidth(
-                            context.deviceClass,
-                          ),
-                          child: CustomScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(
-                              parent: BouncingScrollPhysics(),
+              return BlocBuilder<TaskListCubit, TaskListState>(
+                builder: (context, taskState) {
+                  return BlocBuilder<CalendarCubit, CalendarState>(
+                    builder: (context, calendarState) {
+                      final focusTasks = _focusTasks(taskState);
+                      final upcomingEvents = _upcomingEvents(
+                        calendarState.events,
+                      );
+                      return shad.Scaffold(
+                        child: NovaRefreshIndicator(
+                          onRefresh: () => _refresh(context, workspace),
+                          child: SafeArea(
+                            top: false,
+                            bottom: false,
+                            child: ResponsiveWrapper(
+                              maxWidth: ResponsivePadding.rootContentWidth(
+                                context.deviceClass,
+                              ),
+                              child: CustomScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(
+                                  parent: BouncingScrollPhysics(),
+                                ),
+                                slivers: [
+                                  SliverToBoxAdapter(
+                                    child: SizedBox(
+                                      height: floatingShellHeaderInset(context),
+                                    ),
+                                  ),
+                                  const SliverToBoxAdapter(
+                                    child: DeviceMfaSuggestion(),
+                                  ),
+                                  SliverPadding(
+                                    padding: EdgeInsets.fromLTRB(
+                                      ResponsivePadding.horizontal(
+                                        context.deviceClass,
+                                      ),
+                                      10,
+                                      ResponsivePadding.horizontal(
+                                        context.deviceClass,
+                                      ),
+                                      24 + MediaQuery.paddingOf(context).bottom,
+                                    ),
+                                    sliver: SliverResponsiveCards(
+                                      leading: StaggeredEntrance(
+                                        replayKey: widget.replayToken,
+                                        child: workspacePicker,
+                                      ),
+                                      children: _dashboardWidgets(
+                                        context,
+                                        workspace,
+                                        taskState,
+                                        calendarState,
+                                        focusTasks,
+                                        upcomingEvents,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            slivers: [
-                              SliverToBoxAdapter(
-                                child: SizedBox(
-                                  height: floatingShellHeaderInset(context),
-                                ),
-                              ),
-                              const SliverToBoxAdapter(
-                                child: DeviceMfaSuggestion(),
-                              ),
-                              SliverToBoxAdapter(
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: ResponsivePadding.horizontal(
-                                      context.deviceClass,
-                                    ),
-                                  ),
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: TextButton.icon(
-                                      key: const ValueKey('home-customize'),
-                                      onPressed: () =>
-                                          _showHomeCustomization(context),
-                                      icon: const Icon(Icons.tune_rounded),
-                                      label: Text(context.l10n.homeCustomize),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SliverPadding(
-                                padding: EdgeInsets.fromLTRB(
-                                  ResponsivePadding.horizontal(
-                                    context.deviceClass,
-                                  ),
-                                  10,
-                                  ResponsivePadding.horizontal(
-                                    context.deviceClass,
-                                  ),
-                                  24 + MediaQuery.paddingOf(context).bottom,
-                                ),
-                                sliver: SliverResponsiveCards(
-                                  leading: StaggeredEntrance(
-                                    replayKey: widget.replayToken,
-                                    child:
-                                        const _DashboardWorkspacePickerCard(),
-                                  ),
-                                  children: _dashboardWidgets(
-                                    context,
-                                    workspace,
-                                    taskState,
-                                    calendarState,
-                                    focusTasks,
-                                    upcomingEvents,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   );
                 },
               );
             },
-          );
-        },
-      ),
+          ),
+        ),
+        ShellChromeActions(
+          ownerId: 'home-dashboard',
+          locations: const {Routes.home},
+          actions: [
+            ShellActionSpec(
+              id: 'home-customize',
+              icon: Icons.tune_rounded,
+              tooltip: context.l10n.homeCustomize,
+              onPressed: () => _showHomeCustomization(context),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

@@ -6,6 +6,7 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_visibility_button.dart';
+import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -57,10 +58,39 @@ class AppsPickerEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.watch<AppTabCubit>();
-    final modules = arrangeApps(AppRegistry.modules(context), cubit);
-    final shownCount = modules
-        .where((module) => !cubit.state.hiddenAppIds.contains(module.id))
-        .length;
+    final experiments = context.watch<ExperimentalAppsCubit>();
+    final available = AppRegistry.modules(context);
+    final availableIds = available.map((module) => module.id).toSet();
+    final all = arrangeApps([
+      ...available,
+      ...AppRegistry.experimentalModules.where(
+        (module) => !availableIds.contains(module.id),
+      ),
+    ], cubit);
+    final shown = all
+        .where(
+          (module) =>
+              availableIds.contains(module.id) &&
+              !cubit.state.hiddenAppIds.contains(module.id),
+        )
+        .toList();
+    final hiddenApps = all
+        .where(
+          (module) =>
+              !AppRegistry.experimentalModuleIds.contains(module.id) &&
+              cubit.state.hiddenAppIds.contains(module.id),
+        )
+        .toList();
+    final hiddenExperiments = all
+        .where(
+          (module) =>
+              AppRegistry.experimentalModuleIds.contains(module.id) &&
+              (!availableIds.contains(module.id) ||
+                  cubit.state.hiddenAppIds.contains(module.id)),
+        )
+        .toList();
+    final modules = [...shown, ...hiddenApps, ...hiddenExperiments];
+    final shownCount = shown.length;
     return ReorderableListView.builder(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -71,24 +101,35 @@ class AppsPickerEditor extends StatelessWidget {
       buildDefaultDragHandles: false,
       itemCount: modules.length,
       onReorderItem: (oldIndex, newIndex) {
-        if (oldIndex >= shownCount) return;
+        if (oldIndex >= shownCount || shownCount < 2) return;
         final moved = modules.removeAt(oldIndex);
         modules.insert(newIndex.clamp(0, shownCount - 1), moved);
         unawaited(cubit.setAppOrder(modules.map((app) => app.id).toList()));
       },
       itemBuilder: (context, index) {
         final module = modules[index];
-        final hidden = cubit.state.hiddenAppIds.contains(module.id);
+        final hidden = index >= shownCount;
         return Column(
           key: ValueKey(module.id),
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (hidden && index == shownCount) ...[
+            if (hiddenApps.isNotEmpty && index == shownCount) ...[
               const Divider(height: 24),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                 child: Text(
                   context.l10n.appsHiddenSection,
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ),
+            ],
+            if (hiddenExperiments.isNotEmpty &&
+                index == shownCount + hiddenApps.length) ...[
+              const Divider(height: 24),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: Text(
+                  context.l10n.appsHiddenExperimentsSection,
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
               ),
@@ -105,10 +146,11 @@ class AppsPickerEditor extends StatelessWidget {
                   AppVisibilityButton(
                     hidden: hidden,
                     onPressed: () => unawaited(
-                      changeAppVisibility(
-                        context,
-                        cubit,
-                        module,
+                      _changeEditorVisibility(
+                        context: context,
+                        apps: cubit,
+                        experiments: experiments,
+                        module: module,
                         hidden: hidden,
                       ),
                     ),
@@ -132,4 +174,19 @@ class AppsPickerEditor extends StatelessWidget {
       },
     );
   }
+}
+
+Future<void> _changeEditorVisibility({
+  required BuildContext context,
+  required AppTabCubit apps,
+  required ExperimentalAppsCubit experiments,
+  required AppModule module,
+  required bool hidden,
+}) async {
+  if (!hidden && !await confirmHideApp(context)) return;
+  if (!context.mounted) return;
+  if (hidden && AppRegistry.experimentalModuleIds.contains(module.id)) {
+    await experiments.setModuleEnabled(moduleId: module.id, enabled: true);
+  }
+  await apps.setAppHidden(module.id, hidden: !hidden);
 }

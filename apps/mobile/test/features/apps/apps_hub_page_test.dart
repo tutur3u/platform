@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
+import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
@@ -129,6 +130,7 @@ void main() {
 
     showGrid.value = false;
     await tester.pumpAndSettle();
+    expect(find.byTooltip('Hide app'), findsNothing);
     expect(
       find.text('Assignments, boards, estimates, and portfolio planning.'),
       findsOneWidget,
@@ -236,7 +238,7 @@ void main() {
       reason: 'Chat should fill the drag gap ($chatStartX -> $chatReflowX)',
     );
     await drag.up();
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(cubit.state.appOrder.take(4), [
       'chat',
       'calendar',
@@ -272,12 +274,23 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(find.byTooltip('Hide app'), findsNothing);
+    final titleCenter = tester.getCenter(find.text('Tasks')).dx;
+    await tester.longPress(find.text('Tasks'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byTooltip('Hide app'), findsWidgets);
+    final taskTile = find.byKey(const ValueKey('apps-grid-position-tasks'));
+    final taskIcon = find
+        .descendant(of: taskTile, matching: find.byType(Icon))
+        .first;
+    expect(tester.getCenter(taskIcon).dx, closeTo(titleCenter, 1));
+    expect(tester.getCenter(find.text('Tasks')).dx, closeTo(titleCenter, 1));
     await tester.tap(find.byTooltip('Hide app').first);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Hide this app?'), findsOneWidget);
     expect(cubit.state.hiddenAppIds, isEmpty);
     await tester.tap(find.widgetWithText(FilledButton, 'Hide app'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
     expect(cubit.state.hiddenAppIds, ['tasks']);
     expect(find.text('Hidden apps'), findsOneWidget);
     expect(
@@ -285,7 +298,50 @@ void main() {
       greaterThan(tester.getTopLeft(find.text('Finance')).dy),
     );
     await tester.tap(find.byTooltip('Show app'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
     expect(cubit.state.hiddenAppIds, isEmpty);
+    await tester.tapAt(const Offset(400, 1200));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byTooltip('Hide app'), findsNothing);
+  });
+
+  testWidgets('disabled experiments can be shown from their own section', (
+    tester,
+  ) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(430, 2400);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final apps = AppTabCubit(settingsRepository: SettingsRepository());
+    final experiments = ExperimentalAppsCubit(
+      settingsRepository: SettingsRepository(),
+    );
+    await experiments.load();
+    addTearDown(apps.close);
+    addTearDown(experiments.close);
+    await tester.pumpApp(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: apps),
+          BlocProvider.value(value: experiments),
+        ],
+        child: const AppsPickerEditor(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Hidden experiments'), findsOneWidget);
+    final chat = find.byKey(const ValueKey('chat'));
+    await tester.tap(
+      find.descendant(of: chat, matching: find.byTooltip('Show app')),
+    );
+    await tester.pumpAndSettle();
+    expect(experiments.state.isEnabled('chat'), isTrue);
+    expect(
+      tester.getTopLeft(find.text('Chat')).dy,
+      lessThan(tester.getTopLeft(find.text('Hidden experiments')).dy),
+    );
   });
 }
