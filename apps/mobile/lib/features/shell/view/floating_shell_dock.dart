@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/dock_action_transition.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
@@ -298,7 +299,10 @@ class _DockActionsState extends State<_DockActions> {
                           shape: const StadiumBorder(),
                         ),
                         onPressed: action.enabled && !action.isLoading
-                            ? action.onPressed
+                            ? () {
+                                unawaited(AppHaptics.selection());
+                                action.onPressed?.call();
+                              }
                             : null,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -330,7 +334,10 @@ class _DockActionsState extends State<_DockActions> {
                       child: PopupMenuButton<ShellActionSpec>(
                         tooltip: '',
                         icon: const Icon(Icons.more_horiz),
-                        onSelected: (action) => action.onPressed?.call(),
+                        onSelected: (action) {
+                          unawaited(AppHaptics.selection());
+                          action.onPressed?.call();
+                        },
                         itemBuilder: (context) => [
                           for (final action in actions.skip(visibleCount))
                             PopupMenuItem(

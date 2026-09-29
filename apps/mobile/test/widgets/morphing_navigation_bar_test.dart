@@ -150,10 +150,21 @@ void main() {
       tester.getCenter(find.text('Home')),
     );
     await tester.pump(const Duration(milliseconds: 600));
-    await outside.moveTo(Offset.zero);
+    final bounds = tester.getRect(
+      find.byKey(const ValueKey('navigation-morph-bounds')),
+    );
+    await outside.moveTo(Offset(bounds.right + 120, bounds.top - 140));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(
+      tester
+          .getCenter(find.byKey(const ValueKey('navigation-drag-preview')))
+          .dx,
+      closeTo(bounds.left + 28, 3),
+    );
     await outside.up();
     await tester.pumpAndSettle();
-    expect(selected, isNull);
+    expect(selected, const ValueKey('home'));
   });
 
   testWidgets('release between tabs follows the nearest highlight center', (
@@ -192,6 +203,43 @@ void main() {
     expect(selected, const ValueKey('profile'));
     final pill = find.byKey(const ValueKey('navigation-selection-indicator'));
     expect(tester.getCenter(pill).dx, closeTo(profile.dx, 1));
+  });
+
+  testWidgets('drag outside the bar commits the slot under the clamped pill', (
+    tester,
+  ) async {
+    Key? selected;
+    await tester.pumpApp(
+      Center(
+        child: MorphingNavigationBar(
+          selectedKey: const ValueKey('home'),
+          onSelected: (key) => selected = key,
+          children: const [
+            shad.NavigationItem(key: ValueKey('home'), child: Text('Home')),
+            shad.NavigationItem(key: ValueKey('apps'), child: Text('Apps')),
+          ],
+        ),
+      ),
+    );
+    final bounds = tester.getRect(
+      find.byKey(const ValueKey('navigation-morph-bounds')),
+    );
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Home')),
+    );
+    await gesture.moveTo(Offset(bounds.right + 100, bounds.top - 160));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(selected, isNull);
+    expect(
+      tester
+          .getCenter(find.byKey(const ValueKey('navigation-drag-preview')))
+          .dx,
+      closeTo(bounds.right - 28, 3),
+    );
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(selected, const ValueKey('apps'));
   });
 
   testWidgets('width and retained items interpolate on entry and exit', (

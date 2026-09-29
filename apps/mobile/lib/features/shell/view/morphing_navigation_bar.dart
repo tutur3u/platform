@@ -73,11 +73,9 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
   }
 
   Key? _dragTarget(Offset position, double width, double scale) {
-    if (position.dy < -24 || position.dy > 76) return null;
-    final x = Directionality.of(context) == TextDirection.rtl
-        ? width - position.dx
-        : position.dx;
-    final pillCenter = x.clamp(
+    // A captured drag can leave the island. Selection still follows the
+    // visible pill, which is clamped to the island's nearest slot.
+    final pillCenter = position.dx.clamp(
       2 + _slot * scale / 2,
       (width - 2 - _slot * scale / 2).clamp(
         2 + _slot * scale / 2,
@@ -90,7 +88,10 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
       if (!_to.containsKey(entry.key) || entry.value.item.enabled == false) {
         continue;
       }
-      final center = 2 + (entry.value.x + _slot / 2) * scale;
+      final logicalCenter = 2 + (entry.value.x + _slot / 2) * scale;
+      final center = Directionality.of(context) == TextDirection.rtl
+          ? width - logicalCenter
+          : logicalCenter;
       final candidateDistance = (center - pillCenter).abs();
       if (candidateDistance < distance) {
         distance = candidateDistance;
@@ -187,13 +188,17 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                 _frames()[_settlingTarget ?? widget.selectedKey];
             final selectedX = selectedFrame == null
                 ? null
+                : Directionality.of(context) == TextDirection.rtl
+                ? width - 2 - (selectedFrame.x + _slot) * scale
                 : 2 + selectedFrame.x * scale;
+            final previewFrame = _frames()[_previewTarget];
             final highlightX = _dragPosition == null
                 ? selectedX
-                : (_dragPosition!.dx - _slot * scale / 2).clamp(
-                    2.0,
-                    (width - _slot * scale - 2).clamp(2.0, double.infinity),
-                  );
+                : previewFrame == null
+                ? selectedX
+                : Directionality.of(context) == TextDirection.rtl
+                ? width - 2 - (previewFrame.x + _slot) * scale
+                : 2 + previewFrame.x * scale;
             return AnimatedScale(
               scale: _pressed ? 1.055 : 1,
               duration: MediaQuery.disableAnimationsOf(context)
@@ -206,17 +211,22 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                     : Duration(milliseconds: _pressed ? 105 : 240),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(26),
-                  boxShadow: _pressed
-                      ? [
-                          BoxShadow(
-                            color: theme.colorScheme.primary.withValues(
-                              alpha: 0.5,
-                            ),
-                            blurRadius: 34,
-                            spreadRadius: 5,
-                          ),
-                        ]
-                      : const [],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: theme.brightness == Brightness.dark ? 0.3 : 0.14,
+                      ),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                    BoxShadow(
+                      color: theme.colorScheme.primary.withValues(
+                        alpha: _pressed ? 0.38 : 0,
+                      ),
+                      blurRadius: _pressed ? 32 : 12,
+                      spreadRadius: _pressed ? 4 : 0,
+                    ),
+                  ],
                 ),
                 child: SizedBox(
                   key: const ValueKey('navigation-morph-bounds'),
@@ -309,14 +319,12 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                               width: _slot * scale,
                               height: 48,
                               child: IgnorePointer(
-                                child: DecoratedBox(
-                                  key: _dragPosition == null
-                                      ? const ValueKey(
-                                          'navigation-selection-indicator',
-                                        )
-                                      : const ValueKey(
-                                          'navigation-drag-preview',
-                                        ),
+                                child: AnimatedContainer(
+                                  duration:
+                                      MediaQuery.disableAnimationsOf(context)
+                                      ? Duration.zero
+                                      : const Duration(milliseconds: 220),
+                                  curve: Curves.easeInOutCubic,
                                   decoration: BoxDecoration(
                                     color: theme.colorScheme.foreground
                                         .withValues(
@@ -324,8 +332,33 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
                                               ? 0.14
                                               : 0.22,
                                         ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: theme.colorScheme.primary
+                                            .withValues(
+                                              alpha: _dragPosition == null
+                                                  ? 0.08
+                                                  : 0.25,
+                                            ),
+                                        blurRadius: _dragPosition == null
+                                            ? 12
+                                            : 24,
+                                        spreadRadius: _dragPosition == null
+                                            ? 0
+                                            : 2,
+                                      ),
+                                    ],
                                     // Outer 26px radius minus the 2px inset.
                                     borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  child: SizedBox.expand(
+                                    key: _dragPosition == null
+                                        ? const ValueKey(
+                                            'navigation-selection-indicator',
+                                          )
+                                        : const ValueKey(
+                                            'navigation-drag-preview',
+                                          ),
                                   ),
                                 ),
                               ),

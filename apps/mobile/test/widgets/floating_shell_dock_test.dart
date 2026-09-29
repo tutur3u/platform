@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
@@ -354,5 +357,65 @@ void main() {
     await tester.tap(find.byType(FilledButton));
     expect(calls, 2);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('floating action gives selection feedback before invoking', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    AppHaptics.enabled = true;
+    final feedback = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'HapticFeedback.vibrate') {
+            feedback.add(call.arguments as String);
+          }
+          return null;
+        });
+    addTearDown(() {
+      debugDefaultTargetPlatformOverride = null;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+    final cubit = ShellChromeActionsCubit();
+    addTearDown(cubit.close);
+    var calls = 0;
+    cubit.register(
+      registrationId: 'haptic',
+      ownerId: 'mail',
+      locations: {'/mail'},
+      actions: [
+        ShellActionSpec(
+          id: 'compose',
+          icon: Icons.edit,
+          inDock: true,
+          onPressed: () => calls++,
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider.value(
+          value: cubit,
+          child: const Scaffold(
+            body: FloatingShellDock(
+              location: '/mail',
+              bottomInset: 68,
+              navigation: SizedBox(width: 160, height: 60),
+              child: SizedBox.expand(),
+            ),
+          ),
+        ),
+      ),
+    );
+    // Other dock tests may have produced a selection tick in this isolate.
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 90)),
+    );
+    await tester.tap(find.byType(FilledButton));
+    await tester.pump();
+    expect(calls, 1);
+    expect(feedback, contains('HapticFeedbackType.selectionClick'));
+    debugDefaultTargetPlatformOverride = null;
   });
 }

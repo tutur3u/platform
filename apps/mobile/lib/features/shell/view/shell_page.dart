@@ -358,31 +358,10 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
           'injectedBack=$injectedDeepLinkBackRoute',
     );
     if (miniAppRoot != null && miniAppRoot != currentLocation) {
-      if (_isPrimaryMiniAppDestination(currentLocation) &&
-          _routeHistory.isNotEmpty &&
-          !Routes.isSettingsHubLocation(currentLocation)) {
-        await _returnToAppOrigin();
-        return;
-      }
-      final previousMiniAppLocation = _peekPreviousRoute(currentLocation);
-      if (previousMiniAppLocation != null &&
-          _isSameMiniAppFamily(currentLocation, previousMiniAppLocation)) {
-        final previousLocation = _takePreviousRoute(currentLocation);
-        if (previousLocation != null) {
-          _debugBack(
-            'handleBackNavigation.toPreviousMiniApp',
-            previousLocation,
-          );
-          _debugShellNav(
-            '[ShellNav] go $previousLocation from back previous mini-app',
-          );
-          _isHandlingBackNavigation = true;
-          context.go(previousLocation);
-          return;
-        }
-      }
-
-      final fallbackRoute = injectedDeepLinkBackRoute ?? miniAppRoot;
+      final fallbackRoute =
+          _parentRouteFor(currentLocation, miniAppRoot) ??
+          injectedDeepLinkBackRoute ??
+          miniAppRoot;
       _debugBack('handleBackNavigation.toMiniAppRoot', fallbackRoute);
       _debugShellNav(
         '[ShellNav] go $fallbackRoute from back mini-app root fallback',
@@ -394,6 +373,11 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
 
     if (currentLocation == Routes.settings ||
         currentLocation == Routes.settingsWorkspace) {
+      if (currentLocation == Routes.settingsWorkspace) {
+        _isHandlingBackNavigation = true;
+        context.go(Routes.settings);
+        return;
+      }
       final previousSettingsRoute = _peekPreviousRoute(currentLocation);
       if (previousSettingsRoute != null &&
           Routes.isSettingsHubLocation(previousSettingsRoute)) {
@@ -549,6 +533,28 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
         (item) => _normalizeRouteLocation(item.route) == normalized,
       ),
     );
+  }
+
+  String? _parentRouteFor(String location, String root) {
+    if (Routes.isSettingsHubLocation(location)) {
+      final slash = location.lastIndexOf('/');
+      if (slash > 0) {
+        final parent = location.substring(0, slash);
+        return parent;
+      }
+      return root;
+    }
+    if (_isPrimaryMiniAppDestination(location)) return root;
+    final module = AppRegistry.moduleFromLocation(location);
+    final candidates =
+        module?.miniAppNavItems.map((item) => item.route) ??
+        const Iterable<String>.empty();
+    final parents = candidates.where(
+      (route) =>
+          route != root && route != location && location.startsWith('$route/'),
+    );
+    if (parents.isEmpty) return null;
+    return parents.reduce((a, b) => a.length >= b.length ? a : b);
   }
 
   bool _isExitLocation(String location) {
