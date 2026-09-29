@@ -359,13 +359,15 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
           'injectedBack=$injectedDeepLinkBackRoute',
     );
     if (miniAppRoot != null && miniAppRoot != currentLocation) {
-      if (_isPrimaryMiniAppDestination(currentLocation)) {
-        // Dock sections are peers; their overview tab is not a parent page.
-        await _returnToAppOrigin();
-        return;
-      }
       final parentRoute = _parentRouteFor(currentLocation, miniAppRoot);
-      if (parentRoute == null && injectedDeepLinkBackRoute == Routes.apps) {
+      final hasExplicitParent =
+          injectedDeepLinkBackRoute != null &&
+          injectedDeepLinkBackRoute != Routes.apps;
+      if (parentRoute == null &&
+          !hasExplicitParent &&
+          (_isPrimaryMiniAppDestination(currentLocation) ||
+              injectedDeepLinkBackRoute == Routes.apps)) {
+        // Peer sections exit their app; explicit parents remain reachable.
         await _returnToAppOrigin();
         return;
       }
