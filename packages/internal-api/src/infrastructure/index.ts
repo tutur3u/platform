@@ -10,5 +10,6 @@ export * from './mobile';
 export * from './monitoring';
 export * from './native-settings';
 export * from './realtime';
+export * from './review-accounts';
 export * from './types';
 export * from './workspace';

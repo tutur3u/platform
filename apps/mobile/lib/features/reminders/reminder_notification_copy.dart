@@ -6,7 +6,10 @@ import 'package:mobile/l10n/gen/app_localizations.dart';
   AppLocalizations l10n,
 ) {
   if (entry.kind == ReminderKind.task) {
-    return (title: l10n.remindersTaskTitle, body: entry.title);
+    return (
+      title: '${l10n.notificationTaskAppLabel}: ${entry.title}',
+      body: l10n.remindersTaskTitle,
+    );
   }
 
   final when = switch (entry.offset) {
@@ -18,9 +21,7 @@ import 'package:mobile/l10n/gen/app_localizations.dart';
     _ => null,
   };
   return (
-    title: when == null
-        ? l10n.remindersEventTitle
-        : l10n.remindersCalendarTiming(when),
-    body: entry.title,
+    title: '${l10n.navCalendar}: ${entry.title}',
+    body: when ?? l10n.remindersEventTitle,
   );
 }

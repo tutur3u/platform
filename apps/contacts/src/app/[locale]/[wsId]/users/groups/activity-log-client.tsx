@@ -1,6 +1,7 @@
 'use client';
 
 import { Eye } from '@tuturuuu/icons';
+import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import type { UserGroupActivityEvent } from '@tuturuuu/users-core/lib/user-group-activity/normalize';
@@ -83,6 +84,7 @@ function ActivityLogRows({
 export function UserGroupActivityLogClient({
   data,
   count,
+  loadFailed,
   page,
   pageSize,
   filters,
@@ -92,6 +94,7 @@ export function UserGroupActivityLogClient({
   groupId?: string;
   data: UserGroupActivityEvent[];
   count: number;
+  loadFailed: boolean;
   page: number;
   pageSize: number;
   compact?: boolean;
@@ -147,68 +150,83 @@ export function UserGroupActivityLogClient({
           updateSearchParams={updateSearchParams}
         />
 
-        <div className="overflow-x-auto rounded-md border border-border/70">
-          <table className="w-full min-w-[760px] text-sm">
-            <thead className="bg-muted/40 text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2 text-left font-medium">
-                  {t('ws-user-group-activity.when')}
-                </th>
-                <th className="px-3 py-2 text-left font-medium">
-                  {t('ws-user-group-activity.summary')}
-                </th>
-                <th className="px-3 py-2 text-left font-medium">
-                  {t('ws-user-group-activity.resource')}
-                </th>
-                <th className="px-3 py-2 text-left font-medium">
-                  {t('ws-user-group-activity.actor')}
-                </th>
-                <th className="w-16 px-3 py-2 text-right font-medium">
-                  {t('ws-user-group-activity.details')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <ActivityLogRows data={data} onSelect={setSelectedEvent} />
-            </tbody>
-          </table>
-        </div>
+        {loadFailed && (
+          <Alert variant="destructive" role="alert">
+            <AlertTitle>
+              {t('ws-user-group-activity.load_error_title')}
+            </AlertTitle>
+            <AlertDescription>
+              {t('ws-user-group-activity.load_error_description')}
+            </AlertDescription>
+          </Alert>
+        )}
 
-        <div className="flex items-center justify-between gap-2 text-sm">
-          <div className="text-muted-foreground">
-            {t('ws-user-group-activity.page_summary', {
-              page,
-              totalPages,
-              count,
-            })}
+        {!loadFailed && (
+          <div className="overflow-x-auto rounded-md border border-border/70">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead className="bg-muted/40 text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">
+                    {t('ws-user-group-activity.when')}
+                  </th>
+                  <th className="px-3 py-2 text-left font-medium">
+                    {t('ws-user-group-activity.summary')}
+                  </th>
+                  <th className="px-3 py-2 text-left font-medium">
+                    {t('ws-user-group-activity.resource')}
+                  </th>
+                  <th className="px-3 py-2 text-left font-medium">
+                    {t('ws-user-group-activity.actor')}
+                  </th>
+                  <th className="w-16 px-3 py-2 text-right font-medium">
+                    {t('ws-user-group-activity.details')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <ActivityLogRows data={data} onSelect={setSelectedEvent} />
+              </tbody>
+            </table>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page <= 1 || isPending}
-              onClick={() =>
-                updateSearchParams({ logPage: String(Math.max(page - 1, 1)) })
-              }
-            >
-              {t('ws-user-group-activity.previous')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages || isPending}
-              onClick={() =>
-                updateSearchParams({
-                  logPage: String(Math.min(page + 1, totalPages)),
-                })
-              }
-            >
-              {t('ws-user-group-activity.next')}
-            </Button>
+        )}
+
+        {!loadFailed && (
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <div className="text-muted-foreground">
+              {t('ws-user-group-activity.page_summary', {
+                page,
+                totalPages,
+                count,
+              })}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={page <= 1 || isPending}
+                onClick={() =>
+                  updateSearchParams({ logPage: String(Math.max(page - 1, 1)) })
+                }
+              >
+                {t('ws-user-group-activity.previous')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages || isPending}
+                onClick={() =>
+                  updateSearchParams({
+                    logPage: String(Math.min(page + 1, totalPages)),
+                  })
+                }
+              >
+                {t('ws-user-group-activity.next')}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <UserGroupActivityDetailSheet

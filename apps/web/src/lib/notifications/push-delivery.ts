@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { MulticastMessage } from 'firebase-admin/messaging';
+import { notificationDisplayCopy } from './display-copy';
 import { getFirebaseMessagingClient } from './firebase-admin';
 
 export interface PushNotificationRecord {
@@ -75,6 +76,7 @@ export function buildPushOpenTarget(
 export function buildPushData(
   notification: PushNotificationRecord
 ): Record<string, string> {
+  const display = notificationDisplayCopy(notification);
   const boardId = asOptionalString(notification.data?.board_id);
   const conversationId =
     asOptionalString(notification.data?.conversation_id) ??
@@ -93,8 +95,9 @@ export function buildPushData(
   return {
     notificationId: notification.id,
     type: notification.type,
-    title: notification.title,
-    description: notification.description ?? '',
+    title: display.title,
+    description: display.body,
+    appName: display.app,
     wsId: workspaceId ?? '',
     entityType: asOptionalString(notification.entity_type) ?? '',
     entityId: asOptionalString(notification.entity_id) ?? '',
@@ -207,11 +210,12 @@ export async function sendPushNotificationBatch({
   notification: PushNotificationRecord;
   devices: PushDeviceRegistration[];
 }): Promise<PushSendResult> {
+  const display = notificationDisplayCopy(notification);
   return sendCustomPushMessageBatch({
     devices,
     message: {
-      title: notification.title,
-      body: notification.description ?? '',
+      title: display.title,
+      body: display.body,
       data: buildPushData(notification),
     },
   });

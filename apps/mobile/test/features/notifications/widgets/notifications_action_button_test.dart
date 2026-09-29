@@ -411,7 +411,7 @@ void main() {
       await tester.tap(find.text('Open notifications'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Cross-workspace task'));
+      await tester.tap(find.text('Task: Cross-workspace task'));
       await tester.pumpAndSettle();
 
       verify(() => workspaceCubit.selectWorkspace(teamWorkspace)).called(1);
@@ -515,7 +515,7 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
 
-        await tester.tap(find.text('Cross-workspace request'));
+        await tester.tap(find.text('Timer: Cross-workspace request'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
 

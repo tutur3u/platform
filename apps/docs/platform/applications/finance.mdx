@@ -190,6 +190,14 @@ are available for meaningful changed fields; Finance confidential mode masks
 amounts in the audit UI too. Promotion tracking begins with this migration;
 missing historical events and actor identities cannot be reconstructed by the UI.
 
+For a disputed tuition month, compare the completed invoice's customer, linked
+user group, `subscription_months`, issue date, and payment record. A receipt for
+the same student in another class does not settle a debt in the disputed class.
+Only treat it as a cross-class credit when an explicit adjustment or transfer
+record identifies the source invoice, destination class, covered months, and
+actor. Preserve those IDs in the case record. A missing audit event, especially
+while the audit feed is unavailable, cannot prove that no transfer happened.
+
 ### Audit history performance
 
 Invoice audit history loads bounded pages of 10, 25, or 50 events. The API fetches

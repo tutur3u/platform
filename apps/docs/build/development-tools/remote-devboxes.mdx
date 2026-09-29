@@ -218,6 +218,48 @@ hidden cases are stored in the private platform schema; learner results expose
 only the aggregate pass count and visible case outcomes. A failed or missing
 sandbox readiness check leaves Judge unavailable.
 
+### Recover a Lima Judge VM after disk errors
+
+On macOS, a full host disk can leave a Lima guest's ext4 root filesystem
+read-only. If writes fail with `Read-only file system` or the VM stops before
+SSH is ready, restore host free space first. Keep the VM disk and runner token
+files. Check `df -h` on the host and remove only known rebuildable caches or
+clean, merged worktrees.
+
+If the guest remains read-only, stop the VM before checking its disk. On an
+APFS host, make a copy-on-write backup, then attach the raw disk without
+mounting it:
+
+```bash
+judge_instance=ttr-judge
+limactl stop --force "$judge_instance"
+judge_disk="$HOME/.lima/$judge_instance/disk"
+cp -c "$judge_disk" "$judge_disk.pre-fsck"
+diskutil image attach --noMount "$judge_disk"
+```
+
+Find the ext4 root partition in the `diskutil` output (for example,
+`/dev/disk4s1`). Install the bottled `e2fsprogs` package if needed. Run the
+read-only check first, then repair **that partition** with the block device
+path, not the raw `/dev/rdisk*` path:
+
+```bash
+brew install --force-bottle e2fsprogs
+e2fsck_bin="$(brew --prefix e2fsprogs)/sbin/e2fsck"
+"$e2fsck_bin" -n /dev/disk4s1
+"$e2fsck_bin" -y /dev/disk4s1
+"$e2fsck_bin" -fn /dev/disk4s1
+diskutil eject /dev/disk4
+limactl start "$judge_instance"
+```
+
+Replace the example disk identifiers with those from your attach output. The
+final check must report a clean filesystem. Verify guest writes and the runner
+service before deleting the backup. If the host fills again, repair the host
+space problem before restarting the VM; repeated restarts can corrupt more
+guest data. See [Lima's offline fsck guidance](https://github.com/lima-vm/lima/discussions/2104)
+for the underlying disk-image procedure.
+
 Remove a runner from the cluster from the runner host with its runner token:
 
 ```bash
