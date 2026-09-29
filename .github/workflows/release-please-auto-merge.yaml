@@ -211,7 +211,43 @@ jobs:
 
       - name: Push verified release merge to main
         if: steps.plan.outputs.should_merge == 'true' && inputs.dry_run != true
-        run: git push origin HEAD:main
+        run: |
+          set -euo pipefail
+
+          # Other PRs can land during the release checks. Bring their exact
+          # commits into this merge and recheck before attempting the push.
+          for attempt in 1 2 3 4; do
+            git fetch origin +refs/heads/main:refs/remotes/origin/main
+            if ! git merge-base --is-ancestor origin/main HEAD; then
+              mobile_changed=false
+              if [[ -n "$(git diff --name-only HEAD origin/main -- apps/mobile)" ]]; then
+                mobile_changed=true
+              fi
+
+              git merge --no-ff --no-edit origin/main
+              bun check
+              if [[ "$mobile_changed" == true ]]; then
+                bun check:mobile
+              fi
+              git diff --exit-code
+              git diff --cached --exit-code
+            fi
+
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+
+            # A non-fast-forward race is retryable. Auth or branch protection
+            # errors must fail rather than repeatedly running checks.
+            git fetch origin +refs/heads/main:refs/remotes/origin/main
+            if git merge-base --is-ancestor origin/main HEAD; then
+              exit 1
+            fi
+            echo "Main advanced during release push (attempt $attempt); retrying."
+          done
+
+          echo "::error::Main kept advancing during release push."
+          exit 1
 
       - name: Wait for exact main CI before production
         if: (steps.plan.outputs.should_merge == 'true' || steps.plan.outputs.needs_sync == 'true') && inputs.dry_run != true

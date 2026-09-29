@@ -613,6 +613,11 @@ twice and rejects a changed main head. Production sync uses
 commit instead of silently adopting newer work. The run summary distinguishes
 planned work, a completed local merge, dry runs, and completed promotion.
 
+If another PR lands on `main` during release validation, the push step fetches
+and merges the new head, reruns `bun check` and any affected mobile checks, then
+retries the push up to four times. A merge conflict or a push error unrelated to
+main advancing fails the run. The exact-SHA CI gate still runs after the push.
+
 Validation runs at two Turbo tasks and two Vitest workers, with the worker limit
 preserved through Turbo's strict environment. SDK resource-admission tests start
 real child processes and use bounded integration-test deadlines, rather than the
@@ -650,10 +655,9 @@ front and fails with an actionable error, rather than discovering it after
 `bun check`.
 
 The job also installs Flutter (`3.47.x`, the same pin as `mobile.yaml`) and runs
-`flutter pub get` in `apps/mobile` before the merge. Release Please bumps
-`apps/mobile/pubspec.yaml` on every release, so `touchesMobile()` in
-`scripts/git-release-please.js` is always true and `bun check` is always
-followed by `bun check:mobile`; without a toolchain `dart-format`,
+`flutter pub get` in `apps/mobile` before the merge. When a release includes
+mobile changes, `touchesMobile()` in `scripts/git-release-please.js` follows
+`bun check` with `bun check:mobile`; without a toolchain `dart-format`,
 `flutter-analyze` and `flutter-test` all exit `127`.
 
 Keep every mobile build/deploy workflow on that same Flutter minor. The mobile
