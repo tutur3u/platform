@@ -42,13 +42,16 @@ checks, ownership, production data protections, and migration parity still apply
 The default quiet window for PR merge sync and automated Release Please merges is
 five minutes when a request does not specify a duration.
 
-When a user asks the agent to pause while CI runs, make an asynchronous handoff
-instead of repeatedly polling. Stop active CI watchers, record the PR URL,
-exact head or merge SHA, run IDs, pending gates, last review activity, and
-worktree ownership in `tmp/agent-coordination/`, then send one concise status
-update and pause. Do not merge or sync production while paused. On the user's
-reminder, fetch the current refs and review state again before continuing;
-previously observed green checks do not replace exact-SHA verification.
+Treat running CI as an asynchronous pause point by default. Finish other work
+that does not depend on its result, then stop active watchers and record the PR
+URL, exact head or merge SHA, run IDs, pending gates, last review activity, and
+worktree ownership in `tmp/agent-coordination/`. Send one concise status update
+and pause until the user's reminder. Use the full coordination-note format in
+`tuturuuu-platform/references/repository-workflows.md`, set its status to
+`handoff`, and never stage it. Do not poll, merge, or sync production while
+paused. Continue through CI in the same turn only when the user explicitly asks
+for that follow-through. On resumption, fetch current refs and review state
+again; earlier green checks do not replace exact-SHA verification.
 
 A plugin validator proves structural validity, not better model behavior. Review
 representative read, mutation, implementation, and delivery requests for correct

@@ -93,6 +93,14 @@ merge, or production evidence only when that delivery is authorized.
   follow-through. Only then remove the completed worktree and delete its local
   task branch. Never remove dirty, blocked, unmerged, user-owned, or
   other-agent-owned worktrees or branches.
+- Treat running CI as an asynchronous pause point by default. Finish independent
+  work that does not depend on the CI result, then record the exact SHA, run IDs,
+  pending gates, and worktree state in a coordination note, stop active watchers,
+  and pause until the user reminds you. Use the coordination-note format in
+  `$tuturuuu-platform` with `handoff` status; never stage the note. Do not poll
+  CI while paused. Continue through CI in the same turn only when the user
+  explicitly asks for that follow-through; recheck current refs and gates
+  before acting on a result.
 - Keep Rust build storage bounded with `bun rust-cache report` and the
   repository-owned `prune`/`auto` commands. Inspect the owning worktree first,
   use an explicit size/age bound, and prune only rebuildable
