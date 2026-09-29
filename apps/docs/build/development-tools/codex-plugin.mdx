@@ -196,7 +196,9 @@ Then verify the cached page after refresh at
   dates, overdue behavior, task detail routing, description mode, assignee
   flows, and release-please-managed mobile version metadata.
 - `$tuturuuu-database`: Supabase migration, RLS, workspace-scoped API write,
-  generated type, storage, and database verification guidance.
+  generated type, storage, and database verification guidance. Agents never
+  push production migrations manually; the gated production workflow applies
+  them after authorized sync and requires separate exact-SHA verification.
 - `$tuturuuu-ci-docs`: GitHub Actions, `tuturuuu.ts`, validation script,
   docs-page, and docs navigation guidance.
 - `$tuturuuu-review-comments`: GitHub PR review-thread guidance for checking,

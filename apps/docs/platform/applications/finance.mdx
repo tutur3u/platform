@@ -304,9 +304,10 @@ invoice records. Invoice recovery snapshots preserve the explicit month array.
 
 Apply migration `20260923040000_subscription_invoice_coverage_months.sql` before
 releasing the updated Finance API. Local verification uses
-`supabase/tests/subscription-coverage.sql`; production schema changes remain a
-separate operator action. Generate database types from the migrated local
-schema. Do not deploy API code that writes the new column before the migration.
+`supabase/tests/subscription-coverage.sql`; the gated staging and production
+migration workflows apply schema changes after their exact-commit prerequisites
+pass. Generate database types from the migrated local schema. Do not deploy API
+code that writes the new column before the migration.
 
 The invoice analytics Tuition coverage tab groups completed positive payments
 by their recorded tuition months, independent of when payment was received.
@@ -357,3 +358,10 @@ tab badge, table pagination and CSV/Excel export all count the same all-month,
 student-class rows, including older unpaid months. This behavior applies to
 the shared Finance UI in web and Finance; grouped-by-student mode instead
 counts one row per student in each surface.
+
+The join-date eligibility rule ships in
+`20260929090000_pending_tuition_respect_student_join_date.sql`. The production
+database migration workflow must finish successfully for the corrected debt
+rows to appear; a deployed UI and a green application build do not prove the
+database function changed. Check the migration marker and a read-only customer
+row after sync. Never manually push the migration from an agent checkout.

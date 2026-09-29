@@ -11,7 +11,7 @@ Read `references/database-checklist.md` before changing schema, RLS, storage, or
 Read `references/database-api-patterns.md` when the work needs the longer
 database/API pattern catalog that was split out of root `AGENTS.md`.
 
-Keep migrations additive when possible. Prepare migrations for the user to apply; do not run production push commands. Use runtime/API fallbacks when rollout order can vary across environments.
+Keep migrations additive when possible. Do not run production push commands from an agent checkout. The gated production migration workflow applies eligible migrations after authorized sync, staging success, and the production deployment marker; verify its exact-SHA outcome. Use runtime/API fallbacks when rollout order can vary across environments.
 
 Use `normalizeWorkspaceId(wsId)` in API routes that accept workspace aliases such as `personal`. Keep workspace normalization consistent across selector, preview, and final save routes in the same flow.
 
@@ -42,5 +42,7 @@ reverted independently.
 - Run `bun sb:typegen` after schema changes once the local database reflects the migration.
 - Run focused tests for affected API routes, helpers, or pgTAP coverage where available.
 - Run `bun check` when TypeScript or root config changed.
-- Production migration application remains user-operated; do not run
-  `bun sb:push` or `bun sb:linkpush`.
+- Production migrations run through `.github/workflows/supabase-production.yaml`
+  after authorized promotion; do not run `bun sb:push` or `bun sb:linkpush`
+  manually. A skipped or failed workflow is a release blocker, not a reason to
+  bypass the gate.

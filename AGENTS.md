@@ -29,8 +29,11 @@ merge, or production evidence only when that delivery is authorized.
   to validate the authorized change may run without repeated confirmation.
   Do not run builds on this machine; use CI builds for the exact commit instead.
   This does not authorize deployments or production database writes.
-- Do not run `bun sb:push` or `bun sb:linkpush`; prepare migrations and let the
-  user apply production Supabase changes.
+- Do not run `bun sb:push` or `bun sb:linkpush` from an agent checkout. The
+  gated `supabase-production.yaml` workflow applies eligible migrations after
+  authorized production sync, successful staging migration, and a successful
+  production deployment marker. Verify its exact-SHA result separately; if it
+  skips or fails, stop and report the blocker rather than pushing manually.
 - Do not commit secrets, API keys, tokens, credentials, or raw sensitive values.
   Reference environment variables by name only.
 - Do not manually edit `package.json` to add or update dependencies. Use the
