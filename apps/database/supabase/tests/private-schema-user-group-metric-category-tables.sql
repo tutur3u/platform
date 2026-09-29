@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(42);
+select plan(46);
 
 select ok(
   to_regclass('public.user_group_metric_categories') is null,
@@ -517,6 +517,35 @@ select ok(
   'user group activity feed includes private metric category audit rows'
 );
 
+select ok(
+  exists (
+    select 1
+    from private.user_group_activity_feed(
+      '00000000-0000-0000-0000-000000000000',
+      now() - interval '1 hour',
+      now() + interval '1 hour',
+      '10000000-0000-0000-0000-000000000201'
+    ) activity
+    where activity.table_name = 'workspace_user_groups'
+      and activity.group_id = '10000000-0000-0000-0000-000000000201'
+  ),
+  'scoped activity feed retains this workspace group creation'
+);
+
+select ok(
+  not exists (
+    select 1
+    from private.user_group_activity_feed(
+      '10000000-0000-0000-0000-000000000209',
+      now() - interval '1 hour',
+      now() + interval '1 hour',
+      '10000000-0000-0000-0000-000000000201'
+    ) activity
+    where activity.group_id = '10000000-0000-0000-0000-000000000201'
+  ),
+  'scoped activity feed does not cross workspace boundaries'
+);
+
 set local role service_role;
 
 do $$
@@ -549,6 +578,55 @@ select ok(
     where category_id = '10000000-0000-0000-0000-000000000202'
   ),
   'private metric category links can be cleared by the private RPC'
+);
+
+set local role service_role;
+
+insert into public.workspace_user_groups (id, name, ws_id)
+values
+  ('10000000-0000-0000-0000-000000000206', 'Other scoped group', '00000000-0000-0000-0000-000000000000'),
+  ('10000000-0000-0000-0000-000000000207', 'Deleted scoped group', '00000000-0000-0000-0000-000000000000');
+
+insert into public.workspace_users (id, ws_id, display_name)
+values ('10000000-0000-0000-0000-000000000208', '00000000-0000-0000-0000-000000000000', 'Deleted group member');
+
+insert into public.workspace_user_groups_users (group_id, user_id, role)
+values ('10000000-0000-0000-0000-000000000207', '10000000-0000-0000-0000-000000000208', 'USER');
+
+delete from public.workspace_user_groups
+where id = '10000000-0000-0000-0000-000000000207';
+
+reset role;
+
+select ok(
+  not exists (
+    select 1
+    from private.user_group_activity_feed(
+      '00000000-0000-0000-0000-000000000000',
+      now() - interval '1 hour',
+      now() + interval '1 hour',
+      '10000000-0000-0000-0000-000000000201'
+    ) activity
+    where activity.table_name = 'workspace_user_groups'
+      and activity.resource_id = '10000000-0000-0000-0000-000000000206'
+  ),
+  'scoped feed excludes another group in the same workspace'
+);
+
+select ok(
+  exists (
+    select 1
+    from private.user_group_activity_feed(
+      '00000000-0000-0000-0000-000000000000',
+      now() - interval '1 hour',
+      now() + interval '1 hour',
+      null::uuid
+    ) activity
+    where activity.table_name = 'workspace_user_groups_users'
+      and activity.action = 'deleted'
+      and activity.resource_id = '10000000-0000-0000-0000-000000000208'
+  ),
+  'workspace feed retains member removal after parent group deletion'
 );
 
 select * from finish();
