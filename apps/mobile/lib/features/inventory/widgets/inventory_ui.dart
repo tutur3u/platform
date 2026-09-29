@@ -155,7 +155,7 @@ class InventoryActionTile extends StatelessWidget {
 
     return SizedBox(
       width: 148,
-      height: 48,
+      height: 60,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -175,7 +175,7 @@ class InventoryActionTile extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.typography.small.copyWith(
                       color: foreground,

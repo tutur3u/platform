@@ -12,6 +12,7 @@ import 'package:mobile/features/meet/view/meet_participant_tile.dart';
 import 'package:mobile/features/meet/view/meet_room_content_header.dart';
 import 'package:mobile/features/meet/view/meet_room_exit_actions.dart';
 import 'package:mobile/features/meet/view/meet_room_sheets.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -381,7 +382,15 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
           ShellChromeActions(
             ownerId: 'meet-native-room',
             locations: const {Routes.meet},
-            actions: const [],
+            actions: [
+              ShellActionSpec(
+                id: 'meet-room-leave',
+                inDock: true,
+                icon: Icons.chevron_left_rounded,
+                tooltip: l10n.meetLeave,
+                onPressed: () => unawaited(_leave()),
+              ),
+            ],
             onBack: _leave,
           ),
           Scaffold(
