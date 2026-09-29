@@ -410,7 +410,7 @@ Future<void> _verifyInjectedPickerExit(
     ],
   );
   await _pumpForTransitions(tester);
-  await tester.tap(find.byTooltip('Back'));
+  await tester.tap(find.bySemanticsLabel('Back'));
   await _pumpForTransitions(tester);
   expect(legacyBackCalled, isFalse);
   expect(router.routeInformationProvider.value.uri.path, Routes.home);

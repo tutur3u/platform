@@ -256,7 +256,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(StaggeredEntry), findsOneWidget);
-        expect(find.text('Workspace setup'), findsOneWidget);
+        expect(find.text('Workspace setup'), findsNothing);
         expect(find.text('Current workspace'), findsOneWidget);
         expect(find.text('Default workspace'), findsOneWidget);
         expect(find.text('Workspace information'), findsOneWidget);

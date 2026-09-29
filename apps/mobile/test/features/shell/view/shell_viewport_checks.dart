@@ -46,9 +46,38 @@ void registerShellViewportChecks(
           ),
           findsNothing,
         );
-        expect(find.byTooltip('Home'), findsOneWidget);
-        expect(find.byTooltip('Assistant'), findsOneWidget);
+        expect(find.bySemanticsLabel('Home'), findsOneWidget);
+        expect(find.bySemanticsLabel('Assistant'), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byType(MorphingNavigationBar),
+            matching: find.byType(Tooltip),
+          ),
+          findsNothing,
+        );
+        expect(
+          find.descendant(
+            of: find.byType(MorphingNavigationBar),
+            matching: find.byType(BackdropFilter),
+          ),
+          findsOneWidget,
+        );
         final dock = tester.getRect(find.byType(MorphingNavigationBar));
+        if (size.width == 390) {
+          final press = await tester.startGesture(dock.center);
+          await tester.pump();
+          final scale = find.descendant(
+            of: find.byType(MorphingNavigationBar),
+            matching: find.byType(AnimatedScale),
+          );
+          expect(tester.widget<AnimatedScale>(scale).scale, 1.045);
+          expect(
+            find.byKey(const ValueKey('navigation-drag-preview')),
+            findsOneWidget,
+          );
+          await press.cancel();
+          await tester.pumpAndSettle();
+        }
         expect(dock.height, lessThan(100));
         expect(
           find.byKey(const ValueKey('compact-shell-footer')),
@@ -69,7 +98,7 @@ void registerShellViewportChecks(
         final body = tester.getRect(find.byType(AppsHubPage));
         expect(body.bottom, closeTo(size.height, 1));
         expect(body.bottom, greaterThan(dock.bottom));
-        expect(find.byTooltip('Apps'), findsWidgets);
+        expect(find.bySemanticsLabel('Apps'), findsWidgets);
         final bodyState = tester.state(find.byType(AppsHubPage));
         tester.view.viewInsets = const FakeViewPadding(bottom: 300);
         await tester.pump();

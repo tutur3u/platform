@@ -62,27 +62,22 @@ extension _ShellPageNavigation on _ShellPageState {
     required int itemIndex,
     Widget? image,
     bool dropdown = false,
-  }) => Tooltip(
-    triggerMode: TooltipTriggerMode.manual,
-    message: semanticLabel,
-    excludeFromSemantics: true,
-    child: Semantics(
-      label: semanticLabel,
-      button: true,
-      child: ExcludeSemantics(
-        child: SizedBox(
-          width: dropdown ? 36 : 24,
-          height: 24,
-          child: dropdown
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(icon, size: 22),
-                    const Icon(Icons.expand_more, size: 14),
-                  ],
-                )
-              : image ?? Icon(icon, size: 24),
-        ),
+  }) => Semantics(
+    label: semanticLabel,
+    button: true,
+    child: ExcludeSemantics(
+      child: SizedBox(
+        width: dropdown ? 36 : 24,
+        height: 24,
+        child: dropdown
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 22),
+                  const Icon(Icons.expand_more, size: 14),
+                ],
+              )
+            : image ?? Icon(icon, size: 24),
       ),
     ),
   );

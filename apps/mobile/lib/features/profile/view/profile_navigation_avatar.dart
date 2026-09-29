@@ -12,21 +12,31 @@ class ProfileNavigationAvatar extends StatelessWidget {
       BlocBuilder<ShellProfileCubit, ShellProfileState>(
         builder: (context, state) {
           final url = state.avatarUrl;
-          if (state.profile == null && state.error == null) {
-            return const FinanceSkeletonBlock(width: 30, height: 30, radius: 9);
+          if ((state.profile == null || url == null) &&
+              state.error == null &&
+              (state.isRefreshing || state.profile == null)) {
+            return const FinanceSkeletonBlock(
+              key: ValueKey('profile-avatar-loading'),
+              width: 24,
+              height: 24,
+              radius: 8,
+            );
           }
           if (url == null) return const Icon(Icons.person_outline_rounded);
           return ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
               url,
+              width: 24,
+              height: 24,
               fit: BoxFit.cover,
               loadingBuilder: (context, child, progress) => progress == null
                   ? child
                   : const FinanceSkeletonBlock(
-                      width: 30,
-                      height: 30,
-                      radius: 9,
+                      key: ValueKey('profile-avatar-loading'),
+                      width: 24,
+                      height: 24,
+                      radius: 8,
                     ),
               errorBuilder: (_, error, stack) =>
                   const Icon(Icons.person_outline_rounded),
