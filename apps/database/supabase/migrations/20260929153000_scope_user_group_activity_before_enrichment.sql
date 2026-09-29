@@ -1,6 +1,6 @@
 -- Scope group audit rows before computing snapshots and joining actors.
--- The three-argument feed remains available for existing internal callers;
--- the paginated Contacts RPC uses this scoped overload.
+-- Existing three-argument callers delegate to the same implementation.
+-- The paginated Contacts RPC passes its optional group scope.
 
 create or replace function private.user_group_activity_feed(
   p_ws_id uuid,
@@ -86,6 +86,18 @@ as $function$
           from public.workspace_user_groups scoped_group
           where scoped_group.ws_id = p_ws_id
             and (p_group_id is null or scoped_group.id = p_group_id)
+        )
+        -- Keep direct events whose group was later deleted. The resolver can
+        -- still recover their workspace from the affected user where present.
+        or (
+          coalesce(audit_log.record->>'group_id', audit_log.old_record->>'group_id') is not null
+          and not exists (
+            select 1
+            from public.workspace_user_groups existing_group
+            where existing_group.id::text = coalesce(
+              audit_log.record->>'group_id', audit_log.old_record->>'group_id'
+            )
+          )
         )
         or (
           audit_log.table_name = 'workspace_user_groups'
@@ -368,6 +380,40 @@ as $function$
   where resolved.resolved_ws_id = p_ws_id
     and (p_group_id is null or resolved.resolved_group_id = p_group_id)
   order by resolved.occurred_at desc, resolved.audit_record_id desc;
+$function$;
+
+create or replace function private.user_group_activity_feed(
+  p_ws_id uuid,
+  p_start timestamptz,
+  p_end timestamptz
+)
+returns table (
+  audit_record_id bigint,
+  table_name text,
+  action text,
+  resource_type text,
+  occurred_at timestamptz,
+  group_id uuid,
+  group_name text,
+  resource_id uuid,
+  resource_label text,
+  affected_user_id uuid,
+  affected_user_name text,
+  affected_user_email text,
+  actor_auth_uid uuid,
+  actor_workspace_user_id uuid,
+  actor_id uuid,
+  actor_name text,
+  actor_email text,
+  changed_fields text[],
+  before jsonb,
+  after jsonb
+)
+language sql
+security definer
+set search_path = public, audit, private
+as $function$
+  select * from private.user_group_activity_feed(p_ws_id, p_start, p_end, null::uuid);
 $function$;
 
 revoke all on function private.user_group_activity_feed(uuid, timestamptz, timestamptz, uuid) from public, anon, authenticated;
