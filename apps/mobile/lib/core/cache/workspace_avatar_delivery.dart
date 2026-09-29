@@ -1,0 +1,68 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
+import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/data/sources/api_client.dart';
+
+/// Signs and sends staged workspace avatar bytes only after workspace creation.
+Future<void> deliverWorkspaceAvatar({
+  required ApiClient api,
+  required http.Client httpClient,
+  required String workspaceId,
+  required String filename,
+  required String contentType,
+  required String encodedBytes,
+}) async {
+  final signed = await api.postJson(
+    WorkspaceEndpoints.avatarUploadUrl(workspaceId),
+    {'filename': filename},
+  );
+  final url = (signed['uploadUrl'] ?? signed['signedUrl']) as String?;
+  final token = signed['token'] as String?;
+  final filePath = signed['filePath'] as String?;
+  if (url == null || token == null || filePath == null) {
+    throw const ApiException(
+      message: 'Invalid workspace avatar URL',
+      statusCode: 0,
+    );
+  }
+  late http.Response uploaded;
+  try {
+    uploaded = await httpClient
+        .put(
+          Uri.parse(url),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': contentType,
+          },
+          body: base64Decode(encodedBytes),
+        )
+        .timeout(const Duration(seconds: 60));
+  } on SocketException {
+    throw const ApiException(
+      message: 'Workspace avatar connection lost',
+      statusCode: 0,
+    );
+  } on http.ClientException {
+    throw const ApiException(
+      message: 'Workspace avatar connection lost',
+      statusCode: 0,
+    );
+  } on TimeoutException {
+    throw const ApiException(
+      message: 'Workspace avatar timed out',
+      statusCode: 0,
+    );
+  }
+  if (uploaded.statusCode < 200 || uploaded.statusCode >= 300) {
+    throw ApiException(
+      message: 'Workspace avatar upload failed',
+      statusCode: uploaded.statusCode,
+    );
+  }
+  await api.patchJson(WorkspaceEndpoints.avatar(workspaceId), {
+    'filePath': filePath,
+  });
+}

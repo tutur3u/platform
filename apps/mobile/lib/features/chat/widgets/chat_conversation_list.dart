@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'chat_conversation_tile.dart';
@@ -61,10 +62,15 @@ class ChatConversationList extends StatelessWidget {
                 }
 
                 final conversation = conversations[index];
-                return _ConversationTile(
-                  conversation: conversation,
-                  selected: conversation.id == selectedConversationId,
-                  onTap: () => onSelected(conversation.id),
+                return PendingSyncFrame(
+                  workspaceId: conversation.wsId,
+                  feature: 'chat',
+                  entityId: conversation.id,
+                  child: _ConversationTile(
+                    conversation: conversation,
+                    selected: conversation.id == selectedConversationId,
+                    onTap: () => onSelected(conversation.id),
+                  ),
                 );
               },
             ),

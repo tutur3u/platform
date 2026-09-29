@@ -4,13 +4,26 @@ import 'dart:math';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/chat_attachment_delivery.dart';
+import 'package:mobile/core/cache/crm_avatar_delivery.dart';
+import 'package:mobile/core/cache/drive_upload_delivery.dart';
+import 'package:mobile/core/cache/offline_id_reconciliation.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/cache/profile_avatar_delivery.dart';
+import 'package:mobile/core/cache/task_description_image_delivery.dart';
+import 'package:mobile/core/cache/time_request_image_delivery.dart';
+import 'package:mobile/core/cache/workspace_avatar_delivery.dart';
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
+
+part 'offline_mutation_dispatch.dart';
+part 'offline_mutation_dependencies.dart';
 
 typedef OfflineMutationDispatcher =
     Future<void> Function(PendingMutationRecord record);
@@ -39,6 +52,7 @@ class OfflineMutationQueue {
   StreamSubscription<supa.AuthState>? _authSubscription;
   Timer? _retryTimer;
   bool _isDraining = false;
+  bool _drainRequested = false;
   bool _initialized = false;
 
   Future<void> init() async {
@@ -70,16 +84,27 @@ class OfflineMutationQueue {
     String? entityId,
     bool replaySafe = false,
   }) async {
+    final hasPendingDependency = pending.value.any(
+      (item) =>
+          item.userId == currentCacheUserId() &&
+          item.workspaceId == workspaceId &&
+          (item.feature == feature ||
+              (item.feature == 'workspace' &&
+                  item.method == 'WORKSPACE_CREATE') ||
+              referencesPendingEntity(path, payload, item.entityId)),
+    );
     List<ConnectivityResult> connectivity;
-    try {
-      connectivity = await Connectivity().checkConnectivity();
-    } on Object {
-      // A missing platform signal must not silently turn an online write into
-      // a queued write (notably on desktop and in widget tests).
-      return false;
-    }
-    if (connectivity.any((result) => result != ConnectivityResult.none)) {
-      return false;
+    if (!hasPendingDependency) {
+      try {
+        connectivity = await Connectivity().checkConnectivity();
+      } on Object {
+        // A missing platform signal must not silently turn an online write into
+        // a queued write (notably on desktop and in widget tests).
+        return false;
+      }
+      if (connectivity.any((result) => result != ConnectivityResult.none)) {
+        return false;
+      }
     }
     await enqueue(
       PendingMutationRecord(
@@ -132,63 +157,6 @@ class OfflineMutationQueue {
     return true;
   }
 
-  Future<void> _dispatchHttpMutation(PendingMutationRecord record) async {
-    final api = ApiClient();
-    try {
-      switch (record.method.toUpperCase()) {
-        case 'POST':
-          final response = await api.postJson(record.path, record.payload);
-          if (record.feature == 'mail' &&
-              record.path.endsWith('/messages') &&
-              (response['message'] as Map<String, dynamic>?)?['status'] !=
-                  'sent') {
-            throw const ApiException(
-              message: 'Mail delivery needs review',
-              statusCode: 409,
-            );
-          }
-        case 'PUT':
-          await api.putJson(record.path, record.payload ?? {});
-        case 'PATCH':
-          await api.patchJson(record.path, record.payload ?? {});
-        case 'DELETE':
-          await api.deleteJson(record.path, body: record.payload);
-        case 'MAIL_READ_ALL':
-          String? cursor;
-          String? before;
-          do {
-            final response = await api.postJson(record.path, {
-              ...?record.payload,
-              if (cursor != null) 'cursor': cursor,
-              if (before != null) 'before': before,
-            });
-            cursor = response['nextCursor'] as String?;
-            before = response['before'] as String?;
-          } while (cursor != null);
-        case 'MULTIPART_POST':
-          final payload = record.payload ?? {};
-          await api.sendMultipart(
-            'POST',
-            record.path,
-            fields: {
-              'clientAttachmentId': payload['clientAttachmentId'] as String,
-            },
-            files: [
-              ApiMultipartFile.bytes(
-                field: 'file',
-                bytes: base64Decode(payload['bytes'] as String),
-                filename: payload['filename'] as String,
-              ),
-            ],
-          );
-        default:
-          throw StateError('Unsupported queued method: ${record.method}');
-      }
-    } finally {
-      api.dispose();
-    }
-  }
-
   void registerDispatcher(
     String feature,
     OfflineMutationDispatcher dispatcher,
@@ -204,6 +172,11 @@ class OfflineMutationQueue {
     }
     await CacheStore.instance.savePendingMutation(record);
     await refresh();
+    if (_isDraining) {
+      _drainRequested = true;
+    } else {
+      unawaited(drain());
+    }
   }
 
   Future<void> cancel(String id) async {
@@ -239,7 +212,10 @@ class OfflineMutationQueue {
   }
 
   Future<void> drain() async {
-    if (_isDraining) return;
+    if (_isDraining) {
+      _drainRequested = true;
+      return;
+    }
     try {
       final connectivity = await Connectivity().checkConnectivity();
       if (connectivity.every((result) => result == ConnectivityResult.none)) {
@@ -252,17 +228,37 @@ class OfflineMutationQueue {
     try {
       final records = await listPending();
       final blockedScopes = <(String, String?)>{};
+      final unresolvedEarlier = <(String?, String)>{};
+      void remember(PendingMutationRecord record) {
+        final id = record.entityId;
+        if (id != null) unresolvedEarlier.add((record.workspaceId, id));
+      }
+
       for (final record in records) {
         if (record.userId != currentCacheUserId()) continue;
         final scope = (record.feature, record.workspaceId);
         if (record.status != PendingMutationStatus.queued) {
           blockedScopes.add(scope);
+          remember(record);
           continue;
         }
-        if (blockedScopes.contains(scope)) continue;
+        if (blockedScopes.contains(scope) ||
+            unresolvedEarlier.any(
+              (entry) =>
+                  entry.$1 == record.workspaceId &&
+                  referencesPendingEntity(
+                    record.path,
+                    record.payload,
+                    entry.$2,
+                  ),
+            )) {
+          remember(record);
+          continue;
+        }
         final dispatcher = _dispatchers[record.feature] ?? _dispatchers['*'];
         if (dispatcher == null) {
           blockedScopes.add(scope);
+          remember(record);
           continue;
         }
 
@@ -297,6 +293,7 @@ class OfflineMutationQueue {
           // Edits inside a module/workspace can depend on a preceding create.
           // Other modules can keep syncing after a non-retryable conflict.
           blockedScopes.add(scope);
+          remember(record);
           if (status == PendingMutationStatus.queued ||
               error is ApiException &&
                   (error.statusCode == 401 || error.statusCode == 403)) {
@@ -307,6 +304,10 @@ class OfflineMutationQueue {
     } finally {
       await refresh();
       _isDraining = false;
+      if (_drainRequested) {
+        _drainRequested = false;
+        unawaited(drain());
+      }
     }
   }
 

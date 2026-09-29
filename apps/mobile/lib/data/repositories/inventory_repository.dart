@@ -3,6 +3,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
@@ -10,6 +11,9 @@ import 'package:mobile/data/sources/api_client.dart';
 
 part 'inventory_repository_cache.dart';
 part 'inventory_repository_product_mutations.dart';
+part 'inventory_repository_setup_pending.dart';
+part 'inventory_repository_sales_period_mutations.dart';
+part 'inventory_repository_sales_pending.dart';
 
 class InventoryRepository {
   InventoryRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
@@ -234,24 +238,36 @@ class InventoryRepository {
   Future<List<InventoryOwner>> getOwners(
     String wsId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryMap(
-      namespace: 'owners',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      policy: CachePolicies.metadata,
-      tags: const ['inventory:setup'],
-      fetch: () => _api.getJson(InventoryEndpoints.owners(wsId)),
-      decode: (response) =>
-          (response['data'] as List<dynamic>? ?? const <dynamic>[])
-              .whereType<Map<String, dynamic>>()
-              .map(InventoryOwner.fromJson)
-              .toList(growable: false),
+  }) async {
+    final owners = await _setupRows(
+      _cachedInventoryMap<List<InventoryOwner>>(
+        namespace: 'owners',
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+        policy: CachePolicies.metadata,
+        tags: const ['inventory:setup'],
+        fetch: () => _api.getJson(InventoryEndpoints.owners(wsId)),
+        decode: (response) =>
+            (response['data'] as List<dynamic>? ?? const <dynamic>[])
+                .whereType<Map<String, dynamic>>()
+                .map(InventoryOwner.fromJson)
+                .toList(growable: false),
+      ),
+    );
+    return _overlayPendingInventorySetup(
+      wsId,
+      InventoryEndpoints.owners(wsId),
+      owners,
+      (id, name) => InventoryOwner(id: id, name: name),
     );
   }
 
   Future<void> createOwner(String wsId, String name) async {
-    await _api.postJson(InventoryEndpoints.owners(wsId), {'name': name});
+    await _queueInventorySetupCreate(
+      wsId,
+      InventoryEndpoints.owners(wsId),
+      name,
+    );
     await _invalidateInventory(wsId, const [
       'inventory:setup',
       'inventory:catalog',
@@ -261,41 +277,64 @@ class InventoryRepository {
   Future<List<InventoryLookupItem>> getManufacturers(
     String wsId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryMap(
-      namespace: 'manufacturers',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      policy: CachePolicies.metadata,
-      tags: const ['inventory:setup'],
-      fetch: () => _api.getJson(InventoryEndpoints.manufacturers(wsId)),
-      decode: _decodeLookupMap,
+  }) async {
+    final rows = await _setupRows(
+      _cachedInventoryMap<List<InventoryLookupItem>>(
+        namespace: 'manufacturers',
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+        policy: CachePolicies.metadata,
+        tags: const ['inventory:setup'],
+        fetch: () => _api.getJson(InventoryEndpoints.manufacturers(wsId)),
+        decode: _decodeLookupMap,
+      ),
+    );
+    return _overlayPendingInventorySetup(
+      wsId,
+      InventoryEndpoints.manufacturers(wsId),
+      rows,
+      (id, name) => InventoryLookupItem(id: id, name: name),
     );
   }
 
   Future<void> createManufacturer(String wsId, String name) async {
-    await _api.postJson(InventoryEndpoints.manufacturers(wsId), {'name': name});
+    await _queueInventorySetupCreate(
+      wsId,
+      InventoryEndpoints.manufacturers(wsId),
+      name,
+    );
     await _invalidateInventory(wsId, const ['inventory:setup']);
   }
 
   Future<List<InventoryLookupItem>> getProductCategories(
     String wsId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryList(
-      namespace: 'product-categories',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      tags: const ['inventory:setup'],
-      fetch: () => _api.getJsonList(InventoryEndpoints.productCategories(wsId)),
-      decode: _decodeLookupList,
+  }) async {
+    final rows = await _setupRows(
+      _cachedInventoryList<List<InventoryLookupItem>>(
+        namespace: 'product-categories',
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+        tags: const ['inventory:setup'],
+        fetch: () =>
+            _api.getJsonList(InventoryEndpoints.productCategories(wsId)),
+        decode: _decodeLookupList,
+      ),
+    );
+    return _overlayPendingInventorySetup(
+      wsId,
+      InventoryEndpoints.productCategories(wsId),
+      rows,
+      (id, name) => InventoryLookupItem(id: id, name: name),
     );
   }
 
   Future<void> createProductCategory(String wsId, String name) async {
-    await _api.postJson(InventoryEndpoints.productCategories(wsId), {
-      'name': name,
-    });
+    await _queueInventorySetupCreate(
+      wsId,
+      InventoryEndpoints.productCategories(wsId),
+      name,
+    );
     await _invalidateInventory(wsId, const [
       'inventory:setup',
       'inventory:catalog',
@@ -305,40 +344,63 @@ class InventoryRepository {
   Future<List<InventoryLookupItem>> getProductUnits(
     String wsId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryList(
-      namespace: 'product-units',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      tags: const ['inventory:setup'],
-      fetch: () => _api.getJsonList(InventoryEndpoints.productUnits(wsId)),
-      decode: _decodeLookupList,
+  }) async {
+    final rows = await _setupRows(
+      _cachedInventoryList<List<InventoryLookupItem>>(
+        namespace: 'product-units',
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+        tags: const ['inventory:setup'],
+        fetch: () => _api.getJsonList(InventoryEndpoints.productUnits(wsId)),
+        decode: _decodeLookupList,
+      ),
+    );
+    return _overlayPendingInventorySetup(
+      wsId,
+      InventoryEndpoints.productUnits(wsId),
+      rows,
+      (id, name) => InventoryLookupItem(id: id, name: name),
     );
   }
 
   Future<void> createProductUnit(String wsId, String name) async {
-    await _api.postJson(InventoryEndpoints.productUnits(wsId), {'name': name});
+    await _queueInventorySetupCreate(
+      wsId,
+      InventoryEndpoints.productUnits(wsId),
+      name,
+    );
     await _invalidateInventory(wsId, const ['inventory:setup']);
   }
 
   Future<List<InventoryLookupItem>> getProductWarehouses(
     String wsId, {
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryList(
-      namespace: 'product-warehouses',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      tags: const ['inventory:setup'],
-      fetch: () => _api.getJsonList(InventoryEndpoints.productWarehouses(wsId)),
-      decode: _decodeLookupList,
+  }) async {
+    final rows = await _setupRows(
+      _cachedInventoryList<List<InventoryLookupItem>>(
+        namespace: 'product-warehouses',
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+        tags: const ['inventory:setup'],
+        fetch: () =>
+            _api.getJsonList(InventoryEndpoints.productWarehouses(wsId)),
+        decode: _decodeLookupList,
+      ),
+    );
+    return _overlayPendingInventorySetup(
+      wsId,
+      InventoryEndpoints.productWarehouses(wsId),
+      rows,
+      (id, name) => InventoryLookupItem(id: id, name: name),
     );
   }
 
   Future<void> createProductWarehouse(String wsId, String name) async {
-    await _api.postJson(InventoryEndpoints.productWarehouses(wsId), {
-      'name': name,
-    });
+    await _queueInventorySetupCreate(
+      wsId,
+      InventoryEndpoints.productWarehouses(wsId),
+      name,
+    );
     await _invalidateInventory(wsId, const ['inventory:setup']);
   }
 
@@ -349,33 +411,54 @@ class InventoryRepository {
     int offset = 0,
     String? periodId,
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryMap(
-      namespace: 'sales',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      tags: const ['inventory:sales'],
-      params: {
-        'limit': '$limit',
-        'offset': '$offset',
-        'periodId': periodId ?? '',
-      },
-      fetch: () => _api.getJson(
-        InventoryEndpoints.sales(
-          wsId,
-          limit: limit,
-          offset: offset,
-          periodId: periodId,
-        ),
-      ),
-      decode: (response) => (
-        data: (response['data'] as List<dynamic>? ?? const <dynamic>[])
-            .whereType<Map<String, dynamic>>()
-            .map(InventorySaleSummary.fromJson)
-            .toList(growable: false),
-        count: (response['count'] as num?)?.toInt() ?? 0,
-        realtimeEnabled: response['realtime_enabled'] as bool? ?? false,
-      ),
+  }) async {
+    final ({List<InventorySaleSummary> data, int count, bool realtimeEnabled})
+    result;
+    try {
+      result =
+          await _cachedInventoryMap<
+            ({List<InventorySaleSummary> data, int count, bool realtimeEnabled})
+          >(
+            namespace: 'sales',
+            wsId: wsId,
+            forceRefresh: forceRefresh,
+            tags: const ['inventory:sales'],
+            params: {
+              'limit': '$limit',
+              'offset': '$offset',
+              'periodId': periodId ?? '',
+            },
+            fetch: () => _api.getJson(
+              InventoryEndpoints.sales(
+                wsId,
+                limit: limit,
+                offset: offset,
+                periodId: periodId,
+              ),
+            ),
+            decode: (response) => (
+              data: (response['data'] as List<dynamic>? ?? const <dynamic>[])
+                  .whereType<Map<String, dynamic>>()
+                  .map(InventorySaleSummary.fromJson)
+                  .toList(growable: false),
+              count: (response['count'] as num?)?.toInt() ?? 0,
+              realtimeEnabled: response['realtime_enabled'] as bool? ?? false,
+            ),
+          );
+    } on ApiException catch (error) {
+      if (error.statusCode != 0) rethrow;
+      return _overlayPendingInventorySales(
+        wsId,
+        (data: const [], count: 0, realtimeEnabled: false),
+        periodId: periodId,
+        includeCreates: offset == 0,
+      );
+    }
+    return _overlayPendingInventorySales(
+      wsId,
+      result,
+      periodId: periodId,
+      includeCreates: offset == 0,
     );
   }
 
@@ -383,83 +466,33 @@ class InventoryRepository {
     String wsId, {
     bool includeArchived = true,
     bool forceRefresh = false,
-  }) {
-    return _cachedInventoryMap(
-      namespace: 'sales-periods',
-      wsId: wsId,
-      forceRefresh: forceRefresh,
-      policy: CachePolicies.metadata,
-      tags: const ['inventory:periods'],
-      params: {'includeArchived': '$includeArchived'},
-      fetch: () => _api.getJson(
-        InventoryEndpoints.salesPeriods(wsId, includeArchived: includeArchived),
+  }) async {
+    final periods = await _setupRows(
+      _cachedInventoryMap<List<InventorySalesPeriod>>(
+        namespace: 'sales-periods',
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+        policy: CachePolicies.metadata,
+        tags: const ['inventory:periods'],
+        params: {'includeArchived': '$includeArchived'},
+        fetch: () => _api.getJson(
+          InventoryEndpoints.salesPeriods(
+            wsId,
+            includeArchived: includeArchived,
+          ),
+        ),
+        decode: (response) =>
+            (response['data'] as List<dynamic>? ?? const <dynamic>[])
+                .whereType<Map<String, dynamic>>()
+                .map(InventorySalesPeriod.fromJson)
+                .toList(growable: false),
       ),
-      decode: (response) =>
-          (response['data'] as List<dynamic>? ?? const <dynamic>[])
-              .whereType<Map<String, dynamic>>()
-              .map(InventorySalesPeriod.fromJson)
-              .toList(growable: false),
     );
-  }
-
-  Future<InventorySalesPeriod> createSalesPeriod({
-    required String wsId,
-    required String name,
-    String? description,
-    DateTime? startsAt,
-    DateTime? endsAt,
-    String productScope = 'all',
-    List<String> productIds = const [],
-  }) async {
-    final response = await _api
-        .postJson(InventoryEndpoints.salesPeriods(wsId), {
-          'name': name,
-          'description': description,
-          'starts_at': _dateOnly(startsAt),
-          'ends_at': _dateOnly(endsAt),
-          'product_scope': productScope,
-          'product_ids': productScope == 'all' ? <String>[] : productIds,
-        });
-    final period = InventorySalesPeriod.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
+    return _overlayPendingSalesPeriods(
+      wsId,
+      periods,
+      includeArchived: includeArchived,
     );
-    await _invalidateInventory(wsId, const [
-      'inventory:periods',
-      'inventory:sales',
-    ]);
-    return period;
-  }
-
-  Future<InventorySalesPeriod> updateSalesPeriod({
-    required String wsId,
-    required String periodId,
-    String? name,
-    String? description,
-    DateTime? startsAt,
-    DateTime? endsAt,
-    String? productScope,
-    List<String>? productIds,
-    String? status,
-  }) async {
-    final isContentUpdate = name != null;
-    final response = await _api
-        .patchJson(InventoryEndpoints.salesPeriod(wsId, periodId), {
-          if (name != null) 'name': name,
-          if (isContentUpdate) 'description': description,
-          if (isContentUpdate) 'starts_at': _dateOnly(startsAt),
-          if (isContentUpdate) 'ends_at': _dateOnly(endsAt),
-          if (productScope != null) 'product_scope': productScope,
-          if (productIds != null) 'product_ids': productIds,
-          if (status != null) 'status': status,
-        });
-    final period = InventorySalesPeriod.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
-    );
-    await _invalidateInventory(wsId, const [
-      'inventory:periods',
-      'inventory:sales',
-    ]);
-    return period;
   }
 
   Future<InventorySalesPeriod?> setSalePeriod({
@@ -468,14 +501,24 @@ class InventoryRepository {
     required String source,
     required String? periodId,
   }) async {
-    final response = await _api.putJson(
-      InventoryEndpoints.salePeriod(wsId, saleId),
-      {'period_id': periodId, 'source': source},
+    final path = InventoryEndpoints.salePeriod(wsId, saleId);
+    final payload = {'period_id': periodId, 'source': source};
+    final period = await queueOrSendValue<InventorySalesPeriod?>(
+      feature: 'inventory',
+      method: 'PUT',
+      path: path,
+      workspaceId: wsId,
+      entityId: saleId,
+      payload: payload,
+      pendingValue: (_) => null,
+      send: () async {
+        final response = await _api.putJson(path, payload);
+        final data = response['data'];
+        return data is Map
+            ? InventorySalesPeriod.fromJson(Map<String, dynamic>.from(data))
+            : null;
+      },
     );
-    final data = response['data'];
-    final period = data is Map
-        ? InventorySalesPeriod.fromJson(Map<String, dynamic>.from(data))
-        : null;
     await _invalidateInventory(wsId, const [
       'inventory:periods',
       'inventory:sales',
@@ -511,16 +554,43 @@ class InventoryRepository {
     String? walletId,
     String? categoryId,
     List<Map<String, dynamic>>? products,
+    InventorySaleDetail? previous,
   }) async {
-    final response = await _api.putJson(InventoryEndpoints.sale(wsId, saleId), {
+    final path = InventoryEndpoints.sale(wsId, saleId);
+    final payload = {
       'notice': notice,
       'note': note,
       'wallet_id': walletId,
       'category_id': categoryId,
       if (products != null) 'products': products,
-    });
-    final sale = InventorySaleDetail.fromJson(
-      Map<String, dynamic>.from(response['data'] as Map),
+    };
+    final sale = await queueOrSendValue<InventorySaleDetail>(
+      feature: 'inventory',
+      method: 'PUT',
+      path: path,
+      workspaceId: wsId,
+      entityId: saleId,
+      payload: payload,
+      pendingValue: (_) => InventorySaleDetail(
+        id: saleId,
+        notice: notice,
+        note: note,
+        paidAmount: previous?.paidAmount ?? 0,
+        itemsCount: previous?.itemsCount ?? 0,
+        totalQuantity: previous?.totalQuantity ?? 0,
+        owners: previous?.owners ?? const [],
+        lines: previous?.lines ?? const [],
+        source: previous?.source ?? 'finance_invoice',
+        walletId: walletId,
+        categoryId: categoryId,
+        period: previous?.period,
+      ),
+      send: () async {
+        final response = await _api.putJson(path, payload);
+        return InventorySaleDetail.fromJson(
+          Map<String, dynamic>.from(response['data'] as Map),
+        );
+      },
     );
     await _invalidateInventory(wsId, const [
       'inventory:overview',
@@ -531,7 +601,17 @@ class InventoryRepository {
   }
 
   Future<void> deleteSale(String wsId, String saleId) async {
-    await _api.deleteJson(InventoryEndpoints.sale(wsId, saleId));
+    final path = InventoryEndpoints.sale(wsId, saleId);
+    await queueOrSendVoid(
+      feature: 'inventory',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: saleId,
+      send: () async {
+        await _api.deleteJson(path);
+      },
+    );
     await _invalidateInventory(wsId, const [
       'inventory:overview',
       'inventory:sales',
@@ -573,16 +653,27 @@ class InventoryRepository {
     String? categoryId,
     String? periodId,
   }) async {
-    final response = await _api.postJson(InventoryEndpoints.invoices(wsId), {
+    final path = InventoryEndpoints.invoices(wsId);
+    final payload = {
       'customer_id': null,
       'content': content ?? 'Mobile inventory sale',
       'notes': notes,
       'wallet_id': walletId,
       'category_id': categoryId,
       'products': products,
-    });
-
-    final invoiceId = response['invoice_id'] as String;
+    };
+    final invoiceId = await queueOrSendValue<String>(
+      feature: 'inventory',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      pendingValue: (id) => id,
+      send: () async {
+        final response = await _api.postJson(path, payload);
+        return response['invoice_id'] as String;
+      },
+    );
     if (periodId != null && periodId.isNotEmpty) {
       await setSalePeriod(
         wsId: wsId,
@@ -600,11 +691,4 @@ class InventoryRepository {
   }
 
   void dispose() => _api.dispose();
-}
-
-String? _dateOnly(DateTime? value) {
-  if (value == null) return null;
-  final month = value.month.toString().padLeft(2, '0');
-  final day = value.day.toString().padLeft(2, '0');
-  return '${value.year}-$month-$day';
 }

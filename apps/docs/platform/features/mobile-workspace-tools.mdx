@@ -33,6 +33,10 @@ produces a selection tick, and completing a drop produces a light confirmation.
 The floating dock uses the same semantic feedback. Haptics are enabled by default
 on iOS and Android, can be disabled in Preferences, follow system haptic policy,
 and throttle repeated feedback during a continuous gesture.
+Shell actions and standalone primary actions give a selection tick, and a
+speed dial distinguishes opening from choosing an action. Finance transaction
+actions give a light completion tap after the local edit is accepted; this tap
+does not claim that a queued offline edit has synchronized.
 
 Background warmups for optional products should also respect access state before fetching. Do not let Apps hub or boot-time cache warmups call product endpoints blindly; skip the warmup when the corresponding access cubit is not loaded and enabled, and fail soft on opportunistic `404` responses.
 
@@ -140,24 +144,178 @@ revalidation, even past their expiry window. Explicit refresh waits for the netw
 On startup, the encrypted
 store consolidates legacy aliases into canonical scoped keys and retains the newest
 snapshot for each identity. Pending offline mutations remain separate and intact.
-Mail and Meet keep an explicit request path for authorization cleanup on 401/403;
-their screens still render the scoped snapshot before awaiting that request.
+An encrypted entity index now materializes rows with stable IDs from scoped
+snapshots. It is rebuilt automatically from existing snapshots when its schema
+version is absent, updates alongside new snapshots, and removes rows when their
+source is cleared or evicted. Local queries require a user ID, workspace scope,
+and namespace; they can overlay the matching queued edits without a network
+call. Storage limits include the indexed entity payloads. This is the database
+foundation for module read adapters, rather than evidence that every module is
+already locally readable or writable.
+Mail keeps an explicit request path for authorization cleanup on 401/403.
+Meet now returns the scoped meeting snapshot immediately, refreshes in the
+background, and purges denied data if the refresh returns 401/403.
+Meet room costs, ended-meeting reviews, and assistant review details use scoped
+snapshots. Assistant review decisions queue with revision conflicts surfaced for
+manual review; a queued review card uses the pending frame. Live call tokens and
+assistant generation still require a connection.
 Pending Notes, Mail, Finance, Calendar, and Inventory product edits are stored in the account-scoped encrypted
 mutation queue and replayed in order per module and workspace on reconnect. A
 conflict holds dependent edits in that scope while other modules continue. A queued item uses a dashed
 border and lower opacity until the server confirms it; conflicts and failed
-writes remain visible in Settings > Offline changes for retry or removal. Finance
+writes remain visible in Settings > Offline changes for retry or removal.
+Removing a queued change requires confirmation and does not undo a write that
+may already have reached the server. A user-initiated retry gives a completion
+haptic only when that specific outbox entry is removed after replay. Finance
 creates and transfers, Mail sends and attachments, and Notes creates use stable
-client IDs so replay can recognize a prior successful write. Other modules still
-need individual offline mutation adapters before this is an app-wide write replica.
+client IDs so replay can recognize a prior successful write. The queue checks
+structured local ID references across modules and holds a dependent edit until
+its source create has synced. The replica stores account/workspace-scoped ID
+mappings across module namespaces, so a queued Note mention can resolve a Task
+created offline. Operational actions that require a live server calculation or
+fresh authentication remain explicit online paths.
 Calendar event lists use scoped snapshots and overlay pending edits. An uncertain
 Calendar create stays in manual review because it may have already reached an
 external calendar provider.
+Connected Calendar accounts and visibility settings also read encrypted snapshots
+while revalidating. Offline disconnects and visibility toggles remain queued and
+visibly marked until confirmed. Provider OAuth URLs still require a live request.
 Inventory product lists overlay queued creates and updates on their cached
 catalog; an uncertain product create also requires manual review.
+Inventory setup choices (owners, manufacturers, categories, units, and
+warehouses) use the same queue. Their local chips carry the dashed pending
+frame and stay available after an offline refresh. A failed authorization
+refresh removes the protected snapshot.
+Storefronts and their listings use the same scoped read and write path. A newly
+created offline storefront keeps a local ID so queued listings can reference it;
+replay maps that ID to the server storefront before sending dependent edits.
+Queued storefront and listing cards retain the dashed, dimmed treatment.
 Education course, quiz, and flashcard edits and basic CRM user and feedback
-edits use the same encrypted queue. Their list views still require local read
-adapters and pending row treatments before they meet the full replica contract.
+edits use the same encrypted queue. Education course, quiz-set, quiz, flashcard,
+and attempt reads and CRM user, group, feedback, and audit reads use scoped
+snapshots while revalidating. Education authored cards and CRM user and feedback
+cards show queued edits with the pending treatment. Education attempts are
+read-only in the mobile app and use scoped snapshots.
+CRM user merges and bulk imports enter the outbox as ordered commands. A queued
+merge marks its source user pending; a bulk import reports queued instead of
+claiming users were imported. User avatars stage encrypted bytes, obtain a new
+upload token at replay, and map their local placeholder to the returned URL
+before the dependent user edit runs. Duplicate detection remains a live server
+calculation and does not represent a local edit.
+Workspace secret create, edit, and delete queue in the encrypted settings
+outbox; pending secret cards are dimmed and dashed. A newly created secret is
+matched to its server ID after replay before dependent edits run. Ambiguous
+secret writes stop for manual review. Storage migration remains an online
+operational command and is never represented as a completed offline change.
+Documents lists and details use scoped snapshots. Document create, update, and
+delete enter the encrypted outbox when offline, and list rows expose their
+pending state. A newly created offline document uses a local ID for navigation;
+its create must finish syncing before edits to that document can be replayed
+against a server ID. The outbox persists a scoped local-to-server ID mapping
+when the create response supplies an ID and rewrites dependent queued paths and
+structured payload fields before replay.
+Drive directory and analytics, CMS collections and entries, and Habit tracker
+lists and details also read scoped snapshots while revalidating. CMS collection
+and entry CRUD uses the outbox and marks pending tiles. CMS entries targeting a
+locally created collection use the persisted ID mapping during replay. Drive
+folder create, rename, folder and file delete use path-scoped
+queued edits with pending rows. Drive uploads also queue encrypted file bytes;
+replay requests a fresh signed URL, uploads the bytes, and finalizes the file.
+An uncertain upload remains in manual review to avoid overwriting a file twice.
+Habit trackers, entries, and streak actions also queue edits, with pending
+cards and activity rows. Create responses that omit a server ID still need
+dedicated replay support.
+Meet meeting create, edit, and delete also queue offline with a pending list
+treatment. Assistant model favorites and name changes now queue offline and
+overlay pending values on their scoped cached reads. Live room access,
+realtime tokens, and assistant generation remain network-dependent and must not
+be represented as queued calls.
+Task summaries, board lists, and board task pages read scoped snapshots while
+revalidating. Core task create, edit, description, delete and restore, plus
+board create and lifecycle edits, enter the outbox offline. Task and board
+cards expose pending status. Label, project, and initiative lists revalidate
+from scoped snapshots. Their
+create, edit, and delete actions queue offline with pending cards. Task
+relationships and task/project/initiative links queue as scoped edits. Bulk
+task actions queue as one ordered edit with every affected card marked pending;
+the bulk action reports a queued result without claiming server success.
+Partial bulk replay stays in manual conflict review so successful tasks are not
+silently retried with failed ones.
+Board task create, edit, and move and board list create, edit, and reorder
+also queue offline. Their list reads overlay pending edits; task cards and
+list headers distinguish unsynchronized rows. Project updates read scoped
+snapshots and queue create, edit, and delete with pending cards.
+Board estimation settings also queue offline, overlay pending choices on the
+cached board list, and mark the board tile until the edit is acknowledged.
+Task description images stage encrypted bytes and request a fresh signed upload
+URL during replay. Their unique local image markers are replaced only in queued
+task description fields after upload; arbitrary prose is never rewritten. An
+ambiguous upload remains in manual review before its dependent description edit.
+Converting a Note checklist item to a Task uses the cached board/list reads and
+Tasks outbox. The Note mention carries the local Task ID until replay maps it;
+tapping an unsynced mention shows its queued state, and a synced mention opens
+the resolved Task.
+Chat conversation and message lists also return scoped snapshots while
+revalidating. Conversation create, edit, and delete and user message sends enter
+the encrypted outbox offline. A queued message appears immediately with a
+dimmed dashed frame. Each send carries a stable client request ID so replay can
+use the server's idempotency check. Message edit, delete, read acknowledgment,
+reactions, AI settings, and friend requests also queue offline. Attachments
+stage encrypted bytes in the outbox, request a fresh signed URL on replay,
+and rewrite dependent queued message paths after upload. An ambiguous upload
+remains in manual review. Assistant generation remains network-dependent.
+Notification feeds and unread counts also return scoped snapshots while
+revalidating. Read state, metadata, viewed Mail thread archiving, and workspace
+invite decisions queue offline. Pending read state is applied to the feed and
+unsynchronized notification tiles use the dashed treatment.
+Profile's former preferences snapshot migrates into the encrypted account-scoped
+replica on first read. The visible cached profile stays in place during each
+refresh. Profile text edits and activity sharing queue offline; identity and
+sharing controls show the pending treatment until acknowledged.
+Avatar changes stage encrypted image bytes offline and request a fresh signed
+upload URL on replay. A lost upload connection remains reviewable because the
+server may already have accepted the image.
+Workspace member, role, and invite-link settings use scoped snapshots and queue
+edits while offline. Permission and invitation changes only become effective
+after server acknowledgment; uncertain writes require review in Offline changes.
+Workspace selection migrates from preferences into the encrypted replica, and a
+cached workspace list always triggers revalidation when loaded. Creation limits
+and module visibility metadata use the same read behavior. Finance exchange
+rates, wallet details, transaction pages, and stats retain snapshots during
+refresh, including the initial Finance screen load.
+Workspace creation, name and default changes, and avatar edits queue offline.
+New workspaces receive local IDs; replay maps those IDs before dependent edits.
+Workspace avatar bytes remain encrypted in the outbox until a fresh signed URL
+is requested. An uncertain creation or upload requires review to avoid a
+duplicate workspace or avatar operation.
+Timer sessions, history, categories, goals, requests, and summaries use scoped
+snapshots while revalidating. Session start, stop, pause, resume, edit, missed
+entry creation, and deletion queue offline, with dimmed dashed session cards.
+Timer category creation, goal create, edit, and delete, request create and edit,
+approval changes, comments, and threshold updates queue too. Request images
+stage encrypted bytes, obtain fresh signed URLs during replay, then submit the
+request with the resulting storage paths. Category, goal, request, and comment
+cards show pending sync state. Local ID reconciliation supports edits made
+before a create syncs; ambiguous sends remain in manual review. Running session state applies
+queued lifecycle edits over the latest snapshot.
+Finance category and tag lists also read scoped snapshots while revalidating;
+their create, edit, and delete actions queue offline, and queued cards use the
+dimmed dashed treatment. An uncertain transaction
+update or delete enters manual review rather than automatic replay. Once a
+transaction or transfer update is acknowledged, failure to refresh its detail
+does not invite another money write.
+Wallet checkpoint create, batch create, edit, delete, and reconciliation also
+enter the finance outbox. The timeline overlays queued checkpoints while
+keeping server-confirmed latest balances and interval calculations separate;
+pending rows have the dashed treatment. Finance feedback says queued or needs
+review when the write has not been acknowledged. Transaction attachments stage
+encrypted bytes, request a new signed upload URL on replay, and show queued
+state until delivery. An ambiguous money write or upload waits for manual review.
+Inventory sales-period create and edit, sale create and edit, period assignment,
+and delete queue offline. Sales lists overlay local edits; pending sale cards do
+not show an unconfirmed amount or open a server-only detail. Invoice replay maps
+its returned ID before sending a queued period assignment. Pending period and
+sale cards use the dashed treatment, and unknown outcomes require manual review.
 Invalidation and logout prevent older
 in-flight requests from writing back into the cache. Keys must include user,
 workspace, and all query filters.
@@ -168,14 +326,19 @@ scoped identity. Keep short keys stable, and test persistence/reopening with rea
 UUIDs and long search filters; short mock IDs can hide storage failures.
 
 Mail list snapshots use the existing encrypted Hive store, with a one-minute
-freshness window and a twenty-minute expiry. Cached rows appear while refresh is
-in progress. Pull-to-refresh bypasses freshness, and successful mutations
+freshness window and a seven-day retention window. Cached rows appear while a
+background refresh runs, including after their freshness window. A background
+authorization denial revokes the affected workspace snapshot, clears the inbox,
+and closes an open reader. Pull-to-refresh forces a network read, and successful mutations
 invalidate the workspace's Mail variants. Thread details use the same scoped
 cache; permissions and individual messages (including editable drafts) are
-fetched from the server. Attachment bytes, credentials, and active compose buffers are
+fetched from the server. General attachment bytes, credentials, and active compose buffers are
 not cached. Authorization failures discard the displayed list. Search waits 300ms
 after typing, and list rows are built lazily. Folder metadata loads independently
 so it cannot hold up the inbox.
+Small inline images keep an encrypted thread-scoped copy. A cached image renders
+immediately while one shared background request refreshes it; a denied image
+request revokes the affected Mail workspace and clears its thread media.
 
 Inventory can synchronously restore an unexpired user/workspace-scoped snapshot
 before currency and permission requests finish. Editing remains disabled until

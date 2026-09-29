@@ -171,14 +171,19 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
             padding: EdgeInsets.only(
               bottom: entry.$1 == state.projects.length - 1 ? 0 : 12,
             ),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () =>
-                  context.push(Routes.taskPortfolioProjectPath(project.id)),
-              child: TaskProjectCard(
-                project: project,
-                onEdit: () => _openEditProject(project),
-                onDelete: () => _deleteProject(project),
+            child: PendingSyncFrame(
+              workspaceId: project.wsId,
+              entityId: project.id,
+              feature: 'tasks',
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () =>
+                    context.push(Routes.taskPortfolioProjectPath(project.id)),
+                child: TaskProjectCard(
+                  project: project,
+                  onEdit: () => _openEditProject(project),
+                  onDelete: () => _deleteProject(project),
+                ),
               ),
             ),
           );
@@ -207,11 +212,18 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
             padding: EdgeInsets.only(
               bottom: entry.$1 == state.initiatives.length - 1 ? 0 : 12,
             ),
-            child: TaskInitiativeCard(
-              initiative: initiative,
-              onEdit: () => _openEditInitiative(initiative),
-              onDelete: () => _deleteInitiative(initiative),
-              onManageProjects: () => _manageInitiativeProjects(initiative),
+            child: PendingSyncFrame(
+              workspaceId:
+                  context.read<WorkspaceCubit>().state.currentWorkspace?.id ??
+                  '',
+              entityId: initiative.id,
+              feature: 'tasks',
+              child: TaskInitiativeCard(
+                initiative: initiative,
+                onEdit: () => _openEditInitiative(initiative),
+                onDelete: () => _deleteInitiative(initiative),
+                onManageProjects: () => _manageInitiativeProjects(initiative),
+              ),
             ),
           );
         })

@@ -198,7 +198,15 @@ class _NotificationsListState extends State<_NotificationsList> {
     return StaggeredEntrance(
       replayKey: '${widget.tab.name}-${notification.id}',
       delay: Duration(milliseconds: index.clamp(0, 6) * 40),
-      child: widget.itemBuilder(notification),
+      child: PendingSyncFrame(
+        workspaceId: 'personal',
+        feature: 'notifications',
+        entityId: notification.id,
+        relatedEntityIds: [
+          if (notification.entityId != null) notification.entityId!,
+        ],
+        child: widget.itemBuilder(notification),
+      ),
     );
   }
 }

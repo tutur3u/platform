@@ -150,6 +150,7 @@ class TaskBulkResult extends Equatable {
     required this.succeededTaskIds,
     required this.failures,
     required this.taskMetaById,
+    this.queued = false,
   });
 
   factory TaskBulkResult.fromJson(Map<String, dynamic> json) {
@@ -183,6 +184,7 @@ class TaskBulkResult extends Equatable {
       succeededTaskIds: succeededTaskIds,
       failures: failures,
       taskMetaById: Map.unmodifiable(taskMetaById),
+      queued: json['queued'] == true,
     );
   }
 
@@ -192,6 +194,7 @@ class TaskBulkResult extends Equatable {
   final List<String> succeededTaskIds;
   final List<TaskBulkFailure> failures;
   final Map<String, TaskBulkTaskMeta> taskMetaById;
+  final bool queued;
 
   bool get hasFailures => failCount > 0;
 
@@ -203,5 +206,6 @@ class TaskBulkResult extends Equatable {
     succeededTaskIds,
     failures,
     taskMetaById,
+    queued,
   ];
 }

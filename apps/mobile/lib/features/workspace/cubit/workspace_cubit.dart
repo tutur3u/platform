@@ -22,7 +22,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   /// Resolution order:
   /// 1. Server-side default (`user_private_details.default_workspace_id`)
   /// 2. Local default workspace cache (offline fallback)
-  /// 3. SharedPreferences cache for the current session workspace
+  /// 3. Encrypted replica selection (migrated from SharedPreferences)
   /// 4. Auto-select if only one workspace exists
   Future<void> loadWorkspaces({bool forceRefresh = false}) async {
     final requestToken = ++_loadRequestToken;
@@ -45,11 +45,6 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
           selectionRevisionAtStart: selectionRevisionAtStart,
         ),
       );
-
-      if (cached.isFresh) {
-        unawaited(_loadLimits());
-        return;
-      }
     } else {
       emit(state.copyWith(status: WorkspaceStatus.loading, error: null));
     }

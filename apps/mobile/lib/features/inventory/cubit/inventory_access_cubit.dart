@@ -69,10 +69,6 @@ class InventoryAccessCubit extends Cubit<InventoryAccessState> {
           wsId: trimmed,
         ),
       );
-
-      if (cached.isFresh) {
-        return;
-      }
     } else {
       emit(
         state.copyWith(

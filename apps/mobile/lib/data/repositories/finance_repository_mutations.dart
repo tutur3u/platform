@@ -72,13 +72,39 @@ mixin FinanceRepositoryMutations {
         takenAt: takenAt,
       );
     }
-    await _api.putJson(FinanceEndpoints.transaction(wsId, transactionId), body);
-
-    final refreshed = await _api.getJson(
-      FinanceEndpoints.transaction(wsId, transactionId),
+    final path = FinanceEndpoints.transaction(wsId, transactionId);
+    final local = Transaction(
+      id: transactionId,
+      amount: amount,
+      description: description,
+      walletId: walletId,
+      categoryId: categoryId,
+      takenAt: takenAt,
     );
-
-    return Transaction.fromJson(refreshed);
+    try {
+      await _api.putJson(path, body);
+    } on ApiException catch (error) {
+      if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+        error: error,
+        feature: 'finance',
+        method: 'PUT',
+        path: path,
+        workspaceId: wsId,
+        payload: body,
+        entityId: transactionId,
+        replaySafe: false,
+      )) {
+        return local;
+      }
+      rethrow;
+    }
+    try {
+      return Transaction.fromJson(await _api.getJson(path));
+    } on ApiException {
+      // The write was acknowledged. A failed detail refresh must not invite
+      // another money mutation.
+      return local;
+    }
   }
 
   Future<String?> createTransaction({
@@ -291,13 +317,40 @@ mixin FinanceRepositoryMutations {
         takenAt: takenAt,
       );
     }
-    await _api.putJson(FinanceEndpoints.transfers(wsId), body);
-
-    final refreshed = await _api.getJson(
-      FinanceEndpoints.transaction(wsId, refreshedTransactionId),
+    final path = FinanceEndpoints.transfers(wsId);
+    final local = Transaction(
+      id: refreshedTransactionId,
+      amount: amount,
+      description: description,
+      walletId: originWalletId,
+      takenAt: takenAt,
     );
-
-    return Transaction.fromJson(refreshed);
+    try {
+      await _api.putJson(path, body);
+    } on ApiException catch (error) {
+      if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+        error: error,
+        feature: 'finance',
+        method: 'PUT',
+        path: path,
+        workspaceId: wsId,
+        payload: body,
+        entityId: refreshedTransactionId,
+        replaySafe: false,
+      )) {
+        return local;
+      }
+      rethrow;
+    }
+    try {
+      return Transaction.fromJson(
+        await _api.getJson(
+          FinanceEndpoints.transaction(wsId, refreshedTransactionId),
+        ),
+      );
+    } on ApiException {
+      return local;
+    }
   }
 
   Future<void> deleteTransaction({
@@ -313,6 +366,22 @@ mixin FinanceRepositoryMutations {
     )) {
       return;
     }
-    await _api.deleteJson(FinanceEndpoints.transaction(wsId, transactionId));
+    final path = FinanceEndpoints.transaction(wsId, transactionId);
+    try {
+      await _api.deleteJson(path);
+    } on ApiException catch (error) {
+      if (!await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+        error: error,
+        feature: 'finance',
+        method: 'DELETE',
+        path: path,
+        workspaceId: wsId,
+        payload: const {},
+        entityId: transactionId,
+        replaySafe: false,
+      )) {
+        rethrow;
+      }
+    }
   }
 }

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -43,10 +46,12 @@ class _SpeedDialFabState extends State<SpeedDialFab> {
   static const Duration _animationDuration = Duration(milliseconds: 200);
 
   void _toggle() {
+    unawaited(AppHaptics.selection());
     setState(() => _expanded = !_expanded);
   }
 
   void _onActionTap(FabAction action) {
+    unawaited(AppHaptics.pickup());
     action.onPressed();
     if (!mounted) return;
     setState(() => _expanded = false);
@@ -95,7 +100,10 @@ class _SpeedDialFabState extends State<SpeedDialFab> {
                   ),
                 ),
               );
-              if (mounted && index != null) actions[index].onPressed();
+              if (mounted && index != null) {
+                unawaited(AppHaptics.pickup());
+                actions[index].onPressed();
+              }
             },
           ),
         ],

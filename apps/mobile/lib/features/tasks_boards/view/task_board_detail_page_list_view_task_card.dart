@@ -48,95 +48,100 @@ class _TaskCard extends StatelessWidget {
         Color.lerp(theme.colorScheme.foreground, listStyle.accent, 0.16) ??
         theme.colorScheme.foreground;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 2),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isBulkSelectMode ? onToggleSelected : onTap,
-          onLongPress: () {
-            unawaited(AppHaptics.pickup());
-            onToggleSelected();
-          },
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? listStyle.accent.withValues(alpha: 0.08)
-                  : Colors.transparent,
-              border: Border(
-                bottom: isLast
-                    ? BorderSide.none
-                    : BorderSide(color: borderColor),
+    return PendingSyncFrame(
+      workspaceId: board.wsId,
+      feature: 'tasks',
+      entityId: task.id,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: isLast ? 0 : 2),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: isBulkSelectMode ? onToggleSelected : onTap,
+            onLongPress: () {
+              unawaited(AppHaptics.pickup());
+              onToggleSelected();
+            },
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? listStyle.accent.withValues(alpha: 0.08)
+                    : Colors.transparent,
+                border: Border(
+                  bottom: isLast
+                      ? BorderSide.none
+                      : BorderSide(color: borderColor),
+                ),
               ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(2, 10, 2, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      if (isBulkSelectMode)
-                        _TaskSelectionToggle(
-                          isSelected: isSelected,
-                          listStyle: listStyle,
-                          onPressed: onToggleSelected,
-                        )
-                      else
-                        _TaskCompletionToggle(
-                          task: task,
-                          list: list,
-                          listStyle: listStyle,
-                          targetStatus: doneTargetStatus,
-                          enabled: normalizedStatus != 'closed',
-                          onPressed: () => onToggleDone(doneTargetStatus),
-                        ),
-                      const shad.Gap(8),
-                      Expanded(
-                        child: Text(
-                          task.name?.trim().isNotEmpty == true
-                              ? task.name!.trim()
-                              : context.l10n.taskBoardDetailUntitledTask,
-                          style: theme.typography.small.copyWith(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            height: 1.18,
-                            decoration: isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
-                            color: isCompleted
-                                ? theme.colorScheme.mutedForeground
-                                : titleColor,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const shad.Gap(5),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 29),
-                    child: Row(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(2, 10, 2, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Expanded(
-                          child: _TaskMetadataRow(
+                        if (isBulkSelectMode)
+                          _TaskSelectionToggle(
+                            isSelected: isSelected,
+                            listStyle: listStyle,
+                            onPressed: onToggleSelected,
+                          )
+                        else
+                          _TaskCompletionToggle(
                             task: task,
-                            board: board,
-                            isOverdue: isOverdue,
-                            isCompleted: isCompleted,
+                            list: list,
+                            listStyle: listStyle,
+                            targetStatus: doneTargetStatus,
+                            enabled: normalizedStatus != 'closed',
+                            onPressed: () => onToggleDone(doneTargetStatus),
+                          ),
+                        const shad.Gap(8),
+                        Expanded(
+                          child: Text(
+                            task.name?.trim().isNotEmpty == true
+                                ? task.name!.trim()
+                                : context.l10n.taskBoardDetailUntitledTask,
+                            style: theme.typography.small.copyWith(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              height: 1.18,
+                              decoration: isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                              color: isCompleted
+                                  ? theme.colorScheme.mutedForeground
+                                  : titleColor,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (task.assignees.isNotEmpty) ...[
-                          const shad.Gap(6),
-                          _ListViewAssigneeAvatarStack(
-                            assignees: task.assignees,
-                          ),
-                        ],
                       ],
                     ),
-                  ),
-                ],
+                    const shad.Gap(5),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 29),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _TaskMetadataRow(
+                              task: task,
+                              board: board,
+                              isOverdue: isOverdue,
+                              isCompleted: isCompleted,
+                            ),
+                          ),
+                          if (task.assignees.isNotEmpty) ...[
+                            const shad.Gap(6),
+                            _ListViewAssigneeAvatarStack(
+                              assignees: task.assignees,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

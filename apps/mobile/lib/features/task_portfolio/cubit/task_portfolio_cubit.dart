@@ -96,6 +96,7 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
     final requestToken = ++_loadRequestToken;
     final workspaceChanged = state.workspaceId != wsId;
     final cacheKey = _cacheKey(wsId);
+    var hasCachedData = false;
     if (!forceRefresh) {
       final cached = await CacheStore.instance.read<Map<String, dynamic>>(
         key: cacheKey,
@@ -103,6 +104,7 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
       );
 
       if (cached.hasValue) {
+        hasCachedData = true;
         final json = cached.data!;
         emit(
           state.copyWith(
@@ -121,18 +123,21 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
             clearError: true,
           ),
         );
-        if (cached.isFresh) {
-          return;
-        }
       }
     }
 
     emit(
       state.copyWith(
-        status: TaskPortfolioStatus.loading,
+        status: hasCachedData
+            ? TaskPortfolioStatus.loaded
+            : TaskPortfolioStatus.loading,
         workspaceId: wsId,
-        projects: workspaceChanged ? const [] : state.projects,
-        initiatives: workspaceChanged ? const [] : state.initiatives,
+        projects: workspaceChanged && !hasCachedData
+            ? const []
+            : state.projects,
+        initiatives: workspaceChanged && !hasCachedData
+            ? const []
+            : state.initiatives,
         isMutating: !workspaceChanged && state.isMutating,
         clearError: true,
       ),

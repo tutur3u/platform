@@ -104,20 +104,25 @@ class _FriendRequestGroup extends StatelessWidget {
           Text(title, style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 6),
           ...requests.map(
-            (request) => Card(
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${request.requester.displayName} -> '
-                        '${request.recipient.displayName}',
+            (request) => PendingSyncFrame(
+              workspaceId: context.read<ChatCubit>().state.wsId ?? '',
+              feature: 'chat',
+              entityId: request.id,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${request.requester.displayName} -> '
+                          '${request.recipient.displayName}',
+                        ),
                       ),
-                    ),
-                    if (actionsBuilder != null)
-                      Wrap(spacing: 6, children: actionsBuilder!(request)),
-                  ],
+                      if (actionsBuilder != null)
+                        Wrap(spacing: 6, children: actionsBuilder!(request)),
+                    ],
+                  ),
                 ),
               ),
             ),

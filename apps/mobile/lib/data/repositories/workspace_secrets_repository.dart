@@ -3,6 +3,8 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/workspace_secret.dart';
 import 'package:mobile/data/models/workspace_storage_rollout.dart';
@@ -105,18 +107,59 @@ class WorkspaceSecretsRepository {
     String wsId, {
     bool forceRefresh = false,
   }) async {
-    final cached = await CacheStore.instance.prefetch<List<WorkspaceSecret>>(
-      key: _secretsCacheKey(wsId),
-      policy: _cachePolicy,
-      decode: _decodeSecrets,
-      forceRefresh: forceRefresh,
-      fetch: () async => (await _fetchSecretsRemote(
-        wsId,
-      )).map((secret) => secret.toJson()).toList(growable: false),
-      tags: [_secretsCacheTag, 'workspace:$wsId', 'module:settings'],
-    );
+    List<WorkspaceSecret> confirmed;
+    try {
+      final cached = await CacheStore.instance.prefetch<List<WorkspaceSecret>>(
+        key: _secretsCacheKey(wsId),
+        policy: _cachePolicy,
+        decode: _decodeSecrets,
+        forceRefresh: forceRefresh,
+        fetch: () async => (await _fetchSecretsRemote(
+          wsId,
+        )).map((secret) => secret.toJson()).toList(growable: false),
+        tags: [_secretsCacheTag, 'workspace:$wsId', 'module:settings'],
+      );
+      confirmed = cached.data ?? const [];
+    } on ApiException catch (error) {
+      if (error.statusCode != 0) rethrow;
+      confirmed = const [];
+    }
 
-    return cached.data ?? const [];
+    final rows = {
+      for (final secret in confirmed)
+        if (secret.id != null) secret.id!: secret,
+    };
+    for (final edit in OfflineMutationQueue.instance.pending.value) {
+      if (edit.feature != 'settings' || edit.workspaceId != wsId) continue;
+      final id = edit.entityId;
+      final payload = edit.payload;
+      if (id == null) continue;
+      if (edit.method == 'WORKSPACE_SECRET_CREATE' &&
+          edit.path == WorkspaceSettingsEndpoints.secrets(wsId) &&
+          payload != null) {
+        rows[id] = WorkspaceSecret(
+          id: id,
+          wsId: wsId,
+          name: payload['name'] as String?,
+          value: payload['value'] as String?,
+          createdAt: edit.createdAt,
+        );
+      } else if (edit.method == 'PUT' &&
+          edit.path == WorkspaceSettingsEndpoints.secret(wsId, id) &&
+          payload != null) {
+        rows[id] = WorkspaceSecret(
+          id: id,
+          wsId: wsId,
+          name: payload['name'] as String?,
+          value: payload['value'] as String?,
+          createdAt: rows[id]?.createdAt ?? edit.createdAt,
+        );
+      } else if (edit.method == 'DELETE' &&
+          edit.path == WorkspaceSettingsEndpoints.secret(wsId, id)) {
+        rows.remove(id);
+      }
+    }
+    return rows.values.toList(growable: false);
   }
 
   Future<WorkspaceStorageRolloutState> getRolloutState(
@@ -153,10 +196,18 @@ class WorkspaceSecretsRepository {
     required String name,
     required String value,
   }) async {
-    await _api.postJson(WorkspaceSettingsEndpoints.secrets(wsId), {
-      'name': name,
-      'value': value,
-    });
+    final path = WorkspaceSettingsEndpoints.secrets(wsId);
+    final payload = {'name': name, 'value': value};
+    await queueOrSendVoid(
+      feature: 'settings',
+      method: 'WORKSPACE_SECRET_CREATE',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      send: () async {
+        await _api.postJson(path, payload);
+      },
+    );
     await invalidateWorkspaceCache(wsId);
   }
 
@@ -166,11 +217,19 @@ class WorkspaceSecretsRepository {
     required String name,
     required String value,
   }) async {
-    await _api.putJson(WorkspaceSettingsEndpoints.secret(wsId, secretId), {
-      'id': secretId,
-      'name': name,
-      'value': value,
-    });
+    final path = WorkspaceSettingsEndpoints.secret(wsId, secretId);
+    final payload = {'id': secretId, 'name': name, 'value': value};
+    await queueOrSendVoid(
+      feature: 'settings',
+      method: 'PUT',
+      path: path,
+      workspaceId: wsId,
+      entityId: secretId,
+      payload: payload,
+      send: () async {
+        await _api.putJson(path, payload);
+      },
+    );
     await invalidateWorkspaceCache(wsId);
   }
 
@@ -178,7 +237,17 @@ class WorkspaceSecretsRepository {
     required String wsId,
     required String secretId,
   }) async {
-    await _api.deleteJson(WorkspaceSettingsEndpoints.secret(wsId, secretId));
+    final path = WorkspaceSettingsEndpoints.secret(wsId, secretId);
+    await queueOrSendVoid(
+      feature: 'settings',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: secretId,
+      send: () async {
+        await _api.deleteJson(path);
+      },
+    );
     await invalidateWorkspaceCache(wsId);
   }
 

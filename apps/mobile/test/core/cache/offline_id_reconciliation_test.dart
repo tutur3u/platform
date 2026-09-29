@@ -1,0 +1,68 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/offline_id_reconciliation.dart';
+
+void main() {
+  test('rewrites only complete local IDs in paths and structured payloads', () {
+    final resolved = reconcileOfflineIds(
+      '/api/items/local-1/entries?parent=local-1',
+      {
+        'collection_id': 'local-1',
+        'nested': ['local-1', 'prefix-local-1'],
+        'content': 'Keep local-1 in prose',
+      },
+      {'local-1': 'server-9'},
+    );
+
+    expect(resolved.path, '/api/items/server-9/entries?parent=server-9');
+    expect(resolved.payload?['collection_id'], 'server-9');
+    expect(resolved.payload?['nested'], ['server-9', 'prefix-local-1']);
+    expect(resolved.payload?['content'], 'Keep local-1 in prose');
+  });
+
+  test('finds IDs in supported create response envelopes', () {
+    expect(createdServerId({'id': 'top'}), 'top');
+    expect(createdServerId({'invoice_id': 'invoice-1'}), 'invoice-1');
+    expect(
+      createdServerId({
+        'tracker': {'id': 'nested'},
+      }),
+      'nested',
+    );
+    expect(createdServerId({'status': 'ok'}), isNull);
+    expect(
+      createdServerId({
+        'goal': {'id': 'goal-server-id'},
+      }),
+      'goal-server-id',
+    );
+    expect(
+      createdServerId({
+        'category': {'id': 'category-server-id'},
+      }),
+      'category-server-id',
+    );
+    expect(
+      createdServerId({
+        'role': {'id': 'role-server-id'},
+      }),
+      'role-server-id',
+    );
+  });
+
+  test('replaces queued task image markers only inside descriptions', () {
+    const marker = 'offline-task-image-12345678-1234-1234-1234-123456789abc';
+    final resolved = reconcileOfflineIds(
+      '/api/tasks',
+      {
+        'description': 'Photo ![]($marker) and $marker',
+        'content': 'Keep $marker in prose',
+      },
+      {marker: '/api/shared/image.png'},
+    );
+    expect(
+      resolved.payload?['description'],
+      'Photo ![](/api/shared/image.png) and /api/shared/image.png',
+    );
+    expect(resolved.payload?['content'], 'Keep $marker in prose');
+  });
+}

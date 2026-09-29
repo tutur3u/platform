@@ -8,6 +8,7 @@ import 'package:mobile/features/profile/view/shared_activity_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 /// Key by user and workspace to discard old responses.
 class WorkspaceActivitySection extends StatefulWidget {
@@ -147,21 +148,26 @@ class _WorkspaceActivitySectionState extends State<WorkspaceActivitySection> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 24),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
-          title: Text(l10n.profileShareActivityTitle),
-          subtitle: Text(
-            _sharing
-                ? l10n.profileSharedWithWorkspace(widget.workspaceName)
-                : l10n.profilePrivateByDefault,
+        PendingSyncFrame(
+          workspaceId: widget.workspaceId,
+          feature: 'profile',
+          entityId: widget.workspaceId,
+          child: SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            title: Text(l10n.profileShareActivityTitle),
+            subtitle: Text(
+              _sharing
+                  ? l10n.profileSharedWithWorkspace(widget.workspaceName)
+                  : l10n.profilePrivateByDefault,
+            ),
+            secondary: Icon(
+              _sharing ? Icons.groups_outlined : Icons.lock_outline,
+            ),
+            value: _sharing,
+            onChanged: _loading || _saving || _failed
+                ? null
+                : (value) => unawaited(_toggle(value)),
           ),
-          secondary: Icon(
-            _sharing ? Icons.groups_outlined : Icons.lock_outline,
-          ),
-          value: _sharing,
-          onChanged: _loading || _saving || _failed
-              ? null
-              : (value) => unawaited(_toggle(value)),
         ),
         if (_failed)
           TextButton.icon(

@@ -146,9 +146,6 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
             clearError: true,
           ),
         );
-        if (cached.isFresh) {
-          return;
-        }
       }
     }
 

@@ -35,6 +35,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
@@ -582,10 +583,18 @@ class _RequestsViewState extends State<_RequestsView> {
                                   }
                                   final request = state
                                       .requests[index - (showMetaRow ? 1 : 0)];
-                                  return _RequestTile(
-                                    request: request,
-                                    onTap: () =>
-                                        _showRequestDetail(context, request),
+                                  return PendingSyncFrame(
+                                    workspaceId:
+                                        _permissionsWorkspaceId ??
+                                        request.workspaceId ??
+                                        '',
+                                    entityId: request.id,
+                                    feature: 'time_tracker',
+                                    child: _RequestTile(
+                                      request: request,
+                                      onTap: () =>
+                                          _showRequestDetail(context, request),
+                                    ),
                                   );
                                 },
                               ),

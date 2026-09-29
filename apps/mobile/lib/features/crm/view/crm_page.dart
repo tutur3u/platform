@@ -28,9 +28,13 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:share_plus/share_plus.dart';
+
+part 'crm_user_card.dart';
+part 'crm_duplicate_users_sheet.dart';
 
 enum _CrmTab { users, audit }
 
@@ -614,9 +618,13 @@ class _CrmPageState extends State<CrmPage> {
     if (confirmed != true) return;
 
     try {
-      await _repository.bulkImportUsers(wsId, items);
+      final queued = await _repository.bulkImportUsers(wsId, items);
       if (!mounted) return;
-      _toast(context.l10n.crmImportSuccess(items.length));
+      _toast(
+        queued
+            ? context.l10n.offlineEditQueued
+            : context.l10n.crmImportSuccess(items.length),
+      );
       await _loadInitial();
     } on ApiException catch (error) {
       if (!mounted) return;
@@ -1009,17 +1017,22 @@ class _CrmPageState extends State<CrmPage> {
                             )
                           else if (_tab == _CrmTab.users)
                             ..._users.map(
-                              (user) => _CrmUserCard(
-                                user: user,
-                                onEdit: _canUpdateUsers
-                                    ? () => _showUserSheet(user: user)
-                                    : null,
-                                onDelete: _canDeleteUsers
-                                    ? () => _deleteUser(user)
-                                    : null,
-                                onFeedback: _canViewFeedbacks
-                                    ? () => _showFeedbackSheet(user)
-                                    : null,
+                              (user) => PendingSyncFrame(
+                                workspaceId: _wsId ?? '',
+                                entityId: user.id,
+                                feature: 'crm',
+                                child: _CrmUserCard(
+                                  user: user,
+                                  onEdit: _canUpdateUsers
+                                      ? () => _showUserSheet(user: user)
+                                      : null,
+                                  onDelete: _canDeleteUsers
+                                      ? () => _deleteUser(user)
+                                      : null,
+                                  onFeedback: _canViewFeedbacks
+                                      ? () => _showFeedbackSheet(user)
+                                      : null,
+                                ),
                               ),
                             )
                           else
@@ -1098,165 +1111,6 @@ class _CrmPill extends StatelessWidget {
             style: theme.typography.small.copyWith(fontWeight: FontWeight.w600),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CrmUserCard extends StatelessWidget {
-  const _CrmUserCard({
-    required this.user,
-    this.onEdit,
-    this.onDelete,
-    this.onFeedback,
-  });
-
-  final CrmUser user;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
-  final VoidCallback? onFeedback;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final accent = user.requireAttention
-        ? theme.colorScheme.destructive
-        : const Color(0xFF4D8DFF);
-    final secondaryLine = [
-      user.email,
-      user.phone,
-      if (user.address?.trim().isNotEmpty ?? false) user.address,
-    ].whereType<String>().where((value) => value.isNotEmpty).join(' • ');
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: FinancePanel(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: accent.withValues(alpha: 0.12),
-              backgroundImage: user.avatarUrl == null
-                  ? null
-                  : NetworkImage(user.avatarUrl!),
-              child: user.avatarUrl == null
-                  ? Text(
-                      user.label.characters.first.toUpperCase(),
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: accent,
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          user.label,
-                          style: theme.typography.large.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      PopupMenuButton<String>(
-                        onSelected: (value) {
-                          if (value == 'edit') onEdit?.call();
-                          if (value == 'delete') onDelete?.call();
-                          if (value == 'feedback') onFeedback?.call();
-                        },
-                        itemBuilder: (context) => [
-                          if (onEdit != null)
-                            PopupMenuItem(
-                              value: 'edit',
-                              child: Text(context.l10n.commonEdit),
-                            ),
-                          if (onFeedback != null)
-                            PopupMenuItem(
-                              value: 'feedback',
-                              child: Text(context.l10n.crmFeedbackAction),
-                            ),
-                          if (onDelete != null)
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Text(context.l10n.commonDelete),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  if (secondaryLine.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      secondaryLine,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.textSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                      ),
-                    ),
-                  ],
-                  if (user.note?.trim().isNotEmpty ?? false) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      user.note!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.small.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      if (user.requireAttention)
-                        _CrmPill(
-                          icon: Icons.priority_high_rounded,
-                          label: context.l10n.crmRequireAttention,
-                          tint: theme.colorScheme.destructive,
-                        ),
-                      if (user.archived)
-                        _CrmPill(
-                          icon: Icons.archive_outlined,
-                          label: context.l10n.crmArchived,
-                          tint: theme.colorScheme.mutedForeground,
-                        ),
-                      if (user.isGuest)
-                        _CrmPill(
-                          icon: Icons.person_outline_rounded,
-                          label: context.l10n.crmGuestUser,
-                          tint: accent,
-                        ),
-                      if (user.groupCount > 0)
-                        _CrmPill(
-                          icon: Icons.groups_2_outlined,
-                          label: '${user.groupCount}',
-                          tint: accent,
-                        ),
-                      if (user.linkedPromotionsCount > 0)
-                        _CrmPill(
-                          icon: Icons.local_offer_outlined,
-                          label: '${user.linkedPromotionsCount}',
-                          tint: accent,
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1840,166 +1694,49 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
                   : ListView(
                       children: _items
                           .map(
-                            (item) => Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: ListTile(
-                                title: Text(
-                                  item.groupName ?? item.group?.name ?? '',
+                            (item) => PendingSyncFrame(
+                              workspaceId: widget.wsId,
+                              feature: 'crm',
+                              entityId: item.id,
+                              child: Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                child: ListTile(
+                                  title: Text(
+                                    item.groupName ?? item.group?.name ?? '',
+                                  ),
+                                  subtitle: Text(item.content),
+                                  trailing: widget.canManageFeedbacks
+                                      ? PopupMenuButton<String>(
+                                          onSelected: (value) {
+                                            if (value == 'edit') {
+                                              unawaited(_editFeedback(item));
+                                            }
+                                            if (value == 'delete') {
+                                              unawaited(_deleteFeedback(item));
+                                            }
+                                          },
+                                          itemBuilder: (context) => [
+                                            PopupMenuItem(
+                                              value: 'edit',
+                                              child: Text(
+                                                context.l10n.commonEdit,
+                                              ),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'delete',
+                                              child: Text(
+                                                context.l10n.commonDelete,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : null,
                                 ),
-                                subtitle: Text(item.content),
-                                trailing: widget.canManageFeedbacks
-                                    ? PopupMenuButton<String>(
-                                        onSelected: (value) {
-                                          if (value == 'edit') {
-                                            unawaited(_editFeedback(item));
-                                          }
-                                          if (value == 'delete') {
-                                            unawaited(_deleteFeedback(item));
-                                          }
-                                        },
-                                        itemBuilder: (context) => [
-                                          PopupMenuItem(
-                                            value: 'edit',
-                                            child: Text(
-                                              context.l10n.commonEdit,
-                                            ),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'delete',
-                                            child: Text(
-                                              context.l10n.commonDelete,
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : null,
                               ),
                             ),
                           )
                           .toList(growable: false),
                     ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DuplicateUsersSheet extends StatefulWidget {
-  const _DuplicateUsersSheet({required this.result, required this.onMerge});
-
-  final CrmDuplicateDetectionResult result;
-  final Future<CrmMergeResult> Function(String sourceId, String targetId)
-  onMerge;
-
-  @override
-  State<_DuplicateUsersSheet> createState() => _DuplicateUsersSheetState();
-}
-
-class _DuplicateUsersSheetState extends State<_DuplicateUsersSheet> {
-  late final Map<int, String> _selectedTargets;
-  bool _merging = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedTargets = {
-      for (final cluster in widget.result.clusters)
-        cluster.clusterId: cluster.suggestedTargetId,
-    };
-  }
-
-  Future<void> _mergeCluster(CrmDuplicateCluster cluster) async {
-    final targetId = _selectedTargets[cluster.clusterId];
-    if (targetId == null) return;
-    final source = cluster.users.firstWhere((user) => user.id != targetId);
-    setState(() => _merging = true);
-    try {
-      await widget.onMerge(source.id, targetId);
-      if (!mounted) return;
-      Navigator.of(context).pop();
-    } finally {
-      if (mounted) setState(() => _merging = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.l10n.crmDuplicateResults(widget.result.clusters.length),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView(
-                children: widget.result.clusters
-                    .map(
-                      (cluster) => Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(cluster.matchReason),
-                              const SizedBox(height: 12),
-                              DropdownButtonFormField<String>(
-                                initialValue:
-                                    _selectedTargets[cluster.clusterId],
-                                items: cluster.users
-                                    .map(
-                                      (user) => DropdownMenuItem(
-                                        value: user.id,
-                                        child: Text(user.label),
-                                      ),
-                                    )
-                                    .toList(growable: false),
-                                onChanged: (value) {
-                                  if (value == null) return;
-                                  setState(() {
-                                    _selectedTargets[cluster.clusterId] = value;
-                                  });
-                                },
-                                decoration: InputDecoration(
-                                  labelText: context.l10n.crmMergeTarget,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              ...cluster.users.map(
-                                (user) => ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(user.label),
-                                  subtitle: Text(
-                                    [
-                                      user.email,
-                                      user.phone,
-                                      if (user.isLinked)
-                                        context.l10n.crmLinkedUser,
-                                    ].whereType<String>().join(' • '),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              FilledButton.tonal(
-                                onPressed: _merging
-                                    ? null
-                                    : () => _mergeCluster(cluster),
-                                child: Text(context.l10n.crmMergeUsers),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(growable: false),
-              ),
             ),
           ],
         ),

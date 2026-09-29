@@ -23,6 +23,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class StorefrontDetailPage extends StatefulWidget {
@@ -378,10 +379,17 @@ class _ListingsSection extends StatelessWidget {
           )
         else
           ...listings.map(
-            (listing) => _ListingTile(
-              listing: listing,
-              onEdit: () => onEdit(listing),
-              onDelete: () => onDelete(listing),
+            (listing) => PendingSyncFrame(
+              workspaceId:
+                  context.read<WorkspaceCubit>().state.currentWorkspace?.id ??
+                  '',
+              entityId: listing.id,
+              feature: 'storefront',
+              child: _ListingTile(
+                listing: listing,
+                onEdit: () => onEdit(listing),
+                onDelete: () => onDelete(listing),
+              ),
             ),
           ),
       ],

@@ -67,6 +67,7 @@ class MailReader extends StatefulWidget {
 }
 
 class _MailReaderState extends State<MailReader> {
+  bool _accessRevoked = false;
   bool _busy = false;
   bool _showImages = MailImagePreference.instance.value;
   bool _childRouteOpen = false;
@@ -87,6 +88,7 @@ class _MailReaderState extends State<MailReader> {
   @override
   void initState() {
     super.initState();
+    widget.repository.accessRevoked?.addListener(_onAccessRevoked);
     MailImagePreference.instance.addListener(_imagePreferenceChanged);
     MailPrimaryActionPreference.instance.addListener(_primaryActionChanged);
     unawaited(MailImagePreference.instance.load());
@@ -110,9 +112,19 @@ class _MailReaderState extends State<MailReader> {
 
   @override
   void dispose() {
+    widget.repository.accessRevoked?.removeListener(_onAccessRevoked);
     MailImagePreference.instance.removeListener(_imagePreferenceChanged);
     MailPrimaryActionPreference.instance.removeListener(_primaryActionChanged);
     super.dispose();
+  }
+
+  void _onAccessRevoked() {
+    if (!mounted ||
+        widget.repository.accessRevoked?.value != widget.workspaceId) {
+      return;
+    }
+    setState(() => _accessRevoked = true);
+    Navigator.of(context).maybePop();
   }
 
   Future<void> _refresh() async {
@@ -258,6 +270,7 @@ class _MailReaderState extends State<MailReader> {
 
   @override
   Widget build(BuildContext context) {
+    if (_accessRevoked) return const SizedBox.shrink();
     final l10n = context.l10n;
     final actions = {
       'snooze': l10n.mailSnooze,

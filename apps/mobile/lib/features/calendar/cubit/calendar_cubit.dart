@@ -9,7 +9,6 @@ import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/calendar_event_deduplication.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/features/calendar/calendar_cache.dart';
 
 part 'calendar_state.dart';
 
@@ -210,25 +209,11 @@ class CalendarCubit extends Cubit<CalendarState> {
         fetchedAt: diskCached.fetchedAt,
       );
       emit(_restoreView(diskCached.data!));
-      if (!forceRefresh && diskCached.isFresh) {
-        return;
-      }
     }
 
     if (cached != null && !hasVisibleData) {
       _rememberCachedState(wsId, cached.state, fetchedAt: cached.fetchedAt);
       emit(_restoreView(cached.state));
-      if (!forceRefresh && isCalendarCacheFresh(cached.fetchedAt)) {
-        return;
-      }
-    }
-
-    if (!forceRefresh &&
-        ((cached != null &&
-                isCalendarCacheFresh(cached.fetchedAt) &&
-                (hasVisibleData || cached.state.hasLoadedOnce)) ||
-            (diskCached?.isFresh ?? false))) {
-      return;
     }
 
     if (hasVisibleData || cached != null) {

@@ -2,13 +2,16 @@ import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/utils/gallery_platform_file.dart';
+import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/features/chat/widgets/chat_attachment_preview.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ChatComposer extends StatefulWidget {
@@ -186,11 +189,16 @@ class _PendingAttachmentStrip extends StatelessWidget {
         runSpacing: 8,
         children: attachments
             .map(
-              (attachment) => ChatAttachmentPreview(
-                key: ValueKey(attachment.id),
-                attachment: attachment,
-                compact: true,
-                onRemove: () => onRemove(attachment.id),
+              (attachment) => PendingSyncFrame(
+                workspaceId: context.read<ChatCubit>().state.wsId ?? '',
+                feature: 'chat',
+                entityId: attachment.id,
+                child: ChatAttachmentPreview(
+                  key: ValueKey(attachment.id),
+                  attachment: attachment,
+                  compact: true,
+                  onRemove: () => onRemove(attachment.id),
+                ),
               ),
             )
             .toList(growable: false),

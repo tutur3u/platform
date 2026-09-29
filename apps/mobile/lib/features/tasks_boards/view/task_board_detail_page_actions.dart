@@ -775,8 +775,9 @@ class _TaskBoardBulkActionsDrawerState
     try {
       final result = await action();
       if (!mounted || !toastContext.mounted) return;
-
-      final message = result.hasFailures
+      final message = result.queued
+          ? l10n.offlineEditQueued
+          : result.hasFailures
           ? l10n.taskBoardDetailBulkPartialSuccess(
               result.successCount,
               result.failCount,
@@ -788,7 +789,6 @@ class _TaskBoardBulkActionsDrawerState
             ? shad.Alert.destructive(content: Text(message))
             : shad.Alert(content: Text(message)),
       );
-
       if (closeOnSuccess) {
         widget.onClose();
       }

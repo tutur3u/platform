@@ -8,6 +8,7 @@ import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskSectionAccordion extends StatelessWidget {
@@ -163,71 +164,80 @@ class _TaskTile extends StatelessWidget {
       if (listName != null && listName.isNotEmpty) listName,
     ].join(' / ');
 
-    return shad.GhostButton(
-      onPressed: () => unawaited(
-        openUserTaskBoardDetailWithWorkspace(
-          context,
-          task,
-          workspaceCubit: _workspaceCubitOrNull(context),
+    return PendingSyncFrame(
+      workspaceId:
+          _workspaceCubitOrNull(context)?.state.currentWorkspace?.id ?? '',
+      feature: 'tasks',
+      entityId: task.id,
+      child: shad.GhostButton(
+        onPressed: () => unawaited(
+          openUserTaskBoardDetailWithWorkspace(
+            context,
+            task,
+            workspaceCubit: _workspaceCubitOrNull(context),
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _PriorityIndicator(priority: task.priority),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    (task.name?.trim().isNotEmpty ?? false)
-                        ? task.name!.trim()
-                        : l10n.tasksUntitled,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.p.copyWith(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _PriorityIndicator(priority: task.priority),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      (task.name?.trim().isNotEmpty ?? false)
+                          ? task.name!.trim()
+                          : l10n.tasksUntitled,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.p.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.textMuted,
+                      ),
+                    ],
+                    if (task.priority != null) ...[
+                      const SizedBox(height: 6),
+                      _PriorityChip(priority: task.priority!, l10n: l10n),
+                    ],
+                  ],
+                ),
+              ),
+              if (task.endDate != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.muted,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    DateFormat.MMMd(
+                      Localizations.localeOf(context).toLanguageTag(),
+                    ).format(task.endDate!),
+                    style: theme.typography.xSmall.copyWith(
+                      color: theme.colorScheme.mutedForeground,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.textMuted,
-                    ),
-                  ],
-                  if (task.priority != null) ...[
-                    const SizedBox(height: 6),
-                    _PriorityChip(priority: task.priority!, l10n: l10n),
-                  ],
-                ],
-              ),
-            ),
-            if (task.endDate != null) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.muted,
-                  borderRadius: BorderRadius.circular(999),
                 ),
-                child: Text(
-                  DateFormat.MMMd(
-                    Localizations.localeOf(context).toLanguageTag(),
-                  ).format(task.endDate!),
-                  style: theme.typography.xSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

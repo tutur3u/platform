@@ -34,68 +34,73 @@ class _TaskBoardCard extends StatelessWidget {
         ? const Color(0xFFF59E0B)
         : theme.colorScheme.primary;
 
-    return TaskSurfacePane(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    resolvePlatformIcon(board.icon),
-                    size: 22,
-                    color: accentColor,
-                  ),
-                ),
-                const shad.Gap(12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        board.name ?? context.l10n.taskEstimatesUnnamedBoard,
-                        style: theme.typography.large.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (canManage)
-                  shad.IconButton.ghost(
-                    icon: const Icon(Icons.more_horiz),
-                    onPressed: () => _showActionMenu(context),
-                  ),
-              ],
-            ),
-            if (board.isArchived || board.isRecentlyDeleted) ...[
-              const shad.Gap(14),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+    return PendingSyncFrame(
+      workspaceId: board.wsId,
+      feature: 'tasks',
+      entityId: board.id,
+      child: TaskSurfacePane(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  if (board.isArchived)
-                    shad.OutlineBadge(
-                      child: Text(context.l10n.taskBoardsArchived),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                  if (board.isRecentlyDeleted)
-                    shad.OutlineBadge(
-                      child: Text(context.l10n.taskBoardsRecentlyDeleted),
+                    child: Icon(
+                      resolvePlatformIcon(board.icon),
+                      size: 22,
+                      color: accentColor,
+                    ),
+                  ),
+                  const shad.Gap(12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          board.name ?? context.l10n.taskEstimatesUnnamedBoard,
+                          style: theme.typography.large.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (canManage)
+                    shad.IconButton.ghost(
+                      icon: const Icon(Icons.more_horiz),
+                      onPressed: () => _showActionMenu(context),
                     ),
                 ],
               ),
+              if (board.isArchived || board.isRecentlyDeleted) ...[
+                const shad.Gap(14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (board.isArchived)
+                      shad.OutlineBadge(
+                        child: Text(context.l10n.taskBoardsArchived),
+                      ),
+                    if (board.isRecentlyDeleted)
+                      shad.OutlineBadge(
+                        child: Text(context.l10n.taskBoardsRecentlyDeleted),
+                      ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

@@ -9267,4 +9267,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get offlineChangesDiscard => 'Bỏ thay đổi trên máy';
+
+  @override
+  String get offlineChangesDiscardConfirm => 'Thao tác này xóa thay đổi đang chờ trên thiết bị. Nó không hoàn tác dữ liệu mà máy chủ có thể đã nhận.';
 }

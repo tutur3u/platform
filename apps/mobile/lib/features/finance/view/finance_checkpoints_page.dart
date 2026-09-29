@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -57,6 +59,30 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
   bool _isLoadingWallet = false;
   bool _isMutating = false;
   int _requestToken = 0;
+
+  Set<String> get _pendingFinanceIds => OfflineMutationQueue
+      .instance
+      .pending
+      .value
+      .where((edit) => edit.feature == 'finance')
+      .map((edit) => edit.id)
+      .toSet();
+
+  String? _newPendingMessage(Set<String> before, String wsId) {
+    for (final edit in OfflineMutationQueue.instance.pending.value) {
+      if (edit.feature != 'finance' ||
+          edit.workspaceId != wsId ||
+          before.contains(edit.id)) {
+        continue;
+      }
+      return switch (edit.status) {
+        PendingMutationStatus.queued => context.l10n.offlineEditQueued,
+        PendingMutationStatus.conflict => context.l10n.offlineEditConflict,
+        PendingMutationStatus.failed => context.l10n.offlineEditFailed,
+      };
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -122,6 +148,13 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
                     else if (selectedWallet != null &&
                         _selectedWalletCheckpoints != null)
                       WalletCheckpointDetailSections(
+                        workspaceId:
+                            context
+                                .read<WorkspaceCubit>()
+                                .state
+                                .currentWorkspace
+                                ?.id ??
+                            '',
                         wallet: selectedWallet,
                         response: _selectedWalletCheckpoints!,
                         showAmounts: showAmounts,
@@ -306,6 +339,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     final toastContext = Navigator.of(context, rootNavigator: true).context;
     final savedMessage = context.l10n.financeCheckpointsSaved;
     final fallbackError = context.l10n.commonSomethingWentWrong;
+    final pendingBefore = _pendingFinanceIds;
     setState(() => _isMutating = true);
 
     try {
@@ -330,7 +364,10 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
       FinanceCubit.clearWorkspaceCache(wsId);
       await _load(showLoader: false, forceRefresh: true);
       if (!mounted || !toastContext.mounted) return;
-      _showToast(toastContext, message: savedMessage);
+      _showToast(
+        toastContext,
+        message: _newPendingMessage(pendingBefore, wsId) ?? savedMessage,
+      );
     } on Exception catch (error) {
       if (!mounted || !toastContext.mounted) return;
       _showToast(
@@ -364,6 +401,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     final toastContext = Navigator.of(context, rootNavigator: true).context;
     final deletedMessage = context.l10n.financeCheckpointsDeleted;
     final fallbackError = context.l10n.commonSomethingWentWrong;
+    final pendingBefore = _pendingFinanceIds;
     setState(() => _isMutating = true);
 
     try {
@@ -375,7 +413,10 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
       FinanceCubit.clearWorkspaceCache(wsId);
       await _load(showLoader: false, forceRefresh: true);
       if (!mounted || !toastContext.mounted) return;
-      _showToast(toastContext, message: deletedMessage);
+      _showToast(
+        toastContext,
+        message: _newPendingMessage(pendingBefore, wsId) ?? deletedMessage,
+      );
     } on Exception catch (error) {
       if (!mounted || !toastContext.mounted) return;
       _showToast(
@@ -416,6 +457,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     final createdMessage = context.l10n.financeCheckpointsReconciliationCreated;
     final cleanMessage = context.l10n.financeCheckpointsReconciliationClean;
     final fallbackError = context.l10n.commonSomethingWentWrong;
+    final pendingBefore = _pendingFinanceIds;
     setState(() => _isMutating = true);
 
     try {
@@ -434,7 +476,9 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
       if (!mounted || !toastContext.mounted) return;
       _showToast(
         toastContext,
-        message: response.created ? createdMessage : cleanMessage,
+        message:
+            _newPendingMessage(pendingBefore, wsId) ??
+            (response.created ? createdMessage : cleanMessage),
       );
     } on Exception catch (error) {
       if (!mounted || !toastContext.mounted) return;
@@ -472,6 +516,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     final toastContext = Navigator.of(context, rootNavigator: true).context;
     final savedMessage = context.l10n.financeCheckpointsBatchSaved;
     final fallbackError = context.l10n.commonSomethingWentWrong;
+    final pendingBefore = _pendingFinanceIds;
     setState(() => _isMutating = true);
 
     try {
@@ -483,7 +528,10 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
       FinanceCubit.clearWorkspaceCache(wsId);
       await _load(showLoader: false, forceRefresh: true);
       if (!mounted || !toastContext.mounted) return;
-      _showToast(toastContext, message: savedMessage);
+      _showToast(
+        toastContext,
+        message: _newPendingMessage(pendingBefore, wsId) ?? savedMessage,
+      );
     } on Exception catch (error) {
       if (!mounted || !toastContext.mounted) return;
       _showToast(

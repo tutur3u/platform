@@ -9333,4 +9333,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineChangesDiscard => 'Discard local change';
+
+  @override
+  String get offlineChangesDiscardConfirm => 'This removes the queued change from this device. It does not undo anything the server may have received.';
 }

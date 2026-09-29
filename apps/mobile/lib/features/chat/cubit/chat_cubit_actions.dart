@@ -60,7 +60,19 @@ extension ChatCubitActions on ChatCubit {
         systemPrompt: systemPrompt,
       );
       _upsertConversation(conversation, select: true);
-      await selectConversation(conversation.id, forceRefresh: true);
+      if (_isPendingChatItem(wsId, conversation.id)) {
+        _emitState(
+          state.copyWith(
+            messageStatus: ChatMessageStatus.loaded,
+            messages: {
+              ...state.messages,
+              conversation.id: const <ChatMessage>[],
+            },
+          ),
+        );
+      } else {
+        await selectConversation(conversation.id, forceRefresh: true);
+      }
       return conversation;
     } on ApiException catch (error) {
       _emitState(state.copyWith(error: error.message));
@@ -191,7 +203,11 @@ extension ChatCubitActions on ChatCubit {
         conversation.id,
         pinned: !conversation.isPinned,
       );
-      _upsertConversation(updated);
+      _upsertConversation(
+        _isPendingChatItem(wsId, conversation.id)
+            ? conversation.copyWith(updatedAt: DateTime.now())
+            : updated,
+      );
     } on ApiException catch (error) {
       _emitState(state.copyWith(error: error.message));
     }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -8,9 +9,12 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_read_through.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
+import 'package:mobile/core/cache/workspace_avatar_delivery.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/env.dart';
-import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/models/workspace_limits.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -33,6 +37,37 @@ class WorkspaceRepository {
   final ApiClient _api;
   final http.Client _httpClient;
   static const _selectedKey = 'selected-workspace';
+
+  CacheKey? _selectedReplicaKey() {
+    final userId = currentCacheUserId();
+    if (userId == null) return null;
+    return CacheKey(
+      namespace: 'workspace.selected',
+      userId: userId,
+      workspaceId: 'personal',
+    );
+  }
+
+  CacheKey? _defaultReplicaKey() {
+    final userId = currentCacheUserId();
+    if (userId == null) return null;
+    return CacheKey(
+      namespace: 'workspace.default',
+      userId: userId,
+      workspaceId: 'personal',
+    );
+  }
+
+  Future<String> _resolvedWorkspaceId(String id) async {
+    final userId = currentCacheUserId();
+    if (userId == null) return id;
+    final mappings = await CacheStore.instance.localIdMappings(
+      userId: userId,
+      workspaceId: id,
+      feature: 'workspace',
+    );
+    return mappings[id] ?? id;
+  }
 
   String? _resolveWorkspaceAvatarUrl(String? value) {
     final trimmed = value?.trim();
@@ -129,7 +164,12 @@ class WorkspaceRepository {
   }
 
   Future<List<Workspace>> _fetchWorkspacesRemote() async {
-    final list = await _api.getJsonList('/api/v1/workspaces');
+    final list = await readThroughJsonList(
+      api: _api,
+      namespace: 'workspace.list',
+      workspaceId: 'personal',
+      path: '/api/v1/workspaces',
+    );
     return list
         .whereType<Map<String, dynamic>>()
         .map(_workspaceFromJson)
@@ -139,7 +179,17 @@ class WorkspaceRepository {
 
   /// Fetches workspaces the current user belongs to.
   Future<List<Workspace>> getWorkspaces() async {
-    final workspaces = await _fetchWorkspacesRemote();
+    final workspaces = (await _fetchWorkspacesRemote()).toList();
+    for (final item in await OfflineMutationQueue.instance.listPending()) {
+      if (item.feature == 'workspace' &&
+          item.method == 'WORKSPACE_CREATE' &&
+          item.entityId != null &&
+          !workspaces.any((workspace) => workspace.id == item.entityId)) {
+        workspaces.add(
+          Workspace(id: item.entityId!, name: item.payload?['name'] as String?),
+        );
+      }
+    }
     await saveCachedWorkspaces(workspaces);
     return workspaces;
   }
@@ -216,23 +266,74 @@ class WorkspaceRepository {
   Future<void> updateDefaultWorkspace(String workspaceId) async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) return;
-
-    await supabase
-        .from('user_private_details')
-        .update({'default_workspace_id': workspaceId})
-        .eq('user_id', userId);
+    await queueOrSendVoid(
+      feature: 'workspace',
+      method: 'WORKSPACE_DEFAULT',
+      path: '/local/workspace-default',
+      workspaceId: workspaceId,
+      entityId: workspaceId,
+      payload: {'workspaceId': workspaceId},
+      send: () async {
+        await supabase
+            .from('user_private_details')
+            .update({'default_workspace_id': workspaceId})
+            .eq('user_id', userId);
+      },
+    );
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_defaultWorkspaceIdKey, workspaceId);
+    final key = _defaultReplicaKey();
+    if (key == null) {
+      await prefs.setString(_defaultWorkspaceIdKey, workspaceId);
+    } else {
+      await CacheStore.instance.write(
+        key: key,
+        policy: CachePolicies.offlineCatalog,
+        payload: {'workspaceId': workspaceId},
+        tags: const ['module:workspace', 'workspace:personal'],
+      );
+      await prefs.remove(_defaultWorkspaceIdKey);
+    }
   }
 
   Future<String?> loadDefaultWorkspaceId() async {
+    final key = _defaultReplicaKey();
+    if (key != null) {
+      final cached = await CacheStore.instance.read<String>(
+        key: key,
+        decode: (data) => (data! as Map)['workspaceId'] as String,
+      );
+      if (cached.data != null) {
+        return await _resolvedWorkspaceId(cached.data!);
+      }
+    }
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_defaultWorkspaceIdKey);
+    final legacyId = prefs.getString(_defaultWorkspaceIdKey);
+    if (legacyId != null && key != null) {
+      await CacheStore.instance.write(
+        key: key,
+        policy: CachePolicies.offlineCatalog,
+        payload: {'workspaceId': legacyId},
+        tags: const ['module:workspace', 'workspace:personal'],
+      );
+      await prefs.remove(_defaultWorkspaceIdKey);
+    }
+    return legacyId == null ? null : await _resolvedWorkspaceId(legacyId);
   }
 
   /// Fetches a single workspace by ID.
   Future<Workspace?> getWorkspaceById(String wsId) async {
+    final pending = (await OfflineMutationQueue.instance.listPending())
+        .where(
+          (item) =>
+              item.feature == 'workspace' &&
+              item.method == 'WORKSPACE_CREATE' &&
+              item.entityId == wsId,
+        )
+        .firstOrNull;
+    if (pending != null) {
+      return Workspace(id: wsId, name: pending.payload?['name'] as String?);
+    }
     Map<String, dynamic>? response;
     try {
       response = await supabase
@@ -240,32 +341,76 @@ class WorkspaceRepository {
           .select(_workspaceBaseSelect)
           .eq('id', wsId)
           .maybeSingle();
-    } on Object {
-      response = await supabase
-          .from('workspaces')
-          .select(_workspaceBaseSelect)
-          .eq('id', wsId)
-          .maybeSingle();
+    } on Object catch (error) {
+      if (error is! SocketException &&
+          error is! TimeoutException &&
+          error is! http.ClientException) {
+        rethrow;
+      }
+      final cached = await readCachedWorkspaces();
+      for (final workspace in cached.data ?? const <Workspace>[]) {
+        if (workspace.id == wsId) return workspace;
+      }
+      rethrow;
     }
 
     if (response == null) return null;
     return _workspaceFromJson(response);
   }
 
-  /// Persists the selected workspace to SharedPreferences.
+  /// Persists selection in the encrypted account-scoped replica.
   Future<void> saveSelectedWorkspace(Workspace workspace) async {
+    final key = _selectedReplicaKey();
+    if (key != null) {
+      await CacheStore.instance.write(
+        key: key,
+        policy: CachePolicies.offlineCatalog,
+        payload: workspace.toJson(),
+        tags: const ['module:workspace', 'workspace:personal'],
+      );
+    }
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_selectedKey, jsonEncode(workspace.toJson()));
+    if (key == null) {
+      await prefs.setString(_selectedKey, jsonEncode(workspace.toJson()));
+    } else {
+      await prefs.remove(_selectedKey);
+    }
   }
 
-  /// Loads the previously selected workspace from SharedPreferences.
+  /// Loads selection and migrates the previous preferences snapshot.
   Future<Workspace?> loadSelectedWorkspace() async {
+    final key = _selectedReplicaKey();
+    if (key != null) {
+      final cached = await CacheStore.instance.read<Workspace>(
+        key: key,
+        decode: (data) =>
+            _workspaceFromJson(Map<String, dynamic>.from(data! as Map)),
+      );
+      if (cached.data != null) {
+        final selected = cached.data!;
+        final serverId = await _resolvedWorkspaceId(selected.id);
+        return serverId == selected.id
+            ? selected
+            : Workspace(
+                id: serverId,
+                name: selected.name,
+                avatarUrl: selected.avatarUrl,
+                personal: selected.personal,
+                tier: selected.tier,
+                createdAt: selected.createdAt,
+              );
+      }
+    }
     final prefs = await SharedPreferences.getInstance();
     final json = prefs.getString(_selectedKey);
     if (json == null) return null;
 
     try {
-      return _workspaceFromJson(jsonDecode(json) as Map<String, dynamic>);
+      final workspace = _workspaceFromJson(
+        jsonDecode(json) as Map<String, dynamic>,
+      );
+      await saveSelectedWorkspace(workspace);
+      return workspace;
     } on Object catch (_) {
       return null;
     }
@@ -273,6 +418,10 @@ class WorkspaceRepository {
 
   /// Clears the selected workspace.
   Future<void> clearSelectedWorkspace() async {
+    final key = _selectedReplicaKey();
+    if (key != null) await CacheStore.instance.remove(key);
+    final defaultKey = _defaultReplicaKey();
+    if (defaultKey != null) await CacheStore.instance.remove(defaultKey);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_selectedKey);
     await prefs.remove(_defaultWorkspaceIdKey);
@@ -280,7 +429,13 @@ class WorkspaceRepository {
 
   /// Fetches workspace creation limits for the current user.
   Future<WorkspaceLimits> getWorkspaceLimits() async {
-    final json = await _api.getJson('/api/v1/workspaces/limits');
+    final json = await readThroughJson(
+      api: _api,
+      namespace: 'workspace.limits',
+      workspaceId: 'personal',
+      path: '/api/v1/workspaces/limits',
+      policy: CachePolicies.metadata,
+    );
     return WorkspaceLimits.fromJson(json);
   }
 
@@ -288,6 +443,35 @@ class WorkspaceRepository {
   ///
   /// Returns the created [WorkspaceCreationResult] or throws [ApiException].
   Future<WorkspaceCreationResult> createWorkspace(
+    String name, {
+    File? avatarFile,
+  }) async {
+    final localId = newLocalMutationId();
+    final payload = <String, dynamic>{'name': name};
+    if (avatarFile != null) {
+      payload.addAll({
+        'avatarFilename': avatarFile.uri.pathSegments.last,
+        'avatarContentType':
+            lookupMimeType(avatarFile.path) ?? 'application/octet-stream',
+        'avatarBytes': base64Encode(await avatarFile.readAsBytes()),
+      });
+    }
+    return await queueOrSendValue<WorkspaceCreationResult>(
+      feature: 'workspace',
+      method: 'WORKSPACE_CREATE',
+      path: WorkspaceEndpoints.team,
+      workspaceId: localId,
+      entityId: localId,
+      payload: payload,
+      pendingValue: (id) => WorkspaceCreationResult(
+        workspace: Workspace(id: id, name: name),
+        avatarUploadFailed: false,
+      ),
+      send: () => _createRemoteWorkspace(name, avatarFile: avatarFile),
+    );
+  }
+
+  Future<WorkspaceCreationResult> _createRemoteWorkspace(
     String name, {
     File? avatarFile,
   }) async {
@@ -305,63 +489,86 @@ class WorkspaceRepository {
       }
     }
 
-    // Fetch the full workspace to get all fields
-    final ws = await getWorkspaceById(wsId);
-    if (ws == null) {
-      throw const ApiException(
-        message: 'Workspace created but could not be fetched',
-        statusCode: 0,
-      );
+    // Creation is already committed. A detail-read outage must never turn it
+    // into another queued create and duplicate the workspace on replay.
+    Workspace? ws;
+    try {
+      ws = await getWorkspaceById(wsId);
+    } on Object {
+      ws = null;
     }
     return WorkspaceCreationResult(
-      workspace: ws,
+      workspace: ws ?? Workspace(id: wsId, name: name),
       avatarUploadFailed: avatarUploadFailed,
     );
   }
 
   Future<void> updateWorkspaceName(String wsId, String name) async {
-    await _api.putJson(WorkspaceEndpoints.workspace(wsId), {'name': name});
+    final path = WorkspaceEndpoints.workspace(wsId);
+    final payload = {'name': name};
+    await queueOrSendVoid(
+      feature: 'workspace',
+      method: 'PUT',
+      path: path,
+      workspaceId: wsId,
+      entityId: wsId,
+      payload: payload,
+      send: () async {
+        await _api.putJson(path, payload);
+      },
+    );
   }
 
   Future<void> updateWorkspaceAvatar(String wsId, File avatarFile) async {
-    final uploadJson = await _api.postJson(
-      WorkspaceEndpoints.avatarUploadUrl(wsId),
-      {'filename': avatarFile.uri.pathSegments.last},
-    );
-    final upload = AvatarUploadUrlResponse.fromJson(uploadJson);
-
     final bytes = await avatarFile.readAsBytes();
+    final encodedBytes = base64Encode(bytes);
+    final filename = avatarFile.uri.pathSegments.last;
     final contentType =
         lookupMimeType(avatarFile.path) ?? 'application/octet-stream';
-    final uploadResponse = await _httpClient
-        .put(
-          Uri.parse(upload.uploadUrl),
-          headers: {
-            'Authorization': 'Bearer ${upload.token}',
-            'Content-Type': contentType,
-          },
-          body: bytes,
-        )
-        .timeout(const Duration(seconds: 60));
-
-    if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
-      throw ApiException(
-        message: 'Failed to upload workspace avatar',
-        statusCode: uploadResponse.statusCode,
-      );
-    }
-
-    await _api.patchJson(WorkspaceEndpoints.avatar(wsId), {
-      'filePath': upload.filePath,
-    });
+    await queueOrSendVoid(
+      feature: 'workspace',
+      method: 'WORKSPACE_AVATAR_UPLOAD',
+      path: WorkspaceEndpoints.avatar(wsId),
+      workspaceId: wsId,
+      entityId: wsId,
+      payload: {
+        'filename': filename,
+        'contentType': contentType,
+        'bytes': encodedBytes,
+      },
+      send: () => deliverWorkspaceAvatar(
+        api: _api,
+        httpClient: _httpClient,
+        workspaceId: wsId,
+        filename: filename,
+        contentType: contentType,
+        encodedBytes: encodedBytes,
+      ),
+    );
   }
 
   Future<void> removeWorkspaceAvatar(String wsId) async {
-    await _api.deleteJson(WorkspaceEndpoints.avatar(wsId));
+    final path = WorkspaceEndpoints.avatar(wsId);
+    await queueOrSendVoid(
+      feature: 'workspace',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: wsId,
+      send: () async {
+        await _api.deleteJson(path);
+      },
+    );
   }
 
   Future<List<String>> getMobileHiddenModuleIds(String wsId) async {
-    final json = await _api.getJson(WorkspaceEndpoints.mobileModuleFlags(wsId));
+    final json = await readThroughJson(
+      api: _api,
+      namespace: 'workspace.mobileModuleFlags',
+      workspaceId: wsId,
+      path: WorkspaceEndpoints.mobileModuleFlags(wsId),
+      policy: CachePolicies.metadata,
+    );
     final rawIds = json['hiddenModuleIds'];
     if (rawIds is! List) {
       return const [];

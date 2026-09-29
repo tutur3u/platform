@@ -6,6 +6,7 @@ import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/features/time_tracker/utils/duration.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracking_category_chip.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 class SessionTile extends StatelessWidget {
   const SessionTile({
@@ -46,124 +47,129 @@ class SessionTile extends StatelessWidget {
 
     final descriptionPreview = _descriptionPreview(session.description);
 
-    return Dismissible(
-      key: Key(session.id),
-      background: Container(
-        color: theme.colorScheme.primary,
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: 20),
-        child: Icon(
-          shad.LucideIcons.pencil,
-          color: theme.colorScheme.primaryForeground,
+    return PendingSyncFrame(
+      workspaceId: session.wsId ?? '',
+      feature: 'time_tracker',
+      entityId: session.id,
+      child: Dismissible(
+        key: Key(session.id),
+        background: Container(
+          color: theme.colorScheme.primary,
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.only(left: 20),
+          child: Icon(
+            shad.LucideIcons.pencil,
+            color: theme.colorScheme.primaryForeground,
+          ),
         ),
-      ),
-      secondaryBackground: Container(
-        color: theme.colorScheme.destructive,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: Icon(
-          shad.LucideIcons.trash2,
-          color: theme.colorScheme.primaryForeground,
+        secondaryBackground: Container(
+          color: theme.colorScheme.destructive,
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          child: Icon(
+            shad.LucideIcons.trash2,
+            color: theme.colorScheme.primaryForeground,
+          ),
         ),
-      ),
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
-          onEdit?.call();
-          return false;
-        } else {
-          return await _confirmDelete(context, l10n);
-        }
-      },
-      onDismissed: (direction) {
-        if (direction == DismissDirection.endToStart) {
-          onDelete?.call();
-        }
-      },
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-        child: Material(
-          color: theme.colorScheme.card,
-          borderRadius: BorderRadius.circular(12),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
+        confirmDismiss: (direction) async {
+          if (direction == DismissDirection.startToEnd) {
+            onEdit?.call();
+            return false;
+          } else {
+            return await _confirmDelete(context, l10n);
+          }
+        },
+        onDismissed: (direction) {
+          if (direction == DismissDirection.endToStart) {
+            onDelete?.call();
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+          child: Material(
+            color: theme.colorScheme.card,
             borderRadius: BorderRadius.circular(12),
-            onTap: onTap ?? onEdit,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: theme.colorScheme.border),
-              ),
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          session.title ?? l10n.timerRunningSessionNoTitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.base.copyWith(
-                            fontWeight: FontWeight.w600,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: onTap ?? onEdit,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: theme.colorScheme.border),
+                ),
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            session.title ?? l10n.timerRunningSessionNoTitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.base.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ),
-                      const shad.Gap(10),
-                      _SessionDurationBadge(label: durationText),
-                    ],
-                  ),
-                  const shad.Gap(8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 6,
-                          children: [
-                            TimeTrackingCategoryChip(
-                              label: categoryLabel,
-                              rawColor: colorKey,
-                            ),
-                            if (session.pendingApproval)
-                              shad.OutlineBadge(
-                                child: Text(
-                                  l10n.timerRequestPending,
-                                  style: theme.typography.small.copyWith(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
+                        const shad.Gap(10),
+                        _SessionDurationBadge(label: durationText),
+                      ],
+                    ),
+                    const shad.Gap(8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              TimeTrackingCategoryChip(
+                                label: categoryLabel,
+                                rawColor: colorKey,
+                              ),
+                              if (session.pendingApproval)
+                                shad.OutlineBadge(
+                                  child: Text(
+                                    l10n.timerRequestPending,
+                                    style: theme.typography.small.copyWith(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      if (timeRange.isNotEmpty) ...[
-                        const shad.Gap(8),
-                        Flexible(
-                          child: Align(
-                            alignment: AlignmentDirectional.centerEnd,
-                            child: _SessionTimeRangeChip(label: timeRange),
+                            ],
                           ),
                         ),
+                        if (timeRange.isNotEmpty) ...[
+                          const shad.Gap(8),
+                          Flexible(
+                            child: Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: _SessionTimeRangeChip(label: timeRange),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  if (descriptionPreview != null) ...[
-                    const shad.Gap(6),
-                    Text(
-                      descriptionPreview,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.small.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                        height: 1.25,
-                      ),
                     ),
+                    if (descriptionPreview != null) ...[
+                      const shad.Gap(6),
+                      Text(
+                        descriptionPreview,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.small.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                          height: 1.25,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

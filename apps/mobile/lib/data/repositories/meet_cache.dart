@@ -32,9 +32,7 @@ class MeetCache {
   MeetMeetingsPage? peek(String wsId, String path) {
     if (!_usable) return null;
     final result = _store.peek(key: _key(wsId, path), decode: _decode);
-    return result.isExpired || result.data == null
-        ? null
-        : MeetMeetingsPage.fromJson(result.data!);
+    return result.data == null ? null : MeetMeetingsPage.fromJson(result.data!);
   }
 
   Future<Map<String, dynamic>> read(
@@ -52,13 +50,18 @@ class MeetCache {
     try {
       final result = await _store.prefetch(
         key: _key(wsId, path),
-        policy: const CachePolicy(
-          staleAfter: Duration(minutes: 1),
-          expireAfter: Duration(minutes: 20),
-          allowBackgroundRefresh: false,
-        ),
+        policy: CachePolicies.moduleData,
         decode: _decode,
-        fetch: fetch,
+        fetch: () async {
+          try {
+            return await fetch();
+          } on ApiException catch (error) {
+            if (error.statusCode == 401 || error.statusCode == 403) {
+              await _purgeDenied(wsId);
+            }
+            rethrow;
+          }
+        },
         forceRefresh: forceRefresh,
         tags: ['meet'],
       );
@@ -68,18 +71,22 @@ class MeetCache {
       return result.data!;
     } on ApiException catch (error) {
       if (error.statusCode == 401 || error.statusCode == 403) {
-        try {
-          await _store.clearScope(
-            userId: _userId,
-            workspaceId: wsId,
-            namespace: 'meet.list',
-          );
-        } on Object {
-          _disabled = true;
-          debugPrint('Meet cache cleanup unavailable; cache disabled');
-        }
+        await _purgeDenied(wsId);
       }
       rethrow;
+    }
+  }
+
+  Future<void> _purgeDenied(String wsId) async {
+    try {
+      await _store.clearScope(
+        userId: _userId,
+        workspaceId: wsId,
+        namespace: 'meet.list',
+      );
+    } on Object {
+      _disabled = true;
+      debugPrint('Meet cache cleanup unavailable; cache disabled');
     }
   }
 

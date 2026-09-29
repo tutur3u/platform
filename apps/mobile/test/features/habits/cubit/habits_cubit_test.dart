@@ -372,7 +372,7 @@ void main() {
       expect(cubit.state.activityEntries.last.tracker.id, 'tracker-2');
     });
 
-    test('reuses fresh cached state across cubit instances', () async {
+    test('revalidates fresh cached state across cubit instances', () async {
       when(
         () => repository.listTrackers(
           'ws-1',
@@ -410,7 +410,7 @@ void main() {
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
         ),
-      ).called(1);
+      ).called(2);
       verify(
         () => repository.getTrackerDetail(
           'ws-1',
@@ -418,7 +418,7 @@ void main() {
           scope: any(named: 'scope'),
           userId: any(named: 'userId'),
         ),
-      ).called(2);
+      ).called(4);
     });
   });
 }

@@ -18,6 +18,7 @@ import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/tasks_boards/data/task_broadcast_client.dart';
 
 part 'task_board_detail_state.dart';
+part 'task_board_detail_cache_merge.dart';
 
 class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
   TaskBoardDetailCubit({
@@ -336,9 +337,6 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           requestToken: requestToken,
           detail: cachedDetail,
         );
-        if (cached.isFresh) {
-          return;
-        }
       }
     }
 
@@ -564,7 +562,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           pageSize: pageSize,
           loadMore: loadMore,
         );
-        if (!applied || cached.isFresh) {
+        if (!applied) {
           return;
         }
       }
@@ -834,7 +832,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
 
     final refreshedTask = updatedTask;
-    if (refreshedTask != null) {
+    if (refreshedTask != null && refreshedTask.listId != 'pending') {
       _replaceTaskSnapshot(refreshedTask);
     }
 
@@ -1185,6 +1183,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       listId,
     };
 
+    // Ignore list reads started before the optimistic move. A stale cached
+    // revalidation can otherwise put the task back in its previous list.
+    _loadRequestToken++;
     _optimisticallyMoveTaskToList(taskId: taskId, listId: listId);
 
     try {
@@ -2281,7 +2282,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           clearError: true,
         ),
       );
-
+      if (result.queued) return result;
       await _invalidateBoardCaches(wsId: wsId);
 
       final affectedListIds = <String>{
@@ -2923,15 +2924,6 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
             MapEntry(listId, List<TaskBoardTask>.unmodifiable(listTasks)),
       ),
     );
-  }
-
-  static Map<String, List<TaskBoardTask>> _mergeTaskListSnapshots(
-    Map<String, List<TaskBoardTask>> base,
-    Map<String, List<TaskBoardTask>> overlay,
-  ) {
-    if (base.isEmpty) return overlay;
-    if (overlay.isEmpty) return base;
-    return Map.unmodifiable({...base, ...overlay});
   }
 
   static Map<String, T> _filterMapByKeys<T>(

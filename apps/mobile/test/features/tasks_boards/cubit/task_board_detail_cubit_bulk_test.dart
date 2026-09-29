@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_summary.dart';
@@ -11,6 +12,8 @@ import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
 import 'package:mocktail/mocktail.dart';
+
+part 'task_board_detail_cubit_bulk_cases.dart';
 
 class _MockTaskRepository extends Mock implements TaskRepository {}
 
@@ -123,6 +126,10 @@ void main() {
     });
 
     setUp(() async {
+      await CacheStore.instance.clearScope(
+        workspaceId: 'ws-1',
+        resourceOnly: true,
+      );
       repository = _MockTaskRepository();
       cubit = TaskBoardDetailCubit(taskRepository: repository);
       repositoryTasks = [taskOne, taskTwo, taskDone, taskClosed, taskDocuments];
@@ -693,6 +700,8 @@ void main() {
       ).called(1);
     });
 
+    _registerQueuedBulkTests(() => repository, () => cubit);
+
     test(
       'bulk updates refresh affected lists when API omits succeeded ids',
       () async {
@@ -813,18 +822,6 @@ void main() {
         expect(cubit.state.isBulkSelectMode, isTrue);
       },
     );
-
-    test('bulk update clears selection when all succeed', () async {
-      cubit
-        ..enterBulkSelectMode()
-        ..toggleBulkTaskSelection('task-1')
-        ..toggleBulkTaskSelection('task-2');
-
-      await cubit.bulkClearLabels();
-
-      expect(cubit.state.selectedTaskIds, isEmpty);
-      expect(cubit.state.isBulkSelectMode, isFalse);
-    });
 
     test(
       'bulkMoveToList forwards targetBoardId for cross-board moves',

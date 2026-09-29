@@ -19,6 +19,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class MeetPage extends StatefulWidget {
@@ -523,16 +524,21 @@ class _MeetPageState extends State<MeetPage> {
                               for (final meeting in _meetings)
                                 SizedBox(
                                   width: width,
-                                  child: _MeetingTile(
-                                    meeting: meeting,
-                                    onJoin: () {
-                                      final code = encodeMeetRoomCode(
-                                        meeting.id,
-                                      );
-                                      context.go('${Routes.meet}?room=$code');
-                                    },
-                                    onEdit: () => _showMeetingEditor(meeting),
-                                    onDelete: () => _deleteMeeting(meeting),
+                                  child: PendingSyncFrame(
+                                    workspaceId: _wsId ?? '',
+                                    feature: 'meet',
+                                    entityId: meeting.id,
+                                    child: _MeetingTile(
+                                      meeting: meeting,
+                                      onJoin: () {
+                                        final code = encodeMeetRoomCode(
+                                          meeting.id,
+                                        );
+                                        context.go('${Routes.meet}?room=$code');
+                                      },
+                                      onEdit: () => _showMeetingEditor(meeting),
+                                      onDelete: () => _deleteMeeting(meeting),
+                                    ),
                                   ),
                                 ),
                             ],

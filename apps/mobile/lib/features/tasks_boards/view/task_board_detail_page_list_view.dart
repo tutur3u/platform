@@ -305,11 +305,16 @@ class _TaskListStickySection extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           child: Column(
             children: [
-              _ListSectionHeader(
-                list: list,
-                style: style,
-                isCollapsed: isCollapsed,
-                onToggleCollapsed: onToggleCollapsed,
+              PendingSyncFrame(
+                workspaceId: board.wsId,
+                feature: 'tasks',
+                entityId: list.id,
+                child: _ListSectionHeader(
+                  list: list,
+                  style: style,
+                  isCollapsed: isCollapsed,
+                  onToggleCollapsed: onToggleCollapsed,
+                ),
               ),
               if (!isCollapsed)
                 Padding(

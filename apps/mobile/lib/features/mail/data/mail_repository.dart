@@ -1,6 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_cache.dart';
@@ -15,16 +16,28 @@ class MailRepository {
     MailMediaCache? mediaCache,
   }) : _api = apiClient ?? ApiClient(),
        _cache = cache ?? MailCache(),
-       _mediaCache = mediaCache ?? MailMediaCache();
+       _mediaCache = mediaCache ?? MailMediaCache() {
+    _cache.accessRevoked.addListener(_onAccessRevoked);
+  }
   final ApiClient _api;
   final MailCache _cache;
   final MailMediaCache _mediaCache;
+  final Map<String, Future<void>> _mediaRefreshes = {};
+  void _onAccessRevoked() {
+    final wsId = _cache.accessRevoked.value;
+    if (wsId != null) unawaited(_mediaCache.clearWorkspace(wsId));
+  }
+
+  ValueListenable<String?>? get accessRevoked => _cache.accessRevoked;
 
   Future<Map<String, dynamic>?> savedView(String wsId) =>
       _cache.snapshot(wsId, 'view-state');
   Future<void> saveView(String wsId, Map<String, dynamic> view) =>
       _cache.saveSnapshot(wsId, 'view-state', view);
-  Future<void> denyAccess(String wsId) => _cache.denyAccess(wsId);
+  Future<void> denyAccess(String wsId) async {
+    await _cache.denyAccess(wsId);
+    await _mediaCache.clearWorkspace(wsId);
+  }
 
   Map<String, dynamic>? cachedList(String wsId, String path) {
     final cached = _cache.peek(wsId, path);
@@ -390,7 +403,10 @@ class MailRepository {
     );
   }
 
-  void dispose() => _api.dispose();
+  void dispose() {
+    _cache.accessRevoked.removeListener(_onAccessRevoked);
+    _api.dispose();
+  }
 
   Future<void> bulk(
     String wsId,
@@ -565,6 +581,34 @@ class MailRepository {
     String? threadId,
     bool cacheInlineImage = false,
   }) async {
+    final path =
+        '${mailboxPath(wsId, mailboxId)}/messages/${Uri.encodeComponent(messageId)}/attachments/${Uri.encodeComponent(attachmentId)}';
+    Future<Uint8List> fetch() => _api.getBytes(path);
+    Future<void> refresh() async {
+      try {
+        final bytes = await fetch();
+        if (cacheInlineImage && threadId != null) {
+          await _mediaCache.save(
+            wsId,
+            mailboxId,
+            threadId,
+            messageId,
+            attachmentId,
+            bytes,
+          );
+        }
+      } on ApiException catch (error) {
+        if (error.statusCode == 401 || error.statusCode == 403) {
+          if (threadId != null) {
+            await _mediaCache.clearThread(wsId, mailboxId, threadId);
+          }
+          await _cache.denyAccess(wsId);
+        }
+      } on Object {
+        // Keep the last inline image visible during a transient failure.
+      }
+    }
+
     if (cacheInlineImage && threadId != null) {
       final cached = await _mediaCache.read(
         wsId,
@@ -573,11 +617,27 @@ class MailRepository {
         messageId,
         attachmentId,
       );
-      if (cached != null) return cached;
+      if (cached != null) {
+        final flight = _mediaRefreshes.putIfAbsent(path, () async {
+          try {
+            await refresh();
+          } finally {
+            unawaited(_mediaRefreshes.remove(path));
+          }
+        });
+        unawaited(flight);
+        return cached;
+      }
     }
-    final bytes = await _api.getBytes(
-      '${mailboxPath(wsId, mailboxId)}/messages/${Uri.encodeComponent(messageId)}/attachments/${Uri.encodeComponent(attachmentId)}',
-    );
+    late final Uint8List bytes;
+    try {
+      bytes = await fetch();
+    } on ApiException catch (error) {
+      if (error.statusCode == 401 || error.statusCode == 403) {
+        await _cache.denyAccess(wsId);
+      }
+      rethrow;
+    }
     if (cacheInlineImage && threadId != null) {
       await _mediaCache.save(
         wsId,

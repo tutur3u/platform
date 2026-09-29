@@ -18,7 +18,10 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+part 'education_cards.dart';
 
 enum _EducationTab { overview, courses, library, attempts }
 
@@ -867,9 +870,14 @@ class _EducationPageState extends State<EducationPage> {
         )
       else
         ..._coursePreview.map(
-          (course) => _CourseCard(
-            course: course,
-            onTap: () => _selectTab(_EducationTab.courses),
+          (course) => PendingSyncFrame(
+            workspaceId: _wsId ?? '',
+            entityId: course.id,
+            feature: 'education',
+            child: _CourseCard(
+              course: course,
+              onTap: () => _selectTab(_EducationTab.courses),
+            ),
           ),
         ),
       const SizedBox(height: 24),
@@ -916,12 +924,17 @@ class _EducationPageState extends State<EducationPage> {
         )
       else
         ..._courses.map(
-          (course) => _CourseCard(
-            course: course,
-            onEdit: () => _showCourseSheet(course: course),
-            onDelete: () => _confirmDelete(
-              title: l10n.educationDeleteCourseConfirm(course.name),
-              onDelete: () => _repository.deleteCourse(_wsId!, course.id),
+          (course) => PendingSyncFrame(
+            workspaceId: _wsId ?? '',
+            entityId: course.id,
+            feature: 'education',
+            child: _CourseCard(
+              course: course,
+              onEdit: () => _showCourseSheet(course: course),
+              onDelete: () => _confirmDelete(
+                title: l10n.educationDeleteCourseConfirm(course.name),
+                onDelete: () => _repository.deleteCourse(_wsId!, course.id),
+              ),
             ),
           ),
         ),
@@ -992,12 +1005,17 @@ class _EducationPageState extends State<EducationPage> {
     }
     return _quizzes
         .map(
-          (quiz) => _QuizCard(
-            quiz: quiz,
-            onEdit: () => _showQuizSheet(quiz: quiz),
-            onDelete: () => _confirmDelete(
-              title: l10n.educationDeleteQuizConfirm,
-              onDelete: () => _repository.deleteQuiz(_wsId!, quiz.id),
+          (quiz) => PendingSyncFrame(
+            workspaceId: _wsId ?? '',
+            entityId: quiz.id,
+            feature: 'education',
+            child: _QuizCard(
+              quiz: quiz,
+              onEdit: () => _showQuizSheet(quiz: quiz),
+              onDelete: () => _confirmDelete(
+                title: l10n.educationDeleteQuizConfirm,
+                onDelete: () => _repository.deleteQuiz(_wsId!, quiz.id),
+              ),
             ),
           ),
         )
@@ -1017,12 +1035,17 @@ class _EducationPageState extends State<EducationPage> {
     }
     return _quizSets
         .map(
-          (quizSet) => _QuizSetCard(
-            quizSet: quizSet,
-            onEdit: () => _showQuizSetSheet(quizSet: quizSet),
-            onDelete: () => _confirmDelete(
-              title: l10n.educationDeleteQuizSetConfirm(quizSet.name),
-              onDelete: () => _repository.deleteQuizSet(_wsId!, quizSet.id),
+          (quizSet) => PendingSyncFrame(
+            workspaceId: _wsId ?? '',
+            entityId: quizSet.id,
+            feature: 'education',
+            child: _QuizSetCard(
+              quizSet: quizSet,
+              onEdit: () => _showQuizSetSheet(quizSet: quizSet),
+              onDelete: () => _confirmDelete(
+                title: l10n.educationDeleteQuizSetConfirm(quizSet.name),
+                onDelete: () => _repository.deleteQuizSet(_wsId!, quizSet.id),
+              ),
             ),
           ),
         )
@@ -1042,12 +1065,18 @@ class _EducationPageState extends State<EducationPage> {
     }
     return _flashcards
         .map(
-          (flashcard) => _FlashcardCard(
-            flashcard: flashcard,
-            onEdit: () => _showFlashcardSheet(flashcard: flashcard),
-            onDelete: () => _confirmDelete(
-              title: l10n.educationDeleteFlashcardConfirm,
-              onDelete: () => _repository.deleteFlashcard(_wsId!, flashcard.id),
+          (flashcard) => PendingSyncFrame(
+            workspaceId: _wsId ?? '',
+            entityId: flashcard.id,
+            feature: 'education',
+            child: _FlashcardCard(
+              flashcard: flashcard,
+              onEdit: () => _showFlashcardSheet(flashcard: flashcard),
+              onDelete: () => _confirmDelete(
+                title: l10n.educationDeleteFlashcardConfirm,
+                onDelete: () =>
+                    _repository.deleteFlashcard(_wsId!, flashcard.id),
+              ),
             ),
           ),
         )
@@ -1209,310 +1238,6 @@ class _EducationLibraryToggle extends StatelessWidget {
       label: Text(label),
       selected: selected,
       onSelected: (_) => onTap(),
-    );
-  }
-}
-
-class _CourseCard extends StatelessWidget {
-  const _CourseCard({
-    required this.course,
-    this.onTap,
-    this.onEdit,
-    this.onDelete,
-  });
-
-  final EducationCourse course;
-  final VoidCallback? onTap;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: FinancePanel(
-        onTap: onTap,
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2563EB).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.school_outlined,
-                color: Color(0xFF2563EB),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    course.name,
-                    style: shad.Theme.of(
-                      context,
-                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  if (course.description?.isNotEmpty ?? false) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      course.description!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: shad.Theme.of(context).typography.textSmall
-                          .copyWith(
-                            color: shad.Theme.of(
-                              context,
-                            ).colorScheme.mutedForeground,
-                          ),
-                    ),
-                  ],
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _EducationBadge(
-                        icon: Icons.layers_outlined,
-                        label: '${course.modulesCount}',
-                        tint: const Color(0xFF2563EB),
-                      ),
-                      if (course.certTemplate?.isNotEmpty ?? false)
-                        _EducationBadge(
-                          icon: Icons.verified_outlined,
-                          label: course.certTemplate!,
-                          tint: const Color(0xFF2563EB),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (onEdit != null || onDelete != null)
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') onEdit?.call();
-                  if (value == 'delete') onDelete?.call();
-                },
-                itemBuilder: (context) => [
-                  if (onEdit != null)
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Text(context.l10n.commonEdit),
-                    ),
-                  if (onDelete != null)
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text(context.l10n.commonDelete),
-                    ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _QuizSetCard extends StatelessWidget {
-  const _QuizSetCard({required this.quizSet, this.onEdit, this.onDelete});
-
-  final EducationQuizSet quizSet;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: FinancePanel(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: const Color(0xFF805AD5).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.layers_outlined,
-                color: Color(0xFF805AD5),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    quizSet.name,
-                    style: shad.Theme.of(
-                      context,
-                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 8),
-                  _EducationBadge(
-                    icon: Icons.link_outlined,
-                    label: '${quizSet.linkedModulesCount}',
-                    tint: const Color(0xFF805AD5),
-                  ),
-                ],
-              ),
-            ),
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'edit') onEdit?.call();
-                if (value == 'delete') onDelete?.call();
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'edit',
-                  child: Text(context.l10n.commonEdit),
-                ),
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Text(context.l10n.commonDelete),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _QuizCard extends StatelessWidget {
-  const _QuizCard({required this.quiz, this.onEdit, this.onDelete});
-
-  final EducationQuiz quiz;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: FinancePanel(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    quiz.question,
-                    style: shad.Theme.of(
-                      context,
-                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'edit') onEdit?.call();
-                    if (value == 'delete') onDelete?.call();
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Text(context.l10n.commonEdit),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text(context.l10n.commonDelete),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ...quiz.options
-                .take(4)
-                .map(
-                  (option) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _EducationBadge(
-                      icon: option.isCorrect
-                          ? Icons.check_circle_outline_rounded
-                          : Icons.radio_button_unchecked_rounded,
-                      label: option.value,
-                      tint: option.isCorrect
-                          ? const Color(0xFF2F855A)
-                          : const Color(0xFF64748B),
-                    ),
-                  ),
-                ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FlashcardCard extends StatelessWidget {
-  const _FlashcardCard({required this.flashcard, this.onEdit, this.onDelete});
-
-  final EducationFlashcard flashcard;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: FinancePanel(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    flashcard.front,
-                    style: shad.Theme.of(
-                      context,
-                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'edit') onEdit?.call();
-                    if (value == 'delete') onDelete?.call();
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Text(context.l10n.commonEdit),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text(context.l10n.commonDelete),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              flashcard.back,
-              style: shad.Theme.of(context).typography.textSmall.copyWith(
-                color: shad.Theme.of(context).colorScheme.mutedForeground,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

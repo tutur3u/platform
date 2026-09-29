@@ -3723,5 +3723,6 @@
     "offlineChangesEmpty": "Everything is synced",
     "offlineChangesReview": "Check this action on another device before retrying. It may have reached the server already.",
     "offlineChangesRetry": "Retry",
-    "offlineChangesDiscard": "Discard local change"
+    "offlineChangesDiscard": "Discard local change",
+    "offlineChangesDiscardConfirm": "This removes the queued change from this device. It does not undo anything the server may have received."
 }

@@ -27,6 +27,7 @@ import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 part 'task_boards_cards.dart';
 part 'task_boards_states.dart';

@@ -196,6 +196,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   void initState() {
     super.initState();
     _repository = widget.repository ?? MailRepository();
+    _repository.accessRevoked?.addListener(_onCacheAccessRevoked);
     _searchFocus.addListener(_onSearchFocusChanged);
     _mailPushSubscription = PushNotificationService.instance.events.listen((
       event,
@@ -228,10 +229,19 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     }
   }
 
+  void _onCacheAccessRevoked() {
+    if (mounted &&
+        !_accessDenied &&
+        _repository.accessRevoked?.value == widget.workspaceId) {
+      unawaited(_denyCachedAccess());
+    }
+  }
+
   void _onSearchFocusChanged() => setState(() {});
 
   @override
   void dispose() {
+    _repository.accessRevoked?.removeListener(_onCacheAccessRevoked);
     _dismissSwipeFeedback();
     _snoozeRefreshTimer?.cancel();
     _generation++;

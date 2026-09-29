@@ -55,19 +55,14 @@ class InventoryAccessRepository {
     );
   }
 
-  Future<void> _saveCachedInventoryAccess(String wsId, bool enabled) {
-    return CacheStore.instance.write(
+  Future<bool> isInventoryEnabled(String wsId) async {
+    final result = await CacheStore.instance.prefetch<bool>(
       key: _cacheKey(wsId),
       policy: _cachePolicy,
-      payload: {'enabled': enabled},
+      decode: _decodeEnabled,
+      fetch: () => _api.getJson(InventoryEndpoints.access(wsId)),
       tags: const [_cacheTag],
     );
-  }
-
-  Future<bool> isInventoryEnabled(String wsId) async {
-    final response = await _api.getJson(InventoryEndpoints.access(wsId));
-    final enabled = _decodeEnabled(response);
-    await _saveCachedInventoryAccess(wsId, enabled);
-    return enabled;
+    return result.data ?? false;
   }
 }

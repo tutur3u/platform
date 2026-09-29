@@ -23,6 +23,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -160,94 +161,103 @@ class _ProfileView extends StatelessWidget {
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final panels = <Widget>[
-                        StaggeredEntry(
-                          index: 1,
-                          playOnceKey: 'profile-identity',
-                          child: _ProfilePanel(
-                            title: l10n.profileIdentitySectionTitle,
-                            description: l10n.profileIdentitySectionDescription,
-                            child: Column(
-                              children: [
-                                _ProfileActionTile(
-                                  icon: Icons.person_outline_rounded,
-                                  title: l10n.profileDisplayName,
-                                  value:
-                                      profile.displayName ??
-                                      l10n.profileMissingValue,
-                                  isValuePlaceholder:
-                                      profile.displayName?.trim().isEmpty ??
-                                      true,
-                                  onTap: () => _showEditFieldSheet(
-                                    context,
+                        PendingSyncFrame(
+                          workspaceId: 'personal',
+                          feature: 'profile',
+                          entityId: profile.id,
+                          child: StaggeredEntry(
+                            index: 1,
+                            playOnceKey: 'profile-identity',
+                            child: _ProfilePanel(
+                              title: l10n.profileIdentitySectionTitle,
+                              description:
+                                  l10n.profileIdentitySectionDescription,
+                              child: Column(
+                                children: [
+                                  _ProfileActionTile(
+                                    icon: Icons.person_outline_rounded,
                                     title: l10n.profileDisplayName,
-                                    description:
-                                        l10n.profileDisplayNameDescription,
-                                    initialValue: profile.displayName ?? '',
-                                    placeholder: l10n.profileDisplayNameHint,
-                                    validator: (value) => value.trim().isEmpty
-                                        ? l10n.profileDisplayNameRequired
-                                        : null,
-                                    onSave: (value) => context
-                                        .read<ProfileCubit>()
-                                        .updateDisplayName(value),
+                                    value:
+                                        profile.displayName ??
+                                        l10n.profileMissingValue,
+                                    isValuePlaceholder:
+                                        profile.displayName?.trim().isEmpty ??
+                                        true,
+                                    onTap: () => _showEditFieldSheet(
+                                      context,
+                                      title: l10n.profileDisplayName,
+                                      description:
+                                          l10n.profileDisplayNameDescription,
+                                      initialValue: profile.displayName ?? '',
+                                      placeholder: l10n.profileDisplayNameHint,
+                                      validator: (value) => value.trim().isEmpty
+                                          ? l10n.profileDisplayNameRequired
+                                          : null,
+                                      onSave: (value) => context
+                                          .read<ProfileCubit>()
+                                          .updateDisplayName(value),
+                                    ),
                                   ),
-                                ),
-                                const shad.Gap(12),
-                                _ProfileActionTile(
-                                  icon: Icons.badge_outlined,
-                                  title: l10n.profileFullName,
-                                  value:
-                                      profile.fullName ??
-                                      l10n.profileMissingValue,
-                                  isValuePlaceholder:
-                                      profile.fullName?.trim().isEmpty ?? true,
-                                  onTap: () => _showEditFieldSheet(
-                                    context,
+                                  const shad.Gap(12),
+                                  _ProfileActionTile(
+                                    icon: Icons.badge_outlined,
                                     title: l10n.profileFullName,
-                                    description:
-                                        l10n.profileFullNameDescription,
-                                    initialValue: profile.fullName ?? '',
-                                    placeholder: l10n.profileFullNameHint,
-                                    validator: (value) => value.trim().isEmpty
-                                        ? l10n.profileFullNameRequired
-                                        : null,
-                                    onSave: (value) => context
-                                        .read<ProfileCubit>()
-                                        .updateFullName(value),
+                                    value:
+                                        profile.fullName ??
+                                        l10n.profileMissingValue,
+                                    isValuePlaceholder:
+                                        profile.fullName?.trim().isEmpty ??
+                                        true,
+                                    onTap: () => _showEditFieldSheet(
+                                      context,
+                                      title: l10n.profileFullName,
+                                      description:
+                                          l10n.profileFullNameDescription,
+                                      initialValue: profile.fullName ?? '',
+                                      placeholder: l10n.profileFullNameHint,
+                                      validator: (value) => value.trim().isEmpty
+                                          ? l10n.profileFullNameRequired
+                                          : null,
+                                      onSave: (value) => context
+                                          .read<ProfileCubit>()
+                                          .updateFullName(value),
+                                    ),
                                   ),
-                                ),
-                                const shad.Gap(12),
-                                _ProfileActionTile(
-                                  icon: Icons.alternate_email_rounded,
-                                  title: l10n.profileEmail,
-                                  value:
-                                      profile.email ?? l10n.profileMissingValue,
-                                  subtitle:
-                                      profile.newEmail?.trim().isNotEmpty !=
-                                          true
-                                      ? null
-                                      : l10n.profileEmailPendingChange(
-                                          profile.newEmail!,
-                                        ),
-                                  isValuePlaceholder:
-                                      profile.email?.trim().isEmpty ?? true,
-                                  onTap: () => _showEditFieldSheet(
-                                    context,
+                                  const shad.Gap(12),
+                                  _ProfileActionTile(
+                                    icon: Icons.alternate_email_rounded,
                                     title: l10n.profileEmail,
-                                    description: l10n.profileEmailDescription,
-                                    initialValue: profile.email ?? '',
-                                    placeholder: l10n.profileEmailHint,
-                                    keyboardType: TextInputType.emailAddress,
-                                    validator: (value) => value.contains('@')
+                                    value:
+                                        profile.email ??
+                                        l10n.profileMissingValue,
+                                    subtitle:
+                                        profile.newEmail?.trim().isNotEmpty !=
+                                            true
                                         ? null
-                                        : l10n.profileInvalidEmail,
-                                    onSave: (value) => context
-                                        .read<ProfileCubit>()
-                                        .updateEmail(value),
-                                    successMessage: l10n.profileEmailUpdateNote,
+                                        : l10n.profileEmailPendingChange(
+                                            profile.newEmail!,
+                                          ),
+                                    isValuePlaceholder:
+                                        profile.email?.trim().isEmpty ?? true,
+                                    onTap: () => _showEditFieldSheet(
+                                      context,
+                                      title: l10n.profileEmail,
+                                      description: l10n.profileEmailDescription,
+                                      initialValue: profile.email ?? '',
+                                      placeholder: l10n.profileEmailHint,
+                                      keyboardType: TextInputType.emailAddress,
+                                      validator: (value) => value.contains('@')
+                                          ? null
+                                          : l10n.profileInvalidEmail,
+                                      onSave: (value) => context
+                                          .read<ProfileCubit>()
+                                          .updateEmail(value),
+                                      successMessage:
+                                          l10n.profileEmailUpdateNote,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),

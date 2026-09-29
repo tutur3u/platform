@@ -5,6 +5,7 @@ import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_model_picker_tile.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 class AssistantModelPickerSheet extends StatefulWidget {
   const AssistantModelPickerSheet({
@@ -91,7 +92,7 @@ class _AssistantModelPickerSheetState extends State<AssistantModelPickerSheet> {
       await widget.repository!.toggleModelFavorite(
         widget.workspaceId!,
         model.value,
-        isFavorited: wasFavorite,
+        isFavorited: !wasFavorite,
       );
     } on Object {
       if (mounted) {
@@ -246,7 +247,7 @@ class _AssistantModelPickerSheetState extends State<AssistantModelPickerSheet> {
                         itemCount: visible.length,
                         itemBuilder: (context, index) {
                           final model = visible[index];
-                          return AssistantModelPickerTile(
+                          final tile = AssistantModelPickerTile(
                             model: model,
                             selected: model.value == widget.selected.value,
                             allowed: widget.isAllowed(model),
@@ -257,6 +258,14 @@ class _AssistantModelPickerSheetState extends State<AssistantModelPickerSheet> {
                             onFavorite: () => unawaited(_toggleFavorite(model)),
                             onSelect: () => Navigator.of(context).pop(model),
                           );
+                          return widget.workspaceId == null
+                              ? tile
+                              : PendingSyncFrame(
+                                  workspaceId: widget.workspaceId!,
+                                  feature: 'assistant',
+                                  entityId: model.value,
+                                  child: tile,
+                                );
                         },
                       ),
               ),

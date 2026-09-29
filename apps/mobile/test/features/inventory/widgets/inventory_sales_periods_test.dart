@@ -20,6 +20,7 @@ void main() {
     await tester.pumpApp(
       Material(
         child: InventorySalesPeriodBar(
+          workspaceId: 'ws-1',
           periods: const [
             InventorySalesPeriod(
               id: 'period-1',

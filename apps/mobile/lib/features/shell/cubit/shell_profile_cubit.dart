@@ -10,8 +10,6 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
     : _repository = profileRepository,
       super(const ShellProfileState());
 
-  static const Duration staleAfter = Duration(minutes: 30);
-
   final ProfileRepository _repository;
 
   void primeFromAuthenticatedUser(User user) {
@@ -53,14 +51,6 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
       );
     }
 
-    if (!forceRefresh &&
-        state.userId == user.id &&
-        state.profile != null &&
-        state.lastUpdatedAt != null &&
-        _isFresh(state.lastUpdatedAt!)) {
-      return;
-    }
-
     final cachedResult = await _repository.getCachedProfile();
     final cachedProfile = cachedResult.profile?.id == user.id
         ? cachedResult.profile
@@ -78,10 +68,6 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
           error: null,
         ),
       );
-    }
-
-    if (!forceRefresh && cachedAt != null && _isFresh(cachedAt)) {
-      return;
     }
 
     emit(state.copyWith(isRefreshing: true, error: null));
@@ -113,11 +99,7 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
       return;
     }
 
-    if (state.userId != user.id ||
-        state.lastUpdatedAt == null ||
-        !_isFresh(state.lastUpdatedAt!)) {
-      await loadFromAuthenticatedUser(user, forceRefresh: true);
-    }
+    await loadFromAuthenticatedUser(user, forceRefresh: true);
   }
 
   Future<void> applyExternalProfile(
@@ -171,9 +153,6 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
       error: error,
     );
   }
-
-  bool _isFresh(DateTime fetchedAt) =>
-      DateTime.now().difference(fetchedAt) < staleAfter;
 
   UserProfile _profileFromUser(User user) {
     final metadata = user.userMetadata;

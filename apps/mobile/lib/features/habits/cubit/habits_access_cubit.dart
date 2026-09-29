@@ -69,10 +69,6 @@ class HabitsAccessCubit extends Cubit<HabitsAccessState> {
           wsId: trimmed,
         ),
       );
-
-      if (cached.isFresh) {
-        return;
-      }
     } else {
       emit(
         state.copyWith(

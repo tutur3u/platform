@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -75,7 +78,10 @@ class ExtendedFab extends StatelessWidget {
           height: _fabSize,
           child: shad.PrimaryButton(
             onPressed: enabled && !loading && onPressed != null
-                ? onPressed
+                ? () {
+                    unawaited(AppHaptics.selection());
+                    onPressed?.call();
+                  }
                 : null,
             shape: shad.ButtonShape.circle,
             density: shad.ButtonDensity.icon,

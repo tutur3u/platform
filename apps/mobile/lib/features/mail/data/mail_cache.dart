@@ -18,10 +18,12 @@ class MailCache {
   static const _policy = CachePolicy(
     staleAfter: Duration(minutes: 1),
     expireAfter: Duration(days: 7),
-    allowBackgroundRefresh: false,
   );
 
+  final ValueNotifier<String?> accessRevoked = ValueNotifier(null);
+
   bool _disabled = false;
+  final Set<String> _deniedWorkspaces = {};
   bool get _usable =>
       !_disabled && _userId != null && _userId == _currentUserId();
   CacheKey _key(String wsId, String path) => CacheKey(
@@ -34,9 +36,9 @@ class MailCache {
       Map<String, dynamic>.from(value! as Map);
 
   Map<String, dynamic>? peek(String wsId, String path) {
-    if (!_usable) return null;
+    if (!_usable || _deniedWorkspaces.contains(wsId)) return null;
     final cached = _store.peek(key: _key(wsId, path), decode: _decode);
-    return cached.isExpired ? null : cached.data;
+    return cached.data;
   }
 
   Future<Map<String, dynamic>> read(
@@ -47,6 +49,9 @@ class MailCache {
   }) async {
     if (_userId != null && _userId != _currentUserId()) {
       throw const ApiException(message: 'Account changed', statusCode: 401);
+    }
+    if (_deniedWorkspaces.contains(wsId) && !_disabled) {
+      throw const ApiException(message: 'Mail access denied', statusCode: 403);
     }
     if (!_usable) return await fetch();
     // Cache availability must never prevent a network read. Only catch the
@@ -61,7 +66,16 @@ class MailCache {
         key: _key(wsId, path),
         policy: _policy,
         decode: _decode,
-        fetch: fetch,
+        fetch: () async {
+          try {
+            return await fetch();
+          } on ApiException catch (error) {
+            if (error.statusCode == 401 || error.statusCode == 403) {
+              await denyAccess(wsId);
+            }
+            rethrow;
+          }
+        },
         forceRefresh: forceRefresh,
         tags: ['mail'],
       );
@@ -92,10 +106,10 @@ class MailCache {
   }
 
   Future<Map<String, dynamic>?> snapshot(String wsId, String path) async {
-    if (!_usable) return null;
+    if (!_usable || _deniedWorkspaces.contains(wsId)) return null;
     try {
       final cached = await _store.read(key: _key(wsId, path), decode: _decode);
-      if (!_usable || cached.isExpired) return null;
+      if (!_usable) return null;
       return cached.data;
     } on Object {
       return null;
@@ -112,7 +126,7 @@ class MailCache {
     // Serialize local writes: request deduplication must not discard the latest
     // mailbox/filter selection when several UI updates happen together.
     final write = _snapshotWrites.then((_) async {
-      if (!_usable) return;
+      if (!_usable || _deniedWorkspaces.contains(wsId)) return;
       try {
         await _store.prefetch(
           key: _key(wsId, path),
@@ -121,7 +135,9 @@ class MailCache {
           forceRefresh: true,
           tags: const ['mail.view'],
           fetch: () async {
-            if (!_usable) throw StateError('Mail snapshot invalidated');
+            if (!_usable || _deniedWorkspaces.contains(wsId)) {
+              throw StateError('Mail snapshot invalidated');
+            }
             return payload;
           },
         );
@@ -134,9 +150,10 @@ class MailCache {
   }
 
   Future<void> denyAccess(String wsId) async {
-    if (!_usable) return;
+    if (!_usable || _deniedWorkspaces.contains(wsId)) return;
     // Suppress late snapshots before clearing the encrypted store.
-    _disabled = true;
+    _deniedWorkspaces.add(wsId);
+    accessRevoked.value = wsId;
     try {
       await _store.clearScope(
         userId: _userId,
@@ -144,6 +161,7 @@ class MailCache {
         namespace: 'mail.list',
       );
     } on Object {
+      _disabled = true;
       debugPrint('Mail cache cleanup unavailable; cache disabled');
     }
   }

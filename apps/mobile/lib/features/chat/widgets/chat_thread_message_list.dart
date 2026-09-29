@@ -2,6 +2,7 @@ part of 'chat_thread_view.dart';
 
 class _MessageList extends StatelessWidget {
   const _MessageList({
+    required this.workspaceId,
     required this.messages,
     required this.currentUserId,
     required this.streamingAssistantText,
@@ -9,6 +10,7 @@ class _MessageList extends StatelessWidget {
   });
 
   final List<ChatMessage> messages;
+  final String workspaceId;
   final String? currentUserId;
   final String streamingAssistantText;
   final void Function(ChatMessage message, String emoji) onReaction;
@@ -46,10 +48,15 @@ class _MessageList extends StatelessWidget {
             message.senderId == currentUserId;
         return Padding(
           padding: const EdgeInsets.only(bottom: 6),
-          child: _MessageBubble(
-            message: message,
-            isMine: isMine,
-            onReaction: (emoji) => onReaction(message, emoji),
+          child: PendingSyncFrame(
+            workspaceId: workspaceId,
+            feature: 'chat',
+            entityId: message.id,
+            child: _MessageBubble(
+              message: message,
+              isMine: isMine,
+              onReaction: (emoji) => onReaction(message, emoji),
+            ),
           ),
         );
       },

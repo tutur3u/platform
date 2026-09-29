@@ -184,7 +184,7 @@ void main() {
       await cubit.loadRequests('ws_1');
 
       expect(cubit.state.selectedStatus, ApprovalStatus.approved);
-      expect(cubit.state.isFromCache, true);
+      expect(cubit.state.isFromCache, false);
       verify(
         () => repository.getRequests(
           'ws_1',
@@ -193,7 +193,7 @@ void main() {
           limit: any(named: 'limit'),
           offset: any(named: 'offset'),
         ),
-      ).called(1);
+      ).called(2);
 
       await cubit.close();
     });
@@ -210,16 +210,32 @@ void main() {
           offset: any(named: 'offset'),
         ),
       ).thenAnswer((_) async => [_request('req_all', ApprovalStatus.pending)]);
+      when(
+        () => repository.getRequests(
+          'ws_1',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
+      ).thenAnswer((_) async => [_request('req_all', ApprovalStatus.pending)]);
 
       await cubit.loadRequests('ws_1', statusOverride: 'all');
       await cubit.loadRequests('ws_1');
 
       expect(cubit.state.selectedStatus, isNull);
-      expect(cubit.state.isFromCache, true);
+      expect(cubit.state.isFromCache, false);
       verify(
         () => repository.getRequests(
           'ws_1',
           status: 'all',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
+      ).called(1);
+      verify(
+        () => repository.getRequests(
+          'ws_1',
           userId: any(named: 'userId'),
           limit: any(named: 'limit'),
           offset: any(named: 'offset'),

@@ -57,6 +57,7 @@ import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 part 'task_board_detail_page_actions.dart';
 part 'task_board_detail_page_actions_filter_sheet.dart';

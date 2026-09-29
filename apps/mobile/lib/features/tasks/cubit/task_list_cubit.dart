@@ -135,7 +135,7 @@ class TaskListCubit extends Cubit<TaskListState> {
           status: TaskListStatus.loaded,
           hasLoadedOnce: true,
           isFromCache: true,
-          isRefreshing: forceRefresh || !cached.isFresh,
+          isRefreshing: true,
           lastUpdatedAt: cached.fetchedAt,
           overdueTasks: page.overdue,
           todayTasks: page.today,
@@ -149,9 +149,6 @@ class TaskListCubit extends Cubit<TaskListState> {
           clearError: true,
         ),
       );
-      if (!forceRefresh && cached.isFresh) {
-        return;
-      }
     }
 
     final shouldServeVisibleData = preserveData || hasCachedValue;

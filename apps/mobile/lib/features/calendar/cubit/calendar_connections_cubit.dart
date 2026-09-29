@@ -55,6 +55,7 @@ class CalendarConnectionsCubit extends Cubit<CalendarConnectionsState> {
       await _repo.toggleConnection(
         connectionId: connectionId,
         isEnabled: enabled,
+        wsId: state.connections.firstWhere((c) => c.id == connectionId).wsId,
       );
     } on ApiException {
       // Rollback on error.
@@ -80,8 +81,11 @@ class CalendarConnectionsCubit extends Cubit<CalendarConnectionsState> {
     try {
       await _repo.disconnectAccount(accountId: accountId, wsId: wsId);
 
-      // Remove account and disable associated connections locally.
-      final accounts = state.accounts.where((a) => a.id != accountId).toList();
+      // Keep a queued disconnect visible with its pending sync frame.
+      final pending = await _repo.isDisconnectPending(accountId, wsId);
+      final accounts = pending
+          ? state.accounts
+          : state.accounts.where((a) => a.id != accountId).toList();
       final connections = state.connections.map((c) {
         if (c.authTokenId == accountId) {
           return c.copyWith(isEnabled: false);

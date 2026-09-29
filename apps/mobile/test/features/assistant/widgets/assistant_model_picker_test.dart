@@ -91,7 +91,7 @@ void main() {
     await tester.tap(find.byTooltip('Remove from favorites'));
     await tester.pumpAndSettle();
     expect(repository.toggledModelId, 'provider/fast');
-    expect(repository.wasFavorite, true);
+    expect(repository.wasFavorite, false);
     expect(find.text('No models match these filters'), findsOneWidget);
     await tester.tap(find.text('Other'));
     await tester.pumpAndSettle();

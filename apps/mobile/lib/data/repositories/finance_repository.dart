@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -7,7 +8,11 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/drive_upload_delivery.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_read_through.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
+import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
@@ -24,10 +29,14 @@ part 'finance_repository_checkpoints.dart';
 part 'finance_repository_attachments.dart';
 part 'finance_repository_transaction_lookup.dart';
 part 'finance_repository_mutations.dart';
+part 'finance_repository_taxonomy.dart';
 
 /// Repository for finance operations (wallets, transactions, categories).
 class FinanceRepository
-    with FinanceRepositoryAttachments, FinanceRepositoryMutations {
+    with
+        FinanceRepositoryAttachments,
+        FinanceRepositoryMutations,
+        FinanceRepositoryTaxonomy {
   FinanceRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
 
   @override
@@ -208,26 +217,30 @@ class FinanceRepository
     required String wsId,
     required String currency,
   }) async {
-    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+    final path = FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY');
+    final payload = {'value': currency.trim().toUpperCase()};
+    await queueOrSendVoid(
       feature: 'finance',
       method: 'PUT',
-      path: FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+      path: path,
       workspaceId: wsId,
-      payload: {'value': currency.trim().toUpperCase()},
+      payload: payload,
       entityId: wsId,
-    )) {
-      await _storeWorkspaceDefaultCurrencyCache(wsId: wsId, currency: currency);
-      return;
-    }
-    await _api.putJson(
-      FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
-      {'value': currency.trim().toUpperCase()},
+      send: () async {
+        await _api.putJson(path, payload);
+      },
     );
     await _storeWorkspaceDefaultCurrencyCache(wsId: wsId, currency: currency);
   }
 
   Future<List<ExchangeRate>> getExchangeRates() async {
-    final response = await _api.getJson(FinanceEndpoints.exchangeRates);
+    final response = await readThroughJson(
+      api: _api,
+      namespace: 'finance.exchangeRates',
+      workspaceId: 'global',
+      path: FinanceEndpoints.exchangeRates,
+      policy: CachePolicies.metadata,
+    );
     final data = response['data'];
     if (data is! List<dynamic>) return const [];
 
@@ -242,8 +255,11 @@ class FinanceRepository
     required String walletId,
   }) async {
     try {
-      final response = await _api.getJson(
-        FinanceEndpoints.wallet(wsId, walletId),
+      final response = await readThroughJson(
+        api: _api,
+        namespace: 'finance.walletDetail',
+        workspaceId: wsId,
+        path: FinanceEndpoints.wallet(wsId, walletId),
       );
       return Wallet.fromJson(response);
     } on ApiException catch (error) {
@@ -406,8 +422,11 @@ class FinanceRepository
     if (walletId != null && walletId.isNotEmpty) params['walletId'] = walletId;
 
     final query = Uri(queryParameters: params).query;
-    final response = await _api.getJson(
-      '${FinanceEndpoints.infiniteTransactions(wsId)}?$query',
+    final response = await readThroughJson(
+      api: _api,
+      namespace: 'finance.infiniteTransactions',
+      workspaceId: wsId,
+      path: '${FinanceEndpoints.infiniteTransactions(wsId)}?$query',
     );
 
     final page = InfiniteTransactionResponse.fromJson(response);
@@ -439,7 +458,12 @@ class FinanceRepository
     final endpoint = query.isEmpty
         ? FinanceEndpoints.transactionStats(wsId)
         : '${FinanceEndpoints.transactionStats(wsId)}?$query';
-    final response = await _api.getJson(endpoint);
+    final response = await readThroughJson(
+      api: _api,
+      namespace: 'finance.transactionStats',
+      workspaceId: wsId,
+      path: endpoint,
+    );
     return TransactionStats.fromJson(response);
   }
 
@@ -487,97 +511,6 @@ class FinanceRepository
     return (response as List<dynamic>)
         .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
         .toList();
-  }
-
-  // ── Categories ──────────────────────────────────
-
-  Future<List<TransactionCategory>> getCategories(String wsId) async {
-    final response = await _api.getJsonList(FinanceEndpoints.categories(wsId));
-
-    return response
-        .map((e) => TransactionCategory.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
-
-  Future<void> createCategory({
-    required String wsId,
-    required String name,
-    required bool isExpense,
-    String? icon,
-    String? color,
-  }) async {
-    await _api.postJson(FinanceEndpoints.categories(wsId), {
-      'name': name,
-      'is_expense': isExpense,
-      'icon': icon,
-      'color': color,
-    });
-  }
-
-  Future<void> updateCategory({
-    required String wsId,
-    required String categoryId,
-    required String name,
-    required bool isExpense,
-    String? icon,
-    String? color,
-  }) async {
-    final body = <String, dynamic>{
-      'name': name,
-      'is_expense': isExpense,
-      'icon': icon,
-      'color': color,
-    };
-
-    await _api.putJson(FinanceEndpoints.category(wsId, categoryId), body);
-  }
-
-  Future<void> deleteCategory({
-    required String wsId,
-    required String categoryId,
-  }) async {
-    await _api.deleteJson(FinanceEndpoints.category(wsId, categoryId));
-  }
-
-  // ── Tags ────────────────────────────────────────
-
-  Future<List<FinanceTag>> getTags(String wsId) async {
-    final response = await _api.getJsonList(FinanceEndpoints.tags(wsId));
-
-    return response
-        .map((e) => FinanceTag.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
-
-  Future<void> createTag({
-    required String wsId,
-    required String name,
-    required String color,
-    String? description,
-  }) async {
-    await _api.postJson(FinanceEndpoints.tags(wsId), {
-      'name': name,
-      'color': color,
-      'description': description,
-    });
-  }
-
-  Future<void> updateTag({
-    required String wsId,
-    required String tagId,
-    required String name,
-    required String color,
-    String? description,
-  }) async {
-    await _api.putJson(FinanceEndpoints.tag(wsId, tagId), {
-      'name': name,
-      'color': color,
-      'description': description,
-    });
-  }
-
-  Future<void> deleteTag({required String wsId, required String tagId}) async {
-    await _api.deleteJson(FinanceEndpoints.tag(wsId, tagId));
   }
 }
 

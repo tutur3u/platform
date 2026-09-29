@@ -1,3 +1,6 @@
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_read_through.dart';
+import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/data/models/calendar_account.dart';
 import 'package:mobile/data/models/calendar_connection.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -19,14 +22,26 @@ class CalendarConnectionsRepository {
 
   /// Fetches all active connected accounts for [wsId].
   Future<List<CalendarAccount>> getAccounts(String wsId) async {
-    final response = await _api.getJson(
-      '/api/v1/calendar/auth/accounts?wsId=$wsId',
+    final response = await readThroughJson(
+      api: _api,
+      namespace: 'calendar.accounts',
+      workspaceId: wsId,
+      path: '/api/v1/calendar/auth/accounts?wsId=$wsId',
     );
     final list = response['accounts'] as List<dynamic>? ?? [];
     return list
         .map((e) => CalendarAccount.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  Future<bool> isDisconnectPending(String accountId, String wsId) async =>
+      (await OfflineMutationQueue.instance.listPending()).any(
+        (item) =>
+            item.feature == 'calendar' &&
+            item.method == 'DELETE' &&
+            item.workspaceId == wsId &&
+            item.entityId == accountId,
+      );
 
   /// Soft-deletes the account identified by [accountId].
   ///
@@ -35,8 +50,17 @@ class CalendarConnectionsRepository {
     required String accountId,
     required String wsId,
   }) async {
-    await _api.deleteJson(
-      '/api/v1/calendar/auth/accounts?accountId=$accountId&wsId=$wsId',
+    final path =
+        '/api/v1/calendar/auth/accounts?accountId=$accountId&wsId=$wsId';
+    await queueOrSendVoid(
+      feature: 'calendar',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: accountId,
+      send: () async {
+        await _api.deleteJson(path);
+      },
     );
   }
 
@@ -44,12 +68,40 @@ class CalendarConnectionsRepository {
 
   /// Fetches all calendar connections for [wsId].
   Future<List<CalendarConnection>> getConnections(String wsId) async {
-    final response = await _api.getJson(
-      '/api/v1/calendar/connections?wsId=$wsId',
+    final response = await readThroughJson(
+      api: _api,
+      namespace: 'calendar.connections',
+      workspaceId: wsId,
+      path: '/api/v1/calendar/connections?wsId=$wsId',
     );
     final list = response['connections'] as List<dynamic>? ?? [];
+    final pending = await OfflineMutationQueue.instance.listPending();
+    final toggles = {
+      for (final item in pending)
+        if (item.feature == 'calendar' &&
+            item.method == 'PATCH' &&
+            item.workspaceId == wsId &&
+            item.entityId != null)
+          item.entityId!: item.payload?['isEnabled'] as bool?,
+    };
+    final disconnected = pending
+        .where(
+          (item) =>
+              item.feature == 'calendar' &&
+              item.method == 'DELETE' &&
+              item.workspaceId == wsId,
+        )
+        .map((item) => item.entityId)
+        .toSet();
     return list
         .map((e) => CalendarConnection.fromJson(e as Map<String, dynamic>))
+        .map(
+          (connection) => connection.copyWith(
+            isEnabled: disconnected.contains(connection.authTokenId)
+                ? false
+                : toggles[connection.id],
+          ),
+        )
         .toList();
   }
 
@@ -57,11 +109,21 @@ class CalendarConnectionsRepository {
   Future<void> toggleConnection({
     required String connectionId,
     required bool isEnabled,
+    required String wsId,
   }) async {
-    await _api.patchJson('/api/v1/calendar/connections', {
-      'id': connectionId,
-      'isEnabled': isEnabled,
-    });
+    const path = '/api/v1/calendar/connections';
+    final payload = {'id': connectionId, 'isEnabled': isEnabled};
+    await queueOrSendVoid(
+      feature: 'calendar',
+      method: 'PATCH',
+      path: path,
+      workspaceId: wsId,
+      entityId: connectionId,
+      payload: payload,
+      send: () async {
+        await _api.patchJson(path, payload);
+      },
+    );
   }
 
   // ── OAuth ──────────────────────────────────────────────────────────

@@ -17820,6 +17820,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard local change'**
   String get offlineChangesDiscard;
+
+  /// No description provided for @offlineChangesDiscardConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the queued change from this device. It does not undo anything the server may have received.'**
+  String get offlineChangesDiscardConfirm;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

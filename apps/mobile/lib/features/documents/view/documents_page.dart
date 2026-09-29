@@ -19,6 +19,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class DocumentsPage extends StatefulWidget {
@@ -298,10 +299,15 @@ class _DocumentsPageState extends State<DocumentsPage> {
                       ..._documents.map(
                         (document) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
-                          child: _DocumentTile(
-                            document: document,
-                            onTap: () => context.push(
-                              Routes.documentDetailPath(document.id),
+                          child: PendingSyncFrame(
+                            workspaceId: _wsId ?? '',
+                            feature: 'documents',
+                            entityId: document.id,
+                            child: _DocumentTile(
+                              document: document,
+                              onTap: () => context.push(
+                                Routes.documentDetailPath(document.id),
+                              ),
                             ),
                           ),
                         ),

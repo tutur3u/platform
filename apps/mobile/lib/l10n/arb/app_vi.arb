@@ -3727,5 +3727,6 @@
     "offlineChangesEmpty": "Mọi thay đổi đã được đồng bộ",
     "offlineChangesReview": "Hãy kiểm tra thao tác này trên thiết bị khác trước khi thử lại. Có thể máy chủ đã nhận được thao tác.",
     "offlineChangesRetry": "Thử lại",
-    "offlineChangesDiscard": "Bỏ thay đổi trên máy"
+    "offlineChangesDiscard": "Bỏ thay đổi trên máy",
+    "offlineChangesDiscardConfirm": "Thao tác này xóa thay đổi đang chờ trên thiết bị. Nó không hoàn tác dữ liệu mà máy chủ có thể đã nhận."
 }

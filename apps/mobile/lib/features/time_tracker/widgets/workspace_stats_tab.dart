@@ -289,12 +289,9 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                 .map(TimeTrackingSession.fromJson)
                 .toList(growable: false);
         _loading = false;
-        _isRefreshing = !cached.isFresh;
+        _isRefreshing = true;
         _error = null;
       });
-      if (!forceRefresh && cached.isFresh) {
-        return;
-      }
     } else {
       setState(() {
         _loading = true;

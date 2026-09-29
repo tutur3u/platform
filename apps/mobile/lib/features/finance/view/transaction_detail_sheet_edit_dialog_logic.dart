@@ -455,7 +455,8 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     final pendingAttachments = _attachments
         .where(
           (attachment) =>
-              attachment.status != _TransactionAttachmentStatus.uploaded,
+              attachment.status != _TransactionAttachmentStatus.uploaded &&
+              attachment.status != _TransactionAttachmentStatus.queued,
         )
         .toList(growable: false);
     if (transactionId == null ||
@@ -463,14 +464,12 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         pendingAttachments.isEmpty) {
       return;
     }
-
     var failedCount = 0;
     for (final attachment in pendingAttachments) {
       _setAttachmentStatus(
         attachment.id,
         _TransactionAttachmentStatus.uploading,
       );
-
       try {
         final bytes = await _readAttachmentBytes(attachment.file);
         if (bytes == null) {
@@ -479,8 +478,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
             statusCode: 0,
           );
         }
-
-        await widget.repository.uploadTransactionAttachment(
+        final queued = await widget.repository.uploadTransactionAttachment(
           wsId: widget.wsId,
           transactionId: transactionId,
           filename: attachment.file.name,
@@ -489,7 +487,9 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
 
         _setAttachmentStatus(
           attachment.id,
-          _TransactionAttachmentStatus.uploaded,
+          queued
+              ? _TransactionAttachmentStatus.queued
+              : _TransactionAttachmentStatus.uploaded,
         );
       } on Exception {
         failedCount += 1;

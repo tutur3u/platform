@@ -4,6 +4,7 @@ import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimates_feedback.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskLabelsSection extends StatelessWidget {
@@ -33,11 +34,16 @@ class TaskLabelsSection extends StatelessWidget {
             children: [
               for (var index = 0; index < labels.length; index++) ...[
                 if (index > 0) const shad.Gap(10),
-                _TaskLabelCard(
-                  label: labels[index],
-                  disabled: isSaving,
-                  onEdit: () => onEdit(labels[index]),
-                  onDelete: () => onDelete(labels[index]),
+                PendingSyncFrame(
+                  workspaceId: labels[index].wsId,
+                  entityId: labels[index].id,
+                  feature: 'tasks',
+                  child: _TaskLabelCard(
+                    label: labels[index],
+                    disabled: isSaving,
+                    onEdit: () => onEdit(labels[index]),
+                    onDelete: () => onDelete(labels[index]),
+                  ),
                 ),
               ],
             ],

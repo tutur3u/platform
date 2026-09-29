@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
 import 'package:mobile/features/meet/data/meet_room_assistant.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 class MeetAssistantReviewCard extends StatefulWidget {
   const MeetAssistantReviewCard({
@@ -94,91 +95,96 @@ class _MeetAssistantReviewCardState extends State<MeetAssistantReviewCard> {
         .whereType<Map<dynamic, dynamic>>();
     final status = review['status'] as String?;
     final ready = status == 'ready';
-    return Card.outlined(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.lock_outline, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    l10n.meetMiraReviews,
-                    style: Theme.of(context).textTheme.titleSmall,
+    return PendingSyncFrame(
+      workspaceId: widget.assistant.workspaceId,
+      entityId: review['id'] as String? ?? '',
+      feature: 'meet',
+      child: Card.outlined(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.lock_outline, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.meetMiraReviews,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                review['workspaceName'] as String? ?? '',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+              if ((review['text'] as String? ?? '').isNotEmpty) ...[
+                const SizedBox(height: 8),
+                AssistantMarkdownBody(data: review['text'] as String),
+              ],
+              for (final approval in approvals) ...[
+                const SizedBox(height: 12),
+                Text(
+                  (approval['toolName'] as String? ?? '').replaceAll('_', ' '),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 4),
+                SelectableText(
+                  const JsonEncoder.withIndent('  ').convert(approval['input']),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              review['workspaceName'] as String? ?? '',
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-            if ((review['text'] as String? ?? '').isNotEmpty) ...[
-              const SizedBox(height: 8),
-              AssistantMarkdownBody(data: review['text'] as String),
+              if (_failed) ...[
+                const SizedBox(height: 8),
+                Text(
+                  l10n.meetMiraActionFailed,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+              if (_busy) const LinearProgressIndicator(),
+              if (ready && !_busy) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  children: approvals.isNotEmpty
+                      ? [
+                          FilledButton.icon(
+                            onPressed: () => unawaited(_decide('approve')),
+                            icon: const Icon(Icons.check_circle_outline),
+                            label: Text(l10n.meetMiraApprove),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () => unawaited(_decide('deny')),
+                            icon: const Icon(Icons.block_outlined),
+                            label: Text(l10n.meetMiraDeny),
+                          ),
+                        ]
+                      : [
+                          FilledButton.icon(
+                            onPressed: () => unawaited(_decide('share')),
+                            icon: const Icon(Icons.share_outlined),
+                            label: Text(l10n.meetShareWithEveryone),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () => unawaited(_decide('discard')),
+                            icon: const Icon(Icons.delete_outline),
+                            label: Text(l10n.meetMiraDiscard),
+                          ),
+                        ],
+                ),
+              ],
+              if (status == 'interrupted' && !_busy)
+                TextButton.icon(
+                  onPressed: () => unawaited(_decide('discard')),
+                  icon: const Icon(Icons.delete_outline),
+                  label: Text(l10n.meetMiraDiscard),
+                ),
             ],
-            for (final approval in approvals) ...[
-              const SizedBox(height: 12),
-              Text(
-                (approval['toolName'] as String? ?? '').replaceAll('_', ' '),
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 4),
-              SelectableText(
-                const JsonEncoder.withIndent('  ').convert(approval['input']),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-            if (_failed) ...[
-              const SizedBox(height: 8),
-              Text(
-                l10n.meetMiraActionFailed,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-            if (_busy) const LinearProgressIndicator(),
-            if (ready && !_busy) ...[
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                children: approvals.isNotEmpty
-                    ? [
-                        FilledButton.icon(
-                          onPressed: () => unawaited(_decide('approve')),
-                          icon: const Icon(Icons.check_circle_outline),
-                          label: Text(l10n.meetMiraApprove),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () => unawaited(_decide('deny')),
-                          icon: const Icon(Icons.block_outlined),
-                          label: Text(l10n.meetMiraDeny),
-                        ),
-                      ]
-                    : [
-                        FilledButton.icon(
-                          onPressed: () => unawaited(_decide('share')),
-                          icon: const Icon(Icons.share_outlined),
-                          label: Text(l10n.meetShareWithEveryone),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () => unawaited(_decide('discard')),
-                          icon: const Icon(Icons.delete_outline),
-                          label: Text(l10n.meetMiraDiscard),
-                        ),
-                      ],
-              ),
-            ],
-            if (status == 'interrupted' && !_busy)
-              TextButton.icon(
-                onPressed: () => unawaited(_decide('discard')),
-                icon: const Icon(Icons.delete_outline),
-                label: Text(l10n.meetMiraDiscard),
-              ),
-          ],
+          ),
         ),
       ),
     );

@@ -21,6 +21,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class InventoryManagePage extends StatefulWidget {
@@ -280,13 +281,17 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                         onConfirm: _createOwner,
                       ),
                       child: _ChipWrap(
-                        labels: data.owners
+                        workspaceId: _wsId ?? '',
+                        items: data.owners
                             .map((owner) {
                               if (owner.archived) {
-                                return '${owner.name} '
-                                    '(${l10n.inventoryOwnerArchived})';
+                                return (
+                                  owner.id,
+                                  '${owner.name} '
+                                      '(${l10n.inventoryOwnerArchived})',
+                                );
                               }
-                              return owner.name;
+                              return (owner.id, owner.name);
                             })
                             .toList(growable: false),
                       ),
@@ -302,8 +307,9 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                         onConfirm: _createCategory,
                       ),
                       child: _ChipWrap(
-                        labels: data.productCategories
-                            .map((item) => item.name)
+                        workspaceId: _wsId ?? '',
+                        items: data.productCategories
+                            .map((item) => (item.id, item.name))
                             .toList(growable: false),
                       ),
                     ),
@@ -318,8 +324,9 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                         onConfirm: _createManufacturer,
                       ),
                       child: _ChipWrap(
-                        labels: data.manufacturers
-                            .map((item) => item.name)
+                        workspaceId: _wsId ?? '',
+                        items: data.manufacturers
+                            .map((item) => (item.id, item.name))
                             .toList(growable: false),
                       ),
                     ),
@@ -334,8 +341,9 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                         onConfirm: _createUnit,
                       ),
                       child: _ChipWrap(
-                        labels: data.units
-                            .map((item) => item.name)
+                        workspaceId: _wsId ?? '',
+                        items: data.units
+                            .map((item) => (item.id, item.name))
                             .toList(growable: false),
                       ),
                     ),
@@ -350,8 +358,9 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                         onConfirm: _createWarehouse,
                       ),
                       child: _ChipWrap(
-                        labels: data.warehouses
-                            .map((item) => item.name)
+                        workspaceId: _wsId ?? '',
+                        items: data.warehouses
+                            .map((item) => (item.id, item.name))
                             .toList(growable: false),
                       ),
                     ),
@@ -367,9 +376,11 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                           ),
                           const shad.Gap(10),
                           _ChipWrap(
-                            labels: data.financeCategories
-                                .map((item) => item.name ?? '')
-                                .where((item) => item.isNotEmpty)
+                            workspaceId: _wsId ?? '',
+                            feature: 'finance',
+                            items: data.financeCategories
+                                .where((item) => (item.name ?? '').isNotEmpty)
+                                .map((item) => (item.id, item.name ?? ''))
                                 .toList(growable: false),
                           ),
                         ],
@@ -539,21 +550,34 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
 }
 
 class _ChipWrap extends StatelessWidget {
-  const _ChipWrap({required this.labels});
+  const _ChipWrap({
+    required this.workspaceId,
+    required this.items,
+    this.feature = 'inventory',
+  });
 
-  final List<String> labels;
+  final String workspaceId;
+  final List<(String, String)> items;
+  final String feature;
 
   @override
   Widget build(BuildContext context) {
-    if (labels.isEmpty) {
+    if (items.isEmpty) {
       return Text(context.l10n.inventoryManageEmpty);
     }
 
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: labels
-          .map((label) => Chip(label: Text(label)))
+      children: items
+          .map(
+            (item) => PendingSyncFrame(
+              workspaceId: workspaceId,
+              entityId: item.$1,
+              feature: feature,
+              child: Chip(label: Text(item.$2)),
+            ),
+          )
           .toList(growable: false),
     );
   }
