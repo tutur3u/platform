@@ -15703,6 +15703,12 @@ abstract class AppLocalizations {
   /// **'Could not complete the action. Your draft is retained; please try again.'**
   String get mailActionFailed;
 
+  /// No description provided for @mailOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open this message. Please try again.'**
+  String get mailOpenFailed;
+
   /// No description provided for @mailInvalidRecipient.
   ///
   /// In en, this message translates to:

@@ -352,7 +352,8 @@ class _MailReaderState extends State<MailReader> {
                 ),
           body: ListView(
             padding: EdgeInsets.only(
-              bottom: 16 + MediaQuery.paddingOf(context).bottom,
+              // Keep the end of long messages clear of the floating Mail dock.
+              bottom: 128 + MediaQuery.paddingOf(context).bottom,
             ),
             children: [
               for (final message in _messages)
