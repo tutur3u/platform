@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/learn-v0.28.0...learn-v0.29.0) (2026-09-29)
+
+
+### Features
+
+* **learn:** add resizable coding workspace and execution history ([c7043ff](https://github.com/tutur3u/platform/commit/c7043ff9a30b5d1c49bc44534aa8e2107d5a16ae)) ([#5637](https://github.com/tutur3u/platform/issues/5637)) ([6b82c0c](https://github.com/tutur3u/platform/commit/6b82c0c9daecb7dd7ed9eb0ac9310c02a7895c68))
+
+
+### Bug Fixes
+
+* **learn:** harden coding history and editor defaults ([a92bd5e](https://github.com/tutur3u/platform/commit/a92bd5e3e66fa233d57a916a7fa7c86fe05cb842))
+* **learn:** resolve Monaco workers through package exports ([9c4c4fd](https://github.com/tutur3u/platform/commit/9c4c4fdc76206e0b07cb23ee95160638995aaf09))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/learn-v0.27.0...learn-v0.28.0) (2026-09-29)
 
 

@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.63.0](https://github.com/tutur3u/platform/compare/platform-v0.62.0...platform-v0.63.0) (2026-09-29)
+
+
+### Features
+
+* **learn:** add resizable coding workspace and execution history ([c7043ff](https://github.com/tutur3u/platform/commit/c7043ff9a30b5d1c49bc44534aa8e2107d5a16ae)) ([#5637](https://github.com/tutur3u/platform/issues/5637)) ([6b82c0c](https://github.com/tutur3u/platform/commit/6b82c0c9daecb7dd7ed9eb0ac9310c02a7895c68))
+* **mobile:** customize Apps and Home visibility and order ([0516b67](https://github.com/tutur3u/platform/commit/0516b67a3943c46489ffffe1b79c6748d1c3f863))
+* **mobile:** customize Apps, Home, dock, and experiments ([#5645](https://github.com/tutur3u/platform/issues/5645)) ([b63ec8f](https://github.com/tutur3u/platform/commit/b63ec8f2f971dea0e26793184e63ac2588192e9d))
+* **mobile:** make Meet Mail Chat and Notes opt-in ([44aad51](https://github.com/tutur3u/platform/commit/44aad51b976662e807ca3d0709e647ae80da6233))
+* **mobile:** refine Apps and Home customization ([154d522](https://github.com/tutur3u/platform/commit/154d522e695af20726f74b2a95dada70226373fa)) ([#5647](https://github.com/tutur3u/platform/issues/5647)) ([377671f](https://github.com/tutur3u/platform/commit/377671f38f646d44663f7eaee2fa2119a9bf9c6b))
+
+
+### Bug Fixes
+
+* **database:** scope group audit feed before enrichment ([#5635](https://github.com/tutur3u/platform/issues/5635)) ([a4cf43a](https://github.com/tutur3u/platform/commit/a4cf43ad854dbf2b8f7e63bfe5a297fd212db086))
+* **database:** use indexed metric lookup in audit fallback ([8a74c53](https://github.com/tutur3u/platform/commit/8a74c5305a85641558eb8e6905247f9e5e1417f7))
+* **infrastructure:** isolate app review identities from staff access ([#5632](https://github.com/tutur3u/platform/issues/5632)) ([ecad401](https://github.com/tutur3u/platform/commit/ecad4019f602317b59d37500cd8049d1602d11fa))
+* **infrastructure:** place reviewer status copy in panel namespace ([e70759a](https://github.com/tutur3u/platform/commit/e70759a2adad37e6b614e0c3adb79a402d3a6b5d))
+* **learn:** harden coding history and editor defaults ([a92bd5e](https://github.com/tutur3u/platform/commit/a92bd5e3e66fa233d57a916a7fa7c86fe05cb842))
+* **learn:** resolve Monaco workers through package exports ([9c4c4fd](https://github.com/tutur3u/platform/commit/9c4c4fdc76206e0b07cb23ee95160638995aaf09))
+* **mobile:** animate dock tap highlight without splash ([e244fc5](https://github.com/tutur3u/platform/commit/e244fc5fdeeceed498112aa7f6d38af32045f4df))
+* **mobile:** honor explicit dock back parents ([4107069](https://github.com/tutur3u/platform/commit/4107069f3db159ec74a46098fdaa00a4b57242fa))
+* **mobile:** keep Home shell action overlay full size ([d288b95](https://github.com/tutur3u/platform/commit/d288b9547e46669ffbc29f562c2f2f083c2ef8c7))
+* **mobile:** keep peer navigation and currency snapshots stable ([794acda](https://github.com/tutur3u/platform/commit/794acda1ee65207cbedcf2919f59b62a9d20aef8)) ([#5639](https://github.com/tutur3u/platform/issues/5639)) ([6489396](https://github.com/tutur3u/platform/commit/6489396c918180a79d66807a092e8e77f661c1e4))
+* **mobile:** refine floating dock feedback and back hierarchy ([c14fbd8](https://github.com/tutur3u/platform/commit/c14fbd8a5407796488b35aade1a0a3cd82673ea9)) ([#5642](https://github.com/tutur3u/platform/issues/5642)) ([1bfe314](https://github.com/tutur3u/platform/commit/1bfe31465e30058f37c40323b13fba3a64ea7c6e))
+* **mobile:** refine floating dock gesture and material ([b7dff9c](https://github.com/tutur3u/platform/commit/b7dff9c37b29534794a2987efcc95811b4acb1d5)) ([#5638](https://github.com/tutur3u/platform/issues/5638)) ([9e74c42](https://github.com/tutur3u/platform/commit/9e74c4218f5d0f24265c22b9a0b9ebd6beee7bf1))
+* **mobile:** refine glass dock navigation and shell search ([eab97b3](https://github.com/tutur3u/platform/commit/eab97b3423201d27163ea6cca2d86b7bbd73cee1)) ([#5643](https://github.com/tutur3u/platform/issues/5643)) ([2d0983d](https://github.com/tutur3u/platform/commit/2d0983d6becfb11730bab61683db55878110a4f4))
+* **mobile:** respect access in experiment sorter ([12ac509](https://github.com/tutur3u/platform/commit/12ac509af05a9440fa81f828f7c69b2bd26de65b))
+
+
+### Performance Improvements
+
+* **database:** avoid sorting full user group audit feed ([6c9ae84](https://github.com/tutur3u/platform/commit/6c9ae840e30642006ee9460b6e05e601e4483c51)) ([#5644](https://github.com/tutur3u/platform/issues/5644)) ([f3105b9](https://github.com/tutur3u/platform/commit/f3105b9c2bc8aa81833d9c6a851029c0a336963e))
+* **database:** index group audit candidates before enrichment ([01e4520](https://github.com/tutur3u/platform/commit/01e4520b06eab5e593ddce599c72c0bffcbda2e0)) ([#5640](https://github.com/tutur3u/platform/issues/5640)) ([848eb91](https://github.com/tutur3u/platform/commit/848eb91daa51093a7228317b1617f2da868d035c))
+* **database:** scope workspace group audit history candidates ([f595411](https://github.com/tutur3u/platform/commit/f59541125b0ffa1110116a10448cfe1c1ecf4c7f)) ([#5641](https://github.com/tutur3u/platform/issues/5641)) ([29767ac](https://github.com/tutur3u/platform/commit/29767ac185af8b04bd2ce4c6ec0aa5414f258b16))
+
 ## [0.62.0](https://github.com/tutur3u/platform/compare/platform-v0.61.0...platform-v0.62.0) (2026-09-29)
 
 

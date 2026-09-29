@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.20.0](https://github.com/tutur3u/platform/compare/mobile-v0.19.0...mobile-v0.20.0) (2026-09-29)
+
+
+### Features
+
+* **mobile:** customize Apps and Home visibility and order ([0516b67](https://github.com/tutur3u/platform/commit/0516b67a3943c46489ffffe1b79c6748d1c3f863))
+* **mobile:** customize Apps, Home, dock, and experiments ([#5645](https://github.com/tutur3u/platform/issues/5645)) ([b63ec8f](https://github.com/tutur3u/platform/commit/b63ec8f2f971dea0e26793184e63ac2588192e9d))
+* **mobile:** make Meet Mail Chat and Notes opt-in ([44aad51](https://github.com/tutur3u/platform/commit/44aad51b976662e807ca3d0709e647ae80da6233))
+* **mobile:** refine Apps and Home customization ([154d522](https://github.com/tutur3u/platform/commit/154d522e695af20726f74b2a95dada70226373fa)) ([#5647](https://github.com/tutur3u/platform/issues/5647)) ([377671f](https://github.com/tutur3u/platform/commit/377671f38f646d44663f7eaee2fa2119a9bf9c6b))
+
+
+### Bug Fixes
+
+* **infrastructure:** isolate app review identities from staff access ([#5632](https://github.com/tutur3u/platform/issues/5632)) ([ecad401](https://github.com/tutur3u/platform/commit/ecad4019f602317b59d37500cd8049d1602d11fa))
+* **mobile:** animate dock tap highlight without splash ([e244fc5](https://github.com/tutur3u/platform/commit/e244fc5fdeeceed498112aa7f6d38af32045f4df))
+* **mobile:** honor explicit dock back parents ([4107069](https://github.com/tutur3u/platform/commit/4107069f3db159ec74a46098fdaa00a4b57242fa))
+* **mobile:** keep Home shell action overlay full size ([d288b95](https://github.com/tutur3u/platform/commit/d288b9547e46669ffbc29f562c2f2f083c2ef8c7))
+* **mobile:** keep peer navigation and currency snapshots stable ([794acda](https://github.com/tutur3u/platform/commit/794acda1ee65207cbedcf2919f59b62a9d20aef8)) ([#5639](https://github.com/tutur3u/platform/issues/5639)) ([6489396](https://github.com/tutur3u/platform/commit/6489396c918180a79d66807a092e8e77f661c1e4))
+* **mobile:** refine floating dock feedback and back hierarchy ([c14fbd8](https://github.com/tutur3u/platform/commit/c14fbd8a5407796488b35aade1a0a3cd82673ea9)) ([#5642](https://github.com/tutur3u/platform/issues/5642)) ([1bfe314](https://github.com/tutur3u/platform/commit/1bfe31465e30058f37c40323b13fba3a64ea7c6e))
+* **mobile:** refine floating dock gesture and material ([b7dff9c](https://github.com/tutur3u/platform/commit/b7dff9c37b29534794a2987efcc95811b4acb1d5)) ([#5638](https://github.com/tutur3u/platform/issues/5638)) ([9e74c42](https://github.com/tutur3u/platform/commit/9e74c4218f5d0f24265c22b9a0b9ebd6beee7bf1))
+* **mobile:** refine glass dock navigation and shell search ([eab97b3](https://github.com/tutur3u/platform/commit/eab97b3423201d27163ea6cca2d86b7bbd73cee1)) ([#5643](https://github.com/tutur3u/platform/issues/5643)) ([2d0983d](https://github.com/tutur3u/platform/commit/2d0983d6becfb11730bab61683db55878110a4f4))
+* **mobile:** respect access in experiment sorter ([12ac509](https://github.com/tutur3u/platform/commit/12ac509af05a9440fa81f828f7c69b2bd26de65b))
+
 ## [0.19.0](https://github.com/tutur3u/platform/compare/mobile-v0.18.0...mobile-v0.19.0) (2026-09-29)
 
 
