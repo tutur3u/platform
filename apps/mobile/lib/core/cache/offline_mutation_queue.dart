@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/chat_attachment_delivery.dart';
 import 'package:mobile/core/cache/drive_upload_delivery.dart';
 import 'package:mobile/core/cache/offline_id_reconciliation.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
@@ -234,6 +235,40 @@ class OfflineMutationQueue {
               contentType: payload['contentType'] as String,
               directoryPath: payload['directoryPath'] as String?,
             );
+          } finally {
+            httpClient.close();
+          }
+        case 'CHAT_UPLOAD':
+          if (workspaceId == null) {
+            throw StateError('Chat upload has no workspace');
+          }
+          final payload = resolved.payload ?? const <String, dynamic>{};
+          final httpClient = http.Client();
+          try {
+            final attachment = await deliverChatAttachment(
+              api: api,
+              httpClient: httpClient,
+              uploadPath: resolved.path,
+              filename: payload['filename'] as String,
+              contentType: payload['contentType'] as String,
+              bytes: base64Decode(payload['bytes'] as String),
+            );
+            final serverPath =
+                attachment['storage_path'] ??
+                attachment['storagePath'] ??
+                attachment['path'];
+            if (userId != null &&
+                record.entityId != null &&
+                serverPath is String &&
+                serverPath.isNotEmpty) {
+              await CacheStore.instance.saveLocalIdMapping(
+                userId: userId,
+                workspaceId: workspaceId,
+                feature: 'chat',
+                localId: record.entityId!,
+                serverId: serverPath,
+              );
+            }
           } finally {
             httpClient.close();
           }

@@ -210,13 +210,19 @@ task actions queue as one ordered edit with every affected card marked pending;
 the bulk action reports a queued result without claiming server success.
 Partial bulk replay stays in manual conflict review so successful tasks are not
 silently retried with failed ones.
-Richer board mutations still need dedicated adapters.
+Board task create, edit, and move and board list create, edit, and reorder
+also queue offline. Their list reads overlay pending edits; task cards and
+list headers distinguish unsynchronized rows. Project updates read scoped
+snapshots and queue create, edit, and delete with pending cards.
 Chat conversation and message lists also return scoped snapshots while
 revalidating. Conversation create, edit, and delete and user message sends enter
 the encrypted outbox offline. A queued message appears immediately with a
 dimmed dashed frame. Each send carries a stable client request ID so replay can
-use the server's idempotency check. Assistant generation, file upload, and
-other conversation actions still need separate offline handling.
+use the server's idempotency check. Message edit, delete, read acknowledgment,
+reactions, AI settings, and friend requests also queue offline. Attachments
+stage encrypted bytes in the outbox, request a fresh signed URL on replay,
+and rewrite dependent queued message paths after upload. An ambiguous upload
+remains in manual review. Assistant generation remains network-dependent.
 Timer sessions, history, categories, goals, requests, and summaries use scoped
 snapshots while revalidating. Session start, stop, pause, resume, edit, missed
 entry creation, and deletion queue offline, with dimmed dashed session cards.

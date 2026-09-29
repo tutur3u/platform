@@ -10,6 +10,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/pending_sync_frame.dart';
 
 class TaskProjectUpdatesSection extends StatefulWidget {
   const TaskProjectUpdatesSection({
@@ -146,98 +147,103 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
     final isEditing = _editingId == update.id;
     final isDeleting = _deletingId == update.id;
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: theme.colorScheme.border.withValues(alpha: 0.9),
+    return PendingSyncFrame(
+      workspaceId: widget.workspaceId,
+      feature: 'tasks',
+      entityId: update.id,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: theme.colorScheme.border.withValues(alpha: 0.9),
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    update.creator?.displayName?.trim().isNotEmpty == true
-                        ? update.creator!.displayName!.trim()
-                        : context.l10n.taskPortfolioUnknownUser,
-                    style: theme.typography.small.copyWith(
-                      fontWeight: FontWeight.w600,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      update.creator?.displayName?.trim().isNotEmpty == true
+                          ? update.creator!.displayName!.trim()
+                          : context.l10n.taskPortfolioUnknownUser,
+                      style: theme.typography.small.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-                Text(
-                  DateFormat.yMMMd().add_Hm().format(
-                    update.createdAt.toLocal(),
+                  Text(
+                    DateFormat.yMMMd().add_Hm().format(
+                      update.createdAt.toLocal(),
+                    ),
+                    style: theme.typography.xSmall.copyWith(
+                      color: theme.colorScheme.mutedForeground,
+                    ),
                   ),
-                  style: theme.typography.xSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ),
-                if (update.isEdited) ...[
-                  const shad.Gap(6),
-                  shad.OutlineBadge(
-                    child: Text(context.l10n.taskPortfolioUpdateEdited),
-                  ),
+                  if (update.isEdited) ...[
+                    const shad.Gap(6),
+                    shad.OutlineBadge(
+                      child: Text(context.l10n.taskPortfolioUpdateEdited),
+                    ),
+                  ],
                 ],
-              ],
-            ),
-            const shad.Gap(8),
-            if (isEditing)
-              shad.TextArea(
-                contextMenuBuilder: platformTextContextMenuBuilder(),
-                controller: _editUpdateController,
-                enabled: !_isSavingEdit,
-                minHeight: 80,
-                maxHeight: 160,
-                initialHeight: 80,
-              )
-            else
-              Text(update.content),
-            const shad.Gap(8),
-            Row(
-              children: [
-                if (isOwn && isEditing) ...[
-                  shad.OutlineButton(
-                    onPressed: _isSavingEdit ? null : _cancelEdit,
-                    child: Text(context.l10n.commonCancel),
-                  ),
-                  const shad.Gap(8),
-                  shad.PrimaryButton(
-                    onPressed: _isSavingEdit
-                        ? null
-                        : () => _saveEdit(update.id),
-                    child: Text(context.l10n.timerSave),
-                  ),
-                ] else if (isOwn) ...[
-                  shad.GhostButton(
-                    onPressed: isDeleting ? null : () => _startEdit(update),
-                    child: Text(context.l10n.taskPortfolioEditUpdate),
-                  ),
-                  const shad.Gap(4),
-                  shad.GhostButton(
-                    onPressed: isDeleting
-                        ? null
-                        : () => _deleteUpdate(update.id),
-                    child: Text(context.l10n.taskPortfolioDeleteUpdate),
-                  ),
+              ),
+              const shad.Gap(8),
+              if (isEditing)
+                shad.TextArea(
+                  contextMenuBuilder: platformTextContextMenuBuilder(),
+                  controller: _editUpdateController,
+                  enabled: !_isSavingEdit,
+                  minHeight: 80,
+                  maxHeight: 160,
+                  initialHeight: 80,
+                )
+              else
+                Text(update.content),
+              const shad.Gap(8),
+              Row(
+                children: [
+                  if (isOwn && isEditing) ...[
+                    shad.OutlineButton(
+                      onPressed: _isSavingEdit ? null : _cancelEdit,
+                      child: Text(context.l10n.commonCancel),
+                    ),
+                    const shad.Gap(8),
+                    shad.PrimaryButton(
+                      onPressed: _isSavingEdit
+                          ? null
+                          : () => _saveEdit(update.id),
+                      child: Text(context.l10n.timerSave),
+                    ),
+                  ] else if (isOwn) ...[
+                    shad.GhostButton(
+                      onPressed: isDeleting ? null : () => _startEdit(update),
+                      child: Text(context.l10n.taskPortfolioEditUpdate),
+                    ),
+                    const shad.Gap(4),
+                    shad.GhostButton(
+                      onPressed: isDeleting
+                          ? null
+                          : () => _deleteUpdate(update.id),
+                      child: Text(context.l10n.taskPortfolioDeleteUpdate),
+                    ),
+                  ],
+                  if (isDeleting) ...[
+                    const shad.Gap(8),
+                    const shad.SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: NovaLoadingIndicator(size: 20),
+                    ),
+                  ],
                 ],
-                if (isDeleting) ...[
-                  const shad.Gap(8),
-                  const shad.SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: NovaLoadingIndicator(size: 20),
-                  ),
-                ],
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

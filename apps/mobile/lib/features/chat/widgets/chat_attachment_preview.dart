@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -30,23 +31,35 @@ class _ChatAttachmentPreviewState extends State<ChatAttachmentPreview> {
       widget.attachment.contentType?.startsWith('video/') ?? false;
   bool get _isMedia => widget.attachment.isImage || _isVideo;
 
+  bool get _isPending => OfflineMutationQueue.instance.pending.value.any(
+    (record) =>
+        record.feature == 'chat' &&
+        record.method == 'CHAT_UPLOAD' &&
+        record.entityId == widget.attachment.id,
+  );
+
   @override
   void initState() {
     super.initState();
-    _readUrl = context.read<ChatCubit>().attachmentReadUrl(widget.attachment);
+    _readUrl = _isPending
+        ? Future.value('')
+        : context.read<ChatCubit>().attachmentReadUrl(widget.attachment);
   }
 
   @override
   void didUpdateWidget(covariant ChatAttachmentPreview oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.attachment.id != widget.attachment.id) {
-      _readUrl = context.read<ChatCubit>().attachmentReadUrl(widget.attachment);
+      _readUrl = _isPending
+          ? Future.value('')
+          : context.read<ChatCubit>().attachmentReadUrl(widget.attachment);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final attachment = widget.attachment;
+    if (_isPending) return _fileTile(context);
     if (!_isMedia) return _fileTile(context);
 
     return FutureBuilder<String>(

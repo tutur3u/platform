@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
+import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
@@ -28,6 +29,7 @@ import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 
 part 'task_repository_helpers.dart';
 part 'task_repository_planning.dart';
+part 'task_repository_project_updates.dart';
 
 /// Repository for task operations.
 class TaskRepository {
@@ -584,12 +586,26 @@ class TaskRepository {
       'boardLists',
       '/api/v1/workspaces/$wsId/task-boards/$boardId/lists',
     );
-    final lists = response['lists'] as List<dynamic>? ?? const [];
-
-    return lists
-        .whereType<Map<String, dynamic>>()
-        .map(TaskBoardList.fromJson)
-        .toList(growable: false);
+    final path = '/api/v1/workspaces/$wsId/task-boards/$boardId/lists';
+    final lists = overlayPendingCollection(
+      workspaceId: wsId,
+      feature: 'tasks',
+      pathContains: path,
+      source: (response['lists'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .toList(),
+      pending: (await OfflineMutationQueue.instance.listPending())
+          .where(
+            (item) =>
+                item.path == path ||
+                item.path.startsWith('$path/') &&
+                    !item.path.substring(path.length + 1).contains('/'),
+          )
+          .toList(),
+      normalizeCreate: (payload) => {...payload, 'board_id': boardId},
+      matchesQuery: (row) => row['deleted'] != true,
+    );
+    return lists.map(TaskBoardList.fromJson).toList(growable: false);
   }
 
   Future<TaskBoardTask> createBoardTask({
@@ -605,29 +621,49 @@ class TaskRepository {
     List<String>? projectIds,
     List<String>? assigneeIds,
   }) async {
-    final response = await _apiClient
-        .postJson('/api/v1/workspaces/$wsId/tasks', {
-          'name': name,
-          'listId': listId,
-          'description': description,
-          'priority': priority,
-          'start_date': startDate == null ? null : _taskStartDateIso(startDate),
-          'end_date': endDate == null ? null : _taskEndDateIso(endDate),
-          'estimation_points': estimationPoints,
-          if (labelIds != null) 'label_ids': labelIds,
-          if (projectIds != null) 'project_ids': projectIds,
-          if (assigneeIds != null) 'assignee_ids': assigneeIds,
-        });
-
-    final task = response['task'];
-    if (task is! Map<String, dynamic>) {
-      throw const ApiException(
-        message: 'Invalid task create response',
-        statusCode: 0,
-      );
-    }
-
-    return TaskBoardTask.fromJson(task);
+    final path = '/api/v1/workspaces/$wsId/tasks';
+    final payload = <String, dynamic>{
+      'name': name,
+      'listId': listId,
+      'description': description,
+      'priority': priority,
+      'start_date': startDate == null ? null : _taskStartDateIso(startDate),
+      'end_date': endDate == null ? null : _taskEndDateIso(endDate),
+      'estimation_points': estimationPoints,
+      if (labelIds != null) 'label_ids': labelIds,
+      if (projectIds != null) 'project_ids': projectIds,
+      if (assigneeIds != null) 'assignee_ids': assigneeIds,
+    };
+    return await queueOrSendValue<TaskBoardTask>(
+      feature: 'tasks',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      pendingValue: (id) => TaskBoardTask(
+        id: id,
+        listId: listId,
+        name: name,
+        description: description,
+        priority: priority,
+        startDate: startDate,
+        endDate: endDate,
+        estimationPoints: estimationPoints,
+        labelIds: labelIds ?? const [],
+        projectIds: projectIds ?? const [],
+        assigneeIds: assigneeIds ?? const [],
+      ),
+      send: () async {
+        final task = (await _apiClient.postJson(path, payload))['task'];
+        if (task is! Map<String, dynamic>) {
+          throw const ApiException(
+            message: 'Invalid task create response',
+            statusCode: 0,
+          );
+        }
+        return TaskBoardTask.fromJson(task);
+      },
+    );
   }
 
   Future<TaskBoardTask> updateBoardTask({
@@ -694,19 +730,39 @@ class TaskRepository {
       );
     }
 
-    final response = await _apiClient.putJson(
-      '/api/v1/workspaces/$wsId/tasks/$taskId',
-      updatePayload,
+    final path = '/api/v1/workspaces/$wsId/tasks/$taskId';
+    return await queueOrSendValue<TaskBoardTask>(
+      feature: 'tasks',
+      method: 'PUT',
+      path: path,
+      workspaceId: wsId,
+      entityId: taskId,
+      payload: updatePayload,
+      pendingValue: (_) => TaskBoardTask(
+        id: taskId,
+        listId: 'pending',
+        name: name,
+        description: description,
+        priority: priority,
+        completed: completed,
+        startDate: startDate,
+        endDate: endDate,
+        estimationPoints: estimationPoints,
+        labelIds: labelIds ?? const [],
+        projectIds: projectIds ?? const [],
+        assigneeIds: assigneeIds ?? const [],
+      ),
+      send: () async {
+        final task = (await _apiClient.putJson(path, updatePayload))['task'];
+        if (task is! Map<String, dynamic>) {
+          throw const ApiException(
+            message: 'Invalid task update response',
+            statusCode: 0,
+          );
+        }
+        return TaskBoardTask.fromJson(task);
+      },
     );
-    final task = response['task'];
-    if (task is! Map<String, dynamic>) {
-      throw const ApiException(
-        message: 'Invalid task update response',
-        statusCode: 0,
-      );
-    }
-
-    return TaskBoardTask.fromJson(task);
   }
 
   Future<TaskBoardTask> moveBoardTask({
@@ -714,19 +770,27 @@ class TaskRepository {
     required String taskId,
     required String listId,
   }) async {
-    final response = await _apiClient.putJson(
-      '/api/v1/workspaces/$wsId/tasks/$taskId',
-      {'list_id': listId},
+    final path = '/api/v1/workspaces/$wsId/tasks/$taskId';
+    final payload = {'list_id': listId};
+    return await queueOrSendValue<TaskBoardTask>(
+      feature: 'tasks',
+      method: 'PUT',
+      path: path,
+      workspaceId: wsId,
+      entityId: taskId,
+      payload: payload,
+      pendingValue: (_) => TaskBoardTask(id: taskId, listId: listId),
+      send: () async {
+        final task = (await _apiClient.putJson(path, payload))['task'];
+        if (task is! Map<String, dynamic>) {
+          throw const ApiException(
+            message: 'Invalid task move response',
+            statusCode: 0,
+          );
+        }
+        return TaskBoardTask.fromJson(task);
+      },
     );
-    final task = response['task'];
-    if (task is! Map<String, dynamic>) {
-      throw const ApiException(
-        message: 'Invalid task move response',
-        statusCode: 0,
-      );
-    }
-
-    return TaskBoardTask.fromJson(task);
   }
 
   Future<TaskBoardList> createBoardList({
@@ -741,19 +805,36 @@ class TaskRepository {
     final normalizedColor =
         TaskBoardList.normalizeSupportedColor(color) ?? 'BLUE';
 
-    final response = await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/task-boards/$boardId/lists',
-      {'name': name, 'status': normalizedStatus, 'color': normalizedColor},
+    final path = '/api/v1/workspaces/$wsId/task-boards/$boardId/lists';
+    final payload = {
+      'name': name,
+      'status': normalizedStatus,
+      'color': normalizedColor,
+    };
+    return await queueOrSendValue<TaskBoardList>(
+      feature: 'tasks',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      pendingValue: (id) => TaskBoardList(
+        id: id,
+        boardId: boardId,
+        name: name,
+        status: normalizedStatus,
+        color: normalizedColor,
+      ),
+      send: () async {
+        final list = (await _apiClient.postJson(path, payload))['list'];
+        if (list is! Map<String, dynamic>) {
+          throw const ApiException(
+            message: 'Invalid task list create response',
+            statusCode: 0,
+          );
+        }
+        return TaskBoardList.fromJson(list);
+      },
     );
-    final list = response['list'];
-    if (list is! Map<String, dynamic>) {
-      throw const ApiException(
-        message: 'Invalid task list create response',
-        statusCode: 0,
-      );
-    }
-
-    return TaskBoardList.fromJson(list);
   }
 
   Future<TaskBoardList> updateBoardList({
@@ -783,19 +864,33 @@ class TaskRepository {
       );
     }
 
-    final response = await _apiClient.patchJson(
-      '/api/v1/workspaces/$wsId/task-boards/$boardId/lists/$listId',
-      updatePayload,
+    final path = '/api/v1/workspaces/$wsId/task-boards/$boardId/lists/$listId';
+    return await queueOrSendValue<TaskBoardList>(
+      feature: 'tasks',
+      method: 'PATCH',
+      path: path,
+      workspaceId: wsId,
+      entityId: listId,
+      payload: updatePayload,
+      pendingValue: (_) => TaskBoardList(
+        id: listId,
+        boardId: boardId,
+        name: name,
+        status: status,
+        color: color,
+        position: position,
+      ),
+      send: () async {
+        final list = (await _apiClient.patchJson(path, updatePayload))['list'];
+        if (list is! Map<String, dynamic>) {
+          throw const ApiException(
+            message: 'Invalid task list update response',
+            statusCode: 0,
+          );
+        }
+        return TaskBoardList.fromJson(list);
+      },
     );
-    final list = response['list'];
-    if (list is! Map<String, dynamic>) {
-      throw const ApiException(
-        message: 'Invalid task list update response',
-        statusCode: 0,
-      );
-    }
-
-    return TaskBoardList.fromJson(list);
   }
 
   Future<void> createTaskBoard({
@@ -1149,52 +1244,42 @@ class TaskRepository {
     required String projectId,
     int limit = 50,
     int offset = 0,
-  }) async {
-    final response = await _apiClient.getJson(
-      '/api/v1/workspaces/$wsId/task-projects/$projectId/updates?limit=$limit&offset=$offset',
-    );
-    final updates = response['updates'] as List<dynamic>? ?? const [];
-
-    return updates
-        .whereType<Map<String, dynamic>>()
-        .map(TaskProjectUpdate.fromJson)
-        .toList(growable: false);
-  }
+  }) => _getTaskProjectUpdates(
+    wsId: wsId,
+    projectId: projectId,
+    limit: limit,
+    offset: offset,
+  );
 
   Future<TaskProjectUpdate> createTaskProjectUpdate({
     required String wsId,
     required String projectId,
     required String content,
-  }) async {
-    final response = await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/task-projects/$projectId/updates',
-      {'content': content},
-    );
-
-    return TaskProjectUpdate.fromJson(response);
-  }
+  }) => _createTaskProjectUpdate(
+    wsId: wsId,
+    projectId: projectId,
+    content: content,
+  );
 
   Future<TaskProjectUpdate> updateTaskProjectUpdate({
     required String wsId,
     required String projectId,
     required String updateId,
     required String content,
-  }) async {
-    final response = await _apiClient.patchJson(
-      '/api/v1/workspaces/$wsId/task-projects/$projectId/updates/$updateId',
-      {'content': content},
-    );
-
-    return TaskProjectUpdate.fromJson(response);
-  }
+  }) => _updateTaskProjectUpdate(
+    wsId: wsId,
+    projectId: projectId,
+    updateId: updateId,
+    content: content,
+  );
 
   Future<void> deleteTaskProjectUpdate({
     required String wsId,
     required String projectId,
     required String updateId,
-  }) async {
-    await _apiClient.deleteJson(
-      '/api/v1/workspaces/$wsId/task-projects/$projectId/updates/$updateId',
-    );
-  }
+  }) => _deleteTaskProjectUpdate(
+    wsId: wsId,
+    projectId: projectId,
+    updateId: updateId,
+  );
 }

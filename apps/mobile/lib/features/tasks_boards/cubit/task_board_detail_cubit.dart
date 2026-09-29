@@ -834,7 +834,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
 
     final refreshedTask = updatedTask;
-    if (refreshedTask != null) {
+    if (refreshedTask != null && refreshedTask.listId != 'pending') {
       _replaceTaskSnapshot(refreshedTask);
     }
 

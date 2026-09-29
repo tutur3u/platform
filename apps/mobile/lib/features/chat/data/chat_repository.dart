@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/chat_attachment_delivery.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
@@ -250,6 +254,33 @@ class ChatRepository {
       'conversation_id': conversationId,
       'created_at': DateTime.now().toUtc().toIso8601String(),
     });
+    final pendingUploads = await OfflineMutationQueue.instance.listPending();
+    if (attachments.any(
+      (attachment) => pendingUploads.any(
+        (record) =>
+            record.feature == 'chat' &&
+            record.method == 'CHAT_UPLOAD' &&
+            record.entityId == attachment.path,
+      ),
+    )) {
+      await OfflineMutationQueue.instance.enqueue(
+        PendingMutationRecord(
+          id: newLocalMutationId(),
+          feature: 'chat',
+          method: 'POST',
+          path: path,
+          createdAt: DateTime.now().toUtc(),
+          userId: currentCacheUserId(),
+          workspaceId: wsId,
+          payload: payload,
+          optimisticPatch: {'entityId': localId},
+          replaySafe: kind == ChatMessageKind.user && !miraMode,
+        ),
+      );
+      yield ChatStreamMessageEvent(pendingMessage());
+      yield const ChatStreamDoneEvent();
+      return;
+    }
     if (await OfflineMutationQueue.instance.enqueueIfOffline(
       feature: 'chat',
       method: 'POST',
@@ -337,12 +368,27 @@ class ChatRepository {
     String messageId, {
     required String content,
   }) async {
-    final response = await _apiClient.patchJson(
-      '${_conversationPath(wsId, conversationId)}/messages/$messageId',
-      {'content': content},
-    );
-    return ChatMessage.fromJson(
-      response['message'] as Map<String, dynamic>? ?? const <String, dynamic>{},
+    final path =
+        '${_conversationPath(wsId, conversationId)}/messages/$messageId';
+    final payload = {'content': content};
+    return await queueOrSendValue<ChatMessage>(
+      feature: 'chat',
+      method: 'PATCH',
+      path: path,
+      workspaceId: wsId,
+      entityId: messageId,
+      payload: payload,
+      pendingValue: (_) => ChatMessage.fromJson({
+        'id': messageId,
+        'conversation_id': conversationId,
+        'content': content,
+        'kind': 'user',
+      }),
+      send: () async => ChatMessage.fromJson(
+        (await _apiClient.patchJson(path, payload))['message']
+                as Map<String, dynamic>? ??
+            const <String, dynamic>{},
+      ),
     );
   }
 
@@ -351,11 +397,24 @@ class ChatRepository {
     String conversationId,
     String messageId,
   ) async {
-    final response = await _apiClient.deleteJson(
-      '${_conversationPath(wsId, conversationId)}/messages/$messageId',
-    );
-    return ChatMessage.fromJson(
-      response['message'] as Map<String, dynamic>? ?? const <String, dynamic>{},
+    final path =
+        '${_conversationPath(wsId, conversationId)}/messages/$messageId';
+    return await queueOrSendValue<ChatMessage>(
+      feature: 'chat',
+      method: 'DELETE',
+      path: path,
+      workspaceId: wsId,
+      entityId: messageId,
+      pendingValue: (_) => ChatMessage.fromJson({
+        'id': messageId,
+        'conversation_id': conversationId,
+        'deleted_at': DateTime.now().toUtc().toIso8601String(),
+      }),
+      send: () async => ChatMessage.fromJson(
+        (await _apiClient.deleteJson(path))['message']
+                as Map<String, dynamic>? ??
+            const <String, dynamic>{},
+      ),
     );
   }
 
@@ -364,13 +423,24 @@ class ChatRepository {
     String conversationId, {
     String? messageId,
   }) async {
-    final response = await _apiClient.postJson(
-      '${_conversationPath(wsId, conversationId)}/read',
-      {if (messageId != null) 'messageId': messageId},
-    );
-    return ChatConversation.fromJson(
-      response['conversation'] as Map<String, dynamic>? ??
-          const <String, dynamic>{},
+    final path = '${_conversationPath(wsId, conversationId)}/read';
+    final payload = <String, dynamic>{
+      if (messageId != null) 'messageId': messageId,
+    };
+    return await queueOrSendValue<ChatConversation>(
+      feature: 'chat',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      entityId: conversationId,
+      payload: payload,
+      pendingValue: (_) =>
+          ChatConversation.fromJson({'id': conversationId, 'ws_id': wsId}),
+      send: () async => ChatConversation.fromJson(
+        (await _apiClient.postJson(path, payload))['conversation']
+                as Map<String, dynamic>? ??
+            const <String, dynamic>{},
+      ),
     );
   }
 
@@ -380,12 +450,24 @@ class ChatRepository {
     required String messageId,
     required String emoji,
   }) async {
-    final response = await _apiClient.postJson(
-      '${_conversationPath(wsId, conversationId)}/reactions',
-      {'messageId': messageId, 'emoji': emoji},
-    );
-    return ChatMessage.fromJson(
-      response['message'] as Map<String, dynamic>? ?? const <String, dynamic>{},
+    final path = '${_conversationPath(wsId, conversationId)}/reactions';
+    final payload = {'messageId': messageId, 'emoji': emoji};
+    return await queueOrSendValue<ChatMessage>(
+      feature: 'chat',
+      method: 'POST',
+      path: path,
+      workspaceId: wsId,
+      entityId: messageId,
+      payload: payload,
+      pendingValue: (_) => ChatMessage.fromJson({
+        'id': messageId,
+        'conversation_id': conversationId,
+      }),
+      send: () async => ChatMessage.fromJson(
+        (await _apiClient.postJson(path, payload))['message']
+                as Map<String, dynamic>? ??
+            const <String, dynamic>{},
+      ),
     );
   }
 
@@ -394,83 +476,46 @@ class ChatRepository {
     String conversationId, {
     required PlatformFile file,
   }) async {
-    final sizeBytes = await file.length();
+    final builder = BytesBuilder(copy: false);
+    await file.readAsByteStream().forEach(builder.add);
+    final bytes = builder.takeBytes();
     final contentType = file.name.toLowerCase().endsWith('.m4a')
         ? 'audio/mp4'
         : lookupMimeType(file.name) ?? 'application/octet-stream';
-
-    final uploadPayload = await _apiClient.postJson(
-      '${_conversationPath(wsId, conversationId)}/attachments/upload-url',
-      {
+    final path =
+        '${_conversationPath(wsId, conversationId)}/attachments/upload-url';
+    final localId = newLocalMutationId();
+    return await queueOrSendValue<ChatAttachment>(
+      feature: 'chat',
+      method: 'CHAT_UPLOAD',
+      path: path,
+      workspaceId: wsId,
+      entityId: localId,
+      payload: {
         'filename': file.name,
         'contentType': contentType,
-        'sizeBytes': sizeBytes,
+        'bytes': base64Encode(bytes),
+        'sizeBytes': bytes.length,
       },
+      pendingValue: (_) => ChatAttachment(
+        id: localId,
+        conversationId: conversationId,
+        filename: file.name,
+        storagePath: localId,
+        contentType: contentType,
+        sizeBytes: bytes.length,
+      ),
+      send: () async => ChatAttachment.fromJson(
+        await deliverChatAttachment(
+          api: _apiClient,
+          httpClient: _httpClient,
+          uploadPath: path,
+          filename: file.name,
+          contentType: contentType,
+          bytes: bytes,
+        ),
+      ),
     );
-
-    final signedUrl = uploadPayload['signedUrl'] as String?;
-    if (signedUrl == null || signedUrl.isEmpty) {
-      throw const ApiException(
-        message: 'Failed to prepare upload',
-        statusCode: 0,
-      );
-    }
-
-    final headers =
-        (uploadPayload['headers'] as Map<dynamic, dynamic>? ??
-                const <dynamic, dynamic>{})
-            .map((key, value) => MapEntry(key.toString(), value.toString()));
-    final token = uploadPayload['token'] as String?;
-    final uploadHeaders = <String, String>{
-      ...headers,
-      'Content-Type': contentType,
-      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-    };
-
-    var uploadResponse = await _uploadSignedFile(
-      file: file,
-      headers: uploadHeaders,
-      sizeBytes: sizeBytes,
-      url: signedUrl,
-    );
-
-    if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
-      final fallbackHeaders = <String, String>{...uploadHeaders}
-        ..remove('Content-Type');
-      uploadResponse = await _uploadSignedFile(
-        file: file,
-        headers: fallbackHeaders,
-        sizeBytes: sizeBytes,
-        url: signedUrl,
-      );
-    }
-
-    if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
-      throw ApiException(
-        message: 'Failed to upload attachment',
-        statusCode: uploadResponse.statusCode,
-      );
-    }
-
-    return ChatAttachment.fromJson(
-      uploadPayload['attachment'] as Map<String, dynamic>? ??
-          const <String, dynamic>{},
-    );
-  }
-
-  Future<http.StreamedResponse> _uploadSignedFile({
-    required PlatformFile file,
-    required Map<String, String> headers,
-    required int sizeBytes,
-    required String url,
-  }) async {
-    final request = http.StreamedRequest('PUT', Uri.parse(url))
-      ..contentLength = sizeBytes
-      ..headers.addAll(headers);
-    final response = _httpClient.send(request);
-    await request.sink.addStream(file.readAsByteStream());
-    await request.sink.close();
-    return await response;
   }
 
   String _conversationPath(String wsId, String conversationId) {
