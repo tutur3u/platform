@@ -111,6 +111,24 @@ the public release.
 
 ## App Environment Variables
 
+Root platform administrators with `manage_mobile_deployment_vault` can export
+the **active** production Dart define file from Infrastructure → Mobile
+Deployment → Overview. The export includes build-time environment values only;
+it omits signing files, scalar passwords, and CI tokens. The request uses the
+same-origin action guard, returns `no-store`, and records an `env.exported`
+audit event. Save the download outside the repository and pass it to a local
+production-flavor simulator build:
+
+```bash
+cd apps/mobile
+flutter build ios --simulator --debug --flavor production \
+  --target lib/main_production.dart \
+  --dart-define-from-file=/absolute/path/to/tuturuuu-mobile-production.env
+```
+
+Use a dedicated test account for authenticated device QA. The export does not
+include a user session or account credentials.
+
 These preset env vars are baked into the build. Custom env vars can be added but
 have no built-in guidance.
 

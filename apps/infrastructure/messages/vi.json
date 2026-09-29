@@ -10760,6 +10760,8 @@
     "editSecret": "Sửa bí mật",
     "editSecretDescription": "Thay bí mật này mà không hiển thị giá trị hiện tại.",
     "error": "Lỗi",
+    "exportDartDefines": "Xuất cấu hình ứng dụng production",
+    "exportDartDefinesDownloaded": "Đã tải cấu hình ứng dụng production.",
     "filesTitle": "Tài nguyên tệp",
     "fingerprint": "SHA-256 {value}",
     "guidance": {

@@ -73,6 +73,8 @@ import {
 type AdminClient = SupabaseClient<Database>;
 type MobileDeploymentSecretKind = MobileDeploymentSecretValueRow['kind'];
 
+export { getProductionEnvironment, getVersionById, listSecretsForVersion };
+
 function toInfrastructureJsonValue(value: unknown): InfrastructureJsonValue {
   if (value == null) {
     return null;
@@ -253,7 +255,6 @@ async function getProductionEnvironment(db: AdminClient) {
     insertError,
     'Failed to initialize mobile deployment environment'
   );
-
   return inserted as MobileDeploymentEnvironmentRow;
 }
 
@@ -279,7 +280,6 @@ async function getVersionById(db: AdminClient, versionId: string | null) {
   if (!versionId) {
     return null;
   }
-
   const { data, error } = await privateDb(db)
     .from('mobile_deployment_versions')
     .select('*')
