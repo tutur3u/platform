@@ -2,6 +2,7 @@
 
 import {
   Cake,
+  CalendarDays,
   Ellipsis,
   Mail,
   Phone,
@@ -32,6 +33,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 
 export interface GroupMember extends WorkspaceUser {
   role?: string | null;
+  joined_at?: string | null;
   isGuest?: boolean;
   phone?: string | null;
   gender?: string | null;
@@ -133,6 +135,16 @@ export function GroupMemberCard({
                   {t('meet-together.guests')}
                 </Badge>
               )}
+            </div>
+            <div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
+              <CalendarDays className="h-3.5 w-3.5" />
+              {t('ws-user-group-details.joined_on')}:{' '}
+              {person.joined_at
+                ? dateTime(new Date(person.joined_at), {
+                    dateStyle: 'medium',
+                    timeZone: 'Asia/Ho_Chi_Minh',
+                  })
+                : t('common.unknown')}
             </div>
             {isArchived && (
               <div className="mt-1 font-semibold text-dynamic-red text-xs">

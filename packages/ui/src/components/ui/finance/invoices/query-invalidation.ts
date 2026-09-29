@@ -19,6 +19,7 @@ const INVOICE_MUTATION_QUERY_ROOTS = new Set([
   'opening-balance',
   'pending-invoices',
   'pending-invoices-current-month',
+  'pending-invoices-count',
   'promotions',
   'spending_trends',
   'subscription-invoice-context',

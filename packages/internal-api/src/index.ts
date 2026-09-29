@@ -730,6 +730,7 @@ export {
   getDebtLoanSummary,
   getFinanceBalanceAtDate,
   getFinanceOverviewMetrics,
+  getPendingFinanceInvoicesCount,
   getPendingFinanceInvoicesCurrentMonthCount,
   getSpendingTrends,
   getSubscriptionInvoiceContext,

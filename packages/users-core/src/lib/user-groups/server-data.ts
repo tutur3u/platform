@@ -22,6 +22,7 @@ import { listUserGroupSessionDates } from './session-schedule';
 export interface GroupMemberRow {
   id: string;
   role?: string | null;
+  joined_at?: string | null;
   isGuest?: boolean;
   has_require_attention_feedback?: boolean;
   [key: string]: unknown;
@@ -92,7 +93,7 @@ export async function getGroupMembersPage({
     'id, display_name, full_name, avatar_url, archived, archived_until, note';
   const publicFields = canViewPublicInfo ? ', birthday, gender' : '';
   const personalFields = canViewPersonalInfo ? ', email, phone' : '';
-  const selectQuery = `workspace_users!workspace_user_roles_users_user_id_fkey!inner(${baseFields}${publicFields}${personalFields}), role`;
+  const selectQuery = `workspace_users!workspace_user_roles_users_user_id_fkey!inner(${baseFields}${publicFields}${personalFields}), role, created_at`;
 
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
@@ -106,11 +107,13 @@ export async function getGroupMembersPage({
   const rows = (data ?? []) as unknown as Array<{
     workspace_users: Record<string, unknown> & { id: string };
     role: string | null;
+    created_at: string | null;
   }>;
 
   const baseMembers = rows.map((row) => ({
     ...row.workspace_users,
     role: row.role,
+    joined_at: row.created_at,
   }));
   const ids = baseMembers.map((member) => member.id);
 

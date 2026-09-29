@@ -6,7 +6,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {
-  getPendingFinanceInvoicesCurrentMonthCount,
+  getPendingFinanceInvoicesCount,
   getSubscriptionInvoiceContext,
   listFinanceInvoices,
   listPendingFinanceInvoices,
@@ -814,16 +814,16 @@ export const usePendingInvoices = (
   });
 };
 
-// Get count of pending invoices for the current month
-export const usePendingInvoicesCurrentMonthCount = (
+// Count the same all-month scope shown in the table and downloaded report.
+export const usePendingInvoicesCount = (
   wsId: string,
   groupByUser = false,
   enabled = true
 ) => {
   return useQuery({
-    queryKey: ['pending-invoices-current-month', wsId, groupByUser],
+    queryKey: ['pending-invoices-count', wsId, groupByUser],
     queryFn: async () => {
-      const count = await getPendingFinanceInvoicesCurrentMonthCount(wsId, {
+      const count = await getPendingFinanceInvoicesCount(wsId, {
         groupByUser,
       });
       return typeof count === 'number' ? count : 0;

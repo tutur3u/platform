@@ -21,7 +21,7 @@
 //!   7. Query `workspace_user_groups_users` with an inner-join embed of
 //!      `workspace_users`, filtered by `group_id` and `workspace_users.ws_id`,
 //!      paged by `offset`/`limit`.
-//!   8. Flatten each row into `{ ...workspace_users_fields, role }`, then
+//!   8. Flatten each row into `{ ...workspace_users_fields, role, joined_at }`, then
 //!      annotate with `isGuest` and `has_require_attention_feedback` flags.
 //!   9. Respond `200 { "data": [...], "count": <page_size>,
 //!      "next": <next_offset> }` (the `next` key is omitted when on the last
@@ -71,7 +71,7 @@ const USER_GROUPS_TABLE: &str = "workspace_user_groups";
 /// The FK hint `workspace_user_roles_users_user_id_fkey` disambiguates the
 /// join to match the legacy Supabase JS `.select(...)` call, and `!inner`
 /// ensures rows without a matching workspace_users row are excluded.
-const MEMBER_SELECT: &str = "workspace_users!workspace_user_roles_users_user_id_fkey!inner(id,display_name,full_name,avatar_url,archived,archived_until,note),role";
+const MEMBER_SELECT: &str = "workspace_users!workspace_user_roles_users_user_id_fkey!inner(id,display_name,full_name,avatar_url,archived,archived_until,note),role,created_at";
 
 // ---------------------------------------------------------------------------
 // Public entry point
@@ -227,7 +227,7 @@ async fn validate_user_group(
 ///
 /// Returns `(flattened_members, page_row_count)` on success. Each entry in
 /// `flattened_members` is a JSON object of the form
-/// `{ id, display_name, full_name, avatar_url, archived, archived_until, note, role }`.
+/// `{ id, display_name, full_name, avatar_url, archived, archived_until, note, role, joined_at }`.
 ///
 /// NOTE: `isGuest` and `has_require_attention_feedback` are NOT populated; see
 /// the module-level doc comment.
@@ -303,6 +303,10 @@ fn flatten_member_row(row: &Value) -> Value {
     merged.insert(
         "role".to_owned(),
         row.get("role").cloned().unwrap_or(Value::Null),
+    );
+    merged.insert(
+        "joined_at".to_owned(),
+        row.get("created_at").cloned().unwrap_or(Value::Null),
     );
 
     Value::Object(merged)
@@ -490,12 +494,14 @@ mod tests {
                 "archived_until": null,
                 "note": null
             },
-            "role": "STUDENT"
+            "role": "STUDENT",
+            "created_at": "2026-09-27T02:00:00Z"
         });
         let flat = flatten_member_row(&row);
         assert_eq!(flat["id"], json!("user-1"));
         assert_eq!(flat["display_name"], json!("Alice"));
         assert_eq!(flat["role"], json!("STUDENT"));
+        assert_eq!(flat["joined_at"], json!("2026-09-27T02:00:00Z"));
     }
 
     #[test]
