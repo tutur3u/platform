@@ -129,10 +129,12 @@ class CalendarEvent extends Equatable {
     Object? schedulingMetadata = _sentinel,
     Object? wsId = _sentinel,
     Object? createdAt = _sentinel,
-    bool? isAllDayOverride,
+    Object? isAllDayOverride = _sentinel,
   }) => CalendarEvent(
     id: id ?? this.id,
-    isAllDayOverride: isAllDayOverride ?? this.isAllDayOverride,
+    isAllDayOverride: isAllDayOverride == _sentinel
+        ? this.isAllDayOverride
+        : isAllDayOverride as bool?,
     title: title == _sentinel ? this.title : title as String?,
     description: description == _sentinel
         ? this.description

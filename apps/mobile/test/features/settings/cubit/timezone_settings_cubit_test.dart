@@ -12,9 +12,14 @@ class _Repository extends TimezoneSettingsRepository {
   };
   Completer<String>? delayed;
   bool failSave = false;
+  bool failLoad = false;
   int writes = 0;
   @override
-  Future<String> loadPersonal() async => personal;
+  Future<String> loadPersonal() async {
+    if (failLoad) throw Exception('load failed');
+    return personal;
+  }
+
   @override
   Future<String> loadWorkspace(String id) => id == 'a' && delayed != null
       ? delayed!.future
@@ -92,5 +97,35 @@ void main() {
     await cubit.save('UTC');
     expect(cubit.state.personal, 'Europe/London');
     expect(cubit.state.failed, isTrue);
+  });
+  test('resolved save failure allows a direct save retry', () async {
+    await cubit.load(userId: 'user', workspaceId: 'a');
+    repository.failSave = true;
+    await cubit.save('UTC');
+    repository.failSave = false;
+    await cubit.save('Europe/Paris');
+    expect(cubit.state.personal, 'Europe/Paris');
+    expect(cubit.state.failed, isFalse);
+    expect(repository.writes, 1);
+  });
+  test(
+    'same-scope load failure keeps a resolved preference editable',
+    () async {
+      await cubit.load(userId: 'user', workspaceId: 'a');
+      repository.failLoad = true;
+      await cubit.load(userId: 'user', workspaceId: 'a');
+      expect(cubit.state.resolved, isTrue);
+      expect(cubit.state.failed, isTrue);
+      await cubit.save('Europe/Paris');
+      expect(cubit.state.personal, 'Europe/Paris');
+      expect(repository.writes, 1);
+    },
+  );
+  test('unresolved failed scope stays blocked until loaded', () async {
+    repository.failLoad = true;
+    await cubit.load(userId: 'user', workspaceId: 'a');
+    await cubit.save('Europe/Paris');
+    expect(repository.writes, 0);
+    expect(cubit.state.resolved, isFalse);
   });
 }

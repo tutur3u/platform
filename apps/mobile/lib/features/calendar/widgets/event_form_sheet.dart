@@ -73,7 +73,7 @@ class _EventFormContentState extends State<_EventFormContent> {
     );
 
     if (event != null) {
-      final start = event.startAt ?? calendarNowInContext(context);
+      final start = event.startAt ?? calendarNow(widget.timezone);
       final end = event.endAt ?? start.add(const Duration(hours: 1));
       _startDate = start;
       _startTime = TimeOfDay.fromDateTime(start);
@@ -89,7 +89,7 @@ class _EventFormContentState extends State<_EventFormContent> {
     } else {
       final initial =
           widget.initialStartTime ??
-          _roundToQuarter(calendarNowInContext(context));
+          _roundToQuarter(calendarNow(widget.timezone));
       _startDate = initial;
       _startTime = TimeOfDay.fromDateTime(initial);
       final end = initial.add(const Duration(hours: 1));

@@ -7,6 +7,48 @@ import 'package:mobile/features/calendar/widgets/event_form_sheet.dart';
 import '../../../helpers/helpers.dart';
 
 void main() {
+  for (final missingEventTime in [false, true]) {
+    testWidgets('fallback now uses explicit editor zone: $missingEventTime', (
+      tester,
+    ) async {
+      Map<String, dynamic>? saved;
+      final before = DateTime.now().toUtc();
+      await tester.pumpApp(
+        Builder(
+          builder: (context) => Material(
+            child: TextButton(
+              onPressed: () async {
+                saved = await showEventFormSheet(
+                  context,
+                  event: missingEventTime
+                      ? const CalendarEvent(
+                          id: 'missing-time',
+                          title: 'Fixture',
+                        )
+                      : null,
+                  timezone: 'Pacific/Kiritimati',
+                );
+              },
+              child: const Text('Open editor'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open editor'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, 'Synthetic meeting');
+      tester.testTextInput.hide();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      final start = saved!['startAt'] as DateTime;
+      expect(
+        start.difference(before).abs(),
+        lessThan(const Duration(minutes: 16)),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
   for (final sample in [
     ('2026-09-30T07:30:00Z', '2026-09-30T08:30:00Z', 'Asia/Ho_Chi_Minh'),
     ('2026-03-08T05:00:00Z', '2026-03-09T04:00:00Z', 'America/New_York'),

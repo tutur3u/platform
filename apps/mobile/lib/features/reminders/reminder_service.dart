@@ -206,7 +206,7 @@ class ReminderService extends ChangeNotifier {
   Future<void> _refresh() async {
     final userId = _userId;
     final generation = _scopeGeneration;
-    if (userId == null || _workspaces.isEmpty) return;
+    if (userId == null) return;
     status = status.copyWith(isRefreshing: true, clearError: true);
     notifyListeners();
     try {
@@ -281,6 +281,15 @@ class ReminderService extends ChangeNotifier {
           .map(int.tryParse)
           .whereType<int>()
           .toSet();
+      // Record intended IDs before the OS can accept a notification. A session
+      // change must be able to reconcile effects even while scheduling awaits.
+      final recorded = await store.setStringList(
+        key,
+        previousIds.union(scheduledIds).map((id) => '$id').toList(),
+      );
+      if (!recorded) {
+        throw StateError('Unable to record reminder reconciliation IDs');
+      }
       for (final entry in entries) {
         if (!_isCurrent(userId, generation)) return;
         final copy = reminderNotificationCopy(entry, l10n);
