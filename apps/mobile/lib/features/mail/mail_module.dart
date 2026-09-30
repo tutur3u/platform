@@ -38,6 +38,10 @@ bool _visible(BuildContext context) {
     (cubit) => cubit?.state.isEnabled('mail') ?? false,
   );
   if (!enabled) return false;
+  return mailModuleAccessAvailable(context);
+}
+
+bool mailModuleAccessAvailable(BuildContext context) {
   final user = context
       .select<AuthCubit?, ({String? email, Map<String, dynamic>? metadata})>(
         (cubit) => (

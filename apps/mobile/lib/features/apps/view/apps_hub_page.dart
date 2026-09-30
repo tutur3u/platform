@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -11,7 +12,6 @@ import 'package:mobile/features/apps/models/app_description.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
-import 'package:mobile/features/apps/widgets/app_visibility_button.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
 import 'package:mobile/features/apps/widgets/apps_reorder_grid.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
@@ -38,6 +38,14 @@ class AppsHubPage extends StatefulWidget {
 }
 
 class _AppsHubPageState extends State<AppsHubPage> {
+  bool _ordering = false;
+
+  @override
+  void didUpdateWidget(covariant AppsHubPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.showGrid || widget.query.trim().isNotEmpty) _ordering = false;
+  }
+
   void _reorder(List<String> shownIds, List<AppModule> hidden) {
     unawaited(
       context.read<AppTabCubit>().setAppOrder([
@@ -71,8 +79,9 @@ class _AppsHubPageState extends State<AppsHubPage> {
       bottom: false,
       child: ResponsiveWrapper(
         maxWidth: ResponsivePadding.rootContentWidth(context.deviceClass),
-        child: IgnorePointer(
-          ignoring: false,
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: _ordering ? () => setState(() => _ordering = false) : null,
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
@@ -142,6 +151,8 @@ class _AppsHubPageState extends State<AppsHubPage> {
                 modules: modules,
                 hidden: hidden,
                 canReorder: !hidden && widget.query.trim().isEmpty,
+                isOrdering: _ordering,
+                onOrderingStarted: () => setState(() => _ordering = true),
                 onSelected: widget.onSelected,
                 onOrderChanged: (ids) => _reorder(ids, hiddenModules),
                 onVisibilityPressed: (module) => unawaited(
@@ -171,14 +182,6 @@ class _AppsHubPageState extends State<AppsHubPage> {
                                       replayToken: widget.replayToken,
                                       onSelected: widget.onSelected,
                                       hidden: hidden,
-                                      onVisibilityPressed: () => unawaited(
-                                        changeAppVisibility(
-                                          context,
-                                          cubit,
-                                          modules[index * columns + column],
-                                          hidden: hidden,
-                                        ),
-                                      ),
                                     )
                                   : const SizedBox.shrink(),
                             ),
@@ -200,7 +203,6 @@ class _AppEditorialCard extends StatelessWidget {
     required this.index,
     required this.replayToken,
     required this.hidden,
-    required this.onVisibilityPressed,
     this.onSelected,
   });
 
@@ -209,7 +211,6 @@ class _AppEditorialCard extends StatelessWidget {
   final int index;
   final int replayToken;
   final bool hidden;
-  final VoidCallback onVisibilityPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -228,9 +229,14 @@ class _AppEditorialCard extends StatelessWidget {
       delay: Duration(milliseconds: 40 + (index * 28)),
       child: InkWell(
         borderRadius: BorderRadius.circular(26),
-        onTap: () => onSelected != null
-            ? onSelected!(module)
-            : _openModule(context, module),
+        onTap: () {
+          unawaited(AppHaptics.selection());
+          if (onSelected != null) {
+            onSelected!(module);
+          } else {
+            _openModule(context, module);
+          }
+        },
         child: Material(
           color: surfaceColor,
           borderRadius: BorderRadius.circular(26),
@@ -299,10 +305,6 @@ class _AppEditorialCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
-                AppVisibilityButton(
-                  hidden: hidden,
-                  onPressed: onVisibilityPressed,
                 ),
               ],
             ),

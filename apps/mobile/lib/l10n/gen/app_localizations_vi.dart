@@ -8537,6 +8537,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsHiddenSection => 'Ứng dụng đã ẩn';
 
   @override
+  String get appsHiddenExperimentsSection => 'Thử nghiệm đã ẩn';
+
+  @override
+  String get appsUnavailableWithCurrentAccess => 'Không khả dụng với quyền truy cập hiện tại';
+
+  @override
   String get appsHideConfirmTitle => 'Ẩn ứng dụng này?';
 
   @override

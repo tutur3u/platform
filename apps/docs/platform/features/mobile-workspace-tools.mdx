@@ -24,9 +24,11 @@ The Apps screen defaults to the compact grid. A List/Grid switch in the top
 shell header sits beside Customize and changes the same visible, ordered modules
 between icon-and-name tiles and descriptive cards. Grid tiles have more space below
 the shell header and can be held and dragged to reorder without entering Customize.
-The
-choice stays in the mounted Apps screen while navigating within the mobile shell;
-search, pins, and workspace access rules apply to both layouts. Descriptions remain
+Holding an icon enters persistent ordering mode: icons shift during a drag and
+continue to wiggle after release until an empty area is tapped. Compact hide
+controls sit over icon corners only in grid ordering mode; list cards never show
+hide controls. The choice stays in the mounted Apps screen while navigating
+within the mobile shell; search and workspace access rules apply to both layouts. Descriptions remain
 searchable in grid mode even though they are hidden from the tiles.
 Holding a tile produces a pickup haptic, moving onto a new navigation target
 produces a selection tick, and completing a drop produces a light confirmation.
@@ -67,16 +69,22 @@ the mini-app root returns to the Home or Apps launch screen. This also applies
 to deep links, so Back never visits a sibling section by accident.
 Apps is always available in the root dock. The Apps grid supports long-press
 reordering: nearby icons shift across rows during the drag, with a subtle
-motion cue, and the new order is saved on release. The list editor provides
-drag handles. Each app has a compact hide control with confirmation. Hidden
-apps remain accessible at the bottom of Apps, separated from shown apps by a
-divider, and can be shown again without a confirmation. App order and hidden
-choices persist on the device. Workspace permissions and experimental-app
+motion cue, and the new order is saved on release. App taps provide selection
+haptics. The list editor provides drag handles and visibility controls. Hiding
+an app requires confirmation. Hidden apps remain accessible at the bottom of
+Apps, separated from shown apps by a divider, and can be shown again without a
+confirmation. The editor places hidden experiments below Hidden Apps; enabled
+experiments appear in the regular shown order, while disabled or locally hidden
+experiments can be enabled or shown from Hidden Experiments. App order and hidden
+choices persist on the device. The editor disables Show when current account or
+workspace access would still prevent an experiment from appearing; access changes
+can make that control available later. Workspace permissions and experimental-app
 visibility still take precedence; a locally hidden app is only moved out of
 the shown launcher section, not disabled or removed from navigation.
 
 Home's task, calendar, Finance, daily summary, and eligible Mail, Meet, and Notes
-cards can be reordered or hidden in Customize Home. Available cards are shown
+cards can be reordered or hidden through the compact top-bar Customize action.
+Available cards are shown
 in their current order by default, and hidden cards remain in the editor for
 recovery.
 Unavailable modules do not appear as Home cards or editor choices; their saved

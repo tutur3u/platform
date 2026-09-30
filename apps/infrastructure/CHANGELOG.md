@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.1](https://github.com/tutur3u/platform/compare/infra-v0.30.0...infra-v0.30.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* **infrastructure:** isolate app review identities from staff access ([#5632](https://github.com/tutur3u/platform/issues/5632)) ([ecad401](https://github.com/tutur3u/platform/commit/ecad4019f602317b59d37500cd8049d1602d11fa))
+* **infrastructure:** place reviewer status copy in panel namespace ([e70759a](https://github.com/tutur3u/platform/commit/e70759a2adad37e6b614e0c3adb79a402d3a6b5d))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/infra-v0.29.0...infra-v0.30.0) (2026-09-29)
 
 

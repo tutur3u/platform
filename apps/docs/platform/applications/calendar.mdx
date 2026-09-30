@@ -1,8 +1,31 @@
 ---
 title: "Calendar"
 description: "Shared Calendar product surface across apps/web and apps/calendar."
-updatedAt: "2026-09-07"
+updatedAt: "2026-09-30"
 ---
+
+## Calendar editor timezone
+
+Calendar display and the built-in event editor use the same resolved Calendar
+settings. Explicit personal timezone takes precedence over workspace timezone;
+when neither is explicit, the canonical resolver detects the browser timezone.
+The editor's date/time picker inherits those settings instead of resolving its
+own browser timezone. This applies to the shared Calendar surface in Web and
+the standalone Calendar app. It does not change saved user or workspace settings.
+
+Timed edits represent an instant and serialize as UTC ISO timestamps. A date-only
+all-day choice represents midnight in the resolved calendar timezone with an
+exclusive end boundary. A browser in another timezone must still display the
+chosen calendar date, including when its local date is the previous day.
+
+Existing Google-backed events are patched immediately using their stored
+external event identifier. Imported recurring occurrences retain the provider's
+instance identifier; changing an occurrence must preserve that identifier and
+calendar source. The patch sends updates to guests. Verify the stored event and
+the same Google occurrence independently after an edit; a local toast is not
+provider read-back evidence. The current Google write mapper uses `dateTime`
+fields and does not provide native Google date-only all-day writes. Native
+Tuturuuu all-day events do not require that provider path.
 
 ## Tasks and Calendar planning
 
