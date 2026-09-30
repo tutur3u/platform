@@ -219,6 +219,20 @@ export async function pendingExternalBetaReview(apple, appId, buildId) {
   return null;
 }
 
+// Matches the routed-domain rule in isTuturuuuReviewEmail used by provisioning.
+// Metadata cannot prove the account is enabled, unreserved, or usable for review.
+export function betaReviewAccessConfigured(attributes) {
+  return (
+    attributes?.demoAccountRequired === true &&
+    typeof attributes.demoAccountName === 'string' &&
+    /^[^\s@]+@tutur3u\.com$/i.test(attributes.demoAccountName.trim()) &&
+    typeof attributes.demoAccountPassword === 'string' &&
+    attributes.demoAccountPassword.trim().length > 0 &&
+    typeof attributes.notes === 'string' &&
+    attributes.notes.trim().length > 0
+  );
+}
+
 export async function submitExternalBetaReview(
   apple,
   appId,
@@ -243,14 +257,9 @@ export async function submitExternalBetaReview(
     }
     const reviewDetail = await apple(`/v1/apps/${appId}/betaAppReviewDetail`);
     const reviewAttributes = reviewDetail.data?.attributes;
-    if (
-      reviewAttributes?.demoAccountRequired !== true ||
-      !reviewAttributes.demoAccountName?.trim() ||
-      !reviewAttributes.demoAccountPassword?.trim() ||
-      !reviewAttributes.notes?.trim()
-    ) {
+    if (!betaReviewAccessConfigured(reviewAttributes)) {
       console.log(
-        'External TestFlight review NOT submitted: reviewer access metadata is missing. Set the private demo account fields and credential-free review notes in App Store Connect Test Information; the review queue will retry.'
+        'External TestFlight review NOT submitted: reviewer access metadata is missing or the reviewer address is unsafe. Use a routed @tutur3u.com reviewer address and set the private demo account fields and credential-free review notes in App Store Connect Test Information; the review queue will retry.'
       );
       return 'deferred';
     }

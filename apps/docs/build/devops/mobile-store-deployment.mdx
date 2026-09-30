@@ -262,7 +262,8 @@ the app itself.
 In the production Infrastructure app, open the root workspace's **Account
 Security → Review and QA accounts** panel. A platform administrator with
 `manage_internal_accounts` can create a reviewer account at a new,
-organization-controlled `@tuturuuu.com` address. Infrastructure confirms its
+organization-controlled, routed `@tutur3u.com` address outside staff domains.
+Infrastructure confirms its
 email and generates a strong password, then displays credentials once and
 credential-free review steps separately. Copy them to the corresponding private
 App Store Connect fields; never place credentials in source, an issue, CI
@@ -273,7 +274,10 @@ not seed data or grant workspace administrator permissions.
 
 Before resubmitting an external beta, sign out of a test device, use **Email and
 password** on the production mobile build with the reviewer credentials, and
-verify Home, Apps, Profile, Tasks, Calendar, Finance, and Notes in the account's
+follow the current login path: enter the email and tap **Continue with email**;
+enter the password directly if shown, or tap **Use password instead** if a code
+screen appears. Tap **Sign in** and complete the security check if prompted.
+Verify Home, Apps, Profile, Tasks, Calendar, Finance, and Notes in the account's
 personal workspace. Add representative non-sensitive sample data through the
 app if the review needs it. Record the tested build number and any non-obvious
 navigation steps in the private review notes. Keep the account enabled and the
@@ -293,11 +297,22 @@ build reaches `WAITING_FOR_REVIEW`, `IN_REVIEW`, or `APPROVED` in App Store
 Connect; an upload or metadata save alone does not reopen a rejected review.
 The store workflow now checks Apple's private `demoAccountRequired`,
 `demoAccountName`, `demoAccountPassword`, and credential-free `notes` fields
-before a new external beta submission. It reports only whether access is
-configured, never credential values. The production push uploads a new IPA
+before a new external beta submission. The reviewer address must match the
+provisioning domain rule (`@tutur3u.com`); staff-domain and other addresses defer
+external submission. Provisioning separately rejects addresses reserved in
+`platform_email_roles`; the store metadata check does not query that table.
+It reports only whether access is configured, never credential values. The production push uploads a new IPA
 before this check. A missing field defers external review, logs that it was
 not submitted, and leaves the store workflow green once internal distribution
-is verified. After Infrastructure deploys, create and sign in to the reviewer
+is verified. A green store workflow or beta group assignment does not mean
+external testers can install: verify the build is **Testing** for the external
+group after Apple approval. This metadata safeguard does not verify current
+account enabled status, working login, permissions, or representative demo
+content. Those remain unverified until normal read-only QA in the reviewer
+session on the relevant production mobile build; record the tested build and
+outcomes without credentials. It does not guarantee Apple approval.
+
+After Infrastructure deploys, create and sign in to the reviewer
 account. In Infrastructure → Internal Accounts → Account Security → Review and
 QA accounts, use **Publish to Apple after QA** while the one-time credential
 dialog is open. This action requires both internal account and mobile vault
