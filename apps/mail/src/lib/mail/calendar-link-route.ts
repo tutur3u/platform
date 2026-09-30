@@ -64,10 +64,7 @@ export async function mailCalendarLinkRoute(
     );
     if (operation === 'get')
       return NextResponse.json(
-        {
-          target: await service.linkedTarget(ctx.user.id, mailboxId, messageId),
-          association: await readAssociation(ctx.user.id, key),
-        },
+        await service.linkedAssociation(ctx.user.id, mailboxId, messageId),
         { headers }
       );
     if (!body?.ok) throw new Error('Missing validated body');
@@ -83,7 +80,8 @@ export async function mailCalendarLinkRoute(
           ctx.user.id,
           mailboxId,
           messageId,
-          previous.target
+          previous.target,
+          input.receipt
         ),
         { headers }
       );

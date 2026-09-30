@@ -2,6 +2,12 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types';
 import { NextRequest, type NextResponse } from 'next/server';
 import { beforeEach, expect, it, vi } from 'vitest';
+import {
+  createCalendarLinkService,
+  type MailCalendarAssociation,
+} from './calendar-link';
+import { projectMailCalendarTarget } from './calendar-link-adapter';
+import { calendarPreviewFixture } from './calendar-link-fixture';
 import type { MailRouteContext } from './types';
 
 const mocks = vi.hoisted(() => ({
@@ -9,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   preview: vi.fn(),
   confirm: vi.fn(),
   linked: vi.fn(),
+  snapshot: vi.fn(),
   unlink: vi.fn(),
   association: vi.fn(),
   normalize: vi.fn(),
@@ -45,6 +52,7 @@ vi.mock('./repository/calendar-links', () => ({
       preview: mocks.preview,
       confirm: mocks.confirm,
       linkedTarget: mocks.linked,
+      linkedAssociation: mocks.snapshot,
       unlink: mocks.unlink,
     },
     readAssociation: mocks.association,
@@ -95,6 +103,7 @@ beforeEach(() => {
   mocks.confirm.mockResolvedValue({ status: 'linked' });
   mocks.unlink.mockResolvedValue({ status: 'unlinked' });
   mocks.linked.mockResolvedValue(null);
+  mocks.snapshot.mockResolvedValue({ target: null, association: null });
   mocks.association.mockResolvedValue(null);
 });
 it('normalizes personal selection under the request actor and previews without writes', async () => {
@@ -186,5 +195,102 @@ it('suppresses inaccessible or superseded source and fences unlink with saved re
   expect(
     await (await DELETE(request('DELETE', { receipt }), context)).json()
   ).toEqual({ status: 'unlinked' });
-  expect(mocks.unlink).toHaveBeenCalledWith('actor', 'box', 'request', target);
+  expect(mocks.unlink).toHaveBeenCalledWith(
+    'actor',
+    'box',
+    'request',
+    target,
+    receipt
+  );
+});
+
+function actualServiceFixture() {
+  let saved: MailCalendarAssociation | null = null;
+  const authority = calendarPreviewFixture();
+  const readTarget = vi.fn(
+    async () => projectMailCalendarTarget('actor', 'ws', 'event', authority)!
+  );
+  const save = vi.fn(
+    async (
+      _actor: string,
+      _key: string,
+      expected: MailCalendarAssociation | null,
+      next: MailCalendarAssociation | null
+    ) => {
+      if (saved !== expected) return false;
+      saved = next;
+      return true;
+    }
+  );
+  const service = createCalendarLinkService({
+    readInvitation: async () => ({
+      uid: 'uid',
+      sequence: 1,
+      organizer: 'host@example.test',
+      attendee: 'guest@example.test',
+      recurrence: null,
+      summary: 'Invitation',
+      start: '20261002T063000Z',
+      when: 'Original time',
+      timezone: [],
+      location: '',
+      joinUrl: null,
+    }),
+    readTarget,
+    readAssociation: async () => saved,
+    saveAssociation: save,
+  });
+  mocks.linked.mockImplementation(service.linkedTarget);
+  mocks.snapshot.mockImplementation(service.linkedAssociation);
+  mocks.unlink.mockImplementation(service.unlink);
+  mocks.association.mockImplementation(async () => saved);
+  return { service, authority, readTarget, save, saved: () => saved };
+}
+const serviceSelection = {
+  actorId: 'actor',
+  mailboxId: 'box',
+  messageId: 'request',
+  workspaceId: 'ws',
+  eventId: 'event',
+};
+it('returns one GET snapshot when another tab refreshes the same target during authorization', async () => {
+  const fixture = actualServiceFixture();
+  const initial = await fixture.service.preview(serviceSelection);
+  await fixture.service.confirm(serviceSelection, initial!.receipt);
+  const associationA = fixture.saved();
+  const targetA = projectMailCalendarTarget(
+    'actor',
+    'ws',
+    'event',
+    structuredClone(fixture.authority)
+  )!;
+  fixture.readTarget.mockImplementationOnce(async () => {
+    fixture.authority.revision = 'new-revision';
+    const refreshed = await fixture.service.preview(serviceSelection);
+    await fixture.service.confirm(serviceSelection, refreshed!.receipt);
+    return targetA;
+  });
+  const result = await (await GET(request('GET'), context)).json();
+  expect(fixture.saved()?.receipt).not.toBe(associationA?.receipt);
+  expect(result.target.authority.revision).toBe('rev');
+  expect(result.association.receipt).toBe(associationA?.receipt);
+});
+it('preserves a same-target confirmation between the DELETE route check and service reread', async () => {
+  const fixture = actualServiceFixture();
+  const initial = await fixture.service.preview(serviceSelection);
+  await fixture.service.confirm(serviceSelection, initial!.receipt);
+  const associationA = fixture.saved()!;
+  mocks.association.mockImplementationOnce(async () => {
+    fixture.authority.revision = 'new-revision';
+    const refreshed = await fixture.service.preview(serviceSelection);
+    await fixture.service.confirm(serviceSelection, refreshed!.receipt);
+    return associationA;
+  });
+  const result = await (
+    await DELETE(request('DELETE', { receipt: associationA.receipt }), context)
+  ).json();
+  expect(result).toEqual({ status: 'changed' });
+  expect(fixture.saved()?.receipt).not.toBe(associationA.receipt);
+  expect(fixture.saved()).not.toBeNull();
+  expect(fixture.save).toHaveBeenCalledTimes(2);
 });

@@ -268,13 +268,13 @@ export function createCalendarLinkService(deps: CalendarLinkDependencies) {
       ? { status: 'linked', association: next }
       : { status: 'conflict' };
   }
-  async function linkedTarget(
+  async function linkedAssociation(
     actorId: string,
     mailboxId: string,
     messageId: string
   ) {
     const source = await deps.readInvitation(actorId, mailboxId, messageId);
-    if (!source) return null;
+    if (!source) return { target: null, association: null };
     const key = invitationAssociationKey(
       invitationLinkIdentity(actorId, mailboxId, source)
     );
@@ -284,20 +284,34 @@ export function createCalendarLinkService(deps: CalendarLinkDependencies) {
       invitationAssociationKey(saved.invitation) !== key ||
       source.sequence < saved.sequence
     )
-      return null;
+      return { target: null, association: null };
     const target = await deps.readTarget(
       actorId,
       saved.target.workspaceId,
       saved.target.eventId
     );
     // Renamed events remain linked; moved calendars/accounts/occurrences require a new preview.
-    return target && sameTarget(saved.target, target.identity) ? target : null;
+    // Keep the authorized target and its removal receipt from the same read.
+    // A concurrent relink may make this snapshot stale; DELETE must reject its receipt.
+    return {
+      association: saved,
+      target:
+        target && sameTarget(saved.target, target.identity) ? target : null,
+    };
+  }
+  async function linkedTarget(
+    actorId: string,
+    mailboxId: string,
+    messageId: string
+  ) {
+    return (await linkedAssociation(actorId, mailboxId, messageId)).target;
   }
   async function unlink(
     actorId: string,
     mailboxId: string,
     messageId: string,
-    expectedTarget: CalendarLinkTargetIdentity
+    expectedTarget: CalendarLinkTargetIdentity,
+    expectedReceipt: string
   ): Promise<{ status: 'unlinked' | 'unavailable' | 'changed' | 'conflict' }> {
     const source = await deps.readInvitation(actorId, mailboxId, messageId);
     if (!source) return { status: 'unavailable' };
@@ -309,6 +323,7 @@ export function createCalendarLinkService(deps: CalendarLinkDependencies) {
     if (invitationAssociationKey(previous.invitation) !== key)
       return { status: 'unavailable' };
     if (
+      previous.receipt !== expectedReceipt ||
       previous.sequence > source.sequence ||
       !sameTarget(previous.target, expectedTarget)
     )
@@ -319,5 +334,5 @@ export function createCalendarLinkService(deps: CalendarLinkDependencies) {
       ? { status: 'unlinked' }
       : { status: 'conflict' };
   }
-  return { preview, confirm, linkedTarget, unlink };
+  return { preview, confirm, linkedAssociation, linkedTarget, unlink };
 }

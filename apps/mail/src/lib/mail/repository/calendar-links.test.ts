@@ -172,8 +172,15 @@ it('returns conflict on concurrent metadata change and unlinks only the saved ac
     'linked'
   );
   expect(
-    (await service.unlink('actor', 'box', 'request', preview!.target.identity))
-      .status
+    (
+      await service.unlink(
+        'actor',
+        'box',
+        'request',
+        preview!.target.identity,
+        preview!.receipt
+      )
+    ).status
   ).toBe('unlinked');
   expect(metadata).toMatchObject({
     calendar_reply_claim: { id: 'reply' },

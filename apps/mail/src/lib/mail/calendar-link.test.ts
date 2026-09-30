@@ -261,11 +261,27 @@ it('unlink deletes only own association after Calendar revocation and is idempot
   target = null;
   const reads = vi.mocked(deps.readTarget).mock.calls.length;
   expect(
-    (await service.unlink('actor', 'box', 'request', hold.identity)).status
+    (
+      await service.unlink(
+        'actor',
+        'box',
+        'request',
+        hold.identity,
+        preview!.receipt
+      )
+    ).status
   ).toBe('unlinked');
   expect(saved).toBeNull();
   expect(
-    (await service.unlink('actor', 'box', 'request', hold.identity)).status
+    (
+      await service.unlink(
+        'actor',
+        'box',
+        'request',
+        hold.identity,
+        preview!.receipt
+      )
+    ).status
   ).toBe('unlinked');
   expect(deps.readTarget).toHaveBeenCalledTimes(reads);
   expect(source).toEqual(original);
@@ -276,16 +292,30 @@ it('unlink refuses a changed target and preserves a concurrently replaced associ
   await service.confirm(selection, preview!.receipt);
   expect(
     (
-      await service.unlink('actor', 'box', 'request', {
-        ...hold.identity,
-        eventId: 'other',
-      })
+      await service.unlink(
+        'actor',
+        'box',
+        'request',
+        {
+          ...hold.identity,
+          eventId: 'other',
+        },
+        preview!.receipt
+      )
     ).status
   ).toBe('changed');
   expect(saved?.target.eventId).toBe('hold');
   deps.saveAssociation = vi.fn(async () => false);
   expect(
-    (await service.unlink('actor', 'box', 'request', hold.identity)).status
+    (
+      await service.unlink(
+        'actor',
+        'box',
+        'request',
+        hold.identity,
+        preview!.receipt
+      )
+    ).status
   ).toBe('conflict');
   expect(saved?.target.eventId).toBe('hold');
 });
@@ -392,4 +422,28 @@ it('preserves identity, preview receipts and duplicate confirmation across reord
     'linked'
   );
   expect(deps.saveAssociation).toHaveBeenCalledTimes(1);
+});
+
+it('does not adopt a refreshed same-target association after an earlier DELETE receipt check', async () => {
+  const service = createCalendarLinkService(deps);
+  const first = await service.preview(selection);
+  await service.confirm(selection, first!.receipt);
+  const earlierDeleteRead = saved!;
+  // Another tab confirms new authoritative metadata for the SAME event.
+  target!.authority.revision = 'new-revision';
+  const refreshed = await service.preview(selection);
+  await service.confirm(selection, refreshed!.receipt);
+  const replacement = saved;
+  vi.mocked(deps.saveAssociation).mockClear();
+  expect(
+    await service.unlink(
+      'actor',
+      'box',
+      'request',
+      earlierDeleteRead.target,
+      earlierDeleteRead.receipt
+    )
+  ).toEqual({ status: 'changed' });
+  expect(saved).toBe(replacement);
+  expect(deps.saveAssociation).not.toHaveBeenCalled();
 });
