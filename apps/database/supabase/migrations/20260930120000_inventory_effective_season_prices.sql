@@ -54,6 +54,10 @@ create table private.inventory_sale_price_snapshots (
   unique(ws_id, request_id)
 );
 
+-- Bound provenance checks to the selected period before expanding invoice lines.
+create index inventory_sale_price_snapshots_period_captured
+  on private.inventory_sale_price_snapshots(period_id, captured_at);
+
 alter table private.inventory_product_prices enable row level security;
 alter table private.inventory_sale_price_snapshots enable row level security;
 create policy "Service role manages effective inventory prices"
