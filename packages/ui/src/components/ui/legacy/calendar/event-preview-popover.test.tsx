@@ -56,20 +56,23 @@ describe('calendar quick preview timezone', () => {
   });
 
   it('accepts Unicode whitespace in Intl twelve-hour labels', () => {
-    const original = Object.getOwnPropertyDescriptor(
+    const original:
+      | TypedPropertyDescriptor<Intl.DateTimeFormat['format']>
+      | undefined = Object.getOwnPropertyDescriptor(
       Intl.DateTimeFormat.prototype,
       'format'
-    )?.get;
-    if (!original) throw new Error('Intl formatter getter unavailable');
-    const spy = vi
-      .spyOn(Intl.DateTimeFormat.prototype, 'format', 'get')
-      .mockImplementation(function (this: Intl.DateTimeFormat) {
-        const formatter = original.call(this) as (
-          date?: number | Date
-        ) => string;
-        return (date?: number | Date) =>
+    );
+    if (!original?.get) throw new Error('Intl formatter getter unavailable');
+    const getFormat = original.get;
+    Object.defineProperty(Intl.DateTimeFormat.prototype, 'format', {
+      ...original,
+      get(this: Intl.DateTimeFormat): Intl.DateTimeFormat['format'] {
+        const formatter = getFormat.call(this);
+        const unicodeFormat: Intl.DateTimeFormat['format'] = (date) =>
           formatter(date).replace(/\s(?=[AP]M)/gu, '\u202f');
-      });
+        return unicodeFormat;
+      },
+    });
     try {
       const value = formatEventPreviewTime(
         '2026-09-30T11:00:00Z',
@@ -81,7 +84,7 @@ describe('calendar quick preview timezone', () => {
       expect(value).toMatch(/06:00\s+PM/u);
       expect(value).toMatch(/08:00\s+PM/u);
     } finally {
-      spy.mockRestore();
+      Object.defineProperty(Intl.DateTimeFormat.prototype, 'format', original);
     }
   });
   it('uses the supported locale and twelve-hour clock', () => {
