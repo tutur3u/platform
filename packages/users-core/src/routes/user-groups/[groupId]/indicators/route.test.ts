@@ -170,3 +170,104 @@ describe('group indicator PATCH authorization', () => {
     consoleError.mockRestore();
   });
 });
+
+describe('group indicator POST authorization', () => {
+  const containsPermission = vi.fn();
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    mocks.getUserGroupRoutePermissions.mockResolvedValue({
+      containsPermission,
+    });
+    containsPermission.mockReturnValue(true);
+    mocks.resolveUserGroupRouteWorkspaceId.mockResolvedValue(WORKSPACE_ID);
+    mocks.resolveRequestActorAuthUid.mockResolvedValue(ACTOR_AUTH_UID);
+    mocks.createAdminClient.mockResolvedValue(mocks.adminSupabase);
+    mocks.privateRpc.mockResolvedValue({
+      data: { id: METRIC_ID },
+      error: null,
+    });
+  });
+
+  async function post(payload: unknown) {
+    const { POST } = await import('./route.js');
+    return POST(requestWithPayload(payload), params());
+  }
+
+  it('denies unauthenticated actors before privileged work', async () => {
+    mocks.getUserGroupRoutePermissions.mockResolvedValue(null);
+    expect((await post({ name: 'Quiz' })).status).toBe(404);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.privateRpc).not.toHaveBeenCalled();
+  });
+
+  it('denies a member without score creation permission', async () => {
+    containsPermission.mockReturnValue(false);
+    expect((await post({ name: 'Quiz' })).status).toBe(403);
+    expect(containsPermission).toHaveBeenCalledWith(
+      'create_user_groups_scores'
+    );
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.privateRpc).not.toHaveBeenCalled();
+  });
+
+  it('allows a member granted score creation permission without an admin role', async () => {
+    expect(
+      (await post({ name: 'Quiz', unit: 'points', factor: 1 })).status
+    ).toBe(200);
+    expect(mocks.privateRpc).toHaveBeenCalledWith(
+      'admin_create_user_group_metric_with_audit_actor',
+      {
+        p_actor_auth_uid: ACTOR_AUTH_UID,
+        p_category_ids: [],
+        p_group_id: GROUP_ID,
+        p_payload: {
+          factor: 1,
+          is_weighted: true,
+          name: 'Quiz',
+          unit: 'points',
+        },
+        p_ws_id: WORKSPACE_ID,
+      }
+    );
+  });
+
+  it('allows an administrator through the same creation permission', async () => {
+    mocks.getUserGroupRoutePermissions.mockResolvedValue({
+      containsPermission,
+      roles: [{ is_admin: true }],
+    });
+    expect((await post({ name: 'Quiz' })).status).toBe(200);
+    expect(containsPermission).toHaveBeenCalledWith(
+      'create_user_groups_scores'
+    );
+    expect(mocks.privateRpc).toHaveBeenCalledOnce();
+  });
+
+  it('does not let an admin-shaped context bypass missing creation permission', async () => {
+    containsPermission.mockReturnValue(false);
+    mocks.getUserGroupRoutePermissions.mockResolvedValue({
+      containsPermission,
+      roles: [{ is_admin: true }],
+    });
+    expect((await post({ name: 'Quiz' })).status).toBe(403);
+    expect(mocks.privateRpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects a missing name without invoking the database', async () => {
+    expect((await post({ name: '' })).status).toBe(400);
+    expect(mocks.privateRpc).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a database error without reporting success', async () => {
+    mocks.privateRpc.mockResolvedValue({
+      data: null,
+      error: { message: 'synthetic failure' },
+    });
+    const response = await post({ name: 'Quiz' });
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      message: 'Error creating indicator',
+    });
+  });
+});
