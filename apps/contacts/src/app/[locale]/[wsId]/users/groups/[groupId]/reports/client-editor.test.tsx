@@ -254,7 +254,7 @@ describe('group report dashboard with the mounted editor', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     );
     fireEvent.click(
-      screen.getByRole('button', { name: 'Student B', exact: true })
+      screen.getByRole('button', { name: /^Student B$/ })
     );
     await waitFor(() =>
       expect(mocks.load).toHaveBeenCalledWith(
