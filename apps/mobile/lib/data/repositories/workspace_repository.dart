@@ -25,15 +25,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 /// Ported from apps/native/lib/stores/workspace-store.ts.
 class WorkspaceRepository {
-  WorkspaceRepository({ApiClient? apiClient, http.Client? httpClient})
-    : _api = apiClient ?? ApiClient(),
-      _httpClient = httpClient ?? http.Client();
+  WorkspaceRepository({
+    ApiClient? apiClient,
+    http.Client? httpClient,
+    CacheStore? cacheStore,
+    String? Function()? cacheUserId,
+  }) : _api = apiClient ?? ApiClient(),
+       _httpClient = httpClient ?? http.Client(),
+       _cacheStore = cacheStore ?? CacheStore.instance,
+       _cacheUserId = cacheUserId ?? currentCacheUserId;
 
   static const _workspaceBaseSelect =
       'id, name, personal, avatar_url, created_at';
   static const CachePolicy _workspacesCachePolicy = CachePolicies.metadata;
   static const _workspacesCacheTag = 'workspace:list';
 
+  final CacheStore _cacheStore;
+  final String? Function() _cacheUserId;
   final ApiClient _api;
   final http.Client _httpClient;
   static const _selectedKey = 'selected-workspace';
@@ -144,10 +152,10 @@ class WorkspaceRepository {
 
   static const _defaultWorkspaceIdKey = 'default-workspace-id';
 
-  static CacheKey _workspacesCacheKey() {
+  CacheKey _workspacesCacheKey() {
     return CacheKey(
       namespace: 'workspace.list',
-      userId: currentCacheUserId(),
+      userId: _cacheUserId(),
       locale: currentCacheLocaleTag(),
     );
   }
@@ -169,6 +177,10 @@ class WorkspaceRepository {
       namespace: 'workspace.list',
       workspaceId: 'personal',
       path: '/api/v1/workspaces',
+      // Cached UI is read separately; membership decisions await the server.
+      forceRefresh: true,
+      cacheStore: _cacheStore,
+      cacheUserId: _cacheUserId,
     );
     return list
         .whereType<Map<String, dynamic>>()
@@ -195,14 +207,14 @@ class WorkspaceRepository {
   }
 
   Future<CacheReadResult<List<Workspace>>> readCachedWorkspaces() {
-    return CacheStore.instance.read<List<Workspace>>(
+    return _cacheStore.read<List<Workspace>>(
       key: _workspacesCacheKey(),
       decode: _decodeWorkspaces,
     );
   }
 
   Future<void> saveCachedWorkspaces(List<Workspace> workspaces) {
-    return CacheStore.instance.write(
+    return _cacheStore.write(
       key: _workspacesCacheKey(),
       policy: _workspacesCachePolicy,
       payload: workspaces.map((workspace) => workspace.toJson()).toList(),

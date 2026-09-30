@@ -29,3 +29,9 @@ timezone resolver test files. Required validation is `bun check:mobile`, queued
 through `ttr resources run --`. These tests do not schedule OS notifications or
 access live rows. Native delivery and user recurrence/import identity remain
 separate verification tasks.
+
+Workspace discovery retains cached UI snapshots during revalidation. An empty
+cached list does not confirm that membership was removed. Reminder cancellation
+for an empty membership list requires an awaited, successful server refresh;
+failed requests and responses invalidated by cache clearing preserve the
+existing reminder ledger until discovery succeeds. Logout still clears it.
