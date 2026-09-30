@@ -13,23 +13,11 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
+import { useLocale } from 'next-intl';
 import { useEffect, useRef } from 'react';
-
-function formatEventTime(startAt?: string, endAt?: string) {
-  if (!startAt || !endAt) return '';
-
-  const start = new Date(startAt);
-  const end = new Date(endAt);
-  const sameDay = start.toDateString() === end.toDateString();
-
-  if (sameDay) {
-    return `${format(start, 'EEE, MMM d')} - ${format(start, 'p')} - ${format(end, 'p')}`;
-  }
-
-  return `${format(start, 'MMM d, p')} - ${format(end, 'MMM d, p')}`;
-}
+import { formatEventPreviewTime } from './event-preview-time';
 
 function getSourceLabel(event: {
   provider?: string | null;
@@ -48,6 +36,8 @@ function getSourceLabel(event: {
 }
 
 export function EventPreviewPopover() {
+  const preferences = useCalendarPreferences();
+  const locale = useLocale();
   const {
     previewEvent,
     isPreviewOpen,
@@ -111,7 +101,12 @@ export function EventPreviewPopover() {
                 {previewEvent.title || 'Untitled event'}
               </h3>
               <p className="text-muted-foreground text-sm">
-                {formatEventTime(previewEvent.start_at, previewEvent.end_at)}
+                {formatEventPreviewTime(
+                  previewEvent.start_at,
+                  previewEvent.end_at,
+                  preferences,
+                  locale
+                )}
               </p>
             </div>
             <Button

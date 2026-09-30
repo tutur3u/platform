@@ -109,6 +109,31 @@ Calendar proxy responses should clear stale `sb-*-auth-token` cookies. A valid
 Calendar session is represented by Tuturuuu app-session cookies, not by a local
 Supabase browser session.
 
+## Calendar timezone boundaries
+
+Event start/end values are UTC instants. Display and picker controls resolve
+personal calendar timezone first, workspace timezone second, and device timezone
+when both inherit with `auto`. A browser-local `Date` used by a date-only calendar
+widget is a calendar-day carrier, not an event instant: project its year, month
+and day in the resolved timezone before passing selection, today or bounds.
+Compare end-time options on that same calendar day and derive minimum/maximum
+clock values in the same timezone. This matters when the browser and calendar
+are on different dates, for example Los Angeles and Ho Chi Minh City.
+
+Quick previews use the same resolved timezone, clock format and locale as the
+event form. Date/time edits must round-trip the requested wall time; nonexistent
+DST times must not silently normalize into another hour. Reselecting an unchanged
+ambiguous time or date preserves the original UTC instant. Tests cover these
+boundaries; they do not establish exhaustive correctness for every IANA history
+or changed ambiguous-time choice.
+
+Native all-day persistence and the outer calendar Today/header date contract
+remain separate concerns. Do not infer all-day intent solely from a 24-hour
+elapsed duration, and do not publish a DST duration helper in isolation from the
+persistence/rendering contract. Imported recurring provider events require
+exact-instance and neighboring-instance readback after an authorized UI edit.
+Never use real user calendar screenshots as public regression fixtures.
+
 ## API Ownership
 
 `apps/calendar` owns the Calendar product APIs. Its local handlers cover events
