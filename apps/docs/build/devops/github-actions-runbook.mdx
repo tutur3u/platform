@@ -218,6 +218,25 @@ so the repo-pinned Supabase CLI version is used instead of the anonymous
 `latest` release lookup, and retries failed setup attempts with bounded
 exponential backoff.
 
+### Rust dependency verification
+
+The combined `rust-backend.yml` workflow is paused in `tuturuuu.ci.ts`.
+Its disabled switch also applies to manual dispatch; skipped verify jobs do not
+prove native or wasm compilation, regardless of the aggregate check result.
+
+`rust-verify.yml` provides a separate manual, main-only CI verification route
+once registered on the default branch. Supply the exact 40-character source
+commit SHA. It verifies the checkout and records source/workflow SHAs,
+manifest and lock hashes, and the Rust toolchain in the run summary. It uses the
+repository's Rust 1.95 minimum to run locked native Clippy/tests, wasm Worker
+checking and a native release build. It uses read-only repository permissions,
+no deployment environment or secrets, and no shared cache writes.
+
+For dependency drafts, record the requested source SHA and the actual successful
+job result. This route does not run Docker packaging or worker-build bundling;
+those remain separate evidence gaps. Registering this workflow does not resume
+the paused migration/deployment workflow or authorize a production cutover.
+
 ### Docker automation
 
 - `docker-setup-check.yaml`
