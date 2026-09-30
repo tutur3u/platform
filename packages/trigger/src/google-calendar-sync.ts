@@ -1,6 +1,11 @@
 import { type calendar_v3, OAuth2Client } from '@tuturuuu/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { convertGoogleAllDayEvent } from '@tuturuuu/utils/calendar-utils';
+import {
+  type GoogleColorContext,
+  googleColorCompatibilityValue,
+  resolveGoogleEventColor,
+} from '@tuturuuu/utils/google-calendar-colors';
 import { updateLastUpsert } from './calendar-sync-coordination';
 
 // Batch processing configuration
@@ -37,27 +42,12 @@ export const getGoogleAuthClient = (tokens: {
   return oauth2Client;
 };
 
-const getColorFromGoogleColorId = (colorId?: string): string => {
-  const colorMap: Record<string, string> = {
-    '1': 'RED',
-    '2': 'GREEN',
-    '3': 'GRAY',
-    '4': 'PINK',
-    '5': 'YELLOW',
-    '6': 'ORANGE',
-    '8': 'CYAN',
-    '9': 'PURPLE',
-    '10': 'INDIGO',
-    '11': 'BLUE',
-  };
-  return colorId && colorMap[colorId] ? colorMap[colorId] : 'BLUE';
-};
-
 // Format event for database upsert and deletion
 export const formatEventForDb = (
   event: calendar_v3.Schema$Event,
   ws_id: string,
-  google_calendar_id?: string
+  google_calendar_id?: string,
+  colorContext: GoogleColorContext = {}
 ) => {
   const { start_at, end_at } = convertGoogleAllDayEvent(
     event.start?.dateTime || event.start?.date || '',
@@ -76,9 +66,13 @@ export const formatEventForDb = (
     start_at,
     end_at,
     location: event.location || '',
-    color: getColorFromGoogleColorId(event.colorId ?? undefined),
-    scheduling_metadata:
-      event.eventType === 'workingLocation'
+    color: googleColorCompatibilityValue(event.colorId),
+    scheduling_metadata: {
+      google_color: resolveGoogleEventColor(event, {
+        ...colorContext,
+        calendarId: google_calendar_id || 'primary',
+      }),
+      ...(event.eventType === 'workingLocation'
         ? {
             google_event_type: 'workingLocation',
             google_working_location_type:
@@ -86,7 +80,8 @@ export const formatEventForDb = (
             google_working_location_label:
               event.workingLocationProperties?.customLocation?.label ?? null,
           }
-        : null,
+        : {}),
+    },
     ws_id: ws_id,
     locked: true,
   };

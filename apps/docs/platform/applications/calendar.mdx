@@ -382,3 +382,27 @@ present the exact meeting and recipients for user confirmation before calling
 the send operation. These API tests do not establish live Gmail/Outlook delivery;
 verify invitations and RSVP updates using explicitly authorized test accounts
 before claiming provider interoperability.
+
+### Google color identity and inheritance
+
+Google inbound sync preserves the provider's explicit event color ID, calendar-scoped
+label ID, inherited-color intent and resolved opaque RGB in
+`scheduling_metadata.google_color`. The existing canonical event-color foreign key
+remains a compatibility value, not an exact Google color definition. Google labels
+take precedence over legacy event color IDs; an event with neither inherits the
+connected calendar's current RGB color. Calendar custom RGB takes precedence over
+its calendar palette ID, which belongs to a different palette from event IDs.
+
+Active sync refreshes the matching connection's source color even when no events
+changed. Missing provider metadata remains unresolved and observable rather than
+inventing a custom color. Label-definition changes without an event delta can leave
+an explicit event's resolved RGB snapshot stale until the event is fetched again.
+
+Unrelated title/time updates read the current Google event, preserve its exact
+color or label identity and use its ETag to reject concurrent changes. Native
+creates map their canonical color argument to the Google event palette.
+This backend foundation does not provide the full provider color picker or opaque
+UI rendering yet. Color-only edits and cross-calendar create/delete fallback for
+custom labels require the corresponding route and UI followup; these tests do not
+establish complete two-way color editing. Sync never rewrites a calendar's label
+array or implicitly publishes a private native calendar to Google.
