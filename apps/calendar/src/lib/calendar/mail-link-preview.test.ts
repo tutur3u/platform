@@ -1,3 +1,4 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -87,7 +88,7 @@ const providerEvent = {
 };
 
 /** Concrete query fake applies equality/in filters instead of returning unauthorized fixture rows. */
-function db(rows: Record<string, Record<string, any>[]>) {
+function db(rows: Record<string, Record<string, unknown>[]>) {
   const queries: Array<{ table: string; filters: Array<[string, unknown]> }> =
     [];
   return {
@@ -99,7 +100,7 @@ function db(rows: Record<string, Record<string, any>[]>) {
       let data = rows[table] ?? [];
       const record = { table, filters: [] as Array<[string, unknown]> };
       queries.push(record);
-      const query: any = {
+      const query = {
         select: () => query,
         eq: (key: string, value: unknown) => {
           record.filters.push([key, value]);
@@ -123,7 +124,9 @@ function db(rows: Record<string, Record<string, any>[]>) {
     },
   };
 }
-const makeDb = (extra: Partial<Record<string, Record<string, any>[]>> = {}) =>
+const makeDb = (
+  extra: Partial<Record<string, Record<string, unknown>[]>> = {}
+) =>
   db({
     workspace_calendar_events: [event],
     workspace_calendars: [
@@ -137,7 +140,7 @@ const args = (
   database: ReturnType<typeof db>,
   readProviderEvent = vi.fn(async () => providerEvent)
 ) => ({
-  sbAdmin: database as any,
+  sbAdmin: database as unknown as TypedSupabaseClient,
   wsId: 'ws',
   userId: 'actor',
   eventId: 'event',
@@ -291,7 +294,7 @@ describe('authorized Calendar link preview', () => {
   });
   it('uses exact Google GET and rejects cancelled/mismatched provider IDs', async () => {
     const source = (await resolveCalendarPreviewSource({
-      sbAdmin: makeDb() as any,
+      sbAdmin: makeDb() as unknown as TypedSupabaseClient,
       wsId: 'ws',
       userId: 'actor',
       provider: 'google',

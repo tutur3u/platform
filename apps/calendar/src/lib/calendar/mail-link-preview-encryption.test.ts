@@ -45,7 +45,14 @@ let encryptedFields: Awaited<
 >;
 let encryptedKey: string;
 let currentKey: { encrypted_key: string } | null;
-let stored: Record<string, unknown>;
+let stored: {
+  id: string;
+  title: string;
+  description: string;
+  location?: string | null;
+  is_encrypted: boolean;
+  [field: string]: unknown;
+};
 
 function database() {
   const rows: Record<string, Record<string, unknown>[]> = {
@@ -176,7 +183,7 @@ async function expectSuppressed() {
 
 it('demonstrates actual missing-key fallback returns the original encrypted row, then suppresses native/provider previews', async () => {
   currentKey = null;
-  const before = await decryptEventFromStorage(stored as any, 'ws');
+  const before = await decryptEventFromStorage(stored, 'ws');
   expect(before).toBe(stored);
   expect(before.title).toBe(encryptedFields.title);
   expect(before.is_encrypted).toBe(true);
@@ -201,7 +208,7 @@ it.each(['title', 'description', 'location'] as const)(
     const bytes = Buffer.from(encryptedFields[field]!, 'base64');
     bytes[bytes.length - 1] = bytes[bytes.length - 1]! ^ 1;
     stored[field] = bytes.toString('base64');
-    const before = await decryptEventFromStorage(stored as any, 'ws');
+    const before = await decryptEventFromStorage(stored, 'ws');
     expect(before.is_encrypted).toBe(false);
     expect(before[field]).toBe(stored[field]);
     await expectSuppressed();
@@ -235,7 +242,7 @@ it('suppresses wrong workspace keys and corrupt wrapped keys without provider co
   await expectSuppressed();
 });
 it('uses the actual encryption storage format and returns only plaintext for authenticated native data', async () => {
-  const real = await decryptEventFromStorage(stored as any, 'ws');
+  const real = await decryptEventFromStorage(stored, 'ws');
   expect(real).toMatchObject({ ...plain, is_encrypted: false });
   const response = await requestPreview();
   expect(response.status).toBe(200);

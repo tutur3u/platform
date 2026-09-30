@@ -17,7 +17,65 @@ import {
 type PreviewSource = NonNullable<
   Awaited<ReturnType<typeof resolveCalendarPreviewSource>>
 >;
-type ProviderEvent = Record<string, any>;
+type ProviderPerson = {
+  email?: string | null;
+  displayName?: string | null;
+  emailAddress?: { address?: string | null; name?: string | null } | null;
+  responseStatus?: string | null;
+  status?: { response?: string | null } | null;
+};
+type ProviderDateTime = {
+  date?: string | null;
+  dateTime?: string | null;
+  timeZone?: string | null;
+};
+type ProviderLocation = {
+  displayName?: string | null;
+  address?: {
+    street?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postalCode?: string | null;
+    countryOrRegion?: string | null;
+  } | null;
+};
+/** Only the explicit Google/Graph fields read for this authorized preview. */
+type ProviderEvent = {
+  id?: string | null;
+  status?: string | null;
+  isCancelled?: boolean | null;
+  etag?: string | null;
+  '@odata.etag'?: string | null;
+  updated?: string | null;
+  changeKey?: string | null;
+  lastModifiedDateTime?: string | null;
+  summary?: string | null;
+  subject?: string | null;
+  description?: string | null;
+  organizer?: ProviderPerson | null;
+  attendees?: ProviderPerson[] | null;
+  attendeesOmitted?: boolean | null;
+  guestsCanSeeOtherGuests?: boolean | null;
+  hideAttendees?: boolean | null;
+  location?: string | ProviderLocation | null;
+  conferenceData?: {
+    entryPoints?:
+      | { entryPointType?: string | null; uri?: string | null }[]
+      | null;
+  } | null;
+  hangoutLink?: string | null;
+  onlineMeeting?: { joinUrl?: string | null } | null;
+  start?: ProviderDateTime | null;
+  end?: ProviderDateTime | null;
+  originalStartTime?: ProviderDateTime | null;
+  originalStart?: string | null;
+  iCalUID?: string | null;
+  iCalUId?: string | null;
+  recurringEventId?: string | null;
+  seriesMasterId?: string | null;
+  recurrence?: string[] | null;
+  type?: string | null;
+};
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
@@ -41,7 +99,7 @@ function dateTime(
 }
 
 function person(
-  value: ProviderEvent | null | undefined,
+  value: ProviderPerson | null | undefined,
   accountEmail: string
 ): CalendarPreviewPerson | null {
   const email = text(value?.email ?? value?.emailAddress?.address);
@@ -89,7 +147,7 @@ export async function readCalendarProviderPreviewEvent(
       });
     return data.id === eventId && data.status !== 'cancelled' ? data : null;
   }
-  const event = await createGraphClient(source.accessToken!)
+  const event: ProviderEvent = await createGraphClient(source.accessToken!)
     .api(
       `/me/calendars/${encodeURIComponent(source.externalCalendarId)}/events/${encodeURIComponent(eventId)}`
     )
@@ -115,7 +173,7 @@ export function projectCalendarProviderPreview(args: {
     ? event.guestsCanSeeOtherGuests === false || event.attendeesOmitted === true
     : event.hideAttendees === true;
   const attendees = (Array.isArray(event.attendees) ? event.attendees : [])
-    .map((guest: ProviderEvent) => person(guest, accountEmail))
+    .map((guest) => person(guest, accountEmail))
     .filter(
       (guest: CalendarPreviewPerson | null): guest is CalendarPreviewPerson =>
         !!guest && (!restricted || guest.self === true)
@@ -131,7 +189,7 @@ export function projectCalendarProviderPreview(args: {
       : null;
   const joinCandidate = isGoogle
     ? (event.conferenceData?.entryPoints?.find(
-        (entry: ProviderEvent) => entry.entryPointType === 'video'
+        (entry) => entry.entryPointType === 'video'
       )?.uri ?? event.hangoutLink)
     : event.onlineMeeting?.joinUrl;
   const start = dateTime(event.start);
@@ -169,7 +227,7 @@ export function projectCalendarProviderPreview(args: {
       ? text(event.location)
         ? { displayName: text(event.location), address: null }
         : null
-      : event.location
+      : event.location && typeof event.location === 'object'
         ? {
             displayName: text(event.location.displayName),
             address: event.location.address

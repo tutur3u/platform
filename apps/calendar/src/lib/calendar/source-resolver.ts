@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@tuturuuu/supabase';
+import type { SupabaseClient, TypedSupabaseClient } from '@tuturuuu/supabase';
 
 export type CalendarSourceProvider = 'tuturuuu' | 'google' | 'microsoft';
 
@@ -495,11 +495,11 @@ export async function saveDefaultCalendarSource(args: {
 
 /** A disabled workspace source suppresses previews even when the connection remains enabled. */
 export async function isCalendarPreviewSourceEnabled(args: {
-  sbAdmin: SupabaseClient;
+  sbAdmin: TypedSupabaseClient;
   wsId: string;
   workspaceCalendarId: string;
 }) {
-  const { data, error } = await (args.sbAdmin as any)
+  const { data, error } = await args.sbAdmin
     .schema('private')
     .from('workspace_calendars')
     .select('id')
@@ -513,7 +513,7 @@ export async function isCalendarPreviewSourceEnabled(args: {
 
 /** Read-only preview resolution. No fallback, writable-role requirement or first-match selection. */
 export async function resolveCalendarPreviewSource(args: {
-  sbAdmin: SupabaseClient;
+  sbAdmin: TypedSupabaseClient;
   wsId: string;
   userId: string;
   provider: 'google' | 'microsoft';
