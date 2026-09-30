@@ -20,10 +20,10 @@ function renderCreation(kind: 'indicator' | 'category', pending = false) {
     mutateAsync,
     isPending: pending,
   } as unknown as UseMutationResult<unknown, Error, never>;
-  if (kind === 'indicator') {
-    render(
+  const dialog = (open: boolean) =>
+    kind === 'indicator' ? (
       <AddIndicatorDialog
-        open
+        open={open}
         onOpenChange={onOpenChange}
         createMutation={
           mutation as ComponentProps<
@@ -37,11 +37,9 @@ function renderCreation(kind: 'indicator' | 'category', pending = false) {
         }))}
         isAnyMutationPending={pending}
       />
-    );
-  } else {
-    render(
+    ) : (
       <AddCategoryDialog
-        open
+        open={open}
         onOpenChange={onOpenChange}
         createMutation={
           mutation as ComponentProps<typeof AddCategoryDialog>['createMutation']
@@ -49,8 +47,13 @@ function renderCreation(kind: 'indicator' | 'category', pending = false) {
         isAnyMutationPending={pending}
       />
     );
-  }
+  const view = render(dialog(true));
   return {
+    unmount: view.unmount,
+    reopen: () => {
+      view.rerender(dialog(false));
+      view.rerender(dialog(true));
+    },
     mutateAsync,
     onOpenChange,
     name: screen.getByLabelText(
@@ -120,6 +123,106 @@ describe.each(['indicator', 'category'] as const)(
       ).toBeDisabled();
       await act(async () => resolve());
       expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it.each(['Escape', 'Close', 'backdrop'] as const)(
+      'blocks %s while saving, then permits dismissal after failure and a clean reopen',
+      async (method) => {
+        const { name, submit, mutateAsync, onOpenChange, reopen } =
+          renderCreation(kind);
+        // Radix attaches its document pointer listener in the next timer turn.
+        await act(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        const dismiss = () => {
+          if (method === 'Escape')
+            fireEvent.keyDown(document, { key: 'Escape' });
+          else if (method === 'Close')
+            fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+          else {
+            const overlay = document.querySelector(
+              '[data-slot="dialog-overlay"]'
+            )!;
+            fireEvent.pointerDown(overlay, { button: 0 });
+            fireEvent.pointerUp(overlay, { button: 0 });
+            fireEvent.click(overlay, { button: 0 });
+          }
+        };
+        let reject!: (error: Error) => void;
+        mutateAsync.mockReturnValueOnce(
+          new Promise((_resolve, fail) => {
+            reject = fail;
+          })
+        );
+        fireEvent.change(name, { target: { value: 'Interrupted quiz' } });
+        fireEvent.click(submit);
+        dismiss();
+        // Complete Radix's deferred outside-click turn while the save remains unresolved.
+        await act(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        expect(onOpenChange).not.toHaveBeenCalled();
+        expect(screen.getByRole('dialog')).toBeVisible();
+        expect(name).toHaveValue('Interrupted quiz');
+        expect(mutateAsync).toHaveBeenCalledOnce();
+        await act(async () => reject(new Error('synthetic interrupted save')));
+        expect(await screen.findByRole('alert')).toBeVisible();
+        dismiss();
+        await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+        reopen();
+        expect(
+          screen.getByLabelText(
+            kind === 'indicator' ? 'indicator_name' : 'metric_category_name'
+          )
+        ).toHaveValue('');
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(
+          screen.getByRole('button', {
+            name:
+              kind === 'indicator' ? 'add_indicator' : 'add_metric_category',
+          })
+        ).toBeDisabled();
+      }
+    );
+
+    it('isolates a fresh mount from a failed request settling after unmount', async () => {
+      const first = renderCreation(kind);
+      let reject!: (error: Error) => void;
+      first.mutateAsync.mockReturnValueOnce(
+        new Promise((_resolve, fail) => {
+          reject = fail;
+        })
+      );
+      fireEvent.change(first.name, { target: { value: 'Old draft' } });
+      fireEvent.click(first.submit);
+      first.unmount();
+      const fresh = renderCreation(kind);
+      await act(async () => reject(new Error('synthetic late failure')));
+      expect(first.mutateAsync).toHaveBeenCalledOnce();
+      expect(first.onOpenChange).not.toHaveBeenCalled();
+      expect(fresh.name).toHaveValue('');
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(fresh.onOpenChange).not.toHaveBeenCalled();
+      fireEvent.change(fresh.name, { target: { value: 'New quiz' } });
+      fireEvent.click(fresh.submit);
+      await waitFor(() =>
+        expect(fresh.onOpenChange).toHaveBeenCalledWith(false)
+      );
+      expect(fresh.mutateAsync).toHaveBeenCalledOnce();
+    });
+
+    it('starts with an empty draft and no error after a failed dialog is unmounted', async () => {
+      const first = renderCreation(kind);
+      first.mutateAsync.mockRejectedValueOnce(new Error('synthetic failure'));
+      fireEvent.change(first.name, { target: { value: 'Old draft' } });
+      fireEvent.click(first.submit);
+      await screen.findByRole('alert');
+      first.unmount();
+      const fresh = renderCreation(kind);
+      expect(fresh.name).toHaveValue('');
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(fresh.submit).toBeDisabled();
+      expect(fresh.mutateAsync).not.toHaveBeenCalled();
     });
 
     it('blocks creation during other pending mutations', () => {
