@@ -7,53 +7,22 @@ import {
   getSyncToken,
   storeSyncToken,
 } from '@tuturuuu/trigger/google-calendar-sync';
+import type { GoogleColorContext } from '@tuturuuu/utils/google-calendar-colors';
 import { NextResponse } from 'next/server';
 import { sanitizeWorkspaceCalendarEventFields } from '@/lib/calendar/sync-field-limits';
 import { encryptGoogleSyncEvents } from '@/lib/workspace-encryption';
+import { refreshGoogleColorContext } from './google-color-context';
+import {
+  filterEventsByStatus,
+  getCancelledGoogleEventIds,
+} from './google-sync-events';
 
 type IncrementalSyncOptions = {
   syncDeletes?: boolean;
+  colorContext?: GoogleColorContext;
 };
 
-/**
- * Filters events by date range and status using a pipe pattern
- */
-function filterEventsByStatus(events: calendar_v3.Schema$Event[]) {
-  const result = events.reduce(
-    (acc, event) => {
-      // Filter by status
-      if (event.status === 'cancelled') {
-        acc.eventsToDelete.push(event);
-      } else {
-        acc.eventsToUpsert.push(event);
-      }
-      return acc;
-    },
-    {
-      eventsToUpsert: [] as calendar_v3.Schema$Event[],
-      eventsToDelete: [] as calendar_v3.Schema$Event[],
-    }
-  );
-
-  console.debug('✅ [DEBUG] filterEventsByStatus completed:', {
-    originalEventsCount: events.length,
-    eventsToUpsertCount: result.eventsToUpsert.length,
-    eventsToDeleteCount: result.eventsToDelete.length,
-  });
-
-  return result;
-}
-
-export function getCancelledGoogleEventIds(events: calendar_v3.Schema$Event[]) {
-  return [
-    ...new Set(
-      events
-        .filter((event) => event.status === 'cancelled')
-        .map((event) => event.id)
-        .filter((id): id is string => Boolean(id))
-    ),
-  ];
-}
+export { getCancelledGoogleEventIds } from './google-sync-events';
 
 export async function performIncrementalActiveSync(
   wsId: string,
@@ -248,6 +217,13 @@ export async function performIncrementalActiveSync(
   console.debug('✅ [DEBUG] Google Calendar client created successfully');
 
   try {
+    const colorContext = await refreshGoogleColorContext({
+      calendar,
+      calendarId,
+      supabase,
+      wsId,
+      authTokenId,
+    });
     console.debug('🔍 [DEBUG] Getting active sync token...');
     const syncToken = await getSyncToken(wsId, syncTokenKey);
     console.debug('🔍 [DEBUG] Sync token result:', {
@@ -384,7 +360,7 @@ export async function performIncrementalActiveSync(
           calendarId,
           globalEncryptedIds,
           sourceCalendarId,
-          options
+          { ...options, colorContext }
         );
         metrics.eventProcessingMs = result.timings.eventProcessingMs;
         metrics.databaseWritesMs = result.timings.databaseWritesMs;
@@ -482,7 +458,12 @@ async function incrementalActiveSync(
   });
 
   const formattedEventsToUpsert = eventsToUpsert.map((event) => {
-    const formatted = formatEventForDb(event, wsId, calendarId);
+    const formatted = formatEventForDb(
+      event,
+      wsId,
+      calendarId,
+      options.colorContext
+    );
     return sanitizeWorkspaceCalendarEventFields({
       ...formatted,
       provider: 'google' as const,

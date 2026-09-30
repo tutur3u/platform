@@ -9,7 +9,6 @@ import {
 import { Info, Keyboard, Loader2, Search } from '@tuturuuu/icons';
 import {
   deleteMailDraft,
-  listMailThreads,
   type MailThreadSummary,
   type SendMailMessagePayload,
   sendMailMessage,
@@ -52,10 +51,10 @@ import { MailQuickFilters } from './mail-quick-filters';
 import { createMailReplyActions } from './mail-reply-actions';
 import { MailSyncStatus } from './mail-sync-status';
 import { mailThreadDetailQuery } from './mail-thread-detail-query';
+import { loadMailThreadPage } from './mail-thread-page-query';
 import {
   getMailThreadsQueryKey,
   getNextMailThreadPage,
-  MAIL_THREAD_PAGE_SIZE,
 } from './mail-thread-query';
 import { ThreadDetail } from './thread-detail';
 import { useMailBootstrap } from './use-mail-bootstrap';
@@ -139,14 +138,18 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     getNextPageParam: getNextMailThreadPage,
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
-      listMailThreads(workspaceId, activeMailboxId ?? '', {
-        folder,
-        folderId: folderId ?? undefined,
-        label: label ?? undefined,
-        page: pageParam,
-        pageSize: MAIL_THREAD_PAGE_SIZE,
-        query: query || undefined,
-      }),
+      loadMailThreadPage(
+        queryClient,
+        {
+          folder,
+          folderId,
+          label,
+          mailboxId: activeMailboxId ?? '',
+          query,
+          workspaceId,
+        },
+        pageParam
+      ),
     queryKey: threadQueryKey,
     staleTime: 30_000,
     refetchInterval:

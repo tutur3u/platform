@@ -3803,6 +3803,9 @@
     "settingsTimezoneDescription": "Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.",
     "settingsTimezoneAuto": "Automatic",
     "settingsTimezoneSearch": "Search timezones",
+    "settingsTimezoneLoading": "Resolving timezone…",
+    "settingsTimezoneAccountPending": "Waiting for your account.",
+    "settingsTimezoneUnknown": "Unknown",
     "settingsTimezoneEffective": "Effective timezone: {timezone}",
     "settingsTimezoneError": "Could not load or save timezone. Tap to retry.",
     "@settingsTimezoneEffective": {

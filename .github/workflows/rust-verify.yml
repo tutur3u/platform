@@ -1,0 +1,85 @@
+name: Rust Dependency Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: "Exact repository commit to compile and test (40 lowercase hex characters)."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-dependency-verify-${{ inputs.source_sha }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify exact-source native and wasm Rust
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      CARGO_BUILD_JOBS: "2"
+      CARGO_HTTP_MULTIPLEXING: "false"
+      CARGO_NET_RETRY: "10"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    defaults:
+      run:
+        working-directory: ./apps/backend
+    steps:
+      - name: Validate exact source SHA
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+
+      - name: Verify checked out source
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          {
+            echo "Source SHA: $SOURCE_SHA"
+            echo "Workflow SHA: $GITHUB_SHA"
+            sha256sum apps/backend/Cargo.toml apps/backend/Cargo.lock
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup repository minimum Rust toolchain
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # verified stable implementation
+        with:
+          toolchain: "1.95.0"
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - name: Record toolchain
+        run: rustc --version --verbose >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Download locked modules
+        run: bash ../../scripts/ci/run-with-backoff.sh cargo fetch --locked
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Clippy native targets
+        run: cargo clippy --locked --all-targets --features native -- -D warnings
+
+      - name: Test native backend
+        run: cargo test --locked
+
+      - name: Check wasm Worker target
+        run: cargo check --locked --target wasm32-unknown-unknown --no-default-features --features worker
+
+      - name: Build native release binary
+        run: cargo build --locked --release --features native --bin backend
