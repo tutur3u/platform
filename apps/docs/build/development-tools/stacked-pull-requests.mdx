@@ -1,7 +1,7 @@
 ---
 title: "Stacked Pull Requests"
 description: "Split large work into a stack of dependent pull requests so each one stays reviewable, and merge the stack bottom-up without losing the chain."
-updatedAt: "2026-08-26"
+updatedAt: "2026-09-30"
 ---
 
 <Info>
@@ -16,13 +16,17 @@ A stack is a chain of pull requests where each one targets the branch below it
 instead of `main`. Use it when a change is too large to review in one sitting,
 or when follow-up work builds on a branch that has not merged yet.
 
-GitHub has a first-class feature for this, currently **in public preview**. It
-tracks the chain as a unit, and merging one pull request rebases and retargets
-the rest. Use it when you can:
+Native GitHub stacks are a **pilot**, not this repository's default. Continue
+base chaining for existing work. Do not rebase, rewrite or reinstall tooling on
+green published branches merely to adopt the pilot.
 
-```bash
-gh extension install github/gh-stack
-```
+Before a separately owned pilot, verify fully linear branch history, same-repository
+branches, trunk-based rules/workflow behavior, cascading updates, and exact-head
+checks against GitHub's current [linear-history contract](https://docs.github.com/en/pull-requests/how-tos/create-pull-requests/managing-stacked-pull-requests).
+The pilot owner records its results before proposing broader adoption. A native
+stack's trunk supplies merge requirements and pull-request workflow selection;
+that behavior differs from ordinary base chaining. See GitHub's
+[CI contract](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/optimizing-ci-for-stacked-pull-requests).
 
 Everything still merges bottom-up — that is GitHub's rule, not a convention:
 "pull requests must merge from the bottom up."
