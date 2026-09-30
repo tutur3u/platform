@@ -212,11 +212,20 @@ independently.
 These cover staging schema promotion and production schema promotion.
 
 Database workflows that install the Supabase CLI use
-`.github/actions/setup-supabase-cli-with-retry` after checkout. The local action
-passes `github.token` through to `supabase/setup-cli@v2`, leaves `version` empty
-so the repo-pinned Supabase CLI version is used instead of the anonymous
-`latest` release lookup, and retries failed setup attempts with bounded
-exponential backoff.
+`.github/actions/setup-supabase-cli-with-retry` after checkout with Node 20+ and
+npm available. The wrapper pins setup-cli v3.0.1 to its reviewed commit and passes
+the exact stable CLI version resolved for `apps/database` in the root `bun.lock`.
+A missing or malformed pin fails before installation; there is no `latest`
+fallback. Explicit overrides must be exact stable versions. The v3 action no
+longer accepts `github-token`, so callers do not pass a token.
+
+The installer gets a runner-temporary home to protect any existing Bun binary.
+An always-running restoration step verifies that binary's version and restores
+its PATH priority, while retaining the installed CLI path. Jobs without an
+existing Bun runtime keep the installer's runtime. Four attempts use 5, 10 and
+20-second backoff; a fourth failure still fails the job. Real installer and
+follow-on runtime behavior must pass the owning exact-commit CI jobs before
+integration; this does not authorize a migration dispatch.
 
 ### Docker automation
 
