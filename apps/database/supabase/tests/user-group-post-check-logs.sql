@@ -89,6 +89,7 @@ select ok(
     from pg_policies
     where schemaname = 'private'
       and tablename = 'user_group_post_check_logs'
+      and permissive = 'PERMISSIVE'
   ),
   'post check audit logs expose no permissive RLS policies'
 );
