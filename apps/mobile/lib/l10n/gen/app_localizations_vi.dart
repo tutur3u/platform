@@ -9343,4 +9343,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get calendarInvalidLocalTime => 'Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè.';
+
+  @override
+  String get profileOverviewTab => 'Tổng quan';
+
+  @override
+  String get profileTimelineTab => 'Dòng thời gian';
 }

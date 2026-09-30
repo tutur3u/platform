@@ -3761,5 +3761,7 @@
             }
         }
     },
-    "calendarInvalidLocalTime": "Choose a valid start and end time. Some times do not exist when daylight saving time changes."
+    "calendarInvalidLocalTime": "Choose a valid start and end time. Some times do not exist when daylight saving time changes.",
+    "profileOverviewTab": "Overview",
+    "profileTimelineTab": "Timeline"
 }

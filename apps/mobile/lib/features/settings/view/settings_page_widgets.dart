@@ -21,9 +21,9 @@ class _SettingsOverviewSection extends StatelessWidget {
           children: [
             SettingsTile(
               grouped: true,
-              icon: Icons.tune_rounded,
-              title: l10n.settingsPreferencesSectionTitle,
-              onTap: () => context.push(Routes.settingsPreferences),
+              icon: Icons.workspaces_outline,
+              title: l10n.settingsNavWorkspace,
+              onTap: () => context.push(Routes.settingsWorkspace),
             ),
             SettingsTile(
               grouped: true,
@@ -80,6 +80,15 @@ class _SettingsOverviewSection extends StatelessWidget {
             ),
             SettingsTile(
               grouped: true,
+              icon: Icons.description_outlined,
+              title: l10n.settingsLicensesSectionTitle,
+              onTap: () => showLicensePage(
+                context: context,
+                applicationName: 'Tuturuuu',
+              ),
+            ),
+            SettingsTile(
+              grouped: true,
               icon: Icons.info_outline_rounded,
               title: l10n.settingsAboutSectionTitle,
               onTap: () => context.push(Routes.settingsAbout),
@@ -132,6 +141,16 @@ class _AboutSection extends StatelessWidget {
           title: l10n.settingsWhatsNew,
           subtitle: l10n.settingsWhatsNewDescription,
           onTap: () => context.push(Routes.settingsWhatsNew),
+        ),
+        SettingsTile(
+          icon: Icons.description_outlined,
+          title: l10n.settingsLicensesSectionTitle,
+          subtitle: l10n.settingsLicenseViewerDescription,
+          onTap: () => showLicensePage(
+            context: context,
+            applicationName: packageInfo?.appName ?? 'Tuturuuu',
+            applicationVersion: _formatVersionLabel(packageInfo),
+          ),
         ),
         SettingsTile(
           icon: Icons.info_outline_rounded,
@@ -218,6 +237,8 @@ class _ExperimentalAppsSection extends StatelessWidget {
 
 class _PreferencesSection extends StatelessWidget {
   const _PreferencesSection({
+    required this.permissionsRepository,
+    required this.permissionsRevision,
     required this.themeLabel,
     required this.showFinanceAmounts,
     required this.languageLabel,
@@ -232,6 +253,8 @@ class _PreferencesSection extends StatelessWidget {
     required this.onToggleHaptics,
   });
 
+  final WorkspacePermissionsRepository permissionsRepository;
+  final int permissionsRevision;
   final String themeLabel;
   final bool showFinanceAmounts;
   final String languageLabel;
@@ -249,11 +272,22 @@ class _PreferencesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
+    final auth = context.watch<AuthCubit?>();
+    final userId = auth == null ? currentCacheUserId() : auth.state.user?.id;
+    final workspaceId = context
+        .watch<WorkspaceCubit>()
+        .state
+        .currentWorkspace
+        ?.id;
     final tiles = <Widget>[
-      TimezoneSettingsTile(
-        userId: currentCacheUserId(),
-        workspaceId: context.watch<WorkspaceCubit>().state.currentWorkspace?.id,
-      ),
+      TimezoneSettingsTile(userId: userId, workspaceId: workspaceId),
+      if (workspaceId != null)
+        WorkspaceTimezoneSettingsTile(
+          userId: userId,
+          workspaceId: workspaceId,
+          permissionsRepository: permissionsRepository,
+          refreshRevision: permissionsRevision,
+        ),
       SettingsTile(
         icon: Icons.palette_outlined,
         title: l10n.settingsTheme,
@@ -329,7 +363,7 @@ class _PreferencesSection extends StatelessWidget {
     ];
     return LayoutBuilder(
       builder: (context, constraints) => SettingsSection(
-        title: '',
+        title: l10n.settingsPreferencesSectionTitle,
         children: constraints.maxWidth < 840
             ? tiles
             : [

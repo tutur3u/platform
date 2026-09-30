@@ -9409,4 +9409,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarInvalidLocalTime => 'Choose a valid start and end time. Some times do not exist when daylight saving time changes.';
+
+  @override
+  String get profileOverviewTab => 'Overview';
+
+  @override
+  String get profileTimelineTab => 'Timeline';
 }
