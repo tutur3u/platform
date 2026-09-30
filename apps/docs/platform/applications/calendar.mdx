@@ -120,8 +120,8 @@ Compare end-time options on that same calendar day and derive minimum/maximum
 clock values in the same timezone. This matters when the browser and calendar
 are on different dates, for example Los Angeles and Ho Chi Minh City.
 
-Quick previews use the same resolved timezone, clock format and locale as the
-event form. Date/time edits must round-trip the requested wall time; nonexistent
+Quick previews use the same resolved timezone and clock format as the event
+form, localized to the current locale. Date/time edits must round-trip the requested wall time; nonexistent
 DST times must not silently normalize into another hour. Reselecting an unchanged
 ambiguous time or date preserves the original UTC instant. Tests cover these
 boundaries; they do not establish exhaustive correctness for every IANA history
