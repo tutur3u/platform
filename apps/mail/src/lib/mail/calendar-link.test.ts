@@ -1,5 +1,8 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import type { CalendarInvitation } from './calendar-invitation';
+import {
+  type CalendarInvitation,
+  parseCalendarInvitation,
+} from './calendar-invitation';
 import {
   type AuthorizedCalendarLinkTarget,
   type CalendarLinkDependencies,
@@ -264,4 +267,84 @@ it('rejects a stale preview when another explicit association won before confirm
   expect((await service.preview(selection))?.existingTarget?.eventId).toBe(
     'other-hold'
   );
+});
+
+it.each(['Custom:Zone', 'Custom;Zone'])(
+  'canonicalizes validated quoted timezone %s and reordered recurrence parameters',
+  (zone) => {
+    const request = (recurrence: string) =>
+      [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'METHOD:REQUEST',
+        'BEGIN:VTIMEZONE',
+        `TZID:${zone}`,
+        'BEGIN:STANDARD',
+        'DTSTART:16010101T000000',
+        'TZOFFSETFROM:+0700',
+        'TZOFFSETTO:+0700',
+        'END:STANDARD',
+        'END:VTIMEZONE',
+        'BEGIN:VEVENT',
+        'UID:synthetic@example.test',
+        'SEQUENCE:1',
+        'DTSTAMP:20260930T120000Z',
+        'DTSTART:20261002T063000Z',
+        'ORGANIZER:mailto:host@example.test',
+        'ATTENDEE;RSVP=TRUE:mailto:guest@example.test',
+        recurrence,
+        'END:VEVENT',
+        'END:VCALENDAR',
+        '',
+      ].join('\r\n');
+    const a = parseCalendarInvitation(
+      request(`RECURRENCE-ID;TZID="${zone}";VALUE=DATE-TIME:20261002T133000`),
+      'guest@example.test'
+    );
+    const b = parseCalendarInvitation(
+      request(`recurrence-id;VALUE=DATE-TIME;TZID="${zone}":20261002T133000`),
+      'guest@example.test'
+    );
+    expect(a).not.toBeNull();
+    expect(b).not.toBeNull();
+    const first = invitationLinkIdentity('actor', 'box', a!);
+    const second = invitationLinkIdentity('actor', 'box', b!);
+    expect(first.occurrence).toEqual({
+      value: '20261002T133000',
+      valueType: 'DATE-TIME',
+      timezone: zone,
+    });
+    expect(invitationAssociationKey(first)).toBe(
+      invitationAssociationKey(second)
+    );
+  }
+);
+it('preserves identity, preview receipts and duplicate confirmation across reordered JSON persistence fields', async () => {
+  target = {
+    ...hold,
+    identity: {
+      ...hold.identity,
+      occurrence: {
+        value: '20261002T133000',
+        valueType: 'DATE-TIME',
+        timezone: 'Custom:Zone',
+      },
+    },
+  };
+  const service = createCalendarLinkService(deps);
+  const initial = await service.preview(selection);
+  await service.confirm(selection, initial!.receipt);
+  const before = await service.preview(selection);
+  const reorder = (_key: string, value: unknown) =>
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? Object.fromEntries(Object.entries(value).reverse())
+      : value;
+  saved = JSON.parse(JSON.stringify(saved, reorder));
+  target = JSON.parse(JSON.stringify(target, reorder));
+  expect(await service.linkedTarget('actor', 'box', 'request')).not.toBeNull();
+  expect((await service.preview(selection))?.receipt).toBe(before?.receipt);
+  expect((await service.confirm(selection, initial!.receipt)).status).toBe(
+    'linked'
+  );
+  expect(deps.saveAssociation).toHaveBeenCalledTimes(1);
 });

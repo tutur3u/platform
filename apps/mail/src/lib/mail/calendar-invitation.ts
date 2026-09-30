@@ -58,6 +58,22 @@ function property(line: string): Property | null {
   return { name, params, value: line.slice(colon + 1), line };
 }
 
+/** Uses the same quote-aware content-line grammar as invitation validation. */
+export function calendarRecurrenceIdentity(line: string | null) {
+  if (!line) return null;
+  const parsed = property(line);
+  if (parsed?.name !== 'RECURRENCE-ID')
+    throw new Error('Invalid validated recurrence property');
+  return {
+    value: parsed.value,
+    valueType:
+      parsed.params.VALUE?.toUpperCase() === 'DATE'
+        ? ('DATE' as const)
+        : ('DATE-TIME' as const),
+    timezone: parsed.params.TZID ?? null,
+  };
+}
+
 function address(value: string) {
   const match = /^mailto:([^\s<>;,"\\]+@[^\s<>;,"\\]+)$/iu.exec(value);
   return match?.[1]?.toLowerCase() ?? null;

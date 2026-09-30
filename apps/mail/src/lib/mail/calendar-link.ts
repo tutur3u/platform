@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto';
-import type { CalendarInvitation } from './calendar-invitation';
+import {
+  type CalendarInvitation,
+  calendarRecurrenceIdentity,
+} from './calendar-invitation';
 
 export type CalendarOccurrenceIdentity = {
   value: string;
@@ -68,37 +71,51 @@ export function invitationLinkIdentity(
     uid: invitation.uid,
     organizer: invitation.organizer,
     attendee: invitation.attendee,
-    occurrence: occurrenceIdentity(invitation.recurrence),
+    occurrence: calendarRecurrenceIdentity(invitation.recurrence),
   };
 }
-function occurrenceIdentity(line: string | null): CalendarOccurrenceIdentity {
-  if (!line) return null;
-  const colon = line.indexOf(':');
-  if (colon < 0) throw new Error('Invalid validated recurrence identity');
-  const parts = line.slice(0, colon).split(';');
-  if (parts.shift()?.toUpperCase() !== 'RECURRENCE-ID')
-    throw new Error('Invalid validated recurrence property');
-  let timezone: string | null = null;
-  let valueType: 'DATE' | 'DATE-TIME' = 'DATE-TIME';
-  for (const part of parts) {
-    const equals = part.indexOf('=');
-    const name = part.slice(0, equals).toUpperCase();
-    const value = part.slice(equals + 1).replace(/^"|"$/gu, '');
-    if (name === 'TZID') timezone = value;
-    else if (name === 'VALUE' && value.toUpperCase() === 'DATE')
-      valueType = 'DATE';
-  }
-  return { value: line.slice(colon + 1), valueType, timezone };
+function occurrenceTuple(occurrence: CalendarOccurrenceIdentity) {
+  return occurrence
+    ? [occurrence.value, occurrence.valueType, occurrence.timezone]
+    : null;
 }
-export function invitationAssociationKey(identity: MailInvitationIdentity) {
-  return digest([
+function invitationTuple(identity: MailInvitationIdentity) {
+  return [
     identity.actorId,
     identity.mailboxId,
     identity.uid,
     identity.organizer,
     identity.attendee,
-    identity.occurrence,
-  ]);
+    occurrenceTuple(identity.occurrence),
+  ];
+}
+function targetTuple(target: CalendarLinkTargetIdentity) {
+  return [
+    target.workspaceId,
+    target.eventId,
+    target.provider,
+    target.calendarId,
+    target.connectionId,
+    target.accountOwnerId,
+    target.externalEventId,
+    occurrenceTuple(target.occurrence),
+  ];
+}
+function targetAuthorityTuple(target: AuthorizedCalendarLinkTarget) {
+  return [
+    targetTuple(target.identity),
+    target.title,
+    target.organizer,
+    [...target.attendees].sort(),
+    target.location,
+    target.joinUrl,
+    target.start,
+    target.end,
+    target.accountLabel,
+  ];
+}
+export function invitationAssociationKey(identity: MailInvitationIdentity) {
+  return digest(invitationTuple(identity));
 }
 function digest(value: unknown) {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -107,28 +124,7 @@ function sameTarget(
   a: CalendarLinkTargetIdentity,
   b: CalendarLinkTargetIdentity
 ) {
-  return (
-    digest([
-      a.workspaceId,
-      a.eventId,
-      a.provider,
-      a.calendarId,
-      a.connectionId,
-      a.accountOwnerId,
-      a.externalEventId,
-      a.occurrence,
-    ]) ===
-    digest([
-      b.workspaceId,
-      b.eventId,
-      b.provider,
-      b.calendarId,
-      b.connectionId,
-      b.accountOwnerId,
-      b.externalEventId,
-      b.occurrence,
-    ])
-  );
+  return digest(targetTuple(a)) === digest(targetTuple(b));
 }
 
 function associationReceipt(saved: MailCalendarAssociation | null) {
@@ -137,7 +133,7 @@ function associationReceipt(saved: MailCalendarAssociation | null) {
       ? [
           invitationAssociationKey(saved.invitation),
           saved.sequence,
-          saved.target,
+          targetTuple(saved.target),
           saved.receipt,
           saved.authorityReceipt,
         ]
@@ -234,10 +230,10 @@ export function createCalendarLinkService(deps: CalendarLinkDependencies) {
       joinUrl: source.joinUrl,
     };
     const authorityReceipt = digest([
-      invitation,
+      invitationTuple(invitation),
       source.sequence,
-      original,
-      target,
+      [original.summary, original.when, original.location, original.joinUrl],
+      targetAuthorityTuple(target),
     ]);
     const existingReceipt = associationReceipt(saved);
     return {
