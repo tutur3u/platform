@@ -1,4 +1,3 @@
-import '@testing-library/jest-dom/vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   act,
@@ -102,19 +101,21 @@ describe('actual Calendar navigation Today surfaces', () => {
           <MiniMonthCalendar />
         </CalendarNavigationProvider>
       );
-      expect(screen.getByTestId('selected')).toHaveTextContent('2026-01-01');
+      expect(screen.getByTestId('selected').textContent).toBe('2026-01-01');
       expect(
-        screen.getByRole('button', { name: 'Thursday, January 1st, 2026' })
-      ).toHaveAttribute('aria-current', 'date');
+        screen
+          .getByRole('button', { name: 'Thursday, January 1st, 2026' })
+          .getAttribute('aria-current')
+      ).toBe('date');
       fireEvent.click(screen.getByText('Pick January 10'));
       fireEvent.click(screen.getAllByRole('button', { name: 'today' })[0]!);
-      expect(screen.getByTestId('selected')).toHaveTextContent('2026-01-01');
+      expect(screen.getByTestId('selected').textContent).toBe('2026-01-01');
       fireEvent.click(screen.getByText('Pick January 10'));
       fireEvent.click(screen.getAllByRole('button', { name: 'today' })[1]!);
-      expect(screen.getByTestId('selected')).toHaveTextContent('2026-01-01');
+      expect(screen.getByTestId('selected').textContent).toBe('2026-01-01');
       fireEvent.click(screen.getByText('Pick January 10'));
       fireEvent.click(screen.getByText('Change zone'));
-      expect(screen.getByTestId('selected')).toHaveTextContent('2026-01-10');
+      expect(screen.getByTestId('selected').textContent).toBe('2026-01-10');
     }
   );
   it('updates header and sidebar Today at midnight without moving the selection', () => {
@@ -128,14 +129,16 @@ describe('actual Calendar navigation Today surfaces', () => {
       </CalendarNavigationProvider>
     );
     fireEvent.click(screen.getByText('Pick January 10'));
-    expect(screen.getByTestId('selected')).toHaveTextContent('2026-01-10');
+    expect(screen.getByTestId('selected').textContent).toBe('2026-01-10');
     act(() => vi.advanceTimersByTime(60_000));
-    expect(screen.getByTestId('selected')).toHaveTextContent('2026-01-10');
+    expect(screen.getByTestId('selected').textContent).toBe('2026-01-10');
     expect(
-      screen.getByRole('button', { name: 'Thursday, January 1st, 2026' })
-    ).toHaveAttribute('aria-current', 'date');
+      screen
+        .getByRole('button', { name: 'Thursday, January 1st, 2026' })
+        .getAttribute('aria-current')
+    ).toBe('date');
     fireEvent.click(screen.getAllByRole('button', { name: 'today' })[0]!);
-    expect(screen.getByTestId('selected')).toHaveTextContent('2026-01-01');
+    expect(screen.getByTestId('selected').textContent).toBe('2026-01-01');
   });
   it('applies a deep link once without resetting a later selection on timezone changes', () => {
     settings.zone = 'Asia/Tokyo';
@@ -153,10 +156,10 @@ describe('actual Calendar navigation Today surfaces', () => {
         />
       </CalendarNavigationProvider>
     );
-    expect(screen.getByTestId('selected')).toHaveTextContent('2026-01-01');
+    expect(screen.getByTestId('selected').textContent).toBe('2026-01-01');
     fireEvent.click(screen.getByText('Pick January 10'));
     fireEvent.click(screen.getByText('Change zone'));
-    expect(screen.getByTestId('selected')).toHaveTextContent('2026-01-10');
+    expect(screen.getByTestId('selected').textContent).toBe('2026-01-10');
   });
   it('distinguishes explicit date-only links from event instants', () => {
     expect(
