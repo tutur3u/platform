@@ -170,21 +170,29 @@ export async function releaseHistory({
   releases.push({ version, date, sha });
 
   let previousSha = historyBaseTag(current, sha, git);
-  return releases.map((item) => {
-    if (!item.sha) {
-      console.warn(
-        `No source workflow for TestFlight ${item.version} (build ${item.buildNumber}); keeping the version without inferred changes.`
-      );
-      return { version: item.version, date: item.date, changes: [] };
-    }
-    if (!previousSha) {
+  return releases
+    .map((item) => {
+      if (!item.sha) {
+        console.warn(
+          `No source workflow for TestFlight ${item.version} (build ${item.buildNumber}); keeping the version without inferred changes.`
+        );
+        return { version: item.version, date: item.date, changes: [] };
+      }
+      if (!previousSha) {
+        previousSha = item.sha;
+        return { version: item.version, date: item.date, changes: [] };
+      }
+      const changes = changesBetween(previousSha, item.sha, git);
       previousSha = item.sha;
-      return { version: item.version, date: item.date, changes: [] };
-    }
-    const changes = changesBetween(previousSha, item.sha, git);
-    previousSha = item.sha;
-    return { version: item.version, date: item.date, changes };
-  });
+      return { version: item.version, date: item.date, changes };
+    })
+    .filter((item) => {
+      // A release-tag commit has no changes after its own .0 tag. Omitting that
+      // generated entry preserves the complete Release Please CHANGELOG notes.
+      return (
+        item.version !== version || current[2] !== 0 || item.changes.length > 0
+      );
+    });
 }
 
 if (process.argv[1]?.endsWith('/release-history.mjs')) {
