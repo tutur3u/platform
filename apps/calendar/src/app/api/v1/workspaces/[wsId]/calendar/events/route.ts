@@ -222,6 +222,7 @@ export async function POST(request: Request, { params }: Params) {
       location: event.location ?? '',
       start_at: event.start_at,
       end_at: event.end_at,
+      color: event.color,
     };
     let providerSource: ResolvedCalendarSource = source;
     let providerWriteError: unknown = null;
