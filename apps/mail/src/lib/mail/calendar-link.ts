@@ -1,63 +1,27 @@
 import { createHash } from 'node:crypto';
+import type {
+  AuthorizedCalendarLinkTarget,
+  CalendarLinkPreview,
+  CalendarLinkResult,
+  CalendarLinkTargetIdentity,
+  MailCalendarAssociation,
+  MailInvitationIdentity,
+} from '@tuturuuu/internal-api';
+
+import type { CalendarOccurrenceIdentity } from '@tuturuuu/internal-api/calendar';
 import {
   type CalendarInvitation,
   calendarRecurrenceIdentity,
 } from './calendar-invitation';
 
-export type CalendarOccurrenceIdentity = {
-  value: string;
-  valueType: 'DATE' | 'DATE-TIME';
-  timezone: string | null;
-} | null;
-export type MailInvitationIdentity = {
-  actorId: string;
-  mailboxId: string;
-  uid: string;
-  organizer: string;
-  attendee: string;
-  occurrence: CalendarOccurrenceIdentity;
-};
-export type CalendarLinkTargetIdentity = {
-  workspaceId: string;
-  eventId: string;
-  provider: 'tuturuuu' | 'google' | 'microsoft';
-  calendarId: string;
-  connectionId: string | null;
-  accountOwnerId: string | null;
-  externalEventId: string | null;
-  occurrence: CalendarOccurrenceIdentity;
-};
-export type AuthorizedCalendarLinkTarget = {
-  identity: CalendarLinkTargetIdentity;
-  title: string;
-  organizer: string | null;
-  attendees: string[];
-  location: string;
-  joinUrl: string | null;
-  start: string;
-  end: string;
-  accountLabel: string;
-};
-export type MailCalendarAssociation = {
-  invitation: MailInvitationIdentity;
-  sequence: number;
-  target: CalendarLinkTargetIdentity;
-  receipt: string;
-  authorityReceipt: string;
-};
-export type CalendarLinkPreview = {
-  invitation: MailInvitationIdentity;
-  sequence: number;
-  original: Pick<
-    CalendarInvitation,
-    'summary' | 'when' | 'location' | 'joinUrl'
-  >;
-  target: AuthorizedCalendarLinkTarget;
-  existingTarget: CalendarLinkTargetIdentity | null;
-  existingReceipt: string;
-  authorityReceipt: string;
-  receipt: string;
-};
+export type {
+  AuthorizedCalendarLinkTarget,
+  CalendarLinkPreview,
+  CalendarLinkResult,
+  CalendarLinkTargetIdentity,
+  MailCalendarAssociation,
+  MailInvitationIdentity,
+} from '@tuturuuu/internal-api';
 
 /** Only validated scheduling REQUESTs supply this input; never title/time matching. */
 export function invitationLinkIdentity(
@@ -71,12 +35,21 @@ export function invitationLinkIdentity(
     uid: invitation.uid,
     organizer: invitation.organizer,
     attendee: invitation.attendee,
-    occurrence: calendarRecurrenceIdentity(invitation.recurrence),
+    occurrence: (() => {
+      const parsed = calendarRecurrenceIdentity(invitation.recurrence);
+      return parsed
+        ? {
+            value: parsed.value,
+            valueType: parsed.valueType,
+            tzid: parsed.timezone,
+          }
+        : null;
+    })(),
   };
 }
-function occurrenceTuple(occurrence: CalendarOccurrenceIdentity) {
+function occurrenceTuple(occurrence: CalendarOccurrenceIdentity | null) {
   return occurrence
-    ? [occurrence.value, occurrence.valueType, occurrence.timezone]
+    ? [occurrence.value, occurrence.valueType, occurrence.tzid]
     : null;
 }
 function invitationTuple(identity: MailInvitationIdentity) {
@@ -91,13 +64,17 @@ function invitationTuple(identity: MailInvitationIdentity) {
 }
 function targetTuple(target: CalendarLinkTargetIdentity) {
   return [
+    target.actorUserId,
     target.workspaceId,
     target.eventId,
     target.provider,
     target.calendarId,
     target.connectionId,
     target.accountOwnerId,
+    target.sourceCalendarId,
+    target.externalCalendarId,
     target.externalEventId,
+    target.iCalUid,
     occurrenceTuple(target.occurrence),
   ];
 }
@@ -112,10 +89,21 @@ function targetAuthorityTuple(target: AuthorizedCalendarLinkTarget) {
     target.start,
     target.end,
     target.accountLabel,
+    canonicalObject(target.authority),
   ];
 }
 export function invitationAssociationKey(identity: MailInvitationIdentity) {
   return digest(invitationTuple(identity));
+}
+function canonicalObject(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalObject);
+  if (value && typeof value === 'object')
+    return Object.fromEntries(
+      Object.entries(value)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, entry]) => [key, canonicalObject(entry)])
+    );
+  return value;
 }
 function digest(value: unknown) {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -173,10 +161,6 @@ export type CalendarLinkSelection = {
   workspaceId: string;
   eventId: string;
 };
-export type CalendarLinkResult =
-  | { status: 'linked'; association: MailCalendarAssociation }
-  | { status: 'unavailable' | 'changed' | 'conflict' };
-
 /** Non-destructive linking: organizer ownership and RSVP remain on the invitation. */
 export function createCalendarLinkService(deps: CalendarLinkDependencies) {
   async function preview(
@@ -195,13 +179,15 @@ export function createCalendarLinkService(deps: CalendarLinkDependencies) {
     );
     if (
       !target ||
+      target.identity.actorUserId !== selection.actorId ||
       target.identity.workspaceId !== selection.workspaceId ||
       target.identity.eventId !== selection.eventId
     )
       return null;
     if (
       target.identity.provider !== 'tuturuuu' &&
-      (target.identity.accountOwnerId !== selection.actorId ||
+      (target.identity.actorUserId !== selection.actorId ||
+        !target.identity.accountOwnerId ||
         !target.identity.connectionId ||
         !target.identity.externalEventId ||
         !target.identity.calendarId)

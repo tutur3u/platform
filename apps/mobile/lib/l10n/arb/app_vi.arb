@@ -3773,5 +3773,19 @@
         }
     },
     "mailInvitationPending": "Phản hồi đang chờ xử lý. Kiểm tra lại trước khi trả lời.",
-    "mailInvitationFailed": "Chưa xác nhận được phản hồi. Thử lại cùng phản hồi để kiểm tra trạng thái."
+    "mailInvitationFailed": "Chưa xác nhận được phản hồi. Thử lại cùng phản hồi để kiểm tra trạng thái.",
+    "mailCalendarLinkTitle": "Liên kết với Lịch",
+    "mailCalendarLinkUrl": "Liên kết sự kiện Lịch",
+    "mailCalendarLinkPreview": "Xem trước liên kết",
+    "mailCalendarLinkConfirm": "Xác nhận liên kết",
+    "mailCalendarLinkOriginal": "Lời mời gốc",
+    "mailCalendarLinkSelected": "Sự kiện Lịch đã chọn",
+    "mailCalendarLinkNotice": "Liên kết giữ cả hai bản ghi. Phản hồi vẫn gửi đến người tổ chức ban đầu.",
+    "mailCalendarLinkChanged": "Lời mời hoặc sự kiện đã thay đổi. Vui lòng xem trước lại.",
+    "mailCalendarLinkUnavailable": "Sự kiện này không khả dụng trong tài khoản của bạn.",
+    "mailCalendarLinkFailed": "Không thể cập nhật liên kết. Vui lòng thử lại.",
+    "mailCalendarLinkInvalid": "Dán liên kết Lịch của sự kiện đã chọn.",
+    "mailCalendarLinkLinked": "Đã liên kết sự kiện Lịch",
+    "mailCalendarLinkUnlink": "Gỡ liên kết",
+    "mailCalendarLinkOpen": "Mở sự kiện đã liên kết"
 }

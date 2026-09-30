@@ -3769,5 +3769,19 @@
         }
     },
     "mailInvitationPending": "Response is pending. Check again before replying.",
-    "mailInvitationFailed": "Could not confirm your response. Retry the same response to check its status."
+    "mailInvitationFailed": "Could not confirm your response. Retry the same response to check its status.",
+    "mailCalendarLinkTitle": "Link to Calendar",
+    "mailCalendarLinkUrl": "Calendar event link",
+    "mailCalendarLinkPreview": "Preview link",
+    "mailCalendarLinkConfirm": "Confirm link",
+    "mailCalendarLinkOriginal": "Original invitation",
+    "mailCalendarLinkSelected": "Selected Calendar event",
+    "mailCalendarLinkNotice": "Linking keeps both records. Replies still go to the original organizer.",
+    "mailCalendarLinkChanged": "The invitation or event changed. Preview again.",
+    "mailCalendarLinkUnavailable": "This event is unavailable in your account.",
+    "mailCalendarLinkFailed": "Unable to update the link. Try again.",
+    "mailCalendarLinkInvalid": "Paste a Calendar event link containing the selected event.",
+    "mailCalendarLinkLinked": "Calendar event linked",
+    "mailCalendarLinkUnlink": "Remove link",
+    "mailCalendarLinkOpen": "Open linked event"
 }
