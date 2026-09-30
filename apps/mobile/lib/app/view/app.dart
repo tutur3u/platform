@@ -634,9 +634,9 @@ class _AppState extends State<App> {
                 final userId = context.read<AuthCubit>().state.user?.id;
                 if (userId != null) {
                   unawaited(
-                    ReminderService.instance.startSession(
+                    ReminderService.instance.startWorkspaceSession(
                       userId,
-                      state.workspaces,
+                      state,
                     ),
                   );
                 }
