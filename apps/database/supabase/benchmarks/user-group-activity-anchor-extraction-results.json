@@ -1,0 +1,337 @@
+{
+  "source_sha256": {
+    "apps/database/supabase/migrations/20260930100000_user_group_activity_narrow_candidates.sql": "d07879e67637254ca1c0c78b1b33331486d1847c428ea634b3d12fb7a6c7a25a",
+    "apps/database/supabase/migrations/20260930110000_user_group_activity_anchor_extraction.sql": "38db0fbab057f0a3363df2aca4778fd9d8050e5a4e434fe292385e51215a90f1",
+    "apps/database/supabase/benchmarks/user-group-activity-anchor-extraction.sql": "16c744e7347f482dab53c8ecff2783c1e967fef6fd7bf46bc4cd98820ac71f3a"
+  },
+  "scenarios": {
+    "inline": {
+      "samples": [
+        {
+          "ms": 1291.669,
+          "rows": 20,
+          "variant": "after",
+          "iteration": 0,
+          "temp_reads": 830,
+          "shared_hits": 85338,
+          "temp_writes": 830,
+          "shared_reads": 0
+        },
+        {
+          "ms": 1162.662,
+          "rows": 20,
+          "variant": "before",
+          "iteration": 0,
+          "temp_reads": 830,
+          "shared_hits": 118302,
+          "temp_writes": 830,
+          "shared_reads": 0
+        },
+        {
+          "ms": 1282.867,
+          "rows": 20,
+          "variant": "after",
+          "iteration": 1,
+          "temp_reads": 830,
+          "shared_hits": 85305,
+          "temp_writes": 830,
+          "shared_reads": 0
+        },
+        {
+          "ms": 1163.01,
+          "rows": 20,
+          "variant": "before",
+          "iteration": 1,
+          "temp_reads": 830,
+          "shared_hits": 118303,
+          "temp_writes": 830,
+          "shared_reads": 0
+        },
+        {
+          "ms": 1114.758,
+          "rows": 20,
+          "variant": "after",
+          "iteration": 2,
+          "temp_reads": 830,
+          "shared_hits": 85306,
+          "temp_writes": 830,
+          "shared_reads": 0
+        },
+        {
+          "ms": 1151.226,
+          "rows": 20,
+          "variant": "before",
+          "iteration": 2,
+          "temp_reads": 830,
+          "shared_hits": 118302,
+          "temp_writes": 830,
+          "shared_reads": 0
+        },
+        {
+          "ms": 1087.16,
+          "rows": 20,
+          "variant": "after",
+          "iteration": 3,
+          "temp_reads": 830,
+          "shared_hits": 85306,
+          "temp_writes": 830,
+          "shared_reads": 0
+        },
+        {
+          "ms": 1124.932,
+          "rows": 20,
+          "variant": "before",
+          "iteration": 3,
+          "temp_reads": 830,
+          "shared_hits": 118302,
+          "temp_writes": 830,
+          "shared_reads": 0
+        },
+        {
+          "ms": 1175.211,
+          "rows": 20,
+          "variant": "after",
+          "iteration": 4,
+          "temp_reads": 830,
+          "shared_hits": 85306,
+          "temp_writes": 830,
+          "shared_reads": 0
+        },
+        {
+          "ms": 1207.487,
+          "rows": 20,
+          "variant": "before",
+          "iteration": 4,
+          "temp_reads": 830,
+          "shared_hits": 118303,
+          "temp_writes": 830,
+          "shared_reads": 0
+        },
+        {
+          "ms": 1443.44,
+          "rows": 20,
+          "variant": "after",
+          "iteration": 5,
+          "temp_reads": 830,
+          "shared_hits": 85306,
+          "temp_writes": 830,
+          "shared_reads": 0
+        },
+        {
+          "ms": 1480.502,
+          "rows": 20,
+          "variant": "before",
+          "iteration": 5,
+          "temp_reads": 830,
+          "shared_hits": 118304,
+          "temp_writes": 830,
+          "shared_reads": 0
+        }
+      ],
+      "summary": {
+        "before": {
+          "median_ms": 1163.01,
+          "sample_p95_ms": 1425.899,
+          "median_shared_hits": 118303,
+          "median_shared_reads": 0
+        },
+        "after": {
+          "median_ms": 1175.211,
+          "sample_p95_ms": 1411.3254,
+          "median_shared_hits": 85306,
+          "median_shared_reads": 0
+        }
+      },
+      "full_page_parity": true,
+      "candidate_parity": true
+    },
+    "toasted": {
+      "samples": [
+        {
+          "ms": 2147.584,
+          "rows": 20,
+          "variant": "after",
+          "iteration": 0,
+          "temp_reads": 0,
+          "shared_hits": 1411332,
+          "temp_writes": 0,
+          "shared_reads": 120375
+        },
+        {
+          "ms": 3049.244,
+          "rows": 20,
+          "variant": "before",
+          "iteration": 0,
+          "temp_reads": 0,
+          "shared_hits": 3560906,
+          "temp_writes": 0,
+          "shared_reads": 122285
+        },
+        {
+          "ms": 2519.836,
+          "rows": 20,
+          "variant": "after",
+          "iteration": 1,
+          "temp_reads": 0,
+          "shared_hits": 1411343,
+          "temp_writes": 0,
+          "shared_reads": 120332
+        },
+        {
+          "ms": 3743.02,
+          "rows": 20,
+          "variant": "before",
+          "iteration": 1,
+          "temp_reads": 0,
+          "shared_hits": 3561831,
+          "temp_writes": 0,
+          "shared_reads": 121360
+        },
+        {
+          "ms": 2435.518,
+          "rows": 20,
+          "variant": "after",
+          "iteration": 2,
+          "temp_reads": 0,
+          "shared_hits": 1411344,
+          "temp_writes": 0,
+          "shared_reads": 120330
+        },
+        {
+          "ms": 2959.723,
+          "rows": 20,
+          "variant": "before",
+          "iteration": 2,
+          "temp_reads": 0,
+          "shared_hits": 3561921,
+          "temp_writes": 0,
+          "shared_reads": 121270
+        },
+        {
+          "ms": 2261.034,
+          "rows": 20,
+          "variant": "after",
+          "iteration": 3,
+          "temp_reads": 0,
+          "shared_hits": 1411338,
+          "temp_writes": 0,
+          "shared_reads": 120337
+        },
+        {
+          "ms": 2972.289,
+          "rows": 20,
+          "variant": "before",
+          "iteration": 3,
+          "temp_reads": 0,
+          "shared_hits": 3561918,
+          "temp_writes": 0,
+          "shared_reads": 121274
+        },
+        {
+          "ms": 2372.816,
+          "rows": 20,
+          "variant": "after",
+          "iteration": 4,
+          "temp_reads": 0,
+          "shared_hits": 1411330,
+          "temp_writes": 0,
+          "shared_reads": 120346
+        },
+        {
+          "ms": 3662.492,
+          "rows": 20,
+          "variant": "before",
+          "iteration": 4,
+          "temp_reads": 0,
+          "shared_hits": 3561895,
+          "temp_writes": 0,
+          "shared_reads": 121297
+        },
+        {
+          "ms": 2065.479,
+          "rows": 20,
+          "variant": "after",
+          "iteration": 5,
+          "temp_reads": 0,
+          "shared_hits": 1411337,
+          "temp_writes": 0,
+          "shared_reads": 120338
+        },
+        {
+          "ms": 2877.312,
+          "rows": 20,
+          "variant": "before",
+          "iteration": 5,
+          "temp_reads": 0,
+          "shared_hits": 3561903,
+          "temp_writes": 0,
+          "shared_reads": 121289
+        }
+      ],
+      "summary": {
+        "before": {
+          "median_ms": 2972.289,
+          "sample_p95_ms": 3726.9144,
+          "median_shared_hits": 3561903,
+          "median_shared_reads": 121289
+        },
+        "after": {
+          "median_ms": 2372.816,
+          "sample_p95_ms": 2502.9723999999997,
+          "median_shared_hits": 1411338,
+          "median_shared_reads": 120337
+        }
+      },
+      "full_page_parity": true,
+      "candidate_parity": true
+    }
+  },
+  "method": {
+    "database": "isolated synthetic PostgreSQL17.6",
+    "window": "2026-08-31T00:00Z inclusive to2026-09-30T00:00Z exclusive",
+    "audit_inserts": {
+      "mixed_activity": 72000,
+      "unrelated_old_history": 570000
+    },
+    "synthetic_parent_inserts": {
+      "workspace_users": 5626,
+      "workspace_user_groups": 93,
+      "user_group_posts": 9515,
+      "user_group_metrics": 1816,
+      "external_user_monthly_reports": 12044
+    },
+    "snapshots": {
+      "inline": "1.9KiB repeated compressible text",
+      "toasted": "6.4KiB distinct MD5 strings, mixed INSERT/UPDATE/DELETE current and old snapshots"
+    },
+    "session": "same data; alternating before/after; one warm-up thenfive measurements;4MBwork_mem;limit20/offset20;fixture and helper replacements rollback",
+    "units": "All latency values are milliseconds;buffer values are PostgreSQL blocks",
+    "p95": "Linear interpolation of five measured samples, not production percentile or SLA"
+  },
+  "diagnosis": {
+    "representative_nested_plan": "Candidate estimate1 versus47878actual; existing indexed candidate branches used. Repeated JSON anchor extraction across resolution joins repeatedly fetched TOAST payloads. jsonb_to_record expands requested text anchors together; same joins and UUID parsing remain.",
+    "discarded_experiment": "Narrow parsed-ID materialization alone did not improve latency,1.109s->1.221s; not implemented.",
+    "guard_assessment": "Bounded production aggregate found0ambiguousactors, ruling out multiplicity guard as observed timeout cause; unchanged guard regression remains covered."
+  },
+  "validation": {
+    "focused_assertions": 208,
+    "new_anchor_regressions": 10,
+    "candidate_and_full_page_multiset_parity": true,
+    "signature_and_security_footer": "identical to deployed candidate migration",
+    "preexisting_full_sql_failures": "33preexisting failed suites; no new failures versus previous fresh deployed-source run",
+    "fresh_bootstrap_and_migration_apply": "passed; final additive migration applied from fresh full migration history",
+    "fresh_full_sql_suite": {
+      "suites": 155,
+      "assertions": 2915,
+      "failed_suites": 33,
+      "identical_preexisting_failure_summary": true,
+      "owned_disposable_cleanup": "passed"
+    }
+  },
+  "limits": [
+    "Local representative evidence, not a measured production speedup.",
+    "Production diagnostic4316.008ms means4.316008seconds;8492.985ms means8.492985seconds.",
+    "The earlier31daySQLwindow was wider than the default rolling30dayUI, so it is not a same-window baseline.",
+    "Do not widenproductiontimeouts; require new exact-source CI/review and coordinated rollout, followed by actual defaultUI/APIreadback."
+  ]
+}
