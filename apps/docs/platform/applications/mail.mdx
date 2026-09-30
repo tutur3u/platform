@@ -856,3 +856,16 @@ stored reply identity, including when reopened in another authorized workspace;
 mailbox permissions and the original actor are still required. List refresh remains
 available during reader mutations and overlays only the owning mailbox's pending
 reader actions, so unrelated incoming messages remain visible.
+
+Web inbox list responses also replay state changes that were pending when the
+request began or started while it was in flight. This applies to pagination and
+background refresh in the owning workspace/mailbox. An archived final row stays
+hidden while the action is pending; a failed action restores it without removing
+new arrivals. The archive folder retains archived rows. The mounted React test
+uses the actual inbox, reader, Archive control and action hooks with synthetic
+API responses; it covers empty state, failure/retry and refresh after reader exit.
+
+Pending archive refreshes compare the captured conversation revision before
+hiding stale results. A newer inbound message in the same conversation remains
+visible because it falls outside the earlier archive action. Failure restores
+optimistic flags or missing old rows without replacing newer conversation data.

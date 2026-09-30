@@ -1,6 +1,8 @@
 import type { InfiniteData } from '@tanstack/react-query';
 import type { MailThreadsResponse } from '@tuturuuu/internal-api';
 
+import { sameThreadRevision } from './mail-thread-revision';
+
 // Restore only this operation's conversations. Other successful/pending actions
 // must survive a failed archive, even when their snapshots overlap.
 export function restoreThreadPages(
@@ -21,9 +23,12 @@ export function restoreThreadPages(
     )
   );
   const pages = current.pages.map((page, pageIndex) => {
-    const threads = page.threads.map(
-      (thread) => originals.get(thread.id) ?? thread
-    );
+    const threads = page.threads.map((thread) => {
+      const original = originals.get(thread.id);
+      return original && sameThreadRevision(thread, original)
+        ? original
+        : thread;
+    });
     const originalPage = before.pages[pageIndex];
     for (const [index, thread] of (originalPage?.threads ?? []).entries()) {
       if (
