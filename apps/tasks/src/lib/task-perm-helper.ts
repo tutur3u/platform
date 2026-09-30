@@ -69,7 +69,7 @@ export async function verifyTaskShareAccess(
   }
 
   // Verify task belongs to workspace
-  const { data: task } = await supabase
+  const { data: task, error: taskError } = await supabase
     .from('tasks')
     .select(
       `
@@ -85,6 +85,16 @@ export async function verifyTaskShareAccess(
     .eq('id', taskId)
     .maybeSingle();
 
+  if (taskError) {
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: 'Failed to verify task access' },
+        { status: 500 }
+      ),
+    };
+  }
+
   if (!task || task.task_lists?.workspace_boards?.ws_id !== normalizedWsId) {
     return {
       success: false,
@@ -99,4 +109,27 @@ export async function verifyTaskShareAccess(
     success: true,
     data: { supabase, user, normalizedWsId, taskId },
   };
+}
+
+export async function verifyTaskSharingEnabled(
+  supabase: SupabaseClient,
+  taskId: string
+) {
+  const { data: enabled, error } = await supabase.rpc(
+    'is_task_sharing_enabled',
+    {
+      p_task_id: taskId,
+    }
+  );
+  if (error || enabled !== true) {
+    return NextResponse.json(
+      {
+        error: error
+          ? 'Failed to verify task sharing'
+          : 'Task sharing is disabled',
+      },
+      { status: error ? 500 : 403 }
+    );
+  }
+  return null;
 }

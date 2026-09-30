@@ -273,9 +273,28 @@ export async function requireTaskPlanAccess({
   planId,
 }: {
   auth: TaskPlanRouteAuth;
-  permission: 'view' | 'edit';
+  permission: 'view' | 'edit' | 'owner';
   planId: string;
 }) {
+  if (permission === 'owner') {
+    const { data, error } = await auth.supabase
+      .from('task_plans')
+      .select('id')
+      .eq('id', planId)
+      .eq('owner_id', auth.user.id)
+      .maybeSingle();
+    if (error) {
+      if (isTaskPlanSchemaUnavailableError(error))
+        return { schemaUnavailable: true as const };
+      return {
+        error: taskPlanErrorResponse('Failed to verify task plan access', 500),
+      };
+    }
+    return data
+      ? { ok: true as const }
+      : { error: taskPlanErrorResponse('Task plan access denied', 403) };
+  }
+
   const { data, error } = await auth.supabase.rpc('can_access_task_plan', {
     p_plan_id: planId,
     p_required_permission: permission,
