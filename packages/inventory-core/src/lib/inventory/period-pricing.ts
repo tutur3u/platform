@@ -63,3 +63,51 @@ export async function preparePeriodPricingPayload<
   const { pricing_mode: _mode, time_zone: _zone, ...legacy } = payload;
   return legacy;
 }
+
+export async function getPeriodPricingMode(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string,
+  periodId: string
+) {
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .from('inventory_sales_periods')
+    .select('pricing_mode')
+    .eq('id', periodId)
+    .eq('ws_id', wsId)
+    .single();
+  if (error) throw error;
+  return data.pricing_mode;
+}
+
+export async function updateScheduledPeriod(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string,
+  periodId: string,
+  metadata: { pricing_mode?: string },
+  productIds?: string[]
+) {
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .from('inventory_sales_periods')
+    .select('*')
+    .eq('ws_id', wsId)
+    .eq('id', periodId)
+    .maybeSingle();
+  if (error) throw error;
+  if (
+    data?.pricing_mode !== 'scheduled' &&
+    metadata.pricing_mode !== 'scheduled'
+  )
+    return false;
+  return periodPricingRpc<boolean>(
+    sbAdmin,
+    'update_inventory_scheduled_period',
+    {
+      p_ws_id: wsId,
+      p_period_id: periodId,
+      p_metadata: metadata,
+      p_product_ids: productIds === undefined ? null : [...new Set(productIds)],
+    }
+  );
+}

@@ -27,8 +27,9 @@ create table private.inventory_product_prices (
   check (valid_to is null or valid_to > valid_from),
   foreign key (period_id, ws_id)
     references private.inventory_sales_periods(id, ws_id),
-  foreign key (product_id, unit_id, warehouse_id)
-    references private.inventory_products(product_id, unit_id, warehouse_id),
+  foreign key (product_id) references public.workspace_products(id),
+  foreign key (unit_id) references private.inventory_units(id),
+  foreign key (warehouse_id) references private.inventory_warehouses(id),
   exclude using gist (
     period_id with =, product_id with =, unit_id with =, warehouse_id with =,
     tstzrange(valid_from, valid_to, '[)') with &&
@@ -40,7 +41,7 @@ create index inventory_product_prices_workspace_period
 
 -- Immutable provenance; invoice lines continue to own their captured amounts.
 create table private.inventory_sale_price_snapshots (
-  invoice_id uuid primary key references public.finance_invoices(id) on delete cascade,
+  invoice_id uuid primary key, -- Durable receipt/tombstone survives invoice deletion and recovery.
   ws_id uuid not null references public.workspaces(id) on delete cascade,
   request_id uuid not null,
   actor_id uuid not null,
@@ -168,6 +169,9 @@ begin
   ) then
     raise exception 'Invalid stock workspace' using errcode = '23514';
   end if;
+  if not exists (select 1 from private.inventory_products where product_id=p_product_id and unit_id=p_unit_id and warehouse_id=p_warehouse_id) then
+    raise exception 'Stock tuple required to author a price' using errcode='23514';
+  end if;
   perform 1 from public.workspace_configs where ws_id = p_ws_id and id = 'DEFAULT_CURRENCY'
     and upper(value) = p_currency for share;
   if not found then raise exception 'Workspace currency changed' using errcode = '23514'; end if;
@@ -226,6 +230,9 @@ begin
     if v_existing.request_payload <> jsonb_build_object('invoice', p_invoice, 'products', p_products, 'currency', p_currency) then
       raise exception 'Request already used for another cart' using errcode = '23514';
     end if;
+    if not exists (select 1 from public.finance_invoices where id = v_existing.invoice_id and ws_id = p_ws_id) then
+      raise exception 'Sale was deleted; request cannot be replayed' using errcode = '23514';
+    end if;
     return v_existing.invoice_id;
   end if;
   select * into v_period from private.inventory_sales_periods
@@ -276,7 +283,7 @@ begin
       where ip.product_id = v_product.id and ip.unit_id = (v_line->>'unit_id')::uuid
         and ip.warehouse_id = (v_line->>'warehouse_id')::uuid;
     if not found then raise exception 'Invalid stock tuple' using errcode = '23514'; end if;
-    if v_stock.amount is not null and v_stock.amount < (
+    if v_period.pricing_mode = 'scheduled' and v_stock.amount is not null and v_stock.amount < (
       select sum((l->>'quantity')::numeric) from jsonb_array_elements(p_products) l
       where l->>'product_id' = v_line->>'product_id' and l->>'unit_id' = v_line->>'unit_id'
         and l->>'warehouse_id' = v_line->>'warehouse_id'

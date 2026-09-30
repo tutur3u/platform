@@ -1,10 +1,14 @@
 begin;
+-- Bounded retries clear only this fixture's known synthetic workspace.
+delete from public.finance_invoice_products where invoice_id in (select id from public.finance_invoices where ws_id='90000000-0000-4000-8000-000000000002');
+delete from public.finance_invoices where ws_id='90000000-0000-4000-8000-000000000002';
+delete from public.workspaces where id='90000000-0000-4000-8000-000000000002';
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(20);
+select plan(46);
 
 insert into auth.users(id, email) values
-  ('90000000-0000-4000-8000-000000000001', 'season-prices@example.test');
+  ('90000000-0000-4000-8000-000000000001', 'season-prices@example.test') on conflict(id) do nothing;
 insert into public.users(id, display_name) values
   ('90000000-0000-4000-8000-000000000001', 'Synthetic operator') on conflict(id) do nothing;
 insert into public.workspaces(id, name, creator_id, personal) values
@@ -87,5 +91,52 @@ create trigger synthetic_stock_fault before insert on public.product_stock_chang
 select throws_ok($$select pg_temp.create_period_sale('90000000-0000-4000-8000-000000000011')$$,'23514','Synthetic stock fault','stock failure rolls back atomic sale');
 select is((select count(*) from public.finance_invoices where ws_id='90000000-0000-4000-8000-000000000002'),1::bigint,'failed stock write leaves no partial invoice');
 select is((select amount from private.inventory_products where product_id='90000000-0000-4000-8000-000000000008'),9::bigint,'failed transaction restores consumed stock');
+
+drop trigger synthetic_stock_fault on public.product_stock_changes;
+create function pg_temp.edit_stock(p_rows jsonb, p_metadata jsonb default '{}'::jsonb) returns jsonb language sql as $$
+ select private.edit_inventory_priced_product('90000000-0000-4000-8000-000000000002','90000000-0000-4000-8000-000000000008',p_metadata,p_rows,'90000000-0000-4000-8000-000000000003','{}',true);
+$$;
+create function pg_temp.stock_row(p_amount integer) returns jsonb language sql as $$
+ select jsonb_build_array(jsonb_build_object('unit_id','90000000-0000-4000-8000-000000000006','warehouse_id','90000000-0000-4000-8000-000000000007','amount',p_amount,'price',99000,'min_amount',0));
+$$;
+select lives_ok('select pg_temp.edit_stock(pg_temp.stock_row(9))','unchanged priced tuple edit succeeds');
+select lives_ok('select pg_temp.edit_stock(pg_temp.stock_row(8))','priced tuple quantity update succeeds');
+select is((select amount from private.inventory_products where product_id='90000000-0000-4000-8000-000000000008'),8::bigint,'quantity edit retains existing tuple');
+select lives_ok($$select pg_temp.edit_stock('[]')$$,'priced tuple can be removed without deleting history');
+select is((select count(*) from private.inventory_product_prices where product_id='90000000-0000-4000-8000-000000000008'),2::bigint,'removing tuple preserves both price intervals');
+select lives_ok('select pg_temp.edit_stock(pg_temp.stock_row(8))','priced tuple can be re-added');
+create temp table stock_checkpoint as select count(*) as movements from public.product_stock_changes;
+select throws_ok($$select pg_temp.edit_stock('[{"unit_id":"90000000-0000-4000-8000-000000000006","warehouse_id":"90000000-0000-4000-8000-000000000099","amount":2,"price":99000}]','{"name":"Must roll back"}')$$,'23514','Invalid stock workspace relation','invalid replacement rolls back metadata and attempted removal movement');
+select is((select name from public.workspace_products where id='90000000-0000-4000-8000-000000000008'),'Synthetic keychain','failed edit restores product metadata');
+select is((select count(*) from public.product_stock_changes),(select movements from stock_checkpoint),'failed edit leaves no phantom stock movement');
+select is((select price from public.finance_invoice_products where product_id='90000000-0000-4000-8000-000000000008'),60000::numeric,'ordinary inventory edits preserve historical invoice price');
+create function pg_temp.invoice_id() returns uuid language sql as $$
+ select invoice_id from private.inventory_sale_price_snapshots where request_id='90000000-0000-4000-8000-000000000010';
+$$;
+select ok(public.admin_delete_finance_invoice('90000000-0000-4000-8000-000000000002',pg_temp.invoice_id(),'90000000-0000-4000-8000-000000000001'),'recoverable deletion succeeds');
+select throws_ok($$select pg_temp.create_period_sale('90000000-0000-4000-8000-000000000010')$$,'23514','Sale was deleted; request cannot be replayed','deleted request stays tombstoned');
+select is((select count(*) from public.finance_invoices where ws_id='90000000-0000-4000-8000-000000000002'),0::bigint,'retry while deleted creates no invoice');
+select is((select amount from private.inventory_products where product_id='90000000-0000-4000-8000-000000000008'),9::bigint,'deleted retry cannot consume stock again');
+select is((select lines->0->>'price' from private.inventory_sale_price_snapshots where invoice_id=pg_temp.invoice_id()),'60000','deleted receipt preserves immutable price provenance');
+select ok(public.admin_restore_finance_invoice('90000000-0000-4000-8000-000000000002',pg_temp.invoice_id(),'90000000-0000-4000-8000-000000000001'),'normal recovery restores original invoice');
+select lives_ok($$select pg_temp.create_period_sale('90000000-0000-4000-8000-000000000010')$$,'restored retry resolves original durable receipt');
+select is((select count(*) from public.finance_invoices where ws_id='90000000-0000-4000-8000-000000000002'),1::bigint,'restored retry creates no duplicate invoice');
+select is((select amount from private.inventory_products where product_id='90000000-0000-4000-8000-000000000008'),8::bigint,'restored retry does not decrement stock twice');
+select is((select price from public.finance_invoice_products where product_id='90000000-0000-4000-8000-000000000008'),60000::numeric,'restore preserves captured historical price');
+insert into private.inventory_sales_periods(id,ws_id,name,pricing_mode,product_scope) values
+ ('90000000-0000-4000-8000-000000000020','90000000-0000-4000-8000-000000000002','Synthetic legacy','legacy','all');
+delete from public.workspace_configs where ws_id='90000000-0000-4000-8000-000000000002' and id='DEFAULT_CURRENCY';
+select lives_ok($$select private.create_inventory_period_invoice(
+ '90000000-0000-4000-8000-000000000002','90000000-0000-4000-8000-000000000001','90000000-0000-4000-8000-000000000003','90000000-0000-4000-8000-000000000020','90000000-0000-4000-8000-000000000021','USD',
+ '{"wallet_id":"90000000-0000-4000-8000-000000000005","category_id":"90000000-0000-4000-8000-000000000004","content":"Synthetic legacy"}',
+ '[{"product_id":"90000000-0000-4000-8000-000000000008","unit_id":"90000000-0000-4000-8000-000000000006","warehouse_id":"90000000-0000-4000-8000-000000000007","quantity":9,"price":0.001}]')$$,'legacy missing currency setting and finite overselling retain existing policy');
+select is((select price from public.finance_invoice_products where invoice_id=(select invoice_id from private.inventory_sale_price_snapshots where request_id='90000000-0000-4000-8000-000000000021')),0.001::numeric,'legacy sub-cent precision remains six major-unit decimals');
+select is((select amount from private.inventory_products where product_id='90000000-0000-4000-8000-000000000008'),(-1)::bigint,'legacy overselling preserves prior negative-stock policy');
+insert into public.workspace_configs(ws_id,id,value) values('90000000-0000-4000-8000-000000000002','DEFAULT_CURRENCY','VND');
+select lives_ok($$select private.update_inventory_scheduled_period('90000000-0000-4000-8000-000000000002','90000000-0000-4000-8000-000000000009','{"product_scope":"blocklist"}','["90000000-0000-4000-8000-000000000008"]')$$,'period scope and rules update atomically');
+select throws_ok($$select private.update_inventory_scheduled_period('90000000-0000-4000-8000-000000000002','90000000-0000-4000-8000-000000000009','{"product_scope":"all"}','["90000000-0000-4000-8000-000000000099"]')$$,'23514','Invalid period product workspace','invalid rule update cannot expose an empty blocklist');
+select is((select product_scope from private.inventory_sales_periods where id='90000000-0000-4000-8000-000000000009'),'blocklist','failed rule edit preserves original scope');
+
+
 select * from finish();
 rollback;

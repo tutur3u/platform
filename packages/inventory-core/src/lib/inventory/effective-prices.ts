@@ -1,5 +1,7 @@
-import type { InventoryPrice } from '@tuturuuu/internal-api/inventory';
-import type { InventorySalesPeriod } from '@tuturuuu/internal-api/inventory';
+import type {
+  InventoryPrice,
+  InventorySalesPeriod,
+} from '@tuturuuu/internal-api/inventory';
 
 export function periodAllowsProduct(
   period: Pick<InventorySalesPeriod, 'product_scope' | 'product_ids'>,
@@ -43,7 +45,12 @@ export function defaultSalesPeriod(
     isCurrentSalesPeriod(period, now, timeZone)
   );
   const configured = current.find((period) => period.id === configuredId);
-  return configured?.id ?? (current.length === 1 ? current[0]!.id : 'choose');
+  const scheduled = current.filter(
+    (period) => period.pricing_mode === 'scheduled'
+  );
+  return (
+    configured?.id ?? (scheduled.length === 1 ? scheduled[0]!.id : 'choose')
+  );
 }
 
 export function resolvePeriodPrices(

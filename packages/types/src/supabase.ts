@@ -7025,11 +7025,18 @@ export type Database = {
             referencedColumns: ['id', 'ws_id'];
           },
           {
-            foreignKeyName: 'inventory_product_prices_product_id_unit_id_warehouse_id_fkey';
-            columns: ['product_id', 'unit_id', 'warehouse_id'];
+            foreignKeyName: 'inventory_product_prices_unit_id_fkey';
+            columns: ['unit_id'];
             isOneToOne: false;
-            referencedRelation: 'inventory_products';
-            referencedColumns: ['product_id', 'unit_id', 'warehouse_id'];
+            referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_product_prices_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_warehouses';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -16972,6 +16979,18 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      edit_inventory_priced_product: {
+        Args: {
+          p_context: Json;
+          p_inventory: Json;
+          p_metadata: Json;
+          p_product_id: string;
+          p_record_changes: boolean;
+          p_workspace_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       enqueue_learn_coding_execution: {
         Args: {
           p_challenge_slug: string;
@@ -19236,6 +19255,15 @@ export type Database = {
         }[];
       };
       update_expired_sessions: { Args: never; Returns: undefined };
+      update_inventory_scheduled_period: {
+        Args: {
+          p_metadata: Json;
+          p_period_id: string;
+          p_product_ids: Json;
+          p_ws_id: string;
+        };
+        Returns: boolean;
+      };
       update_managed_cron_whitelisted_domain_enabled: {
         Args: { p_actor_id?: string; p_domain: string; p_enabled: boolean };
         Returns: undefined;

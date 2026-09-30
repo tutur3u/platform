@@ -2,9 +2,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createInventoryPrice,
-  listInventoryPrices,
   type InventoryProductSummary,
   type InventorySalesPeriod,
+  listInventoryPrices,
 } from '@tuturuuu/internal-api/inventory';
 import { periodAllowsProduct } from '@tuturuuu/inventory-core/effective-prices';
 import { Button } from '@tuturuuu/ui/button';
@@ -29,10 +29,16 @@ export function SeasonPricesDialog({
   wsId,
   period,
   products,
+  fetchNextProductsPage,
+  hasNextProductsPage = false,
+  isFetchingNextProductsPage = false,
 }: {
   wsId: string;
   period: InventorySalesPeriod;
   products: InventoryProductSummary[];
+  fetchNextProductsPage?: () => unknown;
+  hasNextProductsPage?: boolean;
+  isFetchingNextProductsPage?: boolean;
 }) {
   const t = useTranslations('inventory.operator.commerce.periods');
   const currencyCode = useWorkspaceCurrency();
@@ -106,6 +112,19 @@ export function SeasonPricesDialog({
               name: `${stock.productName} · ${stock.unitName} · ${stock.warehouseName}`,
             }))}
           />
+          {hasNextProductsPage && fetchNextProductsPage ? (
+            <Button
+              variant="outline"
+              disabled={isFetchingNextProductsPage}
+              onClick={() => fetchNextProductsPage()}
+            >
+              {t(
+                isFetchingNextProductsPage
+                  ? 'loadingProducts'
+                  : 'loadMoreProducts'
+              )}
+            </Button>
+          ) : null}
           <label className="grid gap-1 text-sm">
             {t('priceAmount', { currency: currencyCode })}
             <Input

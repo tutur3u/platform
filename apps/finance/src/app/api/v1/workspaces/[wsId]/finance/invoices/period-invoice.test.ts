@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), config: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  rpc: vi.fn(),
+  config: vi.fn(),
+  mode: vi.fn(),
+}));
 vi.mock('@tuturuuu/inventory-core/period-pricing', async (importOriginal) => ({
   ...(await importOriginal<
     typeof import('@tuturuuu/inventory-core/period-pricing')
   >()),
   periodPricingRpc: mocks.rpc,
+  getPeriodPricingMode: mocks.mode,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getWorkspaceConfig: mocks.config,
@@ -50,7 +55,26 @@ describe('period invoice boundary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.config.mockResolvedValue('VND');
+    mocks.mode.mockResolvedValue('scheduled');
     mocks.rpc.mockResolvedValue(id(12));
+  });
+  it('preserves legacy sub-cent precision and missing currency fallback', async () => {
+    mocks.mode.mockResolvedValue('legacy');
+    mocks.config.mockResolvedValue('USD');
+    const legacy = {
+      ...payload,
+      products: [
+        { ...payload.products[0]!, price: 0.001, price_id: undefined },
+      ],
+    };
+    expect((await create(legacy)).status).toBe(200);
+    mocks.config.mockResolvedValue(null);
+    expect((await create(legacy)).status).toBe(200);
+    expect(mocks.rpc).toHaveBeenLastCalledWith(
+      {},
+      'create_inventory_period_invoice',
+      expect.objectContaining({ p_currency: 'USD' })
+    );
   });
   it('delegates all write operations to the atomic RPC with quote references', async () => {
     const response = await create();

@@ -1,4 +1,5 @@
 import {
+  getPeriodPricingMode,
   periodPricingRpc,
   pricingErrorStatus,
 } from '@tuturuuu/inventory-core/period-pricing';
@@ -88,40 +89,55 @@ export async function createPeriodInvoice({
       { status: 400 }
     );
   }
-  const configuredCurrency = await getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY');
-  const currency = resolveSupportedCurrency(configuredCurrency);
-  if (!configuredCurrency || currency !== configuredCurrency.toUpperCase()) {
-    return NextResponse.json(
-      {
-        message:
-          'Configure a supported workspace currency before using season prices',
-      },
-      { status: 503 }
-    );
-  }
-  const scale = 10 ** getCurrencyFractionDigits(currency);
-  if (
-    parsed.data.products.some(
-      ({ price }) =>
-        Math.abs(price * scale - Math.round(price * scale)) > 0.000001
-    )
-  ) {
-    return NextResponse.json(
-      { message: 'Invalid currency precision' },
-      { status: 400 }
-    );
-  }
-  const totalMinor = parsed.data.products.reduce(
-    (sum, row) => sum + Math.round(row.price * scale) * row.quantity,
-    0
-  );
-  if (!Number.isSafeInteger(totalMinor)) {
-    return NextResponse.json(
-      { message: 'Sale amount exceeds supported precision' },
-      { status: 400 }
-    );
-  }
   try {
+    const scheduled =
+      (await getPeriodPricingMode(
+        sbAdmin,
+        wsId,
+        parsed.data.inventory_period_id
+      )) === 'scheduled';
+    const configuredCurrency = await getWorkspaceConfig(
+      wsId,
+      'DEFAULT_CURRENCY'
+    );
+    const currency = resolveSupportedCurrency(configuredCurrency);
+    if (
+      scheduled &&
+      (!configuredCurrency || currency !== configuredCurrency.toUpperCase())
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            'Configure a supported workspace currency before using season prices',
+        },
+        { status: 503 }
+      );
+    }
+    const scale = scheduled
+      ? 10 ** getCurrencyFractionDigits(currency)
+      : 1_000_000;
+    if (
+      scheduled &&
+      parsed.data.products.some(
+        ({ price }) =>
+          Math.abs(price * scale - Math.round(price * scale)) > 0.000001
+      )
+    ) {
+      return NextResponse.json(
+        { message: 'Invalid currency precision' },
+        { status: 400 }
+      );
+    }
+    const totalMinor = parsed.data.products.reduce(
+      (sum, row) => sum + Math.round(row.price * scale) * row.quantity,
+      0
+    );
+    if (!Number.isSafeInteger(totalMinor)) {
+      return NextResponse.json(
+        { message: 'Sale amount exceeds supported precision' },
+        { status: 400 }
+      );
+    }
     const invoiceId = await periodPricingRpc<string>(
       sbAdmin,
       'create_inventory_period_invoice',

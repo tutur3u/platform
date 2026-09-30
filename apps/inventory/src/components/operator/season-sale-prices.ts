@@ -1,8 +1,8 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import {
-  listInventoryPrices,
   type InventorySalesPeriod,
+  listInventoryPrices,
 } from '@tuturuuu/internal-api/inventory';
 import {
   isCurrentSalesPeriod,
@@ -60,8 +60,8 @@ export function useSeasonSalePrices({
   );
   const cartIsCurrent = (lines: SaleCartLine[]) =>
     online &&
-    lines.every((line) =>
-      eligibleOptions.some((option) => option.key === line.key)
+    lines.every(
+      (line) => !period || periodAllowsProduct(period, line.productId)
     ) &&
     (!scheduled ||
       (prices.isSuccess &&

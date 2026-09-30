@@ -1,16 +1,18 @@
-import { describe, expect, it } from 'vitest';
 import type {
   InventoryPrice,
   InventorySalesPeriod,
 } from '@tuturuuu/internal-api/inventory';
+import { describe, expect, it } from 'vitest';
 import {
   defaultSalesPeriod,
   isCurrentSalesPeriod,
   periodAllowsProduct,
   resolvePeriodPrices,
 } from './effective-prices';
+
 const period = {
   id: 'cofi',
+  pricing_mode: 'scheduled',
   status: 'active',
   starts_at: '2026-10-03',
   ends_at: '2026-10-04',
@@ -38,6 +40,12 @@ const next = {
 } satisfies InventoryPrice;
 
 describe('effective season prices', () => {
+  it('requires explicit legacy selection unless a current default was configured', () => {
+    const legacy = { ...period, pricing_mode: 'legacy' as const };
+    const now = new Date('2026-10-03T12:00:00Z');
+    expect(defaultSalesPeriod([legacy], null, now)).toBe('choose');
+    expect(defaultSalesPeriod([legacy], legacy.id, now)).toBe(legacy.id);
+  });
   it('uses inclusive convention dates at Vietnamese midnight', () => {
     expect(
       isCurrentSalesPeriod(period, new Date('2026-10-02T16:59:59.999Z'))

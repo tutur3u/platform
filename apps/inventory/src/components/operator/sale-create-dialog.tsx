@@ -27,6 +27,7 @@ import {
   createInventorySale,
   listInventoryProducts,
 } from '@tuturuuu/internal-api/inventory';
+import { defaultSalesPeriod } from '@tuturuuu/inventory-core/effective-prices';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
@@ -35,6 +36,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { useInventoryActor } from './inventory-session-scope';
 import {
   OperatorDialogContent,
   OperatorDialogFooter,
@@ -55,9 +57,7 @@ import {
   type SaleProductSort,
   sortSaleStockOptions,
 } from './sale-product-picker';
-import { defaultSalesPeriod } from '@tuturuuu/inventory-core/effective-prices';
 import { useSeasonSalePrices } from './season-sale-prices';
-import { useInventoryActor } from './inventory-session-scope';
 import { useHybridSearchResults } from './use-hybrid-search-results';
 
 const SALE_TABS = ['items', 'cart', 'payment', 'review'] as const;
@@ -301,6 +301,7 @@ export function SaleCreateDialog({
   };
 
   const changePeriod = (id: string) => {
+    if (id === periodId) return;
     setPeriodId(id);
     setLines([]);
     setRequestId(crypto.randomUUID());

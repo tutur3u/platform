@@ -1,5 +1,4 @@
 'use client';
-import { SeasonPricesDialog } from './season-prices-dialog';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -39,6 +38,7 @@ import { LifecyclePanel } from './operator-lifecycle';
 import { UNASSIGNED_SALES_PERIOD_FILTER } from './operator-types';
 import { SalesExportDropdown } from './sales-export-dropdown';
 import { SalesPeriodProductRules } from './sales-period-product-rules';
+import { SeasonPricesDialog } from './season-prices-dialog';
 
 const ALL_PERIODS = '__all__';
 export const NO_PERIOD = '__none__';
@@ -123,6 +123,9 @@ export function SalesPeriodsPanel({
             wsId={wsId}
             period={selected}
             products={products}
+            fetchNextProductsPage={fetchNextProductsPage}
+            hasNextProductsPage={hasNextProductsPage}
+            isFetchingNextProductsPage={isFetchingNextProductsPage}
           />
         ) : null}
         <SalesExportDropdown
