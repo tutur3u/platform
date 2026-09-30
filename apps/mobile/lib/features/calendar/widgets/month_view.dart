@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 
 class MonthView extends StatelessWidget {
@@ -20,7 +21,7 @@ class MonthView extends StatelessWidget {
   final int firstDayOfWeek;
 
   List<CalendarEvent> _eventsForDay(DateTime date) {
-    final dayStart = DateTime(date.year, date.month, date.day);
+    final dayStart = calendarDate(date.year, date.month, date.day);
     final dayEnd = dayStart.add(const Duration(days: 1));
 
     return events.where((event) {
@@ -33,14 +34,14 @@ class MonthView extends StatelessWidget {
     }).toList()..sort((a, b) {
       if (a.isAllDay && !b.isAllDay) return -1;
       if (!a.isAllDay && b.isAllDay) return 1;
-      final aStart = a.startAt ?? DateTime(0);
-      final bStart = b.startAt ?? DateTime(0);
+      final aStart = a.startAt ?? calendarDate(0);
+      final bStart = b.startAt ?? calendarDate(0);
       return aStart.compareTo(bStart);
     });
   }
 
   List<DateTime> _visibleDatesForMonth(DateTime month) {
-    final firstOfMonth = DateTime(month.year, month.month);
+    final firstOfMonth = calendarDate(month.year, month.month);
     final startOffset = (firstOfMonth.weekday % 7 - firstDayOfWeek + 7) % 7;
     final gridStart = firstOfMonth.subtract(Duration(days: startOffset));
 
@@ -53,7 +54,11 @@ class MonthView extends StatelessWidget {
 
   List<String> _weekdayLabels() {
     return List<String>.generate(7, (index) {
-      final reference = DateTime(2024, 1, 7 + ((firstDayOfWeek + index) % 7));
+      final reference = calendarDate(
+        2024,
+        1,
+        7 + ((firstDayOfWeek + index) % 7),
+      );
       final label = DateFormat.E().format(reference);
       return label.isEmpty ? '' : label.substring(0, 1).toUpperCase();
     }, growable: false);
@@ -63,11 +68,11 @@ class MonthView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final month = DateTime(focusedMonth.year, focusedMonth.month);
+    final month = calendarDate(focusedMonth.year, focusedMonth.month);
     final visibleDates = _visibleDatesForMonth(month);
     final weekdayLabels = _weekdayLabels();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final now = calendarNowInContext(context);
+    final today = calendarDate(now.year, now.month, now.day);
 
     return Column(
       children: [

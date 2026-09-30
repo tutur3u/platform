@@ -1,5 +1,6 @@
 import { type calendar_v3, google } from '@tuturuuu/google';
 import dayjs from 'dayjs';
+import { getGoogleCalendarColorContext } from './google-calendar-color-context';
 import {
   getGoogleAuthClient,
   storeSyncToken,
@@ -35,6 +36,10 @@ export async function performFullSyncForWorkspace(
   });
 
   try {
+    const colorContext = await getGoogleCalendarColorContext(
+      calendar,
+      calendarId
+    );
     const res = await calendar.events.list({
       calendarId,
       showDeleted: true,
@@ -71,7 +76,15 @@ export async function performFullSyncForWorkspace(
 
     if (events.length > 0) {
       console.log(`Processing ${events.length} events...`, { wsId: ws_id });
-      await syncWorkspaceBatched({ ws_id, events_to_sync: events });
+      const result = await syncWorkspaceBatched({
+        ws_id,
+        events_to_sync: events,
+        calendarId,
+        colorContext,
+        preserveExistingMetadata: true,
+      });
+      if (!result.success)
+        throw new Error(result.error ?? 'Google calendar batch sync failed');
       console.log(`Successfully synced ${events.length} events to database`, {
         wsId: ws_id,
       });

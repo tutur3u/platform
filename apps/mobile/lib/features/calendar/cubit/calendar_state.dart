@@ -19,6 +19,7 @@ class CalendarState extends Equatable {
     this.fetchedRange,
     this.error,
     this.isLoadingMore = false,
+    this.timezone,
   });
 
   final CalendarStatus status;
@@ -34,26 +35,36 @@ class CalendarState extends Equatable {
   final DateTimeRange? fetchedRange;
   final String? error;
   final bool isLoadingMore;
+  final String? timezone;
 
-  DateTime get effectiveSelectedDate => selectedDate ?? DateTime.now();
+  List<CalendarEvent> get displayEvents =>
+      events.map((event) => calendarProjectEvent(event, timezone)).toList();
+
+  DateTime get effectiveSelectedDate => selectedDate == null
+      ? calendarNow(timezone)
+      : calendarDate(
+          selectedDate!.year,
+          selectedDate!.month,
+          selectedDate!.day,
+        );
   DateTime get effectiveFocusedMonth => focusedMonth ?? effectiveSelectedDate;
 
   /// Events that overlap the selected date, sorted: all-day first, then by
   /// start time.
   List<CalendarEvent> get selectedDateEvents {
     final date = effectiveSelectedDate;
-    final dayStart = DateTime(date.year, date.month, date.day);
+    final dayStart = calendarDate(date.year, date.month, date.day);
     final dayEnd = dayStart.add(const Duration(days: 1));
 
-    return events.where((e) {
+    return displayEvents.where((e) {
       if (e.isAllDay) {
         // All-day events: endAt is exclusive (midnight after last day).
         // E.g. Feb 3 → Feb 9 means event covers Feb 3-8 only.
         final start = e.startAt;
         final end = e.endAt ?? start;
         if (start == null) return false;
-        final eventStart = DateTime(start.year, start.month, start.day);
-        final eventEnd = DateTime(end!.year, end.month, end.day);
+        final eventStart = calendarDate(start.year, start.month, start.day);
+        final eventEnd = calendarDate(end!.year, end.month, end.day);
         return dayStart.isBefore(eventEnd) && dayEnd.isAfter(eventStart);
       }
       // Timed events: overlap with the day.
@@ -68,8 +79,8 @@ class CalendarState extends Equatable {
       if (aAllDay && !bAllDay) return -1;
       if (!aAllDay && bAllDay) return 1;
       // Then by start time.
-      final aStart = a.startAt ?? DateTime(0);
-      final bStart = b.startAt ?? DateTime(0);
+      final aStart = a.startAt ?? calendarDate(0);
+      final bStart = b.startAt ?? calendarDate(0);
       return aStart.compareTo(bStart);
     });
   }
@@ -95,7 +106,9 @@ class CalendarState extends Equatable {
     String? error,
     bool clearError = false,
     bool? isLoadingMore,
+    Object? timezone = _sentinel,
   }) => CalendarState(
+    timezone: timezone == _sentinel ? this.timezone : timezone as String?,
     status: status ?? this.status,
     hasLoadedOnce: hasLoadedOnce ?? this.hasLoadedOnce,
     isFromCache: isFromCache ?? this.isFromCache,
@@ -134,5 +147,6 @@ class CalendarState extends Equatable {
     fetchedRange,
     error,
     isLoadingMore,
+    timezone,
   ];
 }

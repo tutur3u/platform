@@ -80,13 +80,21 @@ export async function sendMailMessage({
   const outboundProvider =
     mailboxProvider.outbound_provider_override ?? domain.outbound_provider;
 
-  const { error: queueError } = await mailMessageTable(access, ctx)
+  const { data: claimed, error: queueError } = await mailMessageTable(
+    access,
+    ctx
+  )
     .update({ status: 'sending' })
-    .eq('id', message.id);
+    .eq('id', message.id)
+    .eq('status', 'draft')
+    .select('id')
+    .maybeSingle();
 
   if (queueError) {
     throw new Error(`Failed to queue message: ${queueError.message}`);
   }
+  if (!claimed)
+    return getMailMessage({ ctx, mailboxId, messageId: message.id });
 
   const { data: outboundJob, error: jobError } = await privateTable(
     access.admin,

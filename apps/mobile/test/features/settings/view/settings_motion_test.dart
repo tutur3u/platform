@@ -1,13 +1,14 @@
 import 'dart:convert';
 
 import 'package:bloc_test/bloc_test.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -18,6 +19,7 @@ import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
+import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -36,7 +38,16 @@ class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
 
 class _MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {}
 
+class _MockTimezoneSettingsCubit extends MockCubit<TimezoneSettingsState>
+    implements TimezoneSettingsCubit {}
+
 class _MockProfileRepository extends Mock implements ProfileRepository {}
+
+class _MockPermissionsRepository extends Mock
+    implements WorkspacePermissionsRepository {}
+
+class _MockCalendarSettingsCubit extends MockCubit<CalendarSettingsState>
+    implements CalendarSettingsCubit {}
 
 const _cachedProfileKey = 'cached-user-profile:user-1';
 const _cachedProfileFetchedAtKey = 'cached-user-profile-fetched-at:user-1';
@@ -80,11 +91,29 @@ void main() {
     late _MockWorkspaceCubit workspaceCubit;
     late _MockAuthCubit authCubit;
     late _MockProfileRepository profileRepository;
+    late _MockTimezoneSettingsCubit timezoneCubit;
 
     setUp(() {
       workspaceCubit = _MockWorkspaceCubit();
       authCubit = _MockAuthCubit();
       profileRepository = _MockProfileRepository();
+      timezoneCubit = _MockTimezoneSettingsCubit();
+      const timezoneState = TimezoneSettingsState(
+        loading: false,
+        resolved: true,
+      );
+      when(() => timezoneCubit.state).thenReturn(timezoneState);
+      whenListen(
+        timezoneCubit,
+        const Stream<TimezoneSettingsState>.empty(),
+        initialState: timezoneState,
+      );
+      when(
+        () => timezoneCubit.load(
+          userId: any(named: 'userId'),
+          workspaceId: any(named: 'workspaceId'),
+        ),
+      ).thenAnswer((_) async {});
       final authState = AuthState.authenticated(
         supa.User.fromJson({
           'id': 'user-1',
@@ -123,7 +152,30 @@ void main() {
     testWidgets('app settings renders compact top-level sections', (
       tester,
     ) async {
-      const state = WorkspaceState(status: WorkspaceStatus.loaded);
+      const state = WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        currentWorkspace: Workspace(id: 'ws'),
+      );
+      final permissions = _MockPermissionsRepository();
+      when(
+        () => permissions.getPermissions(wsId: 'ws', userId: 'user-1'),
+      ).thenAnswer(
+        (_) async => const WorkspacePermissions(
+          permissions: {manageWorkspaceSettingsPermission},
+          isCreator: false,
+        ),
+      );
+      final calendar = _MockCalendarSettingsCubit();
+      const calendarState = CalendarSettingsState();
+      when(() => calendar.state).thenReturn(calendarState);
+      whenListen(
+        calendar,
+        const Stream<CalendarSettingsState>.empty(),
+        initialState: calendarState,
+      );
+      when(
+        () => calendar.loadWorkspacePreference('ws'),
+      ).thenAnswer((_) async {});
       when(() => workspaceCubit.state).thenReturn(state);
       whenListen(
         workspaceCubit,
@@ -134,6 +186,8 @@ void main() {
       await tester.pumpApp(
         MultiBlocProvider(
           providers: [
+            BlocProvider<AuthCubit>.value(value: authCubit),
+            BlocProvider<TimezoneSettingsCubit>.value(value: timezoneCubit),
             BlocProvider(
               create: (_) =>
                   AppTabCubit(settingsRepository: SettingsRepository()),
@@ -147,22 +201,32 @@ void main() {
               create: (_) =>
                   LocaleCubit(settingsRepository: SettingsRepository()),
             ),
-            BlocProvider(create: (_) => CalendarSettingsCubit()),
+            BlocProvider<CalendarSettingsCubit>.value(value: calendar),
             BlocProvider(
               create: (_) =>
                   ShellProfileCubit(profileRepository: ProfileRepository()),
             ),
           ],
-          child: const SettingsPage(),
+          child: SettingsPage(permissionsRepository: permissions),
         ),
       );
       await tester.pumpAndSettle();
 
       expect(find.byType(StaggeredEntry), findsWidgets);
       expect(find.text('Settings'), findsNothing);
-      expect(find.text('Preferences'), findsOneWidget);
+      expect(find.text('Personal timezone'), findsOneWidget);
+      expect(find.text('Workspace timezone'), findsOneWidget);
+      verify(
+        () => permissions.getPermissions(wsId: 'ws', userId: 'user-1'),
+      ).called(1);
+      expect(find.text('Theme'), findsOneWidget);
+      expect(find.text('Language'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Experiments'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Experiments'), findsOneWidget);
-      expect(find.text('Open Tasks board by default'), findsNothing);
       await tester.scrollUntilVisible(
         find.text('About the app'),
         300,
@@ -175,6 +239,35 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('Session'), findsOneWidget);
+      await tester.ensureVisible(find.text('Open-source licenses'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open-source licenses'));
+      await tester.pumpAndSettle();
+      expect(find.byType(LicensePage), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('About opens the bundled open source license viewer', (
+      tester,
+    ) async {
+      const state = WorkspaceState(status: WorkspaceStatus.loaded);
+      when(() => workspaceCubit.state).thenReturn(state);
+      whenListen(
+        workspaceCubit,
+        const Stream<WorkspaceState>.empty(),
+        initialState: state,
+      );
+      await tester.pumpApp(
+        BlocProvider<WorkspaceCubit>.value(
+          value: workspaceCubit,
+          child: const SettingsPage(section: SettingsSectionDestination.about),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open-source licenses'));
+      await tester.pumpAndSettle();
+      expect(find.byType(LicensePage), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('app settings section renders fullscreen section content', (
@@ -191,6 +284,7 @@ void main() {
       await tester.pumpApp(
         MultiBlocProvider(
           providers: [
+            BlocProvider<TimezoneSettingsCubit>.value(value: timezoneCubit),
             BlocProvider(
               create: (_) =>
                   AppTabCubit(settingsRepository: SettingsRepository()),
@@ -218,8 +312,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(StaggeredEntry), findsOneWidget);
-      // The shell owns the section title, so it is absent in a standalone page.
-      expect(find.text('Preferences'), findsNothing);
+      expect(find.text('Preferences'), findsOneWidget);
       expect(find.text('Theme'), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
       expect(find.text('Open Tasks board by default'), findsOneWidget);
@@ -249,8 +342,11 @@ void main() {
         );
 
         await tester.pumpApp(
-          BlocProvider<WorkspaceCubit>.value(
-            value: workspaceCubit,
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<TimezoneSettingsCubit>.value(value: timezoneCubit),
+              BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+            ],
             child: const SettingsWorkspacePage(),
           ),
         );
@@ -271,6 +367,7 @@ void main() {
       await tester.pumpApp(
         MultiBlocProvider(
           providers: [
+            BlocProvider<TimezoneSettingsCubit>.value(value: timezoneCubit),
             BlocProvider(
               create: (_) =>
                   AppTabCubit(settingsRepository: SettingsRepository()),

@@ -8,6 +8,7 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { DefaultCalendarEventColorSchema } from '@/lib/calendar/event-color';
 import { syncGoogleInbound } from '@/lib/calendar/google-inbound-sync';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import { classifyCalendarSyncError } from '@/lib/calendar/sync-errors';
@@ -398,6 +399,9 @@ async function syncTuturuuuOutbound(args: {
           location: event.location ?? '',
           start_at: event.start_at,
           end_at: event.end_at,
+          color: DefaultCalendarEventColorSchema.parse(
+            event.color ?? undefined
+          ),
         },
       });
 

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_html_body.dart';
+import 'package:mobile/features/mail/view/mail_invitation_card.dart';
 
 /// Inline attachments use the authenticated API, never WebView credentials.
 class MailMessageContent extends StatefulWidget {
@@ -114,13 +115,31 @@ class _MailMessageContentState extends State<MailMessageContent> {
         widget.message['bodyText'] as String? ??
         widget.message['snippet'] as String? ??
         '';
-    if (_html.isEmpty) return SelectableText(text);
-    return MailHtmlBody(
-      html: _html,
-      inlineImages: _images,
-      fallbackText: text,
-      imagesVisible: widget.imagesVisible,
-      showControls: widget.showControls,
+    final body = _html.isEmpty
+        ? SelectableText(text)
+        : MailHtmlBody(
+            html: _html,
+            inlineImages: _images,
+            fallbackText: text,
+            imagesVisible: widget.imagesVisible,
+            showControls: widget.showControls,
+          );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.message['direction'] == 'inbound')
+          MailInvitationCard(
+            key: ValueKey(
+              '${widget.workspaceId}:${widget.mailboxId}:'
+              '${widget.message['id']}',
+            ),
+            repository: widget.repository,
+            workspaceId: widget.workspaceId,
+            mailboxId: widget.mailboxId,
+            messageId: widget.message['id'] as String,
+          ),
+        body,
+      ],
     );
   }
 }

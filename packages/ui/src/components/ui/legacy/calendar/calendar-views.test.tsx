@@ -1,12 +1,13 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
   openModal: vi.fn(),
   addEmptyEvent: vi.fn(),
   events: [] as CalendarEvent[],
   weekStartsOn: 0,
+  zone: 'America/New_York',
 }));
 vi.mock('@tuturuuu/ui/hooks/use-calendar', () => ({
   useCalendar: () => ({
@@ -31,7 +32,7 @@ vi.mock('./settings/settings-context', () => ({
   useCalendarSettings: () => ({
     settings: {
       appearance: { showWeekends: true },
-      timezone: { timezone: 'America/New_York' },
+      timezone: { timezone: state.zone },
     },
   }),
 }));
@@ -47,6 +48,7 @@ import { YearCalendar } from './year-calendar';
 const date = new Date(2026, 8, 7);
 beforeEach(() => {
   state.weekStartsOn = 0;
+  state.zone = 'America/New_York';
   state.openModal.mockClear();
   state.addEmptyEvent.mockClear();
   state.events = Array.from(
@@ -62,6 +64,8 @@ beforeEach(() => {
       }) as CalendarEvent
   );
 });
+afterEach(() => vi.useRealTimers());
+
 describe('calendar view interactions', () => {
   it('month overflow opens every event and creates on the chosen calendar date and timezone', () => {
     render(<MonthCalendar date={date} viewedMonth={date} locale="en" />);
@@ -165,5 +169,41 @@ describe('calendar view interactions', () => {
       })
     );
     expect(onDayClick.mock.calls[0]?.[0].getDate()).toBe(7);
+  });
+  it.each([
+    ['America/New_York', '2026-09-08T01:00:00Z', 7],
+    ['Asia/Tokyo', '2026-09-07T23:00:00Z', 8],
+  ])('marks the calendar Today in month and year for %s', (zone, now, day) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(now));
+    state.zone = zone;
+    const { container, unmount } = render(
+      <MonthCalendar date={date} locale="en" />
+    );
+    expect(container.querySelector('[aria-current="date"]')).toHaveTextContent(
+      String(day)
+    );
+    unmount();
+    const year = render(<YearCalendar year={2026} locale="en" />);
+    expect(
+      year.container.querySelector('[aria-current="date"]')
+    ).toHaveAccessibleName(new RegExp(`September ${day}, 2026`));
+  });
+  it('uses the calendar Today and event clock in agenda', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-08T01:00:00Z'));
+    state.events = [
+      {
+        id: 'evening',
+        title: 'Evening',
+        start_at: '2026-09-07T23:00:00Z',
+        end_at: '2026-09-08T00:00:00Z',
+      },
+    ];
+    render(<AgendaView startDate={date} daysToShow={1} locale="en" />);
+    expect(screen.getByText('today')).toBeVisible();
+    expect(screen.getByRole('button', { name: /Evening/ })).toHaveTextContent(
+      '19:00'
+    );
   });
 });

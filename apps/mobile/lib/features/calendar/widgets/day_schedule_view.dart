@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
 import 'package:mobile/features/calendar/widgets/all_day_event_bar.dart';
 import 'package:mobile/features/calendar/widgets/current_time_indicator.dart';
@@ -70,7 +71,7 @@ class _DayScheduleViewState extends State<DayScheduleView> {
     _didAutoScroll = true;
 
     final hourH = _hourHeight(context);
-    final now = DateTime.now();
+    final now = calendarNowInContext(context);
     final isToday =
         widget.selectedDate.year == now.year &&
         widget.selectedDate.month == now.month &&
@@ -95,7 +96,7 @@ class _DayScheduleViewState extends State<DayScheduleView> {
   }
 
   bool get _isToday {
-    final now = DateTime.now();
+    final now = calendarNowInContext(context);
     return widget.selectedDate.year == now.year &&
         widget.selectedDate.month == now.month &&
         widget.selectedDate.day == now.day;
@@ -138,7 +139,7 @@ class _DayScheduleViewState extends State<DayScheduleView> {
                       final roundedMinutes = (minutes ~/ 15) * 15;
                       final hour = roundedMinutes ~/ 60;
                       final minute = roundedMinutes % 60;
-                      final eventTime = DateTime(
+                      final eventTime = calendarDate(
                         widget.selectedDate.year,
                         widget.selectedDate.month,
                         widget.selectedDate.day,

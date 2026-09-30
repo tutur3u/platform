@@ -9378,4 +9378,87 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineChangesDiscardConfirm => 'This removes the queued change from this device. It does not undo anything the server may have received.';
+
+  @override
+  String get mailMessageDetails => 'Message details';
+
+  @override
+  String get mailInvitationTitle => 'Calendar invitation';
+
+  @override
+  String get mailInvitationAccept => 'Accept';
+
+  @override
+  String get mailInvitationDecline => 'Decline';
+
+  @override
+  String get mailInvitationTentative => 'Tentative';
+
+  @override
+  String mailInvitationIdentity(String attendee, String organizer) {
+    return 'Reply as $attendee to organizer $organizer';
+  }
+
+  @override
+  String get mailInvitationLocation => 'Location';
+
+  @override
+  String get mailInvitationWhen => 'When';
+
+  @override
+  String get mailInvitationJoin => 'Join meeting';
+
+  @override
+  String get mailInvitationRetry => 'Retry invitation details';
+
+  @override
+  String get mailInvitationSending => 'Sending your response…';
+
+  @override
+  String mailInvitationSent(String response) {
+    return 'Response sent: $response';
+  }
+
+  @override
+  String get mailInvitationPending => 'Response is pending. Check again before replying.';
+
+  @override
+  String get mailInvitationFailed => 'Could not confirm your response. Retry the same response to check its status.';
+
+  @override
+  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
+    return '$leadTime · $occurrence ($timezone)';
+  }
+
+  @override
+  String get settingsTimezone => 'Personal timezone';
+
+  @override
+  String get settingsWorkspaceTimezone => 'Workspace timezone';
+
+  @override
+  String get settingsTimezoneDescription => 'Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.';
+
+  @override
+  String get settingsTimezoneAuto => 'Automatic';
+
+  @override
+  String get settingsTimezoneSearch => 'Search timezones';
+
+  @override
+  String settingsTimezoneEffective(String timezone) {
+    return 'Effective timezone: $timezone';
+  }
+
+  @override
+  String get settingsTimezoneError => 'Could not load or save timezone. Tap to retry.';
+
+  @override
+  String get calendarInvalidLocalTime => 'Choose a valid start and end time. Some times do not exist when daylight saving time changes.';
+
+  @override
+  String get profileOverviewTab => 'Overview';
+
+  @override
+  String get profileTimelineTab => 'Timeline';
 }

@@ -8,8 +8,10 @@ import 'package:mobile/features/mail/data/mail_cache.dart';
 import 'package:mobile/features/mail/data/mail_media_cache.dart';
 import 'package:mobile/features/mail/data/mail_pending_overlay.dart';
 
+part 'mail_invitation_repository.dart';
+
 /// Uses the same authenticated, workspace-scoped contract as apps/mail.
-class MailRepository {
+class MailRepository extends MailInvitationRepository {
   MailRepository({
     ApiClient? apiClient,
     MailCache? cache,
@@ -20,6 +22,8 @@ class MailRepository {
     _cache.accessRevoked.addListener(_onAccessRevoked);
   }
   final ApiClient _api;
+  @override
+  ApiClient get _invitationApi => _api;
   final MailCache _cache;
   final MailMediaCache _mediaCache;
   final Map<String, Future<void>> _mediaRefreshes = {};

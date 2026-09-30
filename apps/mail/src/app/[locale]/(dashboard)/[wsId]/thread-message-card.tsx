@@ -16,6 +16,7 @@ import { MailAttachmentCard } from './mail-attachment-card';
 import { MailBlacklistControl } from './mail-blacklist-control';
 import { MailEmailText } from './mail-email-text';
 import type { MailFolder } from './mail-folders';
+import { MailInvitationCard } from './mail-invitation-card';
 import { MailLabelBadges } from './mail-label-badges';
 import {
   formatMailRecipients,
@@ -160,6 +161,14 @@ export function ThreadMessageCard({
         </div>
       </div>
       <AccordionContent className="p-0 pb-0">
+        {workspaceId && message.direction === 'inbound' ? (
+          <MailInvitationCard
+            key={`${workspaceId}:${message.mailboxId}:${message.id}`}
+            workspaceId={workspaceId}
+            mailboxId={message.mailboxId}
+            messageId={message.id}
+          />
+        ) : null}
         {workspaceId && getFailedMailRecipients(message).length > 0 ? (
           <MailBlacklistControl
             key={message.id}
