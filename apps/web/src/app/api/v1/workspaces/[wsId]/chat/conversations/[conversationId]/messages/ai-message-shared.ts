@@ -20,6 +20,7 @@ import {
   callPrivateChatRpc,
 } from '@/lib/chat/private-rpc';
 import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
+import { authorizeAttachmentSource } from './attachment-source-access';
 
 export type ChatMessageAttachmentInput = {
   contentType?: string | null;
@@ -70,15 +71,18 @@ export async function publishChatRealtimeMessages({
 }
 
 export async function copyChatAttachmentsToAiResources({
+  auth,
   resourceChatId,
   targetWsId,
   userMessage,
 }: {
+  auth: SessionAuthContext;
   resourceChatId: string;
   targetWsId: string;
   userMessage: ChatMessage;
 }) {
   await copyAttachmentInputsToAiResources({
+    auth,
     attachments: userMessage.attachments.map((attachment) => ({
       ...attachment,
       path: attachment.storagePath,
@@ -86,6 +90,10 @@ export async function copyChatAttachmentsToAiResources({
     })),
     resourceChatId,
     targetWsId,
+    persisted: userMessage.attachments.map((attachment) => ({
+      attachmentId: attachment.id,
+      conversationId: attachment.conversationId,
+    })),
   });
 }
 
@@ -94,10 +102,12 @@ export async function copyChatAttachmentsToAiResources({
 // resolve without re-uploading. Old or deleted media must not prevent a new
 // message from being sent.
 export async function copyRecentChatAttachmentsToAiResources({
+  auth,
   resourceChatId,
   targetWsId,
   previousMessages,
 }: {
+  auth: SessionAuthContext;
   resourceChatId: string;
   targetWsId: string;
   previousMessages: ChatMessage[];
@@ -122,6 +132,7 @@ export async function copyRecentChatAttachmentsToAiResources({
       seenPaths.add(attachment.storagePath);
       try {
         await copyAttachmentInputsToAiResources({
+          auth,
           attachments: [
             {
               ...attachment,
@@ -131,6 +142,12 @@ export async function copyRecentChatAttachmentsToAiResources({
           ],
           resourceChatId,
           targetWsId,
+          persisted: [
+            {
+              attachmentId: attachment.id,
+              conversationId: attachment.conversationId,
+            },
+          ],
         });
         remainingBytes -= size;
         copied++;
@@ -145,15 +162,18 @@ export async function copyRecentChatAttachmentsToAiResources({
 }
 
 export async function copyAiChatAttachmentInputsToResources({
+  auth,
   attachments,
   chatId,
   wsId,
 }: {
+  auth: SessionAuthContext;
   attachments: ChatMessageAttachmentInput[];
   chatId: string;
   wsId: string;
 }) {
   await copyAttachmentInputsToAiResources({
+    auth,
     attachments,
     resourceChatId: chatId,
     targetWsId: wsId,
@@ -161,10 +181,14 @@ export async function copyAiChatAttachmentInputsToResources({
 }
 
 async function copyAttachmentInputsToAiResources({
+  auth,
+  persisted,
   attachments,
   resourceChatId,
   targetWsId,
 }: {
+  auth: SessionAuthContext;
+  persisted?: { attachmentId: string; conversationId: string }[];
   attachments: ChatMessageAttachmentInput[];
   resourceChatId: string;
   targetWsId: string;
@@ -181,11 +205,20 @@ async function copyAttachmentInputsToAiResources({
   for (const [index, attachment] of attachments.entries()) {
     const sourceWsId = attachment.storageWsId ?? targetWsId;
     try {
-      const { provider } = await resolveWorkspaceStorageProvider(sourceWsId);
-      const downloaded = await downloadWorkspaceStorageObjectForProvider(
+      const source = await authorizeAttachmentSource({
+        auth,
+        path: attachment.path,
         sourceWsId,
+        targetWsId,
+        persisted: persisted?.[index],
+      });
+      const { provider } = await resolveWorkspaceStorageProvider(
+        source.sourceWsId
+      );
+      const downloaded = await downloadWorkspaceStorageObjectForProvider(
+        source.sourceWsId,
         provider,
-        attachment.path
+        source.path
       );
       downloadedBytes += downloaded.buffer.byteLength;
       if (downloadedBytes > MAX_AI_ATTACHMENT_BYTES) {
