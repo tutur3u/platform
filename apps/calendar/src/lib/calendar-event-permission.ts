@@ -18,10 +18,15 @@ type CalendarEventManagementAccess =
 
 export async function authorizeCalendarEventManagement(
   request: Request,
-  rawWsId: string
+  rawWsId: string,
+  options?: { allowMailPreviewSession?: boolean }
 ): Promise<CalendarEventManagementAccess> {
   const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
+    allowAppSessionAuth: {
+      targetApp: options?.allowMailPreviewSession
+        ? ['calendar', 'tasks', 'mail']
+        : ['calendar', 'tasks'],
+    },
   });
   if (!auth.ok) return { error: auth.response } as const;
 

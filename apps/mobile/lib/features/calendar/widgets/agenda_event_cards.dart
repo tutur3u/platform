@@ -123,21 +123,25 @@ class _AllDayBanner extends StatelessWidget {
       return const _DayInfo(dayNumber: 1, totalDays: 1);
     }
 
-    final startDay = DateTime(
+    final startDay = calendarDate(
       event.startAt!.year,
       event.startAt!.month,
       event.startAt!.day,
     );
     // endAt is exclusive (midnight after last day).
     final lastDay = event.endAt!.subtract(const Duration(days: 1));
-    final endDay = DateTime(lastDay.year, lastDay.month, lastDay.day);
+    final endDay = calendarDate(lastDay.year, lastDay.month, lastDay.day);
     final totalDays = endDay.difference(startDay).inDays + 1;
 
     if (totalDays <= 1) {
       return const _DayInfo(dayNumber: 1, totalDays: 1);
     }
 
-    final day = DateTime(displayDate.year, displayDate.month, displayDate.day);
+    final day = calendarDate(
+      displayDate.year,
+      displayDate.month,
+      displayDate.day,
+    );
     final dayNumber = day.difference(startDay).inDays + 1;
     return _DayInfo(dayNumber: dayNumber, totalDays: totalDays);
   }

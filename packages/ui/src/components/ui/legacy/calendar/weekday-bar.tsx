@@ -1,14 +1,11 @@
 import { Clock } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
 import { AllDayEventBar } from './all-day-event-bar';
 import { MIN_COLUMN_WIDTH } from './config';
 import { DayTitle } from './day-title';
 import { useCalendarSettings } from './settings/settings-context';
-
-dayjs.extend(timezone);
 
 export const WeekdayBar = ({
   locale,
@@ -21,14 +18,12 @@ export const WeekdayBar = ({
 }) => {
   const { settings } = useCalendarSettings();
   const showWeekends = settings.appearance.showWeekends;
-  const tz = settings?.timezone?.timezone;
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
     ? dates
     : dates.filter((date) => {
-        const day =
-          tz === 'auto' ? dayjs(date).day() : dayjs(date).tz(tz).day();
+        const day = date.getDay();
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
@@ -50,8 +45,7 @@ export const WeekdayBar = ({
           }}
         >
           {visibleDates.map((weekday) => {
-            const dayjsDate =
-              tz === 'auto' ? dayjs(weekday) : dayjs(weekday).tz(tz);
+            const dayjsDate = dayjs(weekday);
             return (
               <div
                 key={`date-${dayjsDate.format('YYYY-MM-DD')}`}

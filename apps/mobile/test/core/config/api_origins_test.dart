@@ -41,6 +41,8 @@ void main() {
         for (final path in [
           '/api/v1/calendar/connections?wsId=personal',
           '/api/v1/workspaces/personal/calendar/events',
+          '/api/v1/users/calendar-settings',
+          '/api/v1/workspaces/personal/calendar-settings',
         ]) {
           expect(
             origins.baseUrlForPath(path),

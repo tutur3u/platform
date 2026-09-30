@@ -187,6 +187,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     return state.copyWith(
       status: status,
       workspaces: workspaces,
+      emptyMembershipConfirmed: includeServerDefault && workspaces.isEmpty,
       currentWorkspace: current,
       defaultWorkspace: defaultWorkspace,
       hiddenModuleIds: hiddenModuleIds,

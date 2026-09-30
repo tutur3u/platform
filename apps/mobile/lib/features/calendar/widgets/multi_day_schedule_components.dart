@@ -142,7 +142,13 @@ class _MultiDayTimelineColumn extends StatelessWidget {
         final hour = roundedMinutes ~/ 60;
         final minute = roundedMinutes % 60;
         onCreateAtTime(
-          DateTime(date.year, date.month, date.day, hour.clamp(0, 23), minute),
+          calendarDate(
+            date.year,
+            date.month,
+            date.day,
+            hour.clamp(0, 23),
+            minute,
+          ),
         );
       },
       child: Container(

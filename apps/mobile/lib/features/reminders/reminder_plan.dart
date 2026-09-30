@@ -1,5 +1,6 @@
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/user_task.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 
 enum ReminderKind { task, event }
 
@@ -25,6 +26,7 @@ class ReminderPlanEntry {
     required this.notificationId,
     this.boardId,
     this.isAllDay = false,
+    this.timezone,
   });
 
   final ReminderKind kind;
@@ -37,6 +39,7 @@ class ReminderPlanEntry {
   final int notificationId;
   final String? boardId;
   final bool isAllDay;
+  final String? timezone;
 }
 
 int reminderNotificationId(String key) {
@@ -55,6 +58,7 @@ List<ReminderPlanEntry> buildReminderPlan({
   required List<String> taskOffsets,
   required List<String> eventOffsets,
   int limit = 60,
+  String? timezone,
 }) {
   final entries = <ReminderPlanEntry>[];
 
@@ -87,6 +91,7 @@ List<ReminderPlanEntry> buildReminderPlan({
           ),
           boardId: boardId,
           isAllDay: isAllDay,
+          timezone: timezone,
         ),
       );
     }
@@ -107,8 +112,13 @@ List<ReminderPlanEntry> buildReminderPlan({
     if (event.isWorkingLocation) continue;
     final start = event.startAt;
     if (start == null) continue;
-    final dueAt = event.isAllDay
-        ? DateTime(start.year, start.month, start.day, 9)
+    final projected = calendarProjectEvent(event, timezone);
+    final wallStart = projected.startAt!;
+    final dueAt = projected.isAllDay
+        ? calendarWallToUtc(
+            calendarDate(wallStart.year, wallStart.month, wallStart.day, 9),
+            timezone,
+          )
         : start;
     addEntries(
       kind: ReminderKind.event,
@@ -116,7 +126,7 @@ List<ReminderPlanEntry> buildReminderPlan({
       title: event.title ?? 'Event',
       dueAt: dueAt,
       offsets: eventOffsets,
-      isAllDay: event.isAllDay,
+      isAllDay: projected.isAllDay,
     );
   }
 

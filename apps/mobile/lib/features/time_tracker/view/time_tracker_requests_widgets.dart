@@ -180,28 +180,24 @@ class _UserRow extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     final initials = _initials(displayName);
-    final trimmedAvatarUrl = avatarUrl?.trim();
-    final hasAvatar = trimmedAvatarUrl?.isNotEmpty == true;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         // Avatar circle
-        CircleAvatar(
+        NetworkAvatar(
           radius: 13,
           backgroundColor: colorScheme.primary.withValues(alpha: 0.12),
-          backgroundImage: hasAvatar ? NetworkImage(trimmedAvatarUrl!) : null,
-          child: hasAvatar
-              ? null
-              : Text(
-                  initials,
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 11,
-                    height: 1,
-                  ),
-                ),
+          avatarUrl: avatarUrl,
+          child: Text(
+            initials,
+            style: TextStyle(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+              height: 1,
+            ),
+          ),
         ),
         const SizedBox(width: 8),
         // Display name

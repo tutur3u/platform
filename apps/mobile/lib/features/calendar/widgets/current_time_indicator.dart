@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 
 /// A red horizontal line positioned at the current time on the day timeline.
 ///
@@ -17,13 +18,12 @@ class CurrentTimeIndicator extends StatefulWidget {
 
 class _CurrentTimeIndicatorState extends State<CurrentTimeIndicator> {
   late Timer _timer;
-  TimeOfDay _time = TimeOfDay.now();
 
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(minutes: 1), (_) {
-      setState(() => _time = TimeOfDay.now());
+      setState(() {});
     });
   }
 
@@ -35,7 +35,8 @@ class _CurrentTimeIndicatorState extends State<CurrentTimeIndicator> {
 
   @override
   Widget build(BuildContext context) {
-    final minutes = _time.hour * 60 + _time.minute;
+    final time = TimeOfDay.fromDateTime(calendarNowInContext(context));
+    final minutes = time.hour * 60 + time.minute;
     final top = (minutes / 60) * widget.hourHeight;
 
     return Positioned(

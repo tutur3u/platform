@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/working_location_icon.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -212,8 +213,8 @@ class _AgendaViewState extends State<AgendaView> {
     List<CalendarEvent> events,
     DateTime selectedDate,
   ) {
-    final now = DateTime.now();
-    final start = DateTime(
+    final now = calendarNowInContext(context);
+    final start = calendarDate(
       selectedDate.year,
       selectedDate.month,
       selectedDate.day,
@@ -225,10 +226,10 @@ class _AgendaViewState extends State<AgendaView> {
       final eventEnd = event.endAt ?? eventStart;
       if (eventStart == null) continue;
 
-      var day = DateTime(eventStart.year, eventStart.month, eventStart.day);
+      var day = calendarDate(eventStart.year, eventStart.month, eventStart.day);
       // For all-day events, endAt is exclusive (midnight after last day).
       // Subtract 1 day to get the last inclusive calendar day.
-      final rawEnd = DateTime(eventEnd!.year, eventEnd.month, eventEnd.day);
+      final rawEnd = calendarDate(eventEnd!.year, eventEnd.month, eventEnd.day);
       final lastDay = event.isAllDay
           ? rawEnd.subtract(const Duration(days: 1))
           : rawEnd;
@@ -243,7 +244,7 @@ class _AgendaViewState extends State<AgendaView> {
 
     final sortedDays = grouped.keys.toList()..sort();
     final items = <_AgendaItem>[];
-    final today = DateTime(now.year, now.month, now.day);
+    final today = calendarDate(now.year, now.month, now.day);
     var insertedNow = false;
 
     for (var di = 0; di < sortedDays.length; di++) {
@@ -252,8 +253,8 @@ class _AgendaViewState extends State<AgendaView> {
         ..sort((a, b) {
           if (a.isAllDay && !b.isAllDay) return -1;
           if (!a.isAllDay && b.isAllDay) return 1;
-          final aStart = a.startAt ?? DateTime(0);
-          final bStart = b.startAt ?? DateTime(0);
+          final aStart = a.startAt ?? calendarDate(0);
+          final bStart = b.startAt ?? calendarDate(0);
           return aStart.compareTo(bStart);
         });
 
@@ -367,8 +368,8 @@ class _DateHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final now = calendarNowInContext(context);
+    final today = calendarDate(now.year, now.month, now.day);
     final isToday = date == today;
     final isTomorrow = date == today.add(const Duration(days: 1));
 
@@ -446,13 +447,12 @@ class _NowIndicator extends StatefulWidget {
 
 class _NowIndicatorState extends State<_NowIndicator> {
   late Timer _timer;
-  DateTime _now = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(minutes: 1), (_) {
-      setState(() => _now = DateTime.now());
+      setState(() {});
     });
   }
 
@@ -471,7 +471,7 @@ class _NowIndicatorState extends State<_NowIndicator> {
         (MediaQuery.alwaysUse24HourFormatOf(context)
                 ? DateFormat.Hm(locale)
                 : DateFormat.jm(locale))
-            .format(_now);
+            .format(calendarNowInContext(context));
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

@@ -88,6 +88,48 @@ describe('mobile beta release history', () => {
     }
   });
 
+  for (const changes of ['', 'fix(mobile): follow-up after release tag (#3)']) {
+    test(`preserves published .0 notes when tag-to-build changes are ${changes ? 'present' : 'empty'}`, async () => {
+      const originalFetch = globalThis.fetch;
+      const responses = [{ data: [{ id: 'app' }] }, { data: [], links: {} }];
+      globalThis.fetch = async () => ({
+        ok: true,
+        json: async () => responses.shift(),
+      });
+      const { privateKey } = generateKeyPairSync('ec', {
+        namedCurve: 'prime256v1',
+      });
+      try {
+        const releases = await releaseHistory({
+          credentials: { privateKey, keyId: 'key', issuerId: 'issuer' },
+          githubToken: 'test-token',
+          version: '0.21.0',
+          sha: 'current',
+          date: '2026-09-30',
+          git: (_command, args) => {
+            if (args[0] === 'merge-base') return '';
+            assert.equal(args[3], 'mobile-v0.21.0..current');
+            return changes;
+          },
+        });
+        assert.deepEqual(
+          releases,
+          changes
+            ? [
+                {
+                  version: '0.21.0',
+                  date: '2026-09-30',
+                  changes: ['follow-up after release tag'],
+                },
+              ]
+            : []
+        );
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  }
+
   test('keeps a historical manual build without blocking the current beta', async () => {
     const originalFetch = globalThis.fetch;
     const originalWarn = console.warn;

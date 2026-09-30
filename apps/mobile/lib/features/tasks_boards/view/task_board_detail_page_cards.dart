@@ -567,21 +567,12 @@ class _AssigneeAvatar extends StatelessWidget {
         ? assignee.displayName!.trim()
         : assignee.id;
     final avatarUrl = assignee.avatarUrl?.trim() ?? '';
-    final hasAvatar = avatarUrl.isNotEmpty;
     final fallback = Text(
       name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
       style: const TextStyle(fontSize: 9),
     );
 
-    if (!hasAvatar) {
-      return CircleAvatar(radius: 10, child: fallback);
-    }
-
-    return CircleAvatar(
-      radius: 10,
-      backgroundImage: NetworkImage(avatarUrl),
-      onBackgroundImageError: (error, stackTrace) {},
-    );
+    return NetworkAvatar(radius: 10, avatarUrl: avatarUrl, child: fallback);
   }
 }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 
 /// A collapsible month/week calendar strip.
 ///
@@ -37,13 +38,13 @@ class _MonthStripState extends State<MonthStrip> {
 
   // --- Month paging (expanded mode) ---
   late PageController _monthPageController;
-  static final _referenceMonth = DateTime(2020);
+  static final DateTime _referenceMonth = calendarDate(2020);
   static const _monthInitialPage = 500;
 
   // --- Week paging (collapsed mode) ---
   late PageController _weekPageController;
   // Reference: Sunday 5 Jan 2020.
-  static final _referenceWeekStart = DateTime(2020, 1, 5);
+  static final DateTime _referenceWeekStart = calendarDate(2020, 1, 5);
   static const _weekInitialPage = 1000;
 
   @override
@@ -112,7 +113,7 @@ class _MonthStripState extends State<MonthStrip> {
     final offset = page - _monthInitialPage;
     final totalMonths =
         _referenceMonth.year * 12 + _referenceMonth.month - 1 + offset;
-    return DateTime(totalMonths ~/ 12, totalMonths % 12 + 1);
+    return calendarDate(totalMonths ~/ 12, totalMonths % 12 + 1);
   }
 
   // --- Week helpers ---
@@ -120,7 +121,7 @@ class _MonthStripState extends State<MonthStrip> {
   /// Returns the first day of the week containing [date], based on the
   /// configured first day of week (0=Sun, 1=Mon, 6=Sat).
   DateTime _weekStartOf(DateTime date) {
-    final d = DateTime(date.year, date.month, date.day);
+    final d = calendarDate(date.year, date.month, date.day);
     // d.weekday: Mon=1 … Sun=7. Convert to 0-based (Sun=0).
     final wd = d.weekday % 7;
     final fdow = widget.firstDayOfWeek;
@@ -144,7 +145,7 @@ class _MonthStripState extends State<MonthStrip> {
   // --- Event check ---
 
   bool _hasEvents(DateTime date) {
-    final dayStart = DateTime(date.year, date.month, date.day);
+    final dayStart = calendarDate(date.year, date.month, date.day);
     final dayEnd = dayStart.add(const Duration(days: 1));
     return widget.events.any((e) {
       final start = e.startAt;
@@ -203,7 +204,9 @@ class _MonthStripState extends State<MonthStrip> {
                 final weekStart = _weekStartForPage(page);
                 // Use mid-week (Wednesday) to determine the display month.
                 final midWeek = weekStart.add(const Duration(days: 3));
-                widget.onMonthChanged(DateTime(midWeek.year, midWeek.month));
+                widget.onMonthChanged(
+                  calendarDate(midWeek.year, midWeek.month),
+                );
               },
               itemBuilder: (context, page) {
                 final weekStart = _weekStartForPage(page);
@@ -281,8 +284,8 @@ class _WeekRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final now = calendarNowInContext(context);
+    final today = calendarDate(now.year, now.month, now.day);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -374,11 +377,11 @@ class _MonthGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final now = calendarNowInContext(context);
+    final today = calendarDate(now.year, now.month, now.day);
 
-    final firstOfMonth = DateTime(month.year, month.month);
-    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final firstOfMonth = calendarDate(month.year, month.month);
+    final daysInMonth = calendarDate(month.year, month.month + 1, 0).day;
     // Convert weekday to 0-based (Sun=0), then offset by firstDayOfWeek.
     final startWeekday = (firstOfMonth.weekday % 7 - firstDayOfWeek + 7) % 7;
 
@@ -391,7 +394,7 @@ class _MonthGrid extends StatelessWidget {
 
     // Day cells.
     for (var day = 1; day <= daysInMonth; day++) {
-      final date = DateTime(month.year, month.month, day);
+      final date = calendarDate(month.year, month.month, day);
       final isToday = date == today;
       final isSelected =
           date.year == selectedDate.year &&
