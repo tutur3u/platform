@@ -45,6 +45,7 @@ export {
 } from './mail-attachment-preview';
 export * from './mail-blacklist';
 export { getMailBootstrap, getMailUnreadCounts } from './mail-bootstrap';
+export * from './mail-invitation';
 export { bulkUpdateMailThreads, markMailFolderRead } from './mail-read';
 export * from './mail-types';
 

@@ -161,6 +161,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   String? _mailboxId;
   String _folder = 'inbox';
   bool _loading = true;
+  bool _listResolved = false;
   bool _accessVerified = false;
   bool _cacheRestored = false;
   bool _accessDenied = false;
@@ -352,6 +353,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       _loading = true;
       _failed = false;
       if (!more && _visibleListKey != path) {
+        _listResolved = cached != null;
         _hasMore = false;
         _items = mailRows(cached?[_threads ? 'threads' : 'messages']);
         final organization = _repository.cachedList(
@@ -386,6 +388,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       setState(() {
         final items = mailRows(result[_threads ? 'threads' : 'messages']);
         _items = more ? [..._items, ...items] : items;
+        _listResolved = true;
         _page = page;
         _hasMore =
             pagination['hasMore'] as bool? ??
@@ -623,6 +626,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
               _pendingReaderIds.add(id);
               ++_generation;
               setState(() {
+                _loading = false;
                 _items = optimisticMailItems(
                   _items,
                   {id},
@@ -655,7 +659,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       if (mounted) setState(() => _openingId = null);
       await navigation;
       if (mounted && box == _mailboxId && openedFolder == _folder) {
-        unawaited(_load());
+        if (_pendingReaderIds.isEmpty) unawaited(_load());
       }
     } on Object {
       if (mounted) _showOpenFailure(item);

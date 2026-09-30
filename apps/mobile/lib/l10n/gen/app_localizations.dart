@@ -17910,6 +17910,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This removes the queued change from this device. It does not undo anything the server may have received.'**
   String get offlineChangesDiscardConfirm;
+
+  /// No description provided for @mailMessageDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Message details'**
+  String get mailMessageDetails;
+
+  /// No description provided for @mailInvitationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar invitation'**
+  String get mailInvitationTitle;
+
+  /// No description provided for @mailInvitationAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get mailInvitationAccept;
+
+  /// No description provided for @mailInvitationDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get mailInvitationDecline;
+
+  /// No description provided for @mailInvitationTentative.
+  ///
+  /// In en, this message translates to:
+  /// **'Tentative'**
+  String get mailInvitationTentative;
+
+  /// No description provided for @mailInvitationIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply as {attendee} to organizer {organizer}'**
+  String mailInvitationIdentity(String attendee, String organizer);
+
+  /// No description provided for @mailInvitationLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get mailInvitationLocation;
+
+  /// No description provided for @mailInvitationWhen.
+  ///
+  /// In en, this message translates to:
+  /// **'When'**
+  String get mailInvitationWhen;
+
+  /// No description provided for @mailInvitationJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join meeting'**
+  String get mailInvitationJoin;
+
+  /// No description provided for @mailInvitationRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry invitation details'**
+  String get mailInvitationRetry;
+
+  /// No description provided for @mailInvitationSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending your response…'**
+  String get mailInvitationSending;
+
+  /// No description provided for @mailInvitationSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Response sent: {response}'**
+  String mailInvitationSent(String response);
+
+  /// No description provided for @mailInvitationPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Response is pending. Check again before replying.'**
+  String get mailInvitationPending;
+
+  /// No description provided for @mailInvitationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not confirm your response. Retry the same response to check its status.'**
+  String get mailInvitationFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

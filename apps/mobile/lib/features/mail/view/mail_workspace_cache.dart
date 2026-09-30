@@ -80,6 +80,7 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
         _search.text = query;
         _items = items;
         _visibleListKey = listKey;
+        _listResolved = listKey != null;
         _hasMore = false;
       });
     } on Object {
@@ -134,6 +135,7 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
         _selected.clear();
         _hasMore = false;
         _loading = false;
+        _listResolved = false;
         _failed = true;
       });
     }
