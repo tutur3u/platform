@@ -54,15 +54,19 @@ export async function refreshGoogleColorContext(args: {
 }) {
   const context = await getGoogleColorContext(args.calendar, args.calendarId);
   if (args.authTokenId && context.calendarBackground) {
-    const { error } = await args.supabase
-      .from('calendar_connections')
-      .update({ color: context.calendarBackground })
-      .eq('ws_id', args.wsId)
-      .eq('auth_token_id', args.authTokenId)
-      .eq('calendar_id', args.calendarId)
-      .eq('provider', 'google');
-    if (error)
-      console.warn('Google source color refresh failed', { code: error.code });
+    try {
+      const { error } = await args.supabase
+        .from('calendar_connections')
+        .update({ color: context.calendarBackground })
+        .eq('ws_id', args.wsId)
+        .eq('auth_token_id', args.authTokenId)
+        .eq('calendar_id', args.calendarId)
+        .eq('provider', 'google');
+      if (error) console.warn('Google source color refresh failed');
+    } catch {
+      // Color persistence is optional; keep fetched metadata and event sync usable.
+      console.warn('Google source color refresh failed');
+    }
   }
   return context;
 }
