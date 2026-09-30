@@ -169,6 +169,10 @@ begin
   ) then
     raise exception 'Invalid stock workspace' using errcode = '23514';
   end if;
+  -- Serialize first-price authoring with ordinary tuple edits as well as checkout.
+  perform 1 from private.inventory_products where product_id=p_product_id
+    and unit_id=p_unit_id and warehouse_id=p_warehouse_id for update;
+  perform 1 from public.workspace_products where id=p_product_id and ws_id=p_ws_id for share;
   if not exists (select 1 from private.inventory_products where product_id=p_product_id and unit_id=p_unit_id and warehouse_id=p_warehouse_id) then
     raise exception 'Stock tuple required to author a price' using errcode='23514';
   end if;

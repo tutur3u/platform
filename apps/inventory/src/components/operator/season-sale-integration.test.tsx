@@ -215,6 +215,46 @@ describe('mounted season sales integrations', () => {
     ]);
     expect(api.sale.mock.calls[0]?.[1].request_id).toBeTruthy();
   });
+  it('disables an existing quoted cart when its scheduled period is archived', async () => {
+    function Archivable() {
+      const [status, setStatus] = useState<'active' | 'archived'>('active');
+      return (
+        <>
+          <button type="button" onClick={() => setStatus('archived')}>
+            Archive fixture season
+          </button>
+          <SaleCreateDialog
+            wsId="ws"
+            workspaceCurrency="VND"
+            products={products}
+            periods={[{ ...period, status }]}
+            options={{ ...options, defaultSalesPeriodId: period.id }}
+          />
+        </>
+      );
+    }
+    mount(<Archivable />);
+    fireEvent.click(screen.getByRole('button', { name: 'Record sale' }));
+    await add('Alpha');
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Archive fixture season',
+        hidden: true,
+      })
+    );
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Revenue' }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Review' }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    const save = screen.getByRole('button', { name: 'Record sale' });
+    expect((save as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(save);
+    expect(api.sale).not.toHaveBeenCalled();
+  });
   it('requires manual choice for an implicit legacy-only current period', async () => {
     mount(
       <SaleCreateDialog

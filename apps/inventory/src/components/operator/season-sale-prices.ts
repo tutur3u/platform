@@ -66,6 +66,7 @@ export function useSeasonSalePrices({
     (!scheduled ||
       (prices.isSuccess &&
         Date.now() - Date.parse(asOf) < 15_000 &&
+        Boolean(period && isCurrentSalesPeriod(period, new Date(asOf))) &&
         lines.every((line) => {
           const price = current.get(line.key);
           return (

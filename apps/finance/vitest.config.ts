@@ -7,7 +7,9 @@ export default defineConfig({
   test: {
     server: {
       deps: {
-        inline: ['next-intl'],
+        // Inline server helpers so vi.mock('server-only') also applies in
+        // repository project/shard runs, where workspace imports are external.
+        inline: ['next-intl', '@tuturuuu/inventory-core'],
       },
     },
     // These are server-only route tests. Keep their heavy module imports from

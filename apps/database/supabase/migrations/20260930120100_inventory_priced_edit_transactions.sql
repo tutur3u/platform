@@ -41,6 +41,8 @@ begin
  perform 1 from private.inventory_sales_periods s where s.ws_id=p_ws_id and exists(
   select 1 from private.inventory_product_prices p where p.period_id=s.id and p.product_id=p_product_id)
   order by s.id for update;
+ -- Match checkout/authoring order: period, stock tuples, then product.
+ perform 1 from private.inventory_products where product_id=p_product_id order by unit_id,warehouse_id for update;
  select * into v_product from public.workspace_products where id=p_product_id and ws_id=p_ws_id for update;
  if not found then raise exception 'Product not found' using errcode='23514'; end if;
  v_next:=jsonb_populate_record(v_product,coalesce(p_metadata,'{}'::jsonb));
@@ -67,7 +69,6 @@ begin
  if exists(select 1 from jsonb_array_elements(p_inventory) i group by i->>'unit_id',i->>'warehouse_id' having count(*)>1) then
   raise exception 'Duplicate stock tuple' using errcode='23514';
  end if;
- perform 1 from private.inventory_products where product_id=p_product_id order by unit_id,warehouse_id for update;
  for v_old in select * from private.inventory_products where product_id=p_product_id loop
   if not exists(select 1 from jsonb_array_elements(p_inventory) i where (i->>'unit_id')::uuid=v_old.unit_id and (i->>'warehouse_id')::uuid=v_old.warehouse_id) then
    -- Movement insertion and removal share this transaction, including failure.

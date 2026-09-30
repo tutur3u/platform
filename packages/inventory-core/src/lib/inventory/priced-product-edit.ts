@@ -21,29 +21,41 @@ export async function editPricedProduct({
   context?: { beneficiary_id?: string | null; note?: string | null };
   recordChanges?: boolean;
 }) {
-  const { data, error } = await sbAdmin
-    .schema('private')
-    .from('inventory_product_prices')
-    .select('id')
-    .eq('ws_id', wsId)
-    .eq('product_id', productId)
-    .limit(1);
-  if (error) {
-    if (['42P01', 'PGRST205'].includes(error.code)) return null;
+  // The transaction applies before and after first-price authoring. Never route
+  // an edit using a price-existence read that can become stale before its writes.
+  try {
+    return await periodPricingRpc<{
+      deleted: number;
+      inserted: number;
+      updated: number;
+    }>(sbAdmin, 'edit_inventory_priced_product', {
+      p_ws_id: wsId,
+      p_product_id: productId,
+      p_metadata: metadata ?? null,
+      p_inventory: inventory ?? null,
+      p_workspace_user_id: workspaceUserId,
+      p_context: context,
+      p_record_changes: recordChanges,
+    });
+  } catch (error) {
+    if (!isMissingPricingTransaction(error)) throw error;
+    const probe = await sbAdmin
+      .schema('private')
+      .from('inventory_product_prices')
+      .select('id')
+      .limit(0);
+    if (probe.error && ['42P01', 'PGRST205'].includes(probe.error.code))
+      return null;
+    // If price support exists, an absent edit transaction must fail closed.
     throw error;
   }
-  if (!data?.length) return null;
-  return periodPricingRpc<{
-    deleted: number;
-    inserted: number;
-    updated: number;
-  }>(sbAdmin, 'edit_inventory_priced_product', {
-    p_ws_id: wsId,
-    p_product_id: productId,
-    p_metadata: metadata ?? null,
-    p_inventory: inventory ?? null,
-    p_workspace_user_id: workspaceUserId,
-    p_context: context,
-    p_record_changes: recordChanges,
-  });
+}
+
+export function isMissingPricingTransaction(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    ['42883', 'PGRST202'].includes(String(error.code))
+  );
 }

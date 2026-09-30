@@ -1,5 +1,8 @@
 import 'server-only';
-import type { InventoryPrice } from '@tuturuuu/internal-api/inventory';
+import type {
+  InventoryPrice,
+  InventorySalesPeriodPayload,
+} from '@tuturuuu/internal-api/inventory';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 export async function listPeriodPrices(
@@ -84,30 +87,45 @@ export async function updateScheduledPeriod(
   sbAdmin: TypedSupabaseClient,
   wsId: string,
   periodId: string,
-  metadata: { pricing_mode?: string },
+  metadata: Partial<
+    InventorySalesPeriodPayload & { status: 'active' | 'archived' }
+  >,
   productIds?: string[]
 ) {
-  const { data, error } = await sbAdmin
-    .schema('private')
-    .from('inventory_sales_periods')
-    .select('*')
-    .eq('ws_id', wsId)
-    .eq('id', periodId)
-    .maybeSingle();
-  if (error) throw error;
-  if (
-    data?.pricing_mode !== 'scheduled' &&
-    metadata.pricing_mode !== 'scheduled'
-  )
-    return false;
-  return periodPricingRpc<boolean>(
-    sbAdmin,
-    'update_inventory_scheduled_period',
-    {
-      p_ws_id: wsId,
-      p_period_id: periodId,
-      p_metadata: metadata,
-      p_product_ids: productIds === undefined ? null : [...new Set(productIds)],
-    }
-  );
+  // All installed-schema edits use the same locked transaction, including a
+  // legacy period concurrently converted to scheduled pricing.
+  try {
+    await periodPricingRpc<boolean>(
+      sbAdmin,
+      'update_inventory_scheduled_period',
+      {
+        p_ws_id: wsId,
+        p_period_id: periodId,
+        p_metadata: metadata,
+        p_product_ids:
+          productIds === undefined ? null : [...new Set(productIds)],
+      }
+    );
+    return true;
+  } catch (error) {
+    if (
+      typeof error !== 'object' ||
+      !error ||
+      !('code' in error) ||
+      !['42883', 'PGRST202'].includes(String(error.code))
+    )
+      throw error;
+    const probe = await sbAdmin
+      .schema('private')
+      .from('inventory_sales_periods')
+      .select('pricing_mode')
+      .limit(0);
+    if (
+      probe.error &&
+      ['42703', 'PGRST204'].includes(probe.error.code) &&
+      metadata.pricing_mode !== 'scheduled'
+    )
+      return false;
+    throw error;
+  }
 }
