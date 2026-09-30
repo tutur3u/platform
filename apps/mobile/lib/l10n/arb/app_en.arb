@@ -3783,5 +3783,36 @@
     "mailCalendarLinkInvalid": "Paste a Calendar event link containing the selected event.",
     "mailCalendarLinkLinked": "Calendar event linked",
     "mailCalendarLinkUnlink": "Remove link",
-    "mailCalendarLinkOpen": "Open linked event"
+    "mailCalendarLinkOpen": "Open linked event",
+    "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+    "@remindersOccurrenceDetails": {
+        "placeholders": {
+            "leadTime": {
+                "type": "String"
+            },
+            "occurrence": {
+                "type": "String"
+            },
+            "timezone": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsTimezone": "Personal timezone",
+    "settingsWorkspaceTimezone": "Workspace timezone",
+    "settingsTimezoneDescription": "Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.",
+    "settingsTimezoneAuto": "Automatic",
+    "settingsTimezoneSearch": "Search timezones",
+    "settingsTimezoneEffective": "Effective timezone: {timezone}",
+    "settingsTimezoneError": "Could not load or save timezone. Tap to retry.",
+    "@settingsTimezoneEffective": {
+        "placeholders": {
+            "timezone": {
+                "type": "String"
+            }
+        }
+    },
+    "calendarInvalidLocalTime": "Choose a valid start and end time. Some times do not exist when daylight saving time changes.",
+    "profileOverviewTab": "Overview",
+    "profileTimelineTab": "Timeline"
 }
