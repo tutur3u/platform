@@ -24,11 +24,13 @@ class ReminderService extends ChangeNotifier {
     CalendarRepository? calendarRepository,
     PushNotificationService? notifications,
     SettingsRepository? settingsRepository,
+    DateTime Function()? now,
   }) : _timezoneResolver = timezoneResolver ?? ReminderTimezoneResolver(),
        _taskRepository = taskRepository ?? TaskRepository(),
        _calendarRepository = calendarRepository ?? CalendarRepository(),
        _notifications = notifications ?? PushNotificationService.instance,
-       _settingsRepository = settingsRepository ?? SettingsRepository();
+       _settingsRepository = settingsRepository ?? SettingsRepository(),
+       _now = now ?? DateTime.now;
 
   static final ReminderService instance = ReminderService();
   final ReminderTimezoneResolver _timezoneResolver;
@@ -41,6 +43,7 @@ class ReminderService extends ChangeNotifier {
   final CalendarRepository _calendarRepository;
   final PushNotificationService _notifications;
   final SettingsRepository _settingsRepository;
+  final DateTime Function() _now;
   String? _userId;
   List<Workspace> _workspaces = const [];
   Future<void>? _initializing;
@@ -104,7 +107,7 @@ class ReminderService extends ChangeNotifier {
           : DateTime.fromMillisecondsSinceEpoch(lastSuccess),
       scheduledCount: storedIds.intersection(pendingIds).length,
       notificationsEnabled: notificationsEnabled,
-      nextReminderAt: nextAt?.isAfter(DateTime.now()) == true ? nextAt : null,
+      nextReminderAt: nextAt?.isAfter(_now()) == true ? nextAt : null,
     );
     notifyListeners();
   }
@@ -168,26 +171,27 @@ class ReminderService extends ChangeNotifier {
     final lastSuccess = status.lastSuccessAt;
     if (lastSuccess != null &&
         status.scheduledCount > 0 &&
-        DateTime.now().difference(lastSuccess) < const Duration(minutes: 15)) {
+        _now().difference(lastSuccess) < const Duration(minutes: 15)) {
       return;
     }
     await refresh();
   }
 
-  /// Rebuild the normal plan after a timezone change, bypassing stale guards.
-  /// Existing notification IDs survive unless the new plan removes them.
+  /// Rebuild after initialization and the current refresh finish bookkeeping.
+  /// Zone changes never invalidate saved settings or an OS-accepted alert's ID.
   Future<void> timezoneChanged({
     required String userId,
     String? workspaceId,
   }) async {
+    if (_userId != userId) return;
+    if (_initializing case final initializing?) await initializing;
     if (_userId != userId ||
         (workspaceId != null &&
             !_workspaces.any((workspace) => workspace.id == workspaceId))) {
       return;
     }
-    final generation = ++_scopeGeneration;
     if (_refreshing case final running?) await running;
-    if (!_isCurrent(userId, generation)) return;
+    if (_userId != userId) return;
     await refresh();
   }
 
@@ -207,7 +211,7 @@ class ReminderService extends ChangeNotifier {
     notifyListeners();
     try {
       final allEntries = <ReminderPlanEntry>[];
-      final now = DateTime.now();
+      final now = _now();
       for (final workspace in _workspaces) {
         if (!_isCurrent(userId, generation)) return;
         final timezone = settings.eventsEnabled
@@ -301,7 +305,7 @@ class ReminderService extends ChangeNotifier {
       }
       if (!_isCurrent(userId, generation)) return;
       await store.setStringList(key, scheduledIds.map((id) => '$id').toList());
-      final finishedAt = DateTime.now();
+      final finishedAt = _now();
       await store.setInt(
         'reminders.$userId.lastSuccessAt',
         finishedAt.millisecondsSinceEpoch,
