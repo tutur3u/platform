@@ -8,6 +8,7 @@ export const calendarTimezoneSchema = z
   .refine(
     (value) => {
       if (value === 'auto') return true;
+      if (/^[+-]/.test(value)) return false;
       if (!/^[A-Za-z0-9._+-]+(?:\/[A-Za-z0-9._+-]+)*$/.test(value))
         return false;
       try {

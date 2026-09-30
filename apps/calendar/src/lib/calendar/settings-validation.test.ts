@@ -13,10 +13,16 @@ describe('calendar timezone preference validation', () => {
   ])('preserves supported preference %s', (timezone) => {
     expect(calendarTimezoneSchema.parse(timezone)).toBe(timezone);
   });
-  it.each(['', 'Mars/Unknown', '+07:00', ' UTC ', 'Asia/Ho_Chi_Minh/Invalid'])(
-    'rejects unsupported preference %s',
-    (timezone) => {
-      expect(calendarTimezoneSchema.safeParse(timezone).success).toBe(false);
-    }
-  );
+  it.each([
+    '',
+    'Mars/Unknown',
+    '+07:00',
+    '+07',
+    '+0700',
+    '-2359',
+    ' UTC ',
+    'Asia/Ho_Chi_Minh/Invalid',
+  ])('rejects unsupported preference %s', (timezone) => {
+    expect(calendarTimezoneSchema.safeParse(timezone).success).toBe(false);
+  });
 });
