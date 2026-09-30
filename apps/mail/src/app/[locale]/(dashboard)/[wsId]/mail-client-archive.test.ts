@@ -275,3 +275,60 @@ it('preserves new arrivals when a refreshed pending archive fails and restores t
     screen.queryByRole('status', { name: messages.mail.loading })
   ).toBeNull();
 });
+
+for (const outcome of ['success', 'failure'] as const) {
+  it(`retains a newer message in the same conversation during pending archive and ${outcome}`, async () => {
+    const pending = deferred();
+    await mountAndArchive(pending);
+    const arrival = {
+      ...thread,
+      latestMessageId: 'new-inbound-after-archive',
+      lastMessageAt: '2026-09-30T12:01:00Z',
+      messageCount: 2,
+      inboxInboundCount: 1,
+      unreadCount: 1,
+      latestSnippet: 'New same-conversation message',
+    };
+    serverRows = [arrival];
+    await act(async () => {
+      await client.refetchQueries({ queryKey: key });
+    });
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-mail-thread-open="last"]')
+      ).not.toBeNull()
+    );
+    expect(
+      client.getQueryData<{ pages: ReturnType<typeof page>[] }>(key)?.pages[0]
+        ?.threads[0]?.latestMessageId
+    ).toBe(arrival.latestMessageId);
+    await act(async () => {
+      if (outcome === 'success') pending.resolve({});
+      else pending.reject(new Error('Synthetic old-message archive failure'));
+    });
+    await waitFor(() => expect(client.isMutating()).toBe(0));
+    expect(
+      client.getQueryData<{ pages: ReturnType<typeof page>[] }>(key)?.pages[0]
+        ?.threads[0]?.latestMessageId
+    ).toBe(arrival.latestMessageId);
+    if (outcome === 'failure') {
+      await screen.findByRole('button', { name: 'Archive' });
+      const retry = deferred();
+      api.update.mockReturnValue(retry.promise);
+      fireEvent.click(screen.getByRole('button', { name: 'Archive' }));
+      await waitFor(() => expect(api.update).toHaveBeenCalledTimes(2));
+      await screen.findByText(messages.mail.empty);
+      await act(async () => {
+        await client.refetchQueries({ queryKey: key });
+      });
+      expect(
+        document.querySelector('[data-mail-thread-open="last"]')
+      ).toBeNull();
+      serverRows = [];
+      await act(async () => {
+        retry.resolve({});
+      });
+      await waitFor(() => expect(client.isMutating()).toBe(0));
+    }
+  });
+}

@@ -2,6 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 import type { MailThreadsResponse } from '@tuturuuu/internal-api';
 import { afterEach, expect, it, vi } from 'vitest';
 import { loadMailThreadPage } from './mail-thread-page-query';
+import { restoreThreadPages } from './mail-thread-rollback';
 
 const api = vi.hoisted(() => ({ list: vi.fn() }));
 vi.mock('@tuturuuu/internal-api', () => ({ listMailThreads: api.list }));
@@ -9,7 +10,14 @@ afterEach(() => vi.clearAllMocks());
 const scope = { workspaceId: 'ws', mailboxId: 'box', folder: 'inbox' as const };
 const rows = {
   threads: [
-    { id: 'last', unreadCount: 1, inboundCount: 1 },
+    {
+      id: 'last',
+      latestMessageId: 'old',
+      messageCount: 1,
+      lastMessageAt: '2026-09-30T12:00:00Z',
+      unreadCount: 1,
+      inboundCount: 1,
+    },
     { id: 'new', unreadCount: 0 },
   ],
   pagination: { page: 2, pageSize: 40, total: 42, hasMore: false },
@@ -32,6 +40,7 @@ function archive(client: QueryClient, ws = 'ws', mailbox = 'box') {
   const done = mutation
     .execute({
       action: 'archive',
+      threadRevisions: { last: rows.threads[0] },
       targetThreadId: 'last',
       targetWorkspaceId: ws,
       mailboxId: mailbox,
@@ -101,4 +110,45 @@ it('retains a pending archive in the archive folder while filtering unread inbox
   action.pending.resolve();
   await action.done;
   client.clear();
+});
+
+it('does not replay an old archive over a later inbound in the same conversation', async () => {
+  const client = new QueryClient();
+  const request = deferred<MailThreadsResponse>();
+  api.list.mockReturnValue(request.promise);
+  const loading = loadMailThreadPage(client, scope, 2);
+  const action = archive(client);
+  action.pending.resolve();
+  await action.done;
+  const arrival = {
+    ...rows.threads[0]!,
+    latestMessageId: 'new-inbound-after-archive',
+    inboxInboundCount: 1,
+    unreadCount: 1,
+  };
+  request.resolve({ ...rows, threads: [arrival] });
+  expect((await loading).threads).toEqual([arrival]);
+  client.clear();
+});
+
+it('restores stale optimistic flags without replacing a newer same-thread revision on rollback', () => {
+  const before = { pages: [rows], pageParams: [2] };
+  const original = rows.threads[0]!;
+  const arrival = {
+    ...original,
+    latestMessageId: 'new-inbound-after-archive',
+    unreadCount: 2,
+  };
+  const current = { ...before, pages: [{ ...rows, threads: [arrival] }] };
+  expect(
+    restoreThreadPages(current, before, new Set(['last']))?.pages[0]?.threads[0]
+  ).toEqual(arrival);
+  const optimistic = {
+    ...before,
+    pages: [{ ...rows, threads: [{ ...original, unreadCount: 0 }] }],
+  };
+  expect(
+    restoreThreadPages(optimistic, before, new Set(['last']))?.pages[0]
+      ?.threads[0]
+  ).toEqual(original);
 });

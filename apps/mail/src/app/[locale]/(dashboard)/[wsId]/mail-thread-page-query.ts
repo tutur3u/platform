@@ -10,6 +10,11 @@ import {
   type MailThreadQueryScope,
 } from './mail-thread-query';
 
+import {
+  type MailThreadRevision,
+  sameThreadRevision,
+} from './mail-thread-revision';
+
 /** Apply actions overlapping a list request before its response enters the cache. */
 export async function loadMailThreadPage(
   client: QueryClient,
@@ -55,6 +60,7 @@ export async function loadMailThreadPage(
           targetThreadId?: string;
           threadId?: string;
           threadIds?: string[];
+          threadRevisions?: Record<string, MailThreadRevision>;
           targetWorkspaceId?: string;
           mailboxId?: string;
         }
@@ -74,6 +80,15 @@ export async function loadMailThreadPage(
       target.threadIds ?? [target.targetThreadId ?? target.threadId ?? '']
     );
     ids.delete('');
+    // The server archives messages up to its action watermark. A newer inbound
+    // message in the same conversation is authoritative and must reappear.
+    for (const thread of result.threads) {
+      if (
+        (action === 'archive' || action === 'trash') &&
+        !sameThreadRevision(thread, target.threadRevisions?.[thread.id])
+      )
+        ids.delete(thread.id);
+    }
     if (action && ids.size)
       data = updateThreadPages(
         data,
