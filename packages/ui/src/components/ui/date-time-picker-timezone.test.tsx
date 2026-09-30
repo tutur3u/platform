@@ -8,6 +8,7 @@ import {
   pickerCalendarBounds,
   pickerCalendarDate,
   pickerTimeValue,
+  pickerTimeWithMinimum,
   pickerWallTime,
 } from './date-time-picker-values';
 import { eventEndPickerBounds } from './legacy/calendar/event-picker-bounds';
@@ -175,6 +176,70 @@ describe('calendar picker bounds with a different browser day', () => {
     expect(options).toHaveLength(96);
   });
 
+  it('validates a minimum rollover on its destination day across DST and month boundaries', () => {
+    const ny = 'America/New_York';
+    const beforeGap = new Date('2026-03-07T06:30:00Z');
+    const minimum = new Date('2026-03-07T17:00:00Z');
+    expect(
+      pickerTimeWithMinimum(beforeGap, 2, 30, ny, minimum)
+    ).toBeUndefined();
+    expect(
+      pickerTimeWithMinimum(beforeGap, 3, 30, ny, minimum)?.toISOString()
+    ).toBe('2026-03-08T07:30:00.000Z');
+    expect(
+      pickerTimeWithMinimum(
+        new Date('2026-10-31T05:30:00Z'),
+        1,
+        30,
+        ny,
+        new Date('2026-10-31T16:00:00Z')
+      )?.toISOString()
+    ).toBe('2026-11-01T05:30:00.000Z');
+    expect(
+      pickerTimeWithMinimum(
+        new Date('2026-12-31T05:30:00Z'),
+        1,
+        30,
+        ny,
+        new Date('2026-12-31T17:00:00Z')
+      )?.toISOString()
+    ).toBe('2027-01-01T06:30:00.000Z');
+  });
+  it('rejects a DST-gap option reached through the actual minimum rollover control', () => {
+    let saved = new Date('2026-03-07T06:30:00Z');
+    render(
+      <DateTimePicker
+        date={saved}
+        setDate={(next) => {
+          if (next) saved = next;
+        }}
+        minDate={new Date('2026-03-07T17:00:00Z')}
+        inline
+        preferences={{ timezone: 'America/New_York', timeFormat: '24h' }}
+      />
+    );
+    fireEvent.keyDown(
+      screen
+        .getAllByRole('combobox')
+        .find((element) => element.textContent?.includes('01:30'))!,
+      { key: 'Enter' }
+    );
+    fireEvent.click(screen.getByRole('option', { name: '02:30' }));
+    expect(saved.toISOString()).toBe('2026-03-07T06:30:00.000Z');
+  });
+  it('retains an explicit minTime that differs from minDate in a configured zone', () => {
+    const options = filterPickerTimeOptions({
+      date: end,
+      minDate: new Date('2026-09-30T17:00:00Z'),
+      minTime: '09:00',
+      zone,
+      pattern: 'HH:mm',
+      timeFormat: '24h',
+      options: createPickerTimeOptions('24h'),
+    });
+    expect(options[0]?.value).toBe('09:15');
+    expect(options.some((option) => option.value === '08:45')).toBe(false);
+  });
   it('uses maxDate time and calendar boundary in the configured zone', () => {
     const maxDate = new Date('2026-10-01T05:00:00Z');
     const options = filterPickerTimeOptions({

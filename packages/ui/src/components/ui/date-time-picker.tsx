@@ -37,6 +37,7 @@ import {
   filterPickerTimeOptions,
   pickerCalendarBounds,
   pickerCalendarDate,
+  pickerTimeWithMinimum,
   pickerWallTime,
 } from './date-time-picker-values';
 import { Separator } from './separator';
@@ -261,36 +262,14 @@ export function DateTimePicker({
     if (Number.isNaN(hours) || Number.isNaN(minutes)) return;
 
     const baseDate = selectedDate ?? date ?? minDate ?? new Date();
-    const wallTime = pickerWallTime(baseDate, hours, minutes, tz);
-    if (!wallTime) return;
-    let newDate = wallTime;
-
-    if (tz) {
-      if (minDate && newDate.getTime() <= minDate.getTime()) {
-        const minParts = getDatePartsInTimezone(minDate, tz);
-        newDate = buildDateInTimezone(
-          minParts.year,
-          minParts.month,
-          minParts.day + 1,
-          hours,
-          minutes,
-          tz
-        );
-      }
-    } else {
-      if (
-        minDate &&
-        newDate.getFullYear() === minDate.getFullYear() &&
-        newDate.getMonth() === minDate.getMonth() &&
-        newDate.getDate() === minDate.getDate()
-      ) {
-        const minTimeValue = minDate.getHours() * 60 + minDate.getMinutes();
-        const newTimeValue = newDate.getHours() * 60 + newDate.getMinutes();
-        if (newTimeValue <= minTimeValue) {
-          newDate.setDate(newDate.getDate() + 1);
-        }
-      }
-    }
+    const newDate = pickerTimeWithMinimum(
+      baseDate,
+      hours,
+      minutes,
+      tz,
+      minDate
+    );
+    if (!newDate) return;
 
     setSelectedDate(newDate);
     updateDate(newDate);

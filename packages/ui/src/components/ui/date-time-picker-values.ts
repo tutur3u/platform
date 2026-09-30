@@ -21,6 +21,37 @@ export function pickerTimeValue(date: Date, zone: string | null): string {
   return zone ? formatInTimezone(date, zone, 'HH:mm') : format(date, 'HH:mm');
 }
 
+/** Construct a requested calendar wall time without silently normalizing a DST gap. */
+export function pickerWallTimeOnDay(
+  day: Date,
+  hour: number,
+  minute: number,
+  zone: string | null
+): Date | undefined {
+  const year = day.getFullYear();
+  const month = day.getMonth() + 1;
+  const date = day.getDate();
+  const next = zone
+    ? buildDateInTimezone(year, month, date, hour, minute, zone)
+    : new Date(year, month - 1, date, hour, minute);
+  const parts = zone
+    ? getDatePartsInTimezone(next, zone)
+    : {
+        year: next.getFullYear(),
+        month: next.getMonth() + 1,
+        day: next.getDate(),
+        hour: next.getHours(),
+        minute: next.getMinutes(),
+      };
+  return parts.year === year &&
+    parts.month === month &&
+    parts.day === date &&
+    parts.hour === hour &&
+    parts.minute === minute
+    ? next
+    : undefined;
+}
+
 /** Reject nonexistent wall times and preserve an unchanged ambiguous instant. */
 export function pickerWallTime(
   base: Date,
@@ -55,6 +86,42 @@ export function pickerWallTime(
     roundTrip.minute === minute
     ? next
     : undefined;
+}
+
+/** Retain the existing next-day minimum rule, validating its destination wall time. */
+export function pickerTimeWithMinimum(
+  base: Date,
+  hour: number,
+  minute: number,
+  zone: string | null,
+  minDate?: Date
+): Date | undefined {
+  const next = pickerWallTime(base, hour, minute, zone);
+  if (!next || !minDate) return next;
+  if (zone) {
+    if (next.getTime() > minDate.getTime()) return next;
+    const minimum = getDatePartsInTimezone(minDate, zone);
+    return pickerWallTimeOnDay(
+      new Date(minimum.year, minimum.month - 1, minimum.day + 1),
+      hour,
+      minute,
+      zone
+    );
+  }
+  const sameDay =
+    pickerCalendarDate(next, null).getTime() ===
+    pickerCalendarDate(minDate, null).getTime();
+  if (
+    !sameDay ||
+    hour * 60 + minute > minDate.getHours() * 60 + minDate.getMinutes()
+  )
+    return next;
+  return pickerWallTimeOnDay(
+    new Date(next.getFullYear(), next.getMonth(), next.getDate() + 1),
+    hour,
+    minute,
+    null
+  );
 }
 
 export function createPickerTimeOptions(timeFormat: '12h' | '24h') {

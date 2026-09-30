@@ -55,6 +55,35 @@ describe('calendar quick preview timezone', () => {
     ).toBe('Sun, Mar 8 - 01:30 - 03:30');
   });
 
+  it('accepts Unicode whitespace in Intl twelve-hour labels', () => {
+    const original = Object.getOwnPropertyDescriptor(
+      Intl.DateTimeFormat.prototype,
+      'format'
+    )?.get;
+    if (!original) throw new Error('Intl formatter getter unavailable');
+    const spy = vi
+      .spyOn(Intl.DateTimeFormat.prototype, 'format', 'get')
+      .mockImplementation(function (this: Intl.DateTimeFormat) {
+        const formatter = original.call(this) as (
+          date?: number | Date
+        ) => string;
+        return (date?: number | Date) =>
+          formatter(date).replace(/\s(?=[AP]M)/gu, '\u202f');
+      });
+    try {
+      const value = formatEventPreviewTime(
+        '2026-09-30T11:00:00Z',
+        '2026-09-30T13:00:00Z',
+        { timezone: 'Asia/Ho_Chi_Minh', timeFormat: '12h' },
+        'en-US'
+      );
+      expect(value).toContain('06:00\u202fPM');
+      expect(value).toMatch(/06:00\s+PM/u);
+      expect(value).toMatch(/08:00\s+PM/u);
+    } finally {
+      spy.mockRestore();
+    }
+  });
   it('uses the supported locale and twelve-hour clock', () => {
     const value = formatEventPreviewTime(
       '2026-09-30T11:00:00Z',
@@ -62,8 +91,8 @@ describe('calendar quick preview timezone', () => {
       { timezone: 'Asia/Ho_Chi_Minh', timeFormat: '12h' },
       'en-US'
     );
-    expect(value).toContain('06:00 PM');
-    expect(value).toContain('08:00 PM');
+    expect(value).toMatch(/06:00\s+PM/u);
+    expect(value).toMatch(/08:00\s+PM/u);
     expect(
       formatEventPreviewTime(
         '2026-09-30T11:00:00Z',
