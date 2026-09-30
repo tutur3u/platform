@@ -14,6 +14,17 @@ test('invalidates cached availability and preserves the shared storefront shell'
 }, testInfo) => {
   const fixture = await createStorefrontCacheFixture(request);
 
+  const browserErrors: string[] = [];
+  page.on('pageerror', (error) => {
+    if (browserErrors.length < 20)
+      browserErrors.push(error.stack ?? error.message);
+  });
+  page.on('console', (message) => {
+    if (message.type() === 'error' && browserErrors.length < 20) {
+      browserErrors.push(message.text());
+    }
+  });
+
   try {
     const storefrontUrl = `${INVENTORY_URL}/api/v1/inventory/storefronts/${fixture.slug}`;
     const firstRead = await request.get(storefrontUrl);
@@ -85,16 +96,6 @@ test('invalidates cached availability and preserves the shared storefront shell'
       await expect(page.locator('main[aria-busy="true"]')).toBeVisible();
     });
     await expect(page).toHaveURL(new RegExp(`/${fixture.slug}/?$`, 'u'));
-    if (
-      await page
-        .getByRole('heading', { name: 'This view could not load' })
-        .isVisible()
-    ) {
-      console.error(
-        'Storefront recovery details:',
-        await page.locator('details pre').textContent()
-      );
-    }
     await expect(
       page.getByText('Cache Test Product').filter({ visible: true })
     ).toBeVisible();
@@ -103,6 +104,41 @@ test('invalidates cached availability and preserves the shared storefront shell'
       fullPage: true,
       path: testInfo.outputPath('storefront-client-navigation.png'),
     });
+  } catch (error) {
+    // Capture after the failed assertion: the boundary can appear after URL commit.
+    // Diagnostic failures must not replace the original contract failure.
+    try {
+      const recoveryDetails = await page
+        .locator('details pre')
+        .allTextContents();
+      const redact = (value: string) =>
+        value
+          .replace(/Bearer\s+\S+/giu, 'Bearer [redacted]')
+          .replace(
+            /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/gu,
+            '[redacted JWT]'
+          );
+      await testInfo.attach('storefront-navigation-errors', {
+        body: Buffer.from(
+          JSON.stringify(
+            {
+              browserErrors: browserErrors.map(redact),
+              recoveryDetails: recoveryDetails.map(redact),
+            },
+            null,
+            2
+          )
+        ),
+        contentType: 'application/json',
+      });
+      await page.screenshot({
+        fullPage: true,
+        path: testInfo.outputPath('storefront-navigation-failure.png'),
+      });
+    } catch {
+      // The retained trace still captures failures if the page has closed.
+    }
+    throw error;
   } finally {
     await deleteStorefrontCacheFixture(request, fixture);
   }

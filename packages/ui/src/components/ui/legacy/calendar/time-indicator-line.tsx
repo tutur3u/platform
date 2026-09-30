@@ -1,6 +1,6 @@
+import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { useEffect, useState } from 'react';
 import { HOUR_HEIGHT } from './config';
 import { useCalendarSettings } from './settings/settings-context';
 
@@ -15,25 +15,8 @@ export const TimeIndicatorLine = ({
 }) => {
   const { settings } = useCalendarSettings();
   const tz = settings?.timezone?.timezone;
-  const [now, setNow] = useState(tz === 'auto' ? dayjs() : dayjs().tz(tz));
-
-  // Update the time every minute
-  useEffect(() => {
-    const updateTime = () => {
-      setNow(tz === 'auto' ? dayjs() : dayjs().tz(tz));
-    };
-
-    // Update immediately
-    updateTime();
-
-    // Then update every minute
-    const interval = setInterval(updateTime, 60000);
-
-    return () => clearInterval(interval);
-  }, [tz]);
-
-  // Use selected timezone
-  const nowTz = tz === 'auto' ? now : now.tz(tz);
+  const now = dayjs(useCalendarClock());
+  const nowTz = tz && tz !== 'auto' ? now.tz(tz) : now;
   const hours = nowTz.hour();
   const minutes = nowTz.minute();
   const seconds = nowTz.second();

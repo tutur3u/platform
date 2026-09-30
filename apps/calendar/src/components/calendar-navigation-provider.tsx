@@ -1,14 +1,18 @@
 'use client';
 
+import { CalendarDayZoneBridgeProvider } from '@tuturuuu/ui/hooks/use-calendar-day-zone';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
+import { calendarDay, calendarToday } from '@tuturuuu/ui/lib/calendar-day';
 import {
   createContext,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -17,6 +21,8 @@ interface CalendarNavigationState {
   setDate: Dispatch<SetStateAction<Date>>;
   setView: Dispatch<SetStateAction<CalendarView>>;
   view: CalendarView;
+  timezone?: string;
+  goToToday: () => void;
 }
 
 const CalendarNavigationContext = createContext<CalendarNavigationState | null>(
@@ -37,7 +43,23 @@ export function CalendarNavigationProvider({
 }: {
   children: ReactNode;
 }) {
-  const [date, setDate] = useState(() => new Date());
+  const [date, setDateState] = useState(() => calendarToday());
+  const [timezone, setZone] = useState<string>();
+  const followsToday = useRef(true);
+  const setDate: Dispatch<SetStateAction<Date>> = useCallback((next) => {
+    followsToday.current = false;
+    setDateState((previous) =>
+      calendarDay(typeof next === 'function' ? next(previous) : next)
+    );
+  }, []);
+  const setTimezone = useCallback((zone: string) => {
+    setZone(zone);
+    if (followsToday.current) setDateState(calendarToday(zone));
+  }, []);
+  const goToToday = useCallback(() => {
+    followsToday.current = true;
+    setDateState(calendarToday(timezone));
+  }, [timezone]);
   const [view, setView] = useState<CalendarView>('week');
 
   useEffect(() => {
@@ -58,12 +80,17 @@ export function CalendarNavigationProvider({
 
     if (savedView) setView(savedView);
   }, []);
-  const value = useMemo(() => ({ date, setDate, setView, view }), [date, view]);
+  const value = useMemo(
+    () => ({ date, setDate, setView, view, timezone, goToToday }),
+    [date, view, timezone, goToToday, setDate]
+  );
 
   return (
-    <CalendarNavigationContext.Provider value={value}>
-      {children}
-    </CalendarNavigationContext.Provider>
+    <CalendarDayZoneBridgeProvider value={{ timezone, setTimezone, goToToday }}>
+      <CalendarNavigationContext.Provider value={value}>
+        {children}
+      </CalendarNavigationContext.Provider>
+    </CalendarDayZoneBridgeProvider>
   );
 }
 

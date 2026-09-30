@@ -134,6 +134,35 @@ fast-page migrations. Run through the resource queue with `psql` variables
 `size=48000` and `baseline_rpc=list_user_group_activity_logs_baseline`. Benchmark
 rows roll back. Never run this synthetic fixture against shared or production data.
 
+Candidate resolution extracts the snapshot anchor fields together before parent
+joins. Repeated `->>` calls on large TOASTed JSON can fetch the same snapshot
+for each join even when the required partial indexes are valid. Preserve
+`try_parse_uuid`, current/old fallback, and workspace precedence when changing
+anchor extraction; malformed non-object snapshots retain null-field behavior.
+Use `user-group-activity-anchor-extraction.sql` to compare the deployed candidate
+helper with this follow-up on the same synthetic mixed-operation history. It
+includes representative parent cardinality and both inline (`toast_snapshots=false`)
+and TOASTed (`toast_snapshots=true`) snapshots. Keep production timeout settings
+unchanged while diagnosing; a warm fixed-window success does not prove the
+default rolling 30-day request is stable.
+
+The anchor-extraction benchmark adds 72,000 mixed-operation activity snapshots
+and 570,000 unrelated older audit rows, with representative user/group/post/report
+cardinality. Alternating implementations on the same data (one warm-up and five
+measured runs) produced:
+
+| Snapshot storage | Before median / sample p95 | After median / sample p95 | Before / after median shared buffer hits |
+| --- | --- | --- | --- |
+| Inline | 1,163 / 1,426 ms | 1,175 / 1,411 ms | 118,303 / 85,306 |
+| TOASTed | 2,972 / 3,727 ms | 2,373 / 2,503 ms | 3,561,903 / 1,411,338 |
+
+Candidate and full-page multiset parity passed in both scenarios. Raw samples
+and exact source hashes are in `user-group-activity-anchor-extraction-results.json`.
+These local measurements do not establish production latency or an SLA. Confirm
+the default rolling 30-day UI after release; retain an unavailable state for a
+timeout rather than displaying an empty history.
+
+
 Broad tests on the schema-only local fixture reproduced 43 failing suites on the
 original HEAD. Two stale audit policy assertions are repaired here; the remaining
 41 unrelated failures have identical baseline failure records. This fixture omits

@@ -41,7 +41,6 @@ class _AssigneeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasAvatar = avatarUrl?.trim().isNotEmpty == true;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
@@ -51,15 +50,13 @@ class _AssigneeChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
+          NetworkAvatar(
             radius: 10,
-            foregroundImage: hasAvatar ? NetworkImage(avatarUrl!.trim()) : null,
-            child: hasAvatar
-                ? null
-                : Text(
-                    label.isEmpty ? '?' : label.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(fontSize: 10),
-                  ),
+            avatarUrl: avatarUrl,
+            child: Text(
+              label.isEmpty ? '?' : label.substring(0, 1).toUpperCase(),
+              style: const TextStyle(fontSize: 10),
+            ),
           ),
           const shad.Gap(6),
           Text(label, style: shad.Theme.of(context).typography.small),

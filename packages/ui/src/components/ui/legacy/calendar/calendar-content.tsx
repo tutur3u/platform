@@ -2,12 +2,14 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
+import { useCalendarDayZone } from '@tuturuuu/ui/hooks/use-calendar-day-zone';
 import { CalendarPreferencesProvider } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { calendarDay, calendarToday } from '../../../../lib/calendar-day';
 import { AgendaView } from './agenda-view';
 import { CalendarHeader } from './calendar-header';
 import { CalendarLoadingSkeleton } from './calendar-loading-skeleton';
@@ -127,7 +129,11 @@ export const CalendarContent = ({
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendarSettings();
-  const { dates, isLoading, setDates } = useCalendarSync();
+  const { dates, isLoading, setDates, setTimezone } = useCalendarSync();
+  const dayZone = useCalendarDayZone();
+  const timezone = settings?.timezone?.timezone;
+  const hasExternalDate = !!externalState?.date;
+  const followsToday = useRef(!hasExternalDate);
 
   // Use ref to always have the latest settings without causing dependency cascades
   const settingsRef = useRef(settings);
@@ -136,7 +142,11 @@ export const CalendarContent = ({
   }, [settings]);
 
   const [initialized, setInitialized] = useState(false);
-  const [date, setDate] = useState(externalState?.date || new Date());
+  const [date, setDate] = useState(() =>
+    externalState?.date
+      ? calendarDay(externalState.date)
+      : calendarToday(timezone)
+  );
   const [view, setView] = useState<CalendarView>(externalState?.view || 'week');
   const [availableViews, setAvailableViews] = useState<
     { value: string; label: string; disabled?: boolean }[]
@@ -148,11 +158,13 @@ export const CalendarContent = ({
   // Use the external state handlers when provided
   const handleSetDate = useCallback(
     (newDate: Date | ((prevDate: Date) => Date)) => {
-      if (externalState?.setDate) {
-        externalState.setDate(newDate);
-      } else {
-        setDate(newDate);
-      }
+      followsToday.current = false;
+      const update = (previous: Date) =>
+        calendarDay(
+          typeof newDate === 'function' ? newDate(previous) : newDate
+        );
+      if (externalState?.setDate) externalState.setDate(update);
+      else setDate(update);
     },
     [externalState]
   );
@@ -395,32 +407,13 @@ export const CalendarContent = ({
     }
   }, [externalState?.view, view]);
 
-  // Update the date's hour and minute, every minute
+  // Settings bridge supplies the same resolved zone to the outer navigation and queries.
   useEffect(() => {
-    const secondsToNextMinute = 60 - new Date().getSeconds();
-
-    const timeout = setTimeout(() => {
-      handleSetDate((date) => {
-        const newDate = new Date(date);
-        newDate.setHours(new Date().getHours());
-        newDate.setMinutes(new Date().getMinutes());
-        return newDate;
-      });
-
-      const interval = setInterval(() => {
-        handleSetDate((date) => {
-          const newDate = new Date(date);
-          newDate.setHours(new Date().getHours());
-          newDate.setMinutes(new Date().getMinutes());
-          return newDate;
-        });
-      }, 60000);
-
-      return () => clearInterval(interval);
-    }, secondsToNextMinute * 1000);
-
-    return () => clearTimeout(timeout);
-  }, [handleSetDate]);
+    setTimezone?.(timezone);
+    if (timezone) dayZone?.setTimezone(timezone);
+    if (!hasExternalDate && followsToday.current)
+      setDate(calendarToday(timezone));
+  }, [timezone, setTimezone, dayZone?.setTimezone, hasExternalDate]);
 
   // Update the dates array when date changes while maintaining the same view
   useEffect(() => {

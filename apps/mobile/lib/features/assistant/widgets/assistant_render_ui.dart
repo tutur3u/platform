@@ -10,6 +10,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -129,11 +130,9 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
           variant: props['variant'] as String?,
         );
       case 'Avatar':
-        return CircleAvatar(
+        return NetworkAvatar(
           radius: (_num(props['size'])?.toDouble() ?? 32) / 2,
-          backgroundImage: (props['src'] as String?)?.isNotEmpty == true
-              ? NetworkImage(props['src'] as String)
-              : null,
+          avatarUrl: props['src'] as String?,
           child: Text((props['fallback'] as String? ?? '?').trim()),
         );
       case 'Separator':

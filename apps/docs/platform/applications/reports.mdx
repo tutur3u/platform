@@ -34,6 +34,16 @@ flowchart LR
 
 ## Calendar periods
 
+In a class report workspace, changing the workspace, class, student, or selected
+report loads that selection before showing an editable report or choosing a
+fallback. A previous student's saved report or empty report list must not be used
+for the next student. Student search and background refresh for the same selection
+retain the editor while loading. Failed requests show an error and leave the
+selection intact; they do not establish that a report was deleted.
+This preserves unsaved fields when a refresh returns unchanged saved content.
+If the server returns changed title, content, or feedback, the existing editor
+reset still applies; resolving concurrent edits is outside this selection rule.
+
 Periods are calculated in the workspace timezone:
 
 | Cadence | Boundary | Scheduled draft behavior |
