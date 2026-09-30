@@ -1,12 +1,19 @@
-import type { TablesUpdate } from '@tuturuuu/types';
+import type { Json, TablesUpdate } from '@tuturuuu/types';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { googleColorCompatibilityValue } from '@tuturuuu/utils/google-calendar-colors';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CalendarEventColorSchema } from '@/lib/calendar/event-color';
+import { hydrateEventSourceColors } from '@/lib/calendar/event-source-colors';
+import {
+  GoogleColorChoiceError,
+  GoogleProviderColorChoiceSchema,
+} from '@/lib/calendar/google-color-choices';
+import { refreshOwnedGoogleSourceColor } from '@/lib/calendar/google-source-color-refresh';
 import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
 import {
   createProviderEvent,
@@ -52,6 +59,7 @@ const updateEventSchema = z.object({
   start_at: z.string().datetime().optional(),
   end_at: z.string().datetime().optional(),
   color: CalendarEventColorSchema.optional(),
+  providerColor: GoogleProviderColorChoiceSchema.optional(),
   locked: z.boolean().optional(),
   source: CalendarSourceSchema.optional(),
 });
@@ -98,7 +106,7 @@ export async function GET(request: Request, { params }: Params) {
   const { wsId: rawWsId, eventId } = await params;
   const access = await authorizeCalendarEventManagement(request, rawWsId);
   if ('error' in access) return access.error;
-  const { sbAdmin, wsId } = access;
+  const { sbAdmin, wsId, userId } = access;
 
   try {
     const { data: event, error } = await sbAdmin
@@ -118,7 +126,13 @@ export async function GET(request: Request, { params }: Params) {
     // Decrypt if encrypted
     const decryptedEvent = await decryptEventFromStorage(event, wsId);
 
-    return NextResponse.json(decryptedEvent);
+    const [hydratedEvent] = await hydrateEventSourceColors({
+      sbAdmin,
+      wsId,
+      userId,
+      events: [decryptedEvent],
+    });
+    return NextResponse.json(hydratedEvent);
   } catch (error) {
     console.error('Calendar event API error', { wsId, eventId, error });
     return NextResponse.json(
@@ -156,6 +170,11 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     const updates = validationResult.data;
+    if (updates.providerColor && updates.color !== undefined)
+      return NextResponse.json(
+        { error: 'Choose either native color or provider color' },
+        { status: 400 }
+      );
 
     const { data: existingEvent, error: existingError } = await sbAdmin
       .from('workspace_calendar_events')
@@ -202,6 +221,18 @@ export async function PUT(request: Request, { params }: Params) {
       location: updates.location ?? decryptedExisting.location ?? '',
       start_at: updates.start_at ?? existingEvent.start_at,
       end_at: updates.end_at ?? existingEvent.end_at,
+      color: updates.color,
+      providerColor: updates.providerColor,
+      nativeColorChange: updates.color !== undefined,
+      providerColorOnly:
+        (updates.color !== undefined ||
+          updates.providerColor !== undefined ||
+          hasSourceUpdate) &&
+        updates.title === undefined &&
+        updates.description === undefined &&
+        updates.location === undefined &&
+        updates.start_at === undefined &&
+        updates.end_at === undefined,
     };
 
     const currentSource = await resolveCalendarSourceForEvent({
@@ -233,12 +264,23 @@ export async function PUT(request: Request, { params }: Params) {
         currentSource.provider === 'tuturuuu' &&
         currentSource.workspaceCalendarId !== targetSource.workspaceCalendarId);
 
+    if (
+      updates.providerColor &&
+      (targetSource.provider !== 'google' ||
+        targetSource.connectionId !== updates.providerColor.connectionId)
+    ) {
+      throw new GoogleColorChoiceError(
+        'Color choice does not belong to the selected Google calendar'
+      );
+    }
     const touchesProviderFields =
       updates.title !== undefined ||
       updates.description !== undefined ||
       updates.location !== undefined ||
       updates.start_at !== undefined ||
       updates.end_at !== undefined ||
+      updates.color !== undefined ||
+      updates.providerColor !== undefined ||
       sourceChanged;
 
     let providerResult: Awaited<ReturnType<typeof moveProviderEvent>> = null;
@@ -325,6 +367,22 @@ export async function PUT(request: Request, { params }: Params) {
       });
     }
 
+    if (providerResult?.googleSourceColor)
+      await refreshOwnedGoogleSourceColor({
+        sbAdmin,
+        wsId,
+        source: providerSource,
+        background: providerResult.googleSourceColor,
+      });
+    if (providerResult?.googleColor) {
+      updatePayload.scheduling_metadata = {
+        ...((existingEvent.scheduling_metadata as Record<string, Json>) ?? {}),
+        google_color: { ...providerResult.googleColor },
+      };
+      updatePayload.color = googleColorCompatibilityValue(
+        providerResult.googleColor.color_id
+      );
+    }
     if (hasSensitiveUpdates && workspaceKey) {
       const isCurrentlyEncrypted = existingEvent?.is_encrypted === true;
 
@@ -453,6 +511,16 @@ export async function PUT(request: Request, { params }: Params) {
     const decryptedEvent = await decryptEventFromStorage(data, wsId);
     return NextResponse.json(decryptedEvent);
   } catch (error) {
+    if (error instanceof SyntaxError)
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    if (error instanceof GoogleColorChoiceError)
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
     const message = error instanceof Error ? error.message : '';
     if (message.toLowerCase().includes('source is unavailable or read-only')) {
       return NextResponse.json({ error: message }, { status: 400 });

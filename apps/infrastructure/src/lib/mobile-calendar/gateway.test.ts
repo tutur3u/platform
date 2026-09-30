@@ -26,6 +26,33 @@ function dependencies() {
 }
 
 describe('authenticated native Calendar gateway', () => {
+  it('forwards the exact color options GET and preserves its source query', async () => {
+    const deps = dependencies();
+    const path =
+      '/api/v1/workspaces/personal/calendar/colors?connectionId=source-id';
+    const response = await forwardCalendarRequest(request(path), deps);
+    expect(response.status).toBe(200);
+    expect(deps.fetch.mock.calls[0]?.[0]).toBe(
+      `https://calendar.tuturuuu.com${path}`
+    );
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it.each(['POST', 'PUT', 'PATCH', 'DELETE'])(
+    'rejects color options mutation %s before auth or forwarding',
+    async (method) => {
+      const deps = dependencies();
+      const response = await forwardCalendarRequest(
+        request('/api/v1/workspaces/personal/calendar/colors', { method }),
+        deps
+      );
+      expect(response.status).toBe(405);
+      expect(deps.verifyToken).not.toHaveBeenCalled();
+      expect(deps.loadSecret).not.toHaveBeenCalled();
+      expect(deps.fetch).not.toHaveBeenCalled();
+    }
+  );
+
   it.each(['', 'Bearer invalid', 'Basic valid', 'Bearer one two'])(
     'never accesses the credential or upstream for invalid auth: %s',
     async (auth) => {
@@ -50,6 +77,8 @@ describe('authenticated native Calendar gateway', () => {
     '/api/v1/workspaces/ws/tasks',
     '/api/v1/workspaces/ws%2f..%2fcalendar/calendar/events',
     '//attacker.example/api/v1/calendar/connections',
+    '/api/v1/workspaces/personal/calendar/colors/labels',
+    '/api/v1/workspaces/personal/calendar/colors-extra',
   ])('rejects non-allowlisted route %s', async (path) => {
     const deps = dependencies();
     expect((await forwardCalendarRequest(request(path), deps)).status).toBe(

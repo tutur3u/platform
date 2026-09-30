@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   resolveEventSource: vi.fn(),
   resolveOutboundSource: vi.fn(),
   upsertHabitSkip: vi.fn(),
+  updateProvider: vi.fn(),
 }));
 
 vi.mock('@/lib/calendar-event-permission', () => ({
@@ -22,7 +23,7 @@ vi.mock('@/lib/calendar/provider-writes', () => ({
   createProviderEvent: vi.fn(),
   deleteProviderEvent: mocks.deleteProviderEvent,
   moveProviderEvent: vi.fn(),
-  updateProviderEvent: vi.fn(),
+  updateProviderEvent: mocks.updateProvider,
 }));
 vi.mock('@/lib/calendar/source-resolver', () => ({
   resolveCalendarSource: vi.fn(),
@@ -240,5 +241,163 @@ describe('workspace calendar event item authorization', () => {
       skippedHabitId: null,
     });
     expect(removed.delete).toHaveBeenCalledOnce();
+  });
+});
+
+describe('provider color route contract', () => {
+  const connectionId = '00000000-0000-4000-8000-000000008631';
+  const googleSource = {
+    provider: 'google',
+    connectionId,
+    externalCalendarId: 'source',
+    workspaceCalendarId: null,
+  };
+  function setup() {
+    const existing = chainResult({
+      data: {
+        id: EVENT_ID,
+        ws_id: WS_ID,
+        provider: 'google',
+        external_calendar_id: 'source',
+        external_event_id: 'provider-event',
+        title: 'Keep',
+        start_at: '2026-09-30T07:00:00Z',
+        end_at: '2026-09-30T08:00:00Z',
+        scheduling_metadata: {
+          google_event_type: 'workingLocation',
+          google_working_location_label: 'Home',
+        },
+      },
+      error: null,
+    });
+    const updated = chainResult({ data: { id: EVENT_ID }, error: null });
+    const from = vi
+      .fn()
+      .mockReturnValueOnce(existing)
+      .mockReturnValueOnce(updated);
+    mocks.authorize.mockResolvedValue({
+      sbAdmin: { from },
+      wsId: WS_ID,
+      userId: 'actor',
+    });
+    mocks.resolveEventSource.mockResolvedValue(googleSource);
+    mocks.decryptEvent.mockImplementation(async (event) => event);
+    mocks.getWorkspaceKey.mockResolvedValue(null);
+    mocks.getSyncPreferences.mockResolvedValue({ settingsAvailable: false });
+    mocks.updateProvider.mockResolvedValue({
+      provider: 'google',
+      externalCalendarId: 'source',
+      externalEventId: 'provider-event',
+      googleColor: {
+        version: 1,
+        calendar_id: 'source',
+        color_id: null,
+        event_label_id: null,
+        inherited: true,
+        background: '#d06b64',
+        foreground: null,
+        resolution: 'calendar',
+      },
+    });
+    return { from, existing, updated };
+  }
+  beforeEach(() => vi.clearAllMocks());
+  it('routes a color-only choice through provider validation and preserves unrelated metadata', async () => {
+    const { updated } = setup();
+    expect(
+      (
+        await PUT(
+          request('PUT', {
+            providerColor: { connectionId, kind: 'inherit' },
+            scheduling_metadata: { google_color: { background: '#attacker' } },
+          }),
+          params()
+        )
+      ).status
+    ).toBe(200);
+    expect(mocks.updateProvider).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: googleSource,
+        event: expect.objectContaining({
+          providerColor: { connectionId, kind: 'inherit' },
+          providerColorOnly: true,
+        }),
+      })
+    );
+    expect(updated.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scheduling_metadata: expect.objectContaining({
+          google_working_location_label: 'Home',
+          google_color: expect.objectContaining({ background: '#d06b64' }),
+        }),
+      })
+    );
+    expect(updated.update.mock.calls[0]?.[0]).not.toHaveProperty('title');
+  });
+  it('rejects source mismatch without sending or persisting', async () => {
+    const { updated } = setup();
+    expect(
+      (
+        await PUT(
+          request('PUT', {
+            providerColor: { connectionId: EVENT_ID, kind: 'event', id: '7' },
+          }),
+          params()
+        )
+      ).status
+    ).toBe(400);
+    expect(mocks.updateProvider).not.toHaveBeenCalled();
+    expect(updated.update).not.toHaveBeenCalled();
+  });
+  it('rejects ambiguous native/provider choices before reading rows', async () => {
+    const { from } = setup();
+    expect(
+      (
+        await PUT(
+          request('PUT', {
+            color: 'BLUE',
+            providerColor: { connectionId, kind: 'inherit' },
+          }),
+          params()
+        )
+      ).status
+    ).toBe(400);
+    expect(from).not.toHaveBeenCalled();
+  });
+  it('sends canonical color-only edits instead of merely changing the local enum', async () => {
+    setup();
+    expect(
+      (await PUT(request('PUT', { color: 'CYAN' }), params())).status
+    ).toBe(200);
+    expect(mocks.updateProvider).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          color: 'CYAN',
+          nativeColorChange: true,
+          providerColorOnly: true,
+        }),
+      })
+    );
+  });
+  it('surfaces provider conflicts without a local success write', async () => {
+    const { updated } = setup();
+    const { GoogleColorChoiceError } = await import(
+      '@/lib/calendar/google-color-choices'
+    );
+    mocks.updateProvider.mockRejectedValueOnce(
+      new GoogleColorChoiceError(
+        'Google event changed; refresh before trying again',
+        409
+      )
+    );
+    expect(
+      (
+        await PUT(
+          request('PUT', { providerColor: { connectionId, kind: 'inherit' } }),
+          params()
+        )
+      ).status
+    ).toBe(409);
+    expect(updated.update).not.toHaveBeenCalled();
   });
 });
