@@ -17947,6 +17947,24 @@ abstract class AppLocalizations {
   /// **'Search timezones'**
   String get settingsTimezoneSearch;
 
+  /// No description provided for @settingsTimezoneLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolving timezone…'**
+  String get settingsTimezoneLoading;
+
+  /// No description provided for @settingsTimezoneAccountPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your account.'**
+  String get settingsTimezoneAccountPending;
+
+  /// No description provided for @settingsTimezoneUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get settingsTimezoneUnknown;
+
   /// No description provided for @settingsTimezoneEffective.
   ///
   /// In en, this message translates to:

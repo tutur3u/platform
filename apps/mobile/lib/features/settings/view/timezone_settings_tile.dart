@@ -31,19 +31,9 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
   void initState() {
     super.initState();
     _cubit = context.read<TimezoneSettingsCubit>();
-    unawaited(_load());
   }
 
-  Future<void> _load() =>
-      _cubit.load(userId: widget.userId, workspaceId: widget.workspaceId);
-  @override
-  void didUpdateWidget(TimezoneSettingsTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.userId != widget.userId ||
-        oldWidget.workspaceId != widget.workspaceId) {
-      unawaited(_load());
-    }
-  }
+  Future<void> _load() => _cubit.reload();
 
   Future<void> _choose() async {
     if (widget.workspace && !widget.canManageWorkspace) return;
@@ -69,32 +59,39 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      BlocBuilder<TimezoneSettingsCubit, TimezoneSettingsState>(
-        bloc: _cubit,
-        builder: (context, state) => SettingsTile(
-          icon: Icons.public_rounded,
-          title: widget.workspace
-              ? context.l10n.settingsWorkspaceTimezone
-              : context.l10n.settingsTimezone,
-          subtitle: state.failed
-              ? context.l10n.settingsTimezoneError
-              : context.l10n.settingsTimezoneEffective(state.effective),
-          value: state.loading || state.saving
-              ? '…'
-              : (widget.workspace ? state.workspace : state.personal) == 'auto'
-              ? context.l10n.settingsTimezoneAuto
-              : (widget.workspace ? state.workspace : state.personal),
-          showChevron: !widget.workspace || widget.canManageWorkspace,
-          onTap: state.loading || state.saving
-              ? null
-              : state.failed && !state.resolved
-              ? () => unawaited(_load())
-              : widget.workspace && !widget.canManageWorkspace
-              ? null
-              : () => unawaited(_choose()),
-        ),
-      );
+  Widget build(
+    BuildContext context,
+  ) => BlocBuilder<TimezoneSettingsCubit, TimezoneSettingsState>(
+    bloc: _cubit,
+    builder: (context, state) => SettingsTile(
+      icon: Icons.public_rounded,
+      title: widget.workspace
+          ? context.l10n.settingsWorkspaceTimezone
+          : context.l10n.settingsTimezone,
+      subtitle: state.failed
+          ? context.l10n.settingsTimezoneError
+          : !state.resolved
+          ? state.loading
+                ? context.l10n.settingsTimezoneLoading
+                : context.l10n.settingsTimezoneAccountPending
+          : context.l10n.settingsTimezoneEffective(state.effective),
+      value: state.loading || state.saving
+          ? '…'
+          : !state.resolved
+          ? context.l10n.settingsTimezoneUnknown
+          : (widget.workspace ? state.workspace : state.personal) == 'auto'
+          ? context.l10n.settingsTimezoneAuto
+          : (widget.workspace ? state.workspace : state.personal),
+      showChevron: !widget.workspace || widget.canManageWorkspace,
+      onTap: state.loading || state.saving || (!state.resolved && !state.failed)
+          ? null
+          : state.failed && !state.resolved
+          ? () => unawaited(_load())
+          : widget.workspace && !widget.canManageWorkspace
+          ? null
+          : () => unawaited(_choose()),
+    ),
+  );
 }
 
 class _TimezoneChooser extends StatefulWidget {

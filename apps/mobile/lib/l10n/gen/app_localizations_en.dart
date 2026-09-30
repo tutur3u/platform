@@ -9400,6 +9400,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTimezoneSearch => 'Search timezones';
 
   @override
+  String get settingsTimezoneLoading => 'Resolving timezone…';
+
+  @override
+  String get settingsTimezoneAccountPending => 'Waiting for your account.';
+
+  @override
+  String get settingsTimezoneUnknown => 'Unknown';
+
+  @override
   String settingsTimezoneEffective(String timezone) {
     return 'Effective timezone: $timezone';
   }

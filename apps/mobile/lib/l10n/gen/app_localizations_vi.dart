@@ -9334,6 +9334,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsTimezoneSearch => 'Tìm múi giờ';
 
   @override
+  String get settingsTimezoneLoading => 'Đang xác định múi giờ…';
+
+  @override
+  String get settingsTimezoneAccountPending => 'Đang chờ tài khoản của bạn.';
+
+  @override
+  String get settingsTimezoneUnknown => 'Chưa xác định';
+
+  @override
   String settingsTimezoneEffective(String timezone) {
     return 'Múi giờ áp dụng: $timezone';
   }
