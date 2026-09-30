@@ -162,13 +162,14 @@ select ok(
         'external_user_monthly_reports',
         'external_user_monthly_report_logs'
       )
+      and permissive = 'PERMISSIVE'
       and (
         'anon' = any (roles)
         or 'authenticated' = any (roles)
         or 'public' = any (roles)
       )
   ),
-  'private external user monthly report policies do not grant anon/authenticated/public access'
+  'private external user monthly report permissive policies do not grant anon/authenticated/public access'
 );
 
 select ok(

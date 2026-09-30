@@ -1,0 +1,386 @@
+{
+  "baseline_commit": "91de892012c56c6be279ec50d025735b2d3b6a23",
+  "takeover_patch_fingerprint": "65df22de42479ba4bd91a5d223e861bdbba6886def14e9bb3dc9319745c1e833",
+  "database": "isolated schema-only copy of local Supabase, repository synthetic seed and restored original owners",
+  "fixture": "ungrouped feedback audit events, equally distributed INSERT/UPDATE/DELETE, ~1.9KiB current/prior content snapshots, 28 days",
+  "page": {
+    "limit": 20,
+    "offset": 20
+  },
+  "work_mem": "4MB",
+  "iterations": "0 is warm-up; 1..5 are measured, baseline/fast alternating in one session",
+  "benchmarks": [
+    {
+      "events": 24000,
+      "parity": true,
+      "samples": [
+        {
+          "ms": 2659.894,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 0,
+          "temp_reads": 24685,
+          "shared_hits": 195729,
+          "temp_writes": 25039
+        },
+        {
+          "ms": 470.568,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 0,
+          "temp_reads": 0,
+          "shared_hits": 50197,
+          "temp_writes": 0
+        },
+        {
+          "ms": 2727.978,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 1,
+          "temp_reads": 24685,
+          "shared_hits": 193621,
+          "temp_writes": 25039
+        },
+        {
+          "ms": 497.241,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 1,
+          "temp_reads": 0,
+          "shared_hits": 74334,
+          "temp_writes": 0
+        },
+        {
+          "ms": 2657.588,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 2,
+          "temp_reads": 24685,
+          "shared_hits": 241620,
+          "temp_writes": 25039
+        },
+        {
+          "ms": 567.569,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 2,
+          "temp_reads": 0,
+          "shared_hits": 74185,
+          "temp_writes": 0
+        },
+        {
+          "ms": 2584.97,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 3,
+          "temp_reads": 24685,
+          "shared_hits": 241620,
+          "temp_writes": 25039
+        },
+        {
+          "ms": 501.085,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 3,
+          "temp_reads": 0,
+          "shared_hits": 74185,
+          "temp_writes": 0
+        },
+        {
+          "ms": 2802.973,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 4,
+          "temp_reads": 24685,
+          "shared_hits": 241620,
+          "temp_writes": 25039
+        },
+        {
+          "ms": 550.653,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 4,
+          "temp_reads": 0,
+          "shared_hits": 74185,
+          "temp_writes": 0
+        },
+        {
+          "ms": 2597.971,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 5,
+          "temp_reads": 24685,
+          "shared_hits": 241620,
+          "temp_writes": 25039
+        },
+        {
+          "ms": 503.739,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 5,
+          "temp_reads": 0,
+          "shared_hits": 74185,
+          "temp_writes": 0
+        }
+      ]
+    },
+    {
+      "events": 48000,
+      "parity": true,
+      "samples": [
+        {
+          "ms": 5663.94,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 0,
+          "temp_reads": 49723,
+          "shared_hits": 535053,
+          "temp_writes": 50077
+        },
+        {
+          "ms": 983.888,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 0,
+          "temp_reads": 0,
+          "shared_hits": 149729,
+          "temp_writes": 0
+        },
+        {
+          "ms": 5427.763,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 1,
+          "temp_reads": 49723,
+          "shared_hits": 483848,
+          "temp_writes": 50077
+        },
+        {
+          "ms": 1146.948,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 1,
+          "temp_reads": 0,
+          "shared_hits": 149678,
+          "temp_writes": 0
+        },
+        {
+          "ms": 5637.179,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 2,
+          "temp_reads": 49723,
+          "shared_hits": 483848,
+          "temp_writes": 50077
+        },
+        {
+          "ms": 1158.813,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 2,
+          "temp_reads": 0,
+          "shared_hits": 149678,
+          "temp_writes": 0
+        },
+        {
+          "ms": 6707.147,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 3,
+          "temp_reads": 49723,
+          "shared_hits": 483848,
+          "temp_writes": 50077
+        },
+        {
+          "ms": 960.521,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 3,
+          "temp_reads": 0,
+          "shared_hits": 150007,
+          "temp_writes": 0
+        },
+        {
+          "ms": 5378.653,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 4,
+          "temp_reads": 49723,
+          "shared_hits": 483848,
+          "temp_writes": 50077
+        },
+        {
+          "ms": 973.916,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 4,
+          "temp_reads": 0,
+          "shared_hits": 149678,
+          "temp_writes": 0
+        },
+        {
+          "ms": 5181.487,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 5,
+          "temp_reads": 49723,
+          "shared_hits": 483848,
+          "temp_writes": 50077
+        },
+        {
+          "ms": 958.116,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 5,
+          "temp_reads": 0,
+          "shared_hits": 149678,
+          "temp_writes": 0
+        }
+      ]
+    },
+    {
+      "events": 96000,
+      "parity": true,
+      "samples": [
+        {
+          "ms": 11115.496,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 0,
+          "temp_reads": 99796,
+          "shared_hits": 1064283,
+          "temp_writes": 100150
+        },
+        {
+          "ms": 2078.475,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 0,
+          "temp_reads": 639,
+          "shared_hits": 298166,
+          "temp_writes": 611
+        },
+        {
+          "ms": 10960.607,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 1,
+          "temp_reads": 99796,
+          "shared_hits": 967637,
+          "temp_writes": 100150
+        },
+        {
+          "ms": 2003.041,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 1,
+          "temp_reads": 639,
+          "shared_hits": 298239,
+          "temp_writes": 611
+        },
+        {
+          "ms": 11139.638,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 2,
+          "temp_reads": 99796,
+          "shared_hits": 967637,
+          "temp_writes": 100150
+        },
+        {
+          "ms": 2141.003,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 2,
+          "temp_reads": 639,
+          "shared_hits": 298123,
+          "temp_writes": 611
+        },
+        {
+          "ms": 11525.04,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 3,
+          "temp_reads": 99796,
+          "shared_hits": 967637,
+          "temp_writes": 100150
+        },
+        {
+          "ms": 1916.214,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 3,
+          "temp_reads": 639,
+          "shared_hits": 298123,
+          "temp_writes": 611
+        },
+        {
+          "ms": 11358.661,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 4,
+          "temp_reads": 99796,
+          "shared_hits": 967637,
+          "temp_writes": 100150
+        },
+        {
+          "ms": 1892.297,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 4,
+          "temp_reads": 639,
+          "shared_hits": 298123,
+          "temp_writes": 611
+        },
+        {
+          "ms": 11760.001,
+          "rows": 20,
+          "variant": "baseline",
+          "iteration": 5,
+          "temp_reads": 99796,
+          "shared_hits": 967637,
+          "temp_writes": 100150
+        },
+        {
+          "ms": 1898.549,
+          "rows": 20,
+          "variant": "fast",
+          "iteration": 5,
+          "temp_reads": 639,
+          "shared_hits": 298123,
+          "temp_writes": 611
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Warm-cache synthetic measurements, not production latency or an SLA percentile",
+    "Broad local SQL suite has unrelated baseline failures; audit-specific regression suites pass",
+    "Production validation required after exact-SHA rollout"
+  ],
+  "query_migration_sha256": {
+    "apps/database/supabase/migrations/20260930100000_user_group_activity_narrow_candidates.sql": "d07879e67637254ca1c0c78b1b33331486d1847c428ea634b3d12fb7a6c7a25a",
+    "apps/database/supabase/migrations/20260930100001_user_group_activity_page_enrichment.sql": "9c6958e9dc99368289f60005b6676b3b2941c791ddbcb91ca4c9ff5bdfa59e75",
+    "apps/database/supabase/migrations/20260930100002_user_group_activity_fast_page.sql": "0f481e41a75165c2139680fedafeb10450f6ccfe42b39e1d386ccb71d51e347e"
+  },
+  "query_patch_fingerprint": "621d758bbbec32c5b86b3e3834768a8de11c168c2c214428770d5c0c07b0b941",
+  "verification": {
+    "focused_sql_assertions_passed": 195,
+    "api_and_normalization_unit_tests_passed": 4,
+    "fresh_migration_bootstrap": "start/reset/apply successful, 21-case parity successful",
+    "fresh_full_suite": {
+      "baseline_failed_suites": 35,
+      "final_failed_suites": 33,
+      "new_failures": [],
+      "existing_failure_summaries": "identical",
+      "fixed_suites": [
+        "private-schema-external-user-monthly-reports.sql",
+        "user-group-post-check-logs.sql"
+      ]
+    },
+    "migration_transaction_rollback_recreate_reapply": "passed",
+    "typegen": "regenerated from fresh disposable schema",
+    "types_no_emit_check": "passed",
+    "biome_and_source_size": "passed"
+  }
+}
