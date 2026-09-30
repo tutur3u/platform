@@ -40,10 +40,20 @@ void _recordAvatarError(Object error, StackTrace? stackTrace) {
 }
 
 /// Keeps pending image errors handled after a decoration stops listening.
+@immutable
 class _AvatarImage extends ImageProvider<NetworkImage> {
   const _AvatarImage(this.url);
 
   final String url;
+
+  @override
+  bool operator ==(Object other) =>
+      other.runtimeType == runtimeType &&
+      other is _AvatarImage &&
+      other.url == url;
+
+  @override
+  int get hashCode => Object.hash(runtimeType, url);
 
   @override
   Future<NetworkImage> obtainKey(ImageConfiguration configuration) =>

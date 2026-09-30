@@ -157,6 +157,61 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  _imageTest('same URL rebuilds keep the evaluated avatar decoration settled', (
+    tester,
+    images,
+  ) async {
+    images.pending = Completer<HttpClientRequest>();
+    await tester.pumpWidget(_avatar('https://example.invalid/pending'));
+    final avatarFinder = find.byType(NetworkAvatar);
+    final animatedFinder = find.descendant(
+      of: avatarFinder,
+      matching: find.byType(AnimatedContainer),
+    );
+    final evaluatedFinder = find.descendant(
+      of: animatedFinder,
+      matching: find.byType(Container),
+    );
+    final initialImage = tester
+        .widget<CircleAvatar>(find.byType(CircleAvatar))
+        .foregroundImage!;
+    final evaluatedAtTarget = <bool>[];
+    final evaluatedImageTypes = <String>[];
+
+    // Continuous parent rebuilds span 256ms, beyond the 200ms avatar
+    // transition.
+    for (var frame = 0; frame < 16; frame++) {
+      await tester.pumpWidget(_avatar(' https://example.invalid/pending '));
+      await tester.pump(const Duration(milliseconds: 16));
+      final target =
+          tester.widget<AnimatedContainer>(animatedFinder).foregroundDecoration!
+              as BoxDecoration;
+      final evaluated =
+          tester.widget<Container>(evaluatedFinder).foregroundDecoration!
+              as BoxDecoration;
+      evaluatedAtTarget.add(evaluated.image == target.image);
+      evaluatedImageTypes.add(evaluated.image.runtimeType.toString());
+    }
+    images.pending!.completeError(
+      const SocketException('Synthetic pending avatar error'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      evaluatedAtTarget,
+      everyElement(isTrue),
+      reason:
+          'Same URL rebuilds restarted foreground decoration transitions; '
+          'evaluated types: ${evaluatedImageTypes.toSet()}',
+    );
+    final rebuiltImage = tester
+        .widget<CircleAvatar>(find.byType(CircleAvatar))
+        .foregroundImage!;
+    expect(rebuiltImage, initialImage);
+    expect(rebuiltImage.hashCode, initialImage.hashCode);
+    expect(tester.takeException(), isNull);
+  });
+
   _imageTest('failure completing after disposal stays image-local', (
     tester,
     images,
