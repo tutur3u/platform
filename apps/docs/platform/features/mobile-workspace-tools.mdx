@@ -775,6 +775,16 @@ creations, and notes from the current workspace for the most recent 30 days.
 Calendar rows are explicitly labeled as **workspace events** because the calendar
 table does not record a reliable creator. The timeline groups rows by the device's
 local day, expands to individual items, and links to their native mobile views.
+Overview is the default Profile view. Overview and Timeline use the same shell
+segmented action control as Notifications, Assistant, and Apps. Overview contains
+identity and tracked-time panels; Timeline contains creation records, newest
+first within local-day groups, with all returned records visible.
+Each record states the creation action and time; calendar creation is explicitly
+workspace activity. This is a bounded recent feed, not lifetime achievements,
+completion history, or an inferred account milestone. The existing API's display
+limit and partial-source flags are visible. Failed refreshes keep cached rows and
+show retry. Sharing tracked time does not share Timeline content.
+
 Its snapshot is encrypted and scoped by user and workspace; opening Profile returns
 it first and then revalidates. Timeline data is private and never follows the
 tracked-time sharing preference.

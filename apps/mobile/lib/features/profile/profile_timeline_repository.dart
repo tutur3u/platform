@@ -69,10 +69,8 @@ class ProfileTimelineRepository {
     return result.data;
   }
 
-  Future<({List<ProfileTimelineItem> items, bool partial})> refresh(
-    String workspaceId,
-    String userId,
-  ) async {
+  Future<({List<ProfileTimelineItem> items, bool partial, bool limited})>
+  refresh(String workspaceId, String userId) async {
     final response = await _api.getJson(
       '/api/v1/workspaces/$workspaceId/mobile-activity',
     );
@@ -87,7 +85,11 @@ class ProfileTimelineRepository {
     } on Object {
       // A failed snapshot write must not hide activity returned by the API.
     }
-    return (items: items, partial: response['partial'] == true);
+    return (
+      items: items,
+      partial: response['partial'] == true,
+      limited: response['limited'] == true,
+    );
   }
 
   void dispose() => _api.dispose();

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/repositories/profile_activity_repository.dart';
 import 'package:mobile/features/profile/view/workspace_activity_section.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import '../../../helpers/helpers.dart';
 
 class _Repository extends Mock implements ProfileActivityRepository {}
@@ -42,10 +43,10 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        tester.widget<shad.Switch>(find.byType(shad.Switch)).value,
         isFalse,
       );
-      await tester.tap(find.byType(Switch));
+      await tester.tap(find.text('Share activity'));
       await tester.pumpAndSettle();
       expect(
         find.textContaining(
@@ -57,12 +58,12 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(shared, isFalse);
-      await tester.tap(find.byType(Switch));
+      await tester.tap(find.text('Share activity'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Share activity'));
       await tester.pumpAndSettle();
       expect(shared, isTrue);
-      await tester.tap(find.byType(Switch));
+      await tester.tap(find.text('Share activity'));
       await tester.pumpAndSettle();
       expect(shared, isFalse);
       expect(tester.takeException(), isNull);
