@@ -7,7 +7,7 @@ import type {
 } from '@tuturuuu/internal-api/calendar';
 import { createGraphClient } from '@tuturuuu/microsoft';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { decryptEventFromStorage } from '@/lib/workspace-encryption';
+import { decryptCalendarEventForPreview } from './mail-link-preview-decryption';
 import { createGoogleAuthClient } from './provider-writes';
 import {
   isCalendarPreviewSourceEnabled,
@@ -236,7 +236,7 @@ export async function getAuthorizedCalendarLinkPreview(args: {
     });
     if (!source) return null;
     // Preserve the encrypted storage boundary, after authorizing the connected source.
-    await decryptEventFromStorage(stored, args.wsId);
+    if (!(await decryptCalendarEventForPreview(stored, args.wsId))) return null;
     const event = await (
       args.readProviderEvent ?? readCalendarProviderPreviewEvent
     )(source, stored.external_event_id);
@@ -262,7 +262,8 @@ export async function getAuthorizedCalendarLinkPreview(args: {
     }))
   )
     return null;
-  const event = await decryptEventFromStorage(stored, args.wsId);
+  const event = await decryptCalendarEventForPreview(stored, args.wsId);
+  if (!event) return null;
   const preview: CalendarEventLinkPreview = {
     identity: {
       workspaceId: args.wsId,
