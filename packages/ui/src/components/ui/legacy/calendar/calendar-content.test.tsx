@@ -46,7 +46,7 @@ vi.mock('./calendar-view-with-trail', () => ({
   CalendarViewWithTrail: () => null,
 }));
 vi.mock('./event-modal', async () => {
-  const { EventDateTimePicker } = await import('./event-form-components');
+  const { EventDateTimePicker } = await import('./event-form-components.js');
   const { createAllDayEvent } = await import('@tuturuuu/utils/calendar-utils');
   return {
     EventModal: () => {
