@@ -37,7 +37,7 @@
     "@tuturuuu/utils": "workspace:*",
     "date-fns": "^4.4.0",
     "dayjs": "^1.11.23",
-    "dompurify": "^3.4.15",
+    "dompurify": "^3.4.16",
     "html2canvas-pro": "^2.4.2",
     "jotai": "^3.0.0",
     "jspdf": "^4.2.1",
