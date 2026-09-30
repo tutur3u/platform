@@ -60,6 +60,65 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+  for (final zone in ['Asia/Ho_Chi_Minh', 'America/Los_Angeles']) {
+    testWidgets('picking next date compares calendar carriers in $zone', (
+      tester,
+    ) async {
+      Map<String, dynamic>? saved;
+      final start = calendarWallToUtc(calendarDate(2026, 10, 5, 9), zone);
+      final end = calendarWallToUtc(calendarDate(2026, 10, 5, 18), zone);
+      final event = CalendarEvent(
+        id: 'fixture-date',
+        title: 'Synthetic meeting',
+        startAt: start,
+        endAt: end,
+      );
+      await tester.pumpApp(
+        Builder(
+          builder: (context) => Material(
+            child: TextButton(
+              onPressed: () async {
+                saved = await showEventFormSheet(
+                  context,
+                  event: event,
+                  timezone: zone,
+                );
+              },
+              child: const Text('Open editor'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open editor'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Oct 5, 2026').first);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(DatePickerDialog),
+          matching: find.text('6'),
+        ),
+      );
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      expect(find.text('Oct 6, 2026'), findsNWidgets(2));
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(
+        saved?['startAt'],
+        calendarWallToUtc(calendarDate(2026, 10, 6, 9), zone),
+      );
+      expect(
+        saved?['endAt'],
+        calendarWallToUtc(calendarDate(2026, 10, 6, 18), zone),
+      );
+      expect(
+        (saved!['endAt'] as DateTime).difference(saved!['startAt'] as DateTime),
+        const Duration(hours: 9),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets('nonexistent New York time remains in editor with validation', (
     tester,
   ) async {

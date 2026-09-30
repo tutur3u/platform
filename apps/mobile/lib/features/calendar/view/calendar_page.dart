@@ -41,9 +41,10 @@ CalendarViewMode _defaultCalendarMode(BuildContext context) =>
     : CalendarViewMode.threeDays;
 
 class CalendarPage extends StatelessWidget {
-  const CalendarPage({super.key, this.initialEventId});
+  const CalendarPage({super.key, this.initialEventId, this.repositoryFactory});
 
   final String? initialEventId;
+  final CalendarRepository Function()? repositoryFactory;
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +53,7 @@ class CalendarPage extends StatelessWidget {
       create: (context) {
         final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
         final cubit = CalendarCubit(
-          calendarRepository: CalendarRepository(),
+          calendarRepository: repositoryFactory?.call() ?? CalendarRepository(),
           defaultViewMode: defaultMode,
           initialState: wsId != null
               ? CalendarCubit.cachedStateForWorkspace(wsId)
@@ -61,15 +62,19 @@ class CalendarPage extends StatelessWidget {
         if (wsId != null) unawaited(cubit.loadEvents(wsId, forceRefresh: true));
         return cubit;
       },
-      child: _CalendarView(initialEventId: initialEventId),
+      child: _CalendarView(
+        initialEventId: initialEventId,
+        repositoryFactory: repositoryFactory,
+      ),
     );
   }
 }
 
 class _CalendarView extends StatefulWidget {
-  const _CalendarView({this.initialEventId});
+  const _CalendarView({this.initialEventId, this.repositoryFactory});
 
   final String? initialEventId;
+  final CalendarRepository Function()? repositoryFactory;
 
   @override
   State<_CalendarView> createState() => _CalendarViewState();
@@ -129,7 +134,7 @@ class _CalendarViewState extends State<_CalendarView> {
   Future<void> _openInitialEvent(String eventId) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
-    final repository = CalendarRepository();
+    final repository = widget.repositoryFactory?.call() ?? CalendarRepository();
     CalendarEvent? event;
     try {
       event = await repository.getEventById(wsId, eventId);
@@ -162,6 +167,7 @@ class _CalendarViewState extends State<_CalendarView> {
     await _showEventDetail(
       context,
       calendarProjectEvent(event, context.read<CalendarCubit>().state.timezone),
+      sourceEvent: event,
     );
     if (mounted && widget.initialEventId == eventId) {
       context.go(Routes.calendar);

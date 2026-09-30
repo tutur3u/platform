@@ -178,12 +178,13 @@ class _EventFormContentState extends State<_EventFormContent> {
       lastDate: calendarDate(2100),
     );
     if (picked == null) return;
+    final date = calendarDate(picked.year, picked.month, picked.day);
     setState(() {
       if (isStart) {
-        _startDate = picked;
+        _startDate = date;
         if (_endDate.isBefore(_startDate)) _endDate = _startDate;
       } else {
-        _endDate = picked;
+        _endDate = date;
       }
     });
   }

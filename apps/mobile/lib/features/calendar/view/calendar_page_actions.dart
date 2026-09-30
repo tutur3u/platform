@@ -25,21 +25,42 @@ extension _CalendarPageActions on _CalendarViewState {
 
   Future<void> _showEventDetail(
     BuildContext context,
-    CalendarEvent event,
-  ) async {
+    CalendarEvent event, {
+    CalendarEvent? sourceEvent,
+  }) async {
+    final originalWorkspaceId = context
+        .read<WorkspaceCubit>()
+        .state
+        .currentWorkspace
+        ?.id;
+    final cubit = context.read<CalendarCubit>();
+    var rawEvent = sourceEvent;
+    for (final item in cubit.state.events) {
+      if (item.id == event.id) rawEvent = item;
+    }
     final action = await showEventDetailSheet(context, event: event);
 
-    if (!context.mounted) return;
+    if (!mounted || !context.mounted) return;
 
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (wsId == null || wsId != originalWorkspaceId) return;
 
     if (action == 'edit') {
-      final cubit = context.read<CalendarCubit>();
-      final source = cubit.state.events.firstWhere(
-        (item) => item.id == event.id,
-        orElse: () => event,
-      );
+      // Detail views carry projected wall times. Editing always needs raw
+      // instants, including while a deep-link range load is pending or fails.
+      for (final item in cubit.state.events) {
+        if (item.id == event.id) rawEvent = item;
+      }
+      final source = rawEvent;
+      if (source == null) {
+        shad.showToast(
+          context: Navigator.of(context, rootNavigator: true).context,
+          builder: (context, overlay) => shad.SurfaceCard(
+            child: Text(context.l10n.calendarEventUnavailable),
+          ),
+        );
+        return;
+      }
       final result = await showEventFormSheet(
         context,
         event: source,

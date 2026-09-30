@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/repositories/timezone_settings_repository.dart';
 import 'package:mobile/features/reminders/reminder_timezone_resolver.dart';
@@ -8,11 +9,45 @@ import 'package:mocktail/mocktail.dart';
 class _Repository extends Mock implements TimezoneSettingsRepository {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+    'default native loader revalidates NY to Paris without app restart',
+    () async {
+      const channel = MethodChannel('flutter_timezone');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      var zone = 'America/New_York';
+      messenger.setMockMethodCallHandler(channel, (_) async => zone);
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      final repository = _Repository();
+      when(repository.loadPersonal).thenAnswer((_) async => 'auto');
+      when(
+        () => repository.loadWorkspace(any()),
+      ).thenAnswer((_) async => 'auto');
+      final resolver = ReminderTimezoneResolver(repository: repository);
+      addTearDown(resolver.dispose);
+      expect(
+        await resolver.resolve(userId: 'user', workspaceId: 'ws'),
+        'America/New_York',
+      );
+      zone = 'Europe/Paris';
+      expect(
+        await resolver.resolve(userId: 'user', workspaceId: 'ws'),
+        'Europe/Paris',
+      );
+      when(repository.loadPersonal).thenAnswer((_) async => 'Asia/Ho_Chi_Minh');
+      expect(
+        await resolver.resolve(userId: 'user', workspaceId: 'ws'),
+        'Asia/Ho_Chi_Minh',
+      );
+    },
+  );
+
   late _Repository repository;
   late ReminderTimezoneResolver resolver;
   setUp(() {
     repository = _Repository();
-    when(() => repository.loadPersonal()).thenAnswer((_) async => 'auto');
+    when(repository.loadPersonal).thenAnswer((_) async => 'auto');
     when(() => repository.loadWorkspace(any())).thenAnswer((_) async => 'auto');
     resolver = ReminderTimezoneResolver(
       repository: repository,
@@ -22,9 +57,7 @@ void main() {
   });
 
   test('personal preference overrides workspace and device', () async {
-    when(
-      () => repository.loadPersonal(),
-    ).thenAnswer((_) async => 'Europe/Paris');
+    when(repository.loadPersonal).thenAnswer((_) async => 'Europe/Paris');
     when(
       () => repository.loadWorkspace('ws'),
     ).thenAnswer((_) async => 'America/New_York');
@@ -54,15 +87,13 @@ void main() {
   test(
     'revalidates settings and retains resolved same-scope zone on failure',
     () async {
-      when(
-        () => repository.loadPersonal(),
-      ).thenAnswer((_) async => 'Europe/Paris');
+      when(repository.loadPersonal).thenAnswer((_) async => 'Europe/Paris');
       expect(
         await resolver.resolve(userId: 'user', workspaceId: 'ws'),
         'Europe/Paris',
       );
       when(
-        () => repository.loadPersonal(),
+        repository.loadPersonal,
       ).thenAnswer((_) async => throw Exception('transient'));
       expect(
         await resolver.resolve(userId: 'user', workspaceId: 'ws'),
@@ -108,12 +139,10 @@ void main() {
   test(
     'account switch clears previously resolved workspace settings',
     () async {
-      when(
-        () => repository.loadPersonal(),
-      ).thenAnswer((_) async => 'Europe/Paris');
+      when(repository.loadPersonal).thenAnswer((_) async => 'Europe/Paris');
       await resolver.resolve(userId: 'first', workspaceId: 'ws');
       when(
-        () => repository.loadPersonal(),
+        repository.loadPersonal,
       ).thenAnswer((_) async => throw Exception('unavailable'));
       await expectLater(
         resolver.resolve(userId: 'second', workspaceId: 'ws'),
@@ -127,7 +156,7 @@ void main() {
     () async {
       final old = Completer<String>();
       var calls = 0;
-      when(() => repository.loadPersonal()).thenAnswer(
+      when(repository.loadPersonal).thenAnswer(
         (_) => calls++ == 0 ? old.future : Future.value('Europe/Paris'),
       );
       final pending = resolver.resolve(userId: 'first', workspaceId: 'ws');
@@ -147,7 +176,7 @@ void main() {
 
   test('logout invalidates an in-flight settings resolution', () async {
     final pending = Completer<String>();
-    when(() => repository.loadPersonal()).thenAnswer((_) => pending.future);
+    when(repository.loadPersonal).thenAnswer((_) => pending.future);
     final result = resolver.resolve(userId: 'user', workspaceId: 'ws');
     final rejected = expectLater(result, throwsStateError);
     resolver.clear();

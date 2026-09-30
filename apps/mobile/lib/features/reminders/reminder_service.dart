@@ -18,8 +18,17 @@ import 'package:mobile/l10n/gen/app_localizations_vi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ReminderService extends ChangeNotifier {
-  ReminderService({ReminderTimezoneResolver? timezoneResolver})
-    : _timezoneResolver = timezoneResolver ?? ReminderTimezoneResolver();
+  ReminderService({
+    ReminderTimezoneResolver? timezoneResolver,
+    TaskRepository? taskRepository,
+    CalendarRepository? calendarRepository,
+    PushNotificationService? notifications,
+    SettingsRepository? settingsRepository,
+  }) : _timezoneResolver = timezoneResolver ?? ReminderTimezoneResolver(),
+       _taskRepository = taskRepository ?? TaskRepository(),
+       _calendarRepository = calendarRepository ?? CalendarRepository(),
+       _notifications = notifications ?? PushNotificationService.instance,
+       _settingsRepository = settingsRepository ?? SettingsRepository();
 
   static final ReminderService instance = ReminderService();
   final ReminderTimezoneResolver _timezoneResolver;
@@ -28,8 +37,10 @@ class ReminderService extends ChangeNotifier {
   bool _isCurrent(String userId, int generation) =>
       _userId == userId && _scopeGeneration == generation;
 
-  final _taskRepository = TaskRepository();
-  final _calendarRepository = CalendarRepository();
+  final TaskRepository _taskRepository;
+  final CalendarRepository _calendarRepository;
+  final PushNotificationService _notifications;
+  final SettingsRepository _settingsRepository;
   String? _userId;
   List<Workspace> _workspaces = const [];
   Future<void>? _initializing;
@@ -80,10 +91,8 @@ class ReminderService extends ChangeNotifier {
     var pendingIds = <int>{};
     bool? notificationsEnabled;
     try {
-      pendingIds = await PushNotificationService.instance
-          .pendingLocalReminderIds();
-      notificationsEnabled =
-          await PushNotificationService.instance.notificationsEnabled;
+      pendingIds = await _notifications.pendingLocalReminderIds();
+      notificationsEnabled = await _notifications.notificationsEnabled;
     } on Exception {
       // Status remains unknown until notification services are available.
     }
@@ -122,7 +131,7 @@ class ReminderService extends ChangeNotifier {
         final parsed = int.tryParse(id);
         if (parsed != null) {
           try {
-            await PushNotificationService.instance.cancelLocalReminder(parsed);
+            await _notifications.cancelLocalReminder(parsed);
           } on Exception {
             // Continue clearing the remaining reminders during sign-out.
           }
@@ -148,8 +157,7 @@ class ReminderService extends ChangeNotifier {
   Future<void> refreshIfStale() async {
     if (_userId == null) return;
     try {
-      final enabled =
-          await PushNotificationService.instance.notificationsEnabled;
+      final enabled = await _notifications.notificationsEnabled;
       if (status.notificationsEnabled != enabled) {
         status = status.copyWith(notificationsEnabled: enabled);
         notifyListeners();
@@ -166,12 +174,29 @@ class ReminderService extends ChangeNotifier {
     await refresh();
   }
 
+  /// Rebuild the normal plan after a timezone change, bypassing stale guards.
+  /// Existing notification IDs survive unless the new plan removes them.
+  Future<void> timezoneChanged({
+    required String userId,
+    String? workspaceId,
+  }) async {
+    if (_userId != userId ||
+        (workspaceId != null &&
+            !_workspaces.any((workspace) => workspace.id == workspaceId))) {
+      return;
+    }
+    final generation = ++_scopeGeneration;
+    if (_refreshing case final running?) await running;
+    if (!_isCurrent(userId, generation)) return;
+    await refresh();
+  }
+
   Future<void> refresh() {
     final existing = _refreshing;
     if (existing != null) return existing;
-    final running = _refresh();
+    final running = _refresh().whenComplete(() => _refreshing = null);
     _refreshing = running;
-    return running.whenComplete(() => _refreshing = null);
+    return running;
   }
 
   Future<void> _refresh() async {
@@ -238,7 +263,7 @@ class ReminderService extends ChangeNotifier {
           .toList(growable: false);
       final scheduledIds = entries.map((entry) => entry.notificationId).toSet();
       final language =
-          await SettingsRepository().getLocale() ??
+          await _settingsRepository.getLocale() ??
           PlatformDispatcher.instance.locale.languageCode;
       await initializeDateFormatting(language == 'vi' ? 'vi' : 'en');
       if (!_isCurrent(userId, generation)) return;
@@ -255,7 +280,7 @@ class ReminderService extends ChangeNotifier {
       for (final entry in entries) {
         if (!_isCurrent(userId, generation)) return;
         final copy = reminderNotificationCopy(entry, l10n);
-        await PushNotificationService.instance.scheduleLocalReminder(
+        await _notifications.scheduleLocalReminder(
           id: entry.notificationId,
           scheduledAt: entry.scheduledAt,
           title: copy.title,
@@ -272,7 +297,7 @@ class ReminderService extends ChangeNotifier {
       }
       for (final id in previousIds.difference(scheduledIds)) {
         if (!_isCurrent(userId, generation)) return;
-        await PushNotificationService.instance.cancelLocalReminder(id);
+        await _notifications.cancelLocalReminder(id);
       }
       if (!_isCurrent(userId, generation)) return;
       await store.setStringList(key, scheduledIds.map((id) => '$id').toList());
@@ -295,8 +320,7 @@ class ReminderService extends ChangeNotifier {
         lastSuccessAt: finishedAt,
         scheduledCount: entries.length,
         nextReminderAt: nextReminder,
-        notificationsEnabled:
-            await PushNotificationService.instance.notificationsEnabled,
+        notificationsEnabled: await _notifications.notificationsEnabled,
       );
     } on Object catch (error) {
       if (_isCurrent(userId, generation)) {
