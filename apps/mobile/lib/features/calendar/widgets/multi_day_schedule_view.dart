@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/all_day_layout.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
 import 'package:mobile/features/calendar/utils/working_location_icon.dart';
@@ -119,7 +120,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
     _didAutoScroll = true;
     final hourHeight = _hourHeight(context);
     final hasTodayInRange = _visibleDates.any(_isToday);
-    final now = DateTime.now();
+    final now = calendarNowInContext(context);
     final earliestEventHour = _visibleDates
         .expand(_timedEventsForDay)
         .map((event) => event.startAt?.hour)
@@ -144,7 +145,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
   }
 
   List<DateTime> get _visibleDates {
-    final anchor = DateTime(
+    final anchor = calendarDate(
       widget.selectedDate.year,
       widget.selectedDate.month,
       widget.selectedDate.day,
@@ -163,18 +164,18 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
   DateTime _weekStart(DateTime date, int firstDayOfWeek) {
     final weekday = date.weekday % 7;
     final diff = (weekday - firstDayOfWeek + 7) % 7;
-    return DateTime(date.year, date.month, date.day - diff);
+    return calendarDate(date.year, date.month, date.day - diff);
   }
 
   bool _isToday(DateTime date) {
-    final now = DateTime.now();
+    final now = calendarNowInContext(context);
     return date.year == now.year &&
         date.month == now.month &&
         date.day == now.day;
   }
 
   List<CalendarEvent> _timedEventsForDay(DateTime date) {
-    final dayStart = DateTime(date.year, date.month, date.day);
+    final dayStart = calendarDate(date.year, date.month, date.day);
     final dayEnd = dayStart.add(const Duration(days: 1));
 
     return widget.events.where((event) {

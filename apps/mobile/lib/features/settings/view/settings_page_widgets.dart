@@ -250,6 +250,10 @@ class _PreferencesSection extends StatelessWidget {
     final l10n = context.l10n;
 
     final tiles = <Widget>[
+      TimezoneSettingsTile(
+        userId: currentCacheUserId(),
+        workspaceId: context.watch<WorkspaceCubit>().state.currentWorkspace?.id,
+      ),
       SettingsTile(
         icon: Icons.palette_outlined,
         title: l10n.settingsTheme,

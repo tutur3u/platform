@@ -3487,6 +3487,14 @@
   "@remindersAllDayEvent": {"placeholders": {"title": {"type": "String"}}},
   "remindersUpcomingEvent": "{when}: {title}",
   "@remindersUpcomingEvent": {"placeholders": {"when": {"type": "String"}, "title": {"type": "String"}}},
+  "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+  "@remindersOccurrenceDetails": {
+    "placeholders": {
+      "leadTime": {"type": "String"},
+      "occurrence": {"type": "String"},
+      "timezone": {"type": "String"}
+    }
+  },
   "remindersIn3d": "Còn 3 ngày",
   "remindersIn1d": "Ngày mai",
   "remindersIn12h": "Còn 12 giờ",
@@ -3742,5 +3750,20 @@
     "offlineChangesReview": "Hãy kiểm tra thao tác này trên thiết bị khác trước khi thử lại. Có thể máy chủ đã nhận được thao tác.",
     "offlineChangesRetry": "Thử lại",
     "offlineChangesDiscard": "Bỏ thay đổi trên máy",
-    "offlineChangesDiscardConfirm": "Thao tác này xóa thay đổi đang chờ trên thiết bị. Nó không hoàn tác dữ liệu mà máy chủ có thể đã nhận."
+    "offlineChangesDiscardConfirm": "Thao tác này xóa thay đổi đang chờ trên thiết bị. Nó không hoàn tác dữ liệu mà máy chủ có thể đã nhận.",
+    "settingsTimezone": "Múi giờ cá nhân",
+    "settingsWorkspaceTimezone": "Múi giờ không gian làm việc",
+    "settingsTimezoneDescription": "Múi giờ cá nhân ưu tiên hơn múi giờ không gian làm việc. Tự động dùng mặc định không gian làm việc, sau đó thiết bị.",
+    "settingsTimezoneAuto": "Tự động",
+    "settingsTimezoneSearch": "Tìm múi giờ",
+    "settingsTimezoneEffective": "Múi giờ áp dụng: {timezone}",
+    "settingsTimezoneError": "Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.",
+    "@settingsTimezoneEffective": {
+        "placeholders": {
+            "timezone": {
+                "type": "String"
+            }
+        }
+    },
+    "calendarInvalidLocalTime": "Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè."
 }

@@ -1,4 +1,5 @@
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 
 /// Span info for an all-day event across visible date columns.
 class AllDaySpan {
@@ -58,7 +59,7 @@ AllDayLayoutResult calculateAllDayLayout({
 
   // Normalize visible dates to midnight.
   final dates = visibleDates
-      .map((d) => DateTime(d.year, d.month, d.day))
+      .map((d) => calendarDate(d.year, d.month, d.day))
       .toList();
 
   // --- Pass 1: Create event spans ---
@@ -70,10 +71,18 @@ AllDayLayoutResult calculateAllDayLayout({
     final eventEnd = event.endAt ?? eventStart;
     if (eventStart == null) continue;
 
-    final eStart = DateTime(eventStart.year, eventStart.month, eventStart.day);
+    final eStart = calendarDate(
+      eventStart.year,
+      eventStart.month,
+      eventStart.day,
+    );
     // endAt is exclusive (midnight after last day), so subtract 1 day
     // to get the last inclusive calendar day.
-    final exclusiveEnd = DateTime(eventEnd!.year, eventEnd.month, eventEnd.day);
+    final exclusiveEnd = calendarDate(
+      eventEnd!.year,
+      eventEnd.month,
+      eventEnd.day,
+    );
     final eEnd = exclusiveEnd.subtract(const Duration(days: 1));
 
     // Find column range overlap with visible dates.

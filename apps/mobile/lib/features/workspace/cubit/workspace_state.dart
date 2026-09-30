@@ -16,6 +16,7 @@ class WorkspaceState extends Equatable {
     this.limits,
     this.error,
     this.isCreating = false,
+    this.emptyMembershipConfirmed = false,
   });
 
   final WorkspaceStatus status;
@@ -26,6 +27,9 @@ class WorkspaceState extends Equatable {
   final WorkspaceLimits? limits;
   final String? error;
   final bool isCreating;
+
+  /// An empty cache or failed fetch is not evidence of removed membership.
+  final bool emptyMembershipConfirmed;
 
   bool get hasWorkspace => currentWorkspace != null;
   Workspace? get personalWorkspaceOrCurrent {
@@ -44,6 +48,7 @@ class WorkspaceState extends Equatable {
     Object? limits = _sentinel,
     Object? error = _sentinel,
     bool? isCreating,
+    bool? emptyMembershipConfirmed,
   }) => WorkspaceState(
     status: status ?? this.status,
     workspaces: workspaces ?? this.workspaces,
@@ -57,6 +62,8 @@ class WorkspaceState extends Equatable {
     limits: limits == _sentinel ? this.limits : limits as WorkspaceLimits?,
     error: error == _sentinel ? this.error : error as String?,
     isCreating: isCreating ?? this.isCreating,
+    emptyMembershipConfirmed:
+        emptyMembershipConfirmed ?? this.emptyMembershipConfirmed,
   );
 
   @override
@@ -69,5 +76,6 @@ class WorkspaceState extends Equatable {
     limits,
     error,
     isCreating,
+    emptyMembershipConfirmed,
   ];
 }

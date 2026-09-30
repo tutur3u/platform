@@ -3483,6 +3483,14 @@
   "@remindersAllDayEvent": {"placeholders": {"title": {"type": "String"}}},
   "remindersUpcomingEvent": "{when}: {title}",
   "@remindersUpcomingEvent": {"placeholders": {"when": {"type": "String"}, "title": {"type": "String"}}},
+  "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+  "@remindersOccurrenceDetails": {
+    "placeholders": {
+      "leadTime": {"type": "String"},
+      "occurrence": {"type": "String"},
+      "timezone": {"type": "String"}
+    }
+  },
   "remindersIn3d": "In 3 days",
   "remindersIn1d": "Tomorrow",
   "remindersIn12h": "In 12 hours",
@@ -3738,5 +3746,20 @@
     "offlineChangesReview": "Check this action on another device before retrying. It may have reached the server already.",
     "offlineChangesRetry": "Retry",
     "offlineChangesDiscard": "Discard local change",
-    "offlineChangesDiscardConfirm": "This removes the queued change from this device. It does not undo anything the server may have received."
+    "offlineChangesDiscardConfirm": "This removes the queued change from this device. It does not undo anything the server may have received.",
+    "settingsTimezone": "Personal timezone",
+    "settingsWorkspaceTimezone": "Workspace timezone",
+    "settingsTimezoneDescription": "Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.",
+    "settingsTimezoneAuto": "Automatic",
+    "settingsTimezoneSearch": "Search timezones",
+    "settingsTimezoneEffective": "Effective timezone: {timezone}",
+    "settingsTimezoneError": "Could not load or save timezone. Tap to retry.",
+    "@settingsTimezoneEffective": {
+        "placeholders": {
+            "timezone": {
+                "type": "String"
+            }
+        }
+    },
+    "calendarInvalidLocalTime": "Choose a valid start and end time. Some times do not exist when daylight saving time changes."
 }

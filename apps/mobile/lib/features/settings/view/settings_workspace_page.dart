@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -18,6 +19,7 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart'
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
+import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
 import 'package:mobile/features/settings/view/workspace_properties_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -88,6 +90,18 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
                 32 + MediaQuery.paddingOf(context).bottom,
               ),
               children: [
+                TimezoneSettingsTile(
+                  userId: currentCacheUserId(),
+                  workspaceId: context
+                      .watch<WorkspaceCubit>()
+                      .state
+                      .currentWorkspace
+                      ?.id,
+                  workspace: true,
+                  canManageWorkspace:
+                      _canManageWorkspaceSettings &&
+                      !_isWorkspacePermissionLoading,
+                ),
                 SettingsWorkspaceSection(
                   onSelectCurrentWorkspace: () =>
                       showWorkspacePickerSheet(context),

@@ -49,8 +49,11 @@ Future<List<dynamic>> readThroughJsonList({
   required String path,
   CachePolicy policy = CachePolicies.moduleData,
   bool forceRefresh = false,
+  CacheStore? cacheStore,
+  String? Function()? cacheUserId,
 }) async {
-  final userId = currentCacheUserId();
+  final userId = (cacheUserId ?? currentCacheUserId)();
+  final store = cacheStore ?? CacheStore.instance;
   if (userId == null) return await api.getJsonList(path);
   final key = CacheKey(
     namespace: namespace,
@@ -58,7 +61,7 @@ Future<List<dynamic>> readThroughJsonList({
     workspaceId: workspaceId,
     params: {'path': path},
   );
-  final result = await CacheStore.instance.prefetch<List<dynamic>>(
+  final result = await store.prefetch<List<dynamic>>(
     key: key,
     policy: policy,
     decode: (payload) => List<dynamic>.from(payload! as List),
@@ -67,7 +70,7 @@ Future<List<dynamic>> readThroughJsonList({
         return await api.getJsonList(path);
       } on ApiException catch (error) {
         if (error.statusCode == 401 || error.statusCode == 403) {
-          await CacheStore.instance.remove(key);
+          await store.remove(key);
         }
         rethrow;
       }
@@ -75,5 +78,8 @@ Future<List<dynamic>> readThroughJsonList({
     forceRefresh: forceRefresh,
     tags: ['module:${namespace.split('.').first}', 'workspace:$workspaceId'],
   );
+  if (forceRefresh && !result.hasValue) {
+    throw Exception('Response invalidated during refresh.');
+  }
   return result.data ?? const [];
 }
