@@ -191,9 +191,15 @@ class _AppsReorderGridState extends State<AppsReorderGrid>
       index: index,
       hidden: widget.hidden,
       showVisibility: widget.hidden || widget.isOrdering,
-      onSelected: widget.isOrdering
-          ? (_) => widget.onOrderingFinished?.call()
-          : widget.onSelected,
+      onSelected: (selected) {
+        widget.onOrderingFinished?.call();
+        if (widget.onSelected != null) {
+          widget.onSelected!(selected);
+        } else {
+          unawaited(context.read<AppTabCubit>().select(selected));
+          context.go(selected.route);
+        }
+      },
       onVisibilityPressed: () => widget.onVisibilityPressed(module),
     );
     if (!widget.canReorder) return tile;
@@ -244,44 +250,41 @@ class _AppGridTile extends StatelessWidget {
       index: index,
       moduleId: module.id,
     );
-    return Semantics(
-      button: true,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          unawaited(AppHaptics.selection());
-          if (onSelected != null) {
-            onSelected!(module);
-          } else {
-            unawaited(context.read<AppTabCubit>().select(module));
-            context.go(module.route);
-          }
-        },
-        child: Column(
-          children: [
-            SizedBox(
-              width: 82,
-              height: 84,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: palette.background,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: palette.border),
-                        boxShadow: [
-                          BoxShadow(
-                            color: palette.shadow,
-                            blurRadius: 12,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
+    void select() {
+      unawaited(AppHaptics.selection());
+      onSelected?.call(module);
+    }
+
+    return Column(
+      children: [
+        SizedBox(
+          width: 82,
+          height: 84,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: InkWell(
+                  excludeFromSemantics: true,
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: select,
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: palette.background,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: palette.border),
+                      boxShadow: [
+                        BoxShadow(
+                          color: palette.shadow,
+                          blurRadius: 12,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: ExcludeSemantics(
                       child: Icon(
                         module.icon,
                         color: palette.iconColor,
@@ -289,21 +292,30 @@ class _AppGridTile extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (showVisibility)
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: AppVisibilityButton(
-                        hidden: hidden,
-                        cornerAligned: true,
-                        onPressed: onVisibilityPressed,
-                      ),
-                    ),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
+              if (showVisibility)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: AppVisibilityButton(
+                    hidden: hidden,
+                    cornerAligned: true,
+                    onPressed: onVisibilityPressed,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          excludeFromSemantics: true,
+          borderRadius: BorderRadius.circular(4),
+          onTap: select,
+          child: Semantics(
+            button: true,
+            onTap: select,
+            child: Text(
               module.label(context.l10n),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -316,9 +328,9 @@ class _AppGridTile extends StatelessWidget {
                     : null,
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

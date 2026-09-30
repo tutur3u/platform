@@ -360,14 +360,11 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     );
     if (miniAppRoot != null && miniAppRoot != currentLocation) {
       final parentRoute = _parentRouteFor(currentLocation, miniAppRoot);
-      final hasExplicitParent =
-          injectedDeepLinkBackRoute != null &&
-          injectedDeepLinkBackRoute != Routes.apps;
-      if (parentRoute == null &&
-          !hasExplicitParent &&
-          (_isPrimaryMiniAppDestination(currentLocation) ||
-              injectedDeepLinkBackRoute == Routes.apps)) {
-        // Peer sections exit their app; explicit parents remain reachable.
+      if (injectedDeepLinkBackRoute == Routes.apps ||
+          (parentRoute == null &&
+              injectedDeepLinkBackRoute == null &&
+              _isPrimaryMiniAppDestination(currentLocation))) {
+        // Explicit app exits bypass inferred parents, including default boards.
         await _returnToAppOrigin();
         return;
       }
