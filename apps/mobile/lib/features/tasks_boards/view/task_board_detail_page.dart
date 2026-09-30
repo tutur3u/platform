@@ -22,6 +22,7 @@ import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/core/utils/form_dirty_utils.dart';
 import 'package:mobile/core/utils/tiptap_description_parser.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
+import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';

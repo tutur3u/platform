@@ -32,21 +32,19 @@ class _CrmUserCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
+            NetworkAvatar(
               radius: 24,
               backgroundColor: accent.withValues(alpha: 0.12),
-              backgroundImage: user.avatarUrl == null
-                  ? null
-                  : NetworkImage(user.avatarUrl!),
-              child: user.avatarUrl == null
-                  ? Text(
-                      user.label.characters.first.toUpperCase(),
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: accent,
-                      ),
-                    )
-                  : null,
+              avatarUrl: user.avatarUrl,
+              child: Text(
+                user.label.isEmpty
+                    ? '?'
+                    : user.label.characters.first.toUpperCase(),
+                style: theme.typography.small.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: accent,
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
