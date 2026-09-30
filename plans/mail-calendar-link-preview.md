@@ -1,6 +1,8 @@
 # Mail–Calendar explicit link and merge preview (stage two)
 
-Status: design pending stage-one verification and a fresh coordinated file scope.
+Status: canonical identity and non-destructive preview/confirmation service implemented
+with synthetic fixtures. Calendar authorization endpoint, persistence adapter and
+web/mobile entry points await coordinated Calendar file ownership; no live writes.
 
 The Outlook invitation and a user-created personal Google hold can describe the
 same meeting while having different organizer and provider identities. Preserve
