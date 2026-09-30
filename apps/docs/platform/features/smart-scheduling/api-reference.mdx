@@ -260,7 +260,10 @@ provided and must not be assumed to equal a series UID. Native events report
 unknown account, organizer, UID, recurrence and attendee ownership.
 
 Provider fields come from an exact authorized GET, after the local encrypted
-storage boundary. Hidden attendees are omitted; conferencing fields only yield
+storage boundary. Missing keys, malformed ciphertext and authentication failures
+suppress both native previews and provider GETs; the preview never treats the
+legacy decryption fallback or an encryption flag as proof of plaintext. Hidden
+attendees are omitted; conferencing fields only yield
 validated HTTPS Teams/Meet links, separately from the structured location. Raw
 bodies, account credentials and provider errors are never returned. This endpoint
 does not save associations, alter either event, respond to invitations, copy

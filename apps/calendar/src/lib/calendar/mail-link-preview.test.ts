@@ -1,7 +1,8 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  decrypt: vi.fn(),
+  getKey: vi.fn(),
   googleGet: vi.fn(),
   graphGet: vi.fn(),
   graphApi: vi.fn(),
@@ -9,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   graphSelect: vi.fn(),
 }));
 vi.mock('@/lib/workspace-encryption', () => ({
-  decryptEventFromStorage: mocks.decrypt,
+  getWorkspaceKey: mocks.getKey,
 }));
 vi.mock('@tuturuuu/google', () => ({
   google: { calendar: () => ({ events: { get: mocks.googleGet } }) },
@@ -33,7 +34,12 @@ const event = {
   source_calendar_id: 'native-source',
   external_calendar_id: 'provider-calendar',
   external_event_id: 'provider-event',
-  is_encrypted: true,
+  is_encrypted: false,
+  title: 'Local title',
+  description: '',
+  location: 'Room',
+  start_at: '2026-09-30T12:00:00Z',
+  end_at: '2026-09-30T13:00:00Z',
 };
 const token = {
   id: 'account-row',
@@ -82,7 +88,7 @@ const providerEvent = {
 };
 
 /** Concrete query fake applies equality/in filters instead of returning unauthorized fixture rows. */
-function db(rows: Record<string, Record<string, any>[]>) {
+function db(rows: Record<string, Record<string, unknown>[]>) {
   const queries: Array<{ table: string; filters: Array<[string, unknown]> }> =
     [];
   return {
@@ -94,7 +100,7 @@ function db(rows: Record<string, Record<string, any>[]>) {
       let data = rows[table] ?? [];
       const record = { table, filters: [] as Array<[string, unknown]> };
       queries.push(record);
-      const query: any = {
+      const query = {
         select: () => query,
         eq: (key: string, value: unknown) => {
           record.filters.push([key, value]);
@@ -118,7 +124,9 @@ function db(rows: Record<string, Record<string, any>[]>) {
     },
   };
 }
-const makeDb = (extra: Partial<Record<string, Record<string, any>[]>> = {}) =>
+const makeDb = (
+  extra: Partial<Record<string, Record<string, unknown>[]>> = {}
+) =>
   db({
     workspace_calendar_events: [event],
     workspace_calendars: [
@@ -132,7 +140,7 @@ const args = (
   database: ReturnType<typeof db>,
   readProviderEvent = vi.fn(async () => providerEvent)
 ) => ({
-  sbAdmin: database as any,
+  sbAdmin: database as unknown as TypedSupabaseClient,
   wsId: 'ws',
   userId: 'actor',
   eventId: 'event',
@@ -141,20 +149,14 @@ const args = (
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.decrypt.mockImplementation(async (value) => ({
-    ...value,
-    title: 'Decrypted local',
-    location: 'Room',
-    start_at: '2026-09-30T12:00:00Z',
-    end_at: '2026-09-30T13:00:00Z',
-  }));
+  mocks.getKey.mockResolvedValue(null);
   mocks.graphApi.mockReturnValue({ header: mocks.graphHeader });
   mocks.graphHeader.mockReturnValue({ select: mocks.graphSelect });
   mocks.graphSelect.mockReturnValue({ get: mocks.graphGet });
 });
 
 describe('authorized Calendar link preview', () => {
-  it('uses an exact read-only actor-owned source, decrypts after source authorization and returns only provider authority', async () => {
+  it('uses an exact read-only actor-owned source and returns only provider authority', async () => {
     const database = makeDb();
     const preview = await getAuthorizedCalendarLinkPreview(args(database));
     expect(preview?.identity).toMatchObject({
@@ -177,7 +179,7 @@ describe('authorized Calendar link preview', () => {
     expect(JSON.stringify(preview)).not.toMatch(
       /SECRET|hidden@example|access_token|refresh_token/
     );
-    expect(mocks.decrypt).toHaveBeenCalledWith(event, 'ws');
+    expect(mocks.getKey).not.toHaveBeenCalled();
     expect(
       database.queries.find((query) => query.table === 'calendar_auth_tokens')
         ?.filters
@@ -242,7 +244,7 @@ describe('authorized Calendar link preview', () => {
         await getAuthorizedCalendarLinkPreview(args(makeDb(rows), read))
       ).toBeNull();
       expect(read).not.toHaveBeenCalled();
-      expect(mocks.decrypt).not.toHaveBeenCalled();
+      expect(mocks.getKey).not.toHaveBeenCalled();
     }
   );
   it('fails closed for cancellation and decrypt failures', async () => {
@@ -254,14 +256,20 @@ describe('authorized Calendar link preview', () => {
         )
       )
     ).toBeNull();
-    mocks.decrypt.mockRejectedValue(new Error('encrypted secret'));
     const read = vi.fn();
-    await expect(
-      getAuthorizedCalendarLinkPreview(args(makeDb(), read))
-    ).rejects.toThrow();
+    expect(
+      await getAuthorizedCalendarLinkPreview(
+        args(
+          makeDb({
+            workspace_calendar_events: [{ ...event, is_encrypted: true }],
+          }),
+          read
+        )
+      )
+    ).toBeNull();
     expect(read).not.toHaveBeenCalled();
   });
-  it('returns local content after decryption with unknown provider ownership and stable content revision', async () => {
+  it('returns local plaintext with unknown provider ownership and stable content revision', async () => {
     const database = makeDb({
       workspace_calendar_events: [
         {
@@ -273,7 +281,7 @@ describe('authorized Calendar link preview', () => {
       ],
     });
     const preview = await getAuthorizedCalendarLinkPreview(args(database));
-    expect(preview?.title).toBe('Decrypted local');
+    expect(preview?.title).toBe('Local title');
     expect(preview?.identity).toMatchObject({
       accountOwnerId: null,
       accountEmail: null,
@@ -286,7 +294,7 @@ describe('authorized Calendar link preview', () => {
   });
   it('uses exact Google GET and rejects cancelled/mismatched provider IDs', async () => {
     const source = (await resolveCalendarPreviewSource({
-      sbAdmin: makeDb() as any,
+      sbAdmin: makeDb() as unknown as TypedSupabaseClient,
       wsId: 'ws',
       userId: 'actor',
       provider: 'google',
