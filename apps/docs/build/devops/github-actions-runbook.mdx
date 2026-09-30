@@ -19,8 +19,9 @@ GitHub Actions is the primary automation plane for Tuturuuu.
   builds do not prove a corrected head. New findings or commits require new gates.
 - Develop independent scopes in parallel, each with its own worktree and owner.
   Admit heavy local validation through the shared `ttr resources` FIFO after a
-  resource preflight; keep installs, tests and builds serial. One integration owner
-  serializes main and production mutations. Other owners continue active work and
+  resource preflight; serialize permitted local installs and tests. Require
+  exact-head CI for builds; independent CI builds need not be serialized. One
+  integration owner serializes main and production mutations. Other owners continue active work and
   hand off manifests rather than starting competing CI watch loops.
 - Integrate dependencies bottom-up, retaining ancestry for base-chained PRs.
   Verify child diffs and retargeting, then rerun the owning gates. A base edit alone

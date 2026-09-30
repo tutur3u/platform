@@ -112,15 +112,10 @@ parent in the body of every PR above the base:
 Every PR in the stack must pass on its own. A child that only compiles once its
 parent is merged is not reviewable, and CI will say so.
 
-Run the usual gates in the child's worktree, not just at the top of the stack:
-
-```bash
-bun check
-```
-
-`bun check` does not compile Next apps. For a slice that touches routes, pages,
-or dependencies, require the affected app's real build to pass in CI on that
-PR's exact head commit before calling it verified.
+Run focused non-build tests in the child's owning workspace, not just at the
+top of the stack. Do not run local `bun check`: its Turbo graph can build workspace
+dependencies. Require the applicable test, type, lint and real affected-app build
+workflows to pass in CI on that PR's exact head before calling it verified.
 
 <Warning>
   Do not run builds on this machine, including `bun setup`, which invokes package
