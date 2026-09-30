@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(21);
+select plan(24);
 set local role service_role;
 insert into public.workspace_users(id, ws_id, display_name)
 values ('23000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'Fast page fixture');
@@ -169,5 +169,34 @@ select ok(not exists (
   select 1 from private.user_group_activity_feed_for_ids('00000000-0000-0000-0000-000000000001', '2090-01-01', '2090-02-01', null,
     (select array_agg(id) from audit.record_version where ts = '2090-01-15 12:00Z'))
 ), 'caller-supplied page IDs cannot cross workspace boundaries');
+
+-- A virtual fallback actor can belong to another workspace (intentionally
+-- supported by the richer actor fallback). Its links still multiply feed rows.
+set local role service_role;
+delete from public.workspace_user_linked_users
+where virtual_user_id = '23000000-0000-0000-0000-000000000001';
+insert into public.workspace_users(id, ws_id, display_name)
+values ('23000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000001', 'Cross-workspace actor');
+insert into public.workspace_user_linked_users(platform_user_id, ws_id, virtual_user_id)
+values
+  ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', '23000000-0000-0000-0000-000000000012'),
+  ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', '23000000-0000-0000-0000-000000000012')
+on conflict (platform_user_id, ws_id) do update set virtual_user_id = excluded.virtual_user_id;
+reset role;
+insert into audit.record_version(record_id, op, table_oid, table_schema, table_name, record, ts)
+values ('23000000-0000-0000-0000-000000000013', 'INSERT', 'public.user_feedbacks'::regclass, 'public', 'user_feedbacks',
+  '{"id":"23000000-0000-0000-0000-000000000013","user_id":"23000000-0000-0000-0000-000000000001","creator_id":"23000000-0000-0000-0000-000000000012","content":"Cross-workspace actor fixture"}', '2091-01-15 12:00Z');
+select is((select count(*) from private.list_user_group_activity_logs(
+  '00000000-0000-0000-0000-000000000000', '2091-01-01', '2091-02-01', p_limit => 1)),
+  1::bigint, 'cross-workspace actor links do not exceed the page limit');
+select is((select max(total_count) from private.list_user_group_activity_logs(
+  '00000000-0000-0000-0000-000000000000', '2091-01-01', '2091-02-01', p_limit => 1, p_offset => 1)),
+  2::bigint, 'cross-workspace actor links retain total count and second page');
+select is(
+  (select jsonb_agg(to_jsonb(row) order by actor_email)
+   from private.list_user_group_activity_logs('00000000-0000-0000-0000-000000000000', '2091-01-01', '2091-02-01', p_limit => 10) row),
+  (select jsonb_agg(to_jsonb(row) order by actor_email)
+   from private.list_user_group_activity_logs('00000000-0000-0000-0000-000000000000', '2091-01-01', '2091-02-01', p_query => '%', p_limit => 10) row),
+  'cross-workspace actor contents and multiplicity match the enriched path');
 select * from finish();
 rollback;

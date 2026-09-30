@@ -3,6 +3,7 @@
 -- Install the pre-change listing under the baseline name from the previous migration
 -- before applying the fast-page migrations. The same rows, date window, work_mem,
 -- page, and session are used for both variants. Iteration 0 is warm-up; retain 1..5.
+-- Optional: -v unrelated_actor_links=true adds a duplicated actor in another workspace.
 -- No cold-cache or production-latency claim is made. PostgreSQL shared buffers are
 -- reported in blocks. Keep competing validation serialized through ttr resources.
 \set ON_ERROR_STOP on
@@ -15,6 +16,17 @@ end $$;
 set local statement_timeout = '180s';
 set local work_mem = '4MB';
 insert into public.workspace_users (id, ws_id, display_name) values ('22000000-0000-0000-0000-000000000201', '00000000-0000-0000-0000-000000000000', 'Audit benchmark user');
+\if :{?unrelated_actor_links}
+\if :unrelated_actor_links
+-- Unrelated duplicate actor links must not force workspace-wide enrichment.
+insert into public.workspace_users(id, ws_id, display_name)
+values ('22000000-0000-0000-0000-000000000202', '00000000-0000-0000-0000-000000000001', 'Unrelated benchmark actor');
+insert into public.workspace_user_linked_users(platform_user_id, ws_id, virtual_user_id) values
+('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','22000000-0000-0000-0000-000000000202'),
+('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001','22000000-0000-0000-0000-000000000202')
+on conflict (platform_user_id,ws_id) do update set virtual_user_id=excluded.virtual_user_id;
+\endif
+\endif
 insert into audit.record_version (record_id, old_record_id, op, table_oid, table_schema, table_name, record, old_record, ts)
 select case when entry % 3 <> 1 then md5(entry::text)::uuid end, case when entry % 3 <> 2 then md5(entry::text)::uuid end, case when entry % 3 = 0 then 'UPDATE'::audit.operation when entry % 3 = 1 then 'DELETE'::audit.operation else 'INSERT'::audit.operation end,
  'public.user_feedbacks'::regclass, 'public', 'user_feedbacks',

@@ -47,15 +47,34 @@ begin
     and nullif(btrim(p_actor_query), '') is null
     and nullif(btrim(p_query), '') is null
     and not exists (
-      -- The legacy fallback join can produce one row per platform link.
-      -- Preserve that count and pagination if a workspace user has several.
+      -- Fallback actors deliberately need not belong to this workspace. Check
+      -- every potential snapshot actor, including unchanged UPDATE fields:
+      -- conservative fallback preserves the legacy join's row multiplicity.
+      with ambiguous_actors as materialized (
+        select linked.virtual_user_id
+        from public.workspace_user_linked_users linked
+        group by linked.virtual_user_id
+        having count(*) > 1
+      )
       select 1
-      from public.workspace_user_linked_users linked
-      join public.workspace_users workspace_user
-        on workspace_user.id = linked.virtual_user_id
-      where workspace_user.ws_id = p_ws_id
-      group by linked.virtual_user_id
-      having count(*) > 1
+      from ambiguous_actors actor
+      where exists (
+        select 1
+        from private.user_group_activity_candidates(p_ws_id, p_start, p_end, null::uuid) candidate
+        join audit.record_version history on history.id = candidate.audit_record_id
+        where actor.virtual_user_id = any (array[
+          public.try_parse_uuid(history.record->>'updated_by'),
+          public.try_parse_uuid(history.old_record->>'updated_by'),
+          public.try_parse_uuid(history.record->>'approved_by'),
+          public.try_parse_uuid(history.old_record->>'approved_by'),
+          public.try_parse_uuid(history.record->>'rejected_by'),
+          public.try_parse_uuid(history.old_record->>'rejected_by'),
+          public.try_parse_uuid(history.record->>'creator_id'),
+          public.try_parse_uuid(history.old_record->>'creator_id'),
+          public.try_parse_uuid(history.record->>'created_by'),
+          public.try_parse_uuid(history.old_record->>'created_by')
+        ])
+      )
     )
   then
     return query

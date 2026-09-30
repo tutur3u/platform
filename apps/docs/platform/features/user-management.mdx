@@ -87,8 +87,11 @@ The feed reads a date range of `audit.record_version` before resolving groups an
 
 The fast-page migrations preserve the existing RPC signature and service-role-only
 access. Only the default unfiltered workspace request uses narrow IDs; search,
-resource/action filters, group scope, and workspaces with multiple fallback actor
-links retain the enriched path. Narrow eligibility checks supported row operations
+resource/action filters, group scope, and ranges whose snapshots reference
+multiple fallback actor links retain the enriched path. Fallback actors may belong
+to another workspace; the multiplicity guard checks eligible historical snapshot
+references rather than current workspace ownership. It conservatively checks all
+potential actor fields, including unchanged update fields. Narrow eligibility checks supported row operations
 without calculating snapshot diffs. Action labels, changed fields, names, and
 snapshots are still calculated for the selected page.
 
@@ -101,14 +104,21 @@ not production SLA estimates.
 
 | Events | Baseline median / sample p95 | Fast median / sample p95 | Baseline temp read / written blocks | Fast temp read / written blocks |
 | --- | --- | --- | --- | --- |
-| 24,000 | 2,658 / 2,788 ms | 504 / 564 ms | 24,685 / 25,039 | 0 / 0 |
-| 48,000 | 5,428 / 6,493 ms | 974 / 1,156 ms | 49,723 / 50,077 | 0 / 0 |
-| 96,000 | 11,359 / 11,713 ms | 1,916 / 2,113 ms | 99,796 / 100,150 | 639 / 611 |
+| 24,000 | 2,632 / 2,737 ms | 513 / 527 ms | 24,685 / 25,039 | 0 / 0 |
+| 48,000 | 5,403 / 6,041 ms | 994 / 1,035 ms | 49,723 / 50,077 | 0 / 0 |
+| 96,000 | 10,928 / 12,989 ms | 2,027 / 2,371 ms | 99,796 / 100,150 | 639 / 611 |
+
+An additional 48k fixture with an unrelated virtual actor in another workspace
+linked to two platform users measured baseline median/sample p95 5,651/5,842 ms
+versus fast 2,379/2,701 ms. The scoped ambiguity check adds work but retains early
+pagination when those actor IDs are absent from the audit snapshots. Use the
+harness option `unrelated_actor_links=true` to reproduce this case.
 
 Full-row multiset equality, including counts and snapshots, passed at every size.
 The regression suite also covers all 18 resources and three operations, tied
 sorting, offsets and normalized limits, date boundaries, filters, workspace
-isolation, fallback actor multiplicity, service-role execution, and actual denied
+isolation, same-workspace and cross-workspace fallback actor multiplicity,
+service-role execution, and actual denied
 anon/authenticated calls. Restrictive MFA policies must not be counted as
 permissive access grants in policy assertions; no policy or grant is changed by
 this optimization.
@@ -128,7 +138,7 @@ Broad tests on the schema-only local fixture reproduced 43 failing suites on the
 original HEAD. Two stale audit policy assertions are repaired here; the remaining
 41 unrelated failures have identical baseline failure records. This fixture omits
 scheduler setup and migration-seeded reference catalogs. A separate fresh
-Supabase bootstrap applies the migrations and passes the 21-case parity suite;
+Supabase bootstrap applies the migrations and passes the 24-case parity suite;
 its full test run has 35 failing suites before the change and 33 afterwards,
 with no new failures and identical existing failure summaries. Type generation
 from that fresh schema and a non-emitting type check pass. The full suite is
