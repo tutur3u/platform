@@ -13,6 +13,7 @@ import 'package:mobile/features/reminders/reminder_plan.dart';
 import 'package:mobile/features/reminders/reminder_settings.dart';
 import 'package:mobile/features/reminders/reminder_timezone_resolver.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/gen/app_localizations_en.dart';
 import 'package:mobile/l10n/gen/app_localizations_vi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -46,6 +47,7 @@ class ReminderService extends ChangeNotifier {
   final DateTime Function() _now;
   String? _userId;
   List<Workspace> _workspaces = const [];
+  bool _workspacesResolved = false;
   Future<void>? _initializing;
   Future<void>? _refreshing;
   ReminderSettings settings = const ReminderSettings();
@@ -53,7 +55,20 @@ class ReminderService extends ChangeNotifier {
 
   String? get userId => _userId;
 
-  Future<void> startSession(String userId, List<Workspace> workspaces) async {
+  Future<void> startWorkspaceSession(String userId, WorkspaceState state) =>
+      startSession(
+        userId,
+        state.workspaces,
+        workspacesResolved:
+            state.status == WorkspaceStatus.loaded &&
+            (state.workspaces.isNotEmpty || state.emptyMembershipConfirmed),
+      );
+
+  Future<void> startSession(
+    String userId,
+    List<Workspace> workspaces, {
+    bool workspacesResolved = true,
+  }) async {
     if (_userId != null && _userId != userId) {
       await stopSession();
     }
@@ -61,14 +76,24 @@ class ReminderService extends ChangeNotifier {
       _scopeGeneration++;
       _timezoneResolver.clear();
       _userId = userId;
+      _workspacesResolved = false;
       _initializing = _initializeSession(userId, _scopeGeneration);
     }
     if (_initializing case final initializing?) await initializing;
     if (_userId != userId) return;
+    final wasResolved = _workspacesResolved;
+    _workspacesResolved = workspacesResolved;
+    if (!workspacesResolved) {
+      // Retain recorded alerts until membership is known; initialization still
+      // binds their ledger to the account so logout can reconcile it.
+      _scopeGeneration++;
+      if (_refreshing case final running?) await running;
+      return;
+    }
     final oldIds = _workspaces.map((workspace) => workspace.id).toSet();
     final newIds = workspaces.map((workspace) => workspace.id).toSet();
     _workspaces = workspaces;
-    if (!setEquals(oldIds, newIds)) {
+    if (!setEquals(oldIds, newIds) || !wasResolved) {
       _scopeGeneration++;
       if (_refreshing case final running?) await running;
       await refresh();
@@ -118,6 +143,7 @@ class ReminderService extends ChangeNotifier {
     _timezoneResolver.clear();
     _userId = null;
     _workspaces = const [];
+    _workspacesResolved = false;
     if (_initializing case final initializing?) {
       try {
         await initializing;
@@ -206,7 +232,7 @@ class ReminderService extends ChangeNotifier {
   Future<void> _refresh() async {
     final userId = _userId;
     final generation = _scopeGeneration;
-    if (userId == null) return;
+    if (userId == null || !_workspacesResolved) return;
     status = status.copyWith(isRefreshing: true, clearError: true);
     notifyListeners();
     try {

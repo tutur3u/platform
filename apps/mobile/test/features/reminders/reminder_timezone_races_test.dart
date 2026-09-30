@@ -2,15 +2,19 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/timezone_settings_repository.dart';
+import 'package:mobile/data/repositories/workspace_repository.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/reminders/reminder_service.dart';
 import 'package:mobile/features/reminders/reminder_timezone_resolver.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,6 +25,8 @@ class _Preferences extends Mock implements TimezoneSettingsRepository {}
 class _Settings extends Mock implements SettingsRepository {}
 
 class _Notifications extends Mock implements PushNotificationService {}
+
+class _Workspaces extends Mock implements WorkspaceRepository {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -63,6 +69,127 @@ void main() {
       verifyNever(() => notifications.cancelLocalReminder(any()));
     },
   );
+
+  test(
+    'cold workspace fetch failure preserves persisted native alerts',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'reminders.user.tasksEnabled': false,
+        'reminders.user.eventsEnabled': false,
+        'reminders.user.scheduledIds': ['4242'],
+      });
+      final repository = _Workspaces();
+      when(repository.readCachedWorkspaces).thenAnswer(
+        (_) async => const CacheReadResult<List<Workspace>>(
+          state: CacheEntryState.missing,
+        ),
+      );
+      when(
+        repository.getWorkspaces,
+      ).thenThrow(Exception('Synthetic unavailable'));
+      final workspace = WorkspaceCubit(workspaceRepository: repository);
+      addTearDown(workspace.close);
+      final notifications = _Notifications();
+      final settings = _Settings();
+      final pending = <int>{4242};
+      when(
+        notifications.pendingLocalReminderIds,
+      ).thenAnswer((_) async => pending);
+      when(
+        () => notifications.notificationsEnabled,
+      ).thenAnswer((_) async => true);
+      when(settings.getLocale).thenAnswer((_) async => 'en');
+      when(() => notifications.cancelLocalReminder(any())).thenAnswer((
+        call,
+      ) async {
+        pending.remove(call.positionalArguments.first as int);
+      });
+      final service = ReminderService(
+        notifications: notifications,
+        settingsRepository: settings,
+      );
+      addTearDown(service.dispose);
+      await workspace.loadWorkspaces();
+      expect(workspace.state.status, WorkspaceStatus.error);
+      await service.startWorkspaceSession('user', workspace.state);
+      await service.refreshIfStale();
+      expect(pending, {4242});
+      final store = await SharedPreferences.getInstance();
+      expect(store.getStringList('reminders.user.scheduledIds'), ['4242']);
+      verifyNever(() => notifications.cancelLocalReminder(any()));
+    },
+  );
+
+  for (final verified in [false, true]) {
+    test(
+      'empty cache needs successful discovery before cancel: $verified',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'reminders.user.tasksEnabled': false,
+          'reminders.user.eventsEnabled': false,
+          'reminders.user.scheduledIds': ['4242'],
+        });
+        final repository = _Workspaces();
+        when(repository.readCachedWorkspaces).thenAnswer(
+          (_) async => const CacheReadResult<List<Workspace>>(
+            state: CacheEntryState.stale,
+            data: [],
+            hasValue: true,
+            isFromCache: true,
+          ),
+        );
+        when(repository.loadDefaultWorkspaceId).thenAnswer((_) async => null);
+        when(repository.loadSelectedWorkspace).thenAnswer((_) async => null);
+        when(repository.getDefaultWorkspace).thenAnswer((_) async => null);
+        when(
+          repository.getWorkspaceLimits,
+        ).thenThrow(Exception('Synthetic unavailable'));
+        if (verified) {
+          when(repository.getWorkspaces).thenAnswer((_) async => []);
+        } else {
+          when(
+            repository.getWorkspaces,
+          ).thenThrow(Exception('Synthetic unavailable'));
+        }
+        final workspace = WorkspaceCubit(workspaceRepository: repository);
+        addTearDown(workspace.close);
+        final notifications = _Notifications();
+        final settings = _Settings();
+        final pending = <int>{4242};
+        when(
+          notifications.pendingLocalReminderIds,
+        ).thenAnswer((_) async => pending);
+        when(
+          () => notifications.notificationsEnabled,
+        ).thenAnswer((_) async => true);
+        when(settings.getLocale).thenAnswer((_) async => 'en');
+        when(() => notifications.cancelLocalReminder(any())).thenAnswer((
+          call,
+        ) async {
+          pending.remove(call.positionalArguments.first as int);
+        });
+        final service = ReminderService(
+          notifications: notifications,
+          settingsRepository: settings,
+        );
+        addTearDown(service.dispose);
+        await workspace.loadWorkspaces();
+        expect(workspace.state.status, WorkspaceStatus.loaded);
+        expect(workspace.state.emptyMembershipConfirmed, verified);
+        await service.startWorkspaceSession('user', workspace.state);
+        await service.refreshIfStale();
+        expect(pending, verified ? isEmpty : equals({4242}));
+        if (!verified) {
+          verifyNever(() => notifications.cancelLocalReminder(any()));
+        }
+        // Even unresolved discovery binds the ledger to the account for logout.
+        await service.stopSession();
+        expect(pending, isEmpty);
+        final store = await SharedPreferences.getInstance();
+        expect(store.getStringList('reminders.user.scheduledIds'), isNull);
+      },
+    );
+  }
 
   for (final transition in ['zone change', 'logout', 'workspace removal']) {
     test(
