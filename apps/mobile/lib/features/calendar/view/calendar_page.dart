@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -23,7 +22,6 @@ import 'package:mobile/features/calendar/widgets/three_day_view.dart';
 import 'package:mobile/features/calendar/widgets/week_view.dart';
 import 'package:mobile/features/calendar/widgets/year_view.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
-import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -87,21 +85,6 @@ class _CalendarViewState extends State<_CalendarView> {
   void initState() {
     super.initState();
     _scheduleInitialEventOpen();
-    final preferences = context.read<TimezoneSettingsCubit?>();
-    if (preferences != null) {
-      unawaited(
-        preferences.load(
-          userId: context.read<WorkspaceCubit>().state.currentWorkspace == null
-              ? null
-              : currentCacheUserId(),
-          workspaceId: context
-              .read<WorkspaceCubit>()
-              .state
-              .currentWorkspace
-              ?.id,
-        ),
-      );
-    }
     _lifecycle = AppLifecycleListener(
       onResume: () {
         final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;

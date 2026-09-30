@@ -151,6 +151,12 @@ void main() {
         expect(DateTime.parse(written!['end_at'] as String), event.endAt);
         if (!range.isCompleted) range.complete(const []);
         await tester.pumpAndSettle();
+        verifyNever(
+          () => timezone.load(
+            userId: any(named: 'userId'),
+            workspaceId: any(named: 'workspaceId'),
+          ),
+        );
         expect(tester.takeException(), isNull);
       },
       timeout: const Timeout(Duration(seconds: 30)),

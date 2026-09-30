@@ -99,7 +99,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
     if (_userId == null ||
         state.loading ||
         state.saving ||
-        state.failed ||
+        !state.resolved ||
         (workspace && (!canManageWorkspace || _workspaceId == null))) {
       return;
     }
