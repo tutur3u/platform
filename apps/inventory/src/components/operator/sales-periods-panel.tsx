@@ -1,4 +1,5 @@
 'use client';
+import { SeasonPricesDialog } from './season-prices-dialog';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -116,6 +117,14 @@ export function SalesPeriodsPanel({
           searchPlaceholder={t('title')}
           value={selectedPeriodId || ALL_PERIODS}
         />
+        {selected?.pricing_mode === 'scheduled' ? (
+          <SeasonPricesDialog
+            key={`${wsId}:${selected.id}`}
+            wsId={wsId}
+            period={selected}
+            products={products}
+          />
+        ) : null}
         <SalesExportDropdown
           canExport={canExport}
           period={selected}
@@ -185,6 +194,12 @@ function SalesPeriodDialog({
   const t = useTranslations('inventory.operator.commerce.periods');
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [pricingMode, setPricingMode] = useState<'legacy' | 'scheduled'>(
+    period?.pricing_mode ?? (period ? 'legacy' : 'scheduled')
+  );
+  const [timeZone, setTimeZone] = useState(
+    period?.time_zone ?? Intl.DateTimeFormat().resolvedOptions().timeZone
+  );
   const [name, setName] = useState(period?.name ?? '');
   const [description, setDescription] = useState(period?.description ?? '');
   const [startsAt, setStartsAt] = useState(period?.starts_at ?? '');
@@ -199,6 +214,8 @@ function SalesPeriodDialog({
     mutationFn: () =>
       period
         ? updateInventorySalesPeriod(wsId, period.id, {
+            pricing_mode: pricingMode,
+            time_zone: timeZone,
             description: description.trim() || null,
             ends_at: endsAt || null,
             name: name.trim(),
@@ -207,6 +224,8 @@ function SalesPeriodDialog({
             starts_at: startsAt || null,
           })
         : createInventorySalesPeriod(wsId, {
+            pricing_mode: pricingMode,
+            time_zone: timeZone,
             description: description.trim() || null,
             ends_at: endsAt || null,
             name: name.trim(),
@@ -214,7 +233,8 @@ function SalesPeriodDialog({
             product_scope: productScope,
             starts_at: startsAt || null,
           }),
-    onError: () => toast.error(t('saveError')),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t('saveError')),
     onSuccess: () => {
       toast.success(t(isEditing ? 'updatedSuccess' : 'createdSuccess'));
       setOpen(false);
@@ -289,6 +309,27 @@ function SalesPeriodDialog({
                 onChange={(event) => setName(event.target.value)}
                 placeholder={t('namePlaceholder')}
                 value={name}
+              />
+            </label>
+            <SelectValueField
+              allowEmpty={false}
+              label={t('pricingMode')}
+              placeholder={t('pricingMode')}
+              value={pricingMode}
+              onChange={(value) =>
+                setPricingMode(value as 'legacy' | 'scheduled')
+              }
+              options={[
+                { value: 'scheduled', label: t('scheduledPricing') },
+                { value: 'legacy', label: t('legacyPricing') },
+              ]}
+            />
+            <label className="grid gap-1.5 text-sm">
+              {t('timeZone')}
+              <Input
+                value={timeZone}
+                onChange={(event) => setTimeZone(event.target.value)}
+                maxLength={100}
               />
             </label>
             <SalesPeriodProductRules

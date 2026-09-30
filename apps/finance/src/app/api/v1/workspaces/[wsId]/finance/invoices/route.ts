@@ -1,3 +1,9 @@
+import { validateInvoiceWallet } from './invoice-wallet';
+import {
+  createPeriodInvoice,
+  type CreateInvoiceRequest,
+  type InvoiceProduct,
+} from './period-invoice';
 import {
   type FinanceRouteContext,
   getFinanceRouteContext,
@@ -55,67 +61,6 @@ interface Params {
   params: Promise<{
     wsId: string;
   }>;
-}
-
-interface InvoiceProduct {
-  product_id: string;
-  unit_id: string;
-  warehouse_id: string;
-  quantity: number;
-  price: number;
-  category_id: string;
-}
-
-interface CreateInvoiceRequest {
-  customer_id?: string | null;
-  content: string;
-  notes?: string;
-  wallet_id: string;
-  promotion_id?: string;
-  products: InvoiceProduct[];
-  category_id?: string;
-  // Optional frontend calculated values for comparison
-  frontend_subtotal?: number;
-  frontend_discount_amount?: number;
-  frontend_total?: number;
-  price_mode?: 'catalog' | 'custom';
-}
-
-async function validateInvoiceWallet({
-  sbAdmin,
-  walletId,
-  wsId,
-}: {
-  sbAdmin: FinanceRouteContext['sbAdmin'];
-  walletId: string;
-  wsId: string;
-}) {
-  const { data, error } = await sbAdmin
-    .schema('private')
-    .from('workspace_wallets')
-    .select('id')
-    .eq('id', walletId)
-    .eq('ws_id', wsId)
-    .maybeSingle();
-
-  if (error) {
-    return {
-      ok: false as const,
-      status: 500 as const,
-      message: 'Failed to validate invoice wallet',
-      error,
-    };
-  }
-
-  if (!data) {
-    return {
-      ok: false as const,
-      status: 400 as const,
-      message: 'Invalid invoice wallet',
-    };
-  }
-
-  return { ok: true as const };
 }
 
 export async function validateInvoiceCustomer({
@@ -619,6 +564,8 @@ export async function POST(req: Request, { params }: Params) {
       frontend_discount_amount,
       frontend_total,
       price_mode,
+      inventory_period_id,
+      inventory_request_id,
     }: CreateInvoiceRequest = await req.json();
 
     // Validate required fields
@@ -627,6 +574,16 @@ export async function POST(req: Request, { params }: Params) {
         {
           message: 'Missing required fields: products and wallet_id',
         },
+        { status: 400 }
+      );
+    }
+
+    if (
+      !inventory_period_id &&
+      (inventory_request_id || products.some((product) => product.price_id))
+    ) {
+      return NextResponse.json(
+        { message: 'Price quotes require a sales period' },
         { status: 400 }
       );
     }
@@ -818,6 +775,27 @@ export async function POST(req: Request, { params }: Params) {
         { message: inventoryRelations.message },
         { status: inventoryRelations.status }
       );
+    }
+
+    if (inventory_period_id) {
+      return createPeriodInvoice({
+        sbAdmin,
+        wsId,
+        actorId: user.id,
+        workspaceUserId,
+        payload: {
+          inventory_period_id,
+          inventory_request_id,
+          price_mode,
+          products: productValues,
+          content,
+          notes,
+          wallet_id,
+          promotion_id,
+          customer_id: resolvedCustomerId,
+          category_id: resolvedCategoryId,
+        },
+      });
     }
 
     // Catalog prices and promotions remain server-calculated by the private

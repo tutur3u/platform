@@ -6973,6 +6973,66 @@ export type Database = {
         };
         Relationships: [];
       };
+      inventory_product_prices: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          id: string;
+          period_id: string;
+          price: number;
+          product_id: string;
+          unit_id: string;
+          valid_from: string;
+          valid_to: string | null;
+          warehouse_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          currency: string;
+          id?: string;
+          period_id: string;
+          price: number;
+          product_id: string;
+          unit_id: string;
+          valid_from: string;
+          valid_to?: string | null;
+          warehouse_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          id?: string;
+          period_id?: string;
+          price?: number;
+          product_id?: string;
+          unit_id?: string;
+          valid_from?: string;
+          valid_to?: string | null;
+          warehouse_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_product_prices_period_id_ws_id_fkey';
+            columns: ['period_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_sales_periods';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'inventory_product_prices_product_id_unit_id_warehouse_id_fkey';
+            columns: ['product_id', 'unit_id', 'warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_products';
+            referencedColumns: ['product_id', 'unit_id', 'warehouse_id'];
+          },
+        ];
+      };
       inventory_products: {
         Row: {
           amount: number | null;
@@ -7112,6 +7172,45 @@ export type Database = {
           },
         ];
       };
+      inventory_sale_price_snapshots: {
+        Row: {
+          actor_id: string;
+          captured_at: string;
+          currency: string;
+          invoice_id: string;
+          lines: Json;
+          period_id: string;
+          period_name: string;
+          request_id: string;
+          request_payload: Json;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          captured_at: string;
+          currency: string;
+          invoice_id: string;
+          lines: Json;
+          period_id: string;
+          period_name: string;
+          request_id: string;
+          request_payload: Json;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          captured_at?: string;
+          currency?: string;
+          invoice_id?: string;
+          lines?: Json;
+          period_id?: string;
+          period_name?: string;
+          request_id?: string;
+          request_payload?: Json;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       inventory_sales_period_assignments: {
         Row: {
           assigned_at: string;
@@ -7184,9 +7283,11 @@ export type Database = {
           ends_at: string | null;
           id: string;
           name: string;
+          pricing_mode: string;
           product_scope: string;
           starts_at: string | null;
           status: string;
+          time_zone: string | null;
           updated_at: string;
           ws_id: string;
         };
@@ -7197,9 +7298,11 @@ export type Database = {
           ends_at?: string | null;
           id?: string;
           name: string;
+          pricing_mode?: string;
           product_scope?: string;
           starts_at?: string | null;
           status?: string;
+          time_zone?: string | null;
           updated_at?: string;
           ws_id: string;
         };
@@ -7210,9 +7313,11 @@ export type Database = {
           ends_at?: string | null;
           id?: string;
           name?: string;
+          pricing_mode?: string;
           product_scope?: string;
           starts_at?: string | null;
           status?: string;
+          time_zone?: string | null;
           updated_at?: string;
           ws_id?: string;
         };
@@ -16012,6 +16117,21 @@ export type Database = {
           status: string;
         }[];
       };
+      author_inventory_period_price: {
+        Args: {
+          p_actor_id: string;
+          p_currency: string;
+          p_ends_on: string;
+          p_period_id: string;
+          p_price: number;
+          p_product_id: string;
+          p_starts_on: string;
+          p_unit_id: string;
+          p_warehouse_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       backfill_inventory_finance_sales: {
         Args: { p_ws_id?: string };
         Returns: number;
@@ -16772,6 +16892,19 @@ export type Database = {
       create_inventory_checkout_session: {
         Args: { p_now?: string; p_payload: Json; p_storefront_slug: string };
         Returns: Json;
+      };
+      create_inventory_period_invoice: {
+        Args: {
+          p_actor_id: string;
+          p_currency: string;
+          p_invoice: Json;
+          p_period_id: string;
+          p_products: Json;
+          p_request_id: string;
+          p_workspace_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
       };
       create_inventory_pos_operator_invite: {
         Args: { p_actor_id: string; p_email: string; p_ws_id: string };

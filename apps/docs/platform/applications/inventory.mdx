@@ -116,11 +116,44 @@ the workspace with the request-scoped client before any private-table read or
 write, then use server-only database access or service-role RPCs behind
 `apps/inventory`.
 
+Convention selling uses an explicit sales period. The sale dialog defaults to an
+in-range configured period, otherwise the sole current active period. Overlapping
+or absent current periods require a choice. Operators can explicitly choose the
+legacy unassigned workflow; it is never an automatic fallback.
+
+New periods default to effective season pricing with explicit dates and an IANA
+timezone. Prices are major currency units, scoped to product, unit, warehouse and
+period. Price intervals start at local midnight; end dates are inclusive. A new
+later interval closes an earlier interval without replacing its amount. Price
+history does not alter stock quantity, legacy catalog prices or completed invoice
+snapshots. Existing periods remain in legacy pricing mode until deliberately
+changed; the migration performs no price backfill. Priced period dates, timezone
+and pricing mode are immutable. Use another period to change those boundaries.
+
+Scheduled selling filters eligible active products and requires a current price
+in the workspace currency. Gaps and missing prices prevent checkout; another
+season's prices are never borrowed. Price controls require catalog-management
+permissions. Managers can preview upcoming selected-season prices in the price
+history, labeled with effective dates and the season timezone. Viewing a future
+price does not make it eligible for checkout at the current sale time.
+Offline/stale carts require refresh and review, with no silently
+changed total. Period-linked invoice creation validates the quote and eligibility
+and captures line amounts, stock changes and period assignment in one private
+transaction after the existing Finance authorization checks. Historical invoices,
+reports and completed commerce orders continue using their saved amounts.
+Provider listings/promotions and their minor-unit prices are intentionally
+unchanged. Scheduled manual sales keep the existing custom-price workflow's
+no-promotion semantics and require a matching wallet currency.
+
+The additive migration must be installed before scheduled controls can be used.
+Missing tables/RPCs fail closed; never apply production migrations manually.
+
 Sales-period clients use the Inventory-owned routes below. Keep these paths in
 the Flutter API mapping check whenever the mobile catalog changes:
 
 - `GET/POST /api/v1/workspaces/:wsId/inventory/sales-periods`
 - `PATCH/DELETE /api/v1/workspaces/:wsId/inventory/sales-periods/:periodId`
+- `GET/POST /api/v1/workspaces/:wsId/inventory/sales-periods/:periodId/prices`
 - `PUT /api/v1/workspaces/:wsId/inventory/sales/:saleId/period`
 - `GET /api/v1/workspaces/:wsId/inventory/sales?period_id=:periodId`
 

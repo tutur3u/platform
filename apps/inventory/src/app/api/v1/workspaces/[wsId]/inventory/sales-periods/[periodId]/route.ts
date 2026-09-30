@@ -1,3 +1,4 @@
+import { pricingErrorStatus } from '@tuturuuu/inventory-core/period-pricing';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   canDeleteInventorySales,
@@ -13,6 +14,8 @@ import { z } from 'zod';
 
 const PeriodPatchSchema = z
   .object({
+    pricing_mode: z.enum(['legacy', 'scheduled']).optional(),
+    time_zone: z.string().max(100).nullable().optional(),
     description: z.string().trim().max(500).nullable().optional(),
     ends_at: z.iso.date().nullable().optional(),
     name: z.string().trim().min(1).max(120).optional(),
@@ -76,8 +79,11 @@ export async function PATCH(request: Request, { params }: Params) {
   } catch (error) {
     console.error('Failed to update inventory sales period', error);
     return NextResponse.json(
-      { message: 'Failed to update inventory sales period' },
-      { status: 500 }
+      {
+        message:
+          'Failed to update inventory sales period; priced period dates and timezone cannot be changed',
+      },
+      { status: pricingErrorStatus(error) }
     );
   }
 }

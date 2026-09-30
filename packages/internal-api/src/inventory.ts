@@ -1,3 +1,5 @@
+export { createInventoryPrice, listInventoryPrices } from './inventory-prices';
+export type { InventoryPrice, InventoryPricePayload } from './inventory-prices';
 import type { InventoryOwner } from '@tuturuuu/types/primitives/InventoryOwner';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import type { ProductBatch } from '@tuturuuu/types/primitives/ProductBatch';
@@ -1202,37 +1204,16 @@ export type InventoryBatchPayload = {
 
 export type InventorySaleSource = 'checkout_session' | 'finance_invoice';
 
-export type InventorySalesPeriodStatus = 'active' | 'archived';
-
-export type InventorySalesPeriodProductScope =
-  | 'all'
-  | 'allowlist'
-  | 'blocklist';
-
-export type InventorySalesPeriod = {
-  created_at: string;
-  description: string | null;
-  ends_at: string | null;
-  id: string;
-  name: string;
-  product_ids: string[];
-  product_scope: InventorySalesPeriodProductScope;
-  sale_count: number;
-  starts_at: string | null;
-  status: InventorySalesPeriodStatus;
-  updated_at: string;
-  ws_id: string;
-};
-
-export type InventorySalesPeriodPayload = {
-  description?: string | null;
-  ends_at?: string | null;
-  name: string;
-  product_ids?: string[];
-  product_scope?: InventorySalesPeriodProductScope;
-  starts_at?: string | null;
-};
-
+export type {
+  InventorySalesPeriodStatus,
+  InventorySalesPeriodProductScope,
+  InventorySalesPeriod,
+  InventorySalesPeriodPayload,
+} from './inventory-sales-contracts';
+import type {
+  InventorySalesPeriod,
+  InventorySalesPeriodPayload,
+} from './inventory-sales-contracts';
 export type InventorySaleSummary = {
   category_name?: string | null;
   completed_at: string | null;
@@ -1328,22 +1309,8 @@ export type InventorySaleUpdatePayload = {
   }>;
 };
 
-export type InventorySaleCreatePayload = {
-  category_id: string;
-  content: string;
-  notes?: string;
-  period_id?: string | null;
-  products: Array<{
-    category_id: string;
-    price: number;
-    product_id: string;
-    quantity: number;
-    unit_id: string;
-    warehouse_id: string;
-  }>;
-  wallet_id: string;
-};
-
+export type { InventorySaleCreatePayload } from './inventory-sales-contracts';
+import type { InventorySaleCreatePayload } from './inventory-sales-contracts';
 export type InventorySaleCreateResponse = {
   data?: {
     category_id?: string | null;

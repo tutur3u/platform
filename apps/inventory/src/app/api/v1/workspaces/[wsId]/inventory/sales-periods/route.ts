@@ -1,3 +1,4 @@
+import { pricingErrorStatus } from '@tuturuuu/inventory-core/period-pricing';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   canCreateInventorySales,
@@ -13,6 +14,8 @@ import { z } from 'zod';
 
 const PeriodPayloadSchema = z
   .object({
+    pricing_mode: z.enum(['legacy', 'scheduled']).optional(),
+    time_zone: z.string().max(100).nullable().optional(),
     description: z.string().trim().max(500).nullable().optional(),
     ends_at: z.iso.date().nullable().optional(),
     name: z.string().trim().min(1).max(120),
@@ -20,6 +23,12 @@ const PeriodPayloadSchema = z
     product_scope: z.enum(['all', 'allowlist', 'blocklist']).default('all'),
     starts_at: z.iso.date().nullable().optional(),
   })
+  .refine(
+    (payload) =>
+      payload.pricing_mode !== 'scheduled' ||
+      Boolean(payload.starts_at && payload.ends_at && payload.time_zone),
+    { message: 'Scheduled prices require dates and an IANA timezone' }
+  )
   .refine(
     (payload) =>
       !(payload.starts_at && payload.ends_at) ||
@@ -105,8 +114,11 @@ export async function POST(request: Request, { params }: Params) {
     }
     console.error('Failed to create inventory sales period', error);
     return NextResponse.json(
-      { message: 'Failed to create inventory sales period' },
-      { status: 500 }
+      {
+        message:
+          'Failed to create inventory sales period; season pricing may be unavailable',
+      },
+      { status: pricingErrorStatus(error) }
     );
   }
 }

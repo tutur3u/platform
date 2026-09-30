@@ -55,6 +55,9 @@ import {
   type SaleProductSort,
   sortSaleStockOptions,
 } from './sale-product-picker';
+import { defaultSalesPeriod } from '@tuturuuu/inventory-core/effective-prices';
+import { useSeasonSalePrices } from './season-sale-prices';
+import { useInventoryActor } from './inventory-session-scope';
 import { useHybridSearchResults } from './use-hybrid-search-results';
 
 const SALE_TABS = ['items', 'cart', 'payment', 'review'] as const;
@@ -100,7 +103,10 @@ export function SaleCreateDialog({
   const [notes, setNotes] = useState('');
   const [walletId, setWalletId] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [periodId, setPeriodId] = useState('none');
+  const [periodId, setPeriodId] = useState('choose');
+  const [requestId, setRequestId] = useState('');
+  const actorId = useInventoryActor();
+  const selectedPeriod = periods.find((period) => period.id === periodId);
   const [keepOpenAfterSale, setKeepOpenAfterSale] = useState(false);
   const [serverQuery] = useDebounce(query, 280);
   const productSearchQuery = useQuery({
@@ -118,6 +124,7 @@ export function SaleCreateDialog({
       wsId,
       'products',
       SALE_PRODUCT_SEARCH_SCOPE,
+      actorId,
       serverQuery,
     ],
   });
@@ -125,14 +132,24 @@ export function SaleCreateDialog({
     getId: (product) => product.id,
     isFetching: productSearchQuery.isFetching,
     query,
-    queryKey: ['inventory', wsId, 'products', SALE_PRODUCT_SEARCH_SCOPE],
+    queryKey: [
+      'inventory',
+      wsId,
+      'products',
+      SALE_PRODUCT_SEARCH_SCOPE,
+      actorId,
+    ],
     serverQuery,
     visibleItems: productSearchQuery.data?.data ?? products,
   });
-  const stockOptions = useMemo(
-    () => getSaleStockOptions(productSearch.results),
-    [productSearch.results]
-  );
+  const seasonPricing = useSeasonSalePrices({
+    wsId,
+    period: selectedPeriod,
+    open,
+    options: getSaleStockOptions(productSearch.results),
+    currency: workspaceCurrency,
+  });
+  const stockOptions = periodId === 'choose' ? [] : seasonPricing.options;
 
   const filteredOptions = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -193,7 +210,12 @@ export function SaleCreateDialog({
     0
   );
   const canSubmit = Boolean(
-    lines.length > 0 && content.trim() && walletId && categoryId
+    lines.length > 0 &&
+      content.trim() &&
+      walletId &&
+      categoryId &&
+      periodId !== 'choose' &&
+      seasonPricing.cartIsCurrent(lines)
   );
   const tabIndex = SALE_TABS.indexOf(tab as (typeof SALE_TABS)[number]);
   const canGoNext =
@@ -223,16 +245,8 @@ export function SaleCreateDialog({
       options?.defaultFinanceCategoryId ||
         (categories.length === 1 ? (categories[0]!.id ?? '') : '')
     );
-    setPeriodId(
-      options?.defaultSalesPeriodId &&
-        periods.some(
-          (period) =>
-            period.id === options.defaultSalesPeriodId &&
-            period.status === 'active'
-        )
-        ? options.defaultSalesPeriodId
-        : 'none'
-    );
+    setRequestId(crypto.randomUUID());
+    setPeriodId(defaultSalesPeriod(periods, options?.defaultSalesPeriodId));
   };
 
   const mutation = useMutation({
@@ -242,9 +256,11 @@ export function SaleCreateDialog({
         content: content.trim(),
         notes: notes.trim() || undefined,
         period_id: periodId === 'none' ? null : periodId,
+        request_id: requestId,
         products: lines.map((line) => ({
           category_id: categoryId,
           price: line.price,
+          price_id: line.priceId,
           product_id: line.productId,
           quantity: line.quantity,
           unit_id: line.unitId,
@@ -252,8 +268,12 @@ export function SaleCreateDialog({
         })),
         wallet_id: walletId,
       }),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('createError')),
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : t('createError'));
+      queryClient.invalidateQueries({
+        queryKey: ['inventory', wsId, 'period-prices'],
+      });
+    },
     onSuccess: (result) => {
       toast.success(t('createSuccess'));
       if (result.period_assignment_warning) {
@@ -278,6 +298,12 @@ export function SaleCreateDialog({
   const submitSale = () => {
     if (!canSubmit || mutation.isPending) return;
     mutation.mutate();
+  };
+
+  const changePeriod = (id: string) => {
+    setPeriodId(id);
+    setLines([]);
+    setRequestId(crypto.randomUUID());
   };
 
   const setLineQuantity = (option: SaleStockOption, quantity: number) => {
@@ -319,6 +345,45 @@ export function SaleCreateDialog({
           title={t('title')}
         />
         <div className="flex min-h-0 flex-1 flex-col">
+          <div className="grid gap-2 p-3">
+            <SelectField
+              allowEmpty={false}
+              label={t('period')}
+              onChange={changePeriod}
+              options={[
+                { id: 'choose', name: t('choosePeriod') },
+                { id: 'none', name: t('noPeriod') },
+                ...periods.filter((period) => period.status === 'active'),
+              ]}
+              value={periodId}
+              placeholder={t('choosePeriod')}
+              searchPlaceholder={t('period')}
+            />
+            {seasonPricing.scheduled ? (
+              <p className="text-muted-foreground text-sm">
+                {t('seasonPricing')}
+              </p>
+            ) : null}
+            {seasonPricing.scheduled &&
+            (seasonPricing.prices.isError || !stockOptions.length) ? (
+              <p role="status" className="text-muted-foreground text-sm">
+                {t('missingSeasonPrice')}
+              </p>
+            ) : null}
+            {!seasonPricing.cartIsCurrent(lines) ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setLines([]);
+                  setRequestId(crypto.randomUUID());
+                  void seasonPricing.prices.refetch();
+                }}
+              >
+                {t('refreshCart')}
+              </Button>
+            ) : null}
+          </div>
           <OperatorDialogTabs
             compactMobile
             onValueChange={setTab}
@@ -427,20 +492,6 @@ export function SaleCreateDialog({
                       placeholder={t('chooseCategory')}
                       searchPlaceholder={t('chooseCategory')}
                       value={categoryId}
-                    />
-                    <SelectField
-                      allowEmpty={false}
-                      label={t('period')}
-                      onChange={setPeriodId}
-                      options={[
-                        { id: 'none', name: t('noPeriod') },
-                        ...periods.filter(
-                          (period) => period.status === 'active'
-                        ),
-                      ]}
-                      placeholder={t('noPeriod')}
-                      searchPlaceholder={t('period')}
-                      value={periodId}
                     />
                     <TextAreaField
                       className="sm:col-span-2"

@@ -5,10 +5,11 @@ import type {
   InventorySaleSource,
   InventorySaleSummary,
   InventorySalesPeriod,
-  InventorySalesPeriodProductScope,
+  InventorySalesPeriodPayload,
 } from '@tuturuuu/internal-api/inventory';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { summarizeInventorySales } from './commerce/summary';
+import { preparePeriodPricingPayload } from './period-pricing';
 
 type SalesPeriodRow = Omit<InventorySalesPeriod, 'product_ids' | 'sale_count'>;
 type SalesPeriodAssignmentRow = {
@@ -27,8 +28,7 @@ type InventorySaleReference = {
   source: InventorySaleSource;
 };
 
-const SALES_PERIOD_SELECT =
-  'id, ws_id, name, description, starts_at, ends_at, status, product_scope, created_at, updated_at';
+const SALES_PERIOD_SELECT = '*';
 
 export class InventorySalesPeriodProductRuleError extends Error {
   constructor() {
@@ -221,18 +221,12 @@ export async function createInventorySalesPeriod({
   wsId,
 }: {
   actorId: string;
-  payload: {
-    description?: string | null;
-    ends_at?: string | null;
-    name: string;
-    product_ids?: string[];
-    product_scope?: InventorySalesPeriodProductScope;
-    starts_at?: string | null;
-  };
+  payload: InventorySalesPeriodPayload;
   sbAdmin: TypedSupabaseClient;
   wsId: string;
 }) {
-  const { product_ids: productIds = [], ...periodPayload } = payload;
+  const { product_ids: productIds = [], ...periodPayload } =
+    await preparePeriodPricingPayload(sbAdmin, payload);
   await validatePeriodProducts({ productIds, sbAdmin, wsId });
   const { data, error } = await privateInventory(sbAdmin)
     .from('inventory_sales_periods' as never)
@@ -259,20 +253,15 @@ export async function updateInventorySalesPeriod({
   sbAdmin,
   wsId,
 }: {
-  payload: Partial<{
-    description: string | null;
-    ends_at: string | null;
-    name: string;
-    product_ids: string[];
-    product_scope: InventorySalesPeriodProductScope;
-    starts_at: string | null;
-    status: 'active' | 'archived';
-  }>;
+  payload: Partial<
+    InventorySalesPeriodPayload & { status: 'active' | 'archived' }
+  >;
   periodId: string;
   sbAdmin: TypedSupabaseClient;
   wsId: string;
 }) {
-  const { product_ids: productIds, ...periodPayload } = payload;
+  const { product_ids: productIds, ...periodPayload } =
+    await preparePeriodPricingPayload(sbAdmin, payload);
   if (productIds !== undefined) {
     await validatePeriodProducts({ productIds, sbAdmin, wsId });
   }

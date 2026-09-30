@@ -1,3 +1,4 @@
+import { InventorySessionScope } from '@/components/operator/inventory-session-scope';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import {
@@ -99,7 +100,12 @@ export default async function Layout({ children, params }: LayoutProps) {
           </Suspense>
         }
       >
-        {children}
+        <InventorySessionScope
+          actorId={user.id}
+          key={`${user.id}:${workspace.id}`}
+        >
+          {children}
+        </InventorySessionScope>
       </Structure>
     </SidebarProvider>
   );
