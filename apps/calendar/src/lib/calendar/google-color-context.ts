@@ -1,5 +1,5 @@
 import type { calendar_v3 } from '@tuturuuu/google';
-import type { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   type GoogleColorContext,
   opaqueGoogleColor,
@@ -48,7 +48,7 @@ export async function getGoogleColorContext(
 export async function refreshGoogleColorContext(args: {
   calendar: calendar_v3.Calendar;
   calendarId: string;
-  supabase: Awaited<ReturnType<typeof createAdminClient>>;
+  supabase: TypedSupabaseClient;
   wsId: string;
   authTokenId?: string | null;
 }) {
