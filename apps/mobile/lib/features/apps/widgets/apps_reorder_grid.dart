@@ -21,6 +21,7 @@ class AppsReorderGrid extends StatefulWidget {
     required this.onOrderChanged,
     required this.onVisibilityPressed,
     this.onSelected,
+    this.onOrderingFinished,
     super.key,
   });
 
@@ -29,6 +30,7 @@ class AppsReorderGrid extends StatefulWidget {
   final bool canReorder;
   final bool isOrdering;
   final VoidCallback onOrderingStarted;
+  final VoidCallback? onOrderingFinished;
   final ValueChanged<List<String>> onOrderChanged;
   final ValueChanged<AppModule> onVisibilityPressed;
   final ValueChanged<AppModule>? onSelected;
@@ -189,7 +191,9 @@ class _AppsReorderGridState extends State<AppsReorderGrid>
       index: index,
       hidden: widget.hidden,
       showVisibility: widget.hidden || widget.isOrdering,
-      onSelected: widget.onSelected,
+      onSelected: widget.isOrdering
+          ? (_) => widget.onOrderingFinished?.call()
+          : widget.onSelected,
       onVisibilityPressed: () => widget.onVisibilityPressed(module),
     );
     if (!widget.canReorder) return tile;

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
@@ -12,16 +13,22 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class ProfileTimelineSection extends StatefulWidget {
-  const ProfileTimelineSection({required this.replayToken, super.key});
+  const ProfileTimelineSection({
+    required this.replayToken,
+    this.repository,
+    super.key,
+  });
 
   final int replayToken;
+  final ProfileTimelineRepository? repository;
 
   @override
   State<ProfileTimelineSection> createState() => _ProfileTimelineSectionState();
 }
 
 class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
-  final _repository = ProfileTimelineRepository();
+  late final ProfileTimelineRepository _repository =
+      widget.repository ?? ProfileTimelineRepository();
   List<ProfileTimelineItem>? _items;
   String? _scope;
   int _request = 0;
@@ -186,66 +193,99 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     return [
-      for (final day in days)
-        Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ExpansionTile(
-            initiallyExpanded: day == today,
-            title: Text(
-              day == today
-                  ? context.l10n.profileTimelineToday
-                  : day == today.subtract(const Duration(days: 1))
-                  ? context.l10n.profileTimelineYesterday
-                  : DateFormat.yMMMd(
-                      Localizations.localeOf(context).toString(),
-                    ).format(day),
+      for (final day in days) ...[
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Text(
+            day == today
+                ? context.l10n.profileTimelineToday
+                : day == today.subtract(const Duration(days: 1))
+                ? context.l10n.profileTimelineYesterday
+                : DateFormat.yMMMd(
+                    Localizations.localeOf(context).toString(),
+                  ).format(day),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+        ),
+        for (final item
+            in (groups[day]!
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt))))
+          _timelineRow(context, item),
+      ],
+    ];
+  }
+
+  Widget _timelineRow(BuildContext context, ProfileTimelineItem item) {
+    final module = switch (item.type) {
+      'task' => 'tasks',
+      'transaction' => 'finance',
+      'calendar' => 'calendar',
+      _ => 'notes',
+    };
+    final palette = AppCardPalette.resolve(context, index: 0, moduleId: module);
+    final time = DateFormat.jm(
+      Localizations.localeOf(context).toString(),
+    ).format(item.createdAt);
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 48,
+            child: Column(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: palette.iconBackground,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _icon(item.type),
+                    size: 20,
+                    color: palette.iconColor,
+                  ),
+                ),
+                Expanded(
+                  child: VerticalDivider(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+              ],
             ),
-            subtitle: Text(_summary(context, groups[day]!)),
-            children: [
-              for (final item in groups[day]!)
-                ListTile(
-                  dense: true,
-                  leading: Icon(_icon(item.type)),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Card(
+                margin: EdgeInsets.zero,
+                child: ListTile(
                   title: Text(
                     item.title?.isNotEmpty == true
                         ? item.title!
                         : _typeLabel(context, item.type),
                   ),
                   subtitle: Text(
-                    DateFormat.jm(
-                      Localizations.localeOf(context).toString(),
-                    ).format(item.createdAt),
+                    '${_typeLabel(context, item.type)} · '
+                    '$time',
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => _open(item),
                 ),
-            ],
+              ),
+            ),
           ),
-        ),
-    ];
-  }
-
-  String _summary(BuildContext context, List<ProfileTimelineItem> items) {
-    final counts = <String, int>{};
-    for (final item in items) {
-      counts.update(item.type, (count) => count + 1, ifAbsent: () => 1);
-    }
-    final l10n = context.l10n;
-    return [
-      if (counts['task'] case final count?) l10n.profileTimelineTasks(count),
-      if (counts['transaction'] case final count?)
-        l10n.profileTimelineTransactions(count),
-      if (counts['note'] case final count?) l10n.profileTimelineNotes(count),
-      if (counts['calendar'] case final count?)
-        l10n.profileTimelineWorkspaceEvents(count),
-    ].join(' · ');
+        ],
+      ),
+    );
   }
 
   String _typeLabel(BuildContext context, String type) => switch (type) {
     'task' => context.l10n.taskBoardsTasksCount(1),
     'transaction' => context.l10n.financeActivityLabel,
     'note' => context.l10n.notesTitle,
-    'calendar' => context.l10n.calendarTitle,
+    'calendar' => context.l10n.profileTimelineWorkspaceEvents(1),
     _ => context.l10n.profileTimelineTitle,
   };
 

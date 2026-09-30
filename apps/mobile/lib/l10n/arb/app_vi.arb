@@ -3757,5 +3757,7 @@
             }
         }
     },
-    "calendarInvalidLocalTime": "Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè."
+    "calendarInvalidLocalTime": "Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè.",
+    "profileOverviewTab": "Tổng quan",
+    "profileTimelineTab": "Dòng thời gian"
 }

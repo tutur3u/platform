@@ -17958,6 +17958,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose a valid start and end time. Some times do not exist when daylight saving time changes.'**
   String get calendarInvalidLocalTime;
+
+  /// No description provided for @profileOverviewTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get profileOverviewTab;
+
+  /// No description provided for @profileTimelineTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get profileTimelineTab;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -247,6 +247,121 @@ void main() {
     ]);
   });
 
+  testWidgets('reorder cell margin exits ordering without launching an app', (
+    tester,
+  ) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(430, 2400);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final cubit = AppTabCubit(settingsRepository: SettingsRepository());
+    final experimental = ExperimentalAppsCubit(
+      settingsRepository: SettingsRepository(),
+    );
+    await experimental.load();
+    addTearDown(cubit.close);
+    addTearDown(experimental.close);
+    var selected = 0;
+    await tester.pumpApp(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: cubit),
+          BlocProvider.value(value: experimental),
+        ],
+        child: AppsHubPage(onSelected: (_) => selected++),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.longPress(find.text('Tasks'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byTooltip('Hide app'), findsWidgets);
+    final cell = tester.getRect(
+      find.byKey(const ValueKey('apps-grid-position-calendar')),
+    );
+    await tester.tapAt(cell.topLeft + const Offset(2, 70));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(selected, 0);
+    expect(find.byTooltip('Hide app'), findsNothing);
+    await tester.tap(find.text('Calendar'));
+    await tester.pump();
+    expect(selected, 1);
+    await tester.longPress(find.text('Tasks'));
+    await tester.pump(const Duration(milliseconds: 300));
+    final taskCell = tester.getRect(
+      find.byKey(const ValueKey('apps-grid-position-tasks')),
+    );
+    await tester.tapAt(Offset(taskCell.right + 6, taskCell.top + 70));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(selected, 1);
+    expect(find.byTooltip('Hide app'), findsNothing);
+  });
+
+  testWidgets('short hold and ordinary scroll do not start app reorder', (
+    tester,
+  ) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(300, 400);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final cubit = AppTabCubit(settingsRepository: SettingsRepository());
+    final experimental = ExperimentalAppsCubit(
+      settingsRepository: SettingsRepository(),
+    );
+    await experimental.load();
+    for (final id in ['chat', 'timer', 'drive', 'crm']) {
+      await experimental.setModuleEnabled(moduleId: id, enabled: true);
+    }
+    addTearDown(cubit.close);
+    addTearDown(experimental.close);
+    var selected = 0;
+    await tester.pumpApp(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: cubit),
+          BlocProvider.value(value: experimental),
+        ],
+        child: AppsHubPage(onSelected: (_) => selected++),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final semantics = tester.ensureSemantics();
+    final taskSemantics = tester
+        .getSemantics(find.text('Tasks'))
+        .getSemanticsData();
+    expect(taskSemantics.flagsCollection.isButton, isTrue);
+    final shortHold = await tester.startGesture(
+      tester.getCenter(find.text('Tasks')),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.byTooltip('Hide app'), findsNothing);
+    await shortHold.up();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(selected, 1);
+    final scroll = await tester.startGesture(
+      tester.getCenter(find.text('Tasks')),
+    );
+    await scroll.moveBy(const Offset(0, -40));
+    await tester.pump(const Duration(milliseconds: 20));
+    await scroll.moveBy(const Offset(0, -100));
+    await tester.pump(const Duration(milliseconds: 350));
+    await scroll.up();
+    await tester.pumpAndSettle();
+    final position = tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position;
+    expect(position.pixels, greaterThan(0));
+    expect(find.byTooltip('Hide app'), findsNothing);
+    expect(cubit.state.appOrder, isEmpty);
+    expect(selected, 1);
+    semantics.dispose();
+  });
+
   testWidgets('hide asks for confirmation and moves app below divider', (
     tester,
   ) async {

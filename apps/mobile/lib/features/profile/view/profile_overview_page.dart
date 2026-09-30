@@ -22,10 +22,18 @@ import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Account home. Opening personal activity never implies consent to share it.
-class ProfileOverviewPage extends StatelessWidget {
+class ProfileOverviewPage extends StatefulWidget {
   const ProfileOverviewPage({this.replayToken = 0, super.key});
 
   final int replayToken;
+
+  @override
+  State<ProfileOverviewPage> createState() => _ProfileOverviewPageState();
+}
+
+class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
+  bool _timeline = false;
+  int get replayToken => widget.replayToken;
 
   @override
   Widget build(BuildContext context) {
@@ -153,41 +161,61 @@ class ProfileOverviewPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    ProfileTimelineSection(replayToken: replayToken),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final activity = ProfileActivitySection(
-                          replayToken: replayToken,
-                        );
-                        if (workspace == null ||
-                            workspace.personal ||
-                            userId == null) {
-                          return activity;
-                        }
-                        final workspaceActivity = WorkspaceActivitySection(
-                          key: ValueKey('$userId:${workspace.id}'),
-                          workspaceId: workspace.id,
-                          replayToken: replayToken,
-                          workspaceName: displayWorkspaceNameOrFallback(
-                            context,
-                            workspace,
-                          ),
-                        );
-                        if (constraints.maxWidth < 840) {
-                          return Column(
-                            children: [activity, workspaceActivity],
-                          );
-                        }
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(child: activity),
-                            const SizedBox(width: 20),
-                            Expanded(child: workspaceActivity),
-                          ],
-                        );
-                      },
+                    SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment(
+                          value: false,
+                          label: Text(l10n.profileOverviewTab),
+                          icon: const Icon(Icons.person_outline),
+                        ),
+                        ButtonSegment(
+                          value: true,
+                          label: Text(l10n.profileTimelineTab),
+                          icon: const Icon(Icons.history_rounded),
+                        ),
+                      ],
+                      selected: {_timeline},
+                      onSelectionChanged: (value) =>
+                          setState(() => _timeline = value.single),
                     ),
+                    const SizedBox(height: 12),
+                    if (_timeline)
+                      ProfileTimelineSection(replayToken: replayToken)
+                    else
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final activity = ProfileActivitySection(
+                            replayToken: replayToken,
+                          );
+                          if (workspace == null ||
+                              workspace.personal ||
+                              userId == null) {
+                            return activity;
+                          }
+                          final workspaceActivity = WorkspaceActivitySection(
+                            key: ValueKey('$userId:${workspace.id}'),
+                            workspaceId: workspace.id,
+                            replayToken: replayToken,
+                            workspaceName: displayWorkspaceNameOrFallback(
+                              context,
+                              workspace,
+                            ),
+                          );
+                          if (constraints.maxWidth < 840) {
+                            return Column(
+                              children: [activity, workspaceActivity],
+                            );
+                          }
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: activity),
+                              const SizedBox(width: 20),
+                              Expanded(child: workspaceActivity),
+                            ],
+                          );
+                        },
+                      ),
                   ],
                 );
               },
