@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 const test = require('node:test');
@@ -34,7 +35,7 @@ test('verification is manual, main-only and read-only with no deploy or secret i
   assert.equal(job['timeout-minutes'], 45);
   assert.doesNotMatch(
     source,
-    /secrets\.|wrangler|supabase|docker|deploy_target|workflow_call|pull_request_target/
+    /secrets\.|\bwrangler(?:@[^\s]+)?\s|supabase|docker|deploy_target|workflow_call|pull_request_target/
   );
   assert.match(
     fs.readFileSync(path.join(root, 'tuturuuu.ci.ts'), 'utf8'),
@@ -87,4 +88,65 @@ test('actual compile commands retain native and Worker feature contracts and loc
   const setup = job.steps.find((step) => step.uses?.startsWith('dtolnay/'));
   assert.equal(setup.with.toolchain, '1.95.0');
   assert.equal(setup.with.targets, 'wasm32-unknown-unknown');
+});
+
+test('Worker bundler installation is pinned, locked and runner-local', () => {
+  const install = job.steps.find(
+    (step) => step.name === 'Install pinned Worker bundler'
+  );
+  assert.match(
+    install.run,
+    /cargo install worker-build --version 0\.8\.7 --locked --root "\$RUNNER_TEMP\/worker-build"/
+  );
+  const bundle = job.steps.find(
+    (step) => step.name === 'Build actual Worker bundle'
+  );
+  assert.match(bundle.run, /test "\$\(worker-build --version\)" = '0\.8\.7'/);
+  assert.match(
+    bundle.run,
+    /worker-build --release -- --locked --no-default-features --features worker/
+  );
+  assert.match(bundle.run, /set -euo pipefail/);
+  assert.ok(job.steps.indexOf(install) < job.steps.indexOf(bundle));
+});
+
+test('Worker package validation rejects missing or corrupt emitted artifacts', () => {
+  const step = job.steps.find(
+    (step) => step.name === 'Verify Worker package artifacts'
+  );
+  const dir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'worker-package-contract-')
+  );
+  const summary = path.join(dir, 'summary');
+  const run = () =>
+    spawnSync('bash', ['-c', step.run], {
+      cwd: dir,
+      env: { ...process.env, GITHUB_STEP_SUMMARY: summary },
+      encoding: 'utf8',
+    });
+  try {
+    assert.notEqual(run().status, 0, 'missing package must fail');
+    fs.mkdirSync(path.join(dir, 'build/worker'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'wrangler.jsonc'), '{}');
+    fs.writeFileSync(
+      path.join(dir, 'build/worker/shim.mjs'),
+      "export * from '../index.js';"
+    );
+    fs.writeFileSync(path.join(dir, 'build/index.js'), 'export default {};');
+    const wasm = path.join(dir, 'build/index_bg.wasm');
+    fs.writeFileSync(wasm, 'invalid-wasm');
+    assert.notEqual(run().status, 0, 'invalid WASM header must fail');
+    fs.writeFileSync(wasm, Buffer.from('0061736d01000000', 'hex'));
+    assert.equal(run().status, 0);
+    const hashes = fs.readFileSync(summary, 'utf8');
+    assert.match(hashes, /[a-f0-9]{64} +build\/index_bg\.wasm/);
+    fs.unlinkSync(path.join(dir, 'build/worker/shim.mjs'));
+    assert.notEqual(
+      run().status,
+      0,
+      'configured compatibility entry point must exist'
+    );
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

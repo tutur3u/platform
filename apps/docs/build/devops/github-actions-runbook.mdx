@@ -268,8 +268,15 @@ checking and a native release build. It uses read-only repository permissions,
 no deployment environment or secrets, and no shared cache writes.
 
 For dependency drafts, record the requested source SHA and the actual successful
-job result. This route does not run Docker packaging or worker-build bundling;
-those remain separate evidence gaps. Registering this workflow does not resume
+job result. The route also installs checksum-published stable `worker-build 0.8.7`
+with its locked dependencies into runner-temporary storage and runs the actual
+release bundler with locked project dependencies and Worker-only features. It
+checks the configured legacy `build/worker/shim.mjs` compatibility entry point,
+its `build/index.js` target and a nonempty WASM module with the expected binary
+header, and records config/artifact hashes. The pinned vendor tool selects
+wasm-bindgen 0.2.129, wasm-opt 132 and esbuild 0.28.2; this is Worker package
+construction, without invoking Wrangler or accessing deploy secrets. Docker
+container packaging and deployed runtime behavior remain separate evidence gaps. Registering this workflow does not resume
 the paused migration/deployment workflow or authorize a production cutover.
 
 ### Docker automation

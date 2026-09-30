@@ -83,3 +83,28 @@ jobs:
 
       - name: Build native release binary
         run: cargo build --locked --release --features native --bin backend
+
+      - name: Install pinned Worker bundler
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash ../../scripts/ci/run-with-backoff.sh cargo install worker-build --version 0.8.7 --locked --root "$RUNNER_TEMP/worker-build"
+          echo "$RUNNER_TEMP/worker-build/bin" >> "$GITHUB_PATH"
+
+      - name: Build actual Worker bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(worker-build --version)" = '0.8.7'
+          echo "Worker bundler: $(worker-build --version)" >> "$GITHUB_STEP_SUMMARY"
+          worker-build --release -- --locked --no-default-features --features worker
+
+      - name: Verify Worker package artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s build/worker/shim.mjs
+          test -s build/index.js
+          test -s build/index_bg.wasm
+          test "$(od -An -tx1 -N8 build/index_bg.wasm | tr -d ' \n')" = '0061736d01000000'
+          sha256sum wrangler.jsonc build/worker/shim.mjs build/index.js build/index_bg.wasm >> "$GITHUB_STEP_SUMMARY"
