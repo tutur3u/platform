@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/reminders/reminder_plan.dart';
 import 'package:mobile/l10n/gen/app_localizations.dart';
 
@@ -20,8 +22,18 @@ import 'package:mobile/l10n/gen/app_localizations.dart';
     '1h' => l10n.remindersIn1h,
     _ => null,
   };
+  final wall = calendarWallDate(entry.dueAt, entry.timezone);
+  final format = DateFormat.yMMMd(l10n.localeName);
+  final occurrence = entry.isAllDay
+      ? format.format(wall)
+      : format.add_jm().format(wall);
+  final timezone = entry.timezone ?? entry.dueAt.toLocal().timeZoneName;
   return (
     title: '${l10n.navCalendar}: ${entry.title}',
-    body: when ?? l10n.remindersEventTitle,
+    body: l10n.remindersOccurrenceDetails(
+      when ?? l10n.remindersEventTitle,
+      occurrence,
+      timezone,
+    ),
   );
 }

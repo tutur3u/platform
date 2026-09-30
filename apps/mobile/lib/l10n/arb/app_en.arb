@@ -3483,6 +3483,14 @@
   "@remindersAllDayEvent": {"placeholders": {"title": {"type": "String"}}},
   "remindersUpcomingEvent": "{when}: {title}",
   "@remindersUpcomingEvent": {"placeholders": {"when": {"type": "String"}, "title": {"type": "String"}}},
+  "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+  "@remindersOccurrenceDetails": {
+    "placeholders": {
+      "leadTime": {"type": "String"},
+      "occurrence": {"type": "String"},
+      "timezone": {"type": "String"}
+    }
+  },
   "remindersIn3d": "In 3 days",
   "remindersIn1d": "Tomorrow",
   "remindersIn12h": "In 12 hours",

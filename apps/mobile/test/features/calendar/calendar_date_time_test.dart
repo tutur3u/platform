@@ -6,6 +6,11 @@ import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 
 void main() {
+  test('canonical UTC fallback preserves wall fields and UTC instants', () {
+    final instant = DateTime.utc(2026, 10, 5, 9, 30, 45);
+    expect(calendarWallDate(instant, 'UTC'), instant);
+    expect(calendarWallToUtc(instant, 'UTC'), instant);
+  });
   test('preserves model UTC instants and unrelated scheduling metadata', () {
     final event = CalendarEvent.fromJson(const {
       'id': 'event',

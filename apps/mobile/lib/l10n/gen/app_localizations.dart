@@ -16591,6 +16591,12 @@ abstract class AppLocalizations {
   /// **'{when}: {title}'**
   String remindersUpcomingEvent(String when, String title);
 
+  /// No description provided for @remindersOccurrenceDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'{leadTime} · {occurrence} ({timezone})'**
+  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone);
+
   /// No description provided for @remindersIn3d.
   ///
   /// In en, this message translates to:
