@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.1](https://github.com/tutur3u/platform/compare/mail-v0.26.0...mail-v0.26.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* **infrastructure:** isolate app review identities from staff access ([#5632](https://github.com/tutur3u/platform/issues/5632)) ([ecad401](https://github.com/tutur3u/platform/commit/ecad4019f602317b59d37500cd8049d1602d11fa))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/mail-v0.25.0...mail-v0.26.0) (2026-09-29)
 
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.38.0](https://github.com/tutur3u/platform/compare/database-v1.37.0...database-v1.38.0) (2026-09-29)
+
+
+### Features
+
+* **learn:** add resizable coding workspace and execution history ([c7043ff](https://github.com/tutur3u/platform/commit/c7043ff9a30b5d1c49bc44534aa8e2107d5a16ae)) ([#5637](https://github.com/tutur3u/platform/issues/5637)) ([6b82c0c](https://github.com/tutur3u/platform/commit/6b82c0c9daecb7dd7ed9eb0ac9310c02a7895c68))
+
+
+### Bug Fixes
+
+* **database:** scope group audit feed before enrichment ([#5635](https://github.com/tutur3u/platform/issues/5635)) ([a4cf43a](https://github.com/tutur3u/platform/commit/a4cf43ad854dbf2b8f7e63bfe5a297fd212db086))
+* **database:** use indexed metric lookup in audit fallback ([8a74c53](https://github.com/tutur3u/platform/commit/8a74c5305a85641558eb8e6905247f9e5e1417f7))
+* **infrastructure:** isolate app review identities from staff access ([#5632](https://github.com/tutur3u/platform/issues/5632)) ([ecad401](https://github.com/tutur3u/platform/commit/ecad4019f602317b59d37500cd8049d1602d11fa))
+
+
+### Performance Improvements
+
+* **database:** avoid sorting full user group audit feed ([6c9ae84](https://github.com/tutur3u/platform/commit/6c9ae840e30642006ee9460b6e05e601e4483c51)) ([#5644](https://github.com/tutur3u/platform/issues/5644)) ([f3105b9](https://github.com/tutur3u/platform/commit/f3105b9c2bc8aa81833d9c6a851029c0a336963e))
+* **database:** index group audit candidates before enrichment ([01e4520](https://github.com/tutur3u/platform/commit/01e4520b06eab5e593ddce599c72c0bffcbda2e0)) ([#5640](https://github.com/tutur3u/platform/issues/5640)) ([848eb91](https://github.com/tutur3u/platform/commit/848eb91daa51093a7228317b1617f2da868d035c))
+* **database:** scope workspace group audit history candidates ([f595411](https://github.com/tutur3u/platform/commit/f59541125b0ffa1110116a10448cfe1c1ecf4c7f)) ([#5641](https://github.com/tutur3u/platform/issues/5641)) ([29767ac](https://github.com/tutur3u/platform/commit/29767ac185af8b04bd2ce4c6ec0aa5414f258b16))
+
 ## [1.37.0](https://github.com/tutur3u/platform/compare/database-v1.36.1...database-v1.37.0) (2026-09-29)
 
 

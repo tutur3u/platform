@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/sdk-v0.25.0...sdk-v0.26.0) (2026-09-29)
+
+
+### Features
+
+* **learn:** add resizable coding workspace and execution history ([c7043ff](https://github.com/tutur3u/platform/commit/c7043ff9a30b5d1c49bc44534aa8e2107d5a16ae)) ([#5637](https://github.com/tutur3u/platform/issues/5637)) ([6b82c0c](https://github.com/tutur3u/platform/commit/6b82c0c9daecb7dd7ed9eb0ac9310c02a7895c68))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/sdk-v0.24.0...sdk-v0.25.0) (2026-09-29)
 
 
