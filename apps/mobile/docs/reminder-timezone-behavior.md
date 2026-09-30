@@ -35,3 +35,16 @@ cached list does not confirm that membership was removed. Reminder cancellation
 for an empty membership list requires an awaited, successful server refresh;
 failed requests and responses invalidated by cache clearing preserve the
 existing reminder ledger until discovery succeeds. Logout still clears it.
+
+Settings timezone resolution is owned by the shared account/workspace scope.
+Both root Settings controls show an unknown state until the authenticated
+preferences resolve. Account arrival and workspace switches trigger a new scoped
+read; late prior-scope results are ignored. Pending reads are bounded to 15 seconds
+and failures expose a retry. Same-scope refresh failure retains the last resolved
+values. Settings requires a verified native device identifier for the automatic
+device fallback; an unavailable plugin is not displayed as verified UTC. A named
+personal or workspace preference can resolve without the device. Switching the
+last named override to Automatic requires a successful device lookup before the
+write; failure preserves the preference. Other existing native timezone fallback
+consumers retain their compatibility behavior. These synthetic fixtures do not
+establish the cause of an installed-app screenshot or verify native delivery.
