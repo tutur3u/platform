@@ -177,7 +177,9 @@ function recurrenceTimezone(zones: string[][], tzid: string) {
 function validTimezoneRule(value: string) {
   const keys = new Set<string>();
   for (const part of value.split(';')) {
-    const [key, entry] = part.split('=');
+    const assignment = part.split('=');
+    if (assignment.length !== 2) return false;
+    const [key, entry] = assignment;
     if (!key || !entry || keys.has(key)) return false;
     keys.add(key);
     const patterns: Record<string, RegExp> = {

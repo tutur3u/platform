@@ -241,6 +241,26 @@ it('fails closed for missing, competing, malformed or oversized referenced timez
   ])
     expect(parseCalendarInvitation(source, 'guest@example.test')).toBeNull();
 });
+it('accepts complete yearly timezone rules and rejects extra assignment separators', () => {
+  const withRule = (rule: string) =>
+    outlookOccurrence.replace('END:STANDARD', `RRULE:${rule}\r\nEND:STANDARD`);
+  const valid = parseCalendarInvitation(
+    withRule('FREQ=YEARLY;BYMONTH=1'),
+    'guest@example.test'
+  )!;
+  expect(valid).not.toBeNull();
+  expect(calendarReply(valid, 'ACCEPTED')).toContain(
+    'RRULE:FREQ=YEARLY;BYMONTH=1\r\n'
+  );
+  for (const rule of [
+    'FREQ=YEARLY=garbage;BYMONTH=1',
+    'FREQ=YEARLY;BYMONTH=1=garbage',
+    'FREQ=YEARLY;BYMONTH=1=',
+  ])
+    expect(
+      parseCalendarInvitation(withRule(rule), 'guest@example.test')
+    ).toBeNull();
+});
 it('normalizes scheduling enum parameters and rejects group/non-individual identities', () => {
   for (const parameter of [
     'RSVP=false',
