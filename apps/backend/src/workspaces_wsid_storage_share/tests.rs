@@ -183,3 +183,86 @@ fn uuid_literal_valid() {
 fn uuid_literal_invalid_short() {
     assert!(!is_uuid_literal("00000000-0000-0000-0000"));
 }
+
+#[test]
+fn encoded_dot_segments_are_rejected_before_authorization() {
+    for segment in ["%2e%2e", "%2E.", ".%2e", "%2e"] {
+        let path = format!("task-images/{segment}/other/file.png");
+        assert!(sanitize_path(&path).is_none());
+        assert!(storage_sign_url("https://storage.example/storage/v1", &path).is_err());
+    }
+}
+
+#[test]
+fn signing_preserves_object_keys_across_native_and_worker_url_parsing() {
+    let path = "workspace/task-images/100% done #1? ảnh.png";
+    let url = storage_sign_url("https://storage.example/storage/v1", path).unwrap();
+    assert_eq!(url.query(), None);
+    assert_eq!(url.fragment(), None);
+    assert!(url.path().contains("100%25%20done%20%231%3F%20"));
+    assert_eq!(url::Url::parse(url.as_str()).unwrap(), url);
+    #[cfg(feature = "native")]
+    let native = reqwest::Url::parse(url.as_str()).unwrap();
+    #[cfg(feature = "native")]
+    assert_eq!(native.path(), url.path());
+    let literal = storage_sign_url(
+        "https://storage.example/storage/v1",
+        "workspace/task-images/name%2Fpart.txt",
+    )
+    .unwrap();
+    assert!(literal.path().ends_with("name%252Fpart.txt"));
+}
+
+#[cfg(feature = "native")]
+#[tokio::test]
+async fn signing_outbound_uses_only_the_authorized_object_key() {
+    use crate::outbound::{OutboundFuture, OutboundResponse};
+    use std::cell::RefCell;
+    struct RecordingClient(RefCell<Vec<String>>);
+    impl OutboundHttpClient for RecordingClient {
+        fn send<'a>(&'a self, request: OutboundRequest<'a>) -> OutboundFuture<'a> {
+            self.0.borrow_mut().push(request.url.to_owned());
+            Box::pin(async {
+                Ok(OutboundResponse {
+                    status: 200,
+                    body_text: r#"{"signedURL":"/object/sign/workspaces/synthetic?token=fake"}"#
+                        .to_owned(),
+                    headers: Vec::new(),
+                })
+            })
+        }
+    }
+    let client = RecordingClient(RefCell::new(Vec::new()));
+    let config = contact::ContactDataConfig::new("https://storage.example", "synthetic-key");
+    assert!(
+        create_signed_url(
+            &config,
+            &client,
+            "tenant-a/task-images/photo #1?.png",
+            60,
+            None
+        )
+        .await
+        .is_ok()
+    );
+    {
+        let calls = client.0.borrow();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(
+            calls[0],
+            "https://storage.example/storage/v1/object/sign/workspaces/tenant-a/task-images/photo%20%231%3F.png"
+        );
+    }
+    assert!(
+        create_signed_url(
+            &config,
+            &client,
+            "tenant-a/task-images/%2e%2e/tenant-b/file",
+            60,
+            None
+        )
+        .await
+        .is_err()
+    );
+    assert_eq!(client.0.borrow().len(), 1);
+}
