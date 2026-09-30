@@ -87,6 +87,23 @@ describe('EventCard read-only adapter events', () => {
     });
   });
 
+  it('renders opaque RGB and contrast text on a timed event', () => {
+    renderEventCard({
+      id: 'rgb',
+      title: 'RGB event',
+      color: 'BLUE',
+      start_at: '2026-06-26T08:30:00.000Z',
+      end_at: '2026-06-26T09:30:00.000Z',
+      scheduling_metadata: {
+        google_color: { version: 1, inherited: false, background: '#00ff88' },
+      },
+    });
+    const card = screen.getByTestId('calendar-event-rgb');
+    expect(card.style.backgroundColor).toBe('rgb(0, 255, 136)');
+    expect(card.style.color).toBe('rgb(0, 0, 0)');
+    expect(card.style.opacity).toBe('1');
+  });
+
   it('opens read-only events but hides resize controls', () => {
     const { container } = renderEventCard({
       id: 'event-1',

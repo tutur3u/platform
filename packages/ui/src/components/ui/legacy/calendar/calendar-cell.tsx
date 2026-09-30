@@ -1,4 +1,5 @@
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
@@ -30,11 +31,9 @@ const DragPreview = ({
   timeFormat = '12h',
 }: DragPreviewProps) => {
   const timePattern = timeFormat === '24h' ? 'HH:mm' : 'h:mm a';
-  // Calculate duration in minutes
   const durationMs = endDate.getTime() - startDate.getTime();
   const durationMinutes = Math.round(durationMs / (1000 * 60));
 
-  // Get color styles for the preview
   const { bg, border, text } = getEventStyles(color);
 
   return (
@@ -48,6 +47,7 @@ const DragPreview = ({
         bg
       )}
       style={{
+        ...calendarEventStyle({ color }),
         top: `${top}px`,
         height: `${Math.max(height, 20)}px`,
         transition: 'none', // No transition during interaction

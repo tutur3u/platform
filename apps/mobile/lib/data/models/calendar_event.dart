@@ -15,6 +15,7 @@ class CalendarEvent extends Equatable {
     this.startAt,
     this.endAt,
     this.color,
+    this.sourceColor,
     this.provider,
     this.schedulingMetadata,
     this.wsId,
@@ -58,6 +59,7 @@ class CalendarEvent extends Equatable {
       startAt: startAt,
       endAt: endAt,
       color: json['color'] as String?,
+      sourceColor: json['_calendarColor'] as String?,
       provider: json['provider'] as String?,
       schedulingMetadata: json['scheduling_metadata'] is Map
           ? Map<String, dynamic>.from(json['scheduling_metadata'] as Map)
@@ -75,6 +77,7 @@ class CalendarEvent extends Equatable {
   final DateTime? startAt;
   final DateTime? endAt;
   final String? color;
+  final String? sourceColor;
   final String? provider;
   final Map<String, dynamic>? schedulingMetadata;
   final String? wsId;
@@ -142,6 +145,7 @@ class CalendarEvent extends Equatable {
     Object? startAt = _sentinel,
     Object? endAt = _sentinel,
     Object? color = _sentinel,
+    Object? sourceColor = _sentinel,
     Object? provider = _sentinel,
     Object? schedulingMetadata = _sentinel,
     Object? wsId = _sentinel,
@@ -155,6 +159,9 @@ class CalendarEvent extends Equatable {
     startAt: startAt == _sentinel ? this.startAt : startAt as DateTime?,
     endAt: endAt == _sentinel ? this.endAt : endAt as DateTime?,
     color: color == _sentinel ? this.color : color as String?,
+    sourceColor: sourceColor == _sentinel
+        ? this.sourceColor
+        : sourceColor as String?,
     provider: provider == _sentinel ? this.provider : provider as String?,
     schedulingMetadata: schedulingMetadata == _sentinel
         ? this.schedulingMetadata
@@ -170,6 +177,7 @@ class CalendarEvent extends Equatable {
     'start_at': startAt?.toIso8601String(),
     'end_at': endAt?.toIso8601String(),
     'color': color,
+    '_calendarColor': sourceColor,
     'provider': provider,
     'scheduling_metadata': schedulingMetadata,
     'ws_id': wsId,
@@ -184,6 +192,7 @@ class CalendarEvent extends Equatable {
     startAt,
     endAt,
     color,
+    sourceColor,
     provider,
     schedulingMetadata,
     wsId,

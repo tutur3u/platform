@@ -17,6 +17,7 @@ import {
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { containsHtml, sanitizeHtml } from '@tuturuuu/utils/html-sanitizer';
@@ -936,8 +937,6 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
     isReadOnlyEvent,
   ]);
 
-  // Color styles based on event color
-
   const { bg, border, text, dragBg, syncingBg, successBg, errorBg } =
     getEventStyles(color);
 
@@ -1102,8 +1101,7 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
             willChange:
               isDragging || isResizing ? 'transform, top, left' : 'auto', // GPU acceleration
             transform: isDragging || isResizing ? 'translateZ(0)' : 'none', // Force GPU acceleration during interaction
-            // Add calendar color accent if available
-            borderLeftColor: _calendarColor || undefined,
+            ...calendarEventStyle(event),
             // Enhanced border for shorter events (likely on top)
             borderLeftWidth:
               hasOverlaps && isLikelyTopEvent ? '3px' : undefined,

@@ -13,6 +13,7 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { useEffect, useRef } from 'react';
@@ -102,7 +103,7 @@ export function EventPreviewPopover() {
       <div className="flex items-start gap-3">
         <div
           className="mt-1 h-3 w-3 shrink-0 rounded-full"
-          style={{ backgroundColor: previewEvent._calendarColor || undefined }}
+          style={calendarEventStyle(previewEvent)}
         />
         <div className="min-w-0 flex-1 space-y-3">
           <div className="flex items-start justify-between gap-3">

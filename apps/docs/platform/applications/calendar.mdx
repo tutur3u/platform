@@ -401,8 +401,23 @@ an explicit event's resolved RGB snapshot stale until the event is fetched again
 Unrelated title/time updates read the current Google event, preserve its exact
 color or label identity and use its ETag to reject concurrent changes. Native
 creates map their canonical color argument to the Google event palette.
-This backend foundation does not provide the full provider color picker or opaque
-UI rendering yet. Color-only edits and cross-calendar create/delete fallback for
+The full provider color picker remains a dependent UI stage. Color-only edits and cross-calendar create/delete fallback for
 custom labels require the corresponding route and UI followup; these tests do not
 establish complete two-way color editing. Sync never rewrites a calendar's label
 array or implicitly publishes a private native calendar to Google.
+
+### Opaque event rendering
+
+Web day/week cards, all-day and location bars, month rows, agenda rows, year dots
+and preview accents, plus mobile day/week cards, all-day and working-location
+chips, agenda rows, month dots and detail accents use opaque effective RGB. Event
+fills do not change with the light/dark theme; text on filled cards uses whichever
+of black or white has higher contrast. Hover, selection and overlap controls keep
+their existing interaction behavior.
+
+Known inherited Google events prefer the current connection RGB hydrated on the
+event response, then the resolved metadata snapshot. Explicit colors and labels
+use their own resolved RGB. Legacy rows without provider metadata, invalid RGB and
+unresolved explicit identities retain the canonical fallback; source inheritance
+is never guessed from an old canonical color. A stale label snapshot remains a
+limitation until provider sync refreshes that event.

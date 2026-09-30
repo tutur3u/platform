@@ -167,3 +167,42 @@ describe('calendar view interactions', () => {
     expect(onDayClick.mock.calls[0]?.[0].getDate()).toBe(7);
   });
 });
+
+describe('calendar view opaque effective colors', () => {
+  it.each([false, true])(
+    'uses provider RGB in month and agenda, inherited=%s',
+    (inherited) => {
+      state.events = [
+        {
+          id: 'rgb',
+          title: 'RGB event',
+          color: 'BLUE',
+          start_at: new Date(2026, 8, 7, 10).toISOString(),
+          end_at: new Date(2026, 8, 7, 11).toISOString(),
+          _calendarColor: '#ff80ab',
+          scheduling_metadata: {
+            google_color: { version: 1, inherited, background: '#00ff88' },
+          },
+        },
+      ];
+      const rgb = inherited ? 'rgb(255, 128, 171)' : 'rgb(0, 255, 136)';
+      const month = render(
+        <MonthCalendar date={date} viewedMonth={date} locale="en" />
+      );
+      expect(
+        screen.getByRole('button', { name: /RGB event/ }).style.backgroundColor
+      ).toBe(rgb);
+      expect(
+        screen.getByRole('button', { name: /RGB event/ }).style.color
+      ).toBe('rgb(0, 0, 0)');
+      month.unmount();
+      render(<AgendaView startDate={date} locale="en" daysToShow={1} />);
+      expect(
+        screen.getByRole('button', { name: /RGB event/ }).style.backgroundColor
+      ).toBe(rgb);
+      expect(
+        screen.getByRole('button', { name: /RGB event/ }).style.color
+      ).toBe('rgb(0, 0, 0)');
+    }
+  );
+});

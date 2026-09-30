@@ -36,7 +36,7 @@ class _EventDetailContent extends StatelessWidget {
     final l10n = context.l10n;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final color = EventColors.fromString(event.color);
+    final color = EventColors.forEvent(event);
     final dateFormat = DateFormat.yMMMd();
     final timeFormat = DateFormat.jm();
 
