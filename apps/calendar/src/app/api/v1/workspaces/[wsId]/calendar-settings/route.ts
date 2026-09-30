@@ -10,6 +10,7 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { calendarTimezoneSchema } from '@/lib/calendar/settings-validation';
 
 interface Params {
   params: Promise<{
@@ -18,7 +19,7 @@ interface Params {
 }
 
 const calendarSettingsSchema = z.object({
-  timezone: z.string().max(MAX_SHORT_TEXT_LENGTH).optional(),
+  timezone: calendarTimezoneSchema.optional(),
   first_day_of_week: z
     .enum(['auto', 'sunday', 'monday', 'saturday'])
     .optional(),
@@ -131,6 +132,29 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    // Signed app sessions use an admin client, so membership and table RLS
+    // cannot substitute for an explicit workspace settings permission check.
+    const { data: canManageSettings, error: permissionError } =
+      await supabase.rpc('has_workspace_permission', {
+        p_user_id: user.id,
+        p_ws_id: normalizedWsId,
+        p_permission: 'manage_workspace_settings',
+      });
+
+    if (permissionError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace settings permissions' },
+        { status: 500 }
+      );
+    }
+
+    if (!canManageSettings) {
+      return NextResponse.json(
+        { error: 'Insufficient workspace settings permissions' },
         { status: 403 }
       );
     }

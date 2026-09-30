@@ -137,6 +137,22 @@ auth/session and build-info routes are local as well.
   different owning app must use its configured API base URL with forwarded
   authentication.
 
+### Calendar settings authorization
+
+Personal calendar preferences are scoped to the authenticated user. Settings
+updates accept supported IANA timezone names or `auto` inheritance; invalid
+names and fixed-offset strings are rejected before storage. Workspace
+calendar settings are readable by members, but updates require
+`manage_workspace_settings`. Check that permission explicitly on the owning
+PATCH route: a verified signed app session can use an admin-backed database
+client, so membership and table RLS alone do not enforce editing rights.
+
+Native clients reach the Calendar owner through the authenticated mobile gateway.
+The settings allowlist permits only GET and PATCH on
+`/api/v1/users/calendar-settings` and
+`/api/v1/workspaces/:wsId/calendar-settings`; upstream ownership, workspace
+permission checks, credential isolation and response limits remain enforced.
+
 ## OAuth Token Safety
 
 Calendar OAuth credentials live in `calendar_auth_tokens`. RLS restricts

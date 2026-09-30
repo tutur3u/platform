@@ -35,6 +35,12 @@ function jsonError(status: number, message: string) {
 // callbacks, media, AI endpoints, cron routes and arbitrary URLs are excluded.
 function allowedMethods(path: string): string[] {
   const id = '[a-zA-Z0-9_-]+';
+  if (
+    path === '/api/v1/users/calendar-settings' ||
+    new RegExp(`^/api/v1/workspaces/${id}/calendar-settings$`).test(path)
+  ) {
+    return ['GET', 'PATCH'];
+  }
   if (new RegExp(`^/api/v1/workspaces/${id}/calendar/events$`).test(path)) {
     return ['GET', 'POST'];
   }
