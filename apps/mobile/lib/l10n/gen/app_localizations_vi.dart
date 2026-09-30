@@ -8630,6 +8630,11 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
+    return '$leadTime · $occurrence ($timezone)';
+  }
+
+  @override
   String get remindersIn3d => 'Còn 3 ngày';
 
   @override

@@ -28,6 +28,7 @@ DateTime calendarDate(
 
 bool _initialized = false;
 tz.Location _location(String zone) {
+  if (zone == 'UTC') return tz.UTC;
   if (!_initialized) {
     data.initializeTimeZones();
     _initialized = true;

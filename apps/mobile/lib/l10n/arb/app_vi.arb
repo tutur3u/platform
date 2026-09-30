@@ -3487,6 +3487,14 @@
   "@remindersAllDayEvent": {"placeholders": {"title": {"type": "String"}}},
   "remindersUpcomingEvent": "{when}: {title}",
   "@remindersUpcomingEvent": {"placeholders": {"when": {"type": "String"}, "title": {"type": "String"}}},
+  "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+  "@remindersOccurrenceDetails": {
+    "placeholders": {
+      "leadTime": {"type": "String"},
+      "occurrence": {"type": "String"},
+      "timezone": {"type": "String"}
+    }
+  },
   "remindersIn3d": "Còn 3 ngày",
   "remindersIn1d": "Ngày mai",
   "remindersIn12h": "Còn 12 giờ",
