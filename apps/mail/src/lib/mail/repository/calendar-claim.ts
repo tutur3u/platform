@@ -19,6 +19,10 @@ export async function claimCalendarReply(
     'sender',
   ]);
   if (!access || access.mailbox.groupPolicy) return { status: 'unavailable' };
+  // A delayed replay is historical evidence, never a new response intention.
+  // Check before the source metadata CAS so it cannot replace a newer claim.
+  const replay = await getMailMessage({ ctx, mailboxId, messageId: id });
+  if (replay && replay.status !== 'draft') return { status: replay.status };
   const { data: source, error } = await mailMessageTable(access, ctx)
     .select('metadata')
     .eq('id', messageId)
@@ -27,6 +31,11 @@ export async function claimCalendarReply(
   if (error) throw new Error('Failed to load invitation claim');
   if (!source) return { status: 'unavailable' };
   const current = source.metadata?.calendar_reply_claim;
+  // Fence a caller paused before the metadata read: another attempt may have
+  // completed this ID and then committed a newer response in that interval.
+  const settledReplay = await getMailMessage({ ctx, mailboxId, messageId: id });
+  if (settledReplay && settledReplay.status !== 'draft')
+    return { status: settledReplay.status };
   if (current?.id === id) return { status: 'claimed' };
   if (current?.id) {
     const existing = await getMailMessage({

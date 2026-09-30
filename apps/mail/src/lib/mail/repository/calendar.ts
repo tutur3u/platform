@@ -104,6 +104,7 @@ export async function getMailInvitation(
     return {
       invitation,
       message,
+      retryReplyId: own ? (claimMetadata.id as string) : undefined,
       reply: {
         response: claimMetadata.response as CalendarResponse,
         status: status as string,
@@ -126,7 +127,7 @@ export async function getMailInvitation(
         status: previous.status as string,
       }
     : null;
-  return { invitation, message, reply };
+  return { invitation, message, reply, retryReplyId: undefined };
 }
 
 function replyId(parts: string[]) {
@@ -150,14 +151,12 @@ export async function respondToMailInvitation({
   // Derive every address and calendar property from authorized stored bytes.
   const source = await getMailInvitation(ctx, mailboxId, messageId);
   if (!source) return null;
-  const id = replyId([
-    ctx.normalizedWsId,
-    mailboxId,
-    ctx.user.id,
-    messageId,
-    requestId,
-    response,
-  ]);
+  const id =
+    source.retryReplyId &&
+    source.reply?.retryRequestId === requestId &&
+    source.reply.response === response
+      ? source.retryReplyId
+      : replyId([mailboxId, ctx.user.id, messageId, requestId, response]);
   const claim = await claimCalendarReply(
     ctx,
     mailboxId,
@@ -167,11 +166,25 @@ export async function respondToMailInvitation({
     requestId
   );
   if (claim.status === 'unavailable') return null;
-  if (claim.status !== 'claimed') return claim;
+  if (claim.status !== 'claimed') {
+    // A completed replay acknowledges its old send without reverting current UI state.
+    const latest = await getMailInvitation(ctx, mailboxId, messageId);
+    if (!latest) return null;
+    return {
+      status: latest.reply?.status ?? claim.status,
+      response: latest.reply?.response ?? response,
+    };
+  }
   const previous = await getMailMessage({ ctx, mailboxId, messageId: id });
   // An uncertain provider result is never retried automatically.
-  if (previous && previous.status !== 'draft')
-    return { status: previous.status };
+  if (previous && previous.status !== 'draft') {
+    const latest = await getMailInvitation(ctx, mailboxId, messageId);
+    if (!latest) return null;
+    return {
+      status: latest.reply?.status ?? previous.status,
+      response: latest.reply?.response ?? response,
+    };
+  }
   const payload = {
     clientMessageId: id,
     to: [source.invitation.organizer],

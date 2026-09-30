@@ -20,7 +20,7 @@ beforeEach(() => {
   mocks.access.mockResolvedValue({
     mailbox: { address: 'guest@example.test' },
   });
-  mocks.message.mockResolvedValue({ status: 'sent' });
+  mocks.message.mockResolvedValue(null);
   mocks.table.mockImplementation(() => {
     let patch: Record<string, unknown> | undefined;
     const conditions: Record<string, unknown> = {};
@@ -119,7 +119,9 @@ it.each(['sent', 'failed'])(
       'ACCEPTED',
       'request-first'
     );
-    mocks.message.mockResolvedValue({ status });
+    mocks.message.mockImplementation(async ({ messageId }) =>
+      messageId === 'first' ? { status } : null
+    );
     expect(
       await claimCalendarReply(
         ctx,
@@ -140,6 +142,9 @@ it('allows a deliberate response change after the previous provider outcome sett
     'first',
     'ACCEPTED',
     'request-first'
+  );
+  mocks.message.mockImplementation(async ({ messageId }) =>
+    messageId === 'first' ? { status: 'sent' } : null
   );
   expect(
     await claimCalendarReply(

@@ -51,7 +51,7 @@ export function MailInvitationCard({
     onSuccess: (reply, value) =>
       setResult({
         scope: value.scope,
-        response: value.response,
+        response: reply.response ?? value.response,
         status: reply.status,
       }),
   });

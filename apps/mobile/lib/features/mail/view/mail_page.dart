@@ -154,7 +154,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   List<Map<String, dynamic>> _folders = [];
   final Set<String> _selected = {};
   final Set<String> _pendingSwipeIds = {};
-  final Set<String> _pendingReaderIds = {};
+  final Map<String, ({String mailbox, String action})> _pendingReaderIds = {};
   String? _labelId;
   String? _folderId;
   bool _mutating = false;
@@ -355,7 +355,10 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       if (!more && _visibleListKey != path) {
         _listResolved = cached != null;
         _hasMore = false;
-        _items = mailRows(cached?[_threads ? 'threads' : 'messages']);
+        _items = _overlayReaderActions(
+          mailRows(cached?[_threads ? 'threads' : 'messages']),
+          box,
+        );
         final organization = _repository.cachedList(
           widget.workspaceId,
           '${MailRepository.mailboxPath(widget.workspaceId, box)}/organization',
@@ -387,7 +390,10 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       final pagination = result['pagination'] as Map<String, dynamic>;
       setState(() {
         final items = mailRows(result[_threads ? 'threads' : 'messages']);
-        _items = more ? [..._items, ...items] : items;
+        _items = _overlayReaderActions(
+          more ? [..._items, ...items] : items,
+          box,
+        );
         _listResolved = true;
         _page = page;
         _hasMore =
@@ -623,7 +629,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
             },
             onOptimisticAction: (action, id) {
               if (!mounted || box != _mailboxId) return;
-              _pendingReaderIds.add(id);
+              _pendingReaderIds[id] = (mailbox: box, action: action);
               ++_generation;
               setState(() {
                 _loading = false;

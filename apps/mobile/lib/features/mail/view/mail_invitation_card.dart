@@ -95,7 +95,7 @@ class _MailInvitationCardState extends State<MailInvitationCard> {
         requestId: _requestId!,
       );
       if (!mounted || generation != _generation) return;
-      setState(() => _reply = {...result, 'response': response});
+      setState(() => _reply = {'response': response, ...result});
     } on Object {
       if (mounted && generation == _generation) setState(() => _failed = true);
     } finally {

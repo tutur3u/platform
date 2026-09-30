@@ -126,6 +126,28 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     },
   );
+  testWidgets('uses the current response for a completed historical replay', (
+    tester,
+  ) async {
+    final repository = _Repository();
+    when(
+      () => repository.invitation('ws', 'box', 'message'),
+    ).thenAnswer((_) async => invitation);
+    when(
+      () => repository.respondToInvitation(
+        'ws',
+        'box',
+        'message',
+        response: 'ACCEPTED',
+        requestId: any(named: 'requestId'),
+      ),
+    ).thenAnswer((_) async => {'status': 'sent', 'response': 'DECLINED'});
+    await tester.pumpApp(card(repository));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Accept'));
+    await tester.pumpAndSettle();
+    expect(find.text('Response sent: Decline'), findsOneWidget);
+  });
   testWidgets('viewer or ordinary calendar attachment has no RSVP controls', (
     tester,
   ) async {

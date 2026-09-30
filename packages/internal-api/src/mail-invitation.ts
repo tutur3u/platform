@@ -42,6 +42,7 @@ export function respondToMailInvitation(
 ) {
   return getInternalApiClient(withMailApiBaseUrl(options)).json<{
     status: string;
+    response?: MailCalendarResponse;
   }>(path(wsId, box, message), {
     method: 'POST',
     body: JSON.stringify(payload),

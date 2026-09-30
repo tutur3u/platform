@@ -135,7 +135,9 @@ it('sends only a derived organizer-addressed calendar REPLY and keeps stable ide
     response: 'ACCEPTED' as const,
     requestId: '8238cb8a-ed38-4c98-a673-e038ee5b464a',
   };
-  expect(await respondToMailInvitation(payload)).toEqual({ status: 'sent' });
+  expect(await respondToMailInvitation(payload)).toMatchObject({
+    status: 'sent',
+  });
   const upload = mocks.upload.mock.calls[0]![0];
   expect(upload.contentType).toContain('method=REPLY');
   expect(new TextDecoder().decode(upload.bytes)).toContain(
@@ -148,7 +150,9 @@ it('sends only a derived organizer-addressed calendar REPLY and keeps stable ide
   mocks.get.mockImplementation(async ({ messageId }) =>
     messageId === 'message' ? message : { status: 'sent' }
   );
-  expect(await respondToMailInvitation(payload)).toEqual({ status: 'sent' });
+  expect(await respondToMailInvitation(payload)).toMatchObject({
+    status: 'sent',
+  });
   expect(mocks.send).toHaveBeenCalledTimes(1);
   expect(mocks.claim.mock.calls[1]![3]).toBe(id);
 });
@@ -162,7 +166,7 @@ it('never retries a competing or uncertain send claim', async () => {
       response: 'DECLINED',
       requestId: '8238cb8a-ed38-4c98-a673-e038ee5b464a',
     })
-  ).toEqual({ status: 'sending' });
+  ).toEqual({ status: 'sending', response: 'DECLINED' });
   expect(mocks.draft).not.toHaveBeenCalled();
   expect(mocks.send).not.toHaveBeenCalled();
 });

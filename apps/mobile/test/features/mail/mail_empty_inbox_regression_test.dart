@@ -11,23 +11,26 @@ import '../../helpers/pump_app.dart';
 
 class _Repository extends Mock implements MailRepository {}
 
-Map<String, dynamic> list({bool empty = false}) => {
-  'threads': empty
-      ? <dynamic>[]
-      : [
-          {
-            'id': 'thread',
-            'subject': 'Last message',
-            'participants': <dynamic>[],
-          },
-        ],
-  'pagination': {'hasMore': false, 'total': empty ? 0 : 1},
+Map<String, dynamic> list({bool empty = false, bool extra = false}) => {
+  'threads': [
+    if (!empty)
+      {'id': 'thread', 'subject': 'Last message', 'participants': <dynamic>[]},
+    if (extra)
+      {'id': 'new', 'subject': 'New arrival', 'participants': <dynamic>[]},
+  ],
+  'pagination': {'hasMore': false, 'total': (empty ? 0 : 1) + (extra ? 1 : 0)},
 };
 
 void main() {
-  for (final success in [true, false]) {
+  for (final scenario in [
+    (true, false),
+    (false, false),
+    (true, true),
+    (false, true),
+  ]) {
+    final (success, afterExit) = scenario;
     testWidgets(
-      'reader final archive settles $success with a stale inbox refresh',
+      'reader archive settles $success; refresh after exit $afterExit',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         final repository = _Repository();
@@ -97,10 +100,13 @@ void main() {
           MailWorkspace(workspaceId: 'ws', repository: repository),
         );
         await tester.pumpAndSettle();
-        final refresh = tester
-            .widget<NovaRefreshIndicator>(find.byType(NovaRefreshIndicator))
-            .onRefresh();
-        await tester.pump();
+        Future<void>? refresh;
+        if (!afterExit) {
+          refresh = tester
+              .widget<NovaRefreshIndicator>(find.byType(NovaRefreshIndicator))
+              .onRefresh();
+          await tester.pump();
+        }
         await tester.tap(find.text('Last message'));
         await tester.pumpAndSettle();
         expect(find.byType(MailReader), findsOneWidget);
@@ -113,12 +119,19 @@ void main() {
         expect(find.text('Loading'), findsNothing);
         expect(
           requests,
-          2,
+          afterExit ? 1 : 2,
         ); // Reader exit must not reconcile an unsettled archive.
-        stale.complete(list());
+        if (afterExit) {
+          refresh = tester
+              .widget<NovaRefreshIndicator>(find.byType(NovaRefreshIndicator))
+              .onRefresh();
+          await tester.pump();
+        }
+        stale.complete(list(extra: afterExit));
         await refresh;
         await tester.pump();
         expect(find.text('Last message'), findsNothing);
+        if (afterExit) expect(find.text('New arrival'), findsOneWidget);
         if (success) {
           archive.complete();
         } else {
@@ -127,10 +140,14 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 20));
         expect(find.text('Loading'), findsNothing);
-        reconciliation.complete(list(empty: success));
+        reconciliation.complete(list(empty: success, extra: afterExit));
         await tester.pumpAndSettle();
         expect(
-          find.text(success ? 'No messages here' : 'Last message'),
+          find.text(
+            success
+                ? (afterExit ? 'New arrival' : 'No messages here')
+                : 'Last message',
+          ),
           findsOneWidget,
         );
         expect(tester.takeException(), isNull);

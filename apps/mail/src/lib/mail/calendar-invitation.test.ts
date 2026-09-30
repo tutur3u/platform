@@ -84,15 +84,13 @@ describe('actionable calendar requests', () => {
   it('preserves recurrence occurrence identity without importing series or changing organizer', () => {
     const source = googleRequest.replace(
       'SEQUENCE:2',
-      'SEQUENCE:2\r\nRECURRENCE-ID;TZID=Asia/Ho_Chi_Minh:20261002T133000'
+      'SEQUENCE:2\r\nRECURRENCE-ID:20261002T063000Z'
     );
     const reply = calendarReply(
       parseCalendarInvitation(source, 'guest@example.test')!,
       'TENTATIVE'
     );
-    expect(reply).toContain(
-      'RECURRENCE-ID;TZID=Asia/Ho_Chi_Minh:20261002T133000'
-    );
+    expect(reply).toContain('RECURRENCE-ID:20261002T063000Z');
   });
   it.each(['PUBLISH', 'CANCEL', 'REPLY'])(
     'keeps METHOD:%s as ordinary calendar content',
@@ -162,4 +160,129 @@ describe('actionable calendar requests', () => {
     for (const line of calendarReply(parsed, 'ACCEPTED').split('\r\n'))
       expect(Buffer.byteLength(line)).toBeLessThanOrEqual(75);
   });
+});
+
+const outlookZone = [
+  'BEGIN:VTIMEZONE',
+  'TZID:SE Asia Standard Time',
+  'BEGIN:STANDARD',
+  'DTSTART:16010101T000000',
+  'TZOFFSETFROM:+0700',
+  'TZOFFSETTO:+0700',
+  'TZNAME:SE Asia Standard Time',
+  'END:STANDARD',
+  'END:VTIMEZONE',
+].join('\r\n');
+const outlookOccurrence = googleRequest
+  .replace('BEGIN:VEVENT', `${outlookZone}\r\nBEGIN:VEVENT`)
+  .replace(
+    'SEQUENCE:2',
+    'SEQUENCE:2\r\nRECURRENCE-ID;TZID=SE Asia Standard Time:20261002T133000'
+  );
+
+it('round-trips the complete Outlook occurrence REPLY with the original timezone definition', () => {
+  const invitation = parseCalendarInvitation(
+    outlookOccurrence,
+    'guest@example.test'
+  )!;
+  expect(invitation).not.toBeNull();
+  const reply = calendarReply(
+    invitation,
+    'TENTATIVE',
+    new Date('2026-09-30T12:00:00Z')
+  );
+  expect(reply).toBe(
+    [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Tuturuuu//Mail//EN',
+      'METHOD:REPLY',
+      outlookZone,
+      'BEGIN:VEVENT',
+      'UID:synthetic-uid@google.com',
+      'SEQUENCE:2',
+      'DTSTAMP:20260930T120000Z',
+      'ORGANIZER:mailto:host@example.test',
+      'ATTENDEE;PARTSTAT=TENTATIVE:mailto:guest@example.test',
+      'RECURRENCE-ID;TZID=SE Asia Standard Time:20261002T133000',
+      'END:VEVENT',
+      'END:VCALENDAR',
+      '',
+    ].join('\r\n')
+  );
+  expect(invitation.timezone).toEqual(outlookZone.split('\r\n'));
+});
+it('fails closed for missing, competing, malformed or oversized referenced timezone definitions', () => {
+  for (const source of [
+    outlookOccurrence.replace(`${outlookZone}\r\n`, ''),
+    outlookOccurrence.replace(outlookZone, `${outlookZone}\r\n${outlookZone}`),
+    outlookOccurrence.replace(
+      'TZID:SE Asia Standard Time',
+      'TZID:Another custom zone'
+    ),
+    outlookOccurrence.replace('TZOFFSETTO:+0700', 'TZOFFSETTO:+0799'),
+    outlookOccurrence.replace('TZOFFSETFROM:+0700', 'TZOFFSETFROM:-0000'),
+    outlookOccurrence.replace(
+      'DTSTART:16010101T000000',
+      'DTSTART:16010230T250000'
+    ),
+    outlookOccurrence.replace(
+      'END:STANDARD',
+      'BEGIN:VALARM\r\nEND:VALARM\r\nEND:STANDARD'
+    ),
+    outlookOccurrence.replace(
+      'END:VTIMEZONE',
+      `X-OVERSIZED:${'x'.repeat(33 * 1024)}\r\nEND:VTIMEZONE`
+    ),
+    outlookOccurrence.replace(
+      'END:STANDARD',
+      'RRULE:FREQ=YEARLY;UNKNOWN=1\r\nEND:STANDARD'
+    ),
+  ])
+    expect(parseCalendarInvitation(source, 'guest@example.test')).toBeNull();
+});
+it('normalizes scheduling enum parameters and rejects group/non-individual identities', () => {
+  for (const parameter of [
+    'RSVP=false',
+    'ROLE=non-participant',
+    'CUTYPE=group',
+    'CUTYPE=ROOM',
+  ]) {
+    const original = parameter.startsWith('RSVP')
+      ? 'RSVP=TRUE'
+      : parameter.startsWith('ROLE')
+        ? 'ROLE=REQ-PARTICIPANT'
+        : 'CUTYPE=INDIVIDUAL';
+    const source = googleRequest.replace(original, parameter);
+    expect(parseCalendarInvitation(source, 'guest@example.test')).toBeNull();
+  }
+  expect(
+    parseCalendarInvitation(
+      googleRequest.replace('END:VEVENT', 'STATUS:cancelled\r\nEND:VEVENT'),
+      'guest@example.test'
+    )
+  ).toBeNull();
+});
+it('rejects C0 boundaries without a control-character regex and retains supported line endings', () => {
+  for (let code = 0; code < 32; code++) {
+    if ([9, 10, 13].includes(code)) continue;
+    expect(
+      parseCalendarInvitation(
+        googleRequest.replace('SGS Campus', `Room${String.fromCharCode(code)}`),
+        'guest@example.test'
+      )
+    ).toBeNull();
+  }
+  expect(
+    parseCalendarInvitation(
+      googleRequest.replace('SGS Campus', 'Room\rmalformed'),
+      'guest@example.test'
+    )
+  ).toBeNull();
+  expect(
+    parseCalendarInvitation(
+      googleRequest.replaceAll('\r\n', '\n'),
+      'guest@example.test'
+    )
+  ).not.toBeNull();
 });

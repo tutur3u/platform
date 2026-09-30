@@ -111,3 +111,17 @@ it('reflects saved response state after reopening without sending another reply'
   ).toBe(true);
   expect(api.respond).not.toHaveBeenCalled();
 });
+it('keeps the authoritative current response when checking a completed historical replay', async () => {
+  api.respond.mockResolvedValue({ status: 'sent', response: 'DECLINED' });
+  mount(invitation);
+  fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+  await screen.findByText('Response sent: Decline');
+  expect(
+    (screen.getByRole('button', { name: 'Decline' }) as HTMLButtonElement)
+      .disabled
+  ).toBe(true);
+  expect(
+    (screen.getByRole('button', { name: 'Accept' }) as HTMLButtonElement)
+      .disabled
+  ).toBe(false);
+});
