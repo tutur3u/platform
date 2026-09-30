@@ -35,8 +35,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
+import { formatInTimezone } from '@tuturuuu/utils/task-date-timezone';
 import { useBoardConfig } from '@tuturuuu/utils/task-helper';
-import { format } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
 import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import {
@@ -747,7 +747,6 @@ export function AddTaskForm({
               </div>
             )}
 
-            {/* Dates with Time */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5 text-sm">
@@ -757,7 +756,6 @@ export function AddTaskForm({
                 <DateTimePicker
                   date={startDate}
                   setDate={setStartDate}
-                  showTimeSelect={true}
                   maxDate={endDate}
                   showFooterControls={true}
                   allowClear={true}
@@ -769,7 +767,6 @@ export function AddTaskForm({
                   preferences={{ weekStartsOn, timezone, timeFormat }}
                 />
               </div>
-
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5 text-sm">
                   <CalendarIcon className="h-4 w-4" />
@@ -778,9 +775,12 @@ export function AddTaskForm({
                 <DateTimePicker
                   date={endDate}
                   setDate={setEndDate}
-                  showTimeSelect={true}
                   minDate={startDate}
-                  minTime={startDate ? format(startDate, 'HH:mm') : undefined}
+                  minTime={
+                    startDate
+                      ? formatInTimezone(startDate, timezone ?? 'auto', 'HH:mm')
+                      : undefined
+                  }
                   showFooterControls={true}
                   allowClear={true}
                   scrollIntoViewOnOpen={true}

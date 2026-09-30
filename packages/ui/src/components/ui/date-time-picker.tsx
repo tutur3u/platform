@@ -22,7 +22,7 @@ import {
   resolveTaskTimezone,
 } from '@tuturuuu/utils/task-date-timezone';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
 import {
   type ReactNode,
   useEffect,
@@ -32,6 +32,14 @@ import {
   useState,
 } from 'react';
 import { DATE_TIME_PICKER_LAYOUT_CLASS_NAMES } from './date-time-picker-layout';
+import {
+  createPickerTimeOptions,
+  filterPickerTimeOptions,
+  pickerCalendarBounds,
+  pickerCalendarDate,
+  pickerTimeWithMinimum,
+  pickerWallTime,
+} from './date-time-picker-values';
 import { Separator } from './separator';
 
 interface DateTimePickerProps {
@@ -102,6 +110,7 @@ export function DateTimePicker({
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isManualTimeEntry, setIsManualTimeEntry] = useState(false);
+  const [invalidManualTime, setInvalidManualTime] = useState(false);
   const [manualTimeInput, setManualTimeInput] = useState(
     date ? format(date, 'HH:mm') : ''
   );
@@ -200,14 +209,30 @@ export function DateTimePicker({
     if (tz) {
       const hour = date ? getDatePartsInTimezone(date, tz).hour : 0;
       const minute = date ? getDatePartsInTimezone(date, tz).minute : 0;
-      next = buildDateInTimezone(
-        selectedDate.getFullYear(),
-        selectedDate.getMonth() + 1,
-        selectedDate.getDate(),
-        hour,
-        minute,
-        tz
-      );
+      if (
+        date &&
+        pickerCalendarDate(date, tz).getTime() === selectedDate.getTime()
+      ) {
+        next = new Date(date);
+      } else {
+        next = buildDateInTimezone(
+          selectedDate.getFullYear(),
+          selectedDate.getMonth() + 1,
+          selectedDate.getDate(),
+          hour,
+          minute,
+          tz
+        );
+        const parts = getDatePartsInTimezone(next, tz);
+        if (
+          parts.year !== selectedDate.getFullYear() ||
+          parts.month !== selectedDate.getMonth() + 1 ||
+          parts.day !== selectedDate.getDate() ||
+          parts.hour !== hour ||
+          parts.minute !== minute
+        )
+          return;
+      }
     } else {
       if (date) {
         selectedDate.setHours(date.getHours());
@@ -237,40 +262,14 @@ export function DateTimePicker({
     if (Number.isNaN(hours) || Number.isNaN(minutes)) return;
 
     const baseDate = selectedDate ?? date ?? minDate ?? new Date();
-    let newDate: Date;
-
-    if (tz) {
-      const p = getDatePartsInTimezone(baseDate, tz);
-      newDate = buildDateInTimezone(p.year, p.month, p.day, hours, minutes, tz);
-      if (minDate && newDate.getTime() <= minDate.getTime()) {
-        const minParts = getDatePartsInTimezone(minDate, tz);
-        newDate = buildDateInTimezone(
-          minParts.year,
-          minParts.month,
-          minParts.day + 1,
-          hours,
-          minutes,
-          tz
-        );
-      }
-    } else {
-      newDate = new Date(baseDate);
-      newDate.setHours(hours);
-      newDate.setMinutes(minutes);
-
-      if (
-        minDate &&
-        newDate.getFullYear() === minDate.getFullYear() &&
-        newDate.getMonth() === minDate.getMonth() &&
-        newDate.getDate() === minDate.getDate()
-      ) {
-        const minTimeValue = minDate.getHours() * 60 + minDate.getMinutes();
-        const newTimeValue = newDate.getHours() * 60 + newDate.getMinutes();
-        if (newTimeValue <= minTimeValue) {
-          newDate.setDate(newDate.getDate() + 1);
-        }
-      }
-    }
+    const newDate = pickerTimeWithMinimum(
+      baseDate,
+      hours,
+      minutes,
+      tz,
+      minDate
+    );
+    if (!newDate) return;
 
     setSelectedDate(newDate);
     updateDate(newDate);
@@ -292,23 +291,12 @@ export function DateTimePicker({
           !Number.isNaN(m)
         ) {
           const baseDate = selectedDate ?? date ?? minDate ?? new Date();
-          const baseParts = tz ? getDatePartsInTimezone(baseDate, tz) : null;
-          const newDate =
-            tz && baseParts
-              ? buildDateInTimezone(
-                  baseParts.year,
-                  baseParts.month,
-                  baseParts.day,
-                  h,
-                  m,
-                  tz
-                )
-              : (() => {
-                  const d = new Date(baseDate);
-                  d.setHours(h);
-                  d.setMinutes(m);
-                  return d;
-                })();
+          const newDate = pickerWallTime(baseDate, h, m, tz);
+          if (!newDate) {
+            setInvalidManualTime(true);
+            return;
+          }
+          setInvalidManualTime(false);
           setSelectedDate(newDate);
           updateDate(newDate);
           setIsManualTimeEntry(false);
@@ -338,87 +326,24 @@ export function DateTimePicker({
   const timeFormat = preferences?.timeFormat ?? '12h';
   const timePattern = getTimeFormatPattern(timeFormat);
 
-  // Generate time options in 15-minute increments
   const timeOptions = useMemo(
-    () =>
-      Array.from({ length: 24 * 4 }, (_, i) => {
-        const hour = Math.floor(i / 4);
-        const minute = (i % 4) * 15;
-        const formattedHour = hour.toString().padStart(2, '0');
-        const formattedMinute = minute.toString().padStart(2, '0');
-        const value = `${formattedHour}:${formattedMinute}`;
-        const display = format(parse(value, 'HH:mm', new Date()), timePattern);
-        return { value, display };
-      }),
-    [timePattern]
+    () => createPickerTimeOptions(timeFormat),
+    [timeFormat]
   );
-
-  // Filter time options for end time picker
-  const filteredTimeOptions = useMemo(() => {
-    let options = timeOptions;
-
-    // Filter based on minDate and minTime
-    if (minTime && date && minDate) {
-      // Only restrict if the selected date is the same as minDate
-      if (
-        date.getFullYear() === minDate.getFullYear() &&
-        date.getMonth() === minDate.getMonth() &&
-        date.getDate() === minDate.getDate()
-      ) {
-        options = options.filter((time) => time.value > minTime);
-      } else if (date > minDate) {
-        // If end date is after start date, show all times
-        options = timeOptions;
-      }
-    }
-
-    // Filter based on maxDate
-    if (date && maxDate) {
-      // Only restrict if the selected date is the same as maxDate
-      if (
-        date.getFullYear() === maxDate.getFullYear() &&
-        date.getMonth() === maxDate.getMonth() &&
-        date.getDate() === maxDate.getDate()
-      ) {
-        const maxTimeValue = `${format(maxDate, 'HH')}:${format(maxDate, 'mm')}`;
-        options = options.filter((time) => time.value < maxTimeValue);
-      }
-    }
-
-    // After filtering, ensure the selected time is always present in the dropdown
-    if (date) {
-      const hourMinute =
-        tz !== null
-          ? getDatePartsInTimezone(date, tz)
-          : {
-              hour: date.getHours(),
-              minute: date.getMinutes(),
-            };
-      const customValue = `${hourMinute.hour.toString().padStart(2, '0')}:${hourMinute.minute.toString().padStart(2, '0')}`;
-      if (!options.some((t) => t.value === customValue)) {
-        const display =
-          tz !== null
-            ? formatInTimezone(
-                date,
-                tz,
-                timeFormat === '24h' ? 'HH:mm' : 'h:mm A'
-              )
-            : format(date, timePattern);
-        options = [...options, { value: customValue, display }];
-        options.sort((a, b) => a.value.localeCompare(b.value));
-      }
-    }
-    return options;
-  }, [
-    date,
-    minDate,
-    maxDate,
-    minTime,
-    timeOptions,
-    timePattern,
-    tz,
-    timeFormat,
-  ]);
+  const filteredTimeOptions = useMemo(
+    () =>
+      filterPickerTimeOptions({
+        date,
+        minDate,
+        maxDate,
+        minTime,
+        zone: tz,
+        pattern: timePattern,
+        timeFormat,
+        options: timeOptions,
+      }),
+    [date, minDate, maxDate, minTime, tz, timePattern, timeFormat, timeOptions]
+  );
 
   // If the filtered list is empty, show an error message
   const noValidTimes = filteredTimeOptions.length === 0;
@@ -500,34 +425,7 @@ export function DateTimePicker({
     }
   };
 
-  // Shared calendar disabled dates config
-  const calendarDisabled =
-    minDate || maxDate
-      ? [
-          ...(minDate
-            ? [
-                {
-                  before: new Date(
-                    minDate.getFullYear(),
-                    minDate.getMonth(),
-                    minDate.getDate()
-                  ),
-                },
-              ]
-            : []),
-          ...(maxDate
-            ? [
-                {
-                  after: new Date(
-                    maxDate.getFullYear(),
-                    maxDate.getMonth(),
-                    maxDate.getDate()
-                  ),
-                },
-              ]
-            : []),
-        ]
-      : undefined;
+  const calendarDisabled = pickerCalendarBounds(minDate, maxDate, tz);
 
   const timeControl = showTimeSelect ? (
     <div className={DATE_TIME_PICKER_LAYOUT_CLASS_NAMES.time}>
@@ -545,7 +443,11 @@ export function DateTimePicker({
         <div className="flex items-center gap-2">
           <Input
             value={manualTimeInput}
-            onChange={(e) => setManualTimeInput(e.target.value)}
+            onChange={(e) => {
+              setManualTimeInput(e.target.value);
+              setInvalidManualTime(false);
+            }}
+            aria-invalid={invalidManualTime}
             onKeyDown={handleManualTimeKeyDown}
             placeholder="HH:MM"
             className="h-9 flex-1"
@@ -650,7 +552,8 @@ export function DateTimePicker({
         <div className={DATE_TIME_PICKER_LAYOUT_CLASS_NAMES.calendar}>
           <Calendar
             mode="single"
-            selected={date}
+            selected={date ? pickerCalendarDate(date, tz) : undefined}
+            today={pickerCalendarDate(new Date(), tz)}
             onSelect={handleSelect}
             onSubmit={(date) => {
               handleSelect(date);
