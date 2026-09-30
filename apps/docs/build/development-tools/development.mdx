@@ -660,3 +660,25 @@ does not establish that a failure is a flake. A push changing this test/config
 already triggers `e2e-tests.yaml`; use that exact-head run rather than creating
 a duplicate manual dispatch. Manual dispatch currently selects the full E2E
 workflow, rather than an individual cache-contract job.
+
+### Validating Undici dependency upgrades
+
+The direct Undici 8.x owners are Infrastructure and Web. Update their package
+declarations through Bun and review the lock diff: a scoped direct upgrade should
+change those workspace entries and the shared 8.x resolution. A recursive update
+can also refresh SDK/Discord consumers on maintained 6.x and 7.x lines; validate
+those as a separate consumer group rather than assuming the direct owners cover
+them. Preserve the repository's minimum release age and lifecycle-script policy.
+
+Run the existing managed-cron network and chat link-preview tests in both owning
+apps using their actual Vitest configs. These checks preserve public-address DNS
+validation, private-address rejection and redirect handling with injected
+transport dependencies. They do not establish real socket, HTTP/2 or Worker
+transport behavior. Web's `src/lib/undici-compatibility.test.ts` additionally uses
+the actual library to preserve a literal `__proto__` cookie as an own property of
+a null-prototype result and retain an epoch expiry when clearing a cookie.
+
+Require exact-commit Infrastructure and Web type checks and builds on hosted CI
+after frozen-lock installation. Do not run local builds. A skipped build job is
+not verification. Infrastructure's existing preview workflow also deploys; use a
+CI-only build route when deployment is outside the authorized scope.
