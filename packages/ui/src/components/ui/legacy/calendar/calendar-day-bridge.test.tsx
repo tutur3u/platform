@@ -61,13 +61,15 @@ it('shared content projects default Today, bridges the settings zone and keeps s
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2025-12-31T16:00:00Z'));
   state.zone = 'Asia/Tokyo';
-  const { rerender } = render(<CalendarContent t={(key) => key} locale="en" />);
+  const { rerender } = render(
+    <CalendarContent t={(key: string) => key} locale="en" />
+  );
   expect(screen.getByTestId('day')).toHaveTextContent('2026-01-01:0');
   expect(state.setTimezone).toHaveBeenLastCalledWith('Asia/Tokyo');
   act(() => vi.advanceTimersByTime(24 * 60 * 60_000));
   expect(screen.getByTestId('day')).toHaveTextContent('2026-01-01:0');
   state.zone = 'America/New_York';
-  rerender(<CalendarContent t={(key) => key} locale="en" />);
+  rerender(<CalendarContent t={(key: string) => key} locale="en" />);
   expect(state.setTimezone).toHaveBeenLastCalledWith('America/New_York');
 });
 it('content forwards the zone to outer host navigation without reprojecting an explicit date', () => {
@@ -75,7 +77,7 @@ it('content forwards the zone to outer host navigation without reprojecting an e
   render(
     <CalendarDayZoneBridgeProvider value={{ setTimezone: state.outerZone }}>
       <CalendarContent
-        t={(key) => key}
+        t={(key: string) => key}
         locale="en"
         externalState={{
           date: new Date(2026, 0, 10),

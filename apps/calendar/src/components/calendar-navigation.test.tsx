@@ -1,15 +1,26 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { useEffect } from 'react';
+import '@testing-library/jest-dom/vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
+import { useCalendarDayZone } from '@tuturuuu/ui/hooks/use-calendar-day-zone';
+import { CalendarHeader } from '@tuturuuu/ui/legacy/calendar/calendar-header';
+import {
+  calendarDayKey,
+  calendarNavigationDate,
+} from '@tuturuuu/ui/lib/calendar-day';
+import { type ReactNode, useEffect } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   CalendarNavigationProvider,
   useCalendarNavigation,
-} from '../../../../apps/calendar/src/components/calendar-navigation-provider';
-import { CalendarWorkspacePage } from '../../../../apps/calendar/src/components/calendar-workspace-page';
-import { MiniMonthCalendar } from '../../../../apps/calendar/src/components/mini-month-calendar';
-import { CalendarHeader } from '../components/ui/legacy/calendar/calendar-header';
-import { useCalendarDayZone } from '../hooks/use-calendar-day-zone';
-import { calendarDayKey, calendarNavigationDate } from './calendar-day';
+} from './calendar-navigation-provider';
+import { CalendarWorkspacePage } from './calendar-workspace-page';
+import { MiniMonthCalendar } from './mini-month-calendar';
 
 const settings = vi.hoisted(() => ({ zone: 'Asia/Tokyo' }));
 vi.mock('@tuturuuu/ui/hooks/use-mobile', () => ({ useIsMobile: () => false }));
@@ -26,7 +37,7 @@ vi.mock('@tuturuuu/ui/hooks/use-user-config', () => ({
 vi.mock('@tuturuuu/ui/hooks/use-calendar-sync', () => ({
   useCalendarSync: () => ({ syncStatus: { state: 'idle' } }),
 }));
-vi.mock('../components/ui/legacy/calendar/settings/settings-context', () => ({
+vi.mock('@tuturuuu/ui/legacy/calendar/settings/settings-context', () => ({
   useCalendarSettings: () => ({
     settings: { timezone: { timezone: settings.zone } },
   }),
@@ -63,7 +74,17 @@ function Controls() {
     </>
   );
 }
+function renderCalendar(children: ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  );
+}
 afterEach(() => {
+  cleanup();
+  localStorage.clear();
   vi.useRealTimers();
   vi.unstubAllEnvs();
 });
@@ -75,7 +96,7 @@ describe('actual Calendar navigation Today surfaces', () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-12-31T16:00:00Z'));
       settings.zone = 'Asia/Tokyo';
-      render(
+      renderCalendar(
         <CalendarNavigationProvider>
           <Controls />
           <MiniMonthCalendar />
@@ -100,7 +121,7 @@ describe('actual Calendar navigation Today surfaces', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2025-12-31T14:59:00Z'));
     settings.zone = 'Asia/Tokyo';
-    render(
+    renderCalendar(
       <CalendarNavigationProvider>
         <Controls />
         <MiniMonthCalendar />
@@ -118,7 +139,7 @@ describe('actual Calendar navigation Today surfaces', () => {
   });
   it('applies a deep link once without resetting a later selection on timezone changes', () => {
     settings.zone = 'Asia/Tokyo';
-    render(
+    renderCalendar(
       <CalendarNavigationProvider>
         <Controls />
         <CalendarWorkspacePage
