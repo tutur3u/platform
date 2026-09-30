@@ -154,6 +154,51 @@ describe('CalendarSyncProvider optimistic visible events', () => {
     vi.stubGlobal('fetch', vi.fn());
   });
 
+  it('requests both event APIs at zoned DST boundaries and refetches when the zone changes', async () => {
+    const fetchMock = mockCalendarFetch([]);
+    vi.stubGlobal('fetch', fetchMock);
+    const { result, queryClient } = renderCalendarSync();
+    const requestsFor = (path: string) =>
+      fetchMock.mock.calls
+        .map(([input]) => new URL(String(input), 'http://localhost'))
+        .filter((url) => url.pathname.endsWith(path));
+    act(() => {
+      result.current.setTimezone('America/New_York');
+      result.current.setDates([new Date(2026, 2, 8, 18)]);
+    });
+    await waitFor(() => {
+      for (const path of ['/calendar/events', '/calendar/habit-events']) {
+        const url = requestsFor(path).at(-1);
+        expect(url?.searchParams.get('start_at')).toBe(
+          '2026-03-08T05:00:00.000Z'
+        );
+        expect(url?.searchParams.get('end_at')).toBe(
+          '2026-03-09T04:00:00.000Z'
+        );
+      }
+    });
+    act(() => result.current.setTimezone('Asia/Tokyo'));
+    await waitFor(() => {
+      for (const path of ['/calendar/events', '/calendar/habit-events']) {
+        const url = requestsFor(path).at(-1);
+        expect(url?.searchParams.get('start_at')).toBe(
+          '2026-03-07T15:00:00.000Z'
+        );
+        expect(url?.searchParams.get('end_at')).toBe(
+          '2026-03-08T15:00:00.000Z'
+        );
+      }
+    });
+    const keys = queryClient
+      .getQueryCache()
+      .findAll({ queryKey: ['databaseCalendarEvents'] })
+      .map((query) => query.queryKey[2]);
+    expect(keys).toContain(
+      'workspace-1:America/New_York:2026-03-08-2026-03-08'
+    );
+    expect(keys).toContain('workspace-1:Asia/Tokyo:2026-03-08-2026-03-08');
+  });
+
   it('reports a partial HTTP 200 sync as an error without a success callback', async () => {
     vi.stubGlobal(
       'fetch',

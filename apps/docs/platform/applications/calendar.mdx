@@ -423,3 +423,40 @@ present the exact meeting and recipients for user confirmation before calling
 the send operation. These API tests do not establish live Gmail/Outlook delivery;
 verify invitations and RSVP updates using explicitly authorized test accounts
 before claiming provider interoperability.
+
+
+## Calendar navigation dates and query boundaries
+
+The legacy calendar treats its selected date and visible grid dates as calendar
+days: their local year, month, and day fields identify the selection. An explicit
+`YYYY-MM-DD` navigation value preserves that day when the effective timezone
+changes. Timestamp navigation values and Today project the actual instant into
+the resolved calendar timezone. The Calendar host supplies that timezone to its
+navigation provider; shared calendar content also supplies it to the event sync
+provider. Web's calendar route redirects to the Calendar host. Deep links apply
+once using the first available resolved timezone so later settings updates cannot
+reset a user selection. A timestamp link applied before personal settings finish
+loading retains that initially projected day; following the pending instant until
+settings settle needs a separate selection ownership contract.
+
+Headers, sidebar selection, day/week/month/year/agenda labels, and Today markers
+use these day fields consistently. A shared minute clock updates Today and the
+current-time indicator without changing the selected day. Timed event lookup
+projects event instants into the resolved timezone before grouping by day.
+
+Fetch ranges independently construct the first day's midnight and the midnight
+after the last day in the effective timezone. This supports 23-hour and 25-hour
+days across daylight-saving changes. Calendar cache keys include the timezone
+and the selected calendar-day fields, so a timezone change cannot reuse a range
+from another timezone.
+
+These changes preserve existing event storage, recurrence, and all-day identity
+contracts. All-day lookup retains its legacy browser-local day identity, so its
+month/year grouping may still differ from the configured-zone bar for legacy
+midnight payloads. All-day bar drag and location create/resize/split callbacks retain
+their existing timestamp conversion: their inferred all-day classification cannot
+safely represent zoned 23-hour or 25-hour midnight spans without a persistent
+intent contract. They do not establish a persistent all-day intent flag or verify
+live provider writes. Focused mounted tests exercise navigation, labels, grouping,
+and fetch boundaries; deployed browser verification and exact-head CI remain
+separate release checks.
