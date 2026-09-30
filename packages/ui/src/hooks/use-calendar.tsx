@@ -437,7 +437,7 @@ export const CalendarProvider = ({
   const updateQueueRef = useRef<PendingEventUpdate[]>([]);
   const isProcessingQueueRef = useRef<boolean>(false);
 
-  const { events, refresh, patchVisibleEvents } = useCalendarSync();
+  const { events, refresh, patchVisibleEvents, timezone } = useCalendarSync();
 
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [previewEventId, setPreviewEventId] = useState<string | null>(null);
@@ -503,8 +503,8 @@ export const CalendarProvider = ({
   );
 
   const getCurrentEvents = useMemo(
-    () => createCalendarEventLookup(events),
-    [events]
+    () => createCalendarEventLookup(events, timezone),
+    [events, timezone]
   );
 
   const getUpcomingEvent = useCallback(() => {

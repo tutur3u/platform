@@ -9,6 +9,8 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
+import 'package:mobile/features/calendar/view/calendar_timezone_listener.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import 'package:mobile/features/calendar/widgets/calendar_connections_sheet.dart';
 import 'package:mobile/features/calendar/widgets/day_schedule_view.dart';
@@ -29,15 +31,18 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+part 'calendar_page_actions.dart';
+
 CalendarViewMode _defaultCalendarMode(BuildContext context) =>
     MediaQuery.sizeOf(context).width >= Breakpoints.mediumMin
     ? CalendarViewMode.week
     : CalendarViewMode.threeDays;
 
 class CalendarPage extends StatelessWidget {
-  const CalendarPage({super.key, this.initialEventId});
+  const CalendarPage({super.key, this.initialEventId, this.repositoryFactory});
 
   final String? initialEventId;
+  final CalendarRepository Function()? repositoryFactory;
 
   @override
   Widget build(BuildContext context) {
@@ -46,24 +51,28 @@ class CalendarPage extends StatelessWidget {
       create: (context) {
         final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
         final cubit = CalendarCubit(
-          calendarRepository: CalendarRepository(),
+          calendarRepository: repositoryFactory?.call() ?? CalendarRepository(),
           defaultViewMode: defaultMode,
           initialState: wsId != null
               ? CalendarCubit.cachedStateForWorkspace(wsId)
               : null,
-        );
+        )..setTimezone(calendarZone(context));
         if (wsId != null) unawaited(cubit.loadEvents(wsId, forceRefresh: true));
         return cubit;
       },
-      child: _CalendarView(initialEventId: initialEventId),
+      child: _CalendarView(
+        initialEventId: initialEventId,
+        repositoryFactory: repositoryFactory,
+      ),
     );
   }
 }
 
 class _CalendarView extends StatefulWidget {
-  const _CalendarView({this.initialEventId});
+  const _CalendarView({this.initialEventId, this.repositoryFactory});
 
   final String? initialEventId;
+  final CalendarRepository Function()? repositoryFactory;
 
   @override
   State<_CalendarView> createState() => _CalendarViewState();
@@ -108,7 +117,7 @@ class _CalendarViewState extends State<_CalendarView> {
   Future<void> _openInitialEvent(String eventId) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
-    final repository = CalendarRepository();
+    final repository = widget.repositoryFactory?.call() ?? CalendarRepository();
     CalendarEvent? event;
     try {
       event = await repository.getEventById(wsId, eventId);
@@ -129,10 +138,20 @@ class _CalendarViewState extends State<_CalendarView> {
       return;
     }
     if (event.startAt case final startAt?) {
-      final cubit = context.read<CalendarCubit>()..selectDate(startAt);
+      final cubit = context.read<CalendarCubit>()
+        ..selectDate(
+          calendarWallDate(
+            startAt,
+            context.read<CalendarCubit>().state.timezone,
+          ),
+        );
       unawaited(cubit.ensureRangeLoaded(wsId, startAt));
     }
-    await _showEventDetail(context, event);
+    await _showEventDetail(
+      context,
+      calendarProjectEvent(event, context.read<CalendarCubit>().state.timezone),
+      sourceEvent: event,
+    );
     if (mounted && widget.initialEventId == eventId) {
       context.go(Routes.calendar);
     }
@@ -289,65 +308,67 @@ class _CalendarViewState extends State<_CalendarView> {
                 unawaited(context.read<CalendarCubit>().loadEvents(wsId));
               }
             },
-            child: BlocConsumer<CalendarCubit, CalendarState>(
-              listenWhen: (previous, current) =>
-                  current.error != null && previous.error != current.error,
-              listener: (context, state) {
-                shad.showToast(
-                  context: Navigator.of(context, rootNavigator: true).context,
-                  builder: (context, overlay) =>
-                      shad.SurfaceCard(child: Text(state.error!)),
-                );
-              },
-              builder: (context, state) {
-                if (state.status == CalendarStatus.loading &&
-                    state.events.isEmpty) {
-                  return const Center(child: NovaLoadingIndicator());
-                }
+            child: CalendarTimezoneListener(
+              child: BlocConsumer<CalendarCubit, CalendarState>(
+                listenWhen: (previous, current) =>
+                    current.error != null && previous.error != current.error,
+                listener: (context, state) {
+                  shad.showToast(
+                    context: Navigator.of(context, rootNavigator: true).context,
+                    builder: (context, overlay) =>
+                        shad.SurfaceCard(child: Text(state.error!)),
+                  );
+                },
+                builder: (context, state) {
+                  if (state.status == CalendarStatus.loading &&
+                      state.events.isEmpty) {
+                    return const Center(child: NovaLoadingIndicator());
+                  }
 
-                if (state.status == CalendarStatus.error &&
-                    state.events.isEmpty) {
-                  return _ErrorView(error: state.error);
-                }
+                  if (state.status == CalendarStatus.error &&
+                      state.events.isEmpty) {
+                    return _ErrorView(error: state.error);
+                  }
 
-                return NovaRefreshIndicator(
-                  onRefresh: () async => _reload(context),
-                  child: Column(
-                    children: [
-                      // Month strip for agenda and schedule-style views.
-                      if (state.viewMode == CalendarViewMode.day ||
-                          state.viewMode == CalendarViewMode.agenda)
-                        MonthStrip(
-                          selectedDate: state.effectiveSelectedDate,
-                          focusedMonth: state.effectiveFocusedMonth,
-                          events: state.events,
-                          firstDayOfWeek: firstDayOfWeek,
-                          onDateSelected: (date) {
-                            final cubit = context.read<CalendarCubit>()
-                              ..selectDate(date);
-                            final wsId = context
-                                .read<WorkspaceCubit>()
-                                .state
-                                .currentWorkspace
-                                ?.id;
-                            if (wsId != null) {
-                              unawaited(cubit.ensureRangeLoaded(wsId, date));
-                            }
-                          },
-                          onMonthChanged: (month) {
-                            context.read<CalendarCubit>().setFocusedMonth(
-                              month,
-                            );
-                          },
+                  return NovaRefreshIndicator(
+                    onRefresh: () async => _reload(context),
+                    child: Column(
+                      children: [
+                        // Month strip for agenda and schedule-style views.
+                        if (state.viewMode == CalendarViewMode.day ||
+                            state.viewMode == CalendarViewMode.agenda)
+                          MonthStrip(
+                            selectedDate: state.effectiveSelectedDate,
+                            focusedMonth: state.effectiveFocusedMonth,
+                            events: state.displayEvents,
+                            firstDayOfWeek: firstDayOfWeek,
+                            onDateSelected: (date) {
+                              final cubit = context.read<CalendarCubit>()
+                                ..selectDate(date);
+                              final wsId = context
+                                  .read<WorkspaceCubit>()
+                                  .state
+                                  .currentWorkspace
+                                  ?.id;
+                              if (wsId != null) {
+                                unawaited(cubit.ensureRangeLoaded(wsId, date));
+                              }
+                            },
+                            onMonthChanged: (month) {
+                              context.read<CalendarCubit>().setFocusedMonth(
+                                month,
+                              );
+                            },
+                          ),
+                        // View body.
+                        Expanded(
+                          child: _buildViewBody(context, state, firstDayOfWeek),
                         ),
-                      // View body.
-                      Expanded(
-                        child: _buildViewBody(context, state, firstDayOfWeek),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -373,7 +394,7 @@ class _CalendarViewState extends State<_CalendarView> {
       case CalendarViewMode.threeDays:
         return ThreeDayView(
           selectedDate: state.effectiveSelectedDate,
-          events: state.events,
+          events: state.displayEvents,
           onEventTap: (event) => _showEventDetail(context, event),
           onCreateAtTime: (time) => _createEvent(context, startTime: time),
           onDaySelected: (date) {
@@ -385,7 +406,7 @@ class _CalendarViewState extends State<_CalendarView> {
       case CalendarViewMode.week:
         return WeekView(
           selectedDate: state.effectiveSelectedDate,
-          events: state.events,
+          events: state.displayEvents,
           firstDayOfWeek: firstDayOfWeek,
           onEventTap: (event) => _showEventDetail(context, event),
           onCreateAtTime: (time) => _createEvent(context, startTime: time),
@@ -399,7 +420,7 @@ class _CalendarViewState extends State<_CalendarView> {
         return MonthView(
           selectedDate: state.effectiveSelectedDate,
           focusedMonth: state.effectiveFocusedMonth,
-          events: state.events,
+          events: state.displayEvents,
           firstDayOfWeek: firstDayOfWeek,
           onDaySelected: (date) {
             final cubit = context.read<CalendarCubit>()..selectDate(date);
@@ -409,7 +430,7 @@ class _CalendarViewState extends State<_CalendarView> {
       case CalendarViewMode.agenda:
         return AgendaView(
           selectedDate: state.effectiveSelectedDate,
-          events: state.events,
+          events: state.displayEvents,
           isLoadingMore: state.isLoadingMore,
           onEventTap: (event) => _showEventDetail(context, event),
           onDaySelected: (date) {
@@ -431,7 +452,7 @@ class _CalendarViewState extends State<_CalendarView> {
         return YearView(
           selectedDate: state.effectiveSelectedDate,
           focusedMonth: state.effectiveFocusedMonth,
-          events: state.events,
+          events: state.displayEvents,
           firstDayOfWeek: firstDayOfWeek,
           onDaySelected: (date) {
             final cubit = context.read<CalendarCubit>()..selectDate(date);
@@ -586,57 +607,6 @@ class _CalendarViewState extends State<_CalendarView> {
       CalendarViewMode.agenda ||
       CalendarViewMode.year => l10n.calendarThreeDayView,
     };
-  }
-
-  Future<void> _createEvent(BuildContext context, {DateTime? startTime}) async {
-    final cubit = context.read<CalendarCubit>();
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-
-    final result = await showEventFormSheet(
-      context,
-      initialStartTime: startTime,
-    );
-    if (result == null) return;
-
-    await cubit.createEvent(
-      wsId,
-      title: result['title'] as String,
-      description: result['description'] as String?,
-      startAt: result['startAt'] as DateTime,
-      endAt: result['endAt'] as DateTime,
-      color: result['color'] as String?,
-    );
-  }
-
-  Future<void> _showEventDetail(
-    BuildContext context,
-    CalendarEvent event,
-  ) async {
-    final action = await showEventDetailSheet(context, event: event);
-
-    if (!context.mounted) return;
-
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-
-    if (action == 'edit') {
-      final cubit = context.read<CalendarCubit>();
-      final result = await showEventFormSheet(context, event: event);
-      if (result == null) return;
-
-      await cubit.updateEvent(
-        wsId,
-        event.id,
-        title: result['title'] as String?,
-        description: result['description'] as String?,
-        startAt: result['startAt'] as DateTime?,
-        endAt: result['endAt'] as DateTime?,
-        color: result['color'] as String?,
-      );
-    } else if (action == 'delete') {
-      await context.read<CalendarCubit>().deleteEvent(wsId, event.id);
-    }
   }
 }
 

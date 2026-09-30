@@ -3773,5 +3773,36 @@
         }
     },
     "mailInvitationPending": "Phản hồi đang chờ xử lý. Kiểm tra lại trước khi trả lời.",
-    "mailInvitationFailed": "Chưa xác nhận được phản hồi. Thử lại cùng phản hồi để kiểm tra trạng thái."
+    "mailInvitationFailed": "Chưa xác nhận được phản hồi. Thử lại cùng phản hồi để kiểm tra trạng thái.",
+    "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+    "@remindersOccurrenceDetails": {
+        "placeholders": {
+            "leadTime": {
+                "type": "String"
+            },
+            "occurrence": {
+                "type": "String"
+            },
+            "timezone": {
+                "type": "String"
+            }
+        }
+    },
+    "settingsTimezone": "Múi giờ cá nhân",
+    "settingsWorkspaceTimezone": "Múi giờ không gian làm việc",
+    "settingsTimezoneDescription": "Múi giờ cá nhân ưu tiên hơn múi giờ không gian làm việc. Tự động dùng mặc định không gian làm việc, sau đó thiết bị.",
+    "settingsTimezoneAuto": "Tự động",
+    "settingsTimezoneSearch": "Tìm múi giờ",
+    "settingsTimezoneEffective": "Múi giờ áp dụng: {timezone}",
+    "settingsTimezoneError": "Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.",
+    "@settingsTimezoneEffective": {
+        "placeholders": {
+            "timezone": {
+                "type": "String"
+            }
+        }
+    },
+    "calendarInvalidLocalTime": "Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè.",
+    "profileOverviewTab": "Tổng quan",
+    "profileTimelineTab": "Dòng thời gian"
 }

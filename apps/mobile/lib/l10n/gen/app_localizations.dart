@@ -17994,6 +17994,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not confirm your response. Retry the same response to check its status.'**
   String get mailInvitationFailed;
+
+  /// No description provided for @remindersOccurrenceDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'{leadTime} · {occurrence} ({timezone})'**
+  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone);
+
+  /// No description provided for @settingsTimezone.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal timezone'**
+  String get settingsTimezone;
+
+  /// No description provided for @settingsWorkspaceTimezone.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace timezone'**
+  String get settingsWorkspaceTimezone;
+
+  /// No description provided for @settingsTimezoneDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.'**
+  String get settingsTimezoneDescription;
+
+  /// No description provided for @settingsTimezoneAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get settingsTimezoneAuto;
+
+  /// No description provided for @settingsTimezoneSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search timezones'**
+  String get settingsTimezoneSearch;
+
+  /// No description provided for @settingsTimezoneEffective.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective timezone: {timezone}'**
+  String settingsTimezoneEffective(String timezone);
+
+  /// No description provided for @settingsTimezoneError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load or save timezone. Tap to retry.'**
+  String get settingsTimezoneError;
+
+  /// No description provided for @calendarInvalidLocalTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a valid start and end time. Some times do not exist when daylight saving time changes.'**
+  String get calendarInvalidLocalTime;
+
+  /// No description provided for @profileOverviewTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get profileOverviewTab;
+
+  /// No description provided for @profileTimelineTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get profileTimelineTab;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

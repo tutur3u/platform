@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@tuturuuu/supabase';
+import type { SupabaseClient, TypedSupabaseClient } from '@tuturuuu/supabase';
 
 export type CalendarSourceProvider = 'tuturuuu' | 'google' | 'microsoft';
 
@@ -491,4 +491,78 @@ export async function saveDefaultCalendarSource(args: {
   if (error) throw error;
 
   return getDefaultCalendarSource(args);
+}
+
+/** A disabled workspace source suppresses previews even when the connection remains enabled. */
+export async function isCalendarPreviewSourceEnabled(args: {
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+  workspaceCalendarId: string;
+}) {
+  const { data, error } = await args.sbAdmin
+    .schema('private')
+    .from('workspace_calendars')
+    .select('id')
+    .eq('ws_id', args.wsId)
+    .eq('id', args.workspaceCalendarId)
+    .eq('is_enabled', true)
+    .maybeSingle();
+  if (error) throw new Error('Calendar preview source unavailable');
+  return !!data;
+}
+
+/** Read-only preview resolution. No fallback, writable-role requirement or first-match selection. */
+export async function resolveCalendarPreviewSource(args: {
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+  userId: string;
+  provider: 'google' | 'microsoft';
+  workspaceCalendarId: string;
+  externalCalendarId: string;
+}) {
+  if (!(await isCalendarPreviewSourceEnabled(args))) return null;
+  const { data: tokens, error: tokenError } = await args.sbAdmin
+    .from('calendar_auth_tokens')
+    .select(
+      'id, access_token, refresh_token, user_id, ws_id, provider, account_email, account_name, is_active'
+    )
+    .eq('ws_id', args.wsId)
+    .eq('user_id', args.userId)
+    .eq('provider', args.provider)
+    .eq('is_active', true);
+  if (tokenError) throw new Error('Calendar preview source unavailable');
+  if (!tokens?.length) return null;
+  const { data: connections, error: connectionError } = await args.sbAdmin
+    .from('calendar_connections')
+    .select(
+      'id, ws_id, calendar_id, calendar_name, color, is_enabled, provider, auth_token_id, workspace_calendar_id, access_role'
+    )
+    .eq('ws_id', args.wsId)
+    .eq('provider', args.provider)
+    .eq('workspace_calendar_id', args.workspaceCalendarId)
+    .eq('calendar_id', args.externalCalendarId)
+    .eq('is_enabled', true)
+    .in(
+      'auth_token_id',
+      tokens.map((token) => token.id)
+    );
+  if (connectionError) throw new Error('Calendar preview source unavailable');
+  if (connections?.length !== 1) return null;
+  const connection = connections[0]!;
+  const token = tokens.find((token) => token.id === connection.auth_token_id);
+  if (!token?.account_email || !token.access_token) return null;
+  return {
+    provider: args.provider,
+    connectionId: connection.id,
+    workspaceCalendarId: connection.workspace_calendar_id,
+    externalCalendarId: connection.calendar_id,
+    accessRole: connection.access_role,
+    accountEmail: token.account_email,
+    accountName: token.account_name,
+    accountOwnerId: token.id,
+    label: connection.calendar_name,
+    color: connection.color,
+    accessToken: token.access_token,
+    refreshToken: token.refresh_token,
+  } satisfies ResolvedCalendarSource & { accountOwnerId: string };
 }

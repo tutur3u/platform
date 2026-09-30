@@ -1,24 +1,21 @@
 'use client';
 
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import {
-  eachDayOfInterval,
-  endOfMonth,
-  getDay,
-  isToday,
-  startOfMonth,
-} from 'date-fns';
+import { eachDayOfInterval, endOfMonth, getDay, startOfMonth } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
+import { calendarDayKey, calendarToday } from '../../../../lib/calendar-day';
 import {
   formatLunarDay,
   getLunarDate,
   getLunarHolidayName,
   isSpecialLunarDate,
 } from '../../../../lib/lunar-calendar';
+import { useCalendarSettings } from './settings/settings-context';
 
 interface YearCalendarProps {
   year: number;
@@ -98,6 +95,9 @@ function MiniMonth({
 }) {
   const t = useTranslations('calendar');
   const { getCurrentEvents } = useCalendar();
+  const { settings } = useCalendarSettings();
+  const now = useCalendarClock();
+  const today = calendarToday(settings?.timezone?.timezone, now);
   const monthStart = startOfMonth(monthDate);
   const monthEnd = endOfMonth(monthDate);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -136,8 +136,8 @@ function MiniMonth({
   }, [monthStart, days, firstDayOfWeek, showWeekends, numCols]);
 
   const isCurrentMonth =
-    monthDate.getMonth() === new Date().getMonth() &&
-    monthDate.getFullYear() === new Date().getFullYear();
+    monthDate.getMonth() === today.getMonth() &&
+    monthDate.getFullYear() === today.getFullYear();
 
   // Pre-compute event counts for all days in the month to avoid per-cell context calls
   const dayEventData = useMemo(() => {
@@ -229,11 +229,16 @@ function DayCell({
   dayEventData?: { count: number; dots: string[] };
 }) {
   const t = useTranslations('calendar');
+  const { settings } = useCalendarSettings();
+  const now = useCalendarClock();
+  const todayKey = calendarDayKey(
+    calendarToday(settings?.timezone?.timezone, now)
+  );
   if (!day) {
     return <div className={cn('h-9', showLunar && 'h-11')} />;
   }
 
-  const today = isToday(day);
+  const today = calendarDayKey(day) === todayKey;
   const hasEvents = !!dayEventData && dayEventData.count > 0;
   const eventDots = dayEventData?.dots || [];
 

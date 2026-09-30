@@ -669,12 +669,10 @@ const LocationPill = ({
   // Get the label showing the span info
   const getSpanLabel = () => {
     if (isSingleDayEvent) {
-      return getDayjsDate(visibleDates[startIndex] ?? new Date()).format(
-        'MMM D'
-      );
+      return dayjs(visibleDates[startIndex] ?? new Date()).format('MMM D');
     }
-    const start = getDayjsDate(visibleDates[startIndex] ?? new Date());
-    const end = getDayjsDate(visibleDates[startIndex + span - 1] ?? new Date());
+    const start = dayjs(visibleDates[startIndex] ?? new Date());
+    const end = dayjs(visibleDates[startIndex + span - 1] ?? new Date());
     return `${start.format('MMM D')} - ${end.format('MMM D')}`;
   };
 
@@ -1175,7 +1173,7 @@ const LocationPicker = ({
     }
   };
 
-  const displayDate = getDayjsDate(visibleDates[dateIndex] ?? new Date());
+  const displayDate = dayjs(visibleDates[dateIndex] ?? new Date());
 
   return (
     <Popover
@@ -1353,10 +1351,7 @@ export const LocationTimeline = ({
     >
       {/* Clickable day cells for adding locations */}
       {visibleDates.map((date, dateIndex) => {
-        const dateKey =
-          tz === 'auto'
-            ? dayjs(date).format('YYYY-MM-DD')
-            : dayjs(date).tz(tz).format('YYYY-MM-DD');
+        const dateKey = dayjs(date).format('YYYY-MM-DD');
 
         // Check if this day already has a location event
         const hasLocationEvent = locationSpans.some(

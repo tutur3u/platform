@@ -1,8 +1,9 @@
+import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
+import { calendarDayKey, calendarToday } from '../../../../lib/calendar-day';
 import {
   formatLunarDay,
   getLunarDate,
@@ -10,8 +11,6 @@ import {
   isSpecialLunarDate,
 } from '../../../../lib/lunar-calendar';
 import { useCalendarSettings } from './settings/settings-context';
-
-dayjs.extend(timezone);
 
 interface DayTitleProps {
   view: CalendarView;
@@ -27,9 +26,10 @@ export function DayTitle({ date, weekday, locale = 'en' }: DayTitleProps) {
     'SHOW_LUNAR_CALENDAR',
     locale.startsWith('vi')
   );
-  const today = tz === 'auto' ? dayjs() : dayjs().tz(tz);
-  const dayjsDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
-  const isToday = dayjsDate.isSame(today, 'day');
+  const now = useCalendarClock();
+  const dayjsDate = dayjs(date);
+  const isToday =
+    calendarDayKey(date) === calendarDayKey(calendarToday(tz, now));
 
   const lunar = showLunar ? getLunarDate(dayjsDate.toDate()) : null;
   const holidayName = lunar ? getLunarHolidayName(lunar, locale) : null;

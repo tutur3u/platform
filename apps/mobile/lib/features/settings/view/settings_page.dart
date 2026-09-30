@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
@@ -28,6 +29,8 @@ import 'package:mobile/features/settings/view/offline_changes_sheet.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_session_section.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
+import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
+import 'package:mobile/features/settings/view/workspace_timezone_settings_tile.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -53,14 +56,19 @@ class SettingsPage extends StatelessWidget {
   const SettingsPage({
     super.key,
     this.section = SettingsSectionDestination.overview,
+    this.permissionsRepository,
   });
 
   final SettingsSectionDestination section;
+  final WorkspacePermissionsRepository? permissionsRepository;
 
   @override
   Widget build(BuildContext context) {
     if (section != SettingsSectionDestination.overview) {
-      return _SettingsView(section: section);
+      return _SettingsView(
+        section: section,
+        permissionsRepository: permissionsRepository,
+      );
     }
     return BlocProvider(
       create: (_) {
@@ -73,15 +81,19 @@ class SettingsPage extends StatelessWidget {
         unawaited(cubit.loadProfile());
         return cubit;
       },
-      child: _SettingsView(section: section),
+      child: _SettingsView(
+        section: section,
+        permissionsRepository: permissionsRepository,
+      ),
     );
   }
 }
 
 class _SettingsView extends StatefulWidget {
-  const _SettingsView({required this.section});
+  const _SettingsView({required this.section, this.permissionsRepository});
 
   final SettingsSectionDestination section;
+  final WorkspacePermissionsRepository? permissionsRepository;
 
   @override
   State<_SettingsView> createState() => _SettingsViewState();
@@ -96,12 +108,14 @@ class _SettingsViewState extends State<_SettingsView> {
   bool _canManageMobileVersions = false;
   String? _mobileVersionsAccessWorkspaceId;
   int _mobileVersionsAccessLoadToken = 0;
+  int _timezonePermissionsRevision = 0;
 
   @override
   void initState() {
     super.initState();
     _settingsRepository = SettingsRepository();
-    _workspacePermissionsRepository = WorkspacePermissionsRepository();
+    _workspacePermissionsRepository =
+        widget.permissionsRepository ?? WorkspacePermissionsRepository();
     if (widget.section == SettingsSectionDestination.about) {
       _packageInfoFuture = PackageInfo.fromPlatform();
     }
@@ -110,11 +124,13 @@ class _SettingsViewState extends State<_SettingsView> {
         .state
         .currentWorkspace
         ?.id;
-    if (widget.section == SettingsSectionDestination.preferences &&
+    if ((widget.section == SettingsSectionDestination.preferences ||
+            widget.section == SettingsSectionDestination.overview) &&
         workspaceId != null) {
       unawaited(_loadWorkspaceCalendarPreference(workspaceId));
     }
-    if (widget.section == SettingsSectionDestination.preferences) {
+    if (widget.section == SettingsSectionDestination.preferences ||
+        widget.section == SettingsSectionDestination.overview) {
       unawaited(_loadDefaultTaskBoardNavigationPreference());
     }
     if (widget.section == SettingsSectionDestination.overview) {
@@ -132,7 +148,8 @@ class _SettingsViewState extends State<_SettingsView> {
               previous.currentWorkspace?.id != current.currentWorkspace?.id,
           listener: (context, state) {
             final workspaceId = state.currentWorkspace?.id;
-            if (widget.section == SettingsSectionDestination.preferences &&
+            if ((widget.section == SettingsSectionDestination.preferences ||
+                    widget.section == SettingsSectionDestination.overview) &&
                 workspaceId != null) {
               unawaited(_loadWorkspaceCalendarPreference(workspaceId));
             }
@@ -167,7 +184,8 @@ class _SettingsViewState extends State<_SettingsView> {
           builder: (context, snapshot) {
             final packageInfo = snapshot.data;
             final financePreferencesCubit =
-                widget.section == SettingsSectionDestination.preferences
+                (widget.section == SettingsSectionDestination.preferences ||
+                    widget.section == SettingsSectionDestination.overview)
                 ? context.watch<FinancePreferencesCubit?>()
                 : null;
             final experimentalAppsState =
@@ -218,6 +236,12 @@ class _SettingsViewState extends State<_SettingsView> {
         return [
           StaggeredEntry(
             index: 0,
+            playOnceKey: 'settings-root-preferences',
+            child: _buildPreferencesSection(context, financePreferencesCubit),
+          ),
+          const SizedBox(height: 20),
+          StaggeredEntry(
+            index: 1,
             playOnceKey: 'settings-section-overview',
             child: _SettingsOverviewSection(
               showInfrastructure: _canManageMobileVersions,
@@ -277,6 +301,8 @@ class _SettingsViewState extends State<_SettingsView> {
     FinancePreferencesCubit? financePreferencesCubit,
   ) {
     return _PreferencesSection(
+      permissionsRepository: _workspacePermissionsRepository,
+      permissionsRevision: _timezonePermissionsRevision,
       themeLabel: _themeDisplayName(
         context.watch<ThemeCubit>().state.themeMode,
         context.l10n,
@@ -424,6 +450,7 @@ class _SettingsViewState extends State<_SettingsView> {
   }
 
   Future<void> _refresh(BuildContext context) async {
+    setState(() => _timezonePermissionsRevision++);
     final workspaceCubit = context.read<WorkspaceCubit>();
     final calendarCubit = context.read<CalendarSettingsCubit>();
     final currentWorkspaceId = workspaceCubit.state.currentWorkspace?.id;
@@ -433,11 +460,13 @@ class _SettingsViewState extends State<_SettingsView> {
         context.read<ProfileCubit>().loadProfile(forceRefresh: true),
       workspaceCubit.loadWorkspaces(forceRefresh: true),
       workspaceCubit.refreshLimits(),
-      if (widget.section == SettingsSectionDestination.preferences)
+      if (widget.section == SettingsSectionDestination.preferences ||
+          widget.section == SettingsSectionDestination.overview)
         calendarCubit.loadUserPreference(),
       if (widget.section == SettingsSectionDestination.overview)
         _loadMobileVersionsAccess(currentWorkspaceId, forceReload: true),
-      if (widget.section == SettingsSectionDestination.preferences &&
+      if ((widget.section == SettingsSectionDestination.preferences ||
+              widget.section == SettingsSectionDestination.overview) &&
           currentWorkspaceId != null)
         calendarCubit.loadWorkspacePreference(currentWorkspaceId),
     ]);

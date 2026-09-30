@@ -9358,4 +9358,41 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailInvitationFailed => 'Chưa xác nhận được phản hồi. Thử lại cùng phản hồi để kiểm tra trạng thái.';
+
+  @override
+  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
+    return '$leadTime · $occurrence ($timezone)';
+  }
+
+  @override
+  String get settingsTimezone => 'Múi giờ cá nhân';
+
+  @override
+  String get settingsWorkspaceTimezone => 'Múi giờ không gian làm việc';
+
+  @override
+  String get settingsTimezoneDescription => 'Múi giờ cá nhân ưu tiên hơn múi giờ không gian làm việc. Tự động dùng mặc định không gian làm việc, sau đó thiết bị.';
+
+  @override
+  String get settingsTimezoneAuto => 'Tự động';
+
+  @override
+  String get settingsTimezoneSearch => 'Tìm múi giờ';
+
+  @override
+  String settingsTimezoneEffective(String timezone) {
+    return 'Múi giờ áp dụng: $timezone';
+  }
+
+  @override
+  String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.';
+
+  @override
+  String get calendarInvalidLocalTime => 'Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè.';
+
+  @override
+  String get profileOverviewTab => 'Tổng quan';
+
+  @override
+  String get profileTimelineTab => 'Dòng thời gian';
 }

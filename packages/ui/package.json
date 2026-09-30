@@ -249,6 +249,8 @@
     "./hooks/*": "./src/hooks/*.ts",
     "./hooks/time-blocking-provider": "./src/hooks/time-blocking-provider.tsx",
     "./hooks/use-at-bottom": "./src/hooks/use-at-bottom.tsx",
+    "./hooks/use-calendar-day-zone": "./src/hooks/use-calendar-day-zone.tsx",
+    "./lib/calendar-day": "./src/lib/calendar-day.ts",
     "./hooks/use-calendar-preferences": "./src/hooks/use-calendar-preferences.tsx",
     "./hooks/use-calendar-sync": "./src/hooks/use-calendar-sync.tsx",
     "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",

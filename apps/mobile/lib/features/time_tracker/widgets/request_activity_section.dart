@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/models/time_tracking/request_activity.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -183,24 +184,24 @@ class _ActivityTimelineItem extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(
+                      NetworkAvatar(
                         radius: 12,
-                        backgroundImage: activity.actorAvatarUrl != null
-                            ? NetworkImage(activity.actorAvatarUrl!)
-                            : null,
+                        avatarUrl: activity.actorAvatarUrl,
                         backgroundColor: theme.colorScheme.muted,
-                        child: activity.actorAvatarUrl == null
-                            ? Text(
-                                (activity.actorDisplayName ??
-                                        activity.actorHandle ??
-                                        '?')[0]
-                                    .toUpperCase(),
-                                style: theme.typography.small.copyWith(
-                                  fontSize: 10,
-                                  color: theme.colorScheme.mutedForeground,
-                                ),
-                              )
-                            : null,
+                        child: Text(
+                          (activity.actorDisplayName?.isNotEmpty == true
+                                  ? activity.actorDisplayName!
+                                  : activity.actorHandle?.isNotEmpty == true
+                                  ? activity.actorHandle!
+                                  : '?')
+                              .characters
+                              .first
+                              .toUpperCase(),
+                          style: theme.typography.small.copyWith(
+                            fontSize: 10,
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                        ),
                       ),
                       const shad.Gap(8),
                       Expanded(
