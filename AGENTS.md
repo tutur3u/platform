@@ -82,6 +82,9 @@ merge, or production evidence only when that delivery is authorized.
   separate branches. Merge stacks bottom-up. For base-chained stacks, merge parents
   with `--merge` so ancestry is retained, verify child retargeting, and rerun gates.
   Use `$tuturuuu-pr-merge-sync` for the exact stack and quiet-window procedure.
+  Native GitHub stacks remain a pilot; see
+  [stack policy](apps/docs/build/development-tools/stacked-pull-requests.mdx) and
+  [delivery evidence](apps/docs/build/devops/github-actions-runbook.mdx#validation-and-delivery-evidence).
   Use a five-minute review quiet window unless the user requests another duration.
 - Before production sync, fetch and inspect the exact promotion range. If main
   advanced with unrelated work, use the authorized pinned SHA when supported or
@@ -172,7 +175,9 @@ merge, or production evidence only when that delivery is authorized.
   page when changing a customer-facing rule. State its scope, default, affected
   app surfaces, and intentional exceptions; check that existing docs and the
   live and migration paths agree before delivery. Keep AGENTS.md for this
-  cross-cutting requirement, not copies of individual product decisions.
+  cross-cutting requirement, not copies of individual product decisions. Link the
+  decision to regression coverage; see
+  [recording decisions](apps/docs/build/development-tools/documenting.mdx#product-decisions-and-regression-evidence).
 - For TypeScript, JavaScript, root script, or repo config changes, run focused
   non-build tests locally, then require the applicable test, type-check, lint,
   and build workflows to pass in CI for the exact commit. Do not run `bun check`
