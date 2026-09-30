@@ -10,6 +10,10 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  calendarDayBoundary,
+  calendarDayKey,
+} from '../../../../lib/calendar-day';
 import { MIN_COLUMN_WIDTH } from './config';
 import { CalendarEventProviderIcon } from './event-provider-display';
 import { LocationTimeline } from './location-timeline';
@@ -20,6 +24,11 @@ dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(timezone);
+
+function getZonedDay(date: Date, zone?: string) {
+  const boundary = dayjs(calendarDayBoundary(date, zone));
+  return zone && zone !== 'auto' ? boundary.tz(zone) : boundary;
+}
 
 const MAX_EVENTS_DISPLAY = 2;
 
@@ -122,8 +131,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const visibleDates = showWeekends
     ? dates
     : dates.filter((date) => {
-        const day =
-          tz === 'auto' ? dayjs(date).day() : dayjs(date).tz(tz).day();
+        const day = date.getDay();
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
@@ -310,7 +318,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     const tempSpans: Omit<EventSpan, 'row'>[] = [];
 
     // Process each all-day event
-    allDayEvents.forEach((event) => {
+    (visibleDates.length ? allDayEvents : []).forEach((event) => {
       const eventStart =
         tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
       const eventEnd =
@@ -321,12 +329,11 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       let endIndex = -1;
 
       // First pass: find any overlap with visible dates
-      const firstVisibleDate =
-        tz === 'auto' ? dayjs(visibleDates[0]) : dayjs(visibleDates[0]).tz(tz);
-      const lastVisibleDate =
-        tz === 'auto'
-          ? dayjs(visibleDates[visibleDates.length - 1])
-          : dayjs(visibleDates[visibleDates.length - 1]).tz(tz);
+      const firstVisibleDate = getZonedDay(visibleDates[0]!, tz);
+      const lastVisibleDate = getZonedDay(
+        visibleDates[visibleDates.length - 1]!,
+        tz
+      );
 
       // Check if event overlaps with our visible date range at all
       // Event overlaps if: event_start < visible_end AND event_end > visible_start
@@ -346,10 +353,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       } else {
         // Find the first visible date that matches the event start
         for (let i = 0; i < visibleDates.length; i++) {
-          const currentDate =
-            tz === 'auto'
-              ? dayjs(visibleDates[i])
-              : dayjs(visibleDates[i]).tz(tz);
+          const currentDate = getZonedDay(visibleDates[i]!, tz);
           if (
             currentDate.isSameOrAfter(eventStart, 'day') &&
             currentDate.isBefore(eventEnd, 'day')
@@ -367,10 +371,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       } else {
         // Find the last visible date that the event covers
         for (let i = visibleDates.length - 1; i >= 0; i--) {
-          const currentDate =
-            tz === 'auto'
-              ? dayjs(visibleDates[i])
-              : dayjs(visibleDates[i]).tz(tz);
+          const currentDate = getZonedDay(visibleDates[i]!, tz);
           if (
             currentDate.isBefore(eventEnd, 'day') &&
             currentDate.isSameOrAfter(eventStart, 'day')
@@ -567,10 +568,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     // Calculate max visible events per day for layout purposes
     let maxVisibleEventsPerDay = 0;
     eventsByDay.forEach((dayEvents, dayIndex) => {
-      const dateKey =
-        tz === 'auto'
-          ? dayjs(visibleDates[dayIndex]).format('YYYY-MM-DD')
-          : dayjs(visibleDates[dayIndex]).tz(tz).format('YYYY-MM-DD');
+      const dateKey = calendarDayKey(visibleDates[dayIndex]!);
 
       const shouldShowAll = dayEvents.length === MAX_EVENTS_DISPLAY + 1;
       const isExpanded = expandedDates.includes(dateKey) || shouldShowAll;
@@ -775,10 +773,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           }}
         >
           {visibleDates.map((date, dateIndex) => {
-            const dateKey =
-              tz === 'auto'
-                ? dayjs(date).format('YYYY-MM-DD')
-                : dayjs(date).tz(tz).format('YYYY-MM-DD');
+            const dateKey = calendarDayKey(date);
 
             const dateEvents = getUniqueEventsForDate(dateIndex);
             const shouldShowAll = dateEvents.length === MAX_EVENTS_DISPLAY + 1;
@@ -896,10 +891,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             if (dateIndex < startIndex || dateIndex > startIndex + span - 1)
               return false;
 
-            const dateKey =
-              tz === 'auto'
-                ? dayjs(date).format('YYYY-MM-DD')
-                : dayjs(date).tz(tz).format('YYYY-MM-DD');
+            const dateKey = calendarDayKey(date);
 
             const dateEvents = getUniqueEventsForDate(dateIndex);
             const shouldShowAll = dateEvents.length === MAX_EVENTS_DISPLAY + 1;

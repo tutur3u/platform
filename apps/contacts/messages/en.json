@@ -9436,6 +9436,7 @@
     "metric_category_description_placeholder": "Optional category description",
     "metric_category_name": "Category name",
     "metric_category_name_placeholder": "e.g., Speaking, Homework, Participation",
+    "name_required": "Enter a name to enable creation.",
     "no_indicators_empty_description": "Add your first indicator to start tracking user metrics for this group.",
     "no_indicators_empty_title": "No indicators yet",
     "no_metric_categories": "No metric categories yet.",

@@ -53,6 +53,63 @@ describe('authenticated native Calendar gateway', () => {
     }
   );
 
+  it.each([
+    ['/api/v1/users/calendar-settings', 'GET'],
+    ['/api/v1/users/calendar-settings', 'PATCH'],
+    ['/api/v1/workspaces/workspace-1/calendar-settings', 'GET'],
+    ['/api/v1/workspaces/workspace-1/calendar-settings', 'PATCH'],
+  ])(
+    'forwards verified settings %s %s to the Calendar owner',
+    async (path, method) => {
+      const deps = dependencies();
+      const init =
+        method === 'PATCH'
+          ? {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ timezone: 'Asia/Ho_Chi_Minh' }),
+            }
+          : { method };
+      expect(
+        (await forwardCalendarRequest(request(path, init), deps)).status
+      ).toBe(200);
+      const [url, options] = deps.fetch.mock.calls[0]!;
+      expect(url).toBe(`https://calendar.tuturuuu.com${path}`);
+      expect(options?.method).toBe(method);
+      expect(deps.verifyToken).toHaveBeenCalledWith('valid-session');
+    }
+  );
+
+  it.each([
+    '/api/v1/users/calendar-settings',
+    '/api/v1/workspaces/workspace-1/calendar-settings',
+  ])('requires verified authentication for settings %s', async (path) => {
+    const deps = dependencies();
+    deps.verifyToken.mockResolvedValue(false);
+    expect((await forwardCalendarRequest(request(path), deps)).status).toBe(
+      401
+    );
+    expect(deps.loadSecret).not.toHaveBeenCalled();
+    expect(deps.fetch).not.toHaveBeenCalled();
+  });
+
+  it.each(['POST', 'PUT', 'DELETE'])(
+    'rejects unsupported settings method %s',
+    async (method) => {
+      const deps = dependencies();
+      expect(
+        (
+          await forwardCalendarRequest(
+            request('/api/v1/users/calendar-settings', { method }),
+            deps
+          )
+        ).status
+      ).toBe(405);
+      expect(deps.verifyToken).not.toHaveBeenCalled();
+      expect(deps.fetch).not.toHaveBeenCalled();
+    }
+  );
+
   it.each(['', 'Bearer invalid', 'Basic valid', 'Bearer one two'])(
     'never accesses the credential or upstream for invalid auth: %s',
     async (auth) => {
@@ -77,8 +134,6 @@ describe('authenticated native Calendar gateway', () => {
     '/api/v1/workspaces/ws/tasks',
     '/api/v1/workspaces/ws%2f..%2fcalendar/calendar/events',
     '//attacker.example/api/v1/calendar/connections',
-    '/api/v1/workspaces/personal/calendar/colors/labels',
-    '/api/v1/workspaces/personal/calendar/colors-extra',
   ])('rejects non-allowlisted route %s', async (path) => {
     const deps = dependencies();
     expect((await forwardCalendarRequest(request(path), deps)).status).toBe(

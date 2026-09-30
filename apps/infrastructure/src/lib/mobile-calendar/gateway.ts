@@ -38,6 +38,12 @@ function allowedMethods(path: string): string[] {
   if (new RegExp(`^/api/v1/workspaces/${id}/calendar/colors$`).test(path)) {
     return ['GET'];
   }
+  if (
+    path === '/api/v1/users/calendar-settings' ||
+    new RegExp(`^/api/v1/workspaces/${id}/calendar-settings$`).test(path)
+  ) {
+    return ['GET', 'PATCH'];
+  }
   if (new RegExp(`^/api/v1/workspaces/${id}/calendar/events$`).test(path)) {
     return ['GET', 'POST'];
   }

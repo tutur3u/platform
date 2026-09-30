@@ -3276,10 +3276,12 @@ export type Database = {
           actor_id: string;
           capabilities: Json;
           created_at: string;
+          enabled_features: Json;
           heartbeat_enabled: boolean;
           id: string;
           last_heartbeat_at: string | null;
           name: string;
+          resource_limits: Json;
           status: string;
           updated_at: string;
         };
@@ -3287,10 +3289,12 @@ export type Database = {
           actor_id: string;
           capabilities?: Json;
           created_at?: string;
+          enabled_features?: Json;
           heartbeat_enabled?: boolean;
           id?: string;
           last_heartbeat_at?: string | null;
           name: string;
+          resource_limits?: Json;
           status?: string;
           updated_at?: string;
         };
@@ -3298,10 +3302,12 @@ export type Database = {
           actor_id?: string;
           capabilities?: Json;
           created_at?: string;
+          enabled_features?: Json;
           heartbeat_enabled?: boolean;
           id?: string;
           last_heartbeat_at?: string | null;
           name?: string;
+          resource_limits?: Json;
           status?: string;
           updated_at?: string;
         };
@@ -3339,6 +3345,7 @@ export type Database = {
           status: string;
           timeout_seconds: number | null;
           updated_at: string;
+          workload: string;
         };
         Insert: {
           actor_id: string;
@@ -3356,6 +3363,7 @@ export type Database = {
           status?: string;
           timeout_seconds?: number | null;
           updated_at?: string;
+          workload?: string;
         };
         Update: {
           actor_id?: string;
@@ -3373,6 +3381,7 @@ export type Database = {
           status?: string;
           timeout_seconds?: number | null;
           updated_at?: string;
+          workload?: string;
         };
         Relationships: [
           {
@@ -8195,6 +8204,64 @@ export type Database = {
         };
         Relationships: [];
       };
+      learn_coding_submissions: {
+        Row: {
+          challenge_slug: string;
+          created_at: string;
+          id: string;
+          kind: string;
+          language: string | null;
+          run_id: string;
+          source: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          challenge_slug: string;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          language?: string | null;
+          run_id: string;
+          source: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          challenge_slug?: string;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          language?: string | null;
+          run_id?: string;
+          source?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'learn_coding_submissions_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: true;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'learn_coding_submissions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'learn_coding_submissions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       legal_document_acceptances: {
         Row: {
           accepted_at: string;
@@ -11176,6 +11243,10 @@ export type Database = {
           data_key_ciphertext: string;
           environment_id: string;
           id: string;
+          inheritance_excluded: string[];
+          inheritance_initialized: boolean;
+          inheritance_revision: number;
+          inherited_from_version_id: string | null;
           status: string;
           updated_at: string;
           version: number;
@@ -11188,6 +11259,10 @@ export type Database = {
           data_key_ciphertext: string;
           environment_id: string;
           id?: string;
+          inheritance_excluded?: string[];
+          inheritance_initialized?: boolean;
+          inheritance_revision?: number;
+          inherited_from_version_id?: string | null;
           status?: string;
           updated_at?: string;
           version: number;
@@ -11200,6 +11275,10 @@ export type Database = {
           data_key_ciphertext?: string;
           environment_id?: string;
           id?: string;
+          inheritance_excluded?: string[];
+          inheritance_initialized?: boolean;
+          inheritance_revision?: number;
+          inherited_from_version_id?: string | null;
           status?: string;
           updated_at?: string;
           version?: number;
@@ -11210,6 +11289,13 @@ export type Database = {
             columns: ['environment_id'];
             isOneToOne: false;
             referencedRelation: 'mobile_deployment_environments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mobile_deployment_versions_inherited_from_version_id_fkey';
+            columns: ['inherited_from_version_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_deployment_versions';
             referencedColumns: ['id'];
           },
         ];
@@ -15930,25 +16016,6 @@ export type Database = {
         Args: { p_ws_id?: string };
         Returns: number;
       };
-      begin_meeting_ai_live_session: {
-        Args: {
-          p_access_ws_id: string;
-          p_app: string;
-          p_billing_ws_id: string;
-          p_expires_at: string;
-          p_meeting_id: string;
-          p_model_id: string;
-          p_user_id: string;
-        };
-        Returns: {
-          error_code: string;
-          live_session_id: string;
-          reservation_id: string;
-          reserved_credits: number;
-          success: boolean;
-        }[];
-      };
-      parley_runtime_ready: { Args: never; Returns: boolean };
       begin_ai_live_session: {
         Args: {
           p_access_ws_id: string;
@@ -16000,6 +16067,24 @@ export type Database = {
         Returns: {
           error_code: string;
           run_id: string;
+          success: boolean;
+        }[];
+      };
+      begin_meeting_ai_live_session: {
+        Args: {
+          p_access_ws_id: string;
+          p_app: string;
+          p_billing_ws_id: string;
+          p_expires_at: string;
+          p_meeting_id: string;
+          p_model_id: string;
+          p_user_id: string;
+        };
+        Returns: {
+          error_code: string;
+          live_session_id: string;
+          reservation_id: string;
+          reserved_credits: number;
           success: boolean;
         }[];
       };
@@ -16753,6 +16838,29 @@ export type Database = {
       detect_wallet_interest_transactions: {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
+      };
+      enqueue_learn_coding_execution: {
+        Args: {
+          p_challenge_slug: string;
+          p_command: string[];
+          p_kind: string;
+          p_language: string;
+          p_source: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      enqueue_learn_coding_submission: {
+        Args: {
+          p_challenge_slug: string;
+          p_command: string[];
+          p_language: string;
+          p_source: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
       };
       ensure_user_group_metric_category_ids: {
         Args: { p_category_ids?: string[]; p_ws_id: string };
@@ -18566,6 +18674,25 @@ export type Database = {
         Args: { p_board_id: string; p_input: Json; p_ws_id: string };
         Returns: Json;
       };
+      mobile_deployment_commit_inheritance: {
+        Args: {
+          p_files: Json;
+          p_revision: number;
+          p_secrets: Json;
+          p_source: string;
+          p_user: string;
+          p_version: string;
+        };
+        Returns: undefined;
+      };
+      mobile_deployment_exclude_inheritance: {
+        Args: { p_key: string; p_version: string };
+        Returns: undefined;
+      };
+      mobile_deployment_inheritance_snapshot: {
+        Args: { p_version: string };
+        Returns: Json;
+      };
       normalize_user_group_search_text: {
         Args: { input: string };
         Returns: string;
@@ -18586,6 +18713,7 @@ export type Database = {
         Args: { challenge_id: string; user_id: string };
         Returns: number;
       };
+      parley_runtime_ready: { Args: never; Returns: boolean };
       periodic_report_stage: {
         Args: { approval: string; delivery: string; generation: string };
         Returns: string;
@@ -18846,6 +18974,14 @@ export type Database = {
           pending_count: number;
           rejected_count: number;
         }[];
+      };
+      set_devbox_runner_feature: {
+        Args: { p_enabled: boolean; p_feature: string; p_runner_id: string };
+        Returns: Json;
+      };
+      set_devbox_runner_resource_limits: {
+        Args: { p_limits: Json; p_runner_id: string };
+        Returns: Json;
       };
       set_mail_thread_preference: {
         Args: {
@@ -19155,8 +19291,82 @@ export type Database = {
         Args: { p_after: Json; p_before: Json };
         Returns: string;
       };
-      user_group_activity_feed: {
-        Args: { p_end: string; p_start: string; p_ws_id: string };
+      user_group_activity_candidates: {
+        Args: {
+          p_end: string;
+          p_group_id: string;
+          p_start: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          audit_record_id: number;
+          occurred_at: string;
+        }[];
+      };
+      user_group_activity_feed:
+        | {
+            Args: { p_end: string; p_start: string; p_ws_id: string };
+            Returns: {
+              action: string;
+              actor_auth_uid: string;
+              actor_email: string;
+              actor_id: string;
+              actor_name: string;
+              actor_workspace_user_id: string;
+              affected_user_email: string;
+              affected_user_id: string;
+              affected_user_name: string;
+              after: Json;
+              audit_record_id: number;
+              before: Json;
+              changed_fields: string[];
+              group_id: string;
+              group_name: string;
+              occurred_at: string;
+              resource_id: string;
+              resource_label: string;
+              resource_type: string;
+              table_name: string;
+            }[];
+          }
+        | {
+            Args: {
+              p_end: string;
+              p_group_id: string;
+              p_start: string;
+              p_ws_id: string;
+            };
+            Returns: {
+              action: string;
+              actor_auth_uid: string;
+              actor_email: string;
+              actor_id: string;
+              actor_name: string;
+              actor_workspace_user_id: string;
+              affected_user_email: string;
+              affected_user_id: string;
+              affected_user_name: string;
+              after: Json;
+              audit_record_id: number;
+              before: Json;
+              changed_fields: string[];
+              group_id: string;
+              group_name: string;
+              occurred_at: string;
+              resource_id: string;
+              resource_label: string;
+              resource_type: string;
+              table_name: string;
+            }[];
+          };
+      user_group_activity_feed_for_ids: {
+        Args: {
+          p_audit_record_ids: number[];
+          p_end: string;
+          p_group_id: string;
+          p_start: string;
+          p_ws_id: string;
+        };
         Returns: {
           action: string;
           actor_auth_uid: string;
@@ -41610,19 +41820,6 @@ export type Database = {
         };
         Returns: string;
       };
-      create_parley_session: {
-        Args: { p_scenario_id: string; p_user_id: string; p_ws_id: string };
-        Returns: string;
-      };
-      transition_account_mfa_policy: {
-        Args: {
-          p_clear_devices?: boolean;
-          p_expected: Json;
-          p_next: Json;
-          p_user_id: string;
-        };
-        Returns: Json;
-      };
       account_required_mfa_satisfied: { Args: never; Returns: boolean };
       add_platform_entity_creation_limit_table: {
         Args: {
@@ -42184,6 +42381,10 @@ export type Database = {
           p_user_id?: string;
           p_ws_id?: string;
         };
+        Returns: string;
+      };
+      create_parley_session: {
+        Args: { p_scenario_id: string; p_user_id: string; p_ws_id: string };
         Returns: string;
       };
       create_scheduled_workspace_meeting: {
@@ -45393,6 +45594,15 @@ export type Database = {
       transactions_have_same_amount: {
         Args: { transaction_id_1: string; transaction_id_2: string };
         Returns: boolean;
+      };
+      transition_account_mfa_policy: {
+        Args: {
+          p_clear_devices?: boolean;
+          p_expected: Json;
+          p_next: Json;
+          p_user_id: string;
+        };
+        Returns: Json;
       };
       trunc_to_week_start:
         | {

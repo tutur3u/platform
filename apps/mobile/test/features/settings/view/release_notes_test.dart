@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/settings/view/release_notes.dart';
 
@@ -24,6 +26,37 @@ void main() {
       expect(releases.last.changes, ['restore sessions']);
     },
   );
+
+  for (final followUp in [
+    <String>[],
+    ['follow-up'],
+    ['new feature', 'follow-up', 'follow-up'],
+  ]) {
+    test(
+      'same-version beta notes retain published baseline with $followUp',
+      () {
+        const changelog = '''
+## [0.21.0](https://example.com/compare) (2026-09-30)
+* **mobile:** new feature
+* **mobile:** baseline fix
+''';
+        final history = jsonEncode({
+          'releases': [
+            {'version': '0.21.0', 'date': '2026-10-01', 'changes': followUp},
+          ],
+        });
+        final releases = MobileReleaseNotes.combine(changelog, history);
+        expect(releases, hasLength(1));
+        expect(releases.single.version, '0.21.0');
+        expect(releases.single.changes, [
+          'new feature',
+          'baseline fix',
+          if (followUp.contains('follow-up')) 'follow-up',
+        ]);
+        expect(releases.single.date, DateTime(2026, 9, 30));
+      },
+    );
+  }
 
   test('shows bundled beta patches above the published changelog', () {
     const changelog = '''

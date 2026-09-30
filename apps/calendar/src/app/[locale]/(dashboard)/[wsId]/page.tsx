@@ -28,6 +28,20 @@ function firstQueryValue(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+// Date-only links identify a Gregorian calendar day, independent of server timezone.
+function navigationDateValue(value?: string) {
+  if (!value) return undefined;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const date = new Date(`${value}T00:00:00.000Z`);
+    return Number.isFinite(date.getTime()) &&
+      date.toISOString().slice(0, 10) === value
+      ? value
+      : undefined;
+  }
+  const instant = new Date(value);
+  return Number.isFinite(instant.getTime()) ? instant.toISOString() : undefined;
+}
+
 export default async function CalendarPage({
   params,
   searchParams,
@@ -54,11 +68,7 @@ export default async function CalendarPage({
 
   const sbAdmin = await createAdminClient({ noCookie: true });
 
-  const requestedDateValue = requestedDate ? new Date(requestedDate) : null;
-  let initialDate =
-    requestedDateValue && !Number.isNaN(requestedDateValue.getTime())
-      ? requestedDateValue.toISOString()
-      : undefined;
+  let initialDate = navigationDateValue(requestedDate);
   if (!initialDate && eventId) {
     const { data: linkedEvent, error: linkedEventError } = await sbAdmin
       .from('workspace_calendar_events')
@@ -67,14 +77,15 @@ export default async function CalendarPage({
       .eq('ws_id', workspace.id)
       .maybeSingle();
     if (linkedEventError) throw linkedEventError;
-    initialDate = linkedEvent?.start_at;
+    // Stored event start_at is an instant, even when navigation has a date-only contract.
+    const eventStart = linkedEvent?.start_at
+      ? new Date(linkedEvent.start_at)
+      : null;
+    initialDate =
+      eventStart && Number.isFinite(eventStart.getTime())
+        ? eventStart.toISOString()
+        : undefined;
   }
-  const parsedDate = initialDate ? new Date(initialDate) : null;
-  const normalizedInitialDate =
-    parsedDate && !Number.isNaN(parsedDate.getTime())
-      ? parsedDate.toISOString()
-      : undefined;
-
   const [googleToken, smartSchedulingTasks] = await Promise.all([
     fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
       wsId: workspace.id,
@@ -93,7 +104,7 @@ export default async function CalendarPage({
     <CalendarWorkspacePage
       enableSmartScheduling={enableSmartScheduling}
       experimentalGoogleToken={googleToken}
-      initialDate={normalizedInitialDate}
+      initialDate={initialDate}
       initialEventId={eventId}
       isPersonalWorkspace={isPersonalWorkspace}
       locale={locale}

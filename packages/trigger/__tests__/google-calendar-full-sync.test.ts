@@ -40,6 +40,10 @@ vi.mock('../src/google-calendar-sync', async () => {
   };
 });
 
+vi.mock('../src/google-calendar-color-context', () => ({
+  getGoogleCalendarColorContext: vi.fn(async () => ({ calendarId: 'primary' })),
+}));
+
 // Mock @tuturuuu/google
 const mockCalendarEventsList = vi.fn(() =>
   Promise.resolve({
@@ -255,6 +259,9 @@ describe('performFullSyncForWorkspace', () => {
 
       expect(syncWorkspaceBatched).toHaveBeenCalledWith({
         ws_id: 'test-workspace',
+        calendarId: 'primary',
+        colorContext: { calendarId: 'primary' },
+        preserveExistingMetadata: true,
         events_to_sync: expect.arrayContaining([
           expect.objectContaining({ id: 'event1' }),
           expect.objectContaining({ id: 'event2' }),

@@ -87,3 +87,57 @@ it('refreshes only the matching authenticated source connection without changing
     ['provider', 'google'],
   ]);
 });
+
+for (const failure of ['builder', 'promise'] as const) {
+  it(`retains fetched context when source color persistence fails: ${failure}`, async () => {
+    const sensitive = 'synthetic-private-database-detail';
+    const query = { update: vi.fn(), eq: vi.fn() };
+    query.update.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    if (failure === 'promise') {
+      query.eq.mockImplementationOnce(() => query);
+      query.eq.mockImplementationOnce(() => query);
+      query.eq.mockImplementationOnce(() => query);
+      query.eq.mockRejectedValueOnce(new Error(sensitive));
+    }
+    const supabase = {
+      from:
+        failure === 'builder'
+          ? vi.fn(() => {
+              throw new Error(sensitive);
+            })
+          : vi.fn().mockReturnValue(query),
+    };
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const context = await refreshGoogleColorContext({
+        calendar: client(
+          { backgroundColor: '#d06b64' },
+          { event: { '7': { background: '#039be5' } } },
+          {
+            labelProperties: {
+              eventLabels: [{ id: 'label', backgroundColor: '#aabbcc' }],
+            },
+          }
+        ),
+        calendarId: 'personal',
+        wsId: 'workspace',
+        authTokenId: 'account',
+        supabase: supabase as unknown as Parameters<
+          typeof refreshGoogleColorContext
+        >[0]['supabase'],
+      });
+      expect(context).toMatchObject({
+        calendarBackground: '#d06b64',
+        eventColors: { '7': { background: '#039be5' } },
+        eventLabels: [{ id: 'label', backgroundColor: '#aabbcc' }],
+      });
+      expect(warning).toHaveBeenCalledExactlyOnceWith(
+        'Google source color refresh failed'
+      );
+      expect(JSON.stringify(warning.mock.calls)).not.toContain(sensitive);
+    } finally {
+      warning.mockRestore();
+    }
+  });
+}

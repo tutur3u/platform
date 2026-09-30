@@ -1,5 +1,4 @@
 // This screen keeps app-local imports adjacent for scanability.
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -15,6 +14,7 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/data/repositories/crm_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';

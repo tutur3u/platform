@@ -7,6 +7,7 @@ import {
   resolveGoogleEventColor,
 } from '@tuturuuu/utils/google-calendar-colors';
 import { updateLastUpsert } from './calendar-sync-coordination';
+import { mergeGoogleSyncMetadata } from './google-calendar-sync-metadata';
 
 // Batch processing configuration
 const BATCH_SIZE = 100; // Process 100 events at a time for upserts
@@ -90,7 +91,10 @@ export const formatEventForDb = (
 // Core sync function for a single workspace with batch processing
 const syncGoogleCalendarEventsForWorkspaceBatched = async (
   ws_id: string,
-  events_to_sync: calendar_v3.Schema$Event[]
+  events_to_sync: calendar_v3.Schema$Event[],
+  calendarId = 'primary',
+  colorContext: GoogleColorContext = {},
+  preserveExistingMetadata = false
 ): Promise<SyncResult> => {
   console.log('Syncing Google Calendar events for workspace with batching.', {
     wsId: ws_id,
@@ -121,12 +125,12 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
 
     // Format events for upsert
     const formattedEvents = rawEventsToUpsert.map((event) =>
-      formatEventForDb(event, ws_id)
+      formatEventForDb(event, ws_id, calendarId, colorContext)
     );
 
     // Format events for deletion
     const formattedEventsToDelete = rawEventsToDelete.map((event) =>
-      formatEventForDb(event, ws_id)
+      formatEventForDb(event, ws_id, calendarId, colorContext)
     );
 
     console.log('Formatted events:', {
@@ -142,7 +146,31 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
     if (formattedEvents.length > 0) {
       console.log('Starting upsert batches...', { wsId: ws_id });
       for (let i = 0; i < formattedEvents.length; i += BATCH_SIZE) {
-        const batch = formattedEvents.slice(i, i + BATCH_SIZE);
+        let batch = formattedEvents.slice(i, i + BATCH_SIZE);
+        if (preserveExistingMetadata) {
+          const { data: existing, error: readError } = await sbAdmin
+            .from('workspace_calendar_events')
+            .select('external_event_id,scheduling_metadata')
+            .eq('ws_id', ws_id)
+            .eq('provider', 'google')
+            .eq('external_calendar_id', calendarId)
+            .in(
+              'external_event_id',
+              batch.flatMap((event) =>
+                event.external_event_id ? [event.external_event_id] : []
+              )
+            );
+          if (readError) throw readError;
+          batch = batch.map((event) => ({
+            ...event,
+            scheduling_metadata: mergeGoogleSyncMetadata(
+              existing?.find(
+                (row) => row.external_event_id === event.external_event_id
+              )?.scheduling_metadata,
+              event.scheduling_metadata
+            ),
+          }));
+        }
         const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
 
         console.log(
@@ -313,10 +341,25 @@ export const getWorkspacesForSync = async () => {
 export const syncWorkspaceBatched = async (payload: {
   ws_id: string;
   events_to_sync: calendar_v3.Schema$Event[];
+  calendarId?: string;
+  colorContext?: GoogleColorContext;
+  preserveExistingMetadata?: boolean;
 }) => {
-  const { ws_id, events_to_sync: events } = payload;
+  const {
+    ws_id,
+    events_to_sync: events,
+    calendarId,
+    colorContext,
+    preserveExistingMetadata,
+  } = payload;
 
-  return syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
+  return syncGoogleCalendarEventsForWorkspaceBatched(
+    ws_id,
+    events,
+    calendarId,
+    colorContext,
+    preserveExistingMetadata
+  );
 };
 
 // Store the sync token in the calendar_sync_states table
