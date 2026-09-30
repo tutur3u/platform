@@ -2,6 +2,8 @@
 
 import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
+import { calendarToday } from '@tuturuuu/ui/lib/calendar-day';
 import { cn } from '@tuturuuu/utils/format';
 import {
   addMonths,
@@ -19,7 +21,8 @@ import { getMiniMonthDays } from './mini-month-utils';
 export function MiniMonthCalendar() {
   const locale = useLocale();
   const t = useTranslations('calendar-sidebar');
-  const { date, setDate } = useCalendarNavigation();
+  const now = useCalendarClock();
+  const { date, setDate, timezone, goToToday } = useCalendarNavigation();
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(date));
   const calendarLocale = locale.startsWith('vi') ? vi : enUS;
   const days = useMemo(() => getMiniMonthDays(visibleMonth), [visibleMonth]);
@@ -41,7 +44,7 @@ export function MiniMonthCalendar() {
       <div className="flex items-center justify-between gap-2">
         <Button
           className="h-7 rounded-full px-2.5 font-medium text-xs"
-          onClick={() => setDate(new Date())}
+          onClick={goToToday}
           size="sm"
           variant="ghost"
         >
@@ -81,7 +84,7 @@ export function MiniMonthCalendar() {
         ))}
         {days.map((day) => {
           const selected = isSameDay(day, date);
-          const today = isSameDay(day, new Date());
+          const today = isSameDay(day, calendarToday(timezone, now));
 
           return (
             <button

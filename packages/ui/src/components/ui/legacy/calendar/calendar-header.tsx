@@ -19,7 +19,11 @@ import {
 } from '@tuturuuu/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
+import { useCalendarClock } from '../../../../hooks/use-calendar-clock';
+import { useCalendarDayZone } from '../../../../hooks/use-calendar-day-zone';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
+import { calendarToday } from '../../../../lib/calendar-day';
+import { useCalendarSettings } from './settings/settings-context';
 
 export function CalendarHeader({
   t,
@@ -43,6 +47,10 @@ export function CalendarHeader({
   onViewChange: (view: CalendarView) => void;
   extras?: React.ReactNode;
 }) {
+  const { settings } = useCalendarSettings();
+  const zone = settings.timezone.timezone;
+  const dayZone = useCalendarDayZone();
+  const today = calendarToday(zone, useCalendarClock());
   const views = availableViews.filter((view) => view?.disabled !== true);
   const { value: showLunar, toggle: toggleLunar } = useUserBooleanConfig(
     'SHOW_LUNAR_CALENDAR',
@@ -84,14 +92,15 @@ export function CalendarHeader({
     });
 
   const { syncStatus } = useCalendarSync();
-  const selectToday = () => setDate(new Date());
-  const isTodaySelected = () => dayjs(date).isSame(dayjs(), 'day');
+  const selectToday = () =>
+    dayZone?.goToToday ? dayZone.goToToday() : setDate(today);
+  const isTodaySelected = () => dayjs(date).isSame(dayjs(today), 'day');
   const isCurrentMonth = () =>
     view === 'month' &&
-    date.getMonth() === new Date().getMonth() &&
-    date.getFullYear() === new Date().getFullYear();
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear();
   const isCurrentYear = () =>
-    view === 'year' && date.getFullYear() === new Date().getFullYear();
+    view === 'year' && date.getFullYear() === today.getFullYear();
 
   const isCurrentPeriod =
     isTodaySelected() || isCurrentMonth() || isCurrentYear();
