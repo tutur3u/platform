@@ -360,15 +360,10 @@ class _SelectedAssigneeAvatar extends StatelessWidget {
       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
     );
 
-    if (normalizedAvatarUrl.isEmpty) {
-      return CircleAvatar(radius: 18, child: fallback);
-    }
-
-    return CircleAvatar(
+    return NetworkAvatar(
       radius: 18,
-      backgroundImage: NetworkImage(normalizedAvatarUrl),
-      onBackgroundImageError: (error, stackTrace) {},
-      child: const SizedBox.shrink(),
+      avatarUrl: normalizedAvatarUrl,
+      child: fallback,
     );
   }
 }

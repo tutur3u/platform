@@ -240,3 +240,32 @@ The cron job:
 <Info>
 The cron job uses `forceReschedule: false` to avoid disrupting existing schedules. Only new items are scheduled.
 </Info>
+
+## Calendar link preview for Mail
+
+`GET /api/v1/workspaces/{wsId}/calendar/events/{eventId}/link-preview` returns
+a sanitized read-only target for an explicit Mail association. The default
+Calendar/Tasks authentication boundary is preserved; this endpoint also accepts
+a validated Mail app session and mobile bearer authentication. Workspace
+membership and `manage_calendar` remain required. A provider target additionally
+requires one enabled, active connected account owned by the actor, with both the
+stored workspace source and external calendar IDs matching exactly. Read-only
+provider roles are eligible; ambiguous or incomplete legacy identities, disabled
+accounts, missing targets, and cancelled events suppress the preview.
+
+The response preserves internal IDs, connected-account row and connection IDs,
+provider calendar and immutable event IDs, actual provider UID, and original
+occurrence identity when available. Microsoft occurrence UIDs are returned as
+provided and must not be assumed to equal a series UID. Native events report
+unknown account, organizer, UID, recurrence and attendee ownership.
+
+Provider fields come from an exact authorized GET, after the local encrypted
+storage boundary. Hidden attendees are omitted; conferencing fields only yield
+validated HTTPS Teams/Meet links, separately from the structured location. Raw
+bodies, account credentials and provider errors are never returned. This endpoint
+does not save associations, alter either event, respond to invitations, copy
+events or grant permission to merge a private hold into an organizer's request.
+
+The shared wire contract is exported from `@tuturuuu/internal-api/calendar`.
+Mail owns actor-scoped association metadata and must recheck this preview on
+confirm/open. No Calendar table or provider mutation is part of this seam.

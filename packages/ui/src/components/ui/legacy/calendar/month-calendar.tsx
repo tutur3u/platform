@@ -4,6 +4,7 @@ import { ArrowLeft, Ellipsis, Plus } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
@@ -15,8 +16,6 @@ import {
   endOfMonth,
   endOfWeek,
   isSameMonth,
-  isToday,
-  startOfDay,
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
@@ -25,6 +24,11 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
+import {
+  calendarDayBoundary,
+  calendarDayKey,
+  calendarToday,
+} from '../../../../lib/calendar-day';
 import { formatLunarDay, getLunarDate } from '../../../../lib/lunar-calendar';
 import { Button } from '../../button';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
@@ -60,7 +64,7 @@ function MonthEvent({
   const t = useTranslations('calendar');
   const title = event.title || t('views.untitled_event');
   const allDay = isAllDayEvent(event);
-  const continued = new Date(event.start_at) < startOfDay(day);
+  const continued = new Date(event.start_at) < calendarDayBoundary(day, zone);
   return (
     <button
       type="button"
@@ -106,6 +110,10 @@ export function MonthCalendar({
   } = useCalendar();
   const cannotCreate = readOnly || providerReadOnly;
   const { settings } = useCalendarSettings();
+  const now = useCalendarClock();
+  const todayKey = calendarDayKey(
+    calendarToday(settings?.timezone?.timezone, now)
+  );
   const { timeFormat, weekStartsOn } = useCalendarPreferences();
   const { value: showLunar } = useUserBooleanConfig(
     'SHOW_LUNAR_CALENDAR',
@@ -187,18 +195,20 @@ export function MonthCalendar({
               className={cn(
                 'group min-w-0 border-r border-b p-1 sm:p-2',
                 !currentMonth && 'bg-muted/35 text-muted-foreground',
-                isToday(day) && 'bg-primary/5'
+                calendarDayKey(day) === todayKey && 'bg-primary/5'
               )}
             >
               <div className="mb-1 flex min-h-7 items-center justify-between gap-1">
                 <button
                   type="button"
                   aria-label={label}
-                  aria-current={isToday(day) ? 'date' : undefined}
+                  aria-current={
+                    calendarDayKey(day) === todayKey ? 'date' : undefined
+                  }
                   onClick={() => onDayClick?.(day)}
                   className={cn(
                     'flex size-7 shrink-0 items-center justify-center rounded-full font-medium text-xs tabular-nums hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring',
-                    isToday(day) &&
+                    calendarDayKey(day) === todayKey &&
                       'bg-primary text-primary-foreground hover:bg-primary/90'
                   )}
                 >

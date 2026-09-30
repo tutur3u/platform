@@ -109,6 +109,31 @@ Calendar proxy responses should clear stale `sb-*-auth-token` cookies. A valid
 Calendar session is represented by Tuturuuu app-session cookies, not by a local
 Supabase browser session.
 
+## Calendar timezone boundaries
+
+Event start/end values are UTC instants. Display and picker controls resolve
+personal calendar timezone first, workspace timezone second, and device timezone
+when both inherit with `auto`. A browser-local `Date` used by a date-only calendar
+widget is a calendar-day carrier, not an event instant: project its year, month
+and day in the resolved timezone before passing selection, today or bounds.
+Compare end-time options on that same calendar day and derive minimum/maximum
+clock values in the same timezone. This matters when the browser and calendar
+are on different dates, for example Los Angeles and Ho Chi Minh City.
+
+Quick previews use the same resolved timezone and clock format as the event
+form, localized to the current locale. Date/time edits must round-trip the requested wall time; nonexistent
+DST times must not silently normalize into another hour. Reselecting an unchanged
+ambiguous time or date preserves the original UTC instant. Tests cover these
+boundaries; they do not establish exhaustive correctness for every IANA history
+or changed ambiguous-time choice.
+
+Native all-day persistence and the outer calendar Today/header date contract
+remain separate concerns. Do not infer all-day intent solely from a 24-hour
+elapsed duration, and do not publish a DST duration helper in isolation from the
+persistence/rendering contract. Imported recurring provider events require
+exact-instance and neighboring-instance readback after an authorized UI edit.
+Never use real user calendar screenshots as public regression fixtures.
+
 ## API Ownership
 
 `apps/calendar` owns the Calendar product APIs. Its local handlers cover events
@@ -398,3 +423,40 @@ present the exact meeting and recipients for user confirmation before calling
 the send operation. These API tests do not establish live Gmail/Outlook delivery;
 verify invitations and RSVP updates using explicitly authorized test accounts
 before claiming provider interoperability.
+
+
+## Calendar navigation dates and query boundaries
+
+The legacy calendar treats its selected date and visible grid dates as calendar
+days: their local year, month, and day fields identify the selection. An explicit
+`YYYY-MM-DD` navigation value preserves that day when the effective timezone
+changes. Timestamp navigation values and Today project the actual instant into
+the resolved calendar timezone. The Calendar host supplies that timezone to its
+navigation provider; shared calendar content also supplies it to the event sync
+provider. Web's calendar route redirects to the Calendar host. Deep links apply
+once using the first available resolved timezone so later settings updates cannot
+reset a user selection. A timestamp link applied before personal settings finish
+loading retains that initially projected day; following the pending instant until
+settings settle needs a separate selection ownership contract.
+
+Headers, sidebar selection, day/week/month/year/agenda labels, and Today markers
+use these day fields consistently. A shared minute clock updates Today and the
+current-time indicator without changing the selected day. Timed event lookup
+projects event instants into the resolved timezone before grouping by day.
+
+Fetch ranges independently construct the first day's midnight and the midnight
+after the last day in the effective timezone. This supports 23-hour and 25-hour
+days across daylight-saving changes. Calendar cache keys include the timezone
+and the selected calendar-day fields, so a timezone change cannot reuse a range
+from another timezone.
+
+These changes preserve existing event storage, recurrence, and all-day identity
+contracts. All-day lookup retains its legacy browser-local day identity, so its
+month/year grouping may still differ from the configured-zone bar for legacy
+midnight payloads. All-day bar drag and location create/resize/split callbacks retain
+their existing timestamp conversion: their inferred all-day classification cannot
+safely represent zoned 23-hour or 25-hour midnight spans without a persistent
+intent contract. They do not establish a persistent all-day intent flag or verify
+live provider writes. Focused mounted tests exercise navigation, labels, grouping,
+and fetch boundaries; deployed browser verification and exact-head CI remain
+separate release checks.

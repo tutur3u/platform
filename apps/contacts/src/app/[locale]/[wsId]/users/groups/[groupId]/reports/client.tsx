@@ -1,12 +1,9 @@
 'use client';
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { AlertCircle } from '@tuturuuu/icons';
 import {
   InternalApiError,
-  listWorkspaceGroupReportDashboard,
   type WorkspaceGroupReportDashboardReport,
-  type WorkspaceGroupReportDashboardResponse,
 } from '@tuturuuu/internal-api';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
@@ -40,15 +37,12 @@ import {
 } from '../../../reports/components/report-status-indicator';
 import { BulkReportExporter } from './components/bulk-report-exporter';
 import { ReportWorkspaceToolbar } from './components/report-workspace-toolbar';
+import { useGroupReportDashboard } from './hooks/use-group-report-dashboard';
 
 // Feature flag for experimental factor functionality
 const ENABLE_FACTOR_CALCULATION = false;
 
 type ReportWithNames = WorkspaceGroupReportDashboardReport;
-type SearchableDashboardResponse = WorkspaceGroupReportDashboardResponse & {
-  userSearchHasMore: boolean;
-  userSearchTotal: number;
-};
 
 interface Props {
   wsId: string;
@@ -126,30 +120,12 @@ export default function GroupReportsClient({
   const userId = queryParams.userId;
   const reportId = queryParams.reportId;
 
-  const dashboardQuery = useQuery({
-    queryKey: [
-      'ws',
-      wsId,
-      'group',
-      groupId,
-      'reports-dashboard',
-      userId,
-      reportId,
-      debouncedUserQuery,
-    ],
-    queryFn: (): Promise<SearchableDashboardResponse> =>
-      listWorkspaceGroupReportDashboard({
-        groupId,
-        reportId,
-        userQuery: debouncedUserQuery,
-        userId,
-        workspaceId: wsId,
-      } as Parameters<typeof listWorkspaceGroupReportDashboard>[0] & {
-        userQuery?: string | null;
-      }) as Promise<SearchableDashboardResponse>,
-    enabled: Boolean(wsId && groupId),
-    placeholderData: keepPreviousData,
-    staleTime: 30_000,
+  const dashboardQuery = useGroupReportDashboard({
+    wsId,
+    groupId,
+    userId,
+    reportId,
+    userQuery: debouncedUserQuery,
   });
 
   const managerUserIds = useMemo(() => {

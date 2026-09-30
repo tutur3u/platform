@@ -9,7 +9,6 @@ import type {
 } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
-import dayjs from 'dayjs';
 import {
   createContext,
   type SetStateAction,
@@ -21,12 +20,18 @@ import {
   useState,
 } from 'react';
 import { toast } from '../components/ui/sonner';
+import { calendarQueryRange } from '../lib/calendar-day';
 import { runCalendarProviderSync } from './calendar-provider-sync';
 import {
   type CacheUpdate,
   type CalendarCache,
   updateCalendarRangeCache,
 } from './calendar-range-cache';
+import {
+  calendarEventInQueryRange,
+  calendarRangeCacheKey,
+  calendarRangeIncludesToday,
+} from './calendar-sync-range';
 
 // Type for calendar connection
 type CalendarConnection = {
@@ -91,6 +96,8 @@ const CalendarSyncContext = createContext<{
   googleData: WorkspaceCalendarEvent[] | null;
   error: Error | null;
   dates: Date[];
+  timezone: string | undefined;
+  setTimezone: (timezone: string | undefined) => void;
 
   setDates: (dates: Date[]) => void;
   currentView: 'day' | '4-day' | 'week' | 'month';
@@ -141,6 +148,8 @@ const CalendarSyncContext = createContext<{
   googleData: null,
   error: null,
   dates: [],
+  timezone: undefined,
+  setTimezone: () => {},
   setDates: () => {},
   currentView: 'day',
   setCurrentView: () => {},
@@ -196,6 +205,7 @@ export const CalendarSyncProvider = ({
 
   const [error, setError] = useState<Error | null>(null);
   const [dates, setDates] = useState<Date[]>([]);
+  const [timezone, setTimezone] = useState<string>();
   const [currentView, setCurrentView] = useState<
     'day' | '4-day' | 'week' | 'month'
   >('day');
@@ -257,53 +267,18 @@ export const CalendarSyncProvider = ({
 
   const setCalendarConnections = setCalendarConnectionsState;
 
-  // Helper to generate cache key from dates
-  const getCacheKey = useCallback((dateRange: Date[]) => {
-    if (!dateRange || dateRange.length === 0) {
-      return '';
-    }
-    return `${dateRange[0]!.toISOString()}-${dateRange[dateRange.length - 1]!.toISOString()}`;
-  }, []);
-
   const activeCacheKey = useMemo(
-    () => (dates.length ? `${wsId}:${getCacheKey(dates)}` : ''),
-    [dates, getCacheKey, wsId]
+    () =>
+      dates.length ? `${wsId}:${calendarRangeCacheKey(dates, timezone)}` : '',
+    [dates, timezone, wsId]
   );
   const activeCachedDatabaseEvents = activeCacheKey
     ? calendarCache[activeCacheKey]?.dbEvents
     : undefined;
 
-  // Helper to check if a date range includes today (current week issue)
-  const includesCurrentWeek = useCallback((dateRange: Date[]) => {
-    if (!dateRange || dateRange.length === 0) return false;
-    const today = new Date();
-    const startOfToday = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
-    const endOfToday = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-      23,
-      59,
-      59
-    );
-
-    const firstDate = dateRange[0];
-    const lastDate = dateRange[dateRange.length - 1];
-    if (!firstDate || !lastDate) return false;
-
-    const rangeStart = new Date(firstDate);
-    const rangeEnd = new Date(lastDate);
-
-    return rangeStart <= endOfToday && rangeEnd >= startOfToday;
-  }, []);
-
   // Enhanced cache staleness check - shorter staleness for current week
   const isCacheStaleEnhanced = (lastUpdated: number, dateRange: Date[]) => {
-    const isCurrentWeek = includesCurrentWeek(dateRange);
+    const isCurrentWeek = calendarRangeIncludesToday(dateRange, timezone);
     // 30 seconds for current week, 5 minutes for other weeks
     const staleTime = isCurrentWeek ? 30 * 1000 : 5 * 60 * 1000; // 30 seconds
     return Date.now() - lastUpdated >= staleTime;
@@ -316,27 +291,9 @@ export const CalendarSyncProvider = ({
   }, []);
 
   const isVisibleInCurrentRange = useCallback(
-    (event: { start_at?: string; end_at?: string }) => {
-      if (dates.length === 0) return true;
-
-      const firstDate = dates[0];
-      const lastDate = dates[dates.length - 1];
-      if (!firstDate || !lastDate) return true;
-
-      if (!event.start_at && !event.end_at) return true;
-
-      const rangeStart = dayjs(firstDate).startOf('day').valueOf();
-      const rangeEnd = dayjs(lastDate).endOf('day').valueOf();
-      const startAt = event.start_at ? dayjs(event.start_at).valueOf() : NaN;
-      const endAt = event.end_at ? dayjs(event.end_at).valueOf() : startAt;
-
-      if (Number.isNaN(startAt) || Number.isNaN(endAt)) {
-        return true;
-      }
-
-      return startAt <= rangeEnd && endAt >= rangeStart;
-    },
-    [dates]
+    (event: { start_at?: string; end_at?: string }) =>
+      calendarEventInQueryRange(event, dates, timezone),
+    [dates, timezone]
   );
 
   const patchVisibleEvents = useCallback(
@@ -417,10 +374,10 @@ export const CalendarSyncProvider = ({
       }
 
       // Otherwise fetch fresh data via API (which handles E2EE decryption)
-      const startDate = dayjs(dates[0]).startOf('day');
-      const endDate = dayjs(dates[dates.length - 1])
-        .add(1, 'day')
-        .startOf('day');
+      const { start: startDate, end: endDate } = calendarQueryRange(
+        dates,
+        timezone
+      );
 
       try {
         const response = await fetch(
@@ -494,10 +451,10 @@ export const CalendarSyncProvider = ({
     staleTime: 2 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async () => {
-      const startDate = dayjs(dates[0]).startOf('day');
-      const endDate = dayjs(dates[dates.length - 1])
-        .add(1, 'day')
-        .startOf('day');
+      const { start: startDate, end: endDate } = calendarQueryRange(
+        dates,
+        timezone
+      );
 
       try {
         const response = await fetch(
@@ -534,15 +491,18 @@ export const CalendarSyncProvider = ({
   });
 
   // Helper to check if dates have actually changed
-  const areDatesEqual = useCallback((newDates: Date[]) => {
-    const newDatesStr = JSON.stringify(newDates.map((d) => d.toISOString()));
-    const prevDatesStr = prevDatesRef.current;
-    const areEqual = newDatesStr === prevDatesStr;
-    if (!areEqual) {
-      prevDatesRef.current = newDatesStr;
-    }
-    return areEqual;
-  }, []);
+  const areDatesEqual = useCallback(
+    (newDates: Date[]) => {
+      const newDatesStr = calendarRangeCacheKey(newDates, timezone);
+      const prevDatesStr = prevDatesRef.current;
+      const areEqual = newDatesStr === prevDatesStr;
+      if (!areEqual) {
+        prevDatesRef.current = newDatesStr;
+      }
+      return areEqual;
+    },
+    [timezone]
+  );
 
   // Invalidate and refetch events
   const refresh = useCallback(() => {
@@ -654,7 +614,7 @@ export const CalendarSyncProvider = ({
     const cacheData = calendarCache[activeCacheKey];
 
     // For current week, force a fresh database fetch
-    const isCurrentWeek = includesCurrentWeek(dates);
+    const isCurrentWeek = calendarRangeIncludesToday(dates, timezone);
 
     if (cacheData && isCurrentWeek) {
       isForcedRef.current = true;
@@ -666,7 +626,7 @@ export const CalendarSyncProvider = ({
   }, [
     dates,
     calendarCache,
-    includesCurrentWeek,
+    timezone,
     areDatesEqual,
     activeCacheKey,
     updateCache,
@@ -841,6 +801,8 @@ export const CalendarSyncProvider = ({
     error,
     dates,
     setDates,
+    timezone,
+    setTimezone,
     currentView,
     setCurrentView,
     syncToTuturuuu,

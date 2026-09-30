@@ -4,24 +4,19 @@ import { CalendarX2, Clock, MapPin, Plus, Search, Sun } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import { cn } from '@tuturuuu/utils/format';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
-import {
-  addDays,
-  format,
-  isToday,
-  isTomorrow,
-  isYesterday,
-  startOfDay,
-} from 'date-fns';
+import { addDays, format, startOfDay } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { calendarDayKey, calendarToday } from '../../../../lib/calendar-day';
 import {
   formatLunarDay,
   getLunarDate,
@@ -120,12 +115,14 @@ function getStyles(event: CalendarEvent) {
 function formatTimeWithMidnight(
   date: Date,
   timePattern: string,
-  timeFormat: '12h' | '24h'
+  timeFormat: '12h' | '24h',
+  zone?: string
 ): string {
-  if (date.getHours() === 23 && date.getMinutes() === 59) {
+  const zoned = zone && zone !== 'auto' ? dayjs(date).tz(zone) : dayjs(date);
+  if (zoned.hour() === 23 && zoned.minute() === 59) {
     return timeFormat === '24h' ? '00:00' : '12:00 am';
   }
-  return format(date, timePattern);
+  return zoned.format(timePattern);
 }
 
 function EventCard({
@@ -141,6 +138,7 @@ function EventCard({
   t: (key: string) => string;
   onOpen: (id: string) => void;
 }) {
+  const { settings } = useCalendarSettings();
   const isAllDay = isAllDayEvent(event);
   const styles = getStyles(event);
 
@@ -167,14 +165,16 @@ function EventCard({
               {formatTimeWithMidnight(
                 new Date(event.start_at),
                 timePattern,
-                timeFormat
+                timeFormat,
+                settings?.timezone?.timezone
               )}
             </span>
             <span className="text-muted-foreground text-xs">
               {formatTimeWithMidnight(
                 new Date(event.end_at),
                 timePattern,
-                timeFormat
+                timeFormat,
+                settings?.timezone?.timezone
               )}
             </span>
           </>
@@ -234,9 +234,13 @@ function DateHeader({
   showLunar: boolean;
   t: (key: string, values?: Record<string, number>) => string;
 }) {
-  const today = isToday(date);
-  const tomorrow = isTomorrow(date);
-  const yesterday = isYesterday(date);
+  const { settings } = useCalendarSettings();
+  const now = useCalendarClock();
+  const todayDate = calendarToday(settings?.timezone?.timezone, now);
+  const dateKey = calendarDayKey(date);
+  const today = dateKey === calendarDayKey(todayDate);
+  const tomorrow = dateKey === calendarDayKey(addDays(todayDate, 1));
+  const yesterday = dateKey === calendarDayKey(addDays(todayDate, -1));
 
   const relativeLabel = today
     ? t('today')
