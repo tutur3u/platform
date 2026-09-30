@@ -2,6 +2,7 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
+import { CalendarPreferencesProvider } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
@@ -636,10 +637,19 @@ export const CalendarContent = ({
       {disabled || disableBuiltInEventUi
         ? null
         : workspace && (
-            <>
+            <CalendarPreferencesProvider
+              value={{
+                timezone: settings?.timezone?.timezone ?? 'auto',
+                timeFormat: settings?.appearance?.timeFormat ?? '12h',
+                weekStartsOn: getFirstDayOfWeekNumber(
+                  settings?.appearance?.firstDayOfWeek,
+                  locale
+                ) as 0 | 1 | 6,
+              }}
+            >
               <EventPreviewPopover />
               <EventModal />
-            </>
+            </CalendarPreferencesProvider>
           )}
     </div>
   );
