@@ -29,7 +29,7 @@ export default defineConfig({
   use: {
     ...devices['Desktop Chrome'],
     baseURL: STOREFRONT_URL,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
   },
   webServer: [
     {

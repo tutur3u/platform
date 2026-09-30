@@ -633,3 +633,28 @@ Tests are still a work in progress. We're currently working on adding tests to a
 ## Git Conventions
 
 Tuturuuu uses standardized conventions for Git commits and branch naming. For more information, see the [Git Conventions](/build/development-tools/git-conventions) guide to learn how to format your commits and branch names to align with our workflow.
+
+### Diagnosing a first-attempt Playwright failure
+
+`trace: 'on-first-retry'` records a trace only when Playwright runs a retry.
+A suite with no configured retries therefore produces no trace for its initial
+failure. For the Inventory / Storefront cache contract, use
+`trace: 'retain-on-failure'` so the first failed navigation has an uploaded trace
+without adding automatic reruns.
+
+A URL assertion can complete before a streamed route enters its recovery
+boundary. Capture browser errors and recovery details after the failing content
+assertion, before deleting the local fixture. Keep the original assertion error,
+timeout, and shell-persistence checks intact; diagnostic failures must not mask
+it. The cache contract attaches bounded browser errors with Bearer/JWT values
+redacted and a failure screenshot. Its trace may contain local fixture request
+data, so keep it within the existing failure-artifact access and seven-day
+retention policy; never use production credentials or customer records in this
+fixture.
+
+Inspect the trace and attached errors before deciding whether the cause belongs
+to the application, fixture, or development runtime. A recovery boundary alone
+does not establish that a failure is a flake. A push changing this test/config
+already triggers `e2e-tests.yaml`; use that exact-head run rather than creating
+a duplicate manual dispatch. Manual dispatch currently selects the full E2E
+workflow, rather than an individual cache-contract job.
