@@ -594,8 +594,10 @@ compilation when signing is absent and verifies the resulting AAB with
 its protected runner and executes this exact command. Each store upload derives
 its app version from the major and minor values in `apps/mobile/pubspec.yaml`
 and the highest existing TestFlight prerelease version for that series. For
-example, `0.11.0` advances to `0.11.1`, then `0.11.2`. Android and iOS receive
-the same version, while the unique CI build number remains separate. This does
+example, an unused `0.11.0` ships as `0.11.0`; once that version exists in
+TestFlight, later uploads advance to `0.11.1`, then `0.11.2`. An unused higher
+source patch is retained rather than incremented. Android and iOS receive the
+same version, while the unique CI build number remains separate. This does
 not commit a version bump; Release Please still owns the source version.
 Development builds remain available through `bun build:android:dev`.
 
