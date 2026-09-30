@@ -193,7 +193,12 @@ it('interrupted preparation resumes under another authorized workspace without a
   (metadata.calendar_reply_claim as Record<string, unknown>).id = id;
   const other = { ...ctx, normalizedWsId: 'workspace-b' };
   const invitation = await getMailInvitation(other, 'box', 'source');
-  expect(invitation?.reply?.retryRequestId).toBe('request-a');
+  const reply = invitation?.reply;
+  if (!reply || !('retryRequestId' in reply))
+    throw new Error(
+      'Expected an interrupted reply with its own retry identity'
+    );
+  expect(reply.retryRequestId).toBe('request-a');
   await respond('ACCEPTED', 'request-a', other);
   expect([...drafts.keys()]).toEqual([id]);
   expect(mocks.send).toHaveBeenCalledTimes(1);
