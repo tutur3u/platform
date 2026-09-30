@@ -3,7 +3,7 @@ import {
   formatInTimezone,
   getDatePartsInTimezone,
 } from '@tuturuuu/utils/task-date-timezone';
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
 
 /** A date-only carrier for the browser-local calendar widget, never an instant. */
 export function pickerCalendarDate(date: Date, zone: string | null): Date {
@@ -57,14 +57,19 @@ export function pickerWallTime(
     : undefined;
 }
 
-export function createPickerTimeOptions(pattern: string) {
+export function createPickerTimeOptions(timeFormat: '12h' | '24h') {
   return Array.from({ length: 96 }, (_, index) => {
     const value = `${Math.floor(index / 4)
       .toString()
       .padStart(2, '0')}:${((index % 4) * 15).toString().padStart(2, '0')}`;
     return {
       value,
-      display: format(parse(value, 'HH:mm', new Date()), pattern),
+      // Clock labels have no date or zone; constructing a browser-local Date
+      // would normalize 02:xx on a DST-gap day even for another calendar zone.
+      display:
+        timeFormat === '24h'
+          ? value
+          : `${Math.floor(index / 4) % 12 || 12}:${value.slice(3)} ${index < 48 ? 'AM' : 'PM'}`,
     };
   });
 }

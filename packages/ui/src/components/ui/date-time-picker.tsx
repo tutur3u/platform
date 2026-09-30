@@ -348,8 +348,8 @@ export function DateTimePicker({
   const timePattern = getTimeFormatPattern(timeFormat);
 
   const timeOptions = useMemo(
-    () => createPickerTimeOptions(timePattern),
-    [timePattern]
+    () => createPickerTimeOptions(timeFormat),
+    [timeFormat]
   );
   const filteredTimeOptions = useMemo(
     () =>

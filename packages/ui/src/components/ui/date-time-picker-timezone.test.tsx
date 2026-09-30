@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DateTimePicker } from './date-time-picker';
 import {
   createPickerTimeOptions,
@@ -33,6 +33,26 @@ function EndPicker() {
 }
 
 describe('calendar picker bounds with a different browser day', () => {
+  it('formats clock-only options independently of the current browser DST day', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-03-08T10:00:00Z'));
+      expect(
+        createPickerTimeOptions('24h').find((x) => x.value === '02:30')?.display
+      ).toBe('02:30');
+      const twelveHour = createPickerTimeOptions('12h');
+      expect(twelveHour.find((x) => x.value === '02:30')?.display).toBe(
+        '2:30 AM'
+      );
+      expect(twelveHour[0]?.display).toBe('12:00 AM');
+      expect(twelveHour.find((x) => x.value === '12:00')?.display).toBe(
+        '12:00 PM'
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rejects nonexistent DST wall times and retains an unchanged later overlap instant', () => {
     const gap = new Date('2026-03-08T06:30:00Z');
     const ny = 'America/New_York';
@@ -42,7 +62,7 @@ describe('calendar picker bounds with a different browser day', () => {
       zone: ny,
       pattern: 'HH:mm',
       timeFormat: '24h',
-      options: createPickerTimeOptions('HH:mm'),
+      options: createPickerTimeOptions('24h'),
     });
     expect(options.some((x) => x.value.startsWith('02:'))).toBe(false);
     const overlap = new Date('2026-11-01T06:30:00Z');
@@ -130,7 +150,7 @@ describe('calendar picker bounds with a different browser day', () => {
       zone,
       pattern: 'HH:mm',
       timeFormat: '24h',
-      options: createPickerTimeOptions('HH:mm'),
+      options: createPickerTimeOptions('24h'),
     });
     expect(options[0]?.value).toBe('10:15');
     expect(options.some((x) => x.value === '11:30')).toBe(true);
@@ -149,7 +169,7 @@ describe('calendar picker bounds with a different browser day', () => {
       zone,
       pattern: 'HH:mm',
       timeFormat: '24h',
-      options: createPickerTimeOptions('HH:mm'),
+      options: createPickerTimeOptions('24h'),
     });
     expect(options[0]?.value).toBe('00:00');
     expect(options).toHaveLength(96);
@@ -163,7 +183,7 @@ describe('calendar picker bounds with a different browser day', () => {
       zone,
       pattern: 'HH:mm',
       timeFormat: '24h',
-      options: createPickerTimeOptions('HH:mm'),
+      options: createPickerTimeOptions('24h'),
     });
     expect(options.at(-1)?.value).toBe('11:45');
     expect(pickerCalendarBounds(undefined, maxDate, zone)?.[0]).toEqual({
