@@ -12,6 +12,7 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/core/validation/uuid.dart';
+import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';

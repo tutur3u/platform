@@ -29,7 +29,7 @@ import type {
 } from '@tuturuuu/users-core/lib/group-indicators-types';
 import { useTranslations } from 'next-intl';
 import type { Dispatch, SetStateAction } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface IndicatorForm {
   categoryIds: string[];
@@ -142,17 +142,34 @@ export function AddIndicatorDialog({
   const tIndicators = useTranslations('ws-user-group-indicators');
   const [form, setForm] = useState<IndicatorForm>(defaultIndicatorForm);
 
-  const resetForm = () => setForm(defaultIndicatorForm);
+  const submitting = useRef(false);
+  const [submissionError, setSubmissionError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const busy = isAnyMutationPending || isSubmitting;
+  const resetForm = () => {
+    setForm(defaultIndicatorForm);
+    setSubmissionError(false);
+  };
 
   const handleAdd = async () => {
-    if (!form.name.trim()) return;
-    await createMutation.mutateAsync({
-      ...form,
-      name: form.name.trim(),
-      unit: form.unit.trim(),
-    });
-    onOpenChange(false);
-    resetForm();
+    if (submitting.current || busy || !form.name.trim()) return;
+    submitting.current = true;
+    setIsSubmitting(true);
+    setSubmissionError(false);
+    try {
+      await createMutation.mutateAsync({
+        ...form,
+        name: form.name.trim(),
+        unit: form.unit.trim(),
+      });
+      onOpenChange(false);
+      resetForm();
+    } catch {
+      setSubmissionError(true);
+    } finally {
+      submitting.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -161,27 +178,42 @@ export function AddIndicatorDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (busy) return;
+        if (!nextOpen) resetForm();
+        onOpenChange(nextOpen);
+      }}
+    >
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{tIndicators('add_indicator')}</DialogTitle>
           <DialogDescription>
             {tIndicators('add_indicator_description')}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
           <div className="space-y-2">
             <Label htmlFor="new-metric-name">
               {tIndicators('indicator_name')}
             </Label>
             <Input
               id="new-metric-name"
+              required
+              aria-describedby="new-metric-name-hint"
               value={form.name}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, name: e.target.value }))
               }
               placeholder={tIndicators('indicator_name_placeholder')}
             />
+            <p
+              id="new-metric-name-hint"
+              className="text-muted-foreground text-sm"
+            >
+              {tIndicators('name_required')}
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="new-metric-unit">{tIndicators('unit')}</Label>
@@ -220,18 +252,16 @@ export function AddIndicatorDialog({
           />
           <WeightedMetricField form={form} setForm={setForm} />
         </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isAnyMutationPending}
-          >
+        {submissionError && (
+          <p role="alert" className="shrink-0 text-destructive text-sm">
+            {tIndicators('failed_to_create_indicator')}
+          </p>
+        )}
+        <DialogFooter className="shrink-0">
+          <Button variant="outline" onClick={handleClose} disabled={busy}>
             {t('common.cancel')}
           </Button>
-          <Button
-            onClick={handleAdd}
-            disabled={isAnyMutationPending || !form.name.trim()}
-          >
+          <Button onClick={handleAdd} disabled={busy || !form.name.trim()}>
             {createMutation.isPending
               ? tIndicators('adding')
               : tIndicators('add_indicator')}
@@ -302,14 +332,14 @@ export function EditIndicatorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onOpenChange(false)}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{tIndicators('edit_indicator')}</DialogTitle>
           <DialogDescription>
             {tIndicators('edit_indicator_description')}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
           <div className="space-y-2">
             <Label htmlFor="metric-name">{tIndicators('indicator_name')}</Label>
             <Input
@@ -355,7 +385,7 @@ export function EditIndicatorDialog({
           />
           <WeightedMetricField form={form} setForm={setForm} />
         </div>
-        <DialogFooter className="flex justify-between">
+        <DialogFooter className="shrink-0 justify-between">
           {canDelete && (
             <AlertDialog
               open={deleteDialogOpen}
@@ -437,40 +467,72 @@ export function AddCategoryDialog({
   const tIndicators = useTranslations('ws-user-group-indicators');
   const [form, setForm] = useState({ description: '', name: '' });
 
-  const resetForm = () => setForm({ description: '', name: '' });
+  const submitting = useRef(false);
+  const [submissionError, setSubmissionError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const busy = isAnyMutationPending || isSubmitting;
+  const resetForm = () => {
+    setForm({ description: '', name: '' });
+    setSubmissionError(false);
+  };
 
   const handleAdd = async () => {
-    if (!form.name.trim()) return;
-    await createMutation.mutateAsync({
-      description: form.description.trim(),
-      name: form.name.trim(),
-    });
-    onOpenChange(false);
-    resetForm();
+    if (submitting.current || busy || !form.name.trim()) return;
+    submitting.current = true;
+    setIsSubmitting(true);
+    setSubmissionError(false);
+    try {
+      await createMutation.mutateAsync({
+        description: form.description.trim(),
+        name: form.name.trim(),
+      });
+      onOpenChange(false);
+      resetForm();
+    } catch {
+      setSubmissionError(true);
+    } finally {
+      submitting.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (busy) return;
+        if (!nextOpen) resetForm();
+        onOpenChange(nextOpen);
+      }}
+    >
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{tIndicators('add_metric_category')}</DialogTitle>
           <DialogDescription>
             {tIndicators('add_metric_category_description')}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
           <div className="space-y-2">
             <Label htmlFor="metric-category-name">
               {tIndicators('metric_category_name')}
             </Label>
             <Input
               id="metric-category-name"
+              required
+              aria-describedby="metric-category-name-hint"
               value={form.name}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, name: e.target.value }))
               }
               placeholder={tIndicators('metric_category_name_placeholder')}
             />
+            <p
+              id="metric-category-name-hint"
+              className="text-muted-foreground text-sm"
+            >
+              {tIndicators('name_required')}
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="metric-category-description">
@@ -491,21 +553,23 @@ export function AddCategoryDialog({
             />
           </div>
         </div>
-        <DialogFooter>
+        {submissionError && (
+          <p role="alert" className="shrink-0 text-destructive text-sm">
+            {tIndicators('failed_to_create_category')}
+          </p>
+        )}
+        <DialogFooter className="shrink-0">
           <Button
             variant="outline"
             onClick={() => {
               onOpenChange(false);
               resetForm();
             }}
-            disabled={isAnyMutationPending}
+            disabled={busy}
           >
             {t('common.cancel')}
           </Button>
-          <Button
-            onClick={handleAdd}
-            disabled={isAnyMutationPending || !form.name.trim()}
-          >
+          <Button onClick={handleAdd} disabled={busy || !form.name.trim()}>
             {createMutation.isPending
               ? tIndicators('adding')
               : tIndicators('add_metric_category')}

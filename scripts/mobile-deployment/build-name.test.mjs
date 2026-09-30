@@ -11,7 +11,36 @@ test('increments the app version by one from TestFlight history', () => {
     nextBuildName(pubspec, ['0.11.2', '0.10.9', '0.12.0']),
     '0.11.3'
   );
-  assert.equal(nextBuildName('version: 0.12.0+85', ['0.11.9']), '0.12.1');
+  assert.equal(nextBuildName('version: 0.12.0+85', ['0.11.9']), '0.12.0');
+});
+
+test('preserves unused source patches and ignores unrelated or malformed history', () => {
+  assert.equal(nextBuildName('version: 0.21.0+86', []), '0.21.0');
+  assert.equal(
+    nextBuildName('version: 0.21.0+86', ['0.20.9', '0.22.0']),
+    '0.21.0'
+  );
+  assert.equal(nextBuildName('version: 0.21.4+86', ['0.21.1']), '0.21.4');
+  assert.equal(nextBuildName('version: 0.21.4+86', ['0.21.4']), '0.21.5');
+  assert.equal(
+    nextBuildName('version: 0.21.0+86', [
+      '0.21.2',
+      '0.21.0',
+      '0.21.1',
+      '0.21.2',
+    ]),
+    '0.21.3'
+  );
+  assert.equal(
+    nextBuildName('version: 0.21.0+86', [
+      null,
+      7,
+      '0.210.5',
+      '0.21.-1',
+      '0.21.2-beta',
+    ]),
+    '0.21.0'
+  );
 });
 
 test('rejects invalid source versions', () => {

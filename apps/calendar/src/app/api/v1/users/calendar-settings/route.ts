@@ -1,10 +1,10 @@
-import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { calendarTimezoneSchema } from '@/lib/calendar/settings-validation';
 
 const calendarSettingsSchema = z.object({
-  timezone: z.string().max(MAX_SHORT_TEXT_LENGTH).optional(),
+  timezone: calendarTimezoneSchema.optional(),
   first_day_of_week: z
     .enum(['auto', 'sunday', 'monday', 'saturday'])
     .optional(),

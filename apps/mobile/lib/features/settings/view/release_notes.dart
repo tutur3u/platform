@@ -40,10 +40,16 @@ class MobileReleaseNotes {
         final date = DateTime.tryParse(item['date']?.toString() ?? '');
         final changes = item['changes'];
         if (version is! String || date == null || changes is! List) continue;
+        final existing = byVersion[version];
+        // Generated history contains only tag-to-build changes. A same-version
+        // beta supplements the published release instead of replacing it.
         byVersion[version] = MobileReleaseNote(
           version: version,
-          date: date,
-          changes: List.unmodifiable(changes.whereType<String>()),
+          date: existing?.date ?? date,
+          changes: List.unmodifiable(<String>{
+            ...?existing?.changes,
+            ...changes.whereType<String>(),
+          }),
         );
       }
     }

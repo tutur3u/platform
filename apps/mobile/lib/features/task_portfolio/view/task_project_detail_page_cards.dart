@@ -263,16 +263,12 @@ class _ProjectLeadRow extends StatelessWidget {
 
     return Row(
       children: [
-        CircleAvatar(
+        NetworkAvatar(
           radius: 18,
-          foregroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-              ? NetworkImage(avatarUrl)
-              : null,
-          child: avatarUrl == null || avatarUrl.isEmpty
-              ? project.lead == null
-                    ? const Icon(Icons.person_outline, size: 18)
-                    : Text(_initialsForName(leadName))
-              : null,
+          avatarUrl: avatarUrl,
+          child: project.lead == null
+              ? const Icon(Icons.person_outline, size: 18)
+              : Text(_initialsForName(leadName)),
         ),
         const shad.Gap(10),
         Expanded(

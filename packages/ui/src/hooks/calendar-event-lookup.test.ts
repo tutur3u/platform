@@ -12,6 +12,45 @@ const event = (id: string, start: string, end: string): CalendarEvent => ({
   end_at: end,
 });
 describe('indexed calendar lookup', () => {
+  it.each([
+    ['Asia/Tokyo', 'America/Los_Angeles', '2026-01-01T07:30:00Z', 2025, 11, 31],
+    ['America/Los_Angeles', 'Asia/Tokyo', '2025-12-31T15:30:00Z', 2026, 0, 1],
+  ] as const)(
+    'groups timed instants in %s browser with %s calendar days',
+    (browserZone, calendarZone, instant, year, month, day) => {
+      vi.stubEnv('TZ', browserZone);
+      try {
+        const end = new Date(
+          new Date(instant).getTime() + 15 * 60_000
+        ).toISOString();
+        const lookup = createCalendarEventLookup(
+          [event('timed', instant, end)],
+          calendarZone
+        );
+        expect(
+          lookup(new Date(year, month, day, 18)).map((item) => item.id)
+        ).toEqual(['timed']);
+        expect(lookup(new Date(year, month, day + 1))).toEqual([]);
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    }
+  );
+  it('preserves the existing all-day carrier identity when the calendar zone changes', () => {
+    vi.stubEnv('TZ', 'UTC');
+    try {
+      const events = [
+        event('all-day', '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z'),
+      ];
+      for (const zone of ['America/Los_Angeles', 'Asia/Tokyo']) {
+        const lookup = createCalendarEventLookup(events, zone);
+        expect(lookup(new Date(2026, 0, 1))).toHaveLength(1);
+        expect(lookup(new Date(2026, 0, 2))).toHaveLength(0);
+      }
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
   it('preserves event order and exclusive all-day ends across a year boundary', () => {
     const events = [
       event('timed', '2026-12-31T23:00:00', '2027-01-01T01:00:00'),

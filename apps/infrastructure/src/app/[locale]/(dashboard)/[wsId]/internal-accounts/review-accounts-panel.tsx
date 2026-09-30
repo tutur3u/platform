@@ -22,6 +22,7 @@ import { useCopyToClipboard } from '@tuturuuu/ui/hooks/use-copy-to-clipboard';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -40,6 +41,7 @@ export function ReviewAccountsPanel() {
   const queryClient = useQueryClient();
   const { copyToClipboard, isCopied } = useCopyToClipboard({ timeout: 2000 });
   const [createOpen, setCreateOpen] = useState(false);
+  const [showRetired, setShowRetired] = useState(false);
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [kind, setKind] = useState<'review' | 'external'>('review');
@@ -138,6 +140,12 @@ export function ReviewAccountsPanel() {
         })
       : '';
   const reviewNotes = t('review_notes');
+  const visibleAccounts = accounts.data?.accounts.filter(
+    (account) => showRetired || !account.isDisabled
+  );
+  const hasRetiredAccounts = accounts.data?.accounts.some(
+    (account) => account.isDisabled
+  );
 
   return (
     <section className="space-y-4 rounded-xl border bg-card p-4 shadow-xs">
@@ -153,6 +161,21 @@ export function ReviewAccountsPanel() {
           {t('create')}
         </Button>
       </div>
+      {hasRetiredAccounts ? (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={showRetired}
+              id="review-accounts-show-retired"
+              onCheckedChange={setShowRetired}
+            />
+            <Label htmlFor="review-accounts-show-retired">
+              {t('show_retired')}
+            </Label>
+          </div>
+          <p className="text-muted-foreground text-xs">{t('retired_help')}</p>
+        </div>
+      ) : null}
       {accounts.isLoading ? (
         <p className="text-muted-foreground text-sm">{t('loading')}</p>
       ) : null}
@@ -165,7 +188,12 @@ export function ReviewAccountsPanel() {
       {accounts.data?.accounts.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t('empty')}</p>
       ) : null}
-      {accounts.data?.accounts.map((account) => (
+      {accounts.data &&
+      accounts.data.accounts.length > 0 &&
+      visibleAccounts?.length === 0 ? (
+        <p className="text-muted-foreground text-sm">{t('empty_active')}</p>
+      ) : null}
+      {visibleAccounts?.map((account) => (
         <div
           className="flex flex-wrap items-center justify-between gap-3 border-t pt-3"
           key={account.id}

@@ -6,8 +6,9 @@ import type {
   WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
+import { calendarNavigationDate } from '@tuturuuu/ui/lib/calendar-day';
 import { useTranslations } from 'next-intl';
-import { type ComponentProps, useEffect, useMemo } from 'react';
+import { type ComponentProps, useEffect, useMemo, useRef } from 'react';
 import { useCalendarNavigation } from './calendar-navigation-provider';
 
 export function CalendarWorkspacePage({
@@ -36,11 +37,20 @@ export function CalendarWorkspacePage({
   const t = useTranslations('calendar');
   const isMobile = useIsMobile();
   const navigation = useCalendarNavigation();
+  const appliedDate = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (!initialDate) return;
-    const date = new Date(initialDate);
-    if (!Number.isNaN(date.getTime())) navigation.setDate(date);
-  }, [initialDate, navigation.setDate]);
+    if (
+      !initialDate ||
+      !navigation.timezone ||
+      appliedDate.current === initialDate
+    )
+      return;
+    const date = calendarNavigationDate(initialDate, navigation.timezone);
+    if (date) {
+      appliedDate.current = initialDate;
+      navigation.setDate(date);
+    }
+  }, [initialDate, navigation.setDate, navigation.timezone]);
   const availableViews = useMemo(
     () => [
       { label: t('day'), value: 'day' },

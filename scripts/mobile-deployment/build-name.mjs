@@ -22,7 +22,9 @@ export function nextBuildName(pubspec, prereleaseVersions) {
     .map((version) => version.slice(prefix.length))
     .filter((patch) => /^\d+$/u.test(patch))
     .map(Number);
-  return `${prefix}${Math.max(sourcePatch, 0, ...patches) + 1}`;
+  // An unused source patch (including .0 on a new minor) is publishable.
+  // Once store history reaches it, advance past the highest existing patch.
+  return `${prefix}${Math.max(sourcePatch, ...patches.map((patch) => patch + 1))}`;
 }
 
 function appleToken(privateKey, keyId, issuerId) {

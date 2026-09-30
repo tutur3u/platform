@@ -9436,6 +9436,7 @@
     "metric_category_description_placeholder": "Mô tả danh mục tùy chọn",
     "metric_category_name": "Tên danh mục",
     "metric_category_name_placeholder": "ví dụ: Nói, Bài tập, Tham gia",
+    "name_required": "Nhập tên để có thể tạo mới.",
     "no_indicators_empty_description": "Thêm chỉ số đầu tiên để bắt đầu theo dõi số liệu người dùng cho nhóm này.",
     "no_indicators_empty_title": "Chưa có chỉ số nào",
     "no_metric_categories": "Chưa có danh mục số liệu nào.",

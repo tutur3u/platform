@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useParams } from 'next/navigation';
 import { useMemo } from 'react';
+import { calendarDayKey } from '../../../../lib/calendar-day';
 import { CalendarColumn } from './calendar-column';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
 import { EventCard } from './event-card';
@@ -18,12 +19,6 @@ type LayoutCalendarEvent = CalendarEvent & {
   _endMs: number;
   _startMs: number;
 };
-
-function getDayKeyFromDate(date: Date, tz?: string) {
-  return (tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz)).format(
-    'YYYY-MM-DD'
-  );
-}
 
 function getDayKeyFromIso(value: string, tz?: string) {
   return (tz === 'auto' ? dayjs(value) : dayjs(value).tz(tz)).format(
@@ -179,7 +174,7 @@ export const CalendarBaseMatrix = ({ dates }: { dates: Date[] }) => {
       {dates.map((_, index) => (
         <CalendarColumn
           key={`cal-col-${index}`}
-          date={dayjs(dates[index]!).format('YYYY-MM-DD')}
+          date={calendarDayKey(dates[index]!)}
           last={index === dates.length - 1}
         />
       ))}
@@ -197,8 +192,8 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const tz = settings?.timezone?.timezone;
 
   const visibleDayKeys = useMemo(
-    () => new Set(dates.map((date) => getDayKeyFromDate(date, tz))),
-    [dates, tz]
+    () => new Set(dates.map(calendarDayKey)),
+    [dates]
   );
 
   const filteredRealEvents = useMemo(

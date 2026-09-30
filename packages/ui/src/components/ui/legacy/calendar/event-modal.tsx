@@ -91,6 +91,7 @@ import {
   OverlapWarning,
 } from './event-form-components';
 import { EventModalHeader } from './event-modal-header';
+import { eventEndPickerBounds } from './event-picker-bounds';
 import { saveCalendarEventDrafts } from './save-calendar-event-drafts';
 import { useCalendarSettings } from './settings/settings-context';
 import { useEventDraftSession } from './use-event-draft-session';
@@ -1056,32 +1057,11 @@ export function EventModal() {
                           })()}
                           onChange={handleEndDateChange}
                           showTimeSelect={!isAllDay}
-                          minDate={(() => {
-                            // Allow selecting the same day as the start date
-                            const start = new Date(
-                              event.start_at || new Date()
-                            );
-                            return new Date(
-                              start.getFullYear(),
-                              start.getMonth(),
-                              start.getDate()
-                            );
-                          })()}
-                          minTime={(() => {
-                            const start = new Date(
-                              event.start_at || new Date()
-                            );
-                            const end = new Date(event.end_at || new Date());
-                            // Only apply minTime if start and end are on the same day
-                            if (
-                              start.getFullYear() === end.getFullYear() &&
-                              start.getMonth() === end.getMonth() &&
-                              start.getDate() === end.getDate()
-                            ) {
-                              return `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`;
-                            }
-                            return undefined;
-                          })()}
+                          {...eventEndPickerBounds(
+                            event.start_at || new Date().toISOString(),
+                            tz,
+                            isAllDay
+                          )}
                           scrollIntoViewOnOpen={true}
                           pickerButtonRef={endPickerRef}
                         />

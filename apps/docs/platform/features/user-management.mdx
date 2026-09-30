@@ -81,7 +81,99 @@ User group activity is exposed from the dashboard at `/users/groups?tab=audit-lo
 
 The Contacts audit view must show a distinct error when the feed query fails. An unavailable feed is not evidence that no changes occurred. Investigate the server error and the `private.list_user_group_activity_logs` RPC before using an empty view to reconcile a student's history. Existing membership rows show their current join timestamp; an audit event is needed to establish a prior removal and rejoin. Neither a receipt for a different group nor membership history alone proves that tuition was transferred or credited to another class. Keep the original invoice and any explicit adjustment or transfer record when reconciling debt.
 
-The feed reads a date range of `audit.record_version` before resolving groups and actors. Keep its partial date index aligned with the current `public` and `private` table names whenever a tracked resource moves schemas. A PostgreSQL `57014` timeout means the feed is unavailable, not empty; check the exact query plan and index validity before widening the statement timeout. The concurrent activity index migration `20260929130000_user_group_activity_current_schema_index.sql` restored schema alignment, but did not by itself resolve the Easy Center timeout. An OR-based workspace/group predicate and then an unscoped workspace-wide orphan scan also timed out after reaching production. The feed now builds indexed candidates for direct group events, workspace metadata, child records, workspace users, and metric categories before snapshot and actor enrichment. Historical group IDs retain member and attendance events after a group is deleted. The workspace-wide view retains feedback and child events that resolve through a student or category after their parent is deleted. Keep each branch's table predicate aligned with its partial index when adding an audited resource. The listing RPC owns ordering after filtering and counting; do not sort every wide feed row inside `user_group_activity_feed` as well. Verify event coverage, the query plan, and live response time after release. The three-argument feed delegates to the same implementation.
+The feed reads a date range of `audit.record_version` before resolving groups and actors. Keep its partial date index aligned with the current `public` and `private` table names whenever a tracked resource moves schemas. A PostgreSQL `57014` timeout means the feed is unavailable, not empty; check the exact query plan and index validity before widening the statement timeout. The concurrent activity index migration `20260929130000_user_group_activity_current_schema_index.sql` restored schema alignment, but did not by itself resolve the Easy Center timeout. An OR-based workspace/group predicate and then an unscoped workspace-wide orphan scan also timed out after reaching production. The feed now builds indexed candidates for direct group events, workspace metadata, child records, workspace users, and metric categories. Historical group IDs retain member and attendance events after a group is deleted. The workspace-wide view retains feedback and child events that resolve through a student or category after their parent is deleted. Keep each branch's table predicate aligned with its partial index when adding an audited resource. The unfiltered workspace listing counts and sorts narrow candidate IDs, then calculates snapshots, labels, and actors for the selected page. Searches and group-scoped requests still use the full feed so filters see enriched fields. The listing RPC owns ordering; do not sort every wide feed row inside `user_group_activity_feed` as well. Compare candidate IDs and counts with the full feed, benchmark a representative 30-day range locally, and verify live response time after release. The three-argument feed delegates to the same implementation.
+
+### Local performance verification
+
+The fast-page migrations preserve the existing RPC signature and service-role-only
+access. Only the default unfiltered workspace request uses narrow IDs; search,
+resource/action filters, group scope, and ranges whose snapshots reference
+multiple fallback actor links retain the enriched path. Fallback actors may belong
+to another workspace; the multiplicity guard checks eligible historical snapshot
+references rather than current workspace ownership. It conservatively checks all
+potential actor fields, including unchanged update fields. Narrow eligibility checks supported row operations
+without calculating snapshot diffs. Action labels, changed fields, names, and
+snapshots are still calculated for the selected page.
+
+The 2026-09-30 same-data benchmark used isolated local PostgreSQL, synthetic
+feedback events across 28 days, equally distributed inserts/updates/deletes,
+roughly 1.9 KiB content snapshots, 4 MB `work_mem`, and a 20-row page at offset 20.
+Both implementations read the same rows in one session. Each had one warm-up and
+five measured runs; the p95 values below are interpolated from these five samples,
+not production SLA estimates.
+
+| Events | Baseline median / sample p95 | Fast median / sample p95 | Baseline temp read / written blocks | Fast temp read / written blocks |
+| --- | --- | --- | --- | --- |
+| 24,000 | 2,632 / 2,737 ms | 513 / 527 ms | 24,685 / 25,039 | 0 / 0 |
+| 48,000 | 5,403 / 6,041 ms | 994 / 1,035 ms | 49,723 / 50,077 | 0 / 0 |
+| 96,000 | 10,928 / 12,989 ms | 2,027 / 2,371 ms | 99,796 / 100,150 | 639 / 611 |
+
+An additional 48k fixture with an unrelated virtual actor in another workspace
+linked to two platform users measured baseline median/sample p95 5,651/5,842 ms
+versus fast 2,379/2,701 ms. The scoped ambiguity check adds work but retains early
+pagination when those actor IDs are absent from the audit snapshots. Use the
+harness option `unrelated_actor_links=true` to reproduce this case.
+
+Full-row multiset equality, including counts and snapshots, passed at every size.
+The regression suite also covers all 18 resources and three operations, tied
+sorting, offsets and normalized limits, date boundaries, filters, workspace
+isolation, same-workspace and cross-workspace fallback actor multiplicity,
+service-role execution, and actual denied
+anon/authenticated calls. Restrictive MFA policies must not be counted as
+permissive access grants in policy assertions; no policy or grant is changed by
+this optimization.
+
+The reproducible rollback-only harness and raw JSON samples are in
+`apps/database/supabase/benchmarks/user-group-activity-fast-page.sql` and
+`user-group-activity-fast-page-results.json`. Use a disposable database named
+`audit_benchmark_*` or `audit_takeover_*`; the harness rejects other names. Install
+the previous listing from migration
+`20260929153000_scope_user_group_activity_before_enrichment.sql` under the test-only
+name `private.list_user_group_activity_logs_baseline`, then apply the three
+fast-page migrations. Run through the resource queue with `psql` variables
+`size=48000` and `baseline_rpc=list_user_group_activity_logs_baseline`. Benchmark
+rows roll back. Never run this synthetic fixture against shared or production data.
+
+Candidate resolution extracts the snapshot anchor fields together before parent
+joins. Repeated `->>` calls on large TOASTed JSON can fetch the same snapshot
+for each join even when the required partial indexes are valid. Preserve
+`try_parse_uuid`, current/old fallback, and workspace precedence when changing
+anchor extraction; malformed non-object snapshots retain null-field behavior.
+Use `user-group-activity-anchor-extraction.sql` to compare the deployed candidate
+helper with this follow-up on the same synthetic mixed-operation history. It
+includes representative parent cardinality and both inline (`toast_snapshots=false`)
+and TOASTed (`toast_snapshots=true`) snapshots. Keep production timeout settings
+unchanged while diagnosing; a warm fixed-window success does not prove the
+default rolling 30-day request is stable.
+
+The anchor-extraction benchmark adds 72,000 mixed-operation activity snapshots
+and 570,000 unrelated older audit rows, with representative user/group/post/report
+cardinality. Alternating implementations on the same data (one warm-up and five
+measured runs) produced:
+
+| Snapshot storage | Before median / sample p95 | After median / sample p95 | Before / after median shared buffer hits |
+| --- | --- | --- | --- |
+| Inline | 1,163 / 1,426 ms | 1,175 / 1,411 ms | 118,303 / 85,306 |
+| TOASTed | 2,972 / 3,727 ms | 2,373 / 2,503 ms | 3,561,903 / 1,411,338 |
+
+Candidate and full-page multiset parity passed in both scenarios. Raw samples
+and exact source hashes are in `user-group-activity-anchor-extraction-results.json`.
+These local measurements do not establish production latency or an SLA. Confirm
+the default rolling 30-day UI after release; retain an unavailable state for a
+timeout rather than displaying an empty history.
+
+
+Broad tests on the schema-only local fixture reproduced 43 failing suites on the
+original HEAD. Two stale audit policy assertions are repaired here; the remaining
+41 unrelated failures have identical baseline failure records. This fixture omits
+scheduler setup and migration-seeded reference catalogs. A separate fresh
+Supabase bootstrap applies the migrations and passes the 24-case parity suite;
+its full test run has 35 failing suites before the change and 33 afterwards,
+with no new failures and identical existing failure summaries. Type generation
+from that fresh schema and a non-emitting type check pass. The full suite is
+therefore still blocked by unrelated failures. Require green exact-commit CI,
+plus a read-only live 30-day workspace/group/filter check after
+production rollout before declaring the original timeout fixed.
 
 ### Tracked Resources
 
