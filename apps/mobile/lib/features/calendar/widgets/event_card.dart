@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
 
@@ -25,7 +26,7 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final event = layoutInfo.event;
-    final start = event.startAt ?? DateTime.now();
+    final start = event.startAt ?? calendarNowInContext(context);
     final end = event.endAt ?? start.add(const Duration(minutes: 30));
     final accentColor = EventColors.fromString(event.color);
     final titleColor = EventColors.bright(event.color);

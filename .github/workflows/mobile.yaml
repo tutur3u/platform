@@ -100,6 +100,12 @@ jobs:
       - name: Run test shard
         run: flutter test --concurrency=2 --total-shards=4 --shard-index=${{ matrix.shard }} -r expanded
 
+      - name: Verify native device DST gap
+        if: matrix.shard == 0
+        env:
+          TZ: America/New_York
+        run: flutter test test/features/calendar/calendar_date_time_test.dart -r expanded
+
   build:
     name: build
     needs: [check-ci, quality, tests]

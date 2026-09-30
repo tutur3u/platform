@@ -9,8 +9,10 @@ import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/calendar_event_deduplication.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 
 part 'calendar_state.dart';
+part 'calendar_cache_state.dart';
 
 const _sentinel = Object();
 
@@ -30,12 +32,28 @@ class CalendarCubit extends Cubit<CalendarState> {
 
   CalendarViewMode _defaultViewMode;
 
+  void setTimezone(String? timezone) {
+    if (state.timezone == timezone) return;
+    emit(
+      state.copyWith(
+        timezone: timezone,
+        selectedDate:
+            state.timezone == null && state.selectedDate?.isUtc == false
+            ? calendarWallDate(state.selectedDate!, timezone)
+            : state.hasLoadedOnce || state.selectedDate?.isUtc == true
+            ? state.selectedDate
+            : calendarNow(timezone),
+      ),
+    );
+  }
+
   void updateDefaultView(CalendarViewMode mode) {
     _defaultViewMode = mode;
     if (!state.hasSelectedView) emit(state.copyWith(viewMode: mode));
   }
 
   CalendarState _restoreView(CalendarState cached) => cached.copyWith(
+    timezone: state.timezone,
     viewMode: state.hasSelectedView
         ? state.viewMode
         : cached.hasSelectedView
@@ -64,7 +82,7 @@ class CalendarCubit extends Cubit<CalendarState> {
 
   static CacheKey _cacheKey(String wsId) {
     return CacheKey(
-      namespace: 'calendar.events',
+      namespace: 'calendar.events.utc.v2',
       userId: currentCacheUserId(),
       workspaceId: wsId,
       locale: currentCacheLocaleTag(),
@@ -126,12 +144,19 @@ class CalendarCubit extends Cubit<CalendarState> {
       tags: [_cacheTag, 'workspace:$wsId', 'module:calendar'],
       fetch: () async {
         final events = deduplicateCalendarEvents(
-          await calendarRepository.getEvents(wsId, start: start, end: end),
+          await calendarRepository.getEvents(
+            wsId,
+            start: calendarWallToUtc(start, null),
+            end: calendarWallToUtc(end, null),
+          ),
         );
         final previous = seedStateForWorkspace(wsId);
         return {
           'selectedDate': center.toIso8601String(),
-          'focusedMonth': DateTime(center.year, center.month).toIso8601String(),
+          'focusedMonth': calendarDate(
+            center.year,
+            center.month,
+          ).toIso8601String(),
           'viewMode': previous?.viewMode.name ?? CalendarViewMode.agenda.name,
           'hasSelectedView': previous?.hasSelectedView ?? false,
           'events': events
@@ -169,7 +194,7 @@ class CalendarCubit extends Cubit<CalendarState> {
               )
             : null);
     if (_wsId != null && _wsId != wsId) {
-      emit(CalendarState(viewMode: _defaultViewMode));
+      emit(CalendarState(viewMode: _defaultViewMode, timezone: state.timezone));
     }
     _wsId = wsId;
     final cacheKey = _cacheKey(wsId);
@@ -250,7 +275,11 @@ class CalendarCubit extends Cubit<CalendarState> {
       final end = targetRange.end;
 
       final events = deduplicateCalendarEvents(
-        await _repo.getEvents(wsId, start: start, end: end),
+        await _repo.getEvents(
+          wsId,
+          start: calendarWallToUtc(start, state.timezone),
+          end: calendarWallToUtc(end, state.timezone),
+        ),
       );
 
       if (!isCurrent()) return;
@@ -281,6 +310,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         emit(
           CalendarState(
             selectedDate: state.selectedDate,
+            timezone: state.timezone,
             status: CalendarStatus.error,
             error: e.toString(),
           ),
@@ -338,13 +368,13 @@ class CalendarCubit extends Cubit<CalendarState> {
     emit(state.copyWith(isLoadingMore: true));
 
     final newStart = range.end;
-    final newEnd = DateTime(newStart.year, newStart.month + 2);
+    final newEnd = calendarDate(newStart.year, newStart.month + 2);
 
     try {
       final moreEvents = await _repo.getEvents(
         wsId,
-        start: newStart,
-        end: newEnd,
+        start: calendarWallToUtc(newStart, state.timezone),
+        end: calendarWallToUtc(newEnd, state.timezone),
       );
 
       if (!isCurrent()) return;
@@ -367,20 +397,20 @@ class CalendarCubit extends Cubit<CalendarState> {
     emit(
       _storeAndReturn(
         state.copyWith(
-          selectedDate: date,
-          focusedMonth: DateTime(date.year, date.month),
+          selectedDate: calendarDate(date.year, date.month, date.day),
+          focusedMonth: calendarDate(date.year, date.month),
         ),
       ),
     );
   }
 
   void goToToday() {
-    final now = DateTime.now();
+    final now = calendarNow(state.timezone);
     emit(
       _storeAndReturn(
         state.copyWith(
           selectedDate: now,
-          focusedMonth: DateTime(now.year, now.month),
+          focusedMonth: calendarDate(now.year, now.month),
         ),
       ),
     );
@@ -572,68 +602,6 @@ class CalendarCubit extends Cubit<CalendarState> {
     return nextState;
   }
 
-  static Map<String, dynamic> _stateToCacheJson(CalendarState state) {
-    return {
-      'selectedDate': state.selectedDate?.toIso8601String(),
-      'focusedMonth': state.focusedMonth?.toIso8601String(),
-      'viewMode': state.viewMode.name,
-      'hasSelectedView': state.hasSelectedView,
-      'events': state.events
-          .map((event) => event.toJson())
-          .toList(growable: false),
-      'fetchedRange': state.fetchedRange == null
-          ? null
-          : {
-              'start': state.fetchedRange!.start.toIso8601String(),
-              'end': state.fetchedRange!.end.toIso8601String(),
-            },
-      'hasLoadedOnce': state.hasLoadedOnce,
-      'lastUpdatedAt': state.lastUpdatedAt?.toIso8601String(),
-    };
-  }
-
-  static CalendarState _stateFromCacheJson(Map<String, dynamic> json) {
-    final fetchedRangeJson = json['fetchedRange'];
-    DateTimeRange? fetchedRange;
-    if (fetchedRangeJson is Map<String, dynamic>) {
-      final start = DateTime.tryParse(
-        fetchedRangeJson['start'] as String? ?? '',
-      );
-      final end = DateTime.tryParse(fetchedRangeJson['end'] as String? ?? '');
-      if (start != null && end != null) {
-        fetchedRange = DateTimeRange(start: start, end: end);
-      }
-    }
-
-    final viewMode = CalendarViewMode.values.firstWhere(
-      (value) => value.name == json['viewMode'],
-      orElse: () => CalendarViewMode.agenda,
-    );
-
-    return CalendarState(
-      status: CalendarStatus.loaded,
-      hasLoadedOnce: json['hasLoadedOnce'] as bool? ?? true,
-      isFromCache: true,
-      lastUpdatedAt: json['lastUpdatedAt'] != null
-          ? DateTime.tryParse(json['lastUpdatedAt'] as String)
-          : null,
-      viewMode: viewMode,
-      hasSelectedView: json['hasSelectedView'] == true,
-      selectedDate: json['selectedDate'] != null
-          ? DateTime.tryParse(json['selectedDate'] as String)
-          : null,
-      focusedMonth: json['focusedMonth'] != null
-          ? DateTime.tryParse(json['focusedMonth'] as String)
-          : null,
-      events: deduplicateCalendarEvents(
-        ((json['events'] as List<dynamic>?) ?? const <dynamic>[])
-            .whereType<Map<String, dynamic>>()
-            .map(CalendarEvent.fromJson),
-      ),
-      fetchedRange: fetchedRange,
-    );
-  }
-
   void _storeCache(CalendarState nextState) {
     final wsId = _wsId;
     if (wsId == null || wsId.isEmpty) {
@@ -641,25 +609,6 @@ class CalendarCubit extends Cubit<CalendarState> {
     }
 
     _rememberCachedState(wsId, nextState);
-  }
-
-  static DateTimeRange _targetRangeFor(DateTime center, CalendarViewMode mode) {
-    switch (mode) {
-      case CalendarViewMode.year:
-        return DateTimeRange(
-          start: DateTime(center.year),
-          end: DateTime(center.year + 1),
-        );
-      case CalendarViewMode.day:
-      case CalendarViewMode.threeDays:
-      case CalendarViewMode.week:
-      case CalendarViewMode.month:
-      case CalendarViewMode.agenda:
-        return DateTimeRange(
-          start: DateTime(center.year, center.month - 1),
-          end: DateTime(center.year, center.month + 2),
-        );
-    }
   }
 }
 

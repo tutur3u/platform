@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class YearView extends StatelessWidget {
@@ -52,7 +53,7 @@ class YearView extends StatelessWidget {
               children: [
                 shad.IconButton.ghost(
                   onPressed: () => onYearChanged(
-                    DateTime(displayYear - 1, focusedMonth.month),
+                    calendarDate(displayYear - 1, focusedMonth.month),
                   ),
                   icon: const Icon(Icons.chevron_left_rounded),
                 ),
@@ -67,7 +68,7 @@ class YearView extends StatelessWidget {
                 ),
                 shad.IconButton.ghost(
                   onPressed: () => onYearChanged(
-                    DateTime(displayYear + 1, focusedMonth.month),
+                    calendarDate(displayYear + 1, focusedMonth.month),
                   ),
                   icon: const Icon(Icons.chevron_right_rounded),
                 ),
@@ -84,7 +85,7 @@ class YearView extends StatelessWidget {
                       padding: EdgeInsets.only(bottom: index == 11 ? 0 : 12),
                       child: _YearMonthCard(
                         dayHeight: dayHeight,
-                        month: DateTime(displayYear, index + 1),
+                        month: calendarDate(displayYear, index + 1),
                         selectedDate: selectedDate,
                         firstDayOfWeek: firstDayOfWeek,
                         eventColorsByDay: eventColorsByDay,
@@ -97,7 +98,7 @@ class YearView extends StatelessWidget {
                   delegate: SliverChildBuilderDelegate((context, index) {
                     return _YearMonthCard(
                       dayHeight: dayHeight,
-                      month: DateTime(displayYear, index + 1),
+                      month: calendarDate(displayYear, index + 1),
                       selectedDate: selectedDate,
                       firstDayOfWeek: firstDayOfWeek,
                       eventColorsByDay: eventColorsByDay,
@@ -125,11 +126,11 @@ class YearView extends StatelessWidget {
         continue;
       }
 
-      final startDay = DateTime(start.year, start.month, start.day);
+      final startDay = calendarDate(start.year, start.month, start.day);
       final rawEnd = event.endAt ?? start;
       final endDayExclusive = event.isAllDay
-          ? DateTime(rawEnd.year, rawEnd.month, rawEnd.day)
-          : DateTime(rawEnd.year, rawEnd.month, rawEnd.day + 1);
+          ? calendarDate(rawEnd.year, rawEnd.month, rawEnd.day)
+          : calendarDate(rawEnd.year, rawEnd.month, rawEnd.day + 1);
       final lastDay = endDayExclusive.isAfter(startDay)
           ? endDayExclusive.subtract(const Duration(days: 1))
           : startDay;
@@ -189,13 +190,17 @@ class _YearMonthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final firstOfMonth = DateTime(month.year, month.month);
-    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final firstOfMonth = calendarDate(month.year, month.month);
+    final daysInMonth = calendarDate(month.year, month.month + 1, 0).day;
     final startWeekday = (firstOfMonth.weekday % 7 - firstDayOfWeek + 7) % 7;
     final totalCells = ((startWeekday + daysInMonth + 6) ~/ 7) * 7;
     final weekCount = totalCells ~/ 7;
     final weekdayLabels = List.generate(7, (index) {
-      final reference = DateTime(2024, 1, 7 + ((firstDayOfWeek + index) % 7));
+      final reference = calendarDate(
+        2024,
+        1,
+        7 + ((firstDayOfWeek + index) % 7),
+      );
       final shortLabel = DateFormat.E().format(reference);
       return shortLabel.isEmpty ? '' : shortLabel.substring(0, 1).toUpperCase();
     });
@@ -249,7 +254,7 @@ class _YearMonthCard extends StatelessWidget {
                 final day = cellIndex - startWeekday + 1;
                 final inMonth = day >= 1 && day <= daysInMonth;
                 final date = inMonth
-                    ? DateTime(month.year, month.month, day)
+                    ? calendarDate(month.year, month.month, day)
                     : null;
 
                 return Expanded(
@@ -302,7 +307,7 @@ class _YearDayCell extends StatelessWidget {
     }
 
     final theme = shad.Theme.of(context);
-    final now = DateTime.now();
+    final now = calendarNowInContext(context);
     final isToday =
         date!.year == now.year &&
         date!.month == now.month &&

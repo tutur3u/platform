@@ -19,6 +19,7 @@ class CalendarEvent extends Equatable {
     this.schedulingMetadata,
     this.wsId,
     this.createdAt,
+    this.isAllDayOverride,
   });
 
   factory CalendarEvent.fromJson(Map<String, dynamic> json) {
@@ -29,34 +30,12 @@ class CalendarEvent extends Equatable {
         ? DateTime.parse(json['end_at'] as String)
         : null;
 
-    // Detect all-day events from the UTC representation (exact 24h multiple).
-    final allDay =
-        rawStart != null &&
-        rawEnd != null &&
-        rawEnd.difference(rawStart).inMilliseconds > 0 &&
-        rawEnd.difference(rawStart).inMilliseconds % _msPerDay == 0;
-
-    // For all-day events, use the UTC date at local midnight so the event
-    // stays on the correct calendar day regardless of timezone offset.
-    // E.g. UTC 00:00 Feb 1 → 00:00 Feb 2 in GMT+7 becomes local midnight
-    // Feb 1 → midnight Feb 2 (shows on Feb 1 only).
-    final DateTime? startAt;
-    final DateTime? endAt;
-    if (allDay) {
-      // allDay is only true when both rawStart and rawEnd are non-null.
-      startAt = DateTime(rawStart.year, rawStart.month, rawStart.day);
-      endAt = DateTime(rawEnd.year, rawEnd.month, rawEnd.day);
-    } else {
-      startAt = rawStart?.toLocal();
-      endAt = rawEnd?.toLocal();
-    }
-
     return CalendarEvent(
       id: json['id'] as String,
       title: json['title'] as String?,
       description: json['description'] as String?,
-      startAt: startAt,
-      endAt: endAt,
+      startAt: rawStart?.toUtc(),
+      endAt: rawEnd?.toUtc(),
       color: json['color'] as String?,
       provider: json['provider'] as String?,
       schedulingMetadata: json['scheduling_metadata'] is Map
@@ -80,12 +59,16 @@ class CalendarEvent extends Equatable {
   final String? wsId;
   final DateTime? createdAt;
 
+  /// Display projections may classify calendar midnights across DST.
+  final bool? isAllDayOverride;
+
   /// Whether this event is an all-day event.
   ///
   /// Computed from duration — matches the web calendar's `isAllDayEvent()`:
   /// an event is all-day if its duration is a positive multiple of 24 hours.
   /// The database has no `is_all_day` column; this is always inferred.
   bool get isAllDay {
+    if (isAllDayOverride != null) return isAllDayOverride!;
     if (startAt == null || endAt == null) return false;
     final durationMs = endAt!.difference(startAt!).inMilliseconds;
     return durationMs > 0 && durationMs % _msPerDay == 0;
@@ -146,8 +129,10 @@ class CalendarEvent extends Equatable {
     Object? schedulingMetadata = _sentinel,
     Object? wsId = _sentinel,
     Object? createdAt = _sentinel,
+    bool? isAllDayOverride,
   }) => CalendarEvent(
     id: id ?? this.id,
+    isAllDayOverride: isAllDayOverride ?? this.isAllDayOverride,
     title: title == _sentinel ? this.title : title as String?,
     description: description == _sentinel
         ? this.description
@@ -167,8 +152,8 @@ class CalendarEvent extends Equatable {
     'id': id,
     'title': title,
     'description': description,
-    'start_at': startAt?.toIso8601String(),
-    'end_at': endAt?.toIso8601String(),
+    'start_at': startAt?.toUtc().toIso8601String(),
+    'end_at': endAt?.toUtc().toIso8601String(),
     'color': color,
     'provider': provider,
     'scheduling_metadata': schedulingMetadata,
@@ -188,5 +173,6 @@ class CalendarEvent extends Equatable {
     schedulingMetadata,
     wsId,
     createdAt,
+    isAllDayOverride,
   ];
 }

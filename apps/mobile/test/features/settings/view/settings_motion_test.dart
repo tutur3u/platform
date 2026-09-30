@@ -18,6 +18,7 @@ import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
+import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -35,6 +36,9 @@ class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
     implements WorkspaceCubit {}
 
 class _MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {}
+
+class _MockTimezoneSettingsCubit extends MockCubit<TimezoneSettingsState>
+    implements TimezoneSettingsCubit {}
 
 class _MockProfileRepository extends Mock implements ProfileRepository {}
 
@@ -80,11 +84,29 @@ void main() {
     late _MockWorkspaceCubit workspaceCubit;
     late _MockAuthCubit authCubit;
     late _MockProfileRepository profileRepository;
+    late _MockTimezoneSettingsCubit timezoneCubit;
 
     setUp(() {
       workspaceCubit = _MockWorkspaceCubit();
       authCubit = _MockAuthCubit();
       profileRepository = _MockProfileRepository();
+      timezoneCubit = _MockTimezoneSettingsCubit();
+      const timezoneState = TimezoneSettingsState(
+        loading: false,
+        resolved: true,
+      );
+      when(() => timezoneCubit.state).thenReturn(timezoneState);
+      whenListen(
+        timezoneCubit,
+        const Stream<TimezoneSettingsState>.empty(),
+        initialState: timezoneState,
+      );
+      when(
+        () => timezoneCubit.load(
+          userId: any(named: 'userId'),
+          workspaceId: any(named: 'workspaceId'),
+        ),
+      ).thenAnswer((_) async {});
       final authState = AuthState.authenticated(
         supa.User.fromJson({
           'id': 'user-1',
@@ -134,6 +156,7 @@ void main() {
       await tester.pumpApp(
         MultiBlocProvider(
           providers: [
+            BlocProvider<TimezoneSettingsCubit>.value(value: timezoneCubit),
             BlocProvider(
               create: (_) =>
                   AppTabCubit(settingsRepository: SettingsRepository()),
@@ -191,6 +214,7 @@ void main() {
       await tester.pumpApp(
         MultiBlocProvider(
           providers: [
+            BlocProvider<TimezoneSettingsCubit>.value(value: timezoneCubit),
             BlocProvider(
               create: (_) =>
                   AppTabCubit(settingsRepository: SettingsRepository()),
@@ -249,8 +273,11 @@ void main() {
         );
 
         await tester.pumpApp(
-          BlocProvider<WorkspaceCubit>.value(
-            value: workspaceCubit,
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<TimezoneSettingsCubit>.value(value: timezoneCubit),
+              BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+            ],
             child: const SettingsWorkspacePage(),
           ),
         );
@@ -271,6 +298,7 @@ void main() {
       await tester.pumpApp(
         MultiBlocProvider(
           providers: [
+            BlocProvider<TimezoneSettingsCubit>.value(value: timezoneCubit),
             BlocProvider(
               create: (_) =>
                   AppTabCubit(settingsRepository: SettingsRepository()),

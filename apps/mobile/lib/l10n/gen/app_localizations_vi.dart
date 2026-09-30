@@ -9312,4 +9312,30 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get offlineChangesDiscardConfirm => 'Thao tác này xóa thay đổi đang chờ trên thiết bị. Nó không hoàn tác dữ liệu mà máy chủ có thể đã nhận.';
+
+  @override
+  String get settingsTimezone => 'Múi giờ cá nhân';
+
+  @override
+  String get settingsWorkspaceTimezone => 'Múi giờ không gian làm việc';
+
+  @override
+  String get settingsTimezoneDescription => 'Múi giờ cá nhân ưu tiên hơn múi giờ không gian làm việc. Tự động dùng mặc định không gian làm việc, sau đó thiết bị.';
+
+  @override
+  String get settingsTimezoneAuto => 'Tự động';
+
+  @override
+  String get settingsTimezoneSearch => 'Tìm múi giờ';
+
+  @override
+  String settingsTimezoneEffective(String timezone) {
+    return 'Múi giờ áp dụng: $timezone';
+  }
+
+  @override
+  String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.';
+
+  @override
+  String get calendarInvalidLocalTime => 'Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè.';
 }

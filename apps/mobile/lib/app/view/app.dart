@@ -60,6 +60,7 @@ import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_state.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
+import 'package:mobile/features/settings/view/calendar_timezone_scope.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_mini_nav_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -573,119 +574,123 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _shellProfileCubit),
         BlocProvider.value(value: _shellTitleOverrideCubit),
       ],
-      child: MultiBlocListener(
-        listeners: [
-          BlocListener<AuthCubit, AuthState>(
-            listenWhen: (prev, curr) =>
-                prev.status != curr.status || prev.user?.id != curr.user?.id,
-            listener: (context, state) {
-              ProfileCubit.clearMemoryCache();
-              if (state.status == AuthStatus.authenticated) {
-                unawaited(
-                  PushNotificationService.instance.startSession(state.user!.id),
-                );
-                context.read<ShellProfileCubit>().primeFromAuthenticatedUser(
-                  state.user!,
-                );
-                unawaited(
-                  context.read<ShellProfileCubit>().loadFromAuthenticatedUser(
+      child: CalendarTimezoneScope(
+        child: MultiBlocListener(
+          listeners: [
+            BlocListener<AuthCubit, AuthState>(
+              listenWhen: (prev, curr) =>
+                  prev.status != curr.status || prev.user?.id != curr.user?.id,
+              listener: (context, state) {
+                ProfileCubit.clearMemoryCache();
+                if (state.status == AuthStatus.authenticated) {
+                  unawaited(
+                    PushNotificationService.instance.startSession(
+                      state.user!.id,
+                    ),
+                  );
+                  context.read<ShellProfileCubit>().primeFromAuthenticatedUser(
                     state.user!,
+                  );
+                  unawaited(
+                    context.read<ShellProfileCubit>().loadFromAuthenticatedUser(
+                      state.user!,
+                    ),
+                  );
+                  unawaited(
+                    context.read<AppLockCubit>().load(lockIfEnabled: true),
+                  );
+                  unawaited(_loadWorkspacesWithReminders());
+                  unawaited(_openPendingDeepLinkIfReady());
+                } else if (state.status == AuthStatus.unauthenticated) {
+                  unawaited(ReminderService.instance.stopSession());
+                  context.read<AppLockCubit>().resetLockState();
+                  unawaited(context.read<ShellProfileCubit>().clear());
+                  unawaited(context.read<WorkspaceCubit>().clearWorkspaces());
+                }
+              },
+            ),
+            BlocListener<WorkspaceCubit, WorkspaceState>(
+              listenWhen: (previous, current) =>
+                  previous.currentWorkspace?.id != current.currentWorkspace?.id,
+              listener: (context, state) {
+                unawaited(
+                  context.read<HabitsAccessCubit>().syncWorkspace(
+                    state.currentWorkspace?.id,
                   ),
                 );
                 unawaited(
-                  context.read<AppLockCubit>().load(lockIfEnabled: true),
+                  context.read<EducationAccessCubit>().syncWorkspace(
+                    state.currentWorkspace?.id,
+                  ),
                 );
-                unawaited(_loadWorkspacesWithReminders());
+                unawaited(
+                  context.read<InventoryAccessCubit>().syncWorkspace(
+                    state.currentWorkspace?.id,
+                  ),
+                );
+                if (state.currentWorkspace == null) {
+                  return;
+                }
+                final userId = context.read<AuthCubit>().state.user?.id;
+                if (userId != null) {
+                  unawaited(
+                    ReminderService.instance.startSession(
+                      userId,
+                      state.workspaces,
+                    ),
+                  );
+                }
+                unawaited(
+                  context.read<AuthCubit>().updateActiveAccountWorkspaceContext(
+                    state.currentWorkspace!.id,
+                  ),
+                );
+                unawaited(CacheWarmupCoordinator.instance.prewarmBoot());
                 unawaited(_openPendingDeepLinkIfReady());
-              } else if (state.status == AuthStatus.unauthenticated) {
-                unawaited(ReminderService.instance.stopSession());
-                context.read<AppLockCubit>().resetLockState();
-                unawaited(context.read<ShellProfileCubit>().clear());
-                unawaited(context.read<WorkspaceCubit>().clearWorkspaces());
-              }
-            },
-          ),
-          BlocListener<WorkspaceCubit, WorkspaceState>(
-            listenWhen: (previous, current) =>
-                previous.currentWorkspace?.id != current.currentWorkspace?.id,
-            listener: (context, state) {
-              unawaited(
-                context.read<HabitsAccessCubit>().syncWorkspace(
-                  state.currentWorkspace?.id,
-                ),
-              );
-              unawaited(
-                context.read<EducationAccessCubit>().syncWorkspace(
-                  state.currentWorkspace?.id,
-                ),
-              );
-              unawaited(
-                context.read<InventoryAccessCubit>().syncWorkspace(
-                  state.currentWorkspace?.id,
-                ),
-              );
-              if (state.currentWorkspace == null) {
-                return;
-              }
-              final userId = context.read<AuthCubit>().state.user?.id;
-              if (userId != null) {
-                unawaited(
-                  ReminderService.instance.startSession(
-                    userId,
-                    state.workspaces,
-                  ),
-                );
-              }
-              unawaited(
-                context.read<AuthCubit>().updateActiveAccountWorkspaceContext(
-                  state.currentWorkspace!.id,
-                ),
-              );
-              unawaited(CacheWarmupCoordinator.instance.prewarmBoot());
-              unawaited(_openPendingDeepLinkIfReady());
-            },
-          ),
-        ],
-        child: BlocBuilder<LocaleCubit, LocaleState>(
-          builder: (context, localeState) {
-            return BlocBuilder<ThemeCubit, ThemeState>(
-              builder: (context, themeState) {
-                return shad.ShadcnApp.router(
-                  debugShowCheckedModeBanner: false,
-                  theme: MobileShadTheme.light,
-                  darkTheme: MobileShadTheme.dark,
-                  themeMode: themeState.themeMode,
-                  locale: localeState.locale,
-                  localizationsDelegates: const [
-                    ...AppLocalizations.localizationsDelegates,
-                    shad.ShadcnLocalizations.delegate,
-                  ],
-                  supportedLocales: AppLocalizations.supportedLocales,
-                  routerConfig: _router,
-                  builder: (context, child) {
-                    final authIdentity = context.select<AuthCubit, String?>(
-                      (cubit) => cubit.state.user?.id,
-                    );
-                    return ShadcnMaterialBridge(
-                      child: AuthSessionBoundary(
-                        identity: authIdentity,
-                        child: DismissKeyboardOnPointerDown(
-                          child: AppLockBoundary(
-                            excluded: isAppLockExcludedRoute(
-                              _currentMatchedLocation(),
-                            ),
-                            child: MobileMfaApprovalListener(
-                              child: AppVersionGate(child: child!),
+              },
+            ),
+          ],
+          child: BlocBuilder<LocaleCubit, LocaleState>(
+            builder: (context, localeState) {
+              return BlocBuilder<ThemeCubit, ThemeState>(
+                builder: (context, themeState) {
+                  return shad.ShadcnApp.router(
+                    debugShowCheckedModeBanner: false,
+                    theme: MobileShadTheme.light,
+                    darkTheme: MobileShadTheme.dark,
+                    themeMode: themeState.themeMode,
+                    locale: localeState.locale,
+                    localizationsDelegates: const [
+                      ...AppLocalizations.localizationsDelegates,
+                      shad.ShadcnLocalizations.delegate,
+                    ],
+                    supportedLocales: AppLocalizations.supportedLocales,
+                    routerConfig: _router,
+                    builder: (context, child) {
+                      final authIdentity = context.select<AuthCubit, String?>(
+                        (cubit) => cubit.state.user?.id,
+                      );
+                      return ShadcnMaterialBridge(
+                        child: AuthSessionBoundary(
+                          identity: authIdentity,
+                          child: DismissKeyboardOnPointerDown(
+                            child: AppLockBoundary(
+                              excluded: isAppLockExcludedRoute(
+                                _currentMatchedLocation(),
+                              ),
+                              child: MobileMfaApprovalListener(
+                                child: AppVersionGate(child: child!),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                );
-              },
-            );
-          },
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          ),
         ),
       ),
     );
