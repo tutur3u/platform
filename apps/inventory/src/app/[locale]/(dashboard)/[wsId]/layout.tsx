@@ -1,4 +1,3 @@
-import { InventorySessionScope } from '@/components/operator/inventory-session-scope';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import {
@@ -16,6 +15,7 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
+import { InventorySessionScope } from '@/components/operator/inventory-session-scope';
 import { SidebarProvider } from '@/context/sidebar-context';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';

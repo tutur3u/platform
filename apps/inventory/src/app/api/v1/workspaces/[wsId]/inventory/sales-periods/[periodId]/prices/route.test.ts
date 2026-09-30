@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   admin: vi.fn(),
@@ -26,7 +27,9 @@ vi.mock('@tuturuuu/inventory-core/period-pricing', async (importOriginal) => ({
   listPeriodPrices: mocks.list,
   periodPricingRpc: mocks.rpc,
 }));
+
 import { GET, POST } from './route';
+
 const id = (n: number) =>
   `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const params = {

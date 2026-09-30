@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InventorySessionScope } from './inventory-session-scope';
 import type { SaleCartLine, SaleStockOption } from './sale-create-items';
 import { useSeasonSalePrices } from './season-sale-prices';
+
 const mocks = vi.hoisted(() => ({ query: vi.fn() }));
 vi.mock('@tanstack/react-query', () => ({ useQuery: mocks.query }));
 const period = {

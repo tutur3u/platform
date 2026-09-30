@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createInventoryPrice, listInventoryPrices } from './inventory-prices';
+
 describe('inventory price client', () => {
   it('reads uncached prices on the canonical workspace/period path', async () => {
     const fetch = vi

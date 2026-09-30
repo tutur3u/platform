@@ -1044,9 +1044,10 @@ export type InvoiceAnalyticsQuery = InvoiceAnalyticsFilters & {
 };
 
 export type {
-  FinanceInvoiceProductPayload,
   CreateFinanceInvoicePayload,
+  FinanceInvoiceProductPayload,
 } from './finance-invoice-contracts';
+
 import type { CreateFinanceInvoicePayload } from './finance-invoice-contracts';
 export interface CreateSubscriptionFinanceInvoicePayload
   extends CreateFinanceInvoicePayload {
