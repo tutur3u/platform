@@ -165,7 +165,10 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  for (final title in ['😀 Project', '👨‍👩‍👧‍👦 Project']) {
+  for (final title in [
+    '😀 Project with a long title',
+    '👨‍👩‍👧‍👦 Project with a long title',
+  ]) {
     testWidgets('ellipsis retains the complete first grapheme of $title', (
       tester,
     ) async {
@@ -179,6 +182,7 @@ void main() {
         find.byType(RichText).last,
       );
       expect(text.overflow, TextOverflow.ellipsis);
+      expect(paragraph.didExceedMaxLines, isTrue);
       expect(
         paragraph.getBoxesForSelection(
           TextSelection(
