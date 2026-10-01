@@ -18096,6 +18096,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Timeline'**
   String get profileTimelineTab;
+
+  /// No description provided for @inventoryStockHealthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock health'**
+  String get inventoryStockHealthTitle;
+
+  /// No description provided for @inventoryStockHealthScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Current active products · all stock rows, including archived warehouses'**
+  String get inventoryStockHealthScope;
+
+  /// No description provided for @inventoryStockHealthAsOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Server snapshot: {timestamp} UTC'**
+  String inventoryStockHealthAsOf(String timestamp);
+
+  /// No description provided for @inventoryStockHealthIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial snapshot: some counts or the server timestamp are unavailable.'**
+  String get inventoryStockHealthIncomplete;
+
+  /// No description provided for @inventoryStockHealthUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock health is unavailable. Pull to refresh to try again.'**
+  String get inventoryStockHealthUnavailable;
+
+  /// No description provided for @inventoryStockHealthDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have access to stock analytics.'**
+  String get inventoryStockHealthDenied;
+
+  /// No description provided for @inventoryStockHealthLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading stock health…'**
+  String get inventoryStockHealthLoading;
+
+  /// No description provided for @inventoryStockHealthActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active products'**
+  String get inventoryStockHealthActive;
+
+  /// No description provided for @inventoryStockHealthUnconfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Products without stock rows'**
+  String get inventoryStockHealthUnconfigured;
+
+  /// No description provided for @inventoryStockHealthLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low stock rows'**
+  String get inventoryStockHealthLow;
+
+  /// No description provided for @inventoryStockHealthOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of stock rows'**
+  String get inventoryStockHealthOut;
+
+  /// No description provided for @inventoryStockHealthUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited stock rows'**
+  String get inventoryStockHealthUnlimited;
+
+  /// No description provided for @inventoryStockHealthOverlap.
+  ///
+  /// In en, this message translates to:
+  /// **'Low/out counts can overlap. Unlimited rows are excluded. Bars compare counts.'**
+  String get inventoryStockHealthOverlap;
+
+  /// No description provided for @inventoryStockHealthUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get inventoryStockHealthUnknown;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

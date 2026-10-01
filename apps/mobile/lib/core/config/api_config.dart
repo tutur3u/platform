@@ -243,6 +243,9 @@ abstract final class InventoryEndpoints {
   static String access(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/access';
 
+  static String analyticsSummary(String wsId) =>
+      '/api/v1/workspaces/$wsId/inventory/analytics/summary?days=30';
+
   static String overview(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/overview';
 
