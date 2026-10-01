@@ -101,7 +101,7 @@ publishing or executing.
 `.github/workflows`; this checkpoint registers no runnable repository workflow.
 After source/resource review, activation must place the reviewed proposal at
 `.github/workflows/inventory-native-journal-proof.yaml`, add it to the
-`tuturuuu.ts` CI switchboard and wire the existing `ci-check.yml` gate, then run
+`tuturuuu.ci.ts` CI switchboard and wire the existing `ci-check.yml` gate, then run
 applicable workflow validators before publication. Keep the manual-only trigger,
 explicit admission, immutable checkout and read-only permissions. Registration,
 remote installs/builds, execution and provider/live-data authority are separate;
@@ -143,3 +143,23 @@ lock states and real receipt/auth/DB behavior remain unexecuted/unverified.
 Source-review baseline: `34b2d051ec443521ec15ff3518321b084ca612a9`.
 The draft PR description records the exact published checkpoint after these
 admission/privacy changes; neither checkpoint has native execution evidence.
+
+## Independent source-review corrections
+
+Android retains `dev.tuturuuu.fixture.sale_journal_fixture`; iOS uses the valid
+separate bundle ID `dev.tuturuuu.fixture.sale-journal-fixture` in both preparation
+and host orchestration. These are source findings, not observed native failures.
+
+Both proposed jobs reuse the existing trusted manual main-ref/actor allowlist
+guard (`TRUSTED_PREVIEW_DEPLOY_ACTORS`) plus explicit resource admission. They
+first check out the immutable trusted workflow SHA to a separate directory,
+evaluate `check-workflow-config.ts` and the current `tuturuuu.ci.ts` switchboard
+there with Node24, then check out the reviewed candidate only if enabled. Missing
+or disabled explicit switchboard registration fails closed. No deployments-read
+permission, secrets, GitHub environments or signing settings are added.
+
+`node --test tools/inventory-native-journal-fixture/host-script.test.mjs` tests
+platform ID/rendering, disk thresholds, artifact allowlisting/caps and trusted
+workflow ordering/guards using only host JavaScript. Importing preparation helpers
+executes no SDK/native command. Native compilation and all runtime gates remain
+unexecuted; the corrected workflow file remains an inert proposal.

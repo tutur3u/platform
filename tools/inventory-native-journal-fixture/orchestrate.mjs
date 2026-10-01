@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { applicationId } from './prepare.mjs';
 
 const [platform, fixture, device, emulator] = process.argv.slice(2);
 if (
@@ -11,7 +12,7 @@ if (
 )
   throw Error('Invalid target');
 const expected = JSON.parse(readFileSync(resolve(fixture, 'proof-input.json')));
-const app = 'dev.tuturuuu.fixture.sale_journal_fixture';
+const app = applicationId(platform);
 const evidence = { ...expected, app_id: app, device, phases: [] };
 const command = (executable, args) => {
   return execFileSync(executable, args, {

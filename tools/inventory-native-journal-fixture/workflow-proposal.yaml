@@ -20,39 +20,78 @@ concurrency:
   cancel-in-progress: false
 jobs:
   android:
-    if: inputs.admitted
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && contains(format(',{0},', vars.TRUSTED_PREVIEW_DEPLOY_ACTORS), format(',{0},', github.actor)) && inputs.admitted
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: candidate
     steps:
-      - uses: actions/checkout@v7
+      - name: Check out trusted workflow source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: trusted
+          persist-credentials: false
+          sparse-checkout: |
+            tuturuuu.ts
+            tuturuuu.ci.ts
+            scripts/ci/check-workflow-config.ts
+            scripts/ci/workflow-config-core.ts
+          sparse-checkout-cone-mode: false
+      - name: Admit disk before tool downloads
+        working-directory: trusted
+        run: node -e 'const s=require("node:fs").statfsSync(process.env.RUNNER_TEMP);if(Number(s.bavail)*Number(s.bsize)<20*2**30)process.exit(1)'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Evaluate trusted CI switchboard
+        id: trusted_config
+        working-directory: trusted
+        env:
+          WORKFLOW_NAME: inventory-native-journal-proof.yaml
+        run: |
+          test -f tuturuuu.ci.ts
+          node --experimental-strip-types --input-type=module -e 'import {ci} from "./tuturuuu.ci.ts"; if(ci[process.env.WORKFLOW_NAME] !== true)process.exit(1)'
+          node --experimental-strip-types scripts/ci/check-workflow-config.ts
+      - name: Check out reviewed candidate
+        if: steps.trusted_config.outputs.should_run == 'true'
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.source_sha }}
+          path: candidate
           persist-credentials: false
       - name: Verify immutable checkout
+        if: steps.trusted_config.outputs.should_run == 'true'
         env:
           EXPECTED_SHA: ${{ inputs.source_sha }}
         run: |
           [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - name: Free-disk admission before tool downloads
+        if: steps.trusted_config.outputs.should_run == 'true'
         run: node tools/inventory-native-journal-fixture/prepare.mjs android "$RUNNER_TEMP/journal-fixture" --preflight
       - uses: actions/setup-java@v6.0.1
+        if: steps.trusted_config.outputs.should_run == 'true'
         with:
           distribution: temurin
           java-version: 17
       - uses: subosito/flutter-action@v2
+        if: steps.trusted_config.outputs.should_run == 'true'
         with:
           flutter-version: "3.47.x"
           channel: stable
           cache: true
           pub-cache: true
       - name: Prepare and build isolated fixture
+        if: steps.trusted_config.outputs.should_run == 'true'
         run: |
           node tools/inventory-native-journal-fixture/prepare.mjs android "$RUNNER_TEMP/journal-fixture"
           cd "$RUNNER_TEMP/journal-fixture"
           flutter pub get > /dev/null 2>&1
           flutter build apk --debug --dart-define-from-file=defines.json > /dev/null 2>&1
       - name: Boot disposable emulator and prove real storage across process death
+        if: steps.trusted_config.outputs.should_run == 'true'
         timeout-minutes: 12
         run: |
           set -euo pipefail
@@ -74,10 +113,10 @@ jobs:
           adb -s emulator-5554 shell svc data disable
           node tools/inventory-native-journal-fixture/orchestrate.mjs android "$RUNNER_TEMP/journal-fixture" emulator-5554 "$ANDROID_HOME/emulator/emulator"
       - name: Collect only bounded synthetic evidence
-        if: always()
+        if: always() && steps.trusted_config.outputs.should_run == 'true'
         run: node tools/inventory-native-journal-fixture/prepare.mjs android "$RUNNER_TEMP/journal-fixture" --artifacts
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: always() && steps.trusted_config.outputs.should_run == 'true'
         with:
           name: native-journal-android-${{ inputs.source_sha }}
           path: |
@@ -87,29 +126,66 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
   ios:
-    if: inputs.admitted
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && contains(format(',{0},', vars.TRUSTED_PREVIEW_DEPLOY_ACTORS), format(',{0},', github.actor)) && inputs.admitted
     runs-on: macos-latest
     timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: candidate
     steps:
-      - uses: actions/checkout@v7
+      - name: Check out trusted workflow source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: trusted
+          persist-credentials: false
+          sparse-checkout: |
+            tuturuuu.ts
+            tuturuuu.ci.ts
+            scripts/ci/check-workflow-config.ts
+            scripts/ci/workflow-config-core.ts
+          sparse-checkout-cone-mode: false
+      - name: Admit disk before tool downloads
+        working-directory: trusted
+        run: node -e 'const s=require("node:fs").statfsSync(process.env.RUNNER_TEMP);if(Number(s.bavail)*Number(s.bsize)<12*2**30)process.exit(1)'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Evaluate trusted CI switchboard
+        id: trusted_config
+        working-directory: trusted
+        env:
+          WORKFLOW_NAME: inventory-native-journal-proof.yaml
+        run: |
+          test -f tuturuuu.ci.ts
+          node --experimental-strip-types --input-type=module -e 'import {ci} from "./tuturuuu.ci.ts"; if(ci[process.env.WORKFLOW_NAME] !== true)process.exit(1)'
+          node --experimental-strip-types scripts/ci/check-workflow-config.ts
+      - name: Check out reviewed candidate
+        if: steps.trusted_config.outputs.should_run == 'true'
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.source_sha }}
+          path: candidate
           persist-credentials: false
       - name: Verify immutable checkout
+        if: steps.trusted_config.outputs.should_run == 'true'
         env:
           EXPECTED_SHA: ${{ inputs.source_sha }}
         run: |
           [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - name: Free-disk admission before tool downloads
+        if: steps.trusted_config.outputs.should_run == 'true'
         run: node tools/inventory-native-journal-fixture/prepare.mjs ios "$RUNNER_TEMP/journal-fixture" --preflight
       - uses: subosito/flutter-action@v2
+        if: steps.trusted_config.outputs.should_run == 'true'
         with:
           flutter-version: "3.47.x"
           channel: stable
           cache: true
           pub-cache: true
       - name: Prepare and build isolated fixture
+        if: steps.trusted_config.outputs.should_run == 'true'
         run: |
           flutter config --no-enable-swift-package-manager
           node tools/inventory-native-journal-fixture/prepare.mjs ios "$RUNNER_TEMP/journal-fixture"
@@ -117,6 +193,7 @@ jobs:
           flutter pub get > /dev/null 2>&1
           flutter build ios --debug --simulator --dart-define-from-file=defines.json > /dev/null 2>&1
       - name: Boot disposable simulator and prove real storage across process death
+        if: steps.trusted_config.outputs.should_run == 'true'
         timeout-minutes: 12
         run: |
           set -euo pipefail
@@ -130,10 +207,10 @@ jobs:
           xcrun simctl bootstatus "$DEVICE" -b
           node tools/inventory-native-journal-fixture/orchestrate.mjs ios "$RUNNER_TEMP/journal-fixture" "$DEVICE"
       - name: Collect only bounded synthetic evidence
-        if: always()
+        if: always() && steps.trusted_config.outputs.should_run == 'true'
         run: node tools/inventory-native-journal-fixture/prepare.mjs ios "$RUNNER_TEMP/journal-fixture" --artifacts
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: always() && steps.trusted_config.outputs.should_run == 'true'
         with:
           name: native-journal-ios-${{ inputs.source_sha }}
           path: |
