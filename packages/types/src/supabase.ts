@@ -2279,6 +2279,78 @@ export type Database = {
         };
         Relationships: [];
       };
+      calendar_google_color_operations: {
+        Row: {
+          actor_id: string;
+          completion: Json | null;
+          created_at: string;
+          event_id: string;
+          generation: number;
+          identity: Json;
+          intent: Json;
+          operation_id: string;
+          phase: string;
+          prepared: Json | null;
+          request_hash: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          completion?: Json | null;
+          created_at?: string;
+          event_id: string;
+          generation: number;
+          identity: Json;
+          intent: Json;
+          operation_id: string;
+          phase: string;
+          prepared?: Json | null;
+          request_hash: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          completion?: Json | null;
+          created_at?: string;
+          event_id?: string;
+          generation?: number;
+          identity?: Json;
+          intent?: Json;
+          operation_id?: string;
+          phase?: string;
+          prepared?: Json | null;
+          request_hash?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_google_color_write_permits: {
+        Row: {
+          event_id: string;
+          generation: number;
+          operation_id: string;
+          transaction_id: number;
+          ws_id: string;
+        };
+        Insert: {
+          event_id: string;
+          generation: number;
+          operation_id: string;
+          transaction_id: number;
+          ws_id: string;
+        };
+        Update: {
+          event_id?: string;
+          generation?: number;
+          operation_id?: string;
+          transaction_id?: number;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       calendar_user_workspace_preferences: {
         Row: {
           conflict_policy: string;
@@ -16161,6 +16233,12 @@ export type Database = {
           _to_date: string;
           _wallet_id: string;
           _ws_id: string;
+        };
+        Returns: Json;
+      };
+      calendar_google_color_operation_json: {
+        Args: {
+          op: Database['private']['Tables']['calendar_google_color_operations']['Row'];
         };
         Returns: Json;
       };
@@ -42162,6 +42240,16 @@ export type Database = {
       calculate_time_tracker_streak: {
         Args: { p_is_personal: boolean; p_user_id: string; p_ws_id: string };
         Returns: number;
+      };
+      calendar_google_color_operation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_event_id: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       can_access_task_plan: {
         Args: {

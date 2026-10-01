@@ -449,6 +449,34 @@ establish complete two-way color editing. Sync never rewrites a calendar's label
 array or implicitly publishes a private native calendar to Google.
 
 
+### Recoverable Google color operation development
+
+The same-calendar color-write followup has a server-only operation ledger,
+immutable prepared patch/ETag and private operation marker. Conditional replay
+uses the original ETag; it never refreshes an old operation's precondition. A
+provider 412 fences the old attempt, then current provider state is fetched and
+settled by its operation marker. Matching color alone is not completion proof.
+An authorized resumption must recheck Calendar management permission, connection
+owner and exact token/calendar/event identity. Only definitely-unsent reserved or
+prepared operations can cancel. Local commit failures remain recoverable.
+
+This is an unpublished implementation stage, not an enabled endpoint. The
+private RPC and transaction capability atomically merge Google color into latest
+metadata and commit sync/completion state together. Generation persists after
+completion; an unconditional import or competing write cannot overwrite that
+projection. Client roles cannot create/clear operation state or transaction
+capabilities. No credentials or customer backfill are stored in the ledger.
+
+Do not release this migration on its own. Before enabling color writes, wire an
+authenticated reconcile path and every competing PUT/move/delete; implement
+pre-provider-read generation capture, guarded import/tombstone application and
+durable deferral before advancing a sync token. The existing sync coordination
+cooldown is not a lock. Google ETags are opaque equality tokens, not revisions
+that can be sorted. Google moves lack a documented conditional fence and remain
+a separate recovery scope. Local SQL and executor tests do not establish complete
+Google/local route ordering or importer recovery.
+
+
 ## Calendar navigation dates and query boundaries
 
 The legacy calendar treats its selected date and visible grid dates as calendar
