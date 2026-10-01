@@ -236,41 +236,15 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                     32 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: [
-                    InventoryHeroCard(
-                      title: l10n.inventoryManageLabel,
-                      icon: Icons.tune_rounded,
-                      showHeader: false,
-                      metrics: [
-                        InventoryMetricTile(
-                          label: l10n.inventoryManageOwners,
-                          value: '${data.owners.length}',
-                          icon: Icons.people_outline_rounded,
-                        ),
-                        InventoryMetricTile(
-                          label: l10n.inventoryManageCategories,
-                          value: '${data.productCategories.length}',
-                          icon: Icons.category_outlined,
-                        ),
-                        InventoryMetricTile(
-                          label: l10n.inventoryManageManufacturers,
-                          value: '${data.manufacturers.length}',
-                          icon: Icons.factory_outlined,
-                        ),
-                        InventoryMetricTile(
-                          label: l10n.inventoryManageWarehouses,
-                          value: '${data.warehouses.length}',
-                          icon: Icons.warehouse_outlined,
-                        ),
-                      ],
-                      actions: [
-                        shad.SecondaryButton(
-                          onPressed: () =>
-                              context.go(Routes.inventoryAuditLogs),
-                          child: Text(l10n.inventoryAuditLabel),
-                        ),
-                      ],
+                    Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: shad.OutlineButton(
+                        onPressed: () => context.go(Routes.inventoryAuditLogs),
+                        leading: const Icon(Icons.history_rounded, size: 18),
+                        child: Text(l10n.inventoryAuditLabel),
+                      ),
                     ),
-                    const shad.Gap(16),
+                    const shad.Gap(12),
                     _ManageSection(
                       title: l10n.inventoryManageOwners,
                       actionLabel: l10n.inventoryAddOwner,
@@ -296,7 +270,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                             .toList(growable: false),
                       ),
                     ),
-                    const shad.Gap(16),
+                    const shad.Gap(12),
                     _ManageSection(
                       title: l10n.inventoryManageCategories,
                       actionLabel: l10n.inventoryAddCategory,
@@ -313,7 +287,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                             .toList(growable: false),
                       ),
                     ),
-                    const shad.Gap(16),
+                    const shad.Gap(12),
                     _ManageSection(
                       title: l10n.inventoryManageManufacturers,
                       actionLabel: l10n.inventoryAddManufacturer,
@@ -330,7 +304,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                             .toList(growable: false),
                       ),
                     ),
-                    const shad.Gap(16),
+                    const shad.Gap(12),
                     _ManageSection(
                       title: l10n.inventoryManageUnits,
                       actionLabel: l10n.inventoryAddUnit,
@@ -347,7 +321,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                             .toList(growable: false),
                       ),
                     ),
-                    const shad.Gap(16),
+                    const shad.Gap(12),
                     _ManageSection(
                       title: l10n.inventoryManageWarehouses,
                       actionLabel: l10n.inventoryAddWarehouse,
@@ -364,8 +338,10 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                             .toList(growable: false),
                       ),
                     ),
-                    const shad.Gap(16),
+                    const shad.Gap(12),
                     FinancePanel(
+                      padding: const EdgeInsets.all(14),
+                      radius: 18,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -435,20 +411,22 @@ class _ManageSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FinancePanel(
+      padding: const EdgeInsets.all(14),
+      radius: 18,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           FinanceSectionHeader(
             title: title,
             action: canManage
-                ? shad.IconButton.ghost(
+                ? IconButton(
+                    tooltip: actionLabel,
                     onPressed: () => unawaited(onSubmit()),
-                    icon: const Icon(Icons.add_rounded, size: 18),
+                    icon: const Icon(Icons.add_rounded, size: 20),
                   )
                 : null,
           ),
           const shad.Gap(12),
-          if (canManage && actionLabel.trim().isNotEmpty) const shad.Gap(0),
           child,
         ],
       ),

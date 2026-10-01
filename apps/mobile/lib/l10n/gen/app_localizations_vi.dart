@@ -4038,6 +4038,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySearchProducts => 'Tìm sản phẩm';
 
   @override
+  String get inventoryLoadedLowStock => 'Tồn kho thấp trong sản phẩm đã tải';
+
+  @override
+  String get inventoryStockNoRows => 'Chưa cấu hình dòng tồn kho.';
+
+  @override
+  String get inventoryStockUnlimited => 'Không giới hạn';
+
+  @override
   String get inventoryTitle => 'Tồn kho';
 
   @override

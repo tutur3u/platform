@@ -4062,6 +4062,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySearchProducts => 'Search products';
 
   @override
+  String get inventoryLoadedLowStock => 'Low stock in loaded products';
+
+  @override
+  String get inventoryStockNoRows => 'No stock rows configured.';
+
+  @override
+  String get inventoryStockUnlimited => 'Unlimited';
+
+  @override
   String get inventoryTitle => 'Inventory';
 
   @override

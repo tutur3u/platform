@@ -7,7 +7,15 @@ on:
         required: true
         type: string
         description: "The name of the workflow file (e.g., biome-check.yaml)"
+      check_release_only:
+        required: false
+        type: boolean
+        default: false
+        description: "Also detect whether this push contains only release metadata"
     outputs:
+      run_checks:
+        description: "Whether release relevance requires checks (true when not requested)"
+        value: ${{ jobs.check.outputs.run_checks }}
       should_run:
         description: "Whether the workflow should run"
         value: ${{ jobs.check.outputs.should_run }}
@@ -21,11 +29,13 @@ jobs:
     name: Check CI Config
     runs-on: ubuntu-latest
     outputs:
+      run_checks: ${{ steps.release_relevance.outputs.run_checks || 'true' }}
       should_run: ${{ steps.check_config.outputs.should_run }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
           sparse-checkout: |
             .github/workflows/*
@@ -35,6 +45,7 @@ jobs:
             packages/*/package.json
             scripts/ci/check-workflow-config.ts
             scripts/ci/github-deployment-markers.ts
+            scripts/ci/release-only-changes.js
             scripts/ci/resolve-changed-files-core.ts
             scripts/ci/resolve-changed-files.ts
             scripts/ci/workflow-config-core.ts
@@ -73,3 +84,13 @@ jobs:
           fi
 
           node --experimental-strip-types scripts/ci/check-workflow-config.ts
+
+      - name: Detect release-only changes
+        id: release_relevance
+        if: inputs.check_release_only
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
+          echo "run_checks=$result" >> "$GITHUB_OUTPUT"
