@@ -38,6 +38,9 @@ describe('task plan POST personal workspace gate', () => {
       const response = await POST(request(), {
         params: Promise.resolve({ wsId: 'tenant-a' }),
       });
+      expect(response).toBeInstanceOf(Response);
+      if (!response)
+        throw new Error('POST must return an authorization response');
       expect(response.status).toBe(status);
       expect((await response.json()).code).toBe(code);
       expect(rpc).toHaveBeenCalledWith('is_task_plan_personal_workspace', {
