@@ -31,6 +31,7 @@ Future<T?> showSettingsChoiceDialog<T>({
       return AppDialogScaffold(
         title: title,
         icon: Icons.tune_rounded,
+        scrollHeader: true,
         maxWidth: 420,
         actions: [
           shad.OutlineButton(
