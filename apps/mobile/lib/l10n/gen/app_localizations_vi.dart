@@ -4020,6 +4020,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryStockUnlimited => 'Không giới hạn';
 
   @override
+  String get inventoryStockUnlimitedHint => 'Để trống số lượng để không giới hạn tồn kho.';
+
+  @override
   String get inventoryTitle => 'Tồn kho';
 
   @override

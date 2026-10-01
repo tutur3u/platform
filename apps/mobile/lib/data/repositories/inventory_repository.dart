@@ -17,9 +17,12 @@ part 'inventory_repository_sales_period_mutations.dart';
 part 'inventory_repository_sales_pending.dart';
 
 class InventoryRepository {
-  InventoryRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+  InventoryRepository({ApiClient? apiClient, CacheStore? cacheStore})
+    : _api = apiClient ?? ApiClient(),
+      _cacheStore = cacheStore ?? CacheStore.instance;
 
   final ApiClient _api;
+  final CacheStore _cacheStore;
 
   Map<String, dynamic> _buildProductPayload({
     required String name,

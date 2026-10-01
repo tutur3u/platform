@@ -28,7 +28,24 @@ import '../../../helpers/helpers.dart';
 
 class _Api extends Mock implements ApiClient {}
 
-class _Inventory extends Mock implements InventoryRepository {}
+class _Inventory extends InventoryRepository {
+  _Inventory() : super(apiClient: _Api());
+
+  late Future<InventoryStockHealth> Function(String) loadHealth;
+  final healthCalls = <String>[];
+
+  @override
+  Future<InventoryOverview> getOverview(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async => InventoryOverview.fromJson(const {});
+
+  @override
+  Future<InventoryStockHealth> getStockHealth(String wsId) {
+    healthCalls.add(wsId);
+    return loadHealth(wsId);
+  }
+}
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
@@ -277,28 +294,22 @@ void main() {
     );
     whenListen(auth, authStates.stream, initialState: actor('actor-a'));
     whenListen(workspace, workspaceStates.stream, initialState: scope('ws-a'));
-    when(
-      () => repository.getOverview(
-        any(),
-        forceRefresh: any(named: 'forceRefresh'),
-      ),
-    ).thenAnswer((_) async => InventoryOverview.fromJson(const {}));
+    addTearDown(repository.dispose);
     final pending = Completer<InventoryStockHealth>();
-    when(
-      () => repository.getStockHealth('ws-a'),
-    ).thenAnswer((_) => pending.future);
-    when(() => repository.getStockHealth('ws-b')).thenAnswer(
-      (_) async => InventoryStockHealth.fromJson(
-        _payload()
-          ..['summary'] = {
-            'activeProducts': 99,
-            'stockedProducts': 99,
-            'lowStockRows': 0,
-            'outOfStockRows': 0,
-            'unlimitedStockRows': 0,
-          },
-      ),
-    );
+    repository.loadHealth = (wsId) => wsId == 'ws-a'
+        ? pending.future
+        : Future.value(
+            InventoryStockHealth.fromJson(
+              _payload()
+                ..['summary'] = {
+                  'activeProducts': 99,
+                  'stockedProducts': 99,
+                  'lowStockRows': 0,
+                  'outOfStockRows': 0,
+                  'unlimitedStockRows': 0,
+                },
+            ),
+          );
     await tester.pumpApp(
       MultiBlocProvider(
         providers: [
@@ -317,9 +328,7 @@ void main() {
     expect(find.text('99'), findsOneWidget);
     expect(find.text('12'), findsNothing);
     final denied = Completer<InventoryStockHealth>();
-    when(
-      () => repository.getStockHealth('ws-b'),
-    ).thenAnswer((_) => denied.future);
+    repository.loadHealth = (_) => denied.future;
     authStates.add(actor('actor-c'));
     await tester.pumpAndSettle();
     expect(find.text('99'), findsNothing);
@@ -332,9 +341,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('99'), findsNothing);
-    verify(
-      () => repository.getStockHealth('ws-b'),
-    ).called(greaterThanOrEqualTo(1));
+    expect(
+      repository.healthCalls.where((id) => id == 'ws-b').length,
+      greaterThanOrEqualTo(1),
+    );
     expect(tester.takeException(), isNull);
   });
 }
