@@ -99,6 +99,21 @@ class AppDialogScaffold extends StatelessWidget {
       const shad.Gap(18),
     ];
 
+    final scrollContent = slivers == null
+        ? body
+        : CustomScrollView(
+            shrinkWrap: true,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(mainAxisSize: MainAxisSize.min, children: header),
+              ),
+              SliverPadding(
+                padding: padding,
+                sliver: SliverMainAxisGroup(slivers: slivers!),
+              ),
+            ],
+          );
+
     return SafeArea(
       top: false,
       child: Padding(
@@ -154,34 +169,14 @@ class AppDialogScaffold extends StatelessWidget {
                             ),
                           ),
                         ],
-                        if (slivers != null)
-                          Flexible(
-                            child: NotificationListener<ScrollNotification>(
-                              // Modal scroll stays inside the editor.
-                              onNotification: (_) => true,
-                              child: CustomScrollView(
-                                shrinkWrap: true,
-                                slivers: [
-                                  SliverToBoxAdapter(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: header,
-                                    ),
-                                  ),
-                                  SliverPadding(
-                                    padding: padding,
-                                    sliver: SliverMainAxisGroup(
-                                      slivers: slivers!,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        else ...[
-                          ...header,
-                          Flexible(child: body),
-                        ],
+                        if (slivers == null) ...header,
+                        Flexible(
+                          child: NotificationListener<ScrollNotification>(
+                            // Both dialog body variants keep scrolling local.
+                            onNotification: (_) => true,
+                            child: scrollContent,
+                          ),
+                        ),
                         if (actions.isNotEmpty)
                           Container(
                             width: double.infinity,

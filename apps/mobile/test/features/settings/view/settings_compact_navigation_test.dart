@@ -367,6 +367,67 @@ void main() {
     );
   }
 
+  testWidgets(
+    'non-sliver Finance editor contains scrolling and dismisses without writes',
+    (tester) async {
+      _viewport(tester, const Size(320, 568));
+      final h = _SettingsHarness();
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await h.dispose();
+      });
+      double dockOpacity() => tester
+          .widget<AnimatedOpacity>(
+            find.ancestor(
+              of: find.byType(MorphingNavigationBar),
+              matching: find.byType(AnimatedOpacity),
+            ),
+          )
+          .opacity;
+
+      await h.pump(tester, scale: 2);
+      final prefs = await SharedPreferences.getInstance();
+      final before = prefs.get('finance-amounts-visible');
+      final row = find.byKey(const ValueKey('settings-finance-row'));
+      await tester.ensureVisible(row);
+      await _settle(tester);
+      expect(dockOpacity(), 1);
+      await tester.tap(row);
+      await _settle(tester);
+      expect(find.byType(CustomScrollView), findsNothing);
+      final body = find.ancestor(
+        of: find.text('Show amounts').last,
+        matching: find.byType(SingleChildScrollView),
+      );
+      expect(body, findsOneWidget);
+      final scrollable = find.descendant(
+        of: body,
+        matching: find.byType(Scrollable),
+      );
+      final position = tester.state<ScrollableState>(scrollable).position;
+      final start = position.pixels;
+      expect(position.extentAfter, greaterThan(90));
+      final gesture = await tester.startGesture(tester.getCenter(body));
+      await gesture.moveBy(const Offset(0, -30));
+      await tester.pump();
+      await gesture.moveBy(const Offset(0, -60));
+      await tester.pump();
+      expect(position.pixels, greaterThan(start));
+      expect(position.outOfRange, isFalse);
+      await gesture.up();
+      await tester.pump();
+      expect(dockOpacity(), 1);
+      await _capture(tester, 'settings-finance-scroll-large');
+      await tester.binding.handlePopRoute();
+      await _settle(tester);
+      expect(h.router.state.matchedLocation, Routes.settings);
+      expect(dockOpacity(), 1);
+      expect(prefs.get('finance-amounts-visible'), before);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('timezone choices stay lazy and can find an off-screen zone', (
     tester,
   ) async {

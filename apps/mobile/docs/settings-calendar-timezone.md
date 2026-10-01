@@ -81,10 +81,14 @@ proof. No customer preferences were written. Exact-head owning Mobile Analysis,
 test shards and native development build CI remain required; no local native build
 or full repository check ran for this compact stage.
 
-The review correction checkpoint passes all 15 compact navigation cases and
+The review correction checkpoint passes all 16 compact navigation cases and
 focused 12-item analysis. It verifies lazy zone choices (fewer than 30 built tiles
 with an empty query), filtered off-screen choices, expanded grouped columns,
-keyboard reachability and explicit save, and modal scroll isolation. Actual root
+keyboard reachability and explicit save, and modal scroll isolation for both lazy-sliver and regular child bodies. The
+mounted Finance editor is dragged at 2× text, keeps its local scroll position
+working, leaves the underlying dock visible, and dismisses without a preference
+write. Its pre-fix regression reproduces the underlying dock becoming hidden.
+Actual root
 scroll metrics are 0–5335px: a drag moves 0→150→75px, remaining in bounds while
 hiding and revealing the dock. No timer-drain teardown workaround is used.
 Earlier failed harness and lint runs are retained separately; exact-head owning CI
