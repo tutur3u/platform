@@ -6,6 +6,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.5.1",
     "@vitest/coverage-v8": "^5.0.0",
+    "acorn": "8.18.0",
     "lucide-static": "^1.45.0",
     "portless": "^0.15.6",
     "turbo": "^2.10.12",

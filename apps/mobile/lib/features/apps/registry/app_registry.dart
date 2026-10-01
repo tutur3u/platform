@@ -200,24 +200,13 @@ class AppRegistry {
     ),
   ];
 
+  // Workspace and You are drill-down rows on the single Settings screen.
   static const List<MiniAppNavItem> _settingsMiniNav = [
     MiniAppNavItem(
       id: 'settings_app',
       route: Routes.settings,
       icon: Icons.tune_rounded,
-      labelBuilder: _labelSettingsNavApp,
-    ),
-    MiniAppNavItem(
-      id: 'settings_workspace',
-      route: Routes.settingsWorkspace,
-      icon: Icons.apartment_rounded,
-      labelBuilder: _labelSettingsNavWorkspace,
-    ),
-    MiniAppNavItem(
-      id: 'settings_you',
-      route: Routes.profileRoot,
-      icon: Icons.person_outline_rounded,
-      labelBuilder: _labelSettingsNavYou,
+      labelBuilder: _labelSettingsHub,
     ),
   ];
 
@@ -645,10 +634,4 @@ class AppRegistry {
   static Widget _pageSettings(BuildContext context) => const SettingsPage();
 
   static String _labelSettingsHub(AppLocalizations l10n) => l10n.settingsTitle;
-  static String _labelSettingsNavApp(AppLocalizations l10n) =>
-      l10n.settingsNavApp;
-  static String _labelSettingsNavWorkspace(AppLocalizations l10n) =>
-      l10n.settingsNavWorkspace;
-  static String _labelSettingsNavYou(AppLocalizations l10n) =>
-      l10n.settingsNavYou;
 }

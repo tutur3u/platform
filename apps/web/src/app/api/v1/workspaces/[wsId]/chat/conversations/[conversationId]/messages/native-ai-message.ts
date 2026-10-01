@@ -186,11 +186,13 @@ export async function sendNativeAiConversationMessages({
 
   if (!assistantResponse) {
     await copyChatAttachmentsToAiResources({
+      auth,
       resourceChatId: shadowChatId,
       targetWsId: context.normalizedWsId,
       userMessage,
     });
     await copyRecentChatAttachmentsToAiResources({
+      auth,
       resourceChatId: shadowChatId,
       targetWsId: context.normalizedWsId,
       previousMessages: (privateMessages ?? []).filter(

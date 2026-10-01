@@ -1,7 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { z } from 'zod';
-import { verifyTaskShareAccess } from '@/lib/task-perm-helper';
+import {
+  verifyTaskShareAccess,
+  verifyTaskSharingEnabled,
+} from '@/lib/task-perm-helper';
 
 interface ShareParams {
   wsId: string;
@@ -213,6 +216,12 @@ export async function POST(
 
       return NextResponse.json({ share }, { status: 200 });
     }
+
+    const sharingDenied = await verifyTaskSharingEnabled(
+      supabase,
+      validatedTaskId
+    );
+    if (sharingDenied) return sharingDenied;
 
     // Create new share
     const { data: share, error: shareError } = await supabase
