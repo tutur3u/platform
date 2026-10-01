@@ -23,6 +23,9 @@ const yaml = JSON.parse(
   )
 );
 const job = yaml.jobs.verify;
+const workerJob = yaml.jobs['worker-bundle'];
+const forbiddenOperations =
+  /secrets\.|cloudflare\/wrangler-action@|\bwrangler(?:@[^\s]+)?\s|supabase|docker|deploy_target|workflow_call|pull_request_target/;
 
 test('verification is manual, main-only and read-only with no deploy or secret inputs', () => {
   assert.deepEqual(Object.keys(yaml.on), ['workflow_dispatch']);
@@ -33,10 +36,12 @@ test('verification is manual, main-only and read-only with no deploy or secret i
   assert.equal(job.if, "github.ref == 'refs/heads/main'");
   assert.equal(job.environment, undefined);
   assert.equal(job['timeout-minutes'], 45);
-  assert.doesNotMatch(
-    source,
-    /secrets\.|\bwrangler(?:@[^\s]+)?\s|supabase|docker|deploy_target|workflow_call|pull_request_target/
-  );
+  assert.doesNotMatch(source, forbiddenOperations);
+  for (const candidate of Object.values(yaml.jobs)) {
+    assert.equal(candidate.if, "github.ref == 'refs/heads/main'");
+    assert.equal(candidate.environment, undefined);
+    assert.equal(candidate.permissions, undefined);
+  }
   assert.match(
     fs.readFileSync(path.join(root, 'tuturuuu.ci.ts'), 'utf8'),
     /'rust-backend.yml': false/
@@ -90,15 +95,57 @@ test('actual compile commands retain native and Worker feature contracts and loc
   assert.equal(setup.with.targets, 'wasm32-unknown-unknown');
 });
 
+test('read-only guard rejects the Wrangler Action and executable forms', () => {
+  for (const value of [
+    'uses: cloudflare/wrangler-action@v3',
+    `uses: cloudflare/wrangler-action@${'a'.repeat(40)}`,
+    'run: wrangler deploy',
+    'run: bunx wrangler@4 deploy',
+  ])
+    assert.match(value, forbiddenOperations);
+  assert.doesNotMatch('sha256sum wrangler.jsonc', forbiddenOperations);
+});
+
+test('bundle work has a separate sequential bounded job with exact-source provenance', () => {
+  assert.equal(workerJob.needs, 'verify');
+  assert.equal(workerJob['timeout-minutes'], 60);
+  assert.equal(workerJob.env.CARGO_BUILD_JOBS, '2');
+  for (const name of [
+    'Validate exact source SHA',
+    'Checkout exact source',
+    'Verify checked out source',
+    'Setup repository minimum Rust toolchain',
+  ]) {
+    assert.deepEqual(
+      workerJob.steps.find((step) => step.name === name),
+      job.steps.find((step) => step.name === name)
+    );
+  }
+  const install = workerJob.steps.find(
+    (step) => step.name === 'Install pinned Worker bundler'
+  );
+  const bundle = workerJob.steps.find(
+    (step) => step.name === 'Build actual Worker bundle'
+  );
+  assert.equal(install['timeout-minutes'], 25);
+  assert.equal(bundle['timeout-minutes'], 30);
+  for (const step of [install, bundle]) {
+    assert.match(step.run, /trap .*elapsed seconds: \$SECONDS.* EXIT/);
+  }
+  assert.ok(
+    !job.steps.some((step) => step.name === 'Install pinned Worker bundler')
+  );
+});
+
 test('Worker bundler installation is pinned, locked and runner-local', () => {
-  const install = job.steps.find(
+  const install = workerJob.steps.find(
     (step) => step.name === 'Install pinned Worker bundler'
   );
   assert.match(
     install.run,
     /cargo install worker-build --version 0\.8\.7 --locked --root "\$RUNNER_TEMP\/worker-build"/
   );
-  const bundle = job.steps.find(
+  const bundle = workerJob.steps.find(
     (step) => step.name === 'Build actual Worker bundle'
   );
   assert.match(bundle.run, /test "\$\(worker-build --version\)" = '0\.8\.7'/);
@@ -107,11 +154,12 @@ test('Worker bundler installation is pinned, locked and runner-local', () => {
     /worker-build --release -- --locked --no-default-features --features worker/
   );
   assert.match(bundle.run, /set -euo pipefail/);
-  assert.ok(job.steps.indexOf(install) < job.steps.indexOf(bundle));
+  assert.ok(workerJob.steps.indexOf(install) >= 0);
+  assert.ok(workerJob.steps.indexOf(install) < workerJob.steps.indexOf(bundle));
 });
 
-test('Worker package validation rejects missing or corrupt emitted artifacts', () => {
-  const step = job.steps.find(
+test('Worker package semantics reject entry drift, missing exports and broken modules', () => {
+  const step = workerJob.steps.find(
     (step) => step.name === 'Verify Worker package artifacts'
   );
   const dir = fs.mkdtempSync(
@@ -124,28 +172,54 @@ test('Worker package validation rejects missing or corrupt emitted artifacts', (
       env: { ...process.env, GITHUB_STEP_SUMMARY: summary },
       encoding: 'utf8',
     });
+  const config = path.join(dir, 'wrangler.jsonc');
+  const shim = path.join(dir, 'build/worker/shim.mjs');
+  const bundle = path.join(dir, 'build/index.js');
+  const wasm = path.join(dir, 'build/index_bg.wasm');
+  const validShim =
+    "export * from '../index.js'; export { default } from '../index.js';";
+  const validBundle =
+    'class E {}; E.prototype.fetch = function () {}; export { E as default };';
+  const validWasm = Buffer.from(
+    '0061736d010000000104016000000302010007090105666574636800000a040102000b',
+    'hex'
+  );
   try {
-    assert.notEqual(run().status, 0, 'missing package must fail');
-    fs.mkdirSync(path.join(dir, 'build/worker'), { recursive: true });
-    fs.writeFileSync(path.join(dir, 'wrangler.jsonc'), '{}');
-    fs.writeFileSync(
-      path.join(dir, 'build/worker/shim.mjs'),
-      "export * from '../index.js';"
+    assert.notEqual(run().status, 0);
+    fs.mkdirSync(path.dirname(shim), { recursive: true });
+    fs.writeFileSync(config, JSON.stringify({ main: 'build/worker/shim.mjs' }));
+    fs.writeFileSync(shim, validShim);
+    fs.writeFileSync(bundle, validBundle);
+    fs.writeFileSync(wasm, validWasm);
+    const result = run();
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(
+      fs.readFileSync(summary, 'utf8'),
+      /[a-f0-9]{64} +build\/index_bg\.wasm/
     );
-    fs.writeFileSync(path.join(dir, 'build/index.js'), 'export default {};');
-    const wasm = path.join(dir, 'build/index_bg.wasm');
-    fs.writeFileSync(wasm, 'invalid-wasm');
-    assert.notEqual(run().status, 0, 'invalid WASM header must fail');
-    fs.writeFileSync(wasm, Buffer.from('0061736d01000000', 'hex'));
-    assert.equal(run().status, 0);
-    const hashes = fs.readFileSync(summary, 'utf8');
-    assert.match(hashes, /[a-f0-9]{64} +build\/index_bg\.wasm/);
-    fs.unlinkSync(path.join(dir, 'build/worker/shim.mjs'));
-    assert.notEqual(
-      run().status,
-      0,
-      'configured compatibility entry point must exist'
-    );
+    for (const [file, invalid, original] of [
+      [
+        config,
+        JSON.stringify({ main: 'build/index.js' }),
+        fs.readFileSync(config),
+      ],
+      [shim, "export { default } from '../missing.js';", validShim],
+      [shim, "export * from '../index.js';", validShim],
+      [bundle, 'export default {};', validBundle],
+      [bundle, 'E.prototype.fetch = ; export default {};', validBundle],
+      [wasm, Buffer.from('0061736d01000000', 'hex'), validWasm],
+      [wasm, 'invalid-wasm', validWasm],
+    ]) {
+      fs.writeFileSync(file, invalid);
+      assert.notEqual(
+        run().status,
+        0,
+        `${path.basename(file)} regression must fail`
+      );
+      fs.writeFileSync(file, original);
+    }
+    fs.unlinkSync(shim);
+    assert.notEqual(run().status, 0);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

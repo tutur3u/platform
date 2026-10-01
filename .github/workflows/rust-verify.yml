@@ -84,17 +84,77 @@ jobs:
       - name: Build native release binary
         run: cargo build --locked --release --features native --bin backend
 
-      - name: Install pinned Worker bundler
+  worker-bundle:
+    name: Verify exact-source Worker package
+    needs: verify
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      CARGO_BUILD_JOBS: "2"
+      CARGO_HTTP_MULTIPLEXING: "false"
+      CARGO_NET_RETRY: "10"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    defaults:
+      run:
+        working-directory: ./apps/backend
+    steps:
+      - name: Validate exact source SHA
+        working-directory: .
         shell: bash
         run: |
           set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+
+      - name: Verify checked out source
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          {
+            echo "Source SHA: $SOURCE_SHA"
+            echo "Workflow SHA: $GITHUB_SHA"
+            sha256sum apps/backend/Cargo.toml apps/backend/Cargo.lock
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup repository minimum Rust toolchain
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # verified stable implementation
+        with:
+          toolchain: "1.95.0"
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - name: Record toolchain
+        run: rustc --version --verbose >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Download locked modules
+        run: bash ../../scripts/ci/run-with-backoff.sh cargo fetch --locked
+
+      - name: Install pinned Worker bundler
+        timeout-minutes: 25
+        shell: bash
+        run: |
+          set -euo pipefail
+          SECONDS=0
+          trap 'echo "Bundler install elapsed seconds: $SECONDS" >> "$GITHUB_STEP_SUMMARY"' EXIT
           bash ../../scripts/ci/run-with-backoff.sh cargo install worker-build --version 0.8.7 --locked --root "$RUNNER_TEMP/worker-build"
           echo "$RUNNER_TEMP/worker-build/bin" >> "$GITHUB_PATH"
 
       - name: Build actual Worker bundle
+        timeout-minutes: 30
         shell: bash
         run: |
           set -euo pipefail
+          SECONDS=0
+          trap 'echo "Worker bundle elapsed seconds: $SECONDS" >> "$GITHUB_STEP_SUMMARY"' EXIT
           test "$(worker-build --version)" = '0.8.7'
           echo "Worker bundler: $(worker-build --version)" >> "$GITHUB_STEP_SUMMARY"
           worker-build --release -- --locked --no-default-features --features worker
@@ -103,8 +163,33 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -s build/worker/shim.mjs
-          test -s build/index.js
-          test -s build/index_bg.wasm
-          test "$(od -An -tx1 -N8 build/index_bg.wasm | tr -d ' \n')" = '0061736d01000000'
-          sha256sum wrangler.jsonc build/worker/shim.mjs build/index.js build/index_bg.wasm >> "$GITHUB_STEP_SUMMARY"
+          node --experimental-vm-modules --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { createHash } from 'node:crypto';
+          import { appendFileSync, readFileSync } from 'node:fs';
+          import { resolve } from 'node:path';
+          import { SourceTextModule } from 'node:vm';
+
+          const config = JSON.parse(readFileSync('wrangler.jsonc', 'utf8'));
+          const entry = resolve(config.main);
+          assert.equal(entry, resolve('build/worker/shim.mjs'));
+          const shim = readFileSync(entry, 'utf8');
+          const dependencies = new SourceTextModule(shim).dependencySpecifiers;
+          assert.ok(dependencies.length > 0);
+          for (const dependency of dependencies) {
+            assert.equal(resolve('build/worker', dependency), resolve('build/index.js'));
+          }
+          assert.match(shim, /export\s*\{\s*default\s*\}\s*from\s*['"]\.\.\/index\.js['"]/);
+          const bundle = readFileSync('build/index.js', 'utf8');
+          new SourceTextModule(bundle);
+          assert.match(bundle, /export\s*\{[^}]*\bas\s+default\b|export\s+default\b/);
+          assert.match(bundle, /\bprototype\.fetch\s*=/);
+          const wasm = new WebAssembly.Module(readFileSync('build/index_bg.wasm'));
+          assert.ok(WebAssembly.Module.exports(wasm).some(
+            (item) => item.kind === 'function' && item.name === 'fetch'
+          ), 'WASM must export the backend fetch handler');
+          for (const file of ['wrangler.jsonc', 'build/worker/shim.mjs', 'build/index.js', 'build/index_bg.wasm']) {
+            const hash = createHash('sha256').update(readFileSync(file)).digest('hex');
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${hash}  ${file}\n`);
+          }
+          NODE
