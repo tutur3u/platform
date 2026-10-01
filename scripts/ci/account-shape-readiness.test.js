@@ -32,8 +32,8 @@ function fixture({
         },
       },
       financePage: {
-        async goto(url) {
-          calls.push({ url });
+        async goto(url, options) {
+          calls.push({ url, options });
           return {
             status: () => financeStatus,
             url: () => financeUrl,
@@ -49,7 +49,7 @@ function fixture({
   };
 }
 
-test('prepares workspace-scoped routes sequentially and awaits full bodies without timeout overrides', async () => {
+test('prepares workspace-scoped routes sequentially with a separate bounded cold Finance deadline', async () => {
   const { options, calls } = fixture();
   await prepareAccountShapeRoutes(options);
   assert.equal(calls.length, 6);
@@ -64,7 +64,10 @@ test('prepares workspace-scoped routes sequentially and awaits full bodies witho
   });
   assert.equal(calls[1], 'complete JSON');
   assert.equal(calls[3], 'complete JSON');
-  assert.deepEqual(calls[4], { url: walletUrl });
+  assert.deepEqual(calls[4], {
+    url: walletUrl,
+    options: { timeout: 90_000 },
+  });
   assert.equal(calls[5], 'complete HTML');
 });
 
@@ -94,6 +97,35 @@ test('does not accept a redirected login page as Finance readiness', async () =>
     ),
     /HTML unavailable/
   );
+});
+
+for (const origin of [
+  'https://other.tuturuuu.localhost:1355',
+  'http://finance.tuturuuu.localhost:1355',
+  'https://finance.tuturuuu.localhost:1356',
+]) {
+  test(`rejects successful wallet HTML from the wrong origin ${origin}`, async () => {
+    await assert.rejects(
+      prepareAccountShapeRoutes(
+        fixture({ financeUrl: `${origin}/${workspaceId}/wallets` }).options
+      ),
+      /HTML unavailable/
+    );
+  });
+}
+
+test('propagates cold Finance deadline failure without retrying', async () => {
+  const { options, calls } = fixture();
+  options.financePage.goto = async (_url, navigationOptions) => {
+    assert.equal(navigationOptions.timeout, 90_000);
+    calls.push('Finance timeout');
+    throw new Error('Finance preparation timeout');
+  };
+  await assert.rejects(
+    prepareAccountShapeRoutes(options),
+    /Finance preparation timeout/
+  );
+  assert.equal(calls.filter((call) => call === 'Finance timeout').length, 1);
 });
 
 test('propagates incomplete Finance response failure', async () => {

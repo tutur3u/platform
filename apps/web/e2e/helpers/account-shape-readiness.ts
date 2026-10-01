@@ -1,5 +1,10 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 
+// The retained cold Finance response took 65s (53s in Next.js compilation).
+// Preparation gets one bounded attempt; the measured navigation keeps its
+// existing 60s default, and the complete fixture keeps its 240s test budget.
+const FINANCE_COLD_ROUTE_PREPARATION_TIMEOUT_MS = 90_000;
+
 /** Compile cold satellite routes using the same synthetic account as the UI. */
 export async function prepareAccountShapeRoutes({
   contactsRequest,
@@ -53,16 +58,19 @@ export async function prepareAccountShapeRoutes({
     }
   }
 
-  const response = await financePage.goto(
-    new URL(`/${workspaceId}/wallets`, financeBaseUrl).toString()
-  );
+  const walletUrl = new URL(`/${workspaceId}/wallets`, financeBaseUrl);
+  const response = await financePage.goto(walletUrl.toString(), {
+    timeout: FINANCE_COLD_ROUTE_PREPARATION_TIMEOUT_MS,
+  });
   if (response?.status() !== 200) {
     throw new Error(
       `Account-shape readiness failed: Finance wallets returned ${response?.status() ?? 'no response'}`
     );
   }
+  const responseUrl = new URL(response.url());
   if (
-    !new URL(response.url()).pathname.endsWith(`/${workspaceId}/wallets`) ||
+    responseUrl.origin !== walletUrl.origin ||
+    !responseUrl.pathname.endsWith(`/${workspaceId}/wallets`) ||
     !response.headers()['content-type']?.includes('text/html')
   ) {
     throw new Error(
