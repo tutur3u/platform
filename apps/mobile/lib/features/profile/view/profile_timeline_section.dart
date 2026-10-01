@@ -56,6 +56,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     _failed = false;
     _partial = false;
     _limited = false;
+    _refreshing = false;
     _request++;
     if (userId != null && workspaceId != null) {
       unawaited(_load(workspaceId, userId));
@@ -81,15 +82,20 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     final request = ++_request;
     setState(() => _refreshing = true);
     try {
-      List<ProfileTimelineItem>? cached;
+      ProfileTimelineSnapshot? cached;
       try {
         cached = await _repository.cached(workspaceId, userId);
       } on Object {
         // A stale or unreadable local snapshot must not block revalidation.
       }
       if (mounted && request == _request && cached != null) {
-        setState(() => _items = cached);
+        setState(() {
+          _items = cached!.items;
+          _partial = cached.partial;
+          _limited = cached.limited;
+        });
       }
+      if (!mounted || request != _request) return;
       final fresh = await _repository.refresh(workspaceId, userId);
       if (mounted && request == _request) {
         setState(() {

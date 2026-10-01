@@ -21,7 +21,7 @@ class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 class _Repository extends ProfileTimelineRepository {
   @override
-  Future<List<ProfileTimelineItem>?> cached(
+  Future<ProfileTimelineSnapshot?> cached(
     String workspaceId,
     String userId,
   ) async => null;

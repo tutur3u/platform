@@ -167,10 +167,16 @@ class _WorkspaceActivitySectionState extends State<WorkspaceActivitySection> {
               onTap: _loading || _saving || _failed
                   ? null
                   : () => unawaited(_toggle(!_sharing)),
-              trailing: IgnorePointer(
-                child: shad.Switch(
-                  value: _sharing,
-                  onChanged: _loading || _saving || _failed ? null : (_) {},
+              trailing: ExcludeFocus(
+                child: ExcludeSemantics(
+                  child: IgnorePointer(
+                    child: shad.Switch(
+                      value: _sharing,
+                      onChanged: _loading || _saving || _failed
+                          ? null
+                          : (value) => unawaited(_toggle(value)),
+                    ),
+                  ),
                 ),
               ),
             ),
