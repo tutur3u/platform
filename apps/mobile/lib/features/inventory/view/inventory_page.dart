@@ -60,7 +60,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
   @override
   void dispose() {
-    _repository.dispose();
+    if (widget.repository == null) _repository.dispose();
     super.dispose();
   }
 

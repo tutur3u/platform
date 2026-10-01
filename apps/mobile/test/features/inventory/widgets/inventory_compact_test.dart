@@ -36,6 +36,14 @@ class _Finance extends Mock implements FinanceRepository {}
 class _Permissions extends Mock implements WorkspacePermissionsRepository {}
 
 class _FractionalOverview extends InventoryRepository {
+  bool disposed = false;
+
+  @override
+  void dispose() {
+    disposed = true;
+    super.dispose();
+  }
+
   @override
   Future<InventoryOverview> getOverview(
     String wsId, {
@@ -345,14 +353,12 @@ void main() {
         initialState: state,
       );
       final key = GlobalKey();
+      final repository = _FractionalOverview();
+      addTearDown(repository.dispose);
       await tester.pumpApp(
         BlocProvider<WorkspaceCubit>.value(
           value: workspace,
-          child: _scaled(
-            InventoryPage(repository: _FractionalOverview()),
-            1,
-            key,
-          ),
+          child: _scaled(InventoryPage(repository: repository), 1, key),
         ),
       );
       await tester.pump(const Duration(milliseconds: 1));
@@ -367,6 +373,8 @@ void main() {
       expect(find.text('2.5 / 3'), findsNothing);
       expect(find.text('Fractional beans'), findsOneWidget);
       await _capture(tester, key, 'compact-overview-fractional-minimum');
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(repository.disposed, isFalse);
       expect(tester.takeException(), isNull);
       await workspace.close();
     },
@@ -562,6 +570,8 @@ void main() {
         ),
       );
       final key = GlobalKey();
+      final repository = _FractionalOverview();
+      addTearDown(repository.dispose);
       await tester.pumpApp(
         BlocProvider<WorkspaceCubit>.value(
           value: workspace,
