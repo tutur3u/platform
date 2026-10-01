@@ -1,0 +1,10 @@
+name: sale_journal_fixture
+publish_to: none
+environment:
+  sdk: '>=3.11.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_secure_storage: 11.1.1
+flutter:
+  uses-material-design: true
