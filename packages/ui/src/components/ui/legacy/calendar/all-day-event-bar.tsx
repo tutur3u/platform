@@ -880,7 +880,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         {regularSpans.map((eventSpan) => {
           const { event, startIndex, span, row, isCutOffStart, isCutOffEnd } =
             eventSpan;
-          const { bg, border, text } = getEventStyles(event.color || 'BLUE');
 
           // Use the assigned row directly instead of calculating it
           const eventRow = row;
@@ -933,10 +932,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   : 'cursor-grab hover:cursor-grab',
                 // Visual feedback for dragging
                 isDraggedEvent && 'scale-95 outline outline-dashed',
-                // Normal styling
-                bg,
-                border,
-                text,
                 isPendingMutation &&
                   'outline outline-dashed outline-1 outline-primary',
                 // Special styling for cut-off events
@@ -944,6 +939,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               )}
               style={{
                 ...calendarEventStyle(event),
+                borderColor: calendarEventStyle(event).color,
                 left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
                 width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
                 top: `${eventRow * 1.6 + 0.25 + topOffset}rem`,

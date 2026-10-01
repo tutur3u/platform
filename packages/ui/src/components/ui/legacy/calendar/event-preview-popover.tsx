@@ -16,7 +16,6 @@ import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { cn } from '@tuturuuu/utils/format';
-import { opaqueGoogleColor } from '@tuturuuu/utils/google-calendar-colors';
 import { useLocale } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { formatEventPreviewTime } from './event-preview-time';
@@ -94,12 +93,7 @@ export function EventPreviewPopover() {
       <div className="flex items-start gap-3">
         <div
           className="mt-1 h-3 w-3 shrink-0 rounded-full"
-          style={{
-            ...calendarEventStyle(previewEvent),
-            backgroundColor:
-              opaqueGoogleColor(previewEvent._calendarColor) ??
-              calendarEventStyle(previewEvent).backgroundColor,
-          }}
+          style={calendarEventStyle(previewEvent)}
         />
         <div className="min-w-0 flex-1 space-y-3">
           <div className="flex items-start justify-between gap-3">

@@ -69,7 +69,7 @@ class _AllDayEventBarState extends State<AllDayEventBar> {
                     borderRadius: BorderRadius.circular(4),
                     border: Border(
                       left: BorderSide(
-                        color: EventColors.forEvent(e),
+                        color: EventColors.foreground(e),
                         width: 3,
                       ),
                     ),

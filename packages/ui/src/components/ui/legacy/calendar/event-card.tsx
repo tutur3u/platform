@@ -925,17 +925,11 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
     isReadOnlyEvent,
   ]);
 
-  const { bg, border, text, dragBg, syncingBg, successBg, errorBg } =
-    getEventStyles(color);
-
-  // Get the appropriate background based on event state
-  const getBackgroundStyle = () => {
-    if (updateStatus === 'syncing') return syncingBg;
-    if (updateStatus === 'success') return successBg;
-    if (updateStatus === 'error') return errorBg;
-    if (visualState.isDragging) return dragBg;
-    return bg;
-  };
+  const { border } = getEventStyles(color);
+  // Error feedback stays opaque and uses contrast computed for its red fill.
+  const eventStyle = calendarEventStyle(
+    updateStatus === 'error' ? { color: 'RED' } : event
+  );
 
   // Use the visual state for UI rendering
   const { isDragging, isResizing } = visualState;
@@ -1074,9 +1068,7 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
                 isOptimisticallyPending && !isOptimisticallyMutating,
             },
             level ? 'border border-l-2' : 'border-l-2',
-            border,
-            text,
-            getBackgroundStyle() // Use dynamic background based on status
+            border
           )}
           style={{
             transition:
@@ -1087,7 +1079,7 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
             willChange:
               isDragging || isResizing ? 'transform, top, left' : 'auto', // GPU acceleration
             transform: isDragging || isResizing ? 'translateZ(0)' : 'none', // Force GPU acceleration during interaction
-            ...calendarEventStyle(event),
+            ...eventStyle,
             borderLeftColor: opaqueGoogleColor(_calendarColor) ?? undefined,
             // Enhanced border for shorter events (likely on top)
             borderLeftWidth:

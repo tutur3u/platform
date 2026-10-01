@@ -80,7 +80,7 @@ function EventCard({
       onClick={() => onOpen(event.id)}
       style={calendarEventStyle(event)}
       className={cn(
-        'group flex w-full cursor-pointer items-start gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-left transition-colors'
+        'group flex w-full cursor-pointer items-start gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-left transition-colors hover:brightness-110'
       )}
     >
       {/* Time column */}

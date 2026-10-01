@@ -76,11 +76,10 @@ const DragPreview = ({
           // More compact styling for short durations
           height < 60
             ? 'top-1/2 right-1 -translate-y-1/2 px-1 py-0.5 text-[10px]'
-            : 'top-2 right-2 px-1.5 py-0.5',
-          text,
-          bg
+            : 'top-2 right-2 px-1.5 py-0.5'
         )}
         style={{
+          ...calendarEventStyle({ color }),
           maxWidth: 'calc(100% - 8px)', // Tighter max width
           minWidth: 24, // Smaller min width for short durations
           textAlign: 'right',

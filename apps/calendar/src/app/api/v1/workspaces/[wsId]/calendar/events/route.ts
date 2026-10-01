@@ -12,6 +12,7 @@ import {
 } from '@/lib/calendar/create-invited-meeting';
 import { DefaultCalendarEventColorSchema } from '@/lib/calendar/event-color';
 import { deduplicateCalendarEvents } from '@/lib/calendar/event-deduplication';
+import { hydrateEventSourceColors } from '@/lib/calendar/event-source-colors';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import {
   type ResolvedCalendarSource,
@@ -106,7 +107,7 @@ export async function GET(request: Request, { params }: Params) {
     (await params).wsId
   );
   if ('error' in access) return access.error;
-  const { sbAdmin, wsId } = access;
+  const { sbAdmin, wsId, userId } = access;
 
   // Get the start_at and end_at from the URL
   const url = new URL(request.url);
@@ -158,9 +159,15 @@ export async function GET(request: Request, { params }: Params) {
       await decryptEventsFromStorage(events || [], wsId)
     );
 
+    const hydratedEvents = await hydrateEventSourceColors({
+      sbAdmin,
+      wsId,
+      userId,
+      events: decryptedEvents,
+    });
     return NextResponse.json({
-      data: decryptedEvents,
-      count: decryptedEvents.length,
+      data: hydratedEvents,
+      count: hydratedEvents.length,
     });
   } catch (error) {
     console.error('Calendar events API error', { wsId, error });

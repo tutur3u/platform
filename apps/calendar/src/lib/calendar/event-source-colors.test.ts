@@ -1,0 +1,80 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { describe, expect, it, vi } from 'vitest';
+import { hydrateEventSourceColors } from './event-source-colors';
+
+function query(data: unknown) {
+  const chain = Object.assign(Promise.resolve({ data, error: null }), {
+    select: vi.fn(),
+    eq: vi.fn(),
+    in: vi.fn(),
+  });
+  chain.select.mockReturnValue(chain);
+  chain.eq.mockReturnValue(chain);
+  chain.in.mockReturnValue(chain);
+  return chain;
+}
+it('keeps native event colors unchanged without querying provider accounts', async () => {
+  const from = vi.fn();
+  const events = [{ provider: 'tuturuuu', _calendarColor: 'GREEN' }];
+  expect(
+    await hydrateEventSourceColors({
+      sbAdmin: { from } as unknown as TypedSupabaseClient,
+      wsId: 'ws',
+      userId: 'actor',
+      events,
+    })
+  ).toBe(events);
+  expect(from).not.toHaveBeenCalled();
+});
+describe('actor-scoped source RGB hydration', () => {
+  it('uses only matching workspace/actor account source RGB', async () => {
+    const tokens = query([{ id: 'token' }]);
+    const connections = query([
+      {
+        calendar_id: 'source',
+        workspace_calendar_id: 'native-source',
+        color: '#D06B64',
+      },
+    ]);
+    const from = vi
+      .fn()
+      .mockReturnValueOnce(tokens)
+      .mockReturnValueOnce(connections);
+    const result = await hydrateEventSourceColors({
+      sbAdmin: { from } as unknown as TypedSupabaseClient,
+      wsId: 'ws',
+      userId: 'actor',
+      events: [
+        {
+          provider: 'google',
+          source_calendar_id: 'native-source',
+          external_calendar_id: 'source',
+        },
+      ],
+    });
+    expect(result[0]).toMatchObject({ _calendarColor: '#d06b64' });
+    expect(tokens.eq).toHaveBeenCalledWith('user_id', 'actor');
+    expect(connections.in).toHaveBeenCalledWith('auth_token_id', ['token']);
+  });
+  it('does not guess across ambiguous source accounts', async () => {
+    const tokens = query([{ id: 'token' }]);
+    const connections = query([
+      { calendar_id: 'source', color: '#ffffff' },
+      { calendar_id: 'source', color: '#000000' },
+    ]);
+    const from = vi
+      .fn()
+      .mockReturnValueOnce(tokens)
+      .mockReturnValueOnce(connections);
+    expect(
+      (
+        await hydrateEventSourceColors({
+          sbAdmin: { from } as unknown as TypedSupabaseClient,
+          wsId: 'ws',
+          userId: 'actor',
+          events: [{ provider: 'google', external_calendar_id: 'source' }],
+        })
+      )[0]
+    ).not.toHaveProperty('_calendarColor');
+  });
+});

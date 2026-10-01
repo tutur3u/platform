@@ -15,6 +15,8 @@ const canonicalBackgrounds: Record<string, string> = {
   INDIGO: '#3f51b5',
   CYAN: '#00bcd4',
   GRAY: '#9e9e9e',
+  GREY: '#9e9e9e',
+  '#6B7280': '#6b7280',
 };
 
 type ColorEvent = {

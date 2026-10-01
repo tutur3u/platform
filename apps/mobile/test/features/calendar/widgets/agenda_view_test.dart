@@ -6,6 +6,40 @@ import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import '../../../helpers/helpers.dart';
 
 void main() {
+  testWidgets(
+    'past timed titles retain their completion cue with opaque fills',
+    (tester) async {
+      final start = DateTime.now().subtract(const Duration(days: 1));
+      await tester.pumpApp(
+        AgendaView(
+          selectedDate: start,
+          events: [
+            CalendarEvent(
+              id: 'past',
+              title: 'Past timed',
+              startAt: start,
+              endAt: start.add(const Duration(hours: 1)),
+              color: 'PINK',
+              schedulingMetadata: {
+                'google_color': {
+                  'version': 1,
+                  'inherited': false,
+                  'background': '#00ff88',
+                },
+              },
+            ),
+          ],
+          onEventTap: (_) {},
+          onDaySelected: (_) {},
+        ),
+      );
+      await tester.pumpAndSettle();
+      final title = tester.widget<Text>(find.text('Past timed'));
+      expect(title.style?.decoration, TextDecoration.lineThrough);
+      expect(title.style?.color, Colors.black);
+    },
+  );
+
   for (final size in [
     const Size(390, 844),
     const Size(844, 390),

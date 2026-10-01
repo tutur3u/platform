@@ -28,7 +28,7 @@ class EventCard extends StatelessWidget {
     final event = layoutInfo.event;
     final start = event.startAt ?? calendarNowInContext(context);
     final end = event.endAt ?? start.add(const Duration(minutes: 30));
-    final accentColor = EventColors.forEvent(event);
+    final accentColor = EventColors.foreground(event);
     final titleColor = EventColors.foreground(event);
 
     final startMinutes = start.hour * 60 + start.minute;

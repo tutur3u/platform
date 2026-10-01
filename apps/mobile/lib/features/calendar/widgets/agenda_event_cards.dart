@@ -197,7 +197,7 @@ class _AgendaEventCard extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               border: BorderDirectional(
-                start: BorderSide(color: EventColors.forEvent(event), width: 4),
+                start: BorderSide(color: titleColor, width: 4),
               ),
             ),
             child: Row(
@@ -218,6 +218,9 @@ class _AgendaEventCard extends StatelessWidget {
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: titleColor,
+                          decoration: isPast
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
                       ),
                       if (!wide) ...[const SizedBox(height: 4), timeLabel],

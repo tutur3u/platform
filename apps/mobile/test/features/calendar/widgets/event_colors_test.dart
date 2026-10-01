@@ -12,7 +12,7 @@ CalendarEvent event({bool inherited = false, Object? background = '#00ff88'}) =>
     CalendarEvent(
       id: 'rgb',
       title: 'Provider RGB',
-      color: 'BLUE',
+      color: 'PINK',
       sourceColor: '#ff80ab',
       startAt: DateTime(2030),
       endAt: DateTime(2030, 1, 1, 1),
@@ -40,9 +40,15 @@ void main() {
       EventColors.forEvent(event(inherited: true)),
       const Color(0xffff80ab),
     );
-    expect(EventColors.forEvent(event(background: null)), Colors.blue);
-    expect(EventColors.forEvent(event(background: '#00ff8880')), Colors.blue);
+    expect(EventColors.forEvent(event(background: null)), Colors.pink);
+    expect(EventColors.forEvent(event(background: '#00ff8880')), Colors.pink);
     expect(EventColors.foreground(event()), Colors.black);
+    expect(
+      EventColors.foreground(
+        const CalendarEvent(id: 'dark', color: 'DEEP_PURPLE'),
+      ),
+      Colors.white,
+    );
     final parsed = CalendarEvent.fromJson(event().toJson());
     expect(parsed.sourceColor, '#ff80ab');
     expect(parsed.copyWith(title: 'changed').sourceColor, '#ff80ab');
@@ -89,6 +95,10 @@ void main() {
       expect(boxes.length, greaterThanOrEqualTo(2));
       for (final decoration in boxes) {
         expect(decoration.color!.a, 1);
+        if (decoration.border is Border) {
+          final border = decoration.border! as Border;
+          expect(border.left.color, Colors.black);
+        }
       }
       final title = tester.widgetList<Text>(find.text('Provider RGB'));
       expect(

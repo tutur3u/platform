@@ -54,6 +54,12 @@ describe('effective opaque calendar rendering', () => {
       ).toBe('#4caf50');
     }
   });
+  it('retains legacy grey and stored grey RGB aliases', () => {
+    expect(calendarEventColors({ color: 'grey' }).background).toBe('#9e9e9e');
+    expect(calendarEventColors({ color: '#6b7280' }).background).toBe(
+      '#6b7280'
+    );
+  });
   it('uses readable opaque text across pale and dark colors', () => {
     expect(calendarColorForeground('#ffffff')).toBe('#000000');
     expect(calendarColorForeground('#000000')).toBe('#ffffff');
@@ -69,6 +75,20 @@ describe('effective opaque calendar rendering', () => {
       '#5484ed',
       '#51b749',
       '#dc2127',
+      ...[
+        'BLUE',
+        'RED',
+        'GREEN',
+        'YELLOW',
+        'PURPLE',
+        'PINK',
+        'ORANGE',
+        'INDIGO',
+        'CYAN',
+        'GRAY',
+        'grey',
+        '#6b7280',
+      ].map((color) => calendarEventColors({ color }).background),
     ]) {
       const text = calendarColorForeground(background);
       const rgb = [1, 3, 5]

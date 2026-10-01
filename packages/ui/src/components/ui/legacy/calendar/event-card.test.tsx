@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventCard } from './event-card';
 
 dayjs.extend(utc);
@@ -80,9 +80,12 @@ function renderEventCard(event: CalendarEvent) {
   );
 }
 
+afterEach(() => vi.useRealTimers());
 describe('EventCard read-only adapter events', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-06-28T00:00:00Z'));
     calendarMocks.hoveredBaseEventId = null;
     calendarMocks.hoveredEventColumn = null;
     calendarMocks.preservePastEventOpacity = true;
@@ -134,6 +137,7 @@ describe('EventCard read-only adapter events', () => {
     expect(card.style.visibility).toBe('hidden');
     expect(card.style.backgroundColor).toBe('rgb(0, 255, 136)');
     expect(card.className).not.toMatch(/opacity-(?:30|50|60|80)/);
+    expect(card).toHaveClass('line-through');
     rendered.unmount();
     calendarMocks.hoveredBaseEventId = null;
     calendarMocks.hoveredEventColumn = null;
@@ -173,6 +177,36 @@ describe('EventCard read-only adapter events', () => {
       expect(calendarMocks.updateEvent).not.toHaveBeenCalled();
     }
   );
+
+  it('uses an opaque readable error fill after a failed resize', async () => {
+    calendarMocks.isEventReadOnly.mockReturnValueOnce(false);
+    calendarMocks.updateEvent.mockRejectedValueOnce(
+      new Error('Synthetic update failure')
+    );
+    const { container } = renderEventCard({
+      id: 'failed',
+      title: 'Failed resize',
+      color: 'BLUE',
+      start_at: '2026-06-26T08:30:00Z',
+      end_at: '2026-06-26T09:30:00Z',
+      scheduling_metadata: {
+        google_color: { version: 1, inherited: false, background: '#00ff88' },
+      },
+    });
+    fireEvent.mouseDown(container.querySelector('.cursor-s-resize')!, {
+      button: 0,
+      clientY: 20,
+    });
+    fireEvent.mouseMove(document, { clientY: 80 });
+    fireEvent.mouseUp(document, { clientY: 80 });
+    await waitFor(() =>
+      expect(screen.getByTestId('calendar-event-failed')).toHaveStyle({
+        backgroundColor: '#f44336',
+        color: '#000000',
+        opacity: '1',
+      })
+    );
+  });
 
   it.each([
     {
