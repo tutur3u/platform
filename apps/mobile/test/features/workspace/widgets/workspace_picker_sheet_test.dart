@@ -147,6 +147,23 @@ void main() {
       expect(find.byType(EditableText), findsOneWidget);
       expect(find.text('Design'), findsNothing);
       expect(find.text('Product'), findsNWidgets(2));
+      await tester.tap(find.byIcon(Icons.close_rounded).last);
+      await tester.pumpAndSettle();
+      expect(find.byType(EditableText), findsNothing);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      expect(find.byType(EditableText), findsNothing);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+      expect(find.text('Design'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.search_rounded).first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(EditableText), 'Product');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.close_rounded).last);
+      await tester.pumpAndSettle();
+      expect(find.byType(EditableText), findsNothing);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
     });
 
     testWidgets('selects the workspace represented by a filtered result', (

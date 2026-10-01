@@ -68,7 +68,6 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
   late final FocusNode _searchFocusNode;
   String _searchQuery = '';
   bool _isSearchVisible = false;
-
   bool get _isDefaultMode =>
       widget.mode == WorkspacePickerMode.defaultWorkspace;
 
@@ -103,6 +102,11 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
         : widget.state.workspaces
               .where((workspace) => _matchesWorkspace(context, workspace))
               .toList(growable: false);
+    final selectedId =
+        (_isDefaultMode
+                ? widget.state.defaultWorkspace
+                : widget.state.currentWorkspace)
+            ?.id;
     final sections = splitWorkspaceSections(visibleWorkspaces);
     final size = MediaQuery.sizeOf(context);
 
@@ -139,7 +143,7 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                 onSearch: _toggleSearch,
                 onClearSearch: _searchQuery.trim().isEmpty
                     ? null
-                    : () => _searchController.clear(),
+                    : _clearSearch,
                 onCreate: () => _handleCreate(context),
                 onClose: () => Navigator.maybePop(context),
               ),
@@ -162,7 +166,7 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                         key: ValueKey('workspace-result-${workspace.id}'),
                         paletteModuleId: 'crm',
                         workspace: workspace,
-                        isSelected: _isSelected(workspace),
+                        isSelected: workspace.id == selectedId,
                         isCurrent:
                             workspace.id == widget.state.currentWorkspace?.id,
                         isDefault:
@@ -182,7 +186,7 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                         key: ValueKey('workspace-result-${workspace.id}'),
                         paletteModuleId: 'calendar',
                         workspace: workspace,
-                        isSelected: _isSelected(workspace),
+                        isSelected: workspace.id == selectedId,
                         isCurrent:
                             workspace.id == widget.state.currentWorkspace?.id,
                         isDefault:
@@ -203,7 +207,7 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                         key: ValueKey('workspace-result-${workspace.id}'),
                         paletteModuleId: 'finance',
                         workspace: workspace,
-                        isSelected: _isSelected(workspace),
+                        isSelected: workspace.id == selectedId,
                         isCurrent:
                             workspace.id == widget.state.currentWorkspace?.id,
                         isDefault:
@@ -219,9 +223,7 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                   onCreate: () => _handleCreate(context),
                 )
               else if (visibleWorkspaces.isEmpty)
-                _WorkspaceSearchEmptyState(
-                  onClear: () => _searchController.clear(),
-                ),
+                _WorkspaceSearchEmptyState(onClear: _clearSearch),
             ],
           ),
         ),
@@ -241,30 +243,26 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
     ].whereType<String>().any((value) => value.toLowerCase().contains(query));
   }
 
-  bool _isSelected(Workspace workspace) {
-    return workspace.id ==
-        (_isDefaultMode
-            ? widget.state.defaultWorkspace?.id
-            : widget.state.currentWorkspace?.id);
-  }
-
   void _toggleSearch() {
-    if (_isSearchVisible) {
-      _searchFocusNode.unfocus();
-      return;
-    }
-
     setState(() => _isSearchVisible = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _searchFocusNode.requestFocus();
     });
   }
 
+  void _clearSearch() {
+    _searchController.clear();
+    _searchFocusNode.unfocus();
+    setState(() => _isSearchVisible = false);
+  }
+
   void _handleSearchFocusChanged() {
-    // A result tap can dismiss the keyboard before its tap completes. Preserve
-    // the rendered results; clearing the query must be an explicit action.
-    if (!mounted || !_searchFocusNode.hasFocus) return;
-    if (!_isSearchVisible) setState(() => _isSearchVisible = true);
+    // Preserve filtered results across keyboard dismissal; an empty search can
+    // collapse so Create remains available without reopening the sheet.
+    if (!mounted || _searchFocusNode.hasFocus) return;
+    if (_searchController.text.isEmpty) {
+      setState(() => _isSearchVisible = false);
+    }
   }
 
   Future<void> _handleCreate(BuildContext context) async {
