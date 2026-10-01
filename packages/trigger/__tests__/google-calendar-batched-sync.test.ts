@@ -145,7 +145,16 @@ describe('Google Calendar Batched Sync', () => {
       expect(upsertMock).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
-            color: 'RED',
+            color: 'INDIGO',
+            scheduling_metadata: expect.objectContaining({
+              google_color: expect.objectContaining({
+                version: 1,
+                calendar_id: 'primary',
+                color_id: '1',
+                inherited: false,
+                resolution: 'unresolved',
+              }),
+            }),
             description: 'Description for Test Event 1',
             end_at: '2024-01-15T11:00:00Z',
             google_event_id: 'event1',
@@ -156,7 +165,16 @@ describe('Google Calendar Batched Sync', () => {
             locked: true,
           }),
           expect.objectContaining({
-            color: 'RED',
+            color: 'INDIGO',
+            scheduling_metadata: expect.objectContaining({
+              google_color: expect.objectContaining({
+                version: 1,
+                calendar_id: 'primary',
+                color_id: '1',
+                inherited: false,
+                resolution: 'unresolved',
+              }),
+            }),
             description: 'Description for Test Event 2',
             end_at: '2024-01-15T15:00:00Z',
             google_event_id: 'event2',
@@ -167,7 +185,16 @@ describe('Google Calendar Batched Sync', () => {
             start_at: '2024-01-15T14:00:00Z',
           }),
           expect.objectContaining({
-            color: 'RED',
+            color: 'INDIGO',
+            scheduling_metadata: expect.objectContaining({
+              google_color: expect.objectContaining({
+                version: 1,
+                calendar_id: 'primary',
+                color_id: '1',
+                inherited: false,
+                resolution: 'unresolved',
+              }),
+            }),
             description: 'Description for Test Event 3',
             end_at: '2024-01-15T17:00:00Z',
             google_event_id: 'event3',

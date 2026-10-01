@@ -5,10 +5,12 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/repositories/profile_activity_repository.dart';
 import 'package:mobile/features/profile/view/shared_activity_sheet.dart';
+import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Key by user and workspace to discard old responses.
 class WorkspaceActivitySection extends StatefulWidget {
@@ -152,21 +154,32 @@ class _WorkspaceActivitySectionState extends State<WorkspaceActivitySection> {
           workspaceId: widget.workspaceId,
           feature: 'profile',
           entityId: widget.workspaceId,
-          child: SwitchListTile.adaptive(
-            contentPadding: EdgeInsets.zero,
-            title: Text(l10n.profileShareActivityTitle),
-            subtitle: Text(
-              _sharing
+          child: Semantics(
+            toggled: _sharing,
+            enabled: !_loading && !_saving && !_failed,
+            child: SettingsTile(
+              icon: _sharing ? Icons.groups_outlined : Icons.lock_outline,
+              title: l10n.profileShareActivityTitle,
+              subtitle: _sharing
                   ? l10n.profileSharedWithWorkspace(widget.workspaceName)
                   : l10n.profilePrivateByDefault,
+              showChevron: false,
+              onTap: _loading || _saving || _failed
+                  ? null
+                  : () => unawaited(_toggle(!_sharing)),
+              trailing: ExcludeFocus(
+                child: ExcludeSemantics(
+                  child: IgnorePointer(
+                    child: shad.Switch(
+                      value: _sharing,
+                      onChanged: _loading || _saving || _failed
+                          ? null
+                          : (value) => unawaited(_toggle(value)),
+                    ),
+                  ),
+                ),
+              ),
             ),
-            secondary: Icon(
-              _sharing ? Icons.groups_outlined : Icons.lock_outline,
-            ),
-            value: _sharing,
-            onChanged: _loading || _saving || _failed
-                ? null
-                : (value) => unawaited(_toggle(value)),
           ),
         ),
         if (_failed)
@@ -178,7 +191,9 @@ class _WorkspaceActivitySectionState extends State<WorkspaceActivitySection> {
         const SizedBox(height: 12),
         Text(
           l10n.profileWorkspaceActivity,
-          style: Theme.of(context).textTheme.titleLarge,
+          style: shad.Theme.of(
+            context,
+          ).typography.large.copyWith(fontWeight: FontWeight.w800),
         ),
         if (_members.isEmpty && !_loading && !_failed)
           Padding(
@@ -186,12 +201,13 @@ class _WorkspaceActivitySectionState extends State<WorkspaceActivitySection> {
             child: Text(l10n.profileNoSharedActivity),
           ),
         for (final member in _members)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.person_outline),
-            title: Text(member['name'] as String? ?? l10n.profileTitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => unawaited(_open(member)),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: SettingsTile(
+              icon: Icons.person_outline,
+              title: member['name'] as String? ?? l10n.profileTitle,
+              onTap: () => unawaited(_open(member)),
+            ),
           ),
         if (_loading)
           const Padding(

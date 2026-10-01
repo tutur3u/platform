@@ -1,6 +1,24 @@
 part of 'mail_page.dart';
 
 extension _MailWorkspaceCache on _MailWorkspaceState {
+  List<Map<String, dynamic>> _overlayReaderActions(
+    List<Map<String, dynamic>> items,
+    String mailbox,
+  ) {
+    var result = items;
+    for (final entry in _pendingReaderIds.entries) {
+      if (entry.value.mailbox != mailbox) continue;
+      result = optimisticMailItems(
+        result,
+        {entry.key},
+        action: entry.value.action,
+        folder: _folder,
+        query: _search.text,
+      );
+    }
+    return result;
+  }
+
   Future<void> _warmVisibleThreads(int generation, String box) async {
     if (!_threads || !_accessVerified) return;
     // Prefetch six visible threads in two small batches. Sequential requests
@@ -78,8 +96,9 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
         _labels = labels;
         _folders = folders;
         _search.text = query;
-        _items = items;
+        _items = _overlayReaderActions(items, mailboxId);
         _visibleListKey = listKey;
+        _listResolved = listKey != null;
         _hasMore = false;
       });
     } on Object {
@@ -134,6 +153,7 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
         _selected.clear();
         _hasMore = false;
         _loading = false;
+        _listResolved = false;
         _failed = true;
       });
     }

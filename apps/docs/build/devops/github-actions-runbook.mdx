@@ -1,10 +1,60 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-09-28"
+updatedAt: "2026-09-30"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
+
+## Validation and Delivery Evidence
+
+- Run tests from the owning workspace with its actual config, dependencies and
+  providers. Root-hoisted packages or aliases can conceal undeclared dependencies
+  and invalid test boundaries. If a narrow source-alias fixture is needed, record
+  it and retain the owning type/test/build gates; do not substitute built artifacts
+  or mock away the production orchestration being verified.
+- Record immutable head and tree, commands, results, and workflow/run/job IDs.
+  A manual preview workflow may report the workflow branch SHA rather than its
+  input: verify the decoded checkout matches the requested head. Predecessor green
+  builds do not prove a corrected head. New findings or commits require new gates.
+- Develop independent scopes in parallel, each with its own worktree and owner.
+  Admit heavy local validation through the shared `ttr resources` FIFO after a
+  resource preflight; serialize permitted local installs and tests. Require
+  exact-head CI for builds; independent CI builds need not be serialized. One
+  integration owner serializes main and production mutations. Other owners continue active work and
+  hand off manifests rather than starting competing CI watch loops.
+- Integrate dependencies bottom-up, retaining ancestry for base-chained PRs.
+  Verify child diffs and retargeting, then rerun the owning gates. A base edit alone
+  may not trigger a workflow listening only for opened/synchronize events; verify
+  actual runs before an authorized source-identical synchronization. A changed
+  assembled source tree needs its own validation.
+- Ship verified independent scopes in bounded releases. Pin and inspect the exact
+  main-to-production range, migrations and mobile path triggers before promotion;
+  stop if the range changes. Verify the exact merged-main gates before normal
+  authorized `bun git-sync`, then verify production deployment and migration results
+  separately. A planner success alone does not prove every downstream deployment.
+- For mobile, record source SHA, version/build number, signed upload and processing,
+  and tester-group availability. Internal distribution and external beta review
+  are separate states; neither proves installation or live UI behavior. Record
+  supported read-back or device QA, and state any access or verification limits.
+
+See [stack policy](/build/development-tools/stacked-pull-requests) and
+[product decisions](/build/development-tools/documenting#product-decisions-and-regression-evidence).
+
+### Python installer and cache boundaries
+
+Discord workflows pin `astral-sh/setup-uv` to the immutable commit for stable
+v10.2.0. Upstream stopped publishing major-only tags in v8, so future upgrades
+must verify and pin the full stable release SHA. Keep `uv sync --locked` and
+the `apps/discord/uv.lock` cache key together.
+
+Ordinary Python CI retains cache pruning explicitly because setup-uv v9 changed
+its default to keep unpruned caches. Modal's deployment is triggered by
+`workflow_run` and uses `enable-cache: auto`: setup-uv v10 disables cache access
+for that sensitive event to protect against cache poisoning. Manual deployment
+can still use the automatic cache policy. Preserve the successful-main-run
+condition, exact upstream checkout SHA, and read-only repository permissions
+when updating the installer; do not enable caching explicitly for `workflow_run`.
 
 ## Workflow Gatekeeping
 
@@ -212,11 +262,58 @@ independently.
 These cover staging schema promotion and production schema promotion.
 
 Database workflows that install the Supabase CLI use
-`.github/actions/setup-supabase-cli-with-retry` after checkout. The local action
-passes `github.token` through to `supabase/setup-cli@v2`, leaves `version` empty
-so the repo-pinned Supabase CLI version is used instead of the anonymous
-`latest` release lookup, and retries failed setup attempts with bounded
-exponential backoff.
+`.github/actions/setup-supabase-cli-with-retry` after checkout with Node 20+ and
+npm available. The wrapper pins setup-cli v3.0.1 to its reviewed commit and passes
+the exact stable CLI version resolved for `apps/database` in the root `bun.lock`.
+A missing or malformed pin fails before installation; there is no `latest`
+fallback. Explicit overrides must be exact stable versions. The v3 action no
+longer accepts `github-token`, so callers do not pass a token.
+
+The installer gets a runner-temporary home to protect any existing Bun binary.
+An always-running restoration step verifies that binary's version and restores
+its PATH priority, while retaining the installed CLI path. Jobs without an
+existing Bun runtime keep the installer's runtime. Four attempts use 5, 10 and
+20-second backoff; a fourth failure still fails the job. Real installer and
+follow-on runtime behavior must pass the owning exact-commit CI jobs before
+integration; this does not authorize a migration dispatch.
+
+### Rust dependency verification
+
+The combined `rust-backend.yml` workflow is paused in `tuturuuu.ci.ts`.
+Its disabled switch also applies to manual dispatch; skipped verify jobs do not
+prove native or wasm compilation, regardless of the aggregate check result.
+
+`rust-verify.yml` provides a separate manual, main-only CI verification route
+once registered on the default branch. Supply the exact 40-character source
+commit SHA. It verifies the checkout and records source/workflow SHAs,
+manifest and lock hashes, and the Rust toolchain in the run summary. It uses the
+repository's Rust 1.95 minimum to run locked native Clippy/tests, wasm Worker
+checking and a native release build. It uses read-only repository permissions,
+no deployment environment or secrets, and no shared cache writes.
+
+For dependency drafts, record the requested source SHA and the actual successful
+job result. After the existing verifier succeeds, a separate sequential Worker-package job
+installs checksum-published stable `worker-build 0.8.7`
+with its locked dependencies into runner-temporary storage and runs the actual
+release bundler with locked project dependencies and Worker-only features. It
+checks the configured legacy `build/worker/shim.mjs` compatibility entry point,
+its `build/index.js` target against the configured Wrangler entry, parses the emitted ES modules,
+uses isolated pinned Acorn 8.18.0 to follow the default export through aliases
+and the vendor Proxy to the same class that owns the emitted `fetch` function.
+Selected class/alias bindings must not be reassigned; the check rejects that
+unsupported pattern instead of matching an earlier handler to a later class.
+It also validates a real WASM function export named `fetch`. It records config/artifact hashes. These are
+package contract checks without invoking handlers or proving deployed behavior. The pinned vendor tool selects
+wasm-bindgen 0.2.129, wasm-opt 132 and esbuild 0.28.2; this is Worker package
+construction, without invoking Wrangler or accessing deploy secrets. The native
+job keeps its 45-minute timeout. The sequential bundle job is bounded to 60 minutes,
+with 25 minutes for bundler installation and 30 for release bundling; these are
+limits, not measured durations. Both steps record elapsed seconds on ordinary command exit, including failures;
+use hosted step timestamps if runner cancellation prevents the exit trap.
+Record actual hosted duration after the first approved exact-source dispatch;
+adjust only with evidence if a bound is insufficient. Docker
+container packaging and deployed runtime behavior remain separate evidence gaps. Registering this workflow does not resume
+the paused migration/deployment workflow or authorize a production cutover.
 
 ### Docker automation
 

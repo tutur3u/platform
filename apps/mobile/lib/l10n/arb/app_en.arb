@@ -3483,14 +3483,6 @@
   "@remindersAllDayEvent": {"placeholders": {"title": {"type": "String"}}},
   "remindersUpcomingEvent": "{when}: {title}",
   "@remindersUpcomingEvent": {"placeholders": {"when": {"type": "String"}, "title": {"type": "String"}}},
-  "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
-  "@remindersOccurrenceDetails": {
-    "placeholders": {
-      "leadTime": {"type": "String"},
-      "occurrence": {"type": "String"},
-      "timezone": {"type": "String"}
-    }
-  },
   "remindersIn3d": "In 3 days",
   "remindersIn1d": "Tomorrow",
   "remindersIn12h": "In 12 hours",
@@ -3520,11 +3512,14 @@
     "settingsGeneralGroup": "Personalize",
     "settingsSupportGroup": "Help and account",
     "profilePrivateActivity": "Your private activity",
+    "profileTimelineDescription": "Creation activity in this workspace over the last 30 days. Calendar events are workspace activity.",
+    "profileTimelineLimited": "Showing recent activity only. Some sources reached the display limit.",
+    "profileTimelineUnavailable": "Activity could not be refreshed.",
     "profileTimelineTitle": "Activity timeline",
     "profileTimelineToday": "Today",
     "profileTimelineYesterday": "Yesterday",
     "profileTimelineEmpty": "No recent activity in this workspace",
-    "profileTimelinePartial": "Some activity is unavailable. Retry",
+    "profileTimelinePartial": "Some activity is unavailable.",
     "profileTimelineTasks": "{count, plural, one{Created 1 task} other{Created {count} tasks}}",
     "@profileTimelineTasks": {"placeholders": {"count": {"type": "int"}}},
     "profileTimelineTransactions": "{count, plural, one{Created 1 transaction} other{Created {count} transactions}}",
@@ -3747,11 +3742,59 @@
     "offlineChangesRetry": "Retry",
     "offlineChangesDiscard": "Discard local change",
     "offlineChangesDiscardConfirm": "This removes the queued change from this device. It does not undo anything the server may have received.",
+    "mailMessageDetails": "Message details",
+    "mailInvitationTitle": "Calendar invitation",
+    "mailInvitationAccept": "Accept",
+    "mailInvitationDecline": "Decline",
+    "mailInvitationTentative": "Tentative",
+    "mailInvitationIdentity": "Reply as {attendee} to organizer {organizer}",
+    "@mailInvitationIdentity": {
+        "placeholders": {
+            "attendee": {
+                "type": "String"
+            },
+            "organizer": {
+                "type": "String"
+            }
+        }
+    },
+    "mailInvitationLocation": "Location",
+    "mailInvitationWhen": "When",
+    "mailInvitationJoin": "Join meeting",
+    "mailInvitationRetry": "Retry invitation details",
+    "mailInvitationSending": "Sending your response…",
+    "mailInvitationSent": "Response sent: {response}",
+    "@mailInvitationSent": {
+        "placeholders": {
+            "response": {
+                "type": "String"
+            }
+        }
+    },
+    "mailInvitationPending": "Response is pending. Check again before replying.",
+    "mailInvitationFailed": "Could not confirm your response. Retry the same response to check its status.",
+    "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+    "@remindersOccurrenceDetails": {
+        "placeholders": {
+            "leadTime": {
+                "type": "String"
+            },
+            "occurrence": {
+                "type": "String"
+            },
+            "timezone": {
+                "type": "String"
+            }
+        }
+    },
     "settingsTimezone": "Personal timezone",
     "settingsWorkspaceTimezone": "Workspace timezone",
     "settingsTimezoneDescription": "Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.",
     "settingsTimezoneAuto": "Automatic",
     "settingsTimezoneSearch": "Search timezones",
+    "settingsTimezoneLoading": "Resolving timezone…",
+    "settingsTimezoneAccountPending": "Waiting for your account.",
+    "settingsTimezoneUnknown": "Unknown",
     "settingsTimezoneEffective": "Effective timezone: {timezone}",
     "settingsTimezoneError": "Could not load or save timezone. Tap to retry.",
     "@settingsTimezoneEffective": {
@@ -3761,5 +3804,7 @@
             }
         }
     },
-    "calendarInvalidLocalTime": "Choose a valid start and end time. Some times do not exist when daylight saving time changes."
+    "calendarInvalidLocalTime": "Choose a valid start and end time. Some times do not exist when daylight saving time changes.",
+    "profileOverviewTab": "Overview",
+    "profileTimelineTab": "Timeline"
 }

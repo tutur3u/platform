@@ -40,6 +40,10 @@ vi.mock('../src/google-calendar-sync', async () => {
   };
 });
 
+vi.mock('../src/google-calendar-color-context', () => ({
+  getGoogleCalendarColorContext: vi.fn(async () => ({ calendarId: 'primary' })),
+}));
+
 // Define the mock response type to support both nextPageToken and nextSyncToken
 type MockCalendarResponse = {
   data: {

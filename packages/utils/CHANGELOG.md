@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.33.2](https://github.com/tutur3u/platform/compare/utils-v0.33.1...utils-v0.33.2) (2026-10-01)
+
+
+### Bug Fixes
+
+* **calendar:** preserve Google color identity and inheritance ([#5657](https://github.com/tutur3u/platform/issues/5657)) ([0c2aac6](https://github.com/tutur3u/platform/commit/0c2aac6a1a2b6e9f6eb66bde1e783bf407603cff))
+* **calendar:** preserve Google provider color identity and inheritance ([08f2363](https://github.com/tutur3u/platform/commit/08f236349d1dc29ad0593de8f668d5ce504f38d0))
+
 ## [0.33.1](https://github.com/tutur3u/platform/compare/utils-v0.33.0...utils-v0.33.1) (2026-09-29)
 
 

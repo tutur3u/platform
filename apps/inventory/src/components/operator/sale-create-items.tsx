@@ -18,6 +18,7 @@ export type SaleStockOption = {
   imageUrl: string | null;
   key: string;
   price: number;
+  priceId?: string;
   productId: string;
   productName: string;
   unitId: string;
@@ -156,6 +157,7 @@ export function CartEditor({
               </span>
               <CurrencyInput
                 aria-label={t('unitPrice')}
+                disabled={Boolean(line.priceId)}
                 className="h-9 text-sm"
                 currencySuffix={currencyCode.toUpperCase()}
                 hideHelpers

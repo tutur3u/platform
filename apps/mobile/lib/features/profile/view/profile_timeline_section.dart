@@ -3,30 +3,40 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
+import 'package:mobile/features/profile/view/profile_timeline_days.dart';
+import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ProfileTimelineSection extends StatefulWidget {
-  const ProfileTimelineSection({required this.replayToken, super.key});
+  const ProfileTimelineSection({
+    required this.replayToken,
+    this.repository,
+    super.key,
+  });
 
   final int replayToken;
+  final ProfileTimelineRepository? repository;
 
   @override
   State<ProfileTimelineSection> createState() => _ProfileTimelineSectionState();
 }
 
 class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
-  final _repository = ProfileTimelineRepository();
+  late final ProfileTimelineRepository _repository =
+      widget.repository ?? ProfileTimelineRepository();
   List<ProfileTimelineItem>? _items;
   String? _scope;
   int _request = 0;
   bool _failed = false;
   bool _partial = false;
+  bool _limited = false;
+  bool _refreshing = false;
 
   @override
   void didChangeDependencies() {
@@ -45,6 +55,8 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     _items = null;
     _failed = false;
     _partial = false;
+    _limited = false;
+    _refreshing = false;
     _request++;
     if (userId != null && workspaceId != null) {
       unawaited(_load(workspaceId, userId));
@@ -68,27 +80,48 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
 
   Future<void> _load(String workspaceId, String userId) async {
     final request = ++_request;
+    setState(() => _refreshing = true);
     try {
-      List<ProfileTimelineItem>? cached;
+      ProfileTimelineSnapshot? cached;
       try {
         cached = await _repository.cached(workspaceId, userId);
       } on Object {
         // A stale or unreadable local snapshot must not block revalidation.
       }
       if (mounted && request == _request && cached != null) {
-        setState(() => _items = cached);
+        setState(() {
+          _items = cached!.items;
+          _partial = cached.partial;
+          _limited = cached.limited;
+        });
       }
+      if (!mounted || request != _request) return;
       final fresh = await _repository.refresh(workspaceId, userId);
       if (mounted && request == _request) {
         setState(() {
           _items = fresh.items;
           _partial = fresh.partial;
+          _limited = fresh.limited;
           _failed = false;
         });
       }
     } on Exception {
       if (mounted && request == _request) setState(() => _failed = true);
+    } finally {
+      if (mounted && request == _request) setState(() => _refreshing = false);
     }
+  }
+
+  void _retry() {
+    final userId = context.read<AuthCubit>().state.user?.id;
+    final workspaceId = context
+        .read<WorkspaceCubit>()
+        .state
+        .currentWorkspace
+        ?.id;
+    if (userId == null || workspaceId == null || _refreshing) return;
+    setState(() => _failed = false);
+    unawaited(_load(workspaceId, userId));
   }
 
   @override
@@ -120,140 +153,69 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     final l10n = context.l10n;
     if (_scope == null) return const SizedBox.shrink();
     final items = _items;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 18),
-        Text(
-          l10n.profileTimelineTitle,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 8),
-        if (items == null && !_failed)
-          const FinanceSkeletonBlock(height: 112, radius: 20)
-        else if (items == null)
-          TextButton.icon(
-            onPressed: () {
-              final userId = context.read<AuthCubit>().state.user?.id;
-              final workspaceId = context
-                  .read<WorkspaceCubit>()
-                  .state
-                  .currentWorkspace
-                  ?.id;
-              if (userId != null && workspaceId != null) {
-                setState(() => _failed = false);
-                unawaited(_load(workspaceId, userId));
-              }
-            },
-            icon: const Icon(Icons.refresh_rounded),
-            label: Text(l10n.commonRetry),
-          )
-        else if (items.isEmpty && !_partial)
-          Text(l10n.profileTimelineEmpty)
-        else
-          ..._buildDays(context, items),
-        if (_partial)
-          TextButton.icon(
-            onPressed: () {
-              final userId = context.read<AuthCubit>().state.user?.id;
-              final workspaceId = context
-                  .read<WorkspaceCubit>()
-                  .state
-                  .currentWorkspace
-                  ?.id;
-              if (userId != null && workspaceId != null) {
-                unawaited(_load(workspaceId, userId));
-              }
-            },
-            icon: const Icon(Icons.refresh_rounded),
-            label: Text(l10n.profileTimelinePartial),
+    final theme = shad.Theme.of(context);
+    return SettingsPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.profileTimelineDescription,
+            style: theme.typography.textSmall.copyWith(
+              color: theme.colorScheme.mutedForeground,
+            ),
           ),
-      ],
+          const shad.Gap(16),
+          if (items == null && !_failed)
+            Semantics(
+              label: l10n.profileLoading,
+              liveRegion: true,
+              child: const FinanceSkeletonBlock(height: 112, radius: 20),
+            )
+          else if (items?.isEmpty == true && !_partial)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.history_rounded,
+                    size: 32,
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                  const shad.Gap(12),
+                  Text(l10n.profileTimelineEmpty, textAlign: TextAlign.center),
+                ],
+              ),
+            )
+          else if (items != null)
+            ProfileTimelineDays(items: items, onOpen: _open),
+          if (_limited) ...[
+            const shad.Gap(12),
+            Text(
+              l10n.profileTimelineLimited,
+              style: theme.typography.textSmall.copyWith(
+                color: theme.colorScheme.mutedForeground,
+              ),
+            ),
+          ],
+          if (_failed || _partial) ...[
+            const shad.Gap(12),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                _partial
+                    ? l10n.profileTimelinePartial
+                    : l10n.profileTimelineUnavailable,
+              ),
+            ),
+            const shad.Gap(8),
+            shad.OutlineButton(
+              onPressed: _refreshing ? null : _retry,
+              leading: const Icon(Icons.refresh_rounded, size: 18),
+              child: Text(l10n.commonRetry),
+            ),
+          ],
+        ],
+      ),
     );
   }
-
-  List<Widget> _buildDays(
-    BuildContext context,
-    List<ProfileTimelineItem> items,
-  ) {
-    final groups = <DateTime, List<ProfileTimelineItem>>{};
-    for (final item in items) {
-      final date = item.createdAt;
-      final day = DateTime(date.year, date.month, date.day);
-      groups.putIfAbsent(day, () => []).add(item);
-    }
-    final days = groups.keys.toList()..sort((a, b) => b.compareTo(a));
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    return [
-      for (final day in days)
-        Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ExpansionTile(
-            initiallyExpanded: day == today,
-            title: Text(
-              day == today
-                  ? context.l10n.profileTimelineToday
-                  : day == today.subtract(const Duration(days: 1))
-                  ? context.l10n.profileTimelineYesterday
-                  : DateFormat.yMMMd(
-                      Localizations.localeOf(context).toString(),
-                    ).format(day),
-            ),
-            subtitle: Text(_summary(context, groups[day]!)),
-            children: [
-              for (final item in groups[day]!)
-                ListTile(
-                  dense: true,
-                  leading: Icon(_icon(item.type)),
-                  title: Text(
-                    item.title?.isNotEmpty == true
-                        ? item.title!
-                        : _typeLabel(context, item.type),
-                  ),
-                  subtitle: Text(
-                    DateFormat.jm(
-                      Localizations.localeOf(context).toString(),
-                    ).format(item.createdAt),
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => _open(item),
-                ),
-            ],
-          ),
-        ),
-    ];
-  }
-
-  String _summary(BuildContext context, List<ProfileTimelineItem> items) {
-    final counts = <String, int>{};
-    for (final item in items) {
-      counts.update(item.type, (count) => count + 1, ifAbsent: () => 1);
-    }
-    final l10n = context.l10n;
-    return [
-      if (counts['task'] case final count?) l10n.profileTimelineTasks(count),
-      if (counts['transaction'] case final count?)
-        l10n.profileTimelineTransactions(count),
-      if (counts['note'] case final count?) l10n.profileTimelineNotes(count),
-      if (counts['calendar'] case final count?)
-        l10n.profileTimelineWorkspaceEvents(count),
-    ].join(' · ');
-  }
-
-  String _typeLabel(BuildContext context, String type) => switch (type) {
-    'task' => context.l10n.taskBoardsTasksCount(1),
-    'transaction' => context.l10n.financeActivityLabel,
-    'note' => context.l10n.notesTitle,
-    'calendar' => context.l10n.calendarTitle,
-    _ => context.l10n.profileTimelineTitle,
-  };
-
-  IconData _icon(String type) => switch (type) {
-    'task' => Icons.task_alt_rounded,
-    'transaction' => Icons.account_balance_wallet_outlined,
-    'note' => Icons.edit_note_rounded,
-    'calendar' => Icons.event_rounded,
-    _ => Icons.history_rounded,
-  };
 }

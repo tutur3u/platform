@@ -1,0 +1,260 @@
+name: Rust Dependency Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: "Exact repository commit to compile and test (40 lowercase hex characters)."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-dependency-verify-${{ inputs.source_sha }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify exact-source native and wasm Rust
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      CARGO_BUILD_JOBS: "2"
+      CARGO_HTTP_MULTIPLEXING: "false"
+      CARGO_NET_RETRY: "10"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    defaults:
+      run:
+        working-directory: ./apps/backend
+    steps:
+      - name: Validate exact source SHA
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+
+      - name: Verify checked out source
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          {
+            echo "Source SHA: $SOURCE_SHA"
+            echo "Workflow SHA: $GITHUB_SHA"
+            sha256sum apps/backend/Cargo.toml apps/backend/Cargo.lock
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup repository minimum Rust toolchain
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # verified stable implementation
+        with:
+          toolchain: "1.95.0"
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - name: Record toolchain
+        run: rustc --version --verbose >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Download locked modules
+        run: bash ../../scripts/ci/run-with-backoff.sh cargo fetch --locked
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Clippy native targets
+        run: cargo clippy --locked --all-targets --features native -- -D warnings
+
+      - name: Test native backend
+        run: cargo test --locked
+
+      - name: Check wasm Worker target
+        run: cargo check --locked --target wasm32-unknown-unknown --no-default-features --features worker
+
+      - name: Build native release binary
+        run: cargo build --locked --release --features native --bin backend
+
+  worker-bundle:
+    name: Verify exact-source Worker package
+    needs: verify
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      CARGO_BUILD_JOBS: "2"
+      CARGO_HTTP_MULTIPLEXING: "false"
+      CARGO_NET_RETRY: "10"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    defaults:
+      run:
+        working-directory: ./apps/backend
+    steps:
+      - name: Validate exact source SHA
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+
+      - name: Verify checked out source
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          {
+            echo "Source SHA: $SOURCE_SHA"
+            echo "Workflow SHA: $GITHUB_SHA"
+            sha256sum apps/backend/Cargo.toml apps/backend/Cargo.lock
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup repository minimum Rust toolchain
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # verified stable implementation
+        with:
+          toolchain: "1.95.0"
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - name: Record toolchain
+        run: rustc --version --verbose >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Download locked modules
+        run: bash ../../scripts/ci/run-with-backoff.sh cargo fetch --locked
+
+      - name: Install pinned Worker bundler
+        timeout-minutes: 25
+        shell: bash
+        run: |
+          set -euo pipefail
+          SECONDS=0
+          trap 'echo "Bundler install elapsed seconds: $SECONDS" >> "$GITHUB_STEP_SUMMARY"' EXIT
+          bash ../../scripts/ci/run-with-backoff.sh cargo install worker-build --version 0.8.7 --locked --root "$RUNNER_TEMP/worker-build"
+          echo "$RUNNER_TEMP/worker-build/bin" >> "$GITHUB_PATH"
+
+      - name: Build actual Worker bundle
+        timeout-minutes: 30
+        shell: bash
+        run: |
+          set -euo pipefail
+          SECONDS=0
+          trap 'echo "Worker bundle elapsed seconds: $SECONDS" >> "$GITHUB_STEP_SUMMARY"' EXIT
+          test "$(worker-build --version)" = '0.8.7'
+          echo "Worker bundler: $(worker-build --version)" >> "$GITHUB_STEP_SUMMARY"
+          worker-build --release -- --locked --no-default-features --features worker
+
+      - name: Install pinned JavaScript parser
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/worker-verify" --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org --save-exact acorn@8.18.0
+
+      - name: Verify Worker package artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-vm-modules --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { createHash } from 'node:crypto';
+          import { appendFileSync, readFileSync } from 'node:fs';
+          import { resolve } from 'node:path';
+          import { SourceTextModule } from 'node:vm';
+          import { pathToFileURL } from 'node:url';
+          const parserUrl = pathToFileURL(resolve(process.env.RUNNER_TEMP, 'worker-verify/node_modules/acorn/dist/acorn.mjs'));
+          const { parse, version } = await import(parserUrl);
+          assert.equal(version, '8.18.0');
+
+          const config = JSON.parse(readFileSync('wrangler.jsonc', 'utf8'));
+          const entry = resolve(config.main);
+          assert.equal(entry, resolve('build/worker/shim.mjs'));
+          const shim = readFileSync(entry, 'utf8');
+          const dependencies = new SourceTextModule(shim).dependencySpecifiers;
+          assert.ok(dependencies.length > 0);
+          for (const dependency of dependencies) {
+            assert.equal(resolve('build/worker', dependency), resolve('build/index.js'));
+          }
+          assert.match(shim, /export\s*\{\s*default\s*\}\s*from\s*['"]\.\.\/index\.js['"]/);
+          const bundle = readFileSync('build/index.js', 'utf8');
+          new SourceTextModule(bundle);
+          const ast = parse(bundle, { ecmaVersion: 'latest', sourceType: 'module' });
+          const bindings = new Map();
+          const reassignedBindings = new Set();
+          function recordAssignment(node) {
+            if (node.type === 'SequenceExpression') node.expressions.forEach(recordAssignment);
+            if (node.type === 'AssignmentExpression' && node.left.type === 'Identifier') {
+              reassignedBindings.add(node.left.name);
+              bindings.set(node.left.name, node.right);
+            }
+          }
+          let defaultExport;
+          for (const statement of ast.body) {
+            const node = statement.declaration || statement;
+            if (node.type === 'ClassDeclaration' && node.id) bindings.set(node.id.name, node);
+            if (node.type === 'VariableDeclaration') {
+              for (const declaration of node.declarations) {
+                if (declaration.id.type === 'Identifier') bindings.set(declaration.id.name, declaration.init);
+              }
+            }
+            if (statement.type === 'ExpressionStatement') recordAssignment(statement.expression);
+            if (statement.type === 'ImportDeclaration') for (const specifier of statement.specifiers) bindings.set(specifier.local.name, null);
+            if (statement.type === 'ExportDefaultDeclaration') defaultExport = statement.declaration;
+            if (statement.type === 'ExportNamedDeclaration' && !statement.source) {
+              for (const specifier of statement.specifiers) {
+                if ((specifier.exported.name || specifier.exported.value) === 'default') defaultExport = specifier.local;
+              }
+            }
+          }
+          function resolveClass(node, seen = new Set()) {
+            assert.ok(node, 'default export must resolve to a Worker class');
+            if (node.type === 'Identifier') {
+              assert.ok(!seen.has(node.name), 'cyclic default export alias');
+              assert.ok(!reassignedBindings.has(node.name), 'selected class/alias binding must not be reassigned');
+              return resolveClass(bindings.get(node.name), new Set([...seen, node.name]));
+            }
+            if (node.type === 'NewExpression' && node.callee.type === 'Identifier' && node.callee.name === 'Proxy') {
+              assert.ok(!bindings.has('Proxy'), 'vendor Proxy must use the built-in constructor');
+              return resolveClass(node.arguments[0], seen);
+            }
+            assert.ok(['ClassDeclaration', 'ClassExpression'].includes(node.type), 'default export must wrap the handler class');
+            return node;
+          }
+          const entryClass = resolveClass(defaultExport);
+          const property = (node) => node.computed ? node.property.value : node.property.name;
+          function ownsFetch(node) {
+            if (node?.type === 'SequenceExpression') return node.expressions.some(ownsFetch);
+            if (node?.type !== 'AssignmentExpression' || node.operator !== '=') return false;
+            const target = node.left;
+            if (target.type !== 'MemberExpression' || property(target) !== 'fetch') return false;
+            const prototype = target.object;
+            if (prototype.type !== 'MemberExpression' || property(prototype) !== 'prototype') return false;
+            if (!['FunctionExpression', 'ArrowFunctionExpression'].includes(node.right.type)) return false;
+            try { return resolveClass(prototype.object) === entryClass; } catch { return false; }
+          }
+          assert.ok(ast.body.some((statement) => statement.type === 'ExpressionStatement' && ownsFetch(statement.expression)),
+            'default-exported Worker class must own the emitted fetch function');
+          const wasm = new WebAssembly.Module(readFileSync('build/index_bg.wasm'));
+          assert.ok(WebAssembly.Module.exports(wasm).some(
+            (item) => item.kind === 'function' && item.name === 'fetch'
+          ), 'WASM must export the backend fetch handler');
+          for (const file of ['wrangler.jsonc', 'build/worker/shim.mjs', 'build/index.js', 'build/index_bg.wasm']) {
+            const hash = createHash('sha256').update(readFileSync(file)).digest('hex');
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${hash}  ${file}\n`);
+          }
+          NODE

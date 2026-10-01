@@ -49,10 +49,10 @@ describe('Color Mapping', () => {
       end: { dateTime: '2024-01-15T11:00:00Z' },
     };
 
-    it('maps colorId "1" to RED', () => {
+    it('maps colorId "1" to INDIGO', () => {
       const event = { ...baseEvent, colorId: '1' };
       const result = formatEventForDb(event, wsId);
-      expect(result.color).toBe('RED');
+      expect(result.color).toBe('INDIGO');
     });
 
     it('maps colorId "2" to GREEN', () => {
@@ -61,10 +61,10 @@ describe('Color Mapping', () => {
       expect(result.color).toBe('GREEN');
     });
 
-    it('maps colorId "3" to GRAY', () => {
+    it('maps colorId "3" to PURPLE', () => {
       const event = { ...baseEvent, colorId: '3' };
       const result = formatEventForDb(event, wsId);
-      expect(result.color).toBe('GRAY');
+      expect(result.color).toBe('PURPLE');
     });
 
     it('maps colorId "4" to PINK', () => {
@@ -85,28 +85,28 @@ describe('Color Mapping', () => {
       expect(result.color).toBe('ORANGE');
     });
 
-    it('maps colorId "8" to CYAN', () => {
+    it('maps colorId "8" to GRAY', () => {
       const event = { ...baseEvent, colorId: '8' };
       const result = formatEventForDb(event, wsId);
-      expect(result.color).toBe('CYAN');
+      expect(result.color).toBe('GRAY');
     });
 
-    it('maps colorId "9" to PURPLE', () => {
+    it('maps colorId "9" to BLUE', () => {
       const event = { ...baseEvent, colorId: '9' };
       const result = formatEventForDb(event, wsId);
-      expect(result.color).toBe('PURPLE');
+      expect(result.color).toBe('BLUE');
     });
 
-    it('maps colorId "10" to INDIGO', () => {
+    it('maps colorId "10" to GREEN', () => {
       const event = { ...baseEvent, colorId: '10' };
       const result = formatEventForDb(event, wsId);
-      expect(result.color).toBe('INDIGO');
+      expect(result.color).toBe('GREEN');
     });
 
-    it('maps colorId "11" to BLUE', () => {
+    it('maps colorId "11" to RED', () => {
       const event = { ...baseEvent, colorId: '11' };
       const result = formatEventForDb(event, wsId);
-      expect(result.color).toBe('BLUE');
+      expect(result.color).toBe('RED');
     });
 
     it('defaults to BLUE for undefined colorId', () => {
@@ -123,10 +123,10 @@ describe('Color Mapping', () => {
       expect(result.color).toBe('BLUE');
     });
 
-    it('defaults to BLUE for invalid colorId "7"', () => {
+    it('maps colorId "7" to CYAN', () => {
       const event = { ...baseEvent, colorId: '7' };
       const result = formatEventForDb(event, wsId);
-      expect(result.color).toBe('BLUE');
+      expect(result.color).toBe('CYAN');
     });
 
     it('defaults to BLUE for invalid colorId "12"', () => {
@@ -151,6 +151,30 @@ describe('Color Mapping', () => {
   describe('formatEventForDb', () => {
     const wsId = 'test-workspace';
 
+    it('imports inherited source color and explicit labels without losing identity', () => {
+      const event = {
+        id: 'inherited',
+        start: { dateTime: '2026-09-30T07:00:00Z' },
+        end: { dateTime: '2026-09-30T08:00:00Z' },
+      };
+      const imported = formatEventForDb(event, wsId, 'personal', {
+        calendarBackground: '#f691b2',
+      });
+      expect(imported.scheduling_metadata.google_color).toMatchObject({
+        inherited: true,
+        background: '#f691b2',
+        calendar_id: 'personal',
+      });
+      const labeledEvent = { ...event, eventLabelId: 'custom' };
+      const labeled = formatEventForDb(labeledEvent, wsId, 'personal', {
+        eventLabels: [{ id: 'custom', backgroundColor: '#123abc' }],
+      });
+      expect(labeled.scheduling_metadata.google_color).toMatchObject({
+        inherited: false,
+        event_label_id: 'custom',
+        background: '#123abc',
+      });
+    });
     it('preserves Google working location metadata', () => {
       const event = {
         id: 'location',
@@ -160,7 +184,7 @@ describe('Color Mapping', () => {
         start: { date: '2026-09-25' },
         end: { date: '2026-09-26' },
       };
-      expect(formatEventForDb(event, wsId).scheduling_metadata).toEqual({
+      expect(formatEventForDb(event, wsId).scheduling_metadata).toMatchObject({
         google_event_type: 'workingLocation',
         google_working_location_type: 'homeOffice',
         google_working_location_label: null,
@@ -177,7 +201,7 @@ describe('Color Mapping', () => {
         start: { date: '2026-09-25' },
         end: { date: '2026-09-26' },
       };
-      expect(formatEventForDb(event, wsId).scheduling_metadata).toEqual({
+      expect(formatEventForDb(event, wsId).scheduling_metadata).toMatchObject({
         google_event_type: 'workingLocation',
         google_working_location_type: 'customLocation',
         google_working_location_label: 'School',

@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/mobile-v0.20.0...mobile-v0.21.0) (2026-10-01)
+
+
+### Features
+
+* **mobile:** add scoped timezone settings and preserve calendar instants ([4f96eca](https://github.com/tutur3u/platform/commit/4f96ecad57893376604d9859a8a235273b9373db)) ([#5656](https://github.com/tutur3u/platform/issues/5656)) ([eed3b40](https://github.com/tutur3u/platform/commit/eed3b4001db6a5273f148d105187c8e4ecc2d684))
+* **mobile:** consolidate settings and unify ordering and profile views ([66129e1](https://github.com/tutur3u/platform/commit/66129e1bcd778475bd3645068968352c438f87fb)) ([#5658](https://github.com/tutur3u/platform/issues/5658)) ([baf0e11](https://github.com/tutur3u/platform/commit/baf0e115104c13df924a22bd4c56d79660c5b9b7))
+* **mobile:** inherit verified timezone fixes into settings assembly ([c4600c9](https://github.com/tutur3u/platform/commit/c4600c9d0485f9c14dbe741c480e0edc237d5eb8))
+
+
+### Bug Fixes
+
+* **mail:** add invitation RSVP and settle final inbox archive ([#5668](https://github.com/tutur3u/platform/issues/5668)) ([48a1687](https://github.com/tutur3u/platform/commit/48a1687f253cb7df72716fd4c289a0dcf1aa329d))
+* **mail:** preserve recurrence and replay state ([89afe35](https://github.com/tutur3u/platform/commit/89afe35adb557e9f09fd7a023284f005fa9a9d7b))
+* **mail:** support invitation replies and settle empty inbox ([57e27ab](https://github.com/tutur3u/platform/commit/57e27ab6582e6cb5a1b6be43039ebf795cf908a2))
+* **mobile:** handle avatar image failures with visible fallback ([8ae5bf3](https://github.com/tutur3u/platform/commit/8ae5bf3d9d824e115f56011d490308e5dd57672c))
+* **mobile:** inherit reminder and timezone review corrections ([c3ebfce](https://github.com/tutur3u/platform/commit/c3ebfce99d4943df42d0609400e9509a1562507d))
+* **mobile:** merge beta changes with published release notes ([e83174b](https://github.com/tutur3u/platform/commit/e83174b13951be4b270b798d3dd007ff57dce62a))
+* **mobile:** preserve avatar image identity across rebuilds ([e8f4352](https://github.com/tutur3u/platform/commit/e8f4352796636e78ea21e9886a40ed955d93b845))
+* **mobile:** preserve calendar instants across timezone transitions ([6399a08](https://github.com/tutur3u/platform/commit/6399a08e7c51cd8c2085d128cc10826915b1ba1f))
+* **mobile:** preserve unused beta source versions ([#5667](https://github.com/tutur3u/platform/issues/5667)) ([9298057](https://github.com/tutur3u/platform/commit/9298057f5c26f54948c618083c223fb5d6ac0a04))
+* **mobile:** reconcile pending reminders across session changes ([14f6cc4](https://github.com/tutur3u/platform/commit/14f6cc4cb6aa892d9c8125f0034e978cea592cf4))
+* **mobile:** recover unresolved timezone preferences ([486c0e9](https://github.com/tutur3u/platform/commit/486c0e97a81cb6421d7b4c07743561db7a25193a)) ([#5680](https://github.com/tutur3u/platform/issues/5680)) ([301e29d](https://github.com/tutur3u/platform/commit/301e29df55dfefaa9b230d7a7ea689f903809200))
+* **mobile:** require verified workspace membership refresh ([4df15c8](https://github.com/tutur3u/platform/commit/4df15c87f31c4b2b1602c6e31b78bf39a114f73a))
+* **mobile:** retain avatar fallback on image and disposal failures ([#5662](https://github.com/tutur3u/platform/issues/5662)) ([7f383d1](https://github.com/tutur3u/platform/commit/7f383d157a0f6b2dc1330e31911c2730a33f441b))
+* **mobile:** retain reminders during unresolved workspace discovery ([f8610d0](https://github.com/tutur3u/platform/commit/f8610d0aae90699c91d319d51ecb307a4025d08c))
+* **mobile:** schedule all-day reminders in the effective timezone ([904ba81](https://github.com/tutur3u/platform/commit/904ba818c99fad6afd5b3ee5a4810880f45138f5))
+* **mobile:** serialize timezone reminder reconciliation ([7b0e0fc](https://github.com/tutur3u/platform/commit/7b0e0fc00b20fb1955b55e61509c564a638285a8))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/mobile-v0.19.0...mobile-v0.20.0) (2026-09-29)
 
 

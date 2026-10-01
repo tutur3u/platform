@@ -23,12 +23,14 @@ class AppsHubPage extends StatefulWidget {
     this.replayToken = 0,
     this.query = '',
     this.showGrid = true,
+    this.isActive = true,
     this.onSelected,
     super.key,
   });
 
   final String query;
   final bool showGrid;
+  final bool isActive;
   final ValueChanged<AppModule>? onSelected;
 
   final int replayToken;
@@ -43,7 +45,11 @@ class _AppsHubPageState extends State<AppsHubPage> {
   @override
   void didUpdateWidget(covariant AppsHubPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!widget.showGrid || widget.query.trim().isNotEmpty) _ordering = false;
+    if (!widget.isActive ||
+        !widget.showGrid ||
+        widget.query.trim().isNotEmpty) {
+      _ordering = false;
+    }
   }
 
   void _reorder(List<String> shownIds, List<AppModule> hidden) {
@@ -153,6 +159,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
                 canReorder: !hidden && widget.query.trim().isEmpty,
                 isOrdering: _ordering,
                 onOrderingStarted: () => setState(() => _ordering = true),
+                onOrderingFinished: () => setState(() => _ordering = false),
                 onSelected: widget.onSelected,
                 onOrderChanged: (ids) => _reorder(ids, hiddenModules),
                 onVisibilityPressed: (module) => unawaited(

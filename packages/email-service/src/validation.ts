@@ -97,7 +97,10 @@ export const emailAttachmentSchema = z.object({
     .string()
     .min(1)
     .max(255)
-    .regex(/^[\w!#$&^_.+-]+\/[\w!#$&^_.+-]+$/u, 'Invalid attachment MIME type'),
+    .regex(
+      /^(?:[\w!#$&^_.+-]+\/[\w!#$&^_.+-]+|text\/calendar(?:;[ \t]*(?:charset=(?:UTF-8|utf-8)|method=(?:REQUEST|REPLY|CANCEL|PUBLISH))){1,2})$/u,
+      'Invalid attachment MIME type'
+    ),
   data: z.instanceof(Uint8Array),
   disposition: z.enum(['attachment', 'inline']).optional(),
 });

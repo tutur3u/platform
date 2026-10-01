@@ -7,7 +7,16 @@ export default defineConfig({
   esbuild: { jsx: 'automatic' },
   oxc: false,
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: '@tuturuuu/internal-api',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/index.ts'
+        ),
+      },
+    ],
   },
   test: {
     environment: 'node',

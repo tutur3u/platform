@@ -8,9 +8,11 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
+import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/order_editor_sheet.dart';
 
 /// The whole brand/name control opens the same Apps surface as the Apps page.
 class AppsDropdownPicker extends StatelessWidget {
@@ -71,8 +73,9 @@ Future<void> showAppsPicker(
 }
 
 class AppsScreen extends StatefulWidget {
-  const AppsScreen({this.replayToken = 0, super.key});
+  const AppsScreen({this.replayToken = 0, this.isActive = true, super.key});
   final int replayToken;
+  final bool isActive;
 
   @override
   State<AppsScreen> createState() => _AppsScreenState();
@@ -81,7 +84,6 @@ class AppsScreen extends StatefulWidget {
 class _AppsScreenState extends State<AppsScreen> {
   final _search = TextEditingController();
   bool _searching = false;
-  bool _editing = false;
   bool _showGrid = true;
 
   @override
@@ -138,10 +140,25 @@ class _AppsScreenState extends State<AppsScreen> {
             ),
             ShellActionSpec(
               id: 'apps-arrange',
-              icon: _editing ? Icons.check_rounded : Icons.tune_rounded,
+              icon: Icons.tune_rounded,
               tooltip: context.l10n.appsCustomize,
-              callbackToken: 'arrange-$_editing',
-              onPressed: () => setState(() => _editing = !_editing),
+              onPressed: () {
+                final tabs = context.read<AppTabCubit>();
+                final experiments = context.read<ExperimentalAppsCubit>();
+                unawaited(
+                  showOrderEditorSheet(
+                    context,
+                    title: context.l10n.appsCustomize,
+                    builder: (_) => MultiBlocProvider(
+                      providers: [
+                        BlocProvider.value(value: tabs),
+                        BlocProvider.value(value: experiments),
+                      ],
+                      child: const AppsPickerEditor(),
+                    ),
+                  ),
+                );
+              },
             ),
             ShellActionSpec(
               id: 'apps-view-list',
@@ -164,13 +181,12 @@ class _AppsScreenState extends State<AppsScreen> {
           ],
         ),
         Expanded(
-          child: _editing
-              ? const AppsPickerEditor()
-              : AppsHubPage(
-                  query: _search.text,
-                  showGrid: _showGrid,
-                  replayToken: widget.replayToken,
-                ),
+          child: AppsHubPage(
+            isActive: widget.isActive,
+            query: _search.text,
+            showGrid: _showGrid,
+            replayToken: widget.replayToken,
+          ),
         ),
       ],
     ),

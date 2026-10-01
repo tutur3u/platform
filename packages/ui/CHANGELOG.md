@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.37.1](https://github.com/tutur3u/platform/compare/ui-v0.37.0...ui-v0.37.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **calendar:** align calendar-day navigation and zoned query ranges ([e81a8be](https://github.com/tutur3u/platform/commit/e81a8be8edf2e46b2653bfcf30bc118d12984e88))
+* **calendar:** align date navigation and zoned query ranges ([#5654](https://github.com/tutur3u/platform/issues/5654)) ([f40288c](https://github.com/tutur3u/platform/commit/f40288c7cc817f71ca30f6ee5331efbf726c4ada))
+* **calendar:** format clock options without browser dates ([757709e](https://github.com/tutur3u/platform/commit/757709ecbf1070cfa3248ece54f9b9c66cd000c7))
+* **calendar:** honor resolved timezone in event picker ([eae3a25](https://github.com/tutur3u/platform/commit/eae3a25ec443fbb1fe51acf1c642a6b44e6c80f8)) ([#5648](https://github.com/tutur3u/platform/issues/5648)) ([7ccc4b3](https://github.com/tutur3u/platform/commit/7ccc4b356411744f5b90e55c35c1e6f759981d42))
+* **calendar:** preserve explicit time bounds and guard DST rollover ([56d746b](https://github.com/tutur3u/platform/commit/56d746b91e8c4d48c6c97ad88a32cab74f8457cc))
+* **calendar:** respect timezone in picker bounds and previews ([47720c7](https://github.com/tutur3u/platform/commit/47720c72d09545cd86d3d3814d4fb83f53848890))
+* **calendar:** type-check picker regression import ([60aef11](https://github.com/tutur3u/platform/commit/60aef114c7ad9b3b327befaee37798db1a98b9b6))
+* **calendar:** use calendar timezone for picker bounds and previews ([#5653](https://github.com/tutur3u/platform/issues/5653)) ([ea912c0](https://github.com/tutur3u/platform/commit/ea912c0fd89bf54ca073ae9c8b219a3696db4d19))
+
 ## [0.37.0](https://github.com/tutur3u/platform/compare/ui-v0.36.1...ui-v0.37.0) (2026-09-29)
 
 
