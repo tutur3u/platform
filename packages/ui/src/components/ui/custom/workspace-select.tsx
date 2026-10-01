@@ -108,8 +108,6 @@ export function WorkspaceSelect({
     nextSlug: string;
   }) => string;
   triggerClassName?: string;
-  /** Keep the picker interactive and scrollable when rendered inside a modal. */
-  popoverModal?: boolean;
   /** Platform origin used to prepare a newly created satellite workspace. */
   platformWorkspaceSetupUrl?: string;
   /** Authenticated identity used to isolate user-specific picker caches. */
@@ -299,7 +297,9 @@ export function WorkspaceSelect({
       personal: selected.personal,
     });
     const guestLanding =
-      selected.access_type === 'guest' && selected.guest_landing_path;
+      selected.access_type === 'guest'
+        ? selected.guest_landing_path || '/tasks/boards'
+        : null;
     let nextPath = guestLanding
       ? `/${nextSlug}${guestLanding}`
       : pathname

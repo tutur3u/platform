@@ -1,4 +1,5 @@
 ---
+updatedAt: "2026-10-01"
 title: 'Hidden workspaces'
 description: 'Private workspace choices, recovery and membership separation.'
 ---
@@ -33,6 +34,13 @@ The following local widget capture uses a synthetic guest fixture, bundled font
 and the shared app theme. It contains no real account or workspace data.
 
 <img src="/images/hidden-workspaces-restore-synthetic.png" alt="Branded Hidden workspaces restore editor for a synthetic guest fixture" width="390" />
+
+Global launchers and Settings selectors receive the verified actor at the app root.
+Nested route providers for the same actor share that lifetime, so navigation
+reuses private list caches. Logout or account replacement purges the owner caches
+and rejects delayed responses. Without verified identity, discovery stays empty.
+This includes the External SDK example until it supplies an authorized per-user
+session; workspace API keys do not identify a preference owner.
 
 ## Persistence and actor boundaries
 

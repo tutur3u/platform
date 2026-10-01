@@ -39,7 +39,11 @@ function ownerControl(client: QueryClient, actorId: string) {
   return control;
 }
 
-type ActorScope = { actorId: string; assertActive: () => void };
+type ActorScope = {
+  actorId: string;
+  lifetime: { active: boolean };
+  assertActive: () => void;
+};
 const ActorContext = createContext<ActorScope | null>(null);
 
 /** Feed only a server-verified actor; preferences never become membership data. */
@@ -50,22 +54,30 @@ export function WorkspaceVisibilityProvider({
   actorId: string;
   children: ReactNode;
 }) {
+  const parent = useContext(ActorContext);
   const current = useRef(actorId);
   current.current = actorId;
   const scope = useMemo(() => {
+    if (parent?.actorId === actorId) return parent;
     const lifetime = { active: true };
     return {
       actorId,
       lifetime,
       assertActive() {
-        if (!lifetime.active || current.current !== actorId) {
+        parent?.assertActive();
+        if (
+          !lifetime.active ||
+          current.current !== actorId ||
+          (parent && parent.actorId !== actorId)
+        ) {
           throw new Error('Workspace account changed');
         }
       },
     };
-  }, [actorId]);
+  }, [actorId, parent]);
   const client = useQueryClient();
   useEffect(() => {
+    if (scope === parent) return;
     scope.lifetime.active = true;
     return () => {
       scope.lifetime.active = false;
@@ -90,10 +102,13 @@ export function WorkspaceVisibilityProvider({
         queryKey: ['workspace-select-current-workspace', scope.actorId],
       });
     };
-  }, [scope, client]);
+  }, [scope, parent, client]);
   return createElement(
     ActorContext.Provider,
-    { key: actorId, value: scope },
+    {
+      key: actorId,
+      value: parent && parent.actorId !== actorId ? null : scope,
+    },
     children
   );
 }
