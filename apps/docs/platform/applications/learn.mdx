@@ -19,7 +19,7 @@ and vocabulary support. These handlers live under `apps/learn/src/app/api/v1`.
 Next.js fallback rewrites send only unmatched `/api/v1/*` and `/api/ai/*` paths
 to Web; they do not proxy a path that Learn implements locally.
 
-## Coding Lab
+## Programming
 
 The Learn Coding Lab is available inside eligible education workspaces. Its
 default layout fills the available dashboard viewport: a compact challenge and
@@ -95,9 +95,9 @@ XP awards and heart loss must go through the database RPCs `award_tulearn_xp` an
 
 Courses, modules, quiz sets, flashcards, assignments, monthly reports, and marks continue to reuse existing education and user-group tables.
 
-## Coding Lab
+## Programming
 
-Learn owns the learner-facing Coding Lab at `/[wsId]/coding`. It starts with
+Learn owns the learner-facing Programming workspace at `/[wsId]/coding`. It starts with
 curated array, search, and stack exercises. Students in a workspace with
 `ENABLE_EDUCATION=true` can submit solutions; parents with read-only learner
 access cannot. The initial challenge catalog is platform-authored and shared
@@ -105,6 +105,20 @@ across eligible education workspaces. Python, JavaScript, TypeScript, C, C++,
 Java, Rust, Go, Ruby, and PHP use the same standard-input/standard-output
 exercise contract. The selected language only becomes runnable when a platform
 Judge runner reports a cached pinned image for it.
+
+The Programming workspace uses a full-bleed shell at this route, with shared
+Select, Button, Textarea, Tooltip, Tabs, and Accordion controls. Public test
+cases start collapsed in both problem and console panels. The bottom console
+can be resized or collapsed from the editor toolbar; collapsed content is inert,
+and completing a newly queued execution expands the console to show its result.
+Compact run/submit icons retain localized accessible labels and tooltips.
+The Judge readiness warning uses foreground text on a muted surface in both
+color modes and is informational; it does not enable a runner or change security.
+
+Code uses the self-hosted regular JetBrains Mono v2.304 font, scoped to this
+workspace. Its unmodified webfont, full SIL OFL 1.1 license, copyright and
+source/hash notice are colocated in the Programming component's `fonts` folder.
+There is no operating-system font installation or additional font package.
 
 Submissions are stored in `private.learn_coding_submissions` and queued
 atomically with a private Devbox lease and typed Judge run. The default is at

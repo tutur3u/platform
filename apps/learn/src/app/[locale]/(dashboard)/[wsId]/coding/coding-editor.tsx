@@ -114,7 +114,7 @@ export function CodingEditor({
       onValidate={(markers) => onDiagnostics(markers.length)}
       options={{
         automaticLayout: true,
-        fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+        fontFamily: 'var(--font-programming-mono), ui-monospace, monospace',
         fontSize: 13,
         lineHeight: 21,
         minimap: { enabled: false },

@@ -8,6 +8,7 @@ import {
   type GroupProps as GroupPropsOriginal,
   Panel,
   Separator,
+  usePanelRef,
 } from 'react-resizable-panels';
 
 interface ResizablePanelGroupProps
@@ -96,4 +97,4 @@ function ResizableHandle({
   );
 }
 
-export { ResizableHandle, ResizablePanel, ResizablePanelGroup };
+export { ResizableHandle, ResizablePanel, ResizablePanelGroup, usePanelRef };

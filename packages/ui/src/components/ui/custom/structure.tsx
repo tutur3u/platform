@@ -22,6 +22,7 @@ interface StructureProps {
   sidebarUtility?: ReactNode;
   feedbackButton?: ReactNode;
   children: ReactNode;
+  contentFullBleed?: boolean;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
   sidebarHidden?: boolean;
@@ -47,6 +48,7 @@ export function Structure({
   sidebarUtility,
   feedbackButton,
   children,
+  contentFullBleed = false,
   onMouseEnter,
   onMouseLeave,
   sidebarHidden = false,
@@ -249,8 +251,15 @@ export function Structure({
             {header && <div className="mb-4 hidden md:block">{header}</div>}
             <div
               className={cn(
-                'safe-bottom relative h-full w-full p-2 md:p-4 md:pt-4',
-                sidebarHidden ? 'pt-2' : 'pt-17 pl-2'
+                'safe-bottom relative h-full w-full',
+                contentFullBleed
+                  ? sidebarHidden
+                    ? 'p-0'
+                    : 'pt-17 md:pt-0'
+                  : [
+                      'p-2 md:p-4 md:pt-4',
+                      sidebarHidden ? 'pt-2' : 'pt-17 pl-2',
+                    ]
               )}
             >
               {children}
