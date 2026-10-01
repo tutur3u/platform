@@ -19,6 +19,7 @@ import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
+import { HiddenWorkspacesSettings } from '@tuturuuu/ui/custom/workspace-select';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
@@ -101,6 +102,7 @@ export function SatelliteWorkspaceSettingsPanel({
   if (activeTab === 'workspace_general') {
     return (
       <div className="space-y-4">
+        <HiddenWorkspacesSettings />
         {!permissions?.manage_workspace_settings && <RestrictedNotice />}
         <WorkspaceAvatarEditor
           canEdit={permissions?.manage_workspace_settings ?? false}

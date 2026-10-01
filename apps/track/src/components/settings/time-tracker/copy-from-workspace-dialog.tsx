@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWorkspaceCategories } from '@tuturuuu/hooks/hooks/use-workspace-categories';
 import { AlertCircle, CheckCircle, Copy, Loader2 } from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -24,12 +25,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-
-interface Workspace {
-  id: string;
-  name: string;
-  personal?: boolean;
-}
 
 interface CopyFromWorkspaceDialogProps {
   wsId: string;
@@ -61,22 +56,16 @@ export function CopyFromWorkspaceDialog({
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
 
-  const { data: workspaces = [], isLoading: isLoadingWorkspaces } = useQuery({
-    queryKey: ['workspaces'],
-    queryFn: async () => {
-      const response = await fetch('/api/v1/workspaces', {
-        cache: 'no-store',
-      });
-      if (!response.ok) throw new Error(t('copy_dialog.load_workspaces_error'));
-      return response.json();
-    },
-    enabled: open,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  const { data: workspaces = [], isLoading: isLoadingWorkspaces } =
+    useVisibleWorkspaces(open);
 
   const filteredWorkspaces = useMemo(
-    () => workspaces.filter((ws: Workspace) => ws.id !== wsId),
+    () => workspaces.filter((ws) => ws.id !== wsId),
     [workspaces, wsId]
+  );
+
+  const selectedWorkspaceVisible = filteredWorkspaces.some(
+    (ws) => ws.id === selectedWorkspaceId
   );
 
   const {
@@ -90,7 +79,7 @@ export function CopyFromWorkspaceDialog({
   const { data: sourceCategories = [], isLoading: isLoadingSourceCategories } =
     useWorkspaceCategories({
       wsId: selectedWorkspaceId,
-      enabled: !!selectedWorkspaceId && open,
+      enabled: selectedWorkspaceVisible && open,
     });
 
   const { categories, existingCategories } = useMemo(() => {
@@ -191,7 +180,7 @@ export function CopyFromWorkspaceDialog({
   const isCopying = copyMutation.isPending;
 
   const handleCopy = async () => {
-    if (!selectedWorkspaceId || selectedCategoryIds.length === 0) {
+    if (!selectedWorkspaceVisible || selectedCategoryIds.length === 0) {
       toast.error(t('copy_dialog.select_error'));
       return;
     }
@@ -227,7 +216,7 @@ export function CopyFromWorkspaceDialog({
   };
 
   const selectedWorkspace = filteredWorkspaces.find(
-    (ws: Workspace) => ws.id === selectedWorkspaceId
+    (ws) => ws.id === selectedWorkspaceId
   );
 
   return (
@@ -265,7 +254,7 @@ export function CopyFromWorkspaceDialog({
                 />
               </SelectTrigger>
               <SelectContent>
-                {filteredWorkspaces.map((workspace: Workspace) => (
+                {filteredWorkspaces.map((workspace) => (
                   <SelectItem key={workspace.id} value={workspace.id}>
                     <div className="flex items-center gap-2">
                       <span>{workspace.name}</span>
@@ -462,7 +451,7 @@ export function CopyFromWorkspaceDialog({
           <Button
             onClick={handleCopy}
             disabled={
-              !selectedWorkspaceId ||
+              !selectedWorkspaceVisible ||
               selectedCategoryIds.length === 0 ||
               isCopying ||
               isLoadingCategories

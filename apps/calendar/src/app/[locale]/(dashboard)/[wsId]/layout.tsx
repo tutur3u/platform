@@ -13,6 +13,7 @@ import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provid
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { WorkspacePresenceProvider } from '@tuturuuu/tasks-ui/tu-do/providers/workspace-presence-provider';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
@@ -76,60 +77,62 @@ export default async function Layout({ children, params }: LayoutProps) {
     .order('created_at', { ascending: true });
 
   return (
-    <SidebarProvider
-      initialBehavior={sidebarBehavior}
-      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
-    >
-      <CalendarNavigationProvider>
-        <CalendarSyncProvider
-          initialCalendarConnections={calendarConnections || []}
-          wsId={wsId}
-        >
-          <Structure
+    <WorkspaceVisibilityProvider actorId={user.id}>
+      <SidebarProvider
+        initialBehavior={sidebarBehavior}
+        initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
+      >
+        <CalendarNavigationProvider>
+          <CalendarSyncProvider
+            initialCalendarConnections={calendarConnections || []}
             wsId={wsId}
-            workspace={workspace}
-            defaultCollapsed={defaultCollapsed}
-            links={
-              await getNavigationLinks({
-                workspaceSlug: toWorkspaceSlug(wsId, {
-                  personal: !!workspace.personal,
-                }),
-              })
-            }
-            actions={
-              <Suspense
-                key={user.id}
-                fallback={
-                  <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-                }
-              >
-                <NavbarActions userId={user.id} />
-              </Suspense>
-            }
-            notificationPopover={<NotificationPopover userId={user.id} />}
-            userPopover={
-              <Suspense
-                key={user.id}
-                fallback={
-                  <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-                }
-              >
-                <UserNav hideMetadata />
-              </Suspense>
-            }
           >
-            <RealtimeLogProvider wsId={wsId}>
-              <WorkspacePresenceProvider
-                wsId={wsId}
-                tier={workspace.tier ?? null}
-                enabled={!workspace.personal}
-              >
-                {children}
-              </WorkspacePresenceProvider>
-            </RealtimeLogProvider>
-          </Structure>
-        </CalendarSyncProvider>
-      </CalendarNavigationProvider>
-    </SidebarProvider>
+            <Structure
+              wsId={wsId}
+              workspace={workspace}
+              defaultCollapsed={defaultCollapsed}
+              links={
+                await getNavigationLinks({
+                  workspaceSlug: toWorkspaceSlug(wsId, {
+                    personal: !!workspace.personal,
+                  }),
+                })
+              }
+              actions={
+                <Suspense
+                  key={user.id}
+                  fallback={
+                    <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+                  }
+                >
+                  <NavbarActions userId={user.id} />
+                </Suspense>
+              }
+              notificationPopover={<NotificationPopover userId={user.id} />}
+              userPopover={
+                <Suspense
+                  key={user.id}
+                  fallback={
+                    <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+                  }
+                >
+                  <UserNav hideMetadata />
+                </Suspense>
+              }
+            >
+              <RealtimeLogProvider wsId={wsId}>
+                <WorkspacePresenceProvider
+                  wsId={wsId}
+                  tier={workspace.tier ?? null}
+                  enabled={!workspace.personal}
+                >
+                  {children}
+                </WorkspacePresenceProvider>
+              </RealtimeLogProvider>
+            </Structure>
+          </CalendarSyncProvider>
+        </CalendarNavigationProvider>
+      </SidebarProvider>
+    </WorkspaceVisibilityProvider>
   );
 }

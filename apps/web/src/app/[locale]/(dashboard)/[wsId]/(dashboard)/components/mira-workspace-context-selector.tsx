@@ -1,6 +1,5 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import {
   Brain,
   CheckIcon,
@@ -17,12 +16,12 @@ import {
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
+import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
-import { fetchWorkspaces } from '../../workspace-list-actions';
 import {
   WORKSPACE_CONTEXT_EVENT,
   WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX,
@@ -77,11 +76,7 @@ export function MiraWorkspaceContextSelector({ wsId }: { wsId: string }) {
     };
   }, [wsId, storageKey]);
 
-  const { data: workspaces, isLoading } = useQuery({
-    queryKey: ['mira-dashboard-workspaces'],
-    queryFn: () => fetchWorkspaces(),
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: workspaces, isLoading } = useVisibleWorkspaces();
 
   const selectContext = useCallback(
     (newContextId: string) => {
@@ -140,22 +135,24 @@ export function MiraWorkspaceContextSelector({ wsId }: { wsId: string }) {
           <CommandInput placeholder={t('workspace_context_search')} />
           <CommandEmpty>{t('workspace_context_unknown')}</CommandEmpty>
           <CommandList className="max-h-56">
-            <CommandGroup heading={t('workspace_context_personal')}>
-              <CommandItem
-                value={`${personalLabel} personal`}
-                onSelect={() => selectContext('personal')}
-                className="gap-2 text-sm"
-              >
-                <User className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{personalLabel}</span>
-                <CheckIcon
-                  className={cn(
-                    'ml-auto h-3.5 w-3.5 shrink-0',
-                    isPersonalWorkspaceContext ? 'opacity-100' : 'opacity-0'
-                  )}
-                />
-              </CommandItem>
-            </CommandGroup>
+            {personalWorkspace && (
+              <CommandGroup heading={t('workspace_context_personal')}>
+                <CommandItem
+                  value={`${personalLabel} personal`}
+                  onSelect={() => selectContext('personal')}
+                  className="gap-2 text-sm"
+                >
+                  <User className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{personalLabel}</span>
+                  <CheckIcon
+                    className={cn(
+                      'ml-auto h-3.5 w-3.5 shrink-0',
+                      isPersonalWorkspaceContext ? 'opacity-100' : 'opacity-0'
+                    )}
+                  />
+                </CommandItem>
+              </CommandGroup>
+            )}
             {sharedWorkspaces.length > 0 && (
               <CommandGroup heading={t('workspace_context_shared')}>
                 {sharedWorkspaces.map((ws) => (

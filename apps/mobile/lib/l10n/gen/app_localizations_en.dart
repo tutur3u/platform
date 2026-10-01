@@ -9470,4 +9470,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileTimelineTab => 'Timeline';
+
+  @override
+  String get workspaceHiddenTitle => 'Hidden workspaces';
+
+  @override
+  String get workspaceHideAction => 'Hide';
+
+  @override
+  String get workspaceRestoreAction => 'Restore';
+
+  @override
+  String get workspaceHiddenDescription => 'Only you can see this list. Hiding does not change membership or notifications.';
+
+  @override
+  String get workspaceHiddenEmpty => 'No Hidden workspaces';
+
+  @override
+  String get workspaceHiddenLoadError => 'Unable to refresh Hidden workspaces. Your saved list is kept.';
+
+  @override
+  String get workspaceHiddenUpdateError => 'Unable to save this change. Try again when connected.';
+
+  @override
+  String get workspaceAllHidden => 'Your workspaces are hidden. Restore one to continue.';
+
+  @override
+  String get workspacePickerClose => 'Close workspace picker';
 }

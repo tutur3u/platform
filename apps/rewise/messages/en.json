@@ -825,7 +825,19 @@
       "viewDetails": "View Details"
     },
     "common": {
-      "empty": "Empty"
+      "all_workspaces_hidden": "All your workspaces are Hidden. Restore one to choose a workspace.",
+      "current_workspace": "Current workspace",
+      "default_workspace": "Default workspace",
+      "empty": "Empty",
+      "hidden_workspaces": "Hidden workspaces",
+      "hidden_workspaces_description": "Only you can see this list. Restore a workspace to show it in your workspace lists. Your access and other members are unchanged.",
+      "hidden_workspaces_empty": "You have no Hidden workspaces",
+      "hidden_workspaces_load_error": "Unable to load Hidden workspaces. Retry when you are online.",
+      "hidden_workspaces_update_error": "Unable to update Hidden workspaces. Your previous choice was restored.",
+      "hide_workspace": "Hide workspace",
+      "no_workspace_found": "No workspaces found",
+      "restore_workspace": "Restore workspace",
+      "search_workspace": "Search workspaces"
     },
     "description": "Review and approve user reports and posts.",
     "detail": {

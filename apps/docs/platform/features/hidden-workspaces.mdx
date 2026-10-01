@@ -1,0 +1,95 @@
+---
+title: 'Hidden workspaces'
+description: 'Private workspace choices, recovery and membership separation.'
+---
+
+Hidden is a preference of the signed-in user. It never archives, leaves or deletes
+an organization, changes another member's choices, revokes access or silences
+notifications. Only its owner can read or change the preference.
+
+## Workspace sheet and recovery
+
+The web and mobile picker fills the screen, with the Tuturuuu logo, Workspaces
+heading, floating Search/Create controls, close and Back support. Search and
+sorting retain workspace IDs and the objects from the rendered results. Duplicate
+names cannot substitute a different workspace when a list refreshes.
+
+Hidden workspaces are absent from current/default choices and workspace filters.
+Settings → Workspace opens a focused Hidden workspaces editor; restoring changes
+only the private preference, without selecting a scope or changing the default.
+A picker with all workspaces Hidden also offers recovery. Empty preferences,
+unknown preferences, no memberships and all-Hidden memberships are distinct.
+
+Mobile switches an actively hidden selection to a visible default, personal or
+deterministic first visible workspace. Hiding the last visible workspace clears
+the active UI selection and opens the selection/recovery surface. The stored
+default remains unchanged and is skipped during normal mobile selection while
+Hidden. A browser keeps its existing authorized workspace URL when a choice is
+hidden; it offers no Hidden choices in the sheet. Existing authorized deep links
+and notification navigation may enter a Hidden workspace without restoring it.
+These rules change discovery, not permission checks.
+
+## Persistence and actor boundaries
+
+The existing `public.user_workspace_configs` table stores
+`(user_id, ws_id, id = 'HIDDEN_WORKSPACE', value = 'true')`. An absent row means
+visible. There is no new schema or grant. `user_private_details` must not be used:
+its shared-member read policy would expose a preference intended to be private.
+
+`GET /api/v1/users/me/hidden-workspaces?expectedActorId=<actor>` returns only the
+owner's Hidden IDs with `Cache-Control: private, no-store`. `PUT` accepts
+`workspaceId`, `hidden` and `expectedActorId`. The server derives the owner from
+the authenticated session, compares the expected actor to reject a delayed
+account-switch request, and verifies canonical membership before writing. App
+sessions also stamp and filter by the server actor when using their scoped
+administrative client. The response is never joined into workspace/member APIs,
+profile activity, audit summaries or notifications.
+
+Web query keys and mobile encrypted cache keys include the authenticated actor.
+Optimistic changes suppress duplicate writes, invalidate/revalidate private
+queries, ignore stale refreshes and roll back failed server mutations. A confirmed
+server update is not undone because a device cache write fails. Cold offline
+state cannot claim an empty preference list; cached preferences remain usable
+while refresh errors offer retry. Logout/account replacement invalidates mounted
+work and prevents late responses from updating another account's state.
+
+## Canonical membership and consumers
+
+Mobile `WorkspaceState.workspaces` remains canonical for reminders, access,
+notifications, deep links, task-board navigation, quotas and workspace data.
+`visibleWorkspaces` and `hiddenWorkspaces` are separate UI projections. A list
+with every membership Hidden never sets `emptyMembershipConfirmed`.
+
+Web `listWorkspaces`, workspace summary APIs and permission discovery remain
+canonical. Actor-scoped UI hooks project visible choices for the shared picker,
+satellite command search, Track move/copy/missed-entry selectors, Mira workspace
+context, calendar-sync workspace filters and root link-shortener filters. A
+current-workspace fallback does not reinsert a Hidden choice into those lists.
+Inventory continues using the selected authorized workspace and its currency.
+
+## Verification and integration hold
+
+Focused synthetic tests cover search/sort/duplicate names/refreshed objects,
+current/default selection, owner cache isolation, optimistic rollback, stale
+reads, logout, deep links and narrow large-text/keyboard/Back recovery. No real
+workspace hide/create/delete operation is used for testing.
+
+The rollback-only native SQL fixture lives at
+`apps/database/verification/hidden-workspaces-privacy.sql`. Run it only in a
+resource-admitted disposable project with current migrations. Its 15 assertions
+check existing privileges/RLS, independent users, workspace-admin owner denial,
+restore and unchanged canonical membership. It adds no grants or schema objects.
+Synthetic actors must have `auth.users` rows and authenticated JWT claims: the
+existing restrictive account MFA policy correctly denies public-only profiles.
+
+The admitted disposable run passed all 15 assertions against 1,331 current
+migrations. Rollback verified no synthetic users/workspaces remained; cleanup
+verified no project containers or volumes remained. The fixture SHA-256 was
+`43c6e05754b59a9c1cf052e2cf4cc09be5f54690e1dfc27b0140d146c9362356`.
+
+MCP discovery and consent choices exclude Hidden/unknown visibility. Explicit
+reads/navigation continue to require user-selected OAuth workspace grants,
+canonical membership and operation permissions. Hidden is not access revocation.
+
+The mobile Settings owner must apply the additive restore-row integration against
+its compact Workspace child. Exact-commit parent CI remains required before merge.

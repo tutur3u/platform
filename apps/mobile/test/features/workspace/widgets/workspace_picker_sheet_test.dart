@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/features/workspace/widgets/hidden_workspaces_settings_row.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -40,6 +41,10 @@ void main() {
 
     setUp(() {
       workspaceCubit = _MockWorkspaceCubit();
+      when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(false);
+      when(
+        () => workspaceCubit.refreshHiddenWorkspaces(),
+      ).thenAnswer((_) async {});
     });
 
     testWidgets('shows tier badges for each workspace', (tester) async {
@@ -299,5 +304,101 @@ void main() {
         verifyNever(() => workspaceCubit.selectWorkspace(duplicateA));
       });
     }
+    testWidgets(
+      'narrow fullscreen picker supports large text, keyboard and close',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 568);
+        tester.view.devicePixelRatio = 1;
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        const state = WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          workspaces: [proWorkspace, enterpriseWorkspace, freeWorkspace],
+          visibilityResolved: true,
+          visibilityStatus: WorkspaceStatus.loaded,
+          visibilityError: 'offline',
+        );
+        when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
+        when(() => workspaceCubit.state).thenReturn(state);
+        whenListen(
+          workspaceCubit,
+          const Stream<WorkspaceState>.empty(),
+          initialState: state,
+        );
+        await tester.pumpApp(
+          BlocProvider.value(
+            value: workspaceCubit,
+            child: Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () => showWorkspacePickerSheet(context),
+                  child: const Text('Open picker'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Open picker'));
+        await tester.pumpAndSettle();
+        expect(find.byType(Dialog), findsOneWidget);
+        expect(find.byType(FloatingActionButton), findsNWidgets(2));
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.byIcon(Icons.search_rounded).last);
+        await tester.pumpAndSettle();
+        tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+        addTearDown(tester.view.resetViewInsets);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.byTooltip('Close workspace picker'), findsOneWidget);
+        await tester.tap(find.byTooltip('Close workspace picker'));
+        await tester.pumpAndSettle();
+        expect(find.byType(Dialog), findsNothing);
+        expect(find.text('Open picker'), findsOneWidget);
+      },
+    );
+    testWidgets(
+      'Settings row opens private restore without selecting a scope',
+      (tester) async {
+        const state = WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          workspaces: [proWorkspace, freeWorkspace],
+          hiddenWorkspaceIds: ['ws_1'],
+          visibilityResolved: true,
+          visibilityStatus: WorkspaceStatus.loaded,
+        );
+        when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
+        when(() => workspaceCubit.state).thenReturn(state);
+        when(
+          () => workspaceCubit.setWorkspaceHidden('ws_1', hidden: false),
+        ).thenAnswer((_) async {});
+        whenListen(
+          workspaceCubit,
+          const Stream<WorkspaceState>.empty(),
+          initialState: state,
+        );
+        await tester.pumpApp(
+          BlocProvider.value(
+            value: workspaceCubit,
+            child: const HiddenWorkspacesSettingsRow(),
+          ),
+        );
+        await tester.tap(find.text('Hidden workspaces'));
+        await tester.pumpAndSettle();
+        expect(find.text('Product'), findsOneWidget);
+        expect(find.text('Design'), findsNothing);
+        await tester.tap(find.byTooltip('Restore: Product'));
+        await tester.pumpAndSettle();
+        verify(
+          () => workspaceCubit.setWorkspaceHidden('ws_1', hidden: false),
+        ).called(1);
+        verifyNever(() => workspaceCubit.selectWorkspace(proWorkspace));
+        verifyNever(() => workspaceCubit.setDefaultWorkspace(proWorkspace));
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(Dialog), findsNothing);
+      },
+    );
   });
 }

@@ -9,6 +9,7 @@ import {
   getSidebarCollapsedState,
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
@@ -84,46 +85,48 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
   const canUseAiStudio = access.permissions.containsPermission('use_ai_studio');
 
   return (
-    <SidebarProvider
-      initialBehavior={sidebarBehavior}
-      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
-    >
-      <Structure
-        actions={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <NavbarActions userId={user.id} />
-          </Suspense>
-        }
-        defaultCollapsed={defaultCollapsed}
-        links={
-          await getNavigationLinks({
-            canManageAiKeys:
-              access.permissions.containsPermission('manage_ai_keys'),
-            personalOrWsId,
-          })
-        }
-        notificationPopover={<NotificationPopover userId={user.id} />}
-        userPopover={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <UserNav hideMetadata />
-          </Suspense>
-        }
-        workspace={workspace}
-        wsId={workspace.id}
+    <WorkspaceVisibilityProvider actorId={user.id}>
+      <SidebarProvider
+        initialBehavior={sidebarBehavior}
+        initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
       >
-        {canUseAiStudio ? children : <AiStudioPermissionRequired />}
-      </Structure>
-    </SidebarProvider>
+        <Structure
+          actions={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              <NavbarActions userId={user.id} />
+            </Suspense>
+          }
+          defaultCollapsed={defaultCollapsed}
+          links={
+            await getNavigationLinks({
+              canManageAiKeys:
+                access.permissions.containsPermission('manage_ai_keys'),
+              personalOrWsId,
+            })
+          }
+          notificationPopover={<NotificationPopover userId={user.id} />}
+          userPopover={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              <UserNav hideMetadata />
+            </Suspense>
+          }
+          workspace={workspace}
+          wsId={workspace.id}
+        >
+          {canUseAiStudio ? children : <AiStudioPermissionRequired />}
+        </Structure>
+      </SidebarProvider>
+    </WorkspaceVisibilityProvider>
   );
 }
 

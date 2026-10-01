@@ -825,7 +825,19 @@
       "viewDetails": "Xem Chi Tiết"
     },
     "common": {
-      "empty": "Trống"
+      "all_workspaces_hidden": "Tất cả không gian làm việc của bạn đã ẩn. Khôi phục một không gian để chọn.",
+      "current_workspace": "Không gian làm việc hiện tại",
+      "default_workspace": "Không gian làm việc mặc định",
+      "empty": "Trống",
+      "hidden_workspaces": "Không gian làm việc đã ẩn",
+      "hidden_workspaces_description": "Chỉ bạn thấy danh sách này. Khôi phục để hiện lại trong danh sách không gian làm việc của bạn. Quyền truy cập của bạn và các thành viên khác không thay đổi.",
+      "hidden_workspaces_empty": "Bạn không có không gian làm việc đã ẩn",
+      "hidden_workspaces_load_error": "Không thể tải danh sách đã ẩn. Thử lại khi có kết nối.",
+      "hidden_workspaces_update_error": "Không thể cập nhật danh sách đã ẩn. Lựa chọn trước đó đã được khôi phục.",
+      "hide_workspace": "Ẩn không gian làm việc",
+      "no_workspace_found": "Không tìm thấy không gian làm việc",
+      "restore_workspace": "Khôi phục không gian làm việc",
+      "search_workspace": "Tìm kiếm không gian làm việc"
     },
     "description": "Xem và phê duyệt báo cáo, bài đăng của người dùng.",
     "detail": {

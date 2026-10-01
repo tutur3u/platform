@@ -10,11 +10,13 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
  *
  * @returns Query object with user data, loading state, and error info
  */
-export function useWorkspaceUser() {
+export function useWorkspaceUser(actorId?: string) {
   return useQuery({
-    queryKey: ['workspace-user'],
+    queryKey: ['workspace-user', ...(actorId ? [actorId] : [])],
     queryFn: async (): Promise<WorkspaceUser> => {
       const data = await getCurrentUserProfile();
+      if (actorId && data.id !== actorId)
+        throw new Error('Workspace account changed');
       return {
         id: data.id,
         email: data.email,

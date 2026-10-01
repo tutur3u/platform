@@ -8,6 +8,7 @@ import {
   getSidebarCollapsedState,
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
@@ -70,40 +71,42 @@ export default async function MindWorkspaceLayout({
   );
 
   return (
-    <SidebarProvider
-      initialBehavior={sidebarBehavior}
-      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
-    >
-      <Structure
-        actions={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <NavbarActions userId={user.id} />
-          </Suspense>
-        }
-        defaultCollapsed={defaultCollapsed}
-        links={await getNavigationLinks({ workspaceSlug })}
-        notificationPopover={<NotificationPopover userId={user.id} />}
-        userPopover={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <UserNav hideMetadata />
-          </Suspense>
-        }
-        workspace={workspace}
-        workspaceSlug={workspaceSlug}
-        wsId={workspace.id}
+    <WorkspaceVisibilityProvider actorId={user.id}>
+      <SidebarProvider
+        initialBehavior={sidebarBehavior}
+        initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
       >
-        {children}
-      </Structure>
-    </SidebarProvider>
+        <Structure
+          actions={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              <NavbarActions userId={user.id} />
+            </Suspense>
+          }
+          defaultCollapsed={defaultCollapsed}
+          links={await getNavigationLinks({ workspaceSlug })}
+          notificationPopover={<NotificationPopover userId={user.id} />}
+          userPopover={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              <UserNav hideMetadata />
+            </Suspense>
+          }
+          workspace={workspace}
+          workspaceSlug={workspaceSlug}
+          wsId={workspace.id}
+        >
+          {children}
+        </Structure>
+      </SidebarProvider>
+    </WorkspaceVisibilityProvider>
   );
 }

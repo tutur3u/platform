@@ -40,6 +40,8 @@ class WorkspaceRepository {
   static const CachePolicy _workspacesCachePolicy = CachePolicies.metadata;
   static const _workspacesCacheTag = 'workspace:list';
 
+  String? get authenticatedUserId => _cacheUserId();
+
   final CacheStore _cacheStore;
   final String? Function() _cacheUserId;
   final ApiClient _api;
@@ -47,7 +49,7 @@ class WorkspaceRepository {
   static const _selectedKey = 'selected-workspace';
 
   CacheKey? _selectedReplicaKey() {
-    final userId = currentCacheUserId();
+    final userId = _cacheUserId();
     if (userId == null) return null;
     return CacheKey(
       namespace: 'workspace.selected',
@@ -57,7 +59,7 @@ class WorkspaceRepository {
   }
 
   CacheKey? _defaultReplicaKey() {
-    final userId = currentCacheUserId();
+    final userId = _cacheUserId();
     if (userId == null) return null;
     return CacheKey(
       namespace: 'workspace.default',
@@ -67,7 +69,7 @@ class WorkspaceRepository {
   }
 
   Future<String> _resolvedWorkspaceId(String id) async {
-    final userId = currentCacheUserId();
+    final userId = _cacheUserId();
     if (userId == null) return id;
     final mappings = await CacheStore.instance.localIdMappings(
       userId: userId,
@@ -172,16 +174,9 @@ class WorkspaceRepository {
   }
 
   Future<List<Workspace>> _fetchWorkspacesRemote() async {
-    final list = await readThroughJsonList(
-      api: _api,
-      namespace: 'workspace.list',
-      workspaceId: 'personal',
-      path: '/api/v1/workspaces',
-      // Cached UI is read separately; membership decisions await the server.
-      forceRefresh: true,
-      cacheStore: _cacheStore,
-      cacheUserId: _cacheUserId,
-    );
+    // Persist only after getWorkspaces verifies the initiating actor below.
+    // The generic read-through helper stores before that account check.
+    final list = await _api.getJsonList('/api/v1/workspaces');
     return list
         .whereType<Map<String, dynamic>>()
         .map(_workspaceFromJson)
@@ -191,7 +186,9 @@ class WorkspaceRepository {
 
   /// Fetches workspaces the current user belongs to.
   Future<List<Workspace>> getWorkspaces() async {
+    final actor = _cacheUserId();
     final workspaces = (await _fetchWorkspacesRemote()).toList();
+    if (_cacheUserId() != actor) throw StateError('Workspace account changed');
     for (final item in await OfflineMutationQueue.instance.listPending()) {
       if (item.feature == 'workspace' &&
           item.method == 'WORKSPACE_CREATE' &&
@@ -202,6 +199,7 @@ class WorkspaceRepository {
         );
       }
     }
+    if (_cacheUserId() != actor) throw StateError('Workspace account changed');
     await saveCachedWorkspaces(workspaces);
     return workspaces;
   }
