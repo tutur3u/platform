@@ -1,0 +1,83 @@
+name: Disposable full-schema types (review candidate)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: supabase-hosted-typegen
+  cancel-in-progress: false
+jobs:
+  typegen:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: synthetic-ci-only
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET: synthetic-ci-only
+      SUPABASE_AUTH_EXTERNAL_GITHUB_CLIENT_ID: synthetic-ci-only
+      SUPABASE_AUTH_EXTERNAL_GITHUB_SECRET: synthetic-ci-only
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Switchboard admission
+        id: admission
+        env:
+          WORKFLOW_NAME: supabase-hosted-typegen.yaml
+        run: node --experimental-strip-types scripts/ci/check-workflow-config.ts --event-name workflow_dispatch
+      - uses: oven-sh/setup-bun@v2
+        if: steps.admission.outputs.should_run == 'true'
+        with:
+          bun-version: 1.4.1
+      - uses: ./.github/actions/setup-supabase-cli-with-retry
+        if: steps.admission.outputs.should_run == 'true'
+      - name: Bound disposable Docker resources
+        if: steps.admission.outputs.should_run == 'true'
+        run: |
+          test "$(docker info --format '{{.CgroupDriver}}')" = systemd
+          test -z "$(docker ps -aq)"
+          test -z "$(docker volume ls -q)"
+          sudo mkdir -p /etc/systemd/system/tuturuuu-typegen.slice.d
+          printf '[Slice]\nCPUQuota=200%%\nMemoryMax=6G\nMemorySwapMax=0\n' | sudo tee /etc/systemd/system/tuturuuu-typegen.slice.d/limits.conf >/dev/null
+          sudo systemctl daemon-reload
+          sudo systemctl start tuturuuu-typegen.slice
+          sudo python3 - <<'PYCONFIG'
+          import json
+          from pathlib import Path
+          p = Path('/etc/docker/daemon.json')
+          config = json.loads(p.read_text()) if p.exists() else {}
+          config.update({'cgroup-parent': 'tuturuuu-typegen.slice', 'log-driver': 'json-file', 'log-opts': {'max-size': '20m', 'max-file': '1'}})
+          p.write_text(json.dumps(config))
+          PYCONFIG
+          sudo systemctl restart docker
+          test "$(docker info --format '{{.CgroupDriver}}')" = systemd
+          test "$(systemctl show tuturuuu-typegen.slice -p MemoryMax --value)" = 6442450944
+          test "$(systemctl show tuturuuu-typegen.slice -p MemorySwapMax --value)" = 0
+          test "$(systemctl show tuturuuu-typegen.slice -p CPUQuotaPerSecUSec --value)" = 2s
+          printf 'SUPABASE_CLI_BINARY_OVERRIDE=%s\n' "$(command -v supabase)" >> "$GITHUB_ENV"
+      - name: Stage unique disposable project
+        id: prepare
+        if: steps.admission.outputs.should_run == 'true'
+        run: node apps/database/tests/programming-hosted-typegen-review/proposal.mjs prepare
+      - name: Full migrations, SQL suite, and type generation
+        id: lifecycle
+        if: steps.prepare.outcome == 'success'
+        run: node apps/database/tests/programming-hosted-typegen-review/proposal.mjs run
+      - name: Unconditional scoped cleanup
+        id: cleanup
+        if: always() && steps.admission.outputs.should_run == 'true'
+        timeout-minutes: 4
+        run: node apps/database/tests/programming-hosted-typegen-review/proposal.mjs cleanup
+      - name: Produce sanitized artifact
+        if: success() && steps.lifecycle.outcome == 'success' && steps.cleanup.outcome == 'success'
+        run: node apps/database/tests/programming-hosted-typegen-review/proposal.mjs artifact
+      - uses: actions/upload-artifact@v7
+        if: success() && steps.lifecycle.outcome == 'success' && steps.cleanup.outcome == 'success'
+        with:
+          name: full-schema-types-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/supabase-typegen-review/artifact/
+          retention-days: 1
+          if-no-files-found: error
