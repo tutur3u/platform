@@ -14,6 +14,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/inventory/view/inventory_manage_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
@@ -189,6 +190,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     await tester.pumpWidget(const SizedBox.shrink());
+    verifyNever(h.inventory.dispose);
     h.complete(2, 'Late C');
     await tester.pump();
     expect(tester.takeException(), isNull);
@@ -256,6 +258,8 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
     verifyNever(() => h.inventory.createOwner(any(), any()));
+    expect(find.text('Something went wrong'), findsOneWidget);
+    expect(find.text('Exception: Something went wrong'), findsNothing);
     await tester.tap(find.text('Cancel').hitTestable());
     await tester.pump();
     h.complete(1, 'Owner B', manage: false);
@@ -263,6 +267,71 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Owner A'), findsNothing);
     expect(find.text('Owner B'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('simultaneous scope notifications share one pending load', (
+    tester,
+  ) async {
+    final h = _Harness();
+    addTearDown(h.close);
+    await h.mount(tester);
+    h.complete(0, 'Owner A');
+    await tester.pumpAndSettle();
+    final refresh = tester
+        .widget<NovaRefreshIndicator>(find.byType(NovaRefreshIndicator))
+        .onRefresh;
+    when(() => h.workspace.state).thenReturn(_workspace('b'));
+    when(() => h.auth.state).thenReturn(_actor('actor-b'));
+    h.workspaceStream.add(_workspace('b'));
+    h.authStream.add(_actor('actor-b'));
+    await tester.pump();
+    await tester.pump();
+    expect(h.requests, hasLength(2));
+    expect(h.grants, hasLength(2));
+    final refreshed = refresh();
+    expect(h.requests, hasLength(3));
+    h
+      ..complete(1, 'Superseded B')
+      ..complete(2, 'Owner B');
+    await refreshed;
+    await tester.pumpAndSettle();
+    expect(find.text('Superseded B'), findsNothing);
+    expect(find.text('Owner B'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('queued sheet success cannot refresh or toast a new scope', (
+    tester,
+  ) async {
+    final h = _Harness();
+    addTearDown(h.close);
+    final save = Completer<void>();
+    when(
+      () => h.inventory.createOwner(any(), any()),
+    ).thenAnswer((_) => save.future);
+    await h.mount(tester);
+    h.complete(0, 'Owner A');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Add owner'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(EditableText), 'Synthetic new owner');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    verify(() => h.inventory.createOwner('a', 'Synthetic new owner')).called(1);
+    save.complete();
+    await tester.idle();
+    // The pop has completed and queued its post-frame callback, but no frame
+    // has run. Change selected scope before that callback is executed.
+    when(() => h.workspace.state).thenReturn(_workspace('b'));
+    h.workspaceStream.add(_workspace('b'));
+    await tester.idle();
+    await tester.pump();
+    expect(h.requests, hasLength(2));
+    h.complete(1, 'Owner B', manage: false);
+    await tester.pumpAndSettle();
+    expect(find.text('Owner B'), findsOneWidget);
+    expect(find.text('Add owner'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }
