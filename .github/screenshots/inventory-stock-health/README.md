@@ -10,12 +10,14 @@ separate, and preserves server generatedAt in UTC. It does not sum quantities
 or display revenue/profit. Missing counts are partial; permission-denied refresh
 clears the panel. Overview legacy money charts/amounts without currency are withheld.
 
-Bounded FIFO verification completed: 21 tests (9 stock-health, 12 parent editor/
+Bounded FIFO verification completed: 22 tests (10 stock-health, 12 parent editor/
 Manage correctness), scoped fatal-info analysis clean, Flutter localization
 and scoped Dart format pass. Stock-health repository test executes the real read
 method into a mocked ApiClient; mounted Overview uses a synthetic repository
 subclass, and account/workspace streams are synthetic. No HTTP, persistent-cache,
-DB fixtures or native runtime acceptance is proved. Parent correctness evidence
+DB fixtures or native runtime acceptance is proved. The mounted Android short-
+content regression verifies zero scroll extent, pulls the actual Overview list
+to retry an initially failed repository read, and observes recovered counts. Parent correctness evidence
 retains its own explicit mock-transport/cache boundaries.
 
 [Phone](stock-health-320.png), [tablet](stock-health-768.png).
@@ -25,3 +27,11 @@ Product behavior and seasonal checkout boundaries are documented in
 
 Parent exact-head CI, independent review, native build and integration remain
 required. This is a count-only analytics slice, not full web/mobile parity.
+
+Review follow-up: Overview explicitly selects AlwaysScrollableScrollPhysics.
+The Android regression drags the actual mounted zero-extent list after an initial
+stock-health read failure and asserts a second read/recovered counts. A control
+with only that explicit line removed also passes on the current Flutter SDK:
+ScrollView's constructor already selects the same physics for this vertical,
+controller-less ListView. This is an explicit contract plus regression coverage,
+not proof of a previously failing current-toolchain runtime case.

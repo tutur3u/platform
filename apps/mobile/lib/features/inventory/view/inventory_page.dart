@@ -127,6 +127,7 @@ class _InventoryPageState extends State<InventoryPage> {
               child: NovaRefreshIndicator(
                 onRefresh: () => _reload(forceRefresh: true),
                 child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.fromLTRB(
                     16,
                     8,

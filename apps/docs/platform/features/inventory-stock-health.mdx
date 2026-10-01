@@ -29,7 +29,8 @@ page. No warehouse, season or date filter is implied by this panel.
 The server resolves canonical membership and analytics permissions through the
 same Bearer-authenticated API as web. Hidden discovery preferences are not
 membership or authorization. The panel reads the server on entry and awaited
-pull-to-refresh; it stores no persistent aggregate cache and does not overlay
+pull-to-refresh, including short content that fits in the viewport; it stores
+no persistent aggregate cache and does not overlay
 pending local stock edits. Actor/workspace changes clear the panel and revalidate.
 A denied or failed refresh removes its counts and shows a distinct message.
 

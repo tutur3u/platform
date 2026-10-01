@@ -270,6 +270,72 @@ void main() {
     },
   );
 
+  testWidgets('Android short Overview drag retries failed stock health', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(1024, 1600)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final auth = _Auth();
+    final workspace = _Workspace();
+    final repository = _Inventory();
+    addTearDown(repository.dispose);
+    whenListen(
+      auth,
+      const Stream<AuthState>.empty(),
+      initialState: const AuthState.authenticated(
+        User(
+          id: 'actor',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: '',
+        ),
+      ),
+    );
+    whenListen(
+      workspace,
+      const Stream<WorkspaceState>.empty(),
+      initialState: const WorkspaceState(
+        currentWorkspace: Workspace(id: 'ws', name: 'Synthetic workspace'),
+      ),
+    );
+    repository.loadHealth = (_) async {
+      if (repository.healthCalls.length == 1) {
+        throw const ApiException(message: 'Unavailable', statusCode: 500);
+      }
+      return InventoryStockHealth.fromJson(_payload());
+    };
+    await tester.pumpApp(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthCubit>.value(value: auth),
+          BlocProvider<WorkspaceCubit>.value(value: workspace),
+        ],
+        child: InventoryPage(repository: repository),
+      ),
+    );
+    await tester.pumpAndSettle();
+    const error = 'Stock health is unavailable. Pull to refresh to try again.';
+    expect(find.text(error), findsOneWidget);
+    expect(repository.healthCalls, ['ws']);
+    final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(
+      scrollable.position.maxScrollExtent,
+      0,
+      reason: 'The regression must exercise content shorter than its viewport.',
+    );
+
+    await tester.drag(find.byType(ListView), const Offset(0, 500));
+    await tester.pumpAndSettle();
+    expect(repository.healthCalls, ['ws', 'ws']);
+    expect(find.text(error), findsNothing);
+    expect(find.text('12'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
   testWidgets('mounted Overview clears old actor/workspace pending results', (
     tester,
   ) async {
