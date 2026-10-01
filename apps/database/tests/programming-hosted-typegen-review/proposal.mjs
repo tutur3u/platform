@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   existsSync,
@@ -26,6 +25,7 @@ import {
   validateTypegenOutputPath,
 } from '../../scripts/run-supabase-isolated-typegen.js';
 import { createSyntheticCliContext } from './cli-environment.mjs';
+import { runHostedCommand } from './hosted-command.mjs';
 import {
   resolveHostedNativeCli,
   runCliProbe,
@@ -75,14 +75,31 @@ const output = path.join(
 );
 const statePath = path.join(output, 'state.json');
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
-function command(binary, args, timeout = limits.commandMs) {
-  return execFileSync(binary, args, {
-    encoding: 'utf8',
+export function command(
+  binary,
+  args,
+  timeout = limits.commandMs,
+  maxBuffer = 4 * 1024 ** 2,
+  {
+    nativeBinary = configuredNativeBinary,
+    context = syntheticCliContext,
+    execute,
+  } = {}
+) {
+  return runHostedCommand(binary, args, {
+    context: context(nativeBinary),
+    execute,
     timeout,
-    maxBuffer: 4 * 1024 ** 2,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  }).trim();
+    maxBuffer,
+    cwd: binary === 'git' ? repo : undefined,
+  });
 }
+function checkNetworkPolicy() {
+  return verifyNetworkPolicy((args) =>
+    command('sudo', ['-n', ...args], limits.commandMs, 1024 ** 2)
+  );
+}
+
 function freeBytes() {
   const disk = statfsSync(repo);
   return disk.bavail * disk.bsize;
@@ -174,6 +191,7 @@ async function prepare() {
   assertHosted();
   if (existsSync(statePath))
     throw new Error('Refusing existing lifecycle state');
+  const binary = configureNativeCli();
   if (names('container').length || names('volume').length)
     throw new Error('Requires empty dedicated Docker runner');
   if (
@@ -182,7 +200,6 @@ async function prepare() {
     throw new Error('Requires runner without custom Docker networks');
   const free = freeBytes();
   assertDisk(free, free);
-  const binary = configureNativeCli();
   const cliContext = syntheticCliContext(binary);
   const cliVersion = await runCliProbe(binary, ['--version'], {
     ...cliContext,
@@ -217,7 +234,7 @@ async function prepare() {
     initialFreeBytes: free,
     minimumFreeBytesObserved: free,
     migrationFingerprint: migrationFingerprint(),
-    network: verifyNetworkPolicy(),
+    network: checkNetworkPolicy(),
     images: {},
     runSucceeded: false,
     cleanupVerified: false,
@@ -303,7 +320,7 @@ async function run() {
   assertHosted();
   configureNativeCli();
   const state = readState();
-  verifyNetworkPolicy(); // Fail closed before the CLI can start/apply SQL.
+  checkNetworkPolicy(); // Fail closed before the CLI can start/apply SQL.
   try {
     await resumeRecordedProject(state, {
       onTick: () => {

@@ -8,6 +8,7 @@ import {
   assertUnlinkedCliDirectory,
   CliEnvironmentFailure,
   createSyntheticCliContext,
+  hostedDockerEndpoint,
 } from './cli-environment.mjs';
 import { runCliProbe, verificationFailureStatus } from './native-cli.mjs';
 import { runOwnedProcess } from './process-group.mjs';
@@ -37,7 +38,6 @@ const forbiddenKeys = [
   'HTTPS_PROXY',
   'NODE_OPTIONS',
   'BUN_OPTIONS',
-  'DOCKER_HOST',
   'DOCKER_CONTEXT',
   'DBUS_SESSION_BUS_ADDRESS',
   'SSH_AUTH_SOCK',
@@ -65,6 +65,7 @@ test('allowlist ignores ambient credential/profile/proxy/loader values without r
   assert.equal(env.DO_NOT_TRACK, '1');
   assert.equal(env.SUPABASE_NO_KEYRING, '1');
   assert.equal(env.SUPABASE_WORKDIR, cwd);
+  assert.equal(env.DOCKER_HOST, hostedDockerEndpoint);
   assert.equal(env.PATH, '/usr/local/bin:/usr/bin:/bin');
   assert.equal(env.SUPABASE_INTERNAL_IMAGE_REGISTRY, 'ghcr.io');
   assert(Object.isFrozen(env));
@@ -177,7 +178,25 @@ for (const file of [
   '.supabase/project.json',
   'supabase/.temp/project-ref',
   '.env',
+  '.env.local',
+  '.env.production',
+  '.env.development',
+  '.env.test',
+  '.env.production.local',
+  '.env.development.local',
+  '.env.test.local',
+  'bunfig.toml',
+  '.bunfig.toml',
   'supabase/.env',
+  'supabase/.env.local',
+  'supabase/.env.production',
+  'supabase/.env.development',
+  'supabase/.env.test',
+  'supabase/.env.production.local',
+  'supabase/.env.development.local',
+  'supabase/.env.test.local',
+  'supabase/bunfig.toml',
+  'supabase/.bunfig.toml',
 ]) {
   test(`linked/dotenv state ${file} on an ancestor fails closed`, async (t) => {
     const { base, context } = await fixture(t);
@@ -233,3 +252,50 @@ test('temporary root identity remains unchanged for supported isolated cleanup',
   const { context } = await fixture(t);
   assert.equal(context.env.TMPDIR, os.tmpdir());
 });
+
+for (const location of [
+  'HOME',
+  'XDG_CONFIG_HOME',
+  'DOCKER_CONFIG',
+  'SUPABASE_HOME',
+]) {
+  test(`private ${location} cannot reuse persisted runtime configuration`, async (t) => {
+    const { context } = await fixture(t);
+    const name = location === 'DOCKER_CONFIG' ? 'config.json' : '.bunfig.toml';
+    await writeFile(
+      path.join(context.env[location], name),
+      'synthetic-not-read'
+    );
+    assert.throws(
+      () => assertSyntheticCliEnvironment(context.env, context.cwd),
+      CliEnvironmentFailure
+    );
+    assert.throws(
+      () =>
+        createSyntheticCliContext({
+          root: path.dirname(context.env.HOME),
+          nativeBinary: process.execPath,
+          temporaryRoot: os.tmpdir(),
+        }),
+      CliEnvironmentFailure
+    );
+  });
+}
+for (const location of [
+  'HOME',
+  'XDG_CONFIG_HOME',
+  'DOCKER_CONFIG',
+  'SUPABASE_HOME',
+]) {
+  test(`same-path private ${location} replacement is rejected even with matching mode`, async (t) => {
+    const { base, context } = await fixture(t);
+    const { rename } = await import('node:fs/promises');
+    const directory = context.env[location];
+    await rename(directory, path.join(base, 'original-directory'));
+    await mkdir(directory, { mode: 0o700 });
+    assert.throws(
+      () => assertSyntheticCliEnvironment(context.env, context.cwd),
+      CliEnvironmentFailure
+    );
+  });
+}

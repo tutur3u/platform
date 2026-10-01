@@ -1,7 +1,20 @@
-import { lstatSync, mkdirSync, realpathSync } from 'node:fs';
+import { lstatSync, mkdirSync, readdirSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
 const admitted = new WeakMap();
+export const hostedDockerEndpoint = 'unix:///var/run/docker.sock';
+export const runtimeConfigNames = Object.freeze([
+  '.env',
+  '.env.local',
+  '.env.production',
+  '.env.development',
+  '.env.test',
+  '.env.production.local',
+  '.env.development.local',
+  '.env.test.local',
+  'bunfig.toml',
+  '.bunfig.toml',
+]);
 export class CliEnvironmentFailure extends Error {
   constructor() {
     super('Hosted synthetic CLI environment unavailable');
@@ -40,8 +53,8 @@ export function assertUnlinkedCliDirectory(directory) {
       for (const file of [
         '.supabase/project.json',
         'supabase/.temp/project-ref',
-        '.env',
-        'supabase/.env',
+        ...runtimeConfigNames,
+        ...runtimeConfigNames.map((name) => `supabase/${name}`),
       ]) {
         if (present(path.join(current, file)))
           throw new CliEnvironmentFailure();
@@ -108,6 +121,7 @@ export function createSyntheticCliContext({
       XDG_DATA_HOME: path.join(ownedRoot, 'data'),
       XDG_STATE_HOME: path.join(ownedRoot, 'state'),
       DOCKER_CONFIG: path.join(ownedRoot, 'docker'),
+      DOCKER_HOST: hostedDockerEndpoint,
       TMPDIR: temporaryRoot,
       SUPABASE_WORKDIR: cwd,
       SUPABASE_CLI_BINARY_OVERRIDE: nativeBinary,
@@ -120,15 +134,20 @@ export function createSyntheticCliContext({
       SUPABASE_AUTH_EXTERNAL_GITHUB_CLIENT_ID: 'synthetic-ci-only',
       SUPABASE_AUTH_EXTERNAL_GITHUB_SECRET: 'synthetic-ci-only',
     });
+    const directories = [
+      ownedRoot,
+      ...['home', 'config', 'cache', 'data', 'state', 'docker', 'probe'].map(
+        (name) => path.join(ownedRoot, name)
+      ),
+      path.join(home, 'supabase'),
+    ];
     admitted.set(env, {
-      directories: [
-        ownedRoot,
-        ...['home', 'config', 'cache', 'data', 'state', 'docker', 'probe'].map(
-          (name) => path.join(ownedRoot, name)
-        ),
-        path.join(home, 'supabase'),
-      ],
+      directories: directories.map((directory) => {
+        const { dev, ino } = lstatSync(directory);
+        return { directory, dev, ino };
+      }),
     });
+    assertSyntheticCliEnvironment(env, cwd);
     return { env, cwd };
   } catch {
     throw new CliEnvironmentFailure();
@@ -139,8 +158,22 @@ export function assertSyntheticCliEnvironment(env, cwd) {
     const admission = admitted.get(env);
     if (!admission || cwd !== env.SUPABASE_WORKDIR)
       throw new CliEnvironmentFailure();
-    for (const directory of admission.directories)
+    for (const { directory, dev, ino } of admission.directories) {
       validatePrivateDirectory(directory);
+      const stat = lstatSync(directory);
+      if (stat.dev !== dev || stat.ino !== ino)
+        throw new CliEnvironmentFailure();
+    }
+    // These directories may not import persisted runtime or daemon selection.
+    for (const directory of [
+      env.XDG_CONFIG_HOME,
+      env.DOCKER_CONFIG,
+      env.SUPABASE_HOME,
+    ]) {
+      if (readdirSync(directory).length) throw new CliEnvironmentFailure();
+    }
+    if (readdirSync(env.HOME).some((name) => name !== 'supabase'))
+      throw new CliEnvironmentFailure();
     const legacyHome = path.join(env.HOME, '.supabase');
     if (present(legacyHome) && lstatSync(legacyHome).isSymbolicLink())
       throw new CliEnvironmentFailure();

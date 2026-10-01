@@ -1,5 +1,3 @@
-import { execFileSync } from 'node:child_process';
-
 export const networkPolicy = Object.freeze({
   slice: 'tuturuuu-typegen.slice',
   cgroupPath: '/sys/fs/cgroup/tuturuuu.slice/tuturuuu-typegen.slice',
@@ -53,14 +51,9 @@ export function assertFirewallPolicy({ rules, dockerUser, forward }) {
     throw new Error('Bridge egress firewall missing or reordered');
   }
 }
-export function verifyNetworkPolicy() {
-  const run = (args) =>
-    execFileSync('sudo', ['-n', ...args], {
-      encoding: 'utf8',
-      timeout: 5000,
-      maxBuffer: 1024 ** 2,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    }).trim();
+export function verifyNetworkPolicy(run) {
+  if (typeof run !== 'function')
+    throw new Error('Explicit policy runner required');
   const daemon = JSON.parse(run(['cat', '/etc/docker/daemon.json']));
   const programs = JSON.parse(
     run([

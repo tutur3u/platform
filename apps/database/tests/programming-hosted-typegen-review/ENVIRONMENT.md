@@ -30,7 +30,9 @@ frozen allowlist. Both telemetry flags and no-keyring are forced to `1`.
 HOME, SUPABASE_HOME, XDG and Docker configuration point into private directories
 under the owned runner-local proof root. Ambient environment objects are never
 spread or queried for credentials. Token/profile/project/API/proxy/debug/loader
-and Docker context variables are absent. OAuth values are fixed synthetic
+and Docker context variables are absent. DOCKER_HOST is fixed to
+`unix:///var/run/docker.sock`; Docker inspection commands also pass the same
+explicit host and private config arguments. OAuth values are fixed synthetic
 strings; the image registry remains the reviewed `ghcr.io` value. The native CLI
 path and original temporary root remain available to preserve isolated-helper
 identity and cleanup contracts. PATH is fixed to standard system directories.
@@ -39,8 +41,20 @@ Probes run in an empty private directory with an explicit owned workdir. Helpers
 retain repository cwd for identity validation; their CLI workdir is the already
 validated disposable root. Admission checks existing profile/token state and
 linked/dotenv markers by filesystem metadata only, without reading contents.
-The modern ancestor walk is checked too. Symlinked private directories or
-configuration directories fail closed. Only environments created by the
+The modern ancestor walk is checked too. The pinned
+[release compiler](https://github.com/supabase/cli/blob/21db855916f2c2b12f61cde923a27094b8528b23/apps/cli/scripts/build.ts)
+builds Bun standalone executables without disabling runtime autoload.
+[Bun documents dotenv/bunfig autoload](https://bun.com/docs/bundler/executables#automatic-config-loading)
+and [dotenv variants](https://bun.com/docs/runtime/environment-variables).
+Admission therefore rejects `.env`, `.env.local`, all production/development/test
+variants and their `.local` forms, `bunfig.toml` and `.bunfig.toml` at the workdir
+and every ancestor, including equivalent files under `supabase/`. It checks
+metadata only. HOME permits only its empty Supabase home, and XDG config, Docker
+config and Supabase home must remain empty: persisted configuration/credential
+files cannot enter through reused private paths. Device/inode snapshots are
+rechecked before each command/probe, alongside type, mode and realpath. They
+bind one admitted context; they do not prove immutability across different
+processes or eliminate filesystem race windows. Symlinks fail closed. Only environments created by the
 allowlist builder can reach captured probes. Subprocess output stays bounded and
 in memory; errors emit fixed phase/outcome labels.
 
@@ -51,5 +65,9 @@ Docker cgroup/BPF/bridge policy remains the protection for container SQL egress
 and is unchanged. Its effective runtime behavior, full migrations, SQL suite,
 typegen and actual cleanup still require separately authorized hosted proof.
 Synthetic tests exercise environment construction, subprocess forwarding,
-marker rejection and process ownership; they do not prove upstream CLI behavior
+marker rejection and process ownership. Inventory, container inspection,
+post-cleanup inventory and host policy inspection use the same constructed
+environment as lifecycle work; policy inspection keeps its original 1MiB cap.
+Conflicting synthetic DOCKER_HOST/DOCKER_CONTEXT/HOME/config values cannot select
+another daemon. No Docker or policy command executes in these tests; they do not prove upstream CLI behavior
 or kernel policy enforcement in a live runner.
