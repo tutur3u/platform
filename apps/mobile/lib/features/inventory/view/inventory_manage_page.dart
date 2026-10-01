@@ -340,6 +340,8 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                     ),
                     const shad.Gap(12),
                     FinancePanel(
+                      padding: const EdgeInsets.all(14),
+                      radius: 18,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

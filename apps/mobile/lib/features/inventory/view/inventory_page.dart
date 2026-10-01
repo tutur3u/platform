@@ -22,7 +22,9 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class InventoryPage extends StatefulWidget {
-  const InventoryPage({super.key});
+  const InventoryPage({this.repository, super.key});
+
+  final InventoryRepository? repository;
 
   @override
   State<InventoryPage> createState() => _InventoryPageState();
@@ -38,7 +40,7 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   void initState() {
     super.initState();
-    _repository = InventoryRepository();
+    _repository = widget.repository ?? InventoryRepository();
     unawaited(Future<void>.delayed(Duration.zero, _reload));
   }
 
@@ -217,8 +219,10 @@ class _InventoryPageState extends State<InventoryPage> {
                                           context,
                                           product.amount,
                                         ),
-                                        product.minAmount?.toStringAsFixed(0) ??
-                                            '0',
+                                        inventoryStockAmount(
+                                          context,
+                                          product.minAmount ?? 0,
+                                        ),
                                       ].join(' / '),
                                       style: shad.Theme.of(context)
                                           .typography
