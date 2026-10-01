@@ -40,7 +40,7 @@ vi.mock('@/lib/calendar/habit-skips', () => ({ upsertHabitSkip: vi.fn() }));
 import { GET as ITEM } from '@/app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/route';
 import { GET as LIST } from '@/app/api/v1/workspaces/[wsId]/calendar/events/route';
 
-function fixture() {
+function fixture(errorTable?: string) {
   const event = {
     id: 'event',
     provider: 'google',
@@ -66,16 +66,23 @@ function fixture() {
                 color: sourceColor,
               },
             ];
-    const query: any = Object.assign(Promise.resolve({ data, error: null }), {
-      select: vi.fn(),
-      eq: vi.fn(),
-      lt: vi.fn(),
-      gt: vi.fn(),
-      order: vi.fn(),
-      in: vi.fn(),
-      limit: vi.fn(),
-      single: async () => ({ data: event, error: null }),
-    });
+    const query: any = Object.assign(
+      Promise.resolve({
+        data,
+        error:
+          table === errorTable ? { message: 'private-provider-detail' } : null,
+      }),
+      {
+        select: vi.fn(),
+        eq: vi.fn(),
+        lt: vi.fn(),
+        gt: vi.fn(),
+        order: vi.fn(),
+        in: vi.fn(),
+        limit: vi.fn(),
+        single: async () => ({ data: event, error: null }),
+      }
+    );
     for (const key of ['select', 'eq', 'lt', 'gt', 'order', 'in', 'limit'])
       query[key].mockReturnValue(query);
     queries.push({ table, eq: query.eq });
@@ -130,3 +137,32 @@ it('denies both transports before account/source reads', async () => {
   expect((await ITEM(request(), params())).status).toBe(403);
   expect(f.from).not.toHaveBeenCalled();
 });
+
+for (const table of ['calendar_auth_tokens', 'calendar_connections']) {
+  it(`preserves successful list/item reads when optional ${table} lookup fails`, async () => {
+    const f = fixture(table);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const list = await LIST(request(), params());
+      expect(list.status).toBe(200);
+      const item = await ITEM(request(), params());
+      expect(item.status).toBe(200);
+      const result = await item.json();
+      expect(result.scheduling_metadata).toEqual(f.event.scheduling_metadata);
+      expect(result).not.toHaveProperty('_calendarColor');
+      expect((await list.json()).data[0].scheduling_metadata).toEqual(
+        f.event.scheduling_metadata
+      );
+      expect(warn).toHaveBeenCalledTimes(2);
+      expect(JSON.stringify(warn.mock.calls)).not.toContain(
+        'private-provider-detail'
+      );
+      expect(warn).toHaveBeenCalledWith(
+        'Calendar source color hydration unavailable',
+        { stage: table === 'calendar_auth_tokens' ? 'accounts' : 'connections' }
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+}

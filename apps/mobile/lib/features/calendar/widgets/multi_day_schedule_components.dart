@@ -256,7 +256,7 @@ class _MultiDayEventCardSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = EventColors.forEvent(event);
+    final accentColor = EventColors.foreground(event);
     final foregroundColor = EventColors.foreground(event);
     final backgroundColor = EventColors.forEvent(event);
     final start = event.startAt;
@@ -410,7 +410,7 @@ class _MultiDayAllDayChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = EventColors.forEvent(event);
+    final accentColor = EventColors.foreground(event);
     final foregroundColor = EventColors.foreground(event);
 
     return Material(
@@ -423,7 +423,7 @@ class _MultiDayAllDayChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: EventColors.forEvent(event),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: accentColor.withValues(alpha: 0.22)),
+            border: Border.all(color: accentColor),
           ),
           alignment: Alignment.centerLeft,
           child: Row(

@@ -5,6 +5,7 @@ import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
 import 'package:mobile/features/calendar/widgets/all_day_event_bar.dart';
 import 'package:mobile/features/calendar/widgets/event_card.dart';
+import 'package:mobile/features/calendar/widgets/multi_day_schedule_view.dart';
 
 import '../../../helpers/helpers.dart';
 
@@ -26,6 +27,56 @@ CalendarEvent event({bool inherited = false, Object? background = '#00ff88'}) =>
     );
 
 void main() {
+  for (final brightness in Brightness.values) {
+    testWidgets('multi-day timed and all-day accents contrast in $brightness', (
+      tester,
+    ) async {
+      final timed = event().copyWith(
+        title: 'Timed RGB',
+        startAt: DateTime.utc(2030, 1, 1, 9),
+        endAt: DateTime.utc(2030, 1, 1, 10),
+      );
+      final allDay = event().copyWith(
+        id: 'all-day',
+        title: 'All-day RGB',
+        isAllDayOverride: true,
+        startAt: DateTime.utc(2030),
+        endAt: DateTime.utc(2030, 1, 2),
+      );
+      await tester.pumpApp(
+        Theme(
+          data: ThemeData(brightness: brightness),
+          child: MultiDayScheduleView(
+            selectedDate: DateTime(2030),
+            events: [timed, allDay],
+            onEventTap: (_) {},
+            onCreateAtTime: (_) {},
+            onDaySelected: (_) {},
+            onSwipe: (_) {},
+            visibleDayCount: 3,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Timed RGB'), findsOneWidget);
+      expect(find.text('All-day RGB'), findsOneWidget);
+      final boxes = tester
+          .widgetList<Container>(find.byType(Container))
+          .map((widget) => widget.decoration)
+          .whereType<BoxDecoration>()
+          .where((decoration) => decoration.color == const Color(0xff00ff88))
+          .toList();
+      expect(boxes.length, 2);
+      for (final decoration in boxes) {
+        expect(decoration.color!.a, 1);
+        final border = decoration.border! as Border;
+        expect(border.left.color, Colors.black);
+        expect(border.left.color.a, 1);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   test('legacy named colors retain their original identity', () {
     expect(EventColors.fromString('CYAN'), Colors.cyan);
     expect(
