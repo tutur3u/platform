@@ -75,6 +75,8 @@ export function WorkspaceVisibilityProvider({
       client.removeQueries({ queryKey: ['workspace-ui-list', scope.actorId] });
       client.removeQueries({ queryKey: ['user-workspaces', scope.actorId] });
       client.removeQueries({ queryKey: ['all-user-boards', scope.actorId] });
+      client.removeQueries({ queryKey: ['chat-workspaces', scope.actorId] });
+      client.removeQueries({ queryKey: ['task-source-boards', scope.actorId] });
       client.removeQueries({ queryKey: ['workspace-user', scope.actorId] });
       client.removeQueries({
         queryKey: ['workspace-invitations', scope.actorId],

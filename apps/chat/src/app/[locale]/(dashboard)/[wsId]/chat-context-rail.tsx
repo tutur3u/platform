@@ -1,6 +1,5 @@
 'use client';
 
-import { type InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Hash, LoaderCircle, MessageCircle } from '@tuturuuu/icons';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
@@ -18,11 +17,11 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, type UIEvent, useMemo, useRef } from 'react';
-import { fetchWorkspacesPage } from './actions';
 import {
   getChatRailWorkspaces,
   getPersonalChatWorkspace,
 } from './chat-default-scope';
+import { useChatVisibleWorkspaces } from './use-chat-visible-workspaces';
 
 interface ChatContextRailProps {
   closeOnMobile?: () => void;
@@ -30,11 +29,6 @@ interface ChatContextRailProps {
   defaultConversationScope: ChatConversationScope;
   onExpand?: () => void;
   wsId: string;
-}
-
-interface ChatWorkspacesPage {
-  nextOffset: number | null;
-  workspaces: InternalApiWorkspaceSummary[];
 }
 
 export function ChatContextRail({
@@ -54,25 +48,11 @@ export function ChatContextRail({
     requestedScope,
     defaultConversationScope
   );
-  const workspacesQuery = useInfiniteQuery<
-    ChatWorkspacesPage,
-    Error,
-    InfiniteData<ChatWorkspacesPage>,
-    readonly ['chat-workspaces', 'infinite'],
-    number
-  >({
-    getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
-    initialPageParam: 0,
-    queryKey: ['chat-workspaces', 'infinite'] as const,
-    queryFn: ({ pageParam }) =>
-      fetchWorkspacesPage({ limit: 48, offset: pageParam }),
-  });
+  const { workspacesQuery, workspaces: visibleWorkspaces } =
+    useChatVisibleWorkspaces();
   const workspaces = useMemo(
-    () =>
-      orderWorkspaces(
-        workspacesQuery.data?.pages.flatMap((page) => page.workspaces) ?? []
-      ),
-    [workspacesQuery.data]
+    () => orderWorkspaces(visibleWorkspaces),
+    [visibleWorkspaces]
   );
   const personalWorkspace = getPersonalChatWorkspace(workspaces);
   const railWorkspaces = useMemo(

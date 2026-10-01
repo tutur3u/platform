@@ -19,18 +19,14 @@ import {
 } from '@tuturuuu/icons';
 import {
   listWorkspaceLabels,
-  listWorkspaceTaskBoards,
   listWorkspaceTaskProjects,
-  type WorkspaceTaskBoardListItem,
 } from '@tuturuuu/internal-api/tasks';
-import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
-import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -39,7 +35,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import type {
   SortOption,
   TaskAssignee,
@@ -48,14 +44,10 @@ import type {
   TaskProject,
   TaskSourceScope,
 } from '../../shared/task-filter.types';
+import { useVisibleTaskSourceBoards } from './use-visible-task-source-boards';
 
 // Re-export types for backward compatibility
 export type { SortOption, TaskAssignee, TaskFilters, TaskLabel, TaskProject };
-
-type SourceBoardOption = WorkspaceTaskBoardListItem & {
-  workspaceId: string;
-  workspaceName: string;
-};
 
 const SOURCE_SCOPE_ICONS = {
   all_visible: Globe2,
@@ -315,77 +307,18 @@ export function TaskFilter({
     enabled: !!wsId,
   });
 
-  const { data: availableWorkspaces = [] } = useVisibleWorkspaces(
-    open && sourceScope === 'external_specific'
+  const {
+    sourceWorkspaces,
+    sourceBoards,
+    sourceBoardsLoading,
+    visibleWorkspaceIds,
+    visibleBoardIds,
+  } = useVisibleTaskSourceBoards(
+    open && sourceScope === 'external_specific',
+    wsId,
+    selectedSourceWorkspaceIds,
+    selectedSourceBoardIds
   );
-
-  const sourceWorkspaces = useMemo(
-    () =>
-      [...(availableWorkspaces as InternalApiWorkspaceSummary[])]
-        .filter((workspace) => workspace.id)
-        .sort((a, b) => {
-          if (a.id === wsId) return -1;
-          if (b.id === wsId) return 1;
-          return (a.name ?? '').localeCompare(b.name ?? '');
-        }),
-    [availableWorkspaces, wsId]
-  );
-
-  const sourceWorkspaceKey = useMemo(
-    () => [...selectedSourceWorkspaceIds].sort().join(','),
-    [selectedSourceWorkspaceIds]
-  );
-  const sourceWorkspaceNameKey = useMemo(
-    () =>
-      sourceWorkspaces
-        .map((workspace) => `${workspace.id}:${workspace.name ?? ''}`)
-        .sort()
-        .join('|'),
-    [sourceWorkspaces]
-  );
-
-  const { data: sourceBoards = [], isLoading: sourceBoardsLoading } = useQuery({
-    queryKey: [
-      'task-source-boards',
-      sourceWorkspaceKey,
-      sourceWorkspaceNameKey,
-    ],
-    queryFn: async () => {
-      if (selectedSourceWorkspaceIds.length === 0) return [];
-
-      const boardsByWorkspace = await Promise.all(
-        selectedSourceWorkspaceIds.map(async (workspaceId) => {
-          const workspace = sourceWorkspaces.find(
-            (item) => item.id === workspaceId
-          );
-          const response = await listWorkspaceTaskBoards(workspaceId, {
-            pageSize: 100,
-            status: 'active',
-          });
-
-          return response.boards.map(
-            (board): SourceBoardOption => ({
-              ...board,
-              workspaceId: board.ws_id ?? workspaceId,
-              workspaceName: workspace?.name ?? workspaceId,
-            })
-          );
-        })
-      );
-
-      return boardsByWorkspace.flat().sort((a, b) => {
-        const workspaceCompare = a.workspaceName.localeCompare(b.workspaceName);
-        if (workspaceCompare !== 0) return workspaceCompare;
-        return (a.name ?? '').localeCompare(b.name ?? '');
-      });
-    },
-    enabled:
-      open &&
-      sourceScope === 'external_specific' &&
-      selectedSourceWorkspaceIds.length > 0 &&
-      sourceWorkspaces.length > 0,
-    staleTime: 60_000,
-  });
 
   const sourceScopeOptions = SOURCE_SCOPE_OPTIONS.map((scope) => {
     const Icon = SOURCE_SCOPE_ICONS[scope];
@@ -768,9 +701,9 @@ export function TaskFilter({
                       icon={<Building2 className="h-3.5 w-3.5" />}
                       label={t('ws-tasks.filter_workspaces')}
                       badge={
-                        selectedSourceWorkspaceIds.length ? (
+                        visibleWorkspaceIds.length ? (
                           <Badge variant="secondary">
-                            {selectedSourceWorkspaceIds.length}
+                            {visibleWorkspaceIds.length}
                           </Badge>
                         ) : null
                       }
@@ -778,7 +711,7 @@ export function TaskFilter({
                       <Combobox
                         mode="multiple"
                         options={sourceWorkspaceOptions}
-                        selected={selectedSourceWorkspaceIds}
+                        selected={visibleWorkspaceIds}
                         onChange={(value) =>
                           setSourceWorkspaceIds(value as string[])
                         }
@@ -793,9 +726,9 @@ export function TaskFilter({
                       icon={<LayoutDashboard className="h-3.5 w-3.5" />}
                       label={t('ws-tasks.filter_boards')}
                       badge={
-                        selectedSourceBoardIds.length ? (
+                        visibleBoardIds.length ? (
                           <Badge variant="secondary">
-                            {selectedSourceBoardIds.length}
+                            {visibleBoardIds.length}
                           </Badge>
                         ) : null
                       }
@@ -803,7 +736,7 @@ export function TaskFilter({
                       <Combobox
                         mode="multiple"
                         options={sourceBoardOptions}
-                        selected={selectedSourceBoardIds}
+                        selected={visibleBoardIds}
                         onChange={(value) =>
                           setSourceBoardIds(value as string[])
                         }

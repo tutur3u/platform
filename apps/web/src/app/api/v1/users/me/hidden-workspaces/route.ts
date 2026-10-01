@@ -1,9 +1,16 @@
+import {
+  CLI_APP_ACCESS_SCOPE,
+  CLI_APP_TARGET_APP,
+} from '@tuturuuu/auth/cli-session';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { getDefaultAppSessionVerificationOptions } from '@/lib/api-auth-audiences';
+import { hasBoardShareWorkspaceAccess } from './board-share-access';
 
 const preferenceKey = 'HIDDEN_WORKSPACE';
+const guestPreferencePrefix = 'HIDDEN_WORKSPACE:';
 const headers = { 'Cache-Control': 'private, no-store' };
 const bodySchema = z
   .object({
@@ -31,18 +38,40 @@ export const GET = withSessionAuth(
       .eq('user_id', user.id)
       .eq('id', preferenceKey)
       .eq('value', 'true');
-    if (error) {
+    const { data: guestPreferences, error: guestError } = await supabase
+      .from('user_configs')
+      .select('id')
+      .eq('user_id', user.id)
+      .like('id', 'HIDDEN\\_WORKSPACE:%')
+      .eq('value', 'true');
+    if (error || guestError) {
       return NextResponse.json(
         { message: 'Unable to read Hidden workspaces' },
         { status: 500, headers }
       );
     }
     return NextResponse.json(
-      { hiddenWorkspaceIds: (data ?? []).map((row) => row.ws_id) },
+      {
+        hiddenWorkspaceIds: [
+          ...new Set([
+            ...(data ?? []).map((row) => row.ws_id),
+            ...(guestPreferences ?? [])
+              .map((row) => row.id.slice(guestPreferencePrefix.length))
+              .filter((id) => z.uuid().safeParse(id).success),
+          ]),
+        ],
+      },
       { headers }
     );
   },
-  { allowAppSessionAuth: true }
+  {
+    allowAppSessionAuth: [
+      getDefaultAppSessionVerificationOptions(
+        '/api/v1/users/me/hidden-workspaces'
+      ),
+      { targetApp: CLI_APP_TARGET_APP, requiredScope: CLI_APP_ACCESS_SCOPE },
+    ],
+  }
 );
 
 export const PUT = withSessionAuth(
@@ -78,7 +107,22 @@ export const PUT = withSessionAuth(
       userId: user.id,
       supabase,
     });
-    if (!membership.ok) {
+    let guestAccess = false;
+    if (!membership.ok && membership.error === 'membership_missing') {
+      try {
+        guestAccess = await hasBoardShareWorkspaceAccess(
+          supabase,
+          user.id,
+          workspaceId
+        );
+      } catch {
+        return NextResponse.json(
+          { message: 'Unable to update Hidden workspaces' },
+          { status: 500, headers }
+        );
+      }
+    }
+    if (!membership.ok && !guestAccess) {
       return NextResponse.json(
         { message: 'Unable to update Hidden workspaces' },
         {
@@ -87,22 +131,45 @@ export const PUT = withSessionAuth(
         }
       );
     }
-    const result = hidden
-      ? await supabase.from('user_workspace_configs').upsert(
-          {
-            user_id: user.id,
-            ws_id: workspaceId,
-            id: preferenceKey,
-            value: 'true',
-          },
-          { onConflict: 'user_id,ws_id,id' }
-        )
+    const guestKey = `${guestPreferencePrefix}${workspaceId}`;
+    const guestResult = hidden
+      ? guestAccess
+        ? await supabase
+            .from('user_configs')
+            .upsert(
+              { user_id: user.id, id: guestKey, value: 'true' },
+              { onConflict: 'user_id,id' }
+            )
+        : { error: null }
       : await supabase
-          .from('user_workspace_configs')
+          .from('user_configs')
           .delete()
           .eq('user_id', user.id)
-          .eq('ws_id', workspaceId)
-          .eq('id', preferenceKey);
+          .eq('id', guestKey);
+    if (guestResult.error) {
+      return NextResponse.json(
+        { message: 'Unable to update Hidden workspaces' },
+        { status: 500, headers }
+      );
+    }
+    const result = !membership.ok
+      ? { error: null }
+      : hidden
+        ? await supabase.from('user_workspace_configs').upsert(
+            {
+              user_id: user.id,
+              ws_id: workspaceId,
+              id: preferenceKey,
+              value: 'true',
+            },
+            { onConflict: 'user_id,ws_id,id' }
+          )
+        : await supabase
+            .from('user_workspace_configs')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('ws_id', workspaceId)
+            .eq('id', preferenceKey);
     if (result.error) {
       return NextResponse.json(
         { message: 'Unable to update Hidden workspaces' },

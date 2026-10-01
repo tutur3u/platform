@@ -4,6 +4,7 @@ const f = vi.hoisted(() => ({
   actor: '00000000-0000-4000-8000-000000000001',
   from: vi.fn(),
   membership: vi.fn(),
+  boardAccess: vi.fn(),
 }));
 vi.mock('next/server', async (load) => ({
   ...(await load<object>()),
@@ -17,6 +18,10 @@ vi.mock('@/lib/api-auth', () => ({
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: f.membership,
+}));
+
+vi.mock('./board-share-access', () => ({
+  hasBoardShareWorkspaceAccess: f.boardAccess,
 }));
 
 import { GET, PUT } from './route';
@@ -33,7 +38,14 @@ describe('owner-only Hidden preferences', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     f.actor = '00000000-0000-4000-8000-000000000001';
-    query = { select: vi.fn(), eq: vi.fn(), upsert: vi.fn(), delete: vi.fn() };
+    query = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      upsert: vi.fn(),
+      delete: vi.fn(),
+      like: vi.fn(),
+    };
+    query.like.mockReturnValue(query);
     let operation = 'read';
     query.select.mockReturnValue(query);
     query.delete.mockImplementation(() => {
@@ -46,12 +58,16 @@ describe('owner-only Hidden preferences', () => {
         (operation === 'read' && key === 'value') ||
         (operation === 'delete' && key === 'id')
       ) {
-        return Promise.resolve({ data: [{ ws_id: ws }], error: null });
+        return Promise.resolve({
+          data: [{ ws_id: ws, id: `HIDDEN_WORKSPACE:${ws}` }],
+          error: null,
+        });
       }
       return query;
     });
     f.from.mockReturnValue(query);
     f.membership.mockResolvedValue({ ok: true });
+    f.boardAccess.mockResolvedValue(false);
   });
   it('projects only owner hidden IDs and forbids shared caching', async () => {
     const response = await GET(
@@ -105,15 +121,60 @@ describe('owner-only Hidden preferences', () => {
     expect(query.eq).toHaveBeenCalledWith('ws_id', ws);
     expect(query.eq).toHaveBeenCalledWith('id', 'HIDDEN_WORKSPACE');
   });
+  it('member restore clears a prior board-guest preference as well', async () => {
+    const response = await PUT(
+      request({ workspaceId: ws, hidden: false }) as never
+    );
+    expect(response.status).toBe(200);
+    expect(f.from.mock.calls.map(([table]) => table)).toEqual([
+      'user_configs',
+      'user_workspace_configs',
+    ]);
+    expect(query.eq).toHaveBeenCalledWith('id', `HIDDEN_WORKSPACE:${ws}`);
+    expect(query.eq).toHaveBeenCalledWith('id', 'HIDDEN_WORKSPACE');
+  });
   it.each([
     ['membership_lookup_failed', 500],
-    ['not_member', 403],
+    ['membership_missing', 403],
   ])('denies %s before preference writes', async (error, status) => {
     f.membership.mockResolvedValue({ ok: false, error });
     const response = await PUT(
       request({ workspaceId: ws, hidden: true }) as never
     );
     expect(response.status).toBe(status);
+    expect(f.from).not.toHaveBeenCalled();
+  });
+  it.each([true, false])(
+    'board-share-only guest updates private preference hidden=%s',
+    async (hidden) => {
+      f.membership.mockResolvedValue({
+        ok: false,
+        error: 'membership_missing',
+      });
+      f.boardAccess.mockResolvedValue(true);
+      const response = await PUT(request({ workspaceId: ws, hidden }) as never);
+      expect(response.status).toBe(200);
+      expect(f.boardAccess).toHaveBeenCalledWith(
+        expect.anything(),
+        f.actor,
+        ws
+      );
+      expect(f.from).toHaveBeenCalledWith('user_configs');
+      expect(f.from).not.toHaveBeenCalledWith('user_workspace_configs');
+      if (hidden)
+        expect(query.upsert).toHaveBeenCalledWith(
+          { user_id: f.actor, id: `HIDDEN_WORKSPACE:${ws}`, value: 'true' },
+          { onConflict: 'user_id,id' }
+        );
+    }
+  );
+  it('fails share lookup closed without writing', async () => {
+    f.membership.mockResolvedValue({ ok: false, error: 'membership_missing' });
+    f.boardAccess.mockRejectedValue(new Error('offline'));
+    const response = await PUT(
+      request({ workspaceId: ws, hidden: true }) as never
+    );
+    expect(response.status).toBe(500);
     expect(f.from).not.toHaveBeenCalled();
   });
   it('rejects delayed mutation after account switch before any write', async () => {

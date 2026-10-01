@@ -38,15 +38,25 @@ and the shared app theme. It contains no real account or workspace data.
 
 The existing `public.user_workspace_configs` table stores
 `(user_id, ws_id, id = 'HIDDEN_WORKSPACE', value = 'true')`. An absent row means
-visible. There is no new schema or grant. `user_private_details` must not be used:
+visible. Board-share-only guests have no membership row, so their preferences use
+existing owner-only `public.user_configs` rows:
+`(user_id, id = 'HIDDEN_WORKSPACE:<workspace UUID>', value = 'true')`.
+The owner GET returns the union, with valid UUID IDs only. This uses one key per
+workspace and avoids concurrent updates overwriting a whole list. When a guest
+later becomes a member, restore clears both stores. There is no new schema or grant. `user_private_details` must not be used:
 its shared-member read policy would expose a preference intended to be private.
 
 `GET /api/v1/users/me/hidden-workspaces?expectedActorId=<actor>` returns only the
 owner's Hidden IDs with `Cache-Control: private, no-store`. `PUT` accepts
-`workspaceId`, `hidden` and `expectedActorId`. The shared first-party app-session audience explicitly includes this endpoint.
+`workspaceId`, `hidden` and `expectedActorId`. The shared first-party app-session audience explicitly includes this endpoint, including Git. Owner GET additionally accepts the existing `cli:access` scope for CLI/MCP discovery; PUT does not accept CLI sessions. Unknown visibility fails discovery closed, while explicit MCP reads still use OAuth grants and canonical resource authorization.
 The server derives the owner from
 the authenticated session, compares the expected actor to reject a delayed
-account-switch request, and verifies canonical membership of either MEMBER or GUEST before writing. The existing
+account-switch request, and verifies canonical membership of either MEMBER or GUEST before writing.
+For choices discovered through direct task-board shares without membership, it
+instead validates a live view/edit share for the actor's canonical user ID or
+owner email, on an undeleted board in the requested workspace. Share inspection
+is server-only and read-only; preference writes remain owner-bound. Unknown or
+failed access discovery denies the mutation. No membership is added. The existing
 owner/membership RLS already permits both; no permission or policy is expanded. App
 sessions also stamp and filter by the server actor when using their scoped
 administrative client. The response is never joined into workspace/member APIs,
@@ -114,6 +124,18 @@ Satellite general Settings recovery does not wait for workspace/admin permission
 The guest mutation and audience follow-up have synthetic API/session proofs
 (including real signed satellite tokens and rewritten web cookies); the original
 15-assertion DB run proves the existing owner policy for its synthetic member/admin
-fixtures. It does not prove guest/runtime-publication behavior. No new DB run is
+fixtures. It does not prove board-share-only guest/runtime-publication behavior.
+The separate `hidden-workspaces-board-guests.sql` fixture is prepared for a parent-admitted
+run; it is not yet executed or claimed verified. No new DB run is
 launched solely for that scope; publication membership, replica identity and
 non-internal triggers remain future admitted-run verification.
+
+## Discovery follow-up
+
+Chat's paginated context rail caches canonical pages under the authenticated actor
+and applies Hidden only to its displayed workspace/personal choices. Delayed pages
+cannot publish after an account switch. TaskFilter queries source boards only for
+visible retained source workspace IDs and displays only their selected choices;
+it does not rewrite saved filters or change task aggregation when visibility changes.
+Both caches are removed when the actor provider unmounts. Git's Hidden audience
+is explicitly allowed without adding Git to unrelated current-user APIs.

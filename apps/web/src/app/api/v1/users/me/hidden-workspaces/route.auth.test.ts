@@ -99,7 +99,7 @@ vi.mock('next/server', async (load) => ({
 }));
 
 import { createAppSessionToken } from '@tuturuuu/auth/app-session';
-import { GET } from './route';
+import { GET, PUT } from './route';
 
 afterEach(() => vi.unstubAllEnvs());
 const actor = '00000000-0000-4000-8000-000000000001';
@@ -111,7 +111,8 @@ describe('Hidden route with real session authentication and signed tokens', () =
       'APP_COORDINATION_TOKEN_SECRET',
       'synthetic-hidden-route-signing-secret'
     );
-    const query = { select: vi.fn(), eq: vi.fn() };
+    const query = { select: vi.fn(), eq: vi.fn(), like: vi.fn() };
+    query.like.mockReturnValue(query);
     query.select.mockReturnValue(query);
     query.eq.mockImplementation((key: string) =>
       key === 'value' ? Promise.resolve({ data: [], error: null }) : query
@@ -121,6 +122,7 @@ describe('Hidden route with real session authentication and signed tokens', () =
     mocks.buildAbuseRiskSubjects.mockReturnValue([]);
     mocks.extractIPFromHeaders.mockReturnValue('203.0.113.1');
     mocks.isIPBlocked.mockResolvedValue(null);
+    mocks.checkRateLimit.mockResolvedValue({ allowed: true, remaining: 100 });
     mocks.checkUserSuspension.mockResolvedValue({ suspended: false });
     mocks.resolveWebAbuseDecision.mockResolvedValue({
       tier: 'normal',
@@ -130,7 +132,7 @@ describe('Hidden route with real session authentication and signed tokens', () =
     });
     mocks.enforceAdaptiveStepUpChallenge.mockResolvedValue(null);
   });
-  it.each(['track', 'rewise', 'tasks', 'meet', 'infra', 'calendar'])(
+  it.each(['track', 'rewise', 'tasks', 'meet', 'infra', 'calendar', 'git'])(
     'accepts real %s app session and rewritten web cookie',
     async (targetApp) => {
       const { token } = createAppSessionToken({ userId: actor, targetApp });
@@ -150,6 +152,51 @@ describe('Hidden route with real session authentication and signed tokens', () =
       }
     }
   );
+  it('accepts scoped CLI owner discovery without enabling mutation', async () => {
+    const { token } = createAppSessionToken({
+      userId: actor,
+      targetApp: 'cli',
+      originApp: 'cli',
+      scopes: ['cli:access'],
+    });
+    const headers = { authorization: `Bearer ${token}` };
+    const response = await GET(
+      new NextRequest(
+        `https://app.test/api/v1/users/me/hidden-workspaces?expectedActorId=${actor}`,
+        { headers }
+      )
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ hiddenWorkspaceIds: [] });
+    from.mockClear();
+    const mutation = await PUT(
+      new NextRequest('https://app.test/api/v1/users/me/hidden-workspaces', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          expectedActorId: actor,
+          workspaceId: '00000000-0000-4000-8000-000000000010',
+          hidden: true,
+        }),
+      })
+    );
+    expect(mutation.status).toBe(401);
+    expect(from).not.toHaveBeenCalled();
+  });
+  it('denies a CLI token lacking the existing CLI access scope', async () => {
+    const { token } = createAppSessionToken({
+      userId: actor,
+      targetApp: 'cli',
+    });
+    const response = await GET(
+      new NextRequest(
+        `https://app.test/api/v1/users/me/hidden-workspaces?expectedActorId=${actor}`,
+        { headers: { authorization: `Bearer ${token}` } }
+      )
+    );
+    expect(response.status).toBe(401);
+    expect(from).not.toHaveBeenCalled();
+  });
   it('rejects a signed unregistered audience before data access', async () => {
     const { token } = createAppSessionToken({
       userId: actor,
