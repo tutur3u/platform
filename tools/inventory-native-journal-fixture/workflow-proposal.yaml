@@ -63,6 +63,7 @@ jobs:
           test -x "$ANDROID_HOME/emulator/emulator"
           node tools/inventory-native-journal-fixture/prepare.mjs android "$RUNNER_TEMP/journal-fixture" --preflight
           sdkmanager 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'
+          node tools/inventory-native-journal-fixture/prepare.mjs android "$RUNNER_TEMP/journal-fixture" --runtime-preflight
           echo no | avdmanager create avd --name journal-proof --package 'system-images;android-35;google_apis;x86_64' --force
           "$ANDROID_HOME/emulator/emulator" -avd journal-proof -no-window -no-audio -no-snapshot -no-boot-anim -memory 2048 -cores 2 -gpu swiftshader_indirect > /dev/null 2>&1 &
           EMULATOR_PID=$!
