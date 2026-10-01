@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { describe, expect, it, vi } from 'vitest';
 import type { useWorkspaceVisibility } from '../../../../hooks/use-workspace-visibility';
@@ -36,6 +36,81 @@ function visibility(overrides = {}) {
   } as unknown as ReturnType<typeof useWorkspaceVisibility>;
 }
 describe('workspace sheet rendered identities', () => {
+  it('keeps floating create and search actions separate from workspace selection', () => {
+    const onCreate = vi.fn();
+    const onJoin = vi.fn();
+    const onSelect = vi.fn();
+    render(
+      <Dialog open>
+        <WorkspacePickerContent
+          workspaces={[one]}
+          visibility={visibility()}
+          onSelect={onSelect}
+          onCreate={onCreate}
+          onJoin={onJoin}
+        />
+      </Dialog>
+    );
+    const create = screen.getByRole('button', {
+      name: 'create_workspace_action',
+    });
+    const search = screen.getByRole('button', { name: 'search_workspace' });
+    expect(create.parentElement).toBe(search.parentElement);
+    expect(create.parentElement).toHaveClass('absolute');
+    fireEvent.click(create);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'join_workspace_action' })
+    );
+    expect(onCreate).toHaveBeenCalledOnce();
+    expect(onJoin).toHaveBeenCalledOnce();
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+  it('focuses search when opened and clears the current filtered query', async () => {
+    render(
+      <Dialog open>
+        <WorkspacePickerContent
+          workspaces={[one, other]}
+          visibility={visibility()}
+          onSelect={vi.fn()}
+        />
+      </Dialog>
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'search_workspace' }));
+    const input = screen.getByRole('textbox', { name: 'search_workspace' });
+    await waitFor(() => expect(document.activeElement).toBe(input));
+    fireEvent.change(input, { target: { value: 'Repeated' } });
+    expect(screen.queryByText('Another workspace')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'clear_search' }));
+    expect(input).toHaveValue('');
+    expect(document.activeElement).toBe(input);
+    expect(screen.getByText('Another workspace')).toBeInTheDocument();
+  });
+  it('provides fullscreen scrollable modal content with trapped focus and Escape close', async () => {
+    const onOpenChange = vi.fn();
+    render(
+      <>
+        <input aria-label="Outside picker" />
+        <Dialog open onOpenChange={onOpenChange}>
+          <WorkspacePickerContent
+            workspaces={[one]}
+            visibility={visibility()}
+            onSelect={vi.fn()}
+          />
+        </Dialog>
+      </>
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveClass('inset-0', 'h-dvh', 'overflow-hidden');
+    const row = screen.getByRole('button', { name: 'Repeated name PRO' });
+    expect(row.closest('.overflow-y-auto')).not.toBeNull();
+    const outside = screen.getByLabelText('Outside picker');
+    outside.focus();
+    await waitFor(() =>
+      expect(dialog.contains(document.activeElement)).toBe(true)
+    );
+    fireEvent.keyDown(document.activeElement ?? dialog, { key: 'Escape' });
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+  });
   it('selects refreshed filtered objects with duplicate names and reordered input', () => {
     const onSelect = vi.fn();
     const state = visibility();

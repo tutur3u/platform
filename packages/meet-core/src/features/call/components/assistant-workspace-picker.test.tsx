@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import '@testing-library/jest-dom/vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
@@ -76,13 +75,11 @@ it('assistant options exclude Hidden personal and team workspaces', async () => 
   );
   await waitFor(() =>
     expect(
-      screen.getByRole('option', { name: 'Visible Team' })
-    ).toBeInTheDocument()
+      screen.getByRole('option', { name: 'Visible Team' }).isConnected
+    ).toBe(true)
   );
-  expect(
-    screen.queryByRole('option', { name: 'Hidden Team' })
-  ).not.toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: 'Hidden Team' })).toBeNull();
   expect(
     screen.queryByRole('option', { name: 'assistant_personal_workspace' })
-  ).not.toBeInTheDocument();
+  ).toBeNull();
 });

@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
@@ -10,9 +10,6 @@ import { TaskFilter } from './task-filter';
 vi.mock('@tuturuuu/internal-api/users', () => ({
   getCurrentUserHiddenWorkspaces: async () => ({ hiddenWorkspaceIds: [] }),
   updateCurrentUserHiddenWorkspace: vi.fn(),
-}));
-vi.mock('@tuturuuu/internal-api/workspaces', () => ({
-  listWorkspaces: (...args: unknown[]) => mocks.listWorkspaces(...args),
 }));
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
