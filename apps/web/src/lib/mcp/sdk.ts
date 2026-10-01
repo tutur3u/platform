@@ -28,7 +28,7 @@ export function createSdkTransport(): McpTransport {
             outputSchema: tool.outputSchema.shape,
             annotations: tool.annotations,
           },
-          async (input) => callHostedMcpTool(tool, input)
+          async (input: unknown) => callHostedMcpTool(tool, input)
         );
       }
       try {

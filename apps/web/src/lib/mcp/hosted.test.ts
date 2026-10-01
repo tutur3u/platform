@@ -344,10 +344,11 @@ describe('stateless HTTP and provider seams', () => {
       reads: () => f.reads,
       transport: () => ({ dispatch }),
     });
-    for (const headers of [
+    const hostileHeaders: Record<string, string>[] = [
       { origin: 'https://evil.example.invalid' },
       { host: 'evil.example.invalid' },
-    ])
+    ];
+    for (const headers of hostileHeaders)
       expect((await handler(f.request(headers))).status).toBe(403);
     expect(
       (await handler(f.request({ 'mcp-session-id': 'shared' }))).status

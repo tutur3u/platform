@@ -4,9 +4,7 @@
     "tuturuuu-readonly": {
       "type": "stdio",
       "command": "python3.12",
-      "args": [
-        "mcp/server.py"
-      ],
+      "args": ["mcp/server.py"],
       "cwd": "./"
     }
   }

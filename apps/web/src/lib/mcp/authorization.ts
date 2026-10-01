@@ -82,9 +82,9 @@ export async function authorizeMcp(
     /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/u.exec(
       request.headers.get('authorization') ?? ''
     );
-  if (!match || match[1].length > 16384)
+  const token = match?.[1];
+  if (!token || token.length > 16384)
     throw new McpAccessError(401, 'MCP authorization is required.');
-  const token = match[1];
   let claims: z.infer<typeof oauthClaims>;
   try {
     claims = oauthClaims.parse(await verify(token));
