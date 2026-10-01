@@ -195,6 +195,7 @@ export function isTaskPlanSchemaUnavailableError(error: unknown) {
   return (
     code === '42P01' ||
     code === '42703' ||
+    code === 'PGRST202' ||
     code === 'PGRST204' ||
     code === 'PGRST205' ||
     (mentionsTaskPlanSchema && looksLikeMissingSchema)

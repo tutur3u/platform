@@ -39,7 +39,10 @@ import { copyAiChatAttachmentInputsToResources } from './ai-message-shared';
 
 // Resolve the actual transitive SDK selected by the workspace lockfile.
 const supabaseRequire = createRequire(
-  resolve(process.cwd(), '../../packages/supabase/package.json')
+  resolve(
+    import.meta.dirname,
+    '../../../../../../../../../../../../packages/supabase/package.json'
+  )
 );
 const sdkRequire = createRequire(
   supabaseRequire.resolve('@supabase/supabase-js')
@@ -130,6 +133,7 @@ describe('attachment source request identity', () => {
     encodeFirstLetter('chats/ai/resources/foreign-chat/fixture.txt'),
     'uploads/100% hoàn tất.txt',
     'uploads/literal%41.txt',
+    'uploads/100%25 complete.txt',
     'uploads/name?#fragment.txt',
   ])('requests the exact authorized literal object key %s', async (path) => {
     await copy(path);

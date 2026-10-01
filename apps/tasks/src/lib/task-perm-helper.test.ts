@@ -86,3 +86,14 @@ describe('task share creation policy', () => {
     }
   );
 });
+
+describe('task sharing lookup errors', () => {
+  it('returns 500 rather than a disabled-policy response', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: null, error: {} });
+    const result = await verifyTaskSharingEnabled({ rpc } as never, 'task-a');
+    expect(result?.status).toBe(500);
+    await expect(result?.json()).resolves.toEqual({
+      error: 'Failed to verify task sharing',
+    });
+  });
+});

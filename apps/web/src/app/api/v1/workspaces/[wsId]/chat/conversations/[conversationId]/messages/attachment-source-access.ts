@@ -41,7 +41,7 @@ export async function authorizeAttachmentSource({
     throw new Error('Invalid attachment source path');
   // Encoded structural aliases remain unsupported. Literal object keys are
   // encoded only at the provider transport boundary, after authorization.
-  if (/%(?:2e|2f|5c|25)/iu.test(normalizedPath))
+  if (/%(?:2e|2f|5c|25(?:25)*(?:2e|2f|5c))/iu.test(normalizedPath))
     throw new Error('Invalid attachment source path');
   if (isReservedMobileDeploymentDrivePath(normalizedWsId, normalizedPath))
     throw new Error('Attachment source access denied');

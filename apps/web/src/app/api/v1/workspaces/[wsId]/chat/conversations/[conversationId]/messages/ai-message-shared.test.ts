@@ -107,6 +107,8 @@ describe('AI chat attachment resources', () => {
     'uploads/../foreign.txt',
     'task-images/%2e%2e/foreign.txt',
     'uploads/%252e%252e/file',
+    'uploads/%25252e%25252e/file',
+    'uploads/%255cother/file',
     'uploads/%2fother/file',
   ])('rejects unsafe source representation %s', async (path) => {
     await expect(
@@ -262,6 +264,36 @@ describe('AI chat attachment resources', () => {
       ],
       chatId: 'chat-1',
       wsId: 'workspace-1',
+    });
+    expect(mocks.download).toHaveBeenCalledWith(
+      'workspace-2',
+      'supabase',
+      'finance/transactions/txn/receipt.pdf'
+    );
+  });
+  it('allows finance-only source reads without drive access', async () => {
+    const permissions = { withoutPermission: () => true };
+    mocks.permissions.mockResolvedValue(permissions);
+    mocks.finance.mockResolvedValue(true);
+    await copyAiChatAttachmentInputsToResources({
+      auth,
+      attachments: [
+        {
+          filename: 'receipt.pdf',
+          path: 'finance/transactions/txn/receipt.pdf',
+          storageWsId: 'workspace-2',
+        },
+      ],
+      chatId: 'chat-1',
+      wsId: 'workspace-1',
+    });
+    expect(mocks.finance).toHaveBeenCalledWith({
+      access: 'read',
+      normalizedWsId: 'workspace-2',
+      path: 'finance/transactions/txn/receipt.pdf',
+      permissions,
+      supabase: {},
+      userId: 'actor-a',
     });
     expect(mocks.download).toHaveBeenCalledWith(
       'workspace-2',

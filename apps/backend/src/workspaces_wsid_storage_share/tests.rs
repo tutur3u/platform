@@ -194,17 +194,16 @@ fn encoded_dot_segments_are_rejected_before_authorization() {
 }
 
 #[test]
-fn signing_preserves_object_keys_across_native_and_worker_url_parsing() {
+fn signing_preserves_the_complete_encoded_object_path() {
     let path = "workspace/task-images/100% done #1? ảnh.png";
     let url = storage_sign_url("https://storage.example/storage/v1", path).unwrap();
     assert_eq!(url.query(), None);
     assert_eq!(url.fragment(), None);
-    assert!(url.path().contains("100%25%20done%20%231%3F%20"));
+    assert_eq!(
+        url.path(),
+        "/storage/v1/object/sign/workspaces/workspace/task-images/100%25%20done%20%231%3F%20%E1%BA%A3nh.png"
+    );
     assert_eq!(url::Url::parse(url.as_str()).unwrap(), url);
-    #[cfg(feature = "native")]
-    let native = reqwest::Url::parse(url.as_str()).unwrap();
-    #[cfg(feature = "native")]
-    assert_eq!(native.path(), url.path());
     let literal = storage_sign_url(
         "https://storage.example/storage/v1",
         "workspace/task-images/name%2Fpart.txt",
