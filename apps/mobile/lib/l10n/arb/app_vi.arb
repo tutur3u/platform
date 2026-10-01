@@ -3810,5 +3810,11 @@
     },
     "calendarInvalidLocalTime": "Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè.",
     "profileOverviewTab": "Tổng quan",
-    "profileTimelineTab": "Dòng thời gian"
+    "profileTimelineTab": "Dòng thời gian",
+    "profileTimelineShowDates": "Hiện thanh chọn ngày",
+    "profileTimelineHideDates": "Đóng thanh ngày và xem dòng hoạt động",
+    "profileTimelineAgenda": "Những ngày có hoạt động",
+    "profileTimelineDayEmpty": "Không có hoạt động nào được trả về cho ngày này.",
+    "profileTimelineHasActivity": "Có hoạt động trong dữ liệu đã tải",
+    "profileTimelineMoreDays": "Hiện thêm ngày đã tải"
 }

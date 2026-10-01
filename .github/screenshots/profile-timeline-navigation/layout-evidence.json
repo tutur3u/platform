@@ -1,0 +1,56 @@
+{
+  "synthetic": true,
+  "installed_device_qa": false,
+  "cases": {
+    "agenda": {
+      "sha256": "3ef0fbdfe8bc892ff7f8ed98549c0418b090bf2fdb8e0cd5f56758d48bcaf2f3",
+      "metadata": {
+        "synthetic": true,
+        "realMobileTheme": true,
+        "titleBounds": "Rect.fromLTRB(97.0, 287.0, 190.7, 310.0)",
+        "titleInkPixels": 275,
+        "browser": [16.0, 16.0, 377.0, 836.0]
+      }
+    },
+    "selected-day": {
+      "sha256": "88314433e508cc1cf609378fecdc5a65db6e6fd3572fbc05ab8162f8990f93a4",
+      "metadata": {
+        "synthetic": true,
+        "realMobileTheme": true,
+        "titleBounds": "Rect.fromLTRB(97.0, 287.0, 190.7, 310.0)",
+        "titleInkPixels": 275,
+        "browser": [16.0, 16.0, 377.0, 836.0]
+      }
+    },
+    "empty-day": {
+      "sha256": "58df1c2cbf3f08ef21e536b4d473d0c05c7cfd2982b595673b53990f2e7368de",
+      "metadata": {
+        "synthetic": true,
+        "realMobileTheme": true,
+        "titleBounds": null,
+        "titleInkPixels": 0,
+        "browser": [16.0, 16.0, 377.0, 836.0]
+      }
+    },
+    "320-3x-agenda": {
+      "sha256": "b301a38f4ca622f8a8a78d8673f98c08a8c77b37bd425c4bbcfccd5d8187860c",
+      "metadata": {
+        "synthetic": true,
+        "width": 320,
+        "scale": 3,
+        "titleBounds": "Rect.fromLTRB(97.0, 649.0, 199.2, 718.0)",
+        "titleInkPixels": 1239
+      }
+    },
+    "320-3x-selected-day": {
+      "sha256": "e840010d526b24eda6e92bf28f0a2e3ceaa4576f6356a7945e7bd390a7976f0a",
+      "metadata": {
+        "synthetic": true,
+        "width": 320,
+        "scale": 3,
+        "titleBounds": "Rect.fromLTRB(97.0, 649.0, 199.2, 718.0)",
+        "titleInkPixels": 1239
+      }
+    }
+  }
+}

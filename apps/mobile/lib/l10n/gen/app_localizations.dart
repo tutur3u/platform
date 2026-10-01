@@ -18096,6 +18096,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Timeline'**
   String get profileTimelineTab;
+
+  /// No description provided for @profileTimelineShowDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Show date selector'**
+  String get profileTimelineShowDates;
+
+  /// No description provided for @profileTimelineHideDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Close dates and browse agenda'**
+  String get profileTimelineHideDates;
+
+  /// No description provided for @profileTimelineAgenda.
+  ///
+  /// In en, this message translates to:
+  /// **'Days with activity'**
+  String get profileTimelineAgenda;
+
+  /// No description provided for @profileTimelineDayEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity was returned for this day.'**
+  String get profileTimelineDayEmpty;
+
+  /// No description provided for @profileTimelineHasActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity in loaded snapshot'**
+  String get profileTimelineHasActivity;
+
+  /// No description provided for @profileTimelineMoreDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more loaded days'**
+  String get profileTimelineMoreDays;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

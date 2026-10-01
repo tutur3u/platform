@@ -9479,4 +9479,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileTimelineTab => 'Timeline';
+
+  @override
+  String get profileTimelineShowDates => 'Show date selector';
+
+  @override
+  String get profileTimelineHideDates => 'Close dates and browse agenda';
+
+  @override
+  String get profileTimelineAgenda => 'Days with activity';
+
+  @override
+  String get profileTimelineDayEmpty => 'No activity was returned for this day.';
+
+  @override
+  String get profileTimelineHasActivity => 'Activity in loaded snapshot';
+
+  @override
+  String get profileTimelineMoreDays => 'Show more loaded days';
 }

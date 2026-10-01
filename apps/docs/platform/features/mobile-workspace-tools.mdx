@@ -870,3 +870,33 @@ uses its workspace ID for identity and selects its rendered workspace object,
 including after sorting, duplicate display names, and list refreshes. This rule
 applies to the sheet opened from the navbar, dashboard and Workspace Settings;
 it does not change membership discovery, permissions, or default persistence.
+
+
+## Profile Timeline date navigation
+
+Profile Timeline has two browsing modes in the same reserved viewport. The
+closed date strip is a newest-first agenda containing only returned activity
+days. Opening the strip selects the currently visible activity day; choosing a
+date browses that one day, including an explicit empty-snapshot state. Closing
+the strip returns to the agenda without inserting long runs of empty days.
+Repeated toggles preserve the selected date and visible activity anchor, with
+scroll correction bounded by the available content. Transitions fade without
+changing the reserved header/body geometry and honor reduced motion.
+
+The circular week strip takes its date-led structure from the supplied reference
+image; it uses Tuturuuu theme surfaces and the existing compact Profile navbar
+switch. Dots indicate activity actually present in the loaded scoped snapshot.
+Agenda pages append five returned days at a time; they do not request older
+server history. The existing API returns a 30-day snapshot, has no cursor, and
+caps each source at 200 rows. Partial and limited warnings remain visible, and
+an empty selected day says no activity was returned rather than claiming a
+complete absence of activity. Date groups and timestamps use device-local
+calendar dates; calendar arithmetic and IANA boundary/DST regressions prevent
+UTC-date and fixed-duration-day mistakes. User/workspace changes reset navigation
+state and reject stale cache/refresh results. No milestones or activity are
+fabricated.
+
+Regression targets: `profile_timeline_browser_test.dart` covers sparse days,
+selected empty days, repeated toggles and item pixels, appended pages, fixed
+loading/refresh geometry, reduced motion, double text and timezone/DST grouping.
+Existing scoped race/cache tests remain required alongside it.

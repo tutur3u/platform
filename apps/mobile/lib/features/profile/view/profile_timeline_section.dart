@@ -5,9 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
-import 'package:mobile/features/profile/view/profile_timeline_days.dart';
+import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -165,29 +164,6 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
             ),
           ),
           const shad.Gap(16),
-          if (items == null && !_failed)
-            Semantics(
-              label: l10n.profileLoading,
-              liveRegion: true,
-              child: const FinanceSkeletonBlock(height: 112, radius: 20),
-            )
-          else if (items?.isEmpty == true && !_partial)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.history_rounded,
-                    size: 32,
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                  const shad.Gap(12),
-                  Text(l10n.profileTimelineEmpty, textAlign: TextAlign.center),
-                ],
-              ),
-            )
-          else if (items != null)
-            ProfileTimelineDays(items: items, onOpen: _open),
           if (_limited) ...[
             const shad.Gap(12),
             Text(
@@ -214,6 +190,14 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
               child: Text(l10n.commonRetry),
             ),
           ],
+          const shad.Gap(12),
+          ProfileTimelineBrowser(
+            key: ValueKey(_scope),
+            items: items ?? const [],
+            loading: items == null && !_failed,
+            refreshing: _refreshing,
+            onOpen: _open,
+          ),
         ],
       ),
     );
