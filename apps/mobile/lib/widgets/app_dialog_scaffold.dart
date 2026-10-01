@@ -17,6 +17,7 @@ class AppDialogScaffold extends StatelessWidget {
     this.maxWidth = 560,
     this.maxHeightFactor = 0.88,
     this.scrollable = true,
+    this.scrollHeader = false,
     super.key,
   });
 
@@ -31,6 +32,9 @@ class AppDialogScaffold extends StatelessWidget {
   final double maxHeightFactor;
   final bool scrollable;
 
+  /// Include the heading in the body scroll for constrained editors.
+  final bool scrollHeader;
+
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
@@ -40,6 +44,56 @@ class AppDialogScaffold extends StatelessWidget {
     final body = scrollable
         ? SingleChildScrollView(padding: padding, child: child)
         : Padding(padding: padding, child: child);
+
+    final header = <Widget>[
+      Padding(
+        padding: EdgeInsets.fromLTRB(20, isCompact ? 18 : 20, 20, 0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (icon != null) ...[
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+              ),
+              const shad.Gap(12),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.typography.h4.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (description?.trim().isNotEmpty ?? false) ...[
+                    const shad.Gap(6),
+                    Text(
+                      description!,
+                      style: theme.typography.textSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (headerTrailing != null) ...[
+              const shad.Gap(12),
+              headerTrailing!,
+            ],
+          ],
+        ),
+      ),
+      const shad.Gap(18),
+    ];
 
     return SafeArea(
       top: false,
@@ -96,69 +150,22 @@ class AppDialogScaffold extends StatelessWidget {
                             ),
                           ),
                         ],
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            20,
-                            isCompact ? 18 : 20,
-                            20,
-                            0,
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (icon != null) ...[
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary.withValues(
-                                      alpha: 0.10,
-                                    ),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: Icon(
-                                    icon,
-                                    color: theme.colorScheme.primary,
-                                    size: 20,
-                                  ),
-                                ),
-                                const shad.Gap(12),
-                              ],
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      title,
-                                      style: theme.typography.h4.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                    if (description?.trim().isNotEmpty ??
-                                        false) ...[
-                                      const shad.Gap(6),
-                                      Text(
-                                        description!,
-                                        style: theme.typography.textSmall
-                                            .copyWith(
-                                              color: theme
-                                                  .colorScheme
-                                                  .mutedForeground,
-                                            ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
+                        if (scrollHeader)
+                          Flexible(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ...header,
+                                  Padding(padding: padding, child: child),
+                                ],
                               ),
-                              if (headerTrailing != null) ...[
-                                const shad.Gap(12),
-                                headerTrailing!,
-                              ],
-                            ],
-                          ),
-                        ),
-                        const shad.Gap(18),
-                        Flexible(child: body),
+                            ),
+                          )
+                        else ...[
+                          ...header,
+                          Flexible(child: body),
+                        ],
                         if (actions.isNotEmpty)
                           Container(
                             width: double.infinity,

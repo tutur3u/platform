@@ -1,13 +1,30 @@
 # Settings, ordering, Profile, and Calendar timezone behavior
 
-Settings reuses the existing theme (including system), language (system, English,
-Vietnamese), calendar, finance, navigation, and haptics sources. Personal timezone
-is persisted through authenticated Calendar settings. Workspace timezone appears beside personal timezone on the main Settings
-page and requires workspace settings permission; hiding an editor is not server authorization. The authenticated Calendar and Infrastructure API routes are a separate
-integration dependency. Permission checks clear immediately on account/workspace
+Settings has one Settings navigation destination. The previous App, Workspace,
+and You dock items are compact navigation rows on that screen. Preferences,
+General, and Support use quiet grouped surfaces and current-value summaries.
+Theme, language, first day, timezone, Finance visibility, haptics, and default
+Task board behavior open nested adaptive choice editors. Root rows do not contain
+switches and tapping, opening, canceling, dismissing, or returning from an editor
+never changes a preference. An explicit choice is required. Editors cancel on an
+account/workspace switch, including switching away and back before selecting.
+
+Settings reuses the existing preference sources. Workspace timezone remains next
+to personal timezone and requires workspace settings permission; hiding an editor
+is not server authorization. Loading, unknown, retry, and retained same-scope
+failure states remain visible. Permission checks clear immediately on scope
 changes, ignore stale responses, and revalidate on pull-to-refresh. Workspace
-admin pages keep their other controls; the old Preferences URL redirects to the
-main Settings page. Open-source licenses is directly accessible there.
+administration retains its guarded detail routes. You opens the existing Profile;
+Session, About, and the bundled license viewer remain reachable. Home/Apps and
+Profile's app-wide navigation stay in the existing shell. Workspace is now a
+Settings child, so its Back returns to Settings; deeper routes return to their
+parent. Existing URLs and the legacy Preferences redirect remain valid.
+
+This replaces the earlier decision to expose root switches. The default is a
+compact row with a concise label, muted summary, chevron, and at least a 48dp touch
+target; full explanations and options belong in the child. Rows grow with large
+text. Contextual Time Tracker, Mail, Meet, and Assistant editors remain in their
+owning app because their context and permission rules differ.
 
 Calendar resolves personal timezone, then workspace timezone, then device
 timezone. Stored event times remain UTC instants. Views explicitly project them
@@ -35,7 +52,31 @@ activity repository, render newest first, and retain existing destinations.
 Calendar timeline rows are explicitly workspace activity; they do not claim the
 signed-in user created the event.
 
-## Verification evidence
+## Compact Settings verification (2026-10-01)
+
+The compact stage mounts the real ShellPage, SettingsPage, workspace child and
+adaptive editors with synthetic authenticated scope and preference fixtures. The
+bounded serial focused run passes 69 tests across compact navigation, motion,
+workspace timezone permissions, actual timezone selection and shell Back. Focused
+analysis covers the changed runtime files and new harness. Dart formatting and
+`git diff --check` pass. Dependency metadata reuses the compatible existing mobile
+workspace without installing packages or creating a dependency tree.
+
+Coverage includes one Settings dock item; Workspace row and Back; root rows with
+no switches; explicit choices versus cancel/dismiss; account/workspace switches
+away and back; timezone loading/unknown/retry and permissions; legacy Preferences
+redirect; license Back; and 320×568 layouts at 1×/2× text including a 280px keyboard.
+The timezone editor opts into a scrolling heading in the existing dialog scaffold
+so its search and choices remain reachable at large text with the keyboard open.
+The default scaffold layout for other callers is unchanged.
+
+Rendered proof uses populated synthetic fixtures, the application themes and
+bundled/SDK fonts. It is widget-render evidence, not native/device or screen-reader
+proof. No customer preferences were written. Exact-head owning Mobile Analysis,
+test shards and native development build CI remain required; no local native build
+or full repository check ran for this compact stage.
+
+## Earlier verification evidence
 
 The timezone stage is local commit `74dc63166f`. Its required queued
 `bun check:mobile` passed 1,095 tests; the subsequently added actual timezone chooser
