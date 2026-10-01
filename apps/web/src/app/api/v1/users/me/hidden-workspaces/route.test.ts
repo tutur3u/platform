@@ -330,3 +330,72 @@ describe('owner-only Hidden preferences', () => {
     }
   );
 });
+
+it('owner GET scopes each preference store independently for two synthetic actors', async () => {
+  const actorA = '00000000-0000-4000-8000-000000000001';
+  const actorB = '00000000-0000-4000-8000-000000000002';
+  const otherMember = '00000000-0000-4000-8000-000000000012';
+  const otherGuest = '00000000-0000-4000-8000-000000000013';
+  const tables: Record<string, Record<string, string>[]> = {
+    user_workspace_configs: [
+      { user_id: actorA, ws_id: ws, id: 'HIDDEN_WORKSPACE', value: 'true' },
+      {
+        user_id: actorB,
+        ws_id: otherMember,
+        id: 'HIDDEN_WORKSPACE',
+        value: 'true',
+      },
+    ],
+    user_configs: [
+      { user_id: actorA, id: `HIDDEN_WORKSPACE:${guestWs}`, value: 'true' },
+      { user_id: actorB, id: `HIDDEN_WORKSPACE:${otherGuest}`, value: 'true' },
+    ],
+  };
+  f.from.mockImplementation((table: string) => {
+    const filters = new Map<string, string>();
+    let prefix = '';
+    const query = {
+      select: () => query,
+      eq: (key: string, value: string) => {
+        filters.set(key, value);
+        return query;
+      },
+      like: (_key: string, pattern: string) => {
+        prefix = pattern
+          .replace(/%$/, '')
+          .replaceAll(String.fromCharCode(92), '');
+        return query;
+      },
+      // biome-ignore lint/suspicious/noThenProperty: Supabase read builders are intentionally awaitable.
+      then: (
+        resolve: (result: {
+          data: Record<string, string>[];
+          error: null;
+        }) => unknown
+      ) =>
+        Promise.resolve(
+          resolve({
+            data: (tables[table] ?? []).filter(
+              (row) =>
+                [...filters].every(([key, value]) => row[key] === value) &&
+                (!prefix || row.id?.startsWith(prefix))
+            ),
+            error: null,
+          })
+        ),
+    };
+    return query;
+  });
+  for (const [actor, expected] of [
+    [actorA, [ws, guestWs]],
+    [actorB, [otherMember, otherGuest]],
+  ] as const) {
+    f.actor = actor;
+    const response = await GET(
+      new Request(`https://test/hidden?expectedActorId=${actor}`) as never
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(await response.json()).toEqual({ hiddenWorkspaceIds: expected });
+  }
+});

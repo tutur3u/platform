@@ -166,3 +166,18 @@ visible retained source workspace IDs and displays only their selected choices;
 it does not rewrite saved filters or change task aggregation when visibility changes.
 Both caches are removed when the actor provider unmounts. Git's Hidden audience
 is explicitly allowed without adding Git to unrelated current-user APIs.
+
+## Destination and verification follow-ups
+
+Infrastructure forms submit only a currently visible selected workspace; a stale
+Hidden default is cleared until a visible workspace is selected. Planner creation,
+save, destination addition and item creation wait for verified visible choices.
+An intended Hidden destination cannot silently turn a requested task into a draft.
+Meet chat and live assistant actions require a current visible destination and
+recheck it after awaited preparation. Existing running sessions retain their
+canonical authorization.
+
+Mira preserves its existing Personal fallback choice when the actor has no personal
+workspace; its existing resolver selects an authorized canonical fallback. A real
+personal workspace excluded by Hidden preferences is a different state and is
+omitted from the picker. No personal workspace is created by this UI rule.

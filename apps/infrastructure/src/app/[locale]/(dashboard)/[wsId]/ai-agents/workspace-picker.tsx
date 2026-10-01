@@ -70,16 +70,22 @@ export function WorkspacePicker({
       workspaceOptions.find((workspace) => workspace.id === selectedId) ?? null,
     [selectedId, workspaceOptions]
   );
-  const selectedLabel =
-    selectedWorkspace?.name || selectedId || t('workspace.select');
+  const selectedLabel = selectedWorkspace?.name || t('workspace.select');
 
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{t('fields.workspace_id')}</Label>
-      <Input id={id} name={name} readOnly type="hidden" value={selectedId} />
+      <Input
+        id={id}
+        name={name}
+        readOnly
+        type="hidden"
+        value={selectedWorkspace?.id ?? ''}
+      />
       <Popover onOpenChange={setOpen} open={open}>
         <PopoverTrigger asChild>
           <Button
+            aria-label={t('fields.workspace_id')}
             aria-expanded={open}
             className="h-10 w-full justify-between"
             role="combobox"

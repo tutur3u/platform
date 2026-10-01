@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { KanbanPlannerDialog } from '../kanban-planner-dialog';
 
 const mocks = vi.hoisted(() => ({
+  hidden: vi.fn(),
   addWorkspaceTaskPlanWorkspace: vi.fn(),
   createWorkspaceTaskPlan: vi.fn(),
   createWorkspaceTaskPlanItem: vi.fn(),
@@ -19,7 +20,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tuturuuu/internal-api/users', () => ({
-  getCurrentUserHiddenWorkspaces: async () => ({ hiddenWorkspaceIds: [] }),
+  getCurrentUserHiddenWorkspaces: mocks.hidden,
   updateCurrentUserHiddenWorkspace: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api/workspaces', () => ({
@@ -217,6 +218,7 @@ function renderPlanner() {
 describe('KanbanPlannerDialog', () => {
   beforeEach(() => {
     for (const mock of Object.values(mocks)) mock.mockReset();
+    mocks.hidden.mockResolvedValue({ hiddenWorkspaceIds: [] });
     mocks.listWorkspaces.mockResolvedValue([
       { id: 'ws-personal', name: 'Personal', personal: true },
       { id: 'team-ws', name: 'Team', personal: false },
@@ -386,5 +388,51 @@ describe('KanbanPlannerDialog', () => {
         })
       );
     });
+  });
+  it('disables workspace writes until private discovery settles', async () => {
+    let resolve!: (value: { hiddenWorkspaceIds: string[] }) => void;
+    mocks.hidden.mockReturnValue(
+      new Promise((r) => {
+        resolve = r;
+      })
+    );
+    mocks.listWorkspaceTaskPlans.mockResolvedValue({
+      ok: true,
+      schemaAvailable: true,
+      plans: [basePlan],
+    });
+    renderPlanner();
+    const create = screen.getByRole('button', { name: 'create_plan' });
+    expect(create).toBeDisabled();
+    await waitFor(() => expect(mocks.hidden).toHaveBeenCalled());
+    resolve({ hiddenWorkspaceIds: [] });
+    await waitFor(() => expect(create).toBeEnabled());
+    expect(mocks.createWorkspaceTaskPlan).not.toHaveBeenCalled();
+  });
+  it('blocks stale Hidden destinations instead of silently creating a draft', async () => {
+    mocks.hidden.mockResolvedValue({
+      hiddenWorkspaceIds: [basePlan.default_target_ws_id],
+    });
+    mocks.listWorkspaceTaskPlans.mockResolvedValue({
+      ok: true,
+      schemaAvailable: true,
+      plans: [basePlan],
+    });
+    renderPlanner();
+    await screen.findByRole('option', { name: 'Personal' });
+    fireEvent.change(
+      await screen.findByPlaceholderText('task_title_placeholder'),
+      {
+        target: { value: 'Synthetic task' },
+      }
+    );
+    expect(screen.getByRole('button', { name: 'create_plan' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'save_plan' })).toBeDisabled();
+    const taskAction = screen.getByRole('button', {
+      name: /create_task|create_draft/,
+    });
+    expect(taskAction).toBeDisabled();
+    fireEvent.click(taskAction);
+    expect(mocks.createWorkspaceTaskPlanItem).not.toHaveBeenCalled();
   });
 });

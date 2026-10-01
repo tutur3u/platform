@@ -107,6 +107,7 @@ function PlannerPlanBrowser({
 }
 
 interface PlannerCreatePlanPanelProps {
+  createDisabled?: boolean;
   createPending: boolean;
   mode: TaskPlanPeriod;
   onCreatePlan: () => void;
@@ -116,6 +117,7 @@ interface PlannerCreatePlanPanelProps {
 }
 
 export function PlannerCreatePlanPanel({
+  createDisabled = false,
   createPending,
   mode,
   onCreatePlan,
@@ -149,7 +151,7 @@ export function PlannerCreatePlanPanel({
       <Button
         type="button"
         onClick={onCreatePlan}
-        disabled={createPending}
+        disabled={createPending || createDisabled}
         size="sm"
         className="h-9 gap-2"
       >
@@ -165,6 +167,7 @@ export function PlannerCreatePlanPanel({
 }
 
 interface PlannerEditPlanPanelProps {
+  saveDisabled?: boolean;
   editMode: TaskPlanPeriod;
   editStatus: TaskPlanStatus;
   editTitle: string;
@@ -176,6 +179,7 @@ interface PlannerEditPlanPanelProps {
 }
 
 export function PlannerEditPlanPanel({
+  saveDisabled = false,
   editMode,
   editStatus,
   editTitle,
@@ -224,7 +228,7 @@ export function PlannerEditPlanPanel({
       <Button
         type="button"
         onClick={onSavePlan}
-        disabled={savePending}
+        disabled={savePending || saveDisabled}
         size="sm"
         className="h-9 gap-2"
       >

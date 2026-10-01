@@ -54,3 +54,23 @@ it('settled private discovery failure is an error rather than permanent loading'
   expect(result.current.error?.message).toBe('offline');
   expect(result.current.data).toBeUndefined();
 });
+
+it('distinguishes an absent personal workspace from one excluded by Hidden preferences', async () => {
+  mocks.list.mockResolvedValue([{ id: 'team', personal: false }]);
+  const { client, wrapper } = fixture();
+  const { result } = renderHook(() => useVisibleWorkspaces(), { wrapper });
+  await waitFor(() =>
+    expect(result.current.personalWorkspaceMissing).toBe(true)
+  );
+  mocks.list.mockResolvedValue([
+    { id: 'team', personal: false },
+    { id: 'personal', personal: true },
+  ]);
+  mocks.hidden.mockResolvedValue({ hiddenWorkspaceIds: ['personal'] });
+  await result.current.refetch();
+  await waitFor(() =>
+    expect(result.current.data).toEqual([{ id: 'team', personal: false }])
+  );
+  expect(result.current.personalWorkspaceMissing).toBe(false);
+  expect(client.getQueryData(['workspace-ui-list', 'A'])).toHaveLength(2);
+});

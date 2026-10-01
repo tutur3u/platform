@@ -50,7 +50,10 @@ afterAll(() => {
   vi.unstubAllGlobals();
 });
 
-function renderPicker(includeInternalWorkspace: boolean) {
+function renderPicker(
+  includeInternalWorkspace: boolean,
+  defaultValue?: string
+) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -62,6 +65,7 @@ function renderPicker(includeInternalWorkspace: boolean) {
       <WorkspaceVisibilityProvider actorId="synthetic-actor">
         <WorkspacePicker
           id="workspace-id"
+          defaultValue={defaultValue}
           includeInternalWorkspace={includeInternalWorkspace}
         />
       </WorkspaceVisibilityProvider>
@@ -132,11 +136,22 @@ describe('WorkspacePicker', () => {
     expect(onValueChange).toHaveBeenCalledWith('workspace-1');
   });
   it('does not reinsert Hidden root through the Internal option', async () => {
-    mocks.hiddenIds = [ROOT_WORKSPACE_ID, 'workspace-1'];
-    renderPicker(true);
+    mocks.hiddenIds = [ROOT_WORKSPACE_ID];
+    renderPicker(true, ROOT_WORKSPACE_ID);
     fireEvent.click(screen.getByRole('combobox'));
-    await waitFor(() => expect(mocks.listWorkspaces).toHaveBeenCalled());
+    await screen.findByText('Team workspace');
     expect(screen.queryByText('Internal')).not.toBeInTheDocument();
-    expect(screen.queryByText('Team workspace')).not.toBeInTheDocument();
+    expect(
+      document.querySelector<HTMLInputElement>('input[name="workspaceId"]')
+        ?.value
+    ).toBe('');
+    expect(
+      screen.getByRole('combobox', { name: 'fields.workspace_id' }).textContent
+    ).toContain('workspace.select');
+    fireEvent.click(screen.getByText('Team workspace'));
+    expect(
+      document.querySelector<HTMLInputElement>('input[name="workspaceId"]')
+        ?.value
+    ).toBe('workspace-1');
   });
 });

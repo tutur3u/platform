@@ -76,7 +76,11 @@ export function MiraWorkspaceContextSelector({ wsId }: { wsId: string }) {
     };
   }, [wsId, storageKey]);
 
-  const { data: workspaces, isLoading } = useVisibleWorkspaces();
+  const {
+    data: workspaces,
+    isLoading,
+    personalWorkspaceMissing,
+  } = useVisibleWorkspaces();
 
   const selectContext = useCallback(
     (newContextId: string) => {
@@ -135,7 +139,7 @@ export function MiraWorkspaceContextSelector({ wsId }: { wsId: string }) {
           <CommandInput placeholder={t('workspace_context_search')} />
           <CommandEmpty>{t('workspace_context_unknown')}</CommandEmpty>
           <CommandList className="max-h-56">
-            {personalWorkspace && (
+            {(personalWorkspace || personalWorkspaceMissing) && (
               <CommandGroup heading={t('workspace_context_personal')}>
                 <CommandItem
                   value={`${personalLabel} personal`}

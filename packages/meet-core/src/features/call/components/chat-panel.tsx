@@ -28,7 +28,10 @@ import { useEffect, useRef, useState } from 'react';
 import { isMeetAssistant } from '../lib/assistant-identity';
 import type { CallChatMessage } from '../lib/call-state';
 import { AssistantPrivateReview } from './assistant-private-review';
-import { AssistantWorkspacePicker } from './assistant-workspace-picker';
+import {
+  AssistantWorkspacePicker,
+  useAssistantWorkspaceSelection,
+} from './assistant-workspace-picker';
 import { ChatMessageBody } from './chat-message-body';
 import { MiraAvatar, MiraProfile } from './mira-profile';
 
@@ -114,6 +117,12 @@ export function ChatPanel({
   });
   const [assistantWorkspace, setAssistantWorkspace] =
     useState<string>('personal');
+  const assistantScope = useAssistantWorkspaceSelection(
+    assistantWorkspace,
+    selfUserId
+  );
+  const currentAssistantScope = useRef(assistantScope);
+  currentAssistantScope.current = assistantScope;
   const [draft, setDraft] = useState(''),
     [files, setFiles] = useState<File[]>([]),
     [busy, setBusy] = useState(false),
@@ -153,7 +162,13 @@ export function ChatPanel({
     if (newest) bottom.current?.scrollIntoView({ behavior: 'smooth' });
   }, [newest]);
   const submit = async () => {
-    if (busy || (!draft.trim() && !files.length)) return;
+    if (
+      busy ||
+      (!draft.trim() && !files.length) ||
+      (hasMeetAssistantMention(draft) && !assistantScope.allowed)
+    )
+      return;
+    const requestedScope = assistantScope;
     setBusy(true);
     try {
       const attachments = [];
@@ -181,6 +196,14 @@ export function ChatPanel({
       if (hasMeetAssistantMention(body)) {
         setThinking(true);
         try {
+          const current = currentAssistantScope.current;
+          if (
+            !current.allowed ||
+            current.value !== requestedScope.value ||
+            current.actor !== requestedScope.actor
+          )
+            throw new Error('Assistant workspace choice changed');
+          current.actor!.assertActive();
           await askMeetAssistant(
             meetingId,
             sent.id,
@@ -442,7 +465,11 @@ export function ChatPanel({
           <Button
             type="submit"
             size="icon"
-            disabled={busy || (!draft.trim() && !files.length)}
+            disabled={
+              busy ||
+              (!draft.trim() && !files.length) ||
+              (hasMeetAssistantMention(draft) && !assistantScope.allowed)
+            }
             aria-label={t('send')}
           >
             {busy ? (

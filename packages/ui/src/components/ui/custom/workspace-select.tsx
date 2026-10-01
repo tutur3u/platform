@@ -60,6 +60,7 @@ import {
   buildWorkspaceSetupHandoffUrl,
   mergeWorkspaceSelectWorkspaces,
   normalizeWorkspaceSwitchPath,
+  resolveGuestWorkspaceLanding,
   resolveWorkspaceAvatarUrl,
 } from './workspace-select-helpers';
 import { WorkspaceIcon } from './workspace-select-icon';
@@ -296,10 +297,7 @@ export function WorkspaceSelect({
     const nextSlug = toWorkspaceSlug(selected.id, {
       personal: selected.personal,
     });
-    const guestLanding =
-      selected.access_type === 'guest'
-        ? selected.guest_landing_path || '/tasks/boards'
-        : null;
+    const guestLanding = resolveGuestWorkspaceLanding(selected);
     let nextPath = guestLanding
       ? `/${nextSlug}${guestLanding}`
       : pathname

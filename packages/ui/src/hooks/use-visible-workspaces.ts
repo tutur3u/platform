@@ -39,6 +39,10 @@ export function useVisibleWorkspaces(
     : undefined;
   return {
     ...query,
+    personalWorkspaceMissing:
+      visibility.known &&
+      query.data !== undefined &&
+      !query.data.some((workspace) => workspace.personal),
     data,
     isLoading: query.isLoading || (!visibility.known && !visibility.isError),
     isError: query.isError || visibility.isError,

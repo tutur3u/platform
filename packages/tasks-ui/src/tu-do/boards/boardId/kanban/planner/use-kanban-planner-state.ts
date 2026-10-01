@@ -78,7 +78,7 @@ export function useKanbanPlannerState({
   const targetWorkspace = workspacesQuery.data?.find(
     (workspace) => workspace.id === targetWorkspaceId
   );
-  const boards = boardsQuery.data?.boards ?? [];
+  const boards = targetWorkspace ? (boardsQuery.data?.boards ?? []) : [];
   const targetBoard = boards.find((board) => board.id === targetBoardId);
   const lists = targetBoard?.task_lists ?? [];
   const intendedWorkspaceIds = new Set(
@@ -165,7 +165,8 @@ export function useKanbanPlannerState({
   });
   const createItemMutation = useMutation({
     mutationFn: () => {
-      if (!selectedPlan || !taskTitle.trim()) throw new Error('Missing task');
+      if (!selectedPlan || !taskTitle.trim() || !targetWorkspace)
+        throw new Error('Missing task or visible workspace');
       const createSource = Boolean(
         targetWorkspace && targetIsIntended && targetListId
       );
@@ -195,6 +196,8 @@ export function useKanbanPlannerState({
 
   return {
     addWorkspaceMutation,
+    workspaceActionsDisabled:
+      !targetWorkspace || workspacesQuery.isLoading || workspacesQuery.isError,
     boards,
     createItemMutation,
     createPlanMutation,

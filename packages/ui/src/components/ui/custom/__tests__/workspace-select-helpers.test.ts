@@ -6,6 +6,7 @@ import {
   buildWorkspaceSetupHandoffUrl,
   mergeWorkspaceSelectWorkspaces,
   normalizeWorkspaceSwitchPath,
+  resolveGuestWorkspaceLanding,
   resolveWorkspaceAvatarUrl,
 } from '../workspace-select-helpers';
 
@@ -161,4 +162,27 @@ describe('normalizeWorkspaceSwitchPath', () => {
       )
     ).toBe('/workspace-1/users');
   });
+});
+
+it.each([null, ''])(
+  'preserves the boards fallback for a guest without a landing path (%s)',
+  (guest_landing_path) => {
+    expect(
+      resolveGuestWorkspaceLanding({ access_type: 'guest', guest_landing_path })
+    ).toBe('/tasks/boards');
+  }
+);
+it('preserves explicit guest landing while members retain normal path resolution', () => {
+  expect(
+    resolveGuestWorkspaceLanding({
+      access_type: 'guest',
+      guest_landing_path: '/tasks/boards/shared-board',
+    })
+  ).toBe('/tasks/boards/shared-board');
+  expect(
+    resolveGuestWorkspaceLanding({
+      access_type: 'member',
+      guest_landing_path: null,
+    })
+  ).toBeNull();
 });
