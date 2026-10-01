@@ -40,8 +40,9 @@ jobs:
           test "$(docker info --format '{{.CgroupDriver}}')" = systemd
           test -z "$(docker ps -aq)"
           test -z "$(docker volume ls -q)"
+          command -v bpftool
           sudo mkdir -p /etc/systemd/system/tuturuuu-typegen.slice.d
-          printf '[Slice]\nCPUQuota=200%%\nMemoryMax=6G\nMemorySwapMax=0\n' | sudo tee /etc/systemd/system/tuturuuu-typegen.slice.d/limits.conf >/dev/null
+          printf '[Slice]\nCPUQuota=200%%\nMemoryMax=6G\nMemorySwapMax=0\nIPAddressDeny=any\nIPAddressAllow=localhost 172.28.0.0/16\n' | sudo tee /etc/systemd/system/tuturuuu-typegen.slice.d/limits.conf >/dev/null
           sudo systemctl daemon-reload
           sudo systemctl start tuturuuu-typegen.slice
           sudo python3 - <<'PYCONFIG'
@@ -49,10 +50,24 @@ jobs:
           from pathlib import Path
           p = Path('/etc/docker/daemon.json')
           config = json.loads(p.read_text()) if p.exists() else {}
-          config.update({'cgroup-parent': 'tuturuuu-typegen.slice', 'log-driver': 'json-file', 'log-opts': {'max-size': '20m', 'max-file': '1'}})
+          config.update({'cgroup-parent': 'tuturuuu-typegen.slice', 'default-address-pools': [{'base': '172.28.0.0/16', 'size': 24}], 'dns': ['127.0.0.1'], 'ipv6': False, 'log-driver': 'json-file', 'log-opts': {'max-size': '20m', 'max-file': '1'}})
           p.write_text(json.dumps(config))
           PYCONFIG
           sudo systemctl restart docker
+          for firewall in iptables ip6tables; do
+            command -v "$firewall"
+            if ! sudo "$firewall" -S DOCKER-USER >/dev/null 2>&1; then
+              sudo "$firewall" -N DOCKER-USER
+            fi
+            sudo "$firewall" -N TTR-TYPEGEN-EGRESS
+            sudo "$firewall" -A TTR-TYPEGEN-EGRESS -i br+ -o br+ -m physdev --physdev-is-bridged -j RETURN
+            sudo "$firewall" -A TTR-TYPEGEN-EGRESS -i br+ -j DROP
+            sudo "$firewall" -A TTR-TYPEGEN-EGRESS -i docker0 -o docker0 -j RETURN
+            sudo "$firewall" -A TTR-TYPEGEN-EGRESS -i docker0 -j DROP
+            sudo "$firewall" -A TTR-TYPEGEN-EGRESS -j RETURN
+            sudo "$firewall" -I DOCKER-USER 1 -j TTR-TYPEGEN-EGRESS
+            sudo "$firewall" -I FORWARD 1 -j TTR-TYPEGEN-EGRESS
+          done
           test "$(docker info --format '{{.CgroupDriver}}')" = systemd
           test "$(systemctl show tuturuuu-typegen.slice -p MemoryMax --value)" = 6442450944
           test "$(systemctl show tuturuuu-typegen.slice -p MemorySwapMax --value)" = 0

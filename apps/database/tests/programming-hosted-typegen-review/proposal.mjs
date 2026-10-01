@@ -1,10 +1,12 @@
-import { execFileSync, spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   copyFileSync,
   existsSync,
   mkdirSync,
   readFileSync,
+  renameSync,
+  rmSync,
   statfsSync,
   writeFileSync,
 } from 'node:fs';
@@ -16,8 +18,19 @@ import {
   deriveIsolatedIdentity,
   isPortAvailable,
   readLifecycleMetadata,
+  removeDisposableRoot,
   stageDisposableProject,
 } from '../../scripts/run-supabase-isolated.js';
+import {
+  APPROVED_TYPEGEN_OUTPUT,
+  validateTypegenOutputPath,
+} from '../../scripts/run-supabase-isolated-typegen.js';
+import { verifyNetworkPolicy } from './network-policy.mjs';
+import { runOwnedProcess } from './process-group.mjs';
+
+export function typegenOutputForRepository(repositoryRoot) {
+  return validateTypegenOutputPath(repositoryRoot, APPROVED_TYPEGEN_OUTPUT);
+}
 
 export const limits = Object.freeze({
   executionMs: 25 * 60_000,
@@ -69,20 +82,28 @@ function freeBytes() {
   return disk.bavail * disk.bsize;
 }
 function names(kind) {
-  return command(
-    'docker',
-    kind === 'container'
-      ? ['ps', '-a', '--format', '{{.Names}}']
-      : ['volume', 'ls', '--format', '{{.Name}}']
-  )
-    .split('\n')
-    .filter(Boolean);
+  const args = {
+    container: ['ps', '-a', '--format', '{{.Names}}'],
+    volume: ['volume', 'ls', '--format', '{{.Name}}'],
+    network: ['network', 'ls', '--format', '{{.Name}}'],
+  }[kind];
+  if (!args) throw new Error('Unknown inventory kind');
+  return command('docker', args).split('\n').filter(Boolean);
 }
+
 function readState() {
   return JSON.parse(readFileSync(statePath, 'utf8'));
 }
 function saveState(state) {
-  writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`);
+  const temporary = `${statePath}.${randomUUID()}.tmp`;
+  try {
+    writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`, {
+      flag: 'wx',
+    });
+    renameSync(temporary, statePath);
+  } finally {
+    rmSync(temporary, { force: true });
+  }
 }
 function assertHosted() {
   if (
@@ -113,6 +134,10 @@ async function prepare() {
     throw new Error('Refusing existing lifecycle state');
   if (names('container').length || names('volume').length)
     throw new Error('Requires empty dedicated Docker runner');
+  if (
+    names('network').some((name) => !['bridge', 'host', 'none'].includes(name))
+  )
+    throw new Error('Requires runner without custom Docker networks');
   const free = freeBytes();
   assertDisk(free, free);
   const binary = process.env.SUPABASE_CLI_BINARY_OVERRIDE;
@@ -132,142 +157,187 @@ async function prepare() {
     ),
   });
   const block = await chooseAvailablePortBlock(identity);
-  const metadata = await stageDisposableProject({
-    basePort: block.basePort,
-    headSha,
-    projectId: identity.projectId,
-    repositoryRoot: repo,
-    typegenOutput: path.join(repo, 'packages/types/src/supabase.ts'),
-  });
-  mkdirSync(output, { recursive: true });
-  saveState({
-    metadata,
+  const fields = {
     cliVersion,
     services,
     limits,
     initialFreeBytes: free,
     minimumFreeBytesObserved: free,
     migrationFingerprint: migrationFingerprint(),
+    network: verifyNetworkPolicy(),
     images: {},
     runSucceeded: false,
     cleanupVerified: false,
-  });
+  };
+  mkdirSync(output, { recursive: true });
+  await stageAndRecord(
+    {
+      basePort: block.basePort,
+      headSha,
+      projectId: identity.projectId,
+      repositoryRoot: repo,
+      typegenOutput: typegenOutputForRepository(repo),
+    },
+    fields
+  );
 }
-async function run() {
-  assertHosted();
-  const state = readState();
-  const metadata = await readLifecycleMetadata(state.metadata.disposableRoot);
+export async function stageAndRecord(
+  options,
+  fields,
+  {
+    stage = stageDisposableProject,
+    record = saveState,
+    remove = removeDisposableRoot,
+  } = {}
+) {
+  let metadata;
+  try {
+    metadata = await stage(options);
+    // No fingerprint/provenance work or directory creation after staging and
+    // before this ownership write. A failed write removes this exact root.
+    const state = { ...fields, metadata };
+    record(state);
+    return state;
+  } catch (error) {
+    if (metadata) {
+      try {
+        await remove(metadata.disposableRoot);
+      } catch (cleanupError) {
+        throw new AggregateError(
+          [error, cleanupError],
+          `Prepare failed; scoped recovery metadata remains at ${metadata.disposableRoot}`
+        );
+      }
+    }
+    throw error;
+  }
+}
+function assertMetadata(state, metadata, repositoryRoot = repo) {
   if (
     metadata.projectId !== state.metadata.projectId ||
-    metadata.repositoryRoot !== repo
-  )
+    metadata.disposableRoot !== state.metadata.disposableRoot ||
+    metadata.repositoryRoot !== repositoryRoot ||
+    metadata.headSha !== state.metadata.headSha
+  ) {
     throw new Error('Lifecycle identity changed');
-  const child = spawn(
+  }
+}
+export async function resumeRecordedProject(
+  state,
+  {
+    read = readLifecycleMetadata,
+    runner = runOwnedProcess,
+    onTick,
+    repositoryRoot = repo,
+  } = {}
+) {
+  const metadata = await read(state.metadata.disposableRoot);
+  assertMetadata(state, metadata, repositoryRoot);
+  validateTypegenOutputPath(repositoryRoot, metadata.typegenOutput);
+  if (metadata.typegenOutput !== APPROVED_TYPEGEN_OUTPUT)
+    throw new Error('Typegen output contract mismatch');
+  await runner(
     process.execPath,
     [helper, '--resume', metadata.disposableRoot],
     {
-      detached: true,
-      stdio: 'ignore',
-      env: process.env,
+      timeoutMs: limits.executionMs,
+      onTick,
     }
   );
-  let failure = null;
-  const abort = (reason) => {
-    failure ??= reason;
-    try {
-      process.kill(-child.pid, 'SIGKILL');
-    } catch {
-      /* Already exited. */
-    }
-  };
-  const onSignal = () => abort(new Error('Hosted execution interrupted'));
-  process.once('SIGTERM', onSignal);
-  process.once('SIGINT', onSignal);
-  const deadline = setTimeout(
-    () => abort(new Error('Hosted execution time budget exceeded')),
-    limits.executionMs
-  );
-  const monitor = setInterval(() => {
-    try {
-      const free = freeBytes();
-      state.minimumFreeBytesObserved = Math.min(
-        state.minimumFreeBytesObserved,
-        free
-      );
-      assertDisk(state.initialFreeBytes, free);
-      const owned = ownedNames(names('container'), metadata.projectId);
-      if (owned.length > 32)
-        throw new Error('Disposable service count budget exceeded');
-      if (owned.length) {
-        let inspected = [];
-        try {
-          inspected = JSON.parse(command('docker', ['inspect', ...owned]));
-        } catch (error) {
-          // The supported helper removes containers during successful cleanup.
-          if (ownedNames(names('container'), metadata.projectId).length)
-            throw error;
-        }
-        for (const inspect of inspected) {
-          if (inspect.HostConfig.CgroupParent !== 'tuturuuu-typegen.slice')
-            throw new Error(
-              'Owned container escaped aggregate resource cgroup'
-            );
-          state.images[inspect.Name.replace(/^\//, '')] = inspect.Image;
-        }
-      }
-      saveState(state);
-    } catch (error) {
-      abort(error);
-    }
-  }, 2000);
-  const code = await new Promise((resolve, reject) => {
-    child.once('error', reject);
-    child.once('exit', resolve);
-  }).finally(() => {
-    clearTimeout(deadline);
-    clearInterval(monitor);
-    process.off('SIGTERM', onSignal);
-    process.off('SIGINT', onSignal);
-  });
-  state.runSucceeded = code === 0 && !failure;
-  saveState(state);
-  if (!state.runSucceeded)
-    throw failure ?? new Error('Isolated lifecycle failed');
 }
+
+async function run() {
+  assertHosted();
+  const state = readState();
+  verifyNetworkPolicy(); // Fail closed before the CLI can start/apply SQL.
+  try {
+    await resumeRecordedProject(state, {
+      onTick: () => {
+        const free = freeBytes();
+        state.minimumFreeBytesObserved = Math.min(
+          state.minimumFreeBytesObserved,
+          free
+        );
+        assertDisk(state.initialFreeBytes, free);
+        const owned = ownedNames(names('container'), state.metadata.projectId);
+        if (owned.length > 32)
+          throw new Error('Disposable service count budget exceeded');
+        if (owned.length) {
+          let inspected = [];
+          try {
+            inspected = JSON.parse(command('docker', ['inspect', ...owned]));
+          } catch (error) {
+            // The supported helper removes containers during successful cleanup.
+            if (ownedNames(names('container'), state.metadata.projectId).length)
+              throw error;
+          }
+          for (const inspect of inspected) {
+            if (inspect.HostConfig.CgroupParent !== 'tuturuuu-typegen.slice')
+              throw new Error(
+                'Owned container escaped aggregate resource cgroup'
+              );
+            state.images[inspect.Name.replace(/^\//, '')] = inspect.Image;
+          }
+        }
+        saveState(state);
+      },
+    });
+    state.runSucceeded = true;
+  } catch (error) {
+    state.runSucceeded = false;
+    saveState(state);
+    throw error;
+  }
+  saveState(state);
+}
+
 async function cleanup() {
   assertHosted();
   if (!existsSync(statePath)) return;
-  const state = readState();
-  if (existsSync(state.metadata.disposableRoot)) {
-    const metadata = await readLifecycleMetadata(state.metadata.disposableRoot);
-    if (
-      metadata.projectId !== state.metadata.projectId ||
-      metadata.repositoryRoot !== repo
-    )
-      throw new Error('Cleanup identity changed');
-    command(
+  await cleanupRecordedProject(readState());
+}
+export async function cleanupRecordedProject(
+  state,
+  {
+    exists = existsSync,
+    read = readLifecycleMetadata,
+    runner = runOwnedProcess,
+    inventory = names,
+    portAvailable = isPortAvailable,
+    record = saveState,
+    repositoryRoot = repo,
+  } = {}
+) {
+  if (exists(state.metadata.disposableRoot)) {
+    const metadata = await read(state.metadata.disposableRoot);
+    assertMetadata(state, metadata, repositoryRoot);
+    await runner(
       process.execPath,
       [helper, '--cleanup', metadata.disposableRoot],
-      limits.cleanupMs
+      {
+        timeoutMs: limits.cleanupMs,
+      }
     );
   }
   if (
-    ownedNames(names('container'), state.metadata.projectId).length ||
-    ownedNames(names('volume'), state.metadata.projectId).length ||
-    existsSync(state.metadata.disposableRoot)
+    ownedNames(inventory('container'), state.metadata.projectId).length ||
+    ownedNames(inventory('volume'), state.metadata.projectId).length ||
+    ownedNames(inventory('network'), state.metadata.projectId).length ||
+    exists(state.metadata.disposableRoot)
   ) {
     throw new Error('Owned disposable resources remain');
   }
   const portsClosed = await Promise.all(
     Array.from({ length: 8 }, (_, index) =>
-      isPortAvailable(state.metadata.basePort + index)
+      portAvailable(state.metadata.basePort + index)
     )
   );
   if (!portsClosed.every(Boolean))
     throw new Error('Disposable port block remains occupied');
   state.cleanupVerified = true;
-  saveState(state);
+  record(state);
 }
+
 function artifact() {
   assertHosted();
   const state = readState();
@@ -296,6 +366,7 @@ function artifact() {
         projectId: state.metadata.projectId,
         cliVersion: state.cliVersion,
         services: state.services,
+        network: state.network,
         images: state.images,
         migrationFingerprint: state.migrationFingerprint,
         typesSha256: hash(types),
