@@ -13,6 +13,8 @@ on:
         type: boolean
 permissions:
   contents: read
+env:
+  FLUTTER_SUPPRESS_ANALYTICS: "true"
 concurrency:
   group: inventory-native-journal-proof
   cancel-in-progress: false
@@ -119,8 +121,8 @@ jobs:
           set -euo pipefail
           node tools/inventory-native-journal-fixture/prepare.mjs ios "$RUNNER_TEMP/journal-fixture" --runtime-preflight
           xcrun simctl list --json > "$RUNNER_TEMP/journal-fixture/simulator-catalog.json"
-          DEVICE_TYPE=$(node -e 'const c=require(process.env.RUNNER_TEMP+"/journal-fixture/simulator-catalog.json");const d=c.devicetypes.find(d=>d.name.startsWith("iPhone"));if(!d)process.exit(1);process.stdout.write(d.identifier)')
           RUNTIME=$(node -e 'const c=require(process.env.RUNNER_TEMP+"/journal-fixture/simulator-catalog.json");const r=c.runtimes.filter(r=>r.isAvailable&&r.identifier.includes("iOS")).sort((a,b)=>b.version.localeCompare(a.version,undefined,{numeric:true}))[0];if(!r)process.exit(1);process.stdout.write(r.identifier)')
+          DEVICE_TYPE=$(SELECTED_RUNTIME="$RUNTIME" node -e 'const c=require(process.env.RUNNER_TEMP+"/journal-fixture/simulator-catalog.json");const d=c.devices[process.env.SELECTED_RUNTIME]?.find(d=>d.isAvailable&&d.deviceTypeIdentifier?.includes("iPhone"));if(!d)process.exit(1);process.stdout.write(d.deviceTypeIdentifier)')
           DEVICE=$(xcrun simctl create journal-proof "$DEVICE_TYPE" "$RUNTIME")
           trap 'xcrun simctl shutdown "$DEVICE" || true; xcrun simctl delete "$DEVICE" || true' EXIT
           xcrun simctl boot "$DEVICE"

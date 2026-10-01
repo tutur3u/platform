@@ -37,7 +37,8 @@ cleaned on M4.
 
 iOS: a separate macOS GitHub runner, maximum 40-minute job; one debug simulator
 build with CocoaPods, no signing/store credentials. A disposable iPhone simulator
-uses an actually available iOS runtime selected from `simctl` JSON. It is booted,
+uses an actually available iOS runtime and a compatible existing iPhone device
+type selected from `simctl` JSON; only a new disposable device is installed. It is booted,
 installed once, terminated/relaunched between phases, then shut down/deleted after
 evidence is collected. No production bundle or device is installed. The runtime
 step is bounded to 12min. Android and iOS reports are separately named; neither
