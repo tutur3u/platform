@@ -175,5 +175,51 @@
     "No installed-device QA or native builds.",
     "Mounted shell uses this branch base; separate navbar #5701 is not imported. At 3x text the content is scrollable; captures are the actual visible viewport.",
     "Snapshot has no server pagination cursor; no fabricated history."
-  ]
+  ],
+  "historicalSourceSnapshot": "3c6dee418f484118c582e83dce022176f6183018",
+  "ciFixtureRepair": {
+    "previousHead": "3c6dee418f484118c582e83dce022176f6183018",
+    "failedJob": "https://github.com/tutur3u/platform/actions/runs/36831852534/job/110273766857",
+    "reproduction": {
+      "defaultFont": true,
+      "passed": 0,
+      "failed": 1,
+      "assertion": "60 min tracked missing at 3x; reproduced same CI assertion."
+    },
+    "cause": "Fixed 500-pixel Overview scroll depended on optional capture font; default widget-test font left the lazy activity section unmounted. Offset reset alone also did not reverse hiding shell chrome.",
+    "correction": "Scroll until actual ProfileActivitySection is visible, wait bounded for fetched value with assertion retained, reverse user scrolling before resetting offset and tapping real navbar target.",
+    "validation": {
+      "defaultFont": {
+        "passed": 9,
+        "failed": 0
+      },
+      "captureFont": {
+        "passed": 3,
+        "failed": 0
+      },
+      "analysis": "Changed fixture clean",
+      "fifo": true,
+      "noPub": true,
+      "concurrency": 1,
+      "fullGate": "Not run; parent owns exact-head CI and remaining full mobile gates."
+    },
+    "commands": [
+      "flutter analyze --no-pub test/features/profile/view/profile_overview_shell_test.dart",
+      "flutter test --no-pub --concurrency=1 test/features/profile/view/profile_overview_shell_test.dart (PROFILE_MATERIAL_FONT and capture output overrides unset)",
+      "flutter test --no-pub --concurrency=1 --plain-name 'authenticated Profile' test/features/profile/view/profile_overview_shell_test.dart (cached Roboto loaded via PROFILE_MATERIAL_FONT)"
+    ],
+    "sourceSha256": {
+      "apps/mobile/test/features/profile/view/profile_overview_shell_test.dart": "aa016282014a76991d6f78f2f70be01a90b0ce6c2ce983a767f34477218c4d24",
+      "apps/docs/platform/features/mobile-workspace-tools.mdx": "7e163e4f34ba19962d625a7606bc0c688f8d38d5c5ae9f95a2bc0a3a7a99a83a"
+    },
+    "logSha256": {
+      "/tmp/timeline-5706-ci-failure.log": "89b8b595dd7194533ce83813011f12b238962f99699f0bf1ad57a4888e729440",
+      "/tmp/timeline-ci-reproduce.log": "28e9afc0087c7bc7b5698f0f2ae38d00e59baa7025141e22921ba16c86d750a3",
+      "/tmp/timeline-ci-fixture-analysis.log": "bc32fc1954bc824aa60c1f2d36c1c157d2ce166151fe8806a08ab0268c941217",
+      "/tmp/timeline-ci-fixture-default.log": "2d53fb4f4d251d71df2e8bf6eda4e70c653fd4acc128d87aafc4de84fedf4641",
+      "/tmp/timeline-ci-fixture-roboto.log": "a850c8fa461325b422acb8f58b6cdc8028983fcfa52f7dd1f74fe1fe5fc01100"
+    },
+    "noRuntimeChanges": true,
+    "noScreenshotRegeneration": true
+  }
 }

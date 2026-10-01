@@ -27,6 +27,7 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/profile/view/profile_activity_section.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
 import 'package:mobile/features/profile/view/profile_timeline_section.dart';
@@ -357,37 +358,47 @@ void main() {
           });
           await _pump(tester);
           expect(find.text('Synthetic Person'), findsOneWidget);
-          if (scale == 3) {
-            // The enlarged identity card places statistics below the viewport.
-            await tester.drag(
-              find
-                  .descendant(
-                    of: find.byType(ProfileOverviewPage),
-                    matching: find.byType(ListView),
-                  )
-                  .first,
-              const Offset(0, -500),
-            );
-            await _pump(tester);
+          final overviewScroll = find.descendant(
+            of: find
+                .descendant(
+                  of: find.byType(ProfileOverviewPage),
+                  matching: find.byType(ListView),
+                )
+                .first,
+            matching: find.byType(Scrollable),
+          );
+          // The default test font and capture font have different heights.
+          // Mount the lazy activity section by its actual position, not pixels.
+          await tester.scrollUntilVisible(
+            find.byType(ProfileActivitySection),
+            200,
+            scrollable: overviewScroll.first,
+            maxScrolls: 15,
+          );
+          for (
+            var attempt = 0;
+            attempt < 60 && find.text('60 min tracked').evaluate().isEmpty;
+            attempt++
+          ) {
             await tester.runAsync(() async {
-              await Future<void>.delayed(const Duration(milliseconds: 300));
+              await Future<void>.delayed(const Duration(milliseconds: 50));
             });
-            await _pump(tester);
+            await tester.pump(const Duration(milliseconds: 50));
           }
-          expect(find.text('60 min tracked'), findsOneWidget);
-          if (scale == 3) {
-            // Return the scrolling shell header to its real pointer target.
-            await tester.drag(
-              find
-                  .descendant(
-                    of: find.byType(ProfileOverviewPage),
-                    matching: find.byType(ListView),
-                  )
-                  .first,
-              const Offset(0, 700),
-            );
-            await _pump(tester);
-          }
+          expect(
+            find.text('60 min tracked'),
+            findsOneWidget,
+            reason: 'Mounted activity must render the fetched value: $requests',
+          );
+          // Reverse user scrolling to reveal the shell's hiding header;
+          // jumpTo alone changes offset without reversing its chrome state.
+          await tester.drag(overviewScroll.first, const Offset(0, 200));
+          await _pump(tester);
+          tester
+              .state<ScrollableState>(overviewScroll.first)
+              .position
+              .jumpTo(0);
+          await _pump(tester);
           Future<void> verifyAndCapture(String view) async {
             final selector = find.byKey(const ValueKey('profile-views'));
             expect(selector, findsOneWidget);
