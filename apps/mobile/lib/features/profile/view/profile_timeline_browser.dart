@@ -15,12 +15,15 @@ DateTime profileTimelineDay(DateTime instant, TimelineDateConverter convert) {
   return DateTime(local.year, local.month, local.day);
 }
 
+enum ProfileTimelineAvailability { complete, partial, unavailable }
+
 class ProfileTimelineBrowser extends StatefulWidget {
   const ProfileTimelineBrowser({
     required this.items,
     required this.onOpen,
     this.loading = false,
     this.refreshing = false,
+    this.availability = ProfileTimelineAvailability.complete,
     this.now,
     this.convertDate,
     this.pageSize = 5,
@@ -31,6 +34,7 @@ class ProfileTimelineBrowser extends StatefulWidget {
   final ValueChanged<ProfileTimelineItem> onOpen;
   final bool loading;
   final bool refreshing;
+  final ProfileTimelineAvailability availability;
   final DateTime? now;
   final TimelineDateConverter? convertDate;
   final int pageSize;
@@ -230,11 +234,16 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
                         padding: const EdgeInsets.all(16),
                         child: Semantics(
                           liveRegion: true,
-                          child: Text(
-                            _dates
-                                ? context.l10n.profileTimelineDayEmpty
-                                : context.l10n.profileTimelineEmpty,
-                          ),
+                          child: Text(switch (widget.availability) {
+                            ProfileTimelineAvailability.unavailable =>
+                              context.l10n.profileTimelineUnavailable,
+                            ProfileTimelineAvailability.partial =>
+                              context.l10n.profileTimelinePartial,
+                            ProfileTimelineAvailability.complete =>
+                              _dates
+                                  ? context.l10n.profileTimelineDayEmpty
+                                  : context.l10n.profileTimelineEmpty,
+                          }),
                         ),
                       ),
                     for (final entry in entries)

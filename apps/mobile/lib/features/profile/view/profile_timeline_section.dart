@@ -196,6 +196,11 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
             items: items ?? const [],
             loading: items == null && !_failed,
             refreshing: _refreshing,
+            availability: _failed || items == null
+                ? ProfileTimelineAvailability.unavailable
+                : _partial || _limited
+                ? ProfileTimelineAvailability.partial
+                : ProfileTimelineAvailability.complete,
             onOpen: _open,
           ),
         ],

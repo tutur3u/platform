@@ -247,4 +247,56 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+  testWidgets(
+    'failed cold fetch never claims empty activity; retry can confirm empty',
+    (tester) async {
+      await mount(tester);
+      repository.requests.single.completeError(Exception('Offline'));
+      await tester.pumpAndSettle();
+      expect(find.text('No recent activity in this workspace'), findsNothing);
+      expect(find.text('Activity could not be refreshed.'), findsWidgets);
+      await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+      await tester.pumpAndSettle();
+      expect(find.text('No activity was returned for this day.'), findsNothing);
+      await tester.tap(find.text('Retry'));
+      await tester.pump();
+      repository.requests.last.complete((
+        items: <ProfileTimelineItem>[],
+        partial: false,
+        limited: false,
+      ));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('No activity was returned for this day.'),
+        findsOneWidget,
+      );
+      expect(find.text('Activity could not be refreshed.'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final capped in [false, true]) {
+    testWidgets(
+      'empty incomplete snapshot does not claim absence capped=$capped',
+      (tester) async {
+        await mount(tester);
+        repository.requests.single.complete((
+          items: <ProfileTimelineItem>[],
+          partial: !capped,
+          limited: capped,
+        ));
+        await tester.pumpAndSettle();
+        expect(find.text('No recent activity in this workspace'), findsNothing);
+        expect(find.text('Some activity is unavailable.'), findsWidgets);
+        await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('No activity was returned for this day.'),
+          findsNothing,
+        );
+        expect(find.text('Some activity is unavailable.'), findsWidgets);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 }

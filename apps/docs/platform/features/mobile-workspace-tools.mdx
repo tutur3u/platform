@@ -900,3 +900,13 @@ Regression targets: `profile_timeline_browser_test.dart` covers sparse days,
 selected empty days, repeated toggles and item pixels, appended pages, fixed
 loading/refresh geometry, reduced motion, double text and timezone/DST grouping.
 Existing scoped race/cache tests remain required alongside it.
+
+The week strip reveals the selected date when opened or when the selected date,
+week, width or text scale changes; ordinary snapshot rebuilds retain the user's
+manual horizontal scroll. Browsing another week begins at its first day when
+that week does not contain the selection. Calendar-day comparison uses UTC date
+carriers rather than elapsed DST-length days. Unknown cold failures and empty
+partial/capped snapshots show unavailable/partial state, never a confirmed
+absence of activity. A successful complete empty response can confirm the
+empty state. Actual padded Profile/Shell regressions cover the nested activity
+viewport, selected-date bounds and existing compact navbar at 320px/3×.

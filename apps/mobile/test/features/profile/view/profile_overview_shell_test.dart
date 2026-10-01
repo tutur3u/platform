@@ -28,6 +28,8 @@ import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
+import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
+import 'package:mobile/features/profile/view/profile_timeline_section.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -255,7 +257,7 @@ void main() {
     await _pump(tester);
   }
 
-  for (final scale in [1.0, 2.0]) {
+  for (final scale in [1.0, 2.0, 3.0]) {
     testWidgets(
       'authenticated Profile compact selector stays in navbar at scale $scale',
       (tester) async {
@@ -345,14 +347,47 @@ void main() {
           ),
         );
         await http.runWithClient(() async {
-          await mount(tester, size: const Size(393, 854));
+          await mount(
+            tester,
+            size: scale == 3 ? const Size(320, 852) : const Size(393, 854),
+          );
           await _pump(tester);
           await tester.runAsync(() async {
             await Future<void>.delayed(const Duration(milliseconds: 300));
           });
           await _pump(tester);
           expect(find.text('Synthetic Person'), findsOneWidget);
+          if (scale == 3) {
+            // The enlarged identity card places statistics below the viewport.
+            await tester.drag(
+              find
+                  .descendant(
+                    of: find.byType(ProfileOverviewPage),
+                    matching: find.byType(ListView),
+                  )
+                  .first,
+              const Offset(0, -500),
+            );
+            await _pump(tester);
+            await tester.runAsync(() async {
+              await Future<void>.delayed(const Duration(milliseconds: 300));
+            });
+            await _pump(tester);
+          }
           expect(find.text('60 min tracked'), findsOneWidget);
+          if (scale == 3) {
+            // Return the scrolling shell header to its real pointer target.
+            await tester.drag(
+              find
+                  .descendant(
+                    of: find.byType(ProfileOverviewPage),
+                    matching: find.byType(ListView),
+                  )
+                  .first,
+              const Offset(0, 700),
+            );
+            await _pump(tester);
+          }
           Future<void> verifyAndCapture(String view) async {
             final selector = find.byKey(const ValueKey('profile-views'));
             expect(selector, findsOneWidget);
@@ -380,31 +415,35 @@ void main() {
             );
             final output = Platform.environment['PROFILE_RENDER_DIR'];
             if (output != null) {
-              await tester.runAsync(() async {
-                final boundary = tester.renderObject<RenderRepaintBoundary>(
-                  find.byKey(const ValueKey('synthetic-profile-render')),
-                );
-                final image = await boundary.toImage(pixelRatio: 942 / 393);
-                final bytes = await image.toByteData(
-                  format: ui.ImageByteFormat.png,
-                );
-                await Directory(output).create(recursive: true);
-                await File(
-                  '$output/profile-$view-$scale.png',
-                ).writeAsBytes(bytes!.buffer.asUint8List());
-                await File('$output/profile-$view-$scale.json').writeAsString(
-                  jsonEncode({
-                    'synthetic': true,
-                    'logicalWidth': 393,
-                    'logicalHeight': 854,
-                    'textScale': scale,
-                    'navbar': navRect.toString(),
-                    'selector': selectorRect.toString(),
-                    'duplicateInlineSelector': false,
-                  }),
-                );
-                image.dispose();
-              });
+              await tester
+                  .runAsync(() async {
+                    final boundary = tester.renderObject<RenderRepaintBoundary>(
+                      find.byKey(const ValueKey('synthetic-profile-render')),
+                    );
+                    final image = await boundary.toImage();
+                    final bytes = await image.toByteData(
+                      format: ui.ImageByteFormat.png,
+                    );
+                    await Directory(output).create(recursive: true);
+                    await File(
+                      '$output/profile-$view-$scale.png',
+                    ).writeAsBytes(bytes!.buffer.asUint8List());
+                    await File(
+                      '$output/profile-$view-$scale.json',
+                    ).writeAsString(
+                      jsonEncode({
+                        'synthetic': true,
+                        'logicalWidth': tester.view.physicalSize.width,
+                        'logicalHeight': tester.view.physicalSize.height,
+                        'textScale': scale,
+                        'navbar': navRect.toString(),
+                        'selector': selectorRect.toString(),
+                        'duplicateInlineSelector': false,
+                      }),
+                    );
+                    image.dispose();
+                  })
+                  .timeout(const Duration(seconds: 10));
             }
           }
 
@@ -434,17 +473,79 @@ void main() {
               },
             ),
           );
-          await tester.tap(find.byTooltip('Activity timeline'));
+          final timelineTarget = find.byTooltip('Activity timeline');
+          expect(tester.getCenter(timelineTarget).dy, greaterThan(0));
+          await tester.tap(timelineTarget);
           await _pump(tester);
           await tester.runAsync(() async {
             await Future<void>.delayed(const Duration(milliseconds: 300));
           });
           await _pump(tester);
+          if (scale == 3 &&
+              find.byType(ProfileTimelineSection).evaluate().isEmpty) {
+            await tester.drag(
+              find
+                  .descendant(
+                    of: find.byType(ProfileOverviewPage),
+                    matching: find.byType(ListView),
+                  )
+                  .first,
+              const Offset(0, -400),
+            );
+            await _pump(tester);
+            await tester.runAsync(() async {
+              await Future<void>.delayed(const Duration(milliseconds: 300));
+            });
+            await _pump(tester);
+          }
+          expect(find.byType(ProfileTimelineSection), findsOneWidget);
           expect(
             find.text('Synthetic task creation'),
             findsOneWidget,
             reason: 'Requests: $requests',
           );
+          final section = find.byType(ProfileTimelineSection);
+          final browser = find.byType(ProfileTimelineBrowser);
+          final panelRect = tester.getRect(section);
+          var browserRect = tester.getRect(browser);
+          expect(browserRect.left, greaterThan(panelRect.left));
+          expect(browserRect.right, lessThan(panelRect.right));
+          final outer = tester.state<ScrollableState>(
+            find.ancestor(of: section, matching: find.byType(Scrollable)).first,
+          );
+          final navbarRect = tester.getRect(find.byType(shad.AppBar).first);
+          outer.position.jumpTo(
+            (outer.position.pixels + browserRect.top - navbarRect.bottom - 8)
+                .clamp(0.0, outer.position.maxScrollExtent),
+          );
+          await _pump(tester);
+          browserRect = tester.getRect(browser);
+          expect(browserRect.top, greaterThanOrEqualTo(navbarRect.bottom));
+          await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+          await _pump(tester);
+          expect(tester.getRect(browser), browserRect);
+          final day = DateTime.now();
+          final dateId = DateTime(
+            day.year,
+            day.month,
+            day.day,
+          ).toIso8601String();
+          final selected = tester.getRect(
+            find.byKey(ValueKey('timeline-date-$dateId')),
+          );
+          final strip = tester.getRect(
+            find.byKey(const ValueKey('timeline-date-slot')),
+          );
+          expect(selected.left, greaterThanOrEqualTo(strip.left));
+          expect(selected.right, lessThanOrEqualTo(strip.right));
+          expect(selected.bottom, lessThan(tester.view.physicalSize.height));
+          final inner = find.descendant(
+            of: browser,
+            matching: find.byType(SingleChildScrollView),
+          );
+          await tester.drag(inner, const Offset(0, -220));
+          await _pump(tester);
+          expect(tester.takeException(), isNull);
           await verifyAndCapture('timeline');
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());

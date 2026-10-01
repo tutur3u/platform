@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
+import 'package:mobile/features/profile/view/profile_timeline_date_strip.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
@@ -81,6 +82,94 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.getTopLeft(find.text('Old 3')).dy, closeTo(before, .01));
       }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'selected date reveals on changes while refresh preserves manual scroll',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 852);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final initial = (
+        week: DateTime(2026, 9, 28),
+        selected: DateTime(2026, 10),
+        refresh: 0,
+      );
+      final model = ValueNotifier(initial);
+      addTearDown(model.dispose);
+      await tester.pumpApp(
+        Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(3)),
+            child: ValueListenableBuilder(
+              valueListenable: model,
+              builder: (context, state, _) => ProfileTimelineDateStrip(
+                open: true,
+                selected: state.selected,
+                week: state.week,
+                activityDays: {state.selected},
+                onToggle: () {},
+                onSelect: (_) {},
+                onWeek: (_) {},
+                onToday: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      void expectVisible(DateTime day) {
+        final rect = tester.getRect(
+          find.byKey(ValueKey('timeline-date-${day.toIso8601String()}')),
+        );
+        final viewport = tester.getRect(
+          find.byKey(const ValueKey('timeline-date-slot')),
+        );
+        expect(rect.left, greaterThanOrEqualTo(viewport.left));
+        expect(rect.right, lessThanOrEqualTo(viewport.right));
+      }
+
+      expectVisible(initial.selected);
+      final week = find.byKey(const ValueKey('timeline-week-scroll'));
+      await tester.drag(week, const Offset(450, 0));
+      await tester.pumpAndSettle();
+      final scroll = tester.state<ScrollableState>(
+        find.descendant(of: week, matching: find.byType(Scrollable)),
+      );
+      final offset = scroll.position.pixels;
+      model.value = (
+        week: initial.week,
+        selected: initial.selected,
+        refresh: 1,
+      );
+      await tester.pumpAndSettle();
+      expect(scroll.position.pixels, offset);
+      model.value = (
+        week: initial.week,
+        selected: DateTime(2026, 10, 4),
+        refresh: 2,
+      );
+      await tester.pumpAndSettle();
+      expectVisible(model.value.selected);
+      model.value = (
+        week: DateTime(2026, 10, 5),
+        selected: model.value.selected,
+        refresh: 3,
+      );
+      await tester.pumpAndSettle();
+      expect(scroll.position.pixels, 0);
+      model.value = (
+        week: initial.week,
+        selected: model.value.selected,
+        refresh: 4,
+      );
+      await tester.pumpAndSettle();
+      expectVisible(model.value.selected);
       expect(tester.takeException(), isNull);
     },
   );
@@ -195,6 +284,16 @@ void main() {
       initial,
     );
     expect(find.text('Task'), findsOneWidget);
+    final selectedDate = tester.getRect(
+      find.byKey(
+        ValueKey('timeline-date-${DateTime(2026, 10).toIso8601String()}'),
+      ),
+    );
+    final strip = tester.getRect(
+      find.byKey(const ValueKey('timeline-date-slot')),
+    );
+    expect(selectedDate.left, greaterThanOrEqualTo(strip.left));
+    expect(selectedDate.right, lessThanOrEqualTo(strip.right));
     await capture('320-3x-selected-day');
     expect(tester.takeException(), isNull);
   });
