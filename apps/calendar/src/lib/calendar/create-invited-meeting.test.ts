@@ -37,6 +37,12 @@ import {
   meetingRequestIdentity,
 } from './create-invited-meeting';
 import type { ResolvedCalendarSource } from './source-resolver';
+import {
+  type CacheFailureMode,
+  cacheFailureModes,
+  failingSourceColorCache,
+  privateCacheFailure,
+} from './test-fixtures/source-color-cache';
 
 type Row = Record<string, unknown>;
 function database() {
@@ -44,8 +50,11 @@ function database() {
   const control = {
     insertError: null as unknown,
     updateError: null as unknown,
+    cacheFailure: null as CacheFailureMode | null,
   };
-  const from = vi.fn(() => {
+  const from = vi.fn((table: string) => {
+    if (table === 'calendar_connections' && control.cacheFailure)
+      return failingSourceColorCache(control.cacheFailure);
     let operation = 'read';
     let value: Row = {};
     const filters: Row = {};
@@ -144,6 +153,44 @@ beforeEach(() => {
 });
 
 describe('durable invitation creation', () => {
+  it.each(cacheFailureModes)(
+    'retains invitation identity and RGB when optional cache fails: %s',
+    async (mode) => {
+      db.control.cacheFailure = mode;
+      const color = {
+        version: 1,
+        calendar_id: 'primary',
+        color_id: '11',
+        inherited: false,
+        background: '#d50000',
+      };
+      mocks.provider.mockResolvedValue({
+        provider: 'google',
+        externalEventId: 'provider-event',
+        externalCalendarId: 'primary',
+        googleSourceColor: '#d06b64',
+        googleColor: color,
+      });
+      const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const first = await create();
+      expect(first.external_event_id).toBe('provider-event');
+      expect(first).toHaveProperty('scheduling_metadata.google_color', color);
+      expect(first).toHaveProperty(
+        'scheduling_metadata.meeting_delivery',
+        'sent'
+      );
+      mocks.state = { fresh: false, completed: true };
+      const retry = await create();
+      expect(retry.id).toBe(first.id);
+      expect(mocks.provider).toHaveBeenCalledTimes(1);
+      expect(warning).toHaveBeenCalledExactlyOnceWith(
+        'Google source color refresh failed'
+      );
+      expect(JSON.stringify(warning.mock.calls)).not.toContain(
+        privateCacheFailure
+      );
+    }
+  );
   it('reserves encrypted event data before sending and binds the provider result', async () => {
     const event = await create();
     expect(event.title).toBe('Planning');

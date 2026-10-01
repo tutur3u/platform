@@ -39,6 +39,11 @@ vi.mock('@/lib/workspace-encryption', () => ({
   getWorkspaceKey: mocks.getWorkspaceKey,
 }));
 
+import {
+  cacheFailureModes,
+  failingSourceColorCache,
+  privateCacheFailure,
+} from '@/lib/calendar/test-fixtures/source-color-cache';
 import { DELETE, GET, PUT } from './route';
 
 const WS_ID = '00000000-0000-4000-8000-000000008611';
@@ -302,6 +307,55 @@ describe('provider color route contract', () => {
     return { from, existing, updated };
   }
   beforeEach(() => vi.clearAllMocks());
+  it.each(cacheFailureModes)(
+    'persists provider update when optional cache fails: %s',
+    async (mode) => {
+      const { existing, updated } = setup();
+      let reads = 0;
+      const from = vi.fn((table: string) =>
+        table === 'calendar_connections'
+          ? failingSourceColorCache(mode)
+          : reads++ === 0
+            ? existing
+            : updated
+      );
+      mocks.authorize.mockResolvedValue({
+        sbAdmin: { from },
+        wsId: WS_ID,
+        userId: 'actor',
+      });
+      const result = await mocks.updateProvider();
+      mocks.updateProvider.mockResolvedValue({
+        ...result,
+        googleSourceColor: '#d06b64',
+      });
+      mocks.updateProvider.mockClear();
+      const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        const response = await PUT(
+          request('PUT', { providerColor: { connectionId, kind: 'inherit' } }),
+          params()
+        );
+        expect(response.status).toBe(200);
+        expect(updated.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            external_event_id: 'provider-event',
+            scheduling_metadata: expect.objectContaining({
+              google_color: result.googleColor,
+            }),
+          })
+        );
+        expect(warning).toHaveBeenCalledExactlyOnceWith(
+          'Google source color refresh failed'
+        );
+        expect(JSON.stringify(warning.mock.calls)).not.toContain(
+          privateCacheFailure
+        );
+      } finally {
+        warning.mockRestore();
+      }
+    }
+  );
   it('routes a color-only choice through provider validation and preserves unrelated metadata', async () => {
     const { updated } = setup();
     expect(

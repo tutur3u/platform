@@ -57,6 +57,11 @@ vi.mock('@/lib/calendar/create-invited-meeting', async (original) => ({
 }));
 
 import { MeetingCreateError } from '@/lib/calendar/create-invited-meeting';
+import {
+  cacheFailureModes,
+  failingSourceColorCache,
+  privateCacheFailure,
+} from '@/lib/calendar/test-fixtures/source-color-cache';
 import { GET, POST } from './route';
 
 const WS_ID = '00000000-0000-4000-8000-000000008611';
@@ -157,68 +162,91 @@ describe('workspace calendar event collection authorization', () => {
     },
   };
 
-  it('passes a scoped provider choice on creation and stores trusted provider metadata', async () => {
-    const choice = {
-      connectionId: invitationBody.source.connectionId,
-      kind: 'event',
-      id: '7',
-    };
-    const source = {
-      provider: 'google',
-      connectionId: choice.connectionId,
-      externalCalendarId: 'primary',
-      workspaceCalendarId: null,
-    };
-    const query = insertQueryResult({ id: 'created' });
-    const admin = { from: vi.fn(() => query) };
-    const color = {
-      version: 1,
-      calendar_id: 'primary',
-      color_id: '7',
-      event_label_id: null,
-      inherited: false,
-      background: '#46d6db',
-      foreground: '#000000',
-      resolution: 'event',
-    };
-    mocks.createAdminClient.mockResolvedValue(admin);
-    mocks.resolveSource.mockResolvedValue(source);
-    mocks.createProviderEvent.mockResolvedValue({
-      provider: 'google',
-      externalCalendarId: 'primary',
-      externalEventId: 'provider-created',
-      googleColor: color,
-      googleSourceColor: '#f691b2',
-    });
-    const response = await POST(
-      request('POST', {
-        ...invitationBody,
-        invitation: undefined,
-        requestId: undefined,
-        providerColor: choice,
-        scheduling_metadata: { google_color: { background: '#ffffff' } },
-      }),
-      params()
-    );
-    expect(response.status).toBe(201);
-    expect(mocks.createProviderEvent).toHaveBeenCalledWith({
-      source,
-      event: expect.objectContaining({ providerColor: choice }),
-    });
-    expect(query.insert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        color: 'CYAN',
-        scheduling_metadata: { google_color: color },
-        external_event_id: 'provider-created',
-      })
-    );
-    expect(mocks.refreshSource).toHaveBeenCalledWith({
-      sbAdmin: admin,
-      wsId: WS_ID,
-      source,
-      background: '#f691b2',
-    });
-  });
+  it.each(cacheFailureModes)(
+    'persists provider creation when optional cache fails: %s',
+    async (mode) => {
+      const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const actual = await vi.importActual<
+        typeof import('@/lib/calendar/google-source-color-refresh')
+      >('@/lib/calendar/google-source-color-refresh');
+      mocks.refreshSource.mockImplementationOnce(
+        actual.refreshOwnedGoogleSourceColor
+      );
+      const choice = {
+        connectionId: invitationBody.source.connectionId,
+        kind: 'event',
+        id: '7',
+      };
+      const source = {
+        provider: 'google',
+        connectionId: choice.connectionId,
+        externalCalendarId: 'primary',
+        workspaceCalendarId: null,
+      };
+      const query = insertQueryResult({ id: 'created' });
+      const admin = {
+        from: vi.fn((table: string) =>
+          table === 'calendar_connections'
+            ? failingSourceColorCache(mode)
+            : query
+        ),
+      };
+      const color = {
+        version: 1,
+        calendar_id: 'primary',
+        color_id: '7',
+        event_label_id: null,
+        inherited: false,
+        background: '#46d6db',
+        foreground: '#000000',
+        resolution: 'event',
+      };
+      mocks.createAdminClient.mockResolvedValue(admin);
+      mocks.resolveSource.mockResolvedValue(source);
+      mocks.createProviderEvent.mockResolvedValue({
+        provider: 'google',
+        externalCalendarId: 'primary',
+        externalEventId: 'provider-created',
+        googleColor: color,
+        googleSourceColor: '#f691b2',
+      });
+      const response = await POST(
+        request('POST', {
+          ...invitationBody,
+          invitation: undefined,
+          requestId: undefined,
+          providerColor: choice,
+          scheduling_metadata: { google_color: { background: '#ffffff' } },
+        }),
+        params()
+      );
+      expect(response.status).toBe(201);
+      expect(warning).toHaveBeenCalledExactlyOnceWith(
+        'Google source color refresh failed'
+      );
+      expect(JSON.stringify(warning.mock.calls)).not.toContain(
+        privateCacheFailure
+      );
+      warning.mockRestore();
+      expect(mocks.createProviderEvent).toHaveBeenCalledWith({
+        source,
+        event: expect.objectContaining({ providerColor: choice }),
+      });
+      expect(query.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          color: 'CYAN',
+          scheduling_metadata: { google_color: color },
+          external_event_id: 'provider-created',
+        })
+      );
+      expect(mocks.refreshSource).toHaveBeenCalledWith({
+        sbAdmin: admin,
+        wsId: WS_ID,
+        source,
+        background: '#f691b2',
+      });
+    }
+  );
 
   it.each([
     {
