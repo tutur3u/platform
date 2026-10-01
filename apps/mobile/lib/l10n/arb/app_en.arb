@@ -3823,7 +3823,7 @@
     "inventoryStockHealthLow": "Low stock rows",
     "inventoryStockHealthOut": "Out of stock rows",
     "inventoryStockHealthUnlimited": "Unlimited stock rows",
-    "inventoryStockHealthOverlap": "Low/out counts can overlap. Unlimited rows are excluded. Bars compare counts.",
+    "inventoryStockHealthOverlap": "Low/out counts can overlap. Low/out quantity checks exclude Unlimited rows; Unlimited rows are counted separately. Bars compare row counts.",
     "inventoryStockHealthUnknown": "Unavailable",
     "@inventoryStockHealthAsOf": {
         "placeholders": {

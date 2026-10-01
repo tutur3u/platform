@@ -9531,7 +9531,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryStockHealthUnlimited => 'Unlimited stock rows';
 
   @override
-  String get inventoryStockHealthOverlap => 'Low/out counts can overlap. Unlimited rows are excluded. Bars compare counts.';
+  String get inventoryStockHealthOverlap => 'Low/out counts can overlap. Low/out quantity checks exclude Unlimited rows; Unlimited rows are counted separately. Bars compare row counts.';
 
   @override
   String get inventoryStockHealthUnknown => 'Unavailable';

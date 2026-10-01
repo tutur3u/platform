@@ -9438,7 +9438,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get inventoryStockHealthIncomplete => 'Ảnh chụp chưa đầy đủ: thiếu một số số đếm hoặc thời gian máy chủ.';
+  String get inventoryStockHealthIncomplete => 'Ảnh chụp chưa đầy đủ: một vài số đếm hoặc thời gian máy chủ bị thiếu.';
 
   @override
   String get inventoryStockHealthUnavailable => 'Không thể tải tình trạng tồn kho. Kéo để làm mới và thử lại.';
@@ -9465,7 +9465,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryStockHealthUnlimited => 'Dòng tồn kho không giới hạn';
 
   @override
-  String get inventoryStockHealthOverlap => 'Số dòng thấp/hết hàng có thể trùng nhau. Loại trừ dòng không giới hạn. Biểu đồ so sánh số đếm.';
+  String get inventoryStockHealthOverlap => 'Số dòng thấp/hết hàng có thể trùng nhau. Kiểm tra thấp/hết hàng theo số lượng không tính dòng không giới hạn; các dòng này được đếm riêng. Biểu đồ so sánh số dòng.';
 
   @override
   String get inventoryStockHealthUnknown => 'Chưa có dữ liệu';
