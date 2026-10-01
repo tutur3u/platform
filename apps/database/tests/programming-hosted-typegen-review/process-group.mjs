@@ -29,6 +29,7 @@ export function runOwnedProcess(
     let settled = false;
     let deadline;
     let monitor;
+    let tick;
     const killGroup = () => {
       if (!child.pid) return;
       try {
@@ -37,7 +38,7 @@ export function runOwnedProcess(
         if (error.code !== 'ESRCH') throw error;
       }
     };
-    const finish = (error) => {
+    const finish = async (error) => {
       if (settled) return;
       settled = true;
       clearTimeout(deadline);
@@ -49,6 +50,8 @@ export function runOwnedProcess(
       } catch (killError) {
         error ??= killError;
       }
+      if (tick) await tick;
+      error ??= failure;
       if (error) reject(error);
       else resolve();
     };
@@ -82,11 +85,16 @@ export function runOwnedProcess(
     );
     if (onTick) {
       monitor = setInterval(() => {
-        try {
-          onTick();
-        } catch (error) {
-          abort(error);
-        }
+        if (tick || settled) return;
+        tick = Promise.resolve()
+          .then(onTick)
+          .catch((error) => {
+            failure ??= error;
+            abort(error);
+          })
+          .finally(() => {
+            tick = undefined;
+          });
       }, intervalMs);
     }
   });

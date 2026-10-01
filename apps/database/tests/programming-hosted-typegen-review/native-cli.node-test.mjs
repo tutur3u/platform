@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { existsSync, mkdtempSync, realpathSync, rmSync } from 'node:fs';
 import {
@@ -30,9 +31,8 @@ const contextRoot = mkdtempSync(
 after(() => rmSync(contextRoot, { recursive: true, force: true }));
 function runCliProbe(binary, args, options) {
   const context = createSyntheticCliContext({
-    root: path.join(contextRoot, 'isolated'),
+    root: path.join(contextRoot, `isolated-${randomUUID()}`),
     nativeBinary: binary,
-    temporaryRoot: os.tmpdir(),
   });
   return runRawCliProbe(binary, args, { ...options, ...context });
 }

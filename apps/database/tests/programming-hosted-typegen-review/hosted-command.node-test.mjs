@@ -24,7 +24,6 @@ async function fixture(t) {
   const context = createSyntheticCliContext({
     root: path.join(base, 'private'),
     nativeBinary: process.execPath,
-    temporaryRoot: os.tmpdir(),
   });
   return { base, context };
 }
@@ -50,7 +49,7 @@ for (const args of [
     try {
       Object.assign(process.env, conflicts);
       let calls = 0;
-      const output = command('docker', args, 5000, 4 * 1024 ** 2, {
+      const output = await command('docker', args, 5000, 4 * 1024 ** 2, {
         nativeBinary: process.execPath,
         context: () => context,
         execute: (binary, argv, options) => {
@@ -107,7 +106,7 @@ for (const args of [
 test('non-Docker policy subprocesses also receive only admitted environment', async (t) => {
   const { context } = await fixture(t);
   let called = false;
-  command('sudo', ['-n', 'synthetic-policy'], 5000, 1024 ** 2, {
+  await command('sudo', ['-n', 'synthetic-policy'], 5000, 1024 ** 2, {
     nativeBinary: process.execPath,
     context: () => context,
     execute: (binary, argv, options) => {
@@ -123,7 +122,7 @@ test('non-Docker policy subprocesses also receive only admitted environment', as
 });
 test('actual fake Node command observes private environment instead of inherited values', async (t) => {
   const { context } = await fixture(t);
-  const result = runHostedCommand(
+  const result = await runHostedCommand(
     process.execPath,
     [
       '-e',
@@ -163,7 +162,7 @@ test('actual policy verifier routes every read through the admitted proposal com
   assert.throws(() => verifyNetworkPolicy(), /Explicit policy runner required/);
   const { context } = await fixture(t);
   const observed = [];
-  const result = verifyNetworkPolicy((args) =>
+  const result = await verifyNetworkPolicy((args) =>
     command('sudo', ['-n', ...args], 5000, 1024 ** 2, {
       nativeBinary: process.execPath,
       context: () => context,

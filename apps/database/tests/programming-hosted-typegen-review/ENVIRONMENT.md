@@ -34,8 +34,13 @@ and Docker context variables are absent. DOCKER_HOST is fixed to
 `unix:///var/run/docker.sock`; Docker inspection commands also pass the same
 explicit host and private config arguments. OAuth values are fixed synthetic
 strings; the image registry remains the reviewed `ghcr.io` value. The native CLI
-path and original temporary root remain available to preserve isolated-helper
-identity and cleanup contracts. PATH is fixed to standard system directories.
+path remains available to preserve isolated-helper identity. A private lifecycle
+temporary root is shared only by staging and its admitted lifecycle/cleanup
+helpers, so the unchanged helper validates the same owned root. Each inventory,
+policy and probe context has a fresh private root and temporary directory;
+concurrent commands do not reuse the live CLI's HOME/config paths. Temporary
+directory permissions, realpath and inode are admitted too. PATH is fixed to
+standard system directories.
 
 Probes run in an empty private directory with an explicit owned workdir. Helpers
 run in the admitted disposable root, with their actual cwd equal to their CLI
@@ -88,3 +93,10 @@ not wait for descendants to close inherited pipes. A synthetic detached Node
 descendant tests this boundary and is separately killed by the fixture. This
 does not claim that a POSIX process group can terminate escaped sessions; real
 runner/container containment remains a separate admission requirement.
+Inventory, Git and policy commands now use this same asynchronous bounded runner
+instead of synchronous subprocess timeouts. Policy reads are awaited before
+lifecycle starts; asynchronous monitor ticks are serialized and their failures
+abort the owned helper. Synthetic escaped fixtures publish token-bound positive
+PID records by atomic rename; cleanup never signals zero, NaN, negative or
+unrelated records. Interrupted fixtures have a separate startup budget while
+the timeout fixture retains its short deadline.

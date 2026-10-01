@@ -21,7 +21,6 @@ async function fixture(t) {
   const context = createSyntheticCliContext({
     root: path.join(base, 'private'),
     nativeBinary: process.execPath,
-    temporaryRoot: os.tmpdir(),
   });
   return { base, context };
 }
@@ -57,7 +56,6 @@ test('allowlist excludes conflicting actual ambient credentials/profile/proxy/lo
     const { env, cwd } = createSyntheticCliContext({
       root: path.join(base, 'another'),
       nativeBinary: process.execPath,
-      temporaryRoot: os.tmpdir(),
     });
     for (const key of forbiddenKeys)
       assert.equal(Object.hasOwn(env, key), false);
@@ -126,7 +124,6 @@ for (const mode of ['--resume', '--cleanup']) {
           createSyntheticCliContext({
             root: path.join(base, 'helper-private'),
             nativeBinary,
-            temporaryRoot: os.tmpdir(),
             workdir,
           }),
         runner: async (binary, actualArgs, options) => {
@@ -231,7 +228,6 @@ test('symlinked private HOME/link directory cannot redirect credential resolutio
       createSyntheticCliContext({
         root: directory,
         nativeBinary: process.execPath,
-        temporaryRoot: os.tmpdir(),
       }),
     CliEnvironmentFailure
   );
@@ -252,9 +248,16 @@ test('private directories are revalidated immediately before a probe', async (t)
     CliEnvironmentFailure
   );
 });
-test('temporary root identity remains unchanged for supported isolated cleanup', async (t) => {
+test('temporary directory is private and included in admission', async (t) => {
   const { context } = await fixture(t);
-  assert.equal(context.env.TMPDIR, os.tmpdir());
+  assert.notEqual(context.env.TMPDIR, os.tmpdir());
+  assert.equal(realpathSync(context.env.TMPDIR), context.env.TMPDIR);
+  await rm(context.env.TMPDIR, { recursive: true });
+  await symlink(os.tmpdir(), context.env.TMPDIR);
+  assert.throws(
+    () => assertSyntheticCliEnvironment(context.env, context.cwd),
+    CliEnvironmentFailure
+  );
 });
 
 for (const location of [
@@ -279,7 +282,6 @@ for (const location of [
         createSyntheticCliContext({
           root: path.dirname(context.env.HOME),
           nativeBinary: process.execPath,
-          temporaryRoot: os.tmpdir(),
         }),
       CliEnvironmentFailure
     );

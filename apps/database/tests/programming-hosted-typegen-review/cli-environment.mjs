@@ -78,7 +78,7 @@ export function createSyntheticCliContext({
 } = {}) {
   try {
     if (
-      ![root, nativeBinary, temporaryRoot].every(
+      ![root, nativeBinary].every(
         (value) => typeof value === 'string' && path.isAbsolute(value)
       )
     )
@@ -94,8 +94,11 @@ export function createSyntheticCliContext({
       'state',
       'docker',
       'probe',
+      'tmp',
     ])
       privateDirectory(path.join(ownedRoot, directory));
+    const temp = temporaryRoot ?? path.join(ownedRoot, 'tmp');
+    validatePrivateDirectory(temp);
     const home = path.join(ownedRoot, 'home');
     privateDirectory(path.join(home, 'supabase'));
     for (const file of ['profile', 'access-token', 'profiles']) {
@@ -122,7 +125,7 @@ export function createSyntheticCliContext({
       XDG_STATE_HOME: path.join(ownedRoot, 'state'),
       DOCKER_CONFIG: path.join(ownedRoot, 'docker'),
       DOCKER_HOST: hostedDockerEndpoint,
-      TMPDIR: temporaryRoot,
+      TMPDIR: temp,
       SUPABASE_WORKDIR: cwd,
       SUPABASE_CLI_BINARY_OVERRIDE: nativeBinary,
       SUPABASE_TELEMETRY_DISABLED: '1',
@@ -136,6 +139,7 @@ export function createSyntheticCliContext({
     });
     const directories = [
       ownedRoot,
+      temp,
       ...['home', 'config', 'cache', 'data', 'state', 'docker', 'probe'].map(
         (name) => path.join(ownedRoot, name)
       ),

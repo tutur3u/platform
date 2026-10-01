@@ -1,8 +1,8 @@
-import { execFileSync } from 'node:child_process';
 import {
   assertSyntheticCliEnvironment,
   hostedDockerEndpoint,
 } from './cli-environment.mjs';
+import { runCliProbe } from './native-cli.mjs';
 
 // Every inventory, inspection and cleanup verification uses the same local
 // endpoint and private config as the lifecycle child, never the ambient daemon.
@@ -14,7 +14,14 @@ export function runHostedCommand(
     timeout = 5000,
     maxBuffer = 4 * 1024 ** 2,
     cwd,
-    execute = execFileSync,
+    execute = (binary, args, options) =>
+      runCliProbe(binary, args, {
+        env: options.env,
+        cwd: options.cwd,
+        phase: 'command',
+        timeoutMs: options.timeout,
+        maxOutputBytes: options.maxBuffer,
+      }),
   } = {}
 ) {
   // Reject an override rather than validating one directory and executing in another.
@@ -29,12 +36,14 @@ export function runHostedCommand(
           ...args,
         ]
       : args;
-  return execute(binary, argv, {
-    env: context.env,
-    cwd: cwd ?? context.cwd,
-    encoding: 'utf8',
-    timeout,
-    maxBuffer,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  }).trim();
+  return Promise.resolve(
+    execute(binary, argv, {
+      env: context.env,
+      cwd: cwd ?? context.cwd,
+      encoding: 'utf8',
+      timeout,
+      maxBuffer,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+  ).then((output) => output.trim());
 }

@@ -16,6 +16,7 @@ import {
 } from './cli-environment.mjs';
 
 const phases = new Set([
+  'command',
   'prepare',
   'run',
   'cleanup',
@@ -133,7 +134,7 @@ export function runCliProbe(
   } = {}
 ) {
   if (
-    !['cli-version', 'cli-services'].includes(phase) ||
+    !['cli-version', 'cli-services', 'command'].includes(phase) ||
     !Number.isInteger(timeoutMs) ||
     timeoutMs < 1 ||
     !Number.isInteger(maxOutputBytes) ||
@@ -143,7 +144,7 @@ export function runCliProbe(
   assertSyntheticCliEnvironment(env, cwd);
   return new Promise((resolve, reject) => {
     const probeEnv = { ...env };
-    delete probeEnv.SUPABASE_CLI_BINARY_OVERRIDE;
+    if (phase !== 'command') delete probeEnv.SUPABASE_CLI_BINARY_OVERRIDE;
     let child;
     try {
       child = spawn(binary, args, {

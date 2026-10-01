@@ -12,8 +12,12 @@ import {
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { removeDisposableRoot } from '../../scripts/run-supabase-isolated.js';
+import {
+  readLifecycleMetadata,
+  removeDisposableRoot,
+} from '../../scripts/run-supabase-isolated.js';
 import { createSyntheticCliContext } from './cli-environment.mjs';
+import { runHostedCommand } from './hosted-command.mjs';
 import { command, limits, prepare, stageAndRecord } from './proposal.mjs';
 
 // Actual Git and filesystem staging only. CLI, Docker, policy and port probes
@@ -26,7 +30,6 @@ test('actual prepare stages admitted NUL-delimited Git files despite conflicting
   const context = createSyntheticCliContext({
     root: path.join(base, 'private'),
     nativeBinary: process.execPath,
-    temporaryRoot: os.tmpdir(),
   });
   const config = 'apps/database/supabase/config.toml';
   const unusual = 'apps/database/supabase/tests/case\nwith space.sql';
@@ -97,6 +100,7 @@ test('actual prepare stages admitted NUL-delimited Git files despite conflicting
         kind === 'network' ? ['bridge', 'host', 'none'] : [],
       disk: () => limits.initialFreeBytes,
       context: () => context,
+      temporaryRoot: () => context.env.TMPDIR,
       probe: async (_binary, args) =>
         args[0] === '--version'
           ? JSON.parse(await readFile('apps/database/package.json', 'utf8'))
@@ -137,6 +141,31 @@ test('actual prepare stages admitted NUL-delimited Git files despite conflicting
     });
     assert.equal(state, recorded);
     assert.equal(state.metadata.headSha, expectedHead);
+    assert.equal(
+      path.dirname(state.metadata.disposableRoot),
+      context.env.TMPDIR
+    );
+    const parentMetadata = await readLifecycleMetadata(
+      state.metadata.disposableRoot,
+      { temporaryRoot: context.env.TMPDIR }
+    );
+    assert.equal(parentMetadata.projectId, state.metadata.projectId);
+    const helperModule = path.resolve(
+      'apps/database/scripts/run-supabase-isolated.js'
+    );
+    const childMetadata = await runHostedCommand(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        'const {readLifecycleMetadata}=await import(process.argv[2]);const meta=await readLifecycleMetadata(process.argv[3]);console.log(meta.projectId)',
+        'synthetic-metadata-reader',
+        helperModule,
+        state.metadata.disposableRoot,
+      ],
+      { context }
+    );
+    assert.equal(childMetadata, state.metadata.projectId);
     assert.deepEqual(calls, [
       ['-C', root, 'rev-parse', 'HEAD'],
       ['-C', root, 'ls-files', '-z', '--', 'apps/database/supabase'],
@@ -162,6 +191,9 @@ test('actual prepare stages admitted NUL-delimited Git files despite conflicting
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
     }
-    if (recorded) await removeDisposableRoot(recorded.metadata.disposableRoot);
+    if (recorded)
+      await removeDisposableRoot(recorded.metadata.disposableRoot, {
+        temporaryRoot: context.env.TMPDIR,
+      });
   }
 });

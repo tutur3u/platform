@@ -54,9 +54,12 @@ export function assertFirewallPolicy({ rules, dockerUser, forward }) {
 export function verifyNetworkPolicy(run) {
   if (typeof run !== 'function')
     throw new Error('Explicit policy runner required');
-  const daemon = JSON.parse(run(['cat', '/etc/docker/daemon.json']));
+  return readNetworkPolicy(run);
+}
+async function readNetworkPolicy(run) {
+  const daemon = JSON.parse(await run(['cat', '/etc/docker/daemon.json']));
   const programs = JSON.parse(
-    run([
+    await run([
       'bpftool',
       '-j',
       'cgroup',
@@ -65,7 +68,7 @@ export function verifyNetworkPolicy(run) {
       'effective',
     ])
   );
-  const allow = run([
+  const allow = await run([
     'systemctl',
     'show',
     networkPolicy.slice,
@@ -73,7 +76,7 @@ export function verifyNetworkPolicy(run) {
     'IPAddressAllow',
     '--value',
   ]);
-  const deny = run([
+  const deny = await run([
     'systemctl',
     'show',
     networkPolicy.slice,
@@ -84,9 +87,9 @@ export function verifyNetworkPolicy(run) {
   assertNetworkPolicy({ daemon, programs, allow, deny });
   for (const firewall of ['iptables', 'ip6tables']) {
     assertFirewallPolicy({
-      rules: run([firewall, '-S', 'TTR-TYPEGEN-EGRESS']),
-      dockerUser: run([firewall, '-S', 'DOCKER-USER']),
-      forward: run([firewall, '-S', 'FORWARD']),
+      rules: await run([firewall, '-S', 'TTR-TYPEGEN-EGRESS']),
+      dockerUser: await run([firewall, '-S', 'DOCKER-USER']),
+      forward: await run([firewall, '-S', 'FORWARD']),
     });
   }
   return {
