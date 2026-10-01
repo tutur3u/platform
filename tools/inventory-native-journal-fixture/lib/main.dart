@@ -13,37 +13,63 @@ const _sourceDigest = String.fromEnvironment('JOURNAL_SHA256');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final phase = await _channel.invokeMethod<String>('phase');
-  var passed = false;
-  String? error;
-  try {
-    require(_run.isNotEmpty && _sha.length == 40, 'Missing fixture identity');
-    await exercise(phase);
-    passed = true;
-  } on Object {
-    error = 'fixture_assertion_failed';
-  }
-  await _channel.invokeMethod<void>(
-    'report',
-    jsonEncode({
-      'phase': phase,
-      'passed': passed,
-      'error': error,
-      'run_id': _run,
-      'source_sha': _sha,
-      'journal_sha256': _sourceDigest,
-      'request_ids': records.map((record) => record.requestId).toList(),
-    }),
+  final result = await runFixture(
+    phase: () => _channel.invokeMethod<String>('phase'),
+    report: (value) => _channel.invokeMethod<void>('report', jsonEncode(value)),
   );
   runApp(
     MaterialApp(
       home: Scaffold(
         body: Center(
-          child: Text('Native journal $phase: ${passed ? 'PASS' : 'FAIL'}'),
+          child: Text(
+            'Native journal ${result['phase']}: '
+            '${result['passed'] == true ? 'PASS' : 'FAIL'}',
+          ),
         ),
       ),
     ),
   );
+}
+
+Future<Map<String, dynamic>> runFixture({
+  required Future<String?> Function() phase,
+  required Future<void> Function(Map<String, dynamic>) report,
+  Future<void> Function(String?)? exercisePhase,
+}) async {
+  String? selected;
+  var passed = false;
+  String? error;
+  try {
+    selected = await phase();
+    require(selected != null, 'Missing fixture phase');
+  } on Object {
+    error = 'phase_channel_failed';
+  }
+  if (error == null) {
+    try {
+      require(_run.isNotEmpty && _sha.length == 40, 'Missing fixture identity');
+      await (exercisePhase ?? exercise)(selected);
+      passed = true;
+    } on Object {
+      error = 'fixture_assertion_failed';
+    }
+  }
+  final result = <String, dynamic>{
+    'phase': selected,
+    'passed': passed,
+    'error': error,
+    'run_id': _run,
+    'source_sha': _sha,
+    'journal_sha256': _sourceDigest,
+    'request_ids': records.map((record) => record.requestId).toList(),
+  };
+  try {
+    await report(result);
+  } on Object {
+    result['passed'] = false;
+    result['error'] = 'report_channel_failed';
+  }
+  return result;
 }
 
 void require(bool condition, String message) {
@@ -56,60 +82,84 @@ List<InventorySaleOperation> get records => [
   operation('actor-a', 'workspace-b', '00000000-0000-4000-8000-000000000003'),
 ];
 
-InventorySaleOperation operation(String actor, String workspace, String id) =>
-    InventorySaleOperation(
-      actor: 'native-fixture:$_run:$actor',
-      workspace: 'native-fixture:$_run:$workspace',
-      requestId: id,
-      body: jsonEncode({
-        'inventory_request_id': id,
-        'inventory_period_id': 'synthetic-period',
-        'wallet_id': 'synthetic-wallet',
-        'category_id': 'synthetic-category',
-        'content': 'Synthetic native durability fixture',
-        'products': [
-          {
-            'product_id': 'synthetic-product',
-            'unit_id': 'synthetic-unit',
-            'warehouse_id': 'synthetic-warehouse',
-            'price_id': 'synthetic-price',
-            'quantity': 2,
-            'price': 12.5,
-          },
-        ],
-      }),
-      currency: 'USD',
-      periodName: 'Synthetic period',
-      timeZone: 'Asia/Ho_Chi_Minh',
-      asOf: DateTime.utc(2026, 10),
-      createdAt: DateTime.utc(2026, 10),
-      labels: jsonEncode({
-        'synthetic-product|synthetic-unit|synthetic-warehouse': 'Fixture item',
-      }),
-    );
+InventorySaleOperation operation(
+  String actor,
+  String workspace,
+  String id, {
+  String run = _run,
+}) => InventorySaleOperation(
+  actor: 'native-fixture:$run:$actor',
+  workspace: 'native-fixture:$run:$workspace',
+  requestId: id,
+  body: jsonEncode({
+    'inventory_request_id': id,
+    'inventory_period_id': 'synthetic-period',
+    'wallet_id': 'synthetic-wallet',
+    'category_id': 'synthetic-category',
+    'content': 'Synthetic native durability fixture',
+    'products': [
+      {
+        'product_id': 'synthetic-product',
+        'unit_id': 'synthetic-unit',
+        'warehouse_id': 'synthetic-warehouse',
+        'price_id': 'synthetic-price',
+        'quantity': 2,
+        'price': 12.5,
+      },
+    ],
+  }),
+  currency: 'USD',
+  periodName: 'Synthetic period',
+  timeZone: 'Asia/Ho_Chi_Minh',
+  asOf: DateTime.utc(2026, 10),
+  createdAt: DateTime.utc(2026, 10),
+  labels: jsonEncode({
+    'synthetic-product|synthetic-unit|synthetic-warehouse': 'Fixture item',
+  }),
+);
 
-Future<void> exercise(String? phase) async {
+InventorySaleOperation get sentinel => operation(
+  'actor-sentinel',
+  'workspace-sentinel',
+  '00000000-0000-4000-8000-000000000004',
+  run: '$_run-sentinel',
+);
+
+Future<void> exercise(String? phase, {InventorySaleJournal? journal}) async {
   // No mock adapter, sessions, controller transport, provider or network client.
-  final journal = InventorySaleJournal();
+  final active = journal ?? InventorySaleJournal();
   final expected = records;
+  final unrelated = sentinel;
+  Future<void> checkSentinel() async => require(
+    (await active.read(unrelated.actor, unrelated.workspace))?.encode() ==
+        unrelated.encode(),
+    'Unrelated-run sentinel changed or removed',
+  );
   if (phase == 'write') {
+    require(
+      await active.read(unrelated.actor, unrelated.workspace) == null,
+      'Sentinel storage must begin empty',
+    );
+    await active.write(unrelated);
+    await checkSentinel();
     for (final record in expected) {
       require(
-        await journal.read(record.actor, record.workspace) == null,
+        await active.read(record.actor, record.workspace) == null,
         'Fixture storage must begin empty',
       );
-      await journal.write(record);
+      await active.write(record);
       require(
-        (await journal.read(record.actor, record.workspace))?.encode() ==
+        (await active.read(record.actor, record.workspace))?.encode() ==
             record.encode(),
         'Native write/readback mismatch',
       );
     }
   } else if (phase == 'read' || phase == 'cleanup') {
+    await checkSentinel();
     // Read A, B and A in a new process; scope pairs and exact bytes all differ.
     for (final index in [0, 1, 0, 2, 0]) {
       final record = expected[index];
-      final restored = await journal.read(record.actor, record.workspace);
+      final restored = await active.read(record.actor, record.workspace);
       require(
         restored?.encode() == record.encode(),
         'Restart or actor/workspace isolation mismatch',
@@ -120,12 +170,12 @@ Future<void> exercise(String? phase) async {
       );
     }
     require(
-      await journal.read(expected[1].actor, expected[2].workspace) == null,
+      await active.read(expected[1].actor, expected[2].workspace) == null,
       'Absent actor/workspace scope exposed another record',
     );
     var blocked = false;
     try {
-      await journal.acknowledge(
+      await active.acknowledge(
         expected[0].actor,
         expected[0].workspace,
         'synthetic-invoice',
@@ -135,31 +185,37 @@ Future<void> exercise(String? phase) async {
     }
     require(blocked, 'Unresolved native record could be removed');
     require(
-      (await journal.read(
-            expected[0].actor,
-            expected[0].workspace,
-          ))?.encode() ==
+      (await active.read(expected[0].actor, expected[0].workspace))?.encode() ==
           expected[0].encode(),
       'Unresolved record changed',
     );
     if (phase == 'cleanup') {
       for (final record in expected) {
         // Only this run's synthetic records are ever removed.
-        await journal.write(record.confirmed('synthetic-invoice'));
-        await journal.acknowledge(
+        await active.write(record.confirmed('synthetic-invoice'));
+        await active.acknowledge(
           record.actor,
           record.workspace,
           'synthetic-invoice',
         );
       }
+      await checkSentinel();
     }
   } else if (phase == 'verify-clean') {
+    await checkSentinel();
     for (final record in expected) {
       require(
-        await journal.read(record.actor, record.workspace) == null,
+        await active.read(record.actor, record.workspace) == null,
         'Acknowledged synthetic record survived removal',
       );
     }
+    // Separate final housekeeping only after proving the other run survived.
+    await active.write(unrelated.confirmed('sentinel-invoice'));
+    await active.acknowledge(
+      unrelated.actor,
+      unrelated.workspace,
+      'sentinel-invoice',
+    );
   } else {
     throw StateError('Unknown fixture phase');
   }

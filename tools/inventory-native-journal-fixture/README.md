@@ -33,7 +33,7 @@ KVM. SDK system-image/tool downloads and Flutter/pub/Gradle resolution happen
 audio or snapshot. Boot waits are bounded to 180s, phase waits to 90s each, and
 the runtime step to 12min. Guest wifi/data are disabled before fixture execution.
 The emulator process is stopped afterward; source and existing app data are not
-cleaned on M4.
+cleaned on the local executor.
 
 iOS: a separate macOS GitHub runner, maximum 40-minute job; one debug simulator
 build with CocoaPods, no signing/store credentials. A disposable iPhone simulator
@@ -44,7 +44,7 @@ evidence is collected. No production bundle or device is installed. The runtime
 step is bounded to 12min. Android and iOS reports are separately named; neither
 platform's pass substitutes for the other. The two proposed jobs can use separate
 remote runners concurrently; total requested budget is at most 80 runner-minutes,
-plus dependency/system-image/artifact disk on those runners. No M4 disk or native
+plus dependency/system-image/artifact disk on those runners. No local executor disk or native
 build budget is requested. Cached SDK/dependency setup is reused where available.
 
 ## Assertions and evidence
@@ -55,7 +55,7 @@ simulator erase, rebuild, bundle ID change or storage-option change between them
 1. `write`: assert each synthetic scope is initially empty; await real journal
    write and exact encoded readback for A/workspace-A, B/workspace-A and
    A/workspace-B. Bodies carry distinct original synthetic UUIDs and fixed USD,
-   UTC as-of, IANA timezone and display-label provenance.
+   UTC as-of, IANA timezone and display-label provenance. Also seed an independently scoped sentinel with a different run identity; verify it before/after cleanup and after the final restart.
 2. `read`: after external process death, instantiate a new production journal;
    verify exact encoded identity/payload/provenance in A→B→A and workspace
    A→B→A read order; the unused B/workspace-B pair must return null. Unresolved
@@ -63,19 +63,19 @@ simulator erase, rebuild, bundle ID change or storage-option change between them
 3. `cleanup`: repeat restart/isolation checks, mark only this run's synthetic
    records confirmed, then acknowledge matching invoice IDs.
 4. `verify-clean`: after another external process death, verify all three
-   acknowledged records are absent. No broad secure-storage deletion is used.
+   acknowledged records are absent and the separate sentinel run remains byte-identical. Only then acknowledge the generated sentinel as separate final housekeeping. Broad deletion fails the proof.
 
 Native bridges obtain launch phase and atomically write a completion report with
 native process ID. The host requires a fresh matching phase/run/SHA/source digest,
 PASS and a different native process ID for every phase. Android explicitly
 force-stops and verifies `pidof` reports absence; iOS `simctl terminate` must
-succeed before relaunch. Fixed pass/failure codes and synthetic process IDs are saved
+succeed before relaunch. Fixed pass/failure codes and native OS process IDs are saved
 in `native-proof.json`; missing, stale or failed markers fail the job. Seven-day
 artifacts include the exact source identity, copied source digest, resolved
 lock digest/selected storage package versions and selected device/runtime metadata. Provider or customer data
 cannot enter these synthetic artifacts.
 
-This proves the exercised default native storage adapter's process durability and
+A passing admitted run would prove the exercised default native storage adapter's process durability and
 journal key isolation on the selected emulator/simulator. It does **not** prove
 production auth SDK logout/account switching, native physical-device locked-state
 behavior, the full checkout/controller race lifecycle, or real receipt/auth/DB
@@ -111,11 +111,12 @@ this local checkpoint does not authorize any of them.
 
 Before tool downloads, require at least 20GiB free on the Android runner and
 12GiB on the iOS runner's temporary filesystem. Android repeats its 20GiB
-preflight before SDK image downloads; preparation, iOS runtime admission and
-evidence collection require at least 4GiB remaining. These are explicit admission
+preflight before SDK image downloads; preparation and runtime require at least
+4GiB remaining. Evidence collection is exempt from this admission floor so failed
+preparation or disk admission can still emit tiny fixed-code diagnostics. These are explicit admission
 floors, not hard byte quotas on SDK/dependency downloads; the 40-minute job cap
-remains the outer bound. Native commands have 30s timeouts and 64KiB captured
-output limits. Fixture generation is capped at 120s/64KiB captured output.
+remains the outer bound. `orchestrate.mjs` native commands have 30s timeouts and 64KiB captured
+output limits. Workflow shell SDK/AVD/simulator commands are bounded by their 12-minute runtime step (Android boot waits also have 180-second limits), not that per-command wrapper. Fixture generation is capped at 120s/64KiB captured output. Pub resolution and compilation use separate 5/10-minute deadlines inside the 40-minute job cap.
 
 Only three named JSON files may be uploaded: proof-input, environment and
 native-proof. Collection rejects any file above 64KiB or aggregate above 192KiB.
@@ -123,15 +124,17 @@ The resolved dependency lock is hashed and only storage package version strings
 are retained; its raw content is not uploaded. Actual Flutter/Dart/engine, Node,
 Java or Xcode versions are captured. Android records selected API/release/ABI,
 emulator and adb versions; iOS records only the created simulator's runtime
-identifier/version/build and synthetic device ID. Missing version metadata fails
-collection/proof rather than implying a pass.
+identifier/version/build and the OS-generated disposable device ID. Missing
+version metadata yields incomplete failure evidence, never a passing proof.
+Missing input/proof/lock/build files and unavailable tools produce fixed
+collection codes; collection attempts all three allowed files without a minimum
+disk floor. Actual filesystem write failure still fails collection.
 
 Raw emulator logs go to /dev/null; full device properties and simulator catalog
-are not uploaded. The catalog is temporary selection input only. Raw build/pub
-output is suppressed. Native exception text is replaced by fixed fixture error
+are not uploaded. The catalog is temporary selection input only. Raw build/pub output stays suppressed; the build wrapper retains only the failed stage and numeric exit code in bounded JSON and prints the same fixed diagnostic. No compiler text or command output is exported. Native exception text is replaced by fixed fixture error
 codes and report artifacts whitelist synthetic identifiers/results. The fixture
 has no provider clients, credentials, customer accounts or non-synthetic payload
-sources. Tool/runtime versions are the only intentionally real environment data.
+sources. Tool/runtime versions, native OS process IDs, generated simulator IDs and available free-disk metadata are intentionally real environment metadata; actors/workspaces/request bodies remain synthetic.
 There is no broad storage deletion; cleanup is confined to this run's synthetic
 keys and disposable emulator/simulator. CI job cancellation cleanup is best-effort
 with ephemeral runner teardown as the backstop.
@@ -161,5 +164,5 @@ permission, secrets, GitHub environments or signing settings are added.
 `node --test tools/inventory-native-journal-fixture/host-script.test.mjs` tests
 platform ID/rendering, disk thresholds, artifact allowlisting/caps and trusted
 workflow ordering/guards using only host JavaScript. Importing preparation helpers
-executes no SDK/native command. Native compilation and all runtime gates remain
+executes no SDK/native command. Host tests execute the actual trusted config script in temporary fixture configurations and assert positive output, disabled/missing registration rejection, and missing-output rejection. They also exercise prewrite artifact rejection, partial-failure collection, and sanitized build status. Dedicated mocked Dart tests cover channel failures and cleanup-sentinel survival; they do not prove native storage. Native compilation and all runtime gates remain
 unexecuted; the corrected workflow file remains an inert proposal.

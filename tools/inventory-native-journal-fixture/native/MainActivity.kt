@@ -13,7 +13,11 @@ class MainActivity : FlutterActivity() {
         MethodChannel(engine.dartExecutor.binaryMessenger, "fixture/sale_journal")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
-                    "phase" -> result.success(intent.getStringExtra("journal_phase"))
+                    "phase" -> {
+                        val phase = intent.getStringExtra("journal_phase")
+                        if (phase == null) result.error("missing_phase", null, null)
+                        else result.success(phase)
+                    }
                     "report" -> {
                         try {
                             val report = JSONObject(call.arguments as String)

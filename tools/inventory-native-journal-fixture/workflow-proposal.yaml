@@ -54,6 +54,7 @@ jobs:
           test -f tuturuuu.ci.ts
           node --experimental-strip-types --input-type=module -e 'import {ci} from "./tuturuuu.ci.ts"; if(ci[process.env.WORKFLOW_NAME] !== true)process.exit(1)'
           node --experimental-strip-types scripts/ci/check-workflow-config.ts
+          node -e 'const fs=require("node:fs");const rows=fs.readFileSync(process.env.GITHUB_OUTPUT,"utf8").split("\n").filter(row=>row.startsWith("should_run="));if(rows.length!==1||rows[0]!=="should_run=true")process.exit(1)'
       - name: Check out reviewed candidate
         if: steps.trusted_config.outputs.should_run == 'true'
         uses: actions/checkout@v7
@@ -87,9 +88,7 @@ jobs:
         if: steps.trusted_config.outputs.should_run == 'true'
         run: |
           node tools/inventory-native-journal-fixture/prepare.mjs android "$RUNNER_TEMP/journal-fixture"
-          cd "$RUNNER_TEMP/journal-fixture"
-          flutter pub get > /dev/null 2>&1
-          flutter build apk --debug --dart-define-from-file=defines.json > /dev/null 2>&1
+          node tools/inventory-native-journal-fixture/build.mjs android "$RUNNER_TEMP/journal-fixture"
       - name: Boot disposable emulator and prove real storage across process death
         if: steps.trusted_config.outputs.should_run == 'true'
         timeout-minutes: 12
@@ -160,6 +159,7 @@ jobs:
           test -f tuturuuu.ci.ts
           node --experimental-strip-types --input-type=module -e 'import {ci} from "./tuturuuu.ci.ts"; if(ci[process.env.WORKFLOW_NAME] !== true)process.exit(1)'
           node --experimental-strip-types scripts/ci/check-workflow-config.ts
+          node -e 'const fs=require("node:fs");const rows=fs.readFileSync(process.env.GITHUB_OUTPUT,"utf8").split("\n").filter(row=>row.startsWith("should_run="));if(rows.length!==1||rows[0]!=="should_run=true")process.exit(1)'
       - name: Check out reviewed candidate
         if: steps.trusted_config.outputs.should_run == 'true'
         uses: actions/checkout@v7
@@ -189,9 +189,7 @@ jobs:
         run: |
           flutter config --no-enable-swift-package-manager
           node tools/inventory-native-journal-fixture/prepare.mjs ios "$RUNNER_TEMP/journal-fixture"
-          cd "$RUNNER_TEMP/journal-fixture"
-          flutter pub get > /dev/null 2>&1
-          flutter build ios --debug --simulator --dart-define-from-file=defines.json > /dev/null 2>&1
+          node tools/inventory-native-journal-fixture/build.mjs ios "$RUNNER_TEMP/journal-fixture"
       - name: Boot disposable simulator and prove real storage across process death
         if: steps.trusted_config.outputs.should_run == 'true'
         timeout-minutes: 12

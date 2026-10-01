@@ -1,15 +1,17 @@
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   copyFileSync,
   mkdirSync,
   readFileSync,
   statfsSync,
-  statSync,
   writeFileSync,
 } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { collectArtifacts } from './artifacts.mjs';
+
+export { validateArtifactItems } from './artifacts.mjs';
 
 export function applicationId(platform) {
   if (platform === 'android')
@@ -35,33 +37,22 @@ export function assertDiskAdmission(platform, mode, freeGiB) {
   return minimum;
 }
 
-export function validateArtifactItems(items) {
-  const allowlist = [
-    'environment.json',
-    'native-proof.json',
-    'proof-input.json',
-  ];
-  if (
-    items.length !== 3 ||
-    JSON.stringify(items.map(([name]) => name).sort()) !==
-      JSON.stringify(allowlist)
-  ) {
-    throw Error('Artifact allowlist mismatch');
-  }
-  let total = 0;
-  for (const [, content] of items) {
-    const size = Buffer.byteLength(content);
-    total += size;
-    if (size > 65_536 || total > 196_608)
-      throw Error('Artifact size cap exceeded');
-  }
-  return total;
-}
-
 export function prepare(args = process.argv.slice(2)) {
   const [platform, destination, mode] = args;
   if (!['android', 'ios'].includes(platform) || !destination)
     throw Error('Invalid target');
+  if (mode === '--artifacts') {
+    let freeGiB = null;
+    try {
+      const disk = statfsSync(process.env.RUNNER_TEMP);
+      freeGiB = (Number(disk.bavail) * Number(disk.bsize)) / 2 ** 30;
+    } catch {
+      /* Missing disk metadata never suppresses bounded failure evidence. */
+    }
+    if (!collectArtifacts(platform, destination, { freeGiB }))
+      process.exitCode = 1;
+    return;
+  }
   const freeGiB =
     (Number(statfsSync(process.env.RUNNER_TEMP).bavail) *
       Number(statfsSync(process.env.RUNNER_TEMP).bsize)) /
@@ -71,92 +62,6 @@ export function prepare(args = process.argv.slice(2)) {
     console.log(
       `Fixture preflight PASS: ${platform}, minimum ${minimum} GiB free`
     );
-    process.exit(0);
-  }
-  if (mode === '--artifacts') {
-    const inputFile = resolve(destination, 'proof-input.json');
-    if (statSync(inputFile).size > 65_536)
-      throw Error('Input size cap exceeded');
-    const input = JSON.parse(readFileSync(inputFile));
-    const flutter = JSON.parse(
-      execFileSync('flutter', ['--version', '--machine'], {
-        encoding: 'utf8',
-        timeout: 30_000,
-        maxBuffer: 65_536,
-        stdio: 'pipe',
-      })
-    );
-    const metadata = {
-      ...input,
-      node: process.version,
-      flutter: flutter.frameworkVersion,
-      dart: flutter.dartSdkVersion,
-      engine_revision: flutter.engineRevision,
-      final_free_gib: Math.floor(freeGiB),
-      secure_storage_versions: {},
-    };
-    const lockFile = resolve(destination, 'pubspec.lock');
-    if (statSync(lockFile).size > 1_048_576)
-      throw Error('Resolved lock too large');
-    const lock = readFileSync(lockFile, 'utf8');
-    metadata.resolved_lock_sha256 = createHash('sha256')
-      .update(lock)
-      .digest('hex');
-    let packageName;
-    for (const line of lock.split('\n')) {
-      const name = /^ {2}(flutter_secure_storage(?:_[a-z_]+)?):$/.exec(line);
-      if (/^ {2}[a-z_]+:$/.test(line)) packageName = name?.[1];
-      const version = /^ {4}version: "([0-9][0-9A-Za-z.+-]*)"$/.exec(line);
-      if (packageName && version)
-        metadata.secure_storage_versions[packageName] = version[1];
-    }
-    if (platform === 'android') {
-      const java = spawnSync('java', ['-version'], {
-        encoding: 'utf8',
-        timeout: 30_000,
-        maxBuffer: 65_536,
-      });
-      metadata.java = /version "([0-9][0-9A-Za-z._+-]*)"/.exec(
-        java.stderr
-      )?.[1];
-    } else {
-      const xcode = execFileSync('xcodebuild', ['-version'], {
-        encoding: 'utf8',
-        timeout: 30_000,
-        maxBuffer: 65_536,
-        stdio: 'pipe',
-      });
-      metadata.xcode = /^Xcode ([0-9.]+)/m.exec(xcode)?.[1];
-      metadata.xcode_build = /^Build version ([A-Za-z0-9]+)/m.exec(xcode)?.[1];
-    }
-    const proofFile = resolve(destination, 'native-proof.json');
-    if (statSync(proofFile).size > 65_536)
-      throw Error('Native proof too large');
-    const versions = [
-      metadata.flutter,
-      metadata.dart,
-      metadata.engine_revision,
-      platform === 'android' ? metadata.java : metadata.xcode,
-      metadata.secure_storage_versions.flutter_secure_storage,
-    ];
-    if (
-      versions.some(
-        (value) =>
-          typeof value !== 'string' || !/^[0-9A-Za-z.+_ -]{1,96}$/.test(value)
-      )
-    )
-      throw Error('Tool version unavailable');
-    const artifacts = resolve(destination, 'artifacts');
-    mkdirSync(artifacts, { recursive: true });
-    const items = [
-      ['proof-input.json', JSON.stringify(input)],
-      ['environment.json', JSON.stringify(metadata)],
-      ['native-proof.json', readFileSync(proofFile, 'utf8')],
-    ];
-    validateArtifactItems(items);
-    for (const [name, content] of items) {
-      writeFileSync(resolve(artifacts, name), content);
-    }
     process.exit(0);
   }
   const root = process.cwd();
@@ -202,6 +107,11 @@ export function prepare(args = process.argv.slice(2)) {
   copyFileSync(
     resolve(fixture, 'lib/main.dart'),
     resolve(destination, 'lib/main.dart')
+  );
+  mkdirSync(resolve(destination, 'test'), { recursive: true });
+  copyFileSync(
+    resolve(fixture, 'test/main_test.dart'),
+    resolve(destination, 'test/main_test.dart')
   );
   copyFileSync(
     journal,
