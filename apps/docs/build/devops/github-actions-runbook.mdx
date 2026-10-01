@@ -41,6 +41,21 @@ GitHub Actions is the primary automation plane for Tuturuuu.
 See [stack policy](/build/development-tools/stacked-pull-requests) and
 [product decisions](/build/development-tools/documenting#product-decisions-and-regression-evidence).
 
+### Python installer and cache boundaries
+
+Discord workflows pin `astral-sh/setup-uv` to the immutable commit for stable
+v10.2.0. Upstream stopped publishing major-only tags in v8, so future upgrades
+must verify and pin the full stable release SHA. Keep `uv sync --locked` and
+the `apps/discord/uv.lock` cache key together.
+
+Ordinary Python CI retains cache pruning explicitly because setup-uv v9 changed
+its default to keep unpruned caches. Modal's deployment is triggered by
+`workflow_run` and uses `enable-cache: auto`: setup-uv v10 disables cache access
+for that sensitive event to protect against cache poisoning. Manual deployment
+can still use the automatic cache policy. Preserve the successful-main-run
+condition, exact upstream checkout SHA, and read-only repository permissions
+when updating the installer; do not enable caching explicitly for `workflow_run`.
+
 ## Workflow Gatekeeping
 
 Every major workflow can be disabled centrally through
