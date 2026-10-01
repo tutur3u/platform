@@ -32,6 +32,17 @@ Biome and focused no-emit TypeScript failures make the runners fail. Geometry ow
 the type check; the second runner avoids repeating it for unchanged product source.
 Use `run-geometry.mjs` or `run-ui.mjs` directly to isolate a failure.
 
+The repository keeps Node >=22.13.0. The parent explicitly passes
+`--experimental-strip-types` to its children because the UI runner imports the
+test-only TypeScript freshness helper. Direct UI and regression invocations must
+also pass that flag; Node22.13–22.17 does not enable stripping by default.
+[Node22.13 documentation](https://nodejs.org/download/release/v22.13.0/docs/api/typescript.html#type-stripping)
+documents the supported explicit flag. For a direct UI run:
+
+```sh
+ttr resources run -- node --experimental-strip-types apps/learn/tests/programming-workspace/run-ui.mjs
+```
+
 Published correction `766f33b7c4` passed the original equivalent local batch: 4 geometry
 checks and 17 workspace checks, no console/page errors, focused lint/typecheck pass.
 This portable followup relocates/sanitizes that harness; its validation is recorded
@@ -40,7 +51,7 @@ in the PR handoff separately. Customer pixels/Library metadata stay outside Git.
 Review regressions can run without a browser or server:
 
 ```bash
-ttr resources run -- node --test apps/learn/tests/programming-workspace/review-regressions.node-test.mjs
+ttr resources run -- node --experimental-strip-types --test apps/learn/tests/programming-workspace/review-regressions.node-test.mjs
 ```
 
 These execute the actual header measurement helper, editor font callbacks,

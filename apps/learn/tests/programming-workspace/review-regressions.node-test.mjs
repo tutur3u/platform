@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync as realSpawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -350,6 +351,61 @@ test('batch budget includes child work and teardown, and reports signal/error fa
   });
   assert.equal(calls.length, 1);
   assert.equal(calls[0].options.timeout, 750000);
+  assert.equal(calls[0].args[0], '--experimental-strip-types');
   assert.match(errors[0], /SIGTERM.*ETIMEDOUT/);
   assert.equal(process.exitCode, 1);
+});
+
+test('batch explicitly strips types for both children on the supported Node floor', () => {
+  const code = fs
+    .readFileSync(
+      path.join(import.meta.dirname, 'run-font-fix-batch.mjs'),
+      'utf8'
+    )
+    .replace(/^import .*;$/gm, '')
+    .replace('import.meta.dirname', "'/synthetic'");
+  const calls = [];
+  vm.runInNewContext(code, {
+    path,
+    process: { env: {}, execPath: 'node' },
+    spawnSync: (_command, args) => {
+      calls.push(args);
+      return { status: 0 };
+    },
+    console,
+  });
+  assert.equal(calls.length, 2);
+  assert.deepEqual(
+    calls.map((args) => [...args]),
+    [
+      ['--experimental-strip-types', '/synthetic/run-geometry.mjs'],
+      ['--experimental-strip-types', '/synthetic/run-ui.mjs'],
+    ]
+  );
+});
+
+test('explicit stripping loads the actual freshness helper when default stripping is off', () => {
+  const helper = new URL('./synthetic-result.ts', import.meta.url).href;
+  const code = `const m = await import(${JSON.stringify(helper)}); console.log(m.syntheticSubmissionId(1));`;
+  const options = { encoding: 'utf8', timeout: 5000 };
+  const disabled = realSpawnSync(
+    process.execPath,
+    ['--no-experimental-strip-types', '--input-type=module', '--eval', code],
+    options
+  );
+  assert.notEqual(disabled.status, 0);
+  assert.match(disabled.stderr, /ERR_UNKNOWN_FILE_EXTENSION/);
+  const enabled = realSpawnSync(
+    process.execPath,
+    [
+      '--no-experimental-strip-types',
+      '--experimental-strip-types',
+      '--input-type=module',
+      '--eval',
+      code,
+    ],
+    options
+  );
+  assert.equal(enabled.status, 0, enabled.stderr);
+  assert.equal(enabled.stdout.trim(), syntheticSubmissionId(1));
 });
