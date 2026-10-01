@@ -570,8 +570,6 @@ void main() {
         ),
       );
       final key = GlobalKey();
-      final repository = _FractionalOverview();
-      addTearDown(repository.dispose);
       await tester.pumpApp(
         BlocProvider<WorkspaceCubit>.value(
           value: workspace,
