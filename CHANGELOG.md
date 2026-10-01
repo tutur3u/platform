@@ -1,5 +1,75 @@
 # Changelog
 
+## [0.64.0](https://github.com/tutur3u/platform/compare/platform-v0.63.0...platform-v0.64.0) (2026-10-01)
+
+
+### Features
+
+* **calendar:** expose authorized event link previews ([e9d2823](https://github.com/tutur3u/platform/commit/e9d2823224f0d81aa94a3a6e12d298979ff594a3)) ([#5672](https://github.com/tutur3u/platform/issues/5672)) ([784ab40](https://github.com/tutur3u/platform/commit/784ab4058c815cc979e632caf7a763df0b896f75))
+* **infrastructure:** hide retired review accounts by default ([99bcb04](https://github.com/tutur3u/platform/commit/99bcb04da2cdd943492b085cc06b93b1e8190112)) ([#5664](https://github.com/tutur3u/platform/issues/5664)) ([2ce84b1](https://github.com/tutur3u/platform/commit/2ce84b10ed97ebbeae7b763658825257d9ecad61))
+* **mail:** add canonical Calendar association preview service ([bcf5a0e](https://github.com/tutur3u/platform/commit/bcf5a0e3107f703d76b1abc27221e682fedcdd7f)) ([#5671](https://github.com/tutur3u/platform/issues/5671)) ([c9de495](https://github.com/tutur3u/platform/commit/c9de4957d92c1403c1827bf1fa7aaf48761a98aa))
+* **mobile:** add scoped timezone settings and preserve calendar instants ([4f96eca](https://github.com/tutur3u/platform/commit/4f96ecad57893376604d9859a8a235273b9373db)) ([#5656](https://github.com/tutur3u/platform/issues/5656)) ([eed3b40](https://github.com/tutur3u/platform/commit/eed3b4001db6a5273f148d105187c8e4ecc2d684))
+* **mobile:** consolidate settings and unify ordering and profile views ([66129e1](https://github.com/tutur3u/platform/commit/66129e1bcd778475bd3645068968352c438f87fb)) ([#5658](https://github.com/tutur3u/platform/issues/5658)) ([baf0e11](https://github.com/tutur3u/platform/commit/baf0e115104c13df924a22bd4c56d79660c5b9b7))
+* **mobile:** inherit verified timezone fixes into settings assembly ([c4600c9](https://github.com/tutur3u/platform/commit/c4600c9d0485f9c14dbe741c480e0edc237d5eb8))
+
+
+### Bug Fixes
+
+* **calendar:** align calendar-day navigation and zoned query ranges ([e81a8be](https://github.com/tutur3u/platform/commit/e81a8be8edf2e46b2653bfcf30bc118d12984e88))
+* **calendar:** align date navigation and zoned query ranges ([#5654](https://github.com/tutur3u/platform/issues/5654)) ([f40288c](https://github.com/tutur3u/platform/commit/f40288c7cc817f71ca30f6ee5331efbf726c4ada))
+* **calendar:** format clock options without browser dates ([757709e](https://github.com/tutur3u/platform/commit/757709ecbf1070cfa3248ece54f9b9c66cd000c7))
+* **calendar:** honor resolved timezone in event picker ([eae3a25](https://github.com/tutur3u/platform/commit/eae3a25ec443fbb1fe51acf1c642a6b44e6c80f8)) ([#5648](https://github.com/tutur3u/platform/issues/5648)) ([7ccc4b3](https://github.com/tutur3u/platform/commit/7ccc4b356411744f5b90e55c35c1e6f759981d42))
+* **calendar:** isolate optional source color persistence failures ([2fbbbfe](https://github.com/tutur3u/platform/commit/2fbbbfe9ad2c4a05ff2c9ee1737969bb4aaf5b9c))
+* **calendar:** preserve date-only route navigation ([b197398](https://github.com/tutur3u/platform/commit/b1973986b3bdf1a81959d67b4c99812300dfddc7))
+* **calendar:** preserve explicit time bounds and guard DST rollover ([56d746b](https://github.com/tutur3u/platform/commit/56d746b91e8c4d48c6c97ad88a32cab74f8457cc))
+* **calendar:** preserve Google color identity and inheritance ([#5657](https://github.com/tutur3u/platform/issues/5657)) ([0c2aac6](https://github.com/tutur3u/platform/commit/0c2aac6a1a2b6e9f6eb66bde1e783bf407603cff))
+* **calendar:** preserve Google provider color identity and inheritance ([08f2363](https://github.com/tutur3u/platform/commit/08f236349d1dc29ad0593de8f668d5ce504f38d0))
+* **calendar:** propagate native colors through provider create callers ([3023b18](https://github.com/tutur3u/platform/commit/3023b18704ce0b2c02b8fcde8bf1321fb759466a))
+* **calendar:** reject colonless timezone offsets ([7755c0d](https://github.com/tutur3u/platform/commit/7755c0d6adf34ffe4c56f1986c932abea493bc81))
+* **calendar:** reject undecrypted link preview targets ([df9a458](https://github.com/tutur3u/platform/commit/df9a458cff944dfe055c93c760b3595d945417c2))
+* **calendar:** resolve Trigger sync provider colors ([d7eab8a](https://github.com/tutur3u/platform/commit/d7eab8ab42ec2aa2a5ca00938e28ecf637a9161a))
+* **calendar:** respect timezone in picker bounds and previews ([47720c7](https://github.com/tutur3u/platform/commit/47720c72d09545cd86d3d3814d4fb83f53848890))
+* **calendar:** secure mobile timezone settings ([78f9054](https://github.com/tutur3u/platform/commit/78f90545a19f9e3d4c5e784a5fa2cef6f0b6dff0)) ([#5651](https://github.com/tutur3u/platform/issues/5651)) ([33b05d3](https://github.com/tutur3u/platform/commit/33b05d333829cb4a6e52930744ab78779305f354))
+* **calendar:** type authorized preview contracts and fixtures ([a8e5cd0](https://github.com/tutur3u/platform/commit/a8e5cd05b70af53098b17f5583ab2b63494cf167))
+* **calendar:** type source color refresh and update batch expectations ([9316c35](https://github.com/tutur3u/platform/commit/9316c35b35d703d2e6445802c7d2c0db4a5f9bc2))
+* **calendar:** type-check picker regression import ([60aef11](https://github.com/tutur3u/platform/commit/60aef114c7ad9b3b327befaee37798db1a98b9b6))
+* **calendar:** use calendar timezone for picker bounds and previews ([#5653](https://github.com/tutur3u/platform/issues/5653)) ([ea912c0](https://github.com/tutur3u/platform/commit/ea912c0fd89bf54ca073ae9c8b219a3696db4d19))
+* **contacts:** isolate report dashboard subject transitions ([09630e8](https://github.com/tutur3u/platform/commit/09630e825847d3a2ef483ded9ea466d748d4740e)) ([#5666](https://github.com/tutur3u/platform/issues/5666)) ([2241ae6](https://github.com/tutur3u/platform/commit/2241ae6dcd0063dd883407f0635909834ed9a926))
+* **contacts:** keep indicator creation actions reachable ([909df6b](https://github.com/tutur3u/platform/commit/909df6b4c906a62b29fca0c0a0346122116edf66)) ([#5655](https://github.com/tutur3u/platform/issues/5655)) ([79a2547](https://github.com/tutur3u/platform/commit/79a2547c572a3f2f15a544e44f6f92675a94e303))
+* **database:** order unapplied calendar metadata migration after main ([5f9d3c2](https://github.com/tutur3u/platform/commit/5f9d3c2863d58d0f097e0742e18ed0f9eb3b8bda))
+* **database:** persist calendar import scheduling metadata ([7860633](https://github.com/tutur3u/platform/commit/7860633bfa927cabcd5fa50d1fdea9559bdf9c8f))
+* **database:** persist calendar scheduling metadata through import RPC ([#5665](https://github.com/tutur3u/platform/issues/5665)) ([3c940de](https://github.com/tutur3u/platform/commit/3c940dea4c327c8d427120571c9561436e7bb78f))
+* **database:** preserve cross-workspace audit actor pagination ([9319864](https://github.com/tutur3u/platform/commit/9319864206260ad37d5b58739a95f74c18b4c7ae))
+* **mail:** add invitation RSVP and settle final inbox archive ([#5668](https://github.com/tutur3u/platform/issues/5668)) ([48a1687](https://github.com/tutur3u/platform/commit/48a1687f253cb7df72716fd4c289a0dcf1aa329d))
+* **mail:** canonicalize calendar link occurrence and receipts ([be3c1a6](https://github.com/tutur3u/platform/commit/be3c1a6ca9fdd274c4260dd322169ffb8f81ab67))
+* **mail:** preserve archived rows during web inbox refresh ([#5670](https://github.com/tutur3u/platform/issues/5670)) ([2ab9d7c](https://github.com/tutur3u/platform/commit/2ab9d7c36aa7a4dc0e4f850ab200cf8c030ea9d3))
+* **mail:** preserve recurrence and replay state ([89afe35](https://github.com/tutur3u/platform/commit/89afe35adb557e9f09fd7a023284f005fa9a9d7b))
+* **mail:** preserve web archive state during inbox refresh ([ba6b143](https://github.com/tutur3u/platform/commit/ba6b143b1a30034e992e1b12031f589d4d352c69))
+* **mail:** reject malformed timezone rule assignments ([34aad60](https://github.com/tutur3u/platform/commit/34aad608bd537ef37b8e88b02a4c393707c9b618))
+* **mail:** retain new messages during pending thread archives ([95adcf9](https://github.com/tutur3u/platform/commit/95adcf97c27770a0caacff77bb091fb1cde94e98))
+* **mail:** support invitation replies and settle empty inbox ([57e27ab](https://github.com/tutur3u/platform/commit/57e27ab6582e6cb5a1b6be43039ebf795cf908a2))
+* **mobile:** handle avatar image failures with visible fallback ([8ae5bf3](https://github.com/tutur3u/platform/commit/8ae5bf3d9d824e115f56011d490308e5dd57672c))
+* **mobile:** inherit reminder and timezone review corrections ([c3ebfce](https://github.com/tutur3u/platform/commit/c3ebfce99d4943df42d0609400e9509a1562507d))
+* **mobile:** merge beta changes with published release notes ([e83174b](https://github.com/tutur3u/platform/commit/e83174b13951be4b270b798d3dd007ff57dce62a))
+* **mobile:** preserve avatar image identity across rebuilds ([e8f4352](https://github.com/tutur3u/platform/commit/e8f4352796636e78ea21e9886a40ed955d93b845))
+* **mobile:** preserve calendar instants across timezone transitions ([6399a08](https://github.com/tutur3u/platform/commit/6399a08e7c51cd8c2085d128cc10826915b1ba1f))
+* **mobile:** preserve unused beta source versions ([92b0b85](https://github.com/tutur3u/platform/commit/92b0b856508cfed5f5619df8500581c9ef2279d3)) ([#5667](https://github.com/tutur3u/platform/issues/5667)) ([9298057](https://github.com/tutur3u/platform/commit/9298057f5c26f54948c618083c223fb5d6ac0a04))
+* **mobile:** reconcile pending reminders across session changes ([14f6cc4](https://github.com/tutur3u/platform/commit/14f6cc4cb6aa892d9c8125f0034e978cea592cf4))
+* **mobile:** recover unresolved timezone preferences ([486c0e9](https://github.com/tutur3u/platform/commit/486c0e97a81cb6421d7b4c07743561db7a25193a)) ([#5680](https://github.com/tutur3u/platform/issues/5680)) ([301e29d](https://github.com/tutur3u/platform/commit/301e29df55dfefaa9b230d7a7ea689f903809200))
+* **mobile:** require verified workspace membership refresh ([4df15c8](https://github.com/tutur3u/platform/commit/4df15c87f31c4b2b1602c6e31b78bf39a114f73a))
+* **mobile:** retain avatar fallback on image and disposal failures ([#5662](https://github.com/tutur3u/platform/issues/5662)) ([7f383d1](https://github.com/tutur3u/platform/commit/7f383d157a0f6b2dc1330e31911c2730a33f441b))
+* **mobile:** retain published notes for initial beta versions ([3f1a2e5](https://github.com/tutur3u/platform/commit/3f1a2e5f741c8738f416038af0750be77995e396))
+* **mobile:** retain reminders during unresolved workspace discovery ([f8610d0](https://github.com/tutur3u/platform/commit/f8610d0aae90699c91d319d51ecb307a4025d08c))
+* **mobile:** schedule all-day reminders in the effective timezone ([904ba81](https://github.com/tutur3u/platform/commit/904ba818c99fad6afd5b3ee5a4810880f45138f5))
+* **mobile:** serialize timezone reminder reconciliation ([7b0e0fc](https://github.com/tutur3u/platform/commit/7b0e0fc00b20fb1955b55e61509c564a638285a8))
+
+
+### Performance Improvements
+
+* **database:** avoid repeated audit snapshot anchor reads ([#5660](https://github.com/tutur3u/platform/issues/5660)) ([3120acb](https://github.com/tutur3u/platform/commit/3120acb6cb723547f47440e6e43b0472bcca8030))
+* **database:** extract audit anchors once per snapshot ([8c0415f](https://github.com/tutur3u/platform/commit/8c0415f3f3eb83f2019607a57e863459e21c5770))
+* **database:** page user group audit before enrichment ([f191a50](https://github.com/tutur3u/platform/commit/f191a50b52a14525445addb98a336a04b5ac5a89)) ([#5652](https://github.com/tutur3u/platform/issues/5652)) ([8c93a07](https://github.com/tutur3u/platform/commit/8c93a07a987fee70555d3e33609ab4f1d31dc8b0))
+
 ## [0.63.0](https://github.com/tutur3u/platform/compare/platform-v0.62.0...platform-v0.63.0) (2026-09-29)
 
 
