@@ -300,10 +300,10 @@ delete from public.workspace_members where ws_id='00000000-0000-4000-8000-000000
 set local role authenticated;
 select set_config('request.jwt.claims',jsonb_build_object('sub','00000000-0000-4000-8000-000000009901','role','authenticated')::text,true);
 insert into public.user_configs(user_id,id,value) values ('00000000-0000-4000-8000-000000009901','HIDDEN_WORKSPACE:00000000-0000-4000-8000-000000009910','true');
-with removed as (delete from public.user_workspace_configs where user_id=auth.uid() and ws_id='00000000-0000-4000-8000-000000009910' and id='HIDDEN_WORKSPACE' returning 1)
 do $assert$
 declare check_result text;
 begin
+  with removed as (delete from public.user_workspace_configs where user_id=auth.uid() and ws_id='00000000-0000-4000-8000-000000009910' and id='HIDDEN_WORKSPACE' returning 1)
   select 'ASSERT 21: ' || ((select count(*) from removed) = 0)::text || ' genuine guest RLS cannot remove stale membership preference' into check_result;
   if check_result is null or check_result !~ '^ASSERT [0-9]+: true( |$)' then
     raise exception 'Hidden workspace verification failed: %', check_result;

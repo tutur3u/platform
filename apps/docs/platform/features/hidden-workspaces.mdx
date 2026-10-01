@@ -220,3 +220,8 @@ that dependency; do not invent replacement policies or broaden grants. Only then
 can the two fixtures, three negative controls and five rollback checks provide
 15/26 assertion evidence. This does not claim full Supabase service, API, realtime
 or production-schema parity, and does not authorize starting a database.
+
+The board-guest ASSERT21 data-changing CTE is scoped inside its consuming
+assertion query. Structural regression coverage rejects a CTE left before a DO
+block; this coverage is not a PostgreSQL grammar check. Revised SQL still needs
+fresh admitted runtime validation.

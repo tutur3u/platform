@@ -265,3 +265,22 @@ test('denies an unadmitted executor and rejects retained synthetic rows', async 
     })
   );
 });
+
+// Structural regression only: this does not parse or execute PostgreSQL.
+test('data-changing CTEs stay inside the assertion query that consumes them', () => {
+  for (const sql of [privacySql, guestSql]) {
+    assert.doesNotMatch(sql, /with (?:removed|changed) as[^;]*?do \$assert\$/i);
+    for (const block of sql.split('do $assert$').slice(1)) {
+      const body = block.split('$assert$;')[0];
+      for (const cte of ['removed', 'changed']) {
+        if (new RegExp(`from ${cte}\\b`, 'i').test(body)) {
+          assert.match(body, new RegExp(`begin\\s+with ${cte} as`, 'i'));
+        }
+      }
+    }
+  }
+  assert.match(
+    guestSql,
+    /with removed as \(delete from public\.user_workspace_configs[^;]+returning 1\)\s+select 'ASSERT 21:/
+  );
+});
