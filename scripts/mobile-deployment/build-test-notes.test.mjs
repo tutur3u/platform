@@ -234,7 +234,7 @@ for (const expired of [true, false]) {
   });
 }
 
-for (const deferral of ['metadata', 'pending', 'history']) {
+for (const deferral of ['metadata', 'unsafe reviewer', 'pending', 'history']) {
   test(`notes and internal group availability remain separate from ${deferral} review deferral`, async () => {
     const api = localizationApi({
       id: 'english',
@@ -274,7 +274,19 @@ for (const deferral of ['metadata', 'pending', 'history']) {
               : [],
         };
       if (path === '/v1/apps/app/betaAppReviewDetail')
-        return { data: { attributes: { demoAccountRequired: false } } };
+        return {
+          data: {
+            attributes:
+              deferral === 'unsafe reviewer'
+                ? {
+                    demoAccountRequired: true,
+                    demoAccountName: 'review@tuturuuu.com',
+                    demoAccountPassword: 'synthetic-test-value',
+                    notes: 'Synthetic review instructions',
+                  }
+                : { demoAccountRequired: false },
+          },
+        };
       throw new Error('Unexpected request');
     };
     assert.deepEqual(
