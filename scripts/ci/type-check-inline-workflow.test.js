@@ -21,16 +21,17 @@ const heavyNames = [
 ];
 const expression = (body) => `\${{ ${body} }}`;
 
-test('singleton keeps the Type Check context, event surface, runner and inherited permissions', () => {
+test('singleton keeps the Type Check context, event surface and runner with a read-only token', () => {
   assert.equal(workflow.name, 'TypeScript Type Check');
   assert.deepEqual(workflow.on, { push: null, workflow_dispatch: null });
   assert.deepEqual(Object.keys(workflow.jobs), ['type-check']);
   assert.equal(job.name, 'Type Check');
   assert.equal(job['runs-on'], 'ubuntu-latest');
   for (const object of [workflow, job]) {
-    assert.equal(object.permissions, undefined);
     assert.equal(object.concurrency, undefined);
   }
+  assert.equal(workflow.permissions, undefined);
+  assert.deepEqual(job.permissions, { contents: 'read' });
   assert.equal(job.needs, undefined);
   assert.equal(job.if, undefined);
   const checkouts = job.steps.filter((step) =>

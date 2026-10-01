@@ -148,12 +148,17 @@ A configuration-disabled or release-only run now reports a successful
 instead of a skipped job. It does not claim compilation occurred. Effective
 GitHub rules for `main` and `production` still had no required status-check
 contexts when this change was prepared on October 1, 2026. The job name,
-triggers, runner label, secrets, and inherited permissions remain unchanged.
-The repository currently defaults inherited job tokens to write access; inline
-preflight therefore shares that existing job permission scope rather than the
-former reusable preflight's separate read-only scope. Type Check's changed-file
-resolver uses push payloads or manual dispatch, not deployment API markers, so
-it does not expose a token through its preflight environment. Deployment-aware
+triggers, runner label, and secrets remain unchanged. The whole singleton job
+explicitly uses `permissions: { contents: read }`; unspecified token permissions
+are `none`. This keeps preflight read-only and removes the heavy job's inherited
+write access. Checkout and Node setup need repository read access. Type Check's
+changed-file resolver uses push payloads or manual dispatch, not deployment API
+markers, and does not inject a token into its preflight environment. Bun setup,
+install, compiler commands, and the skip summary need no GitHub write grant.
+GitHub cache save/restore uses the Actions runtime token; Turbo remote caching
+uses its existing separately scoped credential. The workflow has no artifact
+upload, publishing, deployment, or custom check/status API step, so no privileged
+job is needed. GitHub Actions generates the named job check. Deployment-aware
 callers continue using the reusable gate with `deployments: read`.
 
 This singleton layout removes one additional runner allocation relative to the

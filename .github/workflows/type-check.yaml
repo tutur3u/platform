@@ -7,6 +7,8 @@ on:
 jobs:
   type-check:
     name: Type Check
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
