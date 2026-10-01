@@ -53,6 +53,14 @@ metadata cannot strand recovery or route it into legacy creation. Operators can
 leave and resume in the owning account/workspace. No automatic/offline replay
 occurs.
 
+An actor/workspace switch during a POST or receipt lookup clears the mounted
+checkout immediately and queues the current scope's catalog reload until the
+active save finishes. Every switch advances a scope revision, including A→B→A;
+a late response cannot acknowledge, navigate or display an error on the reset
+form merely because its actor/workspace pair matches again. The original scoped
+journal retains its UUID and immutable body. Returning to its owning scope opens
+recovery (or the recorded confirmed result); switching away loads the new scope.
+
 An explicit Check sale result action calls the authenticated uncached
 `GET /api/v1/workspaces/{wsId}/inventory/sale-requests/{requestId}`. The server
 verifies current canonical membership and create-sales action permission, derives
@@ -109,7 +117,10 @@ Recovery regressions cover persistent-store round trips, write-before-send,
 restart/scope isolation, late completion, concurrent checkouts, rejection identity
 retention, denied lookup and confirmed receipt handling. Mounted tests exercise
 preference/cache failures after success, metadata Retry removal while uncertain,
-and recovery after metadata denial. Route tests verify permissions, canonical actor
+and recovery after metadata denial. Twelve mounted scope-switch cases cover
+actor and workspace A→B/A→B→A during delayed POST success, timeout and receipt
+responses; they assert current-scope readiness and preserved original identity.
+Route tests verify permissions, canonical actor
 filters, minimal output and unavailable versus not-observed semantics.
 
 Native keychain/keystore durability and exact-head mobile/API CI remain release

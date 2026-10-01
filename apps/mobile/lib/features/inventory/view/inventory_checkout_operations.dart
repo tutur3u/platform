@@ -3,7 +3,11 @@ part of 'inventory_checkout_page.dart';
 extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
   Future<void> _loadData() async {
     final wsId = _wsId;
-    if (wsId == null || _season.hasPending || _saving) {
+    if (_saving) {
+      _reloadAfterSave = true;
+      return;
+    }
+    if (wsId == null || _season.hasPending) {
       return;
     }
     final actor = _actorId;
@@ -135,6 +139,7 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
       return;
     }
     final actor = _actorId;
+    final revision = _scopeRevision;
     if (_selectedRows.isEmpty ||
         _walletId == null ||
         _resolvedCategoryId == null) {
@@ -183,7 +188,7 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
           periodId: _periodId,
         );
         unawaited(_rememberCategory(wsId, resolvedCategoryId));
-        if (!mounted || wsId != _wsId || actor != _actorId) {
+        if (!mounted || !_matchesSaveScope(revision, actor, wsId)) {
           return;
         }
         showInventoryToast(context, context.l10n.inventorySaleUpdated);
@@ -248,7 +253,7 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
           periodId: _periodId,
         );
       }
-      if (!mounted || wsId != _wsId || actor != _actorId) {
+      if (!mounted || !_matchesSaveScope(revision, actor, wsId)) {
         return;
       }
       _update(() => _saleCompleted = true);
@@ -257,19 +262,17 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
       showInventoryToast(context, context.l10n.inventorySaleCreated);
       if (context.canPop()) context.pop(true);
     } on ApiException catch (error) {
-      if (!mounted || wsId != _wsId || actor != _actorId) {
+      if (!mounted || !_matchesSaveScope(revision, actor, wsId)) {
         return;
       }
       showInventoryToast(context, error.message, destructive: true);
     } on Object catch (error) {
-      if (!mounted || wsId != _wsId || actor != _actorId) {
+      if (!mounted || !_matchesSaveScope(revision, actor, wsId)) {
         return;
       }
       showInventoryToast(context, error.toString(), destructive: true);
     } finally {
-      if (mounted) {
-        _update(() => _saving = false);
-      }
+      _finishSave();
     }
   }
 }

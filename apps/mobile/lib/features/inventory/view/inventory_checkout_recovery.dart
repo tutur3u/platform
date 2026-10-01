@@ -1,6 +1,20 @@
 part of 'inventory_checkout_page.dart';
 
 extension _InventoryCheckoutRecovery on _InventoryCheckoutPageState {
+  bool _matchesSaveScope(int revision, String? actor, String? workspace) =>
+      mounted &&
+      revision == _scopeRevision &&
+      actor == _actorId &&
+      workspace == _wsId;
+
+  void _finishSave() {
+    if (!mounted) return;
+    final reload = _reloadAfterSave;
+    _reloadAfterSave = false;
+    _update(() => _saving = false);
+    if (reload && !_scopeChanged) unawaited(_load());
+  }
+
   Future<void> _rememberCategory(String wsId, String categoryId) async {
     try {
       await _settingsRepository.setLastIncomeCategory(wsId, categoryId);
@@ -20,16 +34,17 @@ extension _InventoryCheckoutRecovery on _InventoryCheckoutPageState {
   Future<void> _recoverSale() async {
     final actor = _actorId;
     final workspace = _wsId;
+    final revision = _scopeRevision;
     _update(() => _saving = true);
     try {
       await _season.retryPending();
-      if (!mounted || actor != _actorId || workspace != _wsId) return;
+      if (!mounted || !_matchesSaveScope(revision, actor, workspace)) return;
       _update(() => _saleCompleted = true);
       unawaited(_acknowledgeReceipt());
       showInventoryToast(context, context.l10n.inventorySaleCreated);
       if (context.canPop()) context.pop(true);
     } on Object {
-      if (mounted && actor == _actorId && workspace == _wsId) {
+      if (mounted && _matchesSaveScope(revision, actor, workspace)) {
         showInventoryToast(
           context,
           context.l10n.inventorySeasonRetryPending,
@@ -37,7 +52,7 @@ extension _InventoryCheckoutRecovery on _InventoryCheckoutPageState {
         );
       }
     } finally {
-      if (mounted) _update(() => _saving = false);
+      _finishSave();
     }
   }
 

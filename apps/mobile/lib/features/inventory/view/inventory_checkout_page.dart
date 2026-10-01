@@ -52,6 +52,7 @@ class InventoryCheckoutPage extends StatefulWidget {
     this.settingsRepository,
     this.seasonController,
     this.actorId,
+    this.actorChanges,
     super.key,
   });
 
@@ -62,6 +63,7 @@ class InventoryCheckoutPage extends StatefulWidget {
   final SettingsRepository? settingsRepository;
   final InventorySeasonPricingController? seasonController;
   final String? Function()? actorId;
+  final Stream<dynamic>? actorChanges;
 
   @override
   State<InventoryCheckoutPage> createState() => _InventoryCheckoutPageState();
@@ -83,6 +85,10 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   int _loadGeneration = 0;
   String? _loadedActor;
   String? _loadedWorkspace;
+  String? _scopeActor;
+  String? _scopeWorkspace;
+  int _scopeRevision = 0;
+  bool _reloadAfterSave = false;
   bool _periodsAvailable = false;
   bool _scopeChanged = false;
   String? get _actorId => widget.actorId?.call() ?? currentCacheUserId();
@@ -127,9 +133,10 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
           ),
         );
     _season.addListener(_quoteChanged);
-    _authSubscription = maybeSupabase?.auth.onAuthStateChange.listen(
-      (_) => _scopeReset(),
-    );
+    _authSubscription =
+        (widget.actorChanges ?? maybeSupabase?.auth.onAuthStateChange)?.listen(
+          (_) => _scopeReset(),
+        );
     _quoteTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _season.tick();
       if (_season.scheduled &&
@@ -139,6 +146,8 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
         unawaited(_season.refresh(automatic: true));
       }
     });
+    _scopeActor = _actorId;
+    _scopeWorkspace = _wsId;
     _syncSeason();
     unawaited(_load());
   }
@@ -163,11 +172,17 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   }
 
   void _scopeReset() {
-    if (!mounted || (_loadedActor == _actorId && _loadedWorkspace == _wsId)) {
+    if (!mounted || (_scopeActor == _actorId && _scopeWorkspace == _wsId)) {
       return;
     }
     _loadGeneration++;
+    _scopeRevision++;
     setState(() {
+      _scopeActor = _actorId;
+      _scopeWorkspace = _wsId;
+      _loadedActor = null;
+      _loadedWorkspace = null;
+      _loading = widget.sale == null;
       _scopeChanged = widget.sale != null;
       _saleCompleted = false;
       _products = [];
