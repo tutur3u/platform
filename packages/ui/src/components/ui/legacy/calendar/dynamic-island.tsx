@@ -63,10 +63,6 @@ export const DynamicIsland = () => {
   const [startAt, setStartAt] = useState<Date | null>(null);
   const [endAt, setEndAt] = useState<Date | null>(null);
 
-  useEffect(() => {
-    if (firstEventEnd) setEndAt(firstEventEnd);
-  }, [firstEventEnd]);
-
   const focusMinutes = 25;
   const breakMinutes = 5;
 
@@ -81,20 +77,19 @@ export const DynamicIsland = () => {
   const [currentCycle, setCurrentCycle] = useState(1);
   const [time, setTime] = useState(0);
 
+  const firstEventId = events?.[0]?.id;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: A different event with the same deadline starts a new session.
   useEffect(() => {
-    if (endAt && firstEventEnd !== endAt) {
-      setEndAt(firstEventEnd);
-      setCurrentCycle(1);
-      setStartAt(null);
-      setTime(0);
-    }
-  }, [endAt, firstEventEnd]);
+    setEndAt(firstEventEnd);
+    setCurrentCycle(1);
+    setStartAt(null);
+    setTime(0);
+  }, [firstEventId, firstEventEnd]);
 
   const startTimer = () => {
     if (startAt) {
       setCurrentCycle(1);
       setStartAt(null);
-      setEndAt(null);
       setTime(0);
       return;
     }
@@ -132,12 +127,13 @@ export const DynamicIsland = () => {
         // });
 
         setStartAt(null);
-        setEndAt(null);
         setTime(0);
       }
 
       return;
     }
+
+    if (!startAt || !endAt || time <= 0) return;
 
     const interval = setInterval(() => {
       setTime(time - 1);
