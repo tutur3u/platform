@@ -1,9 +1,9 @@
 import { Play, StopCircle } from '@tuturuuu/icons';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
+import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import moment from 'moment';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export const DynamicIsland = () => {
   const { getCurrentEvents, getUpcomingEvent, isEditing } = useCalendar();
@@ -53,17 +53,19 @@ export const DynamicIsland = () => {
     return `${hoursString}${minutesString}${secondsString}`.trimEnd();
   };
 
-  const firstEventEnd = events?.[0]?.end_at
-    ? moment(events[0].end_at).toDate()
-    : null;
+  const firstEventEndAt = events?.[0]?.end_at;
+  const firstEventEnd = useMemo(
+    () => (firstEventEndAt ? moment(firstEventEndAt).toDate() : null),
+    [firstEventEndAt]
+  );
   const timeLeft = firstEventEnd ? getTimeLeft(firstEventEnd) : 0;
 
   const [startAt, setStartAt] = useState<Date | null>(null);
   const [endAt, setEndAt] = useState<Date | null>(null);
 
   useEffect(() => {
-    if (events?.[0]?.end_at) setEndAt(firstEventEnd);
-  }, [events, firstEventEnd]);
+    if (firstEventEnd) setEndAt(firstEventEnd);
+  }, [firstEventEnd]);
 
   const focusMinutes = 25;
   const breakMinutes = 5;
@@ -158,9 +160,8 @@ export const DynamicIsland = () => {
   const hasEvents = events?.length > 0 || !!upcomingEvent;
   const hidden = isEditing() || !hasEvents;
 
-  const color =
-    (isUpcoming ? upcomingEvent?.color : events?.[0]?.color) ?? 'BLUE';
-  const { bg, text } = getEventStyles(color);
+  const activeEvent = isUpcoming ? upcomingEvent : events?.[0];
+  const eventStyle = calendarEventStyle(activeEvent ?? {});
 
   return (
     <div
@@ -169,7 +170,7 @@ export const DynamicIsland = () => {
       }`}
     >
       <div
-        className={`flex max-w-4xl items-center gap-4 rounded-lg border px-8 py-2 shadow-xl backdrop-blur-xl ${bg} ${text} ${hidden ? 'opacity-0' : 'opacity-100'} ${
+        className={`flex max-w-4xl items-center gap-4 rounded-lg border px-8 py-2 shadow-xl backdrop-blur-xl ${hidden ? 'opacity-0' : 'opacity-100'} ${
           isUpcoming
             ? 'w-[calc(min(20rem,100%))] justify-center text-center'
             : isRunning
@@ -177,6 +178,8 @@ export const DynamicIsland = () => {
               : 'w-full justify-between'
         } duration-300`}
         style={{
+          ...eventStyle,
+          borderColor: eventStyle.color,
           transition: 'width 1s, opacity 300ms',
         }}
       >
@@ -202,7 +205,10 @@ export const DynamicIsland = () => {
           {pomodoroCycles > 0 && (
             <>
               {!isRunning && (
-                <Separator orientation="vertical" className={bg} />
+                <Separator
+                  orientation="vertical"
+                  style={{ backgroundColor: eventStyle.color }}
+                />
               )}
 
               <div>
@@ -230,7 +236,8 @@ export const DynamicIsland = () => {
           <button
             type="button"
             onClick={startTimer}
-            className={`aspect-square h-fit justify-self-end rounded-lg border p-1 ${bg} transition`}
+            className="aspect-square h-fit justify-self-end rounded-lg border p-1 transition hover:ring-1 hover:ring-current"
+            style={{ ...eventStyle, borderColor: eventStyle.color }}
           >
             {startAt ? (
               <StopCircle className="h-6 w-6" />

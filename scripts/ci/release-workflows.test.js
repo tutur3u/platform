@@ -69,7 +69,10 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
         workflow,
         /node --experimental-strip-types scripts\/ci\/record-vercel-deployment\.ts/
       );
-    } else if (tanstackWebVercelWorkflows.has(workflowName)) {
+    } else if (
+      tanstackWebVercelWorkflows.has(workflowName) ||
+      workflowName === 'vercel-preview-learn.yaml'
+    ) {
       assert.match(workflow, /Record successful Vercel build marker/);
       assert.match(workflow, /VERCEL_MARKER_KIND: build/);
       assert.doesNotMatch(

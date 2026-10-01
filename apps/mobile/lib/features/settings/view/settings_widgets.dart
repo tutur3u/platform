@@ -72,6 +72,52 @@ class SettingsGroup extends StatelessWidget {
   }
 }
 
+/// Root navigation groups use the same quiet heading and shared row surface.
+class SettingsCompactSection extends StatelessWidget {
+  const SettingsCompactSection({
+    required this.title,
+    required this.children,
+    this.columnSplit,
+    super.key,
+  });
+
+  final String title;
+  final List<Widget> children;
+
+  /// Expanded layouts retain the same compact groups in two columns.
+  final int? columnSplit;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: shad.Theme.of(context).typography.small.copyWith(
+          fontWeight: FontWeight.w600,
+          color: shad.Theme.of(context).colorScheme.mutedForeground,
+        ),
+      ),
+      const shad.Gap(8),
+      if (columnSplit case final split?)
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SettingsGroup(children: children.take(split).toList()),
+            ),
+            const shad.Gap(16),
+            Expanded(
+              child: SettingsGroup(children: children.skip(split).toList()),
+            ),
+          ],
+        )
+      else
+        SettingsGroup(children: children),
+    ],
+  );
+}
+
 class SettingsSection extends StatelessWidget {
   const SettingsSection({
     required this.title,
@@ -199,7 +245,9 @@ class SettingsTile extends StatelessWidget {
               const shad.Gap(11),
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(top: hasSupportingLine ? 5 : 0),
+                  padding: EdgeInsets.only(
+                    top: hasSupportingLine && !grouped ? 5 : 0,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -216,10 +264,20 @@ class SettingsTile extends StatelessWidget {
                           value!,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.typography.base.copyWith(
-                            color: textColor ?? theme.colorScheme.foreground,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style:
+                              (grouped
+                                      ? theme.typography.textSmall
+                                      : theme.typography.base)
+                                  .copyWith(
+                                    color:
+                                        textColor ??
+                                        (grouped
+                                            ? theme.colorScheme.mutedForeground
+                                            : theme.colorScheme.foreground),
+                                    fontWeight: grouped
+                                        ? FontWeight.w400
+                                        : FontWeight.w700,
+                                  ),
                         ),
                       ],
                       if (subtitle?.trim().isNotEmpty ?? false) ...[

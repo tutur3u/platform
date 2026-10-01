@@ -1,5 +1,5 @@
 {
-  "commonLoading": "Đang tải",
+    "commonLoading": "Đang tải",
     "@@locale": "vi",
     "appTitle": "Tuturuuu",
     "chatAccept": "Chấp nhận",
@@ -71,7 +71,6 @@
     "@counterAppBarTitle": {
         "description": "Văn bản hiển thị trên AppBar của trang Bộ đếm"
     },
-
     "loginTitle": "Chào mừng trở lại",
     "loginSubtitle": "Đăng nhập để tiếp tục",
     "loginContinueWithEmail": "Tiếp tục với email",
@@ -218,7 +217,6 @@
     "loginSignUpPrompt": "Chưa có tài khoản? Đăng ký",
     "emailLabel": "Email",
     "passwordLabel": "Mật khẩu",
-
     "signUpTitle": "Tạo tài khoản",
     "signUpButton": "Tạo tài khoản",
     "signUpSubtitle": "Chọn một phương thức để tiếp tục.",
@@ -233,7 +231,6 @@
     "signUpBackToLogin": "Quay lại đăng nhập",
     "signUpAlreadyHaveAccountPrompt": "Đã có tài khoản?",
     "signUpSignIn": "Đăng nhập",
-
     "forgotPasswordTitle": "Hỗ trợ mật khẩu",
     "forgotPasswordDescription": "Hãy dùng ứng dụng web để cập nhật mật khẩu.",
     "forgotPasswordInstructions": "Đăng nhập trên web bằng tài khoản mạng xã hội đã liên kết với email của bạn, sau đó đổi mật khẩu trong phần cài đặt tài khoản.",
@@ -242,7 +239,6 @@
     "forgotPasswordSentTitle": "Đã gửi email",
     "forgotPasswordSentMessage": "Kiểm tra hộp thư đến để tìm liên kết đặt lại mật khẩu.",
     "forgotPasswordBackToLogin": "Quay lại đăng nhập",
-
     "workspaceSelectTitle": "Chọn không gian làm việc",
     "workspaceSelectEmpty": "Không tìm thấy không gian làm việc",
     "workspaceSelectError": "Không thể chuyển không gian làm việc",
@@ -253,7 +249,6 @@
     "appUpdateRecommendedMessage": "Đã có phiên bản ứng dụng mới hơn. Hãy cập nhật để nhận các bản sửa lỗi và cải tiến mới nhất.",
     "appUpdateRequiredTitle": "Bắt buộc cập nhật",
     "appUpdateRequiredMessage": "Phiên bản ứng dụng này không còn được hỗ trợ. Vui lòng cập nhật để tiếp tục sử dụng.",
-
     "navHome": "Trang chủ",
     "navTasks": "Công việc",
     "navHabits": "Thói quen",
@@ -498,7 +493,6 @@
     "habitsQuickLogValueRequired": "Hãy nhập giá trị trước khi lưu",
     "habitsMetricMet": "Đạt",
     "habitsMetricPending": "Chưa đạt",
-
     "assistantComingSoon": "Sắp ra mắt",
     "assistantSelectWorkspace": "Chọn một không gian làm việc",
     "assistantWorkspaceAwareDescription": "Mira theo ngữ cảnh không gian làm việc cho việc lên kế hoạch, hỏi đáp và thao tác nhanh.",
@@ -707,7 +701,6 @@
             }
         }
     },
-
     "dashboardGreeting": "Chào mừng trở lại!",
     "dashboardQuickActions": "Thao tác nhanh",
     "dashboardTodayTitle": "Tổng quan hôm nay",
@@ -733,7 +726,6 @@
     "dashboardTasksMetric": "{count} đang hoạt động",
     "dashboardOverdueMetric": "{count} quá hạn",
     "dashboardEventsMetric": "{count} tiếp theo",
-
     "tasksTitle": "Công việc",
     "tasksEmpty": "Chưa có công việc",
     "tasksLoadError": "Không thể tải công việc lúc này",
@@ -799,22 +791,22 @@
     "taskBoardsPageSize": "Kích thước trang",
     "taskBoardsPageSizeOption": "{count} mục",
     "@taskBoardsPageSizeOption": {
-      "placeholders": {
-        "count": {
-          "type": "int"
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
         }
-      }
     },
     "taskBoardsPageInfo": "Trang {current} / {total}",
     "@taskBoardsPageInfo": {
-      "placeholders": {
-        "current": {
-          "type": "int"
-        },
-        "total": {
-          "type": "int"
+        "placeholders": {
+            "current": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
         }
-      }
     },
     "taskBoardsListsCount": "{count, plural, one{{count} danh sách} other{{count} danh sách}}",
     "@taskBoardsListsCount": {
@@ -1320,8 +1312,12 @@
     "taskPortfolioProjectTasksProgress": "{completed}/{total} nhiệm vụ",
     "@taskPortfolioProjectTasksProgress": {
         "placeholders": {
-            "completed": {"type": "int"},
-            "total": {"type": "int"}
+            "completed": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
         }
     },
     "taskPortfolioLinkProject": "Liên kết dự án",
@@ -1365,7 +1361,6 @@
     "taskEstimatesTypeTshirtStandardZeroDisabled": "Kích cỡ áo: XS, S, M, L, XL.",
     "taskEstimatesTypeTshirtExtendedZeroEnabled": "Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.",
     "taskEstimatesTypeTshirtExtendedZeroDisabled": "Kích cỡ áo mở rộng: XS, S, M, L, XL, XXL, XXXL.",
-
     "calendarTitle": "Lịch",
     "calendarEmpty": "Không có sự kiện",
     "calendarToday": "Hôm nay",
@@ -1403,8 +1398,12 @@
     "calendarAllDayProgress": "Ngày {current} / {total}",
     "@calendarAllDayProgress": {
         "placeholders": {
-            "current": { "type": "int" },
-            "total": { "type": "int" }
+            "current": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
         }
     },
     "calendarConnectionsTitle": "Quản lý tài khoản lịch",
@@ -1416,10 +1415,11 @@
     "calendarConnectionsDisconnectConfirm": "Ngắt kết nối {account}? Các lịch liên quan sẽ bị vô hiệu hóa.",
     "@calendarConnectionsDisconnectConfirm": {
         "placeholders": {
-            "account": { "type": "String" }
+            "account": {
+                "type": "String"
+            }
         }
     },
-
     "financeTitle": "Tài chính",
     "inventoryAddCategory": "Thêm danh mục",
     "inventoryAddManufacturer": "Thêm nhà sản xuất",
@@ -1441,7 +1441,9 @@
     "inventoryAuditChanges": "{count} thay đổi",
     "@inventoryAuditChanges": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "inventoryAuditRecentSubtitle": "Theo dõi thay đổi về sản phẩm, tồn kho, cấu hình và giao dịch bán trong không gian làm việc.",
@@ -1536,8 +1538,12 @@
     "inventoryProductAvailableSummary": "Còn {amount} • {price}",
     "@inventoryProductAvailableSummary": {
         "placeholders": {
-            "amount": { "type": "String" },
-            "price": { "type": "String" }
+            "amount": {
+                "type": "String"
+            },
+            "price": {
+                "type": "String"
+            }
         }
     },
     "inventoryProductSaved": "Đã lưu sản phẩm.",
@@ -1566,14 +1572,18 @@
     "inventorySalesItemsCount": "{count} mặt hàng",
     "@inventorySalesItemsCount": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "inventorySalesLabel": "Bán hàng",
     "inventorySalesCreatorBadge": "Tạo bởi {name}",
     "@inventorySalesCreatorBadge": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "inventorySalesLineItems": "Dòng hàng",
@@ -1629,6 +1639,10 @@
     "inventoryCheckoutOptionsUnavailable": "Không thể làm mới một số lựa chọn thanh toán. Các giai đoạn hiện có vẫn dùng được; hãy thử lại để khôi phục ví, danh mục, sản phẩm hoặc giai đoạn còn thiếu.",
     "inventorySaveProduct": "Lưu sản phẩm",
     "inventorySearchProducts": "Tìm sản phẩm",
+    "inventoryLoadedLowStock": "Tồn kho thấp trong sản phẩm đã tải",
+    "inventoryStockNoRows": "Chưa cấu hình dòng tồn kho.",
+    "inventoryStockUnlimited": "Không giới hạn",
+    "inventoryStockUnlimitedHint": "Để trống số lượng để không giới hạn tồn kho.",
     "inventoryTitle": "Tồn kho",
     "financeOverviewLabel": "Tổng quan",
     "financeActivityLabel": "Hoạt động",
@@ -1652,14 +1666,18 @@
     "financeCheckpointsRecordDescription": "Lưu số dư thực tế đang hiển thị trong {wallet}.",
     "@financeCheckpointsRecordDescription": {
         "placeholders": {
-            "wallet": { "type": "String" }
+            "wallet": {
+                "type": "String"
+            }
         }
     },
     "financeCheckpointsActualBalance": "Số dư thực tế",
     "financeCheckpointsActualBalanceWithCurrency": "Số dư thực tế ({currency})",
     "@financeCheckpointsActualBalanceWithCurrency": {
         "placeholders": {
-            "currency": { "type": "String" }
+            "currency": {
+                "type": "String"
+            }
         }
     },
     "financeCheckpointsLedgerBalance": "Số dư sổ cái",
@@ -1670,7 +1688,9 @@
     "financeCheckpointsVarianceValue": "Chênh lệch: {value}",
     "@financeCheckpointsVarianceValue": {
         "placeholders": {
-            "value": { "type": "String" }
+            "value": {
+                "type": "String"
+            }
         }
     },
     "financeCheckpointsCheckedAt": "Thời điểm kiểm tra",
@@ -1692,7 +1712,9 @@
     "financeCheckpointsReconcileDefaultDescription": "Đối chiếu ví {wallet}",
     "@financeCheckpointsReconcileDefaultDescription": {
         "placeholders": {
-            "wallet": { "type": "String" }
+            "wallet": {
+                "type": "String"
+            }
         }
     },
     "financeCheckpointsCategory": "Danh mục",
@@ -1722,9 +1744,21 @@
     },
     "financeWallets": "Ví",
     "financeOverviewWalletCount": "{count} ví",
-    "@financeOverviewWalletCount": {"placeholders": {"count": {"type": "int"}}},
+    "@financeOverviewWalletCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "financeOverviewRecentCount": "{count} giao dịch gần đây",
-    "@financeOverviewRecentCount": {"placeholders": {"count": {"type": "int"}}},
+    "@financeOverviewRecentCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "financeTransactions": "Giao dịch",
     "financeCategories": "Danh mục",
     "financeRecentTransactions": "Giao dịch gần đây",
@@ -1949,7 +1983,6 @@
     "financeDestinationAmountAutoHint": "Tự động điền từ tỷ giá thực tế",
     "financeDestinationAmountOverrideHint": "Dùng số tiền tùy chỉnh — nhấn để chuyển sang tự động",
     "financeInvertRate": "Đảo tỷ giá",
-
     "timerTitle": "Bấm giờ",
     "timerStart": "Bắt đầu",
     "timerStop": "Dừng",
@@ -2093,11 +2126,11 @@
     "timerHeatmapActiveDaysLabel": "Ngày hoạt động",
     "timerHeatmapLessThanMinute": "<1p",
     "timerHeatmapNoActivityYet": "Chưa có hoạt động",
-     "timerViewSessionDetails": "Chi tiết phiên",
-     "timerEditSession": "Sửa phiên",
-     "timerSessionUpdated": "Đã cập nhật phiên",
-     "timerSessionDeleted": "Đã xóa phiên",
-     "timerDeleteSession": "Xóa phiên",
+    "timerViewSessionDetails": "Chi tiết phiên",
+    "timerEditSession": "Sửa phiên",
+    "timerSessionUpdated": "Đã cập nhật phiên",
+    "timerSessionDeleted": "Đã xóa phiên",
+    "timerDeleteSession": "Xóa phiên",
     "timerDeleteConfirm": "Xóa phiên này?",
     "timerAddMissedEntry": "Thêm mục bị thiếu",
     "timerStartTime": "Thời gian bắt đầu",
@@ -2160,11 +2193,11 @@
     "timerRequestActivityCommentDeleted": "đã xóa bình luận",
     "taskBoardDetailTaskAssigneeCount": "{count, plural, one{{count} người được giao} other{{count} người được giao}}",
     "@taskBoardDetailTaskAssigneeCount": {
-      "placeholders": {
-        "count": {
-          "type": "int"
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
         }
-      }
     },
     "timerRequestActivityUpdated": "đã cập nhật yêu cầu này",
     "timerRequestActivityFeedbackLabel": "Phản hồi",
@@ -2174,8 +2207,12 @@
     "timerRequestActivityPageInfo": "Trang {current} / {total}",
     "@timerRequestActivityPageInfo": {
         "placeholders": {
-            "current": { "type": "int" },
-            "total": { "type": "int" }
+            "current": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
         }
     },
     "timerRequestActivityActionCreated": "đã tạo",
@@ -2331,7 +2368,6 @@
     },
     "timerHourUnitShort": "h",
     "timerMinuteUnitShort": "p",
-
     "settingsTitle": "Cài đặt",
     "settingsNavApp": "Ứng dụng",
     "settingsNavWorkspace": "Không gian làm việc",
@@ -2480,7 +2516,6 @@
     "settingsLicenseViewerDescription": "Duyệt các giấy phép Flutter, plugin và package có trong bản dựng này.",
     "settingsLicenseVersionDescription": "Đối chiếu phiên bản đã cài khi xem thông báo.",
     "settingsMinutesUnit": "phút",
-
     "profileTitle": "Hồ sơ",
     "profileIdentitySectionTitle": "Danh tính",
     "profileIdentitySectionDescription": "Giữ các thông tin cốt lõi mà mọi người thấy về tài khoản của bạn luôn cập nhật.",
@@ -2538,7 +2573,6 @@
     "profileLoading": "Đang tải hồ sơ...",
     "profileSave": "Lưu",
     "profileCancel": "Hủy",
-
     "workspacePickerTitle": "Không gian làm việc",
     "workspacePickerSearchHint": "Tìm không gian làm việc",
     "workspaceDefaultPickerTitle": "Không gian mặc định",
@@ -2564,16 +2598,21 @@
     "workspaceCreateLimitInfo": "{current} / {limit} không gian làm việc đã dùng",
     "@workspaceCreateLimitInfo": {
         "placeholders": {
-            "current": { "type": "int" },
-            "limit": { "type": "int" }
+            "current": {
+                "type": "int"
+            },
+            "limit": {
+                "type": "int"
+            }
         }
     },
-
     "notificationsTitle": "Thông báo",
     "notificationsSubtitle": "{count} chưa đọc",
     "@notificationsSubtitle": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "notificationsInbox": "Hộp thư",
@@ -2601,38 +2640,40 @@
     "notificationsMinutesAgo": "{count} phút trước",
     "@notificationsMinutesAgo": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "notificationsHoursAgo": "{count} giờ trước",
     "@notificationsHoursAgo": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "notificationsDaysAgo": "{count} ngày trước",
     "@notificationsDaysAgo": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
-
     "mfaTitle": "Xác thực hai yếu tố",
     "mfaSubtitle": "Nhập mã từ ứng dụng xác thực của bạn",
     "mfaCodeLabel": "Mã gồm 6 chữ số",
     "mfaVerify": "Xác thực",
     "mfaInvalidCode": "Mã xác thực không hợp lệ. Vui lòng thử lại.",
     "mfaSignOut": "Đăng xuất",
-
     "captchaError": "Kiểm tra bảo mật thất bại. Vui lòng thử lại.",
-
     "commonOff": "Tắt",
     "commonOn": "Bật",
     "commonSomethingWentWrong": "Đã xảy ra lỗi",
     "selectImageSource": "Chọn nguồn ảnh",
     "camera": "Camera",
     "gallery": "Thư viện",
-
     "commonRetry": "Thử lại",
     "commonShowLess": "Thu gọn",
     "commonShowMore": "Xem thêm",
@@ -2640,7 +2681,6 @@
     "commonPressBackAgainToExitHint": "Nhấn quay lại lần nữa trong vòng 2 giây để đóng ứng dụng.",
     "commonPrevious": "Trước",
     "commonNext": "Tiếp",
-
     "onboardingSlide1Title": "Gặp gỡ Mira",
     "onboardingSlide1Subtitle": "Người bạn đồng hành AI cho công việc và cuộc sống. Mira kết nối công việc, lịch và tài chính của bạn.",
     "onboardingSlide2Title": "Tất cả trong một ứng dụng",
@@ -2648,21 +2688,24 @@
     "onboardingSlide3Title": "Trí tuệ phát triển cùng bạn",
     "onboardingSlide3Subtitle": "Mira ghi nhớ sở thích của bạn và trở nên thông minh hơn khi bạn sử dụng nhiều hơn.",
     "onboardingGetStarted": "Bắt đầu ngay",
-
     "settingsWorkspaceMembersTitle": "Thành viên",
     "settingsWorkspaceMembersSubtitle": "Mời người mới, xem quyền truy cập và quản lý liên kết mời.",
     "settingsWorkspaceMembersAccessDenied": "Bạn cần quyền quản lý thành viên để dùng mục này.",
     "settingsWorkspaceMembersActiveSection": "Thành viên ({count})",
     "@settingsWorkspaceMembersActiveSection": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "settingsWorkspaceMembersEmpty": "Chưa có thành viên.",
     "settingsWorkspaceMembersPendingSection": "Đang chờ ({count})",
     "@settingsWorkspaceMembersPendingSection": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "settingsWorkspaceMembersPendingEmpty": "Không có lời mời nào đang chờ.",
@@ -2675,7 +2718,9 @@
     "settingsWorkspaceMembersRemoveMessage": "Xóa {name} khỏi không gian làm việc này?",
     "@settingsWorkspaceMembersRemoveMessage": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "settingsWorkspaceMembersLinkDeleteTitle": "Xóa link",
@@ -2695,7 +2740,6 @@
     "settingsWorkspaceMembersLinkFull": "Đầy",
     "settingsWorkspaceMembersLinkActive": "Đang hoạt động",
     "settingsWorkspaceMembersLinkCopy": "Sao chép",
-
     "settingsWorkspaceRolesTitle": "Vai trò",
     "settingsWorkspaceRolesSubtitle": "Quản lý quyền mặc định và các vai trò trong không gian làm việc.",
     "settingsWorkspaceRolesAccessDenied": "Bạn cần quyền quản lý vai trò để dùng mục này.",
@@ -2707,13 +2751,17 @@
     "settingsWorkspaceRolesDeleteMessage": "Xóa {name}?",
     "@settingsWorkspaceRolesDeleteMessage": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "settingsWorkspaceRolesPermissionCount": "Đã bật {count} quyền",
     "@settingsWorkspaceRolesPermissionCount": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "settingsWorkspaceRolesEdit": "Sửa vai trò",
@@ -2734,7 +2782,9 @@
     "settingsWorkspaceSecretsPageDescription": "Quản lý bí mật và lộ trình lưu trữ cho {workspaceName}.",
     "@settingsWorkspaceSecretsPageDescription": {
         "placeholders": {
-            "workspaceName": { "type": "String" }
+            "workspaceName": {
+                "type": "String"
+            }
         }
     },
     "settingsWorkspaceSecretsTotalSecrets": "Tất cả bí mật",
@@ -2759,7 +2809,9 @@
     "settingsWorkspaceSecretsCopyInto": "Sao chép vào {provider}",
     "@settingsWorkspaceSecretsCopyInto": {
         "placeholders": {
-            "provider": { "type": "String" }
+            "provider": {
+                "type": "String"
+            }
         }
     },
     "settingsWorkspaceSecretsAutoExtractTitle": "Tự động giải nén",
@@ -2797,7 +2849,9 @@
     "settingsWorkspaceSecretsDeleteMessage": "Xóa {name}?",
     "@settingsWorkspaceSecretsDeleteMessage": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "settingsWorkspaceSecretsDeleteSuccess": "Đã xóa bí mật.",
@@ -2816,8 +2870,12 @@
     "settingsWorkspaceSecretsMigrationSuccess": "Đã sao chép {filesCopied} tệp vào {provider}.",
     "@settingsWorkspaceSecretsMigrationSuccess": {
         "placeholders": {
-            "filesCopied": { "type": "int" },
-            "provider": { "type": "String" }
+            "filesCopied": {
+                "type": "int"
+            },
+            "provider": {
+                "type": "String"
+            }
         }
     },
     "settingsWorkspaceSecretsMigrationError": "Không thể di chuyển lưu trữ của không gian làm việc.",
@@ -2872,7 +2930,9 @@
     "crmDuplicateResults": "Tìm thấy {count} cụm trùng lặp",
     "@crmDuplicateResults": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "crmEmptyAudit": "Không có sự kiện nhật ký nào",
@@ -2883,7 +2943,9 @@
     "crmFeedbackFor": "Phản hồi cho {name}",
     "@crmFeedbackFor": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "crmFullName": "Họ và tên",
@@ -2894,13 +2956,17 @@
     "crmImportPreview": "Sẵn sàng nhập {count} người dùng",
     "@crmImportPreview": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "crmImportSuccess": "Đã nhập {count} người dùng.",
     "@crmImportSuccess": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "crmImportUsers": "Nhập người dùng",
@@ -2939,7 +3005,9 @@
     "educationDeleteCourseConfirm": "Xóa {name}?",
     "@educationDeleteCourseConfirm": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "educationDeleteFlashcardConfirm": "Xóa flashcard này?",
@@ -2947,7 +3015,9 @@
     "educationDeleteQuizSetConfirm": "Xóa {name}?",
     "@educationDeleteQuizSetConfirm": {
         "placeholders": {
-            "name": { "type": "String" }
+            "name": {
+                "type": "String"
+            }
         }
     },
     "educationEditCourse": "Chỉnh sửa khóa học",
@@ -2978,7 +3048,9 @@
     "educationQuizOptionLabel": "Đáp án {index}",
     "@educationQuizOptionLabel": {
         "placeholders": {
-            "index": { "type": "int" }
+            "index": {
+                "type": "int"
+            }
         }
     },
     "educationQuizOptionValueLabel": "Nội dung đáp án",
@@ -2994,13 +3066,17 @@
     "driveDeleteManyConfirm": "Xóa {count} mục đã chọn?",
     "@driveDeleteManyConfirm": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "driveDeleteSelected": "Xóa mục đã chọn ({count})",
     "@driveDeleteSelected": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "driveDeleteSingleConfirm": "Xóa mục này?",
@@ -3114,7 +3190,9 @@
     "storefrontListingCount": "{count, plural, =1{1 sản phẩm} other{{count} sản phẩm}}",
     "@storefrontListingCount": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "storefrontListingCreate": "Thêm sản phẩm",
@@ -3163,13 +3241,17 @@
     "meetMinutes": "{count} phút",
     "@meetMinutes": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "meetRecordingSessions": "{count, plural, =1{1 bản ghi} other{{count} bản ghi}}",
     "@meetRecordingSessions": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "meetSearchHint": "Tìm cuộc họp",
@@ -3389,130 +3471,169 @@
     "mailSelectAll": "Chọn tất cả thư đã tải",
     "mailDeleteDraft": "Xóa bản nháp",
     "mailDeleteDraftConfirmation": "Xóa vĩnh viễn bản nháp này và các tệp đính kèm?",
-  "deviceMfaTitle": "Trình xác thực trên thiết bị",
-  "deviceMfaDescription": "Dùng thiết bị này để xác minh đăng nhập, xem mã dùng một lần hoặc phê duyệt thiết bị khác.",
-  "deviceMfaEnroll": "Đăng ký thiết bị này",
-  "deviceMfaEnrollWarning": "Giữ một trình xác thực khác để dự phòng. Sau khi đăng ký, bạn có thể cần đăng nhập lại trên các thiết bị khác. Khóa bí mật chỉ được lưu trong bộ nhớ bảo mật của thiết bị này.",
-  "deviceMfaName": "Tên thiết bị",
-  "deviceMfaDefaultName": "Tuturuuu di động",
-  "deviceMfaReady": "Thiết bị này đã được đăng ký",
-  "deviceMfaShowCode": "Hiện mã xác minh",
-  "deviceMfaCodeHint": "Nhập mã này trên thiết bị khác. Mã thay đổi mỗi 30 giây.",
-  "deviceMfaVerifyReason": "Xác minh danh tính để dùng trình xác thực Tuturuuu",
-  "deviceMfaRemove": "Gỡ trình xác thực này",
-  "deviceMfaRemoveHint": "Thiết bị này sẽ ngừng tạo mã hợp lệ. Hãy đảm bảo bạn còn phương thức đăng nhập khác.",
-  "deviceMfaError": "Không thể hoàn tất xác minh. Kiểm tra kết nối và trình xác thực rồi thử lại.",
-  "deviceMfaUseDevice": "Xác minh bằng thiết bị này",
-  "deviceMfaNumberTitle": "Bạn đang đăng nhập?",
-  "deviceMfaNumberHint": "Nhập số gồm sáu chữ số hiển thị trên thiết bị bạn đang đăng nhập. Chỉ phê duyệt yêu cầu do bạn tạo.",
-  "deviceMfaDeny": "Từ chối yêu cầu",
-  "deviceMfaExpired": "Yêu cầu đã hết hạn. Hãy bắt đầu lại trên thiết bị khác.",
-  "deviceMfaReview": "Xem yêu cầu đăng nhập",
-  "deviceMfaNoRequests": "Không có yêu cầu đăng nhập. Hãy đăng nhập trên thiết bị khác.",
-  "deviceMfaHideCode": "Ẩn mã",
-  "deviceMfaQrPaste": "Nhập liên kết đăng nhập",
-  "deviceMfaQrPasteHint": "Dán liên kết QR đăng nhập Tuturuuu từ thiết bị khác.",
-  "appsShowBottomTab": "Hiện Ứng dụng trên thanh điều hướng dưới",
-  "appsNoMatches": "Không có ứng dụng phù hợp",
-  "securitySessionsTitle": "Phiên đăng nhập và kết nối",
-  "securitySessionsDescription": "Xem các thiết bị đang đăng nhập. Đăng xuất phiên khác không làm đăng xuất thiết bị này.",
-  "securityUnknownDevice": "Thiết bị không xác định",
-  "securityCurrentSession": "Phiên hiện tại",
-  "securityRevokeSession": "Đăng xuất phiên này",
-  "securityRevokeOthers": "Đăng xuất các phiên khác",
-  "securityRevokeDescription": "Các thiết bị được chọn sẽ cần đăng nhập lại.",
-  "securityConnectionsTitle": "Tài khoản đã kết nối",
-  "securityConnectionsDescription": "Chọn cách đăng nhập. Giữ ít nhất một tài khoản đã kết nối.",
-  "securityDisconnect": "Ngắt kết nối",
-  "securityDisconnectDescription": "Bạn sẽ không thể đăng nhập bằng tài khoản đã kết nối này nữa.",
-  "securityConnect": "Kết nối",
-  "deviceMfaTrustedTitle": "Thiết bị xác thực tin cậy",
-  "deviceMfaLockTitle": "Khóa đăng ký mới",
-  "deviceMfaLockHint": "Chỉ thiết bị đã đăng ký mới có thể phê duyệt đăng nhập. Mở khóa tại đây trước khi đăng ký thiết bị khác.",
-  "deviceMfaLocked": "Đăng ký mới đã bị khóa. Mở cài đặt này trên một thiết bị tin cậy để mở khóa.",
-  "deviceMfaLockRecoveryHint": "Hãy đăng ký thêm một thiết bị tin cậy trước khi khóa. Nếu mất tất cả thiết bị tin cậy, bạn không thể mở khóa cài đặt này từ thiết bị mới.",
-  "deviceMfaCurrentDevice": "Thiết bị này",
-  "deviceMfaPending": "Chưa hoàn tất thiết lập",
-  "deviceMfaRemoveTrusted": "Xóa thiết bị tin cậy",
-  "deviceMfaSuggestTitle": "Dùng thiết bị này để xác thực?",
-  "deviceMfaSuggestBody": "Phê duyệt đăng nhập bằng xác minh thiết bị và tạo mã cho thiết bị khác. Bạn có thể quản lý thiết bị tin cậy trong cài đặt bảo mật.",
-  "deviceMfaNotNow": "Để sau",
-  "deviceMfaManage": "Thiết lập xác thực",
-  "deviceMfaRemoveDeviceHint": "Thiết bị này sẽ không thể phê duyệt đăng nhập hoặc tạo mã hợp lệ nữa.",
-  "deviceMfaNeedBackup": "Đăng ký thêm một thiết bị tin cậy trước khi khóa đăng ký mới.",
+    "deviceMfaTitle": "Trình xác thực trên thiết bị",
+    "deviceMfaDescription": "Dùng thiết bị này để xác minh đăng nhập, xem mã dùng một lần hoặc phê duyệt thiết bị khác.",
+    "deviceMfaEnroll": "Đăng ký thiết bị này",
+    "deviceMfaEnrollWarning": "Giữ một trình xác thực khác để dự phòng. Sau khi đăng ký, bạn có thể cần đăng nhập lại trên các thiết bị khác. Khóa bí mật chỉ được lưu trong bộ nhớ bảo mật của thiết bị này.",
+    "deviceMfaName": "Tên thiết bị",
+    "deviceMfaDefaultName": "Tuturuuu di động",
+    "deviceMfaReady": "Thiết bị này đã được đăng ký",
+    "deviceMfaShowCode": "Hiện mã xác minh",
+    "deviceMfaCodeHint": "Nhập mã này trên thiết bị khác. Mã thay đổi mỗi 30 giây.",
+    "deviceMfaVerifyReason": "Xác minh danh tính để dùng trình xác thực Tuturuuu",
+    "deviceMfaRemove": "Gỡ trình xác thực này",
+    "deviceMfaRemoveHint": "Thiết bị này sẽ ngừng tạo mã hợp lệ. Hãy đảm bảo bạn còn phương thức đăng nhập khác.",
+    "deviceMfaError": "Không thể hoàn tất xác minh. Kiểm tra kết nối và trình xác thực rồi thử lại.",
+    "deviceMfaUseDevice": "Xác minh bằng thiết bị này",
+    "deviceMfaNumberTitle": "Bạn đang đăng nhập?",
+    "deviceMfaNumberHint": "Nhập số gồm sáu chữ số hiển thị trên thiết bị bạn đang đăng nhập. Chỉ phê duyệt yêu cầu do bạn tạo.",
+    "deviceMfaDeny": "Từ chối yêu cầu",
+    "deviceMfaExpired": "Yêu cầu đã hết hạn. Hãy bắt đầu lại trên thiết bị khác.",
+    "deviceMfaReview": "Xem yêu cầu đăng nhập",
+    "deviceMfaNoRequests": "Không có yêu cầu đăng nhập. Hãy đăng nhập trên thiết bị khác.",
+    "deviceMfaHideCode": "Ẩn mã",
+    "deviceMfaQrPaste": "Nhập liên kết đăng nhập",
+    "deviceMfaQrPasteHint": "Dán liên kết QR đăng nhập Tuturuuu từ thiết bị khác.",
+    "appsShowBottomTab": "Hiện Ứng dụng trên thanh điều hướng dưới",
+    "appsNoMatches": "Không có ứng dụng phù hợp",
+    "securitySessionsTitle": "Phiên đăng nhập và kết nối",
+    "securitySessionsDescription": "Xem các thiết bị đang đăng nhập. Đăng xuất phiên khác không làm đăng xuất thiết bị này.",
+    "securityUnknownDevice": "Thiết bị không xác định",
+    "securityCurrentSession": "Phiên hiện tại",
+    "securityRevokeSession": "Đăng xuất phiên này",
+    "securityRevokeOthers": "Đăng xuất các phiên khác",
+    "securityRevokeDescription": "Các thiết bị được chọn sẽ cần đăng nhập lại.",
+    "securityConnectionsTitle": "Tài khoản đã kết nối",
+    "securityConnectionsDescription": "Chọn cách đăng nhập. Giữ ít nhất một tài khoản đã kết nối.",
+    "securityDisconnect": "Ngắt kết nối",
+    "securityDisconnectDescription": "Bạn sẽ không thể đăng nhập bằng tài khoản đã kết nối này nữa.",
+    "securityConnect": "Kết nối",
+    "deviceMfaTrustedTitle": "Thiết bị xác thực tin cậy",
+    "deviceMfaLockTitle": "Khóa đăng ký mới",
+    "deviceMfaLockHint": "Chỉ thiết bị đã đăng ký mới có thể phê duyệt đăng nhập. Mở khóa tại đây trước khi đăng ký thiết bị khác.",
+    "deviceMfaLocked": "Đăng ký mới đã bị khóa. Mở cài đặt này trên một thiết bị tin cậy để mở khóa.",
+    "deviceMfaLockRecoveryHint": "Hãy đăng ký thêm một thiết bị tin cậy trước khi khóa. Nếu mất tất cả thiết bị tin cậy, bạn không thể mở khóa cài đặt này từ thiết bị mới.",
+    "deviceMfaCurrentDevice": "Thiết bị này",
+    "deviceMfaPending": "Chưa hoàn tất thiết lập",
+    "deviceMfaRemoveTrusted": "Xóa thiết bị tin cậy",
+    "deviceMfaSuggestTitle": "Dùng thiết bị này để xác thực?",
+    "deviceMfaSuggestBody": "Phê duyệt đăng nhập bằng xác minh thiết bị và tạo mã cho thiết bị khác. Bạn có thể quản lý thiết bị tin cậy trong cài đặt bảo mật.",
+    "deviceMfaNotNow": "Để sau",
+    "deviceMfaManage": "Thiết lập xác thực",
+    "deviceMfaRemoveDeviceHint": "Thiết bị này sẽ không thể phê duyệt đăng nhập hoặc tạo mã hợp lệ nữa.",
+    "deviceMfaNeedBackup": "Đăng ký thêm một thiết bị tin cậy trước khi khóa đăng ký mới.",
     "mfaReviewSignIn": "Xem yêu cầu đăng nhập",
-  "deviceMfaClose": "Đóng trình xác thực",
-  "deviceMfaWorking": "Đang kiểm tra bảo mật thiết bị…",
-  "deviceMfaActionFailed": "Không thể hoàn tất bước này",
-  "deviceMfaCancelled": "Xác minh thiết bị đã bị hủy. Hãy thử lại và xác nhận bằng Face ID, vân tay hoặc mật mã thiết bị.",
-  "deviceMfaExistingRequired": "Xác minh bằng trình xác thực hiện có khi đăng nhập tài khoản, rồi quay lại đây để hoàn tất thiết lập.",
-  "deviceMfaSessionExpired": "Không thể xác minh phiên đăng nhập. Hãy đăng nhập lại trước khi thay đổi trình xác thực.",
-  "deviceMfaRateLimited": "Bạn đã thử quá nhiều lần. Hãy đợi một phút rồi thử lại.",
-  "deviceMfaUnavailable": "Đăng ký trình xác thực tạm thời không khả dụng. Hãy thử lại sau ít phút.",
-  "deviceMfaOffline": "Không thể kết nối với Tuturuuu. Kiểm tra kết nối và thử lại.",
-  "securityCheckTitle": "Kiểm tra bảo mật",
-  "appsCustomize": "Tùy chỉnh ứng dụng",
-  "appsHide": "Ẩn ứng dụng",
-  "appsShow": "Hiện ứng dụng",
-  "appsHiddenSection": "Ứng dụng đã ẩn",
-  "appsHiddenExperimentsSection": "Thử nghiệm đã ẩn",
-  "appsUnavailableWithCurrentAccess": "Không khả dụng với quyền truy cập hiện tại",
-  "appsHideConfirmTitle": "Ẩn ứng dụng này?",
-  "appsHideConfirmDescription": "Ứng dụng sẽ chuyển xuống dưới các ứng dụng đang hiện. Bạn có thể hiện lại bất cứ lúc nào.",
-  "appsReorder": "Kéo để sắp xếp",
-  "homeCustomize": "Tùy chỉnh Trang chủ",
-  "homeHideWidget": "Ẩn tiện ích",
-  "homeShowWidget": "Hiện tiện ích",
-  "homeHiddenWidgets": "Tiện ích đã ẩn",
-  "voiceMessage": "Tin nhắn thoại",
-  "voiceRecord": "Ghi âm",
-  "voiceStop": "Dừng",
-  "voicePreview": "Nghe lại",
-  "voiceAttach": "Đính kèm bản ghi",
-  "voiceRetake": "Ghi âm lại",
-  "voiceSendNow": "Gửi ngay",
-  "voicePermission": "Cho phép truy cập micrô để ghi âm.",
-  "voiceRecordingError": "Không thể ghi âm. Vui lòng thử lại.",
-  "remindersTitle": "Nhắc nhở",
-  "remindersDescription": "Hạn công việc và sự kiện lịch được chuẩn bị trên thiết bị này.",
-  "notificationTaskAppLabel": "Công việc",
-  "notificationWorkspaceAppLabel": "Không gian làm việc",
-  "notificationSecurityAppLabel": "Bảo mật",
-  "remindersTaskTitle": "Hạn công việc",
-  "remindersEventTitle": "Sự kiện lịch",
-  "remindersCalendarTiming": "Lịch: {when}",
-  "@remindersCalendarTiming": {"placeholders": {"when": {"type": "String"}}},
-  "calendarEventUnavailable": "Sự kiện này không còn khả dụng.",
-  "remindersAllDayEvent": "Sự kiện cả ngày: {title}",
-  "@remindersAllDayEvent": {"placeholders": {"title": {"type": "String"}}},
-  "remindersUpcomingEvent": "{when}: {title}",
-  "@remindersUpcomingEvent": {"placeholders": {"when": {"type": "String"}, "title": {"type": "String"}}},
-  "remindersIn3d": "Còn 3 ngày",
-  "remindersIn1d": "Ngày mai",
-  "remindersIn12h": "Còn 12 giờ",
-  "remindersIn3h": "Còn 3 giờ",
-  "remindersIn1h": "Còn 1 giờ",
-  "remindersTiming": "Nhắc tôi",
-  "reminders3d": "Trước 3 ngày",
-  "reminders1d": "Trước 1 ngày",
-  "reminders12h": "Trước 12 giờ",
-  "reminders3h": "Trước 3 giờ",
-  "reminders1h": "Trước 1 giờ",
-  "remindersStatusTitle": "Trạng thái nhắc nhở",
-  "remindersPermissionOn": "Đã bật thông báo trên thiết bị",
-  "remindersPermissionOff": "Đã tắt thông báo trên thiết bị",
-  "remindersScheduledCount": "Đã lên lịch {count} lời nhắc",
-  "@remindersScheduledCount": {"placeholders": {"count": {"type": "int"}}},
-  "remindersLastChecked": "Kiểm tra lần cuối: {time}",
-  "@remindersLastChecked": {"placeholders": {"time": {"type": "String"}}},
-  "remindersNext": "Lời nhắc tiếp theo: {time}",
-  "@remindersNext": {"placeholders": {"time": {"type": "String"}}},
-  "remindersNeverChecked": "Đang chờ cập nhật lần đầu",
-  "remindersRefresh": "Cập nhật ngay",
-  "remindersEnableNotifications": "Bật thông báo",
-  "remindersRefreshing": "Đang kiểm tra công việc và sự kiện…",
-  "remindersRefreshFailed": "Không thể cập nhật lời nhắc. Các lời nhắc đã lên lịch vẫn được giữ.",
-  "remindersSystemNote": "Thông báo đã lên lịch có thể xuất hiện khi ứng dụng đóng. Mục mới hoặc thay đổi được kiểm tra khi mở hay quay lại ứng dụng; thời điểm cập nhật nền tùy thuộc thiết bị.",
+    "deviceMfaClose": "Đóng trình xác thực",
+    "deviceMfaWorking": "Đang kiểm tra bảo mật thiết bị…",
+    "deviceMfaActionFailed": "Không thể hoàn tất bước này",
+    "deviceMfaCancelled": "Xác minh thiết bị đã bị hủy. Hãy thử lại và xác nhận bằng Face ID, vân tay hoặc mật mã thiết bị.",
+    "deviceMfaExistingRequired": "Xác minh bằng trình xác thực hiện có khi đăng nhập tài khoản, rồi quay lại đây để hoàn tất thiết lập.",
+    "deviceMfaSessionExpired": "Không thể xác minh phiên đăng nhập. Hãy đăng nhập lại trước khi thay đổi trình xác thực.",
+    "deviceMfaRateLimited": "Bạn đã thử quá nhiều lần. Hãy đợi một phút rồi thử lại.",
+    "deviceMfaUnavailable": "Đăng ký trình xác thực tạm thời không khả dụng. Hãy thử lại sau ít phút.",
+    "deviceMfaOffline": "Không thể kết nối với Tuturuuu. Kiểm tra kết nối và thử lại.",
+    "securityCheckTitle": "Kiểm tra bảo mật",
+    "appsCustomize": "Tùy chỉnh ứng dụng",
+    "appsHide": "Ẩn ứng dụng",
+    "appsShow": "Hiện ứng dụng",
+    "appsHiddenSection": "Ứng dụng đã ẩn",
+    "appsHiddenExperimentsSection": "Thử nghiệm đã ẩn",
+    "appsUnavailableWithCurrentAccess": "Không khả dụng với quyền truy cập hiện tại",
+    "appsHideConfirmTitle": "Ẩn ứng dụng này?",
+    "appsHideConfirmDescription": "Ứng dụng sẽ chuyển xuống dưới các ứng dụng đang hiện. Bạn có thể hiện lại bất cứ lúc nào.",
+    "appsReorder": "Kéo để sắp xếp",
+    "homeCustomize": "Tùy chỉnh Trang chủ",
+    "homeHideWidget": "Ẩn tiện ích",
+    "homeShowWidget": "Hiện tiện ích",
+    "homeHiddenWidgets": "Tiện ích đã ẩn",
+    "voiceMessage": "Tin nhắn thoại",
+    "voiceRecord": "Ghi âm",
+    "voiceStop": "Dừng",
+    "voicePreview": "Nghe lại",
+    "voiceAttach": "Đính kèm bản ghi",
+    "voiceRetake": "Ghi âm lại",
+    "voiceSendNow": "Gửi ngay",
+    "voicePermission": "Cho phép truy cập micrô để ghi âm.",
+    "voiceRecordingError": "Không thể ghi âm. Vui lòng thử lại.",
+    "remindersTitle": "Nhắc nhở",
+    "remindersDescription": "Hạn công việc và sự kiện lịch được chuẩn bị trên thiết bị này.",
+    "notificationTaskAppLabel": "Công việc",
+    "notificationWorkspaceAppLabel": "Không gian làm việc",
+    "notificationSecurityAppLabel": "Bảo mật",
+    "remindersTaskTitle": "Hạn công việc",
+    "remindersEventTitle": "Sự kiện lịch",
+    "remindersCalendarTiming": "Lịch: {when}",
+    "@remindersCalendarTiming": {
+        "placeholders": {
+            "when": {
+                "type": "String"
+            }
+        }
+    },
+    "calendarEventUnavailable": "Sự kiện này không còn khả dụng.",
+    "remindersAllDayEvent": "Sự kiện cả ngày: {title}",
+    "@remindersAllDayEvent": {
+        "placeholders": {
+            "title": {
+                "type": "String"
+            }
+        }
+    },
+    "remindersUpcomingEvent": "{when}: {title}",
+    "@remindersUpcomingEvent": {
+        "placeholders": {
+            "when": {
+                "type": "String"
+            },
+            "title": {
+                "type": "String"
+            }
+        }
+    },
+    "remindersIn3d": "Còn 3 ngày",
+    "remindersIn1d": "Ngày mai",
+    "remindersIn12h": "Còn 12 giờ",
+    "remindersIn3h": "Còn 3 giờ",
+    "remindersIn1h": "Còn 1 giờ",
+    "remindersTiming": "Nhắc tôi",
+    "reminders3d": "Trước 3 ngày",
+    "reminders1d": "Trước 1 ngày",
+    "reminders12h": "Trước 12 giờ",
+    "reminders3h": "Trước 3 giờ",
+    "reminders1h": "Trước 1 giờ",
+    "remindersStatusTitle": "Trạng thái nhắc nhở",
+    "remindersPermissionOn": "Đã bật thông báo trên thiết bị",
+    "remindersPermissionOff": "Đã tắt thông báo trên thiết bị",
+    "remindersScheduledCount": "Đã lên lịch {count} lời nhắc",
+    "@remindersScheduledCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "remindersLastChecked": "Kiểm tra lần cuối: {time}",
+    "@remindersLastChecked": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "remindersNext": "Lời nhắc tiếp theo: {time}",
+    "@remindersNext": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "remindersNeverChecked": "Đang chờ cập nhật lần đầu",
+    "remindersRefresh": "Cập nhật ngay",
+    "remindersEnableNotifications": "Bật thông báo",
+    "remindersRefreshing": "Đang kiểm tra công việc và sự kiện…",
+    "remindersRefreshFailed": "Không thể cập nhật lời nhắc. Các lời nhắc đã lên lịch vẫn được giữ.",
+    "remindersSystemNote": "Thông báo đã lên lịch có thể xuất hiện khi ứng dụng đóng. Mục mới hoặc thay đổi được kiểm tra khi mở hay quay lại ứng dụng; thời điểm cập nhật nền tùy thuộc thiết bị.",
     "settingsGeneralGroup": "Cá nhân hóa",
     "settingsSupportGroup": "Trợ giúp và tài khoản",
     "profilePrivateActivity": "Hoạt động riêng tư của bạn",
@@ -3525,13 +3646,37 @@
     "profileTimelineEmpty": "Không có hoạt động gần đây trong không gian này",
     "profileTimelinePartial": "Một số hoạt động chưa hiển thị.",
     "profileTimelineTasks": "Đã tạo {count} công việc",
-    "@profileTimelineTasks": {"placeholders": {"count": {"type": "int"}}},
+    "@profileTimelineTasks": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "profileTimelineTransactions": "Đã tạo {count} giao dịch",
-    "@profileTimelineTransactions": {"placeholders": {"count": {"type": "int"}}},
+    "@profileTimelineTransactions": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "profileTimelineNotes": "Đã thêm {count} ghi chú",
-    "@profileTimelineNotes": {"placeholders": {"count": {"type": "int"}}},
+    "@profileTimelineNotes": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "profileTimelineWorkspaceEvents": "Đã thêm {count} sự kiện vào không gian",
-    "@profileTimelineWorkspaceEvents": {"placeholders": {"count": {"type": "int"}}},
+    "@profileTimelineWorkspaceEvents": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "profileTrackedMinutes": "Đã theo dõi {minutes} phút",
     "@profileTrackedMinutes": {
         "placeholders": {
@@ -3567,14 +3712,14 @@
     "assistantCreditsUnavailable": "Chưa thể tải nguồn tín dụng của bạn. Vui lòng thử lại.",
     "assistantMicrophoneUnavailable": "Không thể sử dụng micrô. Hãy kiểm tra quyền truy cập hoặc kết nối lại tai nghe rồi thử lại.",
     "assistantAudioUnavailable": "Âm thanh bị gián đoạn. Hãy kết nối lại để tiếp tục cuộc trò chuyện.",
-  "mailSwipeActions": "Thao tác vuốt",
-  "mailSwipeLeft": "Vuốt sang trái",
-  "mailSwipeRight": "Vuốt sang phải",
-  "mailSwipeRead": "Đã đọc / chưa đọc",
-  "mailSwipeStar": "Gắn sao / bỏ sao",
-  "mailSwipeMove": "Chuyển vào thư mục",
-  "mailSwipeNone": "Không có",
-  "mailSwipeUndo": "Hoàn tác",
+    "mailSwipeActions": "Thao tác vuốt",
+    "mailSwipeLeft": "Vuốt sang trái",
+    "mailSwipeRight": "Vuốt sang phải",
+    "mailSwipeRead": "Đã đọc / chưa đọc",
+    "mailSwipeStar": "Gắn sao / bỏ sao",
+    "mailSwipeMove": "Chuyển vào thư mục",
+    "mailSwipeNone": "Không có",
+    "mailSwipeUndo": "Hoàn tác",
     "adminAccountsTitle": "Tài khoản nội bộ",
     "adminAccountsDescription": "Quản lý tài khoản Tuturuuu và bảo mật tài khoản.",
     "adminAccountsSearch": "Tìm tài khoản",
@@ -3593,17 +3738,17 @@
     "adminAccountsEditProfile": "Chỉnh sửa hồ sơ",
     "adminAccountsDisplayName": "Tên hiển thị",
     "adminAccountsUsername": "Tên người dùng",
-  "adminAccountsResetMfa": "Đặt lại trình xác thực",
-  "adminAccountsResetMfaDescription": "Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy. Người dùng cần đăng ký lại trình xác thực.",
-  "assistantLiveShareScreen": "Chia sẻ màn hình",
-  "assistantLiveStopScreen": "Dừng chia sẻ",
-  "assistantLiveScreenActive": "Bạn đang chia sẻ màn hình với Live",
-  "assistantLiveScreenPending": "Đang chờ quyền chia sẻ màn hình",
-  "assistantLiveScreenStopped": "Đã kết thúc chia sẻ màn hình.",
-  "assistantLiveScreenUnavailable": "Không thể bắt đầu chia sẻ màn hình. Vui lòng thử lại.",
-  "assistantLiveScreenMicrophoneRequired": "Bật micrô trước khi chia sẻ màn hình. Live cần phiên thoại để tiếp tục khi bạn chuyển ứng dụng.",
-  "assistantLiveScreenConnectionRequired": "Kết nối với Live trước khi chia sẻ màn hình.",
-  "assistantLiveScreenPrivacy": "Nội dung hiển thị trên màn hình có thể được chia sẻ với Live. Hãy ẩn thông tin riêng tư trước khi tiếp tục.",
+    "adminAccountsResetMfa": "Đặt lại trình xác thực",
+    "adminAccountsResetMfaDescription": "Xóa tất cả yếu tố MFA và thiết bị xác thực tin cậy. Người dùng cần đăng ký lại trình xác thực.",
+    "assistantLiveShareScreen": "Chia sẻ màn hình",
+    "assistantLiveStopScreen": "Dừng chia sẻ",
+    "assistantLiveScreenActive": "Bạn đang chia sẻ màn hình với Live",
+    "assistantLiveScreenPending": "Đang chờ quyền chia sẻ màn hình",
+    "assistantLiveScreenStopped": "Đã kết thúc chia sẻ màn hình.",
+    "assistantLiveScreenUnavailable": "Không thể bắt đầu chia sẻ màn hình. Vui lòng thử lại.",
+    "assistantLiveScreenMicrophoneRequired": "Bật micrô trước khi chia sẻ màn hình. Live cần phiên thoại để tiếp tục khi bạn chuyển ứng dụng.",
+    "assistantLiveScreenConnectionRequired": "Kết nối với Live trước khi chia sẻ màn hình.",
+    "assistantLiveScreenPrivacy": "Nội dung hiển thị trên màn hình có thể được chia sẻ với Live. Hãy ẩn thông tin riêng tư trước khi tiếp tục.",
     "desktopUpdateReady": "Tuturuuu {version} đã sẵn sàng để cài đặt.",
     "desktopUpdateFailed": "Không thể cài đặt bản cập nhật. Bạn vẫn có thể dùng phiên bản hiện tại.",
     "desktopUpdateScheduled": "Bản cập nhật sẽ được cài đặt vào lần mở Tuturuuu tiếp theo.",
@@ -3670,7 +3815,13 @@
     "notesTransferTitle": "Mở khóa trên web",
     "notesTransferScanDescription": "Quét mã QR hiển thị trên ghi chú đã khóa ở web.",
     "notesTransferConfirmDescription": "Chia sẻ khóa mở ghi chú này với {host}?",
-    "@notesTransferConfirmDescription": {"placeholders": {"host": {"type": "String"}}},
+    "@notesTransferConfirmDescription": {
+        "placeholders": {
+            "host": {
+                "type": "String"
+            }
+        }
+    },
     "notesTransferInvalidCode": "Mã này không khớp với ghi chú hiện tại.",
     "notesTransferApprove": "Chia sẻ khóa mở",
     "notesTransferFailed": "Không thể chuyển khóa ghi chú. Hãy thử mã QR mới.",
@@ -3810,5 +3961,32 @@
     },
     "calendarInvalidLocalTime": "Chọn thời gian bắt đầu và kết thúc hợp lệ. Một số thời điểm không tồn tại khi đổi giờ mùa hè.",
     "profileOverviewTab": "Tổng quan",
-    "profileTimelineTab": "Dòng thời gian"
+    "profileTimelineTab": "Dòng thời gian",
+    "profileTimelineShowDates": "Hiện thanh chọn ngày",
+    "profileTimelineHideDates": "Đóng thanh ngày và xem dòng hoạt động",
+    "profileTimelineAgenda": "Những ngày có hoạt động",
+    "profileTimelineDayEmpty": "Không có hoạt động nào được trả về cho ngày này.",
+    "profileTimelineHasActivity": "Có hoạt động trong dữ liệu đã tải",
+    "profileTimelineMoreDays": "Hiện thêm ngày đã tải",
+    "inventoryStockHealthTitle": "Tình trạng tồn kho",
+    "inventoryStockHealthScope": "Sản phẩm đang hoạt động · mọi dòng tồn kho, gồm kho đã lưu trữ",
+    "inventoryStockHealthAsOf": "Ảnh chụp từ máy chủ: {timestamp} UTC",
+    "inventoryStockHealthIncomplete": "Ảnh chụp chưa đầy đủ: một vài số đếm hoặc thời gian máy chủ bị thiếu.",
+    "inventoryStockHealthUnavailable": "Không thể tải tình trạng tồn kho. Kéo để làm mới và thử lại.",
+    "inventoryStockHealthDenied": "Bạn không có quyền xem phân tích tồn kho.",
+    "inventoryStockHealthLoading": "Đang tải tình trạng tồn kho…",
+    "inventoryStockHealthActive": "Sản phẩm đang hoạt động",
+    "inventoryStockHealthUnconfigured": "Sản phẩm chưa có dòng tồn kho",
+    "inventoryStockHealthLow": "Dòng tồn kho thấp",
+    "inventoryStockHealthOut": "Dòng hết hàng",
+    "inventoryStockHealthUnlimited": "Dòng tồn kho không giới hạn",
+    "inventoryStockHealthOverlap": "Số dòng thấp/hết hàng có thể trùng nhau. Kiểm tra thấp/hết hàng theo số lượng không tính dòng không giới hạn; các dòng này được đếm riêng. Biểu đồ so sánh số dòng.",
+    "inventoryStockHealthUnknown": "Chưa có dữ liệu",
+    "@inventoryStockHealthAsOf": {
+        "placeholders": {
+            "timestamp": {
+                "type": "String"
+            }
+        }
+    }
 }

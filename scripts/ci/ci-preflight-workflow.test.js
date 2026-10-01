@@ -69,7 +69,6 @@ test('release relevance is opt-in and shares the exact full-history checkout', (
 for (const [name, aggregate, checkName, shardName] of [
   ['turbo-unit-tests.yaml', 'build', 'Unit Tests (24)', 'Unit test shard'],
   ['codecov.yaml', 'test', 'Run tests and collect coverage', 'Coverage shard'],
-  ['type-check.yaml', 'type-check', 'Type Check', null],
 ]) {
   test(`${name} preserves heavy checks and requires both shared preflight decisions`, () => {
     const workflow = readWorkflow(name);

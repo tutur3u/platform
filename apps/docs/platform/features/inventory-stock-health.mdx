@@ -1,0 +1,51 @@
+---
+title: "Mobile Inventory stock health"
+description: "Current stock counts, reporting scope, and analytics limitations on mobile."
+updatedAt: "2026-10-01"
+---
+
+## Current stock snapshot
+
+The native Inventory Overview shows confirmed server counts from the authorized
+`inventory/analytics/summary` API. This is a current stock snapshot of active
+(nonarchived) workspace products, independent of the API's sales date range.
+It includes their stock rows in archived warehouses because the aggregate does
+not filter warehouses. Every successful snapshot shows its server generation
+time explicitly in UTC; the device fetch time never substitutes for it.
+
+Product setup counts are separate from stock-row counts. A stock row identifies
+a product, unit and warehouse; units and quantities are not summed. Independent
+bars compare low, out-of-stock and unlimited row counts. Low and out-of-stock
+may overlap; unlimited quantity is null and belongs to neither finite check.
+These bars are not percentages or disjoint segments.
+
+Missing or invalid fields show unavailable values and a partial-snapshot warning;
+confirmed zero remains zero. Complete means all selected stock-summary fields
+and the server timestamp are available, not full Inventory feature parity.
+The aggregate includes all active products rather than just the loaded catalog
+page. No warehouse, season or date filter is implied by this panel.
+
+## Access and refresh
+
+The server resolves canonical membership and analytics permissions through the
+same Bearer-authenticated API as web. Hidden discovery preferences are not
+membership or authorization. The panel reads the server on entry and awaited
+pull-to-refresh, including short content that fits in the viewport; it stores
+no persistent aggregate cache and does not overlay
+pending local stock edits. Actor/workspace changes clear the panel and revalidate.
+A denied or failed refresh removes its counts and shows a distinct message.
+
+## Financial and pricing boundaries
+
+Overview's legacy income/expense/revenue tiles and owner/category revenue bars
+are withheld until the API guarantees currency isolation, linked-checkout
+handling, gross/net/refund definitions and reporting timezone. Overview recent-sale amounts are also withheld because that payload lacks
+currency; missing historical dates are not replaced with the current time. Sale details and recorded prices are not
+modified. Costing-scenario estimates are not realized profit.
+
+Season-price integration is a separate slice. Scheduled checkout must consume
+server `as_of`, exact product/unit/warehouse/currency price keys, half-open
+validity intervals and immutable price IDs, then use atomic period invoice
+creation. A current catalog price or post-create period assignment cannot replace
+this contract. Missing production pricing schema/RPC must fail closed (503).
+This panel neither authors prices nor recomputes historical sales.

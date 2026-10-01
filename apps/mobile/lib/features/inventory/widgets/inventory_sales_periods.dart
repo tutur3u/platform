@@ -37,82 +37,53 @@ class InventorySalesPeriodBar extends StatelessWidget {
         .firstOrNull;
 
     final theme = Theme.of(context);
-    final header = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(
-            Icons.calendar_view_month_rounded,
-            color: theme.colorScheme.primary,
-            size: 20,
-          ),
-        ),
-        const shad.Gap(11),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.inventorySalesPeriodsTitle,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const shad.Gap(2),
-              Text(
-                l10n.inventorySalesPeriodsDescription,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.35,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+    final header = Text(
+      l10n.inventorySalesPeriodsTitle,
+      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
     );
 
     final actions = Wrap(
-      alignment: WrapAlignment.end,
       spacing: 8,
       runSpacing: 8,
-      children: [
-        if (selected != null)
-          shad.OutlineButton(
-            onPressed: () => onEdit(selected),
-            size: shad.ButtonSize.small,
-            leading: const Icon(Icons.edit_outlined, size: 16),
-            child: Text(l10n.inventorySalesPeriodEdit),
-          ),
-        if (selected != null)
-          shad.OutlineButton(
-            onPressed: () => onToggleArchive(selected),
-            size: shad.ButtonSize.small,
-            leading: Icon(
-              selected.isArchived
-                  ? Icons.unarchive_outlined
-                  : Icons.archive_outlined,
-              size: 16,
-            ),
-            child: Text(
-              selected.isArchived
-                  ? l10n.inventorySalesPeriodRestore
-                  : l10n.inventorySalesPeriodArchive,
-            ),
-          ),
-        shad.PrimaryButton(
-          onPressed: onCreate,
-          size: shad.ButtonSize.small,
-          leading: const Icon(Icons.add_rounded, size: 17),
-          child: Text(l10n.inventorySalesPeriodCreate),
-        ),
-      ],
+      children:
+          [
+                if (selected != null)
+                  shad.OutlineButton(
+                    onPressed: () => onEdit(selected),
+                    size: shad.ButtonSize.small,
+                    leading: const Icon(Icons.edit_outlined, size: 16),
+                    child: Text(l10n.inventorySalesPeriodEdit),
+                  ),
+                if (selected != null)
+                  shad.OutlineButton(
+                    onPressed: () => onToggleArchive(selected),
+                    size: shad.ButtonSize.small,
+                    leading: Icon(
+                      selected.isArchived
+                          ? Icons.unarchive_outlined
+                          : Icons.archive_outlined,
+                      size: 16,
+                    ),
+                    child: Text(
+                      selected.isArchived
+                          ? l10n.inventorySalesPeriodRestore
+                          : l10n.inventorySalesPeriodArchive,
+                    ),
+                  ),
+                shad.OutlineButton(
+                  onPressed: onCreate,
+                  size: shad.ButtonSize.small,
+                  leading: const Icon(Icons.add_rounded, size: 17),
+                  child: Text(l10n.inventorySalesPeriodCreate),
+                ),
+              ]
+              .map(
+                (action) => ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  child: action,
+                ),
+              )
+              .toList(),
     );
 
     return PendingSyncFrame(
@@ -120,83 +91,47 @@ class InventorySalesPeriodBar extends StatelessWidget {
       entityId: selectedPeriodId ?? '',
       feature: 'inventory',
       child: FinancePanel(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isCompact = constraints.maxWidth < 430;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (isCompact) ...[
-                  header,
-                  if (canManage) ...[const shad.Gap(12), actions],
-                ] else
-                  Row(
-                    children: [
-                      Expanded(child: header),
-                      if (canManage) ...[const shad.Gap(16), actions],
-                    ],
-                  ),
-                const shad.Gap(14),
-                DropdownButtonFormField<String>(
-                  key: ValueKey(selectedPeriodId),
-                  initialValue: selectedPeriodId ?? '',
-                  selectedItemBuilder: (context) {
-                    final labelWidth = (constraints.maxWidth - 96).clamp(
-                      120.0,
-                      double.infinity,
-                    );
-                    return [
-                      SizedBox(
-                        width: labelWidth,
-                        child: Text(
-                          l10n.inventorySalesPeriodsAll,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      ...periods.map(
-                        (period) => SizedBox(
-                          width: labelWidth,
-                          child: Text(
-                            '${period.name} · ${period.saleCount}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ];
-                  },
-                  items: [
-                    DropdownMenuItem<String>(
-                      value: '',
-                      child: Text(l10n.inventorySalesPeriodsAll),
+        padding: const EdgeInsets.all(14),
+        radius: 18,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            header,
+            if (canManage) ...[const shad.Gap(12), actions],
+            const shad.Gap(14),
+            DropdownButtonFormField<String>(
+              key: ValueKey(selectedPeriodId),
+              initialValue: selectedPeriodId ?? '',
+              isExpanded: true,
+              items: [
+                DropdownMenuItem<String>(
+                  value: '',
+                  child: Text(l10n.inventorySalesPeriodsAll),
+                ),
+                ...periods.map(
+                  (period) => DropdownMenuItem<String>(
+                    value: period.id,
+                    child: Text(
+                      '${period.name} · ${period.saleCount}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: period.isArchived
+                          ? theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            )
+                          : null,
                     ),
-                    ...periods.map(
-                      (period) => DropdownMenuItem<String>(
-                        value: period.id,
-                        child: Text(
-                          '${period.name} · ${period.saleCount}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: period.isArchived
-                              ? theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                )
-                              : null,
-                        ),
-                      ),
-                    ),
-                  ],
-                  onChanged: (value) =>
-                      onChanged(value == null || value.isEmpty ? null : value),
-                  decoration: InputDecoration(
-                    labelText: l10n.inventorySalesPeriodAssignmentLabel,
-                    prefixIcon: const Icon(Icons.event_note_outlined, size: 19),
                   ),
                 ),
               ],
-            );
-          },
+              onChanged: (value) =>
+                  onChanged(value == null || value.isEmpty ? null : value),
+              decoration: InputDecoration(
+                labelText: l10n.inventorySalesPeriodAssignmentLabel,
+                prefixIcon: const Icon(Icons.event_note_outlined, size: 19),
+              ),
+            ),
+          ],
         ),
       ),
     );
