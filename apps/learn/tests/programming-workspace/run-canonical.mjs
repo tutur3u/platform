@@ -197,6 +197,36 @@ async function run() {
   await page.reload();
   await expectSource('# beta persisted');
   check('language-specific drafts survive switch and reload');
+  await page.evaluate(() =>
+    window.qaCanonical.navigate(`${location.pathname}?history=true`)
+  );
+
+  await page.reload();
+  await expectSource('# beta persisted');
+  await page.getByRole('tab', { name: 'History', exact: true }).click();
+  await page.getByRole('button', { name: 'Load more', exact: true }).click();
+  await page.getByRole('button', { name: /Submission · Python/ }).click();
+  await page.getByText('older public output', { exact: true }).waitFor();
+  await page.reload();
+  await page.getByText('older public output', { exact: true }).waitFor();
+  assert.equal(
+    await page
+      .getByRole('tab', { name: 'Result', exact: true })
+      .getAttribute('aria-selected'),
+    'true'
+  );
+  const requests = await page.evaluate(() => window.qaCanonical.state.getCalls);
+  assert.ok(
+    requests.some(
+      (args) =>
+        args[0] === '11111111-1111-4111-8111-111111111111' &&
+        args[2] === '55555555-5555-4555-8555-555555555555' &&
+        args[3] === '66666666-6666-4666-8666-666666666666'
+    )
+  );
+  check(
+    'inspected execution beyond first 25 history rows reloads via the scoped direct getter'
+  );
   await page.evaluate(() => window.qaCanonical.setActor('different-actor'));
   await expectSource('# Beta starter');
   await page.evaluate(() => window.qaCanonical.setActor('synthetic-actor'));

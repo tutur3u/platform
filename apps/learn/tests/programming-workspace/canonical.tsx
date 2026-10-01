@@ -36,6 +36,7 @@ export function CanonicalHarness() {
   }, []);
   Object.assign(window, { qaCanonical: { state, navigate, setActor } });
   const route = new URL(url, location.origin);
+  state.historyFixture = route.searchParams.has('history');
   const selected = fixtures.find((entry) => route.pathname.endsWith(entry.id));
   if (selected)
     return (

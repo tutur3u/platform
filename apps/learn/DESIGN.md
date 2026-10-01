@@ -70,3 +70,13 @@ Next RSC hydration, auth cookies, product API integration, a full schema replay 
 owning-app CI builds. The separate disposable SQL fixture validates only the delta
 against synthetic prerequisites and must never replace authoritative generated
 public/private/storage database types.
+
+Programming server authorization attaches the already verified Learn actor to a
+cookie-independent privileged client using the same helper as the API gateway.
+Membership and permission checks still bind that actor and workspace explicitly.
+A conflicting Supabase cookie cannot substitute its actor or grant membership;
+an invalid supplied app-session token cannot fall back to an unrelated cookie.
+This supports app-session-only users without depending on cookie JWT RLS.
+Persisted inspected executions are fetched directly under the complete scoped
+query key, rather than relying on the currently loaded history page. This restores
+older results after reload while retaining the server's problem/history binding.

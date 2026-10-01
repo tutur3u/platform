@@ -233,6 +233,26 @@ export function CodingLab({
         : false;
     },
   });
+  const inspected = useQuery({
+    enabled: Boolean(inspectedId),
+    queryFn: () =>
+      api
+        ? api.get(inspectedId!)
+        : getCodingSubmission(wsId, studentId, inspectedId!),
+    queryKey: [
+      'coding-inspected-execution',
+      draftScope?.actorId,
+      wsId,
+      draftScope?.learnerId ?? studentId,
+      selected,
+      inspectedId,
+    ],
+    refetchInterval: (query) =>
+      query.state.data?.status === 'queued' ||
+      query.state.data?.status === 'running'
+        ? 1500
+        : false,
+  });
   const history = useInfiniteQuery({
     enabled: Boolean(selected),
     getNextPageParam: (lastPage: CodingHistoryPage) => lastPage.nextCursor,
@@ -276,7 +296,9 @@ export function CodingLab({
         }
       : null;
   const activeExecution = inspectedId
-    ? (executions.find((entry) => entry.id === inspectedId) ?? null)
+    ? (inspected.data ??
+      executions.find((entry) => entry.id === inspectedId) ??
+      null)
     : (submission.data ?? optimisticExecution);
   const judgeReady = availableLanguages.includes(language);
   const isBusy =
@@ -486,16 +508,26 @@ export function CodingLab({
           </ResizablePanelGroup>
         </ResizablePanel>
       </ResizablePanelGroup>
-      {readOnly || !judgeReady || submit.error || submission.error ? (
+      {readOnly ||
+      !judgeReady ||
+      submit.error ||
+      submission.error ||
+      inspected.error ? (
         <p
           className="shrink-0 border-t bg-muted px-3 py-2 text-foreground text-xs"
-          role={submit.error || submission.error ? 'alert' : 'status'}
+          role={
+            submit.error || submission.error || inspected.error
+              ? 'alert'
+              : 'status'
+          }
         >
           {readOnly
             ? t('parentReadOnly')
             : !judgeReady
               ? t('judgeUnavailable')
-              : (submit.error?.message ?? submission.error?.message)}
+              : (submit.error?.message ??
+                submission.error?.message ??
+                inspected.error?.message)}
         </p>
       ) : null}
     </div>
