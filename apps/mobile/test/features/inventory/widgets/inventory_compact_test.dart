@@ -1,0 +1,344 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/data/repositories/inventory_repository.dart';
+import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/inventory/view/inventory_products_page.dart';
+import 'package:mobile/features/inventory/widgets/inventory_product_card.dart';
+import 'package:mobile/features/inventory/widgets/inventory_sales_periods.dart';
+import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+import '../../../helpers/helpers.dart';
+
+class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
+
+class _Inventory extends Mock implements InventoryRepository {}
+
+class _Finance extends Mock implements FinanceRepository {}
+
+class _Permissions extends Mock implements WorkspacePermissionsRepository {}
+
+InventoryProduct _product({double? amount, int rows = 1}) => InventoryProduct(
+  id: 'synthetic-product',
+  name: 'Festival coffee',
+  manufacturer: 'Synthetic owner',
+  owner: const InventoryOwner(id: 'owner', name: 'Synthetic owner'),
+  category: 'Coffee',
+  categoryId: 'category',
+  ownerId: 'owner',
+  wsId: 'synthetic-workspace',
+  inventory: [
+    for (var index = 0; index < rows; index++)
+      InventoryStockEntry(
+        unitId: 'unit-$index',
+        warehouseId: 'warehouse-$index',
+        amount: amount,
+        minAmount: 5,
+        price: 12.5,
+        unitName: index == 0 ? 'Cup' : 'Bag',
+        warehouseName: 'Booth ${index + 1}',
+      ),
+  ],
+);
+
+void _viewport(WidgetTester tester, Size size) {
+  tester.view
+    ..devicePixelRatio = 1
+    ..physicalSize = size;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+}
+
+Widget _scaled(Widget child, double scale, GlobalKey key) => Builder(
+  builder: (context) => MediaQuery(
+    data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
+    child: shad.Theme(
+      data: MobileShadTheme.light,
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(fontFamily: 'NotoSans'),
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            textTheme: Theme.of(
+              context,
+            ).textTheme.apply(fontFamily: 'NotoSans'),
+          ),
+          child: RepaintBoundary(key: key, child: child),
+        ),
+      ),
+    ),
+  ),
+);
+
+Future<void> _capture(WidgetTester tester, GlobalKey key, String name) async {
+  final directory = Platform.environment['INVENTORY_VISUAL_DIR'];
+  if (directory == null) return;
+  final boundary =
+      key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+  await tester.runAsync(() async {
+    final image = await boundary.toImage();
+    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+    await Directory(directory).create(recursive: true);
+    await File(
+      '$directory/$name.png',
+    ).writeAsBytes(bytes!.buffer.asUint8List());
+    image.dispose();
+  });
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    final loader = FontLoader('NotoSans')
+      ..addFont(rootBundle.load('assets/fonts/NotoSans.ttf'));
+    await loader.load();
+    final icons = FontLoader('MaterialIcons')
+      ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
+    await icons.load();
+  });
+  test('null quantities are unlimited and never low stock', () {
+    expect(inventoryProductHasLowStock(_product()), isFalse);
+    expect(inventoryProductHasLowStock(_product(amount: 0)), isTrue);
+    expect(inventoryProductHasLowStock(_product(amount: -1)), isTrue);
+    expect(inventoryProductHasLowStock(_product(amount: 5)), isTrue);
+    expect(inventoryProductHasLowStock(_product(amount: 6)), isFalse);
+  });
+
+  for (final size in [const Size(320, 900), const Size(768, 1024)]) {
+    testWidgets('populated card and periods fit $size at large text', (
+      tester,
+    ) async {
+      _viewport(tester, size);
+      final key = GlobalKey();
+      var created = 0;
+      await tester.pumpApp(
+        _scaled(
+          shad.Scaffold(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                InventoryProductCard(
+                  product: _product(rows: 4),
+                  currency: 'USD',
+                ),
+                const SizedBox(height: 12),
+                InventorySalesPeriodBar(
+                  workspaceId: 'synthetic-workspace',
+                  periods: const [
+                    InventorySalesPeriod(
+                      id: 'season',
+                      name: 'Summer coffee festival',
+                      status: 'active',
+                      saleCount: 12,
+                    ),
+                  ],
+                  selectedPeriodId: 'season',
+                  canManage: true,
+                  onChanged: (_) {},
+                  onCreate: () => created++,
+                  onEdit: (_) {},
+                  onToggleArchive: (_) {},
+                ),
+              ],
+            ),
+          ),
+          2,
+          key,
+        ),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Synthetic owner • Coffee'), findsOneWidget);
+      expect(find.textContaining('Unlimited available'), findsNWidgets(4));
+      expect(find.text('Low stock'), findsNothing);
+      expect(find.text('Booth 4 • Bag'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('New period').hitTestable(),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('New period').hitTestable());
+      expect(created, 1);
+      expect(tester.takeException(), isNull);
+      await tester.ensureVisible(find.byType(InventorySalesPeriodBar));
+      await _capture(
+        tester,
+        key,
+        'compact-periods-large-text-${size.width.toInt()}',
+      );
+    });
+  }
+
+  testWidgets(
+    'compact overview has a visible primary workflow and calm empty state',
+    (tester) async {
+      _viewport(tester, const Size(390, 844));
+      final key = GlobalKey();
+      await tester.pumpApp(
+        _scaled(
+          shad.Scaffold(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                InventoryHeroCard(
+                  title: 'Overview',
+                  icon: Icons.inventory_2_outlined,
+                  showHeader: false,
+                  metrics: const [
+                    InventoryMetricTile(
+                      label: 'Income',
+                      value: 'USD 1,200.00',
+                      icon: Icons.south_west,
+                    ),
+                    InventoryMetricTile(
+                      label: 'Expense',
+                      value: 'USD 300.00',
+                      icon: Icons.north_east,
+                    ),
+                    InventoryMetricTile(
+                      label: 'Sales',
+                      value: 'USD 900.00',
+                      icon: Icons.receipt_outlined,
+                    ),
+                  ],
+                  actions: [
+                    InventoryActionTile(
+                      label: 'Sell',
+                      icon: Icons.point_of_sale,
+                      primary: true,
+                      onPressed: () {},
+                    ),
+                    InventoryActionTile(
+                      label: 'Create product',
+                      icon: Icons.add_box_outlined,
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const InventoryEmptyPanel(
+                  body: 'No low-stock products right now.',
+                ),
+                const SizedBox(height: 16),
+                InventoryProductCard(
+                  product: _product(amount: 8),
+                  currency: 'USD',
+                ),
+              ],
+            ),
+          ),
+          1,
+          key,
+        ),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getSize(find.byType(InventoryHeroCard)).height,
+        lessThan(844 / 3),
+      );
+      for (final tile in find.byType(InventoryActionTile).evaluate()) {
+        expect(
+          tester.getSize(find.byWidget(tile.widget)).height,
+          greaterThanOrEqualTo(48),
+        );
+      }
+      await _capture(tester, key, 'compact-overview-populated');
+    },
+  );
+
+  testWidgets(
+    'actual Products page mounts synthetic data and searches without writes',
+    (tester) async {
+      _viewport(tester, const Size(390, 844));
+      final workspace = _Workspace();
+      final inventory = _Inventory();
+      final finance = _Finance();
+      final permissions = _Permissions();
+      const state = WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        currentWorkspace: Workspace(
+          id: 'synthetic-workspace',
+          name: 'Synthetic',
+        ),
+      );
+      when(() => workspace.state).thenReturn(state);
+      whenListen(
+        workspace,
+        const Stream<WorkspaceState>.empty(),
+        initialState: state,
+      );
+      when(() => finance.peekWorkspaceDefaultCurrency(any())).thenReturn('USD');
+      when(
+        () => finance.getWorkspaceDefaultCurrency(any()),
+      ).thenAnswer((_) async => 'USD');
+      when(
+        () => permissions.getPermissions(wsId: any(named: 'wsId')),
+      ).thenAnswer(
+        (_) async =>
+            const WorkspacePermissions(permissions: {}, isCreator: false),
+      );
+      when(
+        () => inventory.getProducts(
+          any(),
+          query: any(named: 'query'),
+          pageSize: any(named: 'pageSize'),
+          forceRefresh: any(named: 'forceRefresh'),
+        ),
+      ).thenAnswer(
+        (call) async => (
+          data: call.namedArguments[#query] == 'missing'
+              ? <InventoryProduct>[]
+              : [_product()],
+          count: call.namedArguments[#query] == 'missing' ? 0 : 1,
+        ),
+      );
+      final key = GlobalKey();
+      await tester.pumpApp(
+        BlocProvider<WorkspaceCubit>.value(
+          value: workspace,
+          child: _scaled(
+            InventoryProductsPage(
+              inventoryRepository: inventory,
+              financeRepository: finance,
+              permissionsRepository: permissions,
+            ),
+            1,
+            key,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Festival coffee'), findsOneWidget);
+      expect(find.textContaining('Unlimited available'), findsOneWidget);
+      expect(find.text('Create product'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await _capture(tester, key, 'compact-products-mounted');
+      await tester.enterText(find.byType(TextField), 'missing');
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+      expect(find.text('Festival coffee'), findsNothing);
+      await tester.tap(find.byTooltip('Clear'));
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+      expect(find.text('Festival coffee'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await workspace.close();
+    },
+  );
+}

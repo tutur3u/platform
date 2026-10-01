@@ -8,6 +8,28 @@ Inventory lives in `apps/inventory` and runs locally through Portless at
 `https://inventory.tuturuuu.localhost`. Production is intended for
 `https://inventory.tuturuuu.com`.
 
+## Native Inventory presentation
+
+The Flutter mini-app keeps Overview, Products, Sales, Manage and Storefront
+destinations in the established floating navigation. Overview retains Sell and
+Create product as visible workflows; it does not repeat the dock destinations.
+Manage keeps every setup collection and its permitted add action visible without
+a second counter dashboard. Season selection, creation, editing and archiving
+remain visible on Sales.
+
+Product summaries show metadata once and keep each quantity and price beside its
+warehouse and unit. Quantities across different units are not summed. A null
+quantity means unlimited stock and must never display as zero or a low-stock
+warning. An absent stock row is shown as unconfigured. The Products low-stock
+count covers loaded search results, not the entire catalog. Native presentation
+does not change server permissions, mutation authorization, or canonical workspace
+membership. Existing pending-sync indicators remain attached to their owning rows.
+
+This compact presentation does not establish parity for web commerce checkout,
+payment providers, stock ledgers, scoped analytics, costing or effective season
+pricing. Those require their existing authorized API contracts and separate
+verification; today's catalog price must not replace historical sold prices.
+
 The app is a registered Tuturuuu satellite app. It uses Tuturuuu app-session
 auth for `targetApp: 'inventory'`, exposes local `/verify-token` and
 `/api/auth/verify-app-token` handoff routes, and forwards fallback `/api/*`
