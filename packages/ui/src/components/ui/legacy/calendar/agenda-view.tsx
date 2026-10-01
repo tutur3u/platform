@@ -7,6 +7,7 @@ import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
+import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import { cn } from '@tuturuuu/utils/format';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
@@ -44,74 +45,6 @@ interface GroupedEvents {
   events: CalendarEvent[];
 }
 
-const COLOR_MAP: Record<
-  string,
-  { accent: string; bg: string; border: string }
-> = {
-  blue: {
-    accent: 'bg-dynamic-blue',
-    bg: 'bg-dynamic-blue/5 hover:bg-dynamic-blue/10',
-    border: 'border-l-dynamic-blue',
-  },
-  red: {
-    accent: 'bg-dynamic-red',
-    bg: 'bg-dynamic-red/5 hover:bg-dynamic-red/10',
-    border: 'border-l-dynamic-red',
-  },
-  green: {
-    accent: 'bg-dynamic-green',
-    bg: 'bg-dynamic-green/5 hover:bg-dynamic-green/10',
-    border: 'border-l-dynamic-green',
-  },
-  purple: {
-    accent: 'bg-dynamic-purple',
-    bg: 'bg-dynamic-purple/5 hover:bg-dynamic-purple/10',
-    border: 'border-l-dynamic-purple',
-  },
-  yellow: {
-    accent: 'bg-dynamic-yellow',
-    bg: 'bg-dynamic-yellow/5 hover:bg-dynamic-yellow/10',
-    border: 'border-l-dynamic-yellow',
-  },
-  orange: {
-    accent: 'bg-dynamic-orange',
-    bg: 'bg-dynamic-orange/5 hover:bg-dynamic-orange/10',
-    border: 'border-l-dynamic-orange',
-  },
-  pink: {
-    accent: 'bg-dynamic-pink',
-    bg: 'bg-dynamic-pink/5 hover:bg-dynamic-pink/10',
-    border: 'border-l-dynamic-pink',
-  },
-  cyan: {
-    accent: 'bg-dynamic-cyan',
-    bg: 'bg-dynamic-cyan/5 hover:bg-dynamic-cyan/10',
-    border: 'border-l-dynamic-cyan',
-  },
-  indigo: {
-    accent: 'bg-dynamic-indigo',
-    bg: 'bg-dynamic-indigo/5 hover:bg-dynamic-indigo/10',
-    border: 'border-l-dynamic-indigo',
-  },
-  gray: {
-    accent: 'bg-dynamic-gray',
-    bg: 'bg-dynamic-gray/5 hover:bg-dynamic-gray/10',
-    border: 'border-l-dynamic-gray',
-  },
-};
-
-function normalizeColor(color: string): string {
-  if (!color) return 'blue';
-  const normalized = color.trim().toLowerCase();
-  if (normalized === '#6b7280' || normalized === 'grey') return 'gray';
-  return normalized;
-}
-
-function getStyles(event: CalendarEvent) {
-  const key = normalizeColor(event.color || 'blue');
-  return COLOR_MAP[key] || COLOR_MAP.blue!;
-}
-
 function formatTimeWithMidnight(
   date: Date,
   timePattern: string,
@@ -140,28 +73,26 @@ function EventCard({
 }) {
   const { settings } = useCalendarSettings();
   const isAllDay = isAllDayEvent(event);
-  const styles = getStyles(event);
 
   return (
     <button
       type="button"
       onClick={() => onOpen(event.id)}
+      style={calendarEventStyle(event)}
       className={cn(
-        'group flex w-full cursor-pointer items-start gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-left transition-colors',
-        styles.border,
-        styles.bg
+        'group flex w-full cursor-pointer items-start gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-left transition-colors hover:ring-1 hover:ring-current'
       )}
     >
       {/* Time column */}
       <div className="flex w-16 shrink-0 flex-col pt-0.5 sm:w-20">
         {isAllDay ? (
-          <span className="flex items-center gap-1 font-medium text-muted-foreground text-xs">
+          <span className="flex items-center gap-1 font-medium text-inherit text-xs">
             <Sun className="h-3 w-3" />
             {t('agenda_all_day')}
           </span>
         ) : (
           <>
-            <span className="font-semibold text-foreground text-sm leading-tight">
+            <span className="font-semibold text-inherit text-sm leading-tight">
               {formatTimeWithMidnight(
                 new Date(event.start_at),
                 timePattern,
@@ -169,7 +100,7 @@ function EventCard({
                 settings?.timezone?.timezone
               )}
             </span>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-inherit text-xs">
               {formatTimeWithMidnight(
                 new Date(event.end_at),
                 timePattern,
@@ -183,14 +114,14 @@ function EventCard({
 
       {/* Content */}
       <div className="min-w-0 flex-1">
-        <span className="line-clamp-1 font-medium text-foreground text-sm leading-tight">
+        <span className="line-clamp-1 font-medium text-inherit text-sm leading-tight">
           {event.title || t('views.untitled_event')}
         </span>
 
         {(event.location || (!isAllDay && event.description)) && (
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
             {!isAllDay && (
-              <span className="flex items-center gap-1 text-muted-foreground text-xs">
+              <span className="flex items-center gap-1 text-inherit text-xs">
                 <Clock className="h-3 w-3 shrink-0" />
                 {(() => {
                   try {
@@ -209,7 +140,7 @@ function EventCard({
               </span>
             )}
             {event.location && (
-              <span className="flex items-center gap-1 truncate text-muted-foreground text-xs">
+              <span className="flex items-center gap-1 truncate text-inherit text-xs">
                 <MapPin className="h-3 w-3 shrink-0" />
                 <span className="truncate">{event.location}</span>
               </span>

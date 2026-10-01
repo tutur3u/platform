@@ -18,6 +18,7 @@ class AppDialogScaffold extends StatelessWidget {
     this.maxWidth = 560,
     this.maxHeightFactor = 0.88,
     this.scrollable = true,
+    this.scrollHeader = false,
     super.key,
   }) : assert(
          (child == null) != (slivers == null),
@@ -38,6 +39,10 @@ class AppDialogScaffold extends StatelessWidget {
   final double maxWidth;
   final double maxHeightFactor;
   final bool scrollable;
+
+  /// Let a non-sliver heading and body share the scrollable viewport.
+  /// Use for choice sheets whose scaled heading can exhaust the body height.
+  final bool scrollHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +105,17 @@ class AppDialogScaffold extends StatelessWidget {
     ];
 
     final scrollContent = slivers == null
-        ? body
+        ? scrollable && scrollHeader
+              ? SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ...header,
+                      Padding(padding: padding, child: child),
+                    ],
+                  ),
+                )
+              : body
         : CustomScrollView(
             shrinkWrap: true,
             slivers: [
@@ -169,7 +184,8 @@ class AppDialogScaffold extends StatelessWidget {
                             ),
                           ),
                         ],
-                        if (slivers == null) ...header,
+                        if (slivers == null && !(scrollable && scrollHeader))
+                          ...header,
                         Flexible(
                           child: NotificationListener<ScrollNotification>(
                             // Both dialog body variants keep scrolling local.

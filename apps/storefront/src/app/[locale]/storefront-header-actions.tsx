@@ -8,8 +8,8 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { getOptionalInventoryPublicStorefront } from '@/components/storefront/storefront-loader';
 import { INVENTORY_APP_URL } from '@/constants/common';
-import { Link } from '@/i18n/navigation';
 import { resolveInventoryStorefrontManageHref } from '@/lib/storefront-manage-access';
+import { StorefrontHeaderLink } from './storefront-header-link';
 import { UserNav } from './user-nav';
 
 /**
@@ -68,12 +68,10 @@ export async function StorefrontHeaderActions({
           </Button>
         ) : null}
         {storeSlug && showHistory ? (
-          <Button asChild size="sm" variant="outline">
-            <Link href={`/${storeSlug}/orders`}>
-              <ReceiptText className="size-4" />
-              {t('history.shortTitle')}
-            </Link>
-          </Button>
+          <StorefrontHeaderLink href={`/${storeSlug}/orders`}>
+            <ReceiptText className="size-4" />
+            {t('history.shortTitle')}
+          </StorefrontHeaderLink>
         ) : null}
         <NotificationPopover userId={user.id} />
         <UserNav hideMetadata />
@@ -84,9 +82,7 @@ export async function StorefrontHeaderActions({
   return (
     <div className="flex items-center gap-1">
       <ThemeToggle />
-      <Button asChild size="sm" variant="outline">
-        <Link href="/login">{t('signIn')}</Link>
-      </Button>
+      <StorefrontHeaderLink href="/login">{t('signIn')}</StorefrontHeaderLink>
     </div>
   );
 }

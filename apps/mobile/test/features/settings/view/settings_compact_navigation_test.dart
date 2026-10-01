@@ -348,6 +348,12 @@ void main() {
         await _tapRow(tester, const ValueKey('settings-haptics-row'));
         expect(find.text('On').last, findsOneWidget);
         expect(find.text('Off'), findsOneWidget);
+        final choices = find.ancestor(
+          of: find.text('Off'),
+          matching: find.byType(SingleChildScrollView),
+        );
+        expect(choices, findsOneWidget);
+        expect(tester.getSize(choices).height, greaterThanOrEqualTo(48));
         final selected = find.ancestor(
           of: find.text('On').last,
           matching: find.byWidgetPredicate(
