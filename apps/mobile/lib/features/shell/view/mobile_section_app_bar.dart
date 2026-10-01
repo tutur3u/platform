@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown.dart';
+import 'package:mobile/features/shell/view/readable_shell_title.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 const double mobileSectionAppBarLogoSize = 26;
@@ -49,6 +50,7 @@ class MobileSectionAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     var hasAuthCubit = true;
     final theme = shad.Theme.of(context);
+    final height = mobileSectionAppBarHeightFor(context);
     try {
       context.read<AuthCubit>();
     } on Exception {
@@ -56,7 +58,7 @@ class MobileSectionAppBar extends StatelessWidget {
     }
 
     return shad.AppBar(
-      height: mobileSectionAppBarHeightFor(context),
+      height: height,
       padding: mobileSectionAppBarPadding,
       leadingGap: 8,
       trailingGap: 6,
@@ -70,7 +72,7 @@ class MobileSectionAppBar extends StatelessWidget {
           ),
       ],
       child: SizedBox(
-        height: mobileSectionAppBarHeightFor(context),
+        height: height,
         child: Row(
           children: [
             Image.asset(
@@ -87,13 +89,7 @@ class MobileSectionAppBar extends StatelessWidget {
                   style: theme.typography.large.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
-                  child:
-                      titleWidget ??
-                      Text(
-                        title ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                  child: titleWidget ?? ReadableShellTitle(title ?? ''),
                 ),
               ),
             ),

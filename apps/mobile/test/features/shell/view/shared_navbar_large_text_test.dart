@@ -212,139 +212,145 @@ void main() {
     final assistantSection = title.startsWith('Mira');
     for (final viewport in [320.0, 393.0]) {
       for (final scale in [1.0, 2.0, 3.0]) {
-        testWidgets(
-          '$title width$viewport text$scale fits actual shell navbar',
-          (tester) async {
-            width = viewport;
-            textScale = scale;
-            await mount(tester);
-            if (profileSection) {
-              router.go(Routes.profileRoot);
-              await _pump(tester);
-            }
-            if (assistantSection) {
-              router.go(Routes.assistant);
-              await _pump(tester);
-              assistant.setLiveMode(value: title == 'Mira Live');
-              await _pump(tester);
-            }
-            final titleFinder = find.descendant(
-              of: find.byType(ShellTopBarTitle),
-              matching: find.text(title),
-            );
-            expect(titleFinder, findsOneWidget);
-            final paragraph = tester.renderObject<RenderParagraph>(titleFinder);
-            final intrinsicHeight = paragraph.getMaxIntrinsicHeight(
-              paragraph.size.width,
-            );
-            if (baseline && !assistantSection && scale > 1) {
-              expect(paragraph.size.height, lessThan(intrinsicHeight));
-            } else {
-              expect(
-                paragraph.size.height,
-                greaterThanOrEqualTo(intrinsicHeight),
-              );
-            }
-            expect(paragraph.maxLines, 1);
-            final fontSize = (paragraph.text as TextSpan).style!.fontSize!;
+        testWidgets('$title width$viewport text$scale paints a title prefix '
+            'in actual shell navbar', (tester) async {
+          width = viewport;
+          textScale = scale;
+          await mount(tester);
+          if (profileSection) {
+            router.go(Routes.profileRoot);
+            await _pump(tester);
+          }
+          if (assistantSection) {
+            router.go(Routes.assistant);
+            await _pump(tester);
+            assistant.setLiveMode(value: title == 'Mira Live');
+            await _pump(tester);
+          }
+          final titleFinder = find.descendant(
+            of: find.byType(ShellTopBarTitle),
+            matching: find.text(title),
+          );
+          expect(titleFinder, findsOneWidget);
+          final paragraph = tester.renderObject<RenderParagraph>(titleFinder);
+          final intrinsicHeight = paragraph.getMaxIntrinsicHeight(
+            paragraph.size.width,
+          );
+          if (baseline && !assistantSection && scale > 1) {
+            expect(paragraph.size.height, lessThan(intrinsicHeight));
+          } else {
             expect(
-              paragraph.textScaler.scale(fontSize),
-              closeTo(fontSize * scale, .01),
+              paragraph.size.height,
+              greaterThanOrEqualTo(intrinsicHeight),
             );
-            final bar = tester.getRect(find.byType(shad.AppBar).first);
-            final titleRect = tester.getRect(titleFinder);
-            expect(bar.contains(titleRect.topLeft), isTrue);
-            expect(bar.contains(titleRect.bottomRight), isTrue);
-            if (scale == 1 || baseline) expect(bar.height, 54);
-            Rect? content;
-            if (!assistantSection) {
-              content = tester.getRect(
-                profileSection
-                    ? find
-                          .descendant(
-                            of: find.byType(ProfileOverviewPage),
-                            matching: find.text('Overview'),
-                          )
-                          .first
-                    : find.byKey(const ValueKey('navbar-content')),
-              );
-              expect(content.top, closeTo(bar.bottom + 10, .01));
-            }
+          }
+          expect(paragraph.maxLines, 1);
+          final fontSize = (paragraph.text as TextSpan).style!.fontSize!;
+          expect(
+            paragraph.textScaler.scale(fontSize),
+            closeTo(fontSize * scale, .01),
+          );
+          final bar = tester.getRect(find.byType(shad.AppBar).first);
+          final titleRect = tester.getRect(titleFinder);
+          expect(bar.contains(titleRect.topLeft), isTrue);
+          expect(bar.contains(titleRect.bottomRight), isTrue);
+          final glyphInk = await _firstGlyphInk(tester, paragraph, titleRect);
+          if (!baseline) {
             expect(
-              floatingShellHeaderInset(
-                tester.element(find.byType(ShellTopBarTitle)),
-              ),
-              bar.height,
+              glyphInk,
+              greaterThan(0),
+              reason: '$title must paint a real title glyph, not only ellipsis',
             );
-            Rect? selectorRect;
-            if (profileSection) {
-              final selector = find.byKey(const ValueKey('profile-views'));
-              expect(selector, findsOneWidget);
-              selectorRect = tester.getRect(selector);
-              expect(selectorRect.size, const Size(104, 46));
-              expect(bar.contains(selectorRect.topLeft), isTrue);
-              expect(bar.contains(selectorRect.bottomRight), isTrue);
-              expect(
-                find.ancestor(of: selector, matching: find.byType(shad.AppBar)),
-                findsOneWidget,
-              );
-            }
-            final semantics = tester.ensureSemantics();
+          }
+          if (scale == 1 || baseline) expect(bar.height, 54);
+          Rect? content;
+          if (!assistantSection) {
+            content = tester.getRect(
+              profileSection
+                  ? find
+                        .descendant(
+                          of: find.byType(ProfileOverviewPage),
+                          matching: find.text('Overview'),
+                        )
+                        .first
+                  : find.byKey(const ValueKey('navbar-content')),
+            );
+            expect(content.top, closeTo(bar.bottom + 10, .01));
+          }
+          expect(
+            floatingShellHeaderInset(
+              tester.element(find.byType(ShellTopBarTitle)),
+            ),
+            bar.height,
+          );
+          Rect? selectorRect;
+          if (profileSection) {
+            final selector = find.byKey(const ValueKey('profile-views'));
+            expect(selector, findsOneWidget);
+            selectorRect = tester.getRect(selector);
+            expect(selectorRect.size, const Size(104, 46));
+            expect(bar.contains(selectorRect.topLeft), isTrue);
+            expect(bar.contains(selectorRect.bottomRight), isTrue);
             expect(
-              find.bySemanticsLabel(
-                RegExp(assistantSection ? title : '$title, Search apps'),
-              ),
+              find.ancestor(of: selector, matching: find.byType(shad.AppBar)),
               findsOneWidget,
             );
-            final output = Platform.environment['NAVBAR_RENDER_DIR'];
-            if (output != null) {
-              await tester.runAsync(() async {
-                final directory = Directory(output)
-                  ..createSync(recursive: true);
-                final name =
-                    '${baseline ? 'before' : 'after'}-$title-$viewport-$scale';
-                final boundary = tester.renderObject<RenderRepaintBoundary>(
-                  find.byKey(const ValueKey('navbar-render')),
-                );
-                final image = await boundary.toImage();
-                final bytes = await image.toByteData(
-                  format: ui.ImageByteFormat.png,
-                );
-                await File(
-                  '${directory.path}/$name.png',
-                ).writeAsBytes(bytes!.buffer.asUint8List());
-                await File('${directory.path}/$name.json').writeAsString(
-                  jsonEncode({
-                    'synthetic': true,
-                    'scale': scale,
-                    'width': width,
-                    'bar': [bar.left, bar.top, bar.right, bar.bottom],
-                    'title': [paragraph.size.width, paragraph.size.height],
-                    'intrinsicTitleHeight': intrinsicHeight,
-                    'paintedTitleBounds': _rectValues(titleRect),
-                    'contentTop': content?.top,
-                    'selector': _rectValues(selectorRect),
-                  }),
-                );
-                image.dispose();
-              });
-            }
-            if (!baseline && profileSection && viewport == 393 && scale == 2) {
-              await tester.tap(find.byTooltip('Activity timeline'));
-              await _pump(tester);
-              expect(
-                tester
-                    .getSemantics(find.byTooltip('Activity timeline'))
-                    .getSemanticsData()
-                    .flagsCollection
-                    .isSelected,
-                ui.Tristate.isTrue,
+          }
+          final semantics = tester.ensureSemantics();
+          expect(
+            find.bySemanticsLabel(
+              RegExp(assistantSection ? title : '$title, Search apps'),
+            ),
+            findsOneWidget,
+          );
+          final output = Platform.environment['NAVBAR_RENDER_DIR'];
+          if (output != null) {
+            await tester.runAsync(() async {
+              final directory = Directory(output)..createSync(recursive: true);
+              final name =
+                  '${baseline ? 'before' : 'after'}-$title-$viewport-$scale';
+              final boundary = tester.renderObject<RenderRepaintBoundary>(
+                find.byKey(const ValueKey('navbar-render')),
               );
-            }
-            semantics.dispose();
-            expect(tester.takeException(), isNull);
-          },
-        );
+              final image = await boundary.toImage();
+              final bytes = await image.toByteData(
+                format: ui.ImageByteFormat.png,
+              );
+              await File(
+                '${directory.path}/$name.png',
+              ).writeAsBytes(bytes!.buffer.asUint8List());
+              await File('${directory.path}/$name.json').writeAsString(
+                jsonEncode({
+                  'synthetic': true,
+                  'scale': scale,
+                  'width': width,
+                  'bar': [bar.left, bar.top, bar.right, bar.bottom],
+                  'title': [paragraph.size.width, paragraph.size.height],
+                  'intrinsicTitleHeight': intrinsicHeight,
+                  'paragraphBounds': _rectValues(titleRect),
+                  'firstTitleGlyphInkPixels': glyphInk,
+                  'contentTop': content?.top,
+                  'selector': _rectValues(selectorRect),
+                }),
+              );
+              image.dispose();
+            });
+          }
+          if (!baseline && profileSection && viewport == 393 && scale == 2) {
+            await tester.tap(find.byTooltip('Activity timeline'));
+            await _pump(tester);
+            expect(
+              tester
+                  .getSemantics(find.byTooltip('Activity timeline'))
+                  .getSemanticsData()
+                  .flagsCollection
+                  .isSelected,
+              ui.Tristate.isTrue,
+            );
+          }
+          semantics.dispose();
+          expect(tester.takeException(), isNull);
+        });
       }
     }
   }
@@ -365,3 +371,44 @@ class _Section extends StatelessWidget {
 
 List<double>? _rectValues(Rect? rect) =>
     rect == null ? null : [rect.left, rect.top, rect.right, rect.bottom];
+
+Future<int> _firstGlyphInk(
+  WidgetTester tester,
+  RenderParagraph paragraph,
+  Rect titleRect,
+) async {
+  final boxes = paragraph.getBoxesForSelection(
+    const TextSelection(baseOffset: 0, extentOffset: 1),
+  );
+  if (boxes.isEmpty) return 0;
+  final box = boxes.first.toRect();
+  final origin = paragraph.localToGlobal(Offset.zero);
+  final glyph = box.shift(origin).intersect(titleRect);
+  return (await tester.runAsync(() async {
+    final boundary = tester.renderObject<RenderRepaintBoundary>(
+      find.byKey(const ValueKey('navbar-render')),
+    );
+    final image = await boundary.toImage();
+    try {
+      final bytes = await image.toByteData();
+      var pixels = 0;
+      final region = glyph.intersect(
+        Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+      );
+      for (var y = region.top.ceil(); y < region.bottom.floor(); y++) {
+        for (var x = region.left.ceil(); x < region.right.floor(); x++) {
+          final offset = (y * image.width + x) * 4;
+          if (bytes!.getUint8(offset + 3) > 128 &&
+              bytes.getUint8(offset) < 140 &&
+              bytes.getUint8(offset + 1) < 140 &&
+              bytes.getUint8(offset + 2) < 140) {
+            pixels++;
+          }
+        }
+      }
+      return pixels;
+    } finally {
+      image.dispose();
+    }
+  }))!;
+}

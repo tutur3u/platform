@@ -8,6 +8,7 @@ import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/widgets/assistant_mode_title.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
+import 'package:mobile/features/shell/view/readable_shell_title.dart';
 import 'package:mobile/features/shell/view/shell_chrome_config.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -100,10 +101,8 @@ class _ShellTopBarTitleContent extends StatelessWidget {
             child: SelectableText(title),
           ),
         ),
-        child: Text(
+        child: ReadableShellTitle(
           title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.titleLarge,
         ),
       );

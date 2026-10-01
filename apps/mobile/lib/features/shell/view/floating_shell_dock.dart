@@ -46,6 +46,17 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   Timer? _returnTimer;
   bool _hidden = false;
   double _travel = 0;
+  late double _headerInset;
+  late bool _accessibleNavigation;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Theme, default text style, text scale, direction and safe-area changes
+    // invalidate this measurement; scroll frames only read the cached value.
+    _headerInset = floatingShellHeaderInset(context);
+    _accessibleNavigation = MediaQuery.of(context).accessibleNavigation;
+  }
 
   @override
   void didUpdateWidget(covariant FloatingShellDock oldWidget) {
@@ -81,7 +92,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     if (notification.depth != 0 ||
         notification.metrics.axis != Axis.vertical ||
         (widget.bottomInset == 0 && widget.header == null) ||
-        MediaQuery.of(context).accessibleNavigation) {
+        _accessibleNavigation) {
       return false;
     }
     if (notification is ScrollUpdateNotification &&
@@ -94,7 +105,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
         _travel += delta;
         final contentClearedHeader =
             !widget.scrollableHeader ||
-            notification.metrics.pixels > floatingShellHeaderInset(context);
+            notification.metrics.pixels > _headerInset;
         if (_travel > 24 && contentClearedHeader && !_hidden) {
           setState(() {
             _hidden = true;
@@ -123,7 +134,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     final clearance = active ? widget.bottomInset + media.padding.bottom : 0.0;
     final headerClearance = widget.header == null || widget.scrollableHeader
         ? 0.0
-        : floatingShellHeaderInset(context);
+        : _headerInset;
     final headerHidden = _hidden && widget.scrollableHeader;
     return NotificationListener<ScrollNotification>(
       onNotification: _onScroll,

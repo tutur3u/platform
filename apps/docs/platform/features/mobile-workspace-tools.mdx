@@ -877,13 +877,17 @@ it does not change membership discovery, permissions, or default persistence.
 The compact mobile navbar keeps its normal size at the default text scale. At
 larger accessibility text sizes, its height grows to fit the title line without
 shrinking that text. The floating content inset grows with the same measurement,
-while icon switches stay compact in the top navbar. Long titles still use one
-line with an ellipsis and retain their full accessibility label.
+while icon switches stay compact in the top navbar. Read-only titles normally
+use one line with an ellipsis and retain their full accessibility label. When
+ellipsis would remove every title character, a clipped prefix remains visible.
+Editable titles scroll horizontally under a fade instead of ellipsizing.
 
 Mounted Assistant chat/live coverage confirms that its existing inner Row allows
 its scaled title to paint within the taller outer navbar: 56px at 2× and 84px at
 3×. That inner Row does not clip the text vertically. Horizontal space remains
-limited by the compact mode controls; narrow layouts may ellipsize the title,
-and at 320px/3× chat may show no title glyphs. Its full semantics label remains
-available. The shared-navbar regression covers both modes at both widths and
-all three text scales without changing Assistant behavior.
+limited by the compact mode controls; narrow layouts can show only a clipped
+prefix rather than the complete title. Its full semantics label remains
+available. The shared-navbar regression verifies actual ink in the first title
+glyph for both modes at both widths and all three text scales. Scroll threshold
+geometry is cached and refreshed for theme, text-scale and safe-area changes;
+drag notifications do not perform title layout.

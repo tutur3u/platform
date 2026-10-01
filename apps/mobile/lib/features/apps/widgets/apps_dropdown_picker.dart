@@ -10,6 +10,7 @@ import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/readable_shell_title.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/order_editor_sheet.dart';
@@ -41,10 +42,8 @@ class AppsDropdownPicker extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Flexible(
-                child: Text(
+                child: ReadableShellTitle(
                   title ?? context.l10n.navApps,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
