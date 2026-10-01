@@ -1,7 +1,11 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { calendarEventColors } from '@tuturuuu/utils/calendar-event-colors';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const state = vi.hoisted(() => ({ admin: null as any, allowed: true }));
+const state = vi.hoisted(() => ({
+  admin: null as TypedSupabaseClient | null,
+  allowed: true,
+}));
 vi.mock('@/lib/calendar-event-permission', () => ({
   authorizeCalendarEventManagement: async () =>
     state.allowed
@@ -66,7 +70,7 @@ function fixture(errorTable?: string) {
                 color: sourceColor,
               },
             ];
-    const query: any = Object.assign(
+    const query = Object.assign(
       Promise.resolve({
         data,
         error:
@@ -83,12 +87,20 @@ function fixture(errorTable?: string) {
         single: async () => ({ data: event, error: null }),
       }
     );
-    for (const key of ['select', 'eq', 'lt', 'gt', 'order', 'in', 'limit'])
+    for (const key of [
+      'select',
+      'eq',
+      'lt',
+      'gt',
+      'order',
+      'in',
+      'limit',
+    ] as const)
       query[key].mockReturnValue(query);
     queries.push({ table, eq: query.eq });
     return query;
   });
-  state.admin = { from };
+  state.admin = { from } as unknown as TypedSupabaseClient;
   return {
     event,
     from,
