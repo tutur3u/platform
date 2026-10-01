@@ -1,20 +1,7 @@
 const assert = require('node:assert/strict');
-const { execFileSync } = require('node:child_process');
-const path = require('node:path');
 const test = require('node:test');
 
-const readWorkflow = (name) =>
-  JSON.parse(
-    execFileSync(
-      'bun',
-      [
-        '-e',
-        'console.log(JSON.stringify(Bun.YAML.parse(await Bun.file(process.argv[1]).text())))',
-        path.resolve(__dirname, '../../.github/workflows', name),
-      ],
-      { encoding: 'utf8' }
-    )
-  );
+const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 test('translation checks run once per PR update and still cover both protected branches and forks', () => {
   const workflow = readWorkflow('i18n-check.yaml');

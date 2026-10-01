@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -89,7 +91,7 @@ void main() {
       expect(find.text('Free'), findsOneWidget);
     });
 
-    testWidgets('reveals search field only after tapping search', (
+    testWidgets('keeps filtered results stable when search loses focus', (
       tester,
     ) async {
       const state = WorkspaceState(
@@ -142,8 +144,34 @@ void main() {
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
 
+      expect(find.byType(EditableText), findsOneWidget);
+      expect(find.text('Design'), findsNothing);
+      expect(find.text('Product'), findsNWidgets(2));
+      await tester.tap(find.byIcon(Icons.close_rounded).last);
+      await tester.pumpAndSettle();
       expect(find.byType(EditableText), findsNothing);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      expect(find.byType(EditableText), findsNothing);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
       expect(find.text('Design'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.search_rounded).first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(EditableText), 'Product');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.close_rounded).last);
+      await tester.pumpAndSettle();
+      expect(find.byType(EditableText), findsNothing);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.search_rounded).first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(EditableText), '   ');
+      await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      expect(find.byType(EditableText), findsNothing);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
     });
 
     testWidgets('selects the workspace represented by a filtered result', (
@@ -200,5 +228,76 @@ void main() {
       ).called(1);
       verifyNever(() => workspaceCubit.selectWorkspace(freeWorkspace));
     });
+
+    for (final mode in WorkspacePickerMode.values) {
+      testWidgets('selects stable ID after sorting and refresh in $mode', (
+        tester,
+      ) async {
+        const original = Workspace(id: 'first', name: 'Zulu');
+        const duplicateA = Workspace(id: 'duplicate_a', name: 'Alpha');
+        const duplicateB = Workspace(id: 'duplicate_b', name: 'Alpha');
+        const updatedB = Workspace(
+          id: 'duplicate_b',
+          name: 'Alpha',
+          tier: workspaceTierPro,
+        );
+        const initial = WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          workspaces: [original, duplicateB, duplicateA],
+          currentWorkspace: original,
+        );
+        final updates = StreamController<WorkspaceState>();
+        addTearDown(updates.close);
+        whenListen(workspaceCubit, updates.stream, initialState: initial);
+        when(
+          () => workspaceCubit.selectWorkspace(updatedB),
+        ).thenAnswer((_) async {});
+        when(
+          () => workspaceCubit.setDefaultWorkspace(updatedB),
+        ).thenAnswer((_) async {});
+        await tester.pumpApp(
+          BlocProvider<WorkspaceCubit>.value(
+            value: workspaceCubit,
+            child: Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () =>
+                      showWorkspacePickerSheet(context, mode: mode),
+                  child: const Text('Open picker'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Open picker'));
+        await tester.pump(const Duration(milliseconds: 250));
+        await tester.tap(find.byIcon(Icons.search_rounded).first);
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(EditableText), 'Alpha');
+        await tester.pumpAndSettle();
+        updates.add(
+          initial.copyWith(workspaces: [duplicateA, original, updatedB]),
+        );
+        await tester.pumpAndSettle();
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        expect(find.text('Zulu'), findsNothing);
+        final result = find.byKey(
+          const ValueKey('workspace-result-duplicate_b'),
+        );
+        await tester.ensureVisible(result);
+        await tester.tap(result);
+        await tester.pumpAndSettle();
+        if (mode == WorkspacePickerMode.current) {
+          verify(() => workspaceCubit.selectWorkspace(updatedB)).called(1);
+          verifyNever(() => workspaceCubit.setDefaultWorkspace(updatedB));
+        } else {
+          verify(() => workspaceCubit.setDefaultWorkspace(updatedB)).called(1);
+          verifyNever(() => workspaceCubit.selectWorkspace(updatedB));
+        }
+        verifyNever(() => workspaceCubit.selectWorkspace(original));
+        verifyNever(() => workspaceCubit.selectWorkspace(duplicateA));
+      });
+    }
   });
 }

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.26.1](https://github.com/tutur3u/platform/compare/contacts-v0.26.0...contacts-v0.26.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **contacts:** isolate report dashboard subject transitions ([09630e8](https://github.com/tutur3u/platform/commit/09630e825847d3a2ef483ded9ea466d748d4740e)) ([#5666](https://github.com/tutur3u/platform/issues/5666)) ([2241ae6](https://github.com/tutur3u/platform/commit/2241ae6dcd0063dd883407f0635909834ed9a926))
+* **contacts:** keep indicator creation actions reachable ([909df6b](https://github.com/tutur3u/platform/commit/909df6b4c906a62b29fca0c0a0346122116edf66)) ([#5655](https://github.com/tutur3u/platform/issues/5655)) ([79a2547](https://github.com/tutur3u/platform/commit/79a2547c572a3f2f15a544e44f6f92675a94e303))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/contacts-v0.25.1...contacts-v0.26.0) (2026-09-29)
 
 

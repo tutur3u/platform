@@ -47,6 +47,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
   late final FinanceRepository _financeRepository;
   late final WorkspacePermissionsRepository _permissionsRepository;
   Future<_InventoryManageData>? _future;
+  Future<_InventoryManageData>? _inFlight;
   (String?, String?)? _futureScope;
 
   (String?, String?) get _scope => (
@@ -71,7 +72,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
 
   @override
   void dispose() {
-    _inventoryRepository.dispose();
+    if (widget.inventoryRepository == null) _inventoryRepository.dispose();
     super.dispose();
   }
 
@@ -86,7 +87,9 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
       });
       return;
     }
+    if (!forceRefresh && _futureScope == scope && _inFlight != null) return;
     final future = _loadData(wsId, forceRefresh: forceRefresh);
+    _inFlight = future;
     setState(() {
       _future = future;
       _futureScope = scope;
@@ -95,6 +98,8 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
       await future;
     } on Object {
       // The scoped FutureBuilder renders the error and retry action.
+    } finally {
+      if (identical(_inFlight, future)) _inFlight = null;
     }
   }
 
@@ -214,7 +219,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
         confirmLabel: confirmLabel,
         onConfirm: (value) async {
           if (!mounted || _scope != scope) {
-            throw Exception(scopeError);
+            throw _InventoryScopeChanged(scopeError);
           }
           await onConfirm(value);
         },
@@ -223,9 +228,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
 
     if (result == true && mounted && _scope == scope) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) {
-          return;
-        }
+        if (!mounted || _scope != scope) return;
         unawaited(_reload(forceRefresh: true));
         showInventoryToast(context, confirmLabel);
       });
@@ -429,6 +432,15 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
       ),
     );
   }
+}
+
+class _InventoryScopeChanged implements Exception {
+  const _InventoryScopeChanged(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
 
 class _InventoryManageData {

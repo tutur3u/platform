@@ -315,7 +315,7 @@ void main() {
       expect(find.text('Preferences'), findsOneWidget);
       expect(find.text('Theme'), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
-      expect(find.text('Open Tasks board by default'), findsOneWidget);
+      expect(find.text('Boards'), findsOneWidget);
       expect(find.text('About the app'), findsNothing);
       expect(find.text('Session'), findsNothing);
     });

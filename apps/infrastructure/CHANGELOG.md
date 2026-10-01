@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/infra-v0.30.1...infra-v0.31.0) (2026-10-01)
+
+
+### Features
+
+* **infrastructure:** hide retired review accounts by default ([99bcb04](https://github.com/tutur3u/platform/commit/99bcb04da2cdd943492b085cc06b93b1e8190112)) ([#5664](https://github.com/tutur3u/platform/issues/5664)) ([2ce84b1](https://github.com/tutur3u/platform/commit/2ce84b10ed97ebbeae7b763658825257d9ecad61))
+
+
+### Bug Fixes
+
+* **calendar:** secure mobile timezone settings ([78f9054](https://github.com/tutur3u/platform/commit/78f90545a19f9e3d4c5e784a5fa2cef6f0b6dff0)) ([#5651](https://github.com/tutur3u/platform/issues/5651)) ([33b05d3](https://github.com/tutur3u/platform/commit/33b05d333829cb4a6e52930744ab78779305f354))
+
 ## [0.30.1](https://github.com/tutur3u/platform/compare/infra-v0.30.0...infra-v0.30.1) (2026-09-29)
 
 

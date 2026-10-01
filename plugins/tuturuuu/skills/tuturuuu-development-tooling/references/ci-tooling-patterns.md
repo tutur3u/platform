@@ -109,11 +109,15 @@ formatting behavior, or repo-wide verification.
   exponential backoff so GitHub release 5xx failures do not immediately fail
   deploys.
 - Workflows that need the Supabase CLI should use
-  `.github/actions/setup-supabase-cli-with-retry` instead of
-  `supabase/setup-cli@v2` directly. Pass `github.token`, leave `version` empty
-  so the repo-pinned Supabase CLI version is used, and keep the action's
-  bounded backoff so GitHub release API rate limits or transient setup failures
-  do not immediately fail E2E, type verification, or migration workflows.
+  `.github/actions/setup-supabase-cli-with-retry` after checkout. The wrapper pins
+  setup-cli v3.0.1 by commit SHA and resolves the database workspace's exact stable
+  CLI from the repository-root `bun.lock`; missing or invalid pins fail before
+  installation. An explicit override must also be an exact stable version.
+  No GitHub token input is needed by v3. Keep Node 20+ and npm available first.
+  The installer uses a runner-temporary home because its setup-bun ignores
+  `BUN_INSTALL`. After every attempted installation, the wrapper verifies any
+  pre-existing Bun binary and prepends its directory for subsequent steps.
+  Four attempts use 5/10/20-second backoff; exhausted retries fail the job.
 - Release Please is the monorepo source of truth for version/changelog PRs.
   Keep `release-please-config.json`, `.release-please-manifest.json`,
   `.github/workflows/release-please.yaml`, and `tuturuuu.ts` aligned when
