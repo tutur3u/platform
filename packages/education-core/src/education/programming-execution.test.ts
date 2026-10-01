@@ -119,15 +119,13 @@ describe('Programming versioned execution boundary', () => {
     expect(mocks.rpc).toHaveBeenCalledTimes(2);
   });
   it('rejects foreign/unpublished snapshots and invalid command payloads', async () => {
-    mocks.rpc
-      .mockReset()
-      .mockResolvedValueOnce({
-        data: {
-          ...snapshot,
-          problem: { ...snapshot.problem, ws_id: 'foreign' },
-        },
-        error: null,
-      });
+    mocks.rpc.mockReset().mockResolvedValueOnce({
+      data: {
+        ...snapshot,
+        problem: { ...snapshot.problem, ws_id: 'foreign' },
+      },
+      error: null,
+    });
     await expect(
       enqueueProgrammingExecution(context, 'workspace', undefined, payload)
     ).rejects.toMatchObject({ status: 404 });

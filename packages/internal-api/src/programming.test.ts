@@ -42,13 +42,11 @@ describe('Programming web facade', () => {
     );
   });
   it('does not turn storage failure into empty catalog', async () => {
-    const fetch = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ message: 'Synthetic error' }), {
-          status: 500,
-        })
-      );
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Synthetic error' }), {
+        status: 500,
+      })
+    );
     await expect(
       listProgrammingProblems(
         'workspace',
