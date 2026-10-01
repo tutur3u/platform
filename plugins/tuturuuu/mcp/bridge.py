@@ -59,10 +59,45 @@ def safe_name(value: object) -> str:
 
 
 class ReadBridge:
-    def __init__(self, run: Callable[[list[str]], object] = run_cli):
+    def __init__(self, run: Callable[[list[str]], object] = run_cli,
+                 visibility: Callable[[str], object] | None = None):
         self.run = run
+        # Trusted adapter only: must read the owner-only Hidden route with the
+        # same CLI actor and expectedActorId, no cache/admin/token export. The
+        # installed CLI has no such operation yet, so discovery fails closed.
+        self.visibility = visibility
+
+    def actor(self) -> str:
+        data = self.run(["whoami"])
+        if not isinstance(data, dict) or data.get("loggedIn") is not True:
+            raise BridgeError("Current CLI actor unavailable.")
+        user = data.get("user")
+        if not isinstance(user, dict):
+            raise BridgeError("Current CLI actor unavailable.")
+        return workspace_uuid(user.get("id"))
 
     def workspaces(self) -> list[dict]:
+        actor = self.actor()
+        rows = self.memberships()
+        if self.visibility is None:
+            return []
+        try:
+            data = self.visibility(actor)
+            if not isinstance(data, dict) or set(data) != {"hiddenWorkspaceIds"}:
+                return []
+            ids = data["hiddenWorkspaceIds"]
+            if not isinstance(ids, list) or len(ids) > 1000:
+                return []
+            hidden = {workspace_uuid(value) for value in ids}
+            # CLI sessions may change between reads; never return the old actor's
+            # preference or membership rows to a newly authenticated actor.
+            if self.actor() != actor:
+                return []
+        except Exception:
+            return []
+        return [row for row in rows if row["id"] not in hidden]
+
+    def memberships(self) -> list[dict]:
         data = self.run(["workspaces", "list"])
         if not isinstance(data, list) or len(data) > 1000:
             raise BridgeError("Unsupported workspace response.")
@@ -75,7 +110,7 @@ class ReadBridge:
 
     def authorize(self, workspace_id: str) -> str:
         normalized = workspace_uuid(workspace_id)
-        if not any(row["id"] == normalized for row in self.workspaces()):
+        if not any(row["id"] == normalized for row in self.memberships()):
             raise BridgeError("Workspace unavailable to the current CLI user.")
         return normalized
 

@@ -642,10 +642,10 @@ def validate_portable_mcp(plugin_root: Path, manifest: dict) -> None:
     for name, server in servers.items():
         if server.get("type") != "stdio":
             fail("local MCP must use stdio, never unauthenticated HTTP")
-        expected = {"command": "python3.12", "args": ["${PLUGIN_ROOT}/mcp/server.py"]}
+        expected = {"command": "python3.12", "args": ["mcp/server.py"], "cwd": "./"}
         if {key: value for key, value in server.items() if key != "type"} != expected:
             fail("local MCP command must use the packaged server")
-        if fallback.get("mcpServers", {}).get(name) != expected:
+        if fallback.get("mcpServers", {}).get(name) != {**expected, "env_vars": ["TUTURUUU_MCP_READS_ENABLED"]}:
             fail("portable and compatibility MCP wiring differ")
         if not (plugin_root / "mcp" / "server.py").is_file():
             fail("missing local MCP entrypoint")

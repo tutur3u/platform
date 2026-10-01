@@ -86,8 +86,29 @@ python3.12 plugins/tuturuuu/mcp/server.py
 
 Install the SDK in the Python 3.12 environment that the host uses to launch the
 manifest's `python3.12` command. A repo-local virtualenv is not copied into plugin
-caches. The server stays fail-closed unless the host process inherits the opt-in
-variable. Do not place tokens in either manifest or enable reads globally without
+caches. Codex's compatibility overlay explicitly forwards only
+`TUTURUUU_MCP_READS_ENABLED` via `.mcp.json` `env_vars`; start/restart the host
+with that variable after review. No manifest hardcodes enablement. Both manifests
+use contained plugin-relative `cwd: "./"` and `mcp/server.py` arguments.
+The portable schema has literal `env`, not `env_vars`; generic portable hosts
+must explicitly configure opt-in forwarding, otherwise reads remain disabled.
+Codex uses the existing OpenAI compatibility overlay.
+
+Loader rules were checked against pinned official Codex source
+[`plugin_config.rs`](https://github.com/openai/codex/blob/d2b254fd17ced848dbc269705373cf5a02ed3284/codex-rs/codex-mcp/src/plugin_config.rs)
+and [`agent_plugin_config.rs`](https://github.com/openai/codex/blob/d2b254fd17ced848dbc269705373cf5a02ed3284/codex-rs/codex-mcp/src/agent_plugin_config.rs).
+The legacy loader joins relative cwd to the package root and does not expand
+`${PLUGIN_ROOT}` in arguments. Tests launch the actual packaged manifests using
+these path/forwarding contracts and the real Python SDK; they do not execute the
+Rust loader or prove live host installation.
+
+Local discovery also fails closed while its actor-bound Hidden reader is
+unavailable: it returns no workspaces. The installed CLI currently has no owner
+Hidden read command. The trusted integration seam must read the owner-only route
+with the current CLI `whoami` identity and `expectedActorId`, without token export,
+admin fallback, or caching. Missing/malformed authority or an actor switch returns
+no discovery rows. Hidden never removes canonical membership: explicit authorized
+task reads and navigation still work. Production wiring of that seam remains a gate. Do not place tokens in either manifest or enable reads globally without
 understanding the host's data handling. Reinstall/refresh the plugin cache after
 source changes; cached packages do not follow source edits automatically.
 

@@ -3,7 +3,11 @@
     "tuturuuu-readonly": {
       "command": "python3.12",
       "args": [
-        "${PLUGIN_ROOT}/mcp/server.py"
+        "mcp/server.py"
+      ],
+      "cwd": "./",
+      "env_vars": [
+        "TUTURUUU_MCP_READS_ENABLED"
       ]
     }
   }

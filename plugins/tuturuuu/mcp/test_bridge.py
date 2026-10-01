@@ -20,6 +20,8 @@ class BridgeTests(unittest.TestCase):
                       "description": "sensitive", "assignees": ["private"], "token": "secret"}]
         def run(args):
             self.calls.append(args)
+            if args[0] == "whoami":
+                return {"loggedIn": True, "user": {"id": TASK}}
             return [{"id": WS, "name": "Workspace", "secret": "hidden"}] if args[0] == "workspaces" else {"tasks": self.rows}
         self.bridge = ReadBridge(run)
 
@@ -56,6 +58,37 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(self.bridge.navigation(WS, "calendar")["url"], f"https://calendar.tuturuuu.com/{WS}")
         with self.assertRaises(BridgeError):
             self.bridge.navigation(WS, "https://evil.example")
+
+    def test_discovery_hidden_unknown_and_explicit_reads(self):
+        self.assertEqual(self.bridge.workspaces(), [])
+        actors = []
+        def hidden(actor):
+            actors.append(actor)
+            return {"hiddenWorkspaceIds": [WS]}
+        self.bridge.visibility = hidden
+        self.assertEqual(self.bridge.workspaces(), [])
+        self.assertEqual(actors, [TASK])
+        self.assertEqual(self.bridge.tasks(WS)["workspace_id"], WS)
+        self.assertIn(WS, self.bridge.navigation(WS, "tasks")["url"])
+        self.bridge.visibility = lambda actor: {"hiddenWorkspaceIds": []}
+        self.assertEqual(self.bridge.workspaces(), [{"id": WS, "name": "Workspace"}])
+        for unknown in (None, {}, {"hiddenWorkspaceIds": ["bad"]},
+                        {"hiddenWorkspaceIds": [], "actor": TASK}):
+            self.bridge.visibility = lambda actor: unknown
+            self.assertEqual(self.bridge.workspaces(), [])
+        def unavailable(actor):
+            raise OSError("private details")
+        self.bridge.visibility = unavailable
+        self.assertEqual(self.bridge.workspaces(), [])
+
+    def test_actor_switch_cannot_discover_previous_users_rows(self):
+        identities = iter([TASK, OTHER])
+        def run(args):
+            if args == ["whoami"]:
+                return {"loggedIn": True, "user": {"id": next(identities)}}
+            return [{"id": WS, "name": "Private"}]
+        bridge = ReadBridge(run, lambda actor: {"hiddenWorkspaceIds": []})
+        self.assertEqual(bridge.workspaces(), [])
 
     def test_gate_blocks_subprocess(self):
         with patch.dict(os.environ, {}, clear=True), patch("bridge.subprocess.run") as run:
