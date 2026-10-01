@@ -181,7 +181,11 @@ last backstop. Those cancellation cases are not claimed to guarantee cleanup.
 
 ## No upload: local proof and durable-evidence limits
 
-User approval for the proposed hosted run remains PENDING. The candidate has no
+User approval is confirmed for ONE disposable GitHub Ubuntu verification run:
+max 35 minutes, aggregate container 2 CPUs/6 GiB, synthetic inputs, fail-closed
+Docker/firewall isolation and no public output upload. Approval applies only to
+that fresh hosted runner. Dispatch remains HELD until the parent confirms the
+independently reviewed activation head; this source proposal does not activate it. The candidate has no
 upload-artifact action, schema/provenance output, cache write or file transfer.
 The generated packages/types/src/supabase.ts and runner-local provenance.json
 remain only on the disposable VM; neither is printed into logs, step summaries or
@@ -262,3 +266,27 @@ local package tsc remains blocked by reused dependency links to another checkout
 missing build outputs; fresh CI must confirm. This is distinct from the remaining
 authoritative generated-schema gate. This proposal changes neither implementation
 branch nor the migration; delta SQL proof remains historical scoped evidence.
+
+## Activation delta for final independent review
+
+No activation is included in this PR. The later activation delta has exactly two
+parts, applied under the normal commit window on a parent-controlled branch:
+
+1. Copy this exact reviewed workflow.yaml.txt byte-for-byte to
+   .github/workflows/supabase-hosted-typegen.yaml.
+2. Add `'supabase-hosted-typegen.yaml': true` to tuturuuu.ci.ts, exported through
+   tuturuuu.ts, so its existing manual-dispatch switchboard gate can admit the job.
+
+No changes to workflow steps, permissions, container caps, time/disk bounds,
+network preflights, helper, local proof checks or cleanup are needed. Do not add
+upload/cache/output channels. Parent should compare the two workflow files,
+review the activation commit's exact SHA and GitHub workflow availability, then
+coordinate exactly ONE dispatch against that reviewed ref. Source activation is
+not evidence of runtime enforcement or authorization for a second run.
+
+After the single run, the parent owns disabling/removing the temporary workflow
+registration and recording its exact run identity/status. No recurring watch or
+rerun is authorized here. This activation plan grants no M4/system changes,
+production credentials/access, customer writes, merge/deploy, or file transfer.
+Generated files/provenance stay ephemeral as explained above; separately authorized
+retrieval/integration remains necessary for a durable generated-type handoff.
