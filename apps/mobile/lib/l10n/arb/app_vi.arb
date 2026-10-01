@@ -3531,7 +3531,7 @@
     "profileTimelineToday": "Hôm nay",
     "profileTimelineYesterday": "Hôm qua",
     "profileTimelineEmpty": "Không có hoạt động gần đây trong không gian này",
-    "profileTimelinePartial": "Một số hoạt động chưa hiển thị. Thử lại",
+    "profileTimelinePartial": "Một số hoạt động chưa hiển thị.",
     "profileTimelineTasks": "Đã tạo {count} công việc",
     "@profileTimelineTasks": {"placeholders": {"count": {"type": "int"}}},
     "profileTimelineTransactions": "Đã tạo {count} giao dịch",

@@ -14,6 +14,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
+import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
@@ -26,6 +27,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
@@ -180,6 +182,40 @@ void main() {
     await _pump(tester);
   }
 
+  testWidgets('Overview omits activity panels without a signed-in user', (
+    tester,
+  ) async {
+    await mount(tester);
+    expect(find.byType(ProfileOverviewPage), findsOneWidget);
+    expect(find.byType(SettingsPanel), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('Overview omits activity panels without a workspace', (
+    tester,
+  ) async {
+    whenListen(
+      auth,
+      const Stream<AuthState>.empty(),
+      initialState: const AuthState.authenticated(
+        supa.User(
+          id: 'owner',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: '',
+        ),
+      ),
+    );
+    whenListen(
+      workspaces,
+      const Stream<WorkspaceState>.empty(),
+      initialState: const WorkspaceState(),
+    );
+    await mount(tester);
+    expect(find.byType(ProfileOverviewPage), findsOneWidget);
+    expect(find.byType(SettingsPanel), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'Profile uses actual shell selector and navigates back at large text',
     (tester) async {

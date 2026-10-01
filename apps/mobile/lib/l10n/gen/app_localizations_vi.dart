@@ -8740,7 +8740,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineEmpty => 'Không có hoạt động gần đây trong không gian này';
 
   @override
-  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị. Thử lại';
+  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị.';
 
   @override
   String profileTimelineTasks(int count) {

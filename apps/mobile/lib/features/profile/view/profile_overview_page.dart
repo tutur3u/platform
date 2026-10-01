@@ -200,49 +200,49 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 14),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final activity = SettingsPanel(
-                            child: ProfileActivitySection(
-                              replayToken: widget.replayToken,
-                            ),
-                          );
-                          if (workspace == null ||
-                              workspace.personal ||
-                              userId == null) {
-                            return activity;
-                          }
-                          final workspaceActivity = SettingsPanel(
-                            child: WorkspaceActivitySection(
-                              key: ValueKey('$userId:${workspace.id}'),
-                              workspaceId: workspace.id,
-                              replayToken: widget.replayToken,
-                              workspaceName: displayWorkspaceNameOrFallback(
-                                context,
-                                workspace,
+                      if (userId != null && workspace != null) ...[
+                        const SizedBox(height: 14),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final activity = SettingsPanel(
+                              child: ProfileActivitySection(
+                                replayToken: widget.replayToken,
                               ),
-                            ),
-                          );
-                          if (constraints.maxWidth < 840) {
-                            return Column(
+                            );
+                            if (workspace.personal) {
+                              return activity;
+                            }
+                            final workspaceActivity = SettingsPanel(
+                              child: WorkspaceActivitySection(
+                                key: ValueKey('$userId:${workspace.id}'),
+                                workspaceId: workspace.id,
+                                replayToken: widget.replayToken,
+                                workspaceName: displayWorkspaceNameOrFallback(
+                                  context,
+                                  workspace,
+                                ),
+                              ),
+                            );
+                            if (constraints.maxWidth < 840) {
+                              return Column(
+                                children: [
+                                  activity,
+                                  const shad.Gap(16),
+                                  workspaceActivity,
+                                ],
+                              );
+                            }
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                activity,
-                                const shad.Gap(16),
-                                workspaceActivity,
+                                Expanded(child: activity),
+                                const SizedBox(width: 20),
+                                Expanded(child: workspaceActivity),
                               ],
                             );
-                          }
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(child: activity),
-                              const SizedBox(width: 20),
-                              Expanded(child: workspaceActivity),
-                            ],
-                          );
-                        },
-                      ),
+                          },
+                        ),
+                      ],
                     ],
                   ],
                 );

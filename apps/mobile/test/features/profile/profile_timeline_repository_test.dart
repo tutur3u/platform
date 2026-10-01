@@ -35,19 +35,25 @@ class _Api extends ApiClient {
 void main() {
   late Directory directory;
   late CacheStore store;
+  late _Storage storage;
+  late Map<String, String?> secureValues;
   late ProfileTimelineRepository repository;
   setUp(() async {
     directory = await Directory.systemTemp.createTemp('profile-snapshot-');
-    final storage = _Storage();
+    storage = _Storage();
+    secureValues = {};
     when(
       () => storage.read(key: any(named: 'key')),
-    ).thenAnswer((_) async => null);
+    ).thenAnswer((call) async => secureValues[call.namedArguments[#key]]);
     when(
       () => storage.write(
         key: any(named: 'key'),
         value: any(named: 'value'),
       ),
-    ).thenAnswer((_) async {});
+    ).thenAnswer((call) async {
+      secureValues[call.namedArguments[#key] as String] =
+          call.namedArguments[#value] as String?;
+    });
     store = CacheStore.forTesting(
       secureStorage: storage,
       directoryResolver: () async => directory,
@@ -63,11 +69,29 @@ void main() {
     await Hive.close();
     await directory.delete(recursive: true);
   });
+  Future<void> reopen() async {
+    repository.dispose();
+    await store.closeForTesting();
+    await Hive.close();
+    store = CacheStore.forTesting(
+      secureStorage: storage,
+      directoryResolver: () async => directory,
+    );
+    repository = ProfileTimelineRepository(
+      apiClient: _Api(),
+      cacheStore: store,
+    );
+  }
+
   test(
     'capped partial result retains completeness through encrypted cache',
     () async {
       final fresh = await repository.refresh('team', 'owner');
+      final persistedKeys = Map<String, String?>.of(secureValues);
+      expect(persistedKeys, isNotEmpty);
+      await reopen();
       final cached = await repository.cached('team', 'owner');
+      expect(secureValues, persistedKeys);
       expect(cached!.items.single.id, fresh.items.single.id);
       expect(cached.partial, isTrue);
       expect(cached.limited, isTrue);
@@ -94,7 +118,11 @@ void main() {
           },
         ],
       );
+      final persistedKeys = Map<String, String?>.of(secureValues);
+      expect(persistedKeys, isNotEmpty);
+      await reopen();
       final cached = await repository.cached('team', 'owner');
+      expect(secureValues, persistedKeys);
       expect(cached!.items.single.id, 'legacy');
       expect(cached.partial, isFalse);
       expect(cached.limited, isFalse);

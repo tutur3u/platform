@@ -16798,7 +16798,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileTimelinePartial.
   ///
   /// In en, this message translates to:
-  /// **'Some activity is unavailable. Retry'**
+  /// **'Some activity is unavailable.'**
   String get profileTimelinePartial;
 
   /// No description provided for @profileTimelineTasks.
