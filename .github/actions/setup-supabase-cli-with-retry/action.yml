@@ -1,25 +1,29 @@
 name: Setup Supabase CLI with retry
-description: Install the Supabase CLI with GitHub-tokened release lookup and bounded exponential backoff.
+description: Install the repository-pinned Supabase CLI with an isolated runtime and bounded retries.
 inputs:
   version:
     description: Supabase CLI version to install. Leave empty to use the version pinned by the repo lockfile.
     required: false
     default: ""
-  github-token:
-    description: GitHub token used by supabase/setup-cli to avoid anonymous release API limits.
-    required: true
 runs:
   using: composite
   steps:
+    - name: Resolve pinned CLI and preserve repository Bun
+      id: prepare
+      shell: bash
+      env:
+        REQUESTED_VERSION: ${{ inputs.version }}
+      run: node "$GITHUB_ACTION_PATH/runtime.mjs" prepare
+
     - name: Setup Supabase CLI (attempt 1)
       id: setup-1
-      uses: supabase/setup-cli@v2
+      uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
       continue-on-error: true
       env:
-        BUN_INSTALL: ${{ runner.temp }}/supabase-cli-bun
+        HOME: ${{ steps.prepare.outputs.installer-home }}
+        BUN_INSTALL: ${{ steps.prepare.outputs.installer-home }}/.bun
       with:
-        version: ${{ inputs.version }}
-        github-token: ${{ inputs.github-token }}
+        version: ${{ steps.prepare.outputs.version }}
 
     - name: Back off before Supabase CLI setup retry 2
       if: steps.setup-1.outcome == 'failure'
@@ -29,13 +33,13 @@ runs:
     - name: Setup Supabase CLI (attempt 2)
       id: setup-2
       if: steps.setup-1.outcome == 'failure'
-      uses: supabase/setup-cli@v2
+      uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
       continue-on-error: true
       env:
-        BUN_INSTALL: ${{ runner.temp }}/supabase-cli-bun
+        HOME: ${{ steps.prepare.outputs.installer-home }}
+        BUN_INSTALL: ${{ steps.prepare.outputs.installer-home }}/.bun
       with:
-        version: ${{ inputs.version }}
-        github-token: ${{ inputs.github-token }}
+        version: ${{ steps.prepare.outputs.version }}
 
     - name: Back off before Supabase CLI setup retry 3
       if: steps.setup-1.outcome == 'failure' && steps.setup-2.outcome == 'failure'
@@ -45,13 +49,13 @@ runs:
     - name: Setup Supabase CLI (attempt 3)
       id: setup-3
       if: steps.setup-1.outcome == 'failure' && steps.setup-2.outcome == 'failure'
-      uses: supabase/setup-cli@v2
+      uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
       continue-on-error: true
       env:
-        BUN_INSTALL: ${{ runner.temp }}/supabase-cli-bun
+        HOME: ${{ steps.prepare.outputs.installer-home }}
+        BUN_INSTALL: ${{ steps.prepare.outputs.installer-home }}/.bun
       with:
-        version: ${{ inputs.version }}
-        github-token: ${{ inputs.github-token }}
+        version: ${{ steps.prepare.outputs.version }}
 
     - name: Back off before Supabase CLI setup retry 4
       if: steps.setup-1.outcome == 'failure' && steps.setup-2.outcome == 'failure' && steps.setup-3.outcome == 'failure'
@@ -59,10 +63,25 @@ runs:
       run: sleep 20
 
     - name: Setup Supabase CLI (attempt 4)
+      id: setup-4
+      continue-on-error: true
       if: steps.setup-1.outcome == 'failure' && steps.setup-2.outcome == 'failure' && steps.setup-3.outcome == 'failure'
-      uses: supabase/setup-cli@v2
+      uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
       env:
-        BUN_INSTALL: ${{ runner.temp }}/supabase-cli-bun
+        HOME: ${{ steps.prepare.outputs.installer-home }}
+        BUN_INSTALL: ${{ steps.prepare.outputs.installer-home }}/.bun
       with:
-        version: ${{ inputs.version }}
-        github-token: ${{ inputs.github-token }}
+        version: ${{ steps.prepare.outputs.version }}
+
+    - name: Restore and verify repository Bun
+      if: always() && steps.prepare.outcome == 'success'
+      shell: bash
+      env:
+        REPO_BUN: ${{ steps.prepare.outputs.repo-bun }}
+        REPO_BUN_VERSION: ${{ steps.prepare.outputs.repo-bun-version }}
+      run: node "$GITHUB_ACTION_PATH/runtime.mjs" restore
+
+    - name: Fail after exhausted setup retries
+      if: steps.setup-4.outcome == 'failure'
+      shell: bash
+      run: exit 1
