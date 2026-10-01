@@ -48,8 +48,8 @@ export function useVisibleWorkspaces(
     isError: query.isError || visibility.isError,
     error: query.error ?? visibility.error,
     refetch: async () => {
-      await visibility.refetch();
-      return query.refetch();
+      const visibilityResult = await visibility.refetch();
+      return visibilityResult ? query.refetch() : null;
     },
   };
 }

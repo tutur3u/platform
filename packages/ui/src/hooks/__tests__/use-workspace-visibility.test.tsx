@@ -137,3 +137,19 @@ describe('private owner-scoped workspace visibility', () => {
     expect(b.result.current.hiddenIds).toEqual([]);
   });
 });
+
+it('settles a refetch safely after logout without returning private old-actor data', async () => {
+  const hook = setup();
+  await waitFor(() => expect(hook.result.current.known).toBe(true));
+  const read = deferred<{ hiddenWorkspaceIds: string[] }>();
+  mocks.get.mockReturnValue(read.promise);
+  let operation!: ReturnType<typeof hook.result.current.refetch>;
+  act(() => {
+    operation = hook.result.current.refetch();
+  });
+  await waitFor(() => expect(mocks.get).toHaveBeenCalledTimes(2));
+  hook.unmount();
+  read.resolve({ hiddenWorkspaceIds: ['old-private'] });
+  await expect(operation).resolves.toBeNull();
+  expect(hook.client.getQueryData(['workspace-hidden', 'A'])).toBeUndefined();
+});

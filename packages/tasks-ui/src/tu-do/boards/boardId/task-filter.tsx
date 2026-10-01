@@ -1,9 +1,4 @@
-import {
-  updateBoardSourceFilter,
-  updateWorkspaceSourceFilter,
-} from './task-source-filter-updates';
-
-('use client');
+'use client';
 
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -49,6 +44,10 @@ import type {
   TaskProject,
   TaskSourceScope,
 } from '../../shared/task-filter.types';
+import {
+  updateBoardSourceFilter,
+  updateWorkspaceSourceFilter,
+} from './task-source-filter-updates';
 import { useVisibleTaskSourceBoards } from './use-visible-task-source-boards';
 
 // Re-export types for backward compatibility

@@ -208,9 +208,18 @@ export function useWorkspaceVisibility() {
   return {
     ...query,
     refetch: async () => {
-      scope?.assertActive();
+      if (!scope) return null;
+      try {
+        scope.assertActive();
+      } catch {
+        return null;
+      }
       const result = await query.refetch();
-      scope?.assertActive();
+      try {
+        scope.assertActive();
+      } catch {
+        return null;
+      }
       if (!result.error) setUpdateError(null);
       return result;
     },
