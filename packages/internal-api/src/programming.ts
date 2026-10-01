@@ -27,6 +27,7 @@ export function programmingQueryKey(scope: {
   mode: 'learner' | 'author';
   studentId?: string;
   problemId?: string;
+  cursor?: string;
 }) {
   return [
     'programming',
@@ -35,17 +36,22 @@ export function programmingQueryKey(scope: {
     scope.mode,
     scope.studentId ?? null,
     scope.problemId ?? null,
+    scope.cursor ?? null,
   ] as const;
 }
 export function listProgrammingProblems(
   wsId: string,
-  query: { mode?: 'learner' | 'author'; studentId?: string } = {},
+  query: {
+    mode?: 'learner' | 'author';
+    studentId?: string;
+    cursor?: string;
+  } = {},
   options?: InternalApiClientOptions
 ) {
-  return webClient(options).json<{ problems: ProgrammingProblemSummary[] }>(
-    catalogPath(wsId),
-    { cache: 'no-store', query }
-  );
+  return webClient(options).json<{
+    problems: ProgrammingProblemSummary[];
+    nextCursor: string | null;
+  }>(catalogPath(wsId), { cache: 'no-store', query });
 }
 export function getProgrammingProblem(
   wsId: string,

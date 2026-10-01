@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 523,
+        "legacyNext": 527,
         "migrated": 62,
-        "percentComplete": 12.4,
-        "remaining": 523,
+        "percentComplete": 12.31,
+        "remaining": 527,
         "terminal": 74,
-        "total": 597,
+        "total": 601,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 533,
+        "legacyNext": 537,
         "migrated": 67,
-        "percentComplete": 12.91,
-        "remaining": 533,
+        "percentComplete": 12.82,
+        "remaining": 537,
         "terminal": 79,
-        "total": 612,
+        "total": 616,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 610,
+      "legacyNext": 614,
       "migrated": 215,
-      "percentComplete": 27.29,
-      "remaining": 610,
+      "percentComplete": 27.16,
+      "remaining": 614,
       "terminal": 229,
-      "total": 839,
+      "total": 843,
       "unknownStatus": 0
     }
   },
@@ -4026,6 +4026,50 @@
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/profile-activity/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:GET:/api/v1/workspaces/:wsId/programming/problems:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/programming/problems",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/workspaces/:wsId/programming/problems:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/workspaces/:wsId/programming/problems:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/programming/problems",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/workspaces/:wsId/programming/problems:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/route.ts"
+    },
+    {
+      "id": "api:GET:/api/v1/workspaces/:wsId/programming/problems/:problemId:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/[problemId]/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/programming/problems/:problemId",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/[problemId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/workspaces/:wsId/programming/problems/:problemId:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/[problemId]/route.ts"
+    },
+    {
+      "id": "api:PATCH:/api/v1/workspaces/:wsId/programming/problems/:problemId:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/[problemId]/route.ts",
+      "kind": "api",
+      "methods": ["PATCH"],
+      "routePath": "/api/v1/workspaces/:wsId/programming/problems/:problemId",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/[problemId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "PATCH",
+      "parentId": "api:/api/v1/workspaces/:wsId/programming/problems/:problemId:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/[problemId]/route.ts"
     },
     {
       "id": "api:GET:/api/v1/workspaces/:wsId/roles:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/route.ts",
@@ -7994,20 +8038,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 597,
+    "apiRoutes": 601,
     "cronRoutes": 10,
     "layouts": 67,
     "pages": 156,
-    "routeHandlers": 612,
+    "routeHandlers": 616,
     "methodCounts": {
-      "GET": 309,
+      "GET": 311,
       "HEAD": 7,
-      "POST": 302,
+      "POST": 303,
       "PUT": 55,
-      "PATCH": 63,
+      "PATCH": 64,
       "DELETE": 100,
       "OPTIONS": 23
     },
-    "total": 839
+    "total": 843
   }
 }

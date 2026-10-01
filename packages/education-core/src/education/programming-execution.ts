@@ -1,4 +1,8 @@
 import 'server-only';
+import {
+  PROGRAMMING_CATALOG_CASE_LIMIT,
+  PROGRAMMING_COMMAND_CASE_LIMIT,
+} from '@tuturuuu/types/primitives/programming';
 import { z } from 'zod';
 import type { EducationAuthContext } from '../types';
 import { resolveProgrammingLearnerAccess } from './programming-access';
@@ -29,7 +33,7 @@ export const ProgrammingExecutionSchema = z
       .string()
       .min(1)
       .max(16_000)
-      .refine((value) => value.trim().length > 0),
+      .refine((value) => value.trim().length > 0 && !value.includes('\0')),
     kind: z.enum(['test', 'submit']),
     customCase: z
       .object({ input: z.string().max(4096), expected: z.string().max(4096) })
@@ -78,13 +82,15 @@ export async function enqueueProgrammingExecution(
   ) {
     throw new ProgrammingError('Problem not found', 404);
   }
+  if (snapshot.data.cases.length > PROGRAMMING_CATALOG_CASE_LIMIT)
+    throw new ProgrammingError('Problem cases exceed the judge limit', 400);
   if (snapshot.data.cases.some((test) => test.problem_id !== problemId))
     throw new ProgrammingError('Invalid execution cases', 500);
   const cases = snapshot.data.cases
     .filter((test) => kind === 'submit' || test.visible)
     .map(({ input, expected, visible }) => ({ input, expected, visible }));
   if (customCase) cases.push({ ...customCase, visible: true });
-  if (cases.length < 1 || cases.length > 50)
+  if (cases.length < 1 || cases.length > PROGRAMMING_COMMAND_CASE_LIMIT)
     throw new ProgrammingError('Invalid execution case count', 400);
   const encoded = Buffer.from(
     JSON.stringify({ cases, language, source })

@@ -43,7 +43,7 @@ create index learn_programming_problems_workspace_status
 create table private.learn_programming_problem_cases (
     problem_id uuid not null references private.learn_programming_problems(id)
         on delete cascade,
-    position integer not null check (position >= 0 and position < 50),
+    position integer not null check (position >= 0 and position < 9),
     input text not null check (length(input) <= 4096),
     expected text not null check (length(expected) <= 4096),
     visible boolean not null default false,
@@ -107,8 +107,9 @@ begin
         where ws_id = p_ws_id and user_id = p_actor_id) then
         raise exception 'Insufficient permissions' using errcode = '42501';
     end if;
+    -- Existing runner accepts ten command cases; reserve one custom-test slot.
     if jsonb_typeof(p_problem -> 'cases') is distinct from 'array'
-        or jsonb_array_length(p_problem -> 'cases') not between 1 and 50
+        or jsonb_array_length(p_problem -> 'cases') not between 1 and 9
         or not exists (select 1 from jsonb_array_elements(p_problem -> 'cases') c
             where c -> 'visible' = 'true'::jsonb) then
         raise exception 'Invalid problem cases' using errcode = '22023';

@@ -5,6 +5,7 @@ import type {
   ProgrammingProblemSummary,
   ProgrammingText,
 } from '@tuturuuu/types/primitives/programming';
+import { PROGRAMMING_CATALOG_CASE_LIMIT } from '@tuturuuu/types/primitives/programming';
 
 /** Private storage shapes pending admitted schema application/type generation. */
 export interface ProgrammingProblemRow {
@@ -40,6 +41,8 @@ export function publicProgrammingProblem(
   cases: ProgrammingCaseRow[],
   canAuthor: boolean
 ): ProgrammingProblem {
+  if (cases.length > PROGRAMMING_CATALOG_CASE_LIMIT)
+    throw new ProgrammingError('Problem cases exceed the judge limit', 500);
   return {
     id: problem.id,
     slug: problem.slug,

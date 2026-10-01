@@ -1,3 +1,10 @@
+/** Compatibility with the existing Judge parser: ten command cases. Authoring
+ * reserves one slot for the learner's optional custom test; runner limits stay unchanged. */
+export const PROGRAMMING_COMMAND_CASE_LIMIT = 10;
+export const PROGRAMMING_CATALOG_PAGE_SIZE = 50;
+export const PROGRAMMING_CATALOG_CASE_LIMIT =
+  PROGRAMMING_COMMAND_CASE_LIMIT - 1;
+
 export type ProgrammingLocale = 'en' | 'vi';
 export type ProgrammingText = Record<ProgrammingLocale, string>;
 export type ProgrammingStatus = 'draft' | 'published' | 'archived';

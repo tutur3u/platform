@@ -32,6 +32,8 @@ do $$ declare v_problem_id uuid; payload jsonb; begin
  select fixture_state.id into v_problem_id from public.fixture_state;
  select jsonb_build_object('slug','synthetic','title',title,'prompt',prompt,'difficulty',difficulty,'topic',topic,'starterCode',starter_code,'status',status,'cases',jsonb_build_array(jsonb_build_object('input',repeat('x',4097),'expected','1','visible',true))) into payload from private.learn_programming_problems where learn_programming_problems.id=v_problem_id;
  begin perform private.save_learn_programming_problem('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111',payload,v_problem_id,1); raise exception 'unexpected oversized case'; exception when check_violation then null; end;
+ payload := jsonb_set(payload, '{cases}', (select jsonb_agg(jsonb_build_object('input','1','expected','1','visible',true)) from generate_series(1,10)));
+ begin perform private.save_learn_programming_problem('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111',payload,v_problem_id,1); raise exception 'unexpected ten catalog cases'; exception when invalid_parameter_value then null; end;
  perform public.fixture_assert((select revision=1 from private.learn_programming_problems where learn_programming_problems.id=v_problem_id),'failed-case row rollback');
  perform public.fixture_assert((select count(*)=2 from private.learn_programming_problem_cases where problem_id=v_problem_id),'failed-case replacement rollback');
  payload := jsonb_set(payload,'{cases}','[{"input":"2","expected":"2","visible":true}]');

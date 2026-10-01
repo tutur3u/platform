@@ -1,4 +1,5 @@
 import { createProgrammingRepository } from '@tuturuuu/education-core/education/programming-repository';
+import { ProgrammingProblemId } from '@tuturuuu/education-core/education/programming-schema';
 import {
   createProgrammingProblem,
   listProgrammingProblems,
@@ -27,10 +28,13 @@ export const GET = withSessionAuth<Params>(async (request, context, params) => {
       request.url
     );
     if (access instanceof NextResponse) return access;
+    const cursor = new URL(request.url).searchParams.get('cursor') ?? undefined;
+    if (cursor !== undefined && !ProgrammingProblemId.safeParse(cursor).success)
+      return programmingResponse({ message: 'Invalid catalog cursor' }, 400);
     const repository = await createProgrammingRepository();
-    return programmingResponse({
-      problems: await listProgrammingProblems(repository, access),
-    });
+    return programmingResponse(
+      await listProgrammingProblems(repository, access, cursor)
+    );
   } catch (error) {
     return programmingErrorResponse(error);
   }

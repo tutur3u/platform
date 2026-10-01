@@ -1,4 +1,7 @@
-import type { ProgrammingProblemInput } from '@tuturuuu/types/primitives/programming';
+import {
+  PROGRAMMING_CATALOG_PAGE_SIZE,
+  type ProgrammingProblemInput,
+} from '@tuturuuu/types/primitives/programming';
 import {
   authorProgrammingProblem,
   type ProgrammingCaseRow,
@@ -8,6 +11,7 @@ import {
 } from './programming-model';
 import {
   ProgrammingProblemEditSchema,
+  ProgrammingProblemId,
   ProgrammingProblemInputSchema,
 } from './programming-schema';
 
@@ -22,6 +26,7 @@ export interface ProgrammingRepository {
   list(scope: {
     wsId: string;
     publishedOnly: boolean;
+    cursor?: string;
   }): Promise<ProgrammingProblemRow[]>;
   find(scope: {
     wsId: string;
@@ -65,14 +70,20 @@ function assertScoped(
 
 export async function listProgrammingProblems(
   repository: ProgrammingRepository,
-  access: ProgrammingAccess
+  access: ProgrammingAccess,
+  cursor?: string
 ) {
+  if (cursor !== undefined && !ProgrammingProblemId.safeParse(cursor).success)
+    throw new ProgrammingError('Invalid catalog cursor', 400);
   const rows = await repository.list({
     wsId: access.wsId,
     publishedOnly: access.mode === 'learner',
+    cursor,
   });
+  if (rows.length > PROGRAMMING_CATALOG_PAGE_SIZE + 1)
+    throw new ProgrammingError('Invalid catalog page', 500);
   // Recheck the adapter boundary before returning any data, including summaries.
-  return rows.map((row) => {
+  const summaries = rows.map((row) => {
     assertScoped(row, access);
     const {
       prompt: _prompt,
@@ -82,6 +93,13 @@ export async function listProgrammingProblems(
     } = publicProgrammingProblem(row, [], access.mode === 'author');
     return summary;
   });
+  return {
+    problems: summaries.slice(0, PROGRAMMING_CATALOG_PAGE_SIZE),
+    nextCursor:
+      rows.length > PROGRAMMING_CATALOG_PAGE_SIZE
+        ? rows[PROGRAMMING_CATALOG_PAGE_SIZE - 1]!.id
+        : null,
+  };
 }
 
 export async function getProgrammingProblem(

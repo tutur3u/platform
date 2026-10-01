@@ -1,5 +1,6 @@
 import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { PROGRAMMING_CATALOG_PAGE_SIZE } from '@tuturuuu/types/primitives/programming';
 import {
   type ProgrammingCaseRow,
   ProgrammingError,
@@ -10,6 +11,8 @@ import type { ProgrammingRepository } from './programming-service';
 type StorageError = { code?: string; message: string };
 type Result<T> = { data: T | null; error: StorageError | null };
 type Query = PromiseLike<Result<ProgrammingProblemRow[]>> & {
+  gt(column: string, value: string): Query;
+  limit(count: number): Query;
   eq(column: string, value: string): Query;
   or(filter: string): Query;
   order(column: string, options?: { ascending: boolean }): Query;
@@ -62,16 +65,17 @@ export async function createProgrammingRepository(): Promise<ProgrammingReposito
       })
     );
   return {
-    async list({ wsId, publishedOnly }) {
+    async list({ wsId, publishedOnly, cursor }) {
       let query = client.from('learn_programming_problems').select(columns);
       query = publishedOnly
         ? query.or(`ws_id.eq.${wsId},ws_id.is.null`).eq('status', 'published')
         : query.or(`ws_id.eq.${wsId},and(ws_id.is.null,status.eq.published)`);
+      if (cursor) query = query.gt('id', cursor);
       return (
         stored(
           await query
-            .order('created_at', { ascending: true })
             .order('id', { ascending: true })
+            .limit(PROGRAMMING_CATALOG_PAGE_SIZE + 1)
         ) ?? []
       );
     },
