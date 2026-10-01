@@ -5,13 +5,23 @@ export default defineConfig({
   esbuild: { jsx: 'automatic' },
   oxc: false,
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@tuturuuu/internal-api': path.resolve(
-        __dirname,
-        '../../packages/internal-api/src/index.ts'
-      ),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      {
+        find: /^@tuturuuu\/internal-api$/,
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/internal-api/src/index.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/internal-api\/(.+)$/,
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/internal-api/src/$1.ts'
+        ),
+      },
+    ],
   },
   test: {
     environment: 'node',
