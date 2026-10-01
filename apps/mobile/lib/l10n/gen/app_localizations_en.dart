@@ -9481,6 +9481,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsTimezoneRateLimited => 'Too many requests. Please wait before retrying.';
+
+  @override
   String get settingsTimezoneError => 'Could not load or save timezone. Tap to retry.';
 
   @override

@@ -9415,6 +9415,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get settingsTimezoneRateLimited => 'Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.';
+
+  @override
   String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.';
 
   @override

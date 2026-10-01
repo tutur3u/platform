@@ -3948,6 +3948,7 @@
     "settingsTimezoneAccountPending": "Waiting for your account.",
     "settingsTimezoneUnknown": "Unknown",
     "settingsTimezoneEffective": "Effective timezone: {timezone}",
+    "settingsTimezoneRateLimited": "Too many requests. Please wait before retrying.",
     "settingsTimezoneError": "Could not load or save timezone. Tap to retry.",
     "@settingsTimezoneEffective": {
         "placeholders": {

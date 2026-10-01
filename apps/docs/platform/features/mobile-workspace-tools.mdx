@@ -1,7 +1,7 @@
 ---
 title: 'Mobile Workspace Tools'
 description: 'Shared mobile navigation, tablet layouts, caching, and workspace application behavior.'
-updatedAt: 2026-10-01
+updatedAt: 2026-10-02
 ---
 
 ## Overview
@@ -153,6 +153,17 @@ the owners; personal timezone still overrides workspace, then device timezone.
 Timezone loading, unknown, retry, same-scope failure retention, and workspace
 permission states stay visible. Permission reloads fail closed and stale results
 cannot expose an editor or administrative destination.
+
+Production native timezone reads use the Infrastructure Calendar gateway. Verified
+Bearer sessions use the same hashed session trust key as server authentication;
+header presence alone never grants a trusted bucket. A 429 response retains its
+`Retry-After` cooldown across workspace changes for the same account. Settings
+show the wait state and suppress repeated reads until that time; changing
+accounts clears the previous account cooldown. A successfully read personal or
+workspace preference stays visible if the other read fails, while effective
+timezone and editing remain unresolved until the full scope is verified.
+Diagnosis must distinguish gateway status, preferences reads and native plugin
+resolution; an Unknown label alone does not establish which failed.
 
 Settings choice sheets scroll the heading and choices together in one bounded
 viewport, so a long heading at large text sizes cannot consume the entire choice
