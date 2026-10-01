@@ -1,5 +1,7 @@
 package com.tuturuuu.app.mobile.meet
 
+import com.cloudwebrtc.webrtc.OrientationAwareScreenCapturer
+import java.util.concurrent.atomic.AtomicLong
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
@@ -16,6 +18,8 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
 class MeetScreenSharePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
+    companion object { private val generations = AtomicLong() }
+    private var activeGeneration = 0L
     private var context: Context? = null
     private var methods: MethodChannel? = null
     private var events: EventChannel? = null
@@ -34,7 +38,7 @@ class MeetScreenSharePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ev
         events = EventChannel(binding.binaryMessenger, "mobile/meet_screen_share/events").also {
             it.setStreamHandler(this)
         }
-        MeetScreenShareService.stoppedListener = { sink?.success("stopped") }
+        MeetScreenShareService.stoppedListener = { generation -> reportStopped(generation) }
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -47,6 +51,7 @@ class MeetScreenSharePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ev
             "start" -> start(appContext, call, result)
             "stop" -> {
                 finishStart("cancelled")
+                cancelCapture()
                 appContext.stopService(Intent(appContext, MeetScreenShareService::class.java))
                 result.success(null)
             }
@@ -59,33 +64,57 @@ class MeetScreenSharePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ev
     }
 
     private fun start(appContext: Context, call: MethodCall, result: MethodChannel.Result) {
-        if (pendingStart != null) {
+        if (pendingStart != null || activeGeneration != 0L) {
             result.error("busy", "Meet screen share is already starting", null)
             return
         }
         pendingStart = result
+        val generation = generations.incrementAndGet()
+        activeGeneration = generation
+        OrientationAwareScreenCapturer.armMeetCapture(generation) { reportStopped(generation) }
         val ready = object : ResultReceiver(handler) {
             override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
                 // A late callback after cancellation cannot restart capture in Dart.
-                if (pendingStart !== result) return
+                if (pendingStart !== result || activeGeneration != generation) return
                 finishStart(if (resultCode == 0) null else "capture_unavailable")
+                if (resultCode != 0) cancelCapture()
             }
         }
         startTimeout = Runnable {
             if (pendingStart !== result) return@Runnable
             finishStart("capture_unavailable")
+            cancelCapture()
             appContext.stopService(Intent(appContext, MeetScreenShareService::class.java))
         }.also { handler.postDelayed(it, 10000) }
         val intent = Intent(appContext, MeetScreenShareService::class.java)
             .putExtra("title", call.argument<String>("title"))
             .putExtra("stopLabel", call.argument<String>("stopLabel"))
             .putExtra(MeetScreenShareService.READY_RECEIVER, ready)
+            .putExtra(MeetScreenShareService.GENERATION, generation)
         try {
             if (Build.VERSION.SDK_INT >= 26) appContext.startForegroundService(intent)
             else appContext.startService(intent)
         } catch (_: Exception) {
             finishStart("capture_unavailable")
+            cancelCapture()
             appContext.stopService(Intent(appContext, MeetScreenShareService::class.java))
+        }
+    }
+
+    private fun cancelCapture() {
+        val generation = activeGeneration
+        if (generation == 0L) return
+        OrientationAwareScreenCapturer.disarmMeetCapture(generation)
+        activeGeneration = 0L
+    }
+
+    private fun reportStopped(generation: Long) {
+        handler.post {
+            if (context == null || activeGeneration != generation) return@post
+            finishStart("cancelled")
+            cancelCapture()
+            context?.let { it.stopService(Intent(it, MeetScreenShareService::class.java)) }
+            sink?.success("stopped")
         }
     }
 
@@ -127,6 +156,7 @@ class MeetScreenSharePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ev
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         finishStart("cancelled")
+        cancelCapture()
         context?.let { it.stopService(Intent(it, MeetScreenShareService::class.java)) }
         MeetScreenShareService.stoppedListener = null
         releaseTone?.let(handler::removeCallbacks)

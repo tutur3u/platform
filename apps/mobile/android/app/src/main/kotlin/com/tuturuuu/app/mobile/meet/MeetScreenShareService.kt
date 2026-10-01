@@ -19,23 +19,27 @@ class MeetScreenShareService : Service() {
     companion object {
         const val STOP_ACTION = "com.tuturuuu.meet.STOP_SCREEN_SHARE"
         const val READY_RECEIVER = "readyReceiver"
+        const val GENERATION = "generation"
         private const val CHANNEL_ID = "meet-screen-sharing"
         private const val NOTIFICATION_ID = 8618
-        @Volatile var stoppedListener: (() -> Unit)? = null
+        @Volatile var stoppedListener: ((Long) -> Unit)? = null
     }
 
     private var foreground = false
+    private var generation = 0L
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == STOP_ACTION) {
-            stopSelf()
+            if (intent.getLongExtra(GENERATION, 0L) == generation) stopSelf()
             return START_NOT_STICKY
         }
         @Suppress("DEPRECATION")
         val ready = intent?.getParcelableExtra<ResultReceiver>(READY_RECEIVER)
         try {
+            generation = intent?.getLongExtra(GENERATION, 0L) ?: 0L
+            check(generation > 0L) { "No Meet capture owner" }
             val title = intent?.getStringExtra("title") ?: "Screen sharing"
             val stopLabel = intent?.getStringExtra("stopLabel") ?: "Stop"
             val manager = getSystemService(NotificationManager::class.java)
@@ -45,7 +49,7 @@ class MeetScreenShareService : Service() {
                 )
             }
             val stop = PendingIntent.getService(
-                this, 0, Intent(this, javaClass).setAction(STOP_ACTION),
+                this, 0, Intent(this, javaClass).setAction(STOP_ACTION).putExtra(GENERATION, generation),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
             val builder = if (Build.VERSION.SDK_INT >= 26) {
@@ -90,7 +94,9 @@ class MeetScreenShareService : Service() {
             }
             foreground = false
         }
-        Handler(Looper.getMainLooper()).post { stoppedListener?.invoke() }
+        val stoppedGeneration = generation
+        val listener = stoppedListener
+        Handler(Looper.getMainLooper()).post { listener?.invoke(stoppedGeneration) }
         super.onDestroy()
     }
 }

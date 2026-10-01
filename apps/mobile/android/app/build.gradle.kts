@@ -127,3 +127,45 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.10")
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
 }
+
+// The installed WebRTC capturer drops Android's OS revoke/lock callback. Replace
+// exactly one pinned source in generated build storage, never mutate pub-cache.
+val webRtcProject = project(":flutter_webrtc")
+webRtcProject.plugins.withId("com.android.library") {
+    webRtcProject.extensions.configure<com.android.build.gradle.LibraryExtension> {
+        val mainJava = sourceSets.getByName("main").java
+        val originalRoots = mainJava.srcDirs.toList()
+        val relativeCapturer = "com/cloudwebrtc/webrtc/OrientationAwareScreenCapturer.java"
+        val upstreamCapturer = webRtcProject.file("src/main/java/$relativeCapturer")
+        val upstreamPubspec = webRtcProject.file("../pubspec.yaml")
+        val generatedJava = webRtcProject.layout.buildDirectory.dir("generated/meet-webrtc/java")
+        val overlayRoot = rootProject.file("overlays/flutter_webrtc")
+        val prepareMeetWebRtc = webRtcProject.tasks.register<Sync>("prepareMeetWebRtcSources") {
+            inputs.file(upstreamCapturer)
+            inputs.file(upstreamPubspec)
+            from(originalRoots) { exclude(relativeCapturer) }
+            from(overlayRoot) { include(relativeCapturer) }
+            into(generatedJava)
+            doFirst {
+                val version = Regex("(?m)^version: *([^\r\n]+)")
+                    .find(upstreamPubspec.readText())?.groupValues?.get(1)?.trim()
+                val hash = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(upstreamCapturer.readBytes())
+                    .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+                check(version == "1.6.2+hotfix.3" &&
+                    hash == "347ae60171cd831eb0fb28df7deeb6e81205881dac085eb3980e33edbe97a070") {
+                    "Meet WebRTC overlay requires reviewed flutter_webrtc 1.6.2+hotfix.3 source; review the overlay before upgrading."
+                }
+                check(overlayRoot.resolve(relativeCapturer).isFile) {
+                    "Meet WebRTC capturer overlay is missing."
+                }
+            }
+        }
+        mainJava.setSrcDirs(listOf(generatedJava))
+        webRtcProject.tasks.configureEach {
+            if (name.startsWith("compile") || name.startsWith("lint")) {
+                dependsOn(prepareMeetWebRtc)
+            }
+        }
+    }
+}

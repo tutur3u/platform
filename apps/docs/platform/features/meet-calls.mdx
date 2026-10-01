@@ -1013,5 +1013,37 @@ when upgrading the plugin. Native CI must compile/link this replacement.
 
 The iOS reader requires a minimum 10 KiB body to avoid overreading coalesced tiny
 frames. Meet pads JPEG trailing bytes; an independent reader model passed 100
-synthetic fragmentation/coalescing cases with 10 frames each. Actual `CIImage`
-decoding and interruption on physical devices remain release acceptance gates.
+synthetic fragmentation/coalescing cases with 10 frames each. The installed
+macOS CoreImage runtime decoded a synthetic 8×8 JPEG padded from 707 bytes to
+10 KiB and rendered the expected red pixel. iOS receiver-frame decoding and
+interruption on physical devices remain release acceptance gates.
+
+The draft parity implementation at `fe6b020b95b2799fad8314969784d06ccd7fadda`
+passed exact-head Android, iOS simulator, macOS, Linux, and Windows CI builds,
+mobile analysis/tests, TypeScript type checks, and lint. Android artifact
+`11182160313` belongs to run `36899884533`; iOS artifact `11181837360` belongs
+to run `36899884528`. Build success confirms native compilation and linkage,
+but does not establish capture acceptance. Revalidate subsequent changes at
+their own exact head.
+
+Those development CI artifacts use the default localhost API/Supabase settings
+and do not inject a Supabase public key. They have no authenticated synthetic
+Meet room or SFU fixture. Two-peer acceptance therefore requires a separate
+fixture artifact configured for an isolated test service, synthetic host/guest
+sessions, and its existing authorized SFU credentials. Do not create accounts,
+change production settings, or substitute a real meeting to bypass this gate.
+The available local runtime inventory contains an Android 11/API 30 image and
+iOS 27 simulators, with no attached physical devices. Android 14+ OS-chip/lock
+revocation and physical iPhone ReplayKit background/rotation/receiver-frame
+acceptance remain explicit release gates.
+
+Android's installed WebRTC plugin ignores `MediaProjection.Callback.onStop`.
+The repository-owned `android/overlays/flutter_webrtc` capturer forwards that
+callback to the Meet bridge and releases the capture. Each capturer claims an
+immutable owner; repeated callbacks and callbacks from a previous share cannot
+stop a new share. The assistant's separate projection service does not claim
+this owner. Gradle copies plugin Java sources into generated build storage,
+replacing exactly this file after checking the reviewed version and upstream
+SHA256. It fails closed on an upstream change and never modifies the Pub cache.
+Revalidate this overlay when upgrading WebRTC, and require exact-head Android
+CI plus OS Stop/lock/restart fixture acceptance for overlay changes.
