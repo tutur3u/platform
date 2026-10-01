@@ -1,6 +1,6 @@
 import type { calendar_v3 } from '@tuturuuu/google';
 import { describe, expect, it } from 'vitest';
-import { getCancelledGoogleEventIds } from './incremental-active-sync';
+import { getCancelledGoogleEventIds } from './google-sync-events';
 
 describe('getCancelledGoogleEventIds', () => {
   it('extracts id-only Google deletion tombstones without event dates', () => {

@@ -1,0 +1,303 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import type {
+  InventoryProductFormOptionsResponse,
+  InventoryProductSummary,
+  InventorySalesPeriod,
+} from '@tuturuuu/internal-api/inventory';
+import { NextIntlClientProvider } from 'next-intl';
+import { useState } from 'react';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+import messages from '../../../messages/en.json';
+import { InventorySessionScope } from './inventory-session-scope';
+import { SaleCreateDialog } from './sale-create-dialog';
+import { SeasonPricesDialog } from './season-prices-dialog';
+
+const api = vi.hoisted(() => ({
+  products: vi.fn(),
+  prices: vi.fn(),
+  sale: vi.fn(),
+  price: vi.fn(),
+}));
+vi.mock('@tuturuuu/internal-api/inventory', async (original) => ({
+  ...(await original<typeof import('@tuturuuu/internal-api/inventory')>()),
+  listInventoryProducts: api.products,
+  listInventoryPrices: api.prices,
+  createInventorySale: api.sale,
+  createInventoryPrice: api.price,
+}));
+vi.mock('@tuturuuu/ui/sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
+}));
+const period: InventorySalesPeriod = {
+  id: 'season',
+  name: 'Current season',
+  pricing_mode: 'scheduled',
+  status: 'active',
+  starts_at: '2000-01-01',
+  ends_at: '2100-01-01',
+  time_zone: 'UTC',
+  product_scope: 'all',
+  product_ids: [],
+  sale_count: 0,
+  description: null,
+  created_at: '',
+  updated_at: '',
+  ws_id: 'ws',
+};
+const product = (name: string): InventoryProductSummary => ({
+  id: name,
+  name,
+  category_id: 'category',
+  inventory: [
+    {
+      unit_id: 'unit',
+      warehouse_id: 'warehouse',
+      amount: 10,
+      price: 99000,
+      unit_name: 'Item',
+      warehouse_name: 'Booth',
+    },
+  ],
+});
+const products = [product('Alpha'), product('Beta')];
+const options: InventoryProductFormOptionsResponse = {
+  categories: [],
+  manufacturers: [],
+  owners: [],
+  units: [],
+  warehouses: [],
+  financeCategories: [{ id: 'finance', name: 'Revenue', ws_id: 'ws' }],
+  wallets: [{ id: 'wallet', name: 'Wallet' }],
+};
+function mount(children: React.ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <QueryClientProvider client={client}>
+        <InventorySessionScope actorId="actor">
+          {children}
+        </InventorySessionScope>
+      </QueryClientProvider>
+    </NextIntlClientProvider>
+  );
+}
+function openSale(mode: 'legacy' | 'scheduled') {
+  mount(
+    <SaleCreateDialog
+      wsId="ws"
+      workspaceCurrency="VND"
+      products={products}
+      periods={[{ ...period, pricing_mode: mode }]}
+      options={{ ...options, defaultSalesPeriodId: period.id }}
+    />
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Record sale' }));
+}
+async function add(name: string) {
+  fireEvent.click(await screen.findByRole('button', { name: `Add ${name}` }));
+}
+function review() {
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Revenue' }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Review' }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  const save = screen.getByRole('button', { name: 'Record sale' });
+  expect((save as HTMLButtonElement).disabled).toBe(false);
+  fireEvent.click(save);
+}
+beforeAll(() => {
+  class Observer {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  vi.stubGlobal('ResizeObserver', Observer);
+  HTMLElement.prototype.scrollIntoView = vi.fn();
+});
+beforeEach(() => {
+  vi.clearAllMocks();
+  Object.defineProperty(navigator, 'onLine', {
+    configurable: true,
+    value: true,
+  });
+  api.products.mockImplementation(
+    async (_ws: string, params: { q: string }) => ({
+      data: products.filter((p) =>
+        p.name.toLowerCase().includes(params.q.toLowerCase())
+      ),
+    })
+  );
+  api.prices.mockImplementation(async () => ({
+    as_of: new Date().toISOString(),
+    data: products.map((p, i) => ({
+      id: `quote-${p.id}`,
+      period_id: 'season',
+      product_id: p.id,
+      unit_id: 'unit',
+      warehouse_id: 'warehouse',
+      currency: 'VND',
+      price: 60000 + i * 10000,
+      valid_from: '2000-01-01T00:00:00Z',
+      valid_to: '2100-01-02T00:00:00Z',
+    })),
+  }));
+  api.sale.mockResolvedValue({ invoice_id: 'synthetic' });
+  api.price.mockResolvedValue({ data: {} });
+});
+afterEach(cleanup);
+describe('mounted season sales integrations', () => {
+  it.each(['scheduled', 'legacy'] as const)(
+    'keeps A while searching B and submitting both in %s mode',
+    async (mode) => {
+      openSale(mode);
+      await add('Alpha');
+      fireEvent.change(
+        screen.getByRole('textbox', {
+          name: 'Search products, units, or warehouses',
+        }),
+        { target: { value: 'Beta' } }
+      );
+      await waitFor(() => expect(api.products).toHaveBeenCalled());
+      await add('Beta');
+      review();
+      await waitFor(() => expect(api.sale).toHaveBeenCalledTimes(1));
+      expect(api.sale.mock.calls[0]?.[1].products).toEqual([
+        expect.objectContaining({
+          product_id: 'Alpha',
+          quantity: 1,
+          price: mode === 'scheduled' ? 60000 : 99000,
+        }),
+        expect.objectContaining({
+          product_id: 'Beta',
+          quantity: 1,
+          price: mode === 'scheduled' ? 70000 : 99000,
+        }),
+      ]);
+    }
+  );
+  it('clicking the selected row in the real period dropdown preserves cart and request identity', async () => {
+    const uuid = vi.spyOn(crypto, 'randomUUID');
+    openSale('scheduled');
+    await add('Alpha');
+    const requests = uuid.mock.calls.length;
+    const dropdown = screen
+      .getAllByRole('combobox')
+      .find((element) => element.textContent?.includes('Current season'))!;
+    fireEvent.click(dropdown);
+    fireEvent.click(screen.getByRole('option', { name: 'Current season' }));
+    expect(uuid.mock.calls.length).toBe(requests);
+    uuid.mockRestore();
+    review();
+    await waitFor(() => expect(api.sale).toHaveBeenCalledTimes(1));
+    expect(api.sale.mock.calls[0]?.[1].products).toEqual([
+      expect.objectContaining({ product_id: 'Alpha', price: 60000 }),
+    ]);
+    expect(api.sale.mock.calls[0]?.[1].request_id).toBeTruthy();
+  });
+  it('disables an existing quoted cart when its scheduled period is archived', async () => {
+    function Archivable() {
+      const [status, setStatus] = useState<'active' | 'archived'>('active');
+      return (
+        <>
+          <button type="button" onClick={() => setStatus('archived')}>
+            Archive fixture season
+          </button>
+          <SaleCreateDialog
+            wsId="ws"
+            workspaceCurrency="VND"
+            products={products}
+            periods={[{ ...period, status }]}
+            options={{ ...options, defaultSalesPeriodId: period.id }}
+          />
+        </>
+      );
+    }
+    mount(<Archivable />);
+    fireEvent.click(screen.getByRole('button', { name: 'Record sale' }));
+    await add('Alpha');
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Archive fixture season',
+        hidden: true,
+      })
+    );
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Revenue' }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Review' }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    const save = screen.getByRole('button', { name: 'Record sale' });
+    expect((save as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(save);
+    expect(api.sale).not.toHaveBeenCalled();
+  });
+  it('requires manual choice for an implicit legacy-only current period', async () => {
+    mount(
+      <SaleCreateDialog
+        wsId="ws"
+        workspaceCurrency="VND"
+        products={products}
+        periods={[{ ...period, pricing_mode: 'legacy' }]}
+        options={options}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Record sale' }));
+    expect(screen.queryByRole('button', { name: 'Add Alpha' })).toBeNull();
+  });
+  it('loads and selects a product past the first 50 rows in the actual price dialog', async () => {
+    const catalog = Array.from({ length: 65 }, (_, i) =>
+      product(`Design ${String(i + 1).padStart(2, '0')}`)
+    );
+    function Paginated() {
+      const [count, setCount] = useState(50);
+      return (
+        <SeasonPricesDialog
+          wsId="ws"
+          period={period}
+          products={catalog.slice(0, count)}
+          hasNextProductsPage={count < 65}
+          fetchNextProductsPage={() => setCount(65)}
+        />
+      );
+    }
+    mount(<Paginated />);
+    fireEvent.click(screen.getByRole('button', { name: 'Season prices' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load more products' }));
+    fireEvent.click(screen.getByRole('combobox'));
+    fireEvent.click(
+      await screen.findByRole('option', { name: 'Design 65 · Item · Booth' })
+    );
+    fireEvent.change(screen.getByRole('spinbutton'), {
+      target: { value: '75000' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(api.price).toHaveBeenCalledTimes(1));
+    expect(api.price.mock.calls[0]?.[2]).toEqual(
+      expect.objectContaining({ product_id: 'Design 65', price: 75000 })
+    );
+  });
+});

@@ -1,5 +1,6 @@
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { safelyRevalidateWorkspaceStorefronts } from '@tuturuuu/inventory-core/commerce/public-storefront';
+import { editPricedProduct } from '@tuturuuu/inventory-core/priced-product-edit';
 import { validateInventoryItemWorkspaceRelations } from '@tuturuuu/inventory-core/relation-validation';
 import { getStockChangeAmount } from '@tuturuuu/inventory-core/stock-change';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -238,6 +239,33 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json(
       { message: inventoryRelations.message },
       { status: inventoryRelations.status }
+    );
+  }
+
+  try {
+    const changes = await editPricedProduct({
+      sbAdmin,
+      wsId,
+      productId,
+      inventory,
+      workspaceUserId: await getWorkspaceUserId(userId, sbAdmin, wsId),
+      context: stockChangeContextColumns(normalizedChangeContext),
+      recordChanges: true,
+    });
+    if (changes) {
+      await safelyRevalidateWorkspaceStorefronts(wsId);
+      return NextResponse.json({
+        message: inventory.length
+          ? 'Inventory updated successfully'
+          : 'Inventory cleared',
+        changes,
+      });
+    }
+  } catch (error) {
+    console.error('Error atomically editing priced stock', error);
+    return NextResponse.json(
+      { message: 'Error updating inventory' },
+      { status: 500 }
     );
   }
 
@@ -566,6 +594,27 @@ export async function DELETE(req: Request, { params }: Params) {
 
   if (productError || !product) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+  }
+
+  try {
+    const changes = await editPricedProduct({
+      sbAdmin,
+      wsId,
+      productId,
+      inventory: [],
+      workspaceUserId: await getWorkspaceUserId(userId, sbAdmin, wsId),
+      recordChanges: true,
+    });
+    if (changes) {
+      await safelyRevalidateWorkspaceStorefronts(wsId);
+      return NextResponse.json({ message: 'Inventory deleted successfully' });
+    }
+  } catch (error) {
+    console.error('Error atomically removing priced stock', error);
+    return NextResponse.json(
+      { message: 'Error deleting inventory' },
+      { status: 500 }
+    );
   }
 
   const { data: existingInventory, error: fetchError } = await inventoryClient

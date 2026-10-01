@@ -3487,14 +3487,6 @@
   "@remindersAllDayEvent": {"placeholders": {"title": {"type": "String"}}},
   "remindersUpcomingEvent": "{when}: {title}",
   "@remindersUpcomingEvent": {"placeholders": {"when": {"type": "String"}, "title": {"type": "String"}}},
-  "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
-  "@remindersOccurrenceDetails": {
-    "placeholders": {
-      "leadTime": {"type": "String"},
-      "occurrence": {"type": "String"},
-      "timezone": {"type": "String"}
-    }
-  },
   "remindersIn3d": "Còn 3 ngày",
   "remindersIn1d": "Ngày mai",
   "remindersIn12h": "Còn 12 giờ",
@@ -3751,11 +3743,59 @@
     "offlineChangesRetry": "Thử lại",
     "offlineChangesDiscard": "Bỏ thay đổi trên máy",
     "offlineChangesDiscardConfirm": "Thao tác này xóa thay đổi đang chờ trên thiết bị. Nó không hoàn tác dữ liệu mà máy chủ có thể đã nhận.",
+    "mailMessageDetails": "Thông tin thư",
+    "mailInvitationTitle": "Lời mời lịch",
+    "mailInvitationAccept": "Chấp nhận",
+    "mailInvitationDecline": "Từ chối",
+    "mailInvitationTentative": "Có thể tham gia",
+    "mailInvitationIdentity": "Trả lời với tư cách {attendee} cho người tổ chức {organizer}",
+    "@mailInvitationIdentity": {
+        "placeholders": {
+            "attendee": {
+                "type": "String"
+            },
+            "organizer": {
+                "type": "String"
+            }
+        }
+    },
+    "mailInvitationLocation": "Địa điểm",
+    "mailInvitationWhen": "Thời gian",
+    "mailInvitationJoin": "Tham gia cuộc họp",
+    "mailInvitationRetry": "Tải lại thông tin lời mời",
+    "mailInvitationSending": "Đang gửi phản hồi…",
+    "mailInvitationSent": "Đã gửi phản hồi: {response}",
+    "@mailInvitationSent": {
+        "placeholders": {
+            "response": {
+                "type": "String"
+            }
+        }
+    },
+    "mailInvitationPending": "Phản hồi đang chờ xử lý. Kiểm tra lại trước khi trả lời.",
+    "mailInvitationFailed": "Chưa xác nhận được phản hồi. Thử lại cùng phản hồi để kiểm tra trạng thái.",
+    "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
+    "@remindersOccurrenceDetails": {
+        "placeholders": {
+            "leadTime": {
+                "type": "String"
+            },
+            "occurrence": {
+                "type": "String"
+            },
+            "timezone": {
+                "type": "String"
+            }
+        }
+    },
     "settingsTimezone": "Múi giờ cá nhân",
     "settingsWorkspaceTimezone": "Múi giờ không gian làm việc",
     "settingsTimezoneDescription": "Múi giờ cá nhân ưu tiên hơn múi giờ không gian làm việc. Tự động dùng mặc định không gian làm việc, sau đó thiết bị.",
     "settingsTimezoneAuto": "Tự động",
     "settingsTimezoneSearch": "Tìm múi giờ",
+    "settingsTimezoneLoading": "Đang xác định múi giờ…",
+    "settingsTimezoneAccountPending": "Đang chờ tài khoản của bạn.",
+    "settingsTimezoneUnknown": "Chưa xác định",
     "settingsTimezoneEffective": "Múi giờ áp dụng: {timezone}",
     "settingsTimezoneError": "Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.",
     "@settingsTimezoneEffective": {

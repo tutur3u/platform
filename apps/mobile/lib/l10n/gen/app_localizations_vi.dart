@@ -8630,11 +8630,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
-    return '$leadTime · $occurrence ($timezone)';
-  }
-
-  @override
   String get remindersIn3d => 'Còn 3 ngày';
 
   @override
@@ -9319,6 +9314,57 @@ class AppLocalizationsVi extends AppLocalizations {
   String get offlineChangesDiscardConfirm => 'Thao tác này xóa thay đổi đang chờ trên thiết bị. Nó không hoàn tác dữ liệu mà máy chủ có thể đã nhận.';
 
   @override
+  String get mailMessageDetails => 'Thông tin thư';
+
+  @override
+  String get mailInvitationTitle => 'Lời mời lịch';
+
+  @override
+  String get mailInvitationAccept => 'Chấp nhận';
+
+  @override
+  String get mailInvitationDecline => 'Từ chối';
+
+  @override
+  String get mailInvitationTentative => 'Có thể tham gia';
+
+  @override
+  String mailInvitationIdentity(String attendee, String organizer) {
+    return 'Trả lời với tư cách $attendee cho người tổ chức $organizer';
+  }
+
+  @override
+  String get mailInvitationLocation => 'Địa điểm';
+
+  @override
+  String get mailInvitationWhen => 'Thời gian';
+
+  @override
+  String get mailInvitationJoin => 'Tham gia cuộc họp';
+
+  @override
+  String get mailInvitationRetry => 'Tải lại thông tin lời mời';
+
+  @override
+  String get mailInvitationSending => 'Đang gửi phản hồi…';
+
+  @override
+  String mailInvitationSent(String response) {
+    return 'Đã gửi phản hồi: $response';
+  }
+
+  @override
+  String get mailInvitationPending => 'Phản hồi đang chờ xử lý. Kiểm tra lại trước khi trả lời.';
+
+  @override
+  String get mailInvitationFailed => 'Chưa xác nhận được phản hồi. Thử lại cùng phản hồi để kiểm tra trạng thái.';
+
+  @override
+  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
+    return '$leadTime · $occurrence ($timezone)';
+  }
+
+  @override
   String get settingsTimezone => 'Múi giờ cá nhân';
 
   @override
@@ -9332,6 +9378,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsTimezoneSearch => 'Tìm múi giờ';
+
+  @override
+  String get settingsTimezoneLoading => 'Đang xác định múi giờ…';
+
+  @override
+  String get settingsTimezoneAccountPending => 'Đang chờ tài khoản của bạn.';
+
+  @override
+  String get settingsTimezoneUnknown => 'Chưa xác định';
 
   @override
   String settingsTimezoneEffective(String timezone) {

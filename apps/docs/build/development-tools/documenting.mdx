@@ -1,6 +1,7 @@
 ---
 title: 'Documenting'
 description: 'Learn how to contribute to our documentation.'
+updatedAt: '2026-09-30'
 ---
 
 <Info>
@@ -71,6 +72,20 @@ Content goes here...
 3. **Add cross-references** to related documentation
 4. **Keep content up-to-date** by updating the `updatedAt` field
 5. **Use consistent formatting** throughout
+
+### Product Decisions and Regression Evidence
+
+Record intentional customer behavior in the owning feature page alongside the
+change: scope, defaults, affected web/mobile surfaces, persistence and permission
+rules, and intentional exceptions. Distinguish implemented behavior from pending
+stages and installed or deployed behavior. Link the owning regression tests and
+exact validation evidence; do not convert a user preference into a repo-wide rule.
+
+Exercise the real boundary that previously failed. Examples include server-to-client
+date serialization, cache provenance before membership-based cancellation, and
+route-to-provider payload propagation. A helper-only mock can pass while those
+contracts remain broken. Use synthetic fixtures; keep private calendars, mail,
+credentials and live notifications out of shared test evidence.
 
 ### Code Examples
 
