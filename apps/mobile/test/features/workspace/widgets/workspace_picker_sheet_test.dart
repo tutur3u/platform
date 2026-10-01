@@ -164,6 +164,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(EditableText), findsNothing);
       expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.search_rounded).first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(EditableText), '   ');
+      await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      expect(find.byType(EditableText), findsNothing);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
     });
 
     testWidgets('selects the workspace represented by a filtered result', (

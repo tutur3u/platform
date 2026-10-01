@@ -260,7 +260,7 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
     // Preserve filtered results across keyboard dismissal; an empty search can
     // collapse so Create remains available without reopening the sheet.
     if (!mounted || _searchFocusNode.hasFocus) return;
-    if (_searchController.text.isEmpty) {
+    if (_searchController.text.trim().isEmpty) {
       setState(() => _isSearchVisible = false);
     }
   }
