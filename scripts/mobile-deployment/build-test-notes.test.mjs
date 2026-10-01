@@ -122,76 +122,113 @@ test('readback failure is reported', async () => {
   );
 });
 
-test('retry uses original upload artifact and not a later production source', async () => {
-  const calls = [];
-  const run = (_command, args) => {
-    calls.push(args);
-    const path = args[1];
-    if (_command === 'unzip') return JSON.stringify(history);
-    if (path.includes('/workflows/'))
-      return JSON.stringify({
-        workflow_runs: [
-          {
-            id: 999,
-            run_number: 209,
-            run_attempt: 1,
-            head_branch: 'production',
-            head_sha: 'a'.repeat(40),
-          },
-          {
-            id: 207,
-            run_number: 207,
-            run_attempt: 1,
-            head_branch: 'production',
-            head_sha: sha,
-          },
-        ],
-      });
-    if (path.includes('/runs/207/artifacts'))
-      return JSON.stringify({
-        artifacts: [
-          {
-            id: 17,
-            name: 'mobile-beta-release-history',
-            expired: false,
-            size_in_bytes: 400,
-          },
-        ],
-      });
-    if (path.endsWith('/artifacts/17/zip'))
-      return Buffer.from('synthetic archive');
-    throw new Error('Unexpected source lookup');
-  };
-  assert.match(
-    await originalBuildHistory('307001', '0.20.4', { run }),
-    /calendar instants/
-  );
-  assert.ok(calls.some((args) => args[1]?.includes('/runs/207/artifacts')));
-  assert.ok(!calls.some((args) => args[1]?.includes('/runs/999/artifacts')));
-});
+for (const artifactMismatch of [false, true]) {
+  test(`retry resolves attempt 1 after run 207 advances to attempt 2${artifactMismatch ? ' and rejects mismatched history' : ''}`, async () => {
+    const calls = [];
+    const run = (_command, args) => {
+      calls.push(args);
+      const path = args[1];
+      if (_command === 'unzip')
+        return JSON.stringify(
+          artifactMismatch
+            ? { ...history, build: { ...identity, number: '307002' } }
+            : history
+        );
+      if (path.includes('/workflows/'))
+        return JSON.stringify({
+          workflow_runs: [
+            {
+              id: 999,
+              run_number: 209,
+              run_attempt: 1,
+              head_branch: 'production',
+              head_sha: 'a'.repeat(40),
+            },
+            {
+              id: 207,
+              run_number: 207,
+              run_attempt: 2,
+              head_branch: 'production',
+              head_sha: sha,
+            },
+          ],
+        });
+      if (path.endsWith('/runs/207/attempts/1'))
+        return JSON.stringify({
+          id: 207,
+          run_number: 207,
+          run_attempt: 1,
+          head_branch: 'production',
+          head_sha: sha,
+          event: 'push',
+        });
+      if (path.includes('/runs/207/artifacts'))
+        return JSON.stringify({
+          artifacts: [
+            {
+              id: 17,
+              name: 'mobile-beta-release-history',
+              expired: false,
+              size_in_bytes: 400,
+            },
+          ],
+        });
+      if (path.endsWith('/artifacts/17/zip'))
+        return Buffer.from('synthetic archive');
+      throw new Error('Unexpected source lookup');
+    };
+    if (artifactMismatch) {
+      await assert.rejects(
+        originalBuildHistory('307001', '0.20.4', { run }),
+        /does not match/
+      );
+    } else {
+      assert.match(
+        await originalBuildHistory('307001', '0.20.4', { run }),
+        /calendar instants/
+      );
+    }
+    assert.ok(calls.some((args) => args[1]?.endsWith('/runs/207/attempts/1')));
+    assert.ok(calls.some((args) => args[1]?.includes('/runs/207/artifacts')));
+    assert.ok(!calls.some((args) => args[1]?.includes('/runs/999/artifacts')));
+  });
+}
 for (const expired of [true, false]) {
   test(`retry refuses ${expired ? 'expired artifact' : 'unmapped upload'} without using checkout notes`, async () => {
     const run = (_command, args) =>
       JSON.stringify(
-        args[1].includes('/workflows/')
+        args[1].includes('/attempts/')
           ? {
-              workflow_runs: expired
-                ? [
-                    {
-                      id: 207,
-                      run_number: 207,
-                      run_attempt: 1,
-                      head_branch: 'production',
-                      head_sha: sha,
-                    },
-                  ]
-                : [],
+              id: 207,
+              run_number: 207,
+              run_attempt: 1,
+              head_branch: 'production',
+              head_sha: sha,
+              event: 'push',
             }
-          : {
-              artifacts: [
-                { id: 17, name: 'mobile-beta-release-history', expired: true },
-              ],
-            }
+          : args[1].includes('/workflows/')
+            ? {
+                workflow_runs: expired
+                  ? [
+                      {
+                        id: 207,
+                        run_number: 207,
+                        run_attempt: 1,
+                        head_branch: 'production',
+                        head_sha: sha,
+                      },
+                    ]
+                  : [],
+              }
+            : {
+                artifacts: [
+                  {
+                    id: 17,
+                    name: 'mobile-beta-release-history',
+                    expired: true,
+                  },
+                ],
+              }
       );
     await assert.rejects(originalBuildHistory('307001', '0.20.4', { run }));
   });

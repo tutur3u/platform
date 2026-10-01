@@ -124,7 +124,9 @@ export async function originalBuildHistory(
           '--jq',
           path.includes('/workflows/')
             ? '{workflow_runs:[.workflow_runs[]|{id,run_number,run_attempt,head_branch,head_sha}]}'
-            : '{artifacts:[.artifacts[]|{id,name,expired,size_in_bytes}]}',
+            : path.includes('/attempts/')
+              ? '{id,run_number,run_attempt,head_branch,head_sha,event}'
+              : '{artifacts:[.artifacts[]|{id,name,expired,size_in_bytes}]}',
         ],
         {
           encoding: 'utf8',
@@ -140,14 +142,24 @@ export async function originalBuildHistory(
     );
     upload = result.workflow_runs?.find(
       (item) =>
-        item.run_number === runNumber &&
-        item.run_attempt === attempt &&
-        item.head_branch === 'production'
+        item.run_number === runNumber && item.head_branch === 'production'
     );
     if (upload || (result.workflow_runs?.length ?? 0) < 100) break;
   }
   if (!upload || !/^[a-f0-9]{40}$/.test(upload.head_sha ?? ''))
     throw new Error('Original beta upload source is unavailable');
+  // The list endpoint reports the latest attempt, which may have rerun only
+  // another job. Resolve the attempt encoded in this binary's build number.
+  const original = api(`actions/runs/${upload.id}/attempts/${attempt}`);
+  if (
+    original.id !== upload.id ||
+    original.run_number !== runNumber ||
+    original.run_attempt !== attempt ||
+    original.head_branch !== 'production' ||
+    original.event !== 'push' ||
+    original.head_sha !== upload.head_sha
+  )
+    throw new Error('Original beta upload attempt is unavailable');
   const artifacts = api(`actions/runs/${upload.id}/artifacts?per_page=100`);
   const matches =
     artifacts.artifacts?.filter(
@@ -179,7 +191,7 @@ export async function originalBuildHistory(
     const identity = {
       version,
       number: String(number),
-      sourceSha: upload.head_sha,
+      sourceSha: original.head_sha,
     };
     return renderBuildTestNotes(history, identity);
   } finally {

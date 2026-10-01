@@ -302,7 +302,9 @@ deferral; internal group distribution remains available when notes cannot be
 verified. This does not mean external testing is approved.
 
 Retries resolve the selected build number to its original production upload run
-and history artifact. They never use the current checkout's newer changes. A
+and the specific attempt encoded in the build number, then verify its history
+artifact. A later rerun of another job does not invalidate that original attempt.
+Retries never use the current checkout's newer changes. A
 missing, expired, ambiguous, or mismatched source/artifact requires manually
 prepared version-specific notes; the workflow does not invent a changelog or
 submit a new external review with unverified notes. A legacy history artifact
