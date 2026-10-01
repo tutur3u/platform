@@ -105,6 +105,34 @@ The shared logic is organized in four pieces:
 
 ### Reusable and inline gates
 
+Test, Coverage, and Type Check opt into `check_release_only: true` on the
+existing `ci-check.yml` job. One full-history sparse checkout at `github.sha`
+now resolves both the CI switchboard and the release-only comparison; callers
+use its separate `should_run` and `run_checks` outputs. Other callers retain
+the default `run_checks=true`. Missing, zero, invalid, or unavailable comparison
+SHAs and malformed manifests still default to running checks. A failed preflight
+cannot schedule the heavy jobs; shard aggregates still require every shard to
+succeed.
+
+This removes three redundant runner allocations per push that creates all three
+workflows, without changing tests, shard counts, aggregate check names, or
+coverage uploads. It does not estimate elapsed time savings. Before removing the
+`Check release-only changes` jobs, live effective branch rules for `main` and
+`production` and ruleset `8839175` were checked: they required PR approval,
+code-owner review, and resolved threads, with no required status-check contexts;
+legacy branch protection was absent (verified on October 1, 2026). Recheck those rules before future check
+renames. Deployment-aware callers retain `deployments: read`.
+
+Run the focused contracts and decisions with:
+
+```sh
+node --test --test-concurrency=1 \
+  scripts/ci/ci-preflight-workflow.test.js \
+  scripts/ci/release-only-changes.test.js \
+  scripts/ci/check-workflow-config.test.js \
+  scripts/ci/resolve-changed-files.test.js
+```
+
 Non-Vercel gated workflows can declare a `check-ci` job that calls
 `ci-check.yml`, then gate their real job on the result. Platform preview is
 different: it must complete on every protected `main` push so
