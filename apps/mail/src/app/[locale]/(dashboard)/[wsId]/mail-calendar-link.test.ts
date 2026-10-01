@@ -24,7 +24,7 @@ const api = vi.hoisted(() => ({
   unlink: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', async () => ({
-  ...(await import('@tuturuuu/internal-api/mail-calendar-link')),
+  ...(await import('@tuturuuu/internal-api/mail')),
   getMailCalendarLink: api.get,
   previewMailCalendarLink: api.preview,
   confirmMailCalendarLink: api.confirm,

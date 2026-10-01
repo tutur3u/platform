@@ -4,7 +4,7 @@ import {
   parseMailCalendarEventUrl,
   previewMailCalendarLink,
   unlinkMailCalendarLink,
-} from '@tuturuuu/internal-api/mail-calendar-link';
+} from '@tuturuuu/internal-api/mail';
 import { expect, it, vi } from 'vitest';
 
 it('uses encoded Mail paths, uncached authenticated requests and the exact preview/confirm/unlink payloads', async () => {
