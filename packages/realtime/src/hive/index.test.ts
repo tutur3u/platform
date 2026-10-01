@@ -78,15 +78,16 @@ describe('@tuturuuu/realtime Hive CRDT helpers', () => {
     const world = doc.getMap('world');
     const block = new Y.Map();
     world.set('block', block);
-    const delivered: Array<{ target: unknown; path: unknown }> = [];
+    const deliveredToWorld: Array<{ target: unknown; path: unknown }> = [];
+    const deliveredToBlock: typeof deliveredToWorld = [];
     world.observeDeep((events) => {
-      delivered.push({
+      deliveredToWorld.push({
         target: events[0]?.currentTarget,
         path: events[0]?.path,
       });
     });
     block.observeDeep((events) => {
-      delivered.push({
+      deliveredToBlock.push({
         target: events[0]?.currentTarget,
         path: events[0]?.path,
       });
@@ -94,10 +95,8 @@ describe('@tuturuuu/realtime Hive CRDT helpers', () => {
 
     block.set('color', '#7cba62');
 
-    expect(delivered).toEqual([
-      { target: block, path: [] },
-      { target: world, path: ['block'] },
-    ]);
+    expect(deliveredToBlock).toEqual([{ target: block, path: [] }]);
+    expect(deliveredToWorld).toEqual([{ target: world, path: ['block'] }]);
     doc.destroy();
   });
 
