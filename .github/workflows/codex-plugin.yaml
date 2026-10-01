@@ -31,5 +31,11 @@ jobs:
       - name: Validate plugin
         run: python3 plugins/tuturuuu/scripts/validate_plugin.py
 
+      - name: Install local MCP test dependency
+        run: python3 -m pip install -r plugins/tuturuuu/mcp/requirements.txt
+
+      - name: Test local MCP boundaries and stdio contract
+        run: python3 -m unittest discover -s plugins/tuturuuu/mcp -p 'test_*.py'
+
       - name: Validate docs navigation JSON
         run: python3 -m json.tool apps/docs/docs.json > /dev/null

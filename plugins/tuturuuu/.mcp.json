@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "tuturuuu-readonly": {
+      "command": "python3.12",
+      "args": [
+        "${PLUGIN_ROOT}/mcp/server.py"
+      ]
+    }
+  }
+}

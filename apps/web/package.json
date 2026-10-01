@@ -61,6 +61,7 @@
     "@mantine/core": "^9.6.1",
     "@mantine/hooks": "^9.6.1",
     "@marsidev/react-turnstile": "^1.6.1",
+    "@modelcontextprotocol/sdk": "1.31.0",
     "@octokit/auth-app": "^8.3.1",
     "@octokit/rest": "^22.0.1",
     "@react-email/render": "^2.1.0",

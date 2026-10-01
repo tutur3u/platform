@@ -12,6 +12,7 @@
   "license": "MIT",
   "keywords": ["tuturuuu", "platform", "codex", "monorepo"],
   "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Tuturuuu",
     "shortDescription": "Keep Tuturuuu platform work aligned with repo conventions.",

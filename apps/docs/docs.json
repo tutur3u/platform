@@ -307,6 +307,7 @@
               "build/development-tools/overview",
               "build/development-tools/development",
               "build/development-tools/codex-plugin",
+              "build/development-tools/chatgpt-mcp",
               "build/development-tools/monorepo-architecture",
               "build/development-tools/git-conventions",
               "build/development-tools/stacked-pull-requests",

@@ -1,0 +1,375 @@
+---
+title: 'ChatGPT and MCP'
+description: 'Portable plugins, hosted read workflows and authorization gates.'
+---
+
+
+Source audit: October 1, 2026. This package now has a portable root
+`plugin.json` and `mcp.json`, with `.codex-plugin/plugin.json` and `.mcp.json`
+retained for compatibility. The portable manifest deliberately omits
+`extensions.com.openai`, so the existing OpenAI presentation overlay remains
+active in full. Portable version is omitted; Release Please continues to own the
+compatibility manifest's version. No legacy `ai-plugin.json` is used.
+
+### Capability and security gates
+
+| Capability | Existing source / first slice | Gate before claiming ChatGPT delivery |
+| --- | --- | --- |
+| Portable packaging | Root manifests plus existing developer skills | Install and smoke-test the package in each intended host |
+| Workspace discovery and task summaries | Local opt-in CLI bridge plus hosted user/grant-bound source, tested with synthetic accounts | Reviewed issuer/grant/session authority, private-board/RLS proof and permitted-account delivery |
+| Tasks / Calendar navigation and Calendar summaries | Canonical links and hosted bounded event projection; existing Calendar permission preserved | Signed-in smoke tests and reviewed Calendar/RLS compatibility; no live event reads yet |
+| Hosted ChatGPT MCP | Connected official SDK source and real Streamable HTTP protocol tests; no registered endpoint | Public HTTPS deployment, persistent grants, provider/live-session policy, read-only API/RLS and rate admission |
+| ChatGPT OAuth | Existing CLI browser exchange and external-app token exchange are different protocols | Protected-resource and issuer discovery, resource/audience binding, authorization code + S256 PKCE, exact redirect allowlist, scopes and consent; choose CIMD or supported registration flow |
+| MCP Apps UI | No widget or UI resource yet | Standard MCP Apps bridge first, output schemas, resource CSP and approved origins; keep credentials server-side |
+| Sidebar / panels / deep links | Optional OpenAI extension stage | Capability detection and MCP App entrypoints; Free/Go web extensions are documented as coming soon |
+| Composer mentions | Optional later stage | Desktop only per current docs; workspace-authorized search and IDs, never raw token/file paths |
+| File viewers / editors | Deferred; no current workspace task need | File access/size/type authorization and user-confirmed writes |
+| Writes / marketplace | No write tools, public submission, credentials, grants, or production configuration changes | Separate parent approval, reviewed scope/consent, idempotency tied to actor/workspace, stale-state checks; publication requires review materials and remote endpoint |
+
+Current OpenAI docs describe portable Agent Plugins as the authoring format,
+MCP Apps as the shared UI bridge, and OpenAI MCP Extensions as optional host
+surfaces. Existing plugin functionality remains available while Free/Go web
+extensions are coming soon. Do not infer availability on every plan, mobile
+client, or host from a successful desktop example. See
+[packaging](https://developers.openai.com/plugins/build/plugins),
+[extensions](https://developers.openai.com/plugins/build/extensions),
+[UI reference](https://developers.openai.com/plugins/reference), and
+[changelog](https://developers.openai.com/plugins/changelog).
+
+### Local read bridge
+
+This is a local stdio server using the official MCP Python SDK's maintained
+FastMCP API, pinned to `mcp==1.28.0`; SDK v2 is now stable and needs a separately
+validated migration. It is not a hosted ChatGPT connector. Public MCP submission
+requires a remote HTTPS endpoint. The server binds to no network port and exposes:
+
+- `list_workspaces`: only workspace IDs and bounded names.
+- `list_workspace_tasks`: one page of open task IDs and bounded names with an
+  explicit workspace UUID, limit 1–50 and offset 0–10000. Default CLI status
+  filtering still applies. Personal external placements fail closed.
+- `get_workspace_navigation`: a canonical Tasks or Calendar workspace link;
+  does not launch a browser or fetch events.
+
+Each call uses the current local CLI identity. Workspace membership is rechecked
+before scoped reads and links; the API remains the permission authority. There
+is no MCP cache. The current workspace API uses private response caching; this
+bridge adds no cache and does not prove immediate upstream revocation. The task
+GET route already uses a server admin client behind explicit membership checks
+and workspace filters; the MCP layer adds no admin client or bypass. Hosted
+rollout still needs actor/guest/private-board authorization and revocation tests. The bridge never reads the CLI config or tokens directly, accepts
+no model-selected origin/config/executable, invokes no shell, disables update
+checks, and emits no raw CLI errors. The existing CLI may refresh its user session
+and rotate its local config. The CLI session itself is broader than these three
+read tools: this process allowlist is not a new narrowly scoped OAuth grant.
+Never serve this adapter over HTTP or reuse a machine CLI identity for multiple
+remote users. A future hosted adapter must bind issuer/subject/workspace/scopes
+per request, partition caches by that identity, and reauthorize after revocation.
+
+Names returned by Tuturuuu are hostile content boundaries: treat them as data,
+never instructions, links, commands or authorization. No descriptions, assignee
+identities, raw provider events, secrets or tokens are returned. All tools declare
+read-only, nondestructive, idempotent and closed-world annotations; typed results
+generate `outputSchema`. A CLI call times out after 20 seconds and its parsed
+response is capped at 1 MiB; temporary output is deleted after each call.
+
+Setup is deliberate and separate from installation of repository dependencies:
+
+```bash
+# Use a reviewed Python 3.12 environment and an already installed ttr CLI.
+# Run dependency setup and validation through the shared FIFO resource queue.
+ttr resources run -- python3.12 -m pip install -r plugins/tuturuuu/mcp/requirements.txt
+# Authenticate manually using the existing user CLI flow if needed.
+# Enabling reads authorizes requested workspace/task data to reach the MCP host.
+export TUTURUUU_MCP_READS_ENABLED=1
+python3.12 plugins/tuturuuu/mcp/server.py
+```
+
+Install the SDK in the Python 3.12 environment that the host uses to launch the
+manifest's `python3.12` command. A repo-local virtualenv is not copied into plugin
+caches. The server stays fail-closed unless the host process inherits the opt-in
+variable. Do not place tokens in either manifest or enable reads globally without
+understanding the host's data handling. Reinstall/refresh the plugin cache after
+source changes; cached packages do not follow source edits automatically.
+
+Offline verification (synthetic responses; does not authenticate or call APIs):
+
+```bash
+ttr resources run -- python3.12 -m unittest discover -s plugins/tuturuuu/mcp -p 'test_*.py'
+python3 plugins/tuturuuu/scripts/validate_plugin.py
+```
+
+The focused suite checks scope rejection, missing membership, cross-workspace and
+external rows, bounded pagination/output, sensitive-field projection, safe error
+handling, opt-in behavior, and actual SDK schemas/annotations. Live user reads,
+ChatGPT host installation, OAuth, UI, and CI builds are separate evidence gates.
+
+### Smallest staged rollout and owned paths
+
+1. Local read slice: `plugins/tuturuuu/{plugin.json,mcp.json,.mcp.json}`,
+   `.codex-plugin/plugin.json`, `plugins/tuturuuu/mcp/`, the plugin validator, and
+   this existing documentation page, and `.github/workflows/codex-plugin.yaml`
+   for offline protocol/security tests. No mobile, workspace picker, Calendar UI,
+   database, SDK, or live API files change.
+2. Hosted read adapter: propose isolated `packages/mcp/` transport/auth modules
+   and `apps/web/src/app/api/mcp/` only after OAuth design review. Keep Rust/API
+   migration registration in step under repository rules. Reuse existing
+   user-authorized API reads; never introduce a service-role bypass. Gate calendar
+   reads on verified per-user/provider visibility and bounded time ranges.
+3. MCP App: a workspace/task view built on the standard bridge, then optional
+   sidebar/panel entrypoints and desktop composer mentions when supported.
+4. Writes and publication: independent review and approval; use explicit proposed
+   changes and server-enforced confirmation/idempotency, then host testing,
+   privacy/support/terms, test-account and review materials, metadata scan and
+   directory publication. No stage silently enables another.
+
+Authentication and review requirements:
+[OAuth](https://developers.openai.com/plugins/build/auth),
+[security and privacy](https://developers.openai.com/plugins/guides/security-privacy),
+[MCP review](https://developers.openai.com/plugins/deploy/app-review), and
+[submission](https://developers.openai.com/plugins/deploy/submission).
+MCP itself requires no OpenAI API key or paid model call.
+
+### Corrected hosted boundary plan
+
+Reconciled against verified remote main
+`e819953329392db746bb22e2e918f3c8bbb06579` on October 1, 2026. The local stdio
+implementation above is Codex/desktop groundwork, not completion of the requested
+hosted ChatGPT integration. Portable packaging supports local stdio, but public
+ChatGPT MCP distribution needs a remote HTTPS endpoint and its own authorization
+contract. No placeholder remote URL or registered connection ID is advertised.
+
+Current source boundaries to reuse:
+
+- `packages/internal-api/src/workspaces.ts` and `tasks.ts` own typed user-facing
+  read requests; `client.ts` owns API transport. Do not wrap every API operation.
+- `packages/tasks-api/src/server/tasks/route.ts` owns task visibility and membership
+  checks; the current handler has admin-backed branches. A hosted adapter must not
+  treat a verified MCP token as permission to use those branches without checking
+  the actor, workspace, private board and guest boundaries.
+- `apps/web/src/lib/api-auth.ts` and `api-auth-audiences.ts` own gateway session,
+  audience, abuse and step-up decisions. Its `allowAppSessionAuth` path explicitly
+  uses an admin-backed client. Do not enable that path for MCP as an RLS substitute.
+- `packages/auth/src/cli-session.ts` grants broad `cli:access`; it is not the
+  hosted token contract. `app-session.ts` handles internal target-app sessions.
+  Neither token is returned to ChatGPT or accepted as an MCP access token.
+- `apps/web/src/app/api/v1/auth/app-token/exchange/route.ts` handles external-app
+  secrets, scopes, workspace checks and rotation. Reuse its authorization and
+  refresh principles; do not send ChatGPT a cross-app token or app secret.
+- `apps/web/src/lib/auth/oauth-providers.ts` configures incoming account sign-in
+  providers. The audit did not find a complete MCP OAuth authorization server in
+  this source. Outbound Google/SePay OAuth is unrelated. Issuer capability, client
+  registration, consent storage and audience binding remain explicit design gates.
+
+Proposed hosted dataflow, source design only:
+
+1. ChatGPT discovers the MCP protected-resource document and the approved issuer's
+   discovery document. No account-specific data is available anonymously.
+2. Authorization code + S256 PKCE enters the existing Tuturuuu sign-in boundary.
+   A Tuturuuu-owned consent screen chooses one accessible workspace and read scopes
+   for workspace discovery/task summaries/navigation. Preserve required MFA and
+   deny suspended users. Bind client, exact redirect, resource, workspace and
+   granted scopes to a single-use code; never infer consent from sign-in alone.
+3. The approved issuer produces a resource-bound OAuth user access token with
+   subject, expiry, client and revisioned MCP grant claims. ChatGPT receives this
+   restricted credential. Ordinary account, CLI, internal-app and refresh tokens
+   are rejected as tool-access credentials and never appear in tool output.
+4. A stateless Streamable HTTP request verifies issuer/signature or introspection,
+   audience/resource, expiry, grant revocation, scopes and actor on every POST.
+   Reject browser cookie-only requests, unsafe Origin/Host, oversized JSON/batches
+   and unsupported methods. Missing auth returns the discoverable 401 challenge.
+   Apply shared gateway abuse/rate limits and redacted correlation-only logging.
+5. Construct a request-scoped typed read client using `packages/internal-api`.
+   The adapter uses the verified OAuth user JWT on three fixed resource-read GET
+   paths plus the owner-private Hidden GET at canonical platform/Tasks/Calendar
+   origins. Release requires those
+   gateways to enforce the MCP audience, client, domain grant and read-only user
+   authority. Ordinary Supabase `authenticated` audience acceptance is insufficient.
+   If gateway/RLS compatibility cannot be established safely, keep this adapter
+   disabled and implement the narrow actor-aware boundary first. No process CLI
+   identity, workspace API key or service-role client is constructed by MCP.
+6. Recheck selected-workspace membership and operation-specific task visibility;
+   return only projected summaries and canonical allowlisted links. No MCP cache
+   in the first hosted slice; later cache keys include issuer/subject/grant/workspace
+   and scopes, and never bypass revocation. Names remain untrusted content.
+7. Start without widgets or writes. The prepared Calendar adapter preserves the
+   current `manage_calendar` requirement and projects event ID/title/times only,
+   within a seven-day interval and 100-event cap. It does not weaken Calendar
+   permissions or return guests, descriptions or provider credentials. Add MCP Apps UI only
+   after this read path passes isolation tests; use standard bridge/resource CSP
+   before optional OpenAI sidebar/panel/desktop composer surfaces.
+
+### Prepared hosted source slice
+
+The source has one connected composition root and remains unregistered. The
+shipping web package pins the official `@modelcontextprotocol/sdk@1.31.0` in
+`apps/web/package.json` and the root `bun.lock`. Package-manager generation added
+only that workspace dependency and eight new SDK-related lock records; existing
+package records, other workspaces and lock settings did not change. Existing JOSE,
+Zod and internal-api dependencies support the source core.
+
+A bounded local FIFO run passed all 37 focused tests, including three real official
+SDK client/server Streamable HTTP tests. It exercised initialize/initialized,
+typed tools/list, task/navigation tools/call and forged-workspace/cross-tenant
+rejection through JWT, provider and typed API boundaries. Test identities, signing
+keys and upstream provider/API responses are synthetic; no live grants, credentials,
+public endpoint, database or application build was used. This proves the source
+read workflow, not deployed OAuth/RLS authority or production readiness.
+
+Exact owned paths:
+
+| Paths | Responsibility / prerequisite |
+| --- | --- |
+| `apps/web/src/lib/mcp/contracts.ts` | Revisioned actor/client/resource/workspace grant, projected outputs and mandatory fresh authority interfaces |
+| `apps/web/src/lib/mcp/authorization.ts` | Official JOSE signature validation; issuer/audience/expiry/client checks; fresh grant, provider session, account, MFA and admission checks |
+| `apps/web/src/lib/mcp/provider.ts` and `provider-client.ts` | Installed Auth SDK response contract, fixed issuer identity/grant GETs, public publishable key and mandatory live-session policy; no administrator or refresh session |
+| `apps/web/src/lib/mcp/read-service.ts` | Visible workspace discovery; bounded task/Calendar summaries and navigation require explicit workspace grants plus current member/operation permission |
+| `apps/web/src/lib/mcp/internal-api.ts` | Fixed-origin GET-only, no-store, redirect-denying user bearer transport; 10-second timeout, 1 MiB cap, tenant projections and owner Hidden API allowlist |
+| `apps/web/src/lib/mcp/visibility.ts` | Per-request verified-actor Hidden reader through existing internal-api transport, expected actor check, unavailable route means unknown, no cache |
+| `apps/web/src/lib/mcp/consent.ts` and `grant-store.ts` | Pure trusted provider/actor/redirect/workspace consent preparation; persistent atomic reserve/activate/revoke contract and owner-bound grant reader; no production store or provider approval |
+| `apps/web/src/lib/mcp/runtime.ts` | Single provider/grant/session/visibility/admission/internal-api/HTTP composition root; no environment defaults |
+| `apps/web/src/lib/mcp/http.ts` | Unregistered HTTP factory/discovery payload; stateless request instances, 64 KiB body cap, Origin/Host checks and sanitized errors |
+| `apps/web/src/lib/mcp/tools.ts` | Four accurate typed output schemas and read-only/idempotent/non-destructive/closed-world annotations; hostile-content instructions |
+| `apps/web/src/lib/mcp/hosted.test.ts`, `workflow.test.ts` and `workflow-fixtures.ts` | Unit coverage plus composed signed-JOSE/provider-REST/internal-api/task projection/Hidden/consent/store fixtures; passed in the focused suite |
+| `apps/web/src/lib/mcp/sdk.ts` and `sdk-workflow.ts` | Concrete official SDK Streamable HTTP composition; fresh server/transport per request, JSON responses, structured outputs, no shared sessions; exact official SDK dependency declared |
+| `plugins/tuturuuu/hosted/sdk-protocol.test.ts` | Real SDK client/server initialize, initialized notification, typed tools/list, task/navigation tools/call and cross-tenant failure tests; all three passed |
+| `plugins/tuturuuu/hosted/vitest.config.mjs` and `tsconfig.test.json` | Focused Node/one-worker non-build tests, isolated from unrelated sparse project references and application environment loading |
+| Existing portable manifests, local Python MCP, validator, plugin workflow and this page | Local groundwork preserved separately; no remote endpoint or connection ID advertised |
+
+No route, route-override, mobile, workspace selector, existing API, database or
+Calendar lane file is changed. Route registration and any Rust gateway mirror
+remain required before deployment, using the repository's normal ownership rules.
+
+### Provider, consent and release gates
+
+Current Supabase documentation describes a managed OAuth 2.1/OIDC server with
+authorization-code PKCE, custom consent and user grant revocation. It is a candidate
+issuer, not evidence that the Tuturuuu project has enabled it. The provider handles
+codes, token issuance and refresh; do not implement custom OAuth cryptography.
+Use its authorization-details and approval/denial APIs from a trusted authenticated
+consent boundary with existing MFA/account rules, same-origin CSRF protection and
+exact approved client/redirect checks. Persist actor/client/resource/selected
+workspaces/read scopes before approval in an atomic revisioned grant store. No
+consent page, grant store, access-token hook or OAuth configuration was created.
+[Supabase OAuth flows](https://supabase.com/docs/guides/auth/oauth-server/oauth-flows).
+
+Supabase's default audience is `authenticated`; OAuth tokens carry `client_id`.
+Its OIDC scopes are not Tuturuuu task/Calendar permissions. The prepared
+`mcp:*:read` values are a local domain grant contract, not a claim that the provider
+supports arbitrary OAuth scopes. A reviewed provider hook must bind the MCP
+resource audience and grant ID/revision. Restrictive RLS and gateway checks must
+prevent this JWT from gaining ordinary write or unrelated workspace access via
+another API. No RLS, signing key, issuer, hook or gateway security configuration
+was changed. [Supabase token security](https://supabase.com/docs/guides/auth/oauth-server/token-security).
+
+The current user API wrappers can enter administrator proxy paths and some task
+and Calendar handlers use admin queries after authorization. Their existing
+membership/private-board gates must be proved for OAuth user tokens; MCP does not
+enable app-session fallback or construct a service-role client. Raw public-key
+Supabase identity access is required at the provider seam. The installed
+`@supabase/auth-js@2.117.1` differs from the public flow page examples: it exposes
+`oauth.listGrants()` and rows with `client.id`. That SDK method requires a local
+refreshable session, even with global bearer headers. The prepared stateless
+provider reader therefore uses its two fixed read endpoints (`/user` and
+`/user/oauth/grants`) with the verified request JWT and public publishable key;
+it does not fabricate a refresh session or credential vault. `getUser` and JWKS
+verification alone do not satisfy the live-session/account/MFA policy contract.
+
+The parallel workspace lane defines owner-only `HIDDEN_WORKSPACE = true` rows in
+`user_workspace_configs`, with absent rows visible and an actor-bound owner GET.
+The verified base does not yet contain that lane's route. The prepared reader
+returns `visible`, `hidden` or `unknown`; Hidden/unknown are excluded from discovery
+and consent choices. Explicit granted reads and authorized navigation preserve
+canonical membership, matching that lane's documented deep-link rule: hiding is
+not permission revocation. The route must be integrated and its OAuth user behavior
+proved before deployment. This lane does not edit or copy its preference writes.
+There is no MCP data cache or cross-user session cache. Task API responses that
+include external placements or lack the workspace relation are rejected in full;
+native-only API query behavior remains a compatibility gate.
+
+No OAuth grant, secret, client registration, public endpoint, database/security
+configuration or marketplace action occurs during this source slice. Before runtime
+wiring, resolve issuer, consent/grant storage, live session policy, Hidden visibility
+and gateway/RLS authority; before installs or tests, use bounded FIFO admission.
+Prepared synthetic tests cover wrong issuer/audience,
+expired/revoked grants, refresh-as-access, account switching, forged workspace IDs,
+guest workspace access, Origin/Host confusion and hostile names. Private-board API
+fixtures, real signature/key-rotation tests, real SDK initialize/list/call tests,
+provider refresh/revocation, restrictive RLS and gateway compatibility tests remain
+required. Delivery evidence also needs actual Streamable HTTP host tests and
+parent-approved permitted-account reads. Writes require separately reviewed
+confirmation/idempotency; widgets require standard MCP Apps bridge/CSP review;
+marketplace publication remains a later parent-approved stage.
+
+### Remaining authority design against existing contracts
+
+The runtime's required policy/store callbacks are seams, not a deployed authority.
+No environment loader supplies them and no public route invokes the workflow.
+Keep `securityReviewComplete` false until these boundaries are implemented and
+reviewed with the provider and gateway behavior.
+
+- `packages/supabase/src/next/auth-session-user.ts` revalidates identity with
+  `getUser()` after checking claims. Reuse that identity principle, but do not
+  equate identity/JWKS success with an authoritative active OAuth session.
+  No existing source contract inspected here proves owner-bound live
+  `session_id` and client revocation together. A narrow reviewed provider/session
+  adapter remains required; never query unrestricted auth tables via an MCP admin
+  client or fabricate a local refresh session to obtain SDK grant methods.
+- `packages/utils/src/required-mfa-policy.ts` owns the server `app_metadata`
+  policy and verified AMR/session proof helpers: `readRequiredMfaPolicy`,
+  `mfaProofFromVerifiedClaims` and `satisfiesRequiredMfaPolicy`. A future adapter
+  must carry already-verified claims and current server-owned metadata in request
+  context, bind proof to the same session, and preserve recovery/primary-proof
+  cutoffs. The current `(userId, sessionId)` callback is intentionally unwired;
+  enrich its verified context before implementing MFA policy. Refresh `iat`,
+  browser flags and editable `user_metadata` do not establish fresh MFA.
+- `packages/utils/src/abuse-protection/user-suspension.ts` owns suspension reads.
+  Some existing `apps/web/src/lib/api-auth.ts` branches catch suspension lookup
+  errors and continue. Do not inherit that fail-open behavior for MCP:
+  unavailable policy or unknown account/session state must deny access.
+- The persistent grant store must uniquely bind user/client/provider authorization
+  ID, resource, redirect, selected workspace IDs and domain read scopes. Reserve
+  consent atomically; activate only after trusted provider approval; the token
+  hook reads only active grants. Never reuse generic editable user configuration
+  as grant authority. Revisioned revoke/change commits must reject old JWTs before
+  returning tool data. Provider revocation is a separate distributed side effect:
+  use durable reconciliation/outbox semantics rather than claiming an atomic
+  database/provider transaction. No schema, RPC, privileged policy or hook is
+  created by this slice.
+
+### Focused validation and SDK provenance
+
+From an installed checkout, run the non-build Node tests with one worker:
+
+```bash
+node node_modules/vitest/vitest.mjs run \
+  --config plugins/tuturuuu/hosted/vitest.config.mjs --configLoader native \
+  --maxWorkers 1 --no-file-parallelism
+```
+
+Locally, wrap that command in `ttr resources run --`. The focused config isolates
+unrelated TypeScript project references and never loads application environment
+files. It resolves the shipping SDK from the web package. An explicitly owned
+isolated validation installation can be selected with `TUTURUUU_MCP_SDK_DIR`; that
+option changes only test module resolution, not runtime authorization or API origins.
+
+`workflow.test.ts` uses an explicitly synthetic dispatcher to isolate the source
+boundary; `sdk-protocol.test.ts` uses the actual official Client, Streamable HTTP
+client transport, McpServer and Web Standard Streamable HTTP server transport.
+Both share real JOSE-signed synthetic identities and the actual internal-api client.
+No stub dispatcher is used to claim SDK protocol compatibility.
+
+The official registry's compatible v1 package `@modelcontextprotocol/sdk@1.31.0`
+was published September 28, 2026 at 18:59:36 UTC. It exceeded this repository's
+`minimumReleaseAge = 86400`; MCP has no exemption. The newer generation uses
+separate v2 packages; this source targets the maintained v1 API. See the
+[official v1 release](https://github.com/modelcontextprotocol/typescript-sdk/releases/tag/1.31.0).
+The SDK lock integrity matches the registry:
+`sha512-UvTMgnNlnIBO/22ob2RcVGDlcvOslQs8T59+FTGdA0L27a39fdGF/EDETNtDVK4DZGpwomlsYpRdA8UXcVL/pw==`.
+
+Local SDK installation used an owned isolated directory/cache, exact pin, disabled
+lifecycle scripts and normal FIFO admission. The shipping manifest/lock were
+package-manager-generated in a manifest-only workspace copy with unchanged existing
+patch/vendor inputs, then inspected before export. No donor/global dependency or
+credential mutation occurred. Focused evidence does not replace exact-commit CI
+lint/type/build checks, live provider refresh/revocation, private-board/RLS fixtures
+or permitted-account delivery checks; the parent owns integration and monitoring.
