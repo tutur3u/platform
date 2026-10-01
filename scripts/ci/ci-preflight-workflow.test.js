@@ -1,23 +1,12 @@
 const assert = require('node:assert/strict');
-const { execFileSync, spawnSync } = require('node:child_process');
+const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 
 const root = path.resolve(__dirname, '../..');
-const readWorkflow = (name) =>
-  JSON.parse(
-    execFileSync(
-      'bun',
-      [
-        '-e',
-        'console.log(JSON.stringify(Bun.YAML.parse(await Bun.file(process.argv[1]).text())))',
-        path.join(root, '.github/workflows', name),
-      ],
-      { encoding: 'utf8' }
-    )
-  );
+const { readWorkflow } = require('./workflow-yaml-test-helper');
 const gate = readWorkflow('ci-check.yml');
 const expression = (body) => `\${{ ${body} }}`;
 
