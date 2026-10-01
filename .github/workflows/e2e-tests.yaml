@@ -312,8 +312,6 @@ jobs:
 
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry
-        with:
-          github-token: ${{ github.token }}
 
       - name: Get Supabase CLI version
         id: supabase-version
@@ -610,8 +608,6 @@ jobs:
 
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry
-        with:
-          github-token: ${{ github.token }}
 
       - name: Get Supabase CLI version
         id: supabase-version
@@ -746,8 +742,6 @@ jobs:
       - name: Setup Supabase CLI
         if: matrix.setup_supabase == 'true'
         uses: ./.github/actions/setup-supabase-cli-with-retry
-        with:
-          github-token: ${{ github.token }}
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry

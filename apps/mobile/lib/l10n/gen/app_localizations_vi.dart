@@ -8726,6 +8726,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profilePrivateActivity => 'Hoạt động riêng tư của bạn';
 
   @override
+  String get profileTimelineDescription => 'Hoạt động tạo trong không gian làm việc này trong 30 ngày qua. Sự kiện lịch là hoạt động của không gian làm việc.';
+
+  @override
+  String get profileTimelineLimited => 'Chỉ hiển thị hoạt động gần đây. Một số nguồn đã đạt giới hạn hiển thị.';
+
+  @override
+  String get profileTimelineUnavailable => 'Không thể làm mới hoạt động.';
+
+  @override
   String get profileTimelineTitle => 'Dòng thời gian hoạt động';
 
   @override
@@ -8738,7 +8747,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineEmpty => 'Không có hoạt động gần đây trong không gian này';
 
   @override
-  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị. Thử lại';
+  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị.';
 
   @override
   String profileTimelineTasks(int count) {

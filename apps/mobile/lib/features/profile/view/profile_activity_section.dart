@@ -13,6 +13,7 @@ import 'package:mobile/features/profile/view/profile_activity_chart.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 typedef ProfileStatsLoader =
     Future<TimeTrackerStats> Function(
@@ -153,7 +154,9 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
       children: [
         Text(
           l10n.profilePrivateActivity,
-          style: Theme.of(context).textTheme.titleLarge,
+          style: shad.Theme.of(
+            context,
+          ).typography.large.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 12),
         Row(
@@ -188,14 +191,17 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
                           children: [
                             Text(
                               entry.$1,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: palette.textColor),
+                              style: shad.Theme.of(context).typography.textSmall
+                                  .copyWith(color: palette.textColor),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               l10n.profileTrackedMinutes(entry.$2 ~/ 60),
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(color: palette.textColor),
+                              style: shad.Theme.of(context).typography.base
+                                  .copyWith(
+                                    color: palette.textColor,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                             ),
                           ],
                         ),

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.33.1](https://github.com/tutur3u/platform/compare/types-v0.33.0...types-v0.33.1) (2026-10-01)
+
+
+### Performance Improvements
+
+* **database:** page user group audit before enrichment ([f191a50](https://github.com/tutur3u/platform/commit/f191a50b52a14525445addb98a336a04b5ac5a89)) ([#5652](https://github.com/tutur3u/platform/issues/5652)) ([8c93a07](https://github.com/tutur3u/platform/commit/8c93a07a987fee70555d3e33609ab4f1d31dc8b0))
+
 ## [0.33.0](https://github.com/tutur3u/platform/compare/types-v0.32.0...types-v0.33.0) (2026-09-25)
 
 
