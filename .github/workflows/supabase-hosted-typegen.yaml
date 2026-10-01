@@ -38,7 +38,7 @@ jobs:
           test "$REQUESTED_SOURCE_SHA" = "$REVIEWED_SOURCE_SHA"
           printf 'should_run=true\n' >> "$GITHUB_OUTPUT"
       - name: Check out the immutable verification source
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ inputs.source_sha }}
           persist-credentials: false
@@ -50,10 +50,10 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$REVIEWED_SOURCE_SHA"
           test -z "$(git status --porcelain)"
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         if: steps.admission.outputs.should_run == 'true'
         with:
           bun-version: 1.4.1
