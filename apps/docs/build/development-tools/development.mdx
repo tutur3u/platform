@@ -64,6 +64,23 @@ explicitly excluded from the age gate in `bunfig.toml`; keep each trusted
 family's exact-name list aligned with the packages resolved in `bun.lock` and
 cover the list with a policy test.
 
+Discord's Python environment is resolved separately in `apps/discord/uv.lock`.
+For targeted transitive updates, use `uv lock --upgrade-package pyjwt
+--upgrade-package urllib3`, then confirm that unrelated package records and the
+project's Python floor are unchanged. Validate artifact hashes against PyPI and
+run the owning locked Python CI, including the offline dependency security tests
+in `tests/test_dependency_security.py`.
+
+PyJWT 2.15.1 includes malformed-payload/JWKS hardening and accepts valid trailing
+Base64URL padding while continuing to reject invalid characters. urllib3 2.8.0
+bounds chunk-size lines and fixes HTTPS proxy TLS configuration and Deflate
+streaming. Proxy-specific trust settings belong in `proxy_ssl_context` and the
+proxy identity options; destination TLS settings are separate. These dependencies
+are reached through Supabase Auth/MSAL and Requests, respectively. A locked CI
+environment does not establish the version in an already deployed Modal image:
+`app.py` has a separate floating `.pip_install(...)` recipe. Verify that image's
+resolved versions during the separately authorized deployment process.
+
 To complete the initial setup, please restart your IDE so that it can recognize the newly installed dependencies. Additionally, some recommended VS Code Extensions may only work after restarting your IDE.
 
 <Tip>
