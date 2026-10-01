@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.32.0](https://github.com/tutur3u/platform/compare/calendar-v0.31.0...calendar-v0.32.0) (2026-10-01)
+
+
+### Features
+
+* **calendar:** expose authorized event link previews ([e9d2823](https://github.com/tutur3u/platform/commit/e9d2823224f0d81aa94a3a6e12d298979ff594a3)) ([#5672](https://github.com/tutur3u/platform/issues/5672)) ([784ab40](https://github.com/tutur3u/platform/commit/784ab4058c815cc979e632caf7a763df0b896f75))
+
+
+### Bug Fixes
+
+* **calendar:** align calendar-day navigation and zoned query ranges ([e81a8be](https://github.com/tutur3u/platform/commit/e81a8be8edf2e46b2653bfcf30bc118d12984e88))
+* **calendar:** align date navigation and zoned query ranges ([#5654](https://github.com/tutur3u/platform/issues/5654)) ([f40288c](https://github.com/tutur3u/platform/commit/f40288c7cc817f71ca30f6ee5331efbf726c4ada))
+* **calendar:** isolate optional source color persistence failures ([2fbbbfe](https://github.com/tutur3u/platform/commit/2fbbbfe9ad2c4a05ff2c9ee1737969bb4aaf5b9c))
+* **calendar:** preserve date-only route navigation ([b197398](https://github.com/tutur3u/platform/commit/b1973986b3bdf1a81959d67b4c99812300dfddc7))
+* **calendar:** preserve Google color identity and inheritance ([#5657](https://github.com/tutur3u/platform/issues/5657)) ([0c2aac6](https://github.com/tutur3u/platform/commit/0c2aac6a1a2b6e9f6eb66bde1e783bf407603cff))
+* **calendar:** preserve Google provider color identity and inheritance ([08f2363](https://github.com/tutur3u/platform/commit/08f236349d1dc29ad0593de8f668d5ce504f38d0))
+* **calendar:** propagate native colors through provider create callers ([3023b18](https://github.com/tutur3u/platform/commit/3023b18704ce0b2c02b8fcde8bf1321fb759466a))
+* **calendar:** reject colonless timezone offsets ([7755c0d](https://github.com/tutur3u/platform/commit/7755c0d6adf34ffe4c56f1986c932abea493bc81))
+* **calendar:** reject undecrypted link preview targets ([df9a458](https://github.com/tutur3u/platform/commit/df9a458cff944dfe055c93c760b3595d945417c2))
+* **calendar:** secure mobile timezone settings ([78f9054](https://github.com/tutur3u/platform/commit/78f90545a19f9e3d4c5e784a5fa2cef6f0b6dff0)) ([#5651](https://github.com/tutur3u/platform/issues/5651)) ([33b05d3](https://github.com/tutur3u/platform/commit/33b05d333829cb4a6e52930744ab78779305f354))
+* **calendar:** type authorized preview contracts and fixtures ([a8e5cd0](https://github.com/tutur3u/platform/commit/a8e5cd05b70af53098b17f5583ab2b63494cf167))
+* **calendar:** type source color refresh and update batch expectations ([9316c35](https://github.com/tutur3u/platform/commit/9316c35b35d703d2e6445802c7d2c0db4a5f9bc2))
+
 ## [0.31.0](https://github.com/tutur3u/platform/compare/calendar-v0.30.0...calendar-v0.31.0) (2026-09-25)
 
 
