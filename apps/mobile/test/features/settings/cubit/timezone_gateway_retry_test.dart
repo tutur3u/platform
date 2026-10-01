@@ -52,54 +52,53 @@ void main() {
     );
   });
   tearDown(() => messenger.setMockMethodCallHandler(channel, null));
-  test(
-    'actual gateway 429 parser and native map parser respect cooldown across workspace changes',
-    () async {
-      var requests = 0;
-      var blocked = true;
-      final api = ApiClient(
-        baseUrl: 'https://infra.test/api/v1/mobile-calendar',
-        authClient: client,
-        httpClient: MockClient((request) async {
-          requests++;
-          expect(request.headers['authorization'], 'Bearer synthetic-token');
-          if (blocked)
-            return http.Response(
-              '{"error":"Too Many Requests","message":"Rate limit exceeded"}',
-              429,
-              headers: {
-                'retry-after': '30',
-                'x-proxy-block-reason': 'route-rate-limit',
-              },
-            );
-          return http.Response('{"timezone":"auto"}', 200);
-        }),
-      );
-      final repository = TimezoneSettingsRepository(apiClient: api);
-      final cubit = TimezoneSettingsCubit(
-        repository: repository,
-        deviceLoader: getVerifiedDeviceTimezoneIdentifier,
-        clock: () => now,
-      );
-      await cubit.load(userId: user.id, workspaceId: 'workspace-a');
-      expect(cubit.state.resolved, isFalse);
-      expect(cubit.state.failed, isTrue);
-      expect(cubit.state.retryAt, now.add(const Duration(seconds: 30)));
-      final firstRequests = requests;
-      await cubit.reload();
-      await cubit.load(userId: user.id, workspaceId: 'workspace-b');
-      expect(requests, firstRequests);
-      now = now.add(const Duration(seconds: 30));
-      blocked = false;
-      await cubit.reload();
-      expect(cubit.state.resolved, isTrue);
-      expect(cubit.state.effective, 'Asia/Saigon');
-      expect(cubit.state.retryAt, isNull);
-      await cubit.close();
-      repository.dispose();
-      api.dispose();
-    },
-  );
+  test('actual gateway and native parsers respect cooldown '
+      'across workspace changes', () async {
+    var requests = 0;
+    var blocked = true;
+    final api = ApiClient(
+      baseUrl: 'https://infra.test/api/v1/mobile-calendar',
+      authClient: client,
+      httpClient: MockClient((request) async {
+        requests++;
+        expect(request.headers['authorization'], 'Bearer synthetic-token');
+        if (blocked) {
+          return http.Response(
+            '{"error":"Too Many Requests","message":"Rate limit exceeded"}',
+            429,
+            headers: {
+              'retry-after': '30',
+              'x-proxy-block-reason': 'route-rate-limit',
+            },
+          );
+        }
+        return http.Response('{"timezone":"auto"}', 200);
+      }),
+    );
+    final repository = TimezoneSettingsRepository(apiClient: api);
+    final cubit = TimezoneSettingsCubit(
+      repository: repository,
+      deviceLoader: getVerifiedDeviceTimezoneIdentifier,
+      clock: () => now,
+    );
+    await cubit.load(userId: user.id, workspaceId: 'workspace-a');
+    expect(cubit.state.resolved, isFalse);
+    expect(cubit.state.failed, isTrue);
+    expect(cubit.state.retryAt, now.add(const Duration(seconds: 30)));
+    final firstRequests = requests;
+    await cubit.reload();
+    await cubit.load(userId: user.id, workspaceId: 'workspace-b');
+    expect(requests, firstRequests);
+    now = now.add(const Duration(seconds: 30));
+    blocked = false;
+    await cubit.reload();
+    expect(cubit.state.resolved, isTrue);
+    expect(cubit.state.effective, 'Asia/Saigon');
+    expect(cubit.state.retryAt, isNull);
+    await cubit.close();
+    repository.dispose();
+    api.dispose();
+  });
   test(
     'account switch clears old cooldown without retaining preferences',
     () async {
@@ -127,35 +126,33 @@ void main() {
       api.dispose();
     },
   );
-  test(
-    'partial API success stays visible without guessing effective timezone or enabling saves',
-    () async {
-      final api = ApiClient(
-        baseUrl: 'https://infra.test',
-        authClient: client,
-        httpClient: MockClient(
-          (request) async => request.url.path.contains('/workspaces/')
-              ? http.Response('{}', 429, headers: {'retry-after': '30'})
-              : http.Response('{"timezone":"Europe/Paris"}', 200),
-        ),
-      );
-      final repository = TimezoneSettingsRepository(apiClient: api);
-      final cubit = TimezoneSettingsCubit(
-        repository: repository,
-        deviceLoader: getVerifiedDeviceTimezoneIdentifier,
-        clock: () => now,
-      );
-      await cubit.load(userId: user.id, workspaceId: 'workspace-a');
-      expect(cubit.state.personal, 'Europe/Paris');
-      expect(cubit.state.personalLoaded, isTrue);
-      expect(cubit.state.workspaceLoaded, isFalse);
-      expect(cubit.state.resolved, isFalse);
-      await cubit.reload();
-      expect(cubit.state.personal, 'Europe/Paris');
-      expect(cubit.state.personalLoaded, isTrue);
-      await cubit.close();
-      repository.dispose();
-      api.dispose();
-    },
-  );
+  test('partial success stays visible without guessing '
+      'effective timezone or enabling saves', () async {
+    final api = ApiClient(
+      baseUrl: 'https://infra.test',
+      authClient: client,
+      httpClient: MockClient(
+        (request) async => request.url.path.contains('/workspaces/')
+            ? http.Response('{}', 429, headers: {'retry-after': '30'})
+            : http.Response('{"timezone":"Europe/Paris"}', 200),
+      ),
+    );
+    final repository = TimezoneSettingsRepository(apiClient: api);
+    final cubit = TimezoneSettingsCubit(
+      repository: repository,
+      deviceLoader: getVerifiedDeviceTimezoneIdentifier,
+      clock: () => now,
+    );
+    await cubit.load(userId: user.id, workspaceId: 'workspace-a');
+    expect(cubit.state.personal, 'Europe/Paris');
+    expect(cubit.state.personalLoaded, isTrue);
+    expect(cubit.state.workspaceLoaded, isFalse);
+    expect(cubit.state.resolved, isFalse);
+    await cubit.reload();
+    expect(cubit.state.personal, 'Europe/Paris');
+    expect(cubit.state.personalLoaded, isTrue);
+    await cubit.close();
+    repository.dispose();
+    api.dispose();
+  });
 }
