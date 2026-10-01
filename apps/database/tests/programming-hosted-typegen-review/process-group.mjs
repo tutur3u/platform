@@ -12,6 +12,7 @@ export function runOwnedProcess(
     signalSource = process,
     onSpawn = () => {},
     env = process.env,
+    cwd,
   } = {}
 ) {
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1) {
@@ -22,6 +23,7 @@ export function runOwnedProcess(
       detached: true,
       stdio: 'ignore',
       env,
+      cwd,
     });
     let failure;
     let settled = false;

@@ -110,7 +110,7 @@ test('actual prepare stages admitted NUL-delimited Git files despite conflicting
           execute: (actual, argv, options) => {
             calls.push(argv);
             assert.equal(actual, 'git');
-            assert.equal(options.cwd, root);
+            assert.equal(options.cwd, context.cwd);
             assert.equal(options.env, context.env);
             assert.equal(options.timeout, 5000);
             assert.equal(options.maxBuffer, 4 * 1024 ** 2);
@@ -138,8 +138,8 @@ test('actual prepare stages admitted NUL-delimited Git files despite conflicting
     assert.equal(state, recorded);
     assert.equal(state.metadata.headSha, expectedHead);
     assert.deepEqual(calls, [
-      ['rev-parse', 'HEAD'],
-      ['ls-files', '-z', '--', 'apps/database/supabase'],
+      ['-C', root, 'rev-parse', 'HEAD'],
+      ['-C', root, 'ls-files', '-z', '--', 'apps/database/supabase'],
     ]);
     assert.equal(
       await readFile(

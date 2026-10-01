@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { realpathSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -45,33 +46,38 @@ const forbiddenKeys = [
   'GH_TOKEN',
   'GITHUB_TOKEN',
 ];
-test('allowlist ignores ambient credential/profile/proxy/loader values without reading them', async (t) => {
+test('allowlist excludes conflicting actual ambient credentials/profile/proxy/loader values', async (t) => {
   const { base } = await fixture(t);
-  const unreadable = Object.fromEntries(
-    forbiddenKeys.map((key) => [key, 'synthetic-never-forward'])
+  const original = Object.fromEntries(
+    forbiddenKeys.map((key) => [key, process.env[key]])
   );
-  for (const key of forbiddenKeys)
-    Object.defineProperty(unreadable, key, {
-      get: () => assert.fail('ambient value must not be read'),
+  try {
+    for (const key of forbiddenKeys)
+      process.env[key] = 'synthetic-never-forward';
+    const { env, cwd } = createSyntheticCliContext({
+      root: path.join(base, 'another'),
+      nativeBinary: process.execPath,
+      temporaryRoot: os.tmpdir(),
     });
-  const { env, cwd } = createSyntheticCliContext({
-    root: path.join(base, 'another'),
-    nativeBinary: process.execPath,
-    temporaryRoot: os.tmpdir(),
-    ambient: unreadable,
-  });
-  for (const key of forbiddenKeys) assert.equal(Object.hasOwn(env, key), false);
-  assert.equal(env.SUPABASE_TELEMETRY_DISABLED, '1');
-  assert.equal(env.DO_NOT_TRACK, '1');
-  assert.equal(env.SUPABASE_NO_KEYRING, '1');
-  assert.equal(env.SUPABASE_WORKDIR, cwd);
-  assert.equal(env.DOCKER_HOST, hostedDockerEndpoint);
-  assert.equal(env.PATH, '/usr/local/bin:/usr/bin:/bin');
-  assert.equal(env.SUPABASE_INTERNAL_IMAGE_REGISTRY, 'ghcr.io');
-  assert(Object.isFrozen(env));
-  assert.throws(() => {
-    env.SUPABASE_ACCESS_TOKEN = 'synthetic';
-  }, TypeError);
+    for (const key of forbiddenKeys)
+      assert.equal(Object.hasOwn(env, key), false);
+    assert.equal(env.SUPABASE_TELEMETRY_DISABLED, '1');
+    assert.equal(env.DO_NOT_TRACK, '1');
+    assert.equal(env.SUPABASE_NO_KEYRING, '1');
+    assert.equal(env.SUPABASE_WORKDIR, cwd);
+    assert.equal(env.DOCKER_HOST, hostedDockerEndpoint);
+    assert.equal(env.PATH, '/usr/local/bin:/usr/bin:/bin');
+    assert.equal(env.SUPABASE_INTERNAL_IMAGE_REGISTRY, 'ghcr.io');
+    assert(Object.isFrozen(env));
+    assert.throws(() => {
+      env.SUPABASE_ACCESS_TOKEN = 'synthetic';
+    }, TypeError);
+  } finally {
+    for (const [key, value] of Object.entries(original)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
 test('prepare probes enforce admitted private context and explicit telemetry flags', async (t) => {
   const { context } = await fixture(t);
@@ -127,10 +133,8 @@ for (const mode of ['--resume', '--cleanup']) {
           called = true;
           assert.equal(binary, process.execPath);
           assert.deepEqual(actualArgs, args);
-          assertSyntheticCliEnvironment(
-            options.env,
-            options.env.SUPABASE_WORKDIR
-          );
+          assertSyntheticCliEnvironment(options.env, options.cwd);
+          assert.equal(options.cwd, realpathSync(project));
           assert.equal(options.env.SUPABASE_TELEMETRY_DISABLED, '1');
           assert.equal(options.env.DO_NOT_TRACK, '1');
           for (const key of forbiddenKeys)

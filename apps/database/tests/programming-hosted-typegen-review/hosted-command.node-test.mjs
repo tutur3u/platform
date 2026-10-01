@@ -120,7 +120,6 @@ test('non-Docker policy subprocesses also receive only admitted environment', as
     },
   });
   assert(called);
-  assert.throws(() => verifyNetworkPolicy(), /Explicit policy runner required/);
 });
 test('actual fake Node command observes private environment instead of inherited values', async (t) => {
   const { context } = await fixture(t);
@@ -161,6 +160,7 @@ test('dirty Docker config and directory replacement fail before any inventory co
 });
 
 test('actual policy verifier routes every read through the admitted proposal command', async (t) => {
+  assert.throws(() => verifyNetworkPolicy(), /Explicit policy runner required/);
   const { context } = await fixture(t);
   const observed = [];
   const result = verifyNetworkPolicy((args) =>

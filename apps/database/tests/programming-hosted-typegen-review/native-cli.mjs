@@ -173,7 +173,7 @@ export function runCliProbe(
     };
     const abort = (reason) => {
       outcome ??= reason;
-      killGroup();
+      finish(1);
     };
     const interrupt = () => abort('interrupted');
     const finish = (code) => {
@@ -183,6 +183,14 @@ export function runCliProbe(
       signalSource.off('SIGINT', interrupt);
       signalSource.off('SIGTERM', interrupt);
       killGroup();
+      if (outcome) {
+        // An escaped descendant may retain the pipes after the owned group dies.
+        // Close our read ends and settle without waiting for its close event.
+        child.stdout.destroy();
+        child.stderr.destroy();
+        child.unref();
+        stdout.length = 0;
+      }
       if (outcome || code !== 0)
         reject(new CliProbeFailure(phase, outcome ?? 'failed'));
       else resolve(Buffer.concat(stdout).toString('utf8').trim());

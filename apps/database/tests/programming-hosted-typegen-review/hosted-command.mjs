@@ -17,7 +17,8 @@ export function runHostedCommand(
     execute = execFileSync,
   } = {}
 ) {
-  assertSyntheticCliEnvironment(context?.env, context?.cwd);
+  // Reject an override rather than validating one directory and executing in another.
+  assertSyntheticCliEnvironment(context?.env, cwd ?? context?.cwd);
   const argv =
     binary === 'docker'
       ? [

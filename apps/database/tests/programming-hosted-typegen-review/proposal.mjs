@@ -24,7 +24,10 @@ import {
   APPROVED_TYPEGEN_OUTPUT,
   validateTypegenOutputPath,
 } from '../../scripts/run-supabase-isolated-typegen.js';
-import { createSyntheticCliContext } from './cli-environment.mjs';
+import {
+  assertSyntheticCliEnvironment,
+  createSyntheticCliContext,
+} from './cli-environment.mjs';
 import { runHostedCommand } from './hosted-command.mjs';
 import {
   resolveHostedNativeCli,
@@ -87,13 +90,17 @@ export function command(
     repositoryRoot = repo,
   } = {}
 ) {
-  return runHostedCommand(binary, args, {
-    context: context(nativeBinary),
-    execute,
-    timeout,
-    maxBuffer,
-    cwd: binary === 'git' ? repositoryRoot : undefined,
-  });
+  // Git selects its source explicitly while the subprocess stays in admitted cwd.
+  return runHostedCommand(
+    binary,
+    binary === 'git' ? ['-C', repositoryRoot, ...args] : args,
+    {
+      context: context(nativeBinary),
+      execute,
+      timeout,
+      maxBuffer,
+    }
+  );
 }
 function checkNetworkPolicy() {
   return verifyNetworkPolicy((args) =>
@@ -186,7 +193,8 @@ export async function runHostedHelper(
   if (!nativeBinary || !['--resume', '--cleanup'].includes(args[1]))
     throw new Error('Hosted helper context unavailable');
   const safe = context(nativeBinary, args[2]);
-  await runner(binary, args, { ...options, env: safe.env });
+  assertSyntheticCliEnvironment(safe.env, safe.cwd);
+  await runner(binary, args, { ...options, env: safe.env, cwd: safe.cwd });
 }
 export async function prepare({
   hosted = assertHosted,
