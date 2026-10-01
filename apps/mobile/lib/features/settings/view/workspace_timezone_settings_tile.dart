@@ -11,10 +11,12 @@ class WorkspaceTimezoneSettingsTile extends StatefulWidget {
     required this.workspaceId,
     this.permissionsRepository,
     this.refreshRevision = 0,
+    this.grouped = false,
     super.key,
   });
 
   final int refreshRevision;
+  final bool grouped;
   final String? userId;
   final String? workspaceId;
   final WorkspacePermissionsRepository? permissionsRepository;
@@ -76,5 +78,6 @@ class _WorkspaceTimezoneSettingsTileState
     workspaceId: widget.workspaceId,
     workspace: true,
     canManageWorkspace: _canManage,
+    grouped: widget.grouped,
   );
 }

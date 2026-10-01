@@ -68,7 +68,6 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
   late final FocusNode _searchFocusNode;
   String _searchQuery = '';
   bool _isSearchVisible = false;
-
   bool get _isDefaultMode =>
       widget.mode == WorkspacePickerMode.defaultWorkspace;
 
@@ -103,6 +102,11 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
         : widget.state.workspaces
               .where((workspace) => _matchesWorkspace(context, workspace))
               .toList(growable: false);
+    final selectedId =
+        (_isDefaultMode
+                ? widget.state.defaultWorkspace
+                : widget.state.currentWorkspace)
+            ?.id;
     final sections = splitWorkspaceSections(visibleWorkspaces);
     final size = MediaQuery.sizeOf(context);
 
@@ -139,7 +143,7 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                 onSearch: _toggleSearch,
                 onClearSearch: _searchQuery.trim().isEmpty
                     ? null
-                    : () => _searchController.clear(),
+                    : _clearSearch,
                 onCreate: () => _handleCreate(context),
                 onClose: () => Navigator.maybePop(context),
               ),
@@ -159,9 +163,10 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                   children: [
                     for (final workspace in sections.personal)
                       _WorkspaceTile(
+                        key: ValueKey('workspace-result-${workspace.id}'),
                         paletteModuleId: 'crm',
                         workspace: workspace,
-                        isSelected: _isSelected(workspace),
+                        isSelected: workspace.id == selectedId,
                         isCurrent:
                             workspace.id == widget.state.currentWorkspace?.id,
                         isDefault:
@@ -178,9 +183,10 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                   children: [
                     for (final workspace in sections.system)
                       _WorkspaceTile(
+                        key: ValueKey('workspace-result-${workspace.id}'),
                         paletteModuleId: 'calendar',
                         workspace: workspace,
-                        isSelected: _isSelected(workspace),
+                        isSelected: workspace.id == selectedId,
                         isCurrent:
                             workspace.id == widget.state.currentWorkspace?.id,
                         isDefault:
@@ -198,9 +204,10 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                   children: [
                     for (final workspace in sections.team)
                       _WorkspaceTile(
+                        key: ValueKey('workspace-result-${workspace.id}'),
                         paletteModuleId: 'finance',
                         workspace: workspace,
-                        isSelected: _isSelected(workspace),
+                        isSelected: workspace.id == selectedId,
                         isCurrent:
                             workspace.id == widget.state.currentWorkspace?.id,
                         isDefault:
@@ -216,9 +223,7 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                   onCreate: () => _handleCreate(context),
                 )
               else if (visibleWorkspaces.isEmpty)
-                _WorkspaceSearchEmptyState(
-                  onClear: () => _searchController.clear(),
-                ),
+                _WorkspaceSearchEmptyState(onClear: _clearSearch),
             ],
           ),
         ),
@@ -238,38 +243,24 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
     ].whereType<String>().any((value) => value.toLowerCase().contains(query));
   }
 
-  bool _isSelected(Workspace workspace) {
-    return workspace.id ==
-        (_isDefaultMode
-            ? widget.state.defaultWorkspace?.id
-            : widget.state.currentWorkspace?.id);
-  }
-
   void _toggleSearch() {
-    if (_isSearchVisible) {
-      _searchFocusNode.unfocus();
-      return;
-    }
-
     setState(() => _isSearchVisible = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _searchFocusNode.requestFocus();
     });
   }
 
-  void _handleSearchFocusChanged() {
-    if (!mounted) return;
-    if (_searchFocusNode.hasFocus) {
-      if (!_isSearchVisible) {
-        setState(() => _isSearchVisible = true);
-      }
-      return;
-    }
+  void _clearSearch() {
+    _searchController.clear();
+    _searchFocusNode.unfocus();
+    setState(() => _isSearchVisible = false);
+  }
 
-    if (_searchController.text.isNotEmpty) {
-      _searchController.clear();
-    }
-    if (_isSearchVisible) {
+  void _handleSearchFocusChanged() {
+    // Preserve filtered results across keyboard dismissal; an empty search can
+    // collapse so Create remains available without reopening the sheet.
+    if (!mounted || _searchFocusNode.hasFocus) return;
+    if (_searchController.text.trim().isEmpty) {
       setState(() => _isSearchVisible = false);
     }
   }
@@ -691,6 +682,7 @@ class _WorkspaceTile extends StatelessWidget {
     required this.isCurrent,
     required this.isDefault,
     required this.onTap,
+    super.key,
   });
 
   final String paletteModuleId;

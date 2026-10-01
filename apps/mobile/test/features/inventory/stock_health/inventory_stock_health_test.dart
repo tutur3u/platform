@@ -99,6 +99,31 @@ void main() {
     )..addFont(rootBundle.load('assets/fonts/NotoSans.ttf'))).load();
   });
 
+  testWidgets('Vietnamese overlap wording preserves separate unlimited count', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      Builder(
+        builder: (context) => Localizations.override(
+          context: context,
+          locale: const Locale('vi'),
+          child: _panel(
+            Future.value(InventoryStockHealth.fromJson(_payload())),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Dòng tồn kho không giới hạn'), findsOneWidget);
+    expect(find.text('7'), findsOneWidget);
+    expect(
+      find.textContaining('không tính dòng không giới hạn'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('các dòng này được đếm riêng'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   test('complete count scope preserves server UTC and ignores money/units', () {
     final data = InventoryStockHealth.fromJson(_payload());
     expect(data.generatedAt, DateTime.utc(2026, 10, 1, 2));
@@ -196,6 +221,10 @@ void main() {
           find.textContaining('Low/out counts can overlap'),
           findsOneWidget,
         );
+        expect(
+          find.textContaining('Unlimited rows are counted separately'),
+          findsOneWidget,
+        );
         expect(find.textContaining('999999'), findsNothing);
         final bars = tester.widgetList<LinearProgressIndicator>(
           find.byType(LinearProgressIndicator),
@@ -211,6 +240,7 @@ void main() {
             final bytes = await image.toByteData(
               format: ui.ImageByteFormat.png,
             );
+            await Directory(directory).create(recursive: true);
             await File(
               '$directory/stock-health-${width.toInt()}.png',
             ).writeAsBytes(bytes!.buffer.asUint8List());

@@ -8768,6 +8768,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profilePrivateActivity => 'Your private activity';
 
   @override
+  String get profileTimelineDescription => 'Creation activity in this workspace over the last 30 days. Calendar events are workspace activity.';
+
+  @override
+  String get profileTimelineLimited => 'Showing recent activity only. Some sources reached the display limit.';
+
+  @override
+  String get profileTimelineUnavailable => 'Activity could not be refreshed.';
+
+  @override
   String get profileTimelineTitle => 'Activity timeline';
 
   @override
@@ -8780,7 +8789,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineEmpty => 'No recent activity in this workspace';
 
   @override
-  String get profileTimelinePartial => 'Some activity is unavailable. Retry';
+  String get profileTimelinePartial => 'Some activity is unavailable.';
 
   @override
   String profileTimelineTasks(int count) {
@@ -9522,7 +9531,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryStockHealthUnlimited => 'Unlimited stock rows';
 
   @override
-  String get inventoryStockHealthOverlap => 'Low/out counts can overlap. Unlimited rows are excluded. Bars compare counts.';
+  String get inventoryStockHealthOverlap => 'Low/out counts can overlap. Low/out quantity checks exclude Unlimited rows; Unlimited rows are counted separately. Bars compare row counts.';
 
   @override
   String get inventoryStockHealthUnknown => 'Unavailable';
