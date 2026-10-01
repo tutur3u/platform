@@ -28,85 +28,38 @@
       "synthetic": true,
       "scale": 2.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        80.0
-      ],
-      "title": [
-        125.662109375,
-        56.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 80.0],
+      "title": [125.662109375, 56.0],
       "intrinsicTitleHeight": 56.0,
       "contentTop": 90.0,
-      "selector": [
-        235.0,
-        17.0,
-        339.0,
-        63.0
-      ]
+      "selector": [235.0, 17.0, 339.0, 63.0]
     },
     "after-Profile-320.0-2.0": {
       "synthetic": true,
       "scale": 2.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        80.0
-      ],
-      "title": [
-        85.5,
-        56.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 80.0],
+      "title": [85.5, 56.0],
       "intrinsicTitleHeight": 56.0,
       "contentTop": 90.0,
-      "selector": [
-        162.0,
-        17.0,
-        266.0,
-        63.0
-      ]
+      "selector": [162.0, 17.0, 266.0, 63.0]
     },
     "before-Profile-320.0-2.0": {
       "synthetic": true,
       "scale": 2.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        54.0
-      ],
-      "title": [
-        85.5,
-        30.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 54.0],
+      "title": [85.5, 30.0],
       "intrinsicTitleHeight": 56.0,
       "contentTop": 64.0,
-      "selector": [
-        162.0,
-        4.0,
-        266.0,
-        50.0
-      ]
+      "selector": [162.0, 4.0, 266.0, 50.0]
     },
     "after-Settings-393.0-3.0": {
       "synthetic": true,
       "scale": 3.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        108.0
-      ],
-      "title": [
-        240.732421875,
-        84.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 108.0],
+      "title": [240.732421875, 84.0],
       "intrinsicTitleHeight": 84.0,
       "contentTop": 118.0,
       "selector": null
@@ -115,16 +68,8 @@
       "synthetic": true,
       "scale": 1.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        54.0
-      ],
-      "title": [
-        80.244140625,
-        28.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 54.0],
+      "title": [80.244140625, 28.0],
       "intrinsicTitleHeight": 28.0,
       "contentTop": 64.0,
       "selector": null
@@ -133,16 +78,8 @@
       "synthetic": true,
       "scale": 3.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        54.0
-      ],
-      "title": [
-        227.5,
-        30.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 54.0],
+      "title": [227.5, 30.0],
       "intrinsicTitleHeight": 84.0,
       "contentTop": 64.0,
       "selector": null
@@ -151,16 +88,8 @@
       "synthetic": true,
       "scale": 1.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        54.0
-      ],
-      "title": [
-        80.244140625,
-        28.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 54.0],
+      "title": [80.244140625, 28.0],
       "intrinsicTitleHeight": 28.0,
       "contentTop": 64.0,
       "selector": null
@@ -169,16 +98,8 @@
       "synthetic": true,
       "scale": 1.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        54.0
-      ],
-      "title": [
-        80.244140625,
-        28.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 54.0],
+      "title": [80.244140625, 28.0],
       "intrinsicTitleHeight": 28.0,
       "contentTop": 64.0,
       "selector": null
@@ -187,16 +108,8 @@
       "synthetic": true,
       "scale": 3.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        54.0
-      ],
-      "title": [
-        240.732421875,
-        30.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 54.0],
+      "title": [240.732421875, 30.0],
       "intrinsicTitleHeight": 84.0,
       "contentTop": 64.0,
       "selector": null
@@ -205,16 +118,8 @@
       "synthetic": true,
       "scale": 1.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        54.0
-      ],
-      "title": [
-        80.244140625,
-        28.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 54.0],
+      "title": [80.244140625, 28.0],
       "intrinsicTitleHeight": 28.0,
       "contentTop": 64.0,
       "selector": null
@@ -223,39 +128,18 @@
       "synthetic": true,
       "scale": 2.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        54.0
-      ],
-      "title": [
-        125.662109375,
-        30.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 54.0],
+      "title": [125.662109375, 30.0],
       "intrinsicTitleHeight": 56.0,
       "contentTop": 64.0,
-      "selector": [
-        235.0,
-        4.0,
-        339.0,
-        50.0
-      ]
+      "selector": [235.0, 4.0, 339.0, 50.0]
     },
     "after-Settings-320.0-3.0": {
       "synthetic": true,
       "scale": 3.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        108.0
-      ],
-      "title": [
-        227.5,
-        84.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 108.0],
+      "title": [227.5, 84.0],
       "intrinsicTitleHeight": 84.0,
       "contentTop": 118.0,
       "selector": null
@@ -264,108 +148,48 @@
       "synthetic": true,
       "scale": 3.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        108.0
-      ],
-      "title": [
-        158.5,
-        84.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 108.0],
+      "title": [158.5, 84.0],
       "intrinsicTitleHeight": 84.0,
       "contentTop": 118.0,
-      "selector": [
-        235.0,
-        31.0,
-        339.0,
-        77.0
-      ]
+      "selector": [235.0, 31.0, 339.0, 77.0]
     },
     "after-Profile-320.0-1.0": {
       "synthetic": true,
       "scale": 1.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        54.0
-      ],
-      "title": [
-        62.8310546875,
-        28.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 54.0],
+      "title": [62.8310546875, 28.0],
       "intrinsicTitleHeight": 28.0,
       "contentTop": 64.0,
-      "selector": [
-        162.0,
-        4.0,
-        266.0,
-        50.0
-      ]
+      "selector": [162.0, 4.0, 266.0, 50.0]
     },
     "after-Profile-393.0-1.0": {
       "synthetic": true,
       "scale": 1.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        54.0
-      ],
-      "title": [
-        62.8310546875,
-        28.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 54.0],
+      "title": [62.8310546875, 28.0],
       "intrinsicTitleHeight": 28.0,
       "contentTop": 64.0,
-      "selector": [
-        235.0,
-        4.0,
-        339.0,
-        50.0
-      ]
+      "selector": [235.0, 4.0, 339.0, 50.0]
     },
     "after-Profile-320.0-3.0": {
       "synthetic": true,
       "scale": 3.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        108.0
-      ],
-      "title": [
-        85.5,
-        84.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 108.0],
+      "title": [85.5, 84.0],
       "intrinsicTitleHeight": 84.0,
       "contentTop": 118.0,
-      "selector": [
-        162.0,
-        31.0,
-        266.0,
-        77.0
-      ]
+      "selector": [162.0, 31.0, 266.0, 77.0]
     },
     "before-Settings-320.0-2.0": {
       "synthetic": true,
       "scale": 2.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        54.0
-      ],
-      "title": [
-        160.48828125,
-        30.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 54.0],
+      "title": [160.48828125, 30.0],
       "intrinsicTitleHeight": 56.0,
       "contentTop": 64.0,
       "selector": null
@@ -374,39 +198,18 @@
       "synthetic": true,
       "scale": 1.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        54.0
-      ],
-      "title": [
-        62.8310546875,
-        28.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 54.0],
+      "title": [62.8310546875, 28.0],
       "intrinsicTitleHeight": 28.0,
       "contentTop": 64.0,
-      "selector": [
-        235.0,
-        4.0,
-        339.0,
-        50.0
-      ]
+      "selector": [235.0, 4.0, 339.0, 50.0]
     },
     "after-Settings-393.0-2.0": {
       "synthetic": true,
       "scale": 2.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        80.0
-      ],
-      "title": [
-        160.48828125,
-        56.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 80.0],
+      "title": [160.48828125, 56.0],
       "intrinsicTitleHeight": 56.0,
       "contentTop": 90.0,
       "selector": null
@@ -415,39 +218,18 @@
       "synthetic": true,
       "scale": 3.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        54.0
-      ],
-      "title": [
-        85.5,
-        30.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 54.0],
+      "title": [85.5, 30.0],
       "intrinsicTitleHeight": 84.0,
       "contentTop": 64.0,
-      "selector": [
-        162.0,
-        4.0,
-        266.0,
-        50.0
-      ]
+      "selector": [162.0, 4.0, 266.0, 50.0]
     },
     "after-Settings-320.0-2.0": {
       "synthetic": true,
       "scale": 2.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        80.0
-      ],
-      "title": [
-        160.48828125,
-        56.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 80.0],
+      "title": [160.48828125, 56.0],
       "intrinsicTitleHeight": 56.0,
       "contentTop": 90.0,
       "selector": null
@@ -456,62 +238,28 @@
       "synthetic": true,
       "scale": 3.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        54.0
-      ],
-      "title": [
-        158.5,
-        30.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 54.0],
+      "title": [158.5, 30.0],
       "intrinsicTitleHeight": 84.0,
       "contentTop": 64.0,
-      "selector": [
-        235.0,
-        4.0,
-        339.0,
-        50.0
-      ]
+      "selector": [235.0, 4.0, 339.0, 50.0]
     },
     "before-Profile-320.0-1.0": {
       "synthetic": true,
       "scale": 1.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        54.0
-      ],
-      "title": [
-        62.8310546875,
-        28.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 54.0],
+      "title": [62.8310546875, 28.0],
       "intrinsicTitleHeight": 28.0,
       "contentTop": 64.0,
-      "selector": [
-        162.0,
-        4.0,
-        266.0,
-        50.0
-      ]
+      "selector": [162.0, 4.0, 266.0, 50.0]
     },
     "before-Settings-393.0-2.0": {
       "synthetic": true,
       "scale": 2.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        54.0
-      ],
-      "title": [
-        160.48828125,
-        30.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 54.0],
+      "title": [160.48828125, 30.0],
       "intrinsicTitleHeight": 56.0,
       "contentTop": 64.0,
       "selector": null

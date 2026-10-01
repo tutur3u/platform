@@ -7,23 +7,10 @@
       "synthetic": true,
       "scale": 1.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        54.0
-      ],
-      "title": [
-        85.5,
-        28.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 54.0],
+      "title": [85.5, 28.0],
       "intrinsicTitleHeight": 28.0,
-      "paintedTitleBounds": [
-        54.0,
-        13.0,
-        139.5,
-        41.0
-      ],
+      "paintedTitleBounds": [54.0, 13.0, 139.5, 41.0],
       "contentTop": null,
       "selector": null
     },
@@ -31,23 +18,10 @@
       "synthetic": true,
       "scale": 2.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        80.0
-      ],
-      "title": [
-        85.5,
-        56.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 80.0],
+      "title": [85.5, 56.0],
       "intrinsicTitleHeight": 56.0,
-      "paintedTitleBounds": [
-        54.0,
-        12.0,
-        139.5,
-        68.0
-      ],
+      "paintedTitleBounds": [54.0, 12.0, 139.5, 68.0],
       "contentTop": null,
       "selector": null
     },
@@ -55,23 +29,10 @@
       "synthetic": true,
       "scale": 3.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        108.0
-      ],
-      "title": [
-        85.5,
-        84.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 108.0],
+      "title": [85.5, 84.0],
       "intrinsicTitleHeight": 84.0,
-      "paintedTitleBounds": [
-        54.0,
-        12.0,
-        139.5,
-        96.0
-      ],
+      "paintedTitleBounds": [54.0, 12.0, 139.5, 96.0],
       "contentTop": null,
       "selector": null
     },
@@ -79,23 +40,10 @@
       "synthetic": true,
       "scale": 1.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        54.0
-      ],
-      "title": [
-        94.5634765625,
-        28.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 54.0],
+      "title": [94.5634765625, 28.0],
       "intrinsicTitleHeight": 28.0,
-      "paintedTitleBounds": [
-        54.0,
-        13.0,
-        148.5634765625,
-        41.0
-      ],
+      "paintedTitleBounds": [54.0, 13.0, 148.5634765625, 41.0],
       "contentTop": null,
       "selector": null
     },
@@ -103,23 +51,10 @@
       "synthetic": true,
       "scale": 2.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        80.0
-      ],
-      "title": [
-        158.5,
-        56.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 80.0],
+      "title": [158.5, 56.0],
       "intrinsicTitleHeight": 56.0,
-      "paintedTitleBounds": [
-        54.0,
-        12.0,
-        212.5,
-        68.0
-      ],
+      "paintedTitleBounds": [54.0, 12.0, 212.5, 68.0],
       "contentTop": null,
       "selector": null
     },
@@ -127,23 +62,10 @@
       "synthetic": true,
       "scale": 3.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        108.0
-      ],
-      "title": [
-        158.5,
-        84.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 108.0],
+      "title": [158.5, 84.0],
       "intrinsicTitleHeight": 84.0,
-      "paintedTitleBounds": [
-        54.0,
-        12.0,
-        212.5,
-        96.0
-      ],
+      "paintedTitleBounds": [54.0, 12.0, 212.5, 96.0],
       "contentTop": null,
       "selector": null
     },
@@ -151,23 +73,10 @@
       "synthetic": true,
       "scale": 1.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        54.0
-      ],
-      "title": [
-        85.5,
-        28.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 54.0],
+      "title": [85.5, 28.0],
       "intrinsicTitleHeight": 28.0,
-      "paintedTitleBounds": [
-        54.0,
-        13.0,
-        139.5,
-        41.0
-      ],
+      "paintedTitleBounds": [54.0, 13.0, 139.5, 41.0],
       "contentTop": null,
       "selector": null
     },
@@ -175,23 +84,10 @@
       "synthetic": true,
       "scale": 2.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        80.0
-      ],
-      "title": [
-        85.5,
-        56.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 80.0],
+      "title": [85.5, 56.0],
       "intrinsicTitleHeight": 56.0,
-      "paintedTitleBounds": [
-        54.0,
-        12.0,
-        139.5,
-        68.0
-      ],
+      "paintedTitleBounds": [54.0, 12.0, 139.5, 68.0],
       "contentTop": null,
       "selector": null
     },
@@ -199,23 +95,10 @@
       "synthetic": true,
       "scale": 3.0,
       "width": 320.0,
-      "bar": [
-        0.0,
-        0.0,
-        320.0,
-        108.0
-      ],
-      "title": [
-        85.5,
-        84.0
-      ],
+      "bar": [0.0, 0.0, 320.0, 108.0],
+      "title": [85.5, 84.0],
       "intrinsicTitleHeight": 84.0,
-      "paintedTitleBounds": [
-        54.0,
-        12.0,
-        139.5,
-        96.0
-      ],
+      "paintedTitleBounds": [54.0, 12.0, 139.5, 96.0],
       "contentTop": null,
       "selector": null
     },
@@ -223,23 +106,10 @@
       "synthetic": true,
       "scale": 1.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        54.0
-      ],
-      "title": [
-        88.322265625,
-        28.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 54.0],
+      "title": [88.322265625, 28.0],
       "intrinsicTitleHeight": 28.0,
-      "paintedTitleBounds": [
-        54.0,
-        13.0,
-        142.322265625,
-        41.0
-      ],
+      "paintedTitleBounds": [54.0, 13.0, 142.322265625, 41.0],
       "contentTop": null,
       "selector": null
     },
@@ -247,23 +117,10 @@
       "synthetic": true,
       "scale": 2.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        80.0
-      ],
-      "title": [
-        158.5,
-        56.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 80.0],
+      "title": [158.5, 56.0],
       "intrinsicTitleHeight": 56.0,
-      "paintedTitleBounds": [
-        54.0,
-        12.0,
-        212.5,
-        68.0
-      ],
+      "paintedTitleBounds": [54.0, 12.0, 212.5, 68.0],
       "contentTop": null,
       "selector": null
     },
@@ -271,23 +128,10 @@
       "synthetic": true,
       "scale": 3.0,
       "width": 393.0,
-      "bar": [
-        0.0,
-        0.0,
-        393.0,
-        108.0
-      ],
-      "title": [
-        158.5,
-        84.0
-      ],
+      "bar": [0.0, 0.0, 393.0, 108.0],
+      "title": [158.5, 84.0],
       "intrinsicTitleHeight": 84.0,
-      "paintedTitleBounds": [
-        54.0,
-        12.0,
-        212.5,
-        96.0
-      ],
+      "paintedTitleBounds": [54.0, 12.0, 212.5, 96.0],
       "contentTop": null,
       "selector": null
     }
