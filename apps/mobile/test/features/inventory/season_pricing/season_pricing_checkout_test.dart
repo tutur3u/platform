@@ -160,10 +160,7 @@ void main() {
       await mount(tester, inventory, controller);
       await tester.tap(find.byIcon(Icons.add_circle_outline_rounded).first);
       await selectSeason(tester);
-      expect(
-        find.textContaining('as of 2026-10-01 01:00:00'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('as of 2026-10-01 01:00:00'), findsOneWidget);
       expect(find.textContaining('USD'), findsWidgets);
       expect(find.textContaining('USD 12.50'), findsWidgets);
       expect(find.textContaining(r'$999.00'), findsNothing);

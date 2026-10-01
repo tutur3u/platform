@@ -17,6 +17,9 @@ void main() {
     await (FontLoader(
       'NotoSans',
     )..addFont(rootBundle.load('assets/fonts/NotoSans.ttf'))).load();
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
   });
   test('scheduled formatting keeps explicit code and currency precision', () {
     expect(formatSeasonPrice(12.345, 'BHD'), contains('BHD 12.345'));

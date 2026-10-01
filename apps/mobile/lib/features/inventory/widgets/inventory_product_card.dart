@@ -98,9 +98,15 @@ class _StockRow extends StatelessWidget {
     final theme = shad.Theme.of(context);
     final low = row.amount != null && row.amount! <= row.minAmount;
     final location = [
-      row.warehouseName,
-      row.unitName,
-    ].whereType<String>().where((value) => value.isNotEmpty).join(' • ');
+      if (row.warehouseName?.trim().isNotEmpty ?? false)
+        row.warehouseName!.trim()
+      else
+        '${context.l10n.inventoryProductWarehouse} ${row.warehouseId}',
+      if (row.unitName?.trim().isNotEmpty ?? false)
+        row.unitName!.trim()
+      else
+        '${context.l10n.inventoryProductUnit} ${row.unitId}',
+    ].join(' • ');
     final available = context.l10n.inventoryProductAvailableSummary(
       inventoryStockAmount(context, row.amount),
       formatCurrency(row.price, currency),

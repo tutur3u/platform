@@ -224,8 +224,10 @@ class _InventoryPageState extends State<InventoryPage> {
                                           context,
                                           product.amount,
                                         ),
-                                        product.minAmount?.toStringAsFixed(0) ??
-                                            '0',
+                                        inventoryStockAmount(
+                                          context,
+                                          product.minAmount ?? 0,
+                                        ),
                                       ].join(' / '),
                                       style: shad.Theme.of(context)
                                           .typography
