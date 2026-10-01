@@ -23,33 +23,41 @@ void main() {
     VoidCallback launch, {
     bool ordering = false,
     bool twoModules = false,
+    bool canReorder = false,
   }) async {
+    var activeOrdering = ordering;
     await tester.pumpApp(
-      Material(
-        child: Align(
-          alignment: Alignment.topLeft,
-          child: SizedBox(
-            width: twoModules ? 192 : 96,
-            child: AppsReorderGrid(
-              modules: [
-                module,
-                if (twoModules)
-                  AppModule(
-                    id: 'calendar',
-                    route: '/calendar',
-                    icon: Icons.calendar_today,
-                    labelBuilder: (_) => 'Calendar',
-                    pageBuilder: (_) => const SizedBox(),
-                    miniAppNavItems: const [],
-                  ),
-              ],
-              hidden: false,
-              canReorder: false,
-              isOrdering: ordering,
-              onOrderingStarted: () {},
-              onOrderChanged: (_) {},
-              onVisibilityPressed: (_) {},
-              onSelected: (_) => launch(),
+      StatefulBuilder(
+        builder: (context, setState) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: Material(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: twoModules ? 192 : 96,
+                child: AppsReorderGrid(
+                  modules: [
+                    module,
+                    if (twoModules)
+                      AppModule(
+                        id: 'calendar',
+                        route: '/calendar',
+                        icon: Icons.calendar_today,
+                        labelBuilder: (_) => 'Calendar',
+                        pageBuilder: (_) => const SizedBox(),
+                        miniAppNavItems: const [],
+                      ),
+                  ],
+                  hidden: false,
+                  canReorder: canReorder,
+                  isOrdering: activeOrdering,
+                  onOrderingStarted: () =>
+                      setState(() => activeOrdering = true),
+                  onOrderChanged: (_) {},
+                  onVisibilityPressed: (_) {},
+                  onSelected: (_) => launch(),
+                ),
+              ),
             ),
           ),
         ),
@@ -90,42 +98,107 @@ void main() {
       handle.dispose();
     });
   }
-  testWidgets('one named keyboard launch stop supports Enter and Space', (
-    tester,
-  ) async {
+  testWidgets(
+    'one named keyboard launch stop supports Enter, Space and numpad Enter',
+    (tester) async {
+      var launched = 0;
+      final handle = tester.ensureSemantics();
+      await mount(tester, () => launched++, twoModules: true);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      final launch = tester.getSemantics(find.text('Tasks'));
+      expect(
+        launch.getSemanticsData().flagsCollection.isFocused,
+        Tristate.isTrue,
+      );
+      Border ring(String id) =>
+          (tester
+                          .widget<DecoratedBox>(
+                            find.byKey(ValueKey('apps-grid-focus-$id')),
+                          )
+                          .decoration
+                      as BoxDecoration)
+                  .border!
+              as Border;
+      expect(ring('tasks').top.color.a, greaterThan(0));
+      expect(ring('calendar').top.color.a, 0);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(launched, 1);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      final next = tester.getSemantics(find.text('Calendar'));
+      expect(
+        next.getSemanticsData().flagsCollection.isFocused,
+        Tristate.isTrue,
+      );
+      expect(ring('tasks').top.color.a, 0);
+      expect(ring('calendar').top.color.a, greaterThan(0));
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pump();
+      expect(launched, 2);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.pump();
+      expect(
+        tester
+            .getSemantics(find.text('Tasks'))
+            .getSemanticsData()
+            .flagsCollection
+            .isFocused,
+        Tristate.isTrue,
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.numpadEnter);
+      await tester.pump();
+      expect(launched, 3);
+      handle.dispose();
+    },
+  );
+  testWidgets('real reorder drag keeps one named launch target '
+      'and visible keyboard focus', (tester) async {
     var launched = 0;
     final handle = tester.ensureSemantics();
-    await mount(tester, () => launched++, twoModules: true);
+    await mount(tester, () => launched++, canReorder: true);
+    await tester.longPress(find.text('Tasks'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Hide app'), findsOneWidget);
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
-    final launch = tester.getSemantics(find.text('Tasks'));
+    final target = tester.getSemantics(find.text('Tasks'));
+    expect(target.label, 'Tasks');
     expect(
-      launch.getSemanticsData().flagsCollection.isFocused,
+      target.getSemanticsData().flagsCollection.isFocused,
       Tristate.isTrue,
     );
-    Border ring(String id) =>
-        (tester
-                        .widget<DecoratedBox>(
-                          find.byKey(ValueKey('apps-grid-focus-$id')),
-                        )
-                        .decoration
-                    as BoxDecoration)
-                .border!
-            as Border;
-    expect(ring('tasks').top.color.a, greaterThan(0));
-    expect(ring('calendar').top.color.a, 0);
+    final decoration =
+        tester
+                .widget<DecoratedBox>(
+                  find.byKey(const ValueKey('apps-grid-focus-tasks')),
+                )
+                .decoration
+            as BoxDecoration;
+    expect((decoration.border! as Border).top.color.a, greaterThan(0));
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pump();
     expect(launched, 1);
-    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Tasks')),
+    );
+    await tester.pump(const Duration(milliseconds: 350));
+    await gesture.moveBy(const Offset(12, 12));
     await tester.pump();
-    final next = tester.getSemantics(find.text('Calendar'));
-    expect(next.getSemanticsData().flagsCollection.isFocused, Tristate.isTrue);
-    expect(ring('tasks').top.color.a, 0);
-    expect(ring('calendar').top.color.a, greaterThan(0));
-    await tester.sendKeyEvent(LogicalKeyboardKey.space);
-    await tester.pump();
-    expect(launched, 2);
+    expect(find.text('Tasks'), findsNWidgets(2));
+    // Flutter excludes feedback from semantics: only the retained grid target
+    // is announced. Visible feedback has no duplicate launch action.
+    expect(find.bySemanticsLabel('Tasks'), findsOneWidget);
+    final retained = tester.getSemantics(find.bySemanticsLabel('Tasks'));
+    expect(retained.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+    expect(retained.rect.width, greaterThanOrEqualTo(64));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.text('Tasks'), findsOneWidget);
+    expect(tester.takeException(), isNull);
     handle.dispose();
   });
 }

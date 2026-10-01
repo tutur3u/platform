@@ -99,6 +99,15 @@ void main() {
             GoRoute(path: Routes.tasks, builder: (_, _) => const SizedBox()),
             GoRoute(path: Routes.calendar, builder: (_, _) => const SizedBox()),
             GoRoute(
+              path: Routes.taskPlanning,
+              builder: (_, _) => const ShellMiniNav(
+                ownerId: 'task-planning-mini-nav',
+                locations: {Routes.taskPlanning},
+                deepLinkBackRoute: Routes.tasks,
+                items: [],
+              ),
+            ),
+            GoRoute(
               path: Routes.taskBoards,
               builder: (_, _) => const SizedBox(),
             ),
@@ -159,6 +168,32 @@ void main() {
     await _pump(tester);
   }
 
+  testWidgets('registered in-app parent remains inside Tasks', (tester) async {
+    await mount(tester);
+    router.go(Routes.taskPlanning);
+    await _pump(tester);
+    await tester.binding.handlePopRoute();
+    await _pump(tester);
+    expect(router.routeInformationProvider.value.uri.path, Routes.tasks);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('personal board explicit exit also applies from Tasks root', (
+    tester,
+  ) async {
+    await mount(tester);
+    router.go(Routes.tasks);
+    await _pump(tester);
+    router.go(Routes.taskBoardDetailPath('synthetic-board'));
+    await _pump(tester);
+    expect(
+      tester.widget<ShellMiniNav>(find.byType(ShellMiniNav)).deepLinkBackRoute,
+      Routes.apps,
+    );
+    await tester.binding.handlePopRoute();
+    await _pump(tester);
+    expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+    expect(tester.takeException(), isNull);
+  });
   for (final origin in [Routes.apps, Routes.home]) {
     for (final systemBack in [false, true]) {
       testWidgets('personal Tasks ${systemBack ? 'system' : 'dock'} back '
@@ -222,6 +257,7 @@ void main() {
       final state = tester.state(find.byType(AppsHubPage));
       await tester.longPress(find.text('Tasks'));
       await _pump(tester);
+      expect(find.byTooltip('Hide app'), findsWidgets);
       router.go(destination);
       await _pump(tester);
       router.go(Routes.apps);
