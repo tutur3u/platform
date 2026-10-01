@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +10,7 @@ import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -265,6 +268,65 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets(
+    'post-frame availability change after resolution cancels launch',
+    (tester) async {
+      await experiments.setModuleEnabled(moduleId: 'chat', enabled: true);
+      await mount(tester);
+      await search(tester, 'chat');
+      final field = tester.widget<TextField>(searchField);
+      var changedAfterBuild = false;
+      tester.binding.addPostFrameCallback((_) {
+        // Registered before the Apps build queues its launch. The match has
+        // already resolved, but Bloc's inherited notification is still pending.
+        expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+        unawaited(
+          experiments.setModuleEnabled(moduleId: 'chat', enabled: false),
+        );
+        changedAfterBuild = true;
+      });
+      field.onSubmitted!('chat');
+      await _pump(tester);
+      expect(changedAfterBuild, isTrue);
+      expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+      expect(apps.state.selectedId, isNull);
+      expect(field.controller!.text, 'chat');
+      expect(searchField, findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'duplicate submit between build and launch does not requeue state',
+    (tester) async {
+      await mount(tester);
+      await search(tester, 'calendar');
+      final field = tester.widget<TextField>(searchField);
+      var exercisedQueuedPhase = false;
+      tester.binding.addPostFrameCallback((_) {
+        // The build consumed pendingSubmit and set launchQueued.
+        // This runs before the launch callback registered by that build.
+        final element = tester.element(find.byType(AppsScreen));
+        expect(element.dirty, isFalse);
+        expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+        field.onSubmitted!('calendar');
+        expect(
+          element.dirty,
+          isFalse,
+          reason: 'queued duplicate must not setState',
+        );
+        exercisedQueuedPhase = true;
+      });
+      field.onSubmitted!('calendar');
+      await _pump(tester);
+      expect(exercisedQueuedPhase, isTrue);
+      expect(router.routeInformationProvider.value.uri.path, Routes.calendar);
+      expect(calendarEntries, 1);
+      expect(field.controller!.text, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('IME exits reorder and returning does not restore it', (
     tester,
   ) async {

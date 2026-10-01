@@ -128,6 +128,7 @@ class _AppsScreenState extends State<AppsScreen> {
     final matches = appsHubResults(context, tabs, query);
     if (matches.length != 1) return;
     final module = matches.single;
+    final availability = appsHubAvailability(context);
     _launchQueued = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _launchQueued = false;
@@ -139,6 +140,9 @@ class _AppsScreenState extends State<AppsScreen> {
               Routes.apps) {
         return;
       }
+      // Read current states directly; inherited notifications can still be
+      // pending when an earlier post-frame callback changes availability.
+      if (appsHubAvailability(context) != availability) return;
       if ((context as Element).dirty) {
         setState(() => _pendingSubmit = query);
         return;
