@@ -30,9 +30,11 @@ const mocks = vi.hoisted(() => ({
   resolveCrossAppReturnUrlWithInternalApi: vi.fn(),
   routerPush: vi.fn(),
   routerRefresh: vi.fn(),
+  routerReplace: vi.fn(),
   searchParams: new URLSearchParams(),
   sendOtpWithInternalApi: vi.fn(),
   signInWithOAuth: vi.fn(),
+  signOut: vi.fn(),
   switchAccount: vi.fn(),
   verifyOtpWithInternalApi: vi.fn(),
 }));
@@ -109,6 +111,7 @@ vi.mock('@tuturuuu/supabase/next/auth-browser', () => ({
       },
       refreshSession: mocks.refreshSession,
       signInWithOAuth: mocks.signInWithOAuth,
+      signOut: mocks.signOut,
     },
   }),
 }));
@@ -157,6 +160,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mocks.routerPush,
     refresh: mocks.routerRefresh,
+    replace: mocks.routerReplace,
   }),
   useSearchParams: () => mocks.searchParams,
 }));
