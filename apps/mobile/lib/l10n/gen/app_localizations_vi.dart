@@ -12,6 +12,33 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';
+
+  @override
+  String get workspaceHideAction => 'Ẩn';
+
+  @override
+  String get workspaceRestoreAction => 'Hiện lại';
+
+  @override
+  String get workspaceHiddenDescription => 'Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.';
+
+  @override
+  String get workspaceHiddenEmpty => 'Không có không gian làm việc đã ẩn';
+
+  @override
+  String get workspaceHiddenLoadError => 'Không thể làm mới danh sách đã ẩn. Danh sách đã lưu được giữ lại.';
+
+  @override
+  String get workspaceHiddenUpdateError => 'Không thể lưu thay đổi. Hãy thử lại khi có kết nối.';
+
+  @override
+  String get workspaceAllHidden => 'Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.';
+
+  @override
+  String get workspacePickerClose => 'Đóng danh sách không gian làm việc';
+
+  @override
   String get commonLoading => 'Đang tải';
 
   @override
@@ -9413,31 +9440,4 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileTimelineTab => 'Dòng thời gian';
-
-  @override
-  String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';
-
-  @override
-  String get workspaceHideAction => 'Ẩn';
-
-  @override
-  String get workspaceRestoreAction => 'Hiện lại';
-
-  @override
-  String get workspaceHiddenDescription => 'Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.';
-
-  @override
-  String get workspaceHiddenEmpty => 'Không có không gian làm việc đã ẩn';
-
-  @override
-  String get workspaceHiddenLoadError => 'Không thể làm mới danh sách đã ẩn. Danh sách đã lưu được giữ lại.';
-
-  @override
-  String get workspaceHiddenUpdateError => 'Không thể lưu thay đổi. Hãy thử lại khi có kết nối.';
-
-  @override
-  String get workspaceAllHidden => 'Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.';
-
-  @override
-  String get workspacePickerClose => 'Đóng danh sách không gian làm việc';
 }

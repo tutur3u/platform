@@ -97,6 +97,60 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @workspaceHiddenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden workspaces'**
+  String get workspaceHiddenTitle;
+
+  /// No description provided for @workspaceHideAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get workspaceHideAction;
+
+  /// No description provided for @workspaceRestoreAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get workspaceRestoreAction;
+
+  /// No description provided for @workspaceHiddenDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see this list. Hiding does not change membership or notifications.'**
+  String get workspaceHiddenDescription;
+
+  /// No description provided for @workspaceHiddenEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No Hidden workspaces'**
+  String get workspaceHiddenEmpty;
+
+  /// No description provided for @workspaceHiddenLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to refresh Hidden workspaces. Your saved list is kept.'**
+  String get workspaceHiddenLoadError;
+
+  /// No description provided for @workspaceHiddenUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to save this change. Try again when connected.'**
+  String get workspaceHiddenUpdateError;
+
+  /// No description provided for @workspaceAllHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Your workspaces are hidden. Restore one to continue.'**
+  String get workspaceAllHidden;
+
+  /// No description provided for @workspacePickerClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close workspace picker'**
+  String get workspacePickerClose;
+
   /// No description provided for @commonLoading.
   ///
   /// In en, this message translates to:
@@ -18096,60 +18150,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Timeline'**
   String get profileTimelineTab;
-
-  /// No description provided for @workspaceHiddenTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Hidden workspaces'**
-  String get workspaceHiddenTitle;
-
-  /// No description provided for @workspaceHideAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide'**
-  String get workspaceHideAction;
-
-  /// No description provided for @workspaceRestoreAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Restore'**
-  String get workspaceRestoreAction;
-
-  /// No description provided for @workspaceHiddenDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Only you can see this list. Hiding does not change membership or notifications.'**
-  String get workspaceHiddenDescription;
-
-  /// No description provided for @workspaceHiddenEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No Hidden workspaces'**
-  String get workspaceHiddenEmpty;
-
-  /// No description provided for @workspaceHiddenLoadError.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to refresh Hidden workspaces. Your saved list is kept.'**
-  String get workspaceHiddenLoadError;
-
-  /// No description provided for @workspaceHiddenUpdateError.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to save this change. Try again when connected.'**
-  String get workspaceHiddenUpdateError;
-
-  /// No description provided for @workspaceAllHidden.
-  ///
-  /// In en, this message translates to:
-  /// **'Your workspaces are hidden. Restore one to continue.'**
-  String get workspaceAllHidden;
-
-  /// No description provided for @workspacePickerClose.
-  ///
-  /// In en, this message translates to:
-  /// **'Close workspace picker'**
-  String get workspacePickerClose;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
