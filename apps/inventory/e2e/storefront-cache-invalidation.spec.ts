@@ -79,10 +79,11 @@ test('invalidates cached availability and preserves the shared storefront shell'
     page.on('request', (requestEvent) => {
       if (requestEvent.resourceType() === 'document') documentRequests += 1;
     });
-    finishSlotDiagnostics = await captureStorefrontSlotDiagnostics(
-      page,
-      testInfo
-    ).catch(() => async () => {});
+    if (process.env.STOREFRONT_SLOT_DIAGNOSTICS === 'true')
+      finishSlotDiagnostics = await captureStorefrontSlotDiagnostics(
+        page,
+        testInfo
+      ).catch(() => async () => {});
     await page.goto(
       `/${fixture.slug}/products/${invalidatedPayload.listings[0].id}`
     );

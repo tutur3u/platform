@@ -29,6 +29,10 @@ on:
       - "turbo.json"
   workflow_dispatch:
     inputs:
+      storefront_slot_diagnostics:
+        description: Run only the Storefront target three times with bounded Slot diagnostics
+        type: boolean
+        default: false
       supabase_image_transport:
         description: Supabase image transport benchmark mode
         type: choice
@@ -73,9 +77,12 @@ jobs:
         id: detect
         env:
           EVENT_NAME: ${{ github.event_name }}
+          STOREFRONT_DIAGNOSTICS: ${{ inputs.storefront_slot_diagnostics }}
           BEFORE_SHA: ${{ github.event.before }}
         run: |
-          if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
+          if [ "$EVENT_NAME" = 'workflow_dispatch' ] && [ "$STOREFRONT_DIAGNOSTICS" = 'true' ]; then
+            echo 'run_e2e=false' >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
             echo 'run_e2e=true' >> "$GITHUB_OUTPUT"
           else
             result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
@@ -583,7 +590,7 @@ jobs:
   inventory-storefront-cache-e2e:
     name: Inventory / Storefront cache contract
     needs: relevance
-    if: github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true'
+    if: github.ref != 'refs/heads/production' && (needs.relevance.outputs.run_e2e == 'true' || (github.event_name == 'workflow_dispatch' && inputs.storefront_slot_diagnostics))
     timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:
@@ -663,11 +670,18 @@ jobs:
 
       - name: Verify cache invalidation and instant navigation
         working-directory: apps/inventory
-        run: bun test:e2e -- --reporter=line,html
+        env:
+          STOREFRONT_SLOT_DIAGNOSTICS: ${{ inputs.storefront_slot_diagnostics }}
+        run: |
+          if [ "$STOREFRONT_SLOT_DIAGNOSTICS" = 'true' ]; then
+            bun test:e2e -- storefront-cache-invalidation.spec.ts --workers=1 --repeat-each=3 --reporter=line,html
+          else
+            bun test:e2e -- --reporter=line,html
+          fi
 
-      - name: Upload cache E2E failure artifact
+      - name: Upload cache E2E evidence
         uses: actions/upload-artifact@v7
-        if: ${{ failure() }}
+        if: ${{ failure() || (always() && inputs.storefront_slot_diagnostics) }}
         with:
           name: inventory-storefront-cache-e2e
           path: |
