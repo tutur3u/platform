@@ -39,6 +39,7 @@ import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -401,6 +402,8 @@ void main() {
         matching: find.byType(SingleChildScrollView),
       );
       expect(body, findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.byType(AppDialogScaffold), findsOneWidget);
       final scrollable = find.descendant(
         of: body,
         matching: find.byType(Scrollable),
@@ -421,6 +424,8 @@ void main() {
       await _capture(tester, 'settings-finance-scroll-large');
       await tester.binding.handlePopRoute();
       await _settle(tester);
+      expect(find.text('Cancel'), findsNothing);
+      expect(find.byType(AppDialogScaffold), findsNothing);
       expect(h.router.state.matchedLocation, Routes.settings);
       expect(dockOpacity(), 1);
       expect(prefs.get('finance-amounts-visible'), before);
@@ -537,7 +542,6 @@ void main() {
     expect(dockOpacity(), 1);
     final rootScroll = find.byType(Scrollable).first;
     final position = tester.state<ScrollableState>(rootScroll).position;
-    final startOffset = position.pixels;
     expect(position.extentAfter, greaterThan(180));
     final gesture = await tester.startGesture(tester.getCenter(rootScroll));
     await gesture.moveBy(const Offset(0, -30));
@@ -560,11 +564,6 @@ void main() {
     );
     expect(position.outOfRange, isFalse);
     expect(dockOpacity(), 1);
-    debugPrint(
-      'Settings root scroll: min=${position.minScrollExtent}, '
-      'max=${position.maxScrollExtent}, start=$startOffset, '
-      'down=$downOffset, reverse=${position.pixels}',
-    );
     await gesture.up();
     await _settle(tester);
     expect(tester.takeException(), isNull);
