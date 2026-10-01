@@ -183,3 +183,40 @@ Mira preserves its existing Personal fallback choice when the actor has no perso
 workspace; its existing resolver selects an authorized canonical fallback. A real
 personal workspace excluded by Hidden preferences is a different state and is
 omitted from the picker. No personal workspace is created by this UI rule.
+
+## SQL assertion harness and pending execution
+
+The privacy and board-guest fixtures now enable `ON_ERROR_STOP` and raise SQL
+exceptions for false or null assertions. The owner restore assertion checks the
+actual absence of the current actor's preference. Synthetic actors, authorization
+contexts and final rollback remain unchanged; no helper grants are added.
+
+`apps/database/scripts/verify-hidden-workspaces.js` is a pure, injected-executor
+harness. It accepts legacy stdout assertions and psql stderr NOTICE assertions,
+requires successful exit and every unique expected assertion (15 or 26), and
+checks guest event counts and private storage publication metadata. Negative
+controls must fail for the intended false, null or skipped owner restore assertion;
+a startup or permission error cannot satisfy a negative control. Each execution
+uses a fresh session, followed by a separate owner rollback check, including
+failed executions. Its static tests simulate transcripts; they do not execute SQL.
+Current corrected fixtures and negative controls remain **runtime unexecuted**.
+Earlier fixture runtime evidence does not verify these revised bytes.
+
+The proposed next runtime lane is one cached PostgreSQL 17 container, with an
+explicit parent admission and unique owned identity. Pin the locally resolved image
+ID; use `--pull=never`, `--network=none`, no host ports, CPU 1, memory 2 GiB and
+128 PIDs. Use a bounded disposable data mount, a 3 GiB incremental disk limit,
+15 minutes execution plus 5 minutes cleanup, and reject admission below 10 GiB
+free disk or elevated memory pressure; stop below 6 GiB free. No image pulls,
+seeds, external network, ordinary/shared database access or global Docker pruning.
+Cleanup removes only its recorded container and disposable mount and verifies
+both are gone, even after failure.
+
+This database-only proposal requires an offline pristine schema/bootstrap from
+pinned tracked migrations and the cached image. Required auth functions, roles,
+RLS, event tables and publication metadata must be installed unchanged. If the
+bootstrap cannot replay without missing Supabase dependencies, stop and report
+that dependency; do not invent replacement policies or broaden grants. Only then
+can the two fixtures, three negative controls and five rollback checks provide
+15/26 assertion evidence. This does not claim full Supabase service, API, realtime
+or production-schema parity, and does not authorize starting a database.
