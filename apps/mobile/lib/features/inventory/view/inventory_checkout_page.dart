@@ -26,6 +26,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'inventory_checkout_operations.dart';
 part 'inventory_checkout_pricing.dart';
+part 'inventory_checkout_recovery.dart';
 part 'inventory_checkout_widgets.dart';
 
 Future<T?> showInventoryCheckoutPage<T>(
@@ -51,6 +52,7 @@ class InventoryCheckoutPage extends StatefulWidget {
     this.settingsRepository,
     this.seasonController,
     this.actorId,
+    this.actorChanges,
     super.key,
   });
 
@@ -61,6 +63,7 @@ class InventoryCheckoutPage extends StatefulWidget {
   final SettingsRepository? settingsRepository;
   final InventorySeasonPricingController? seasonController;
   final String? Function()? actorId;
+  final Stream<dynamic>? actorChanges;
 
   @override
   State<InventoryCheckoutPage> createState() => _InventoryCheckoutPageState();
@@ -82,11 +85,16 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   int _loadGeneration = 0;
   String? _loadedActor;
   String? _loadedWorkspace;
+  String? _scopeActor;
+  String? _scopeWorkspace;
+  int _scopeRevision = 0;
+  bool _reloadAfterSave = false;
   bool _periodsAvailable = false;
   bool _scopeChanged = false;
   String? get _actorId => widget.actorId?.call() ?? currentCacheUserId();
   bool _loading = true;
   bool _saving = false;
+  bool _saleCompleted = false;
   bool _hasUnavailableOptions = false;
   int _activeTab = _tabBrowse;
   List<InventoryProduct> _products = const [];
@@ -118,14 +126,17 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
         InventorySeasonPricingController(
           fetch: _inventoryRepository.getSeasonQuote,
           send: _inventoryRepository.sendScheduledSale,
+          lookupReceipt: _inventoryRepository.getSaleReceipt,
+          currentActor: () => _actorId,
           isOnline: () async => (await Connectivity().checkConnectivity()).any(
             (item) => item != ConnectivityResult.none,
           ),
         );
     _season.addListener(_quoteChanged);
-    _authSubscription = maybeSupabase?.auth.onAuthStateChange.listen(
-      (_) => _scopeReset(),
-    );
+    _authSubscription =
+        (widget.actorChanges ?? maybeSupabase?.auth.onAuthStateChange)?.listen(
+          (_) => _scopeReset(),
+        );
     _quoteTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _season.tick();
       if (_season.scheduled &&
@@ -135,6 +146,9 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
         unawaited(_season.refresh(automatic: true));
       }
     });
+    _scopeActor = _actorId;
+    _scopeWorkspace = _wsId;
+    _syncSeason();
     unawaited(_load());
   }
 
@@ -158,12 +172,19 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   }
 
   void _scopeReset() {
-    if (!mounted || (_loadedActor == _actorId && _loadedWorkspace == _wsId)) {
+    if (!mounted || (_scopeActor == _actorId && _scopeWorkspace == _wsId)) {
       return;
     }
     _loadGeneration++;
+    _scopeRevision++;
     setState(() {
+      _scopeActor = _actorId;
+      _scopeWorkspace = _wsId;
+      _loadedActor = null;
+      _loadedWorkspace = null;
+      _loading = widget.sale == null;
       _scopeChanged = widget.sale != null;
+      _saleCompleted = false;
       _products = [];
       _wallets = [];
       _categories = [];
@@ -315,10 +336,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
       BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (a, b) => a.currentWorkspace?.id != b.currentWorkspace?.id,
         listener: (_, _) => _scopeReset(),
-        child: PopScope(
-          canPop: !_season.hasPending && !_saving,
-          child: _buildCheckout(context),
-        ),
+        child: PopScope(canPop: !_saving, child: _buildCheckout(context)),
       );
 
   Widget _buildCheckout(BuildContext context) {
@@ -329,6 +347,12 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     final primaryActionLabel = widget.sale == null
         ? l10n.inventoryCheckoutSubmit
         : l10n.inventorySalesSave;
+
+    if (_season.hasPending ||
+        _season.completedInvoiceId != null ||
+        _season.journalFailed) {
+      return _buildRecovery(context);
+    }
 
     if (_loading) {
       return FinanceFullscreenFormScaffold(
@@ -344,6 +368,8 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
       primaryActionLabel: primaryActionLabel,
       onPrimaryPressed:
           _saving ||
+              _saleCompleted ||
+              !_season.journalReady ||
               _scopeChanged ||
               _blockedHistory ||
               !_periodResolved ||

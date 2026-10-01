@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
@@ -663,6 +664,9 @@ class InventoryRepository {
 
   Future<InventorySeasonQuote> getSeasonQuote(String wsId, String periodId) =>
       _getSeasonQuote(wsId, periodId);
+
+  Future<String?> getSaleReceipt(String wsId, String requestId) =>
+      _getSaleReceipt(wsId, requestId);
 
   Future<String> sendScheduledSale(String wsId, Map<String, dynamic> payload) =>
       _sendScheduledSale(wsId, payload);

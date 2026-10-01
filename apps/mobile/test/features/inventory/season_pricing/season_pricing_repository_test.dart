@@ -13,12 +13,16 @@ class _Api extends ApiClient {
   String? readPath;
   String? writePath;
   Map<String, dynamic>? body;
+  Map<String, dynamic>? receipt;
+  bool? readAuthenticated;
   @override
   Future<Map<String, dynamic>> getJson(
     String path, {
     bool requiresAuth = true,
   }) async {
     readPath = path;
+    readAuthenticated = requiresAuth;
+    if (receipt != null) return receipt!;
     if (path.contains('/prices')) {
       return {
         'data': [priceRow()],
@@ -52,6 +56,42 @@ class _Api extends ApiClient {
 }
 
 void main() {
+  test(
+    'receipt reads are authenticated, scoped and fail closed on bad identity',
+    () async {
+      final api = _Api();
+      final repository = InventoryRepository(apiClient: api);
+      api.receipt = {'state': 'not_observed', 'request_id': 'request'};
+      expect(await repository.getSaleReceipt('ws', 'request'), isNull);
+      expect(api.readAuthenticated, isTrue);
+      expect(api.readPath, InventoryEndpoints.saleReceipt('ws', 'request'));
+      api.receipt = {
+        'state': 'committed',
+        'request_id': 'request',
+        'invoice_id': 'invoice',
+      };
+      expect(await repository.getSaleReceipt('ws', 'request'), 'invoice');
+      api.receipt = {
+        'state': 'committed',
+        'request_id': 'other',
+        'invoice_id': 'invoice',
+      };
+      await expectLater(
+        repository.getSaleReceipt('ws', 'request'),
+        throwsFormatException,
+      );
+      api.receipt = {
+        'state': 'committed',
+        'request_id': 'request',
+        'invoice_id': '',
+      };
+      await expectLater(
+        repository.getSaleReceipt('ws', 'request'),
+        throwsFormatException,
+      );
+      expect(api.writePath, isNull);
+    },
+  );
   test(
     'uncached quote path escapes both IDs and preserves server as_of',
     () async {

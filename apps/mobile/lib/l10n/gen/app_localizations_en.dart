@@ -9566,7 +9566,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get inventorySeasonRetryPending => 'Sale response uncertain. Cart is locked; submit again to retry the same request. Do not start another sale until this is resolved.';
+  String get inventorySeasonRecoveryTitle => 'Recover sale';
+
+  @override
+  String get inventorySeasonRecoveryCheck => 'Check sale result';
+
+  @override
+  String get inventorySeasonRecoveryUnavailable => 'Sale recovery storage is unavailable. Creation is blocked until this operation can be recovered safely.';
+
+  @override
+  String get inventorySeasonRetryPending => 'Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.';
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';

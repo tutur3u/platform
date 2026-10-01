@@ -38,15 +38,55 @@ one transaction. The UI currency is a quote-selection constraint, not authority
 to change workspace currency. Zero prices are legitimate only when explicitly
 returned by the server.
 
-An uncertain network/5xx response locks the original payload and request ID.
-Submit retries that exact payload even if the quote expires. Cart edits and
-ordinary modal dismissal are blocked until the result is resolved. Explicit
-transaction rejection releases the cart and invalidates the quote for review.
-Account/workspace changes clear visible data and invalidate in-flight results.
-The pending request is scoped to this mounted checkout, not a durable background
-replay record; after process termination an operator must reconcile uncertain
-sales before starting another. Scheduled historical sales are read only in this
-checkout. Ordinary historical line prices remain their recorded prices.
+Before any scheduled POST, checkout writes and verifies an encrypted operation
+journal using the existing secure-storage adapter. It retains the exact request
+UUID/body, original currency, quote provenance and frozen product display labels
+in an actor/workspace scope. Cache eviction, logout, scope switches and controller
+recreation do not erase unresolved operations. Read, corruption, version and write
+failures block creation; they never become an empty cart. One app-wide scope lock
+prevents simultaneous checkouts preparing distinct operations. Separate business
+drafts on another device are outside this local journal contract.
+
+An unresolved operation opens a dedicated recovery view. Metadata Retry and cart
+editing are unavailable there; current catalog, wallet, category and period
+metadata cannot strand recovery or route it into legacy creation. Operators can
+leave and resume in the owning account/workspace. No automatic/offline replay
+occurs.
+
+An actor/workspace switch during a POST or receipt lookup clears the mounted
+checkout immediately and queues the current scope's catalog reload until the
+active save finishes. Every switch advances a scope revision, including A→B→A;
+a late response cannot acknowledge, navigate or display an error on the reset
+form merely because its actor/workspace pair matches again. The original scoped
+journal retains its UUID and immutable body. Returning to its owning scope opens
+recovery (or the recorded confirmed result); switching away loads the new scope.
+
+An explicit Check sale result action calls the authenticated uncached
+`GET /api/v1/workspaces/{wsId}/inventory/sale-requests/{requestId}`. The server
+verifies current canonical membership and create-sales action permission, derives
+the actor from authentication and selects only that actor's workspace/request
+receipt. It returns only state, request ID and committed invoice ID. The existing
+private receipt/tombstone stays authoritative after invoice deletion. Lost
+permissions and unavailable rollout schema are errors, never an empty receipt.
+
+`not_observed` is not proof an earlier transaction cannot still commit. This
+explicit action may resend only the original UUID and immutable payload. Every
+HTTP rejection retains uncertainty, including 400/401/403/409/422/503. Changed
+DEFAULT_CURRENCY can reject resubmission while the original is in flight; future
+receipt lookup resolves a committed outcome independently of current pricing
+configuration. No replacement request/key or revised cart is allowed. If the
+original never commits and continues to be rejected, the operation stays blocked
+for manual reconciliation. This slice does not add a terminal server rejection or
+cancellation protocol or permit unsafe journal reset.
+
+A valid invoice response or matching receipt makes checkout terminal. Cache
+invalidation and remembered-category preferences are best-effort maintenance and
+cannot turn confirmed creation into a resubmittable cart. Confirmation is stored
+before its journal can be acknowledged. A confirmation-write failure retains the
+prepared record for next-entry receipt reconciliation while keeping known success
+terminal in the current view. Acknowledgement removes only a matching confirmed
+record. Scheduled history stays read only and ordinary historical line prices
+remain their recorded prices.
 
 ## Permissions and rollout limits
 
@@ -72,3 +112,18 @@ currency separation, malformed quotes, timezone eligibility, product scope,
 expiry/offline/denial, actor/workspace races, exact-payload idempotent retry, direct
 atomic repository transport and mounted checkout/historical guards. The existing
 partial-option checkout regression remains in the focused suite.
+
+Recovery regressions cover persistent-store round trips, write-before-send,
+restart/scope isolation, late completion, concurrent checkouts, rejection identity
+retention, denied lookup and confirmed receipt handling. Mounted tests exercise
+preference/cache failures after success, metadata Retry removal while uncertain,
+and recovery after metadata denial. Twelve mounted scope-switch cases cover
+actor and workspace A→B/A→B→A during delayed POST success, timeout and receipt
+responses; they assert current-scope readiness and preserved original identity.
+Route tests verify permissions, canonical actor
+filters, minimal output and unavailable versus not-observed semantics.
+
+Native keychain/keystore durability and exact-head mobile/API CI remain release
+gates. Mocked storage does not prove native persistence or deployed endpoint
+availability. This read-only satellite API uses the existing receipt schema;
+no database migration or application is part of the recovery follow-up.

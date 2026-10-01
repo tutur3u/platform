@@ -18259,10 +18259,28 @@ abstract class AppLocalizations {
   /// **'Season prices · {currency} · as of {asOf} (UTC) · season dates in {timeZone}'**
   String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone);
 
+  /// No description provided for @inventorySeasonRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recover sale'**
+  String get inventorySeasonRecoveryTitle;
+
+  /// No description provided for @inventorySeasonRecoveryCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check sale result'**
+  String get inventorySeasonRecoveryCheck;
+
+  /// No description provided for @inventorySeasonRecoveryUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale recovery storage is unavailable. Creation is blocked until this operation can be recovered safely.'**
+  String get inventorySeasonRecoveryUnavailable;
+
   /// No description provided for @inventorySeasonRetryPending.
   ///
   /// In en, this message translates to:
-  /// **'Sale response uncertain. Cart is locked; submit again to retry the same request. Do not start another sale until this is resolved.'**
+  /// **'Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.'**
   String get inventorySeasonRetryPending;
 
   /// No description provided for @inventorySeasonHistoricalReadOnly.
