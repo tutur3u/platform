@@ -1,3 +1,4 @@
+import AudioToolbox
 import FirebaseCore
 import FirebaseMessaging
 import Flutter
@@ -29,6 +30,15 @@ import UserNotifications
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MeetNotificationSound") {
+      let channel = FlutterMethodChannel(name: "mobile/meet_screen_share", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { call, result in
+        if call.method == "sound" {
+          AudioServicesPlaySystemSound(1007)
+          result(nil)
+        } else { result(FlutterMethodNotImplemented) }
+      }
+    }
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "LiveScreenCapturePlugin") {
       LiveScreenCapturePlugin.register(with: registrar)
     }

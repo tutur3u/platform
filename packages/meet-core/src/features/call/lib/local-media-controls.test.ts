@@ -142,3 +142,64 @@ it('applies a processing change to the replacement microphone after acquisition 
   expect(replacement.applyConstraints).toHaveBeenCalledWith(preferences);
   expect(controls.getAudioProcessing()).toEqual(preferences);
 });
+
+it('classifies missing screen capture and allows another attempt', async () => {
+  vi.stubGlobal('navigator', { mediaDevices: {} });
+  const controls = createLocalMediaControls({
+    activeRef: { current: true },
+    effects: new CameraEffects(),
+    localStreamRef: { current: null },
+    screenStreamRef: { current: null },
+    mediaRef: {
+      current: {
+        audioEnabled: false,
+        videoEnabled: false,
+        screenEnabled: false,
+      },
+    },
+    setLocalStream: vi.fn(),
+    setScreenStream: vi.fn(),
+    applyMedia: vi.fn(),
+  });
+  await expect(controls.toggleScreenShare()).rejects.toMatchObject({
+    name: 'NotSupportedError',
+  });
+  await expect(controls.toggleScreenShare()).rejects.toMatchObject({
+    name: 'NotSupportedError',
+  });
+});
+
+it('stops capture and clears sharing when screen publication fails', async () => {
+  const stop = vi.fn();
+  const video = { stop, addEventListener: vi.fn() };
+  const display = {
+    getTracks: () => [video],
+    getVideoTracks: () => [video],
+    getAudioTracks: () => [],
+  } as unknown as MediaStream;
+  vi.stubGlobal('navigator', {
+    mediaDevices: { getDisplayMedia: vi.fn(async () => display) },
+  });
+  const screenStreamRef = { current: null as MediaStream | null };
+  const mediaRef = {
+    current: { audioEnabled: false, videoEnabled: false, screenEnabled: false },
+  };
+  const controls = createLocalMediaControls({
+    activeRef: { current: true },
+    effects: new CameraEffects(),
+    localStreamRef: { current: null },
+    screenStreamRef,
+    mediaRef,
+    setLocalStream: vi.fn(),
+    setScreenStream: vi.fn(),
+    applyMedia: vi.fn(async () => {
+      throw new Error('synthetic publication failure');
+    }),
+  });
+  await expect(controls.toggleScreenShare()).rejects.toThrow(
+    'synthetic publication failure'
+  );
+  expect(stop).toHaveBeenCalledOnce();
+  expect(screenStreamRef.current).toBeNull();
+  expect(mediaRef.current.screenEnabled).toBe(false);
+});

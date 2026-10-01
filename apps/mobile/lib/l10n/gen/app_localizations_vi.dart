@@ -9443,4 +9443,37 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
+
+  @override
+  String meetNoticeJoined(String name) {
+    return '$name đã tham gia cuộc họp';
+  }
+
+  @override
+  String meetNoticeWaiting(String name) {
+    return '$name đang yêu cầu tham gia';
+  }
+
+  @override
+  String meetNoticeChat(String name) {
+    return '$name đã gửi tin nhắn';
+  }
+
+  @override
+  String get meetNoticeView => 'Xem';
+
+  @override
+  String get meetNotificationSound => 'Âm thanh thông báo';
+
+  @override
+  String get meetShareScreen => 'Chia sẻ màn hình';
+
+  @override
+  String get meetStopSharing => 'Dừng chia sẻ';
+
+  @override
+  String get meetScreenShareHint => 'Màn hình bạn chọn sẽ hiển thị với mọi người trong cuộc họp cho đến khi bạn dừng chia sẻ. Dùng hộp thoại hệ thống để chọn nội dung cần chia sẻ. Âm thanh hệ thống không được chia sẻ.';
+
+  @override
+  String get meetScreenShareFailed => 'Chưa thể chia sẻ màn hình. Kiểm tra quyền ghi màn hình và thử lại.';
 }

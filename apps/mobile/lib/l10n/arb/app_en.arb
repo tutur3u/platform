@@ -3816,5 +3816,35 @@
     "profileTimelineAgenda": "Days with activity",
     "profileTimelineDayEmpty": "No activity was returned for this day.",
     "profileTimelineHasActivity": "Activity in loaded snapshot",
-    "profileTimelineMoreDays": "Show more loaded days"
+    "profileTimelineMoreDays": "Show more loaded days",
+    "meetNoticeJoined": "{name} joined the meeting",
+    "meetNoticeWaiting": "{name} is asking to join",
+    "meetNoticeChat": "{name} sent a message",
+    "meetNoticeView": "View",
+    "meetNotificationSound": "Notification sound",
+    "meetShareScreen": "Share screen",
+    "meetStopSharing": "Stop sharing",
+    "meetScreenShareHint": "Your selected screen will be visible to everyone in this meeting until you stop sharing. Use the system chooser to select what to share. System audio is not shared.",
+    "meetScreenShareFailed": "Screen sharing did not start. Check capture permissions and try again.",
+    "@meetNoticeJoined": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "@meetNoticeWaiting": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "@meetNoticeChat": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    }
 }

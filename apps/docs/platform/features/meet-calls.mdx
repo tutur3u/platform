@@ -974,3 +974,44 @@ adapter configuration.
 After a Meet deployment, verify a fresh browser load as well as the signaling
 checks. Check page errors and the rendered interface; a successful HTTP response
 or a page that recovers after refreshing does not prove server rendering passed.
+
+## Mobile screen sharing and notifications
+
+Native Meet presents join, room chat, and host admission-request notices with a
+shortcut to the relevant sheet. Initial presence and replayed chat stay quiet;
+reconnecting does not repeat previously seen messages or pending requests.
+Notification sound can be disabled separately from meeting audio. OS volume,
+silent mode, and Do Not Disturb may suppress the sound.
+
+The floating navigation bar owns Leave. Hosts retain the leave/end decision;
+ending the meeting remains restricted by server authorization.
+
+| Runtime | Capture capability | Acceptance evidence |
+| --- | --- | --- |
+| Desktop web | Browser display chooser; source/audio depend on browser | Synthetic regression fixtures; exact-head CI required |
+| Android/iPhone browser | Requires `getDisplayMedia`; unavailable runtimes receive a supported-desktop hint | No mobile browser capture promised |
+| Native Android | Fresh system consent, then a dedicated media-projection foreground service; video only | Physical Android 14+ consent, cancel, Stop, revoke, repeat, reconnect QA required |
+| Native iPhone | Existing ReplayKit Broadcast Upload Extension sends video to WebRTC via the existing App Group socket; video only | Physical iPhone consent, app switching, receiver frames, stop, repeat QA required |
+
+Run synthetic fixtures without joining real meetings or publishing real screen,
+voice, or chat. Validate failed publication, interrupted consent, removal, room
+end, denied admission, reconnect, and repeated start/stop. Device testing must
+use controlled fixtures and explicit capture consent. No signing entitlement or developer-account capability is added. A returned WebRTC
+track alone does not prove ReplayKit produced frames; verify actual receiver frames
+before declaring native capture acceptance complete.
+
+References: [Android media projection](https://developer.android.com/media/grow/media-projection),
+[Apple ReplayKit](https://developer.apple.com/documentation/replaykit), and
+[browser display capture](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia).
+
+The installed WebRTC socket implementation previously left a listener open when
+capture stopped before its first connection. `ios/MeetSocketConnection.m` is a
+repository-owned copy with bounded cleanup changes. The Podfile selects it in
+the generated `flutter_webrtc` target and fails closed if the expected source
+layout changes; it does not mutate shared Pub cache files. Revalidate this patch
+when upgrading the plugin. Native CI must compile/link this replacement.
+
+The iOS reader requires a minimum 10 KiB body to avoid overreading coalesced tiny
+frames. Meet pads JPEG trailing bytes; an independent reader model passed 100
+synthetic fragmentation/coalescing cases with 10 frames each. Actual `CIImage`
+decoding and interruption on physical devices remain release acceptance gates.

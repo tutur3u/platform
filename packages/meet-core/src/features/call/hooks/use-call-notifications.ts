@@ -21,6 +21,7 @@ export function useCallNotifications(
   const [sound, setSound] = useState(true);
   const audio = useRef<AudioContext | null>(null);
   const lastSound = useRef(0);
+  const waitingSeen = useRef(new Set<string>());
   const chatToasts = useRef(new Set<string>());
   useEffect(() => {
     if (activePanel !== 'chat') return;
@@ -56,12 +57,36 @@ export function useCallNotifications(
   useEffect(() => {
     const notices =
       enabled && connected && wasConnected.current
-        ? collectCallNotices(previous.current, state)
+        ? collectCallNotices(previous.current, state).filter(
+            (notice) => notice.kind !== 'waiting'
+          )
         : [];
+    if (
+      enabled &&
+      connected &&
+      state.admission === 'admitted' &&
+      !state.ended &&
+      state.role === 'host'
+    ) {
+      for (const person of state.waiting) {
+        if (!waitingSeen.current.has(person.userId))
+          notices.push({
+            id: `waiting:${person.userId}`,
+            kind: 'waiting',
+            name: person.displayName,
+          });
+      }
+      waitingSeen.current = new Set(
+        state.waiting.map((person) => person.userId)
+      );
+    }
     previous.current = state;
     wasConnected.current = connected;
-    for (const notice of notices) {
-      if (notice.kind === 'chat' && activePanel === 'chat') continue;
+    const visibleNotices = notices.filter(
+      (notice) => notice.kind !== 'chat' || activePanel !== 'chat'
+    );
+    if (document.visibilityState === 'hidden') return;
+    for (const notice of visibleNotices) {
       if (notice.kind === 'chat') chatToasts.current.add(notice.id);
       const panel = notice.kind === 'chat' ? 'chat' : 'participants';
       toast.info(t(`notice_${notice.kind}`, { name: notice.name }), {
@@ -78,7 +103,7 @@ export function useCallNotifications(
     }
     const context = audio.current;
     if (
-      !notices.length ||
+      !visibleNotices.length ||
       !sound ||
       volume === 0 ||
       audioSuppressed ||
@@ -93,7 +118,7 @@ export function useCallNotifications(
     gain.connect(context.destination);
     const start = context.currentTime;
     oscillator.frequency.setValueAtTime(
-      notices.some((notice) => notice.kind === 'waiting') ? 660 : 520,
+      visibleNotices.some((notice) => notice.kind === 'waiting') ? 660 : 520,
       start
     );
     oscillator.frequency.setValueAtTime(780, start + 0.09);

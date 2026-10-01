@@ -6,11 +6,13 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
+import 'package:mobile/features/meet/view/meet_device_choice.dart';
 import 'package:mobile/features/meet/view/meet_ended_review.dart';
 import 'package:mobile/features/meet/view/meet_media_status_banner.dart';
 import 'package:mobile/features/meet/view/meet_participant_tile.dart';
 import 'package:mobile/features/meet/view/meet_room_content_header.dart';
 import 'package:mobile/features/meet/view/meet_room_exit_actions.dart';
+import 'package:mobile/features/meet/view/meet_room_notices.dart';
 import 'package:mobile/features/meet/view/meet_room_sheets.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -35,13 +37,21 @@ class MeetNativeRoomPage extends StatefulWidget {
   State<MeetNativeRoomPage> createState() => _MeetNativeRoomPageState();
 }
 
-class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
+class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
+    with WidgetsBindingObserver {
+  bool _foreground = true;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+  }
+
   late final MeetRepository _repository = widget.repository ?? MeetRepository();
   late final MeetCallController _call = MeetCallController(
     workspaceId: widget.workspaceId,
     meetingId: widget.meetingId,
     repository: widget.repository,
   );
+  final _notices = MeetRoomNotices();
   bool _joinRequested = false;
   bool _audioPreferred = true;
   bool _previewBusy = false;
@@ -56,6 +66,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _call.addListener(_onCallUpdated);
     unawaited(_checkRoomBeforeMedia());
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -72,7 +83,9 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _countdownTimer?.cancel();
+    _notices.dispose();
     _call.removeListener(_onCallUpdated);
     _call.dispose();
     if (widget.repository == null) _repository.dispose();
@@ -80,6 +93,11 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
   }
 
   void _onCallUpdated() {
+    if (mounted && _foreground) {
+      _notices.show(context, _call);
+    } else {
+      _call.notices.clear();
+    }
     if (_call.ended && !_endedReviewRequested) {
       _endedReviewRequested = true;
       unawaited(_loadEndedReview());
@@ -273,53 +291,6 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
     );
   }
 
-  Widget _buildDeviceChoice(BuildContext context) {
-    final l10n = context.l10n;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.devices_outlined, size: 48),
-            const SizedBox(height: 12),
-            Text(
-              l10n.meetDeviceAlreadyJoined,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(l10n.meetDeviceChoiceHint, textAlign: TextAlign.center),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: _call.status == 'connecting'
-                  ? null
-                  : () =>
-                        unawaited(_call.chooseDevice(switchToThisDevice: true)),
-              icon: const Icon(Icons.swap_horiz),
-              label: Text(l10n.meetSwitchDevice),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: _call.status == 'connecting'
-                  ? null
-                  : () => unawaited(
-                      _call.chooseDevice(switchToThisDevice: false),
-                    ),
-              icon: const Icon(Icons.devices),
-              label: Text(l10n.meetJoinAnotherDevice),
-            ),
-            const SizedBox(height: 8),
-            Text(l10n.meetDeviceEchoHint, textAlign: TextAlign.center),
-            if (_call.error != null) ...[
-              const SizedBox(height: 12),
-              Text(l10n.commonSomethingWentWrong),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _end() async {
     try {
       await _call.endRoom();
@@ -386,7 +357,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
               ShellActionSpec(
                 id: 'meet-room-leave',
                 inDock: true,
-                icon: Icons.chevron_left_rounded,
+                icon: Icons.call_end,
                 tooltip: l10n.meetLeave,
                 onPressed: () => unawaited(_leave()),
               ),
@@ -440,7 +411,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                         : !_joinRequested
                         ? _buildLobby(context)
                         : _call.requiresDeviceChoice
-                        ? _buildDeviceChoice(context)
+                        ? buildMeetDeviceChoice(context, _call)
                         : switch ((_call.ended, _call.admission)) {
                             (true, _) => const Center(
                               child: NovaLoadingIndicator(size: 28),
@@ -498,7 +469,14 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                                     : 2;
                                 return GridView.builder(
                                   padding: const EdgeInsets.all(12),
-                                  itemCount: others.length + 1,
+                                  itemCount:
+                                      others.length +
+                                      1 +
+                                      _call.media.remoteRenderers.keys
+                                          .where(
+                                            (key) => key.endsWith(':screen'),
+                                          )
+                                          .length,
                                   gridDelegate:
                                       SliverGridDelegateWithFixedCrossAxisCount(
                                         crossAxisCount: columns,
@@ -519,6 +497,13 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                                         renderer: _call.media.videoEnabled
                                             ? _call.media.localRenderer
                                             : null,
+                                      );
+                                    }
+                                    if (index > others.length) {
+                                      return buildMeetScreenTile(
+                                        context,
+                                        _call,
+                                        index - others.length - 1,
                                       );
                                     }
                                     final person = others[index - 1];
@@ -654,13 +639,16 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage> {
                           IconButton.filledTonal(
                             tooltip: l10n.meetChat,
                             onPressed: () =>
-                                unawaited(showMeetChatSheet(context, _call)),
+                                unawaited(_notices.openChat(context, _call)),
                             icon: const Icon(Icons.chat_bubble_outline),
                           ),
-                          IconButton.filled(
-                            tooltip: l10n.meetLeave,
-                            onPressed: () => unawaited(_leave()),
-                            icon: const Icon(Icons.call_end),
+                          if (_call.media.screenCapture.supported &&
+                              _call.role != 'viewer')
+                            MeetScreenControl(call: _call),
+                          buildMeetSoundControl(
+                            context,
+                            _notices,
+                            () => setState(() {}),
                           ),
                         ],
                       ),
