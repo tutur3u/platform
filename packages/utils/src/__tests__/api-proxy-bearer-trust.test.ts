@@ -61,7 +61,7 @@ function verifiedKey(value = token) {
   }).find((subject) => subject.subject_type === 'session')!.subject_key;
 }
 async function request(authorization = `Bearer ${token}`, cookie?: string) {
-  const { guardApiProxyRequest } = await import('../api-proxy-guard');
+  const { guardApiProxyRequest } = await import('../api-proxy-guard.js');
   return guardApiProxyRequest(
     new NextRequest(`https://infra.test${path}`, {
       headers: { authorization, ...(cookie ? { cookie } : {}) },
@@ -94,7 +94,7 @@ describe('native Calendar gateway verified session parity', () => {
     mocks.trust.mockImplementation(async (keys: string[]) => {
       expect(keys).toContain(key);
       expect(JSON.stringify(keys)).not.toContain(token);
-      return new Map([[key, { m: 1 }]]);
+      return new Map([[key, { m: 1, verified: true }]]);
     });
     const response = await request();
     expect(response?.status).toBe(429);
@@ -121,19 +121,25 @@ describe('native Calendar gateway verified session parity', () => {
   );
 
   it('rotated credentials cannot inherit the old session cache entry', async () => {
-    mocks.trust.mockResolvedValue(new Map([[verifiedKey(), { m: 1 }]]));
+    mocks.trust.mockResolvedValue(
+      new Map([[verifiedKey(), { m: 1, verified: true }]])
+    );
     const response = await request('Bearer rotated-session');
     expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
     expect(mocks.limit).toHaveBeenCalledWith('ip:192.0.2.1');
   });
 
   it('uses Bearer precedence even when a different trusted cookie is present', async () => {
-    const { buildProxySessionSubjectKey } = await import('../api-proxy-guard');
+    const { buildProxySessionSubjectKey } = await import(
+      '../api-proxy-guard.js'
+    );
     const cookieKey = await buildProxySessionSubjectKey(
       'sb-test-auth-token',
       'cookie'
     );
-    mocks.trust.mockResolvedValue(new Map([[cookieKey, { m: 1 }]]));
+    mocks.trust.mockResolvedValue(
+      new Map([[cookieKey, { m: 1, verified: true }]])
+    );
     const response = await request(
       'Bearer forged',
       'sb-test-auth-token=cookie'
@@ -142,7 +148,9 @@ describe('native Calendar gateway verified session parity', () => {
   });
 
   it('retains IP blocks even for verified native sessions', async () => {
-    mocks.trust.mockResolvedValue(new Map([[verifiedKey(), { m: 1 }]]));
+    mocks.trust.mockResolvedValue(
+      new Map([[verifiedKey(), { m: 1, verified: true }]])
+    );
     mocks.blocked.mockResolvedValue({
       expiresAt: new Date(Date.now() + 60_000),
     });
