@@ -227,7 +227,7 @@ export function renderLoginFormSearch(
   mocks.searchParams = new URLSearchParams(search);
   setWindowLocation(search, options.origin);
 
-  render(
+  const login = () => (
     <QueryClientProvider client={queryClient}>
       <LoginForm
         deferAuthSurfaceUntilSessionCheck={
@@ -237,7 +237,8 @@ export function renderLoginFormSearch(
     </QueryClientProvider>
   );
 
-  return queryClient;
+  const view = render(login());
+  return { queryClient, rerender: () => view.rerender(login()) };
 }
 
 export function renderLoginForm(

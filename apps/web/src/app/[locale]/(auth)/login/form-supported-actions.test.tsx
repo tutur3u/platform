@@ -29,7 +29,19 @@ afterEach(() => {
 
 describe('LoginForm supported recovery actions', () => {
   it('clears an invalid return URL through router.replace and refresh', async () => {
-    renderLoginForm('//evil.test/phish');
+    mocks.routerReplace.mockImplementationOnce((path: string) => {
+      mocks.searchParams = new URLSearchParams(
+        new URL(path, window.location.href).search
+      );
+      view.rerender();
+    });
+    const view = renderLoginForm('//evil.test/phish');
+    await screen.findByRole('heading', {
+      name: 'login.invalid_return_url_title',
+    });
+    expect(
+      screen.queryByRole('button', { name: 'login.continue_with_email' })
+    ).not.toBeInTheDocument();
     fireEvent.click(
       await screen.findByRole('button', {
         name: 'login.clear_invalid_return_url',
@@ -41,6 +53,10 @@ describe('LoginForm supported recovery actions', () => {
     expect(mocks.routerRefresh).toHaveBeenCalledTimes(1);
     expect(mocks.replace).not.toHaveBeenCalled();
     expect(mocks.signOut).not.toHaveBeenCalled();
+    await screen.findByRole('button', { name: 'login.continue_with_email' });
+    expect(
+      screen.queryByRole('heading', { name: 'login.invalid_return_url_title' })
+    ).not.toBeInTheDocument();
   });
 
   it('chooses another account using local sign-out and restores the public form', async () => {
