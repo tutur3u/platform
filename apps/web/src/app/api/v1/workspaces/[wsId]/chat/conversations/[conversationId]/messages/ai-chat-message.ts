@@ -117,6 +117,7 @@ export async function sendAiChatMessage({
       })) ?? [];
     if (!isResumingPersistedRequest) {
       await copyAiChatAttachmentInputsToResources({
+        auth,
         attachments,
         chatId: chat.id,
         wsId: context.normalizedWsId,

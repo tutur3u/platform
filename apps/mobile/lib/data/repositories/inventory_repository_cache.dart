@@ -73,7 +73,7 @@ extension InventoryCacheSnapshot on InventoryRepository {
     T Function(Map<String, dynamic>) decode, {
     Map<String, String> params = const {},
   }) {
-    final cached = CacheStore.instance.peek<T>(
+    final cached = _cacheStore.peek<T>(
       key: _inventoryCacheKey(namespace, wsId, params: params),
       decode: (json) => decode(Map<String, dynamic>.from(json! as Map)),
     );
@@ -116,7 +116,7 @@ extension _InventoryRepositoryCache on InventoryRepository {
 
     T? data;
     try {
-      final result = await CacheStore.instance.prefetch<T>(
+      final result = await _cacheStore.prefetch<T>(
         key: key,
         policy: policy,
         decode: decodePayload,
@@ -125,7 +125,7 @@ extension _InventoryRepositoryCache on InventoryRepository {
             return await fetch();
           } on ApiException catch (error) {
             if (error.statusCode == 401 || error.statusCode == 403) {
-              await CacheStore.instance.remove(key);
+              await _cacheStore.remove(key);
             }
             rethrow;
           }
@@ -136,10 +136,7 @@ extension _InventoryRepositoryCache on InventoryRepository {
       data = result.data;
     } on ApiException catch (error) {
       if (error.statusCode != 0) rethrow;
-      data = (await CacheStore.instance.read<T>(
-        key: key,
-        decode: decodePayload,
-      )).data;
+      data = (await _cacheStore.read<T>(key: key, decode: decodePayload)).data;
       if (data == null) rethrow;
     }
     if (data == null) {
@@ -168,7 +165,7 @@ extension _InventoryRepositoryCache on InventoryRepository {
 
     T? data;
     try {
-      final result = await CacheStore.instance.prefetch<T>(
+      final result = await _cacheStore.prefetch<T>(
         key: key,
         policy: policy,
         decode: decodePayload,
@@ -177,7 +174,7 @@ extension _InventoryRepositoryCache on InventoryRepository {
             return await fetch();
           } on ApiException catch (error) {
             if (error.statusCode == 401 || error.statusCode == 403) {
-              await CacheStore.instance.remove(key);
+              await _cacheStore.remove(key);
             }
             rethrow;
           }
@@ -188,10 +185,7 @@ extension _InventoryRepositoryCache on InventoryRepository {
       data = result.data;
     } on ApiException catch (error) {
       if (error.statusCode != 0) rethrow;
-      data = (await CacheStore.instance.read<T>(
-        key: key,
-        decode: decodePayload,
-      )).data;
+      data = (await _cacheStore.read<T>(key: key, decode: decodePayload)).data;
       if (data == null) rethrow;
     }
     if (data == null) {
@@ -201,7 +195,7 @@ extension _InventoryRepositoryCache on InventoryRepository {
   }
 
   Future<void> _invalidateInventory(String wsId, Iterable<String> tags) {
-    return CacheStore.instance.invalidateTags({
+    return _cacheStore.invalidateTags({
       ...tags,
       'inventory:audit',
     }, workspaceId: wsId);

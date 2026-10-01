@@ -7,6 +7,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
+import 'package:mobile/features/apps/view/apps_hub_results.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -84,6 +85,8 @@ class _AppsScreenState extends State<AppsScreen> {
   final _search = TextEditingController();
   bool _searching = false;
   bool _showGrid = true;
+  String? _pendingSubmit;
+  bool _launchQueued = false;
 
   @override
   void initState() {
@@ -102,92 +105,149 @@ class _AppsScreenState extends State<AppsScreen> {
     super.dispose();
   }
 
+  void _submitSearch(String submitted) {
+    if (!widget.isActive ||
+        !_searching ||
+        _pendingSubmit != null ||
+        _launchQueued) {
+      return;
+    }
+    final query = _search.text.trim().toLowerCase();
+    if (query.isEmpty || submitted.trim().toLowerCase() != query) return;
+    setState(() => _pendingSubmit = query);
+  }
+
+  void _scheduleSearchSelection(BuildContext context) {
+    final query = _pendingSubmit;
+    if (query == null) return;
+    _pendingSubmit = null;
+    // Resolve availability during build, using the same live dependencies and
+    // filter as the displayed hub, rather than a debounced result snapshot.
+    final tabs = context.read<AppTabCubit>();
+    final matches = appsHubResults(context, tabs, query);
+    if (matches.length != 1) return;
+    final module = matches.single;
+    final availability = appsHubAvailability(context);
+    _launchQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _launchQueued = false;
+      if (!mounted ||
+          !widget.isActive ||
+          !_searching ||
+          _search.text.trim().toLowerCase() != query ||
+          GoRouter.of(context).routeInformationProvider.value.uri.path !=
+              Routes.apps) {
+        return;
+      }
+      // Read current states directly; inherited notifications can still be
+      // pending when an earlier post-frame callback changes availability.
+      if (appsHubAvailability(context) != availability) return;
+      if ((context as Element).dirty) {
+        setState(() => _pendingSubmit = query);
+        return;
+      }
+      // Clear and close synchronously before launch: repeated IME actions
+      // cannot launch a second app or retain stale search when returning.
+      setState(() {
+        _searching = false;
+        _search.clear();
+      });
+      FocusManager.instance.primaryFocus?.unfocus();
+      unawaited(tabs.select(module));
+      context.go(module.route);
+    });
+  }
+
   @override
-  Widget build(BuildContext context) => BlocListener<AppTabCubit, AppTabState>(
-    listenWhen: (previous, current) =>
-        !previous.shouldAutoFocus && current.shouldAutoFocus,
-    listener: (context, state) {
-      setState(() => _searching = true);
-      context.read<AppTabCubit>().consumeAutoFocus();
-    },
-    child: Column(
-      key: const ValueKey('apps-screen'),
-      children: [
-        ShellChromeActions(
-          ownerId: 'apps-screen',
-          locations: const {Routes.apps},
-          actions: [
-            ShellActionSpec(
-              id: 'apps-search',
-              inDock: true,
-              icon: _searching
-                  ? Icons.search_off_rounded
-                  : Icons.search_rounded,
-              tooltip: context.l10n.appsHubSearchHint,
-              callbackToken: 'search-$_searching',
-              searchController: _searching ? _search : null,
-              searchHint: context.l10n.appsHubSearchHint,
-              onSearchChanged: (_) => setState(() {}),
-              onCloseSearch: () => setState(() {
-                _searching = false;
-                _search.clear();
-              }),
-              onPressed: () => setState(() {
-                _searching = !_searching;
-                if (!_searching) _search.clear();
-              }),
-            ),
-            ShellActionSpec(
-              id: 'apps-arrange',
-              icon: Icons.tune_rounded,
-              tooltip: context.l10n.appsCustomize,
-              onPressed: () {
-                final tabs = context.read<AppTabCubit>();
-                final experiments = context.read<ExperimentalAppsCubit>();
-                unawaited(
-                  showOrderEditorSheet(
-                    context,
-                    title: context.l10n.appsCustomize,
-                    builder: (_) => MultiBlocProvider(
-                      providers: [
-                        BlocProvider.value(value: tabs),
-                        BlocProvider.value(value: experiments),
-                      ],
-                      child: const AppsPickerEditor(),
+  Widget build(BuildContext context) {
+    _scheduleSearchSelection(context);
+    return BlocListener<AppTabCubit, AppTabState>(
+      listenWhen: (previous, current) =>
+          !previous.shouldAutoFocus && current.shouldAutoFocus,
+      listener: (context, state) {
+        setState(() => _searching = true);
+        context.read<AppTabCubit>().consumeAutoFocus();
+      },
+      child: Column(
+        key: const ValueKey('apps-screen'),
+        children: [
+          ShellChromeActions(
+            ownerId: 'apps-screen',
+            locations: const {Routes.apps},
+            actions: [
+              ShellActionSpec(
+                id: 'apps-search',
+                inDock: true,
+                icon: _searching
+                    ? Icons.search_off_rounded
+                    : Icons.search_rounded,
+                tooltip: context.l10n.appsHubSearchHint,
+                callbackToken: 'search-$_searching',
+                searchController: _searching ? _search : null,
+                searchHint: context.l10n.appsHubSearchHint,
+                onSearchChanged: (_) => setState(() {}),
+                onSearchSubmitted: _submitSearch,
+                onCloseSearch: () => setState(() {
+                  _searching = false;
+                  _search.clear();
+                }),
+                onPressed: () => setState(() {
+                  _searching = !_searching;
+                  if (!_searching) _search.clear();
+                }),
+              ),
+              ShellActionSpec(
+                id: 'apps-arrange',
+                icon: Icons.tune_rounded,
+                tooltip: context.l10n.appsCustomize,
+                onPressed: () {
+                  final tabs = context.read<AppTabCubit>();
+                  final experiments = context.read<ExperimentalAppsCubit>();
+                  unawaited(
+                    showOrderEditorSheet(
+                      context,
+                      title: context.l10n.appsCustomize,
+                      builder: (_) => MultiBlocProvider(
+                        providers: [
+                          BlocProvider.value(value: tabs),
+                          BlocProvider.value(value: experiments),
+                        ],
+                        child: const AppsPickerEditor(),
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-            ShellActionSpec(
-              id: 'apps-view-list',
-              segmentGroup: 'apps-view',
-              icon: Icons.view_agenda_rounded,
-              tooltip: context.l10n.appsHubListView,
-              highlighted: !_showGrid,
-              callbackToken: _showGrid,
-              onPressed: () => setState(() => _showGrid = false),
-            ),
-            ShellActionSpec(
-              id: 'apps-view-grid',
-              segmentGroup: 'apps-view',
-              icon: Icons.grid_view_rounded,
-              tooltip: context.l10n.appsHubGridView,
-              highlighted: _showGrid,
-              callbackToken: _showGrid,
-              onPressed: () => setState(() => _showGrid = true),
-            ),
-          ],
-        ),
-        Expanded(
-          child: AppsHubPage(
-            isActive: widget.isActive,
-            query: _search.text,
-            showGrid: _showGrid,
-            replayToken: widget.replayToken,
+                  );
+                },
+              ),
+              ShellActionSpec(
+                id: 'apps-view-list',
+                segmentGroup: 'apps-view',
+                icon: Icons.view_agenda_rounded,
+                tooltip: context.l10n.appsHubListView,
+                highlighted: !_showGrid,
+                callbackToken: _showGrid,
+                onPressed: () => setState(() => _showGrid = false),
+              ),
+              ShellActionSpec(
+                id: 'apps-view-grid',
+                segmentGroup: 'apps-view',
+                icon: Icons.grid_view_rounded,
+                tooltip: context.l10n.appsHubGridView,
+                highlighted: _showGrid,
+                callbackToken: _showGrid,
+                onPressed: () => setState(() => _showGrid = true),
+              ),
+            ],
           ),
-        ),
-      ],
-    ),
-  );
+          Expanded(
+            child: AppsHubPage(
+              isActive: widget.isActive,
+              query: _search.text,
+              showGrid: _showGrid,
+              replayToken: widget.replayToken,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
