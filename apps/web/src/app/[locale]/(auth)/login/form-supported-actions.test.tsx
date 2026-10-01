@@ -24,6 +24,7 @@ beforeEach(() => {
 afterEach(() => {
   for (const client of queryClients) client.clear();
   queryClients.clear();
+  vi.unstubAllEnvs();
 });
 
 describe('LoginForm supported recovery actions', () => {
@@ -58,14 +59,22 @@ describe('LoginForm supported recovery actions', () => {
       data: { claims: { sub: 'user-1' } },
       error: null,
     });
-    renderLoginForm(
-      'https://contacts.tuturuuu.com/verify-token?nextUrl=%2Fpersonal'
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS',
+      'partner:https://partner.example'
     );
-    fireEvent.click(
-      await screen.findByRole('button', {
-        name: 'login.use_another_account',
-      })
-    );
+    vi.stubEnv('TUTURUUU_EXTERNAL_APP_DOMAINS', '');
+    mocks.resolveCrossAppReturnUrlWithInternalApi.mockResolvedValue({
+      appName: 'Synthetic Partner',
+      targetApp: 'partner',
+    });
+    renderLoginForm('https://partner.example/launch');
+    await screen.findByText('login.confirm_internal_app_account_title');
+    const useAnotherAccount = await screen.findByRole('button', {
+      name: 'login.use_another_account',
+    });
+    await waitFor(() => expect(useAnotherAccount).toBeEnabled());
+    fireEvent.click(useAnotherAccount);
     await waitFor(() =>
       expect(mocks.signOut).toHaveBeenCalledWith({ scope: 'local' })
     );
