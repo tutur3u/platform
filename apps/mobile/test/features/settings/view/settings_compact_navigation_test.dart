@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/utils/supported_timezones.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -366,6 +367,65 @@ void main() {
     );
   }
 
+  testWidgets('timezone choices stay lazy and can find an off-screen zone', (
+    tester,
+  ) async {
+    _viewport(tester, const Size(390, 844));
+    final h = _SettingsHarness();
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await h.dispose();
+    });
+    await h.pump(tester);
+    await tester.tap(find.text('Personal timezone'));
+    await _settle(tester);
+    expect(find.byType(ListTile).evaluate().length, lessThan(30));
+    expect(
+      find.widgetWithText(ListTile, supportedTimezones.last),
+      findsNothing,
+    );
+    await tester.enterText(find.byType(TextField), supportedTimezones.last);
+    await _settle(tester);
+    expect(
+      find.widgetWithText(ListTile, supportedTimezones.last),
+      findsOneWidget,
+    );
+    await tester.binding.handlePopRoute();
+    await _settle(tester);
+    verifyNever(() => h.timezone.save(any()));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('expanded Settings preserves two compact preference groups', (
+    tester,
+  ) async {
+    _viewport(tester, const Size(1024, 768));
+    final h = _SettingsHarness();
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await h.dispose();
+    });
+    await h.pump(tester);
+    final preferences = find.byWidgetPredicate(
+      (w) => w is SettingsCompactSection && w.title == 'Preferences',
+    );
+    expect(
+      find.descendant(of: preferences, matching: find.byType(SettingsGroup)),
+      findsNWidgets(2),
+    );
+    expect(
+      tester.getRect(find.byKey(const ValueKey('settings-haptics-row'))).left,
+      greaterThan(
+        tester.getRect(find.byKey(const ValueKey('settings-finance-row'))).left,
+      ),
+    );
+    expect(find.byType(shad.Switch), findsNothing);
+    await _capture(tester, 'settings-root-expanded');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('timezone search fits with large text and the keyboard', (
     tester,
   ) async {
@@ -376,7 +436,17 @@ void main() {
       await tester.pump();
       await h.dispose();
     });
+    double dockOpacity() => tester
+        .widget<AnimatedOpacity>(
+          find.ancestor(
+            of: find.byType(MorphingNavigationBar),
+            matching: find.byType(AnimatedOpacity),
+          ),
+        )
+        .opacity;
+
     await h.pump(tester, scale: 2);
+    expect(dockOpacity(), 1);
     await tester.tap(find.text('Personal timezone'));
     await _settle(tester);
     tester.view.viewInsets = const FakeViewPadding(bottom: 280);
@@ -384,16 +454,58 @@ void main() {
     await tester.enterText(find.byType(TextField), 'Paris');
     await _settle(tester);
     await tester.scrollUntilVisible(
-      find.text('Europe/Paris').last,
+      find.widgetWithText(ListTile, 'Europe/Paris'),
       60,
-      scrollable: find.byType(Scrollable).last,
+      scrollable: find
+          .descendant(
+            of: find.byType(CustomScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
     );
     await _settle(tester);
+    expect(find.byType(MorphingNavigationBar), findsNothing);
     await _capture(tester, 'settings-timezone-keyboard-large');
-    await tester.tap(find.text('Europe/Paris').last);
+    await tester.tap(find.widgetWithText(ListTile, 'Europe/Paris'));
     await _settle(tester);
     verify(() => h.timezone.save('Europe/Paris')).called(1);
     expect(h.router.state.matchedLocation, Routes.settings);
+
+    tester.view.resetViewInsets();
+    await tester.pump();
+    expect(dockOpacity(), 1);
+    final rootScroll = find.byType(Scrollable).first;
+    final position = tester.state<ScrollableState>(rootScroll).position;
+    final startOffset = position.pixels;
+    expect(position.extentAfter, greaterThan(180));
+    final gesture = await tester.startGesture(tester.getCenter(rootScroll));
+    await gesture.moveBy(const Offset(0, -30));
+    await tester.pump();
+    await gesture.moveBy(const Offset(0, -150));
+    await tester.pump();
+    expect(
+      tester.state<ScrollableState>(rootScroll).position.pixels,
+      greaterThan(0),
+    );
+    expect(position.outOfRange, isFalse);
+    expect(dockOpacity(), 0);
+    final downOffset = position.pixels;
+    final reverseDistance = (downOffset - position.minScrollExtent) / 2;
+    await gesture.moveBy(Offset(0, reverseDistance));
+    await tester.pump();
+    expect(
+      tester.state<ScrollableState>(rootScroll).position.pixels,
+      greaterThan(0),
+    );
+    expect(position.outOfRange, isFalse);
+    expect(dockOpacity(), 1);
+    debugPrint(
+      'Settings root scroll: min=${position.minScrollExtent}, '
+      'max=${position.maxScrollExtent}, start=$startOffset, '
+      'down=$downOffset, reverse=${position.pixels}',
+    );
+    await gesture.up();
+    await _settle(tester);
     expect(tester.takeException(), isNull);
   });
 

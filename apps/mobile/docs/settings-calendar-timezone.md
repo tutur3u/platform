@@ -1,8 +1,10 @@
 # Settings, ordering, Profile, and Calendar timezone behavior
 
-Settings has one Settings navigation destination. The previous App, Workspace,
-and You dock items are compact navigation rows on that screen. Preferences,
-General, and Support use quiet grouped surfaces and current-value summaries.
+The App, Workspace, and You dock destinations consolidate into one Settings
+screen. Workspace and You are nested navigation rows; App preferences are compact
+items on that root. Preferences, General, and Support use quiet grouped surfaces
+and current-value summaries. Expanded preferences retain two grouped columns
+at widths of at least 840dp.
 Theme, language, first day, timezone, Finance visibility, haptics, and default
 Task board behavior open nested adaptive choice editors. Root rows do not contain
 switches and tapping, opening, canceling, dismissing, or returning from an editor
@@ -56,7 +58,7 @@ signed-in user created the event.
 
 The compact stage mounts the real ShellPage, SettingsPage, workspace child and
 adaptive editors with synthetic authenticated scope and preference fixtures. The
-bounded serial focused run passes 69 tests across compact navigation, motion,
+initial bounded serial focused run passed 69 tests across compact navigation, motion,
 workspace timezone permissions, actual timezone selection and shell Back. Focused
 analysis covers the changed runtime files and new harness. Dart formatting and
 `git diff --check` pass. Dependency metadata reuses the compatible existing mobile
@@ -66,8 +68,11 @@ Coverage includes one Settings dock item; Workspace row and Back; root rows with
 no switches; explicit choices versus cancel/dismiss; account/workspace switches
 away and back; timezone loading/unknown/retry and permissions; legacy Preferences
 redirect; license Back; and 320×568 layouts at 1×/2× text including a 280px keyboard.
-The timezone editor opts into a scrolling heading in the existing dialog scaffold
-so its search and choices remain reachable at large text with the keyboard open.
+The timezone editor uses one bounded sliver viewport in the existing dialog
+scaffold. Its heading and search scroll with lazily built choices, keeping options
+reachable at large text with the keyboard open without laying out every zone.
+Editor scroll notifications stay inside the modal so they do not hide the
+underlying shell dock.
 The default scaffold layout for other callers is unchanged.
 
 Rendered proof uses populated synthetic fixtures, the application themes and
@@ -75,6 +80,15 @@ bundled/SDK fonts. It is widget-render evidence, not native/device or screen-rea
 proof. No customer preferences were written. Exact-head owning Mobile Analysis,
 test shards and native development build CI remain required; no local native build
 or full repository check ran for this compact stage.
+
+The review correction checkpoint passes all 15 compact navigation cases and
+focused 12-item analysis. It verifies lazy zone choices (fewer than 30 built tiles
+with an empty query), filtered off-screen choices, expanded grouped columns,
+keyboard reachability and explicit save, and modal scroll isolation. Actual root
+scroll metrics are 0–5335px: a drag moves 0→150→75px, remaining in bounds while
+hiding and revealing the dock. No timer-drain teardown workaround is used.
+Earlier failed harness and lint runs are retained separately; exact-head owning CI
+and native/device checks remain pending.
 
 ## Earlier verification evidence
 

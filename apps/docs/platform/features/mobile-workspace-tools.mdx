@@ -130,8 +130,10 @@ search icon, input, and close control share one vertical center; submitting an
 empty or whitespace-only query closes search mode. Chat shows message matches
 in the page, while task boards and Timer keep filtering their current lists.
 
-Settings has one dock destination. Its former App, Workspace, and You destinations
-are consolidated into compact grouped sections and rows on `/settings`. Root rows
+The App, Workspace, and You dock destinations consolidate into one Settings
+screen at `/settings`, with Workspace and You as nested navigation rows. App
+preferences use compact grouped items, retaining two columns at widths of at
+least 840dp. Root rows
 show the current value and open nested choices; Finance visibility, haptics, and
 Task board behavior never switch directly from a root tap. Opening, canceling,
 dismissing, or pressing Back in a child does not write a preference. An explicit

@@ -9,116 +9,88 @@ class _SettingsOverviewSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    final general = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final general = SettingsCompactSection(
+      title: l10n.settingsGeneralGroup,
       children: [
-        Text(
-          l10n.settingsGeneralGroup,
-          style: shad.Theme.of(context).typography.small.copyWith(
-            fontWeight: FontWeight.w600,
-            color: shad.Theme.of(context).colorScheme.mutedForeground,
+        SettingsTile(
+          key: const ValueKey('settings-workspace-row'),
+          grouped: true,
+          icon: Icons.workspaces_outline,
+          title: l10n.settingsNavWorkspace,
+          value:
+              context.watch<WorkspaceCubit>().state.currentWorkspace?.name ??
+              l10n.settingsNoWorkspaceSelected,
+          onTap: () => context.push(Routes.settingsWorkspace),
+        ),
+        SettingsTile(
+          key: const ValueKey('settings-you-row'),
+          grouped: true,
+          icon: Icons.person_outline_rounded,
+          title: l10n.settingsNavYou,
+          value: context.watch<AuthCubit?>()?.state.user?.email,
+          onTap: () => context.push(Routes.profileRoot),
+        ),
+        SettingsTile(
+          grouped: true,
+          icon: Icons.science_outlined,
+          title: l10n.settingsExperimentalAppsSectionTitle,
+          onTap: () => context.push(Routes.settingsExperiments),
+        ),
+        ValueListenableBuilder(
+          valueListenable: OfflineMutationQueue.instance.pending,
+          builder: (context, records, _) => SettingsTile(
+            grouped: true,
+            icon: Icons.sync_rounded,
+            title: l10n.offlineChangesTitle,
+            value: records.isEmpty ? null : '${records.length}',
+            onTap: () => unawaited(showOfflineChangesSheet(context)),
           ),
         ),
-        const shad.Gap(8),
-        SettingsGroup(
-          children: [
-            SettingsTile(
-              key: const ValueKey('settings-workspace-row'),
-              grouped: true,
-              icon: Icons.workspaces_outline,
-              title: l10n.settingsNavWorkspace,
-              value:
-                  context
-                      .watch<WorkspaceCubit>()
-                      .state
-                      .currentWorkspace
-                      ?.name ??
-                  l10n.settingsNoWorkspaceSelected,
-              onTap: () => context.push(Routes.settingsWorkspace),
-            ),
-            SettingsTile(
-              key: const ValueKey('settings-you-row'),
-              grouped: true,
-              icon: Icons.person_outline_rounded,
-              title: l10n.settingsNavYou,
-              value: context.watch<AuthCubit?>()?.state.user?.email,
-              onTap: () => context.push(Routes.profileRoot),
-            ),
-            SettingsTile(
-              grouped: true,
-              icon: Icons.science_outlined,
-              title: l10n.settingsExperimentalAppsSectionTitle,
-              onTap: () => context.push(Routes.settingsExperiments),
-            ),
-            ValueListenableBuilder(
-              valueListenable: OfflineMutationQueue.instance.pending,
-              builder: (context, records, _) => SettingsTile(
-                grouped: true,
-                icon: Icons.sync_rounded,
-                title: l10n.offlineChangesTitle,
-                value: records.isEmpty ? null : '${records.length}',
-                onTap: () => unawaited(showOfflineChangesSheet(context)),
-              ),
-            ),
-            if (showInfrastructure)
-              SettingsTile(
-                grouped: true,
-                icon: Icons.dns_outlined,
-                title: l10n.settingsInfrastructureSectionTitle,
-                onTap: () => context.push(Routes.settingsInfrastructure),
-              ),
-          ],
-        ),
+        if (showInfrastructure)
+          SettingsTile(
+            grouped: true,
+            icon: Icons.dns_outlined,
+            title: l10n.settingsInfrastructureSectionTitle,
+            onTap: () => context.push(Routes.settingsInfrastructure),
+          ),
       ],
     );
-    final support = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final support = SettingsCompactSection(
+      title: l10n.settingsSupportGroup,
       children: [
-        Text(
-          l10n.settingsSupportGroup,
-          style: shad.Theme.of(context).typography.small.copyWith(
-            fontWeight: FontWeight.w600,
-            color: shad.Theme.of(context).colorScheme.mutedForeground,
+        SettingsTile(
+          grouped: true,
+          icon: Icons.auto_awesome_outlined,
+          title: l10n.settingsWhatsNew,
+          onTap: () => context.push(Routes.settingsWhatsNew),
+        ),
+        SettingsTile(
+          grouped: true,
+          icon: Icons.explore_outlined,
+          title: l10n.connectedOnboardingSettingsTitle,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const OnboardingPage(replay: true),
+            ),
           ),
         ),
-        const shad.Gap(8),
-        SettingsGroup(
-          children: [
-            SettingsTile(
-              grouped: true,
-              icon: Icons.auto_awesome_outlined,
-              title: l10n.settingsWhatsNew,
-              onTap: () => context.push(Routes.settingsWhatsNew),
-            ),
-            SettingsTile(
-              grouped: true,
-              icon: Icons.explore_outlined,
-              title: l10n.connectedOnboardingSettingsTitle,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const OnboardingPage(replay: true),
-                ),
-              ),
-            ),
-            SettingsTile(
-              grouped: true,
-              icon: Icons.description_outlined,
-              title: l10n.settingsLicensesSectionTitle,
-              onTap: () => showSettingsLicensePage(context: context),
-            ),
-            SettingsTile(
-              grouped: true,
-              icon: Icons.info_outline_rounded,
-              title: l10n.settingsAboutSectionTitle,
-              onTap: () => context.push(Routes.settingsAbout),
-            ),
-            SettingsTile(
-              grouped: true,
-              icon: Icons.logout_rounded,
-              title: l10n.settingsDangerSectionTitle,
-              onTap: () => context.push(Routes.settingsSession),
-            ),
-          ],
+        SettingsTile(
+          grouped: true,
+          icon: Icons.description_outlined,
+          title: l10n.settingsLicensesSectionTitle,
+          onTap: () => showSettingsLicensePage(context: context),
+        ),
+        SettingsTile(
+          grouped: true,
+          icon: Icons.info_outline_rounded,
+          title: l10n.settingsAboutSectionTitle,
+          onTap: () => context.push(Routes.settingsAbout),
+        ),
+        SettingsTile(
+          grouped: true,
+          icon: Icons.logout_rounded,
+          title: l10n.settingsDangerSectionTitle,
+          onTap: () => context.push(Routes.settingsSession),
         ),
       ],
     );
@@ -374,9 +346,15 @@ class _PreferencesSection extends StatelessWidget {
         onTap: onToggleDefaultTaskBoardNavigation,
       ),
     ];
-    return SettingsCompactSection(
-      title: l10n.settingsPreferencesSectionTitle,
-      children: tiles,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final split = (tiles.length / 2).ceil();
+        return SettingsCompactSection(
+          title: l10n.settingsPreferencesSectionTitle,
+          columnSplit: constraints.maxWidth >= 840 ? split : null,
+          children: tiles,
+        );
+      },
     );
   }
 }

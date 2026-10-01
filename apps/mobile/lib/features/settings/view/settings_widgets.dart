@@ -77,11 +77,15 @@ class SettingsCompactSection extends StatelessWidget {
   const SettingsCompactSection({
     required this.title,
     required this.children,
+    this.columnSplit,
     super.key,
   });
 
   final String title;
   final List<Widget> children;
+
+  /// Expanded layouts retain the same compact groups in two columns.
+  final int? columnSplit;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -95,7 +99,21 @@ class SettingsCompactSection extends StatelessWidget {
         ),
       ),
       const shad.Gap(8),
-      SettingsGroup(children: children),
+      if (columnSplit case final split?)
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SettingsGroup(children: children.take(split).toList()),
+            ),
+            const shad.Gap(16),
+            Expanded(
+              child: SettingsGroup(children: children.skip(split).toList()),
+            ),
+          ],
+        )
+      else
+        SettingsGroup(children: children),
     ],
   );
 }

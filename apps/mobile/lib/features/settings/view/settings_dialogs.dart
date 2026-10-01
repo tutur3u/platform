@@ -41,9 +41,9 @@ Future<T?> showSettingsChoiceDialog<T>({
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (description != null) ...[
+            if (description?.trim().isNotEmpty ?? false) ...[
               Text(
-                description,
+                description!.trim(),
                 style: shad.Theme.of(dialogContext).typography.textSmall
                     .copyWith(
                       color: shad.Theme.of(

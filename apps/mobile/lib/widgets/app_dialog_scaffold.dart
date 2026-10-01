@@ -8,7 +8,8 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 class AppDialogScaffold extends StatelessWidget {
   const AppDialogScaffold({
     required this.title,
-    required this.child,
+    this.child,
+    this.slivers,
     this.description,
     this.icon,
     this.actions = const [],
@@ -17,23 +18,26 @@ class AppDialogScaffold extends StatelessWidget {
     this.maxWidth = 560,
     this.maxHeightFactor = 0.88,
     this.scrollable = true,
-    this.scrollHeader = false,
     super.key,
-  });
+  }) : assert(
+         (child == null) != (slivers == null),
+         'Supply exactly one of child or slivers.',
+       );
 
   final String title;
   final String? description;
   final IconData? icon;
-  final Widget child;
+  final Widget? child;
+
+  /// Lazy body slivers share one bounded viewport with the heading.
+  /// Supply either [child] or [slivers].
+  final List<Widget>? slivers;
   final List<Widget> actions;
   final Widget? headerTrailing;
   final EdgeInsetsGeometry padding;
   final double maxWidth;
   final double maxHeightFactor;
   final bool scrollable;
-
-  /// Include the heading in the body scroll for constrained editors.
-  final bool scrollHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -150,14 +154,26 @@ class AppDialogScaffold extends StatelessWidget {
                             ),
                           ),
                         ],
-                        if (scrollHeader)
+                        if (slivers != null)
                           Flexible(
-                            child: SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  ...header,
-                                  Padding(padding: padding, child: child),
+                            child: NotificationListener<ScrollNotification>(
+                              // Modal scroll stays inside the editor.
+                              onNotification: (_) => true,
+                              child: CustomScrollView(
+                                shrinkWrap: true,
+                                slivers: [
+                                  SliverToBoxAdapter(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: header,
+                                    ),
+                                  ),
+                                  SliverPadding(
+                                    padding: padding,
+                                    sliver: SliverMainAxisGroup(
+                                      slivers: slivers!,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),

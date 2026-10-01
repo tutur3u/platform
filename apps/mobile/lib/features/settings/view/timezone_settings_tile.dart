@@ -136,30 +136,33 @@ class _TimezoneChooserState extends State<_TimezoneChooser> {
   String _query = '';
   @override
   Widget build(BuildContext context) {
-    final zones = supportedTimezones.where(
-      (zone) => zone.toLowerCase().replaceAll('_', ' ').contains(_query),
-    );
+    final zones = supportedTimezones
+        .where(
+          (zone) => zone.toLowerCase().replaceAll('_', ' ').contains(_query),
+        )
+        .toList();
     return AppDialogScaffold(
       title: widget.workspace
           ? context.l10n.settingsWorkspaceTimezone
           : context.l10n.settingsTimezone,
-      scrollHeader: true,
-      child: Material(
-        type: MaterialType.transparency,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                hintText: context.l10n.settingsTimezoneSearch,
-              ),
-              onChanged: (value) => setState(
-                () => _query = value.trim().toLowerCase().replaceAll('_', ' '),
-              ),
-            ),
-            Column(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Material(
+            type: MaterialType.transparency,
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: context.l10n.settingsTimezoneSearch,
+                  ),
+                  onChanged: (value) => setState(
+                    () => _query = value.trim().toLowerCase().replaceAll(
+                      '_',
+                      ' ',
+                    ),
+                  ),
+                ),
                 if (!widget.workspace)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -169,16 +172,24 @@ class _TimezoneChooserState extends State<_TimezoneChooser> {
                   title: Text(context.l10n.settingsTimezoneAuto),
                   onTap: () => Navigator.of(context).pop('auto'),
                 ),
-                for (final zone in zones)
-                  ListTile(
-                    title: Text(zone),
-                    onTap: () => Navigator.of(context).pop(zone),
-                  ),
               ],
             ),
-          ],
+          ),
         ),
-      ),
+        SliverList.builder(
+          itemCount: zones.length,
+          itemBuilder: (context, index) {
+            final zone = zones[index];
+            return Material(
+              type: MaterialType.transparency,
+              child: ListTile(
+                title: Text(zone),
+                onTap: () => Navigator.of(context).pop(zone),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
