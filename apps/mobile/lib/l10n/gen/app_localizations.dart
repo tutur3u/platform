@@ -18097,6 +18097,12 @@ abstract class AppLocalizations {
   /// **'Effective timezone: {timezone}'**
   String settingsTimezoneEffective(String timezone);
 
+  /// No description provided for @settingsTimezoneRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests. Please wait before retrying.'**
+  String get settingsTimezoneRateLimited;
+
   /// No description provided for @settingsTimezoneError.
   ///
   /// In en, this message translates to:

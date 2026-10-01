@@ -99,7 +99,9 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
       title: widget.workspace
           ? context.l10n.settingsWorkspaceTimezone
           : context.l10n.settingsTimezone,
-      subtitle: state.failed
+      subtitle: state.retryAt?.isAfter(DateTime.now()) == true
+          ? context.l10n.settingsTimezoneRateLimited
+          : state.failed
           ? context.l10n.settingsTimezoneError
           : !state.resolved
           ? state.loading
@@ -108,7 +110,10 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
           : context.l10n.settingsTimezoneEffective(state.effective),
       value: state.loading || state.saving
           ? '…'
-          : !state.resolved
+          : !(state.resolved ||
+                (widget.workspace
+                    ? state.workspaceLoaded
+                    : state.personalLoaded))
           ? context.l10n.settingsTimezoneUnknown
           : (widget.workspace ? state.workspace : state.personal) == 'auto'
           ? context.l10n.settingsTimezoneAuto
@@ -116,7 +121,8 @@ class _TimezoneSettingsTileState extends State<TimezoneSettingsTile> {
       showChevron: !widget.workspace || widget.canManageWorkspace,
       onTap: state.loading || state.saving || (!state.resolved && !state.failed)
           ? null
-          : state.failed && !state.resolved
+          : (state.retryAt?.isAfter(DateTime.now()) == true) ||
+                (state.failed && !state.resolved)
           ? () => unawaited(_load())
           : widget.workspace && !widget.canManageWorkspace
           ? null

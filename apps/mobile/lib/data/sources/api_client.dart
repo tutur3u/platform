@@ -509,7 +509,9 @@ class ApiClient {
       throw ApiException(
         message: effectiveMessage,
         statusCode: response.statusCode,
-        retryAfter: parsed?['retryAfter'] as int?,
+        retryAfter:
+            int.tryParse(response.headers['retry-after'] ?? '') ??
+            parsed?['retryAfter'] as int?,
         code: parsed?['code'] as String?,
       );
     }
