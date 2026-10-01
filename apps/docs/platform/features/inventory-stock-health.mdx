@@ -49,3 +49,15 @@ validity intervals and immutable price IDs, then use atomic period invoice
 creation. A current catalog price or post-create period assignment cannot replace
 this contract. Missing production pricing schema/RPC must fail closed (503).
 This panel neither authors prices nor recomputes historical sales.
+
+## Stock quantity display
+
+Inventory product rows and Overview low-stock rows preserve the parsed quantity's
+shortest round-trippable decimal representation. There is no one-decimal rounding:
+`0.04` remains `0.04`, whole quantities omit `.0`, and null remains Unlimited.
+Very small quantities may use scientific notation. This display rule does not
+change stored quantities, unit comparisons, price formatting, or financial totals.
+Precision is bounded by the existing double model; source precision already lost
+during parsing is not recovered. Overview quantities wrap within narrow layouts.
+Regressions live in `inventory_ui_test.dart` and the mounted
+`inventory_fractional_stock_test.dart` 320px/2x text case.

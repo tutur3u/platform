@@ -277,11 +277,15 @@ class InventoryEmptyPanel extends StatelessWidget {
   }
 }
 
-/// Null stock is unlimited; it is never treated as a zero quantity.
-String inventoryStockAmount(BuildContext context, double? amount) =>
-    amount == null
-    ? context.l10n.inventoryStockUnlimited
-    : amount.toStringAsFixed(amount % 1 == 0 ? 0 : 1);
+/// Null stock is unlimited; finite stock keeps the parsed double's shortest
+/// round-trippable representation instead of imposing a decimal-place limit.
+/// Whole quantities omit the trailing .0 without adding binary precision noise.
+String inventoryStockAmount(BuildContext context, double? amount) {
+  if (amount == null) return context.l10n.inventoryStockUnlimited;
+  if (amount == 0) return '0';
+  final text = amount.toString();
+  return text.endsWith('.0') ? text.substring(0, text.length - 2) : text;
+}
 
 class InventoryOverviewSkeleton extends StatelessWidget {
   const InventoryOverviewSkeleton({super.key});
