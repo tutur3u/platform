@@ -15,7 +15,7 @@ sorting retain workspace IDs and the objects from the rendered results. Duplicat
 names cannot substitute a different workspace when a list refreshes.
 
 Hidden workspaces are absent from current/default choices and workspace filters.
-Settings → Workspace opens a focused Hidden workspaces editor; restoring changes
+Settings → Hidden workspaces opens a focused restore editor; restoring changes
 only the private preference, without selecting a scope or changing the default.
 A picker with all workspaces Hidden also offers recovery. Empty preferences,
 unknown preferences, no memberships and all-Hidden memberships are distinct.
@@ -96,15 +96,18 @@ MCP discovery and consent choices exclude Hidden/unknown visibility. Explicit
 reads/navigation continue to require user-selected OAuth workspace grants,
 canonical membership and operation permissions. Hidden is not access revocation.
 
-The mobile Settings integration depends on compact Settings PR #5692. Its owner
-now proposes an account-scoped restore row in the root group immediately after
-Workspace, independent of current selection, membership role or admin permissions.
-Apply that reviewed placement only after reconciliation and actual-root tests.
+The mobile Settings integration depends on compact Settings PR #5692, reconciled
+at `dbf74ec222`. Its account-scoped restore row is in the root group immediately
+after Workspace, independent of current selection, membership role or admin
+permissions. Actual Shell/root cases verify guest, no-active and all-Hidden
+recovery, one Settings navigation item, search/Back without writes, explicit
+restore without selecting/current-default changes, and 320px/2× text scrolling.
 The all-Hidden selection surface already provides recovery without an active scope.
 Settings root/Workspace routes also remain reachable without an active scope.
 Satellite general Settings recovery does not wait for workspace/admin permissions. Exact-commit parent CI remains required before merge.
 
-Guest and audience follow-up changes require their new focused proofs; the original
+The guest mutation and audience follow-up have synthetic API/session proofs
+(including real signed satellite tokens and rewritten web cookies); the original
 15-assertion DB run proves the existing owner policy for its synthetic member/admin
 fixtures. It does not prove guest/runtime-publication behavior. No new DB run is
 launched solely for that scope; publication membership, replica identity and

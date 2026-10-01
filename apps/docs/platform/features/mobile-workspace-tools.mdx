@@ -894,3 +894,20 @@ uses its workspace ID for identity and selects its rendered workspace object,
 including after sorting, duplicate display names, and list refreshes. This rule
 applies to the sheet opened from the navbar, dashboard and Workspace Settings;
 it does not change membership discovery, permissions, or default persistence.
+
+
+## Private Hidden workspace recovery
+
+The compact Settings root places **Hidden workspaces** immediately after
+Workspace, before You. Its restore editor is account-scoped and available for
+guests, without an active workspace, and when every workspace is Hidden.
+Opening, searching and dismissing perform no preference write; explicit Restore
+changes only that user's preference and does not select a scope or change its
+default. The all-Hidden workspace selection screen also offers recovery.
+
+See [Hidden workspaces](./hidden-workspaces) for canonical membership separation,
+actor-scoped caching and web/satellite selector behavior. Regression coverage is
+in `settings_hidden_recovery_checks.dart` (actual Settings/Shell root, one mini
+navigation item, guest/no-active/all-Hidden, Back and 320px/2× text) and
+`workspace_visibility_test.dart` (rollback, logout/account replacement, deferred
+module flags and explicit deep links before preference discovery).
