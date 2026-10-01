@@ -55,24 +55,38 @@ describe('sent email preview DOMPurify compatibility', () => {
     expect(root.querySelector('span')?.textContent).toBe('Safe');
   });
 
-  for (const hook of [
-    'afterSanitizeElements',
-    'beforeSanitizeAttributes',
-    'afterSanitizeAttributes',
+  const detachSection = (node: Node) => {
+    if (node.nodeName === 'SECTION') node.parentNode?.removeChild(node);
+  };
+  // Literal hook names preserve DOMPurify's distinct addHook overloads.
+  for (const [hook, registerHook] of [
+    [
+      'beforeSanitizeElements',
+      () => DOMPurify.addHook('beforeSanitizeElements', detachSection),
+    ],
+    [
+      'uponSanitizeElement',
+      () => DOMPurify.addHook('uponSanitizeElement', detachSection),
+    ],
+    [
+      'afterSanitizeElements',
+      () => DOMPurify.addHook('afterSanitizeElements', detachSection),
+    ],
+    [
+      'beforeSanitizeAttributes',
+      () => DOMPurify.addHook('beforeSanitizeAttributes', detachSection),
+    ],
+    [
+      'afterSanitizeAttributes',
+      () => DOMPurify.addHook('afterSanitizeAttributes', detachSection),
+    ],
   ] as const) {
     it(`neutralizes queued handlers when ${hook} detaches an in-place subtree`, () => {
       const root = document.createElement('div');
       root.innerHTML =
         '<section><img id="queued" onerror="alert(1)"></section><p>Safe</p>';
       const queued = root.querySelector('#queued');
-      const detachSection = (node: Node) => {
-        if (node.nodeName === 'SECTION') node.parentNode?.removeChild(node);
-      };
-      if (hook === 'afterSanitizeElements') {
-        DOMPurify.addHook(hook, detachSection);
-      } else {
-        DOMPurify.addHook(hook, detachSection);
-      }
+      registerHook();
 
       expect(DOMPurify.sanitize(root, { IN_PLACE: true })).toBe(root);
       expect(root.querySelector('section')).toBeNull();
