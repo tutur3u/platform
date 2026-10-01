@@ -1136,13 +1136,13 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
           {/* Continuation indicators for multi-day events */}
           {showStartIndicator && (
             <div className="absolute top-1/2 left-2 -translate-x-1 -translate-y-1/2">
-              <ArrowLeft className={`h-3 w-3 ${text}`} />
+              <ArrowLeft className="h-3 w-3 text-inherit" />
             </div>
           )}
 
           {showEndIndicator && (
             <div className="absolute top-1/2 right-2 translate-x-1 -translate-y-1/2">
-              <ArrowRight className={`h-3 w-3 ${text}`} />
+              <ArrowRight className="h-3 w-3 text-inherit" />
             </div>
           )}
 

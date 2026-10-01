@@ -174,6 +174,46 @@ describe('EventCard read-only adapter events', () => {
     }
   );
 
+  it.each([
+    {
+      position: 'start',
+      icon: 'arrow-right',
+      background: '#a6bff2',
+      foreground: '#000000',
+    },
+    {
+      position: 'end',
+      icon: 'arrow-left',
+      background: '#3670e2',
+      foreground: '#ffffff',
+    },
+  ] as const)(
+    'continuation arrows inherit resolved contrast for custom RGB at $position',
+    ({ position, icon, background, foreground }) => {
+      const { container } = renderEventCard({
+        id: 'continuation',
+        title: 'Custom Google continuation',
+        color: 'BLUE',
+        start_at: '2026-06-26T08:30:00.000Z',
+        end_at: '2026-06-27T09:30:00.000Z',
+        _isMultiDay: true,
+        _dayPosition: position,
+        scheduling_metadata: {
+          google_color: { version: 1, inherited: false, background },
+        },
+      });
+      const card = screen.getByTestId('calendar-event-continuation');
+      const arrow = container.querySelector(`.lucide-${icon}`);
+      expect(arrow).not.toBeNull();
+      expect(card).toHaveStyle({
+        backgroundColor: background,
+        color: foreground,
+      });
+      expect(arrow).toHaveClass('text-inherit');
+      expect(arrow).not.toHaveClass('text-dynamic-light-blue');
+    }
+  );
+
   it('opens read-only events but hides resize controls', () => {
     const { container } = renderEventCard({
       id: 'event-1',
