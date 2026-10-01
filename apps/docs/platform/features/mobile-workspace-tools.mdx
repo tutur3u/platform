@@ -130,7 +130,7 @@ Pressing gently scales the island and smoothly brightens that internal glow,
 which fades on release. Dock controls use accessibility labels without hover
 tooltips. The Profile dock reserves its avatar space with a default placeholder,
 shows a skeleton while an image downloads, and displays the cached image when
-ready. Back from a peer navigation section, including a Settings tab, exits to
+ready. Back from a peer navigation section exits to
 the root tab that opened that context; back from a detail page returns to its
 parent section. Shell search actions across Apps, Chat, Finance, Habits, Mail,
 Meet, Notes, task boards, and Timer focus the top search input on entry. The
@@ -138,6 +138,30 @@ search icon, input, and close control share one vertical center; submitting an
 empty or whitespace-only query closes search mode except in Apps, which keeps
 its current search. Chat shows message matches
 in the page, while task boards and Timer keep filtering their current lists.
+
+The App, Workspace, and You dock destinations consolidate into one Settings
+screen at `/settings`, with Workspace and You as nested navigation rows. App
+preferences use compact grouped items, retaining two columns at widths of at
+least 840dp. Root rows
+show the current value and open nested choices; Finance visibility, haptics, and
+Task board behavior never switch directly from a root tap. Opening, canceling,
+dismissing, or pressing Back in a child does not write a preference. An explicit
+choice is required, and an account/workspace switch cancels a pending editor,
+including a switch away and back. This replaces the earlier inline-root-toggle
+design. Existing theme, language, calendar, finance, and haptics sources remain
+the owners; personal timezone still overrides workspace, then device timezone.
+Timezone loading, unknown, retry, same-scope failure retention, and workspace
+permission states stay visible. Permission reloads fail closed and stale results
+cannot expose an editor or administrative destination.
+
+The app-wide Home/Apps dock is unchanged. Workspace is a child of Settings, so
+Back returns to Settings; deeper workspace pages return to their parent. You opens
+the existing Profile, preserving its navigation and account behavior. Legacy
+Settings URLs and the Preferences redirect remain supported. Session, About, and
+open-source licenses remain accessible. Root rows use existing theme tokens,
+quiet shared borders, concise labels, muted values, and at least 48dp touch targets;
+they grow with large text. Contextual Time Tracker, Mail, Meet, and Assistant
+settings intentionally remain with their own app and permission context.
 
 Settings tiles center a single title with the icon. For tiles with a value or
 supporting line, the first title line aligns with the icon. Workspace settings

@@ -9,97 +9,88 @@ class _SettingsOverviewSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    final general = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final general = SettingsCompactSection(
+      title: l10n.settingsGeneralGroup,
       children: [
-        Text(
-          l10n.settingsGeneralGroup,
-          style: Theme.of(context).textTheme.titleSmall,
+        SettingsTile(
+          key: const ValueKey('settings-workspace-row'),
+          grouped: true,
+          icon: Icons.workspaces_outline,
+          title: l10n.settingsNavWorkspace,
+          value:
+              context.watch<WorkspaceCubit>().state.currentWorkspace?.name ??
+              l10n.settingsNoWorkspaceSelected,
+          onTap: () => context.push(Routes.settingsWorkspace),
         ),
-        const shad.Gap(8),
-        SettingsGroup(
-          children: [
-            SettingsTile(
-              grouped: true,
-              icon: Icons.workspaces_outline,
-              title: l10n.settingsNavWorkspace,
-              onTap: () => context.push(Routes.settingsWorkspace),
-            ),
-            SettingsTile(
-              grouped: true,
-              icon: Icons.science_outlined,
-              title: l10n.settingsExperimentalAppsSectionTitle,
-              onTap: () => context.push(Routes.settingsExperiments),
-            ),
-            ValueListenableBuilder(
-              valueListenable: OfflineMutationQueue.instance.pending,
-              builder: (context, records, _) => SettingsTile(
-                grouped: true,
-                icon: Icons.sync_rounded,
-                title: l10n.offlineChangesTitle,
-                value: records.isEmpty ? null : '${records.length}',
-                onTap: () => unawaited(showOfflineChangesSheet(context)),
-              ),
-            ),
-            if (showInfrastructure)
-              SettingsTile(
-                grouped: true,
-                icon: Icons.dns_outlined,
-                title: l10n.settingsInfrastructureSectionTitle,
-                onTap: () => context.push(Routes.settingsInfrastructure),
-              ),
-          ],
+        SettingsTile(
+          key: const ValueKey('settings-you-row'),
+          grouped: true,
+          icon: Icons.person_outline_rounded,
+          title: l10n.settingsNavYou,
+          value: context.watch<AuthCubit?>()?.state.user?.email,
+          onTap: () => context.push(Routes.profileRoot),
         ),
+        SettingsTile(
+          grouped: true,
+          icon: Icons.science_outlined,
+          title: l10n.settingsExperimentalAppsSectionTitle,
+          onTap: () => context.push(Routes.settingsExperiments),
+        ),
+        ValueListenableBuilder(
+          valueListenable: OfflineMutationQueue.instance.pending,
+          builder: (context, records, _) => SettingsTile(
+            grouped: true,
+            icon: Icons.sync_rounded,
+            title: l10n.offlineChangesTitle,
+            value: records.isEmpty ? null : '${records.length}',
+            onTap: () => unawaited(showOfflineChangesSheet(context)),
+          ),
+        ),
+        if (showInfrastructure)
+          SettingsTile(
+            grouped: true,
+            icon: Icons.dns_outlined,
+            title: l10n.settingsInfrastructureSectionTitle,
+            onTap: () => context.push(Routes.settingsInfrastructure),
+          ),
       ],
     );
-    final support = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final support = SettingsCompactSection(
+      title: l10n.settingsSupportGroup,
       children: [
-        Text(
-          l10n.settingsSupportGroup,
-          style: Theme.of(context).textTheme.titleSmall,
+        SettingsTile(
+          grouped: true,
+          icon: Icons.auto_awesome_outlined,
+          title: l10n.settingsWhatsNew,
+          onTap: () => context.push(Routes.settingsWhatsNew),
         ),
-        const shad.Gap(8),
-        SettingsGroup(
-          children: [
-            SettingsTile(
-              grouped: true,
-              icon: Icons.auto_awesome_outlined,
-              title: l10n.settingsWhatsNew,
-              onTap: () => context.push(Routes.settingsWhatsNew),
+        SettingsTile(
+          grouped: true,
+          icon: Icons.explore_outlined,
+          title: l10n.connectedOnboardingSettingsTitle,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const OnboardingPage(replay: true),
             ),
-            SettingsTile(
-              grouped: true,
-              icon: Icons.explore_outlined,
-              title: l10n.connectedOnboardingSettingsTitle,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const OnboardingPage(replay: true),
-                ),
-              ),
-            ),
-            SettingsTile(
-              grouped: true,
-              icon: Icons.description_outlined,
-              title: l10n.settingsLicensesSectionTitle,
-              onTap: () => showLicensePage(
-                context: context,
-                applicationName: 'Tuturuuu',
-              ),
-            ),
-            SettingsTile(
-              grouped: true,
-              icon: Icons.info_outline_rounded,
-              title: l10n.settingsAboutSectionTitle,
-              onTap: () => context.push(Routes.settingsAbout),
-            ),
-            SettingsTile(
-              grouped: true,
-              icon: Icons.logout_rounded,
-              title: l10n.settingsDangerSectionTitle,
-              onTap: () => context.push(Routes.settingsSession),
-            ),
-          ],
+          ),
+        ),
+        SettingsTile(
+          grouped: true,
+          icon: Icons.description_outlined,
+          title: l10n.settingsLicensesSectionTitle,
+          onTap: () => showSettingsLicensePage(context: context),
+        ),
+        SettingsTile(
+          grouped: true,
+          icon: Icons.info_outline_rounded,
+          title: l10n.settingsAboutSectionTitle,
+          onTap: () => context.push(Routes.settingsAbout),
+        ),
+        SettingsTile(
+          grouped: true,
+          icon: Icons.logout_rounded,
+          title: l10n.settingsDangerSectionTitle,
+          onTap: () => context.push(Routes.settingsSession),
         ),
       ],
     );
@@ -146,7 +137,7 @@ class _AboutSection extends StatelessWidget {
           icon: Icons.description_outlined,
           title: l10n.settingsLicensesSectionTitle,
           subtitle: l10n.settingsLicenseViewerDescription,
-          onTap: () => showLicensePage(
+          onTap: () => showSettingsLicensePage(
             context: context,
             applicationName: packageInfo?.appName ?? 'Tuturuuu',
             applicationVersion: _formatVersionLabel(packageInfo),
@@ -280,119 +271,93 @@ class _PreferencesSection extends StatelessWidget {
         .currentWorkspace
         ?.id;
     final tiles = <Widget>[
-      TimezoneSettingsTile(userId: userId, workspaceId: workspaceId),
+      TimezoneSettingsTile(
+        userId: userId,
+        workspaceId: workspaceId,
+        grouped: true,
+      ),
       if (workspaceId != null)
         WorkspaceTimezoneSettingsTile(
           userId: userId,
           workspaceId: workspaceId,
           permissionsRepository: permissionsRepository,
           refreshRevision: permissionsRevision,
+          grouped: true,
         ),
       SettingsTile(
+        grouped: true,
         icon: Icons.palette_outlined,
         title: l10n.settingsTheme,
-        subtitle: l10n.settingsThemeDescription,
         value: themeLabel,
         onTap: onChangeTheme,
       ),
       SettingsTile(
+        grouped: true,
         icon: Icons.language_rounded,
         title: l10n.settingsLanguage,
-        subtitle: l10n.settingsLanguageDescription,
         value: languageLabel,
         onTap: onChangeLanguage,
       ),
       SettingsTile(
+        key: const ValueKey('settings-finance-row'),
+        grouped: true,
         icon: Icons.visibility_outlined,
         title: l10n.settingsFinanceAmounts,
-        subtitle: l10n.settingsFinanceAmountsDescription,
         value: showFinanceAmounts
             ? l10n.financeShowAmounts
             : l10n.financeHideAmounts,
         onTap: onToggleFinanceAmounts,
-        showChevron: false,
-        trailing: IgnorePointer(
-          child: shad.Switch(value: showFinanceAmounts, onChanged: (_) {}),
-        ),
       ),
       SettingsTile(
+        grouped: true,
         icon: Icons.calendar_today_outlined,
         title: l10n.settingsFirstDayOfWeek,
-        subtitle: l10n.settingsFirstDayOfWeekDescription,
         value: calendarLabel,
         onTap: onChangeFirstDayOfWeek,
       ),
       SettingsTile(
+        grouped: true,
         icon: Icons.notifications_active_outlined,
         title: l10n.remindersTitle,
-        subtitle: l10n.remindersDescription,
         onTap: () => context.push(Routes.settingsReminders),
       ),
       SettingsTile(
+        key: const ValueKey('settings-haptics-row'),
+        grouped: true,
         icon: Icons.vibration_rounded,
         title: l10n.settingsHaptics,
         value: hapticsEnabled ? l10n.commonOn : l10n.commonOff,
         onTap: onToggleHaptics,
-        showChevron: false,
-        trailing: IgnorePointer(
-          child: shad.Switch(value: hapticsEnabled, onChanged: (_) {}),
-        ),
       ),
       SettingsTile(
+        grouped: true,
         icon: Icons.storage_outlined,
         title: l10n.cacheStorageTitle,
-        subtitle: l10n.cacheStorageDescription,
         onTap: () => unawaited(showCacheStorageSheet(context)),
       ),
       SettingsTile(
+        key: const ValueKey('settings-task-board-row'),
+        grouped: true,
         icon: Icons.view_kanban_outlined,
-        title: l10n.settingsDefaultTaskBoardNavigation,
-        subtitle: l10n.settingsDefaultTaskBoardNavigationDescription,
+        title: l10n.taskBoardsTitle,
         value: disableDefaultTaskBoardNavigation
             ? l10n.settingsDefaultTaskBoardNavigationBoardPicker
             : l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
         onTap: onToggleDefaultTaskBoardNavigation,
-        showChevron: false,
-        trailing: IgnorePointer(
-          child: shad.Switch(
-            value: !disableDefaultTaskBoardNavigation,
-            onChanged: (_) {},
-          ),
-        ),
       ),
     ];
     return LayoutBuilder(
-      builder: (context, constraints) => SettingsSection(
-        title: l10n.settingsPreferencesSectionTitle,
-        children: constraints.maxWidth < 840
-            ? tiles
-            : [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _settingsTileColumn(tiles.take(3).toList()),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _settingsTileColumn(tiles.skip(3).toList()),
-                    ),
-                  ],
-                ),
-              ],
-      ),
+      builder: (context, constraints) {
+        final split = (tiles.length / 2).ceil();
+        return SettingsCompactSection(
+          title: l10n.settingsPreferencesSectionTitle,
+          columnSplit: constraints.maxWidth >= 840 ? split : null,
+          children: tiles,
+        );
+      },
     );
   }
 }
-
-Widget _settingsTileColumn(List<Widget> tiles) => Column(
-  children: [
-    for (var index = 0; index < tiles.length; index++) ...[
-      if (index > 0) const shad.Gap(8),
-      tiles[index],
-    ],
-  ],
-);
 
 String _formatVersionLabel(PackageInfo? packageInfo) {
   if (packageInfo == null) {

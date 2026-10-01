@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/features/settings/view/settings_scoped_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -25,16 +25,13 @@ Future<T?> showSettingsChoiceDialog<T>({
   required T currentValue,
   String? description,
 }) {
-  return showAdaptiveSheet<T>(
+  return showScopedSettingsSheet<T>(
     context: context,
-    maxDialogWidth: 420,
     builder: (dialogContext) {
       return AppDialogScaffold(
         title: title,
-        description: description,
         icon: Icons.tune_rounded,
         maxWidth: 420,
-        maxHeightFactor: 0.72,
         actions: [
           shad.OutlineButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -44,6 +41,18 @@ Future<T?> showSettingsChoiceDialog<T>({
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (description?.trim().isNotEmpty ?? false) ...[
+              Text(
+                description!.trim(),
+                style: shad.Theme.of(dialogContext).typography.textSmall
+                    .copyWith(
+                      color: shad.Theme.of(
+                        dialogContext,
+                      ).colorScheme.mutedForeground,
+                    ),
+              ),
+              const shad.Gap(12),
+            ],
             for (final option in options)
               _SettingsChoiceTile<T>(
                 option: option,
@@ -57,6 +66,26 @@ Future<T?> showSettingsChoiceDialog<T>({
   );
 }
 
+/// Give the bundled license route its own Back dispatcher above the shell.
+Future<void> showSettingsLicensePage({
+  required BuildContext context,
+  String applicationName = 'Tuturuuu',
+  String? applicationVersion,
+}) => Navigator.of(context).push<void>(
+  MaterialPageRoute(
+    builder: (licenseContext) => BackButtonListener(
+      onBackButtonPressed: () async {
+        await Navigator.maybePop(licenseContext);
+        return true;
+      },
+      child: LicensePage(
+        applicationName: applicationName,
+        applicationVersion: applicationVersion,
+      ),
+    ),
+  ),
+);
+
 Future<bool?> showSettingsConfirmationDialog({
   required BuildContext context,
   required String title,
@@ -65,9 +94,8 @@ Future<bool?> showSettingsConfirmationDialog({
   IconData? icon,
   bool isDestructive = false,
 }) {
-  return showAdaptiveSheet<bool>(
+  return showScopedSettingsSheet<bool>(
     context: context,
-    maxDialogWidth: 420,
     builder: (dialogContext) {
       return AppDialogScaffold(
         title: title,
@@ -112,79 +140,83 @@ class _SettingsChoiceTile<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: onTap,
-          child: Ink(
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? theme.colorScheme.primary.withValues(alpha: 0.10)
-                  : theme.colorScheme.card,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
+    return Semantics(
+      selected: isSelected,
+      button: true,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: onTap,
+            child: Ink(
+              decoration: BoxDecoration(
                 color: isSelected
-                    ? theme.colorScheme.primary.withValues(alpha: 0.55)
-                    : theme.colorScheme.border.withValues(alpha: 0.75),
-              ),
-            ),
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? theme.colorScheme.primary.withValues(alpha: 0.14)
-                        : theme.colorScheme.background,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    option.icon,
-                    size: 18,
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.foreground,
-                  ),
+                    ? theme.colorScheme.primary.withValues(alpha: 0.10)
+                    : theme.colorScheme.card,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isSelected
+                      ? theme.colorScheme.primary.withValues(alpha: 0.55)
+                      : theme.colorScheme.border.withValues(alpha: 0.75),
                 ),
-                const shad.Gap(12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        option.label,
-                        style: theme.typography.small.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (option.description?.trim().isNotEmpty ?? false) ...[
-                        const shad.Gap(4),
+              ),
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? theme.colorScheme.primary.withValues(alpha: 0.14)
+                          : theme.colorScheme.background,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      option.icon,
+                      size: 18,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.foreground,
+                    ),
+                  ),
+                  const shad.Gap(12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          option.description!,
-                          style: theme.typography.textSmall.copyWith(
-                            color: theme.colorScheme.mutedForeground,
+                          option.label,
+                          style: theme.typography.small.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
+                        if (option.description?.trim().isNotEmpty ?? false) ...[
+                          const shad.Gap(4),
+                          Text(
+                            option.description!,
+                            style: theme.typography.textSmall.copyWith(
+                              color: theme.colorScheme.mutedForeground,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                const shad.Gap(12),
-                Icon(
-                  isSelected
-                      ? Icons.check_circle_rounded
-                      : Icons.radio_button_unchecked_rounded,
-                  size: 20,
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.mutedForeground,
-                ),
-              ],
+                  const shad.Gap(12),
+                  Icon(
+                    isSelected
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_unchecked_rounded,
+                    size: 20,
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.mutedForeground,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
