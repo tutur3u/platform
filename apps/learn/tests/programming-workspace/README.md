@@ -59,3 +59,9 @@ Disabled Run/Submit tooltips are reached with keyboard Tab through the actual
 Radix components. Both challenges exercise Run and Submit and compare actual
 rendered verdicts with the one synthetic case card. Unique synthetic submission
 ids keep query caching faithful between these attempts.
+
+The four Run/Submit flow checks first wait for exact output tagged with the synthetic attempt
+ordinal, UUID, challenge and Run/Submit kind. This same browser wait predicate has
+a regression proving that an older identical 1/1 verdict cannot pass. Stored
+fixture attempts are read by submission id. The tags identify fresh UI renders;
+they provide no evidence of real judge correctness.

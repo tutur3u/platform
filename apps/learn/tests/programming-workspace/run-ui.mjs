@@ -4,6 +4,10 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { prepareTypecheck } from './prepare-typecheck.mjs';
+import {
+  hasFreshSyntheticOutput,
+  syntheticSubmissionOutput,
+} from './synthetic-result.ts';
 
 const require = createRequire(import.meta.url);
 const { createServer } = await import(require.resolve('vite'));
@@ -431,7 +435,10 @@ async function run() {
   await page.keyboard.press('ControlOrMeta+Enter');
   await page.waitForFunction(() => window.__syntheticSubmitCount === 2);
   check('Ctrl/Cmd+Enter uses guarded test execution');
-  for (const challengeName of ['Two Sum', 'Binary Search']) {
+  for (const [challengeName, challengeSlug] of [
+    ['Two Sum', 'two-sum'],
+    ['Binary Search', 'binary-search'],
+  ]) {
     await page.getByRole('combobox', { name: 'Programming problems' }).click();
     await page
       .getByRole('option', { name: challengeName, exact: true })
@@ -440,13 +447,31 @@ async function run() {
       const beforeCount = await page.evaluate(
         () => window.__syntheticSubmitCount
       );
+      const expectedOutput = syntheticSubmissionOutput({
+        ordinal: beforeCount + 1,
+        challengeSlug,
+        kind: actionName === 'Run tests' ? 'test' : 'submit',
+        output: challengeSlug === 'binary-search' ? '3\n' : '0 1\n',
+      });
       await page.getByRole('button', { name: actionName, exact: true }).click();
       await page.waitForFunction(
         (count) => window.__syntheticSubmitCount === count + 1,
         beforeCount
       );
+      await page.waitForFunction(hasFreshSyntheticOutput, expectedOutput);
       await page.getByText('1 of 1 cases passed', { exact: true }).waitFor();
       const panel = page.getByRole('tabpanel');
+      assert.equal(
+        await panel
+          .locator('pre')
+          .evaluateAll(
+            (elements, expected) =>
+              elements.filter((element) => element.textContent === expected)
+                .length,
+            expectedOutput
+          ),
+        1
+      );
       assert.equal(
         await panel.getByText('Public case 1', { exact: true }).count(),
         1
@@ -460,7 +485,7 @@ async function run() {
         1
       );
       check(
-        `${challengeName} ${actionName}: actual verdict and rendered case count agree at 1/1`
+        `${challengeName} ${actionName}: fresh attempt output, verdict and rendered case count agree at 1/1`
       );
     }
   }

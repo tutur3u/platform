@@ -5,6 +5,11 @@ import path from 'node:path';
 import test from 'node:test';
 import vm from 'node:vm';
 import { observeMobileHeaderHeight } from '../../../../packages/ui/src/components/ui/custom/mobile-header-height.ts';
+import {
+  hasFreshSyntheticOutput,
+  syntheticSubmissionId,
+  syntheticSubmissionOutput,
+} from './synthetic-result.ts';
 
 const require = createRequire(import.meta.url);
 const { transformSync } = require('esbuild');
@@ -157,9 +162,10 @@ test('loaded font remeasures once and disposed editor skips remeasure', async ()
 test('synthetic custom result carries custom input and consistent case statistics', async () => {
   const fixture = load(path.join(import.meta.dirname, 'judge.ts'), {
     '../../src/lib/coding/languages': { isCodingLanguage: () => true },
+    './synthetic-result': { syntheticSubmissionId, syntheticSubmissionOutput },
   });
   const customCase = { input: 'synthetic input', expected: 'synthetic output' };
-  await fixture.submitCodingSolution(
+  const id = await fixture.submitCodingSolution(
     'ws',
     undefined,
     'two-sum',
@@ -168,9 +174,11 @@ test('synthetic custom result carries custom input and consistent case statistic
     'test',
     customCase
   );
-  const submission = await fixture.getCodingSubmission();
+  const submission = await fixture.getCodingSubmission('ws', undefined, id);
   assert.deepEqual({ ...submission.customCase }, customCase);
-  assert.equal(submission.result.results[0].output, customCase.expected);
+  assert.ok(
+    submission.result.results[0].output.endsWith(`\n${customCase.expected}`)
+  );
   assert.equal(submission.result.total, submission.result.results.length);
   assert.equal(submission.result.passed, 1);
   assert.equal(JSON.stringify(submission.result.timingRangeMs), '[3,3]');
@@ -179,6 +187,7 @@ test('synthetic custom result carries custom input and consistent case statistic
 test('browser verdict expectation matches actual fixture counts for Run and Submit', async () => {
   const fixture = load(path.join(import.meta.dirname, 'judge.ts'), {
     '../../src/lib/coding/languages': { isCodingLanguage: () => true },
+    './synthetic-result': { syntheticSubmissionId, syntheticSubmissionOutput },
   });
   const browser = fs.readFileSync(
     path.join(import.meta.dirname, 'run-ui.mjs'),
@@ -190,7 +199,7 @@ test('browser verdict expectation matches actual fixture counts for Run and Subm
   assert.ok(expectation, 'Browser batch must wait for the exact case verdict');
   for (const challenge of ['two-sum', 'binary-search']) {
     for (const kind of ['test', 'submit']) {
-      await fixture.submitCodingSolution(
+      const id = await fixture.submitCodingSolution(
         'ws',
         undefined,
         challenge,
@@ -198,7 +207,7 @@ test('browser verdict expectation matches actual fixture counts for Run and Subm
         'source',
         kind
       );
-      const { result } = await fixture.getCodingSubmission();
+      const { result } = await fixture.getCodingSubmission('ws', undefined, id);
       assert.equal(result.total, result.results.length);
       assert.equal(
         result.passed,
@@ -210,6 +219,58 @@ test('browser verdict expectation matches actual fixture counts for Run and Subm
       );
       assert.equal(result.hiddenPassed, 0);
       assert.equal(result.hiddenTotal, 0);
+    }
+  }
+});
+
+test('the actual browser wait rejects stale output despite identical 1/1 verdicts', async () => {
+  const fixture = load(path.join(import.meta.dirname, 'judge.ts'), {
+    '../../src/lib/coding/languages': { isCodingLanguage: () => true },
+    './synthetic-result': { syntheticSubmissionId, syntheticSubmissionOutput },
+  });
+  const wait = vm.runInNewContext(`(${hasFreshSyntheticOutput.toString()})`, {
+    document: { querySelectorAll: () => rendered },
+  });
+  let rendered = [];
+  let previous = null;
+  for (const challenge of ['two-sum', 'binary-search']) {
+    for (const kind of ['test', 'submit']) {
+      const id = await fixture.submitCodingSolution(
+        'ws',
+        undefined,
+        challenge,
+        'python',
+        'source',
+        kind
+      );
+      const submission = await fixture.getCodingSubmission('ws', undefined, id);
+      const expected = submission.result.results[0].output;
+      assert.ok(expected.includes(`${id} ${challenge}/${kind}`));
+      if (previous) {
+        rendered = [{ textContent: previous.result.results[0].output }];
+        assert.equal(previous.result.passed, submission.result.passed);
+        assert.equal(previous.result.total, submission.result.total);
+        assert.equal(
+          wait(expected),
+          false,
+          'Old 1/1 result must not satisfy actual browser predicate'
+        );
+        const oldRead = await fixture.getCodingSubmission(
+          'ws',
+          undefined,
+          previous.id
+        );
+        assert.equal(oldRead.id, previous.id);
+        assert.equal(oldRead.challengeSlug, previous.challengeSlug);
+        assert.equal(oldRead.kind, previous.kind);
+        assert.equal(
+          oldRead.result.results[0].output,
+          previous.result.results[0].output
+        );
+      }
+      rendered = [{ textContent: expected }];
+      assert.equal(wait(expected), true);
+      previous = submission;
     }
   }
 });
