@@ -1,131 +1,149 @@
 import type { Page, TestInfo } from '@playwright/test';
 
-// Only structural metadata: never serialize element props, thenable values,
-// network headers, cookies, or API bodies from the synthetic fixture.
-const childShapeExpression = `(() => {
-  const shape = (value) => {
-    if (value == null) return { kind: String(value) };
-    const result = { kind: typeof value, array: Array.isArray(value) };
-    if (typeof value !== 'object') return result;
-    result.reactType = typeof value.$$typeof === 'symbol'
-      ? String(value.$$typeof) : typeof value.$$typeof;
-    result.elementType = typeof value.type;
-    result.payloadKind = typeof value._payload;
-    const payload = value._payload;
-    if (payload && typeof payload === 'object') {
-      const status = payload.status ?? payload._status;
-      if (typeof status === 'number' ||
-          ['pending', 'fulfilled', 'rejected', 'blocked'].includes(status))
-        result.payloadStatus = status;
-      result.payloadThen = typeof payload.then;
-    }
-    if (Array.isArray(value)) result.length = value.length;
-    return result;
-  };
-  return {
-    children: shape(typeof children === 'undefined' ? undefined : children),
-    childArray: shape(typeof childrenArray === 'undefined' ? undefined : childrenArray),
-    child: shape(typeof child === 'undefined' ? undefined : child),
-    reactUse: typeof use,
-    reactNamespaceUse: typeof React === 'undefined' ? 'unbound' : typeof React.use,
-  };
-})()`;
-
+/** Passive observers only: no breakpoints, lazy resolution, or element changes. */
 export async function captureStorefrontSlotDiagnostics(
   page: Page,
   testInfo: TestInfo
 ) {
-  const session = await page.context().newCDPSession(page);
-  const captures: unknown[] = [];
-  const pending = new Set<Promise<void>>();
-  let stopped = false;
-
-  session.on('Debugger.paused', (event) => {
-    const task = (async () => {
-      try {
-        const description = event.data?.description ?? '';
+  await page.addInitScript(() => {
+    const observed: unknown[] = [];
+    const shape = (value: unknown): Record<string, unknown> => {
+      if (value == null) return { kind: String(value) };
+      const result: Record<string, unknown> = {
+        kind: typeof value,
+        array: Array.isArray(value),
+      };
+      if (typeof value !== 'object') return result;
+      const element = value as Record<string, unknown>;
+      result.reactType =
+        typeof element.$$typeof === 'symbol'
+          ? String(element.$$typeof)
+          : typeof element.$$typeof;
+      result.elementType = typeof element.type;
+      result.payloadKind = typeof element._payload;
+      if (Array.isArray(value)) result.length = value.length;
+      if (element._payload && typeof element._payload === 'object') {
+        const payload = element._payload as Record<string, unknown>;
+        const status = payload.status ?? payload._status;
         if (
-          stopped ||
-          captures.length >= 3 ||
-          !description.includes('Slot failed to slot onto its children')
+          typeof status === 'number' ||
+          ['pending', 'fulfilled', 'rejected', 'blocked'].includes(
+            String(status)
+          )
         )
-          return;
-        const frame = event.callFrames.find((candidate) =>
-          candidate.functionName.includes('Slot')
-        );
-        if (!frame) return;
+          result.payloadStatus = status;
+        result.payloadThen = typeof payload.then;
+      }
+      return result;
+    };
+    type Fiber = {
+      type?: { name?: string; displayName?: string };
+      memoizedProps?: { asChild?: boolean; children?: unknown };
+      pendingProps?: { asChild?: boolean; children?: unknown };
+      child?: Fiber;
+      sibling?: Fiber;
+    };
+    const record = (fiber: Fiber, phase: string) => {
+      if (fiber.type?.name !== 'Button' && fiber.type?.displayName !== 'Button')
+        return;
+      const props = fiber.memoizedProps ?? fiber.pendingProps;
+      if (!props?.asChild) return;
+      // Ring buffer contains only structural types/status, never props/text or
+      // a thenable's value/reason. Do not call _init, then(), or React.use().
+      observed.push({ phase, child: shape(props.children) });
+      if (observed.length > 24) observed.shift();
+    };
+    const inspect = (root: { current?: Fiber }) => {
+      const stack = root.current ? [root.current] : [];
+      let remaining = 500;
+      while (stack.length && remaining-- > 0) {
+        const fiber = stack.pop()!;
+        record(fiber, 'commit');
+        if (fiber.child) stack.push(fiber.child);
+        if (fiber.sibling) stack.push(fiber.sibling);
+      }
+    };
+    const target = window as unknown as Record<string, unknown>;
+    const existing = target.__REACT_DEVTOOLS_GLOBAL_HOOK__ as
+      | Record<string, unknown>
+      | undefined;
+    let rendererId = 0;
+    const hook = existing ?? {
+      supportsFiber: true,
+      inject: () => ++rendererId,
+    };
+    const wrap = (name: string, observe: (...args: unknown[]) => void) => {
+      const original = hook[name];
+      hook[name] = (...args: unknown[]) => {
+        // Diagnostics must not change React's existing DevTools callbacks.
+        try {
+          observe(...args);
+        } catch {}
+        return typeof original === 'function'
+          ? Reflect.apply(original, hook, args)
+          : undefined;
+      };
+    };
+    wrap('onCommitFiberRoot', (_id, root) =>
+      inspect(root as { current?: Fiber })
+    );
+    wrap('onCommitFiberUnmount', (_id, fiber) =>
+      record(fiber as Fiber, 'unmount')
+    );
+    target.__REACT_DEVTOOLS_GLOBAL_HOOK__ = hook;
+    target.__storefrontSlotShapes = observed;
+  });
+
+  const session = await page.context().newCDPSession(page);
+  const scripts: Array<{ scriptId: string; url: string }> = [];
+  session.on('Debugger.scriptParsed', (script) => {
+    if (
+      scripts.length < 100 &&
+      script.url.startsWith('http://localhost:7822/_next/static/chunks/')
+    )
+      scripts.push({ scriptId: script.scriptId, url: script.url });
+  });
+  await session.send('Debugger.enable');
+  // Deliberately never setPauseOnExceptions or setBreakpoint: a pause can
+  // resolve the pending RSC child and hide the failure under investigation.
+  return async (failed: boolean) => {
+    try {
+      if (!failed) return;
+      const sources: unknown[] = [];
+      const candidates = [...scripts].sort(
+        (a, b) =>
+          Number(b.url.includes('node_modules')) -
+          Number(a.url.includes('node_modules'))
+      );
+      for (const script of candidates.slice(0, 24)) {
         const { scriptSource } = await session.send(
           'Debugger.getScriptSource',
           {
-            scriptId: frame.location.scriptId,
+            scriptId: script.scriptId,
           }
         );
-        const lines = scriptSource.split('\n');
-        const throwLine = frame.location.lineNumber;
-        const start = Math.max(0, throwLine - 80);
-        const source = lines
-          .slice(start, throwLine + 20)
-          .join('\n')
-          .slice(0, 20_000);
-        const localScope = frame.scopeChain.find(
-          (scope) => scope.type === 'local'
-        );
-        const locals = localScope?.object.objectId
-          ? await session.send('Runtime.getProperties', {
-              objectId: localScope.object.objectId,
-              ownProperties: true,
-            })
-          : null;
-        const childNames = (locals?.result ?? [])
-          .map((binding) => binding.name)
-          .filter((name) => /^(children|childrenArray|child)\d*$/.test(name))
-          .slice(0, 6);
-        const expression = childNames.length
-          ? childShapeExpression.replace(
-              /children: shape\([\s\S]*?reactUse: typeof use,/,
-              `${childNames.map((name) => `${name}: shape(${name})`).join(',')}, reactUse: typeof use,`
-            )
-          : childShapeExpression;
-        const child = await session.send('Debugger.evaluateOnCallFrame', {
-          callFrameId: frame.callFrameId,
-          expression,
-          returnByValue: true,
-          silent: true,
+        const index = scriptSource.indexOf('failed to slot onto its children');
+        if (index < 0) continue;
+        sources.push({
+          chunk: new URL(script.url).pathname,
+          servedSlotExcerpt: scriptSource.slice(
+            Math.max(0, index - 12_000),
+            index + 2_000
+          ),
         });
-        captures.push({
-          exception: 'Slot failed to slot onto its children',
-          functionName: frame.functionName,
-          line: throwLine + 1,
-          sourceStartLine: start + 1,
-          servedSourceExcerpt: source,
-          structuralChildState: child.result.value ?? null,
-          evaluationFailed: Boolean(child.exceptionDetails),
-        });
-      } catch {
-        // Diagnostic failure must never replace the navigation assertion.
-        captures.push({ diagnosticFailed: true });
-      } finally {
-        await session.send('Debugger.resume').catch(() => undefined);
+        if (sources.length === 2) break;
       }
-    })();
-    pending.add(task);
-    void task.finally(() => pending.delete(task));
-  });
-
-  await session.send('Debugger.enable');
-  // React handles this exception with its boundary, so 'uncaught' misses it.
-  await session.send('Debugger.setPauseOnExceptions', { state: 'all' });
-
-  return async () => {
-    stopped = true;
-    await session
-      .send('Debugger.setPauseOnExceptions', { state: 'none' })
-      .catch(() => undefined);
-    await Promise.allSettled([...pending]);
-    await session.detach().catch(() => undefined);
-    await testInfo.attach('storefront-slot-boundary-diagnostics', {
-      body: Buffer.from(JSON.stringify({ captures }, null, 2)),
-      contentType: 'application/json',
-    });
+      const childShapes = await page.evaluate(
+        () =>
+          (window as unknown as Record<string, unknown>)
+            .__storefrontSlotShapes ?? []
+      );
+      await testInfo.attach('storefront-slot-boundary-diagnostics', {
+        body: Buffer.from(JSON.stringify({ sources, childShapes }, null, 2)),
+        contentType: 'application/json',
+      });
+    } finally {
+      await session.detach().catch(() => undefined);
+    }
   };
 }

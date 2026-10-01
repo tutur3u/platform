@@ -14,7 +14,8 @@ test('invalidates cached availability and preserves the shared storefront shell'
   request,
 }, testInfo) => {
   const fixture = await createStorefrontCacheFixture(request);
-  let finishSlotDiagnostics = async () => {};
+  let finishSlotDiagnostics = async (_failed: boolean) => {};
+  let navigationFailed = false;
 
   const browserErrors: string[] = [];
   page.on('pageerror', (error) => {
@@ -79,11 +80,10 @@ test('invalidates cached availability and preserves the shared storefront shell'
     page.on('request', (requestEvent) => {
       if (requestEvent.resourceType() === 'document') documentRequests += 1;
     });
-    if (process.env.STOREFRONT_SLOT_DIAGNOSTICS === 'true')
-      finishSlotDiagnostics = await captureStorefrontSlotDiagnostics(
-        page,
-        testInfo
-      ).catch(() => async () => {});
+    finishSlotDiagnostics = await captureStorefrontSlotDiagnostics(
+      page,
+      testInfo
+    ).catch(() => async (_failed: boolean) => {});
     await page.goto(
       `/${fixture.slug}/products/${invalidatedPayload.listings[0].id}`
     );
@@ -112,6 +112,7 @@ test('invalidates cached availability and preserves the shared storefront shell'
       path: testInfo.outputPath('storefront-client-navigation.png'),
     });
   } catch (error) {
+    navigationFailed = true;
     // Capture after the failed assertion: the boundary can appear after URL commit.
     // Diagnostic failures must not replace the original contract failure.
     try {
@@ -147,7 +148,7 @@ test('invalidates cached availability and preserves the shared storefront shell'
     }
     throw error;
   } finally {
-    await finishSlotDiagnostics().catch(() => undefined);
+    await finishSlotDiagnostics(navigationFailed).catch(() => undefined);
     await deleteStorefrontCacheFixture(request, fixture);
   }
 });
