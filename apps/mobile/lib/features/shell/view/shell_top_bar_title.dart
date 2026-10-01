@@ -109,7 +109,7 @@ class _ShellTopBarTitleContent extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: mobileSectionAppBarHeight,
+      height: mobileSectionAppBarHeightFor(context),
       width: double.infinity,
       child: Row(
         children: [
@@ -309,7 +309,7 @@ class _AnimatedTitleTextState extends State<_AnimatedTitleText> {
         onTap: _startEditing,
         child: SizedBox(
           key: ValueKey<String>('title-view-${widget.title}'),
-          height: mobileSectionAppBarHeight,
+          height: mobileSectionAppBarHeightFor(context),
           width: double.infinity,
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -366,7 +366,7 @@ class _AnimatedTitleTextState extends State<_AnimatedTitleText> {
 
     return SizedBox(
       key: ValueKey<String>('title-editor-${widget.title}'),
-      height: mobileSectionAppBarHeight,
+      height: mobileSectionAppBarHeightFor(context),
       width: double.infinity,
       child: Row(
         children: [

@@ -1,0 +1,344 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
+import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/profile/view/profile_overview_page.dart';
+import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
+import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
+import 'package:mobile/features/shell/view/floating_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_page.dart';
+import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supa;
+
+class _Auth extends MockCubit<AuthState> implements AuthCubit {}
+
+class _Workspaces extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
+
+class _Profile extends MockCubit<ShellProfileState>
+    implements ShellProfileCubit {}
+
+Future<void> _pump(WidgetTester tester) async {
+  for (var i = 0; i < 12; i++) {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+}
+
+void main() {
+  late AppTabCubit apps;
+  late ExperimentalAppsCubit experiments;
+  late _Auth auth;
+  late _Workspaces workspaces;
+  late _Profile profile;
+  late GoRouter router;
+  var textScale = 1.0;
+  var width = 320.0;
+  final baseline = Platform.environment['NAVBAR_BASELINE'] == '1';
+
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+    await supa.Supabase.initialize(
+      url: 'https://synthetic.supabase.test',
+      publishableKey: 'synthetic-test-key',
+      authOptions: const supa.FlutterAuthClientOptions(
+        autoRefreshToken: false,
+        detectSessionInUri: false,
+        localStorage: supa.EmptyLocalStorage(),
+      ),
+    );
+    final font = Platform.environment['NAVBAR_MATERIAL_FONT'];
+    if (font != null) {
+      final loader = FontLoader('Roboto')
+        ..addFont(File(font).readAsBytes().then(ByteData.sublistView));
+      await loader.load();
+    }
+    final manifest =
+        jsonDecode(await rootBundle.loadString('FontManifest.json'))
+            as List<dynamic>;
+    for (final entry in manifest.cast<Map<String, dynamic>>()) {
+      final loader = FontLoader(entry['family'] as String);
+      for (final font
+          in (entry['fonts'] as List<dynamic>).cast<Map<String, dynamic>>()) {
+        loader.addFont(rootBundle.load(font['asset'] as String));
+      }
+      await loader.load();
+    }
+  });
+
+  tearDownAll(() => supa.Supabase.instance.dispose());
+
+  setUp(() async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('mobile/shell_back'),
+          (_) async => null,
+        );
+    SharedPreferences.setMockInitialValues({});
+    apps = AppTabCubit(settingsRepository: SettingsRepository());
+    experiments = ExperimentalAppsCubit(
+      settingsRepository: SettingsRepository(),
+    );
+    await experiments.load();
+    auth = _Auth();
+    workspaces = _Workspaces();
+    profile = _Profile();
+    whenListen(
+      auth,
+      const Stream<AuthState>.empty(),
+      initialState: const AuthState.unauthenticated(),
+    );
+    whenListen(
+      workspaces,
+      const Stream<WorkspaceState>.empty(),
+      initialState: const WorkspaceState(
+        currentWorkspace: Workspace(id: 'synthetic-personal', personal: true),
+      ),
+    );
+    whenListen(
+      profile,
+      const Stream<ShellProfileState>.empty(),
+      initialState: const ShellProfileState(),
+    );
+    router = GoRouter(
+      initialLocation: Routes.settings,
+      routes: [
+        ShellRoute(
+          builder: (context, state, child) => ShellPage(
+            matchedLocation: state.uri.path,
+            enableDebugLogs: false,
+            child: child,
+          ),
+          routes: [
+            GoRoute(path: Routes.apps, builder: (_, _) => const SizedBox()),
+            GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
+            GoRoute(path: Routes.settings, builder: (_, _) => const _Section()),
+            GoRoute(
+              path: Routes.profileRoot,
+              builder: (_, _) => const SizedBox(),
+            ),
+          ],
+        ),
+      ],
+    );
+  });
+  tearDown(() async {
+    router.dispose();
+    await apps.close();
+    await experiments.close();
+    await auth.close();
+    await workspaces.close();
+    await profile.close();
+  });
+
+  Future<void> mount(WidgetTester tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = Size(width, 568);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: const ValueKey('navbar-render'),
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: apps),
+            BlocProvider.value(value: experiments),
+            BlocProvider<AuthCubit>.value(value: auth),
+            BlocProvider<WorkspaceCubit>.value(value: workspaces),
+            BlocProvider<ShellProfileCubit>.value(value: profile),
+            BlocProvider(create: (_) => AssistantChromeCubit()),
+            BlocProvider(create: (_) => ShellMiniNavCubit()),
+            BlocProvider(create: (_) => ShellTitleOverrideCubit()),
+            BlocProvider(create: (_) => ShellChromeActionsCubit()),
+          ],
+          child: shad.ShadcnApp.router(
+            theme: MobileShadTheme.light,
+            debugShowCheckedModeBanner: false,
+            localizationsDelegates: const [
+              ...AppLocalizations.localizationsDelegates,
+              shad.ShadcnLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(textScale)),
+              child: ShadcnMaterialBridge.appBuilder(context, child),
+            ),
+            routerConfig: router,
+          ),
+        ),
+      ),
+    );
+    await _pump(tester);
+  }
+
+  for (final profileSection in [false, true]) {
+    for (final viewport in [320.0, 393.0]) {
+      for (final scale in [1.0, 2.0, 3.0]) {
+        final title = profileSection ? 'Profile' : 'Settings';
+        testWidgets(
+          '$title width$viewport text$scale fits actual shell navbar',
+          (tester) async {
+            width = viewport;
+            textScale = scale;
+            await mount(tester);
+            if (profileSection) {
+              router.go(Routes.profileRoot);
+              await _pump(tester);
+            }
+            final titleFinder = find.descendant(
+              of: find.byType(ShellTopBarTitle),
+              matching: find.text(title),
+            );
+            expect(titleFinder, findsOneWidget);
+            final paragraph = tester.renderObject<RenderParagraph>(titleFinder);
+            final intrinsicHeight = paragraph.getMaxIntrinsicHeight(
+              paragraph.size.width,
+            );
+            if (baseline && scale > 1) {
+              expect(paragraph.size.height, lessThan(intrinsicHeight));
+            } else {
+              expect(
+                paragraph.size.height,
+                greaterThanOrEqualTo(intrinsicHeight),
+              );
+            }
+            expect(paragraph.maxLines, 1);
+            final fontSize = (paragraph.text as TextSpan).style!.fontSize!;
+            expect(
+              paragraph.textScaler.scale(fontSize),
+              closeTo(fontSize * scale, .01),
+            );
+            final bar = tester.getRect(find.byType(shad.AppBar).first);
+            if (scale == 1 || baseline) expect(bar.height, 54);
+            final content = tester.getRect(
+              profileSection
+                  ? find
+                        .descendant(
+                          of: find.byType(ProfileOverviewPage),
+                          matching: find.text('Overview'),
+                        )
+                        .first
+                  : find.byKey(const ValueKey('navbar-content')),
+            );
+            expect(content.top, closeTo(bar.bottom + 10, .01));
+            expect(
+              floatingShellHeaderInset(
+                tester.element(find.byType(ShellTopBarTitle)),
+              ),
+              bar.height,
+            );
+            Rect? selectorRect;
+            if (profileSection) {
+              final selector = find.byKey(const ValueKey('profile-views'));
+              expect(selector, findsOneWidget);
+              selectorRect = tester.getRect(selector);
+              expect(selectorRect.size, const Size(104, 46));
+              expect(bar.contains(selectorRect.topLeft), isTrue);
+              expect(bar.contains(selectorRect.bottomRight), isTrue);
+              expect(
+                find.ancestor(of: selector, matching: find.byType(shad.AppBar)),
+                findsOneWidget,
+              );
+            }
+            final semantics = tester.ensureSemantics();
+            expect(
+              find.bySemanticsLabel(RegExp('$title, Search apps')),
+              findsOneWidget,
+            );
+            final output = Platform.environment['NAVBAR_RENDER_DIR'];
+            if (output != null) {
+              await tester.runAsync(() async {
+                final directory = Directory(output)
+                  ..createSync(recursive: true);
+                final name =
+                    '${baseline ? 'before' : 'after'}-$title-$viewport-$scale';
+                final boundary = tester.renderObject<RenderRepaintBoundary>(
+                  find.byKey(const ValueKey('navbar-render')),
+                );
+                final image = await boundary.toImage();
+                final bytes = await image.toByteData(
+                  format: ui.ImageByteFormat.png,
+                );
+                await File(
+                  '${directory.path}/$name.png',
+                ).writeAsBytes(bytes!.buffer.asUint8List());
+                await File('${directory.path}/$name.json').writeAsString(
+                  jsonEncode({
+                    'synthetic': true,
+                    'scale': scale,
+                    'width': width,
+                    'bar': [bar.left, bar.top, bar.right, bar.bottom],
+                    'title': [paragraph.size.width, paragraph.size.height],
+                    'intrinsicTitleHeight': intrinsicHeight,
+                    'contentTop': content.top,
+                    'selector': _rectValues(selectorRect),
+                  }),
+                );
+                image.dispose();
+              });
+            }
+            if (!baseline && profileSection && viewport == 393 && scale == 2) {
+              await tester.tap(find.byTooltip('Activity timeline'));
+              await _pump(tester);
+              expect(
+                tester
+                    .getSemantics(find.byTooltip('Activity timeline'))
+                    .getSemanticsData()
+                    .flagsCollection
+                    .isSelected,
+                ui.Tristate.isTrue,
+              );
+            }
+            semantics.dispose();
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+  }
+}
+
+/// Synthetic Settings body inside the real shell. Profile cases exercise the
+/// real ProfileOverviewPage with scoped mock cubits and no signed-in account.
+class _Section extends StatelessWidget {
+  const _Section();
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.only(top: 10, left: 16),
+    children: const [
+      Text('Synthetic section content', key: ValueKey('navbar-content')),
+    ],
+  );
+}
+
+List<double>? _rectValues(Rect? rect) =>
+    rect == null ? null : [rect.left, rect.top, rect.right, rect.bottom];

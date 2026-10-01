@@ -8,6 +8,29 @@ const double mobileSectionAppBarLogoSize = 26;
 const double mobileSectionAppBarHeight = 46;
 const EdgeInsets mobileSectionAppBarPadding = EdgeInsets.fromLTRB(16, 4, 16, 4);
 
+/// Fit the scaled title line plus the brand control's vertical padding without
+/// reducing accessibility text. Default text keeps the normal compact height.
+double mobileSectionAppBarHeightFor(BuildContext context) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: 'Ag',
+      style: DefaultTextStyle.of(context).style.merge(
+        Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+      ),
+    ),
+    textScaler: MediaQuery.textScalerOf(context),
+    textDirection: Directionality.of(context),
+    maxLines: 1,
+  )..layout();
+  final titleHeight = painter.height + 16;
+  painter.dispose();
+  return titleHeight > mobileSectionAppBarHeight
+      ? titleHeight.ceilToDouble()
+      : mobileSectionAppBarHeight;
+}
+
 class MobileSectionAppBar extends StatelessWidget {
   const MobileSectionAppBar({
     this.title,
@@ -33,7 +56,7 @@ class MobileSectionAppBar extends StatelessWidget {
     }
 
     return shad.AppBar(
-      height: mobileSectionAppBarHeight,
+      height: mobileSectionAppBarHeightFor(context),
       padding: mobileSectionAppBarPadding,
       leadingGap: 8,
       trailingGap: 6,
@@ -47,7 +70,7 @@ class MobileSectionAppBar extends StatelessWidget {
           ),
       ],
       child: SizedBox(
-        height: mobileSectionAppBarHeight,
+        height: mobileSectionAppBarHeightFor(context),
         child: Row(
           children: [
             Image.asset(

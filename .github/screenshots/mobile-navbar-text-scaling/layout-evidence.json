@@ -1,0 +1,520 @@
+{
+  "synthetic": true,
+  "not_installed_QA": true,
+  "normal_size_pixels": {
+    "Settings-320.0-1.0": {
+      "pixel_identical": true,
+      "before_pixel_sha256": "9fd006449f08e36d631279987384d8582a6b276f0f90e06a701d2f8d33935c16",
+      "after_pixel_sha256": "9fd006449f08e36d631279987384d8582a6b276f0f90e06a701d2f8d33935c16"
+    },
+    "Settings-393.0-1.0": {
+      "pixel_identical": true,
+      "before_pixel_sha256": "efddb7c2bad3f28a31fca4e250d452398f309dd4bac29d473bd703fb1c6dec70",
+      "after_pixel_sha256": "efddb7c2bad3f28a31fca4e250d452398f309dd4bac29d473bd703fb1c6dec70"
+    },
+    "Profile-320.0-1.0": {
+      "pixel_identical": true,
+      "before_pixel_sha256": "637ff2e806821075c8a4739943c3d06bcbd47bfdae49c17a4a95ad6aa58f41e5",
+      "after_pixel_sha256": "637ff2e806821075c8a4739943c3d06bcbd47bfdae49c17a4a95ad6aa58f41e5"
+    },
+    "Profile-393.0-1.0": {
+      "pixel_identical": true,
+      "before_pixel_sha256": "4e51dee888bdd2505082da453836fb0232c2ae636fce15772dfe3dabe36d03d7",
+      "after_pixel_sha256": "4e51dee888bdd2505082da453836fb0232c2ae636fce15772dfe3dabe36d03d7"
+    }
+  },
+  "cases": {
+    "after-Profile-393.0-2.0": {
+      "synthetic": true,
+      "scale": 2.0,
+      "width": 393.0,
+      "bar": [
+        0.0,
+        0.0,
+        393.0,
+        80.0
+      ],
+      "title": [
+        125.662109375,
+        56.0
+      ],
+      "intrinsicTitleHeight": 56.0,
+      "contentTop": 90.0,
+      "selector": [
+        235.0,
+        17.0,
+        339.0,
+        63.0
+      ]
+    },
+    "after-Profile-320.0-2.0": {
+      "synthetic": true,
+      "scale": 2.0,
+      "width": 320.0,
+      "bar": [
+        0.0,
+        0.0,
+        320.0,
+        80.0
+      ],
+      "title": [
+        85.5,
+        56.0
+      ],
+      "intrinsicTitleHeight": 56.0,
+      "contentTop": 90.0,
+      "selector": [
+        162.0,
+        17.0,
+        266.0,
+        63.0
+      ]
+    },
+    "before-Profile-320.0-2.0": {
+      "synthetic": true,
+      "scale": 2.0,
+      "width": 320.0,
+      "bar": [
+        0.0,
+        0.0,
+        320.0,
+        54.0
+      ],
+      "title": [
+        85.5,
+        30.0
+      ],
+      "intrinsicTitleHeight": 56.0,
+      "contentTop": 64.0,
+      "selector": [
+        162.0,
+        4.0,
+        266.0,
+        50.0
+      ]
+    },
+    "after-Settings-393.0-3.0": {
+      "synthetic": true,
+      "scale": 3.0,
+      "width": 393.0,
+      "bar": [
+        0.0,
+        0.0,
+        393.0,
+        108.0
+      ],
+      "title": [
+        240.732421875,
+        84.0
+      ],
+      "intrinsicTitleHeight": 84.0,
+      "contentTop": 118.0,
+      "selector": null
+    },
+    "after-Settings-320.0-1.0": {
+      "synthetic": true,
+      "scale": 1.0,
+      "width": 320.0,
+      "bar": [
+        0.0,
+        0.0,
+        320.0,
+        54.0
+      ],
+      "title": [
+        80.244140625,
+        28.0
+      ],
+      "intrinsicTitleHeight": 28.0,
+      "contentTop": 64.0,
+      "selector": null
+    },
+    "before-Settings-320.0-3.0": {
+      "synthetic": true,
+      "scale": 3.0,
+      "width": 320.0,
+      "bar": [
+        0.0,
+        0.0,
+        320.0,
+        54.0
+      ],
+      "title": [
+        227.5,
+        30.0
+      ],
+      "intrinsicTitleHeight": 84.0,
+      "contentTop": 64.0,
+      "selector": null
+    },
+    "before-Settings-393.0-1.0": {
+      "synthetic": true,
+      "scale": 1.0,
+      "width": 393.0,
+      "bar": [
+        0.0,
+        0.0,
+        393.0,
+        54.0
+      ],
+      "title": [
+        80.244140625,
+        28.0
+      ],
+      "intrinsicTitleHeight": 28.0,
+      "contentTop": 64.0,
+      "selector": null
+    },
+    "before-Settings-320.0-1.0": {
+      "synthetic": true,
+      "scale": 1.0,
+      "width": 320.0,
+      "bar": [
+        0.0,
+        0.0,
+        320.0,
+        54.0
+      ],
+      "title": [
+        80.244140625,
+        28.0
+      ],
+      "intrinsicTitleHeight": 28.0,
+      "contentTop": 64.0,
+      "selector": null
+    },
+    "before-Settings-393.0-3.0": {
+      "synthetic": true,
+      "scale": 3.0,
+      "width": 393.0,
+      "bar": [
+        0.0,
+        0.0,
+        393.0,
+        54.0
+      ],
+      "title": [
+        240.732421875,
+        30.0
+      ],
+      "intrinsicTitleHeight": 84.0,
+      "contentTop": 64.0,
+      "selector": null
+    },
+    "after-Settings-393.0-1.0": {
+      "synthetic": true,
+      "scale": 1.0,
+      "width": 393.0,
+      "bar": [
+        0.0,
+        0.0,
+        393.0,
+        54.0
+      ],
+      "title": [
+        80.244140625,
+        28.0
+      ],
+      "intrinsicTitleHeight": 28.0,
+      "contentTop": 64.0,
+      "selector": null
+    },
+    "before-Profile-393.0-2.0": {
+      "synthetic": true,
+      "scale": 2.0,
+      "width": 393.0,
+      "bar": [
+        0.0,
+        0.0,
+        393.0,
+        54.0
+      ],
+      "title": [
+        125.662109375,
+        30.0
+      ],
+      "intrinsicTitleHeight": 56.0,
+      "contentTop": 64.0,
+      "selector": [
+        235.0,
+        4.0,
+        339.0,
+        50.0
+      ]
+    },
+    "after-Settings-320.0-3.0": {
+      "synthetic": true,
+      "scale": 3.0,
+      "width": 320.0,
+      "bar": [
+        0.0,
+        0.0,
+        320.0,
+        108.0
+      ],
+      "title": [
+        227.5,
+        84.0
+      ],
+      "intrinsicTitleHeight": 84.0,
+      "contentTop": 118.0,
+      "selector": null
+    },
+    "after-Profile-393.0-3.0": {
+      "synthetic": true,
+      "scale": 3.0,
+      "width": 393.0,
+      "bar": [
+        0.0,
+        0.0,
+        393.0,
+        108.0
+      ],
+      "title": [
+        158.5,
+        84.0
+      ],
+      "intrinsicTitleHeight": 84.0,
+      "contentTop": 118.0,
+      "selector": [
+        235.0,
+        31.0,
+        339.0,
+        77.0
+      ]
+    },
+    "after-Profile-320.0-1.0": {
+      "synthetic": true,
+      "scale": 1.0,
+      "width": 320.0,
+      "bar": [
+        0.0,
+        0.0,
+        320.0,
+        54.0
+      ],
+      "title": [
+        62.8310546875,
+        28.0
+      ],
+      "intrinsicTitleHeight": 28.0,
+      "contentTop": 64.0,
+      "selector": [
+        162.0,
+        4.0,
+        266.0,
+        50.0
+      ]
+    },
+    "after-Profile-393.0-1.0": {
+      "synthetic": true,
+      "scale": 1.0,
+      "width": 393.0,
+      "bar": [
+        0.0,
+        0.0,
+        393.0,
+        54.0
+      ],
+      "title": [
+        62.8310546875,
+        28.0
+      ],
+      "intrinsicTitleHeight": 28.0,
+      "contentTop": 64.0,
+      "selector": [
+        235.0,
+        4.0,
+        339.0,
+        50.0
+      ]
+    },
+    "after-Profile-320.0-3.0": {
+      "synthetic": true,
+      "scale": 3.0,
+      "width": 320.0,
+      "bar": [
+        0.0,
+        0.0,
+        320.0,
+        108.0
+      ],
+      "title": [
+        85.5,
+        84.0
+      ],
+      "intrinsicTitleHeight": 84.0,
+      "contentTop": 118.0,
+      "selector": [
+        162.0,
+        31.0,
+        266.0,
+        77.0
+      ]
+    },
+    "before-Settings-320.0-2.0": {
+      "synthetic": true,
+      "scale": 2.0,
+      "width": 320.0,
+      "bar": [
+        0.0,
+        0.0,
+        320.0,
+        54.0
+      ],
+      "title": [
+        160.48828125,
+        30.0
+      ],
+      "intrinsicTitleHeight": 56.0,
+      "contentTop": 64.0,
+      "selector": null
+    },
+    "before-Profile-393.0-1.0": {
+      "synthetic": true,
+      "scale": 1.0,
+      "width": 393.0,
+      "bar": [
+        0.0,
+        0.0,
+        393.0,
+        54.0
+      ],
+      "title": [
+        62.8310546875,
+        28.0
+      ],
+      "intrinsicTitleHeight": 28.0,
+      "contentTop": 64.0,
+      "selector": [
+        235.0,
+        4.0,
+        339.0,
+        50.0
+      ]
+    },
+    "after-Settings-393.0-2.0": {
+      "synthetic": true,
+      "scale": 2.0,
+      "width": 393.0,
+      "bar": [
+        0.0,
+        0.0,
+        393.0,
+        80.0
+      ],
+      "title": [
+        160.48828125,
+        56.0
+      ],
+      "intrinsicTitleHeight": 56.0,
+      "contentTop": 90.0,
+      "selector": null
+    },
+    "before-Profile-320.0-3.0": {
+      "synthetic": true,
+      "scale": 3.0,
+      "width": 320.0,
+      "bar": [
+        0.0,
+        0.0,
+        320.0,
+        54.0
+      ],
+      "title": [
+        85.5,
+        30.0
+      ],
+      "intrinsicTitleHeight": 84.0,
+      "contentTop": 64.0,
+      "selector": [
+        162.0,
+        4.0,
+        266.0,
+        50.0
+      ]
+    },
+    "after-Settings-320.0-2.0": {
+      "synthetic": true,
+      "scale": 2.0,
+      "width": 320.0,
+      "bar": [
+        0.0,
+        0.0,
+        320.0,
+        80.0
+      ],
+      "title": [
+        160.48828125,
+        56.0
+      ],
+      "intrinsicTitleHeight": 56.0,
+      "contentTop": 90.0,
+      "selector": null
+    },
+    "before-Profile-393.0-3.0": {
+      "synthetic": true,
+      "scale": 3.0,
+      "width": 393.0,
+      "bar": [
+        0.0,
+        0.0,
+        393.0,
+        54.0
+      ],
+      "title": [
+        158.5,
+        30.0
+      ],
+      "intrinsicTitleHeight": 84.0,
+      "contentTop": 64.0,
+      "selector": [
+        235.0,
+        4.0,
+        339.0,
+        50.0
+      ]
+    },
+    "before-Profile-320.0-1.0": {
+      "synthetic": true,
+      "scale": 1.0,
+      "width": 320.0,
+      "bar": [
+        0.0,
+        0.0,
+        320.0,
+        54.0
+      ],
+      "title": [
+        62.8310546875,
+        28.0
+      ],
+      "intrinsicTitleHeight": 28.0,
+      "contentTop": 64.0,
+      "selector": [
+        162.0,
+        4.0,
+        266.0,
+        50.0
+      ]
+    },
+    "before-Settings-393.0-2.0": {
+      "synthetic": true,
+      "scale": 2.0,
+      "width": 393.0,
+      "bar": [
+        0.0,
+        0.0,
+        393.0,
+        54.0
+      ],
+      "title": [
+        160.48828125,
+        30.0
+      ],
+      "intrinsicTitleHeight": 56.0,
+      "contentTop": 64.0,
+      "selector": null
+    }
+  }
+}

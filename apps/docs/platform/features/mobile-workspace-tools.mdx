@@ -870,3 +870,12 @@ uses its workspace ID for identity and selects its rendered workspace object,
 including after sorting, duplicate display names, and list refreshes. This rule
 applies to the sheet opened from the navbar, dashboard and Workspace Settings;
 it does not change membership discovery, permissions, or default persistence.
+
+
+## Shared navbar text scaling
+
+The compact mobile navbar keeps its normal size at the default text scale. At
+larger accessibility text sizes, its height grows to fit the title line without
+shrinking that text. The floating content inset grows with the same measurement,
+while icon switches stay compact in the top navbar. Long titles still use one
+line with an ellipsis and retain their full accessibility label.

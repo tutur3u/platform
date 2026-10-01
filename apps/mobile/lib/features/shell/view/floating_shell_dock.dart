@@ -12,7 +12,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 /// The floating header includes the system status bar and the section bar.
 double floatingShellHeaderInset(BuildContext context) =>
     MediaQuery.viewPaddingOf(context).top +
-    mobileSectionAppBarHeight +
+    mobileSectionAppBarHeightFor(context) +
     mobileSectionAppBarPadding.vertical;
 
 /// Overlays the dock without shortening the page viewport.
