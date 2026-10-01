@@ -1,8 +1,8 @@
 # Synthetic native journal proof proposal
 
-**Source-only, unexecuted.** This separate fixture does not change the production
-app or recovery branch. Publication, workflow dispatch and remote native resource
-admission require review. Nothing here establishes a passing native gate yet.
+**Draft source proposal, unexecuted.** This separate fixture does not change the production
+app or recovery branch. Source publication is authorized for independent review only. Workflow dispatch,
+registration and remote native resource admission require further review. Nothing here establishes a passing native gate yet.
 
 The dedicated Dart entrypoint imports a byte-identical copy of
 `apps/mobile/lib/data/sources/inventory_sale_journal.dart`. The prepare script
@@ -68,10 +68,10 @@ Native bridges obtain launch phase and atomically write a completion report with
 native process ID. The host requires a fresh matching phase/run/SHA/source digest,
 PASS and a different native process ID for every phase. Android explicitly
 force-stops and verifies `pidof` reports absence; iOS `simctl terminate` must
-succeed before relaunch. Commands, pass/failure status and process IDs are saved
+succeed before relaunch. Fixed pass/failure codes and synthetic process IDs are saved
 in `native-proof.json`; missing, stale or failed markers fail the job. Seven-day
 artifacts include the exact source identity, copied source digest, resolved
-fixture dependency lock and device/runtime metadata. Provider or customer data
+lock digest/selected storage package versions and selected device/runtime metadata. Provider or customer data
 cannot enter these synthetic artifacts.
 
 This proves the exercised default native storage adapter's process durability and
@@ -87,7 +87,7 @@ The Flutter3.47 native template, Kotlin/Swift bridge, plugin deployment targets,
 runner SDK/runtime availability and simulator keychain configuration have not
 been built or run. Generation/build/boot/plugin/report failures are gate failures,
 not storage passes. The disposable fixture dependency graph is seeded from the
-production lock but pruned by remote pub get; its resolved lock is an artifact,
+production lock but pruned by remote pub get; its resolved lock digest and selected package versions are artifacts,
 not a claim that all production native entitlements/options have been exercised.
 No integration_test SDK dependency is needed: the dedicated app and native host
 phase controls produce the proof directly, without repeated test-tool installs
@@ -105,3 +105,40 @@ applicable workflow validators before publication. Keep the manual-only trigger,
 explicit admission, immutable checkout and read-only permissions. Registration,
 remote installs/builds, execution and provider/live-data authority are separate;
 this local checkpoint does not authorize any of them.
+
+## Disk, output and privacy admission
+
+Before tool downloads, require at least 20GiB free on the Android runner and
+12GiB on the iOS runner's temporary filesystem. Android repeats its 20GiB
+preflight before SDK image downloads; preparation, iOS runtime admission and
+evidence collection require at least 4GiB remaining. These are explicit admission
+floors, not hard byte quotas on SDK/dependency downloads; the 40-minute job cap
+remains the outer bound. Native commands have 30s timeouts and 64KiB captured
+output limits. Fixture generation is capped at 120s/64KiB captured output.
+
+Only three named JSON files may be uploaded: proof-input, environment and
+native-proof. Collection rejects any file above 64KiB or aggregate above 192KiB.
+The resolved dependency lock is hashed and only storage package version strings
+are retained; its raw content is not uploaded. Actual Flutter/Dart/engine, Node,
+Java or Xcode versions are captured. Android records selected API/release/ABI,
+emulator and adb versions; iOS records only the created simulator's runtime
+identifier/version/build and synthetic device ID. Missing version metadata fails
+collection/proof rather than implying a pass.
+
+Raw emulator logs go to /dev/null; full device properties and simulator catalog
+are not uploaded. The catalog is temporary selection input only. Raw build/pub
+output is suppressed. Native exception text is replaced by fixed fixture error
+codes and report artifacts whitelist synthetic identifiers/results. The fixture
+has no provider clients, credentials, customer accounts or non-synthetic payload
+sources. Tool/runtime versions are the only intentionally real environment data.
+There is no broad storage deletion; cleanup is confined to this run's synthetic
+keys and disposable emulator/simulator. CI job cancellation cleanup is best-effort
+with ephemeral runner teardown as the backstop.
+
+The draft follows recovery PR #5708, but is not part of its product assembly.
+Native compilation, runtime proof, production auth lifecycle, physical-device
+lock states and real receipt/auth/DB behavior remain unexecuted/unverified.
+
+Source-review baseline: `34b2d051ec443521ec15ff3518321b084ca612a9`.
+The draft PR description records the exact published checkpoint after these
+admission/privacy changes; neither checkpoint has native execution evidence.

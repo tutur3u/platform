@@ -20,8 +20,8 @@ Future<void> main() async {
     require(_run.isNotEmpty && _sha.length == 40, 'Missing fixture identity');
     await exercise(phase);
     passed = true;
-  } on Object catch (failure) {
-    error = failure.toString();
+  } on Object {
+    error = 'fixture_assertion_failed';
   }
   await _channel.invokeMethod<void>(
     'report',

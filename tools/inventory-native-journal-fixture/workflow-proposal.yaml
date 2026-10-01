@@ -32,6 +32,8 @@ jobs:
         run: |
           [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Free-disk admission before tool downloads
+        run: node tools/inventory-native-journal-fixture/prepare.mjs android "$RUNNER_TEMP/journal-fixture" --preflight
       - uses: actions/setup-java@v6.0.1
         with:
           distribution: temurin
@@ -46,8 +48,8 @@ jobs:
         run: |
           node tools/inventory-native-journal-fixture/prepare.mjs android "$RUNNER_TEMP/journal-fixture"
           cd "$RUNNER_TEMP/journal-fixture"
-          flutter pub get
-          flutter build apk --debug --dart-define-from-file=defines.json
+          flutter pub get > /dev/null 2>&1
+          flutter build apk --debug --dart-define-from-file=defines.json > /dev/null 2>&1
       - name: Boot disposable emulator and prove real storage across process death
         timeout-minutes: 12
         run: |
@@ -57,27 +59,28 @@ jobs:
           command -v avdmanager
           command -v adb
           test -x "$ANDROID_HOME/emulator/emulator"
+          node tools/inventory-native-journal-fixture/prepare.mjs android "$RUNNER_TEMP/journal-fixture" --preflight
           sdkmanager 'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'
           echo no | avdmanager create avd --name journal-proof --package 'system-images;android-35;google_apis;x86_64' --force
-          "$ANDROID_HOME/emulator/emulator" -avd journal-proof -no-window -no-audio -no-snapshot -no-boot-anim -memory 2048 -cores 2 -gpu swiftshader_indirect > "$RUNNER_TEMP/emulator.log" 2>&1 &
+          "$ANDROID_HOME/emulator/emulator" -avd journal-proof -no-window -no-audio -no-snapshot -no-boot-anim -memory 2048 -cores 2 -gpu swiftshader_indirect > /dev/null 2>&1 &
           EMULATOR_PID=$!
           trap 'adb -s emulator-5554 emu kill || true; kill "$EMULATOR_PID" 2>/dev/null || true' EXIT
           timeout 180 adb -s emulator-5554 wait-for-device
           timeout 180 bash -c 'until [ "$(adb -s emulator-5554 shell getprop sys.boot_completed | tr -d "\r")" = 1 ]; do sleep 1; done'
           adb -s emulator-5554 shell svc wifi disable
           adb -s emulator-5554 shell svc data disable
-          adb -s emulator-5554 shell getprop > "$RUNNER_TEMP/journal-fixture/device-properties.txt"
-          node tools/inventory-native-journal-fixture/orchestrate.mjs android "$RUNNER_TEMP/journal-fixture" emulator-5554
+          node tools/inventory-native-journal-fixture/orchestrate.mjs android "$RUNNER_TEMP/journal-fixture" emulator-5554 "$ANDROID_HOME/emulator/emulator"
+      - name: Collect only bounded synthetic evidence
+        if: always()
+        run: node tools/inventory-native-journal-fixture/prepare.mjs android "$RUNNER_TEMP/journal-fixture" --artifacts
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: native-journal-android-${{ inputs.source_sha }}
           path: |
-            ${{ runner.temp }}/journal-fixture/native-proof.json
-            ${{ runner.temp }}/journal-fixture/proof-input.json
-            ${{ runner.temp }}/journal-fixture/pubspec.lock
-            ${{ runner.temp }}/journal-fixture/device-properties.txt
-            ${{ runner.temp }}/emulator.log
+            ${{ runner.temp }}/journal-fixture/artifacts/proof-input.json
+            ${{ runner.temp }}/journal-fixture/artifacts/environment.json
+            ${{ runner.temp }}/journal-fixture/artifacts/native-proof.json
           retention-days: 7
           if-no-files-found: warn
   ios:
@@ -95,6 +98,8 @@ jobs:
         run: |
           [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Free-disk admission before tool downloads
+        run: node tools/inventory-native-journal-fixture/prepare.mjs ios "$RUNNER_TEMP/journal-fixture" --preflight
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.47.x"
@@ -106,12 +111,13 @@ jobs:
           flutter config --no-enable-swift-package-manager
           node tools/inventory-native-journal-fixture/prepare.mjs ios "$RUNNER_TEMP/journal-fixture"
           cd "$RUNNER_TEMP/journal-fixture"
-          flutter pub get
-          flutter build ios --debug --simulator --dart-define-from-file=defines.json
+          flutter pub get > /dev/null 2>&1
+          flutter build ios --debug --simulator --dart-define-from-file=defines.json > /dev/null 2>&1
       - name: Boot disposable simulator and prove real storage across process death
         timeout-minutes: 12
         run: |
           set -euo pipefail
+          node tools/inventory-native-journal-fixture/prepare.mjs ios "$RUNNER_TEMP/journal-fixture" --runtime-preflight
           xcrun simctl list --json > "$RUNNER_TEMP/journal-fixture/simulator-catalog.json"
           DEVICE_TYPE=$(node -e 'const c=require(process.env.RUNNER_TEMP+"/journal-fixture/simulator-catalog.json");const d=c.devicetypes.find(d=>d.name.startsWith("iPhone"));if(!d)process.exit(1);process.stdout.write(d.identifier)')
           RUNTIME=$(node -e 'const c=require(process.env.RUNNER_TEMP+"/journal-fixture/simulator-catalog.json");const r=c.runtimes.filter(r=>r.isAvailable&&r.identifier.includes("iOS")).sort((a,b)=>b.version.localeCompare(a.version,undefined,{numeric:true}))[0];if(!r)process.exit(1);process.stdout.write(r.identifier)')
@@ -120,14 +126,16 @@ jobs:
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
           node tools/inventory-native-journal-fixture/orchestrate.mjs ios "$RUNNER_TEMP/journal-fixture" "$DEVICE"
+      - name: Collect only bounded synthetic evidence
+        if: always()
+        run: node tools/inventory-native-journal-fixture/prepare.mjs ios "$RUNNER_TEMP/journal-fixture" --artifacts
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: native-journal-ios-${{ inputs.source_sha }}
           path: |
-            ${{ runner.temp }}/journal-fixture/native-proof.json
-            ${{ runner.temp }}/journal-fixture/proof-input.json
-            ${{ runner.temp }}/journal-fixture/pubspec.lock
-            ${{ runner.temp }}/journal-fixture/simulator-catalog.json
+            ${{ runner.temp }}/journal-fixture/artifacts/proof-input.json
+            ${{ runner.temp }}/journal-fixture/artifacts/environment.json
+            ${{ runner.temp }}/journal-fixture/artifacts/native-proof.json
           retention-days: 7
           if-no-files-found: warn

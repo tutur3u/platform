@@ -23,7 +23,7 @@ class MainActivity : FlutterActivity() {
                             check(temporary.renameTo(File(filesDir, "journal-proof.json")))
                             result.success(null)
                         } catch (failure: Exception) {
-                            result.error("report_failed", failure.message, null)
+                            result.error("report_failed", "Fixture report failed", null)
                         }
                     }
                     else -> result.notImplemented()
