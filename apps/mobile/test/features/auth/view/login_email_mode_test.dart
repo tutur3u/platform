@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -169,13 +171,24 @@ void main() {
       await render(tester);
       await identify(tester, 'person@$domain');
       expectPassword(tester);
-      await tap(tester, 'Use email code instead');
-      expectOtp();
       when(
         () => auth.sendOtp(any(), captchaToken: any(named: 'captchaToken')),
       ).thenAnswer((_) async => (success: false, retryAfter: 30));
-      await tap(tester, 'Resend code');
+      await tap(tester, 'Use email code instead');
+      verify(
+        () => auth.sendOtp(
+          'person@$domain',
+          captchaToken: any(named: 'captchaToken'),
+        ),
+      ).called(1);
       expect(find.text('Retry in 30s'), findsOneWidget);
+      await tap(tester, 'Use password instead');
+      expectPassword(tester);
+      await tap(tester, 'Use email code instead');
+      verifyNever(
+        () => auth.sendOtp(any(), captchaToken: any(named: 'captchaToken')),
+      );
+      expect(find.textContaining(RegExp(r'^Retry in \d+s$')), findsOneWidget);
       expectOtp();
       await tap(tester, 'Back');
       await identify(tester, 'another@tuturuuu.com');
@@ -185,7 +198,82 @@ void main() {
       expectOtp();
       verify(
         () => auth.sendOtp(any(), captchaToken: any(named: 'captchaToken')),
-      ).called(2);
+      ).called(1);
+    });
+  }
+
+  for (final domain in ['tuturuuu.com', 'tutur3u.com']) {
+    testWidgets('code switch sends immediately and repeats for $domain', (
+      tester,
+    ) async {
+      await render(tester);
+      await identify(tester, 'person@$domain');
+      await tap(tester, 'Use email code instead');
+      expectOtp();
+      verify(
+        () => auth.sendOtp(
+          'person@$domain',
+          captchaToken: any(named: 'captchaToken'),
+        ),
+      ).called(1);
+      await tap(tester, 'Use password instead');
+      expectPassword(tester);
+      await tap(tester, 'Use email code instead');
+      expectOtp();
+      verify(
+        () => auth.sendOtp(
+          'person@$domain',
+          captchaToken: any(named: 'captchaToken'),
+        ),
+      ).called(1);
+    });
+
+    testWidgets('failed initial code switch remains retryable for $domain', (
+      tester,
+    ) async {
+      final states = StreamController<AuthState>();
+      addTearDown(states.close);
+      whenListen(
+        auth,
+        states.stream,
+        initialState: const AuthState.unauthenticated(),
+      );
+      when(
+        () => auth.sendOtp(any(), captchaToken: any(named: 'captchaToken')),
+      ).thenAnswer((_) async {
+        states.add(
+          const AuthState.unauthenticated().copyWith(
+            error: 'Synthetic code send failed',
+          ),
+        );
+        return (success: false, retryAfter: null);
+      });
+      await render(tester);
+      await identify(tester, 'person@$domain');
+      await tap(tester, 'Use email code instead');
+      expectPassword(tester);
+      expect(find.text('Synthetic code send failed'), findsOneWidget);
+      expect(
+        find.text('Enter the 6-digit code we sent to your email.'),
+        findsNothing,
+      );
+      verify(
+        () => auth.sendOtp(
+          'person@$domain',
+          captchaToken: any(named: 'captchaToken'),
+        ),
+      ).called(1);
+      when(
+        () => auth.sendOtp(any(), captchaToken: any(named: 'captchaToken')),
+      ).thenAnswer((_) async => (success: true, retryAfter: null));
+      await tap(tester, 'Use email code instead');
+      expectOtp();
+      verify(
+        () => auth.sendOtp(
+          'person@$domain',
+          captchaToken: any(named: 'captchaToken'),
+        ),
+      ).called(1);
     });
   }
 

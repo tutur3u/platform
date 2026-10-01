@@ -63,7 +63,10 @@ It does not establish account existence, enable a disabled account, or grant sta
 access. Password, code, CAPTCHA, rate limits, passkeys and required MFA continue
 through their existing authentication checks. Supported code sign-in remains
 available from the password screen; social sign-in, web passkeys and mobile QR
-remain available from the email screen via Back.
+remain available from the email screen via Back. Choosing mobile code sign-in
+requests the initial code through the existing CAPTCHA flow before showing the
+sent-code screen. Cancellation or send failure keeps the prior screen and error;
+method switching retains an active code-request cooldown.
 
 An explicit password/code choice is remembered per trimmed, case-insensitive
 email within the current login flow. Back, retries, and switching to another email

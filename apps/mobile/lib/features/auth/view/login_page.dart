@@ -28,7 +28,15 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 enum _LoginStage { identify, otp, password }
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({this.addAccountMode = false, super.key});
+  const LoginPage({
+    this.addAccountMode = false,
+    this.otpSecurityCheck,
+    super.key,
+  });
+
+  /// Challenge presentation seam; the configured-token guard still applies.
+  @visibleForTesting
+  final Future<String?> Function(BuildContext)? otpSecurityCheck;
 
   final bool addAccountMode;
 
@@ -193,10 +201,8 @@ class _LoginPageState extends State<LoginPage> {
 
   void _showPasswordStage() {
     context.read<AuthCubit>().clearError();
-    _stopRetryAfterTimer();
     setState(() {
       _stage = _LoginStage.password;
-      _retryAfter = 0;
     });
     Future<void>.delayed(const Duration(milliseconds: 180), () {
       if (mounted && _isPasswordStage) {
@@ -223,8 +229,10 @@ class _LoginPageState extends State<LoginPage> {
     _emailModePreference.choose(_emailController.text, mode);
     if (mode == LoginEmailMode.password) {
       _showPasswordStage();
+    } else if (_retryAfter > 0) {
+      _showOtpStage(clearOtp: false, retryAfter: _retryAfter);
     } else {
-      _showOtpStage();
+      unawaited(_handleSendOtp());
     }
   }
 
@@ -251,7 +259,9 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final captcha = await showSecurityCheck(context);
+    final captcha = await (widget.otpSecurityCheck ?? showSecurityCheck)(
+      context,
+    );
     if (!mounted || (Env.isTurnstileConfigured && captcha == null)) return;
 
     final result = await context.read<AuthCubit>().sendOtp(
@@ -306,18 +316,6 @@ class _LoginPageState extends State<LoginPage> {
       captchaToken: captcha,
     );
   }
-
-  Future<void> _handleGoogleSignIn() =>
-      context.read<AuthCubit>().signInWithGoogle();
-
-  Future<void> _handleAppleSignIn() =>
-      context.read<AuthCubit>().signInWithApple();
-
-  Future<void> _handleMicrosoftSignIn() =>
-      context.read<AuthCubit>().signInWithMicrosoft();
-
-  Future<void> _handleGithubSignIn() =>
-      context.read<AuthCubit>().signInWithGithub();
 
   void _handleQrLogin() {
     unawaited(context.push(Routes.qrLogin));
@@ -427,10 +425,10 @@ class _LoginPageState extends State<LoginPage> {
             AuthMethodDivider(label: l10n.authContinueWithSocial),
             const shad.Gap(18),
             LoginSocialSection(
-              onGoogle: _handleGoogleSignIn,
-              onMicrosoft: _handleMicrosoftSignIn,
-              onApple: _handleAppleSignIn,
-              onGithub: _handleGithubSignIn,
+              onGoogle: context.read<AuthCubit>().signInWithGoogle,
+              onMicrosoft: context.read<AuthCubit>().signInWithMicrosoft,
+              onApple: context.read<AuthCubit>().signInWithApple,
+              onGithub: context.read<AuthCubit>().signInWithGithub,
             ),
             const shad.Gap(24),
             AuthMethodDivider(label: l10n.authContinueWithQr),
