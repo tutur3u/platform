@@ -1,9 +1,9 @@
-name: Vercel Learn Preview Deployment
+name: Vercel Learn Preview Build
 on:
   workflow_dispatch:
     inputs:
       preview_ref:
-        description: Branch, tag, or SHA to deploy to preview.
+        description: Branch, tag, or SHA to build for preview.
         required: true
         type: string
 
@@ -19,6 +19,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && contains(format(',{0},', vars.TRUSTED_PREVIEW_DEPLOY_ACTORS), format(',{0},', github.actor))
     environment: vercel-preview-learn
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     permissions:
       contents: read
       deployments: write
@@ -32,7 +33,9 @@ jobs:
       - name: Confirm preview ref
         id: check_commits
         run: |
-          echo "Deploying preview ref ${{ inputs.preview_ref }}."
+          source_sha="$(git rev-parse --verify HEAD)"
+          printf 'source_sha=%s\n' "$source_sha" >> "$GITHUB_OUTPUT"
+          printf 'Building checked-out source %s.\n' "$source_sha"
           echo "skip_build=false" >> $GITHUB_OUTPUT
 
       - name: Setup bun
@@ -82,10 +85,12 @@ jobs:
           token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
-      - name: Record successful Vercel deployment marker
+      - name: Record successful Vercel build marker
         if: steps.check_commits.outputs.skip_build != 'true'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
           VERCEL_WORKFLOW_NAME: vercel-preview-learn.yaml
+          VERCEL_MARKER_KIND: build
+          VERCEL_MARKER_SHA: ${{ steps.check_commits.outputs.source_sha }}
         run: bun run --silent scripts/ci/record-vercel-deployment.ts
