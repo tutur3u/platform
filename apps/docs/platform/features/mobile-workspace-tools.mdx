@@ -936,6 +936,11 @@ glyph for both modes at both widths and all three text scales. Scroll threshold
 geometry is cached and refreshed for theme, text-scale and safe-area changes;
 drag notifications do not perform title layout.
 
+Title measurements follow inherited text style and platform bold, line-height,
+letter-spacing and word-spacing overrides. The painted-prefix check selects a
+complete first grapheme, so emoji and joined characters retain ordinary ellipsis
+when they fit. Full title semantics remain available in either overflow mode.
+
 
 ## Profile Timeline date navigation
 

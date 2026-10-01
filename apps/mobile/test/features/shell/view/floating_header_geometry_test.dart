@@ -12,6 +12,7 @@ void main() {
       top: 0.0,
       accessible: false,
       revision: 0,
+      lineHeight: 1.0,
     ));
     final controller = ScrollController();
     addTearDown(configuration.dispose);
@@ -27,11 +28,18 @@ void main() {
               ),
             ),
             child: MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                textScaler: TextScaler.linear(geometry.scale),
-                viewPadding: EdgeInsets.only(top: geometry.top),
-                accessibleNavigation: geometry.accessible,
-              ),
+              data: MediaQuery.of(context)
+                  .copyWith(
+                    textScaler: TextScaler.linear(geometry.scale),
+                    viewPadding: EdgeInsets.only(top: geometry.top),
+                    accessibleNavigation: geometry.accessible,
+                  )
+                  .applyTextStyleOverrides(
+                    lineHeightScaleFactorOverride: geometry.lineHeight,
+                    letterSpacingOverride: null,
+                    wordSpacingOverride: null,
+                    paragraphSpacingOverride: null,
+                  ),
               child: DefaultTextStyle(
                 style: const TextStyle(fontSize: 14, height: 1),
                 child: FloatingShellDock(
@@ -91,6 +99,7 @@ void main() {
       top: 0,
       accessible: false,
       revision: 1,
+      lineHeight: 1,
     );
     await tester.pump();
     await scrollAt(80, hides: false); // Scaled header clears at 84px.
@@ -100,6 +109,7 @@ void main() {
       top: 0,
       accessible: false,
       revision: 2,
+      lineHeight: 1,
     );
     await tester.pump();
     await scrollAt(60, hides: false); // Larger themed title clears at 66px.
@@ -109,6 +119,7 @@ void main() {
       top: 20,
       accessible: false,
       revision: 3,
+      lineHeight: 1,
     );
     await tester.pump();
     await scrollAt(60, hides: false); // Safe-area inset raises it to 74px.
@@ -116,8 +127,29 @@ void main() {
       scale: 1,
       font: 20,
       top: 0,
-      accessible: true,
+      accessible: false,
       revision: 4,
+      lineHeight: 4,
+    );
+    await tester.pump();
+    await scrollAt(80, hides: false); // Override raises clearance to 104px.
+    configuration.value = (
+      scale: 1,
+      font: 20,
+      top: 0,
+      accessible: false,
+      revision: 5,
+      lineHeight: 1,
+    );
+    await tester.pump();
+    await scrollAt(80, hides: true); // Removing it restores 54px clearance.
+    configuration.value = (
+      scale: 1,
+      font: 20,
+      top: 0,
+      accessible: true,
+      revision: 6,
+      lineHeight: 1,
     );
     await tester.pump();
     await scrollAt(80, hides: false);

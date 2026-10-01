@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/shell/view/readable_shell_title.dart';
+import 'package:mobile/features/shell/view/shell_title_text_style.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 const double mobileSectionAppBarLogoSize = 26;
@@ -15,14 +16,21 @@ double mobileSectionAppBarHeightFor(BuildContext context) {
   final painter = TextPainter(
     text: TextSpan(
       text: 'Ag',
-      style: DefaultTextStyle.of(context).style.merge(
-        Theme.of(
+      style: effectiveShellTitleStyle(
+        context,
+        style: Theme.of(
           context,
         ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
       ),
     ),
     textScaler: MediaQuery.textScalerOf(context),
     textDirection: Directionality.of(context),
+    locale: Localizations.maybeLocaleOf(context),
+    textAlign: DefaultTextStyle.of(context).textAlign ?? TextAlign.start,
+    textWidthBasis: DefaultTextStyle.of(context).textWidthBasis,
+    textHeightBehavior:
+        DefaultTextStyle.of(context).textHeightBehavior ??
+        DefaultTextHeightBehavior.maybeOf(context),
     maxLines: 1,
   )..layout();
   final titleHeight = painter.height + 16;
