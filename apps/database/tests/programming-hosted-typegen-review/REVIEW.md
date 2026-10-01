@@ -24,7 +24,7 @@ Commands below describe the unexecuted hosted job, from repository root:
 5. `node apps/database/tests/programming-hosted-typegen-review/proposal.mjs run`
 6. Always: `node apps/database/tests/programming-hosted-typegen-review/proposal.mjs cleanup`
 7. Success plus verified cleanup only:
-   `node apps/database/tests/programming-hosted-typegen-review/proposal.mjs artifact`
+   `node apps/database/tests/programming-hosted-typegen-review/proposal.mjs validate`
 
 `prepare` checks the native CLI exact pin and service metadata, hashes tracked
 migrations, checks disk, and verifies network denial before staging. Output
@@ -109,7 +109,7 @@ no package was installed locally to obtain it. Runtime configuration remains hel
 The repository composite resolves Supabase 2.117.0 from bun.lock, using
 supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 (v3.0.1), four
 attempts with 5/10/20-second setup backoffs. Existing checkout@v7, setup-node@v7,
-upload-artifact@v7 and setup-bun@v2 conventions are retained. Major action refs
+setup-bun@v2 conventions are retained. Major action refs
 are mutable: resolved action SHAs and hosted image release must come from the
 future run log. The native CLI version must equal the exact database-package pin.
 
@@ -175,32 +175,50 @@ supported helper with `--cleanup <recorded-root>`. It never resets a database or
 broadens deletion to unrelated resources. After success, verify no exactly owned
 container/volume/network/root remains and all eight loopback ports are available. Any
 failure, changed identity or remaining object blocks cleanup verification and
-artifact production. Recovery uses only the preserved supported metadata/root.
+local output validation. Recovery uses only the preserved supported metadata/root.
 SIGKILL or hosted cancellation can interrupt an always step; VM teardown is the
 last backstop. Those cancellation cases are not claimed to guarantee cleanup.
 
-## Artifacts are public material
+## No upload: local proof and durable-evidence limits
 
-This repository is public. Generated types and provenance uploaded as workflow
-artifacts must be treated as public material. One-day retention controls duration;
-it does not make them private. Review every permitted field before activation.
-Only supabase.ts and provenance.json are eligible, after success AND verified
-cleanup. Provenance includes HEAD, migration fingerprint, CLI/service versions,
-observed image content IDs, types hash, schema names, resource limits/disk readings,
-network policy/program IDs/owned firewall rules, run/attempt and cleanup status. Kernel program IDs and
-Docker project/container identifiers are infrastructure metadata, not credentials.
+User approval for the proposed hosted run remains PENDING. The candidate has no
+upload-artifact action, schema/provenance output, cache write or file transfer.
+The generated packages/types/src/supabase.ts and runner-local provenance.json
+remain only on the disposable VM; neither is printed into logs, step summaries or
+outputs. Only a fixed validation/cleanup success message is logged. Source
+publication does not authorize execution, workflow registration or dispatch.
 
-Do not upload database snapshots, runtime/CLI status logs, tokens, .env files,
-private screenshots, customer rows or other data. State remains runner-local and
-is not uploaded. The artifact contains schema declarations, not database records.
-No artifact was generated or uploaded by source validation.
+After successful lifecycle AND verified cleanup, validate checks the generated
+Database declaration and public/private/storage sections, computes its hash and
+byte length, and writes local provenance under RUNNER_TEMP/supabase-typegen-review/local-proof. Provenance retains exact HEAD/migration fingerprint,
+CLI/service versions, observed image IDs, network verification, resource/disk
+readings and cleanup/run identity. Structural checks are not a TypeScript compiler
+check or a review of the generated type diff. Helper generation still has its
+existing empty/64-MiB bounds and approved output-path checks.
+
+The only durable GitHub evidence is the exact checked-out source identity, job/step
+exit statuses and generic success marker. The schema/provenance files and their
+hashes disappear at runner teardown: this run cannot provide a downloadable,
+independently reproducible generated-type diff or serve as a type-file integration
+handoff. Image-content provenance also cannot be inspected after teardown. Do not
+claim that proof survived just because the job status did. Further generated-type
+review/application requires a separately approved private retrieval channel or
+another authorized generation/integration step; do not reconstruct types manually.
+
+Safe no-upload output checks are in-run generation/structural checks, local hashes
+and verified cleanup gates, followed by the generic pass/fail status. Do not replace
+lost files by dumping their contents or provenance into public logs. This public
+repository's logs and artifacts must be treated as public material; retention time
+is not privacy. Database snapshots, CLI status/tokens, .env files, private images
+and customer data remain excluded. No output files were generated or transferred
+by these source tests.
 
 ## Source validation and remaining proof
 
 From repository root, using existing Node and normal Tuturuuu resource FIFO:
 
 ```sh
-node --test apps/database/tests/programming-hosted-typegen-review/guards.node-test.mjs apps/database/tests/programming-hosted-typegen-review/lifecycle.node-test.mjs apps/database/tests/programming-hosted-typegen-review/metadata.node-test.mjs
+node --test apps/database/tests/programming-hosted-typegen-review/guards.node-test.mjs apps/database/tests/programming-hosted-typegen-review/lifecycle.node-test.mjs apps/database/tests/programming-hosted-typegen-review/metadata.node-test.mjs apps/database/tests/programming-hosted-typegen-review/proof.node-test.mjs
 node --check apps/database/scripts/run-supabase-isolated.js
 node --check apps/database/tests/programming-hosted-typegen-review/proposal.mjs
 node --check apps/database/tests/programming-hosted-typegen-review/process-group.mjs
@@ -209,7 +227,7 @@ node node_modules/@biomejs/biome/bin/biome format apps/database/scripts/run-supa
 git diff --check
 ```
 
-The latest 21 source tests passed. Tests cover real helper staging/metadata/output validation using owned synthetic
+The metadata checkpoint passed 21 source tests; the no-upload candidate adds local-proof/privacy contracts. Tests cover real helper staging/metadata/output validation using owned synthetic
 filesystem fixtures; failed ownership writes; mocked resume/cleanup argv and
 bounds; changed identity/residue/interruption denial; fail-closed policy metadata;
 and harmless fake helper/CLI descendants killed on timeout, interruption and
@@ -218,7 +236,7 @@ run SQL/typegen or contact a production endpoint. Existing YAML parser checks th
 text candidate; no executable workflow or switchboard registration exists.
 
 Remaining gates: admitted hosted kernel/Docker/egress and cleanup-interruption
-verification, full historical migration replay/SQL suite, generated public/private/
+verification, full historical migration replay/SQL suite, separately authorized durable generated-type review/integration, generated public/private/
 storage types, actual Next/router/auth/API/RLS/history/enqueue integration, actual
 runner integration and owning CI. No offline replay, production drift absence,
 release readiness or runtime resource-control success is claimed from these tests.

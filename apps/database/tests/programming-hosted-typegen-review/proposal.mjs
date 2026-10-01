@@ -1,7 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  copyFileSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -338,57 +337,66 @@ export async function cleanupRecordedProject(
   record(state);
 }
 
-function artifact() {
-  assertHosted();
-  const state = readState();
+export function buildLocalProof(state, types) {
   if (
     !state.runSucceeded ||
     !state.cleanupVerified ||
     !Object.keys(state.images).length
-  )
+  ) {
     throw new Error('No successful cleaned lifecycle proof');
-  const types = readFileSync('packages/types/src/supabase.ts');
-  for (const schema of ['public', 'private', 'storage']) {
-    if (!types.toString().includes(`  ${schema}: {`))
-      throw new Error(`Generated types missing ${schema}`);
   }
-  const artifactRoot = path.join(output, 'artifact');
-  mkdirSync(artifactRoot, { recursive: true });
-  copyFileSync(
-    'packages/types/src/supabase.ts',
-    path.join(artifactRoot, 'supabase.ts')
+  const text = types.toString('utf8');
+  if (!types.length || !/export type Database\s*=/.test(text)) {
+    throw new Error('Generated database type declaration missing');
+  }
+  for (const schema of ['public', 'private', 'storage']) {
+    if (!text.includes(`  ${schema}: {`))
+      throw new Error('Generated schema declaration missing');
+  }
+  return {
+    headSha: state.metadata.headSha,
+    projectId: state.metadata.projectId,
+    cliVersion: state.cliVersion,
+    services: state.services,
+    network: state.network,
+    images: state.images,
+    migrationFingerprint: state.migrationFingerprint,
+    typesSha256: hash(types),
+    typesBytes: types.length,
+    schemas: ['public', 'private', 'storage'],
+    limits: state.limits,
+    initialFreeBytes: state.initialFreeBytes,
+    minimumFreeBytesObserved: state.minimumFreeBytesObserved,
+    cleanupVerified: true,
+    runId: process.env.GITHUB_RUN_ID,
+    runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+  };
+}
+function validate() {
+  assertHosted();
+  const proof = buildLocalProof(
+    readState(),
+    readFileSync('packages/types/src/supabase.ts')
   );
+  const proofRoot = path.join(output, 'local-proof');
+  mkdirSync(proofRoot, { recursive: true });
   writeFileSync(
-    path.join(artifactRoot, 'provenance.json'),
-    `${JSON.stringify(
-      {
-        headSha: state.metadata.headSha,
-        projectId: state.metadata.projectId,
-        cliVersion: state.cliVersion,
-        services: state.services,
-        network: state.network,
-        images: state.images,
-        migrationFingerprint: state.migrationFingerprint,
-        typesSha256: hash(types),
-        schemas: ['public', 'private', 'storage'],
-        limits: state.limits,
-        initialFreeBytes: state.initialFreeBytes,
-        minimumFreeBytesObserved: state.minimumFreeBytesObserved,
-        cleanupVerified: true,
-        runId: process.env.GITHUB_RUN_ID,
-        runAttempt: process.env.GITHUB_RUN_ATTEMPT,
-      },
-      null,
-      2
-    )}\n`
+    path.join(proofRoot, 'provenance.json'),
+    `${JSON.stringify(proof, null, 2)}\n`
+  );
+  // Fixed status only. Neither generated declarations nor provenance/hashes are
+  // copied into logs, step summaries, outputs, caches or public artifacts.
+  console.log(
+    'Local output validation and scoped cleanup passed; no files uploaded.'
   );
 }
+
 export async function main(mode) {
   if (mode === 'prepare') return prepare();
   if (mode === 'run') return run();
   if (mode === 'cleanup') return cleanup();
-  if (mode === 'artifact') return artifact();
-  throw new Error('Expected prepare, run, cleanup, or artifact');
+  if (mode === 'validate') return validate();
+  throw new Error('Expected prepare, run, cleanup, or validate');
 }
 if (
   process.argv[1] &&

@@ -86,13 +86,6 @@ jobs:
         if: always() && steps.admission.outputs.should_run == 'true'
         timeout-minutes: 4
         run: node apps/database/tests/programming-hosted-typegen-review/proposal.mjs cleanup
-      - name: Produce sanitized artifact
+      - name: Validate generated types and retain runner-local proof only
         if: success() && steps.lifecycle.outcome == 'success' && steps.cleanup.outcome == 'success'
-        run: node apps/database/tests/programming-hosted-typegen-review/proposal.mjs artifact
-      - uses: actions/upload-artifact@v7
-        if: success() && steps.lifecycle.outcome == 'success' && steps.cleanup.outcome == 'success'
-        with:
-          name: full-schema-types-${{ github.sha }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/supabase-typegen-review/artifact/
-          retention-days: 1
-          if-no-files-found: error
+        run: node apps/database/tests/programming-hosted-typegen-review/proposal.mjs validate
