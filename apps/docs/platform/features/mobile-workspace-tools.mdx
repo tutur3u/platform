@@ -879,3 +879,11 @@ larger accessibility text sizes, its height grows to fit the title line without
 shrinking that text. The floating content inset grows with the same measurement,
 while icon switches stay compact in the top navbar. Long titles still use one
 line with an ellipsis and retain their full accessibility label.
+
+Mounted Assistant chat/live coverage confirms that its existing inner Row allows
+its scaled title to paint within the taller outer navbar: 56px at 2× and 84px at
+3×. That inner Row does not clip the text vertically. Horizontal space remains
+limited by the compact mode controls; narrow layouts may ellipsize the title,
+and at 320px/3× chat may show no title glyphs. Its full semantics label remains
+available. The shared-navbar regression covers both modes at both widths and
+all three text scales without changing Assistant behavior.

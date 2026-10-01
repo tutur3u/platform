@@ -55,6 +55,7 @@ void main() {
   late _Workspaces workspaces;
   late _Profile profile;
   late GoRouter router;
+  late AssistantChromeCubit assistant;
   var textScale = 1.0;
   var width = 320.0;
   final baseline = Platform.environment['NAVBAR_BASELINE'] == '1';
@@ -99,6 +100,7 @@ void main() {
           (_) async => null,
         );
     SharedPreferences.setMockInitialValues({});
+    assistant = AssistantChromeCubit();
     apps = AppTabCubit(settingsRepository: SettingsRepository());
     experiments = ExperimentalAppsCubit(
       settingsRepository: SettingsRepository(),
@@ -135,6 +137,10 @@ void main() {
           ),
           routes: [
             GoRoute(path: Routes.apps, builder: (_, _) => const SizedBox()),
+            GoRoute(
+              path: Routes.assistant,
+              builder: (_, _) => const SizedBox(),
+            ),
             GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
             GoRoute(path: Routes.settings, builder: (_, _) => const _Section()),
             GoRoute(
@@ -148,6 +154,7 @@ void main() {
   });
   tearDown(() async {
     router.dispose();
+    await assistant.close();
     await apps.close();
     await experiments.close();
     await auth.close();
@@ -173,7 +180,7 @@ void main() {
             BlocProvider<AuthCubit>.value(value: auth),
             BlocProvider<WorkspaceCubit>.value(value: workspaces),
             BlocProvider<ShellProfileCubit>.value(value: profile),
-            BlocProvider(create: (_) => AssistantChromeCubit()),
+            BlocProvider.value(value: assistant),
             BlocProvider(create: (_) => ShellMiniNavCubit()),
             BlocProvider(create: (_) => ShellTitleOverrideCubit()),
             BlocProvider(create: (_) => ShellChromeActionsCubit()),
@@ -200,10 +207,11 @@ void main() {
     await _pump(tester);
   }
 
-  for (final profileSection in [false, true]) {
+  for (final title in ['Settings', 'Profile', 'Mira Chat', 'Mira Live']) {
+    final profileSection = title == 'Profile';
+    final assistantSection = title.startsWith('Mira');
     for (final viewport in [320.0, 393.0]) {
       for (final scale in [1.0, 2.0, 3.0]) {
-        final title = profileSection ? 'Profile' : 'Settings';
         testWidgets(
           '$title width$viewport text$scale fits actual shell navbar',
           (tester) async {
@@ -212,6 +220,12 @@ void main() {
             await mount(tester);
             if (profileSection) {
               router.go(Routes.profileRoot);
+              await _pump(tester);
+            }
+            if (assistantSection) {
+              router.go(Routes.assistant);
+              await _pump(tester);
+              assistant.setLiveMode(value: title == 'Mira Live');
               await _pump(tester);
             }
             final titleFinder = find.descendant(
@@ -223,7 +237,7 @@ void main() {
             final intrinsicHeight = paragraph.getMaxIntrinsicHeight(
               paragraph.size.width,
             );
-            if (baseline && scale > 1) {
+            if (baseline && !assistantSection && scale > 1) {
               expect(paragraph.size.height, lessThan(intrinsicHeight));
             } else {
               expect(
@@ -238,18 +252,24 @@ void main() {
               closeTo(fontSize * scale, .01),
             );
             final bar = tester.getRect(find.byType(shad.AppBar).first);
+            final titleRect = tester.getRect(titleFinder);
+            expect(bar.contains(titleRect.topLeft), isTrue);
+            expect(bar.contains(titleRect.bottomRight), isTrue);
             if (scale == 1 || baseline) expect(bar.height, 54);
-            final content = tester.getRect(
-              profileSection
-                  ? find
-                        .descendant(
-                          of: find.byType(ProfileOverviewPage),
-                          matching: find.text('Overview'),
-                        )
-                        .first
-                  : find.byKey(const ValueKey('navbar-content')),
-            );
-            expect(content.top, closeTo(bar.bottom + 10, .01));
+            Rect? content;
+            if (!assistantSection) {
+              content = tester.getRect(
+                profileSection
+                    ? find
+                          .descendant(
+                            of: find.byType(ProfileOverviewPage),
+                            matching: find.text('Overview'),
+                          )
+                          .first
+                    : find.byKey(const ValueKey('navbar-content')),
+              );
+              expect(content.top, closeTo(bar.bottom + 10, .01));
+            }
             expect(
               floatingShellHeaderInset(
                 tester.element(find.byType(ShellTopBarTitle)),
@@ -271,7 +291,9 @@ void main() {
             }
             final semantics = tester.ensureSemantics();
             expect(
-              find.bySemanticsLabel(RegExp('$title, Search apps')),
+              find.bySemanticsLabel(
+                RegExp(assistantSection ? title : '$title, Search apps'),
+              ),
               findsOneWidget,
             );
             final output = Platform.environment['NAVBAR_RENDER_DIR'];
@@ -299,7 +321,8 @@ void main() {
                     'bar': [bar.left, bar.top, bar.right, bar.bottom],
                     'title': [paragraph.size.width, paragraph.size.height],
                     'intrinsicTitleHeight': intrinsicHeight,
-                    'contentTop': content.top,
+                    'paintedTitleBounds': _rectValues(titleRect),
+                    'contentTop': content?.top,
                     'selector': _rectValues(selectorRect),
                   }),
                 );
