@@ -10,7 +10,7 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/models/app_description.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
-import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/apps/view/apps_hub_results.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
 import 'package:mobile/features/apps/widgets/apps_reorder_grid.dart';
@@ -64,15 +64,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
   @override
   Widget build(BuildContext context) {
     final cubit = context.watch<AppTabCubit>();
-    final modules = arrangeApps(AppRegistry.modules(context), cubit)
-        .where(
-          (module) =>
-              '${module.label(context.l10n)} '
-                      '${appDescription(context, module.id)} ${module.id}'
-                  .toLowerCase()
-                  .contains(widget.query.trim().toLowerCase()),
-        )
-        .toList();
+    final modules = appsHubResults(context, cubit, widget.query);
     final shown = modules
         .where((module) => !cubit.state.hiddenAppIds.contains(module.id))
         .toList();

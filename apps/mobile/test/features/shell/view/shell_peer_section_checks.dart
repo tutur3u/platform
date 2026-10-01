@@ -5,7 +5,7 @@ void registerShellPeerSectionChecks({
   required AuthCubit Function() authCubit,
   required WorkspaceCubit Function() workspaceCubit,
 }) {
-  testWidgets('workspace settings back exits its peer settings tabs', (
+  testWidgets('workspace settings Back reaches Settings before exiting', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -27,10 +27,13 @@ void registerShellPeerSectionChecks({
     await _pumpForTransitions(tester);
     await tester.binding.handlePopRoute();
     await _pumpForTransitions(tester);
+    expect(router.routeInformationProvider.value.uri.path, Routes.settings);
+    await tester.binding.handlePopRoute();
+    await _pumpForTransitions(tester);
     expect(router.routeInformationProvider.value.uri.path, Routes.home);
   });
 
-  testWidgets('dock back from workspace settings returns to its root origin', (
+  testWidgets('dock Back from Workspace reaches Settings before its origin', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -54,6 +57,9 @@ void registerShellPeerSectionChecks({
     await _pumpForTransitions(tester);
     router.go(Routes.settingsWorkspace);
     await _pumpForTransitions(tester);
+    await tester.tap(find.bySemanticsLabel('Back'));
+    await _pumpForTransitions(tester);
+    expect(router.routeInformationProvider.value.uri.path, Routes.settings);
     await tester.tap(find.bySemanticsLabel('Back'));
     await _pumpForTransitions(tester);
     expect(router.routeInformationProvider.value.uri.path, Routes.profileRoot);

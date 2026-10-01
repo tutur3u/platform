@@ -7,6 +7,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CalendarEventColorSchema } from '@/lib/calendar/event-color';
+import { hydrateEventSourceColors } from '@/lib/calendar/event-source-colors';
 import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
 import {
   createProviderEvent,
@@ -98,7 +99,7 @@ export async function GET(request: Request, { params }: Params) {
   const { wsId: rawWsId, eventId } = await params;
   const access = await authorizeCalendarEventManagement(request, rawWsId);
   if ('error' in access) return access.error;
-  const { sbAdmin, wsId } = access;
+  const { sbAdmin, wsId, userId } = access;
 
   try {
     const { data: event, error } = await sbAdmin
@@ -118,7 +119,13 @@ export async function GET(request: Request, { params }: Params) {
     // Decrypt if encrypted
     const decryptedEvent = await decryptEventFromStorage(event, wsId);
 
-    return NextResponse.json(decryptedEvent);
+    const [hydratedEvent] = await hydrateEventSourceColors({
+      sbAdmin,
+      wsId,
+      userId,
+      events: [decryptedEvent],
+    });
+    return NextResponse.json(hydratedEvent);
   } catch (error) {
     console.error('Calendar event API error', { wsId, eventId, error });
     return NextResponse.json(

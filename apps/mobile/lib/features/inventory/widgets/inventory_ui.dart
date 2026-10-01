@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 void showInventoryToast(
@@ -48,16 +49,11 @@ class InventoryHeroCard extends StatelessWidget {
     final theme = shad.Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.colorScheme.card,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: palette.subtleBorder.withValues(alpha: 0.8)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: palette.heroGradient,
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,7 +111,10 @@ class InventoryHeroCard extends StatelessWidget {
           if (metrics.isNotEmpty) ...[
             if (showHeader || (subtitle?.trim().isNotEmpty ?? false))
               const shad.Gap(18),
-            Wrap(spacing: 12, runSpacing: 12, children: metrics),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: metrics,
+            ),
           ],
           if (child != null) ...[const shad.Gap(18), child!],
           if (actions.isNotEmpty) ...[
@@ -153,16 +152,15 @@ class InventoryActionTile extends StatelessWidget {
         ? theme.colorScheme.primary
         : theme.colorScheme.muted.withValues(alpha: 0.36);
 
-    return SizedBox(
-      width: 148,
-      height: 60,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48, maxWidth: 150),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(14),
           child: Ink(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
               color: background,
               borderRadius: BorderRadius.circular(14),
@@ -175,8 +173,6 @@ class InventoryActionTile extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                     style: theme.typography.small.copyWith(
                       color: foreground,
                       fontWeight: FontWeight.w700,
@@ -208,9 +204,84 @@ class InventoryMetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FinanceStatChip(label: label, value: value, icon: icon, tint: tint);
+    final theme = shad.Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: tint ?? FinancePalette.of(context).accent,
+            ),
+            const shad.Gap(8),
+            Expanded(child: Text(label, style: theme.typography.textSmall)),
+            const shad.Gap(12),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.6),
+              child: Text(
+                value,
+                textAlign: TextAlign.end,
+                style: theme.typography.textSmall.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
+
+/// A calm, compact empty state; its section already supplies the heading.
+class InventoryEmptyPanel extends StatelessWidget {
+  const InventoryEmptyPanel({
+    required this.body,
+    this.icon,
+    this.action,
+    super.key,
+  });
+
+  final String body;
+  final IconData? icon;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    return FinancePanel(
+      padding: const EdgeInsets.all(14),
+      radius: 18,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                icon ?? Icons.inventory_2_outlined,
+                color: FinancePalette.of(context).accent,
+                size: 22,
+              ),
+              const shad.Gap(12),
+              Expanded(child: Text(body, style: theme.typography.textSmall)),
+            ],
+          ),
+          if (action != null) ...[const shad.Gap(12), action!],
+        ],
+      ),
+    );
+  }
+}
+
+/// Null stock is unlimited; it is never treated as a zero quantity.
+String inventoryStockAmount(BuildContext context, double? amount) =>
+    amount == null
+    ? context.l10n.inventoryStockUnlimited
+    : amount.toStringAsFixed(amount % 1 == 0 ? 0 : 1);
 
 class InventoryOverviewSkeleton extends StatelessWidget {
   const InventoryOverviewSkeleton({super.key});
