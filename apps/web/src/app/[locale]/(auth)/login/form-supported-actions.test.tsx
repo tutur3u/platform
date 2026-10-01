@@ -35,7 +35,9 @@ describe('LoginForm supported recovery actions', () => {
       );
       view.rerender();
     });
-    const view = renderLoginForm('//evil.test/phish');
+    const view = renderLoginForm('//evil.test/phish', {
+      origin: 'https://vc.tuturuuu.com',
+    });
     await screen.findByRole('heading', {
       name: 'login.invalid_return_url_title',
     });
@@ -57,6 +59,23 @@ describe('LoginForm supported recovery actions', () => {
     expect(
       screen.queryByRole('heading', { name: 'login.invalid_return_url_title' })
     ).not.toBeInTheDocument();
+    expect(window.location.href).toBe('https://vc.tuturuuu.com/login');
+    expect(window.location.origin).toBe('https://vc.tuturuuu.com');
+    expect(window.location.search).toBe('');
+    expect(mocks.searchParams.toString()).toBe('');
+    mocks.signInWithOAuth.mockResolvedValueOnce({ error: null });
+    fireEvent.click(
+      screen.getByRole('button', { name: /login\.continue_with_google/u })
+    );
+    await waitFor(() =>
+      expect(mocks.signInWithOAuth).toHaveBeenCalledWith({
+        provider: 'google',
+        options: expect.objectContaining({
+          redirectTo:
+            'https://vc.tuturuuu.com/api/auth/callback?returnUrl=https%3A%2F%2Fvc.tuturuuu.com%2F',
+        }),
+      })
+    );
   });
 
   it('chooses another account using local sign-out and restores the public form', async () => {

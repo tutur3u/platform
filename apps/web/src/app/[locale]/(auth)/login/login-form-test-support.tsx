@@ -190,19 +190,18 @@ vi.mock('framer-motion', () => {
   };
 });
 
-function setWindowLocation(search = '', origin = 'https://tuturuuu.com') {
-  const url = new URL(`/login${search}`, origin);
-
+function setWindowLocation(url: URL) {
   Object.defineProperty(window, 'location', {
     configurable: true,
     value: {
       assign: mocks.assign,
       href: url.toString(),
       origin: url.origin,
-      pathname: '/login',
+      hash: url.hash,
+      pathname: url.pathname,
       reload: mocks.reload,
       replace: mocks.replace,
-      search,
+      search: url.search,
     },
   });
 }
@@ -225,7 +224,9 @@ export function renderLoginFormSearch(
   queryClients.add(queryClient);
 
   mocks.searchParams = new URLSearchParams(search);
-  setWindowLocation(search, options.origin);
+  setWindowLocation(
+    new URL(`/login${search}`, options.origin ?? 'https://tuturuuu.com')
+  );
 
   const login = () => (
     <QueryClientProvider client={queryClient}>
@@ -238,7 +239,15 @@ export function renderLoginFormSearch(
   );
 
   const view = render(login());
-  return { queryClient, rerender: () => view.rerender(login()) };
+  return {
+    queryClient,
+    rerender: () => {
+      const url = new URL(window.location.href);
+      url.search = mocks.searchParams.toString();
+      setWindowLocation(url);
+      view.rerender(login());
+    },
+  };
 }
 
 export function renderLoginForm(
