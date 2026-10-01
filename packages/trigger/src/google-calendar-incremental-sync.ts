@@ -1,4 +1,5 @@
 import { type calendar_v3, google } from '@tuturuuu/google';
+import { getGoogleCalendarColorContext } from './google-calendar-color-context';
 import {
   getGoogleAuthClient,
   getSyncToken,
@@ -20,9 +21,12 @@ export async function performIncrementalSyncForWorkspace(
   const calendar = google.calendar({ version: 'v3', auth: calendarAuth });
 
   try {
+    const colorContext = await getGoogleCalendarColorContext(
+      calendar,
+      calendarId
+    );
     const syncToken = await getSyncToken(ws_id, calendarId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let allEvents: any[] = [];
+    let allEvents: calendar_v3.Schema$Event[] = [];
     let pageToken: string | undefined;
     let nextSyncToken: string | undefined;
     do {
@@ -41,7 +45,15 @@ export async function performIncrementalSyncForWorkspace(
     } while (pageToken);
 
     if (allEvents.length > 0) {
-      await syncWorkspaceBatched({ ws_id, events_to_sync: allEvents });
+      const result = await syncWorkspaceBatched({
+        ws_id,
+        events_to_sync: allEvents,
+        calendarId,
+        colorContext,
+        preserveExistingMetadata: true,
+      });
+      if (!result.success)
+        throw new Error(result.error ?? 'Google calendar batch sync failed');
     }
 
     if (nextSyncToken) {

@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query';
 import {
   bulkUpdateMailThreads,
+  type MailThreadDetail,
   type MailThreadSummary,
   updateMailThreadState,
 } from '@tuturuuu/internal-api';
@@ -27,6 +28,11 @@ import {
   restoreMailThreads,
   snapshotMailThreads,
 } from './mail-thread-optimistic';
+
+import {
+  type MailThreadRevision,
+  threadRevision,
+} from './mail-thread-revision';
 
 export { updateThreadPages } from './mail-thread-optimistic';
 
@@ -135,6 +141,32 @@ export function useMailThreadActions({
   const restore = (context: OptimisticContext | null | undefined) =>
     restoreMailThreads(queryClient, context);
 
+  const captureRevisions = (ids: string[]) => {
+    const revisions: Record<string, MailThreadRevision> = {};
+    for (const id of ids) {
+      const thread = threads.find((row) => row.id === id);
+      if (thread) {
+        revisions[id] = threadRevision(thread);
+        continue;
+      }
+      const detail = queryClient.getQueryData<MailThreadDetail>([
+        'mail',
+        workspaceId,
+        activeMailboxId,
+        'thread',
+        id,
+      ]);
+      const latest = detail?.messages.at(-1);
+      if (detail && latest) {
+        revisions[id] = threadRevision({
+          ...detail.thread,
+          latestMessageId: latest.id,
+        });
+      }
+    }
+    return revisions;
+  };
+
   const stateMutation = useMutation({
     mutationKey: [...actionKey, 'state'],
     mutationFn: async ({
@@ -147,6 +179,7 @@ export function useMailThreadActions({
       targetThreadId: string;
       mailboxId: string;
       targetWorkspaceId: string;
+      threadRevisions: Record<string, MailThreadRevision>;
     }) => {
       await waitForMailBackgroundReads(
         queryClient,
@@ -222,6 +255,7 @@ export function useMailThreadActions({
       threadIds: string[];
       mailboxId: string;
       targetWorkspaceId: string;
+      threadRevisions: Record<string, MailThreadRevision>;
     }) => {
       await waitForMailBackgroundReads(
         queryClient,
@@ -310,6 +344,7 @@ export function useMailThreadActions({
         bulkMutation.mutate({
           action,
           threadIds,
+          threadRevisions: captureRevisions(threadIds),
           mailboxId: activeMailboxId,
           targetWorkspaceId: workspaceId,
         });
@@ -322,6 +357,7 @@ export function useMailThreadActions({
       stateMutation.mutate({
         action,
         targetThreadId,
+        threadRevisions: captureRevisions([targetThreadId]),
         mailboxId: activeMailboxId,
         targetWorkspaceId: workspaceId,
       });

@@ -12,6 +12,7 @@ import {
   canViewInventoryCatalog,
   canViewInventoryStock,
 } from '@tuturuuu/inventory-core/permissions';
+import { editPricedProduct } from '@tuturuuu/inventory-core/priced-product-edit';
 import { getInventoryCatalogProducts } from '@tuturuuu/inventory-core/product-rpc';
 import { validateInventoryItemWorkspaceRelations } from '@tuturuuu/inventory-core/relation-validation';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -324,13 +325,31 @@ export async function PATCH(req: Request, { params }: Params) {
       ? { manufacturer_id: resolvedManufacturer.manufacturerId }
       : {}),
   };
-  const product = await sbAdmin
-    .from('workspace_products')
-    .update(updateData)
-    .select('id')
-    .eq('id', productId)
-    .eq('ws_id', wsId)
-    .maybeSingle();
+  let pricedEdit: Awaited<ReturnType<typeof editPricedProduct>>;
+  try {
+    pricedEdit = await editPricedProduct({
+      sbAdmin,
+      wsId,
+      productId,
+      metadata: updateData,
+      inventory,
+    });
+  } catch (error) {
+    console.error('Error updating priced product', error);
+    return NextResponse.json(
+      { message: 'Error updating product and inventory' },
+      { status: 500 }
+    );
+  }
+  const product = pricedEdit
+    ? { data: { id: productId }, error: null }
+    : await sbAdmin
+        .from('workspace_products')
+        .update(updateData)
+        .select('id')
+        .eq('id', productId)
+        .eq('ws_id', wsId)
+        .maybeSingle();
 
   if (product.error) {
     console.error('Error updating product', product.error);
@@ -344,8 +363,8 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }
 
-  // Update inventory if provided
-  if (inventory && Array.isArray(inventory)) {
+  // Update inventory if provided; priced edits already committed atomically.
+  if (!pricedEdit && inventory && Array.isArray(inventory)) {
     // First, delete existing inventory for this product
     const { error: deleteError } = await inventoryClient
       .from('inventory_products')

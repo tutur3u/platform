@@ -805,3 +805,67 @@ muted notifications. Apply `20260923110000_mail_thread_snooze_mute.sql` after
 The native swipe settings include Snooze and Mute. Swipe and web actions offer
 Undo; reader and web menus support rescheduling, unmuting, and returning snoozed
 mail to Inbox.
+
+## Calendar invitations and message details
+
+Mail reads scheduling requests from authorized calendar attachments, including
+Google `multipart/alternative` calendar parts and legacy SES raw MIME. Ordinary
+ICS exports (`PUBLISH`), cancellation notices and calendar replies are files, not
+RSVP requests. The responding address must exactly match an invited mailbox;
+viewers and group delivery identities cannot send replies. Unsupported delegated
+identities and multiple competing event attachments do not expose controls.
+
+The invitation card preserves the organizer, UID, sequence and occurrence when
+sending an iTIP `REPLY`. It displays the original location and time-zone label;
+Teams and Google Meet links have a separate join action. It creates no calendar
+event copy. A self-organized personal hold is not the organizer's invitation.
+
+Replies use a persisted invitation claim and an atomic draft-to-sending claim.
+Retries keep the same request identity. A pending or uncertain provider result
+is checked rather than automatically sent again. Interrupted preparation can
+resume with its original request identity, exposed only to its original actor.
+For historical threads without indexed iCalendar identity, only the latest
+inbound message in the thread can be answered; newer mail conservatively hides
+older RSVP controls, including after updates or cancellation notices.
+
+Mobile message details expand to show each authorized From, To and Cc name and
+address with native text selection/copy. Bcc appears only when it exists in the
+already authorized message data. A resolved empty inbox remains visible during
+background refresh; exiting the reader waits for pending archive settlement
+before reconciliation.
+
+### Focused synthetic verification
+
+Run the calendar parser, attachment worker, reply claim, permission and invitation
+card tests in `apps/mail` with one Vitest worker. Run the Mail empty-inbox,
+invitation-card and message-details Flutter tests with `--no-pub` after
+`flutter gen-l10n`. Include existing optimistic/cache/filter/reader tests. Never
+send RSVP, archive user messages or create/delete live events for verification.
+
+A timezone-specific recurrence reply includes the original referenced `VTIMEZONE`
+component. Mail does not infer UTC from custom or Windows timezone names. Missing,
+competing, malformed or oversized definitions suppress RSVP; supported definitions
+use bounded STANDARD/DAYLIGHT observances and common yearly timezone rules.
+Scheduling enum parameters are case-insensitive; only individual attendee identities
+are eligible, including when `CUTYPE` is explicitly supplied.
+
+A completed historical request acknowledges its receipt without replacing a newer
+reply claim or the current response displayed by either client. Fresh changed
+intentions use fresh request identities. Preparation recovery uses the original
+stored reply identity, including when reopened in another authorized workspace;
+mailbox permissions and the original actor are still required. List refresh remains
+available during reader mutations and overlays only the owning mailbox's pending
+reader actions, so unrelated incoming messages remain visible.
+
+Web inbox list responses also replay state changes that were pending when the
+request began or started while it was in flight. This applies to pagination and
+background refresh in the owning workspace/mailbox. An archived final row stays
+hidden while the action is pending; a failed action restores it without removing
+new arrivals. The archive folder retains archived rows. The mounted React test
+uses the actual inbox, reader, Archive control and action hooks with synthetic
+API responses; it covers empty state, failure/retry and refresh after reader exit.
+
+Pending archive refreshes compare the captured conversation revision before
+hiding stale results. A newer inbound message in the same conversation remains
+visible because it falls outside the earlier archive action. Failure restores
+optimistic flags or missing old rows without replacing newer conversation data.

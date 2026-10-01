@@ -229,7 +229,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (_loading)
+                            if (_loading && !_listResolved)
                               const NovaLoadingIndicator(size: 24)
                             else
                               Icon(
@@ -240,7 +240,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                               ),
                             const SizedBox(height: 12),
                             Text(
-                              _loading
+                              _loading && !_listResolved
                                   ? l10n.commonLoading
                                   : _failed
                                   ? l10n.commonSomethingWentWrong

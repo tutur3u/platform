@@ -153,6 +153,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
                 canReorder: !hidden && widget.query.trim().isEmpty,
                 isOrdering: _ordering,
                 onOrderingStarted: () => setState(() => _ordering = true),
+                onOrderingFinished: () => setState(() => _ordering = false),
                 onSelected: widget.onSelected,
                 onOrderChanged: (ids) => _reorder(ids, hiddenModules),
                 onVisibilityPressed: (module) => unawaited(

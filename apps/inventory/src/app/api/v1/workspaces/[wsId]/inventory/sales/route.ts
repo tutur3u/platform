@@ -13,7 +13,6 @@ import { isInventoryRealtimeEnabled } from '@tuturuuu/inventory-core/realtime';
 import {
   getInventorySalesPeriod,
   listInventoryCommerceSales,
-  setInventorySalePeriod,
 } from '@tuturuuu/inventory-core/sales-periods';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -35,20 +34,29 @@ const SearchParamsSchema = z.object({
 const SaleProductSchema = z.object({
   category_id: z.uuid(),
   price: z.number().finite().nonnegative(),
+  price_id: z.uuid().optional(),
   product_id: z.uuid(),
   quantity: z.number().finite().positive(),
   unit_id: z.uuid(),
   warehouse_id: z.uuid(),
 });
 
-const CreateSaleSchema = z.object({
-  category_id: z.uuid(),
-  content: z.string().trim().min(1).max(500),
-  notes: z.string().trim().max(2_000).optional(),
-  period_id: z.uuid().nullable().optional(),
-  products: z.array(SaleProductSchema).min(1).max(500),
-  wallet_id: z.uuid(),
-});
+const CreateSaleSchema = z
+  .object({
+    category_id: z.uuid(),
+    content: z.string().trim().min(1).max(500),
+    notes: z.string().trim().max(2_000).optional(),
+    period_id: z.uuid().nullable().optional(),
+    request_id: z.uuid().optional(),
+    products: z.array(SaleProductSchema).min(1).max(500),
+    wallet_id: z.uuid(),
+  })
+  .refine(
+    (payload) =>
+      payload.period_id ||
+      !payload.products.some((product) => product.price_id),
+    { message: 'Price quotes require a sales period' }
+  );
 
 interface Params {
   params: Promise<{
@@ -259,7 +267,7 @@ export async function POST(req: Request, { params }: Params) {
   const authorization = await authorizeInventoryWorkspace(req, id);
   if (!authorization.ok) return authorization.response;
 
-  const { permissions, userId, wsId } = authorization.value;
+  const { permissions, wsId } = authorization.value;
   if (!canCreateInventorySales(permissions)) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
@@ -272,7 +280,11 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { period_id: periodId, ...payload } = parsed.data;
+  const {
+    period_id: periodId,
+    request_id: requestId,
+    ...payload
+  } = parsed.data;
 
   try {
     const result = await createFinanceInvoice(
@@ -281,35 +293,19 @@ export async function POST(req: Request, { params }: Params) {
         ...payload,
         customer_id: null,
         price_mode: 'custom',
+        inventory_period_id: periodId ?? undefined,
+        inventory_request_id: periodId
+          ? (requestId ?? crypto.randomUUID())
+          : undefined,
       },
       withForwardedInternalApiAuth(req.headers)
     );
-
-    let periodAssignmentWarning: string | undefined;
-    if (periodId) {
-      try {
-        const period = await setInventorySalePeriod({
-          actorId: userId,
-          periodId,
-          saleId: result.invoice_id,
-          saleSource: 'finance_invoice',
-          sbAdmin: await createAdminClient(),
-          wsId,
-        });
-        if (!period) periodAssignmentWarning = 'Sales period was not found';
-      } catch (error) {
-        console.warn('Sale created but period assignment failed', error);
-        periodAssignmentWarning =
-          'Sale was created, but its sales period could not be assigned';
-      }
-    }
 
     await safelyRevalidateWorkspaceStorefronts(wsId);
 
     return NextResponse.json(
       {
         ...result,
-        period_assignment_warning: periodAssignmentWarning,
       },
       { status: 201 }
     );

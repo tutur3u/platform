@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { type calendar_v3, google, OAuth2Client } from '@tuturuuu/google';
 import { createGraphClient } from '@tuturuuu/microsoft';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { GOOGLE_COLOR_IDS } from '@tuturuuu/utils/google-calendar-colors';
 import type { MeetingInvitationInput } from '@tuturuuu/utils/meeting-invitations';
 import {
   googleMeetingGuests,
@@ -105,6 +106,7 @@ export function createGoogleAuthClient(source: ResolvedCalendarSource) {
 
 function toGoogleEvent(event: ProviderEventInput): calendar_v3.Schema$Event {
   return {
+    ...(event.color ? { colorId: GOOGLE_COLOR_IDS[event.color] } : {}),
     ...googleMeetingGuests(event.invitation),
     summary: event.title || 'Untitled Event',
     description: event.description || '',
@@ -262,12 +264,33 @@ export async function updateProviderEvent(args: {
       auth: createGoogleAuthClient(source),
     });
 
-    await calendar.events.patch({
+    // Use the current provider copy, including labels absent from older DB rows.
+    // Never turn an unrelated edit or stale native enum into a color change.
+    const current = await calendar.events.get({
+      calendarId: existing.externalCalendarId,
+      eventId: existing.externalEventId,
+    });
+    const eventLabelId = current.data.eventLabelId;
+    const payload = toGoogleEvent(event);
+    delete payload.colorId;
+    if (current.data.colorId) payload.colorId = current.data.colorId;
+    const request = {
       calendarId: existing.externalCalendarId,
       eventId: existing.externalEventId,
       sendUpdates: 'all',
-      requestBody: toGoogleEvent(event),
-    });
+      // Version 1 requires the live label identity to be supplied explicitly.
+      ...(eventLabelId ? { eventLabelVersion: 1 } : {}),
+      requestBody: {
+        ...payload,
+        ...(eventLabelId ? { eventLabelId } : {}),
+      },
+    };
+    await calendar.events.patch(
+      request,
+      current.data.etag
+        ? { headers: { 'If-Match': current.data.etag } }
+        : undefined
+    );
 
     return existing;
   }

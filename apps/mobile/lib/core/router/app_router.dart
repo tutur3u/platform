@@ -511,9 +511,7 @@ GoRouter createAppRouter(
           ),
           GoRoute(
             path: Routes.settingsPreferences,
-            builder: (context, state) => const SettingsPage(
-              section: SettingsSectionDestination.preferences,
-            ),
+            redirect: (context, state) => Routes.settings,
           ),
           GoRoute(
             path: Routes.settingsExperiments,
