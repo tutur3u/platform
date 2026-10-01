@@ -233,7 +233,6 @@ The `mobile-store-beta` GitHub environment accepts two optional variables:
 | --- | --- | --- |
 | `TESTFLIGHT_BETA_ENABLED` | `true` | Set `false` to skip automatic group assignment. The internal group's own automatic distribution setting still applies. |
 | `TESTFLIGHT_BETA_GROUPS` | `all` | Comma-separated exact group names or App Store Connect group IDs to limit assignment. Unknown names fail the run. |
-| `TESTFLIGHT_BETA_WHATS_NEW` | Generic test note | English (U.S.) instructions shown to external testers when a new build is submitted for beta review. Set this to specific test areas for a release. |
 
 External groups require TestFlight beta review before testers can install a new
 build. If an external group is selected, CI creates a missing English (U.S.)
@@ -291,6 +290,28 @@ upload, use Apple's TestFlight App Review appeal/contact path rather than
 assuming the retry workflow will resubmit it. Confirm the newly submitted
 build reaches `WAITING_FOR_REVIEW`, `IN_REVIEW`, or `APPROVED` in App Store
 Connect; an upload or metadata save alone does not reopen a rejected review.
+### Per-build What to Test
+
+What to Test is `betaBuildLocalizations.whatsNew`, separate from app-level
+reviewer credentials and Review Notes. The upload uses the prepared
+`mobile-beta-release-history` artifact for the exact version, build number, and
+source SHA. It creates missing English text or fills blank text, preserves
+nonempty manual text and other locales, and reads the result back before a new
+external review. Notes preparation runs before reviewer-metadata or pending-review
+deferral; internal group distribution remains available when notes cannot be
+verified. This does not mean external testing is approved.
+
+Retries resolve the selected build number to its original production upload run
+and history artifact. They never use the current checkout's newer changes. A
+missing, expired, ambiguous, or mismatched source/artifact requires manually
+prepared version-specific notes; the workflow does not invent a changelog or
+submit a new external review with unverified notes. A legacy history artifact
+is usable only when its original upload run is verified and the exact version
+entry has changes. An empty `.0` entry must use manually reviewed notes from that
+source's matching release changelog. The former generic
+`TESTFLIGHT_BETA_WHATS_NEW` fallback is no longer used. Automatic writes only fill
+absent or blank text; correcting nonempty text remains an explicit manual action.
+
 The store workflow now checks Apple's private `demoAccountRequired`,
 `demoAccountName`, `demoAccountPassword`, and credential-free `notes` fields
 before a new external beta submission. It reports only whether access is
