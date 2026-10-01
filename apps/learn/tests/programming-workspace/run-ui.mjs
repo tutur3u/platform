@@ -253,7 +253,7 @@ async function run() {
     .click({ position: { x: 100, y: 12 } });
   await page.keyboard.press('ControlOrMeta+A');
   await page.keyboard.type('# synthetic alpha');
-  await capture('desktop-edited-draft');
+  await capture('desktop-edited-draft-initial');
   await page
     .locator('.view-lines')
     .filter({ hasText: 'synthetic alpha' })

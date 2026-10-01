@@ -2,10 +2,12 @@ import type { submitCodingSolution as realSubmitCodingSolution } from '../../src
 import { isCodingLanguage } from '../../src/lib/coding/languages';
 import type { CodingExecutionSummary } from '../../src/lib/coding/results';
 
-let attempt: Pick<
-  CodingExecutionSummary,
-  'challengeSlug' | 'language' | 'source' | 'kind'
-> | null = null;
+let attempt:
+  | (Pick<
+      CodingExecutionSummary,
+      'challengeSlug' | 'language' | 'source' | 'kind'
+    > & { customCase?: { input: string; expected: string } })
+  | null = null;
 const syntheticGlobal = globalThis as typeof globalThis & {
   __syntheticSubmitCount?: number;
 };
@@ -17,13 +19,14 @@ export async function submitCodingSolution(
     language,
     source,
     kind = 'submit',
+    customCase,
   ]: Parameters<typeof realSubmitCodingSolution>
 ) {
   if (!isCodingLanguage(language))
     throw new Error('Unsupported synthetic language');
   syntheticGlobal.__syntheticSubmitCount =
     (syntheticGlobal.__syntheticSubmitCount ?? 0) + 1;
-  attempt = { challengeSlug, language, source, kind };
+  attempt = { challengeSlug, language, source, kind, customCase };
   return '22222222-2222-4222-8222-222222222222';
 }
 export async function listCodingExecutions() {
@@ -37,12 +40,12 @@ export async function getCodingSubmission(): Promise<CodingExecutionSummary> {
     createdAt: new Date().toISOString(),
     status: 'succeeded',
     result: {
-      passed: 2,
-      total: 2,
+      passed: 1,
+      total: 1,
       hiddenPassed: 0,
       hiddenTotal: 0,
       medianDurationMs: 3,
-      timingRangeMs: [2, 4],
+      timingRangeMs: [3, 3],
       results: [
         {
           index: 0,
@@ -50,7 +53,9 @@ export async function getCodingSubmission(): Promise<CodingExecutionSummary> {
           passed: true,
           reason: 'passed',
           durationMs: 3,
-          output: '0 1\n',
+          output:
+            attempt.customCase?.expected ??
+            (attempt.challengeSlug === 'binary-search' ? '3\n' : '0 1\n'),
         },
       ],
     },

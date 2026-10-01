@@ -35,3 +35,17 @@ Published correction `766f33b7c4` passed the original equivalent local batch: 4 
 checks and 17 workspace checks, no console/page errors, focused lint/typecheck pass.
 This portable followup relocates/sanitizes that harness; its validation is recorded
 in the PR handoff separately. Customer pixels/Library metadata stay outside Git.
+
+Review regressions can run without a browser or server:
+
+```bash
+ttr resources run -- node --test apps/learn/tests/programming-workspace/review-regressions.node-test.mjs
+```
+
+These execute the actual header measurement helper, editor font callbacks,
+toolbar focus properties and synthetic judge fixture with synthetic adapters.
+They also verify the parent batch budget and timeout diagnostics. Each browser
+child retains its 600-second work budget; the parent allows an additional
+120 seconds for lint/typecheck teardown and 30 seconds of startup margin.
+Source checks do not prove device safe-area geometry or replace the browser
+batch and exact-head Learn build in CI.

@@ -9,7 +9,6 @@
 }
 .qa-programming-font {
   --font-programming-mono: ProgrammingQA;
-  --font-mono: ProgrammingQA, monospace;
 }
 html,
 body,

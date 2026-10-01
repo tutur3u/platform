@@ -4,7 +4,14 @@ import { ChevronLeft, ChevronRight, Menu, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { type CSSProperties, type ReactNode, useEffect } from 'react';
+import {
+  type CSSProperties,
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+} from 'react';
+import { observeMobileHeaderHeight } from './mobile-header-height';
 
 interface StructureProps {
   sidebarLabels?: { open: string; close: string };
@@ -57,6 +64,15 @@ export function Structure({
   sidebarHeaderClassName,
   sidebarHeaderHeight,
 }: StructureProps) {
+  const mobileNavRef = useRef<HTMLElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    if (!contentFullBleed || sidebarHidden) return;
+    const nav = mobileNavRef.current;
+    const main = mainRef.current;
+    if (nav && main) return observeMobileHeaderHeight(nav, main);
+  }, [contentFullBleed, sidebarHidden]);
+
   const sidebarStyle = {
     '--sidebar-collapsed-width': sidebarCollapsedWidth,
     '--sidebar-expanded-width': sidebarExpandedWidth,
@@ -88,7 +104,10 @@ export function Structure({
   return (
     <>
       {!sidebarHidden && (
-        <nav className="safe-top safe-x fixed inset-x-0 top-0 z-30 max-sm:border-b md:hidden">
+        <nav
+          ref={mobileNavRef}
+          className="safe-top safe-x fixed inset-x-0 top-0 z-30 max-sm:border-b md:hidden"
+        >
           <div className="bg-background/50 p-2 font-semibold backdrop-blur-md md:px-8 lg:px-16 xl:px-32">
             <div className="relative flex items-center justify-between gap-2 md:gap-4">
               <div className="flex w-full items-center gap-2">
@@ -238,8 +257,12 @@ export function Structure({
           {/* Main content area - overflow-y-auto removed to prevent double scrollbars */}
           {/* Body element now handles page-level scrolling */}
           <main
+            ref={mainRef}
             className={cn(
-              'relative flex h-full min-h-screen flex-col overflow-x-clip overflow-y-visible transition-all duration-300 ease-in-out',
+              'relative flex flex-col overflow-x-clip transition-all duration-300 ease-in-out',
+              contentFullBleed
+                ? 'h-dvh min-h-0 overflow-y-hidden'
+                : 'h-full min-h-screen overflow-y-visible',
               sidebarHidden
                 ? 'md:pl-0'
                 : isCollapsed || overlayOnExpand
@@ -251,13 +274,13 @@ export function Structure({
             {header && <div className="mb-4 hidden md:block">{header}</div>}
             <div
               className={cn(
-                'safe-bottom relative h-full w-full',
+                'safe-bottom relative w-full',
                 contentFullBleed
                   ? sidebarHidden
-                    ? 'p-0'
-                    : 'pt-17 md:pt-0'
+                    ? 'flex min-h-0 flex-1 flex-col'
+                    : 'flex min-h-0 flex-1 flex-col pt-[var(--mobile-nav-height,calc(4.25rem+env(safe-area-inset-top,0px)))] md:pt-0'
                   : [
-                      'p-2 md:p-4 md:pt-4',
+                      'h-full p-2 md:p-4 md:pt-4',
                       sidebarHidden ? 'pt-2' : 'pt-17 pl-2',
                     ]
               )}
