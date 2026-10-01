@@ -18196,7 +18196,7 @@ abstract class AppLocalizations {
   /// No description provided for @inventoryStockHealthOverlap.
   ///
   /// In en, this message translates to:
-  /// **'Low/out counts can overlap. Unlimited rows are excluded. Bars compare counts.'**
+  /// **'Low/out counts can overlap. Low/out quantity checks exclude Unlimited rows; Unlimited rows are counted separately. Bars compare row counts.'**
   String get inventoryStockHealthOverlap;
 
   /// No description provided for @inventoryStockHealthUnknown.
