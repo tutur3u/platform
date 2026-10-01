@@ -246,7 +246,7 @@ describe('AI chat attachment resources', () => {
     expect(mocks.download).toHaveBeenCalledWith(
       'workspace-1',
       'supabase',
-      'uploads/100% hoàn tất.txt'
+      'uploads/100%25%20ho%C3%A0n%20t%E1%BA%A5t.txt'
     );
   });
   it('preserves finance source reads authorized through view_drive', async () => {

@@ -3,6 +3,7 @@ import {
   getFinanceTransactionIdFromStoragePath,
 } from '@tuturuuu/finance-core/storage-access';
 import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import type { WorkspaceStorageProvider } from '@tuturuuu/storage-core/workspace-storage-config';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import {
   getPermissions,
@@ -38,8 +39,8 @@ export async function authorizeAttachmentSource({
     )
   )
     throw new Error('Invalid attachment source path');
-  // Reject encoded separators/dots: authorization and provider URL parsers
-  // must agree on the namespace. Ordinary percent characters remain valid.
+  // Encoded structural aliases remain unsupported. Literal object keys are
+  // encoded only at the provider transport boundary, after authorization.
   if (/%(?:2e|2f|5c|25)/iu.test(normalizedPath))
     throw new Error('Invalid attachment source path');
   if (isReservedMobileDeploymentDrivePath(normalizedWsId, normalizedPath))
@@ -120,4 +121,16 @@ export async function authorizeAttachmentSource({
     if (!allowed) throw new Error('Attachment source access denied');
   }
   return { sourceWsId: normalizedWsId, path: normalizedPath };
+}
+
+// The locked Supabase SDK interpolates download paths into a URL. Quote each
+// literal segment so its provider decodes exactly the key we authorized. R2
+// accepts an object key directly and performs its own transport encoding.
+export function attachmentSourceDownloadPath(
+  path: string,
+  provider: WorkspaceStorageProvider
+) {
+  return provider === 'supabase'
+    ? path.split('/').map(encodeURIComponent).join('/')
+    : path;
 }

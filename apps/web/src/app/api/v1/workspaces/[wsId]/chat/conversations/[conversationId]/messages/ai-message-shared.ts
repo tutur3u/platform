@@ -20,7 +20,10 @@ import {
   callPrivateChatRpc,
 } from '@/lib/chat/private-rpc';
 import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
-import { authorizeAttachmentSource } from './attachment-source-access';
+import {
+  attachmentSourceDownloadPath,
+  authorizeAttachmentSource,
+} from './attachment-source-access';
 
 export type ChatMessageAttachmentInput = {
   contentType?: string | null;
@@ -218,7 +221,7 @@ async function copyAttachmentInputsToAiResources({
       const downloaded = await downloadWorkspaceStorageObjectForProvider(
         source.sourceWsId,
         provider,
-        source.path
+        attachmentSourceDownloadPath(source.path, provider)
       );
       downloadedBytes += downloaded.buffer.byteLength;
       if (downloadedBytes > MAX_AI_ATTACHMENT_BYTES) {
