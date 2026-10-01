@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { existsSync, realpathSync } from 'node:fs';
+import { existsSync, mkdtempSync, realpathSync, rmSync } from 'node:fs';
 import {
   chmod,
   mkdir,
@@ -12,16 +12,30 @@ import {
 } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { getSupabaseBinaryPath } from '../../scripts/run-supabase.js';
+import { createSyntheticCliContext } from './cli-environment.mjs';
 import {
   CliProbeFailure,
   resolveHostedNativeCli,
-  runCliProbe,
+  runCliProbe as runRawCliProbe,
   verificationFailureStatus,
 } from './native-cli.mjs';
 import { configureNativeCli, limits } from './proposal.mjs';
+
+const contextRoot = mkdtempSync(
+  path.join(os.tmpdir(), 'native-probe-environment-')
+);
+after(() => rmSync(contextRoot, { recursive: true, force: true }));
+function runCliProbe(binary, args, options) {
+  const context = createSyntheticCliContext({
+    root: path.join(contextRoot, 'isolated'),
+    nativeBinary: binary,
+    temporaryRoot: os.tmpdir(),
+  });
+  return runRawCliProbe(binary, args, { ...options, ...context });
+}
 
 async function installedFixture(
   t,
@@ -125,7 +139,6 @@ for (const [phase, args] of [
       {
         phase,
         timeoutMs: 2000,
-        env: { ...process.env, SUPABASE_CLI_BINARY_OVERRIDE: 'SYNTHETIC-SHIM' },
       }
     );
     assert.deepEqual(JSON.parse(text), { args, override: null });

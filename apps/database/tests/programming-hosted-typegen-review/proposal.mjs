@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   readFileSync,
   renameSync,
@@ -24,6 +25,7 @@ import {
   APPROVED_TYPEGEN_OUTPUT,
   validateTypegenOutputPath,
 } from '../../scripts/run-supabase-isolated-typegen.js';
+import { createSyntheticCliContext } from './cli-environment.mjs';
 import {
   resolveHostedNativeCli,
   runCliProbe,
@@ -132,13 +134,41 @@ function migrationFingerprint() {
     files.map((file) => `${file}\0${hash(readFileSync(file))}`).join('\n')
   );
 }
+let configuredNativeBinary;
 export function configureNativeCli({
   env = process.env,
   resolver = resolveHostedNativeCli,
 } = {}) {
   const binary = resolver(env.SUPABASE_CLI_BINARY_OVERRIDE);
   env.SUPABASE_CLI_BINARY_OVERRIDE = binary;
+  if (env === process.env) configuredNativeBinary = binary;
   return binary;
+}
+function syntheticCliContext(nativeBinary, workdir) {
+  if (existsSync(output) && lstatSync(output).isSymbolicLink())
+    throw new Error('Hosted helper context unavailable');
+  mkdirSync(output, { recursive: true, mode: 0o700 });
+  return createSyntheticCliContext({
+    root: path.join(output, 'cli-isolation'),
+    nativeBinary,
+    temporaryRoot: os.tmpdir(),
+    workdir,
+  });
+}
+export async function runHostedHelper(
+  binary,
+  args,
+  options,
+  {
+    nativeBinary = configuredNativeBinary,
+    context = syntheticCliContext,
+    runner = runOwnedProcess,
+  } = {}
+) {
+  if (!nativeBinary || !['--resume', '--cleanup'].includes(args[1]))
+    throw new Error('Hosted helper context unavailable');
+  const safe = context(nativeBinary, args[2]);
+  await runner(binary, args, { ...options, env: safe.env });
 }
 async function prepare() {
   assertHosted();
@@ -153,7 +183,9 @@ async function prepare() {
   const free = freeBytes();
   assertDisk(free, free);
   const binary = configureNativeCli();
+  const cliContext = syntheticCliContext(binary);
   const cliVersion = await runCliProbe(binary, ['--version'], {
+    ...cliContext,
     phase: 'cli-version',
     timeoutMs: limits.commandMs,
   });
@@ -164,6 +196,7 @@ async function prepare() {
     throw new Error('Supabase CLI pin mismatch');
   const services = JSON.parse(
     await runCliProbe(binary, ['services', '-o', 'json'], {
+      ...cliContext,
       phase: 'cli-services',
       timeoutMs: limits.commandMs,
     })
@@ -246,7 +279,7 @@ export async function resumeRecordedProject(
   state,
   {
     read = readLifecycleMetadata,
-    runner = runOwnedProcess,
+    runner = runHostedHelper,
     onTick,
     repositoryRoot = repo,
   } = {}
@@ -326,7 +359,7 @@ export async function cleanupRecordedProject(
   {
     exists = existsSync,
     read = readLifecycleMetadata,
-    runner = runOwnedProcess,
+    runner = runHostedHelper,
     inventory = names,
     portAvailable = isPortAvailable,
     record = saveState,

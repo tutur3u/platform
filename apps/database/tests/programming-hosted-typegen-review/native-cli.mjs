@@ -10,6 +10,10 @@ import {
 import os from 'node:os';
 import path from 'node:path';
 import { getBundledSupabaseBinaryPath } from '../../scripts/run-supabase.js';
+import {
+  assertSyntheticCliEnvironment,
+  CliEnvironmentFailure,
+} from './cli-environment.mjs';
 
 const phases = new Set([
   'prepare',
@@ -35,6 +39,8 @@ export class CliProbeFailure extends Error {
   }
 }
 export function verificationFailureStatus(mode, error) {
+  if (error instanceof CliEnvironmentFailure)
+    return 'Programming verification phase=cli-environment outcome=unavailable';
   const phase =
     error instanceof CliProbeFailure && phases.has(error.phase)
       ? error.phase
@@ -120,7 +126,8 @@ export function runCliProbe(
     phase,
     timeoutMs,
     maxOutputBytes = 4 * 1024 ** 2,
-    env = process.env,
+    env,
+    cwd,
     signalSource = process,
     onSpawn = () => {},
   } = {}
@@ -133,6 +140,7 @@ export function runCliProbe(
     maxOutputBytes < 1
   )
     throw new CliProbeFailure(phase, 'failed');
+  assertSyntheticCliEnvironment(env, cwd);
   return new Promise((resolve, reject) => {
     const probeEnv = { ...env };
     delete probeEnv.SUPABASE_CLI_BINARY_OVERRIDE;
@@ -140,6 +148,7 @@ export function runCliProbe(
     try {
       child = spawn(binary, args, {
         detached: true,
+        cwd,
         stdio: ['ignore', 'pipe', 'pipe'],
         env: probeEnv,
       });

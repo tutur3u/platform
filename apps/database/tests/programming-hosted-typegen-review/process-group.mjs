@@ -11,6 +11,7 @@ export function runOwnedProcess(
     intervalMs = 2000,
     signalSource = process,
     onSpawn = () => {},
+    env = process.env,
   } = {}
 ) {
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1) {
@@ -20,7 +21,7 @@ export function runOwnedProcess(
     const child = spawn(binary, args, {
       detached: true,
       stdio: 'ignore',
-      env: process.env,
+      env,
     });
     let failure;
     let settled = false;
