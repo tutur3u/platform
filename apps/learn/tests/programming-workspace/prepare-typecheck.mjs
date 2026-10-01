@@ -55,6 +55,8 @@ export function prepareTypecheck() {
           paths,
         },
         include: [
+          path.join(here, '*.tsx'),
+          path.join(here, 'judge.ts'),
           path.join(
             repo,
             'apps/learn/src/app/[locale]/(dashboard)/[wsId]/coding/*.tsx'

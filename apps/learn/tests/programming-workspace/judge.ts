@@ -1,27 +1,39 @@
-let attempt: any = null;
+import type { submitCodingSolution as realSubmitCodingSolution } from '../../src/app/[locale]/(dashboard)/[wsId]/coding/actions';
+import { isCodingLanguage } from '../../src/lib/coding/languages';
+import type { CodingExecutionSummary } from '../../src/lib/coding/results';
+
+let attempt: Pick<
+  CodingExecutionSummary,
+  'challengeSlug' | 'language' | 'source' | 'kind'
+> | null = null;
+const syntheticGlobal = globalThis as typeof globalThis & {
+  __syntheticSubmitCount?: number;
+};
 export async function submitCodingSolution(
-  _ws: any,
-  _student: any,
-  challenge: any,
-  language: any,
-  source: any,
-  kind: any
+  ...[
+    _ws,
+    _student,
+    challengeSlug,
+    language,
+    source,
+    kind = 'submit',
+  ]: Parameters<typeof realSubmitCodingSolution>
 ) {
-  globalThis.__syntheticSubmitCount =
-    (globalThis.__syntheticSubmitCount ?? 0) + 1;
-  attempt = { challenge, language, source, kind };
+  if (!isCodingLanguage(language))
+    throw new Error('Unsupported synthetic language');
+  syntheticGlobal.__syntheticSubmitCount =
+    (syntheticGlobal.__syntheticSubmitCount ?? 0) + 1;
+  attempt = { challengeSlug, language, source, kind };
   return '22222222-2222-4222-8222-222222222222';
 }
 export async function listCodingExecutions() {
   return { items: [], nextCursor: null };
 }
-export async function getCodingSubmission() {
+export async function getCodingSubmission(): Promise<CodingExecutionSummary> {
+  if (!attempt) throw new Error('No synthetic attempt');
   return {
     id: '22222222-2222-4222-8222-222222222222',
-    challengeSlug: attempt.challenge,
-    language: attempt.language,
-    source: attempt.source,
-    kind: attempt.kind,
+    ...attempt,
     createdAt: new Date().toISOString(),
     status: 'succeeded',
     result: {

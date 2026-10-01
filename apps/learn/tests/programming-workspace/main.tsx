@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import * as monaco from 'monaco-editor';
 
 Object.assign(window, { qaMonaco: monaco });
@@ -5,7 +6,7 @@ Object.assign(window, { qaMonaco: monaco });
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider, useTheme } from 'next-themes';
-import { useState } from 'react';
+import { type ComponentProps, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Structure } from '../../../../packages/ui/src/components/ui/custom/structure';
 import messages from '../../messages/en.json';
@@ -33,7 +34,7 @@ const challenges = [
     samples: [],
     publicCases: [{ input: '5\n1 3 5 7 9\n7\n', output: '3\n' }],
   },
-] as const;
+] satisfies ComponentProps<typeof CodingLab>['challenges'];
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
 });
@@ -56,7 +57,7 @@ function Harness() {
           availableLanguages={
             ready ? ['python', 'javascript', 'typescript'] : []
           }
-          challenges={challenges as any}
+          challenges={challenges}
           readOnly={false}
           wsId="11111111-1111-4111-8111-111111111111"
         />
