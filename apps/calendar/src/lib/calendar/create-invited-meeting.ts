@@ -176,6 +176,7 @@ export async function createInvitedMeeting({
           start_at: input.start_at,
           end_at: input.end_at,
           invitation: input.invitation,
+          color,
         },
       });
       if (!provider)

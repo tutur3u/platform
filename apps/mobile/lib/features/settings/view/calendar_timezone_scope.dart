@@ -13,7 +13,16 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 
 /// Shared Settings and Calendar preferences for the active account.
 class CalendarTimezoneScope extends StatefulWidget {
-  const CalendarTimezoneScope({required this.child, super.key});
+  const CalendarTimezoneScope({
+    required this.child,
+    this.repository,
+    this.deviceLoader,
+    this.loadTimeout = const Duration(seconds: 15),
+    super.key,
+  });
+  final TimezoneSettingsRepository? repository;
+  final Future<String> Function()? deviceLoader;
+  final Duration loadTimeout;
   final Widget child;
   @override
   State<CalendarTimezoneScope> createState() => _CalendarTimezoneScopeState();
@@ -33,10 +42,11 @@ class _CalendarTimezoneScopeState extends State<CalendarTimezoneScope>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _repository = TimezoneSettingsRepository();
+    _repository = widget.repository ?? TimezoneSettingsRepository();
     _cubit = TimezoneSettingsCubit(
       repository: _repository,
-      deviceLoader: getCurrentTimezoneIdentifier,
+      deviceLoader: widget.deviceLoader ?? getVerifiedDeviceTimezoneIdentifier,
+      loadTimeout: widget.loadTimeout,
     );
     _load();
   }
@@ -50,7 +60,7 @@ class _CalendarTimezoneScopeState extends State<CalendarTimezoneScope>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_cubit.close());
-    _repository.dispose();
+    if (widget.repository == null) _repository.dispose();
     super.dispose();
   }
 

@@ -47,3 +47,14 @@ Future<String> _loadCurrentTimezoneIdentifier() async {
 
   return 'UTC';
 }
+
+/// Settings must distinguish a verified UTC device from an unknown fallback.
+/// Other existing consumers retain their compatibility fallback above.
+Future<String> getVerifiedDeviceTimezoneIdentifier() async {
+  final timezone = await FlutterTimezone.getLocalTimezone();
+  final identifier = timezone.identifier.trim();
+  if (identifier.isEmpty) {
+    throw Exception('Native device timezone is unavailable.');
+  }
+  return identifier;
+}

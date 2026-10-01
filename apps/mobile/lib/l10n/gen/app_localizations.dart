@@ -16591,12 +16591,6 @@ abstract class AppLocalizations {
   /// **'{when}: {title}'**
   String remindersUpcomingEvent(String when, String title);
 
-  /// No description provided for @remindersOccurrenceDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'{leadTime} · {occurrence} ({timezone})'**
-  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone);
-
   /// No description provided for @remindersIn3d.
   ///
   /// In en, this message translates to:
@@ -16753,6 +16747,24 @@ abstract class AppLocalizations {
   /// **'Your private activity'**
   String get profilePrivateActivity;
 
+  /// No description provided for @profileTimelineDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Creation activity in this workspace over the last 30 days. Calendar events are workspace activity.'**
+  String get profileTimelineDescription;
+
+  /// No description provided for @profileTimelineLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing recent activity only. Some sources reached the display limit.'**
+  String get profileTimelineLimited;
+
+  /// No description provided for @profileTimelineUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity could not be refreshed.'**
+  String get profileTimelineUnavailable;
+
   /// No description provided for @profileTimelineTitle.
   ///
   /// In en, this message translates to:
@@ -16780,7 +16792,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileTimelinePartial.
   ///
   /// In en, this message translates to:
-  /// **'Some activity is unavailable. Retry'**
+  /// **'Some activity is unavailable.'**
   String get profileTimelinePartial;
 
   /// No description provided for @profileTimelineTasks.
@@ -17917,6 +17929,96 @@ abstract class AppLocalizations {
   /// **'This removes the queued change from this device. It does not undo anything the server may have received.'**
   String get offlineChangesDiscardConfirm;
 
+  /// No description provided for @mailMessageDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Message details'**
+  String get mailMessageDetails;
+
+  /// No description provided for @mailInvitationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar invitation'**
+  String get mailInvitationTitle;
+
+  /// No description provided for @mailInvitationAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get mailInvitationAccept;
+
+  /// No description provided for @mailInvitationDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get mailInvitationDecline;
+
+  /// No description provided for @mailInvitationTentative.
+  ///
+  /// In en, this message translates to:
+  /// **'Tentative'**
+  String get mailInvitationTentative;
+
+  /// No description provided for @mailInvitationIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply as {attendee} to organizer {organizer}'**
+  String mailInvitationIdentity(String attendee, String organizer);
+
+  /// No description provided for @mailInvitationLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get mailInvitationLocation;
+
+  /// No description provided for @mailInvitationWhen.
+  ///
+  /// In en, this message translates to:
+  /// **'When'**
+  String get mailInvitationWhen;
+
+  /// No description provided for @mailInvitationJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join meeting'**
+  String get mailInvitationJoin;
+
+  /// No description provided for @mailInvitationRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry invitation details'**
+  String get mailInvitationRetry;
+
+  /// No description provided for @mailInvitationSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending your response…'**
+  String get mailInvitationSending;
+
+  /// No description provided for @mailInvitationSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Response sent: {response}'**
+  String mailInvitationSent(String response);
+
+  /// No description provided for @mailInvitationPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Response is pending. Check again before replying.'**
+  String get mailInvitationPending;
+
+  /// No description provided for @mailInvitationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not confirm your response. Retry the same response to check its status.'**
+  String get mailInvitationFailed;
+
+  /// No description provided for @remindersOccurrenceDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'{leadTime} · {occurrence} ({timezone})'**
+  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone);
+
   /// No description provided for @settingsTimezone.
   ///
   /// In en, this message translates to:
@@ -17946,6 +18048,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search timezones'**
   String get settingsTimezoneSearch;
+
+  /// No description provided for @settingsTimezoneLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolving timezone…'**
+  String get settingsTimezoneLoading;
+
+  /// No description provided for @settingsTimezoneAccountPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your account.'**
+  String get settingsTimezoneAccountPending;
+
+  /// No description provided for @settingsTimezoneUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get settingsTimezoneUnknown;
 
   /// No description provided for @settingsTimezoneEffective.
   ///

@@ -15,6 +15,7 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
+import { InventorySessionScope } from '@/components/operator/inventory-session-scope';
 import { SidebarProvider } from '@/context/sidebar-context';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
@@ -99,7 +100,12 @@ export default async function Layout({ children, params }: LayoutProps) {
           </Suspense>
         }
       >
-        {children}
+        <InventorySessionScope
+          actorId={user.id}
+          key={`${user.id}:${workspace.id}`}
+        >
+          {children}
+        </InventorySessionScope>
       </Structure>
     </SidebarProvider>
   );

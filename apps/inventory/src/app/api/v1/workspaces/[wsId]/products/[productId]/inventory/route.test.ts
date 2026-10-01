@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const pricedEdit = vi.hoisted(() => vi.fn());
+vi.mock('@tuturuuu/inventory-core/priced-product-edit', () => ({
+  editPricedProduct: pricedEdit,
+}));
+
 const {
   authorizeInventoryWorkspaceMock,
   createAdminClientMock,
@@ -152,6 +157,7 @@ function createInventoryAdminClient({
 describe('product inventory route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    pricedEdit.mockResolvedValue(null);
 
     authorizeInventoryWorkspaceMock.mockResolvedValue({
       ok: true,
@@ -412,6 +418,42 @@ describe('product inventory route', () => {
         unit_id: UNIT_ID,
         warehouse_id: WAREHOUSE_ID,
       });
+    }
+  );
+
+  it.each([false, true])(
+    'priced stock edits use a single transaction; failure=%s',
+    async (failure) => {
+      const mocks = createInventoryAdminClient();
+      createAdminClientMock.mockResolvedValue(mocks.client);
+      validateInventoryItemWorkspaceRelationsMock.mockResolvedValue({
+        ok: true,
+      });
+      if (failure)
+        pricedEdit.mockRejectedValue(new Error('Synthetic edit fault'));
+      else
+        pricedEdit.mockResolvedValue({ deleted: 1, inserted: 0, updated: 0 });
+      const { PATCH } = await import('./route');
+      const response = await PATCH(
+        new Request('http://localhost/inventory', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            inventory: [],
+            changeContext: { note: 'Synthetic removal' },
+          }),
+        }),
+        { params: Promise.resolve({ productId: PRODUCT_ID, wsId: 'personal' }) }
+      );
+      expect(response.status).toBe(failure ? 500 : 200);
+      expect(pricedEdit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          inventory: [],
+          recordChanges: true,
+          context: expect.objectContaining({ note: 'Synthetic removal' }),
+        })
+      );
+      expect(mocks.inventoryProductsQuery.delete).not.toHaveBeenCalled();
+      expect(mocks.stockChangeQuery.insert).not.toHaveBeenCalled();
     }
   );
 

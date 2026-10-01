@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('server-only', () => ({}));
+vi.mock('@tuturuuu/inventory-core/actor', () => ({
+  getInventoryActorContext: vi.fn(),
+}));
+vi.mock('@tuturuuu/inventory-core/audit', () => ({
+  createInventoryAuditLog: vi.fn(),
+}));
+
 const mocks = {
   canCreateInventorySales: vi.fn(),
   getFinanceRouteContext: vi.fn(),
