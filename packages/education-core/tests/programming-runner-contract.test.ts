@@ -3,9 +3,9 @@ import {
   PROGRAMMING_COMMAND_CASE_LIMIT,
 } from '@tuturuuu/types/primitives/programming';
 import { describe, expect, it, vi } from 'vitest';
-import { parseJudgePayload } from '../../../sdk/src/cli/devbox-judge-sandbox';
-import { ProgrammingExecutionSchema } from './programming-execution';
-import { ProgrammingProblemInputSchema } from './programming-schema';
+import { parseJudgePayload } from '../../sdk/src/cli/devbox-judge-sandbox';
+import { ProgrammingExecutionSchema } from '../src/education/programming-execution';
+import { ProgrammingProblemInputSchema } from '../src/education/programming-schema';
 
 vi.mock('server-only', () => ({}));
 const testCase = { input: '1\n', expected: '1\n', visible: true };
