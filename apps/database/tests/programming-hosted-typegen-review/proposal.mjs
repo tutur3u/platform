@@ -24,6 +24,11 @@ import {
   APPROVED_TYPEGEN_OUTPUT,
   validateTypegenOutputPath,
 } from '../../scripts/run-supabase-isolated-typegen.js';
+import {
+  resolveHostedNativeCli,
+  runCliProbe,
+  verificationFailureStatus,
+} from './native-cli.mjs';
 import { verifyNetworkPolicy } from './network-policy.mjs';
 import { runOwnedProcess } from './process-group.mjs';
 
@@ -127,6 +132,14 @@ function migrationFingerprint() {
     files.map((file) => `${file}\0${hash(readFileSync(file))}`).join('\n')
   );
 }
+export function configureNativeCli({
+  env = process.env,
+  resolver = resolveHostedNativeCli,
+} = {}) {
+  const binary = resolver(env.SUPABASE_CLI_BINARY_OVERRIDE);
+  env.SUPABASE_CLI_BINARY_OVERRIDE = binary;
+  return binary;
+}
 async function prepare() {
   assertHosted();
   if (existsSync(statePath))
@@ -139,14 +152,22 @@ async function prepare() {
     throw new Error('Requires runner without custom Docker networks');
   const free = freeBytes();
   assertDisk(free, free);
-  const binary = process.env.SUPABASE_CLI_BINARY_OVERRIDE;
-  const cliVersion = command(binary, ['--version']);
+  const binary = configureNativeCli();
+  const cliVersion = await runCliProbe(binary, ['--version'], {
+    phase: 'cli-version',
+    timeoutMs: limits.commandMs,
+  });
   const expectedVersion = JSON.parse(
     readFileSync('apps/database/package.json', 'utf8')
   ).devDependencies.supabase;
   if (cliVersion !== expectedVersion)
     throw new Error('Supabase CLI pin mismatch');
-  const services = JSON.parse(command(binary, ['services', '-o', 'json']));
+  const services = JSON.parse(
+    await runCliProbe(binary, ['services', '-o', 'json'], {
+      phase: 'cli-services',
+      timeoutMs: limits.commandMs,
+    })
+  );
   const headSha = command('git', ['rev-parse', 'HEAD']);
   const identity = deriveIsolatedIdentity({
     headSha,
@@ -247,6 +268,7 @@ export async function resumeRecordedProject(
 
 async function run() {
   assertHosted();
+  configureNativeCli();
   const state = readState();
   verifyNetworkPolicy(); // Fail closed before the CLI can start/apply SQL.
   try {
@@ -292,7 +314,11 @@ async function run() {
 
 async function cleanup() {
   assertHosted();
-  if (!existsSync(statePath)) return;
+  if (!existsSync(statePath)) {
+    console.log('Programming verification phase=cleanup outcome=no-state');
+    return;
+  }
+  configureNativeCli();
   await cleanupRecordedProject(readState());
 }
 export async function cleanupRecordedProject(
@@ -405,7 +431,7 @@ if (
   try {
     await main(process.argv[2]);
   } catch (error) {
-    console.error(error.message);
+    console.error(verificationFailureStatus(process.argv[2], error));
     process.exitCode = 1;
   }
 }
