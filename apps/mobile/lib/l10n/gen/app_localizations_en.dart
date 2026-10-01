@@ -4044,6 +4044,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryStockUnlimited => 'Unlimited';
 
   @override
+  String get inventoryStockUnlimitedHint => 'Leave quantity empty for unlimited stock.';
+
+  @override
   String get inventoryTitle => 'Inventory';
 
   @override

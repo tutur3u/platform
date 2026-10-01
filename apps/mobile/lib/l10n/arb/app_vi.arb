@@ -1632,6 +1632,7 @@
     "inventoryLoadedLowStock": "Tồn kho thấp trong sản phẩm đã tải",
     "inventoryStockNoRows": "Chưa cấu hình dòng tồn kho.",
     "inventoryStockUnlimited": "Không giới hạn",
+    "inventoryStockUnlimitedHint": "Để trống số lượng để không giới hạn tồn kho.",
     "inventoryTitle": "Tồn kho",
     "financeOverviewLabel": "Tổng quan",
     "financeActivityLabel": "Hoạt động",

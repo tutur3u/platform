@@ -7849,6 +7849,12 @@ abstract class AppLocalizations {
   /// **'Unlimited'**
   String get inventoryStockUnlimited;
 
+  /// No description provided for @inventoryStockUnlimitedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave quantity empty for unlimited stock.'**
+  String get inventoryStockUnlimitedHint;
+
   /// No description provided for @inventoryTitle.
   ///
   /// In en, this message translates to:
