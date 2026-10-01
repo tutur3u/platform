@@ -9427,6 +9427,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineTab => 'Dòng thời gian';
 
   @override
+  String get profileTimelineShowDates => 'Hiện thanh chọn ngày';
+
+  @override
+  String get profileTimelineHideDates => 'Đóng thanh ngày và xem dòng hoạt động';
+
+  @override
+  String get profileTimelineAgenda => 'Những ngày có hoạt động';
+
+  @override
+  String get profileTimelineDayEmpty => 'Không có hoạt động nào được trả về cho ngày này.';
+
+  @override
+  String get profileTimelineHasActivity => 'Có hoạt động trong dữ liệu đã tải';
+
+  @override
+  String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
+
+  @override
   String get inventoryStockHealthTitle => 'Tình trạng tồn kho';
 
   @override

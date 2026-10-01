@@ -1,0 +1,142 @@
+{
+  "runtime_source_changed": false,
+  "inner_row_clips": false,
+  "synthetic_actual_shell_and_assistant_page": true,
+  "cases": [
+    {
+      "synthetic": true,
+      "scale": 1,
+      "width": 320,
+      "bar": [0, 0, 320, 54],
+      "title": [85.5, 28],
+      "intrinsicTitleHeight": 28,
+      "paintedTitleBounds": [54, 13, 139.5, 41],
+      "contentTop": null,
+      "selector": null
+    },
+    {
+      "synthetic": true,
+      "scale": 2,
+      "width": 320,
+      "bar": [0, 0, 320, 80],
+      "title": [85.5, 56],
+      "intrinsicTitleHeight": 56,
+      "paintedTitleBounds": [54, 12, 139.5, 68],
+      "contentTop": null,
+      "selector": null
+    },
+    {
+      "synthetic": true,
+      "scale": 3,
+      "width": 320,
+      "bar": [0, 0, 320, 108],
+      "title": [85.5, 84],
+      "intrinsicTitleHeight": 84,
+      "paintedTitleBounds": [54, 12, 139.5, 96],
+      "contentTop": null,
+      "selector": null
+    },
+    {
+      "synthetic": true,
+      "scale": 1,
+      "width": 393,
+      "bar": [0, 0, 393, 54],
+      "title": [94.5634765625, 28],
+      "intrinsicTitleHeight": 28,
+      "paintedTitleBounds": [54, 13, 148.5634765625, 41],
+      "contentTop": null,
+      "selector": null
+    },
+    {
+      "synthetic": true,
+      "scale": 2,
+      "width": 393,
+      "bar": [0, 0, 393, 80],
+      "title": [158.5, 56],
+      "intrinsicTitleHeight": 56,
+      "paintedTitleBounds": [54, 12, 212.5, 68],
+      "contentTop": null,
+      "selector": null
+    },
+    {
+      "synthetic": true,
+      "scale": 3,
+      "width": 393,
+      "bar": [0, 0, 393, 108],
+      "title": [158.5, 84],
+      "intrinsicTitleHeight": 84,
+      "paintedTitleBounds": [54, 12, 212.5, 96],
+      "contentTop": null,
+      "selector": null
+    },
+    {
+      "synthetic": true,
+      "scale": 1,
+      "width": 320,
+      "bar": [0, 0, 320, 54],
+      "title": [85.5, 28],
+      "intrinsicTitleHeight": 28,
+      "paintedTitleBounds": [54, 13, 139.5, 41],
+      "contentTop": null,
+      "selector": null
+    },
+    {
+      "synthetic": true,
+      "scale": 2,
+      "width": 320,
+      "bar": [0, 0, 320, 80],
+      "title": [85.5, 56],
+      "intrinsicTitleHeight": 56,
+      "paintedTitleBounds": [54, 12, 139.5, 68],
+      "contentTop": null,
+      "selector": null
+    },
+    {
+      "synthetic": true,
+      "scale": 3,
+      "width": 320,
+      "bar": [0, 0, 320, 108],
+      "title": [85.5, 84],
+      "intrinsicTitleHeight": 84,
+      "paintedTitleBounds": [54, 12, 139.5, 96],
+      "contentTop": null,
+      "selector": null
+    },
+    {
+      "synthetic": true,
+      "scale": 1,
+      "width": 393,
+      "bar": [0, 0, 393, 54],
+      "title": [88.322265625, 28],
+      "intrinsicTitleHeight": 28,
+      "paintedTitleBounds": [54, 13, 142.322265625, 41],
+      "contentTop": null,
+      "selector": null
+    },
+    {
+      "synthetic": true,
+      "scale": 2,
+      "width": 393,
+      "bar": [0, 0, 393, 80],
+      "title": [158.5, 56],
+      "intrinsicTitleHeight": 56,
+      "paintedTitleBounds": [54, 12, 212.5, 68],
+      "contentTop": null,
+      "selector": null
+    },
+    {
+      "synthetic": true,
+      "scale": 3,
+      "width": 393,
+      "bar": [0, 0, 393, 108],
+      "title": [158.5, 84],
+      "intrinsicTitleHeight": 84,
+      "paintedTitleBounds": [54, 12, 212.5, 96],
+      "contentTop": null,
+      "selector": null
+    }
+  ],
+  "horizontal_limitation": "320px chat at3x may display no glyphs; full semantics label retained",
+  "historicalSourceHead": "5c47ed56eef5a257f6ea50a8c4d7c794960fff1b",
+  "currentReviewEvidence": "review-layout-evidence.json"
+}

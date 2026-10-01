@@ -154,6 +154,13 @@ Timezone loading, unknown, retry, same-scope failure retention, and workspace
 permission states stay visible. Permission reloads fail closed and stale results
 cannot expose an editor or administrative destination.
 
+Settings choice sheets scroll the heading and choices together in one bounded
+viewport, so a long heading at large text sizes cannot consume the entire choice
+area. Cancel stays outside that viewport. Other non-sliver dialog callers retain
+their fixed heading by default; timezone choices keep their existing lazy slivers.
+Mounted compact navigation coverage verifies visible choice space, real Finance
+scrolling, dismissal without a write, and isolation from the underlying dock.
+
 The app-wide Home/Apps dock is unchanged. Workspace is a child of Settings, so
 Back returns to Settings; deeper workspace pages return to their parent. You opens
 the existing Profile, preserving its navigation and account behavior. Legacy
@@ -907,3 +914,89 @@ uses its workspace ID for identity and selects its rendered workspace object,
 including after sorting, duplicate display names, and list refreshes. This rule
 applies to the sheet opened from the navbar, dashboard and Workspace Settings;
 it does not change membership discovery, permissions, or default persistence.
+
+
+## Shared navbar text scaling
+
+The compact mobile navbar keeps its normal size at the default text scale. At
+larger accessibility text sizes, its height grows to fit the title line without
+shrinking that text. The floating content inset grows with the same measurement,
+while icon switches stay compact in the top navbar. Read-only titles normally
+use one line with an ellipsis and retain their full accessibility label. When
+ellipsis would remove every title character, a clipped prefix remains visible.
+Editable titles scroll horizontally under a fade instead of ellipsizing.
+
+Mounted Assistant chat/live coverage confirms that its existing inner Row allows
+its scaled title to paint within the taller outer navbar: 56px at 2× and 84px at
+3×. That inner Row does not clip the text vertically. Horizontal space remains
+limited by the compact mode controls; narrow layouts can show only a clipped
+prefix rather than the complete title. Its full semantics label remains
+available. The shared-navbar regression verifies actual ink in the first title
+glyph for both modes at both widths and all three text scales. Scroll threshold
+geometry is cached and refreshed for theme, text-scale and safe-area changes;
+drag notifications do not perform title layout.
+
+Title measurements follow inherited text style and platform bold, line-height,
+letter-spacing and word-spacing overrides. The painted-prefix check selects a
+complete first grapheme, so emoji and joined characters retain ordinary ellipsis
+when they fit. Full title semantics remain available in either overflow mode.
+
+
+## Profile Timeline date navigation
+
+Profile Timeline has two browsing modes in the same reserved viewport. The
+closed date strip is a newest-first agenda containing only returned activity
+days. Opening the strip selects the currently visible activity day; choosing a
+date browses that one day, including an explicit empty-snapshot state. Closing
+the strip returns to the agenda without inserting long runs of empty days.
+Repeated toggles preserve the selected date and visible activity anchor, with
+scroll correction bounded by the available content. Transitions fade without
+changing the reserved header/body geometry and honor reduced motion.
+
+The circular week strip takes its date-led structure from the supplied reference
+image; it uses Tuturuuu theme surfaces and the existing compact Profile navbar
+switch. Dots indicate activity actually present in the loaded scoped snapshot.
+Agenda pages append five returned days at a time; they do not request older
+server history. The existing API returns a 30-day snapshot, has no cursor, and
+caps each source at 200 rows. Partial and limited warnings remain visible, and
+an empty selected day says no activity was returned rather than claiming a
+complete absence of activity. Date groups and timestamps use device-local
+calendar dates; calendar arithmetic and IANA boundary/DST regressions prevent
+UTC-date and fixed-duration-day mistakes. User/workspace changes reset navigation
+state and reject stale cache/refresh results. No milestones or activity are
+fabricated.
+
+Regression targets: `profile_timeline_browser_test.dart` covers sparse days,
+selected empty days, repeated toggles and item pixels, appended pages, fixed
+loading/refresh geometry, reduced motion, double text and timezone/DST grouping.
+Existing scoped race/cache tests remain required alongside it.
+
+The week strip reveals the selected date when opened or when the selected date,
+week, width or text scale changes; ordinary snapshot rebuilds retain the user's
+manual horizontal scroll. Browsing another week begins at its first day when
+that week does not contain the selection. Calendar-day comparison uses UTC date
+carriers rather than elapsed DST-length days. Unknown cold failures and empty
+partial/capped snapshots show unavailable/partial state, never a confirmed
+absence of activity. A successful complete empty response can confirm the
+empty state. Actual padded Profile/Shell regressions cover the nested activity
+viewport, selected-date bounds and existing compact navbar at 320px/3×.
+
+Opening date controls before the first activity response does not lock the
+default date: the newest returned day is revealed unless the user explicitly
+chooses a date. Empty stored snapshots stay provisional while revalidation is
+pending, using the fixed skeleton viewport rather than announcing absence.
+The section owns its failure/partial retry banner; the embedded browser does
+not repeat that status. Standalone browsers still report incomplete state.
+
+Synthetic Timeline captures use their tested logical viewport at pixel ratio
+one: 393px for ordinary cases and 320px for the narrow large-text case. They
+are geometry/pixel regression evidence, not uniformly 942px documentation
+renders or installed-device QA. Historical PNGs are not regenerated by the
+fixture-only correction; their original source and dimensions remain recorded.
+
+Mounted Profile regressions locate the lazy activity section by its rendered
+position and wait within a bounded interval for fetched statistics. Fixed pixel
+scroll distances depend on the test font and can leave the section unmounted at
+large text sizes. Restore a hidden shell header with reverse user scrolling
+before tapping its selector; resetting content offset alone does not reveal
+the header. Validate both the default CI font and the optional capture font.
