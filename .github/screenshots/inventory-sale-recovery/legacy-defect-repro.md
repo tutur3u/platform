@@ -164,6 +164,18 @@ same bounded FIFO. The recorded run contains 40 unique passing mobile tests and
 scoped fatal-info Dart analysis reports No issues found. The new receipt route
 has 7 passing Vitest tests with one worker and no file parallelism; Biome is clean.
 
+The checked-in narrow Node runner removes executor-specific Vitest configuration.
+From the repository root, with already installed compatible dependencies:
+
+```sh
+ttr resources run -- node_modules/.bin/vitest run --config apps/inventory/vitest.sale-recovery.config.mts
+```
+
+It uses current workspace source aliases, one worker and no file parallelism.
+Apply the same owned-process hard deadline as above (45 seconds suffices for this
+seven-test suite), and require the actual seven-passed summary plus exit 0. Do not
+install dependencies or run an app build just to reproduce this proof.
+
 The persistent fake survives controller recreation and scope changes, while the
 secure-storage adapter round trip uses the existing plugin's test mock. Mounted
 flows cover success followed by preference/cache failure, frozen recovery after
