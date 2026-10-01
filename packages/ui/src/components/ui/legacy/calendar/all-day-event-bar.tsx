@@ -881,7 +881,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           const { event, startIndex, span, row, isCutOffStart, isCutOffEnd } =
             eventSpan;
 
-          // Use the assigned row directly instead of calculating it
+          const eventStyle = calendarEventStyle(event);
           const eventRow = row;
 
           // Check if this event should be visible based on expansion state
@@ -938,8 +938,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 (isCutOffStart || isCutOffEnd) && 'border-dashed'
               )}
               style={{
-                ...calendarEventStyle(event),
-                borderColor: calendarEventStyle(event).color,
+                ...eventStyle,
+                borderColor: eventStyle.color,
                 left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
                 width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
                 top: `${eventRow * 1.6 + 0.25 + topOffset}rem`,

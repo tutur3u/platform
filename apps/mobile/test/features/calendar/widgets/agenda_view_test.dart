@@ -37,6 +37,16 @@ void main() {
       final title = tester.widget<Text>(find.text('Past timed'));
       expect(title.style?.decoration, TextDecoration.lineThrough);
       expect(title.style?.color, Colors.black);
+      final card = tester.widget<Material>(
+        find
+            .ancestor(
+              of: find.text('Past timed'),
+              matching: find.byType(Material),
+            )
+            .first,
+      );
+      expect(card.color, const Color(0xff00ff88));
+      expect(card.color!.a, 1);
     },
   );
 

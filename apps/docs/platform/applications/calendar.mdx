@@ -454,8 +454,9 @@ array or implicitly publishes a private native calendar to Google.
 Web and mobile event surfaces render opaque fills with the higher-contrast black
 or white foreground. Persisted `google_color` RGB is used when available; only
 known inherited intent uses a valid current source RGB. Authenticated list/item
-reads join the current stored connection RGB for the actor's active Google accounts;
-ambiguous or unavailable account matches retain the event snapshot. Active sync
+reads join the current stored connection RGB only for a persisted source calendar
+link in the actor's active Google accounts. Unbound legacy rows, mismatched source
+links, and ambiguous or unavailable account matches retain the event snapshot. Active sync
 refreshes that connection even without an event delta. This read join does not
 fetch or mutate Google and does not infer intent for legacy rows. Native and legacy events
 without resolved provider metadata retain their canonical event color. Rendering

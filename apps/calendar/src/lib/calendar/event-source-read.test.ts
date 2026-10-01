@@ -45,6 +45,7 @@ function fixture() {
     id: 'event',
     provider: 'google',
     external_calendar_id: 'source',
+    source_calendar_id: 'linked-source',
     color: 'BLUE',
     scheduling_metadata: {
       google_color: { version: 1, inherited: true, background: '#abcdef' },
@@ -61,7 +62,7 @@ function fixture() {
           : [
               {
                 calendar_id: 'source',
-                workspace_calendar_id: null,
+                workspace_calendar_id: 'linked-source',
                 color: sourceColor,
               },
             ];

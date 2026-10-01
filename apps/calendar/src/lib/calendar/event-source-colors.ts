@@ -39,17 +39,15 @@ export async function hydrateEventSourceColors<T extends SourceEvent>(args: {
     );
   if (error) throw error;
   return args.events.map((event) => {
-    if (event.provider !== 'google') return event;
+    if (event.provider !== 'google' || !event.source_calendar_id) return event;
     const calendarId = event.external_calendar_id ?? event.google_calendar_id;
-    // The primary alias is account-relative; a legacy row without a source
-    // calendar link cannot be assigned to the viewer's account by this string.
-    if (calendarId === 'primary' && !event.source_calendar_id) return event;
+    // Calendar IDs (including shared IDs) cannot establish account ownership.
+    // Hydrate only a persisted source link within the viewer's owned accounts.
     const matches =
       connections?.filter(
         (source) =>
           source.calendar_id === calendarId &&
-          (!event.source_calendar_id ||
-            source.workspace_calendar_id === event.source_calendar_id)
+          source.workspace_calendar_id === event.source_calendar_id
       ) ?? [];
     const color =
       matches.length === 1 ? opaqueGoogleColor(matches[0]?.color) : null;
