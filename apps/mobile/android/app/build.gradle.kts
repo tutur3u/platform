@@ -1,5 +1,6 @@
 import java.util.Properties
 import java.io.FileInputStream
+import java.security.MessageDigest
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -149,7 +150,7 @@ webRtcProject.plugins.withId("com.android.library") {
             doFirst {
                 val version = Regex("(?m)^version: *([^\r\n]+)")
                     .find(upstreamPubspec.readText())?.groupValues?.get(1)?.trim()
-                val hash = java.security.MessageDigest.getInstance("SHA-256")
+                val hash = MessageDigest.getInstance("SHA-256")
                     .digest(upstreamCapturer.readBytes())
                     .joinToString("") { "%02x".format(it.toInt() and 0xff) }
                 check(version == "1.6.2+hotfix.3" &&
