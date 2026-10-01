@@ -41,6 +41,9 @@ export async function hydrateEventSourceColors<T extends SourceEvent>(args: {
   return args.events.map((event) => {
     if (event.provider !== 'google') return event;
     const calendarId = event.external_calendar_id ?? event.google_calendar_id;
+    // The primary alias is account-relative; a legacy row without a source
+    // calendar link cannot be assigned to the viewer's account by this string.
+    if (calendarId === 'primary' && !event.source_calendar_id) return event;
     const matches =
       connections?.filter(
         (source) =>

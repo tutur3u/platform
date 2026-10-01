@@ -78,3 +78,25 @@ describe('actor-scoped source RGB hydration', () => {
     ).not.toHaveProperty('_calendarColor');
   });
 });
+
+it('does not borrow an owned primary alias for an account-unbound legacy row', async () => {
+  const from = vi
+    .fn()
+    .mockReturnValueOnce(query([{ id: 'viewer-token' }]))
+    .mockReturnValueOnce(
+      query([
+        {
+          calendar_id: 'primary',
+          workspace_calendar_id: 'viewer-calendar',
+          color: '#ff0000',
+        },
+      ])
+    );
+  const result = await hydrateEventSourceColors({
+    sbAdmin: { from } as unknown as TypedSupabaseClient,
+    wsId: 'ws',
+    userId: 'viewer',
+    events: [{ provider: 'google', external_calendar_id: 'primary' }],
+  });
+  expect(result[0]).not.toHaveProperty('_calendarColor');
+});
