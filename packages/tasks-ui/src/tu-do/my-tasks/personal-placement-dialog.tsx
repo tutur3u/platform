@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Loader2 } from '@tuturuuu/icons';
 import {
-  listWorkspaces,
   listWorkspaceTaskBoards,
   upsertCurrentUserTaskPersonalPlacement,
 } from '@tuturuuu/internal-api';
@@ -17,6 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
+import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -47,10 +48,18 @@ export function PersonalPlacementDialog({
   const queryClient = useQueryClient();
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
 
-  const { data: personalBoards = [], isLoading } = useQuery({
-    queryKey: ['personal-placement-boards'],
+  const actor = useWorkspaceActor();
+  const visible = useVisibleWorkspaces(open);
+  const { data: fetchedBoards = [], isLoading } = useQuery({
+    queryKey: [
+      'workspace-ui-list',
+      actor?.actorId,
+      'personal-placement-boards',
+      visible.data?.map((ws) => ws.id),
+    ],
     queryFn: async () => {
-      const workspaces = await listWorkspaces();
+      actor!.assertActive();
+      const workspaces = visible.data ?? [];
       const personalWorkspaces = workspaces.filter(
         (workspace) => workspace.personal
       );
@@ -74,10 +83,17 @@ export function PersonalPlacementDialog({
         })
       );
 
+      actor!.assertActive();
       return boardGroups.flat();
     },
-    enabled: open,
+    enabled: open && !!actor && visible.data !== undefined,
   });
+
+  const personalBoards = visible.data
+    ? fetchedBoards.filter((board) =>
+        visible.data!.some((workspace) => workspace.id === board.workspaceId)
+      )
+    : [];
 
   const selectedBoard = useMemo(
     () => personalBoards.find((board) => board.id === selectedBoardId) ?? null,
@@ -86,12 +102,12 @@ export function PersonalPlacementDialog({
 
   const placeMutation = useMutation({
     mutationFn: async () => {
-      if (!task || !selectedBoardId) {
+      if (!task || !selectedBoard) {
         throw new Error('Missing task or board');
       }
 
       await upsertCurrentUserTaskPersonalPlacement(task.id, {
-        personal_board_id: selectedBoardId,
+        personal_board_id: selectedBoard.id,
         personal_list_id: null,
         personal_sort_key: null,
       });
@@ -99,7 +115,12 @@ export function PersonalPlacementDialog({
     onSuccess: () => {
       toast.success(t('placed_on_personal_board'));
       queryClient.invalidateQueries({
-        queryKey: ['personal-placement-boards'],
+        queryKey: [
+          'workspace-ui-list',
+          actor?.actorId,
+          'personal-placement-boards',
+          visible.data?.map((ws) => ws.id),
+        ],
       });
       onPlaced?.();
       onOpenChange(false);

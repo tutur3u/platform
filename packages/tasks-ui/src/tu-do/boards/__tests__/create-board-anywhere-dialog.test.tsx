@@ -5,12 +5,14 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateBoardAnywhereDialog } from '../create-board-anywhere-dialog';
 
 const mocks = vi.hoisted(() => ({
   checkWorkspacePermission: vi.fn(),
   createWorkspaceTaskBoard: vi.fn(),
+  hiddenIds: [] as string[],
   listWorkspaces: vi.fn(),
   push: vi.fn(),
 }));
@@ -59,6 +61,13 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
   ),
 }));
 
+vi.mock('@tuturuuu/internal-api/users', () => ({
+  getCurrentUserHiddenWorkspaces: async () => ({
+    hiddenWorkspaceIds: mocks.hiddenIds,
+  }),
+  updateCurrentUserHiddenWorkspace: vi.fn(),
+}));
+
 vi.mock('next-intl', () => ({
   useTranslations: (namespace?: string) => (key: string) =>
     namespace ? `${namespace}.${key}` : key,
@@ -75,6 +84,7 @@ vi.mock('../../tasks-route-context', () => ({
 describe('CreateBoardAnywhereDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.hiddenIds = [];
     mocks.listWorkspaces.mockResolvedValue([
       { id: 'ws-1', name: 'Current', personal: false },
       { id: 'ws-2', name: 'Studio', personal: false },
@@ -100,9 +110,11 @@ describe('CreateBoardAnywhereDialog', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <CreateBoardAnywhereDialog currentWorkspaceId="ws-1">
-          <button type="button">Open creator</button>
-        </CreateBoardAnywhereDialog>
+        <WorkspaceVisibilityProvider actorId="synthetic-actor">
+          <CreateBoardAnywhereDialog currentWorkspaceId="ws-1">
+            <button type="button">Open creator</button>
+          </CreateBoardAnywhereDialog>
+        </WorkspaceVisibilityProvider>
       </QueryClientProvider>
     );
 
@@ -139,5 +151,33 @@ describe('CreateBoardAnywhereDialog', () => {
     await waitFor(() => {
       expect(mocks.push).toHaveBeenCalledWith('/ws-2/tasks/boards/board-new');
     });
+  });
+  it('excludes a manageable Hidden workspace before permission checks and creation choices', async () => {
+    mocks.hiddenIds = ['ws-2'];
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <WorkspaceVisibilityProvider actorId="synthetic-actor">
+          <CreateBoardAnywhereDialog currentWorkspaceId="ws-1">
+            <button type="button">Open creator</button>
+          </CreateBoardAnywhereDialog>
+        </WorkspaceVisibilityProvider>
+      </QueryClientProvider>
+    );
+    fireEvent.click(screen.getByText('Open creator'));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('option', { name: 'Current' })
+      ).toBeInTheDocument()
+    );
+    expect(
+      screen.queryByRole('option', { name: 'Studio' })
+    ).not.toBeInTheDocument();
+    expect(mocks.checkWorkspacePermission).not.toHaveBeenCalledWith(
+      'ws-2',
+      'manage_projects'
+    );
   });
 });

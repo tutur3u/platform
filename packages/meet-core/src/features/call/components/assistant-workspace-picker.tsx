@@ -1,7 +1,7 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
+
 import { Building2 } from '@tuturuuu/icons';
-import { listWorkspaces } from '@tuturuuu/internal-api';
+import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
 import {
   Select,
   SelectContent,
@@ -20,13 +20,7 @@ export function AssistantWorkspacePicker({
   selfUserId: string | null;
 }) {
   const t = useTranslations('meet.call');
-  const workspaces = useQuery({
-    queryKey: ['meet-assistant-workspaces', selfUserId],
-    queryFn: () => listWorkspaces(),
-    enabled: !!selfUserId,
-    staleTime: 60000,
-    retry: false,
-  });
+  const workspaces = useVisibleWorkspaces(!!selfUserId);
   return (
     <div className="flex items-center gap-2 border-b px-3 py-2">
       <Building2 className="size-4 shrink-0 text-muted-foreground" />
@@ -38,9 +32,11 @@ export function AssistantWorkspacePicker({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="personal">
-            {t('assistant_personal_workspace')}
-          </SelectItem>
+          {workspaces.data?.some((workspace) => workspace.personal) && (
+            <SelectItem value="personal">
+              {t('assistant_personal_workspace')}
+            </SelectItem>
+          )}
           {workspaces.data
             ?.filter(
               (workspace) =>

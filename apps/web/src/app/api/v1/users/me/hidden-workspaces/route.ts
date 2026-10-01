@@ -73,6 +73,7 @@ export const PUT = withSessionAuth(
       );
     }
     const membership = await verifyWorkspaceMembershipType({
+      requiredType: 'ANY',
       wsId: workspaceId,
       userId: user.id,
       supabase,

@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   afterAll,
@@ -13,7 +14,15 @@ import {
 import { WorkspacePicker } from './workspace-picker';
 
 const mocks = vi.hoisted(() => ({
+  hiddenIds: [] as string[],
   listWorkspaces: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/internal-api/users', () => ({
+  getCurrentUserHiddenWorkspaces: async () => ({
+    hiddenWorkspaceIds: mocks.hiddenIds,
+  }),
+  updateCurrentUserHiddenWorkspace: vi.fn(),
 }));
 
 vi.mock('next-intl', () => ({
@@ -50,10 +59,12 @@ function renderPicker(includeInternalWorkspace: boolean) {
 
   render(
     <QueryClientProvider client={queryClient}>
-      <WorkspacePicker
-        id="workspace-id"
-        includeInternalWorkspace={includeInternalWorkspace}
-      />
+      <WorkspaceVisibilityProvider actorId="synthetic-actor">
+        <WorkspacePicker
+          id="workspace-id"
+          includeInternalWorkspace={includeInternalWorkspace}
+        />
+      </WorkspaceVisibilityProvider>
     </QueryClientProvider>
   );
 }
@@ -61,6 +72,7 @@ function renderPicker(includeInternalWorkspace: boolean) {
 describe('WorkspacePicker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.hiddenIds = [];
     mocks.listWorkspaces.mockResolvedValue([
       {
         avatar_url: null,
@@ -101,11 +113,13 @@ describe('WorkspacePicker', () => {
     });
     render(
       <QueryClientProvider client={queryClient}>
-        <WorkspacePicker
-          id="workspace-id"
-          onValueChange={onValueChange}
-          value=""
-        />
+        <WorkspaceVisibilityProvider actorId="synthetic-actor">
+          <WorkspacePicker
+            id="workspace-id"
+            onValueChange={onValueChange}
+            value=""
+          />
+        </WorkspaceVisibilityProvider>
       </QueryClientProvider>
     );
 
@@ -116,5 +130,13 @@ describe('WorkspacePicker', () => {
     fireEvent.click(screen.getByText('Team workspace'));
 
     expect(onValueChange).toHaveBeenCalledWith('workspace-1');
+  });
+  it('does not reinsert Hidden root through the Internal option', async () => {
+    mocks.hiddenIds = [ROOT_WORKSPACE_ID, 'workspace-1'];
+    renderPicker(true);
+    fireEvent.click(screen.getByRole('combobox'));
+    await waitFor(() => expect(mocks.listWorkspaces).toHaveBeenCalled());
+    expect(screen.queryByText('Internal')).not.toBeInTheDocument();
+    expect(screen.queryByText('Team workspace')).not.toBeInTheDocument();
   });
 });

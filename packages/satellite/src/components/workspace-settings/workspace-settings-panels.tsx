@@ -85,14 +85,22 @@ export function SatelliteWorkspaceSettingsPanel({
 
   if (!activeTab.startsWith('workspace_')) return null;
   if ((!workspace && workspaceQuery.isPending) || permissionsQuery.isPending) {
-    return <PanelLoading label={t('loading')} />;
+    return (
+      <div className="space-y-4">
+        {activeTab === 'workspace_general' && <HiddenWorkspacesSettings />}
+        <PanelLoading label={t('loading')} />
+      </div>
+    );
   }
   if (!workspace || workspaceQuery.isError || permissionsQuery.isError) {
     return (
-      <PanelError
-        description={t('load_error_description')}
-        title={t('load_error')}
-      />
+      <div className="space-y-4">
+        {activeTab === 'workspace_general' && <HiddenWorkspacesSettings />}
+        <PanelError
+          description={t('load_error_description')}
+          title={t('load_error')}
+        />
+      </div>
     );
   }
 

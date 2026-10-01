@@ -1,8 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { Building2, Check, ChevronsUpDown, Loader2 } from '@tuturuuu/icons';
-import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -12,6 +10,8 @@ import {
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
+import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
+import { useWorkspaceVisibility } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -44,18 +44,26 @@ export function WorkspacePicker({
     defaultValue ?? ''
   );
   const selectedId = value ?? internalSelectedId;
-  const { data: workspaces, isLoading } = useQuery({
-    queryFn: () => listWorkspaces(),
-    queryKey: ['ai-agents', 'workspaces'],
-    staleTime: 60_000,
-  });
+  const { data: workspaces, isLoading } = useVisibleWorkspaces();
+  const visibility = useWorkspaceVisibility();
   const workspaceOptions = useMemo(
     () =>
       mergeInternalAiAgentWorkspaceOption(workspaces, {
-        includeInternal: includeInternalWorkspace,
+        includeInternal:
+          includeInternalWorkspace &&
+          visibility.known &&
+          !visibility.hiddenIds.includes(
+            '00000000-0000-0000-0000-000000000000'
+          ),
         label: t('workspace.internal'),
       }),
-    [includeInternalWorkspace, t, workspaces]
+    [
+      includeInternalWorkspace,
+      t,
+      workspaces,
+      visibility.known,
+      visibility.hiddenIds,
+    ]
   );
   const selectedWorkspace = useMemo(
     () =>

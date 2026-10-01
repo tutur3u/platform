@@ -267,4 +267,38 @@ void main() {
       verifyNever(() => visibility.saveCached(any(), any()));
     },
   );
+  test(
+    'hide during deferred module flags cannot re-emit hidden current scope',
+    () async {
+      await load();
+      final flags = Completer<List<String>>();
+      when(
+        () => repo.getMobileHiddenModuleIds(personal.id),
+      ).thenAnswer((_) => flags.future);
+      when(
+        () => repo.getMobileHiddenModuleIds(team.id),
+      ).thenAnswer((_) async => ['team-only']);
+      final loading = cubit.loadWorkspaces(forceRefresh: true);
+      await Future<void>.delayed(Duration.zero);
+      await cubit.setWorkspaceHidden(personal.id, hidden: true);
+      flags.complete(['personal-only']);
+      await loading;
+      expect(cubit.state.currentWorkspace, team);
+      expect(cubit.state.hiddenModuleIds, ['team-only']);
+    },
+  );
+  test(
+    'explicit deep link before hidden refresh retains authorized scope',
+    () async {
+      final hidden = Completer<List<String>>();
+      when(() => visibility.refresh('A')).thenAnswer((_) => hidden.future);
+      await cubit.loadWorkspaces(forceRefresh: true);
+      expect(cubit.state.visibilityResolved, isFalse);
+      await cubit.selectWorkspace(team);
+      hidden.complete([team.id]);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.currentWorkspace, team);
+      expect(cubit.state.visibleWorkspaces, [personal]);
+    },
+  );
 }

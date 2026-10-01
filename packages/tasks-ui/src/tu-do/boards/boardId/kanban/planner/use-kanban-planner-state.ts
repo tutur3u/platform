@@ -7,12 +7,12 @@ import {
   createWorkspaceTaskPlanItem,
   isTaskPlanSchemaUnavailable,
   listWorkspaceBoardsWithLists,
-  listWorkspaces,
   listWorkspaceTaskPlans,
   type TaskPlanPeriod,
   type TaskPlanStatus,
   updateWorkspaceTaskPlan,
 } from '@tuturuuu/internal-api';
+import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -60,14 +60,17 @@ export function useKanbanPlannerState({
     [plans, selectedPlanId]
   );
 
-  const workspacesQuery = useQuery({
-    enabled: isPersonalWorkspace && enabled && !schemaUnavailable,
-    queryKey: ['task-plan-workspaces'],
-    queryFn: () => listWorkspaces({ limit: 100 }),
-    staleTime: 60_000,
-  });
+  const workspacesQuery = useVisibleWorkspaces(
+    isPersonalWorkspace && enabled && !schemaUnavailable,
+    100
+  );
   const boardsQuery = useQuery({
-    enabled: enabled && Boolean(targetWorkspaceId) && !schemaUnavailable,
+    enabled:
+      enabled &&
+      !!workspacesQuery.data?.some(
+        (workspace) => workspace.id === targetWorkspaceId
+      ) &&
+      !schemaUnavailable,
     queryKey: ['task-plan-boards-with-lists', targetWorkspaceId],
     queryFn: () => listWorkspaceBoardsWithLists(targetWorkspaceId),
     staleTime: 30_000,
@@ -102,6 +105,7 @@ export function useKanbanPlannerState({
 
   const createPlanMutation = useMutation({
     mutationFn: () => {
+      if (!targetWorkspace) throw new Error('Workspace choice is unavailable');
       const window = buildPlanWindow(mode);
       return createWorkspaceTaskPlan(workspaceId, {
         title: planTitle.trim() || getDefaultPlanTitle(mode),
@@ -125,7 +129,8 @@ export function useKanbanPlannerState({
   });
   const updatePlanMutation = useMutation({
     mutationFn: () => {
-      if (!selectedPlan) throw new Error('Missing plan');
+      if (!selectedPlan || !targetWorkspace)
+        throw new Error('Missing plan or visible workspace');
       const window = buildPlanWindow(editMode);
       return updateWorkspaceTaskPlan(workspaceId, selectedPlan.id, {
         title: editTitle.trim() || getDefaultPlanTitle(editMode),
@@ -147,7 +152,8 @@ export function useKanbanPlannerState({
   });
   const addWorkspaceMutation = useMutation({
     mutationFn: () => {
-      if (!selectedPlan) throw new Error('Missing plan');
+      if (!selectedPlan || !targetWorkspace)
+        throw new Error('Missing plan or visible workspace');
       return addWorkspaceTaskPlanWorkspace(
         workspaceId,
         selectedPlan.id,
@@ -160,7 +166,9 @@ export function useKanbanPlannerState({
   const createItemMutation = useMutation({
     mutationFn: () => {
       if (!selectedPlan || !taskTitle.trim()) throw new Error('Missing task');
-      const createSource = Boolean(targetIsIntended && targetListId);
+      const createSource = Boolean(
+        targetWorkspace && targetIsIntended && targetListId
+      );
       return createWorkspaceTaskPlanItem(workspaceId, selectedPlan.id, {
         target_ws_id: createSource ? targetWorkspaceId : null,
         target_board_id: createSource ? targetBoardId : null,

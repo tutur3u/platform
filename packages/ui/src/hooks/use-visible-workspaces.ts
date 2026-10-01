@@ -8,15 +8,15 @@ import {
 } from './use-workspace-visibility';
 
 /** UI choices only. Do not use this hook for access or membership reconciliation. */
-export function useVisibleWorkspaces(enabled = true) {
+export function useVisibleWorkspaces(enabled = true, limit?: number) {
   const actor = useWorkspaceActor();
   const visibility = useWorkspaceVisibility();
   const query = useQuery({
-    queryKey: ['workspace-ui-list', actor?.actorId],
+    queryKey: ['workspace-ui-list', actor?.actorId, ...(limit ? [limit] : [])],
     enabled: enabled && Boolean(actor),
     queryFn: async () => {
       actor!.assertActive();
-      const result = await listWorkspaces();
+      const result = await listWorkspaces(limit ? { limit } : undefined);
       actor!.assertActive();
       return result;
     },

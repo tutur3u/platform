@@ -23,7 +23,6 @@ import {
   listWorkspaceTaskProjects,
   type WorkspaceTaskBoardListItem,
 } from '@tuturuuu/internal-api/tasks';
-import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -31,6 +30,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -315,12 +315,9 @@ export function TaskFilter({
     enabled: !!wsId,
   });
 
-  const { data: availableWorkspaces = [] } = useQuery({
-    queryKey: ['task-source-workspaces'],
-    queryFn: () => listWorkspaces(),
-    enabled: open && sourceScope === 'external_specific',
-    staleTime: 60_000,
-  });
+  const { data: availableWorkspaces = [] } = useVisibleWorkspaces(
+    open && sourceScope === 'external_specific'
+  );
 
   const sourceWorkspaces = useMemo(
     () =>

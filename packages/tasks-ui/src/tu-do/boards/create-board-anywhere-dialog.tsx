@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { KanbanSquare, Loader2, Plus } from '@tuturuuu/icons';
 import { checkWorkspacePermission } from '@tuturuuu/internal-api/settings';
 import { createWorkspaceTaskBoard } from '@tuturuuu/internal-api/tasks';
-import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import {
@@ -16,6 +15,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
+import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -41,10 +42,18 @@ export function CreateBoardAnywhereDialog({
   const [name, setName] = useState('');
   const [workspaceId, setWorkspaceId] = useState(currentWorkspaceId ?? '');
 
+  const actor = useWorkspaceActor();
+  const visible = useVisibleWorkspaces(open, 200);
   const workspacesQuery = useQuery({
-    queryKey: ['task-board-create-workspaces'],
+    queryKey: [
+      'workspace-ui-list',
+      actor?.actorId,
+      'task-board-create-permissions',
+      visible.data?.map((ws) => ws.id),
+    ],
     queryFn: async () => {
-      const workspaces = await listWorkspaces({ limit: 200 });
+      actor!.assertActive();
+      const workspaces = visible.data ?? [];
       const permissions = await Promise.all(
         workspaces.map(async (workspace) => {
           try {
@@ -58,21 +67,27 @@ export function CreateBoardAnywhereDialog({
           }
         })
       );
+      actor!.assertActive();
       return permissions.filter((workspace) => workspace !== null);
     },
-    enabled: open,
+    enabled: open && !!actor && visible.data !== undefined,
     staleTime: 5 * 60 * 1000,
   });
 
   const workspaceOptions = useMemo(
     () =>
-      (workspacesQuery.data ?? []).map((workspace) => ({
+      (visible.data
+        ? (workspacesQuery.data ?? []).filter((workspace) =>
+            visible.data!.some((choice) => choice.id === workspace.id)
+          )
+        : []
+      ).map((workspace) => ({
         value: workspace.id,
         label: workspace.name || t('untitled_workspace'),
         description: workspace.personal ? t('personal_workspace') : undefined,
         icon: <KanbanSquare className="size-4" />,
       })),
-    [t, workspacesQuery.data]
+    [t, workspacesQuery.data, visible.data]
   );
 
   const effectiveWorkspaceId = workspaceOptions.some(

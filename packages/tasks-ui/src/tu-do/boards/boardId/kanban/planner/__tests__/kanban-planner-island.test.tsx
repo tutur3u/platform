@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { KanbanPlannerDialog } from '../kanban-planner-dialog';
@@ -17,6 +18,13 @@ const mocks = vi.hoisted(() => ({
   updateWorkspaceTaskPlan: vi.fn(),
 }));
 
+vi.mock('@tuturuuu/internal-api/users', () => ({
+  getCurrentUserHiddenWorkspaces: async () => ({ hiddenWorkspaceIds: [] }),
+  updateCurrentUserHiddenWorkspace: vi.fn(),
+}));
+vi.mock('@tuturuuu/internal-api/workspaces', () => ({
+  listWorkspaces: (...args: unknown[]) => mocks.listWorkspaces(...args),
+}));
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: Record<string, string>) =>
     values?.name ? `${key} ${values.name}` : key,
@@ -193,13 +201,15 @@ function renderPlanner() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <KanbanPlannerDialog
-        boardId="board-1"
-        isPersonalWorkspace
-        onOpenChange={vi.fn()}
-        open
-        workspaceId="ws-personal"
-      />
+      <WorkspaceVisibilityProvider actorId="synthetic-actor">
+        <KanbanPlannerDialog
+          boardId="board-1"
+          isPersonalWorkspace
+          onOpenChange={vi.fn()}
+          open
+          workspaceId="ws-personal"
+        />
+      </WorkspaceVisibilityProvider>
     </QueryClientProvider>
   );
 }

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   cleanup,
@@ -7,6 +8,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../apps/meet/messages/en.json';
@@ -14,6 +16,10 @@ import { FollowupReview } from './followup-review';
 import type { MeetingFollowup } from './followup-types';
 
 const mocks = vi.hoisted(() => ({ context: vi.fn(), create: vi.fn() }));
+vi.mock('@tuturuuu/internal-api/users', () => ({
+  getCurrentUserHiddenWorkspaces: async () => ({ hiddenWorkspaceIds: [] }),
+  updateCurrentUserHiddenWorkspace: vi.fn(),
+}));
 vi.mock('@tuturuuu/internal-api', async (original) => ({
   ...(await original<typeof import('@tuturuuu/internal-api')>()),
   getMeetFollowupContext: mocks.context,
@@ -40,15 +46,17 @@ function view(selected: MeetingFollowup = suggestion) {
         new QueryClient({ defaultOptions: { queries: { retry: false } } })
       }
     >
-      <NextIntlClientProvider locale="en" messages={messages}>
-        <FollowupReview
-          suggestion={selected}
-          sourceUrl="https://meet.tuturuuu.com/source"
-          wsId={wsId}
-          meetingId="meeting"
-          onClose={() => undefined}
-        />
-      </NextIntlClientProvider>
+      <WorkspaceVisibilityProvider actorId={userId}>
+        <NextIntlClientProvider locale="en" messages={messages}>
+          <FollowupReview
+            suggestion={selected}
+            sourceUrl="https://meet.tuturuuu.com/source"
+            wsId={wsId}
+            meetingId="meeting"
+            onClose={() => undefined}
+          />
+        </NextIntlClientProvider>
+      </WorkspaceVisibilityProvider>
     </QueryClientProvider>
   );
 }

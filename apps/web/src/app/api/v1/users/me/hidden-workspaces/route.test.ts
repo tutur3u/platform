@@ -136,4 +136,19 @@ describe('owner-only Hidden preferences', () => {
     expect(response.status).toBe(409);
     expect(f.from).not.toHaveBeenCalled();
   });
+  it.each([true, false])(
+    'guest can update own private preference hidden=%s',
+    async (hidden) => {
+      f.membership.mockImplementation(async ({ requiredType }) =>
+        requiredType === 'ANY'
+          ? { ok: true, membershipType: 'GUEST' }
+          : { ok: false, error: 'membership_type_mismatch' }
+      );
+      const response = await PUT(request({ workspaceId: ws, hidden }) as never);
+      expect(response.status).toBe(200);
+      expect(f.membership).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: f.actor, requiredType: 'ANY' })
+      );
+    }
+  );
 });

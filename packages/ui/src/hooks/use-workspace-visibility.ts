@@ -73,6 +73,8 @@ export function WorkspaceVisibilityProvider({
       // A private cache is never retained across logout/account replacement.
       client.removeQueries({ queryKey: ['workspace-hidden', scope.actorId] });
       client.removeQueries({ queryKey: ['workspace-ui-list', scope.actorId] });
+      client.removeQueries({ queryKey: ['user-workspaces', scope.actorId] });
+      client.removeQueries({ queryKey: ['all-user-boards', scope.actorId] });
       client.removeQueries({ queryKey: ['workspace-user', scope.actorId] });
       client.removeQueries({
         queryKey: ['workspace-invitations', scope.actorId],

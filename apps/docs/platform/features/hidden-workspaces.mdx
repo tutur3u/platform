@@ -38,9 +38,11 @@ its shared-member read policy would expose a preference intended to be private.
 
 `GET /api/v1/users/me/hidden-workspaces?expectedActorId=<actor>` returns only the
 owner's Hidden IDs with `Cache-Control: private, no-store`. `PUT` accepts
-`workspaceId`, `hidden` and `expectedActorId`. The server derives the owner from
+`workspaceId`, `hidden` and `expectedActorId`. The shared first-party app-session audience explicitly includes this endpoint.
+The server derives the owner from
 the authenticated session, compares the expected actor to reject a delayed
-account-switch request, and verifies canonical membership before writing. App
+account-switch request, and verifies canonical membership of either MEMBER or GUEST before writing. The existing
+owner/membership RLS already permits both; no permission or policy is expanded. App
 sessions also stamp and filter by the server actor when using their scoped
 administrative client. The response is never joined into workspace/member APIs,
 profile activity, audit summaries or notifications.
@@ -62,8 +64,11 @@ with every membership Hidden never sets `emptyMembershipConfirmed`.
 
 Web `listWorkspaces`, workspace summary APIs and permission discovery remain
 canonical. Actor-scoped UI hooks project visible choices for the shared picker,
-satellite command search, Track move/copy/missed-entry selectors, Mira workspace
-context, calendar-sync workspace filters and root link-shortener filters. A
+satellite command search, Track move/copy/missed-entry selectors, Tasks source/
+planner/create-board/personal-placement choices, Meet assistant/follow-up choices,
+Infrastructure AI workspace choices, Mira workspace context, calendar-sync
+workspace filters and root link-shortener filters. An optional Infrastructure
+Internal/root choice must also respect Hidden/unknown state. A
 current-workspace fallback does not reinsert a Hidden choice into those lists.
 Inventory continues using the selected authorized workspace and its currency.
 
@@ -91,5 +96,16 @@ MCP discovery and consent choices exclude Hidden/unknown visibility. Explicit
 reads/navigation continue to require user-selected OAuth workspace grants,
 canonical membership and operation permissions. Hidden is not access revocation.
 
-The mobile Settings owner must apply the additive restore-row integration against
-its compact Workspace child. Exact-commit parent CI remains required before merge.
+The mobile Settings integration depends on compact Settings PR #5692. Its owner
+now proposes an account-scoped restore row in the root group immediately after
+Workspace, independent of current selection, membership role or admin permissions.
+Apply that reviewed placement only after reconciliation and actual-root tests.
+The all-Hidden selection surface already provides recovery without an active scope.
+Settings root/Workspace routes also remain reachable without an active scope.
+Satellite general Settings recovery does not wait for workspace/admin permissions. Exact-commit parent CI remains required before merge.
+
+Guest and audience follow-up changes require their new focused proofs; the original
+15-assertion DB run proves the existing owner policy for its synthetic member/admin
+fixtures. It does not prove guest/runtime-publication behavior. No new DB run is
+launched solely for that scope; publication membership, replica identity and
+non-internal triggers remain future admitted-run verification.

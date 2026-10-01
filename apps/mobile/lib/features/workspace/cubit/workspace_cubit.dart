@@ -20,9 +20,10 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   final WorkspaceRepository _repo;
   final WorkspaceVisibilityRepository _visibility;
   String? _actor;
-  String? _explicitHiddenSelectionId;
+  String? _explicitSelectionId;
   bool get hasAuthenticatedActor =>
       _actor != null && _repo.authenticatedUserId == _actor;
+  int _visibilityStateRevision = 0;
   int _actorEpoch = 0;
   Future<void> _visibilityPersistence = Future<void>.value();
   int _visibilityRevision = 0;
@@ -42,7 +43,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     if (_actor != actor) {
       _actor = actor;
       _actorEpoch++;
-      _explicitHiddenSelectionId = null;
+      _explicitSelectionId = null;
       _visibilityRevision++;
       _visibilityRequest++;
       emit(const WorkspaceState());
@@ -101,9 +102,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   /// Selects the active workspace for the current device/session.
   Future<void> selectWorkspace(Workspace workspace) async {
     _selectionRevision += 1;
-    _explicitHiddenSelectionId = state.hiddenWorkspaceIds.contains(workspace.id)
-        ? workspace.id
-        : null;
+    _explicitSelectionId = workspace.id;
     emit(
       state.copyWith(currentWorkspace: workspace, hiddenModuleIds: const []),
     );
@@ -174,7 +173,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     _visibilityRevision++;
     _actor = null;
     _actorEpoch++;
-    _explicitHiddenSelectionId = null;
+    _explicitSelectionId = null;
     emit(const WorkspaceState());
     await _repo.clearSelectedWorkspace();
   }
@@ -189,6 +188,8 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
         : null;
     final localDefaultId = await _repo.loadDefaultWorkspaceId();
     final saved = await _repo.loadSelectedWorkspace();
+    final visibilityAtResolution = _visibilityStateRevision;
+    final selectionAtResolution = _selectionRevision;
     // Resolve from the latest private list after awaits.
     final visible = workspaces
         .where((workspace) => !state.hiddenWorkspaceIds.contains(workspace.id))
@@ -203,7 +204,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
         .where((workspace) => workspace.personal)
         .firstOrNull;
     var current = workspaces
-        .where((workspace) => workspace.id == _explicitHiddenSelectionId)
+        .where((workspace) => workspace.id == _explicitSelectionId)
         .firstOrNull;
     current ??= visible
         .where((workspace) => workspace.id == saved?.id)
@@ -216,13 +217,21 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     defaultWorkspace ??= current;
     if (_actor != null &&
         !state.visibilityResolved &&
-        _explicitHiddenSelectionId == null) {
+        _explicitSelectionId == null) {
       current = null;
     }
     final hiddenModuleIds = current == null
         ? const <String>[]
         : await _getMobileHiddenModuleIds(current.id);
 
+    if (visibilityAtResolution != _visibilityStateRevision ||
+        selectionAtResolution != _selectionRevision) {
+      return await _buildResolvedState(
+        workspaces,
+        status: status,
+        includeServerDefault: includeServerDefault,
+      );
+    }
     return state.copyWith(
       status: status,
       workspaces: workspaces,
@@ -313,6 +322,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   }
 
   void _applyHidden(List<String> ids) {
+    _visibilityStateRevision++;
     final visible = state.workspaces.where((w) => !ids.contains(w.id)).toList();
     var current = state.currentWorkspace;
     if (current == null &&
@@ -327,7 +337,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     }
     if (current != null &&
         ids.contains(current.id) &&
-        current.id != _explicitHiddenSelectionId) {
+        current.id != _explicitSelectionId) {
       current =
           visible
               .where((w) => w.id == state.defaultWorkspace?.id)
@@ -385,8 +395,8 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     }
     final epoch = _actorEpoch;
     final wasHidden = state.hiddenWorkspaceIds.contains(workspaceId);
-    if (hidden && _explicitHiddenSelectionId == workspaceId) {
-      _explicitHiddenSelectionId = null;
+    if (hidden && _explicitSelectionId == workspaceId) {
+      _explicitSelectionId = null;
     }
     final previousCurrent = state.currentWorkspace;
     final selectionRevision = _selectionRevision;
