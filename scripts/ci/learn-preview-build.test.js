@@ -11,6 +11,26 @@ const workflow = fs.readFileSync(
   'utf8'
 );
 
+function assertSourceShaOutput(output, expected) {
+  assert.deepEqual(
+    output.split(/\r?\n/).filter((line) => line.startsWith('source_sha=')),
+    [`source_sha=${expected}`]
+  );
+}
+
+test('source SHA output rejects trailing junk and duplicate values', () => {
+  const expected = '1234567890abcdef1234567890abcdef12345678';
+  assertSourceShaOutput(`source_sha=${expected}\nskip_build=false\n`, expected);
+  for (const output of [
+    `source_sha=${expected}junk\nskip_build=false\n`,
+    `source_sha=${expected}\nsource_sha=other\n`,
+  ]) {
+    assert.throws(() => assertSourceShaOutput(output, expected), {
+      code: 'ERR_ASSERTION',
+    });
+  }
+});
+
 test('Learn build source output comes from actual checkout, not dispatch SHA or input shell', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'learn-source-'));
   try {
@@ -58,10 +78,7 @@ test('Learn build source output comes from actual checkout, not dispatch SHA or 
         GITHUB_SHA: dispatchSha,
       },
     });
-    assert.match(
-      fs.readFileSync(output, 'utf8'),
-      new RegExp(`source_sha=${expected}`)
-    );
+    assertSourceShaOutput(fs.readFileSync(output, 'utf8'), expected);
     assert.match(workflow, /ref: \$\{\{ inputs.preview_ref \}\}/);
     assert.match(
       workflow,
