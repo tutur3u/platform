@@ -119,6 +119,84 @@ void main() {
     expect(inventoryProductHasLowStock(_product(amount: 6)), isFalse);
   });
 
+  testWidgets('low-stock marker and semantics identify the affected unit row', (
+    tester,
+  ) async {
+    _viewport(tester, const Size(390, 844));
+    final semantics = tester.ensureSemantics();
+
+    final key = GlobalKey();
+    final product = _product();
+    await tester.pumpApp(
+      _scaled(
+        shad.Scaffold(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              InventoryProductCard(
+                product: InventoryProduct(
+                  id: product.id,
+                  name: product.name,
+                  categoryId: product.categoryId,
+                  ownerId: product.ownerId,
+                  wsId: product.wsId,
+                  inventory: const [
+                    InventoryStockEntry(
+                      unitId: 'cup',
+                      warehouseId: 'one',
+                      amount: 12,
+                      minAmount: 5,
+                      price: 12.5,
+                      unitName: 'Cup',
+                      warehouseName: 'Booth 1',
+                    ),
+                    InventoryStockEntry(
+                      unitId: 'bag',
+                      warehouseId: 'two',
+                      amount: 1,
+                      minAmount: 5,
+                      price: 12.5,
+                      unitName: 'Bag',
+                      warehouseName: 'Booth 2',
+                    ),
+                    InventoryStockEntry(
+                      unitId: 'session',
+                      warehouseId: 'three',
+                      amount: null,
+                      minAmount: 5,
+                      price: 12.5,
+                      unitName: 'Session',
+                      warehouseName: 'Booth 3',
+                    ),
+                  ],
+                ),
+                currency: 'USD',
+              ),
+            ],
+          ),
+        ),
+        1,
+        key,
+      ),
+    );
+    await tester.pump();
+    expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+    expect(find.text('Low stock • Minimum amount: 5'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(
+        RegExp('Booth 2 • Bag • 1 available.*Low stock • Minimum amount: 5'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(RegExp('Booth 3 • Session • Unlimited available')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+    await _capture(tester, key, 'compact-stock-warnings');
+    semantics.dispose();
+  });
+
   for (final size in [const Size(320, 900), const Size(768, 1024)]) {
     testWidgets('populated card and periods fit $size at large text', (
       tester,

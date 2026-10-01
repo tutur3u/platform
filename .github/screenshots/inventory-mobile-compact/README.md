@@ -3,6 +3,7 @@
 Synthetic populated Flutter captures, inspected after the exact focused checks. They contain no live customer, sales or stock data. Source screenshots supplied by the user remain in the local task evidence folder.
 
 - [Overview composition](compact-overview-populated.png): production shared Inventory widgets with visible Sell/Create workflows and compact low-stock empty state.
+- [Scoped low-stock warnings](compact-stock-warnings.png): normal, finite low and unlimited rows; warning icon, threshold and warehouse/unit semantics.
 - [Mounted Products page](compact-products-mounted.png): actual Products page using injected synthetic repositories; unlimited stock and scoped loaded-product count.
 - [Phone at 200% text](compact-periods-large-text-320.png): intentionally scrolled populated stock rows and whole season panel.
 - [Tablet at 200% text](compact-periods-large-text-768.png): populated product and visible season actions.
@@ -18,7 +19,7 @@ flutter test --no-pub --concurrency=1 test/features/inventory/widgets/inventory_
 dart analyze --fatal-infos <eight owned Dart files>
 ```
 
-All seven tests passed; scoped analysis reported no issues. Donor pubspec/lock were byte-identical and donor package-config hashes stayed unchanged. No install, local app build, live business-data write, backend grant change or shared shell edit occurred.
+All eight tests passed; scoped analysis reported no issues. Donor pubspec/lock were byte-identical and donor package-config hashes stayed unchanged. No install, local app build, live business-data write, backend grant change or shared shell edit occurred.
 
 ## Feature checklist and remaining gates
 

@@ -97,31 +97,57 @@ class _StockRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final low = row.amount != null && row.amount! <= row.minAmount;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          [
-            row.warehouseName,
-            row.unitName,
-          ].whereType<String>().where((value) => value.isNotEmpty).join(' • '),
-          style: theme.typography.textSmall.copyWith(
-            fontWeight: FontWeight.w600,
+    final location = [
+      row.warehouseName,
+      row.unitName,
+    ].whereType<String>().where((value) => value.isNotEmpty).join(' • ');
+    final available = context.l10n.inventoryProductAvailableSummary(
+      inventoryStockAmount(context, row.amount),
+      formatCurrency(row.price, currency),
+    );
+    final warning =
+        '${context.l10n.inventoryOverviewLowStock} • '
+        '${context.l10n.inventoryProductMinAmount}: '
+        '${inventoryStockAmount(context, row.minAmount)}';
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: [location, available, if (low) warning].join(' • '),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            location,
+            style: theme.typography.textSmall.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        const shad.Gap(2),
-        Text(
-          context.l10n.inventoryProductAvailableSummary(
-            inventoryStockAmount(context, row.amount),
-            formatCurrency(row.price, currency),
+          const shad.Gap(2),
+          Text(
+            available,
+            style: theme.typography.textSmall.copyWith(
+              color: theme.colorScheme.mutedForeground,
+            ),
           ),
-          style: theme.typography.textSmall.copyWith(
-            color: low
-                ? FinancePalette.of(context).negative
-                : theme.colorScheme.mutedForeground,
-          ),
-        ),
-      ],
+          if (low) ...[
+            const shad.Gap(4),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  size: 18,
+                  color: FinancePalette.of(context).negative,
+                ),
+                const shad.Gap(6),
+                Expanded(
+                  child: Text(warning, style: theme.typography.textSmall),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
