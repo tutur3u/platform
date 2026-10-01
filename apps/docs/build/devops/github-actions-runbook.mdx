@@ -292,8 +292,27 @@ checking and a native release build. It uses read-only repository permissions,
 no deployment environment or secrets, and no shared cache writes.
 
 For dependency drafts, record the requested source SHA and the actual successful
-job result. This route does not run Docker packaging or worker-build bundling;
-those remain separate evidence gaps. Registering this workflow does not resume
+job result. After the existing verifier succeeds, a separate sequential Worker-package job
+installs checksum-published stable `worker-build 0.8.7`
+with its locked dependencies into runner-temporary storage and runs the actual
+release bundler with locked project dependencies and Worker-only features. It
+checks the configured legacy `build/worker/shim.mjs` compatibility entry point,
+its `build/index.js` target against the configured Wrangler entry, parses the emitted ES modules,
+uses isolated pinned Acorn 8.18.0 to follow the default export through aliases
+and the vendor Proxy to the same class that owns the emitted `fetch` function.
+Selected class/alias bindings must not be reassigned; the check rejects that
+unsupported pattern instead of matching an earlier handler to a later class.
+It also validates a real WASM function export named `fetch`. It records config/artifact hashes. These are
+package contract checks without invoking handlers or proving deployed behavior. The pinned vendor tool selects
+wasm-bindgen 0.2.129, wasm-opt 132 and esbuild 0.28.2; this is Worker package
+construction, without invoking Wrangler or accessing deploy secrets. The native
+job keeps its 45-minute timeout. The sequential bundle job is bounded to 60 minutes,
+with 25 minutes for bundler installation and 30 for release bundling; these are
+limits, not measured durations. Both steps record elapsed seconds on ordinary command exit, including failures;
+use hosted step timestamps if runner cancellation prevents the exit trap.
+Record actual hosted duration after the first approved exact-source dispatch;
+adjust only with evidence if a bound is insufficient. Docker
+container packaging and deployed runtime behavior remain separate evidence gaps. Registering this workflow does not resume
 the paused migration/deployment workflow or authorize a production cutover.
 
 ### Docker automation
