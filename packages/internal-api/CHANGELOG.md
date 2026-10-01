@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.48.0](https://github.com/tutur3u/platform/compare/internal-api-v0.47.0...internal-api-v0.48.0) (2026-10-01)
+
+
+### Features
+
+* **calendar:** expose authorized event link previews ([e9d2823](https://github.com/tutur3u/platform/commit/e9d2823224f0d81aa94a3a6e12d298979ff594a3)) ([#5672](https://github.com/tutur3u/platform/issues/5672)) ([784ab40](https://github.com/tutur3u/platform/commit/784ab4058c815cc979e632caf7a763df0b896f75))
+
+
+### Bug Fixes
+
+* **mail:** add invitation RSVP and settle final inbox archive ([#5668](https://github.com/tutur3u/platform/issues/5668)) ([48a1687](https://github.com/tutur3u/platform/commit/48a1687f253cb7df72716fd4c289a0dcf1aa329d))
+* **mail:** preserve recurrence and replay state ([89afe35](https://github.com/tutur3u/platform/commit/89afe35adb557e9f09fd7a023284f005fa9a9d7b))
+* **mail:** support invitation replies and settle empty inbox ([57e27ab](https://github.com/tutur3u/platform/commit/57e27ab6582e6cb5a1b6be43039ebf795cf908a2))
+
 ## [0.47.0](https://github.com/tutur3u/platform/compare/internal-api-v0.46.0...internal-api-v0.47.0) (2026-09-29)
 
 

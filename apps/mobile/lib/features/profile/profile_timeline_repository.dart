@@ -40,11 +40,19 @@ class ProfileTimelineItem {
   };
 }
 
+typedef ProfileTimelineSnapshot = ({
+  List<ProfileTimelineItem> items,
+  bool partial,
+  bool limited,
+});
+
 class ProfileTimelineRepository {
-  ProfileTimelineRepository({ApiClient? apiClient})
-    : _api = apiClient ?? ApiClient();
+  ProfileTimelineRepository({ApiClient? apiClient, CacheStore? cacheStore})
+    : _api = apiClient ?? ApiClient(),
+      _store = cacheStore ?? CacheStore.instance;
 
   final ApiClient _api;
+  final CacheStore _store;
 
   CacheKey _key(String workspaceId, String userId) => CacheKey(
     namespace: 'profile.timeline',
@@ -58,18 +66,33 @@ class ProfileTimelineRepository {
           .map(ProfileTimelineItem.fromJson)
           .toList(growable: false);
 
-  Future<List<ProfileTimelineItem>?> cached(
+  ProfileTimelineSnapshot _decodeSnapshot(Object? value) {
+    // Older encrypted snapshots contain only the item list.
+    if (value is List) {
+      return (items: _decode(value), partial: false, limited: false);
+    }
+    if (value is! Map<String, dynamic> || value['version'] != 1) {
+      throw const FormatException('Unsupported profile timeline snapshot');
+    }
+    return (
+      items: _decode(value['items']),
+      partial: value['partial'] == true,
+      limited: value['limited'] == true,
+    );
+  }
+
+  Future<ProfileTimelineSnapshot?> cached(
     String workspaceId,
     String userId,
   ) async {
-    final result = await CacheStore.instance.read<List<ProfileTimelineItem>>(
+    final result = await _store.read<ProfileTimelineSnapshot>(
       key: _key(workspaceId, userId),
-      decode: _decode,
+      decode: _decodeSnapshot,
     );
     return result.data;
   }
 
-  Future<({List<ProfileTimelineItem> items, bool partial})> refresh(
+  Future<ProfileTimelineSnapshot> refresh(
     String workspaceId,
     String userId,
   ) async {
@@ -77,17 +100,27 @@ class ProfileTimelineRepository {
       '/api/v1/workspaces/$workspaceId/mobile-activity',
     );
     final items = _decode(response['items']);
+    final snapshot = (
+      items: items,
+      partial: response['partial'] == true,
+      limited: response['limited'] == true,
+    );
     try {
-      await CacheStore.instance.write(
+      await _store.write(
         key: _key(workspaceId, userId),
         policy: CachePolicies.summary,
-        payload: items.map((item) => item.toJson()).toList(),
+        payload: {
+          'version': 1,
+          'items': items.map((item) => item.toJson()).toList(),
+          'partial': snapshot.partial,
+          'limited': snapshot.limited,
+        },
         tags: ['module:profile', 'workspace:$workspaceId'],
       );
     } on Object {
       // A failed snapshot write must not hide activity returned by the API.
     }
-    return (items: items, partial: response['partial'] == true);
+    return snapshot;
   }
 
   void dispose() => _api.dispose();

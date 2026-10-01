@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.3](https://github.com/tutur3u/platform/compare/trigger-v0.3.2...trigger-v0.3.3) (2026-10-01)
+
+
+### Bug Fixes
+
+* **calendar:** preserve Google color identity and inheritance ([#5657](https://github.com/tutur3u/platform/issues/5657)) ([0c2aac6](https://github.com/tutur3u/platform/commit/0c2aac6a1a2b6e9f6eb66bde1e783bf407603cff))
+* **calendar:** preserve Google provider color identity and inheritance ([08f2363](https://github.com/tutur3u/platform/commit/08f236349d1dc29ad0593de8f668d5ce504f38d0))
+* **calendar:** resolve Trigger sync provider colors ([d7eab8a](https://github.com/tutur3u/platform/commit/d7eab8ab42ec2aa2a5ca00938e28ecf637a9161a))
+* **calendar:** type source color refresh and update batch expectations ([9316c35](https://github.com/tutur3u/platform/commit/9316c35b35d703d2e6445802c7d2c0db4a5f9bc2))
+
 ## [0.3.2](https://github.com/tutur3u/platform/compare/trigger-v0.3.1...trigger-v0.3.2) (2026-09-25)
 
 

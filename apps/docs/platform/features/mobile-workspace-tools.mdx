@@ -1,7 +1,7 @@
 ---
 title: 'Mobile Workspace Tools'
 description: 'Shared mobile navigation, tablet layouts, caching, and workspace application behavior.'
-updatedAt: '2026-10-01'
+updatedAt: 2026-10-01
 ---
 
 ## Overview
@@ -68,10 +68,18 @@ navigation history. Back follows the current context's outer layer: a detail
 returns to its parent section, a peer section returns to the mini-app root, and
 the mini-app root returns to the Home or Apps launch screen. This also applies
 to deep links, so Back never visits a sibling section by accident.
+Personal Tasks boards are the Tasks entry surface. Their dock and Android system
+Back return to the root tab that launched Tasks, rather than the board directory
+that automatically opens the default board. Workspace board details retain their
+board-directory parent; task overlays return to their owning board.
 Apps is always available in the root dock. The Apps grid supports long-press
 reordering: nearby icons shift across rows during the drag, with a subtle
-motion cue, and the new order is saved on release. App taps provide selection
-haptics. The list editor provides drag handles and visibility controls. Hiding
+motion cue, and the new order is saved on release. Tapping an app's icon or
+label exits reorder and opens that app. Empty cell margins, row gaps, and unused
+grid space never open an app; tapping them exits reorder. Leaving Apps through
+any route also exits reorder, while preserving its search and scroll state.
+Long-press pickup and ordinary scrolling retain their existing gesture thresholds.
+App taps provide selection haptics. The list editor provides drag handles and visibility controls. Hiding
 an app requires confirmation. Hidden apps remain accessible at the bottom of
 Apps, separated from shown apps by a divider, and can be shown again without a
 confirmation. The editor places hidden experiments below Hidden Apps; enabled
@@ -800,6 +808,18 @@ creations, and notes from the current workspace for the most recent 30 days.
 Calendar rows are explicitly labeled as **workspace events** because the calendar
 table does not record a reliable creator. The timeline groups rows by the device's
 local day, expands to individual items, and links to their native mobile views.
+Overview is the default Profile view. Overview and Timeline use the same shell
+segmented action control as Notifications, Assistant, and Apps. Overview contains
+identity and tracked-time panels; Timeline contains creation records, newest
+first within local-day groups, with all returned records visible.
+Each record states the creation action and time; calendar creation is explicitly
+workspace activity. This is a bounded recent feed, not lifetime achievements,
+completion history, or an inferred account milestone. The existing API's display
+limit and partial-source flags are visible. Failed refreshes keep cached rows and
+show retry. Completeness and display-limit flags persist with the encrypted
+snapshot, so reopening offline keeps the same warnings. Older list snapshots
+remain readable. Sharing tracked time does not share Timeline content.
+
 Its snapshot is encrypted and scoped by user and workspace; opening Profile returns
 it first and then revalidates. Timeline data is private and never follows the
 tracked-time sharing preference.
@@ -863,3 +883,14 @@ are recoverable UI states. A simulator without a valid input format cannot prove
 physical-device audio quality; verify recording, playback, interruption, and
 headset reconnection on hardware before claiming that a reported device crash or
 stutter is resolved.
+
+
+## Workspace picker search selection
+
+The mobile current-workspace and launch-default pickers keep search text and
+filtered results when the search field loses focus, including keyboard dismissal
+before a result tap completes. Clearing search is an explicit action. Each result
+uses its workspace ID for identity and selects its rendered workspace object,
+including after sorting, duplicate display names, and list refreshes. This rule
+applies to the sheet opened from the navbar, dashboard and Workspace Settings;
+it does not change membership discovery, permissions, or default persistence.
