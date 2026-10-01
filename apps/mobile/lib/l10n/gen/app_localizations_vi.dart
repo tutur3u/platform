@@ -9443,4 +9443,48 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
+
+  @override
+  String get inventoryStockHealthTitle => 'Tình trạng tồn kho';
+
+  @override
+  String get inventoryStockHealthScope => 'Sản phẩm đang hoạt động · mọi dòng tồn kho, gồm kho đã lưu trữ';
+
+  @override
+  String inventoryStockHealthAsOf(String timestamp) {
+    return 'Ảnh chụp từ máy chủ: $timestamp UTC';
+  }
+
+  @override
+  String get inventoryStockHealthIncomplete => 'Ảnh chụp chưa đầy đủ: một vài số đếm hoặc thời gian máy chủ bị thiếu.';
+
+  @override
+  String get inventoryStockHealthUnavailable => 'Không thể tải tình trạng tồn kho. Kéo để làm mới và thử lại.';
+
+  @override
+  String get inventoryStockHealthDenied => 'Bạn không có quyền xem phân tích tồn kho.';
+
+  @override
+  String get inventoryStockHealthLoading => 'Đang tải tình trạng tồn kho…';
+
+  @override
+  String get inventoryStockHealthActive => 'Sản phẩm đang hoạt động';
+
+  @override
+  String get inventoryStockHealthUnconfigured => 'Sản phẩm chưa có dòng tồn kho';
+
+  @override
+  String get inventoryStockHealthLow => 'Dòng tồn kho thấp';
+
+  @override
+  String get inventoryStockHealthOut => 'Dòng hết hàng';
+
+  @override
+  String get inventoryStockHealthUnlimited => 'Dòng tồn kho không giới hạn';
+
+  @override
+  String get inventoryStockHealthOverlap => 'Số dòng thấp/hết hàng có thể trùng nhau. Kiểm tra thấp/hết hàng theo số lượng không tính dòng không giới hạn; các dòng này được đếm riêng. Biểu đồ so sánh số dòng.';
+
+  @override
+  String get inventoryStockHealthUnknown => 'Chưa có dữ liệu';
 }
