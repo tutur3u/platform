@@ -1,5 +1,5 @@
 import { CircleUserRound, Users } from '@tuturuuu/icons';
-import type { Workspace } from '@tuturuuu/types';
+import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -14,7 +14,12 @@ import { useTranslations } from 'next-intl';
 interface WorkspaceSelectorProps {
   selectedWorkspaceId: string;
   currentWorkspaceId: string;
-  userWorkspaces: Workspace[] | undefined;
+  userWorkspaces:
+    | Pick<
+        InternalApiWorkspaceSummary,
+        'id' | 'name' | 'avatar_url' | 'personal'
+      >[]
+    | undefined;
   isLoadingWorkspaces: boolean;
   isLoading: boolean;
   onWorkspaceChange: (workspaceId: string) => void;
