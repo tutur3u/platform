@@ -84,6 +84,7 @@ export function command(
     nativeBinary = configuredNativeBinary,
     context = syntheticCliContext,
     execute,
+    repositoryRoot = repo,
   } = {}
 ) {
   return runHostedCommand(binary, args, {
@@ -91,7 +92,7 @@ export function command(
     execute,
     timeout,
     maxBuffer,
-    cwd: binary === 'git' ? repo : undefined,
+    cwd: binary === 'git' ? repositoryRoot : undefined,
   });
 }
 function checkNetworkPolicy() {
@@ -187,21 +188,37 @@ export async function runHostedHelper(
   const safe = context(nativeBinary, args[2]);
   await runner(binary, args, { ...options, env: safe.env });
 }
-async function prepare() {
-  assertHosted();
-  if (existsSync(statePath))
-    throw new Error('Refusing existing lifecycle state');
-  const binary = configureNativeCli();
-  if (names('container').length || names('volume').length)
+export async function prepare({
+  hosted = assertHosted,
+  existingState = () => existsSync(statePath),
+  configure = configureNativeCli,
+  inventory = names,
+  disk = freeBytes,
+  context = syntheticCliContext,
+  probe = runCliProbe,
+  commandRunner = command,
+  repositoryRoot = repo,
+  ports = chooseAvailablePortBlock,
+  fingerprint = migrationFingerprint,
+  policy = checkNetworkPolicy,
+  createOutput = () => mkdirSync(output, { recursive: true }),
+  stage = stageAndRecord,
+} = {}) {
+  hosted();
+  if (existingState()) throw new Error('Refusing existing lifecycle state');
+  const binary = configure();
+  if (inventory('container').length || inventory('volume').length)
     throw new Error('Requires empty dedicated Docker runner');
   if (
-    names('network').some((name) => !['bridge', 'host', 'none'].includes(name))
+    inventory('network').some(
+      (name) => !['bridge', 'host', 'none'].includes(name)
+    )
   )
     throw new Error('Requires runner without custom Docker networks');
-  const free = freeBytes();
+  const free = disk();
   assertDisk(free, free);
-  const cliContext = syntheticCliContext(binary);
-  const cliVersion = await runCliProbe(binary, ['--version'], {
+  const cliContext = context(binary);
+  const cliVersion = await probe(binary, ['--version'], {
     ...cliContext,
     phase: 'cli-version',
     timeoutMs: limits.commandMs,
@@ -212,41 +229,50 @@ async function prepare() {
   if (cliVersion !== expectedVersion)
     throw new Error('Supabase CLI pin mismatch');
   const services = JSON.parse(
-    await runCliProbe(binary, ['services', '-o', 'json'], {
+    await probe(binary, ['services', '-o', 'json'], {
       ...cliContext,
       phase: 'cli-services',
       timeoutMs: limits.commandMs,
     })
   );
-  const headSha = command('git', ['rev-parse', 'HEAD']);
+  const headSha = commandRunner('git', ['rev-parse', 'HEAD']);
+  const trackedFiles = commandRunner('git', [
+    'ls-files',
+    '-z',
+    '--',
+    'apps/database/supabase',
+  ])
+    .split('\0')
+    .filter(Boolean);
   const identity = deriveIsolatedIdentity({
     headSha,
     repositoryPath: path.join(
-      repo,
+      repositoryRoot,
       `run-${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT}`
     ),
   });
-  const block = await chooseAvailablePortBlock(identity);
+  const block = await ports(identity);
   const fields = {
     cliVersion,
     services,
     limits,
     initialFreeBytes: free,
     minimumFreeBytesObserved: free,
-    migrationFingerprint: migrationFingerprint(),
-    network: checkNetworkPolicy(),
+    migrationFingerprint: fingerprint(),
+    network: policy(),
     images: {},
     runSucceeded: false,
     cleanupVerified: false,
   };
-  mkdirSync(output, { recursive: true });
-  await stageAndRecord(
+  createOutput();
+  return stage(
     {
       basePort: block.basePort,
       headSha,
       projectId: identity.projectId,
-      repositoryRoot: repo,
-      typegenOutput: typegenOutputForRepository(repo),
+      repositoryRoot,
+      typegenOutput: typegenOutputForRepository(repositoryRoot),
+      trackedFiles,
     },
     fields
   );

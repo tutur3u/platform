@@ -69,5 +69,12 @@ marker rejection and process ownership. Inventory, container inspection,
 post-cleanup inventory and host policy inspection use the same constructed
 environment as lifecycle work; policy inspection keeps its original 1MiB cap.
 Conflicting synthetic DOCKER_HOST/DOCKER_CONTEXT/HOME/config values cannot select
-another daemon. No Docker or policy command executes in these tests; they do not prove upstream CLI behavior
+another daemon. Preparation also obtains the NUL-delimited tracked Supabase file
+list through the same admitted Git command (explicit repository cwd, private
+HOME, fixed PATH, no ambient Git selectors, 5000ms deadline and 4MiB cap) and
+passes it explicitly to staging. The original helper's default parent-process
+Git enumeration is not used by the proposal. Synthetic preparation tests use
+real Git and actual filesystem staging in inert fixture repositories under
+conflicting PATH/HOME/GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE/config selectors;
+CLI, Docker, policy and port checks are mocked. No Docker or policy command executes in these tests; they do not prove upstream CLI behavior
 or kernel policy enforcement in a live runner.
