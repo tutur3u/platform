@@ -31,6 +31,8 @@ export function useFollowupContext(wsId: string, meetingId: string) {
     profile: { ...query, data: query.data?.user },
     workspaces: {
       ...query,
+      error: query.error ?? visibility.error,
+      isError: query.isError || visibility.isError,
       data: visibility.known
         ? query.data?.workspaces.filter(
             (workspace) => !visibility.hiddenIds.includes(workspace.id)

@@ -91,6 +91,59 @@ void main() {
     expect(cubit.state.visibilityError, isNotNull);
   });
 
+  test('concurrent successes persist only confirmed choices '
+      'and rollback remains offline-safe', () async {
+    await load();
+    final writes = <List<String>>[];
+    when(() => visibility.saveCached('A', any())).thenAnswer((call) async {
+      writes.add(List<String>.of(call.positionalArguments[1] as List<String>));
+    });
+    final pending = Completer<void>();
+    when(
+      () => visibility.update('A', personal.id, hidden: true),
+    ).thenAnswer((_) => pending.future);
+    final hidingPersonal = cubit.setWorkspaceHidden(personal.id, hidden: true);
+    await cubit.setWorkspaceHidden(team.id, hidden: true);
+    expect(writes, [
+      [team.id],
+    ]);
+    expect(cubit.state.hiddenWorkspaceIds, containsAll([personal.id, team.id]));
+    final failure = expectLater(hidingPersonal, throwsA(isA<Exception>()));
+    pending.completeError(Exception('offline'));
+    await failure;
+    expect(writes.last, [team.id]);
+    expect(writes.expand((ids) => ids), isNot(contains(personal.id)));
+    expect(cubit.state.hiddenWorkspaceIds, [team.id]);
+    when(() => visibility.readCached('A')).thenAnswer(
+      (_) async => CacheReadResult<List<String>>(
+        state: CacheEntryState.fresh,
+        hasValue: true,
+        data: writes.last,
+      ),
+    );
+    when(() => visibility.refresh('A')).thenThrow(Exception('offline'));
+    await cubit.close();
+    cubit = WorkspaceCubit(
+      workspaceRepository: repo,
+      visibilityRepository: visibility,
+    );
+    await load();
+    expect(cubit.state.hiddenWorkspaceIds, [team.id]);
+    expect(cubit.state.visibleWorkspaces, [personal]);
+  });
+  test(
+    'account-change StateError during canonical discovery is safely discarded',
+    () async {
+      final pending = Completer<List<Workspace>>();
+      when(() => repo.getWorkspaces()).thenAnswer((_) => pending.future);
+      final loading = cubit.loadWorkspaces(forceRefresh: true);
+      await Future<void>.delayed(Duration.zero);
+      actor = 'B';
+      pending.completeError(StateError('Workspace account changed'));
+      await loading;
+      expect(cubit.state.workspaces, isEmpty);
+    },
+  );
   test('stale refresh cannot overwrite a newer optimistic hide', () async {
     await load();
     final stale = Completer<List<String>>();
@@ -188,9 +241,15 @@ void main() {
   test(
     'known empty private cache stays usable when revalidation is offline',
     () async {
-      await load();
+      when(() => visibility.readCached('A')).thenAnswer(
+        (_) async => const CacheReadResult<List<String>>(
+          state: CacheEntryState.fresh,
+          hasValue: true,
+          data: [],
+        ),
+      );
       when(() => visibility.refresh('A')).thenThrow(Exception('offline'));
-      await cubit.refreshHiddenWorkspaces();
+      await load();
       expect(cubit.state.visibilityResolved, isTrue);
       expect(cubit.state.visibleWorkspaces, [personal, team]);
     },

@@ -15,9 +15,13 @@ import messages from '../../../../../apps/meet/messages/en.json';
 import { FollowupReview } from './followup-review';
 import type { MeetingFollowup } from './followup-types';
 
-const mocks = vi.hoisted(() => ({ context: vi.fn(), create: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  context: vi.fn(),
+  create: vi.fn(),
+  hidden: vi.fn(),
+}));
 vi.mock('@tuturuuu/internal-api/users', () => ({
-  getCurrentUserHiddenWorkspaces: async () => ({ hiddenWorkspaceIds: [] }),
+  getCurrentUserHiddenWorkspaces: mocks.hidden,
   updateCurrentUserHiddenWorkspace: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', async (original) => ({
@@ -72,6 +76,7 @@ beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
   localStorage.clear();
   vi.clearAllMocks();
+  mocks.hidden.mockResolvedValue({ hiddenWorkspaceIds: [] });
   mocks.context.mockResolvedValue({
     user: { id: userId, display_name: 'Requester' },
     timezone: 'America/New_York',
@@ -221,4 +226,20 @@ it('creates a task with a reviewed board, list and a different verified assignee
       priority: 'normal',
     })
   );
+});
+
+it('shows identity failure after private visibility rejects instead of spinning or submitting', async () => {
+  mocks.hidden.mockRejectedValue(new Error('offline'));
+  view();
+  await waitFor(
+    () =>
+      expect(screen.getByRole('status').textContent).toBe(
+        messages.meet.ai.followup_identity_failed
+      ),
+    { timeout: 4000 }
+  );
+  expect(mocks.context).toHaveBeenCalled();
+  expect(mocks.hidden).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole('button', { name: 'Add to calendar' })).toBeNull();
+  expect(mocks.create).not.toHaveBeenCalled();
 });

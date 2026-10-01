@@ -21,6 +21,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   final WorkspaceVisibilityRepository _visibility;
   String? _actor;
   String? _explicitSelectionId;
+  Set<String> _confirmedHiddenIds = {};
   bool get hasAuthenticatedActor =>
       _actor != null && _repo.authenticatedUserId == _actor;
   int _visibilityStateRevision = 0;
@@ -43,6 +44,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     if (_actor != actor) {
       _actor = actor;
       _actorEpoch++;
+      _confirmedHiddenIds = {};
       _explicitSelectionId = null;
       _visibilityRevision++;
       _visibilityRequest++;
@@ -90,7 +92,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
 
       // Load limits in background (non-blocking)
       unawaited(_loadLimits());
-    } on Exception catch (e) {
+    } on Object catch (e) {
       if (!_isCurrentLoad(requestToken)) return;
       if (hasCachedWorkspaces) {
         return;
@@ -173,6 +175,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     _visibilityRevision++;
     _actor = null;
     _actorEpoch++;
+    _confirmedHiddenIds = {};
     _explicitSelectionId = null;
     emit(const WorkspaceState());
     await _repo.clearSelectedWorkspace();
@@ -302,12 +305,14 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
       final cached = await _visibility.readCached(actor);
       if (!current()) return;
       if (cached.hasValue && cached.data != null) {
+        _confirmedHiddenIds = cached.data!.toSet();
         _applyHidden(cached.data!);
       } else {
         emit(state.copyWith(visibilityStatus: WorkspaceStatus.loading));
       }
       final ids = await _visibility.refresh(actor);
       if (!current()) return;
+      _confirmedHiddenIds = ids.toSet();
       _applyHidden(ids);
       await _persistVisibility(actor, _actorEpoch);
     } on Object catch (error) {
@@ -371,11 +376,11 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
       _repo.authenticatedUserId == actor;
 
   Future<void> _persistVisibility(String actor, int epoch) {
-    // Serialize disk writes and resolve the latest list when the write starts.
+    // Serialize only confirmed choices; other pending mutations stay in the UI.
     return _visibilityPersistence = _visibilityPersistence.then((_) async {
       if (!_mutationCurrent(actor, epoch)) return;
       try {
-        await _visibility.saveCached(actor, state.hiddenWorkspaceIds);
+        await _visibility.saveCached(actor, _confirmedHiddenIds.toList());
       } on Object {
         // Remote success remains authoritative if local persistence fails.
       }
@@ -417,6 +422,11 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     try {
       await _visibility.update(actor, workspaceId, hidden: hidden);
       if (!_mutationCurrent(actor, epoch)) return;
+      if (hidden) {
+        _confirmedHiddenIds.add(workspaceId);
+      } else {
+        _confirmedHiddenIds.remove(workspaceId);
+      }
       await _persistVisibility(actor, epoch);
       if (!_mutationCurrent(actor, epoch)) return;
       final selected = state.currentWorkspace;
@@ -436,6 +446,8 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
         rollback.remove(workspaceId);
       }
       _applyHidden(rollback.toList());
+      await _persistVisibility(actor, epoch);
+      if (!_mutationCurrent(actor, epoch)) return;
       emit(
         state.copyWith(
           visibilityError: error.toString(),
