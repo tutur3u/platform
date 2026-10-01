@@ -135,7 +135,8 @@ the root tab that opened that context; back from a detail page returns to its
 parent section. Shell search actions across Apps, Chat, Finance, Habits, Mail,
 Meet, Notes, task boards, and Timer focus the top search input on entry. The
 search icon, input, and close control share one vertical center; submitting an
-empty or whitespace-only query closes search mode. Chat shows message matches
+empty or whitespace-only query closes search mode except in Apps, which keeps
+its current search. Chat shows message matches
 in the page, while task boards and Timer keep filtering their current lists.
 
 Settings tiles center a single title with the icon. For tiles with a value or
@@ -859,6 +860,18 @@ are recoverable UI states. A simulator without a valid input format cannot prove
 physical-device audio quality; verify recording, playback, interruption, and
 headset reconnection on hardware before claiming that a reported device crash or
 stutter is resolved.
+
+## Apps search submission
+
+Submitting a nonempty Apps query with exactly one current matching app clears
+the field, closes search mode, and opens that app. Zero or multiple matches
+keep the current search unchanged. Submission uses the same current localized
+results as the hub, and repeated submissions cannot launch the app twice.
+
+Apps discovery retains its case-insensitive substring matching over the localized
+label, description, and module ID; this submission change adds no plural stemming.
+A queued selection is canceled if workspace, account, experiment, access, or
+locale inputs change after its match was resolved and before navigation.
 
 
 ## Workspace picker search selection
