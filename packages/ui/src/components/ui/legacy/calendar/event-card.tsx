@@ -17,8 +17,10 @@ import {
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
+import { opaqueGoogleColor } from '@tuturuuu/utils/google-calendar-colors';
 import { containsHtml, sanitizeHtml } from '@tuturuuu/utils/html-sanitizer';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -346,7 +348,7 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
     });
 
     if (dateIdx === -1) {
-      cardEl.style.opacity = '0';
+      cardEl.style.visibility = 'hidden';
       cardEl.style.pointerEvents = 'none';
       return;
     }
@@ -438,9 +440,6 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
 
     observer.observe(cellEl);
 
-    // Check if the event is in the past
-    const isPastEvent = endDate.isBefore(dayjs());
-
     // Check if this event should be transparent due to hover state
     // An event is transparent if:
     // 1. There are overlaps
@@ -454,17 +453,9 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
       columnIndex > hoveredEventColumn &&
       overlapGroup.includes(hoveredBaseEventId);
 
-    // Set opacity based on transparency state, then past event state
-    if (shouldBeTransparent) {
-      cardEl.style.opacity = '0.05';
-      cardEl.style.pointerEvents = 'none';
-    } else if (isPastEvent && !preservePastEventOpacity) {
-      cardEl.style.opacity = '0.5';
-      cardEl.style.pointerEvents = 'all';
-    } else {
-      cardEl.style.opacity = '1';
-      cardEl.style.pointerEvents = 'all';
-    }
+    cardEl.style.opacity = '1';
+    cardEl.style.visibility = shouldBeTransparent ? 'hidden' : 'visible';
+    cardEl.style.pointerEvents = shouldBeTransparent ? 'none' : 'all';
 
     return () => observer.disconnect();
   }, [
@@ -481,8 +472,6 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
     overlapGroup,
     hoveredBaseEventId,
     hoveredEventColumn,
-    endDate,
-    preservePastEventOpacity,
   ]);
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
@@ -936,19 +925,11 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
     isReadOnlyEvent,
   ]);
 
-  // Color styles based on event color
-
-  const { bg, border, text, dragBg, syncingBg, successBg, errorBg } =
-    getEventStyles(color);
-
-  // Get the appropriate background based on event state
-  const getBackgroundStyle = () => {
-    if (updateStatus === 'syncing') return syncingBg;
-    if (updateStatus === 'success') return successBg;
-    if (updateStatus === 'error') return errorBg;
-    if (visualState.isDragging) return dragBg;
-    return bg;
-  };
+  const { border } = getEventStyles(color);
+  // Error feedback stays opaque and uses contrast computed for its red fill.
+  const eventStyle = calendarEventStyle(
+    updateStatus === 'error' ? { color: 'RED' } : event
+  );
 
   // Use the visual state for UI rendering
   const { isDragging, isResizing } = visualState;
@@ -1070,28 +1051,24 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
               'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
               'shadow-sm': hasOverlaps && !isDragging && !isResizing, // Subtle shadow for stacked events
               'hover:shadow-md': hasOverlaps, // Enhanced shadow on hover for stacked events
-              'opacity-50':
+              'line-through':
                 isPastEvent &&
                 !isAffectedByPreview &&
-                !preservePastEventOpacity, // Lower opacity for past events
-              'opacity-30 grayscale transition-all duration-500':
-                isAffectedByPreview, // Dim affected events during preview
+                !preservePastEventOpacity, // Mark past events in the text
               'rounded-l-none border-l-4': showStartIndicator, // Special styling for continuation from previous day
               'rounded-r-none border-r-4': showEndIndicator, // Special styling for continuation to next day
               'border-l-[3px]': hasCalendarInfo, // Thicker border for calendar events
               // Habit-specific styling (icon only, no dashed border)
-              'opacity-60': _isHabit && _habitCompleted, // Dimmed for completed habits
+              'line-through decoration-double': _isHabit && _habitCompleted, // Mark completed habits
               // Preview-specific styling - dashed border only for NEW/MOVED events (not reused)
               'border-2 border-dashed': _isPreview && !_isReused,
-              'opacity-60 outline outline-dashed outline-1 outline-primary/50':
-                isOptimisticallyMutating,
-              'opacity-80 ring-1 ring-primary/30':
+              'outline outline-dashed outline-1 outline-primary':
+                isOptimisticallyMutating || isAffectedByPreview,
+              'ring-1 ring-primary':
                 isOptimisticallyPending && !isOptimisticallyMutating,
             },
             level ? 'border border-l-2' : 'border-l-2',
-            border,
-            text,
-            getBackgroundStyle() // Use dynamic background based on status
+            border
           )}
           style={{
             transition:
@@ -1102,13 +1079,14 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
             willChange:
               isDragging || isResizing ? 'transform, top, left' : 'auto', // GPU acceleration
             transform: isDragging || isResizing ? 'translateZ(0)' : 'none', // Force GPU acceleration during interaction
-            // Add calendar color accent if available
-            borderLeftColor: _calendarColor || undefined,
+            ...eventStyle,
+            borderLeftColor: opaqueGoogleColor(_calendarColor) ?? undefined,
             // Enhanced border for shorter events (likely on top)
             borderLeftWidth:
               hasOverlaps && isLikelyTopEvent ? '3px' : undefined,
-            // Significantly lowered opacity for stacked events when base is hovered
-            opacity: shouldBeTransparent ? 0.05 : 1,
+            // Hide upper cards to reveal the hovered lower card without blending fills
+            opacity: 1,
+            visibility: shouldBeTransparent ? 'hidden' : 'visible',
             // Maintain pointer events even when transparent
             pointerEvents: shouldBeTransparent ? 'none' : undefined,
           }}
@@ -1150,13 +1128,13 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
           {/* Continuation indicators for multi-day events */}
           {showStartIndicator && (
             <div className="absolute top-1/2 left-2 -translate-x-1 -translate-y-1/2">
-              <ArrowLeft className={`h-3 w-3 ${text}`} />
+              <ArrowLeft className="h-3 w-3 text-inherit" />
             </div>
           )}
 
           {showEndIndicator && (
             <div className="absolute top-1/2 right-2 translate-x-1 -translate-y-1/2">
-              <ArrowRight className={`h-3 w-3 ${text}`} />
+              <ArrowRight className="h-3 w-3 text-inherit" />
             </div>
           )}
 
@@ -1302,7 +1280,7 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
               {((!_isMultiDay && duration > 0.5) ||
                 (_isMultiDay &&
                   (_dayPosition === 'start' || _dayPosition === 'end'))) && (
-                <div className="mt-1 flex items-center text-xs opacity-80">
+                <div className="mt-1 flex items-center text-xs">
                   {_isMultiDay ? (
                     _dayPosition === 'start' ? (
                       <span>Starts {formatEventTime(startDate)}</span>

@@ -7831,6 +7831,30 @@ abstract class AppLocalizations {
   /// **'Search products'**
   String get inventorySearchProducts;
 
+  /// No description provided for @inventoryLoadedLowStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Low stock in loaded products'**
+  String get inventoryLoadedLowStock;
+
+  /// No description provided for @inventoryStockNoRows.
+  ///
+  /// In en, this message translates to:
+  /// **'No stock rows configured.'**
+  String get inventoryStockNoRows;
+
+  /// No description provided for @inventoryStockUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited'**
+  String get inventoryStockUnlimited;
+
+  /// No description provided for @inventoryStockUnlimitedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave quantity empty for unlimited stock.'**
+  String get inventoryStockUnlimitedHint;
+
   /// No description provided for @inventoryTitle.
   ///
   /// In en, this message translates to:
@@ -16747,6 +16771,24 @@ abstract class AppLocalizations {
   /// **'Your private activity'**
   String get profilePrivateActivity;
 
+  /// No description provided for @profileTimelineDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Creation activity in this workspace over the last 30 days. Calendar events are workspace activity.'**
+  String get profileTimelineDescription;
+
+  /// No description provided for @profileTimelineLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing recent activity only. Some sources reached the display limit.'**
+  String get profileTimelineLimited;
+
+  /// No description provided for @profileTimelineUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity could not be refreshed.'**
+  String get profileTimelineUnavailable;
+
   /// No description provided for @profileTimelineTitle.
   ///
   /// In en, this message translates to:
@@ -16774,7 +16816,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileTimelinePartial.
   ///
   /// In en, this message translates to:
-  /// **'Some activity is unavailable. Retry'**
+  /// **'Some activity is unavailable.'**
   String get profileTimelinePartial;
 
   /// No description provided for @profileTimelineTasks.

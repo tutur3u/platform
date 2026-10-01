@@ -1,7 +1,7 @@
 ---
 title: "Authentication Patterns"
 description: "Authentication implementation patterns in the Tuturuuu platform"
-updatedAt: "2026-06-28"
+updatedAt: "2026-10-01"
 ---
 
 The Tuturuuu platform uses Supabase Auth for user authentication with support for email/password, OAuth providers, multi-factor authentication (MFA), and cross-app token authentication.
@@ -33,9 +33,9 @@ The default is an active reviewer account and an unconfirmed external invitation
 these rules apply to the Infrastructure admin panel and the mobile and web
 sign-in surfaces. The external invitation intentionally has no administrator-
 visible password, so it cannot serve as an unaccepted App Review login. For
-mobile password sign-in, enter the email, continue to the code screen, then
-choose **Use password instead**. The Apple demo account fields contain the
-credential; Review Notes contain these steps without the password. Mail access
+mobile password sign-in with a review account, enter its exact `@tutur3u.com`
+email and continue directly to the password screen. The Apple demo account fields
+contain the credential; Review Notes contain these steps without the password. Mail access
 for review is scoped to the account's personal workspace and does not grant
 staff mailbox or root-workspace access.
 
@@ -47,6 +47,37 @@ staff mailbox or root-workspace access.
   `await createAdminClient()` still work — never `await createClient()` results
   without the keyword.
 </Note>
+
+## Email sign-in method preference
+
+The canonical web login (including satellite app redirects) and Flutter mobile
+login intentionally prefer password after **Continue with email** for the exact
+email domains `tuturuuu.com` and `tutur3u.com`. Matching trims surrounding
+whitespace and ignores case; internal whitespace, subdomains, lookalikes, and
+appended suffixes do not qualify. Web's existing username shorthand still expands to `@tuturuuu.com`.
+External email accounts keep the existing code-first default when OTP is enabled;
+when it is disabled by the existing app policy, password remains the default.
+
+This is a product presentation decision, not a trust or permission classification.
+It does not establish account existence, enable a disabled account, or grant staff
+access. Password, code, CAPTCHA, rate limits, passkeys and required MFA continue
+through their existing authentication checks. Supported code sign-in remains
+available from the password screen; social sign-in, web passkeys and mobile QR
+remain available from the email screen via Back. Choosing mobile code sign-in
+requests the initial code through the existing CAPTCHA flow before showing the
+sent-code screen. CAPTCHA cancellation keeps the prior screen; an ordinary send
+failure keeps that screen with the error. A rate-limited send opens the code screen
+with its retry countdown so password fallback remains available. Method switching
+retains an active code-request cooldown.
+
+An explicit password/code choice is remembered per trimmed, case-insensitive
+email within the current login flow. Back, retries, and switching to another email
+and back retain that choice; changing to an email with no explicit choice uses
+its domain default. OTP policy disablement takes precedence over a saved code
+choice. Editing the email does not switch screens while typing. A fresh login
+flow/reload starts with domain defaults; choices and credentials are not persisted
+by this preference. Web code-send failures stay on the code screen for retry
+instead of silently changing the chosen method to password.
 
 ## Authentication Flow
 

@@ -138,7 +138,7 @@
     "cronstrue": "^3.26.0",
     "date-fns": "^4.4.0",
     "dayjs": "^1.11.23",
-    "dompurify": "^3.4.15",
+    "dompurify": "^3.4.16",
     "eventemitter3": "^5.0.4",
     "firebase-admin": "^14.4.0",
     "framer-motion": "^13.2.0",

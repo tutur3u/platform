@@ -13,11 +13,14 @@ import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/utils/auth_error_localization.dart';
+import 'package:mobile/features/auth/utils/login_email_mode.dart';
 import 'package:mobile/features/auth/widgets/auth_action_button.dart';
-import 'package:mobile/features/auth/widgets/auth_google_button.dart';
+import 'package:mobile/features/auth/widgets/auth_google_button.dart'
+    show AuthMethodDivider;
 import 'package:mobile/features/auth/widgets/auth_otp_field.dart';
 import 'package:mobile/features/auth/widgets/auth_scaffold.dart';
 import 'package:mobile/features/auth/widgets/auth_section_card.dart';
+import 'package:mobile/features/auth/widgets/login_alternative_methods.dart';
 import 'package:mobile/features/auth/widgets/security_check_dialog.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -25,7 +28,15 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 enum _LoginStage { identify, otp, password }
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({this.addAccountMode = false, super.key});
+  const LoginPage({
+    this.addAccountMode = false,
+    this.otpSecurityCheck,
+    super.key,
+  });
+
+  /// Challenge presentation seam; the configured-token guard still applies.
+  @visibleForTesting
+  final Future<String?> Function(BuildContext)? otpSecurityCheck;
 
   final bool addAccountMode;
 
@@ -51,6 +62,7 @@ class _LoginPageState extends State<LoginPage> {
   final _otpFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
 
+  final _emailModePreference = LoginEmailModePreference();
   _LoginStage _stage = _LoginStage.identify;
   int _retryAfter = 0;
   Timer? _retryAfterTimer;
@@ -189,10 +201,8 @@ class _LoginPageState extends State<LoginPage> {
 
   void _showPasswordStage() {
     context.read<AuthCubit>().clearError();
-    _stopRetryAfterTimer();
     setState(() {
       _stage = _LoginStage.password;
-      _retryAfter = 0;
     });
     Future<void>.delayed(const Duration(milliseconds: 180), () {
       if (mounted && _isPasswordStage) {
@@ -215,6 +225,33 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
+  void _chooseEmailMode(LoginEmailMode mode) {
+    _emailModePreference.choose(_emailController.text, mode);
+    if (mode == LoginEmailMode.password) {
+      _showPasswordStage();
+    } else if (_retryAfter > 0) {
+      _showOtpStage(clearOtp: false, retryAfter: _retryAfter);
+    } else {
+      unawaited(_handleSendOtp());
+    }
+  }
+
+  void _continueWithEmail({
+    required bool otpEnabled,
+    required bool isResolving,
+  }) {
+    if (isResolving) return;
+    if (_emailModePreference.resolve(
+          _emailController.text,
+          otpEnabled: otpEnabled,
+        ) ==
+        LoginEmailMode.password) {
+      _showPasswordStage();
+    } else {
+      unawaited(_handleSendOtp());
+    }
+  }
+
   Future<void> _handleSendOtp() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
@@ -222,7 +259,9 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final captcha = await showSecurityCheck(context);
+    final captcha = await (widget.otpSecurityCheck ?? showSecurityCheck)(
+      context,
+    );
     if (!mounted || (Env.isTurnstileConfigured && captcha == null)) return;
 
     final result = await context.read<AuthCubit>().sendOtp(
@@ -276,22 +315,6 @@ class _LoginPageState extends State<LoginPage> {
       password,
       captchaToken: captcha,
     );
-  }
-
-  Future<void> _handleGoogleSignIn() {
-    return context.read<AuthCubit>().signInWithGoogle();
-  }
-
-  Future<void> _handleAppleSignIn() {
-    return context.read<AuthCubit>().signInWithApple();
-  }
-
-  Future<void> _handleMicrosoftSignIn() {
-    return context.read<AuthCubit>().signInWithMicrosoft();
-  }
-
-  Future<void> _handleGithubSignIn() {
-    return context.read<AuthCubit>().signInWithGithub();
   }
 
   void _handleQrLogin() {
@@ -401,11 +424,16 @@ class _LoginPageState extends State<LoginPage> {
             const shad.Gap(24),
             AuthMethodDivider(label: l10n.authContinueWithSocial),
             const shad.Gap(18),
-            _buildSocialSection(),
+            LoginSocialSection(
+              onGoogle: context.read<AuthCubit>().signInWithGoogle,
+              onMicrosoft: context.read<AuthCubit>().signInWithMicrosoft,
+              onApple: context.read<AuthCubit>().signInWithApple,
+              onGithub: context.read<AuthCubit>().signInWithGithub,
+            ),
             const shad.Gap(24),
             AuthMethodDivider(label: l10n.authContinueWithQr),
             const shad.Gap(18),
-            _buildQrLoginSection(),
+            LoginQrSection(onPressed: _handleQrLogin),
           ],
           BlocBuilder<AuthCubit, AuthState>(
             buildWhen: (prev, curr) =>
@@ -496,16 +524,10 @@ class _LoginPageState extends State<LoginPage> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.done,
                 onChanged: (_) => setState(() {}),
-                onSubmitted: (_) {
-                  if (isResolvingOtpEnablement) {
-                    return;
-                  }
-                  if (otpEnabled) {
-                    unawaited(_handleSendOtp());
-                    return;
-                  }
-                  _showPasswordStage();
-                },
+                onSubmitted: (_) => _continueWithEmail(
+                  otpEnabled: otpEnabled,
+                  isResolving: isResolvingOtpEnablement,
+                ),
               ),
               const shad.Gap(16),
               AuthPrimaryButton(
@@ -514,7 +536,10 @@ class _LoginPageState extends State<LoginPage> {
                     isResolvingOtpEnablement ||
                         _emailController.text.trim().isEmpty
                     ? null
-                    : (otpEnabled ? _handleSendOtp : _showPasswordStage),
+                    : () => _continueWithEmail(
+                        otpEnabled: otpEnabled,
+                        isResolving: isResolvingOtpEnablement,
+                      ),
                 isLoading: state.isLoading || isResolvingOtpEnablement,
               ),
             ],
@@ -603,7 +628,9 @@ class _LoginPageState extends State<LoginPage> {
               const shad.Gap(6),
               AuthSecondaryButton(
                 variant: AuthSecondaryButtonVariant.ghost,
-                onPressed: state.isLoading ? null : _showPasswordStage,
+                onPressed: state.isLoading
+                    ? null
+                    : () => _chooseEmailMode(LoginEmailMode.password),
                 label: context.l10n.loginUsePasswordInstead,
               ),
             ],
@@ -678,46 +705,13 @@ class _LoginPageState extends State<LoginPage> {
                 const shad.Gap(10),
                 AuthSecondaryButton(
                   variant: AuthSecondaryButtonVariant.ghost,
-                  onPressed: state.isLoading ? null : _showOtpStage,
+                  onPressed: state.isLoading
+                      ? null
+                      : () => _chooseEmailMode(LoginEmailMode.otp),
                   label: context.l10n.loginUseOtpInstead,
                 ),
               ],
             ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildSocialSection() {
-    return AuthSectionCard(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      child: BlocBuilder<AuthCubit, AuthState>(
-        buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
-        builder: (context, state) {
-          return AuthSocialButtons(
-            isLoading: state.isLoading,
-            onGooglePressed: _handleGoogleSignIn,
-            onMicrosoftPressed: _handleMicrosoftSignIn,
-            onApplePressed: _handleAppleSignIn,
-            onGithubPressed: _handleGithubSignIn,
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildQrLoginSection() {
-    return AuthSectionCard(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      child: BlocBuilder<AuthCubit, AuthState>(
-        buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
-        builder: (context, state) {
-          return AuthSecondaryButton(
-            label: context.l10n.qrLoginMobileButton,
-            isLoading: state.isLoading,
-            onPressed: _handleQrLogin,
-            leading: const Icon(Icons.qr_code_2_rounded, size: 20),
           );
         },
       ),

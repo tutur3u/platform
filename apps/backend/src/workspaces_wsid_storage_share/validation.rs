@@ -135,7 +135,9 @@ pub(super) fn sanitize_path(path: &str) -> Option<String> {
     let segments: Vec<&str> = trimmed.split('/').filter(|s| !s.is_empty()).collect();
 
     for segment in &segments {
-        if *segment == ".." || *segment == "." || segment.is_empty() {
+        // URL parsers treat percent-encoded dots as structural path segments.
+        let url_segment = segment.to_ascii_lowercase().replace("%2e", ".");
+        if url_segment == ".." || url_segment == "." || segment.is_empty() {
             return None;
         }
         if segment.contains("..") {

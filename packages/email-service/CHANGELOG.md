@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.2](https://github.com/tutur3u/platform/compare/email-service-v0.6.1...email-service-v0.6.2) (2026-10-01)
+
+
+### Bug Fixes
+
+* **mail:** add invitation RSVP and settle final inbox archive ([#5668](https://github.com/tutur3u/platform/issues/5668)) ([48a1687](https://github.com/tutur3u/platform/commit/48a1687f253cb7df72716fd4c289a0dcf1aa329d))
+* **mail:** support invitation replies and settle empty inbox ([57e27ab](https://github.com/tutur3u/platform/commit/57e27ab6582e6cb5a1b6be43039ebf795cf908a2))
+
 ## [0.6.1](https://github.com/tutur3u/platform/compare/email-service-v0.6.0...email-service-v0.6.1) (2026-09-20)
 
 

@@ -13,6 +13,8 @@ import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/inventory/inventory_permissions.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
@@ -25,7 +27,16 @@ import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class InventoryManagePage extends StatefulWidget {
-  const InventoryManagePage({super.key});
+  const InventoryManagePage({
+    super.key,
+    this.inventoryRepository,
+    this.financeRepository,
+    this.permissionsRepository,
+  });
+
+  final InventoryRepository? inventoryRepository;
+  final FinanceRepository? financeRepository;
+  final WorkspacePermissionsRepository? permissionsRepository;
 
   @override
   State<InventoryManagePage> createState() => _InventoryManagePageState();
@@ -36,6 +47,15 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
   late final FinanceRepository _financeRepository;
   late final WorkspacePermissionsRepository _permissionsRepository;
   Future<_InventoryManageData>? _future;
+  Future<_InventoryManageData>? _inFlight;
+  (String?, String?)? _futureScope;
+
+  (String?, String?) get _scope => (
+    context.read<AuthCubit>().state.status == AuthStatus.authenticated
+        ? context.read<AuthCubit>().state.user?.id
+        : null,
+    _wsId,
+  );
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -43,26 +63,44 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
   @override
   void initState() {
     super.initState();
-    _inventoryRepository = InventoryRepository();
-    _financeRepository = FinanceRepository();
-    _permissionsRepository = WorkspacePermissionsRepository();
+    _inventoryRepository = widget.inventoryRepository ?? InventoryRepository();
+    _financeRepository = widget.financeRepository ?? FinanceRepository();
+    _permissionsRepository =
+        widget.permissionsRepository ?? WorkspacePermissionsRepository();
     unawaited(Future<void>.delayed(Duration.zero, _reload));
   }
 
   @override
   void dispose() {
-    _inventoryRepository.dispose();
+    if (widget.inventoryRepository == null) _inventoryRepository.dispose();
     super.dispose();
   }
 
   Future<void> _reload({bool forceRefresh = false}) async {
-    final wsId = _wsId;
-    if (wsId == null) return;
+    if (!mounted) return;
+    final scope = _scope;
+    final wsId = scope.$2;
+    if (scope.$1 == null || wsId == null) {
+      setState(() {
+        _future = null;
+        _futureScope = scope;
+      });
+      return;
+    }
+    if (!forceRefresh && _futureScope == scope && _inFlight != null) return;
     final future = _loadData(wsId, forceRefresh: forceRefresh);
+    _inFlight = future;
     setState(() {
       _future = future;
+      _futureScope = scope;
     });
-    await future;
+    try {
+      await future;
+    } on Object {
+      // The scoped FutureBuilder renders the error and retry action.
+    } finally {
+      if (identical(_inFlight, future)) _inFlight = null;
+    }
   }
 
   Future<_InventoryManageData> _loadData(
@@ -171,21 +209,26 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
     required String confirmLabel,
     required Future<void> Function(String value) onConfirm,
   }) async {
+    final scope = _scope;
+    final scopeError = context.l10n.commonSomethingWentWrong;
     final result = await showAdaptiveSheet<bool>(
       context: context,
       maxDialogWidth: 420,
       builder: (_) => _CreateManageItemDialog(
         title: title,
         confirmLabel: confirmLabel,
-        onConfirm: onConfirm,
+        onConfirm: (value) async {
+          if (!mounted || _scope != scope) {
+            throw _InventoryScopeChanged(scopeError);
+          }
+          await onConfirm(value);
+        },
       ),
     );
 
-    if (result == true && mounted) {
+    if (result == true && mounted && _scope == scope) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) {
-          return;
-        }
+        if (!mounted || _scope != scope) return;
         unawaited(_reload(forceRefresh: true));
         showInventoryToast(context, confirmLabel);
       });
@@ -195,206 +238,209 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return shad.Scaffold(
-      child: BlocListener<WorkspaceCubit, WorkspaceState>(
-        listenWhen: (previous, current) =>
-            previous.currentWorkspace?.id != current.currentWorkspace?.id,
-        listener: (context, state) => unawaited(_reload()),
-        child: FutureBuilder<_InventoryManageData>(
-          future: _future,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData &&
-                snapshot.connectionState != ConnectionState.done) {
-              return const InventoryOverviewSkeleton();
-            }
+    context.select<AuthCubit, (AuthStatus, String?)>(
+      (cubit) => (cubit.state.status, cubit.state.user?.id),
+    );
+    final scope = _scope;
+    return BlocListener<AuthCubit, AuthState>(
+      listenWhen: (previous, current) =>
+          previous.status != current.status ||
+          previous.user?.id != current.user?.id,
+      listener: (context, state) => unawaited(_reload()),
+      child: shad.Scaffold(
+        child: BlocListener<WorkspaceCubit, WorkspaceState>(
+          listenWhen: (previous, current) =>
+              previous.currentWorkspace?.id != current.currentWorkspace?.id,
+          listener: (context, state) => unawaited(_reload()),
+          child: FutureBuilder<_InventoryManageData>(
+            key: ValueKey(scope),
+            future: _futureScope == scope ? _future : null,
+            builder: (context, snapshot) {
+              if (scope.$1 == null || scope.$2 == null) {
+                return const SizedBox.shrink();
+              }
+              if (!snapshot.hasData &&
+                  snapshot.connectionState != ConnectionState.done) {
+                return const InventoryOverviewSkeleton();
+              }
 
-            if (snapshot.hasError || !snapshot.hasData) {
-              return Center(
-                child: FinanceEmptyState(
-                  icon: Icons.error_outline,
-                  title: l10n.commonSomethingWentWrong,
-                  body: snapshot.error?.toString() ?? l10n.inventoryManageLabel,
-                  action: shad.SecondaryButton(
-                    onPressed: () => unawaited(_reload(forceRefresh: true)),
-                    child: Text(l10n.commonRetry),
+              if (snapshot.hasError || !snapshot.hasData) {
+                return Center(
+                  child: FinanceEmptyState(
+                    icon: Icons.error_outline,
+                    title: l10n.commonSomethingWentWrong,
+                    body:
+                        snapshot.error?.toString() ?? l10n.inventoryManageLabel,
+                    action: shad.SecondaryButton(
+                      onPressed: () => unawaited(_reload(forceRefresh: true)),
+                      child: Text(l10n.commonRetry),
+                    ),
+                  ),
+                );
+              }
+
+              final data = snapshot.data!;
+
+              return ResponsiveWrapper(
+                maxWidth: ResponsivePadding.maxContentWidth(
+                  context.deviceClass,
+                ),
+                child: NovaRefreshIndicator(
+                  onRefresh: () => _reload(forceRefresh: true),
+                  child: ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      8,
+                      16,
+                      32 + MediaQuery.paddingOf(context).bottom,
+                    ),
+                    children: [
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: shad.OutlineButton(
+                          onPressed: () =>
+                              context.go(Routes.inventoryAuditLogs),
+                          leading: const Icon(Icons.history_rounded, size: 18),
+                          child: Text(l10n.inventoryAuditLabel),
+                        ),
+                      ),
+                      const shad.Gap(12),
+                      _ManageSection(
+                        title: l10n.inventoryManageOwners,
+                        actionLabel: l10n.inventoryAddOwner,
+                        canManage: data.canManageSetup,
+                        onSubmit: () => _showCreateDialog(
+                          title: l10n.inventoryAddOwner,
+                          confirmLabel: l10n.inventoryAddOwner,
+                          onConfirm: _createOwner,
+                        ),
+                        child: _ChipWrap(
+                          workspaceId: _wsId ?? '',
+                          items: data.owners
+                              .map((owner) {
+                                if (owner.archived) {
+                                  return (
+                                    owner.id,
+                                    '${owner.name} '
+                                        '(${l10n.inventoryOwnerArchived})',
+                                  );
+                                }
+                                return (owner.id, owner.name);
+                              })
+                              .toList(growable: false),
+                        ),
+                      ),
+                      const shad.Gap(12),
+                      _ManageSection(
+                        title: l10n.inventoryManageCategories,
+                        actionLabel: l10n.inventoryAddCategory,
+                        canManage: data.canManageSetup,
+                        onSubmit: () => _showCreateDialog(
+                          title: l10n.inventoryAddCategory,
+                          confirmLabel: l10n.inventoryAddCategory,
+                          onConfirm: _createCategory,
+                        ),
+                        child: _ChipWrap(
+                          workspaceId: _wsId ?? '',
+                          items: data.productCategories
+                              .map((item) => (item.id, item.name))
+                              .toList(growable: false),
+                        ),
+                      ),
+                      const shad.Gap(12),
+                      _ManageSection(
+                        title: l10n.inventoryManageManufacturers,
+                        actionLabel: l10n.inventoryAddManufacturer,
+                        canManage: data.canManageSetup,
+                        onSubmit: () => _showCreateDialog(
+                          title: l10n.inventoryAddManufacturer,
+                          confirmLabel: l10n.inventoryAddManufacturer,
+                          onConfirm: _createManufacturer,
+                        ),
+                        child: _ChipWrap(
+                          workspaceId: _wsId ?? '',
+                          items: data.manufacturers
+                              .map((item) => (item.id, item.name))
+                              .toList(growable: false),
+                        ),
+                      ),
+                      const shad.Gap(12),
+                      _ManageSection(
+                        title: l10n.inventoryManageUnits,
+                        actionLabel: l10n.inventoryAddUnit,
+                        canManage: data.canManageSetup,
+                        onSubmit: () => _showCreateDialog(
+                          title: l10n.inventoryAddUnit,
+                          confirmLabel: l10n.inventoryAddUnit,
+                          onConfirm: _createUnit,
+                        ),
+                        child: _ChipWrap(
+                          workspaceId: _wsId ?? '',
+                          items: data.units
+                              .map((item) => (item.id, item.name))
+                              .toList(growable: false),
+                        ),
+                      ),
+                      const shad.Gap(12),
+                      _ManageSection(
+                        title: l10n.inventoryManageWarehouses,
+                        actionLabel: l10n.inventoryAddWarehouse,
+                        canManage: data.canManageSetup,
+                        onSubmit: () => _showCreateDialog(
+                          title: l10n.inventoryAddWarehouse,
+                          confirmLabel: l10n.inventoryAddWarehouse,
+                          onConfirm: _createWarehouse,
+                        ),
+                        child: _ChipWrap(
+                          workspaceId: _wsId ?? '',
+                          items: data.warehouses
+                              .map((item) => (item.id, item.name))
+                              .toList(growable: false),
+                        ),
+                      ),
+                      const shad.Gap(12),
+                      FinancePanel(
+                        padding: const EdgeInsets.all(14),
+                        radius: 18,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.financeCategories,
+                              style: shad.Theme.of(context).typography.large
+                                  .copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const shad.Gap(10),
+                            _ChipWrap(
+                              workspaceId: _wsId ?? '',
+                              feature: 'finance',
+                              items: data.financeCategories
+                                  .where((item) => (item.name ?? '').isNotEmpty)
+                                  .map((item) => (item.id, item.name ?? ''))
+                                  .toList(growable: false),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
-            }
-
-            final data = snapshot.data!;
-
-            return ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: NovaRefreshIndicator(
-                onRefresh: () => _reload(forceRefresh: true),
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    8,
-                    16,
-                    32 + MediaQuery.paddingOf(context).bottom,
-                  ),
-                  children: [
-                    InventoryHeroCard(
-                      title: l10n.inventoryManageLabel,
-                      icon: Icons.tune_rounded,
-                      showHeader: false,
-                      metrics: [
-                        InventoryMetricTile(
-                          label: l10n.inventoryManageOwners,
-                          value: '${data.owners.length}',
-                          icon: Icons.people_outline_rounded,
-                        ),
-                        InventoryMetricTile(
-                          label: l10n.inventoryManageCategories,
-                          value: '${data.productCategories.length}',
-                          icon: Icons.category_outlined,
-                        ),
-                        InventoryMetricTile(
-                          label: l10n.inventoryManageManufacturers,
-                          value: '${data.manufacturers.length}',
-                          icon: Icons.factory_outlined,
-                        ),
-                        InventoryMetricTile(
-                          label: l10n.inventoryManageWarehouses,
-                          value: '${data.warehouses.length}',
-                          icon: Icons.warehouse_outlined,
-                        ),
-                      ],
-                      actions: [
-                        shad.SecondaryButton(
-                          onPressed: () =>
-                              context.go(Routes.inventoryAuditLogs),
-                          child: Text(l10n.inventoryAuditLabel),
-                        ),
-                      ],
-                    ),
-                    const shad.Gap(16),
-                    _ManageSection(
-                      title: l10n.inventoryManageOwners,
-                      actionLabel: l10n.inventoryAddOwner,
-                      canManage: data.canManageSetup,
-                      onSubmit: () => _showCreateDialog(
-                        title: l10n.inventoryAddOwner,
-                        confirmLabel: l10n.inventoryAddOwner,
-                        onConfirm: _createOwner,
-                      ),
-                      child: _ChipWrap(
-                        workspaceId: _wsId ?? '',
-                        items: data.owners
-                            .map((owner) {
-                              if (owner.archived) {
-                                return (
-                                  owner.id,
-                                  '${owner.name} '
-                                      '(${l10n.inventoryOwnerArchived})',
-                                );
-                              }
-                              return (owner.id, owner.name);
-                            })
-                            .toList(growable: false),
-                      ),
-                    ),
-                    const shad.Gap(16),
-                    _ManageSection(
-                      title: l10n.inventoryManageCategories,
-                      actionLabel: l10n.inventoryAddCategory,
-                      canManage: data.canManageSetup,
-                      onSubmit: () => _showCreateDialog(
-                        title: l10n.inventoryAddCategory,
-                        confirmLabel: l10n.inventoryAddCategory,
-                        onConfirm: _createCategory,
-                      ),
-                      child: _ChipWrap(
-                        workspaceId: _wsId ?? '',
-                        items: data.productCategories
-                            .map((item) => (item.id, item.name))
-                            .toList(growable: false),
-                      ),
-                    ),
-                    const shad.Gap(16),
-                    _ManageSection(
-                      title: l10n.inventoryManageManufacturers,
-                      actionLabel: l10n.inventoryAddManufacturer,
-                      canManage: data.canManageSetup,
-                      onSubmit: () => _showCreateDialog(
-                        title: l10n.inventoryAddManufacturer,
-                        confirmLabel: l10n.inventoryAddManufacturer,
-                        onConfirm: _createManufacturer,
-                      ),
-                      child: _ChipWrap(
-                        workspaceId: _wsId ?? '',
-                        items: data.manufacturers
-                            .map((item) => (item.id, item.name))
-                            .toList(growable: false),
-                      ),
-                    ),
-                    const shad.Gap(16),
-                    _ManageSection(
-                      title: l10n.inventoryManageUnits,
-                      actionLabel: l10n.inventoryAddUnit,
-                      canManage: data.canManageSetup,
-                      onSubmit: () => _showCreateDialog(
-                        title: l10n.inventoryAddUnit,
-                        confirmLabel: l10n.inventoryAddUnit,
-                        onConfirm: _createUnit,
-                      ),
-                      child: _ChipWrap(
-                        workspaceId: _wsId ?? '',
-                        items: data.units
-                            .map((item) => (item.id, item.name))
-                            .toList(growable: false),
-                      ),
-                    ),
-                    const shad.Gap(16),
-                    _ManageSection(
-                      title: l10n.inventoryManageWarehouses,
-                      actionLabel: l10n.inventoryAddWarehouse,
-                      canManage: data.canManageSetup,
-                      onSubmit: () => _showCreateDialog(
-                        title: l10n.inventoryAddWarehouse,
-                        confirmLabel: l10n.inventoryAddWarehouse,
-                        onConfirm: _createWarehouse,
-                      ),
-                      child: _ChipWrap(
-                        workspaceId: _wsId ?? '',
-                        items: data.warehouses
-                            .map((item) => (item.id, item.name))
-                            .toList(growable: false),
-                      ),
-                    ),
-                    const shad.Gap(16),
-                    FinancePanel(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.financeCategories,
-                            style: shad.Theme.of(context).typography.large
-                                .copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const shad.Gap(10),
-                          _ChipWrap(
-                            workspaceId: _wsId ?? '',
-                            feature: 'finance',
-                            items: data.financeCategories
-                                .where((item) => (item.name ?? '').isNotEmpty)
-                                .map((item) => (item.id, item.name ?? ''))
-                                .toList(growable: false),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+            },
+          ),
         ),
       ),
     );
   }
+}
+
+class _InventoryScopeChanged implements Exception {
+  const _InventoryScopeChanged(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
 
 class _InventoryManageData {
@@ -435,20 +481,22 @@ class _ManageSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FinancePanel(
+      padding: const EdgeInsets.all(14),
+      radius: 18,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           FinanceSectionHeader(
             title: title,
             action: canManage
-                ? shad.IconButton.ghost(
+                ? IconButton(
+                    tooltip: actionLabel,
                     onPressed: () => unawaited(onSubmit()),
-                    icon: const Icon(Icons.add_rounded, size: 18),
+                    icon: const Icon(Icons.add_rounded, size: 20),
                   )
                 : null,
           ),
           const shad.Gap(12),
-          if (canManage && actionLabel.trim().isNotEmpty) const shad.Gap(0),
           child,
         ],
       ),

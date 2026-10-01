@@ -4011,6 +4011,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySearchProducts => 'Tìm sản phẩm';
 
   @override
+  String get inventoryLoadedLowStock => 'Tồn kho thấp trong sản phẩm đã tải';
+
+  @override
+  String get inventoryStockNoRows => 'Chưa cấu hình dòng tồn kho.';
+
+  @override
+  String get inventoryStockUnlimited => 'Không giới hạn';
+
+  @override
+  String get inventoryStockUnlimitedHint => 'Để trống số lượng để không giới hạn tồn kho.';
+
+  @override
   String get inventoryTitle => 'Tồn kho';
 
   @override
@@ -8714,6 +8726,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profilePrivateActivity => 'Hoạt động riêng tư của bạn';
 
   @override
+  String get profileTimelineDescription => 'Hoạt động tạo trong không gian làm việc này trong 30 ngày qua. Sự kiện lịch là hoạt động của không gian làm việc.';
+
+  @override
+  String get profileTimelineLimited => 'Chỉ hiển thị hoạt động gần đây. Một số nguồn đã đạt giới hạn hiển thị.';
+
+  @override
+  String get profileTimelineUnavailable => 'Không thể làm mới hoạt động.';
+
+  @override
   String get profileTimelineTitle => 'Dòng thời gian hoạt động';
 
   @override
@@ -8726,7 +8747,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineEmpty => 'Không có hoạt động gần đây trong không gian này';
 
   @override
-  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị. Thử lại';
+  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị.';
 
   @override
   String profileTimelineTasks(int count) {
