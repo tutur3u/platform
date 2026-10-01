@@ -67,9 +67,10 @@ import RoomPage from './page';
 
 const id = '00000000-0000-4000-8000-000000000001';
 const code = encodeRoomCode(id);
+const actorId = '00000000-0000-4000-8000-000000000002';
 function callResult(result: Awaited<ReturnType<typeof RoomPage>>) {
   if (result.type === WorkspaceVisibilityProvider) {
-    expect(result.props.actorId).toBe(id);
+    expect(result.props.actorId).toBe(actorId);
     return result.props.children;
   }
   return result;
@@ -79,7 +80,7 @@ beforeEach(() => {
   mocks.publicInfo.mockResolvedValue(null);
   mocks.policy.mockResolvedValue({ ended: false, canReadNotes: false });
   mocks.access.mockResolvedValue({
-    user: { id, email: 'guest@example.com' },
+    user: { id: actorId, email: 'guest@example.com' },
     meeting: { id, ws_id: id, name: 'Invited call' },
     isHost: false,
     canReadWorkspace: false,
@@ -112,7 +113,7 @@ it('renders the invited call for a non-member after sign-in', async () => {
 
 it('leaves a personal workspace call through its canonical URL', async () => {
   mocks.access.mockResolvedValue({
-    user: { id },
+    user: { id: actorId },
     meeting: { id, ws_id: id },
     isHost: true,
     canReadWorkspace: true,
@@ -152,7 +153,7 @@ it('does not turn a forbidden invite into an unrelated home-page redirect', asyn
 
 it('returns workspace guests to home without opening the meeting archive', async () => {
   mocks.access.mockResolvedValue({
-    user: { id },
+    user: { id: actorId },
     meeting: { id, ws_id: id },
     isHost: false,
     canReadWorkspace: false,
@@ -170,7 +171,7 @@ it('returns workspace guests to home without opening the meeting archive', async
 
 it('asks for a missing name before creating the realtime session', async () => {
   mocks.access.mockResolvedValue({
-    user: { id },
+    user: { id: actorId },
     meeting: { id, ws_id: id, name: 'Invited call' },
     canReadWorkspace: false,
     needsDisplayName: true,

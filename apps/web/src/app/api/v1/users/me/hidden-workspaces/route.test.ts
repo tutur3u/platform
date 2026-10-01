@@ -32,6 +32,7 @@ vi.mock('./board-share-access', () => ({
 import { GET, PUT } from './route';
 
 const ws = '00000000-0000-4000-8000-000000000010';
+const guestWs = '00000000-0000-4000-8000-000000000011';
 const request = (body: object) =>
   new Request('https://test/hidden', {
     method: 'PUT',
@@ -39,7 +40,10 @@ const request = (body: object) =>
   });
 
 describe('owner-only Hidden preferences', () => {
-  let query: Record<string, ReturnType<typeof vi.fn>>;
+  let query: Record<
+    'select' | 'eq' | 'upsert' | 'delete' | 'like',
+    ReturnType<typeof vi.fn>
+  >;
   beforeEach(() => {
     vi.clearAllMocks();
     f.actor = '00000000-0000-4000-8000-000000000001';
@@ -52,6 +56,7 @@ describe('owner-only Hidden preferences', () => {
     };
     query.like.mockReturnValue(query);
     let operation = 'read';
+    let table = 'user_workspace_configs';
     query.select.mockReturnValue(query);
     query.delete.mockImplementation(() => {
       operation = 'delete';
@@ -64,13 +69,19 @@ describe('owner-only Hidden preferences', () => {
         (operation === 'delete' && key === 'id')
       ) {
         return Promise.resolve({
-          data: [{ ws_id: ws, id: `HIDDEN_WORKSPACE:${ws}` }],
+          data:
+            table === 'user_configs'
+              ? [{ id: `HIDDEN_WORKSPACE:${guestWs}` }]
+              : [{ ws_id: ws }],
           error: null,
         });
       }
       return query;
     });
-    f.from.mockReturnValue(query);
+    f.from.mockImplementation((requestedTable: string) => {
+      table = requestedTable;
+      return query;
+    });
     f.adminFrom.mockReturnValue(query);
     f.admin.mockResolvedValue({ from: f.adminFrom });
     f.membership.mockResolvedValue({ ok: true });
@@ -84,7 +95,9 @@ describe('owner-only Hidden preferences', () => {
     expect(query.eq).toHaveBeenCalledWith('user_id', f.actor);
     expect(query.eq).toHaveBeenCalledWith('id', 'HIDDEN_WORKSPACE');
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
-    expect(await response.json()).toEqual({ hiddenWorkspaceIds: [ws] });
+    expect(await response.json()).toEqual({
+      hiddenWorkspaceIds: [ws, guestWs],
+    });
   });
   it.each([
     '00000000-0000-4000-8000-000000000002',

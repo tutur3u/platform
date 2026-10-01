@@ -136,8 +136,8 @@ describe('Hidden route with real session authentication and signed tokens', () =
     async (targetApp) => {
       const { token } = createAppSessionToken({ userId: actor, targetApp });
       for (const headers of [
-        { authorization: `Bearer ${token}` },
-        { cookie: `tuturuuu_web_app_session=${token}` },
+        new Headers({ authorization: `Bearer ${token}` }),
+        new Headers({ cookie: `tuturuuu_web_app_session=${token}` }),
       ]) {
         const response = await GET(
           new NextRequest(
