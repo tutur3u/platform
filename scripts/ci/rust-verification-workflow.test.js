@@ -158,6 +158,23 @@ test('Worker bundler installation is pinned, locked and runner-local', () => {
   assert.ok(workerJob.steps.indexOf(install) < workerJob.steps.indexOf(bundle));
 });
 
+test('semantic parser is an exact isolated public-registry tool with no scripts', () => {
+  const install = workerJob.steps.find(
+    (step) => step.name === 'Install pinned JavaScript parser'
+  );
+  assert.equal(install['timeout-minutes'], 3);
+  assert.match(
+    install.run,
+    /npm install --prefix "\$RUNNER_TEMP\/worker-verify" --ignore-scripts --no-audit --no-fund --registry=https:\/\/registry\.npmjs\.org --save-exact acorn@8\.18\.0/
+  );
+  assert.ok(
+    workerJob.steps.indexOf(install) <
+      workerJob.steps.findIndex(
+        (step) => step.name === 'Verify Worker package artifacts'
+      )
+  );
+});
+
 test('Worker package semantics reject entry drift, missing exports and broken modules', () => {
   const step = workerJob.steps.find(
     (step) => step.name === 'Verify Worker package artifacts'
@@ -169,9 +186,12 @@ test('Worker package semantics reject entry drift, missing exports and broken mo
   const run = () =>
     spawnSync('bash', ['-c', step.run], {
       cwd: dir,
-      env: { ...process.env, GITHUB_STEP_SUMMARY: summary },
+      env: { ...process.env, GITHUB_STEP_SUMMARY: summary, RUNNER_TEMP: dir },
       encoding: 'utf8',
     });
+  const parser = path.join(dir, 'worker-verify/node_modules/acorn');
+  fs.mkdirSync(path.dirname(parser), { recursive: true });
+  fs.symlinkSync(path.join(root, 'node_modules/acorn'), parser, 'dir');
   const config = path.join(dir, 'wrangler.jsonc');
   const shim = path.join(dir, 'build/worker/shim.mjs');
   const bundle = path.join(dir, 'build/index.js');
@@ -206,6 +226,36 @@ test('Worker package semantics reject entry drift, missing exports and broken mo
       [shim, "export { default } from '../missing.js';", validShim],
       [shim, "export * from '../index.js';", validShim],
       [bundle, 'export default {};', validBundle],
+      [
+        bundle,
+        'class E {}; E.prototype.fetch = function () {}; export default {};',
+        validBundle,
+      ],
+      [
+        bundle,
+        'class E {}; class Wrong {}; E.prototype.fetch = function () {}; export default new Proxy(Wrong, {});',
+        validBundle,
+      ],
+      [
+        bundle,
+        'class E {}; E.prototype.fetch = function () {}; const Wrong={}; export { Wrong as default };',
+        validBundle,
+      ],
+      [
+        bundle,
+        'let E=class {}; E.prototype.fetch = function () {}; E={}; export { E as default };',
+        validBundle,
+      ],
+      [
+        bundle,
+        'class E {}; const decoy="E.prototype.fetch = function () {}"; export { E as default };',
+        validBundle,
+      ],
+      [
+        bundle,
+        'class E {}; E.prototype.fetch = function () {}; const Proxy=Object; export default new Proxy(E, {});',
+        validBundle,
+      ],
       [bundle, 'E.prototype.fetch = ; export default {};', validBundle],
       [wasm, Buffer.from('0061736d01000000', 'hex'), validWasm],
       [wasm, 'invalid-wasm', validWasm],
