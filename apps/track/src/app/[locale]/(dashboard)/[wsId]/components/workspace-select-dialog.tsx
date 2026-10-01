@@ -39,8 +39,14 @@ export function WorkspaceSelectDialog({
 }: WorkspaceSelectDialogProps) {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
   const t = useTranslations('time-tracker.workspace_select_dialog');
+  const common = useTranslations('common');
 
-  const { data: workspaces, isLoading } = useVisibleWorkspaces(isOpen);
+  const {
+    data: workspaces,
+    isLoading,
+    error,
+    refetch,
+  } = useVisibleWorkspaces(isOpen);
 
   const availableWorkspaces = workspaces
     ?.filter((ws) => ws.id !== currentWorkspaceId)
@@ -94,7 +100,14 @@ export function WorkspaceSelectDialog({
 
           <div className="space-y-2">
             <div className="font-medium text-sm">{t('selectTarget')}</div>
-            {isLoading ? (
+            {error ? (
+              <div role="alert">
+                {common('hidden_workspaces_load_error')}
+                <Button variant="outline" onClick={() => void refetch()}>
+                  {common('retry')}
+                </Button>
+              </div>
+            ) : isLoading ? (
               <div className="flex items-center gap-2 py-3">
                 <RefreshCw className="h-4 w-4 animate-spin" />
                 <span className="text-muted-foreground text-sm">

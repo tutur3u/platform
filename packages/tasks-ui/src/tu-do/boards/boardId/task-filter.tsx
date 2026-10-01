@@ -1,4 +1,9 @@
-'use client';
+import {
+  updateBoardSourceFilter,
+  updateWorkspaceSourceFilter,
+} from './task-source-filter-updates';
+
+('use client');
 
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -445,35 +450,12 @@ export function TaskFilter({
     });
   };
 
-  const setSourceWorkspaceIds = (nextWorkspaceIds: string[]) => {
-    const selectedWorkspaces = new Set(nextWorkspaceIds);
-
-    onFiltersChange({
-      ...filters,
-      sourceScope: 'external_specific',
-      sourceWorkspaceIds: nextWorkspaceIds,
-      sourceBoardIds: selectedSourceBoardIds.filter((boardId) => {
-        const board = sourceBoards.find((item) => item.id === boardId);
-        return !board || selectedWorkspaces.has(board.workspaceId);
-      }),
-    });
-  };
-
-  const setSourceBoardIds = (nextBoardIds: string[]) => {
-    const workspaceIds = new Set(selectedSourceWorkspaceIds);
-    for (const board of sourceBoards.filter((board) =>
-      nextBoardIds.includes(board.id)
-    )) {
-      workspaceIds.add(board.workspaceId);
-    }
-
-    onFiltersChange({
-      ...filters,
-      sourceScope: 'external_specific',
-      sourceBoardIds: nextBoardIds,
-      sourceWorkspaceIds: Array.from(workspaceIds),
-    });
-  };
+  const setSourceWorkspaceIds = (next: string[]) =>
+    onFiltersChange(
+      updateWorkspaceSourceFilter(filters, sourceWorkspaces, sourceBoards, next)
+    );
+  const setSourceBoardIds = (next: string[]) =>
+    onFiltersChange(updateBoardSourceFilter(filters, sourceBoards, next));
 
   const clearAllFilters = () => {
     onFiltersChange({

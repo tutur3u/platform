@@ -50,7 +50,11 @@ export function PersonalPlacementDialog({
 
   const actor = useWorkspaceActor();
   const visible = useVisibleWorkspaces(open);
-  const { data: fetchedBoards = [], isLoading } = useQuery({
+  const {
+    data: fetchedBoards = [],
+    isLoading,
+    error: boardsError,
+  } = useQuery({
     queryKey: [
       'workspace-ui-list',
       actor?.actorId,
@@ -148,13 +152,15 @@ export function PersonalPlacementDialog({
         </DialogHeader>
 
         <div className="max-h-72 space-y-2 overflow-y-auto">
-          {isLoading ? (
+          {visible.isLoading || isLoading ? (
             <div className="flex h-28 items-center justify-center">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : personalBoards.length === 0 ? (
             <div className="rounded-lg border border-dashed p-4 text-center text-muted-foreground text-sm">
-              {t('no_personal_boards_available')}
+              {visible.error || boardsError
+                ? tCommon('hidden_workspaces_load_error')
+                : t('no_personal_boards_available')}
             </div>
           ) : (
             personalBoards.map((board) => (

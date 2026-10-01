@@ -39,12 +39,24 @@ export function useVisibleTaskSourceBoards(
       actor!.assertActive();
       const lists = await Promise.all(
         selected.map(async (workspace) => {
-          const response = await listWorkspaceTaskBoards(workspace.id, {
-            pageSize: 100,
-            status: 'active',
-          });
-          actor!.assertActive();
-          return response.boards
+          const boards = [];
+          const seen = new Set<string>();
+          for (let page = 1; ; page++) {
+            const response = await listWorkspaceTaskBoards(workspace.id, {
+              page,
+              pageSize: 100,
+              status: 'active',
+            });
+            actor!.assertActive();
+            const fresh = response.boards.filter(
+              (board) => !seen.has(board.id)
+            );
+            if (fresh.length === 0) break;
+            for (const board of fresh) seen.add(board.id);
+            boards.push(...fresh);
+            if (response.boards.length < 100) break;
+          }
+          return boards
             .filter((board) => !board.ws_id || board.ws_id === workspace.id)
             .map((board) => ({
               ...board,

@@ -83,7 +83,8 @@ export function CopyFromWorkspaceDialog({
     });
 
   const { categories, existingCategories } = useMemo(() => {
-    if (!selectedWorkspaceId) return { categories: [], existingCategories: [] };
+    if (!selectedWorkspaceVisible)
+      return { categories: [], existingCategories: [] };
 
     // Create a map of existing categories by name (case-insensitive)
     const existingCategoriesMap = new Map(
@@ -107,7 +108,7 @@ export function CopyFromWorkspaceDialog({
     });
 
     return { categories: newCategories, existingCategories: existingInCurrent };
-  }, [selectedWorkspaceId, sourceCategories, currentCategories]);
+  }, [selectedWorkspaceVisible, sourceCategories, currentCategories]);
 
   const isLoadingCategories =
     isLoadingSourceCategories || isLoadingCurrentCategories;
@@ -276,7 +277,7 @@ export function CopyFromWorkspaceDialog({
           </div>
 
           {/* Categories Selection */}
-          {selectedWorkspaceId && (
+          {selectedWorkspaceVisible && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label>

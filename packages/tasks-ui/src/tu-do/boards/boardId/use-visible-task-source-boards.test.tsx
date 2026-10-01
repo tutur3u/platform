@@ -33,7 +33,7 @@ describe('retained task source filters', () => {
   });
   function fixture() {
     const client = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
+      defaultOptions: { queries: { retry: false, retryDelay: 0 } },
     });
     const wrapper = ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={client}>
@@ -42,7 +42,7 @@ describe('retained task source filters', () => {
         </WorkspaceVisibilityProvider>
       </QueryClientProvider>
     );
-    return { wrapper };
+    return { wrapper, client };
   }
   it('queries/displays only visible retained IDs without mutating saved filters', async () => {
     const savedWs = ['hidden', 'visible'];
@@ -82,7 +82,7 @@ describe('retained task source filters', () => {
   });
   it('fails unknown visibility closed', async () => {
     f.hidden.mockRejectedValue(new Error('offline'));
-    const { wrapper } = fixture();
+    const { wrapper, client } = fixture();
     const { result } = renderHook(
       () =>
         useVisibleTaskSourceBoards(
@@ -93,8 +93,48 @@ describe('retained task source filters', () => {
         ),
       { wrapper }
     );
-    await waitFor(() => expect(f.hidden).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(
+        client.getQueryState(['workspace-hidden', 'actor-A'])?.status
+      ).toBe('error')
+    );
     expect(f.boards).not.toHaveBeenCalled();
     expect(result.current.sourceBoards).toEqual([]);
   });
+});
+
+it('loads source boards beyond a full first page', async () => {
+  f.hidden.mockResolvedValue({ hiddenWorkspaceIds: ['hidden'] });
+  f.boards.mockReset();
+  f.boards.mockResolvedValueOnce({
+    boards: Array.from({ length: 100 }, (_, index) => ({
+      id: `board-${index}`,
+      ws_id: 'visible',
+    })),
+  });
+  f.boards.mockResolvedValueOnce({
+    boards: [{ id: 'last-board', ws_id: 'visible' }],
+  });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, retryDelay: 0 } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={client}>
+      <WorkspaceVisibilityProvider actorId="actor-A">
+        {children}
+      </WorkspaceVisibilityProvider>
+    </QueryClientProvider>
+  );
+  const { result } = renderHook(
+    () =>
+      useVisibleTaskSourceBoards(true, 'visible', ['visible'], ['last-board']),
+    { wrapper }
+  );
+  await waitFor(() =>
+    expect(result.current.visibleBoardIds).toEqual(['last-board'])
+  );
+  expect(result.current.sourceBoards).toHaveLength(101);
+  expect(f.boards.mock.calls.map(([, options]) => options.page)).toEqual([
+    1, 2,
+  ]);
 });

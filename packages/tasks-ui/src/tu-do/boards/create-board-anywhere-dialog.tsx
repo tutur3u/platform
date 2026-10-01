@@ -68,7 +68,9 @@ export function CreateBoardAnywhereDialog({
         })
       );
       actor!.assertActive();
-      return permissions.filter((workspace) => workspace !== null);
+      return permissions
+        .filter((workspace) => workspace !== null)
+        .map((workspace) => workspace.id);
     },
     enabled: open && !!actor && visible.data !== undefined,
     staleTime: 5 * 60 * 1000,
@@ -76,17 +78,14 @@ export function CreateBoardAnywhereDialog({
 
   const workspaceOptions = useMemo(
     () =>
-      (visible.data
-        ? (workspacesQuery.data ?? []).filter((workspace) =>
-            visible.data!.some((choice) => choice.id === workspace.id)
-          )
-        : []
-      ).map((workspace) => ({
-        value: workspace.id,
-        label: workspace.name || t('untitled_workspace'),
-        description: workspace.personal ? t('personal_workspace') : undefined,
-        icon: <KanbanSquare className="size-4" />,
-      })),
+      (visible.data ?? [])
+        .filter((workspace) => workspacesQuery.data?.includes(workspace.id))
+        .map((workspace) => ({
+          value: workspace.id,
+          label: workspace.name || t('untitled_workspace'),
+          description: workspace.personal ? t('personal_workspace') : undefined,
+          icon: <KanbanSquare className="size-4" />,
+        })),
     [t, workspacesQuery.data, visible.data]
   );
 
@@ -160,9 +159,13 @@ export function CreateBoardAnywhereDialog({
             <Label>{t('workspace')}</Label>
             <Combobox
               ariaLabel={t('workspace')}
-              disabled={workspacesQuery.isLoading || !hasWorkspaceOptions}
+              disabled={
+                visible.isLoading ||
+                workspacesQuery.isLoading ||
+                !hasWorkspaceOptions
+              }
               emptyText={
-                workspacesQuery.isError
+                visible.error || workspacesQuery.isError
                   ? t('workspace_error')
                   : t('workspace_empty')
               }
@@ -171,7 +174,7 @@ export function CreateBoardAnywhereDialog({
               }
               options={workspaceOptions}
               placeholder={
-                workspacesQuery.isLoading
+                visible.isLoading || workspacesQuery.isLoading
                   ? t('workspace_loading')
                   : t('workspace_placeholder')
               }

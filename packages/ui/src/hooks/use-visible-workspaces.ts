@@ -8,15 +8,26 @@ import {
 } from './use-workspace-visibility';
 
 /** UI choices only. Do not use this hook for access or membership reconciliation. */
-export function useVisibleWorkspaces(enabled = true, limit?: number) {
+export function useVisibleWorkspaces(
+  enabled = true,
+  limit?: number,
+  options?: { refetchInterval?: number }
+) {
   const actor = useWorkspaceActor();
   const visibility = useWorkspaceVisibility();
   const query = useQuery({
-    queryKey: ['workspace-ui-list', actor?.actorId, ...(limit ? [limit] : [])],
+    queryKey: [
+      'workspace-ui-list',
+      actor?.actorId,
+      ...(limit !== undefined ? [limit] : []),
+    ],
     enabled: enabled && Boolean(actor),
+    refetchInterval: options?.refetchInterval,
     queryFn: async () => {
       actor!.assertActive();
-      const result = await listWorkspaces(limit ? { limit } : undefined);
+      const result = await listWorkspaces(
+        limit !== undefined ? { limit } : undefined
+      );
       actor!.assertActive();
       return result;
     },
@@ -29,7 +40,8 @@ export function useVisibleWorkspaces(enabled = true, limit?: number) {
   return {
     ...query,
     data,
-    isLoading: query.isLoading || !visibility.known,
+    isLoading: query.isLoading || (!visibility.known && !visibility.isError),
+    isError: query.isError || visibility.isError,
     error: query.error ?? visibility.error,
     refetch: async () => {
       await visibility.refetch();

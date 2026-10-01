@@ -14,7 +14,9 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
   const [filterWorkspace, setFilterWorkspace] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const workspacesQuery = useVisibleWorkspaces();
+  const workspacesQuery = useVisibleWorkspaces(true, undefined, {
+    refetchInterval: 300_000,
+  });
   const workspaces = workspacesQuery.data ?? [];
 
   const filteredLogs = useMemo(() => {

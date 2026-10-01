@@ -192,6 +192,13 @@ export function useWorkspaceVisibility() {
   }
   return {
     ...query,
+    refetch: async () => {
+      scope?.assertActive();
+      const result = await query.refetch();
+      scope?.assertActive();
+      if (!result.error) setUpdateError(null);
+      return result;
+    },
     accountDenied,
     actorId,
     hiddenIds: ids ?? [],

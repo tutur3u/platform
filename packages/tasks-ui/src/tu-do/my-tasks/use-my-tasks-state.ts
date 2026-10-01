@@ -8,7 +8,6 @@ import {
   listWorkspaceBoardsWithLists,
   listWorkspaceLabels,
   listWorkspaceMembers,
-  listWorkspaces,
   listWorkspaceTaskBoards,
   listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
@@ -269,17 +268,6 @@ export function useMyTasksState({
   }, [onUpdate, handleUpdate]);
 
   const actor = useWorkspaceActor();
-  const { data: canonicalWorkspaces } = useQuery({
-    queryKey: ['user-workspaces', userId],
-    queryFn: async () => {
-      actor!.assertActive();
-      const result = await listWorkspaces();
-      actor!.assertActive();
-      return result;
-    },
-    enabled: isPersonal && actor?.actorId === userId,
-  });
-
   const { data: workspacesData } = useVisibleWorkspaces(isPersonal);
   const { data: canonicalBoards = [] } = useQuery({
     queryKey: ['all-user-boards', userId],
@@ -395,10 +383,10 @@ export function useMyTasksState({
   const allWorkspaceIds = useMemo(
     () =>
       (isPersonal
-        ? canonicalWorkspaces?.map((ws) => ws.id) || []
+        ? workspacesData?.map((ws) => ws.id) || []
         : [wsId]
       ).toSorted(),
-    [isPersonal, canonicalWorkspaces, wsId]
+    [isPersonal, workspacesData, wsId]
   );
 
   const { data: workspaceLabels = [] } = useQuery({

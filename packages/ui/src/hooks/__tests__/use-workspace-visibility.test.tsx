@@ -61,6 +61,10 @@ describe('private owner-scoped workspace visibility', () => {
     expect(hook.result.current.hiddenIds).toEqual([]);
     expect(hook.result.current.updateError).not.toBeNull();
     expect(mocks.put).toHaveBeenCalledWith('ws-1', true, 'A');
+    await act(async () => {
+      await hook.result.current.refetch();
+    });
+    expect(hook.result.current.updateError).toBeNull();
   });
   it('a stale refresh cannot replace optimistic state', async () => {
     const hook = setup();
