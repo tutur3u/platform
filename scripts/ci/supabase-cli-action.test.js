@@ -132,13 +132,14 @@ test('temporary home protects Bun; restoration keeps CLI available and detects o
 });
 
 // Execute the actual composite conditions, using a stub instead of the remote installer.
-function runComposite(failures) {
+function runComposite(failures, steps = action.runs.steps) {
   const outcomes = {};
+  const events = [];
   const delays = [];
   let attempts = 0;
   let failed = false;
   let restored = false;
-  for (const step of action.runs.steps) {
+  for (const step of steps) {
     const condition = (step.if || 'true')
       .replace(/always\(\)/g, 'true')
       .replace(/steps\.([\w-]+)\.outcome/g, (_, id) =>
@@ -152,10 +153,15 @@ function runComposite(failures) {
         failed = true;
     } else if (step.run.startsWith('sleep '))
       delays.push(Number(step.run.slice(6)));
-    else if (step.run.includes('restore')) restored = true;
-    else if (step.run === 'exit 1') failed = true;
+    else if (step.run.includes('restore')) {
+      restored = true;
+      events.push('restore');
+    } else if (step.run === 'exit 1') {
+      failed = true;
+      events.push('exhausted-exit');
+    }
   }
-  return { attempts, delays, failed, restored };
+  return { attempts, delays, failed, restored, events };
 }
 
 test('actual composite retries transient failures and propagates exhausted retries after restoration', () => {
@@ -164,25 +170,82 @@ test('actual composite retries transient failures and propagates exhausted retri
     delays: [],
     failed: false,
     restored: true,
+    events: ['restore'],
   });
   assert.deepEqual(runComposite(1), {
     attempts: 2,
     delays: [5],
     failed: false,
     restored: true,
+    events: ['restore'],
   });
   assert.deepEqual(runComposite(3), {
     attempts: 4,
     delays: [5, 10, 20],
     failed: false,
     restored: true,
+    events: ['restore'],
   });
   assert.deepEqual(runComposite(4), {
     attempts: 4,
     delays: [5, 10, 20],
     failed: true,
     restored: true,
+    events: ['restore', 'exhausted-exit'],
   });
+});
+
+test('retry ordering detects an exhausted exit moved before restoration', () => {
+  const steps = structuredClone(action.runs.steps);
+  const failure = steps.findIndex((step) => step.run === 'exit 1');
+  const restoreAt = steps.findIndex((step) => step.run?.includes(' restore'));
+  assert.ok(restoreAt >= 0 && failure > restoreAt);
+  const [exit] = steps.splice(failure, 1);
+  steps.splice(restoreAt, 0, exit);
+  assert.deepEqual(runComposite(4, steps).events, [
+    'exhausted-exit',
+    'restore',
+  ]);
+  assert.notDeepEqual(runComposite(4, steps).events, runComposite(4).events);
+});
+
+function assertCallerCheckouts(workflow) {
+  for (const [jobId, job] of Object.entries(workflow.jobs || {})) {
+    const steps = job.steps || [];
+    for (const [index, step] of steps.entries()) {
+      if (step.uses !== './.github/actions/setup-supabase-cli-with-retry')
+        continue;
+      const preceding = steps.slice(0, index);
+      assert.ok(
+        preceding.some(
+          (candidate) =>
+            candidate.uses?.startsWith('actions/checkout@') &&
+            candidate.if === undefined
+        ),
+        `${jobId}: Supabase setup at step ${index} requires a preceding checkout`
+      );
+    }
+  }
+}
+
+test('caller checkout validation rejects missing, late and cross-job checkouts', () => {
+  const checkout = { uses: 'actions/checkout@v7' };
+  const setup = { uses: './.github/actions/setup-supabase-cli-with-retry' };
+  assert.doesNotThrow(() =>
+    assertCallerCheckouts({
+      jobs: { good: { steps: [checkout, setup, setup] } },
+    })
+  );
+  for (const jobs of [
+    { missing: { steps: [setup] } },
+    { skipped: { steps: [{ ...checkout, if: 'false' }, setup] } },
+    { late: { steps: [setup, checkout, setup] } },
+    { good: { steps: [checkout, setup] }, bad: { steps: [setup] } },
+  ])
+    assert.throws(
+      () => assertCallerCheckouts({ jobs }),
+      /requires a preceding checkout/
+    );
 });
 
 test('installer passes only supported explicit version and scoped home; callers checkout before setup', () => {
@@ -211,10 +274,20 @@ test('installer passes only supported explicit version and scoped home; callers 
     );
     assert.doesNotMatch(source, /uses: supabase\/setup-cli@/);
     if (source.includes('./.github/actions/setup-supabase-cli-with-retry')) {
-      assert.ok(
-        source.indexOf('actions/checkout') <
-          source.indexOf('./.github/actions/setup-supabase-cli-with-retry')
+      const workflow = JSON.parse(
+        execFileSync(
+          'ruby',
+          [
+            '-ryaml',
+            '-rjson',
+            '-e',
+            'puts JSON.generate(YAML.load_file(ARGV[0]))',
+            path.join(root, '.github/workflows', name),
+          ],
+          { encoding: 'utf8' }
+        )
       );
+      assertCallerCheckouts(workflow);
       assert.doesNotMatch(source, /github-token:/);
     }
   }
