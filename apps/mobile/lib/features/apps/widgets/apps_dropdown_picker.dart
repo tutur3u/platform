@@ -73,8 +73,9 @@ Future<void> showAppsPicker(
 }
 
 class AppsScreen extends StatefulWidget {
-  const AppsScreen({this.replayToken = 0, super.key});
+  const AppsScreen({this.replayToken = 0, this.isActive = true, super.key});
   final int replayToken;
+  final bool isActive;
 
   @override
   State<AppsScreen> createState() => _AppsScreenState();
@@ -181,6 +182,7 @@ class _AppsScreenState extends State<AppsScreen> {
         ),
         Expanded(
           child: AppsHubPage(
+            isActive: widget.isActive,
             query: _search.text,
             showGrid: _showGrid,
             replayToken: widget.replayToken,
