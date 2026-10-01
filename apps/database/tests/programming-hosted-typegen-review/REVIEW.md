@@ -1,6 +1,7 @@
 # Inert hosted full-schema/typegen proposal
 
-This directory is source for review. `workflow.yaml.txt` is outside
+This directory is source for review. The PR also includes a narrow atomic-metadata
+fix in the existing supported helper, without adding an automatic caller. `workflow.yaml.txt` is outside
 .github/workflows; no switchboard registration or automatic caller is added.
 No Docker, network-policy, database, full-stack, build, install, typegen or workflow
 execution is admitted by source publication. Activation and dispatch require a
@@ -147,6 +148,21 @@ file/rename. Failed initial ownership writes remove exactly that staged root;
 failed removal reports the remaining scoped recovery path. Later state writes
 cannot truncate the previously recorded ownership. Staging never starts Docker.
 
+The supported helper's own recovery file also uses exclusive temporary writes
+and a same-directory atomic rename for staging and every lifecycle transition.
+A SIGKILL during a write leaves the preceding complete recovery record readable;
+a partial temporary can remain until scoped cleanup removes the owned root. A
+normal write failure removes its temporary in finally. This is process-interruption
+atomicity, not a claim of fsync-backed power-loss durability.
+
+The regression runs the actual helper lifecycle in synthetic subprocesses, pauses
+its real metadata writer after a partial temporary write, and SIGKILLs the owned
+group at starting/resetting/testing/typegen. The actual recovery reader must parse
+the preceding complete record. That record then drives the actual supported
+cleanup function with a mocked CLI runner, verifying exact project/root stop args
+and actual owned-root removal. No Docker or SQL work is performed. A separate
+normal-transition test exercises the helper's default metadata writer throughout.
+
 Lifecycle AND cleanup helpers run in new POSIX process groups. Timeout, monitor
 failure or SIGTERM/SIGINT kills the owned group, covering helper and inherited
 Supabase CLI descendants. The wrapper also terminates leftover descendants when
@@ -184,15 +200,16 @@ No artifact was generated or uploaded by source validation.
 From repository root, using existing Node and normal Tuturuuu resource FIFO:
 
 ```sh
-node --test apps/database/tests/programming-hosted-typegen-review/guards.node-test.mjs apps/database/tests/programming-hosted-typegen-review/lifecycle.node-test.mjs
+node --test apps/database/tests/programming-hosted-typegen-review/guards.node-test.mjs apps/database/tests/programming-hosted-typegen-review/lifecycle.node-test.mjs apps/database/tests/programming-hosted-typegen-review/metadata.node-test.mjs
+node --check apps/database/scripts/run-supabase-isolated.js
 node --check apps/database/tests/programming-hosted-typegen-review/proposal.mjs
 node --check apps/database/tests/programming-hosted-typegen-review/process-group.mjs
 node --check apps/database/tests/programming-hosted-typegen-review/network-policy.mjs
-node node_modules/@biomejs/biome/bin/biome format apps/database/tests/programming-hosted-typegen-review/*.mjs
+node node_modules/@biomejs/biome/bin/biome format apps/database/scripts/run-supabase-isolated.js apps/database/tests/programming-hosted-typegen-review/*.mjs
 git diff --check
 ```
 
-Tests cover real helper staging/metadata/output validation using owned synthetic
+The latest 21 source tests passed. Tests cover real helper staging/metadata/output validation using owned synthetic
 filesystem fixtures; failed ownership writes; mocked resume/cleanup argv and
 bounds; changed identity/residue/interruption denial; fail-closed policy metadata;
 and harmless fake helper/CLI descendants killed on timeout, interruption and

@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import {
   copyFile,
   mkdir,
   mkdtemp,
   readFile,
+  rename,
   rm,
   writeFile,
 } from 'node:fs/promises';
@@ -289,11 +290,27 @@ export function validateFocusedTestPath(repositoryRoot, testPath) {
   return normalized;
 }
 
-async function writeMetadata(disposableRoot, metadata) {
-  await writeFile(
-    path.join(disposableRoot, METADATA_FILE),
-    `${JSON.stringify(metadata, null, 2)}\n`
+export async function writeMetadata(
+  disposableRoot,
+  metadata,
+  { write = writeFile, move = rename, remove = rm } = {}
+) {
+  const target = path.join(disposableRoot, METADATA_FILE);
+  const temporary = path.join(
+    disposableRoot,
+    `${METADATA_FILE}.${randomUUID()}.tmp`
   );
+  try {
+    // A killed lifecycle may leave this temporary file partial, while the sole
+    // recovery record stays complete until same-directory atomic replacement.
+    await write(temporary, `${JSON.stringify(metadata, null, 2)}\n`, {
+      flag: 'wx',
+      mode: 0o600,
+    });
+    await move(temporary, target);
+  } finally {
+    await remove(temporary, { force: true });
+  }
 }
 
 export async function readLifecycleMetadata(disposableRoot, options) {
