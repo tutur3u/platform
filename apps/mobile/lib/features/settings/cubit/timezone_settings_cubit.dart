@@ -57,6 +57,7 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
   }) async {
     final generation = ++_generation;
     final previous = state;
+    final sameUser = userId != null && _userId == userId;
     final sameScope = _userId == userId && _workspaceId == workspaceId;
     if (_userId != userId) _retryAt = null;
     _userId = userId;
@@ -64,11 +65,12 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
     if (_retryAt?.isAfter(_clock()) ?? false) {
       emit(
         TimezoneSettingsState(
-          personal: sameScope ? previous.personal : 'auto',
+          personal: sameUser ? previous.personal : 'auto',
           workspace: sameScope ? previous.workspace : 'auto',
           device: sameScope ? previous.device : 'UTC',
           resolved: sameScope && previous.resolved,
-          personalLoaded: sameScope && previous.personalLoaded,
+          personalLoaded:
+              sameUser && (previous.resolved || previous.personalLoaded),
           workspaceLoaded: sameScope && previous.workspaceLoaded,
           loading: false,
           failed: true,
@@ -172,10 +174,24 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
                   retryAt: _retryAt,
                 )
               : TimezoneSettingsState(
-                  personal: personalRead ?? 'auto',
-                  workspace: workspaceRead ?? 'auto',
-                  personalLoaded: personalRead != null,
-                  workspaceLoaded: workspaceRead != null,
+                  personal:
+                      personalRead ??
+                      (sameUser &&
+                              (previous.resolved || previous.personalLoaded)
+                          ? previous.personal
+                          : 'auto'),
+                  workspace:
+                      workspaceRead ??
+                      (sameScope && previous.workspaceLoaded
+                          ? previous.workspace
+                          : 'auto'),
+                  personalLoaded:
+                      personalRead != null ||
+                      (sameUser &&
+                          (previous.resolved || previous.personalLoaded)),
+                  workspaceLoaded:
+                      workspaceRead != null ||
+                      (sameScope && previous.workspaceLoaded),
                   loading: false,
                   failed: true,
                   retryAt: _retryAt,

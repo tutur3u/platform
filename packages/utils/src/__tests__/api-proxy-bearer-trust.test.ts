@@ -89,6 +89,34 @@ describe('native Calendar gateway verified session parity', () => {
   });
   afterEach(() => vi.unstubAllEnvs());
 
+  it('allows a verified native session with available per-session budget', async () => {
+    const key = verifiedKey();
+    mocks.trust.mockResolvedValue(new Map([[key, { m: 1, verified: true }]]));
+    mocks.limit.mockResolvedValue({
+      success: true,
+      limit: 60,
+      remaining: 59,
+      reset: Date.now() + 30_000,
+    });
+    expect(await request()).toBeNull();
+    expect(mocks.limit).toHaveBeenCalledWith(key);
+  });
+
+  it('keeps unsupported separator whitespace aligned with server cache keys', async () => {
+    const header = `Bearer  ${token}`;
+    expect(
+      buildAbuseRiskSubjects({ headers: { authorization: header } }).some(
+        (subject) => subject.subject_type === 'session'
+      )
+    ).toBe(false);
+    mocks.trust.mockResolvedValue(
+      new Map([[verifiedKey(), { m: 1, verified: true }]])
+    );
+    const response = await request(header);
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
+    expect(mocks.limit).toHaveBeenCalledWith('ip:192.0.2.1');
+  });
+
   it('uses exactly the authenticated server key, preserving rate limits and Retry-After', async () => {
     const key = verifiedKey();
     mocks.trust.mockImplementation(async (keys: string[]) => {
