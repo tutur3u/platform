@@ -256,9 +256,9 @@ class _MultiDayEventCardSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = EventColors.fromString(event.color);
-    final foregroundColor = EventColors.bright(event.color);
-    final backgroundColor = EventColors.background(event.color);
+    final accentColor = EventColors.forEvent(event);
+    final foregroundColor = EventColors.foreground(event);
+    final backgroundColor = EventColors.forEvent(event);
     final start = event.startAt;
     final end = event.endAt ?? start;
     final lineHeight =
@@ -311,7 +311,7 @@ class _MultiDayEventCardSurface extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: foregroundColor.withValues(alpha: 0.78),
+                    color: foregroundColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -410,8 +410,8 @@ class _MultiDayAllDayChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = EventColors.fromString(event.color);
-    final foregroundColor = EventColors.bright(event.color);
+    final accentColor = EventColors.forEvent(event);
+    final foregroundColor = EventColors.foreground(event);
 
     return Material(
       color: Colors.transparent,
@@ -421,7 +421,7 @@ class _MultiDayAllDayChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
-            color: EventColors.background(event.color),
+            color: EventColors.forEvent(event),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: accentColor.withValues(alpha: 0.22)),
           ),

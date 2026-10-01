@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createCalendarEventLookup } from '../../../../hooks/calendar-event-lookup';
 
 const state = vi.hoisted(() => ({
   openModal: vi.fn(),
@@ -8,15 +9,18 @@ const state = vi.hoisted(() => ({
   events: [] as CalendarEvent[],
   weekStartsOn: 0,
   zone: 'America/New_York',
+  useZonedLookup: false,
 }));
 vi.mock('@tuturuuu/ui/hooks/use-calendar', () => ({
   useCalendar: () => ({
     ...state,
     getCurrentEvents: (day: Date) =>
-      state.events.filter(
-        (event) =>
-          new Date(event.start_at).toDateString() === day.toDateString()
-      ),
+      state.useZonedLookup
+        ? createCalendarEventLookup(state.events, state.zone)(day)
+        : state.events.filter(
+            (event) =>
+              new Date(event.start_at).toDateString() === day.toDateString()
+          ),
   }),
 }));
 vi.mock('@tuturuuu/ui/hooks/use-calendar-preferences', () => ({
@@ -49,6 +53,7 @@ const date = new Date(2026, 8, 7);
 beforeEach(() => {
   state.weekStartsOn = 0;
   state.zone = 'America/New_York';
+  state.useZonedLookup = false;
   state.openModal.mockClear();
   state.addEmptyEvent.mockClear();
   state.events = Array.from(
@@ -190,6 +195,7 @@ describe('calendar view interactions', () => {
     ).toHaveAccessibleName(new RegExp(`September ${day}, 2026`));
   });
   it('uses the calendar Today and event clock in agenda', () => {
+    state.useZonedLookup = true;
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-08T01:00:00Z'));
     state.events = [
@@ -206,4 +212,43 @@ describe('calendar view interactions', () => {
       '19:00'
     );
   });
+});
+
+describe('calendar view opaque effective colors', () => {
+  it.each([false, true])(
+    'uses provider RGB in month and agenda, inherited=%s',
+    (inherited) => {
+      state.events = [
+        {
+          id: 'rgb',
+          title: 'RGB event',
+          color: 'BLUE',
+          start_at: new Date(2026, 8, 7, 10).toISOString(),
+          end_at: new Date(2026, 8, 7, 11).toISOString(),
+          _calendarColor: '#ff80ab',
+          scheduling_metadata: {
+            google_color: { version: 1, inherited, background: '#00ff88' },
+          },
+        },
+      ];
+      const rgb = inherited ? 'rgb(255, 128, 171)' : 'rgb(0, 255, 136)';
+      const month = render(
+        <MonthCalendar date={date} viewedMonth={date} locale="en" />
+      );
+      expect(
+        screen.getByRole('button', { name: /RGB event/ }).style.backgroundColor
+      ).toBe(rgb);
+      expect(
+        screen.getByRole('button', { name: /RGB event/ }).style.color
+      ).toBe('rgb(0, 0, 0)');
+      month.unmount();
+      render(<AgendaView startDate={date} locale="en" daysToShow={1} />);
+      expect(
+        screen.getByRole('button', { name: /RGB event/ }).style.backgroundColor
+      ).toBe(rgb);
+      expect(
+        screen.getByRole('button', { name: /RGB event/ }).style.color
+      ).toBe('rgb(0, 0, 0)');
+    }
+  );
 });

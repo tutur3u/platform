@@ -1,6 +1,7 @@
 import { Play, StopCircle } from '@tuturuuu/icons';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { Separator } from '@tuturuuu/ui/separator';
+import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
@@ -158,8 +159,8 @@ export const DynamicIsland = () => {
   const hasEvents = events?.length > 0 || !!upcomingEvent;
   const hidden = isEditing() || !hasEvents;
 
-  const color =
-    (isUpcoming ? upcomingEvent?.color : events?.[0]?.color) ?? 'BLUE';
+  const activeEvent = isUpcoming ? upcomingEvent : events?.[0];
+  const color = activeEvent?.color ?? 'BLUE';
   const { bg, text } = getEventStyles(color);
 
   return (
@@ -177,6 +178,7 @@ export const DynamicIsland = () => {
               : 'w-full justify-between'
         } duration-300`}
         style={{
+          ...calendarEventStyle(activeEvent ?? {}),
           transition: 'width 1s, opacity 300ms',
         }}
       >

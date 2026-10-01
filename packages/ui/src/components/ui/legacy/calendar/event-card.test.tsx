@@ -19,6 +19,9 @@ class ResizeObserverMock {
 }
 
 const calendarMocks = vi.hoisted(() => ({
+  hoveredBaseEventId: null as string | null,
+  hoveredEventColumn: null as number | null,
+  preservePastEventOpacity: true,
   deleteEvent: vi.fn(),
   hideModal: vi.fn(),
   isEventReadOnly: vi.fn(() => true),
@@ -34,11 +37,11 @@ vi.mock('@tuturuuu/ui/hooks/use-calendar', () => ({
     deleteEvent: calendarMocks.deleteEvent,
     disableBuiltInEventUi: true,
     hideModal: calendarMocks.hideModal,
-    hoveredBaseEventId: null,
-    hoveredEventColumn: null,
+    hoveredBaseEventId: calendarMocks.hoveredBaseEventId,
+    hoveredEventColumn: calendarMocks.hoveredEventColumn,
     isEventReadOnly: calendarMocks.isEventReadOnly,
     openModal: calendarMocks.openModal,
-    preservePastEventOpacity: true,
+    preservePastEventOpacity: calendarMocks.preservePastEventOpacity,
     readOnly: false,
     renderEventContextMenu: undefined,
     setHoveredBaseEventId: calendarMocks.setHoveredBaseEventId,
@@ -80,12 +83,96 @@ function renderEventCard(event: CalendarEvent) {
 describe('EventCard read-only adapter events', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    calendarMocks.hoveredBaseEventId = null;
+    calendarMocks.hoveredEventColumn = null;
+    calendarMocks.preservePastEventOpacity = true;
     vi.stubGlobal('ResizeObserver', ResizeObserverMock);
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
       callback(0);
       return 0;
     });
   });
+
+  it('renders opaque RGB and contrast text on a timed event', () => {
+    renderEventCard({
+      id: 'rgb',
+      title: 'RGB event',
+      color: 'BLUE',
+      start_at: '2026-06-26T08:30:00.000Z',
+      end_at: '2026-06-26T09:30:00.000Z',
+      scheduling_metadata: {
+        google_color: { version: 1, inherited: false, background: '#00ff88' },
+      },
+    });
+    const card = screen.getByTestId('calendar-event-rgb');
+    expect(card.style.backgroundColor).toBe('rgb(0, 255, 136)');
+    expect(card.style.color).toBe('rgb(0, 0, 0)');
+    expect(card.style.opacity).toBe('1');
+  });
+
+  it('keeps pending and past fills opaque, and reveals lower stacks by hiding upper cards', () => {
+    calendarMocks.preservePastEventOpacity = false;
+    calendarMocks.hoveredBaseEventId = 'base';
+    calendarMocks.hoveredEventColumn = 0;
+    const base = {
+      id: 'stack',
+      title: 'Stack',
+      color: 'BLUE' as const,
+      start_at: '2026-06-26T08:30:00.000Z',
+      end_at: '2026-06-26T09:30:00.000Z',
+      _column: 1,
+      _overlapCount: 2,
+      _overlapGroup: ['base', 'stack'],
+      _optimisticStatus: 'updating',
+      scheduling_metadata: {
+        google_color: { version: 1, inherited: false, background: '#00ff88' },
+      },
+    };
+    const rendered = renderEventCard(base);
+    const card = screen.getByTestId('calendar-event-stack');
+    expect(card.style.opacity).toBe('1');
+    expect(card.style.visibility).toBe('hidden');
+    expect(card.style.backgroundColor).toBe('rgb(0, 255, 136)');
+    expect(card.className).not.toMatch(/opacity-(?:30|50|60|80)/);
+    rendered.unmount();
+    calendarMocks.hoveredBaseEventId = null;
+    calendarMocks.hoveredEventColumn = null;
+    renderEventCard(base);
+    expect(screen.getByTestId('calendar-event-stack').style.visibility).toBe(
+      'visible'
+    );
+    expect(screen.getByTestId('calendar-event-stack').style.opacity).toBe('1');
+  });
+
+  it.each(['drag', 'resize'] as const)(
+    'keeps provider fill and text opaque during %s pickup',
+    (interaction) => {
+      calendarMocks.isEventReadOnly.mockReturnValueOnce(false);
+      const { container } = renderEventCard({
+        id: 'interaction',
+        title: 'Interactive RGB',
+        color: 'BLUE',
+        start_at: '2026-06-26T08:30:00.000Z',
+        end_at: '2026-06-26T09:30:00.000Z',
+        scheduling_metadata: {
+          google_color: { version: 1, inherited: false, background: '#00ff88' },
+        },
+      });
+      const card = screen.getByTestId('calendar-event-interaction');
+      const handle =
+        interaction === 'resize'
+          ? container.querySelector('.cursor-s-resize')!
+          : screen.getByText('Interactive RGB');
+      fireEvent.mouseDown(handle, { button: 0, clientX: 20, clientY: 20 });
+      expect(card).toHaveClass('shadow-md');
+      expect(card.style.backgroundColor).toBe('rgb(0, 255, 136)');
+      expect(card.style.color).toBe('rgb(0, 0, 0)');
+      expect(card.style.opacity).toBe('1');
+      expect(card.className).not.toMatch(/opacity-(?:30|50|60|80)/);
+      fireEvent.mouseUp(window, { clientX: 20, clientY: 20 });
+      expect(calendarMocks.updateEvent).not.toHaveBeenCalled();
+    }
+  );
 
   it('opens read-only events but hides resize controls', () => {
     const { container } = renderEventCard({
@@ -170,8 +257,7 @@ describe('EventCard read-only adapter events', () => {
     } as CalendarEvent & { _optimisticStatus: 'updating' });
 
     expect(screen.getByTestId('calendar-event-event-updating')).toHaveClass(
-      'outline-dashed',
-      'opacity-60'
+      'outline-dashed'
     );
   });
 });
