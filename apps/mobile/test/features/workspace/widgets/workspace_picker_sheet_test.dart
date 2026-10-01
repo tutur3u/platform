@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/data/models/workspace_limits.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/hidden_workspaces_settings_row.dart';
@@ -400,5 +401,117 @@ void main() {
         expect(find.byType(Dialog), findsNothing);
       },
     );
+
+    Future<void> openPicker(
+      WidgetTester tester,
+      WorkspaceState state, {
+      Stream<WorkspaceState>? stream,
+    }) async {
+      when(() => workspaceCubit.state).thenReturn(state);
+      whenListen(
+        workspaceCubit,
+        stream ?? const Stream<WorkspaceState>.empty(),
+        initialState: state,
+      );
+      await tester.pumpApp(
+        BlocProvider.value(
+          value: workspaceCubit,
+          child: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => showWorkspacePickerSheet(context),
+                child: const Text('Open picker'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open picker'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets(
+      'explains the disabled creation action at the workspace limit',
+      (tester) async {
+        await openPicker(
+          tester,
+          const WorkspaceState(
+            status: WorkspaceStatus.loaded,
+            workspaces: [proWorkspace, freeWorkspace],
+            limits: WorkspaceLimits(
+              canCreate: false,
+              currentCount: 2,
+              limit: 2,
+            ),
+          ),
+        );
+        expect(find.text('2 of 2 workspaces used'), findsOneWidget);
+        expect(
+          find.text('You have reached the workspace limit'),
+          findsOneWidget,
+        );
+        final add = tester.widget<FloatingActionButton>(
+          find.widgetWithIcon(FloatingActionButton, Icons.add_rounded),
+        );
+        expect(add.onPressed, isNull);
+      },
+    );
+    testWidgets('shows one private load error and an accessible retry', (
+      tester,
+    ) async {
+      when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
+      await openPicker(
+        tester,
+        const WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          workspaces: [proWorkspace],
+          visibilityStatus: WorkspaceStatus.error,
+          visibilityError: 'offline',
+        ),
+      );
+      expect(
+        find.text(
+          'Unable to refresh Hidden workspaces. Your saved list is kept.',
+        ),
+        findsOneWidget,
+      );
+      clearInteractions(workspaceCubit);
+      await tester.tap(find.text('Retry'));
+      verify(() => workspaceCubit.refreshHiddenWorkspaces()).called(1);
+      expect(find.text('Product'), findsNothing);
+    });
+    testWidgets('recovers all-Hidden choices in the same fullscreen route '
+        'and returns in place', (tester) async {
+      const state = WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        workspaces: [proWorkspace],
+        hiddenWorkspaceIds: ['ws_1'],
+        visibilityResolved: true,
+        visibilityStatus: WorkspaceStatus.loaded,
+      );
+      final updates = StreamController<WorkspaceState>();
+      addTearDown(updates.close);
+      when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
+      when(
+        () => workspaceCubit.setWorkspaceHidden('ws_1', hidden: false),
+      ).thenAnswer((_) async {
+        updates.add(state.copyWith(hiddenWorkspaceIds: []));
+      });
+      await openPicker(tester, state, stream: updates.stream);
+      await tester.tap(find.text('Hidden workspaces'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.text('Product'), findsOneWidget);
+      await tester.tap(find.byTooltip('Restore: Product'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsOneWidget);
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+      expect(find.text('Product'), findsOneWidget);
+      verifyNever(() => workspaceCubit.selectWorkspace(proWorkspace));
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsNothing);
+    });
   });
 }

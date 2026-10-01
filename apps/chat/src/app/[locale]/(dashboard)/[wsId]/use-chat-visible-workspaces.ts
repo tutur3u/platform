@@ -6,56 +6,34 @@ import {
   useWorkspaceVisibility,
 } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { useMemo } from 'react';
-import { fetchWorkspacesPage } from './actions';
+import { fetchWorkspaces } from './actions';
 
-/** Paginate canonical discovery, then project only the current actor's choices. */
+/** The server returns the canonical list once; Hidden changes only its UI projection. */
 export function useChatVisibleWorkspaces() {
   const actor = useWorkspaceActor();
   const visibility = useWorkspaceVisibility();
-  type Page = Awaited<ReturnType<typeof fetchWorkspacesPage>>;
+  type Page = {
+    workspaces: Awaited<ReturnType<typeof fetchWorkspaces>>;
+    nextOffset: null;
+  };
   const workspacesQuery = useInfiniteQuery<
     Page,
     Error,
     InfiniteData<Page>,
-    readonly ['chat-workspaces', string | undefined, 'infinite', string],
+    readonly ['chat-workspaces', string | undefined, 'infinite'],
     number
   >({
-    queryKey: [
-      'chat-workspaces',
-      actor?.actorId,
-      'infinite',
-      [...visibility.hiddenIds].sort().join(','),
-    ] as const,
+    queryKey: ['chat-workspaces', actor?.actorId, 'infinite'] as const,
     enabled: Boolean(actor) && visibility.known,
     initialPageParam: 0,
     getNextPageParam: (page) => page.nextOffset ?? undefined,
-    queryFn: async ({ pageParam, signal }) => {
-      const hidden = new Set(visibility.hiddenIds);
-      const workspaces: Page['workspaces'] = [];
-      let nextOffset: number | null = pageParam;
-      let visibleRailCount = 0;
-      // Fill a usable rail even if a canonical page contains only Hidden rows.
-      // Bound each request; the explicit Load more action handles the remainder.
-      for (let pages = 0; pages < 8 && nextOffset !== null; pages++) {
-        actor!.assertActive();
-        if (signal.aborted) throw new Error('Workspace pagination cancelled');
-        const page = await fetchWorkspacesPage({
-          limit: 48,
-          offset: nextOffset,
-        });
-        actor!.assertActive();
-        if (signal.aborted) throw new Error('Workspace pagination cancelled');
-        workspaces.push(...page.workspaces);
-        visibleRailCount += page.workspaces.filter(
-          (workspace) => !workspace.personal && !hidden.has(workspace.id)
-        ).length;
-        if (page.nextOffset !== null && page.nextOffset <= nextOffset) {
-          throw new Error('Invalid workspace pagination cursor');
-        }
-        nextOffset = page.nextOffset;
-        if (visibleRailCount >= 12) break;
-      }
-      return { workspaces, nextOffset };
+    queryFn: async ({ signal }) => {
+      actor!.assertActive();
+      if (signal.aborted) throw new Error('Workspace discovery cancelled');
+      const workspaces = await fetchWorkspaces();
+      actor!.assertActive();
+      if (signal.aborted) throw new Error('Workspace discovery cancelled');
+      return { workspaces, nextOffset: null };
     },
   });
   const workspaces = useMemo(

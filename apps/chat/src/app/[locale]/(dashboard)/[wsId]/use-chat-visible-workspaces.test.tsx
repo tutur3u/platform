@@ -4,8 +4,8 @@ import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-vi
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const f = vi.hoisted(() => ({ page: vi.fn(), hidden: vi.fn() }));
-vi.mock('./actions', () => ({ fetchWorkspacesPage: f.page }));
+const f = vi.hoisted(() => ({ list: vi.fn(), hidden: vi.fn() }));
+vi.mock('./actions', () => ({ fetchWorkspaces: f.list }));
 vi.mock('@tuturuuu/internal-api/users', () => ({
   getCurrentUserHiddenWorkspaces: f.hidden,
   updateCurrentUserHiddenWorkspace: vi.fn(),
@@ -16,15 +16,15 @@ import { useChatVisibleWorkspaces } from './use-chat-visible-workspaces';
 describe('Chat workspace discovery projection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    f.page.mockResolvedValue({
-      nextOffset: null,
-      workspaces: [{ id: 'visible' }, { id: 'hidden', personal: true }],
-    });
+    f.list.mockResolvedValue([
+      { id: 'visible' },
+      { id: 'hidden', personal: true },
+    ]);
     f.hidden.mockResolvedValue({ hiddenWorkspaceIds: ['hidden'] });
   });
   function fixture() {
     const client = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
+      defaultOptions: { queries: { retry: false, retryDelay: 0 } },
     });
     let actor = 'actor-A';
     const wrapper = ({ children }: { children: ReactNode }) => (
@@ -49,55 +49,66 @@ describe('Chat workspace discovery projection', () => {
       expect(result.current.workspaces.map((ws) => ws.id)).toEqual(['visible'])
     );
     expect(
-      client.getQueryData(['chat-workspaces', 'actor-A', 'infinite', 'hidden'])
+      client.getQueryData(['chat-workspaces', 'actor-A', 'infinite'])
     ).toMatchObject({
       pages: [{ workspaces: [{ id: 'visible' }, { id: 'hidden' }] }],
     });
   });
   it('fails discovery closed on unknown visibility', async () => {
     f.hidden.mockRejectedValue(new Error('offline'));
-    const { wrapper } = fixture();
+    const { wrapper, client } = fixture();
     const { result } = renderHook(useChatVisibleWorkspaces, { wrapper });
-    await waitFor(() => expect(f.hidden).toHaveBeenCalled());
-    expect(f.page).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(
+        client.getQueryState(['workspace-hidden', 'actor-A'])?.status
+      ).toBe('error')
+    );
+    expect(f.list).not.toHaveBeenCalled();
     expect(result.current.workspaces).toEqual([]);
   });
-  it('advances beyond a Hidden first page even with a visible personal workspace', async () => {
-    f.page.mockResolvedValueOnce({
-      nextOffset: 48,
-      workspaces: [{ id: 'personal', personal: true }, { id: 'hidden' }],
-    });
-    f.page.mockResolvedValueOnce({
-      nextOffset: null,
-      workspaces: [{ id: 'page-two-visible' }],
-    });
+  it('discovers later visible rows in one canonical fetch without artificial page caps', async () => {
+    const hiddenIds = Array.from(
+      { length: 500 },
+      (_, index) => `hidden-${index}`
+    );
+    f.hidden.mockResolvedValue({ hiddenWorkspaceIds: hiddenIds });
+    f.list.mockResolvedValue([
+      ...hiddenIds.map((id) => ({ id })),
+      { id: 'later-visible' },
+    ]);
     const { wrapper } = fixture();
     const { result } = renderHook(useChatVisibleWorkspaces, { wrapper });
     await waitFor(() =>
       expect(result.current.workspaces.map((ws) => ws.id)).toEqual([
-        'personal',
-        'page-two-visible',
+        'later-visible',
       ])
     );
-    expect(f.page.mock.calls.map(([page]) => page.offset)).toEqual([0, 48]);
+    expect(f.list).toHaveBeenCalledTimes(1);
+    expect(result.current.workspacesQuery.hasNextPage).toBe(false);
   });
-  it('bounds sparse-page filling and retains an explicit next-page cursor', async () => {
-    f.page.mockImplementation(async ({ offset }) => ({
-      nextOffset: offset + 48,
-      workspaces: [{ id: 'hidden' }],
-    }));
-    const { wrapper } = fixture();
+  it('projects hide and restore changes without refetching the canonical list', async () => {
+    const { client, wrapper } = fixture();
     const { result } = renderHook(useChatVisibleWorkspaces, { wrapper });
-    await waitFor(() =>
-      expect(result.current.workspacesQuery.isSuccess).toBe(true)
+    await waitFor(() => expect(result.current.workspaces).toHaveLength(1));
+    act(() => client.setQueryData(['workspace-hidden', 'actor-A'], []));
+    await waitFor(() => expect(result.current.workspaces).toHaveLength(2));
+    act(() =>
+      client.setQueryData(
+        ['workspace-hidden', 'actor-A'],
+        ['hidden', 'visible']
+      )
     );
-    expect(f.page).toHaveBeenCalledTimes(8);
-    expect(result.current.workspaces).toEqual([]);
-    expect(result.current.workspacesQuery.hasNextPage).toBe(true);
+    await waitFor(() => expect(result.current.workspaces).toHaveLength(0));
+    expect(f.list).toHaveBeenCalledTimes(1);
+    expect(
+      client.getQueryData(['chat-workspaces', 'actor-A', 'infinite'])
+    ).toMatchObject({
+      pages: [{ workspaces: [{ id: 'visible' }, { id: 'hidden' }] }],
+    });
   });
   it('removes old account cache and rejects its delayed page', async () => {
     let resolve!: (value: unknown) => void;
-    f.page.mockImplementationOnce(
+    f.list.mockImplementationOnce(
       () =>
         new Promise((r) => {
           resolve = r;
@@ -107,17 +118,15 @@ describe('Chat workspace discovery projection', () => {
     const { result, rerender } = renderHook(useChatVisibleWorkspaces, {
       wrapper,
     });
-    await waitFor(() => expect(f.page).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(f.list).toHaveBeenCalledTimes(1));
     switchActor();
     rerender();
     await waitFor(() =>
       expect(result.current.workspaces.map((ws) => ws.id)).toEqual(['visible'])
     );
-    await act(async () =>
-      resolve({ nextOffset: null, workspaces: [{ id: 'old-actor-secret' }] })
-    );
+    await act(async () => resolve([{ id: 'old-actor-secret' }]));
     expect(
-      client.getQueryData(['chat-workspaces', 'actor-A', 'infinite', 'hidden'])
+      client.getQueryData(['chat-workspaces', 'actor-A', 'infinite'])
     ).toBeUndefined();
     expect(result.current.workspaces.map((ws) => ws.id)).toEqual(['visible']);
   });
