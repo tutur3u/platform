@@ -7831,6 +7831,24 @@ abstract class AppLocalizations {
   /// **'Search products'**
   String get inventorySearchProducts;
 
+  /// No description provided for @inventoryLoadedLowStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Low stock in loaded products'**
+  String get inventoryLoadedLowStock;
+
+  /// No description provided for @inventoryStockNoRows.
+  ///
+  /// In en, this message translates to:
+  /// **'No stock rows configured.'**
+  String get inventoryStockNoRows;
+
+  /// No description provided for @inventoryStockUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited'**
+  String get inventoryStockUnlimited;
+
   /// No description provided for @inventoryTitle.
   ///
   /// In en, this message translates to:

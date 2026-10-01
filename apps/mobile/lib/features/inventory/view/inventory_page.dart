@@ -22,7 +22,9 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class InventoryPage extends StatefulWidget {
-  const InventoryPage({super.key});
+  const InventoryPage({this.repository, super.key});
+
+  final InventoryRepository? repository;
 
   @override
   State<InventoryPage> createState() => _InventoryPageState();
@@ -38,7 +40,7 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   void initState() {
     super.initState();
-    _repository = InventoryRepository();
+    _repository = widget.repository ?? InventoryRepository();
     unawaited(Future<void>.delayed(Duration.zero, _reload));
   }
 
@@ -58,7 +60,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
   @override
   void dispose() {
-    _repository.dispose();
+    if (widget.repository == null) _repository.dispose();
     super.dispose();
   }
 
@@ -163,28 +165,13 @@ class _InventoryPageState extends State<InventoryPage> {
                             }
                           },
                         ),
-                        InventoryActionTile(
-                          onPressed: () => context.go(Routes.inventorySales),
-                          icon: Icons.calendar_view_month_outlined,
-                          label: l10n.inventorySalesPeriodsTitle,
-                        ),
-                        InventoryActionTile(
-                          onPressed: () => context.go(Routes.inventoryManage),
-                          icon: Icons.tune_rounded,
-                          label: l10n.inventoryManageLabel,
-                        ),
-                        InventoryActionTile(
-                          onPressed: () => context.go(Routes.storefronts),
-                          icon: Icons.storefront_outlined,
-                          label: l10n.storefrontTitle,
-                        ),
                       ],
                     ),
                     const shad.Gap(24),
                     FinanceSectionHeader(title: l10n.inventoryOverviewLowStock),
                     const shad.Gap(12),
                     if (overview.lowStockProducts.isEmpty)
-                      _InventoryEmptyPanel(
+                      InventoryEmptyPanel(
                         body: l10n.inventoryNoLowStockProducts,
                       )
                     else
@@ -228,10 +215,14 @@ class _InventoryPageState extends State<InventoryPage> {
                                     const shad.Gap(12),
                                     Text(
                                       [
-                                        product.amount?.toStringAsFixed(0) ??
-                                            '0',
-                                        product.minAmount?.toStringAsFixed(0) ??
-                                            '0',
+                                        inventoryStockAmount(
+                                          context,
+                                          product.amount,
+                                        ),
+                                        inventoryStockAmount(
+                                          context,
+                                          product.minAmount ?? 0,
+                                        ),
                                       ].join(' / '),
                                       style: shad.Theme.of(context)
                                           .typography
@@ -255,7 +246,7 @@ class _InventoryPageState extends State<InventoryPage> {
                     ),
                     const shad.Gap(12),
                     if (overview.recentSales.isEmpty)
-                      _InventoryEmptyPanel(body: l10n.inventorySalesEmpty)
+                      InventoryEmptyPanel(body: l10n.inventorySalesEmpty)
                     else
                       ...overview.recentSales
                           .take(5)
@@ -342,7 +333,7 @@ class _BreakdownList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
-      return _InventoryEmptyPanel(body: context.l10n.inventoryNoBreakdownData);
+      return InventoryEmptyPanel(body: context.l10n.inventoryNoBreakdownData);
     }
 
     final maximum = entries
@@ -398,21 +389,6 @@ class _BreakdownList extends StatelessWidget {
             );
           })
           .toList(growable: false),
-    );
-  }
-}
-
-class _InventoryEmptyPanel extends StatelessWidget {
-  const _InventoryEmptyPanel({required this.body});
-
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return FinanceEmptyState(
-      icon: Icons.inventory_2_outlined,
-      title: context.l10n.inventoryTitle,
-      body: body,
     );
   }
 }
