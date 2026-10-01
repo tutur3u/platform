@@ -173,8 +173,10 @@ Infrastructure forms submit only a currently visible selected workspace; a stale
 Hidden default is cleared until a visible workspace is selected. Planner creation,
 save, destination addition and item creation wait for verified visible choices.
 An intended Hidden destination cannot silently turn a requested task into a draft.
+Normal meeting chat defers workspace discovery until a Mira mention.
 Meet chat and live assistant actions require a current visible destination and
-recheck it after awaited preparation. Existing running sessions retain their
+recheck actor lifetime after awaited preparation. Infrastructure submission stays
+disabled until a visible workspace is selected. Existing running sessions retain their
 canonical authorization.
 
 Mira preserves its existing Personal fallback choice when the actor has no personal

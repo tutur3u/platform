@@ -12,6 +12,7 @@ import type { ReactNode } from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import {
   AssistantWorkspacePicker,
+  isCurrentAssistantWorkspace,
   useAssistantWorkspaceSelection,
 } from './assistant-workspace-picker';
 
@@ -156,4 +157,35 @@ it('blocks selected assistant destinations after a settled private-read failure'
     ).toBe('error')
   );
   expect(result.current.allowed).toBe(false);
+});
+
+it('defers all workspace and private reads while assistant discovery is disabled', async () => {
+  const { wrapper } = selectionFixture();
+  const { result, rerender } = renderHook(
+    ({ enabled }) =>
+      useAssistantWorkspaceSelection('personal', 'synthetic-actor', enabled),
+    { wrapper, initialProps: { enabled: false } }
+  );
+  await act(async () => {});
+  expect(mocks.hidden).not.toHaveBeenCalled();
+  expect(mocks.list).not.toHaveBeenCalled();
+  expect(result.current.allowed).toBe(false);
+  rerender({ enabled: true });
+  await waitFor(() => expect(result.current.allowed).toBe(true));
+});
+it('rejects a same-object actor invalidated during awaited preparation', async () => {
+  let active = true;
+  const actor = {
+    assertActive: () => {
+      if (!active) throw new Error('Account changed');
+    },
+  };
+  const requested = { allowed: true, value: 'personal', actor };
+  expect(isCurrentAssistantWorkspace(requested, requested)).toBe(true);
+  await Promise.resolve();
+  active = false;
+  expect(isCurrentAssistantWorkspace(requested, requested)).toBe(false);
+  expect(
+    isCurrentAssistantWorkspace({ ...requested, actor: null }, requested)
+  ).toBe(false);
 });

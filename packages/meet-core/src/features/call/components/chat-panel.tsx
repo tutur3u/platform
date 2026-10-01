@@ -30,6 +30,7 @@ import type { CallChatMessage } from '../lib/call-state';
 import { AssistantPrivateReview } from './assistant-private-review';
 import {
   AssistantWorkspacePicker,
+  isCurrentAssistantWorkspace,
   useAssistantWorkspaceSelection,
 } from './assistant-workspace-picker';
 import { ChatMessageBody } from './chat-message-body';
@@ -117,16 +118,17 @@ export function ChatPanel({
   });
   const [assistantWorkspace, setAssistantWorkspace] =
     useState<string>('personal');
-  const assistantScope = useAssistantWorkspaceSelection(
-    assistantWorkspace,
-    selfUserId
-  );
-  const currentAssistantScope = useRef(assistantScope);
-  currentAssistantScope.current = assistantScope;
   const [draft, setDraft] = useState(''),
     [files, setFiles] = useState<File[]>([]),
     [busy, setBusy] = useState(false),
     [thinking, setThinking] = useState(false);
+  const assistantScope = useAssistantWorkspaceSelection(
+    assistantWorkspace,
+    selfUserId,
+    hasMeetAssistantMention(draft) || thinking
+  );
+  const currentAssistantScope = useRef(assistantScope);
+  currentAssistantScope.current = assistantScope;
   const composer = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (!mentionRequest || busy) return;
@@ -197,13 +199,8 @@ export function ChatPanel({
         setThinking(true);
         try {
           const current = currentAssistantScope.current;
-          if (
-            !current.allowed ||
-            current.value !== requestedScope.value ||
-            current.actor !== requestedScope.actor
-          )
+          if (!isCurrentAssistantWorkspace(current, requestedScope))
             throw new Error('Assistant workspace choice changed');
-          current.actor!.assertActive();
           await askMeetAssistant(
             meetingId,
             sent.id,

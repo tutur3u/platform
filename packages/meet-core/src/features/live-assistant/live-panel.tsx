@@ -35,6 +35,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AssistantWorkspacePicker,
+  isCurrentAssistantWorkspace,
   useAssistantWorkspaceSelection,
 } from '../call/components/assistant-workspace-picker';
 import { MiraAvatar } from '../call/components/mira-profile';
@@ -118,17 +119,18 @@ export function MeetLivePanel({
   const currentRoom = useRef(room);
   currentRoom.current = room;
   const start = async (mode: 'personal' | 'room') => {
-    if (audioSuppressed || !workspaceScope.allowed) return;
-    workspaceScope.actor!.assertActive();
+    if (
+      audioSuppressed ||
+      !isCurrentAssistantWorkspace(workspaceScope, workspaceScope)
+    )
+      return;
     const requestedScope = workspaceScope;
     const restoreMicrophone = mode === 'personal' && room.media.audioEnabled;
     const muteRevision = room.getSelectedDevices().microphoneRevision + 1;
     if (restoreMicrophone) await room.toggleMicrophone();
     const current = currentWorkspaceScope.current;
     const started =
-      current.allowed &&
-      current.value === requestedScope.value &&
-      current.actor === requestedScope.actor &&
+      isCurrentAssistantWorkspace(current, requestedScope) &&
       (await live.start(
         mode,
         streams,

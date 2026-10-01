@@ -14,7 +14,7 @@ export function useVisibleWorkspaces(
   options?: { refetchInterval?: number }
 ) {
   const actor = useWorkspaceActor();
-  const visibility = useWorkspaceVisibility();
+  const visibility = useWorkspaceVisibility(enabled);
   const query = useQuery({
     queryKey: [
       'workspace-ui-list',
@@ -44,7 +44,9 @@ export function useVisibleWorkspaces(
       query.data !== undefined &&
       !query.data.some((workspace) => workspace.personal),
     data,
-    isLoading: query.isLoading || (!visibility.known && !visibility.isError),
+    isLoading:
+      enabled &&
+      (query.isLoading || (!visibility.known && !visibility.isError)),
     isError: query.isError || visibility.isError,
     error: query.error ?? visibility.error,
     refetch: async () => {

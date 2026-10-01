@@ -11,17 +11,17 @@ import {
   it,
   vi,
 } from 'vitest';
+import { AgentForm } from './agent-form';
 import { WorkspacePicker } from './workspace-picker';
 
 const mocks = vi.hoisted(() => ({
   hiddenIds: [] as string[],
   listWorkspaces: vi.fn(),
+  hidden: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/internal-api/users', () => ({
-  getCurrentUserHiddenWorkspaces: async () => ({
-    hiddenWorkspaceIds: mocks.hiddenIds,
-  }),
+  getCurrentUserHiddenWorkspaces: mocks.hidden,
   updateCurrentUserHiddenWorkspace: vi.fn(),
 }));
 
@@ -77,6 +77,9 @@ describe('WorkspacePicker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.hiddenIds = [];
+    mocks.hidden.mockImplementation(async () => ({
+      hiddenWorkspaceIds: mocks.hiddenIds,
+    }));
     mocks.listWorkspaces.mockResolvedValue([
       {
         avatar_url: null,
@@ -154,4 +157,48 @@ describe('WorkspacePicker', () => {
         ?.value
     ).toBe('workspace-1');
   });
+});
+
+vi.mock('./channel-config-fields', () => ({
+  DiscordChannelFields: () => null,
+  ZaloChannelFields: () => null,
+}));
+it('blocks form submission until its selected visible workspace is available', async () => {
+  let resolve!: (value: { hiddenWorkspaceIds: string[] }) => void;
+  mocks.hidden.mockReturnValue(
+    new Promise((r) => {
+      resolve = r;
+    })
+  );
+  mocks.listWorkspaces.mockResolvedValue([
+    { id: 'workspace-1', name: 'Team workspace' },
+  ]);
+  const onSubmit = vi.fn();
+  render(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      <WorkspaceVisibilityProvider actorId="synthetic-actor">
+        <AgentForm
+          includeInternalWorkspace
+          isPending={false}
+          onSubmit={onSubmit}
+        />
+      </WorkspaceVisibilityProvider>
+    </QueryClientProvider>
+  );
+  const create = screen.getByRole('button', { name: 'actions.create' });
+  expect(create).toBeDisabled();
+  fireEvent.submit(create.closest('form')!);
+  expect(onSubmit).not.toHaveBeenCalled();
+  resolve({ hiddenWorkspaceIds: [ROOT_WORKSPACE_ID] });
+  fireEvent.click(screen.getByRole('combobox'));
+  await screen.findByText('Team workspace');
+  expect(create).toBeDisabled();
+  fireEvent.click(screen.getByText('Team workspace'));
+  await waitFor(() => expect(create).toBeEnabled());
+  fireEvent.submit(create.closest('form')!);
+  expect(onSubmit).toHaveBeenCalledTimes(1);
 });

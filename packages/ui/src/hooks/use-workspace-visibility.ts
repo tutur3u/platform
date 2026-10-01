@@ -117,7 +117,7 @@ export function useWorkspaceActor() {
   return useContext(ActorContext);
 }
 
-export function useWorkspaceVisibility() {
+export function useWorkspaceVisibility(enabled = true) {
   const scope = useWorkspaceActor();
   const actorId = scope?.actorId;
   const client = useQueryClient();
@@ -127,7 +127,7 @@ export function useWorkspaceVisibility() {
   const [updateError, setUpdateError] = useState<Error | null>(null);
   const query = useQuery({
     queryKey: key,
-    enabled: Boolean(scope),
+    enabled: enabled && Boolean(scope),
     queryFn: async () => {
       scope!.assertActive();
       if (control.pending.size > 0) {

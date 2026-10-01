@@ -59,13 +59,15 @@ export function AssistantWorkspacePicker({
 
 export function useAssistantWorkspaceSelection(
   value: string,
-  selfUserId: string | null
+  selfUserId: string | null,
+  enabled = true
 ) {
   const actor = useWorkspaceActor();
   const workspaces = useVisibleWorkspaces(
-    Boolean(selfUserId) && actor?.actorId === selfUserId
+    enabled && Boolean(selfUserId) && actor?.actorId === selfUserId
   );
   const allowed =
+    enabled &&
     actor?.actorId === selfUserId &&
     !workspaces.isError &&
     Boolean(
@@ -78,4 +80,27 @@ export function useAssistantWorkspaceSelection(
       )
     );
   return { workspaces, allowed, value, actor };
+}
+
+export function isCurrentAssistantWorkspace(
+  current: {
+    allowed: boolean;
+    value: string;
+    actor: { assertActive: () => void } | null;
+  },
+  requested: { value: string; actor: { assertActive: () => void } | null }
+) {
+  if (
+    !current.allowed ||
+    !current.actor ||
+    current.value !== requested.value ||
+    current.actor !== requested.actor
+  )
+    return false;
+  try {
+    current.actor.assertActive();
+    return true;
+  } catch {
+    return false;
+  }
 }

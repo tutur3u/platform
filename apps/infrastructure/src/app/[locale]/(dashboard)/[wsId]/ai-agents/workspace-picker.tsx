@@ -17,7 +17,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   getAiAgentWorkspaceSearchValue,
   mergeInternalAiAgentWorkspaceOption,
@@ -29,6 +29,7 @@ export function WorkspacePicker({
   includeInternalWorkspace = false,
   name = 'workspaceId',
   onValueChange,
+  onAvailabilityChange,
   value,
 }: {
   defaultValue?: string | null;
@@ -36,6 +37,7 @@ export function WorkspacePicker({
   includeInternalWorkspace?: boolean;
   name?: string;
   onValueChange?: (value: string) => void;
+  onAvailabilityChange?: (available: boolean) => void;
   value?: string;
 }) {
   const t = useTranslations('ai-agents-settings');
@@ -70,6 +72,11 @@ export function WorkspacePicker({
       workspaceOptions.find((workspace) => workspace.id === selectedId) ?? null,
     [selectedId, workspaceOptions]
   );
+  useEffect(() => {
+    onAvailabilityChange?.(
+      Boolean(selectedWorkspace) && !isLoading && visibility.known
+    );
+  }, [selectedWorkspace, isLoading, visibility.known, onAvailabilityChange]);
   const selectedLabel = selectedWorkspace?.name || t('workspace.select');
 
   return (
