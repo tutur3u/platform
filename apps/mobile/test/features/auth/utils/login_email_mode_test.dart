@@ -7,6 +7,12 @@ void main() {
     for (final email in [
       '@tuturuuu.com',
       'person@@tuturuuu.com',
+      'person name@tuturuuu.com',
+      'person name@tutur3u.com',
+      'person\tname@tuturuuu.com',
+      'person\tname@tutur3u.com',
+      'person\nname@tuturuuu.com',
+      'person\nname@tutur3u.com',
       'person@sub.tutur3u.com',
       'person@tuturuuu.com.',
       'person@tuturuuu.com.evil.test',
@@ -20,6 +26,16 @@ void main() {
       );
     }
   });
+  test('outer whitespace is trimmed for both exact domains', () {
+    final preference = LoginEmailModePreference();
+    for (final domain in ['TUTURUUU.COM', 'TUTUR3U.COM']) {
+      expect(
+        preference.resolve(' \tPerson@$domain\n ', otpEnabled: true),
+        LoginEmailMode.password,
+      );
+    }
+  });
+
   test('OTP disablement overrides a code choice without erasing it', () {
     final preference = LoginEmailModePreference()
       ..choose(' Person@TUTUR3U.COM ', LoginEmailMode.otp);

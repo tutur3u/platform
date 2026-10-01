@@ -1,7 +1,7 @@
 ---
 title: "Authentication Patterns"
 description: "Authentication implementation patterns in the Tuturuuu platform"
-updatedAt: "2026-06-28"
+updatedAt: "2026-10-01"
 ---
 
 The Tuturuuu platform uses Supabase Auth for user authentication with support for email/password, OAuth providers, multi-factor authentication (MFA), and cross-app token authentication.
@@ -53,8 +53,8 @@ staff mailbox or root-workspace access.
 The canonical web login (including satellite app redirects) and Flutter mobile
 login intentionally prefer password after **Continue with email** for the exact
 email domains `tuturuuu.com` and `tutur3u.com`. Matching trims surrounding
-whitespace and ignores case; subdomains, lookalikes, and appended suffixes do
-not qualify. Web's existing username shorthand still expands to `@tuturuuu.com`.
+whitespace and ignores case; internal whitespace, subdomains, lookalikes, and
+appended suffixes do not qualify. Web's existing username shorthand still expands to `@tuturuuu.com`.
 External email accounts keep the existing code-first default when OTP is enabled;
 when it is disabled by the existing app policy, password remains the default.
 
@@ -65,8 +65,10 @@ through their existing authentication checks. Supported code sign-in remains
 available from the password screen; social sign-in, web passkeys and mobile QR
 remain available from the email screen via Back. Choosing mobile code sign-in
 requests the initial code through the existing CAPTCHA flow before showing the
-sent-code screen. Cancellation or send failure keeps the prior screen and error;
-method switching retains an active code-request cooldown.
+sent-code screen. CAPTCHA cancellation keeps the prior screen; an ordinary send
+failure keeps that screen with the error. A rate-limited send opens the code screen
+with its retry countdown so password fallback remains available. Method switching
+retains an active code-request cooldown.
 
 An explicit password/code choice is remembered per trimmed, case-insensitive
 email within the current login flow. Back, retries, and switching to another email

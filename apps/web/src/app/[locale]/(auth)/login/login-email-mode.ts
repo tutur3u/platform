@@ -16,6 +16,7 @@ export class LoginEmailModePreference {
   resolve(email: string, otpEnabled: boolean): LoginEmailMode {
     if (!otpEnabled) return 'password';
     const normalized = email.trim().toLowerCase();
+    if (/\s/.test(normalized)) return 'otp';
     const choice = this.choices.get(normalized);
     if (choice) return choice;
     const parts = normalized.split('@');

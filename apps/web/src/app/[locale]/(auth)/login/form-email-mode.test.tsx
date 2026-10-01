@@ -114,7 +114,6 @@ describe('LoginForm email method defaults', () => {
       await expectPassword();
       mocks.sendOtpWithInternalApi.mockResolvedValueOnce({
         error: 'Try again',
-        retryAfter: 30,
       });
       fireEvent.click(
         screen.getByRole('button', { name: 'login.use_code_instead' })
@@ -123,13 +122,24 @@ describe('LoginForm email method defaults', () => {
       expect(
         screen.queryByPlaceholderText('login.password_placeholder')
       ).not.toBeInTheDocument();
+      const resend = screen.getByRole('button', { name: 'login.resend' });
+      await waitFor(() => expect(resend).toBeEnabled());
+      fireEvent.click(resend);
+      await waitFor(() =>
+        expect(mocks.sendOtpWithInternalApi).toHaveBeenCalledTimes(2)
+      );
+      expect(mocks.sendOtpWithInternalApi).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ email: `person@${domain}` })
+      );
+      await expectOtp();
       await back();
       await identify('another@tuturuuu.com');
       await expectPassword();
       await back();
       await identify(` PERSON@${domain.toUpperCase()} `);
       await expectOtp();
-      expect(mocks.sendOtpWithInternalApi).toHaveBeenCalledTimes(2);
+      expect(mocks.sendOtpWithInternalApi).toHaveBeenCalledTimes(3);
     }
   );
 

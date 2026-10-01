@@ -11,6 +11,7 @@ class LoginEmailModePreference {
   LoginEmailMode resolve(String email, {required bool otpEnabled}) {
     if (!otpEnabled) return LoginEmailMode.password;
     final normalized = email.trim().toLowerCase();
+    if (RegExp(r'\s').hasMatch(normalized)) return LoginEmailMode.otp;
     final choice = _choices[normalized];
     if (choice != null) return choice;
     final parts = normalized.split('@');

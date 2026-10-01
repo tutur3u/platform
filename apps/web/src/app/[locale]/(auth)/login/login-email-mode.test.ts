@@ -8,6 +8,12 @@ describe('login presentation preference', () => {
   it.each([
     '@tuturuuu.com',
     'person@@tuturuuu.com',
+    'person name@tuturuuu.com',
+    'person name@tutur3u.com',
+    'person\tname@tuturuuu.com',
+    'person\tname@tutur3u.com',
+    'person\nname@tuturuuu.com',
+    'person\nname@tutur3u.com',
     'person@sub.tutur3u.com',
     'person@tuturuuu.com.',
     'person@tuturuuu.com.evil.test',
@@ -16,6 +22,15 @@ describe('login presentation preference', () => {
   ])('rejects malformed or lookalike input %s', (email) => {
     expect(new LoginEmailModePreference().resolve(email, true)).toBe('otp');
   });
+
+  it.each([' \tPerson@TUTURUUU.COM\n ', ' \tPerson@TUTUR3U.COM\n '])(
+    'trims outer whitespace without rejecting a valid address %s',
+    (email) => {
+      expect(new LoginEmailModePreference().resolve(email, true)).toBe(
+        'password'
+      );
+    }
+  );
 
   it('preserves existing web username shorthand before applying the preference', () => {
     const email = processEmailInput(' Person ');
