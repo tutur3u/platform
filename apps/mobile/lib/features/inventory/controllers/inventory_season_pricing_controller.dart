@@ -32,6 +32,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
   InventorySeasonQuote? quote;
   Map<String, InventorySeasonPrice> prices = const {};
   DateTime? _receivedAt;
+  DateTime? _lastFetchAttempt;
   int _generation = 0;
   bool _disposed = false;
   bool loading = false;
@@ -68,6 +69,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
     period = selectedPeriod;
     this.currency = currency.toUpperCase();
     _pending = null;
+    _lastFetchAttempt = null;
     sending = false;
     _clear();
     _notify();
@@ -134,10 +136,21 @@ class InventorySeasonPricingController extends ChangeNotifier {
     return ready && allowsProduct(productId) ? price : null;
   }
 
-  Future<void> refresh() async {
+  Future<void> refresh({bool automatic = false}) async {
     if (!scheduled || _actor == null || _workspace == null || hasPending) {
       return;
     }
+    final instant = now();
+    final elapsed = _lastFetchAttempt == null
+        ? null
+        : instant.difference(_lastFetchAttempt!);
+    if (automatic &&
+        elapsed != null &&
+        elapsed >= Duration.zero &&
+        elapsed < const Duration(seconds: 10)) {
+      return;
+    }
+    _lastFetchAttempt = instant;
     final token = ++_generation;
     final workspace = _workspace!;
     final periodId = period!.id;

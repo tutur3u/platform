@@ -132,7 +132,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
           !_season.loading &&
           !_season.hasPending &&
           !_season.fresh) {
-        unawaited(_season.refresh());
+        unawaited(_season.refresh(automatic: true));
       }
     });
     unawaited(_load());

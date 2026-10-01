@@ -21,7 +21,8 @@ server. No device-timezone date or catalog fallback decides scheduled pricing.
 
 The compact checkout shows season, currency, UTC quote time and period timezone.
 Quotes expire after 15 seconds of local receipt age and are refreshed while the
-checkout is open. Failed refreshes clear visible quotes. Missing lines display an
+checkout is open. Automatic failures retry at most once every ten seconds;
+manual refresh remains immediate. Failed refreshes clear visible quotes. Missing lines display an
 unavailable amount rather than a zero-priced sale or a mixed-currency total.
 
 ## Atomic creation and retry

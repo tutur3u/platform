@@ -18,7 +18,7 @@ The feature document is
 period discovery's view-sales vs price GET's view/create-sales permission gap,
 server as-of half-open quote resolution, IANA date eligibility, currency precision,
 uncached reads, 15-second receipt freshness, online-only direct atomic POST,
-immutable price IDs, exact request retry, and the current mounted-checkout-only
+immutable price IDs, ten-second automatic retry throttling, exact request retry, and the current mounted-checkout-only
 pending state. Process termination still requires operator reconciliation of an
 uncertain sale. Financial aggregate contract gaps remain documented in the parent
 stock-health correctness report; no unsupported financial chart is added.
@@ -29,7 +29,7 @@ The assembled source normally includes exact #5700 parent
 `5c1bdbd77e8acf37e0e78959c7f4df99368e30d7`, preserving #5698 cache/editor/Manage
 assembly and its fractional Overview harness corrections.
 
-- **20 focused tests passed**, with a genuine completed success marker.
+- **21 focused tests passed**, with a genuine completed success marker.
 - Scoped fatal-info analysis reported **No issues found**.
 - The two status captures were repeated after a fixture-only MaterialIcons font
   load; both passed and fixture analysis was clean. Product code was unchanged.

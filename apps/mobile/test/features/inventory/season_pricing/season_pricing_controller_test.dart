@@ -358,4 +358,35 @@ void main() {
       expect(controller.quote, isNull);
     }
   });
+  test('failed automatic quotes retry at most every ten seconds', () async {
+    controller.dispose();
+    var reads = 0;
+    controller =
+        InventorySeasonPricingController(
+          fetch: (_, _) async {
+            reads++;
+            throw const ApiException(message: 'Unavailable', statusCode: 503);
+          },
+          send: (_, _) async => 'unused',
+          isOnline: () async => true,
+          now: () => now,
+        )..configure(
+          actorId: 'actor',
+          workspaceId: 'ws',
+          selectedPeriod: period(),
+          currency: 'USD',
+        );
+    await controller.refresh(automatic: true);
+    for (var i = 0; i < 9; i++) {
+      now = now.add(const Duration(seconds: 1));
+      await controller.refresh(automatic: true);
+    }
+    expect(reads, 1);
+    now = now.add(const Duration(seconds: 1));
+    await controller.refresh(automatic: true);
+    expect(reads, 2);
+    await controller.refresh();
+    expect(reads, 3);
+    expect(controller.quote, isNull);
+  });
 }
