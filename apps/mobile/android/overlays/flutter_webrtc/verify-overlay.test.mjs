@@ -5,6 +5,7 @@ import test from 'node:test';
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const overlay = read('./com/cloudwebrtc/webrtc/OrientationAwareScreenCapturer.java');
+const bridge = read('./com/cloudwebrtc/webrtc/MeetScreenCaptureBridge.java');
 const gradle = read('../../app/build.gradle.kts');
 const plugin = read('../../app/src/main/kotlin/com/tuturuuu/app/mobile/meet/MeetScreenSharePlugin.kt');
 const service = read('../../app/src/main/kotlin/com/tuturuuu/app/mobile/meet/MeetScreenShareService.kt');
@@ -33,7 +34,8 @@ test('Gradle excludes the original, installs repository overlay and pins upstrea
   assert.ok(gradle.includes('inputs.file(upstreamCapturer)'));
   assert.ok(gradle.includes('inputs.file(upstreamPubspec)'));
   assert.ok(gradle.includes('from(originalRoots) { exclude(relativeCapturer) }'));
-  assert.ok(gradle.includes('from(overlayRoot) { include(relativeCapturer) }'));
+  assert.ok(gradle.includes('from(overlayRoot) { include(relativeCapturer, relativeBridge) }'));
+  assert.ok(gradle.includes('overlayRoot.resolve(relativeBridge).isFile'));
   assert.ok(gradle.includes('mainJava.setSrcDirs(listOf(generatedJava))'));
   assert.ok(gradle.includes('dependsOn(prepareMeetWebRtc)'));
 });
@@ -43,9 +45,20 @@ test('capture owner and service stop keep the same generation across the main-th
   assert.ok(overlay.includes('mediaProjection.unregisterCallback(mediaProjectionCallback)'));
   assert.ok(overlay.includes('meetOwner.notified.compareAndSet(false, true)'));
   assert.ok(plugin.includes('private val generations = AtomicLong()'));
-  assert.ok(plugin.includes('OrientationAwareScreenCapturer.armMeetCapture(generation) { reportStopped(generation) }'));
+  assert.ok(plugin.includes('MeetScreenCaptureBridge.arm(generation) { reportStopped(generation) }'));
   assert.ok(plugin.includes('activeGeneration != generation'));
   assert.ok(service.includes('intent.getLongExtra(GENERATION, 0L) == generation'));
   assert.ok(service.includes('val stoppedGeneration = generation'));
   assert.ok(service.includes('listener?.invoke(stoppedGeneration)'));
+});
+
+test('the app-facing ownership boundary does not require private WebRTC supertypes', () => {
+  assert.ok(bridge.includes('public final class MeetScreenCaptureBridge {'));
+  assert.ok(bridge.includes('public static void arm(long generation, Runnable stopped)'));
+  assert.ok(bridge.includes('public static void disarm(long generation)'));
+  assert.ok(bridge.includes('OrientationAwareScreenCapturer.armMeetCapture(generation, stopped)'));
+  assert.ok(bridge.includes('OrientationAwareScreenCapturer.disarmMeetCapture(generation)'));
+  assert.ok(!bridge.includes('org.webrtc'));
+  assert.ok(!plugin.includes('OrientationAwareScreenCapturer'));
+  assert.ok(plugin.includes('MeetScreenCaptureBridge.disarm(generation)'));
 });

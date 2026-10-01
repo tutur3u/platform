@@ -1,6 +1,6 @@
 package com.tuturuuu.app.mobile.meet
 
-import com.cloudwebrtc.webrtc.OrientationAwareScreenCapturer
+import com.cloudwebrtc.webrtc.MeetScreenCaptureBridge
 import java.util.concurrent.atomic.AtomicLong
 import android.app.NotificationManager
 import android.content.Context
@@ -71,7 +71,7 @@ class MeetScreenSharePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ev
         pendingStart = result
         val generation = generations.incrementAndGet()
         activeGeneration = generation
-        OrientationAwareScreenCapturer.armMeetCapture(generation) { reportStopped(generation) }
+        MeetScreenCaptureBridge.arm(generation) { reportStopped(generation) }
         val ready = object : ResultReceiver(handler) {
             override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
                 // A late callback after cancellation cannot restart capture in Dart.
@@ -104,7 +104,7 @@ class MeetScreenSharePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ev
     private fun cancelCapture() {
         val generation = activeGeneration
         if (generation == 0L) return
-        OrientationAwareScreenCapturer.disarmMeetCapture(generation)
+        MeetScreenCaptureBridge.disarm(generation)
         activeGeneration = 0L
     }
 

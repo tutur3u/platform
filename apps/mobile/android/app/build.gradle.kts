@@ -137,6 +137,7 @@ webRtcProject.plugins.withId("com.android.library") {
         val mainJava = sourceSets.getByName("main").java
         val originalRoots = mainJava.srcDirs.toList()
         val relativeCapturer = "com/cloudwebrtc/webrtc/OrientationAwareScreenCapturer.java"
+        val relativeBridge = "com/cloudwebrtc/webrtc/MeetScreenCaptureBridge.java"
         val upstreamCapturer = webRtcProject.file("src/main/java/$relativeCapturer")
         val upstreamPubspec = webRtcProject.file("../pubspec.yaml")
         val generatedJava = webRtcProject.layout.buildDirectory.dir("generated/meet-webrtc/java")
@@ -145,7 +146,7 @@ webRtcProject.plugins.withId("com.android.library") {
             inputs.file(upstreamCapturer)
             inputs.file(upstreamPubspec)
             from(originalRoots) { exclude(relativeCapturer) }
-            from(overlayRoot) { include(relativeCapturer) }
+            from(overlayRoot) { include(relativeCapturer, relativeBridge) }
             into(generatedJava)
             doFirst {
                 val version = Regex("(?m)^version: *([^\r\n]+)")
@@ -157,8 +158,9 @@ webRtcProject.plugins.withId("com.android.library") {
                     hash == "347ae60171cd831eb0fb28df7deeb6e81205881dac085eb3980e33edbe97a070") {
                     "Meet WebRTC overlay requires reviewed flutter_webrtc 1.6.2+hotfix.3 source; review the overlay before upgrading."
                 }
-                check(overlayRoot.resolve(relativeCapturer).isFile) {
-                    "Meet WebRTC capturer overlay is missing."
+                check(overlayRoot.resolve(relativeCapturer).isFile &&
+                    overlayRoot.resolve(relativeBridge).isFile) {
+                    "Meet WebRTC capturer overlay or ownership bridge is missing."
                 }
             }
         }
