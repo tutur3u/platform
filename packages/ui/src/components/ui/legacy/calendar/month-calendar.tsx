@@ -72,7 +72,7 @@ function MonthEvent({
       title={title}
       style={calendarEventStyle(event)}
       className={cn(
-        'flex w-full min-w-0 items-center gap-1 rounded px-1 py-1 text-left text-[10px] leading-tight transition-colors hover:brightness-110 focus-visible:outline-2 focus-visible:outline-ring sm:px-1.5 sm:text-xs',
+        'flex w-full min-w-0 items-center gap-1 rounded px-1 py-1 text-left text-[10px] leading-tight transition-colors hover:ring-1 hover:ring-current focus-visible:outline-2 focus-visible:outline-ring sm:px-1.5 sm:text-xs',
         allDay && 'font-medium'
       )}
     >
