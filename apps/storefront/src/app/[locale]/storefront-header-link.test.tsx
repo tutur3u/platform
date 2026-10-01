@@ -57,6 +57,9 @@ describe('Storefront header client link composition', () => {
       expect(host.querySelector('a')?.getAttribute('href')).toBe(
         '/sample-store/orders'
       );
+      expect(host.querySelector('a')?.getAttribute('data-slot')).toBe('button');
+      expect(host.querySelector('a')?.className).toContain('border-input');
+      expect(host.querySelector('button')).toBeNull();
     });
   }
 });
