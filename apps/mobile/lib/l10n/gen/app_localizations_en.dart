@@ -9542,4 +9542,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meetScreenShareFailed => 'Screen sharing did not start. Check capture permissions and try again.';
+
+  @override
+  String get inventoryStockHealthTitle => 'Stock health';
+
+  @override
+  String get inventoryStockHealthScope => 'Current active products · all stock rows, including archived warehouses';
+
+  @override
+  String inventoryStockHealthAsOf(String timestamp) {
+    return 'Server snapshot: $timestamp UTC';
+  }
+
+  @override
+  String get inventoryStockHealthIncomplete => 'Partial snapshot: some counts or the server timestamp are unavailable.';
+
+  @override
+  String get inventoryStockHealthUnavailable => 'Stock health is unavailable. Pull to refresh to try again.';
+
+  @override
+  String get inventoryStockHealthDenied => 'You do not have access to stock analytics.';
+
+  @override
+  String get inventoryStockHealthLoading => 'Loading stock health…';
+
+  @override
+  String get inventoryStockHealthActive => 'Active products';
+
+  @override
+  String get inventoryStockHealthUnconfigured => 'Products without stock rows';
+
+  @override
+  String get inventoryStockHealthLow => 'Low stock rows';
+
+  @override
+  String get inventoryStockHealthOut => 'Out of stock rows';
+
+  @override
+  String get inventoryStockHealthUnlimited => 'Unlimited stock rows';
+
+  @override
+  String get inventoryStockHealthOverlap => 'Low/out counts can overlap. Low/out quantity checks exclude Unlimited rows; Unlimited rows are counted separately. Bars compare row counts.';
+
+  @override
+  String get inventoryStockHealthUnknown => 'Unavailable';
 }

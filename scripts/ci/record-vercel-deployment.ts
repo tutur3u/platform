@@ -78,7 +78,7 @@ async function githubJson<T>({
   return (await response.json()) as T;
 }
 
-async function main() {
+export async function main() {
   const token = getEnv('GITHUB_TOKEN');
   const repository = getEnv('GITHUB_REPOSITORY');
   const sha = process.env.VERCEL_MARKER_SHA ?? getEnv('GITHUB_SHA');

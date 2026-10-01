@@ -10,11 +10,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/models/inventory/inventory_stock_health.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/inventory/view/inventory_page.dart';
 import 'package:mobile/features/inventory/view/inventory_products_page.dart';
 import 'package:mobile/features/inventory/widgets/inventory_product_card.dart';
@@ -24,8 +27,11 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import '../../../helpers/helpers.dart';
+
+class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
@@ -49,6 +55,19 @@ class _Finance extends Mock implements FinanceRepository {}
 class _Permissions extends Mock implements WorkspacePermissionsRepository {}
 
 class _FractionalOverview extends InventoryRepository {
+  @override
+  Future<InventoryStockHealth> getStockHealth(String wsId) async =>
+      InventoryStockHealth.fromJson({
+        'generatedAt': '2026-10-01T00:00:00Z',
+        'summary': <String, dynamic>{
+          'activeProducts': 1,
+          'stockedProducts': 1,
+          'lowStockRows': 1,
+          'outOfStockRows': 0,
+          'unlimitedStockRows': 0,
+        },
+      });
+
   bool disposed = false;
 
   @override
@@ -365,12 +384,31 @@ void main() {
         const Stream<WorkspaceState>.empty(),
         initialState: state,
       );
+      final auth = _Auth();
+      const authState = AuthState.authenticated(
+        User(
+          id: 'synthetic-actor',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: '',
+        ),
+      );
+      when(() => auth.state).thenReturn(authState);
+      whenListen(
+        auth,
+        const Stream<AuthState>.empty(),
+        initialState: authState,
+      );
       final key = GlobalKey();
       final repository = _FractionalOverview();
       addTearDown(repository.dispose);
       await tester.pumpApp(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspace,
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<WorkspaceCubit>.value(value: workspace),
+            BlocProvider<AuthCubit>.value(value: auth),
+          ],
           child: _scaled(InventoryPage(repository: repository), 1, key),
         ),
       );
@@ -390,6 +428,7 @@ void main() {
       expect(repository.disposed, isFalse);
       expect(tester.takeException(), isNull);
       await workspace.close();
+      await auth.close();
     },
   );
 

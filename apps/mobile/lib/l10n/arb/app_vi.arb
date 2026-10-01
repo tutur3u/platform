@@ -3850,5 +3850,26 @@
                 "type": "String"
             }
         }
+    },
+    "inventoryStockHealthTitle": "Tình trạng tồn kho",
+    "inventoryStockHealthScope": "Sản phẩm đang hoạt động · mọi dòng tồn kho, gồm kho đã lưu trữ",
+    "inventoryStockHealthAsOf": "Ảnh chụp từ máy chủ: {timestamp} UTC",
+    "inventoryStockHealthIncomplete": "Ảnh chụp chưa đầy đủ: một vài số đếm hoặc thời gian máy chủ bị thiếu.",
+    "inventoryStockHealthUnavailable": "Không thể tải tình trạng tồn kho. Kéo để làm mới và thử lại.",
+    "inventoryStockHealthDenied": "Bạn không có quyền xem phân tích tồn kho.",
+    "inventoryStockHealthLoading": "Đang tải tình trạng tồn kho…",
+    "inventoryStockHealthActive": "Sản phẩm đang hoạt động",
+    "inventoryStockHealthUnconfigured": "Sản phẩm chưa có dòng tồn kho",
+    "inventoryStockHealthLow": "Dòng tồn kho thấp",
+    "inventoryStockHealthOut": "Dòng hết hàng",
+    "inventoryStockHealthUnlimited": "Dòng tồn kho không giới hạn",
+    "inventoryStockHealthOverlap": "Số dòng thấp/hết hàng có thể trùng nhau. Kiểm tra thấp/hết hàng theo số lượng không tính dòng không giới hạn; các dòng này được đếm riêng. Biểu đồ so sánh số dòng.",
+    "inventoryStockHealthUnknown": "Chưa có dữ liệu",
+    "@inventoryStockHealthAsOf": {
+        "placeholders": {
+            "timestamp": {
+                "type": "String"
+            }
+        }
     }
 }

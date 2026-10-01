@@ -3846,5 +3846,26 @@
                 "type": "String"
             }
         }
+    },
+    "inventoryStockHealthTitle": "Stock health",
+    "inventoryStockHealthScope": "Current active products · all stock rows, including archived warehouses",
+    "inventoryStockHealthAsOf": "Server snapshot: {timestamp} UTC",
+    "inventoryStockHealthIncomplete": "Partial snapshot: some counts or the server timestamp are unavailable.",
+    "inventoryStockHealthUnavailable": "Stock health is unavailable. Pull to refresh to try again.",
+    "inventoryStockHealthDenied": "You do not have access to stock analytics.",
+    "inventoryStockHealthLoading": "Loading stock health…",
+    "inventoryStockHealthActive": "Active products",
+    "inventoryStockHealthUnconfigured": "Products without stock rows",
+    "inventoryStockHealthLow": "Low stock rows",
+    "inventoryStockHealthOut": "Out of stock rows",
+    "inventoryStockHealthUnlimited": "Unlimited stock rows",
+    "inventoryStockHealthOverlap": "Low/out counts can overlap. Low/out quantity checks exclude Unlimited rows; Unlimited rows are counted separately. Bars compare row counts.",
+    "inventoryStockHealthUnknown": "Unavailable",
+    "@inventoryStockHealthAsOf": {
+        "placeholders": {
+            "timestamp": {
+                "type": "String"
+            }
+        }
     }
 }
