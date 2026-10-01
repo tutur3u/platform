@@ -29,7 +29,20 @@ import '../../../helpers/helpers.dart';
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
-class _Inventory extends Mock implements InventoryRepository {}
+class _Inventory extends InventoryRepository {
+  @override
+  Future<({List<InventoryProduct> data, int count})> getProducts(
+    String wsId, {
+    String? query,
+    String status = 'active',
+    int page = 1,
+    int pageSize = 20,
+    bool forceRefresh = false,
+  }) async => (
+    data: query == 'missing' ? <InventoryProduct>[] : [_product()],
+    count: query == 'missing' ? 0 : 1,
+  );
+}
 
 class _Finance extends Mock implements FinanceRepository {}
 
@@ -553,21 +566,6 @@ void main() {
       ).thenAnswer(
         (_) async =>
             const WorkspacePermissions(permissions: {}, isCreator: false),
-      );
-      when(
-        () => inventory.getProducts(
-          any(),
-          query: any(named: 'query'),
-          pageSize: any(named: 'pageSize'),
-          forceRefresh: any(named: 'forceRefresh'),
-        ),
-      ).thenAnswer(
-        (call) async => (
-          data: call.namedArguments[#query] == 'missing'
-              ? <InventoryProduct>[]
-              : [_product()],
-          count: call.namedArguments[#query] == 'missing' ? 0 : 1,
-        ),
       );
       final key = GlobalKey();
       await tester.pumpApp(
