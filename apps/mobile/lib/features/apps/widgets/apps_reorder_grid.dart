@@ -227,7 +227,7 @@ class _AppsReorderGridState extends State<AppsReorderGrid>
   }
 }
 
-class _AppGridTile extends StatelessWidget {
+class _AppGridTile extends StatefulWidget {
   const _AppGridTile({
     required this.module,
     required this.index,
@@ -245,23 +245,31 @@ class _AppGridTile extends StatelessWidget {
   final ValueChanged<AppModule>? onSelected;
 
   @override
+  State<_AppGridTile> createState() => _AppGridTileState();
+}
+
+class _AppGridTileState extends State<_AppGridTile> {
+  bool _showFocus = false;
+
+  @override
   Widget build(BuildContext context) {
     final palette = AppCardPalette.resolve(
       context,
-      index: index,
-      moduleId: module.id,
+      index: widget.index,
+      moduleId: widget.module.id,
     );
     void select() {
       unawaited(AppHaptics.selection());
-      onSelected?.call(module);
+      widget.onSelected?.call(widget.module);
     }
 
     return Semantics(
       container: true,
-      label: module.label(context.l10n),
+      label: widget.module.label(context.l10n),
       button: true,
       onTap: select,
       child: FocusableActionDetector(
+        onShowFocusHighlight: (value) => setState(() => _showFocus = value),
         shortcuts: const {
           SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
           SingleActivator(LogicalKeyboardKey.numpadEnter): ActivateIntent(),
@@ -275,82 +283,94 @@ class _AppGridTile extends StatelessWidget {
             },
           ),
         },
-        child: Column(
-          children: [
-            SizedBox(
-              width: 82,
-              height: 84,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: InkWell(
-                      excludeFromSemantics: true,
-                      canRequestFocus: false,
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: select,
-                      child: Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: palette.background,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: palette.border),
-                          boxShadow: [
-                            BoxShadow(
-                              color: palette.shadow,
-                              blurRadius: 12,
-                              offset: const Offset(0, 5),
+        child: DecoratedBox(
+          key: ValueKey('apps-grid-focus-${widget.module.id}'),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: _showFocus
+                  ? Theme.of(context).colorScheme.primary
+                  : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Column(
+            children: [
+              SizedBox(
+                width: 82,
+                height: 84,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: InkWell(
+                        excludeFromSemantics: true,
+                        canRequestFocus: false,
+                        borderRadius: BorderRadius.circular(18),
+                        onTap: select,
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: palette.background,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: palette.border),
+                            boxShadow: [
+                              BoxShadow(
+                                color: palette.shadow,
+                                blurRadius: 12,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: ExcludeSemantics(
+                            child: Icon(
+                              widget.module.icon,
+                              color: palette.iconColor,
+                              size: 30,
                             ),
-                          ],
-                        ),
-                        child: ExcludeSemantics(
-                          child: Icon(
-                            module.icon,
-                            color: palette.iconColor,
-                            size: 30,
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  if (showVisibility)
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: AppVisibilityButton(
-                        hidden: hidden,
-                        cornerAligned: true,
-                        onPressed: onVisibilityPressed,
+                    if (widget.showVisibility)
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: AppVisibilityButton(
+                          hidden: widget.hidden,
+                          cornerAligned: true,
+                          onPressed: widget.onVisibilityPressed,
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            InkWell(
-              excludeFromSemantics: true,
-              canRequestFocus: false,
-              borderRadius: BorderRadius.circular(4),
-              onTap: select,
-              child: ExcludeSemantics(
-                child: Text(
-                  module.label(context.l10n),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    height: 1.12,
-                    color: hidden
-                        ? Theme.of(context).colorScheme.onSurfaceVariant
-                        : null,
+              const SizedBox(height: 8),
+              InkWell(
+                excludeFromSemantics: true,
+                canRequestFocus: false,
+                borderRadius: BorderRadius.circular(4),
+                onTap: select,
+                child: ExcludeSemantics(
+                  child: Text(
+                    widget.module.label(context.l10n),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      height: 1.12,
+                      color: widget.hidden
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                          : null,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

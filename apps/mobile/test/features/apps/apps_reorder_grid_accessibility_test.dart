@@ -103,6 +103,17 @@ void main() {
       launch.getSemanticsData().flagsCollection.isFocused,
       Tristate.isTrue,
     );
+    Border ring(String id) =>
+        (tester
+                        .widget<DecoratedBox>(
+                          find.byKey(ValueKey('apps-grid-focus-$id')),
+                        )
+                        .decoration
+                    as BoxDecoration)
+                .border!
+            as Border;
+    expect(ring('tasks').top.color.a, greaterThan(0));
+    expect(ring('calendar').top.color.a, 0);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pump();
     expect(launched, 1);
@@ -110,6 +121,8 @@ void main() {
     await tester.pump();
     final next = tester.getSemantics(find.text('Calendar'));
     expect(next.getSemanticsData().flagsCollection.isFocused, Tristate.isTrue);
+    expect(ring('tasks').top.color.a, 0);
+    expect(ring('calendar').top.color.a, greaterThan(0));
     await tester.sendKeyEvent(LogicalKeyboardKey.space);
     await tester.pump();
     expect(launched, 2);
