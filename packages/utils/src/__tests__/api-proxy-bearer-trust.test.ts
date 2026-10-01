@@ -104,11 +104,13 @@ describe('native Calendar gateway verified session parity', () => {
 
   it('keeps unsupported separator whitespace aligned with server cache keys', async () => {
     const header = `Bearer  ${token}`;
-    expect(
-      buildAbuseRiskSubjects({ headers: { authorization: header } }).some(
-        (subject) => subject.subject_type === 'session'
-      )
-    ).toBe(false);
+    const sessionSubject = (authorization: string) =>
+      buildAbuseRiskSubjects({
+        headers: { authorization },
+        userId: 'synthetic-user',
+      }).find((subject) => subject.subject_type === 'session');
+    expect(sessionSubject(`Bearer ${token}`)?.subject_key).toBe(verifiedKey());
+    expect(sessionSubject(header)).toBeUndefined();
     mocks.trust.mockResolvedValue(
       new Map([[verifiedKey(), { m: 1, verified: true }]])
     );

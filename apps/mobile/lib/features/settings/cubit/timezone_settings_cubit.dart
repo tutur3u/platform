@@ -81,14 +81,16 @@ class TimezoneSettingsCubit extends Cubit<TimezoneSettingsState> {
     }
     _retryAt = null;
     emit(
-      sameScope && previous.resolved
-          ? TimezoneSettingsState(
-              personal: previous.personal,
-              workspace: previous.workspace,
-              device: previous.device,
-              resolved: true,
-            )
-          : const TimezoneSettingsState(),
+      TimezoneSettingsState(
+        personal: sameUser ? previous.personal : 'auto',
+        workspace: sameScope ? previous.workspace : 'auto',
+        device: sameScope ? previous.device : 'UTC',
+        resolved: sameScope && previous.resolved,
+        personalLoaded:
+            sameUser && (previous.resolved || previous.personalLoaded),
+        workspaceLoaded:
+            sameScope && (previous.resolved || previous.workspaceLoaded),
+      ),
     );
     if (userId == null) {
       emit(const TimezoneSettingsState(loading: false));
