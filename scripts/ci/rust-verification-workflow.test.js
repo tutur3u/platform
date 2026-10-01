@@ -248,6 +248,21 @@ test('Worker package semantics reject entry drift, missing exports and broken mo
       ],
       [
         bundle,
+        'let E=class {}; E.prototype.fetch = function () {}; E=class {}; export { E as default };',
+        validBundle,
+      ],
+      [
+        bundle,
+        'class E {}; let Alias=E; Alias.prototype.fetch = function () {}; Alias=class {}; export { Alias as default };',
+        validBundle,
+      ],
+      [
+        bundle,
+        'let E=class {}; E.prototype.fetch=function(){},E=class{}; export default new Proxy(E, {});',
+        validBundle,
+      ],
+      [
+        bundle,
         'class E {}; const decoy="E.prototype.fetch = function () {}"; export { E as default };',
         validBundle,
       ],

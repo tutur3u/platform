@@ -195,9 +195,13 @@ jobs:
           new SourceTextModule(bundle);
           const ast = parse(bundle, { ecmaVersion: 'latest', sourceType: 'module' });
           const bindings = new Map();
+          const reassignedBindings = new Set();
           function recordAssignment(node) {
             if (node.type === 'SequenceExpression') node.expressions.forEach(recordAssignment);
-            if (node.type === 'AssignmentExpression' && node.left.type === 'Identifier') bindings.set(node.left.name, node.right);
+            if (node.type === 'AssignmentExpression' && node.left.type === 'Identifier') {
+              reassignedBindings.add(node.left.name);
+              bindings.set(node.left.name, node.right);
+            }
           }
           let defaultExport;
           for (const statement of ast.body) {
@@ -221,6 +225,7 @@ jobs:
             assert.ok(node, 'default export must resolve to a Worker class');
             if (node.type === 'Identifier') {
               assert.ok(!seen.has(node.name), 'cyclic default export alias');
+              assert.ok(!reassignedBindings.has(node.name), 'selected class/alias binding must not be reassigned');
               return resolveClass(bindings.get(node.name), new Set([...seen, node.name]));
             }
             if (node.type === 'NewExpression' && node.callee.type === 'Identifier' && node.callee.name === 'Proxy') {
