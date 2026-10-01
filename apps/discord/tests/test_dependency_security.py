@@ -87,8 +87,8 @@ class DependencySecurityTests(unittest.TestCase):
             response.close()
 
     def test_oversized_chunk_extension_is_rejected(self):
-        # A bounded 16KiB fixture represents an attacker-controlled chunk-size line.
-        response = self.chunked_response(b"1;" + b"x" * 16384 + b"\r\na\r\n0\r\n\r\n")
+        # A bounded 128KiB line exceeds the parser's 64KiB security limit.
+        response = self.chunked_response(b"1;" + b"x" * (128 * 1024) + b"\r\na\r\n0\r\n\r\n")
         try:
             with pytest.raises(urllib3.exceptions.ProtocolError):
                 list(response.read_chunked())
