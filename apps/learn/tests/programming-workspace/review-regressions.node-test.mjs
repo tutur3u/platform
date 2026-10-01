@@ -176,6 +176,44 @@ test('synthetic custom result carries custom input and consistent case statistic
   assert.equal(JSON.stringify(submission.result.timingRangeMs), '[3,3]');
 });
 
+test('browser verdict expectation matches actual fixture counts for Run and Submit', async () => {
+  const fixture = load(path.join(import.meta.dirname, 'judge.ts'), {
+    '../../src/lib/coding/languages': { isCodingLanguage: () => true },
+  });
+  const browser = fs.readFileSync(
+    path.join(import.meta.dirname, 'run-ui.mjs'),
+    'utf8'
+  );
+  const expectation = browser.match(
+    /getByText\('([0-9]+ of [0-9]+ cases passed)', \{ exact: true \}\)/
+  )?.[1];
+  assert.ok(expectation, 'Browser batch must wait for the exact case verdict');
+  for (const challenge of ['two-sum', 'binary-search']) {
+    for (const kind of ['test', 'submit']) {
+      await fixture.submitCodingSolution(
+        'ws',
+        undefined,
+        challenge,
+        'python',
+        'source',
+        kind
+      );
+      const { result } = await fixture.getCodingSubmission();
+      assert.equal(result.total, result.results.length);
+      assert.equal(
+        result.passed,
+        result.results.filter((item) => item.passed).length
+      );
+      assert.equal(
+        expectation,
+        `${result.passed} of ${result.total} cases passed`
+      );
+      assert.equal(result.hiddenPassed, 0);
+      assert.equal(result.hiddenTotal, 0);
+    }
+  }
+});
+
 test('disabled toolbar tooltip is focusable without adding enabled duplicate tab stops', () => {
   const tree = [];
   const mocks = {

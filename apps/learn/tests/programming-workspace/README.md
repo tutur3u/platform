@@ -12,7 +12,8 @@ bundled font through Vite. It checks font geometry/caret/hit-testing/wrapping fi
 then desktop/mobile dark/light rendering, contrast, keyboard controls, draft
 switches, collapse/resize, guarded execution, and synthetic result expansion.
 Both runners close browser/server in finally; strict loopback port 4187 must be free.
-Each child has 180 seconds; the outer browser budget is 10 minutes. No dependency or
+Each child has a 10-minute work budget. The parent permits 750 seconds per child
+to include bounded teardown and startup margin. No dependency or
 browser downloads, application build, real API, database, customer fixture or judge
 execution is performed. Missing compatible dependencies/browser are prerequisites,
 not permission to install or bypass FIFO.
@@ -49,3 +50,12 @@ child retains its 600-second work budget; the parent allows an additional
 120 seconds for lint/typecheck teardown and 30 seconds of startup margin.
 Source checks do not prove device safe-area geometry or replace the browser
 batch and exact-head Learn build in CI.
+
+The UI runner also enables the actual shared mobile navigation, wraps its
+synthetic header row, and crosses the 767/768 breakpoint. Test-only CSS variables
+simulate 24px top and 20px bottom safe insets; geometry evidence explicitly labels
+these simulated values. Desktop Chromium is not real notched-device acceptance.
+Disabled Run/Submit tooltips are reached with keyboard Tab through the actual
+Radix components. Both challenges exercise Run and Submit and compare actual
+rendered verdicts with the one synthetic case card. Unique synthetic submission
+ids keep query caching faithful between these attempts.

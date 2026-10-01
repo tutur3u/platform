@@ -11,6 +11,10 @@ let attempt:
 const syntheticGlobal = globalThis as typeof globalThis & {
   __syntheticSubmitCount?: number;
 };
+function syntheticId() {
+  // Distinct cache keys reproduce real submissions instead of reusing stale data.
+  return `22222222-2222-4222-8222-${String(syntheticGlobal.__syntheticSubmitCount ?? 0).padStart(12, '0')}`;
+}
 export async function submitCodingSolution(
   ...[
     _ws,
@@ -27,7 +31,7 @@ export async function submitCodingSolution(
   syntheticGlobal.__syntheticSubmitCount =
     (syntheticGlobal.__syntheticSubmitCount ?? 0) + 1;
   attempt = { challengeSlug, language, source, kind, customCase };
-  return '22222222-2222-4222-8222-222222222222';
+  return syntheticId();
 }
 export async function listCodingExecutions() {
   return { items: [], nextCursor: null };
@@ -35,7 +39,7 @@ export async function listCodingExecutions() {
 export async function getCodingSubmission(): Promise<CodingExecutionSummary> {
   if (!attempt) throw new Error('No synthetic attempt');
   return {
-    id: '22222222-2222-4222-8222-222222222222',
+    id: syntheticId(),
     ...attempt,
     createdAt: new Date().toISOString(),
     status: 'succeeded',

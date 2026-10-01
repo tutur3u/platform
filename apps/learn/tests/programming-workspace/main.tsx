@@ -40,9 +40,12 @@ const queryClient = new QueryClient({
 });
 function Harness() {
   const [ready, setReady] = useState(false);
+  const [navigation, setNavigation] = useState(false);
+  const [wrappedHeader, setWrappedHeader] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const { setTheme } = useTheme();
   useEffect(() => {
-    const qa = { setReady, setTheme };
+    const qa = { setReady, setTheme, setNavigation, setWrappedHeader };
     Object.assign(window, { qa });
     return () => {
       if ((window as Window & { qa?: typeof qa }).qa === qa)
@@ -52,9 +55,21 @@ function Harness() {
   return (
     <Structure
       contentFullBleed
-      sidebarHidden
-      isCollapsed
-      setIsCollapsed={() => {}}
+      sidebarHidden={!navigation}
+      isCollapsed={collapsed}
+      setIsCollapsed={setCollapsed}
+      sidebarLabels={{
+        open: 'Open synthetic navigation',
+        close: 'Close synthetic navigation',
+      }}
+      mobileHeader={
+        <div
+          data-testid="synthetic-mobile-header"
+          style={{ maxWidth: wrappedHeader ? 90 : undefined }}
+        >
+          Synthetic Learn workspace
+        </div>
+      }
       sidebarHeader={null}
       sidebarContent={null}
       actions={null}

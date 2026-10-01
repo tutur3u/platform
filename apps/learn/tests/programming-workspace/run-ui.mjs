@@ -174,6 +174,91 @@ async function run() {
   await themeCapture('light', 1440, 1000);
   await themeCapture('dark', 390, 844);
   await themeCapture('light', 390, 844);
+  // The real shared shell is measured; inset values below are synthetic, not
+  // claims about hardware notch behavior in desktop Chromium.
+  await page.evaluate(() => {
+    window.qa.setNavigation(true);
+    document.documentElement.style.setProperty('--qa-safe-top', '24px');
+    document.documentElement.style.setProperty('--qa-safe-bottom', '20px');
+  });
+  async function verifyMobileShell(name, width) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.waitForFunction(() => {
+      const main = document.querySelector('main');
+      const nav = document.querySelector('nav');
+      return (
+        Math.abs(
+          parseFloat(
+            getComputedStyle(main).getPropertyValue('--mobile-nav-height')
+          ) - nav.getBoundingClientRect().height
+        ) < 1
+      );
+    });
+    const geometry = await page.evaluate(() => {
+      const nav = document.querySelector('nav').getBoundingClientRect();
+      const main = document.querySelector('main').getBoundingClientRect();
+      const toolbar = document
+        .querySelector('main header')
+        .getBoundingClientRect();
+      const consolePanel = document
+        .querySelector('#programming-console')
+        .getBoundingClientRect();
+      return {
+        navHeight: nav.height,
+        navBottom: nav.bottom,
+        mainHeight: main.height,
+        toolbarTop: toolbar.top,
+        consoleBottom: consolePanel.bottom,
+        viewport: innerHeight,
+        scrollHeight: document.documentElement.scrollHeight,
+        scrollWidth: document.documentElement.scrollWidth,
+      };
+    });
+    assert.equal(geometry.mainHeight, 844);
+    assert.ok(
+      geometry.toolbarTop >= geometry.navBottom - 1,
+      JSON.stringify(geometry)
+    );
+    assert.ok(
+      geometry.consoleBottom <= geometry.viewport - 19,
+      JSON.stringify(geometry)
+    );
+    assert.ok(
+      geometry.scrollHeight <= geometry.viewport + 1,
+      JSON.stringify(geometry)
+    );
+    assert.ok(geometry.scrollWidth <= width, JSON.stringify(geometry));
+    if (width < 768) assert.ok(geometry.navHeight > 24);
+    else assert.equal(geometry.navHeight, 0);
+    results.checks.push({
+      name,
+      status: 'pass',
+      geometry,
+      simulatedInsets: { top: 24, bottom: 20 },
+    });
+    console.log('PASS', name);
+    await capture(name);
+    return geometry;
+  }
+  const normalHeader = await verifyMobileShell(
+    'phone-visible-navigation-simulated-insets',
+    390
+  );
+  await page.evaluate(() => window.qa.setWrappedHeader(true));
+  const wrappedHeader = await verifyMobileShell(
+    'phone-wrapped-navigation-simulated-insets',
+    390
+  );
+  assert.ok(wrappedHeader.navHeight > normalHeader.navHeight);
+  await verifyMobileShell('navigation-breakpoint-767', 767);
+  await verifyMobileShell('navigation-breakpoint-768', 768);
+  await verifyMobileShell('navigation-return-phone', 390);
+  await page.evaluate(() => {
+    window.qa.setNavigation(false);
+    window.qa.setWrappedHeader(false);
+    document.documentElement.style.removeProperty('--qa-safe-top');
+    document.documentElement.style.removeProperty('--qa-safe-bottom');
+  });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.evaluate(() => window.qa.setTheme('dark'));
   const firstCase = page
@@ -193,7 +278,34 @@ async function run() {
       .isDisabled(),
     true
   );
-  await run.hover({ force: true });
+  await page.getByRole('combobox', { name: 'Language' }).focus();
+  await page.keyboard.press('Tab');
+  assert.equal(
+    await run.locator('..').evaluate((el) => el === document.activeElement),
+    true
+  );
+  await page.getByRole('tooltip').filter({ hasText: 'Run tests' }).waitFor();
+  await page.keyboard.press('Tab');
+  const submitButton = page.getByRole('button', {
+    name: 'Submit solution',
+    exact: true,
+  });
+  assert.equal(
+    await submitButton
+      .locator('..')
+      .evaluate((el) => el === document.activeElement),
+    true
+  );
+  await page
+    .getByRole('tooltip')
+    .filter({ hasText: 'Submit solution' })
+    .waitFor();
+  check('disabled Run and Submit expose actual Radix tooltips by keyboard Tab');
+  await page.keyboard.press('Escape');
+  await page.getByRole('combobox', { name: 'Language' }).focus();
+  await page.mouse.move(0, 0);
+  await page.waitForFunction(() => !document.querySelector('[role=tooltip]'));
+  await run.locator('..').hover();
   await page.getByRole('tooltip').filter({ hasText: 'Run tests' }).waitFor();
   await page
     .locator('.monaco-editor .view-lines')
@@ -302,7 +414,7 @@ async function run() {
   await page.getByRole('button', { name: 'Collapse test console' }).click();
   await page.evaluate(() => window.qa.setReady(true));
   await run.click();
-  await page.getByText('2 of 2 cases passed', { exact: true }).waitFor();
+  await page.getByText('1 of 1 cases passed', { exact: true }).waitFor();
   assert.equal(
     await page
       .getByRole('button', { name: 'Collapse test console' })
@@ -319,6 +431,40 @@ async function run() {
   await page.keyboard.press('ControlOrMeta+Enter');
   await page.waitForFunction(() => window.__syntheticSubmitCount === 2);
   check('Ctrl/Cmd+Enter uses guarded test execution');
+  for (const challengeName of ['Two Sum', 'Binary Search']) {
+    await page.getByRole('combobox', { name: 'Programming problems' }).click();
+    await page
+      .getByRole('option', { name: challengeName, exact: true })
+      .click();
+    for (const actionName of ['Run tests', 'Submit solution']) {
+      const beforeCount = await page.evaluate(
+        () => window.__syntheticSubmitCount
+      );
+      await page.getByRole('button', { name: actionName, exact: true }).click();
+      await page.waitForFunction(
+        (count) => window.__syntheticSubmitCount === count + 1,
+        beforeCount
+      );
+      await page.getByText('1 of 1 cases passed', { exact: true }).waitFor();
+      const panel = page.getByRole('tabpanel');
+      assert.equal(
+        await panel.getByText('Public case 1', { exact: true }).count(),
+        1
+      );
+      assert.equal(
+        await panel.getByText('Public case 2', { exact: true }).count(),
+        0
+      );
+      assert.equal(
+        await panel.getByText('Your output', { exact: true }).count(),
+        1
+      );
+      check(
+        `${challengeName} ${actionName}: actual verdict and rendered case count agree at 1/1`
+      );
+    }
+  }
+
   await page.evaluate(() => document.fonts.ready);
   assert.equal(
     await page.evaluate(() => document.fonts.check('13px ProgrammingQA')),
