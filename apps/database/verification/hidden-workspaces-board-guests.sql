@@ -1,6 +1,7 @@
 -- Run ONLY on a parent-admitted disposable database with current migrations.
 -- Board-share-only guest preference proof; no grants or schema changes.
--- This fixture is prepared but must not be claimed verified until admitted execution.
+-- Includes controlled synthetic lifecycle setup and server-owner cleanup.
+-- Claim verified only with the exact applied fixture hash and admitted run report.
 begin;
 set local search_path = public, extensions;
 
@@ -31,6 +32,17 @@ insert into public.workspace_boards(id,ws_id,name) values
 insert into public.task_board_shares(board_id,shared_with_user_id,permission,shared_by_user_id) values
  ('00000000-0000-4000-8000-000000009930','00000000-0000-4000-8000-000000009901','view','00000000-0000-4000-8000-000000009903'),
  ('00000000-0000-4000-8000-000000009930','00000000-0000-4000-8000-000000009902','edit','00000000-0000-4000-8000-000000009903');
+do $event_snapshot$
+declare item record; total bigint; counts jsonb := '{}'::jsonb;
+begin
+  for item in select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relkind in ('r','p') and c.relname ~ '(audit|activity|notification)'
+  loop
+    execute format('select count(*) from public.%I',item.relname) into total;
+    counts := counts || jsonb_build_object(item.relname,total);
+  end loop;
+  perform set_config('hidden_fixture.events_before',counts::text,true);
+end $event_snapshot$;
 set local role authenticated;
 select set_config('request.jwt.claims',jsonb_build_object('sub','00000000-0000-4000-8000-000000009901','role','authenticated')::text,true);
 select 'actor=' || auth.uid()::text || ', mfa-satisfied=' || public.account_required_mfa_satisfied()::text || ', canonical-member=' || exists(select 1 from public.workspace_members where ws_id='00000000-0000-4000-8000-000000009910' and user_id=auth.uid())::text;
@@ -59,9 +71,74 @@ select 'ASSERT 14: ' || (((select count(*)::int from public.user_configs where i
 select 'ASSERT 15: ' || (((select count(*)::int from public.workspace_members where ws_id='00000000-0000-4000-8000-000000009910')) = 1)::text || ' ' || 'hide and restore preserve all memberships';
 select 'ASSERT 16: ' || ((select count(*) from public.workspace_members where ws_id='00000000-0000-4000-8000-000000009910' and user_id in ('00000000-0000-4000-8000-000000009901','00000000-0000-4000-8000-000000009902')) = 0)::text || ' guests have no workspace membership';
 select 'ASSERT 17: ' || ((select count(*) from public.task_board_shares where board_id='00000000-0000-4000-8000-000000009930') = 2)::text || ' canonical board shares preserved';
+do $event_snapshot$
+declare item record; total bigint; counts jsonb := '{}'::jsonb;
+begin
+  for item in select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relkind in ('r','p') and c.relname ~ '(audit|activity|notification)'
+  loop
+    execute format('select count(*) from public.%I',item.relname) into total;
+    counts := counts || jsonb_build_object(item.relname,total);
+  end loop;
+  perform set_config('hidden_fixture.events_after',counts::text,true);
+end $event_snapshot$;
+select 'HIDDEN_EVENT_COUNTS: ' || jsonb_build_object(
+  'before',current_setting('hidden_fixture.events_before')::jsonb,
+  'after',current_setting('hidden_fixture.events_after')::jsonb,
+  'unchanged',current_setting('hidden_fixture.events_before')::jsonb=current_setting('hidden_fixture.events_after')::jsonb
+)::text;
+
+-- Fixture lifecycle: a board-share guest becomes a member. These controlled
+-- membership setup operations are outside the Hidden mutations being verified.
+set local role authenticated;
+select set_config('request.jwt.claims',jsonb_build_object('sub','00000000-0000-4000-8000-000000009901','role','authenticated')::text,true);
+insert into public.user_configs(user_id,id,value) values ('00000000-0000-4000-8000-000000009901','HIDDEN_WORKSPACE:00000000-0000-4000-8000-000000009910','true');
+reset role;
+select set_config('request.jwt.claims',jsonb_build_object('sub','00000000-0000-4000-8000-000000009903','role','authenticated')::text,true);
+insert into public.workspace_members(ws_id,user_id,type) values ('00000000-0000-4000-8000-000000009910','00000000-0000-4000-8000-000000009901','MEMBER');
+set local role authenticated;
+select set_config('request.jwt.claims',jsonb_build_object('sub','00000000-0000-4000-8000-000000009901','role','authenticated')::text,true);
+select 'ASSERT 18: ' || public.account_required_mfa_satisfied()::text || ' member transition uses genuine actor with satisfied MFA';
+insert into public.user_workspace_configs(user_id,ws_id,id,value) values ('00000000-0000-4000-8000-000000009901','00000000-0000-4000-8000-000000009910','HIDDEN_WORKSPACE','true');
+delete from public.user_configs where user_id=auth.uid() and id='HIDDEN_WORKSPACE:00000000-0000-4000-8000-000000009910';
+delete from public.user_workspace_configs where user_id=auth.uid() and ws_id='00000000-0000-4000-8000-000000009910' and id='HIDDEN_WORKSPACE';
+select 'ASSERT 19: ' || ((select count(*) from public.user_configs where id='HIDDEN_WORKSPACE:00000000-0000-4000-8000-000000009910') + (select count(*) from public.user_workspace_configs where ws_id='00000000-0000-4000-8000-000000009910' and id='HIDDEN_WORKSPACE') = 0)::text || ' guest-to-member restore removes both own preferences through owner RLS';
+reset role;
+select 'ASSERT 20: ' || ((select count(*) from public.workspace_members where ws_id='00000000-0000-4000-8000-000000009910') = 2 and (select count(*) from public.user_configs where user_id='00000000-0000-4000-8000-000000009902' and id='HIDDEN_WORKSPACE:00000000-0000-4000-8000-000000009910') = 1)::text || ' restore preserves memberships and other guest preference';
+
+-- The member hides, then loses membership through fixture admin setup while the
+-- live board share remains. Direct owner RLS cannot remove the stale member row.
+set local role authenticated;
+select set_config('request.jwt.claims',jsonb_build_object('sub','00000000-0000-4000-8000-000000009901','role','authenticated')::text,true);
+insert into public.user_workspace_configs(user_id,ws_id,id,value) values ('00000000-0000-4000-8000-000000009901','00000000-0000-4000-8000-000000009910','HIDDEN_WORKSPACE','true');
+reset role;
+select set_config('request.jwt.claims',jsonb_build_object('sub','00000000-0000-4000-8000-000000009903','role','authenticated')::text,true);
+delete from public.workspace_members where ws_id='00000000-0000-4000-8000-000000009910' and user_id='00000000-0000-4000-8000-000000009901';
+set local role authenticated;
+select set_config('request.jwt.claims',jsonb_build_object('sub','00000000-0000-4000-8000-000000009901','role','authenticated')::text,true);
+insert into public.user_configs(user_id,id,value) values ('00000000-0000-4000-8000-000000009901','HIDDEN_WORKSPACE:00000000-0000-4000-8000-000000009910','true');
+with removed as (delete from public.user_workspace_configs where user_id=auth.uid() and ws_id='00000000-0000-4000-8000-000000009910' and id='HIDDEN_WORKSPACE' returning 1)
+select 'ASSERT 21: ' || ((select count(*) from removed) = 0)::text || ' genuine guest RLS cannot remove stale membership preference';
+reset role;
+set local role service_role;
+select set_config('request.jwt.claims',jsonb_build_object('sub','00000000-0000-4000-8000-000000009901','role','service_role')::text,true);
+select 'ASSERT 22: ' || (exists(select 1 from public.task_board_shares s join public.workspace_boards b on b.id=s.board_id where s.shared_with_user_id=auth.uid() and s.permission in ('view','edit') and b.ws_id='00000000-0000-4000-8000-000000009910' and b.deleted_at is null) and not exists(select 1 from public.workspace_members where ws_id='00000000-0000-4000-8000-000000009910' and user_id=auth.uid()))::text || ' server actor has current live board share without membership';
+-- Same exact actor/workspace/key filtering as the authorized API cleanup.
+delete from public.user_configs where user_id=auth.uid() and id='HIDDEN_WORKSPACE:00000000-0000-4000-8000-000000009910';
+delete from public.user_workspace_configs where user_id=auth.uid() and ws_id='00000000-0000-4000-8000-000000009910' and id='HIDDEN_WORKSPACE';
+select 'ASSERT 23: ' || ((select count(*) from public.user_configs where user_id=auth.uid() and id='HIDDEN_WORKSPACE:00000000-0000-4000-8000-000000009910') + (select count(*) from public.user_workspace_configs where user_id=auth.uid() and ws_id='00000000-0000-4000-8000-000000009910' and id='HIDDEN_WORKSPACE') = 0)::text || ' member-to-board-guest restore leaves owner GET empty in admin-backed session';
+select 'ASSERT 24: ' || ((select count(*) from public.workspace_members where ws_id='00000000-0000-4000-8000-000000009910') = 1 and (select count(*) from public.user_configs where user_id='00000000-0000-4000-8000-000000009902' and id='HIDDEN_WORKSPACE:00000000-0000-4000-8000-000000009910') = 1)::text || ' narrow server cleanup preserves membership count and other owner';
+reset role;
+select set_config('request.jwt.claims',jsonb_build_object('sub','00000000-0000-4000-8000-000000009903','role','authenticated')::text,true);
+insert into public.workspace_members(ws_id,user_id,type) values ('00000000-0000-4000-8000-000000009910','00000000-0000-4000-8000-000000009901','MEMBER');
+set local role authenticated;
+select set_config('request.jwt.claims',jsonb_build_object('sub','00000000-0000-4000-8000-000000009901','role','authenticated')::text,true);
+select 'ASSERT 25: ' || ((select count(*) from public.user_configs where id='HIDDEN_WORKSPACE:00000000-0000-4000-8000-000000009910') + (select count(*) from public.user_workspace_configs where ws_id='00000000-0000-4000-8000-000000009910' and id='HIDDEN_WORKSPACE') = 0)::text || ' restored owner remains visible after membership returns';
+reset role;
+select 'ASSERT 26: ' || ((select count(*) from public.task_board_shares where board_id='00000000-0000-4000-8000-000000009930') = 2)::text || ' restore transitions preserve canonical board shares';
 select 'STORAGE_METADATA: ' || jsonb_build_object(
   'tables', (select jsonb_agg(jsonb_build_object('name', relname, 'replicaIdentity', relreplident)) from pg_class where oid in ('public.user_configs'::regclass, 'public.user_workspace_configs'::regclass)),
   'publications', (select coalesce(jsonb_agg(jsonb_build_object('publication', pubname, 'table', tablename)), '[]'::jsonb) from pg_publication_tables where schemaname='public' and tablename in ('user_configs','user_workspace_configs')),
-  'triggers', (select coalesce(jsonb_agg(jsonb_build_object('table', tgrelid::regclass::text, 'trigger', tgname)), '[]'::jsonb) from pg_trigger where tgrelid in ('public.user_configs'::regclass,'public.user_workspace_configs'::regclass) and not tgisinternal)
+  'triggers', (select coalesce(jsonb_agg(jsonb_build_object('table', tgrelid::regclass::text, 'trigger', tgname, 'function', tgfoid::regprocedure::text)), '[]'::jsonb) from pg_trigger where tgrelid in ('public.user_configs'::regclass,'public.user_workspace_configs'::regclass) and not tgisinternal)
 )::text;
 rollback;

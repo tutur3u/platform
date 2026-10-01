@@ -123,14 +123,27 @@ The all-Hidden selection surface already provides recovery without an active sco
 Settings root/Workspace routes also remain reachable without an active scope.
 Satellite general Settings recovery does not wait for workspace/admin permissions. Exact-commit parent CI remains required before merge.
 
-The guest mutation and audience follow-up have synthetic API/session proofs
-(including real signed satellite tokens and rewritten web cookies); the original
-15-assertion DB run proves the existing owner policy for its synthetic member/admin
-fixtures. It does not prove board-share-only guest/runtime-publication behavior.
-The separate `hidden-workspaces-board-guests.sql` fixture is prepared for a parent-admitted
-run; it is not yet executed or claimed verified. No new DB run is
-launched solely for that scope; publication membership, replica identity and
-non-internal triggers remain future admitted-run verification.
+The guest mutation and audience follow-up have synthetic API/session proofs,
+including actual production CLI tokens and signed satellite bearer/rewritten-cookie
+sessions. The original 15-assertion member/admin DB proof remains unchanged.
+One additional parent-admitted disposable run applied the same 1,331 migrations
+and passed all 26 assertions in `hidden-workspaces-board-guests.sql`: the first
+17 prove board-share guest owner privacy and admin denial; nine more cover both
+restore transitions, genuine actor/MFA, preserved memberships/board shares, exact
+server-owner cleanup, and no re-hiding after membership returns. Controlled fixture
+membership changes are separate from the Hidden operations. Rollback and owned
+container/volume cleanup passed. No grants, policies or live data were changed.
+
+The applied fixture SHA-256 is
+`a36184027422006227bc4f4a797371c98586816255971e9f1a7adb38993ee510`;
+the migration aggregate is
+`cbdcebb2ccd342f23719b3ebcb879a8d2ad12c20d860cf62ce5e23d0f3ef051d`.
+In this migrated disposable database, neither preference table belongs to a
+publication and both use default replica identity. Captured noninternal triggers
+only update timestamps or enforce strict text limits. Six existing public audit,
+activity and notification table counts stayed unchanged during the guest
+preference operations. This is local migrated-schema evidence, not a claim about
+production catalog drift or every external logging system.
 
 ## Discovery follow-up
 
