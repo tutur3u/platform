@@ -37,23 +37,9 @@ class InventorySalesPeriodBar extends StatelessWidget {
         .firstOrNull;
 
     final theme = Theme.of(context);
-    final header = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.inventorySalesPeriodsTitle,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+    final header = Text(
+      l10n.inventorySalesPeriodsTitle,
+      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
     );
 
     final actions = Wrap(
@@ -107,49 +93,45 @@ class InventorySalesPeriodBar extends StatelessWidget {
       child: FinancePanel(
         padding: const EdgeInsets.all(14),
         radius: 18,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                header,
-                if (canManage) ...[const shad.Gap(12), actions],
-                const shad.Gap(14),
-                DropdownButtonFormField<String>(
-                  key: ValueKey(selectedPeriodId),
-                  initialValue: selectedPeriodId ?? '',
-                  isExpanded: true,
-                  items: [
-                    DropdownMenuItem<String>(
-                      value: '',
-                      child: Text(l10n.inventorySalesPeriodsAll),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            header,
+            if (canManage) ...[const shad.Gap(12), actions],
+            const shad.Gap(14),
+            DropdownButtonFormField<String>(
+              key: ValueKey(selectedPeriodId),
+              initialValue: selectedPeriodId ?? '',
+              isExpanded: true,
+              items: [
+                DropdownMenuItem<String>(
+                  value: '',
+                  child: Text(l10n.inventorySalesPeriodsAll),
+                ),
+                ...periods.map(
+                  (period) => DropdownMenuItem<String>(
+                    value: period.id,
+                    child: Text(
+                      '${period.name} · ${period.saleCount}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: period.isArchived
+                          ? theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            )
+                          : null,
                     ),
-                    ...periods.map(
-                      (period) => DropdownMenuItem<String>(
-                        value: period.id,
-                        child: Text(
-                          '${period.name} · ${period.saleCount}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: period.isArchived
-                              ? theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                )
-                              : null,
-                        ),
-                      ),
-                    ),
-                  ],
-                  onChanged: (value) =>
-                      onChanged(value == null || value.isEmpty ? null : value),
-                  decoration: InputDecoration(
-                    labelText: l10n.inventorySalesPeriodAssignmentLabel,
-                    prefixIcon: const Icon(Icons.event_note_outlined, size: 19),
                   ),
                 ),
               ],
-            );
-          },
+              onChanged: (value) =>
+                  onChanged(value == null || value.isEmpty ? null : value),
+              decoration: InputDecoration(
+                labelText: l10n.inventorySalesPeriodAssignmentLabel,
+                prefixIcon: const Icon(Icons.event_note_outlined, size: 19),
+              ),
+            ),
+          ],
         ),
       ),
     );

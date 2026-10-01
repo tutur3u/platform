@@ -7,12 +7,18 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/models/inventory/inventory_stock_health.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/inventory/view/inventory_page.dart';
 import 'package:mobile/features/inventory/view/inventory_products_page.dart';
 import 'package:mobile/features/inventory/widgets/inventory_product_card.dart';
 import 'package:mobile/features/inventory/widgets/inventory_sales_periods.dart';
@@ -21,16 +27,84 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import '../../../helpers/helpers.dart';
 
+class _Auth extends MockCubit<AuthState> implements AuthCubit {}
+
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
-class _Inventory extends Mock implements InventoryRepository {}
+class _Inventory extends InventoryRepository {
+  @override
+  Future<({List<InventoryProduct> data, int count})> getProducts(
+    String wsId, {
+    String? query,
+    String status = 'active',
+    int page = 1,
+    int pageSize = 20,
+    bool forceRefresh = false,
+  }) async => (
+    data: query == 'missing' ? <InventoryProduct>[] : [_product()],
+    count: query == 'missing' ? 0 : 1,
+  );
+}
 
 class _Finance extends Mock implements FinanceRepository {}
 
 class _Permissions extends Mock implements WorkspacePermissionsRepository {}
+
+class _FractionalOverview extends InventoryRepository {
+  @override
+  Future<InventoryStockHealth> getStockHealth(String wsId) async =>
+      InventoryStockHealth.fromJson({
+        'generatedAt': '2026-10-01T00:00:00Z',
+        'summary': <String, dynamic>{
+          'activeProducts': 1,
+          'stockedProducts': 1,
+          'lowStockRows': 1,
+          'outOfStockRows': 0,
+          'unlimitedStockRows': 0,
+        },
+      });
+
+  bool disposed = false;
+
+  @override
+  void dispose() {
+    disposed = true;
+    super.dispose();
+  }
+
+  @override
+  Future<InventoryOverview> getOverview(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async => const InventoryOverview(
+    realtimeEnabled: false,
+    totals: InventoryOverviewTotals(
+      walletsCount: 0,
+      totalIncome: 0,
+      totalExpense: 0,
+      inventorySalesRevenue: 0,
+      inventorySalesCount: 0,
+    ),
+    lowStockProducts: [
+      InventoryLowStockProduct(
+        productId: 'synthetic-fractional',
+        productName: 'Fractional beans',
+        amount: 2.5,
+        minAmount: 2.5,
+        price: 7.5,
+        warehouseName: 'Synthetic booth',
+        unitName: 'Bag',
+      ),
+    ],
+    recentSales: [],
+    ownerBreakdown: [],
+    categoryBreakdown: [],
+  );
+}
 
 InventoryProduct _product({double? amount, int rows = 1}) => InventoryProduct(
   id: 'synthetic-product',
@@ -124,78 +198,239 @@ void main() {
   ) async {
     _viewport(tester, const Size(390, 844));
     final semantics = tester.ensureSemantics();
-
-    final key = GlobalKey();
-    final product = _product();
-    await tester.pumpApp(
-      _scaled(
-        shad.Scaffold(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              InventoryProductCard(
-                product: InventoryProduct(
-                  id: product.id,
-                  name: product.name,
-                  categoryId: product.categoryId,
-                  ownerId: product.ownerId,
-                  wsId: product.wsId,
-                  inventory: const [
-                    InventoryStockEntry(
-                      unitId: 'cup',
-                      warehouseId: 'one',
-                      amount: 12,
-                      minAmount: 5,
-                      price: 12.5,
-                      unitName: 'Cup',
-                      warehouseName: 'Booth 1',
-                    ),
-                    InventoryStockEntry(
-                      unitId: 'bag',
-                      warehouseId: 'two',
-                      amount: 1,
-                      minAmount: 5,
-                      price: 12.5,
-                      unitName: 'Bag',
-                      warehouseName: 'Booth 2',
-                    ),
-                    InventoryStockEntry(
-                      unitId: 'session',
-                      warehouseId: 'three',
-                      amount: null,
-                      minAmount: 5,
-                      price: 12.5,
-                      unitName: 'Session',
-                      warehouseName: 'Booth 3',
-                    ),
-                  ],
+    try {
+      final key = GlobalKey();
+      final product = _product();
+      await tester.pumpApp(
+        _scaled(
+          shad.Scaffold(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                InventoryProductCard(
+                  product: InventoryProduct(
+                    id: product.id,
+                    name: product.name,
+                    categoryId: product.categoryId,
+                    ownerId: product.ownerId,
+                    wsId: product.wsId,
+                    inventory: const [
+                      InventoryStockEntry(
+                        unitId: 'cup',
+                        warehouseId: 'one',
+                        amount: 12,
+                        minAmount: 5,
+                        price: 12.5,
+                        unitName: 'Cup',
+                        warehouseName: 'Booth 1',
+                      ),
+                      InventoryStockEntry(
+                        unitId: 'bag',
+                        warehouseId: 'two',
+                        amount: 1,
+                        minAmount: 5,
+                        price: 12.5,
+                        unitName: 'Bag',
+                        warehouseName: 'Booth 2',
+                      ),
+                      InventoryStockEntry(
+                        unitId: 'session',
+                        warehouseId: 'three',
+                        amount: null,
+                        minAmount: 5,
+                        price: 12.5,
+                        unitName: 'Session',
+                        warehouseName: 'Booth 3',
+                      ),
+                    ],
+                  ),
+                  currency: 'USD',
                 ),
-                currency: 'USD',
-              ),
-            ],
+              ],
+            ),
           ),
+          1,
+          key,
         ),
-        1,
-        key,
-      ),
-    );
-    await tester.pump();
-    expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
-    expect(find.text('Low stock • Minimum amount: 5'), findsOneWidget);
-    expect(
-      find.bySemanticsLabel(
-        RegExp('Booth 2 • Bag • 1 available.*Low stock • Minimum amount: 5'),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.bySemanticsLabel(RegExp('Booth 3 • Session • Unlimited available')),
-      findsOneWidget,
-    );
-    expect(tester.takeException(), isNull);
-    await _capture(tester, key, 'compact-stock-warnings');
-    semantics.dispose();
+      );
+      await tester.pump();
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+      expect(find.text('Low stock • Minimum amount: 5'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(
+          RegExp('Booth 2 • Bag • 1 available.*Low stock • Minimum amount: 5'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel(
+          RegExp('Booth 3 • Session • Unlimited available'),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      await _capture(tester, key, 'compact-stock-warnings');
+    } finally {
+      semantics.dispose();
+    }
   });
+
+  testWidgets(
+    'actual pending overlay retains names and renders unknown identifiers',
+    (tester) async {
+      _viewport(tester, const Size(390, 844));
+      final product = _product(amount: 8);
+      final overlaid = overlayPendingProducts(
+        product.wsId,
+        [product],
+        [
+          PendingMutationRecord(
+            id: 'synthetic-pending-edit',
+            feature: 'inventory',
+            method: 'PATCH',
+            path:
+                '/api/v1/workspaces/${product.wsId}/inventory/'
+                'products/${product.id}',
+            workspaceId: product.wsId,
+            optimisticPatch: {'entityId': product.id},
+            createdAt: DateTime.utc(2026, 10),
+            payload: {
+              'name': 'Pending beans',
+              'inventory': [
+                {
+                  'unit_id': 'unit-0',
+                  'warehouse_id': 'warehouse-0',
+                  'amount': 1.5,
+                  'min_amount': 2.5,
+                  'price': 12.5,
+                },
+                {
+                  'unit_id': 'new-unit',
+                  'warehouse_id': 'new-warehouse',
+                  'amount': null,
+                  'min_amount': 0,
+                  'price': 12.5,
+                },
+              ],
+            },
+          ),
+        ],
+      ).single;
+      expect(overlaid.inventory.first.unitName, 'Cup');
+      expect(overlaid.inventory.first.warehouseName, 'Booth 1');
+      expect(overlaid.inventory.first.amount, 1.5);
+      expect(overlaid.inventory.last.amount, isNull);
+      final key = GlobalKey();
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpApp(
+          _scaled(
+            shad.Scaffold(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  InventoryProductCard(product: overlaid, currency: 'USD'),
+                ],
+              ),
+            ),
+            1,
+            key,
+          ),
+        );
+        await tester.pump();
+        expect(find.text('Booth 1 • Cup'), findsOneWidget);
+        expect(
+          find.text('Warehouse new-warehouse • Unit new-unit'),
+          findsOneWidget,
+        );
+        expect(find.text('Low stock • Minimum amount: 2.5'), findsOneWidget);
+        expect(
+          find.bySemanticsLabel(
+            RegExp('Booth 1 • Cup • 1.5 available.*Minimum amount: 2.5'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.bySemanticsLabel(
+            RegExp(
+              'Warehouse new-warehouse • Unit new-unit • Unlimited available',
+            ),
+          ),
+          findsOneWidget,
+        );
+        await _capture(tester, key, 'compact-pending-stock-context');
+        expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
+
+  testWidgets(
+    'actual Overview keeps fractional minimum alongside fractional amount',
+    (tester) async {
+      _viewport(tester, const Size(390, 844));
+      final workspace = _Workspace();
+      const state = WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        currentWorkspace: Workspace(
+          id: 'synthetic-workspace',
+          name: 'Synthetic',
+        ),
+      );
+      when(() => workspace.state).thenReturn(state);
+      whenListen(
+        workspace,
+        const Stream<WorkspaceState>.empty(),
+        initialState: state,
+      );
+      final auth = _Auth();
+      const authState = AuthState.authenticated(
+        User(
+          id: 'synthetic-actor',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: '',
+        ),
+      );
+      when(() => auth.state).thenReturn(authState);
+      whenListen(
+        auth,
+        const Stream<AuthState>.empty(),
+        initialState: authState,
+      );
+      final key = GlobalKey();
+      final repository = _FractionalOverview();
+      addTearDown(repository.dispose);
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<WorkspaceCubit>.value(value: workspace),
+            BlocProvider<AuthCubit>.value(value: auth),
+          ],
+          child: _scaled(InventoryPage(repository: repository), 1, key),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('2.5 / 2.5'),
+        300,
+        maxScrolls: 10,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('2.5 / 2.5'), findsOneWidget);
+      expect(find.text('2.5 / 3'), findsNothing);
+      expect(find.text('Fractional beans'), findsOneWidget);
+      await _capture(tester, key, 'compact-overview-fractional-minimum');
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(repository.disposed, isFalse);
+      expect(tester.takeException(), isNull);
+      await workspace.close();
+      await auth.close();
+    },
+  );
 
   for (final size in [const Size(320, 900), const Size(768, 1024)]) {
     testWidgets('populated card and periods fit $size at large text', (
@@ -370,21 +605,6 @@ void main() {
       ).thenAnswer(
         (_) async =>
             const WorkspacePermissions(permissions: {}, isCreator: false),
-      );
-      when(
-        () => inventory.getProducts(
-          any(),
-          query: any(named: 'query'),
-          pageSize: any(named: 'pageSize'),
-          forceRefresh: any(named: 'forceRefresh'),
-        ),
-      ).thenAnswer(
-        (call) async => (
-          data: call.namedArguments[#query] == 'missing'
-              ? <InventoryProduct>[]
-              : [_product()],
-          count: call.namedArguments[#query] == 'missing' ? 0 : 1,
-        ),
       );
       final key = GlobalKey();
       await tester.pumpApp(
