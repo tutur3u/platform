@@ -38,8 +38,8 @@ path and original temporary root remain available to preserve isolated-helper
 identity and cleanup contracts. PATH is fixed to standard system directories.
 
 Probes run in an empty private directory with an explicit owned workdir. Helpers
-retain repository cwd for identity validation; their CLI workdir is the already
-validated disposable root. Admission checks existing profile/token state and
+run in the admitted disposable root, with their actual cwd equal to their CLI
+workdir. Admission checks existing profile/token state and
 linked/dotenv markers by filesystem metadata only, without reading contents.
 The modern ancestor walk is checked too. The pinned
 [release compiler](https://github.com/supabase/cli/blob/21db855916f2c2b12f61cde923a27094b8528b23/apps/cli/scripts/build.ts)
