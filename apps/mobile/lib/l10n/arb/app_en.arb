@@ -3810,5 +3810,11 @@
     },
     "calendarInvalidLocalTime": "Choose a valid start and end time. Some times do not exist when daylight saving time changes.",
     "profileOverviewTab": "Overview",
-    "profileTimelineTab": "Timeline"
+    "profileTimelineTab": "Timeline",
+    "profileTimelineShowDates": "Show date selector",
+    "profileTimelineHideDates": "Close dates and browse agenda",
+    "profileTimelineAgenda": "Days with activity",
+    "profileTimelineDayEmpty": "No activity was returned for this day.",
+    "profileTimelineHasActivity": "Activity in loaded snapshot",
+    "profileTimelineMoreDays": "Show more loaded days"
 }
