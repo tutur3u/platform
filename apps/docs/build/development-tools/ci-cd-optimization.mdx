@@ -140,8 +140,12 @@ existing `Type Check` job. One full-history checkout pinned to `github.sha`
 serves preflight and the existing heavy steps. Only when both decisions are
 `true` do Bun setup, cache restore, install, dependency builds, and type checking
 run. Missing or uncertain comparisons still run checks; preflight script errors
-fail the named job before any heavy step. There is no condition override that
-continues after a failed step.
+fail the named job before any heavy step. A disabled configuration skips release
+comparison as well as heavy steps; its absent release output cannot enable work.
+There is no condition override that continues after a failed step. Keep inline
+resolve/config/release wiring aligned with `ci-check.yml`; the workflow comment
+records intentional differences and `type-check-inline-workflow.test.js`
+compares the actual shell commands to protect parity.
 
 A configuration-disabled or release-only run now reports a successful
 `Type Check` job with heavy steps skipped and an explicit skip summary,

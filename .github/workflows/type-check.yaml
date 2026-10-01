@@ -22,6 +22,9 @@ jobs:
         with:
           node-version: 24
 
+      # Keep script wiring aligned with ci-check.yml; shell parity is enforced by
+      # scripts/ci/type-check-inline-workflow.test.js. Inline differences are the
+      # fixed workflow name, no deployment token, and config-gated release detection.
       - name: Compute changed files
         id: changed_files
         shell: bash
@@ -48,6 +51,7 @@ jobs:
           node --experimental-strip-types scripts/ci/check-workflow-config.ts
 
       - name: Detect release-only changes
+        if: steps.check_config.outputs.should_run == 'true'
         id: release_relevance
         shell: bash
         env:

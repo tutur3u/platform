@@ -58,7 +58,12 @@ test('same preflight scripts precede every heavy step without error overrides', 
     const original = shared.find((entry) => entry.id === id);
     assert.equal(step.run, original.run);
     assert.equal(step.shell, 'bash');
-    assert.equal(step.if, undefined);
+    assert.equal(
+      step.if,
+      id === 'release_relevance'
+        ? "steps.check_config.outputs.should_run == 'true'"
+        : undefined
+    );
     assert.equal(step['continue-on-error'], undefined);
     assert.equal(step.env.GITHUB_TOKEN, undefined);
     if (id !== 'release_relevance')
@@ -93,13 +98,10 @@ test('same preflight scripts precede every heavy step without error overrides', 
   assert.match(summary.run, /GITHUB_STEP_SUMMARY/);
 });
 
-function fixture({
-  disabled = false,
-  change = 'source',
-  missingConfig = false,
-  error,
-} = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'type-check-inline-'));
+function fixture(
+  dir,
+  { disabled = false, change = 'source', missingConfig = false, error } = {}
+) {
   for (const file of [
     'tuturuuu.ts',
     'tuturuuu.ci.ts',
@@ -170,8 +172,9 @@ function fixture({
 }
 
 function runPreflight(options) {
-  const { dir, before, after } = fixture(options);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'type-check-inline-'));
   try {
+    const { before, after } = fixture(dir, options);
     const event = options.event ?? 'push';
     const eventPath = path.join(dir, 'event.json');
     fs.writeFileSync(
@@ -192,6 +195,13 @@ function runPreflight(options) {
     );
     const outputs = {};
     for (const id of preflightIds) {
+      if (
+        id === 'release_relevance' &&
+        outputs.check_config.should_run !== 'true'
+      ) {
+        outputs[id] = {};
+        continue;
+      }
       const step = job.steps.find((entry) => entry.id === id);
       const outputFile = path.join(dir, `${id}.output`);
       fs.writeFileSync(outputFile, '');
@@ -245,12 +255,12 @@ function runPreflight(options) {
 for (const [name, options, config, release, heavy] of [
   ['source change', {}, 'true', 'true', true],
   ['release-only metadata', { change: 'release' }, 'true', 'false', false],
-  ['disabled toggle', { disabled: true }, 'false', 'true', false],
+  ['disabled toggle', { disabled: true }, 'false', undefined, false],
   [
     'disabled release',
     { disabled: true, change: 'release' },
     'false',
-    'false',
+    undefined,
     false,
   ],
   ['manual dispatch', { event: 'workflow_dispatch' }, 'true', 'true', true],
@@ -258,7 +268,7 @@ for (const [name, options, config, release, heavy] of [
     'disabled manual dispatch',
     { disabled: true, event: 'workflow_dispatch' },
     'false',
-    'true',
+    undefined,
     false,
   ],
   [
@@ -302,3 +312,25 @@ for (const id of preflightIds) {
     assert.equal(result.outputs[id], undefined);
   });
 }
+
+test('fixture setup failures remove the allocated temp directory', (t) => {
+  const createDirectory = fs.mkdtempSync;
+  let allocatedDirectory;
+  t.mock.method(fs, 'mkdtempSync', (...args) => {
+    allocatedDirectory = createDirectory(...args);
+    return allocatedDirectory;
+  });
+  t.mock.method(fs, 'copyFileSync', () => {
+    throw new Error('fixture copy failed');
+  });
+  assert.throws(() => runPreflight({}), /fixture copy failed/);
+  assert.ok(allocatedDirectory);
+  assert.equal(fs.existsSync(allocatedDirectory), false);
+});
+
+test('disabled configuration skips release detection even when its script is unavailable', () => {
+  const result = runPreflight({ disabled: true, error: 'release_relevance' });
+  assert.equal(result.failure, null);
+  assert.equal(result.heavy, false);
+  assert.deepEqual(result.outputs.release_relevance, {});
+});
