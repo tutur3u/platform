@@ -217,14 +217,18 @@ function firstAddress(address: Address | undefined) {
   };
 }
 
-function attachmentBytes(attachment: Attachment) {
-  if (attachment.content instanceof ArrayBuffer) {
-    return new Uint8Array(attachment.content);
+export function attachmentBytes(attachment: Attachment) {
+  const content = attachment.content;
+  if (typeof content === 'string') return new TextEncoder().encode(content);
+  // instanceof fails for typed arrays produced in another execution realm.
+  if (ArrayBuffer.isView(content)) {
+    return new Uint8Array(
+      content.buffer,
+      content.byteOffset,
+      content.byteLength
+    );
   }
-  if (attachment.content instanceof Uint8Array) {
-    return attachment.content;
-  }
-  return new TextEncoder().encode(attachment.content);
+  return new Uint8Array(content);
 }
 
 async function storeObject(

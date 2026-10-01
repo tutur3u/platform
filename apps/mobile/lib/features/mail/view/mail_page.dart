@@ -154,13 +154,14 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   List<Map<String, dynamic>> _folders = [];
   final Set<String> _selected = {};
   final Set<String> _pendingSwipeIds = {};
-  final Set<String> _pendingReaderIds = {};
+  final Map<String, ({String mailbox, String action})> _pendingReaderIds = {};
   String? _labelId;
   String? _folderId;
   bool _mutating = false;
   String? _mailboxId;
   String _folder = 'inbox';
   bool _loading = true;
+  bool _listResolved = false;
   bool _accessVerified = false;
   bool _cacheRestored = false;
   bool _accessDenied = false;
@@ -352,8 +353,12 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       _loading = true;
       _failed = false;
       if (!more && _visibleListKey != path) {
+        _listResolved = cached != null;
         _hasMore = false;
-        _items = mailRows(cached?[_threads ? 'threads' : 'messages']);
+        _items = _overlayReaderActions(
+          mailRows(cached?[_threads ? 'threads' : 'messages']),
+          box,
+        );
         final organization = _repository.cachedList(
           widget.workspaceId,
           '${MailRepository.mailboxPath(widget.workspaceId, box)}/organization',
@@ -385,7 +390,11 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       final pagination = result['pagination'] as Map<String, dynamic>;
       setState(() {
         final items = mailRows(result[_threads ? 'threads' : 'messages']);
-        _items = more ? [..._items, ...items] : items;
+        _items = _overlayReaderActions(
+          more ? [..._items, ...items] : items,
+          box,
+        );
+        _listResolved = true;
         _page = page;
         _hasMore =
             pagination['hasMore'] as bool? ??
@@ -620,9 +629,10 @@ class _MailWorkspaceState extends State<MailWorkspace> {
             },
             onOptimisticAction: (action, id) {
               if (!mounted || box != _mailboxId) return;
-              _pendingReaderIds.add(id);
+              _pendingReaderIds[id] = (mailbox: box, action: action);
               ++_generation;
               setState(() {
+                _loading = false;
                 _items = optimisticMailItems(
                   _items,
                   {id},
@@ -655,7 +665,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       if (mounted) setState(() => _openingId = null);
       await navigation;
       if (mounted && box == _mailboxId && openedFolder == _folder) {
-        unawaited(_load());
+        if (_pendingReaderIds.isEmpty) unawaited(_load());
       }
     } on Object {
       if (mounted) _showOpenFailure(item);

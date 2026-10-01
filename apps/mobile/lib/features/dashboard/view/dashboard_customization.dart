@@ -101,11 +101,9 @@ extension _DashboardCustomization on _DashboardViewState {
     final layoutCubit = context.read<DashboardLayoutCubit>();
     final available = _availableHomeWidgetIds(context);
     unawaited(
-      showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        constraints: const BoxConstraints(maxWidth: 560),
+      showOrderEditorSheet(
+        context,
+        title: context.l10n.homeCustomize,
         builder: (context) => BlocProvider.value(
           value: layoutCubit,
           child: _HomeWidgetEditor(available: available),
@@ -127,101 +125,71 @@ class _HomeWidgetEditor extends StatelessWidget {
     final shownCount = modules
         .where((id) => !cubit.state.hidden.contains(id))
         .length;
-    return SafeArea(
-      top: false,
-      child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.75,
-        child: Column(
+    return ReorderableListView.builder(
+      buildDefaultDragHandles: false,
+      itemCount: modules.length,
+      onReorderItem: (oldIndex, newIndex) {
+        if (oldIndex >= shownCount) return;
+        final moved = modules.removeAt(oldIndex);
+        modules.insert(newIndex.clamp(0, shownCount - 1), moved);
+        unawaited(cubit.setOrder(modules));
+      },
+      itemBuilder: (context, index) {
+        final id = modules[index];
+        final hidden = cubit.state.hidden.contains(id);
+        final (label, icon) = _homeWidgetPresentation(context, id);
+        return Column(
+          key: ValueKey('home-editor-$id'),
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 16, 8),
-              child: Row(
+            if (hidden && index == shownCount) ...[
+              const Divider(height: 24),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Text(
+                  context.l10n.homeHiddenWidgets,
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ),
+            ],
+            ListTile(
+              leading: Icon(icon),
+              title: Text(label),
+              textColor: hidden
+                  ? Theme.of(context).colorScheme.onSurfaceVariant
+                  : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Text(
-                      context.l10n.homeCustomize,
-                      style: Theme.of(context).textTheme.titleLarge,
+                  IconButton(
+                    tooltip: hidden
+                        ? context.l10n.homeShowWidget
+                        : context.l10n.homeHideWidget,
+                    onPressed: () =>
+                        unawaited(cubit.setHidden(id, hidden: !hidden)),
+                    icon: Icon(
+                      hidden
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
                     ),
                   ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(context.l10n.commonDone),
-                  ),
+                  if (!hidden)
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Tooltip(
+                        message: context.l10n.appsReorder,
+                        child: const SizedBox.square(
+                          dimension: 48,
+                          child: Icon(Icons.drag_handle_rounded),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
-            Expanded(
-              child: ReorderableListView.builder(
-                buildDefaultDragHandles: false,
-                itemCount: modules.length,
-                onReorderItem: (oldIndex, newIndex) {
-                  if (oldIndex >= shownCount) return;
-                  final moved = modules.removeAt(oldIndex);
-                  modules.insert(newIndex.clamp(0, shownCount - 1), moved);
-                  unawaited(cubit.setOrder(modules));
-                },
-                itemBuilder: (context, index) {
-                  final id = modules[index];
-                  final hidden = cubit.state.hidden.contains(id);
-                  final (label, icon) = _homeWidgetPresentation(context, id);
-                  return Column(
-                    key: ValueKey('home-editor-$id'),
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (hidden && index == shownCount) ...[
-                        const Divider(height: 24),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                          child: Text(
-                            context.l10n.homeHiddenWidgets,
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                        ),
-                      ],
-                      ListTile(
-                        leading: Icon(icon),
-                        title: Text(label),
-                        textColor: hidden
-                            ? Theme.of(context).colorScheme.onSurfaceVariant
-                            : null,
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              tooltip: hidden
-                                  ? context.l10n.homeShowWidget
-                                  : context.l10n.homeHideWidget,
-                              onPressed: () => unawaited(
-                                cubit.setHidden(id, hidden: !hidden),
-                              ),
-                              icon: Icon(
-                                hidden
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                              ),
-                            ),
-                            if (!hidden)
-                              ReorderableDragStartListener(
-                                index: index,
-                                child: Tooltip(
-                                  message: context.l10n.appsReorder,
-                                  child: const SizedBox.square(
-                                    dimension: 48,
-                                    child: Icon(Icons.drag_handle_rounded),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }

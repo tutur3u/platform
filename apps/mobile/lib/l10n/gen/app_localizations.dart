@@ -17910,6 +17910,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This removes the queued change from this device. It does not undo anything the server may have received.'**
   String get offlineChangesDiscardConfirm;
+
+  /// No description provided for @mailMessageDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Message details'**
+  String get mailMessageDetails;
+
+  /// No description provided for @mailInvitationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar invitation'**
+  String get mailInvitationTitle;
+
+  /// No description provided for @mailInvitationAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get mailInvitationAccept;
+
+  /// No description provided for @mailInvitationDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get mailInvitationDecline;
+
+  /// No description provided for @mailInvitationTentative.
+  ///
+  /// In en, this message translates to:
+  /// **'Tentative'**
+  String get mailInvitationTentative;
+
+  /// No description provided for @mailInvitationIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply as {attendee} to organizer {organizer}'**
+  String mailInvitationIdentity(String attendee, String organizer);
+
+  /// No description provided for @mailInvitationLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get mailInvitationLocation;
+
+  /// No description provided for @mailInvitationWhen.
+  ///
+  /// In en, this message translates to:
+  /// **'When'**
+  String get mailInvitationWhen;
+
+  /// No description provided for @mailInvitationJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join meeting'**
+  String get mailInvitationJoin;
+
+  /// No description provided for @mailInvitationRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry invitation details'**
+  String get mailInvitationRetry;
+
+  /// No description provided for @mailInvitationSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending your response…'**
+  String get mailInvitationSending;
+
+  /// No description provided for @mailInvitationSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Response sent: {response}'**
+  String mailInvitationSent(String response);
+
+  /// No description provided for @mailInvitationPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Response is pending. Check again before replying.'**
+  String get mailInvitationPending;
+
+  /// No description provided for @mailInvitationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not confirm your response. Retry the same response to check its status.'**
+  String get mailInvitationFailed;
+
+  /// No description provided for @remindersOccurrenceDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'{leadTime} · {occurrence} ({timezone})'**
+  String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone);
+
+  /// No description provided for @settingsTimezone.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal timezone'**
+  String get settingsTimezone;
+
+  /// No description provided for @settingsWorkspaceTimezone.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace timezone'**
+  String get settingsWorkspaceTimezone;
+
+  /// No description provided for @settingsTimezoneDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal timezone overrides the workspace timezone. Automatic uses the workspace default, then your device.'**
+  String get settingsTimezoneDescription;
+
+  /// No description provided for @settingsTimezoneAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get settingsTimezoneAuto;
+
+  /// No description provided for @settingsTimezoneSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search timezones'**
+  String get settingsTimezoneSearch;
+
+  /// No description provided for @settingsTimezoneLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolving timezone…'**
+  String get settingsTimezoneLoading;
+
+  /// No description provided for @settingsTimezoneAccountPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your account.'**
+  String get settingsTimezoneAccountPending;
+
+  /// No description provided for @settingsTimezoneUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get settingsTimezoneUnknown;
+
+  /// No description provided for @settingsTimezoneEffective.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective timezone: {timezone}'**
+  String settingsTimezoneEffective(String timezone);
+
+  /// No description provided for @settingsTimezoneError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load or save timezone. Tap to retry.'**
+  String get settingsTimezoneError;
+
+  /// No description provided for @calendarInvalidLocalTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a valid start and end time. Some times do not exist when daylight saving time changes.'**
+  String get calendarInvalidLocalTime;
+
+  /// No description provided for @profileOverviewTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get profileOverviewTab;
+
+  /// No description provided for @profileTimelineTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get profileTimelineTab;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

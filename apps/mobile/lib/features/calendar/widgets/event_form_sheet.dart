@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -14,21 +15,26 @@ Future<Map<String, dynamic>?> showEventFormSheet(
   BuildContext context, {
   CalendarEvent? event,
   DateTime? initialStartTime,
+  String? timezone,
 }) {
   return showAdaptiveSheet<Map<String, dynamic>>(
     context: context,
     useRootNavigator: true,
     backgroundColor: Theme.of(context).colorScheme.surface,
-    builder: (context) =>
-        _EventFormContent(event: event, initialStartTime: initialStartTime),
+    builder: (context) => _EventFormContent(
+      event: event,
+      initialStartTime: initialStartTime,
+      timezone: timezone,
+    ),
   );
 }
 
 class _EventFormContent extends StatefulWidget {
-  const _EventFormContent({this.event, this.initialStartTime});
+  const _EventFormContent({this.event, this.initialStartTime, this.timezone});
 
   final CalendarEvent? event;
   final DateTime? initialStartTime;
+  final String? timezone;
 
   @override
   State<_EventFormContent> createState() => _EventFormContentState();
@@ -43,13 +49,23 @@ class _EventFormContentState extends State<_EventFormContent> {
   late TimeOfDay _endTime;
   late bool _isAllDay;
   late String _color;
+  DateTime? _originalStart;
+  DateTime? _originalEnd;
+  DateTime? _initialStartWall;
+  DateTime? _initialEndWall;
+  bool? _initialAllDay;
+  String? _dateTimeError;
 
   bool get _isEditing => widget.event != null;
 
   @override
   void initState() {
     super.initState();
-    final event = widget.event;
+    _originalStart = widget.event?.startAt;
+    _originalEnd = widget.event?.endAt;
+    final event = widget.event == null
+        ? null
+        : calendarProjectEvent(widget.event!, widget.timezone);
 
     _titleController = TextEditingController(text: event?.title ?? '');
     _descriptionController = TextEditingController(
@@ -57,17 +73,23 @@ class _EventFormContentState extends State<_EventFormContent> {
     );
 
     if (event != null) {
-      final start = event.startAt ?? DateTime.now();
+      final start = event.startAt ?? calendarNow(widget.timezone);
       final end = event.endAt ?? start.add(const Duration(hours: 1));
       _startDate = start;
       _startTime = TimeOfDay.fromDateTime(start);
-      _endDate = end;
+      _endDate = event.isAllDay
+          ? calendarDate(end.year, end.month, end.day - 1)
+          : end;
       _endTime = TimeOfDay.fromDateTime(end);
       _isAllDay = event.isAllDay;
+      _initialAllDay = _isAllDay;
+      _initialStartWall = start;
+      _initialEndWall = end;
       _color = event.color ?? 'BLUE';
     } else {
       final initial =
-          widget.initialStartTime ?? _roundToQuarter(DateTime.now());
+          widget.initialStartTime ??
+          _roundToQuarter(calendarNow(widget.timezone));
       _startDate = initial;
       _startTime = TimeOfDay.fromDateTime(initial);
       final end = initial.add(const Duration(hours: 1));
@@ -80,7 +102,7 @@ class _EventFormContentState extends State<_EventFormContent> {
 
   DateTime _roundToQuarter(DateTime dt) {
     final minutes = (dt.minute / 15).ceil() * 15;
-    return DateTime(dt.year, dt.month, dt.day, dt.hour, minutes);
+    return calendarDate(dt.year, dt.month, dt.day, dt.hour, minutes);
   }
 
   @override
@@ -91,30 +113,60 @@ class _EventFormContentState extends State<_EventFormContent> {
   }
 
   DateTime _combineDateAndTime(DateTime date, TimeOfDay time) {
-    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    return calendarDate(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
   }
+
+  bool _sameDisplayedMinute(DateTime? initial, DateTime selected) =>
+      initial != null &&
+      initial.year == selected.year &&
+      initial.month == selected.month &&
+      initial.day == selected.day &&
+      initial.hour == selected.hour &&
+      initial.minute == selected.minute;
 
   void _save() {
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
 
     final startAt = _isAllDay
-        ? DateTime(_startDate.year, _startDate.month, _startDate.day)
+        ? calendarDate(_startDate.year, _startDate.month, _startDate.day)
         : _combineDateAndTime(_startDate, _startTime);
-    // For all-day events, set endAt to midnight of (endDate + 1 day) so the
-    // duration is an exact multiple of 24 hours — this is how the computed
-    // `CalendarEvent.isAllDay` getter detects all-day events.
+    // The selected end date is inclusive; stored end midnight is exclusive.
     final endAt = _isAllDay
-        ? DateTime(_endDate.year, _endDate.month, _endDate.day + 1)
+        ? calendarDate(_endDate.year, _endDate.month, _endDate.day + 1)
         : _combineDateAndTime(_endDate, _endTime);
 
-    Navigator.of(context).pop(<String, dynamic>{
-      'title': title,
-      'description': _descriptionController.text.trim(),
-      'startAt': startAt,
-      'endAt': endAt,
-      'color': _color,
-    });
+    try {
+      // An unchanged ambiguous fall-back wall time keeps its stored instant.
+      final start =
+          _initialAllDay == _isAllDay &&
+              _sameDisplayedMinute(_initialStartWall, startAt) &&
+              _originalStart != null
+          ? _originalStart!.toUtc()
+          : calendarWallToUtc(startAt, widget.timezone);
+      final end =
+          _initialAllDay == _isAllDay &&
+              _sameDisplayedMinute(_initialEndWall, endAt) &&
+              _originalEnd != null
+          ? _originalEnd!.toUtc()
+          : calendarWallToUtc(endAt, widget.timezone);
+      if (!end.isAfter(start)) throw const FormatException('Invalid range');
+      Navigator.of(context).pop(<String, dynamic>{
+        'title': title,
+        'description': _descriptionController.text.trim(),
+        'startAt': start,
+        'endAt': end,
+        'color': _color,
+      });
+    } on FormatException {
+      setState(() => _dateTimeError = context.l10n.calendarInvalidLocalTime);
+    }
   }
 
   Future<void> _pickDate(bool isStart) async {
@@ -122,16 +174,17 @@ class _EventFormContentState extends State<_EventFormContent> {
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      firstDate: calendarDate(2020),
+      lastDate: calendarDate(2100),
     );
     if (picked == null) return;
+    final date = calendarDate(picked.year, picked.month, picked.day);
     setState(() {
       if (isStart) {
-        _startDate = picked;
+        _startDate = date;
         if (_endDate.isBefore(_startDate)) _endDate = _startDate;
       } else {
-        _endDate = picked;
+        _endDate = date;
       }
     });
   }
@@ -161,13 +214,11 @@ class _EventFormContentState extends State<_EventFormContent> {
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOutCubic,
       padding: EdgeInsets.only(bottom: verticalInset),
-      child: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(radius),
-            bottom: Radius.circular(context.isCompact ? 0 : radius),
-          ),
+      child: Material(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(radius),
+          bottom: Radius.circular(context.isCompact ? 0 : radius),
         ),
         child: SafeArea(
           top: false,
@@ -189,6 +240,11 @@ class _EventFormContentState extends State<_EventFormContent> {
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
+                  ),
+                if (_dateTimeError != null)
+                  Text(
+                    _dateTimeError!,
+                    style: TextStyle(color: colorScheme.error),
                   ),
                 // Header.
                 Row(

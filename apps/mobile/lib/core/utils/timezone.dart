@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -6,17 +5,16 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 Future<String>? _timezoneIdentifierFuture;
 
 Future<String> getCurrentTimezoneIdentifier() {
-  final inFlightOrCached = _timezoneIdentifierFuture;
-  if (inFlightOrCached != null) {
-    return inFlightOrCached;
+  final inFlight = _timezoneIdentifierFuture;
+  if (inFlight != null) {
+    return inFlight;
   }
 
-  final future = _loadCurrentTimezoneIdentifier().then((resolved) {
-    if (!resolved.shouldCache) {
-      _timezoneIdentifierFuture = null;
-    }
-    return resolved.identifier;
-  });
+  // Deduplicate concurrent reads, but revalidate after each completed lookup.
+  // A device can change zones while this process remains alive.
+  final future = _loadCurrentTimezoneIdentifier().whenComplete(
+    () => _timezoneIdentifierFuture = null,
+  );
 
   _timezoneIdentifierFuture = future;
   return future;
@@ -26,22 +24,12 @@ bool isLikelyIanaTimezoneIdentifier(String value) {
   return value.contains('/');
 }
 
-class _ResolvedTimezoneIdentifier {
-  const _ResolvedTimezoneIdentifier(
-    this.identifier, {
-    required this.shouldCache,
-  });
-
-  final String identifier;
-  final bool shouldCache;
-}
-
-Future<_ResolvedTimezoneIdentifier> _loadCurrentTimezoneIdentifier() async {
+Future<String> _loadCurrentTimezoneIdentifier() async {
   try {
     final timezone = await FlutterTimezone.getLocalTimezone();
     final identifier = timezone.identifier.trim();
     if (identifier.isNotEmpty) {
-      return _ResolvedTimezoneIdentifier(identifier, shouldCache: true);
+      return identifier;
     }
   } on Object catch (error, stackTrace) {
     developer.log(
@@ -54,8 +42,19 @@ Future<_ResolvedTimezoneIdentifier> _loadCurrentTimezoneIdentifier() async {
 
   final fallbackIdentifier = DateTime.now().timeZoneName.trim();
   if (isLikelyIanaTimezoneIdentifier(fallbackIdentifier)) {
-    return _ResolvedTimezoneIdentifier(fallbackIdentifier, shouldCache: true);
+    return fallbackIdentifier;
   }
 
-  return const _ResolvedTimezoneIdentifier('UTC', shouldCache: false);
+  return 'UTC';
+}
+
+/// Settings must distinguish a verified UTC device from an unknown fallback.
+/// Other existing consumers retain their compatibility fallback above.
+Future<String> getVerifiedDeviceTimezoneIdentifier() async {
+  final timezone = await FlutterTimezone.getLocalTimezone();
+  final identifier = timezone.identifier.trim();
+  if (identifier.isEmpty) {
+    throw Exception('Native device timezone is unavailable.');
+  }
+  return identifier;
 }

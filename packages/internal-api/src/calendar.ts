@@ -10,6 +10,7 @@ export type {
 
 import type { ProviderCalendarsResponse } from './calendar-sync';
 
+export * from './calendar-link-preview';
 export * from './calendar-sync';
 
 import type {

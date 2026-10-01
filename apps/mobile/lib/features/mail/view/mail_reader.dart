@@ -13,6 +13,7 @@ import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
+import 'package:mobile/features/mail/view/mail_message_details.dart';
 import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -405,6 +406,7 @@ class _MailReaderState extends State<MailReader> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           children: [
+                            MailMessageDetails(message: message),
                             MailMessageContent(
                               key: ValueKey(message['id']),
                               repository: widget.repository,

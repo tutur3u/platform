@@ -5,9 +5,9 @@ extension _AppPushNavigation on _AppState {
     await _workspaceCubit.loadWorkspaces();
     final userId = _authCubit.state.user?.id;
     if (userId != null) {
-      await ReminderService.instance.startSession(
+      await ReminderService.instance.startWorkspaceSession(
         userId,
-        _workspaceCubit.state.workspaces,
+        _workspaceCubit.state,
       );
     }
   }

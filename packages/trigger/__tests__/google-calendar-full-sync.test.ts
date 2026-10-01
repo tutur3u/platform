@@ -1,4 +1,5 @@
 // Mocks must come next, before any imports that use them!
+import type { calendar_v3 } from '@tuturuuu/google';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import {
@@ -45,7 +46,11 @@ vi.mock('../src/google-calendar-color-context', () => ({
 }));
 
 // Mock @tuturuuu/google
-const mockCalendarEventsList = vi.fn(() =>
+const mockCalendarEventsList = vi.fn<
+  (
+    params: calendar_v3.Params$Resource$Events$List
+  ) => Promise<{ data: calendar_v3.Schema$Events }>
+>(() =>
   Promise.resolve({
     data: {
       items: [
@@ -88,7 +93,7 @@ vi.mock('@tuturuuu/google', () => ({
 dayjs.extend(utc);
 
 // Dynamically import the actual function after env and mocks are set
-let performFullSyncForWorkspace: any;
+let performFullSyncForWorkspace: typeof import('../src/google-calendar-full-sync.js').performFullSyncForWorkspace;
 
 beforeAll(async () => {
   const mod = await import('../src/google-calendar-full-sync.js');
@@ -152,8 +157,8 @@ describe('performFullSyncForWorkspace', () => {
 
       expect(events).toBeDefined();
       expect(events).toHaveLength(2);
-      expect(events[0].id).toBe('event1');
-      expect(events[1].id).toBe('event2');
+      expect(events[0]?.id).toBe('event1');
+      expect(events[1]?.id).toBe('event2');
     });
 
     it('should perform full sync for a workspace with custom calendar ID', async () => {
@@ -214,13 +219,11 @@ describe('performFullSyncForWorkspace', () => {
     it('should handle null refresh token', async () => {
       const ws_id = 'test-workspace';
       const access_token = 'test-access-token';
-      const refresh_token = null as any;
-
-      const events = await performFullSyncForWorkspace(
-        'primary',
-        ws_id,
-        access_token,
-        refresh_token
+      // Exercise untyped runtime input without widening the public contract.
+      const events = await Reflect.apply(
+        performFullSyncForWorkspace,
+        undefined,
+        ['primary', ws_id, access_token, null]
       );
 
       expect(events).toBeDefined();
@@ -230,13 +233,11 @@ describe('performFullSyncForWorkspace', () => {
     it('should handle undefined refresh token', async () => {
       const ws_id = 'test-workspace';
       const access_token = 'test-access-token';
-      const refresh_token = undefined as any;
-
-      const events = await performFullSyncForWorkspace(
-        'primary',
-        ws_id,
-        access_token,
-        refresh_token
+      // Exercise untyped runtime input without widening the public contract.
+      const events = await Reflect.apply(
+        performFullSyncForWorkspace,
+        undefined,
+        ['primary', ws_id, access_token, undefined]
       );
 
       expect(events).toBeDefined();
@@ -328,7 +329,7 @@ describe('performFullSyncForWorkspace', () => {
               status: 'confirmed',
             },
           ],
-        } as any,
+        },
       });
 
       const { storeSyncToken } = await import('../src/google-calendar-sync.js');
@@ -398,7 +399,7 @@ describe('performFullSyncForWorkspace', () => {
       );
 
       // Verify the time range is approximately 270 days
-      const calls = mockCalendarEventsList.mock.calls as any[];
+      const calls = mockCalendarEventsList.mock.calls;
       expect(calls.length).toBeGreaterThan(0);
       const callArgs = calls[0]?.[0];
       expect(callArgs).toBeDefined();

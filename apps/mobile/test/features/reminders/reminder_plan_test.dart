@@ -164,4 +164,104 @@ void main() {
     expect(plan.single.title, 'Christmas');
     expect(plan.single.isAllDay, isTrue);
   });
+  test('Ho Chi Minh UTC all-day occurrence schedules local 09:00', () {
+    final event = CalendarEvent.fromJson(const {
+      'id': 'oct5',
+      'start_at': '2026-10-04T17:00:00Z',
+      'end_at': '2026-10-05T17:00:00Z',
+    });
+    final entry = buildReminderPlan(
+      now: DateTime.utc(2026, 10),
+      workspaceId: 'ws',
+      tasks: const [],
+      events: [event],
+      taskOffsets: const [],
+      eventOffsets: const ['1d'],
+      timezone: 'Asia/Ho_Chi_Minh',
+    ).single;
+    expect(entry.dueAt, DateTime.utc(2026, 10, 5, 2));
+    expect(entry.scheduledAt, DateTime.utc(2026, 10, 4, 2));
+    expect(entry.isAllDay, isTrue);
+    expect(entry.timezone, 'Asia/Ho_Chi_Minh');
+    expect(event.startAt, DateTime.utc(2026, 10, 4, 17));
+    expect(entry.notificationId, reminderNotificationId('event:ws:oct5:1d'));
+  });
+
+  for (final sample in [
+    (
+      '2026-03-08T05:00:00Z',
+      '2026-03-09T04:00:00Z',
+      DateTime.utc(2026, 3, 8, 13),
+      23,
+    ),
+    (
+      '2026-11-01T04:00:00Z',
+      '2026-11-02T05:00:00Z',
+      DateTime.utc(2026, 11, 1, 14),
+      25,
+    ),
+  ]) {
+    test('New York ${sample.$4} hour all-day span uses zoned 09:00', () {
+      final entry = buildReminderPlan(
+        now: DateTime.utc(2026),
+        workspaceId: 'ws',
+        tasks: const [],
+        events: [
+          CalendarEvent.fromJson({
+            'id': 'dst-day',
+            'start_at': sample.$1,
+            'end_at': sample.$2,
+          }),
+        ],
+        taskOffsets: const [],
+        eventOffsets: const ['1d'],
+        timezone: 'America/New_York',
+      ).single;
+      expect(entry.isAllDay, isTrue);
+      expect(entry.dueAt, sample.$3);
+    });
+  }
+
+  test('legacy UTC date-only identity survives opposite-zone projection', () {
+    final entry = buildReminderPlan(
+      now: DateTime.utc(2026, 10),
+      workspaceId: 'ws',
+      tasks: const [],
+      events: [
+        CalendarEvent.fromJson(const {
+          'id': 'legacy',
+          'start_at': '2026-10-05T00:00:00Z',
+          'end_at': '2026-10-06T00:00:00Z',
+        }),
+      ],
+      taskOffsets: const [],
+      eventOffsets: const ['1d'],
+      timezone: 'America/Los_Angeles',
+    ).single;
+    expect(entry.dueAt, DateTime.utc(2026, 10, 5, 16));
+    expect(entry.isAllDay, isTrue);
+  });
+
+  test('timed UTC instants and notification IDs remain unchanged', () {
+    final event = CalendarEvent.fromJson(const {
+      'id': 'timed',
+      'start_at': '2026-10-05T00:30:45Z',
+      'end_at': '2026-10-05T01:30:45Z',
+    });
+    for (final zone in ['Asia/Ho_Chi_Minh', 'America/Los_Angeles']) {
+      final entry = buildReminderPlan(
+        now: DateTime.utc(2026, 10),
+        workspaceId: 'ws',
+        tasks: const [],
+        events: [event],
+        taskOffsets: const [],
+        eventOffsets: const ['1d'],
+        timezone: zone,
+      ).single;
+      expect(entry.dueAt, event.startAt);
+      expect(entry.scheduledAt, DateTime.utc(2026, 10, 4, 0, 30, 45));
+      expect(entry.notificationId, reminderNotificationId('event:ws:timed:1d'));
+      expect(entry.isAllDay, isFalse);
+    }
+  });
 }
