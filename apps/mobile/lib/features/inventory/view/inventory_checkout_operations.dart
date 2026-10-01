@@ -3,7 +3,7 @@ part of 'inventory_checkout_page.dart';
 extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
   Future<void> _loadData() async {
     final wsId = _wsId;
-    if (wsId == null) {
+    if (wsId == null || _season.hasPending || _saving) {
       return;
     }
     final actor = _actorId;
@@ -61,6 +61,7 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
           actor != _actorId) {
         return;
       }
+      if (_season.hasPending) return;
       _update(() {
         _products = results[0] as List<InventoryProduct>;
         _wallets = results[1] as List<Wallet>;
@@ -110,7 +111,14 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
 
   Future<void> _submitSale() async {
     final wsId = _wsId;
-    if (wsId == null || _saving) {
+    if (wsId == null || _saving || _saleCompleted) {
+      return;
+    }
+    if (_season.hasPending) {
+      await _recoverSale();
+      return;
+    }
+    if (!_season.journalReady) {
       return;
     }
     if (_loadedWorkspace != wsId ||
@@ -174,10 +182,7 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
           source: sale.source,
           periodId: _periodId,
         );
-        await _settingsRepository.setLastIncomeCategory(
-          wsId,
-          resolvedCategoryId,
-        );
+        unawaited(_rememberCategory(wsId, resolvedCategoryId));
         if (!mounted || wsId != _wsId || actor != _actorId) {
           return;
         }
@@ -194,6 +199,18 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
               ? 'Mobile inventory sale'
               : _titleController.text.trim(),
           notes: _noteController.text.trim(),
+          lineLabels: {
+            for (final row in _selectedRows)
+              _rowKey(row):
+                  [
+                        row.product.name,
+                        row.inventory.unitName,
+                        row.inventory.warehouseName,
+                      ]
+                      .whereType<String>()
+                      .where((value) => value.isNotEmpty)
+                      .join(' · '),
+          },
           products: _selectedRows
               .map(
                 (row) => <String, dynamic>{
@@ -234,13 +251,11 @@ extension _InventoryCheckoutOperations on _InventoryCheckoutPageState {
       if (!mounted || wsId != _wsId || actor != _actorId) {
         return;
       }
-      await _settingsRepository.setLastIncomeCategory(wsId, resolvedCategoryId);
-
-      if (!mounted || wsId != _wsId || actor != _actorId) {
-        return;
-      }
+      _update(() => _saleCompleted = true);
+      unawaited(_rememberCategory(wsId, resolvedCategoryId));
+      if (_scheduled) unawaited(_acknowledgeReceipt());
       showInventoryToast(context, context.l10n.inventorySaleCreated);
-      context.pop(true);
+      if (context.canPop()) context.pop(true);
     } on ApiException catch (error) {
       if (!mounted || wsId != _wsId || actor != _actorId) {
         return;

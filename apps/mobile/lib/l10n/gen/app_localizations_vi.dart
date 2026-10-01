@@ -9473,7 +9473,16 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get inventorySeasonRetryPending => 'Chưa xác định được kết quả bán hàng. Giỏ hàng đã khóa; gửi lại để thử đúng yêu cầu này. Không tạo đơn khác cho đến khi xác định được kết quả.';
+  String get inventorySeasonRecoveryTitle => 'Khôi phục đơn bán hàng';
+
+  @override
+  String get inventorySeasonRecoveryCheck => 'Kiểm tra kết quả bán hàng';
+
+  @override
+  String get inventorySeasonRecoveryUnavailable => 'Không thể truy cập bộ lưu trữ khôi phục. Tạm khóa tạo đơn cho đến khi có thể khôi phục an toàn.';
+
+  @override
+  String get inventorySeasonRetryPending => 'Chưa xác định được kết quả bán hàng. Kiểm tra yêu cầu đã lưu trước khi gửi lại đúng nội dung. Bạn có thể rời màn hình và khôi phục trong tài khoản, không gian làm việc này; không tạo đơn thay thế.';
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';

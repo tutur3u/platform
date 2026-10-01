@@ -9,6 +9,7 @@ import 'package:mobile/features/inventory/controllers/inventory_season_pricing_c
 import 'package:mobile/features/inventory/widgets/inventory_season_price_status.dart';
 
 import '../../../helpers/helpers.dart';
+import 'sale_journal_fixture.dart';
 import 'season_pricing_controller_test.dart' show period, quote;
 
 void main() {
@@ -37,6 +38,8 @@ void main() {
       });
       final controller =
           InventorySeasonPricingController(
+            journal: MemorySaleStore().journal,
+            lookupReceipt: (_, _) async => null,
             fetch: (_, _) async => quote(),
             send: (_, _) async => 'unused',
             isOnline: () async => true,

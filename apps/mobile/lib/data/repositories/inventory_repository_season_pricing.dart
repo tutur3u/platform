@@ -69,6 +69,23 @@ extension InventorySeasonPricingRepository on InventoryRepository {
     await _api.getJson(InventoryEndpoints.seasonPrices(wsId, periodId)),
   );
 
+  Future<String?> _getSaleReceipt(String wsId, String requestId) async {
+    final response = await _api.getJson(
+      InventoryEndpoints.saleReceipt(wsId, requestId),
+    );
+    if (response['request_id'] != requestId) {
+      throw const FormatException('Mismatched receipt');
+    }
+    if (response['state'] == 'not_observed') return null;
+    final invoiceId = response['invoice_id'];
+    if (response['state'] != 'committed' ||
+        invoiceId is! String ||
+        invoiceId.isEmpty) {
+      throw const FormatException('Invalid receipt');
+    }
+    return invoiceId;
+  }
+
   Future<String> _sendScheduledSale(
     String wsId,
     Map<String, dynamic> payload,
@@ -82,12 +99,20 @@ extension InventorySeasonPricingRepository on InventoryRepository {
     if (id is! String || id.isEmpty) {
       throw const FormatException('Missing invoice ID');
     }
-    await _invalidateInventory(wsId, const [
-      'inventory:overview',
-      'inventory:sales',
-      'inventory:audit',
-      'inventory:periods',
-    ]);
+    unawaited(_invalidateScheduledReads(wsId));
     return id;
+  }
+
+  Future<void> _invalidateScheduledReads(String wsId) async {
+    try {
+      await _invalidateInventory(wsId, const [
+        'inventory:overview',
+        'inventory:sales',
+        'inventory:audit',
+        'inventory:periods',
+      ]);
+    } on Object {
+      // A local maintenance failure cannot hide the confirmed invoice receipt.
+    }
   }
 }

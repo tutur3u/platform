@@ -7,6 +7,8 @@ import 'package:mobile/data/models/inventory/inventory_season_price.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/inventory/controllers/inventory_season_pricing_controller.dart';
 
+import 'sale_journal_fixture.dart';
+
 Map<String, dynamic> priceRow({
   String id = 'quote-1',
   String currency = 'USD',
@@ -139,6 +141,8 @@ void main() {
     sent = [];
     controller =
         InventorySeasonPricingController(
+          journal: MemorySaleStore().journal,
+          lookupReceipt: (_, _) async => null,
           fetch: (_, _) async => quote(),
           send: (_, payload) async {
             sent.add(payload);
@@ -245,6 +249,8 @@ void main() {
     final completer = Completer<InventorySeasonQuote>();
     controller =
         InventorySeasonPricingController(
+          journal: MemorySaleStore().journal,
+          lookupReceipt: (_, _) async => null,
           fetch: (_, _) => completer.future,
           send: (_, _) async => 'unused',
           isOnline: () async => true,
@@ -274,6 +280,8 @@ void main() {
       var attempts = 0;
       controller =
           InventorySeasonPricingController(
+            journal: MemorySaleStore().journal,
+            lookupReceipt: (_, _) async => null,
             fetch: (_, _) async => quote(),
             send: (_, payload) async {
               sent.add(payload);
@@ -315,6 +323,8 @@ void main() {
     final check = Completer<bool>();
     controller =
         InventorySeasonPricingController(
+          journal: MemorySaleStore().journal,
+          lookupReceipt: (_, _) async => null,
           fetch: (_, _) async => quote(),
           send: (_, payload) async {
             sent.add(payload);
@@ -343,6 +353,8 @@ void main() {
       controller.dispose();
       controller =
           InventorySeasonPricingController(
+            journal: MemorySaleStore().journal,
+            lookupReceipt: (_, _) async => null,
             fetch: (_, _) async =>
                 throw ApiException(message: 'unavailable', statusCode: code),
             send: (_, _) async => 'unused',
@@ -363,6 +375,8 @@ void main() {
     var reads = 0;
     controller =
         InventorySeasonPricingController(
+          journal: MemorySaleStore().journal,
+          lookupReceipt: (_, _) async => null,
           fetch: (_, _) async {
             reads++;
             throw const ApiException(message: 'Unavailable', statusCode: 503);

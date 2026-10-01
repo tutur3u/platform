@@ -4,25 +4,44 @@ import 'package:flutter/foundation.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/inventory/inventory_sales_period.dart';
 import 'package:mobile/data/models/inventory/inventory_season_price.dart';
-import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/inventory_sale_journal.dart';
+
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Owns one actor/workspace/period/currency quote. No persistence or offline queue.
+part 'inventory_season_pricing_recovery.dart';
+
+/// Scoped quotes and a durable operation journal; never automatic offline
+/// replay.
 class InventorySeasonPricingController extends ChangeNotifier {
   InventorySeasonPricingController({
     required this.fetch,
     required this.send,
     required this.isOnline,
+    InventorySaleJournal? journal,
+    this.lookupReceipt,
+    this.currentActor,
     DateTime Function()? now,
     String Function()? requestId,
-  }) : now = now ?? DateTime.now,
+  }) : journal = journal ?? InventorySaleJournal.instance,
+       now = now ?? DateTime.now,
        requestId = requestId ?? newLocalMutationId {
     tzdata.initializeTimeZones();
   }
   final Future<InventorySeasonQuote> Function(String, String) fetch;
   final Future<String> Function(String, Map<String, dynamic>) send;
   final Future<bool> Function() isOnline;
+  final InventorySaleJournal journal;
+  final Future<String?> Function(String, String)? lookupReceipt;
+  final String? Function()? currentActor;
+  InventorySaleOperation? operation;
+  Future<void> _restoreFuture = Future<void>.value();
+  bool restoring = true;
+  bool journalFailed = false;
+  String? completedInvoiceId;
+  String _draftLabels = '{}';
+  bool get journalReady =>
+      !restoring && !journalFailed && _actor != null && _workspace != null;
   final DateTime Function() now;
   final String Function() requestId;
   String? _actor;
@@ -45,7 +64,13 @@ class InventorySeasonPricingController extends ChangeNotifier {
       _receivedAt != null &&
       now().difference(_receivedAt!) >= Duration.zero &&
       now().difference(_receivedAt!) < const Duration(seconds: 15);
-  bool get ready => scheduled && fresh && !loading && _eligiblePeriod();
+  bool get ready =>
+      journalReady &&
+      completedInvoiceId == null &&
+      scheduled &&
+      fresh &&
+      !loading &&
+      _eligiblePeriod();
 
   void configure({
     required String? actorId,
@@ -59,8 +84,9 @@ class InventorySeasonPricingController extends ChangeNotifier {
         this.currency == currency.toUpperCase()) {
       return;
     }
-    // Pending requests are locked. Scope switches discard visibility.
-    if (hasPending && _actor == actorId && _workspace == workspaceId) {
+    // Freeze pending metadata in this scope; changing scope only hides
+    // the record.
+    if (operation != null && _actor == actorId && _workspace == workspaceId) {
       return;
     }
     _generation++;
@@ -69,9 +95,14 @@ class InventorySeasonPricingController extends ChangeNotifier {
     period = selectedPeriod;
     this.currency = currency.toUpperCase();
     _pending = null;
+    operation = null;
+    completedInvoiceId = null;
+    restoring = true;
+    journalFailed = false;
     _lastFetchAttempt = null;
     sending = false;
     _clear();
+    _restoreFuture = _restoreOperation(_generation, actorId, workspaceId);
     _notify();
   }
 
@@ -137,7 +168,11 @@ class InventorySeasonPricingController extends ChangeNotifier {
   }
 
   Future<void> refresh({bool automatic = false}) async {
-    if (!scheduled || _actor == null || _workspace == null || hasPending) {
+    await _restoreFuture;
+    if (!journalReady ||
+        !scheduled ||
+        hasPending ||
+        completedInvoiceId != null) {
       return;
     }
     final instant = now();
@@ -189,9 +224,11 @@ class InventorySeasonPricingController extends ChangeNotifier {
     required List<Map<String, dynamic>> products,
     required String content,
     String? notes,
+    Map<String, String> lineLabels = const {},
   }) async {
-    if (sending || _workspace == null || _actor == null) {
-      throw StateError('Invalid scope');
+    await _restoreFuture;
+    if (sending || !journalReady || completedInvoiceId != null) {
+      throw StateError('Operation recovery required');
     }
     final admission = _generation;
     if (!await isOnline()) {
@@ -201,6 +238,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
       throw StateError('Scope changed');
     }
     if (_pending == null) {
+      _draftLabels = jsonEncode(lineLabels);
       if (!ready || products.isEmpty || products.length > 500) {
         throw StateError('Refresh season prices');
       }
@@ -249,31 +287,27 @@ class InventorySeasonPricingController extends ChangeNotifier {
               )
               as Map<String, dynamic>;
     }
+    return await _attemptOperation(admission);
+  }
+
+  Future<String> retryPending() async {
+    await _restoreFuture;
+    if (!journalReady || !hasPending || sending) {
+      throw StateError('Operation recovery required');
+    }
     final token = _generation;
-    final workspace = _workspace!;
-    sending = true;
-    _notify();
-    try {
-      final id = await send(
-        workspace,
-        jsonDecode(jsonEncode(_pending)) as Map<String, dynamic>,
-      );
-      if (token != _generation || _disposed) throw StateError('Scope changed');
-      _pending = null;
-      return id;
-    } on ApiException catch (error) {
-      // Explicit transaction rejection is safe to revise; network/5xx is uncertain.
-      if (token == _generation &&
-          [400, 401, 403, 409, 422, 503].contains(error.statusCode)) {
-        _pending = null;
-        _clear();
-      }
-      rethrow;
-    } finally {
-      if (token == _generation && !_disposed) {
-        sending = false;
-        _notify();
-      }
+    if (!await isOnline() || token != _generation || _disposed) {
+      throw StateError('Online recovery required');
+    }
+    return await _attemptOperation(token);
+  }
+
+  Future<void> acknowledgeCompletion() async {
+    final actor = _actor;
+    final workspace = _workspace;
+    final id = completedInvoiceId;
+    if (actor != null && workspace != null && id != null) {
+      await journal.acknowledge(actor, workspace, id);
     }
   }
 

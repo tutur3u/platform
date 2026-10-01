@@ -1,7 +1,13 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
@@ -18,11 +24,14 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/helpers.dart';
+import 'sale_journal_fixture.dart';
 import 'season_pricing_controller_test.dart' show period, quote;
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 class _Inventory extends InventoryRepository {
+  _Inventory({super.apiClient, super.cacheStore});
+  int periodReads = 0;
   List<Map<String, dynamic>>? legacy;
   List<InventorySalesPeriod> periods = [period()];
   bool denied = false;
@@ -30,6 +39,7 @@ class _Inventory extends InventoryRepository {
   Future<List<InventorySalesPeriod>> getCheckoutSalesPeriods(
     String wsId,
   ) async {
+    periodReads++;
     if (denied) throw const ApiException(message: 'Denied', statusCode: 403);
     return periods;
   }
@@ -86,16 +96,42 @@ class _Finance extends FinanceRepository {
 }
 
 class _Settings extends SettingsRepository {
+  _Settings({this.failLoad = false, this.failWrite = false});
+  final bool failLoad;
+  final bool failWrite;
+  int writes = 0;
   @override
-  Future<String?> getLastIncomeCategory(String wsId) async => null;
+  Future<String?> getLastIncomeCategory(String wsId) async {
+    if (failLoad) throw StateError('Preferences read unavailable');
+    return null;
+  }
+
+  @override
+  Future<void> setLastIncomeCategory(String wsId, String categoryId) async {
+    writes++;
+    if (failWrite) throw StateError('Preferences write unavailable');
+  }
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    for (final family in ['NotoSans', 'Geist', 'Roboto']) {
+      await (FontLoader(
+        family,
+      )..addFont(rootBundle.load('assets/fonts/NotoSans.ttf'))).load();
+    }
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+  });
   Future<void> mount(
     WidgetTester tester,
     _Inventory inventory,
     InventorySeasonPricingController controller, {
     InventorySaleDetail? sale,
+    _Settings? settings,
+    GlobalKey? captureKey,
   }) async {
     tester.view
       ..devicePixelRatio = 1
@@ -117,13 +153,16 @@ void main() {
     await tester.pumpApp(
       BlocProvider<WorkspaceCubit>.value(
         value: workspace,
-        child: InventoryCheckoutPage(
-          sale: sale,
-          inventoryRepository: inventory,
-          financeRepository: _Finance(),
-          settingsRepository: _Settings(),
-          seasonController: controller,
-          actorId: () => 'actor',
+        child: RepaintBoundary(
+          key: captureKey,
+          child: InventoryCheckoutPage(
+            sale: sale,
+            inventoryRepository: inventory,
+            financeRepository: _Finance(),
+            settingsRepository: settings ?? _Settings(),
+            seasonController: controller,
+            actorId: () => 'actor',
+          ),
         ),
       ),
     );
@@ -142,57 +181,57 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets(
-    'actual scheduled checkout uses quote price, currency/as-of and stable retry',
-    (tester) async {
-      final sent = <Map<String, dynamic>>[];
-      final inventory = _Inventory();
-      final controller = InventorySeasonPricingController(
-        fetch: (_, _) async => quote(),
-        send: (_, payload) async {
-          sent.add(payload);
-          throw const ApiException(message: 'Synthetic timeout', statusCode: 0);
-        },
-        isOnline: () async => true,
-        now: () => DateTime.utc(2026, 10),
-        requestId: () => 'request',
-      );
-      await mount(tester, inventory, controller);
-      await tester.tap(find.byIcon(Icons.add_circle_outline_rounded).first);
-      await selectSeason(tester);
-      expect(find.textContaining('as of 2026-10-01 01:00:00'), findsOneWidget);
-      expect(find.textContaining('USD'), findsWidgets);
-      expect(find.textContaining('USD 12.50'), findsWidgets);
-      expect(find.textContaining(r'$999.00'), findsNothing);
-      await tester.tap(find.text('Create sale'));
-      await tester.pumpAndSettle();
-      expect(sent, hasLength(1));
-      expect(inventory.legacy, isNull);
-      expect(
-        (sent.single['products'] as List<dynamic>).single,
-        containsPair('price_id', 'quote-1'),
-      );
-      expect(find.textContaining('Sale response uncertain.'), findsOneWidget);
-      await tester.drag(find.text('Synthetic timeout'), const Offset(500, 0));
-      await tester.pumpAndSettle();
-      expect(find.text('Synthetic timeout'), findsNothing);
-      await tester.tap(find.text('Create sale'));
-      await tester.pumpAndSettle();
-      expect(sent, hasLength(2));
-      expect(sent[1], sent[0]);
-      expect(
-        tester.widget<PopScope>(find.byType(PopScope).last).canPop,
-        isFalse,
-      );
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.drainShadToastTimers();
-    },
-  );
+  testWidgets('actual scheduled checkout uses quote price, currency/as-of and '
+      'stable retry', (tester) async {
+    final sent = <Map<String, dynamic>>[];
+    final inventory = _Inventory();
+    final controller = InventorySeasonPricingController(
+      journal: MemorySaleStore().journal,
+      lookupReceipt: (_, _) async => null,
+      fetch: (_, _) async => quote(),
+      send: (_, payload) async {
+        sent.add(payload);
+        throw const ApiException(message: 'Synthetic timeout', statusCode: 0);
+      },
+      isOnline: () async => true,
+      now: () => DateTime.utc(2026, 10),
+      requestId: () => 'request',
+    );
+    await mount(tester, inventory, controller);
+    await tester.tap(find.byIcon(Icons.add_circle_outline_rounded).first);
+    await selectSeason(tester);
+    expect(find.textContaining('as of 2026-10-01 01:00:00'), findsOneWidget);
+    expect(find.textContaining('USD'), findsWidgets);
+    expect(find.textContaining('USD 12.50'), findsWidgets);
+    expect(find.textContaining(r'$999.00'), findsNothing);
+    await tester.tap(find.text('Create sale'));
+    await tester.pumpAndSettle();
+    expect(sent, hasLength(1));
+    expect(inventory.legacy, isNull);
+    expect(
+      (sent.single['products'] as List<dynamic>).single,
+      containsPair('price_id', 'quote-1'),
+    );
+    expect(find.textContaining('Sale response uncertain.'), findsOneWidget);
+    await tester.drag(find.text('Synthetic timeout'), const Offset(500, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Synthetic timeout'), findsNothing);
+    await tester.drainShadToastTimers();
+    await tester.tap(find.text('Check sale result'));
+    await tester.pumpAndSettle();
+    expect(sent, hasLength(2));
+    expect(sent[1], sent[0]);
+    expect(tester.widget<PopScope>(find.byType(PopScope).last).canPop, isTrue);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.drainShadToastTimers();
+  });
   testWidgets('denied metadata blocks assignment; '
       'ordinary unassigned checkout stays usable', (tester) async {
     final inventory = _Inventory()..denied = true;
     var scheduledSends = 0;
     final controller = InventorySeasonPricingController(
+      journal: MemorySaleStore().journal,
+      lookupReceipt: (_, _) async => null,
       fetch: (_, _) async => quote(),
       send: (_, _) async {
         scheduledSends++;
@@ -214,6 +253,8 @@ void main() {
   ) async {
     final inventory = _Inventory();
     final controller = InventorySeasonPricingController(
+      journal: MemorySaleStore().journal,
+      lookupReceipt: (_, _) async => null,
       fetch: (_, _) async => quote(),
       send: (_, _) async => throw StateError('Must not write history'),
       isOnline: () async => true,
@@ -251,4 +292,235 @@ void main() {
     expect(find.textContaining('USD 3.00'), findsWidgets);
     await tester.pumpWidget(const SizedBox.shrink());
   });
+  testWidgets(
+    'confirmed scheduled sale is terminal despite preferences write failure',
+    (tester) async {
+      final store = MemorySaleStore();
+      var posts = 0;
+      final settings = _Settings(failWrite: true);
+      final inventory = _Inventory();
+      final controller = InventorySeasonPricingController(
+        journal: store.journal,
+        lookupReceipt: (_, _) async => null,
+        fetch: (_, _) async => quote(),
+        send: (_, _) async {
+          posts++;
+          return 'invoice';
+        },
+        isOnline: () async => true,
+        now: () => DateTime.utc(2026, 10),
+      );
+      await mount(tester, inventory, controller, settings: settings);
+      await tester.tap(find.byIcon(Icons.add_circle_outline_rounded).first);
+      await selectSeason(tester);
+      await tester.tap(find.text('Create sale'));
+      await tester.pumpAndSettle();
+      expect(posts, 1);
+      expect(settings.writes, 1);
+      expect(controller.completedInvoiceId, 'invoice');
+      final form = tester.widget<FinanceFullscreenFormScaffold>(
+        find.byType(FinanceFullscreenFormScaffold),
+      );
+      expect(form.onPrimaryPressed, isNull);
+      expect(find.text('Create sale'), findsNothing);
+      await tester.pump(const Duration(seconds: 1));
+      expect(posts, 1);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.drainShadToastTimers();
+    },
+  );
+
+  testWidgets('uncertain checkout hides metadata Retry and retries frozen '
+      'request after metadata fails', (tester) async {
+    final inventory = _Inventory();
+    final store = MemorySaleStore();
+    final sent = <Map<String, dynamic>>[];
+    final controller = InventorySeasonPricingController(
+      journal: store.journal,
+      lookupReceipt: (_, _) async => null,
+      fetch: (_, _) async => quote(),
+      send: (_, body) async {
+        sent.add(body);
+        throw const ApiException(message: 'Lost', statusCode: 0);
+      },
+      isOnline: () async => true,
+      now: () => DateTime.utc(2026, 10),
+      requestId: () => 'fixed',
+    );
+    await mount(
+      tester,
+      inventory,
+      controller,
+      settings: _Settings(failLoad: true),
+    );
+    expect(find.text('Retry'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.add_circle_outline_rounded).first);
+    await selectSeason(tester);
+    await tester.tap(find.text('Create sale'));
+    await tester.pumpAndSettle();
+    inventory.denied = true;
+    final reads = inventory.periodReads;
+    expect(find.text('Retry'), findsNothing);
+    final form = tester.widget<FinanceFullscreenFormScaffold>(
+      find.byType(FinanceFullscreenFormScaffold),
+    );
+    expect(form.onPrimaryPressed, isNotNull);
+    expect(find.text('Test product · Each · Main'), findsOneWidget);
+    expect(tester.widget<PopScope>(find.byType(PopScope).last).canPop, isTrue);
+    await tester.drainShadToastTimers();
+    if (find.text('Lost').evaluate().isNotEmpty) {
+      await tester.drag(find.text('Lost').last, const Offset(500, 0));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text('Check sale result'));
+    await tester.pumpAndSettle();
+    expect(sent, hasLength(2));
+    expect(sent[1], sent[0]);
+    expect(inventory.periodReads, reads);
+    expect(inventory.legacy, isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.drainShadToastTimers();
+  });
+
+  testWidgets('recreated mounted checkout recovers frozen operation without '
+      'catalog metadata', (tester) async {
+    final store = MemorySaleStore();
+    var posts = 0;
+    InventorySeasonPricingController create({bool recovered = false}) =>
+        InventorySeasonPricingController(
+          journal: store.journal,
+          lookupReceipt: (_, _) async => recovered ? 'invoice' : null,
+          fetch: (_, _) async => quote(),
+          send: (_, _) async {
+            posts++;
+            throw const ApiException(message: 'Lost', statusCode: 0);
+          },
+          isOnline: () async => true,
+          now: () => DateTime.utc(2026, 10),
+          requestId: () => 'fixed',
+        );
+    await mount(tester, _Inventory(), create());
+    await tester.tap(find.byIcon(Icons.add_circle_outline_rounded).first);
+    await selectSeason(tester);
+    await tester.tap(find.text('Create sale'));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.drainShadToastTimers();
+    final inventory = _Inventory()..denied = true;
+    final restored = create(recovered: true);
+    await mount(tester, inventory, restored);
+    expect(find.text('Check sale result'), findsOneWidget);
+    expect(restored.operation!.requestId, 'fixed');
+    await tester.tap(find.text('Check sale result'));
+    await tester.pumpAndSettle();
+    expect(posts, 1);
+    expect(restored.completedInvoiceId, 'invoice');
+    expect(inventory.legacy, isNull);
+    expect(
+      tester
+          .widget<FinanceFullscreenFormScaffold>(
+            find.byType(FinanceFullscreenFormScaffold),
+          )
+          .onPrimaryPressed,
+      isNull,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.drainShadToastTimers();
+  });
+
+  testWidgets('mounted invoice success survives local cache failure without '
+      'second create', (tester) async {
+    final cache = _FailCache();
+    when(
+      () => cache.invalidateTags(any(), workspaceId: 'ws'),
+    ).thenThrow(StateError('Cache unavailable'));
+    final api = _InvoiceApi();
+    final inventory = _Inventory(apiClient: api, cacheStore: cache);
+    final controller = InventorySeasonPricingController(
+      journal: MemorySaleStore().journal,
+      lookupReceipt: (_, _) async => null,
+      fetch: (_, _) async => quote(),
+      send: inventory.sendScheduledSale,
+      isOnline: () async => true,
+      now: () => DateTime.utc(2026, 10),
+    );
+    await mount(tester, inventory, controller);
+    await tester.tap(find.byIcon(Icons.add_circle_outline_rounded).first);
+    await selectSeason(tester);
+    await tester.tap(find.text('Create sale'));
+    await tester.pumpAndSettle();
+    expect(api.posts, 1);
+    expect(controller.completedInvoiceId, 'invoice');
+    expect(
+      tester
+          .widget<FinanceFullscreenFormScaffold>(
+            find.byType(FinanceFullscreenFormScaffold),
+          )
+          .onPrimaryPressed,
+      isNull,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.drainShadToastTimers();
+  });
+  for (final width in [320.0, 768.0]) {
+    testWidgets('full mounted recovery fits $width at large text', (
+      tester,
+    ) async {
+      final controller = InventorySeasonPricingController(
+        journal: MemorySaleStore().journal,
+        lookupReceipt: (_, _) async => null,
+        fetch: (_, _) async => quote(),
+        send: (_, _) async =>
+            throw const ApiException(message: 'Lost', statusCode: 0),
+        isOnline: () async => true,
+        now: () => DateTime.utc(2026, 10),
+      );
+      final key = GlobalKey();
+      await mount(tester, _Inventory(), controller, captureKey: key);
+      await tester.tap(find.byIcon(Icons.add_circle_outline_rounded).first);
+      await selectSeason(tester);
+      await tester.tap(find.text('Create sale'));
+      await tester.pumpAndSettle();
+      await tester.drainShadToastTimers();
+      tester.view.physicalSize = Size(width, 900);
+      tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await tester.pumpAndSettle();
+      expect(find.text('Recover sale'), findsOneWidget);
+      expect(find.text('Test product · Each · Main'), findsOneWidget);
+      expect(find.text('Check sale result'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      final directory = Platform.environment['INVENTORY_RECOVERY_VISUAL_DIR'];
+      if (directory != null) {
+        final boundary =
+            key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        await tester.runAsync(() async {
+          final image = await boundary.toImage();
+          final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+          await File(
+            '$directory/recovery-${width.toInt()}.png',
+          ).writeAsBytes(bytes!.buffer.asUint8List());
+          image.dispose();
+        });
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.drainShadToastTimers();
+    });
+  }
+}
+
+class _FailCache extends Mock implements CacheStore {}
+
+class _InvoiceApi extends ApiClient {
+  int posts = 0;
+  @override
+  Future<Map<String, dynamic>> postJson(
+    String path,
+    Object? payload, {
+    bool requiresAuth = true,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    posts++;
+    return {'invoice_id': 'invoice'};
+  }
 }

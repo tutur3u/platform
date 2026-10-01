@@ -3832,7 +3832,10 @@
     "inventorySeasonPriceLoading": "Checking current season prices…",
     "inventorySeasonPriceUnavailable": "Season prices unavailable or expired. Connect, refresh and review the cart before selling.",
     "inventorySeasonPriceAsOf": "Season prices · {currency} · as of {asOf} (UTC) · season dates in {timeZone}",
-    "inventorySeasonRetryPending": "Sale response uncertain. Cart is locked; submit again to retry the same request. Do not start another sale until this is resolved.",
+    "inventorySeasonRecoveryTitle": "Recover sale",
+    "inventorySeasonRecoveryCheck": "Check sale result",
+    "inventorySeasonRecoveryUnavailable": "Sale recovery storage is unavailable. Creation is blocked until this operation can be recovered safely.",
+    "inventorySeasonRetryPending": "Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.",
     "inventorySeasonHistoricalReadOnly": "Scheduled sale history is read only here. Recorded prices are preserved.",
     "@inventorySeasonPriceAsOf": {
         "placeholders": {
