@@ -17,8 +17,8 @@ part 'agenda_event_cards.dart';
 /// Scrollable agenda showing upcoming events grouped by date.
 ///
 /// Displays a date header for each day followed by its events in a
-/// card-like layout. Past events use a completion icon and title decoration. A "Now" indicator shows the
-/// current time between past and future events.
+/// card-like layout. Past events use a completion icon and title decoration.
+/// A "Now" indicator shows the current time between past and future events.
 ///
 /// Supports infinite scroll — when the user nears the bottom, [onLoadMore]
 /// is called so the parent can fetch additional events from the server.

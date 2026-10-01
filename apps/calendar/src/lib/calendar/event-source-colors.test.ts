@@ -149,6 +149,6 @@ for (const sourceCalendarId of [null, 'another-actor-source']) {
       events: [event],
     });
     expect(result[0]).toBe(event);
-    expect(result[0]._calendarColor).toBe('#abcdef');
+    expect(result[0]?._calendarColor).toBe('#abcdef');
   });
 }

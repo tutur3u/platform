@@ -20,7 +20,7 @@ void main() {
               startAt: start,
               endAt: start.add(const Duration(hours: 1)),
               color: 'PINK',
-              schedulingMetadata: {
+              schedulingMetadata: const {
                 'google_color': {
                   'version': 1,
                   'inherited': false,
