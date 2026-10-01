@@ -33,7 +33,10 @@ export function Structure({
   wsId,
 }: StructureProps) {
   const studentId = useSearchParams().get('studentId');
-  const isCodingLab = usePathname().endsWith('/coding');
+  const pathname = usePathname();
+  const isCodingLab =
+    pathname.endsWith('/coding') ||
+    /\/programming\/problems\/[0-9a-f-]{36}$/iu.test(pathname);
   const activeWorkspace = bootstrap.workspaces.find((item) => item.id === wsId);
   const hasLinkedStudents = bootstrap.linkedStudents.some(
     (student) => student.workspace_id === wsId

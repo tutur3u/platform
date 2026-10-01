@@ -1,4 +1,6 @@
 import 'server-only';
+import { importedProgrammingSlug } from '@tuturuuu/education-core/education/programming-imported-catalog';
+import { ProgrammingProblemId } from '@tuturuuu/education-core/education/programming-schema';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { notifyDevboxRun } from '@tuturuuu/utils/devbox-control';
 import type { CodingChallenge } from './challenges';
@@ -245,21 +247,22 @@ export async function readCodingSubmission({
   id,
   userId,
   wsId,
+  problemId,
 }: {
+  problemId?: string;
   id: string;
   userId: string;
   wsId: string;
 }) {
   const client = await privateClient();
-  const submission = assertRows(
-    await client
-      .from<SubmissionRow>('learn_coding_submissions')
-      .select('id,challenge_slug,source,run_id,created_at,kind,language')
-      .eq('id', id)
-      .eq('user_id', userId)
-      .eq('ws_id', wsId)
-      .limit(1)
-  )[0];
+  let query = client
+    .from<SubmissionRow>('learn_coding_submissions')
+    .select('id,challenge_slug,source,run_id,created_at,kind,language')
+    .eq('id', id)
+    .eq('user_id', userId)
+    .eq('ws_id', wsId);
+  if (problemId) query = bindProgrammingHistory(query, problemId);
+  const submission = assertRows(await query.limit(1))[0];
   if (!submission) return null;
   return (await hydrateExecutions(client, [submission]))[0] ?? null;
 }
@@ -269,7 +272,9 @@ export async function listCodingExecutions({
   challengeSlug,
   userId,
   wsId,
+  problemId,
 }: {
+  problemId?: string;
   before?: string;
   challengeSlug: string;
   userId: string;
@@ -280,8 +285,10 @@ export async function listCodingExecutions({
     .from<SubmissionRow>('learn_coding_submissions')
     .select('id,challenge_slug,source,run_id,created_at,kind,language')
     .eq('user_id', userId)
-    .eq('ws_id', wsId)
-    .eq('challenge_slug', challengeSlug);
+    .eq('ws_id', wsId);
+  query = problemId
+    ? bindProgrammingHistory(query, problemId)
+    : query.eq('challenge_slug', challengeSlug);
   if (before) {
     const [createdAt, id] = before.split('|');
     if (
@@ -308,4 +315,44 @@ export async function listCodingExecutions({
     nextCursor:
       rows.length > 25 ? `${rows[24]?.created_at}|${rows[24]?.id}` : null,
   };
+}
+
+/** Best-effort wake after a successful version-bound enqueue. The runner polls
+ * independently; a notification failure must never encourage duplicate enqueue. */
+export async function notifyProgrammingSubmission({
+  id,
+  problemId,
+  wsId,
+  userId,
+}: {
+  id: string;
+  problemId: string;
+  wsId: string;
+  userId: string;
+}) {
+  try {
+    const client = await privateClient();
+    const result = await client
+      .from<Pick<SubmissionRow, 'run_id'>>('learn_coding_submissions')
+      .select('run_id')
+      .eq('id', ProgrammingProblemId.parse(id))
+      .eq('problem_id', ProgrammingProblemId.parse(problemId))
+      .eq('ws_id', wsId)
+      .eq('user_id', userId)
+      .limit(1);
+    if (!result.error && result.data?.[0]?.run_id)
+      await notifyDevboxRun(result.data[0].run_id);
+  } catch {
+    // The transaction has already committed and normal runner polling remains active.
+  }
+}
+
+function bindProgrammingHistory<T>(query: SelectQuery<T>, problemId: string) {
+  const id = ProgrammingProblemId.parse(problemId);
+  const importedSlug = importedProgrammingSlug(id);
+  return importedSlug
+    ? query.or(
+        `problem_id.eq.${id},and(problem_id.is.null,problem_bound.eq.false,challenge_slug.eq.${importedSlug})`
+      )
+    : query.eq('problem_id', id);
 }

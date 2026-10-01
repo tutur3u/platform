@@ -35,3 +35,12 @@ Published correction `766f33b7c4` passed the original equivalent local batch: 4 
 checks and 17 workspace checks, no console/page errors, focused lint/typecheck pass.
 This portable followup relocates/sanitizes that harness; its validation is recorded
 in the PR handoff separately. Customer pixels/Library metadata stay outside Git.
+
+The canonical frontend slice additionally provides `run-canonical.mjs`, a finite
+loopback browser check for the actual catalog, author CRUD form and database DTO
+workspace adapter. Its navigation/server actions use synthetic in-memory fixtures;
+no actual app authorization, API or database requests occur. It checks draft reload,
+Back/Forward, problem/language and actor switching, unavailable session storage,
+late mutation isolation, case capacity, conflict preservation and parent phone UX.
+Results are ignored under `evidence/canonical`; missing dependencies are blockers,
+never an instruction to install. Run only within the admitted normal FIFO budget.

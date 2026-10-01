@@ -14,7 +14,10 @@ import { useTranslations } from 'next-intl';
 import type { listCodingChallenges } from '@/lib/coding/challenges';
 import { CODING_LANGUAGES, type CodingLanguage } from '@/lib/coding/languages';
 
-type PublicChallenge = ReturnType<typeof listCodingChallenges>[number];
+type PublicChallenge = ReturnType<typeof listCodingChallenges>[number] & {
+  title?: string;
+  prompt?: string;
+};
 
 export function CodingToolbar({
   availableLanguages,
@@ -54,7 +57,7 @@ export function CodingToolbar({
         <SelectContent>
           {challenges.map((entry) => (
             <SelectItem key={entry.slug} value={entry.slug}>
-              {t(`challenges.${entry.slug}.title`)}
+              {entry.title ?? t(`challenges.${entry.slug}.title`)}
             </SelectItem>
           ))}
         </SelectContent>

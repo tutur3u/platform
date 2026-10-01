@@ -32,13 +32,19 @@ const aliases = [
   { find: '@', replacement: path.join(repo, 'apps/learn/src') },
   { find: 'next/dynamic', replacement: path.join(here, 'dynamic.tsx') },
 ];
-for (const namespace of ['ui', 'utils', 'icons']) {
+for (const namespace of ['ui', 'utils', 'icons', 'types']) {
   const pkg = JSON.parse(
     fs.readFileSync(path.join(repo, 'packages', namespace, 'package.json'))
   );
   for (const [key, value] of Object.entries(pkg.exports)) {
-    const target =
+    const declaredTarget =
       typeof value === 'string' ? value : (value.import ?? value.default);
+    const target =
+      namespace === 'types' && declaredTarget
+        ? declaredTarget
+            .replace(/^\.\/dist\//, './src/')
+            .replace(/\.js$/, '.ts')
+        : declaredTarget;
     if (!target) continue;
     const find = `@tuturuuu/${namespace}${key === '.' ? '' : key.slice(1)}`;
     if (find.includes('*'))
@@ -50,7 +56,7 @@ for (const namespace of ['ui', 'utils', 'icons']) {
       });
     else
       aliases.push({
-        find,
+        find: new RegExp(`^${find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
         replacement: path.join(repo, 'packages', namespace, target),
       });
   }
@@ -89,7 +95,19 @@ async function run() {
             id === path.join(coding, 'actions.ts')
           )
             return path.join(here, 'judge.ts');
-          if (id === './coding-font' && importer?.startsWith(coding))
+          if (
+            id === '@/i18n/navigation' ||
+            id === path.join(repo, 'apps/learn/src/i18n/navigation') ||
+            id === path.join(repo, 'apps/learn/src/i18n/navigation.ts')
+          )
+            return path.join(here, 'canonical-navigation.tsx');
+          if (id === './actions' && importer?.includes('/programming/'))
+            return path.join(here, 'canonical-actions.ts');
+          if (
+            (id === './coding-font' || id === '../coding/coding-font') &&
+            (importer?.startsWith(coding) ||
+              importer?.includes('/programming/'))
+          )
             return '\0qa-font';
         },
         load(id) {

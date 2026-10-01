@@ -12,6 +12,7 @@ import { Structure } from '../../../../packages/ui/src/components/ui/custom/stru
 import messages from '../../messages/en.json';
 import { CodingLab } from '../../src/app/[locale]/(dashboard)/[wsId]/coding/coding-lab';
 import './style.css';
+import { CanonicalHarness } from './canonical';
 
 const challenges = [
   {
@@ -69,7 +70,11 @@ createRoot(document.getElementById('root')!).render(
   <ThemeProvider attribute="class" defaultTheme="dark">
     <NextIntlClientProvider locale="en" messages={messages}>
       <QueryClientProvider client={queryClient}>
-        <Harness />
+        {location.pathname.includes('/programming') ? (
+          <CanonicalHarness />
+        ) : (
+          <Harness />
+        )}
       </QueryClientProvider>
     </NextIntlClientProvider>
   </ThemeProvider>
