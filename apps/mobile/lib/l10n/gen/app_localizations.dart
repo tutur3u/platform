@@ -18186,6 +18186,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unavailable'**
   String get inventoryStockHealthUnknown;
+
+  /// No description provided for @inventorySeasonPriceLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking current season prices…'**
+  String get inventorySeasonPriceLoading;
+
+  /// No description provided for @inventorySeasonPriceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Season prices unavailable or expired. Connect, refresh and review the cart before selling.'**
+  String get inventorySeasonPriceUnavailable;
+
+  /// No description provided for @inventorySeasonPriceAsOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Season prices · {currency} · as of {asOf} (UTC) · season dates in {timeZone}'**
+  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone);
+
+  /// No description provided for @inventorySeasonRetryPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale response uncertain. Cart is locked; submit again to retry the same request. Do not start another sale until this is resolved.'**
+  String get inventorySeasonRetryPending;
+
+  /// No description provided for @inventorySeasonHistoricalReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled sale history is read only here. Recorded prices are preserved.'**
+  String get inventorySeasonHistoricalReadOnly;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

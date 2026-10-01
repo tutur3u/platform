@@ -1,0 +1,73 @@
+---
+title: Mobile season prices
+---
+
+Mobile checkout consumes authoritative season prices for **new scheduled sales**.
+Operators explicitly select a sales period and wallet. Legacy/unassigned checkout
+continues using its existing creation flow. This slice does not author prices,
+manage periods, edit scheduled history, or claim complete web parity.
+
+## Current-price contract
+
+Checkout reads uncached period metadata and
+`GET /api/v1/workspaces/{wsId}/inventory/sales-periods/{periodId}/prices`.
+The response contains price rows and a server `as_of` instant. Resolution uses the
+selected period, product, unit, warehouse and explicit wallet currency. Effective
+intervals are half-open `[valid_from, valid_to)`; duplicate applicable rows,
+malformed responses and missing prices block the sale. Product allow/block lists
+apply separately. Period dates are inclusive in the period's IANA timezone,
+checked against server time, with final eligibility checked atomically by the
+server. No device-timezone date or catalog fallback decides scheduled pricing.
+
+The compact checkout shows season, currency, UTC quote time and period timezone.
+Quotes expire after 15 seconds of local receipt age and are refreshed while the
+checkout is open. Failed refreshes clear visible quotes. Missing lines display an
+unavailable amount rather than a zero-priced sale or a mixed-currency total.
+
+## Atomic creation and retry
+
+Scheduled sales require online access and call the existing authenticated
+`POST /api/v1/workspaces/{wsId}/finance/invoices` directly, with
+`price_mode: custom`, `inventory_period_id`, `inventory_request_id` and immutable
+`price_id` on each line. They never enter the offline mutation queue and never
+create an invoice followed by a separate period assignment. The backend derives
+configured workspace currency, checks wallet currency and precision, validates
+current prices/stock, and persists historical snapshots plus period assignment in
+one transaction. The UI currency is a quote-selection constraint, not authority
+to change workspace currency. Zero prices are legitimate only when explicitly
+returned by the server.
+
+An uncertain network/5xx response locks the original payload and request ID.
+Submit retries that exact payload even if the quote expires. Cart edits and
+ordinary modal dismissal are blocked until the result is resolved. Explicit
+transaction rejection releases the cart and invalidates the quote for review.
+Account/workspace changes clear visible data and invalidate in-flight results.
+The pending request is scoped to this mounted checkout, not a durable background
+replay record; after process termination an operator must reconcile uncertain
+sales before starting another. Scheduled historical sales are read only in this
+checkout. Ordinary historical line prices remain their recorded prices.
+
+## Permissions and rollout limits
+
+Canonical actor/workspace membership remains server-owned. Hidden-module
+preferences do not grant or revoke authorization. Period discovery currently
+requires view-sales permission while quote GET also permits create-sales. A
+create-only actor may therefore be unable to discover a period; mobile fails
+closed rather than broadening access. Missing pricing schema/RPC (503), denial,
+invalid timezone, missing metadata or wallet-price currency mismatch block
+scheduled submission. Source presence on main does not prove production migration
+availability. Legacy selected-period assignment retains its existing separate
+creation/assignment semantics; mode changes racing that legacy path still need
+server rollout/integration review.
+
+Revenue/profit remain withheld: the analytics aggregate still needs verified
+currency, linked checkout/invoice deduplication, refund/cancellation and reporting
+timezone semantics. This change does not modify any financial aggregation.
+
+## Regression evidence
+
+`apps/mobile/test/features/inventory/season_pricing/` covers interval boundaries,
+currency separation, malformed quotes, timezone eligibility, product scope,
+expiry/offline/denial, actor/workspace races, exact-payload idempotent retry, direct
+atomic repository transport and mounted checkout/historical guards. The existing
+partial-option checkout regression remains in the focused suite.

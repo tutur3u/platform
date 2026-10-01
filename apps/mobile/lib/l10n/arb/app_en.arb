@@ -3828,5 +3828,23 @@
                 "type": "String"
             }
         }
+    },
+    "inventorySeasonPriceLoading": "Checking current season prices…",
+    "inventorySeasonPriceUnavailable": "Season prices unavailable or expired. Connect, refresh and review the cart before selling.",
+    "inventorySeasonPriceAsOf": "Season prices · {currency} · as of {asOf} (UTC) · season dates in {timeZone}",
+    "inventorySeasonRetryPending": "Sale response uncertain. Cart is locked; submit again to retry the same request. Do not start another sale until this is resolved.",
+    "inventorySeasonHistoricalReadOnly": "Scheduled sale history is read only here. Recorded prices are preserved.",
+    "@inventorySeasonPriceAsOf": {
+        "placeholders": {
+            "currency": {
+                "type": "String"
+            },
+            "asOf": {
+                "type": "String"
+            },
+            "timeZone": {
+                "type": "String"
+            }
+        }
     }
 }

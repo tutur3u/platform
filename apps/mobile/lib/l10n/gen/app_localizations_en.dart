@@ -9526,4 +9526,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryStockHealthUnknown => 'Unavailable';
+
+  @override
+  String get inventorySeasonPriceLoading => 'Checking current season prices…';
+
+  @override
+  String get inventorySeasonPriceUnavailable => 'Season prices unavailable or expired. Connect, refresh and review the cart before selling.';
+
+  @override
+  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone) {
+    return 'Season prices · $currency · as of $asOf (UTC) · season dates in $timeZone';
+  }
+
+  @override
+  String get inventorySeasonRetryPending => 'Sale response uncertain. Cart is locked; submit again to retry the same request. Do not start another sale until this is resolved.';
+
+  @override
+  String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
 }

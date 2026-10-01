@@ -45,6 +45,7 @@
                   "platform/features/meet-together",
                   "platform/features/mobile-workspace-tools",
                   "platform/features/inventory-stock-health",
+              "platform/features/inventory-season-pricing-mobile",
                   "platform/features/user-management",
                   {
                     "group": "Smart Scheduling",
