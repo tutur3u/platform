@@ -93,3 +93,15 @@ No integration_test SDK dependency is needed: the dedicated app and native host
 phase controls produce the proof directly, without repeated test-tool installs
 that could reset state. Review the source diff and exact CI effects before
 publishing or executing.
+
+## Activation requires review
+
+`workflow-proposal.yaml` is deliberately stored beside the fixture, outside
+`.github/workflows`; this checkpoint registers no runnable repository workflow.
+After source/resource review, activation must place the reviewed proposal at
+`.github/workflows/inventory-native-journal-proof.yaml`, add it to the
+`tuturuuu.ts` CI switchboard and wire the existing `ci-check.yml` gate, then run
+applicable workflow validators before publication. Keep the manual-only trigger,
+explicit admission, immutable checkout and read-only permissions. Registration,
+remote installs/builds, execution and provider/live-data authority are separate;
+this local checkpoint does not authorize any of them.
