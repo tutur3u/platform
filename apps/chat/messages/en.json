@@ -312,6 +312,7 @@
     "integration_zalo_personal_description": "Pair a personal Zalo account by QR code and sync conversations.",
     "last_activity": "Last activity",
     "links": "Links",
+    "load_more_workspaces": "Load more workspaces",
     "load_older_messages": "Load older messages",
     "loading_ai_settings": "Loading AI settings",
     "loading_ai_usage": "Loading AI usage",

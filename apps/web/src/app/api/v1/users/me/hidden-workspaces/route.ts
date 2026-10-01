@@ -2,6 +2,7 @@ import {
   CLI_APP_ACCESS_SCOPE,
   CLI_APP_TARGET_APP,
 } from '@tuturuuu/auth/cli-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -131,6 +132,20 @@ export const PUT = withSessionAuth(
         }
       );
     }
+    // A former member can still be a board-share guest. The membership-bound
+    // RLS cannot remove their stale member preference, so this narrow server
+    // cleanup runs only after access validation and filters the verified owner.
+    let memberPreferenceClient = supabase;
+    if (!hidden && guestAccess) {
+      try {
+        memberPreferenceClient = await createAdminClient({ noCookie: true });
+      } catch {
+        return NextResponse.json(
+          { message: 'Unable to update Hidden workspaces' },
+          { status: 500, headers }
+        );
+      }
+    }
     const guestKey = `${guestPreferencePrefix}${workspaceId}`;
     const guestResult = hidden
       ? guestAccess
@@ -152,9 +167,8 @@ export const PUT = withSessionAuth(
         { status: 500, headers }
       );
     }
-    const result = !membership.ok
-      ? { error: null }
-      : hidden
+    const result = hidden
+      ? membership.ok
         ? await supabase.from('user_workspace_configs').upsert(
             {
               user_id: user.id,
@@ -164,12 +178,13 @@ export const PUT = withSessionAuth(
             },
             { onConflict: 'user_id,ws_id,id' }
           )
-        : await supabase
-            .from('user_workspace_configs')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('ws_id', workspaceId)
-            .eq('id', preferenceKey);
+        : { error: null }
+      : await memberPreferenceClient
+          .from('user_workspace_configs')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('ws_id', workspaceId)
+          .eq('id', preferenceKey);
     if (result.error) {
       return NextResponse.json(
         { message: 'Unable to update Hidden workspaces' },

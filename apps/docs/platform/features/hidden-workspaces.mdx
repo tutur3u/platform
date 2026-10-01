@@ -42,8 +42,10 @@ visible. Board-share-only guests have no membership row, so their preferences us
 existing owner-only `public.user_configs` rows:
 `(user_id, id = 'HIDDEN_WORKSPACE:<workspace UUID>', value = 'true')`.
 The owner GET returns the union, with valid UUID IDs only. This uses one key per
-workspace and avoids concurrent updates overwriting a whole list. When a guest
-later becomes a member, restore clears both stores. There is no new schema or grant. `user_private_details` must not be used:
+workspace and avoids concurrent updates overwriting a whole list. Restore clears both stores across either membership transition. A former member
+who still has a validated board share cannot delete the old member row through
+membership RLS, so the server performs only that exact owner/workspace/key cleanup
+after current access validation. No membership is created or RLS policy changed. There is no new schema or grant. `user_private_details` must not be used:
 its shared-member read policy would expose a preference intended to be private.
 
 `GET /api/v1/users/me/hidden-workspaces?expectedActorId=<actor>` returns only the
@@ -133,8 +135,12 @@ non-internal triggers remain future admitted-run verification.
 ## Discovery follow-up
 
 Chat's paginated context rail caches canonical pages under the authenticated actor
+and the visibility revision represented by the Hidden-ID signature
 and applies Hidden only to its displayed workspace/personal choices. Delayed pages
-cannot publish after an account switch. TaskFilter queries source boards only for
+cannot publish after an account switch. Sparse discovery advances up to eight
+canonical 48-row pages per request toward twelve visible team choices, with
+actor/cancellation checks between pages. An accessible Load more action keeps
+remaining pages reachable when the rail has no overflow. TaskFilter queries source boards only for
 visible retained source workspace IDs and displays only their selected choices;
 it does not rewrite saved filters or change task aggregation when visibility changes.
 Both caches are removed when the actor provider unmounts. Git's Hidden audience

@@ -49,7 +49,7 @@ describe('Chat workspace discovery projection', () => {
       expect(result.current.workspaces.map((ws) => ws.id)).toEqual(['visible'])
     );
     expect(
-      client.getQueryData(['chat-workspaces', 'actor-A', 'infinite'])
+      client.getQueryData(['chat-workspaces', 'actor-A', 'infinite', 'hidden'])
     ).toMatchObject({
       pages: [{ workspaces: [{ id: 'visible' }, { id: 'hidden' }] }],
     });
@@ -58,10 +58,42 @@ describe('Chat workspace discovery projection', () => {
     f.hidden.mockRejectedValue(new Error('offline'));
     const { wrapper } = fixture();
     const { result } = renderHook(useChatVisibleWorkspaces, { wrapper });
+    await waitFor(() => expect(f.hidden).toHaveBeenCalled());
+    expect(f.page).not.toHaveBeenCalled();
+    expect(result.current.workspaces).toEqual([]);
+  });
+  it('advances beyond a Hidden first page even with a visible personal workspace', async () => {
+    f.page.mockResolvedValueOnce({
+      nextOffset: 48,
+      workspaces: [{ id: 'personal', personal: true }, { id: 'hidden' }],
+    });
+    f.page.mockResolvedValueOnce({
+      nextOffset: null,
+      workspaces: [{ id: 'page-two-visible' }],
+    });
+    const { wrapper } = fixture();
+    const { result } = renderHook(useChatVisibleWorkspaces, { wrapper });
+    await waitFor(() =>
+      expect(result.current.workspaces.map((ws) => ws.id)).toEqual([
+        'personal',
+        'page-two-visible',
+      ])
+    );
+    expect(f.page.mock.calls.map(([page]) => page.offset)).toEqual([0, 48]);
+  });
+  it('bounds sparse-page filling and retains an explicit next-page cursor', async () => {
+    f.page.mockImplementation(async ({ offset }) => ({
+      nextOffset: offset + 48,
+      workspaces: [{ id: 'hidden' }],
+    }));
+    const { wrapper } = fixture();
+    const { result } = renderHook(useChatVisibleWorkspaces, { wrapper });
     await waitFor(() =>
       expect(result.current.workspacesQuery.isSuccess).toBe(true)
     );
+    expect(f.page).toHaveBeenCalledTimes(8);
     expect(result.current.workspaces).toEqual([]);
+    expect(result.current.workspacesQuery.hasNextPage).toBe(true);
   });
   it('removes old account cache and rejects its delayed page', async () => {
     let resolve!: (value: unknown) => void;
@@ -85,7 +117,7 @@ describe('Chat workspace discovery projection', () => {
       resolve({ nextOffset: null, workspaces: [{ id: 'old-actor-secret' }] })
     );
     expect(
-      client.getQueryData(['chat-workspaces', 'actor-A', 'infinite'])
+      client.getQueryData(['chat-workspaces', 'actor-A', 'infinite', 'hidden'])
     ).toBeUndefined();
     expect(result.current.workspaces.map((ws) => ws.id)).toEqual(['visible']);
   });

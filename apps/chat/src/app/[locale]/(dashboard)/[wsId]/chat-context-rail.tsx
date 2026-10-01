@@ -1,7 +1,12 @@
 'use client';
 
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Hash, LoaderCircle, MessageCircle } from '@tuturuuu/icons';
+import {
+  ChevronDown,
+  Hash,
+  LoaderCircle,
+  MessageCircle,
+} from '@tuturuuu/icons';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -70,8 +75,7 @@ export function ChatContextRail({
     : personalUnavailable
       ? t('scope_personal_unavailable')
       : t('scope_personal');
-  const workspaceCount =
-    railWorkspaces.length + (workspacesQuery.hasNextPage ? 1 : 0);
+  const workspaceCount = railWorkspaces.length;
   const workspaceVirtualizer = useVirtualizer({
     count: workspaceCount,
     estimateSize: () => 48,
@@ -195,6 +199,22 @@ export function ChatContextRail({
             })}
           </div>
         </div>
+      )}
+      {workspacesQuery.hasNextPage && (
+        <RailButton
+          active={false}
+          disabled={workspacesQuery.isFetchingNextPage}
+          label={t('load_more_workspaces')}
+          onClick={() => {
+            void workspacesQuery.fetchNextPage();
+          }}
+        >
+          {workspacesQuery.isFetchingNextPage ? (
+            <LoaderCircle className="size-4 animate-spin" />
+          ) : (
+            <ChevronDown className="size-5" />
+          )}
+        </RailButton>
       )}
     </nav>
   );

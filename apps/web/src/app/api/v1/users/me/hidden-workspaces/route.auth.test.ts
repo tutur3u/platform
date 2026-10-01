@@ -27,11 +27,6 @@ const mocks = vi.hoisted(() => ({
   writeVerifiedSessionCacheForSubjects: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/auth/cli-session', () => ({
-  CLI_APP_ACCESS_SCOPE: 'cli:access',
-  CLI_APP_TARGET_APP: 'cli',
-}));
-
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
   resolveAuthenticatedSessionUser: mocks.resolveAuthenticatedSessionUser,
 }));
@@ -99,6 +94,10 @@ vi.mock('next/server', async (load) => ({
 }));
 
 import { createAppSessionToken } from '@tuturuuu/auth/app-session';
+import {
+  CLI_APP_TARGET_APP,
+  createCliAppSession,
+} from '@tuturuuu/auth/cli-session';
 import { GET, PUT } from './route';
 
 afterEach(() => vi.unstubAllEnvs());
@@ -153,12 +152,9 @@ describe('Hidden route with real session authentication and signed tokens', () =
     }
   );
   it('accepts scoped CLI owner discovery without enabling mutation', async () => {
-    const { token } = createAppSessionToken({
-      userId: actor,
-      targetApp: 'cli',
-      originApp: 'cli',
-      scopes: ['cli:access'],
-    });
+    const { access } = createCliAppSession({ userId: actor });
+    const token = access.token;
+    expect(access.claims.target_app).toBe(CLI_APP_TARGET_APP);
     const headers = { authorization: `Bearer ${token}` };
     const response = await GET(
       new NextRequest(
@@ -186,7 +182,8 @@ describe('Hidden route with real session authentication and signed tokens', () =
   it('denies a CLI token lacking the existing CLI access scope', async () => {
     const { token } = createAppSessionToken({
       userId: actor,
-      targetApp: 'cli',
+      targetApp: CLI_APP_TARGET_APP,
+      originApp: 'cli',
     });
     const response = await GET(
       new NextRequest(

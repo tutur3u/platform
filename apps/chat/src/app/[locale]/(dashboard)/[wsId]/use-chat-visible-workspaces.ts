@@ -17,18 +17,45 @@ export function useChatVisibleWorkspaces() {
     Page,
     Error,
     InfiniteData<Page>,
-    readonly ['chat-workspaces', string | undefined, 'infinite'],
+    readonly ['chat-workspaces', string | undefined, 'infinite', string],
     number
   >({
-    queryKey: ['chat-workspaces', actor?.actorId, 'infinite'] as const,
-    enabled: Boolean(actor),
+    queryKey: [
+      'chat-workspaces',
+      actor?.actorId,
+      'infinite',
+      [...visibility.hiddenIds].sort().join(','),
+    ] as const,
+    enabled: Boolean(actor) && visibility.known,
     initialPageParam: 0,
     getNextPageParam: (page) => page.nextOffset ?? undefined,
-    queryFn: async ({ pageParam }) => {
-      actor!.assertActive();
-      const page = await fetchWorkspacesPage({ limit: 48, offset: pageParam });
-      actor!.assertActive();
-      return page;
+    queryFn: async ({ pageParam, signal }) => {
+      const hidden = new Set(visibility.hiddenIds);
+      const workspaces: Page['workspaces'] = [];
+      let nextOffset: number | null = pageParam;
+      let visibleRailCount = 0;
+      // Fill a usable rail even if a canonical page contains only Hidden rows.
+      // Bound each request; the explicit Load more action handles the remainder.
+      for (let pages = 0; pages < 8 && nextOffset !== null; pages++) {
+        actor!.assertActive();
+        if (signal.aborted) throw new Error('Workspace pagination cancelled');
+        const page = await fetchWorkspacesPage({
+          limit: 48,
+          offset: nextOffset,
+        });
+        actor!.assertActive();
+        if (signal.aborted) throw new Error('Workspace pagination cancelled');
+        workspaces.push(...page.workspaces);
+        visibleRailCount += page.workspaces.filter(
+          (workspace) => !workspace.personal && !hidden.has(workspace.id)
+        ).length;
+        if (page.nextOffset !== null && page.nextOffset <= nextOffset) {
+          throw new Error('Invalid workspace pagination cursor');
+        }
+        nextOffset = page.nextOffset;
+        if (visibleRailCount >= 12) break;
+      }
+      return { workspaces, nextOffset };
     },
   });
   const workspaces = useMemo(
