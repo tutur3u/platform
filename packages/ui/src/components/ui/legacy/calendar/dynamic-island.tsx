@@ -236,7 +236,7 @@ export const DynamicIsland = () => {
           <button
             type="button"
             onClick={startTimer}
-            className="aspect-square h-fit justify-self-end rounded-lg border p-1 transition hover:brightness-110"
+            className="aspect-square h-fit justify-self-end rounded-lg border p-1 transition hover:ring-1 hover:ring-current"
             style={{ ...eventStyle, borderColor: eventStyle.color }}
           >
             {startAt ? (

@@ -848,7 +848,7 @@ const LocationPill = ({
         <div
           className={cn(
             'group absolute flex h-4 items-center justify-center gap-1 rounded-full px-2 font-medium text-[10px] shadow-sm transition-all',
-            'hover:shadow-md hover:brightness-110',
+            'hover:shadow-md hover:ring-1 hover:ring-current',
             isDragging ? 'cursor-grabbing' : 'cursor-pointer'
           )}
           style={{
