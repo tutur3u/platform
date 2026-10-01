@@ -847,3 +847,10 @@ are recoverable UI states. A simulator without a valid input format cannot prove
 physical-device audio quality; verify recording, playback, interruption, and
 headset reconnection on hardware before claiming that a reported device crash or
 stutter is resolved.
+
+### Apps search submission
+
+Submitting a nonempty Apps query with exactly one current matching app clears
+the field, closes search mode, and opens that app. Zero or multiple matches
+keep the current search unchanged. Submission uses the same current localized
+results as the hub, and repeated submissions cannot launch the app twice.
