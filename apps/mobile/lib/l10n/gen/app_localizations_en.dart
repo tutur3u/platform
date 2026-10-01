@@ -8756,6 +8756,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profilePrivateActivity => 'Your private activity';
 
   @override
+  String get profileTimelineDescription => 'Creation activity in this workspace over the last 30 days. Calendar events are workspace activity.';
+
+  @override
+  String get profileTimelineLimited => 'Showing recent activity only. Some sources reached the display limit.';
+
+  @override
+  String get profileTimelineUnavailable => 'Activity could not be refreshed.';
+
+  @override
   String get profileTimelineTitle => 'Activity timeline';
 
   @override
@@ -8768,7 +8777,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineEmpty => 'No recent activity in this workspace';
 
   @override
-  String get profileTimelinePartial => 'Some activity is unavailable. Retry';
+  String get profileTimelinePartial => 'Some activity is unavailable.';
 
   @override
   String profileTimelineTasks(int count) {

@@ -228,8 +228,6 @@ jobs:
 
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry
-        with:
-          github-token: ${{ github.token }}
 
       - name: Deploy migrations to production
         env:
