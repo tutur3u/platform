@@ -221,5 +221,62 @@
     },
     "noRuntimeChanges": true,
     "noScreenshotRegeneration": true
+  },
+  "transitionReviewCorrection": {
+    "previousHead": "e5903004abf924b5beb08d1d20ec28aa6a04101d",
+    "review": "https://github.com/tutur3u/platform/pull/5706#pullrequestreview-5377940571",
+    "findings": {
+      "n5i2a": "Confirmed: opening selector without anchor locked the default date during cold load. Only a real anchor or explicit date choice now locks selection.",
+      "n5i2x": "Confirmed: duplicate section/browser failure status. Section owns retry banner; standalone browser still reports unavailable/partial once.",
+      "n5i21": "Confirmed: stale empty cache announced absence during revalidation. Fixed skeleton/loading state persists until completed fresh response.",
+      "n5i27": "Qualification: e590 changes neither PNGs nor capture scaling versus3c. Captures intentionally use actual logical viewports at ratio1; uniform942px output is not their evidence contract. Docs now clarify source/dimensions; no PNG regeneration."
+    },
+    "reproduction": {
+      "passed": 1,
+      "failed": 4,
+      "scope": "Five mounted targeted transitions before runtime correction; explicit date choice already passed."
+    },
+    "validation": {
+      "passed": 38,
+      "failed": 0,
+      "analysis": "Four changed Dart items clean",
+      "normalFIFO": true,
+      "noPub": true,
+      "concurrency": 1,
+      "defaultFont": true,
+      "fullMobileGate": "Not run; parent owns full gate/current CI/fresh independent review/device QA/integration."
+    },
+    "commands": [
+      "flutter analyze --no-pub lib/features/profile/view/profile_timeline_browser.dart lib/features/profile/view/profile_timeline_section.dart test/features/profile/view/profile_timeline_browser_test.dart test/features/profile/view/profile_timeline_races_test.dart",
+      "flutter test --no-pub --concurrency=1 test/features/profile/view/profile_timeline_browser_test.dart test/features/profile/view/profile_timeline_races_test.dart test/features/profile/view/profile_timeline_navigation_edges_test.dart test/features/profile/view/profile_timeline_section_test.dart test/features/profile/profile_timeline_repository_test.dart test/features/profile/view/profile_overview_shell_test.dart"
+    ],
+    "sourceSha256": {
+      "apps/docs/platform/features/mobile-workspace-tools.mdx": "518205da1b3f948ef39222f750953f7174380fc4c29fa94d4b1bdde007042bd3",
+      "apps/mobile/lib/features/profile/view/profile_timeline_browser.dart": "d1f4cd4e14235e1665fb6780ffea9303c9ea7d92a4f13a0dff79527b66ea4075",
+      "apps/mobile/lib/features/profile/view/profile_timeline_section.dart": "acde846def6031f9b539671f97692f028ade387ab7b27e7cc5e17e587bffc4f6",
+      "apps/mobile/test/features/profile/view/profile_timeline_browser_test.dart": "6bf4fd5f51c1820e5de7912c3e365f38ba02a1d86db118da0f68ab5200add4f3",
+      "apps/mobile/test/features/profile/view/profile_timeline_races_test.dart": "429e09da982394a89ec7bd618179a53d013bda9a1da23f1989eeeaed238c884f"
+    },
+    "logSha256": {
+      "/tmp/timeline-review-transitions-before.log": "dbf46091c5b7dab88814e74e12f202a41280358799b5ade307ab511dfea399f6",
+      "/tmp/timeline-review-transitions-analysis.log": "62e1e91d6ceb6335de43450ab2ee631c8c0e95a3ddf7c523e9aafeb022c7beeb",
+      "/tmp/timeline-review-transitions-final.log": "cd8a2525c5a24c839fe4fd0bdc3627d5bdd02e81de741f6527d2798b9b564fd9"
+    },
+    "historicalPngSha256": {
+      "320-3x-selected-day.png": "33b606e9d168f4934407e3abbadb6655abdd574f42ad607bfa96a8403d0c193b",
+      "320-3x-agenda.png": "b301a38f4ca622f8a8a78d8673f98c08a8c77b37bd425c4bbcfccd5d8187860c",
+      "empty-day.png": "58df1c2cbf3f08ef21e536b4d473d0c05c7cfd2982b595673b53990f2e7368de",
+      "selected-day.png": "88314433e508cc1cf609378fecdc5a65db6e6fd3572fbc05ab8162f8990f93a4",
+      "agenda.png": "3ef0fbdfe8bc892ff7f8ed98549c0418b090bf2fdb8e0cd5f56758d48bcaf2f3",
+      "shell/profile-overview-2.0.png": "bbcfea78e542c3fc7a108e11c8b774e608008072a5fe6047c0a4c09d5fbacc9a",
+      "shell/profile-overview-1.0.png": "42a6bb878bef206db900482b30d7d56041ed3123e8699216beb586017db150f7",
+      "shell/profile-overview-3.0.png": "bd04b842a3a5880ebc866a891223dd970d64eeffb548297447cba64a5fa4ecda",
+      "shell/profile-timeline-2.0.png": "fc1693b50b27c2af1b757dcf9e9e446b84abb6924d726667d16c1db912d2191e",
+      "shell/profile-timeline-1.0.png": "eba9beae5f04e2cbb0974df46d04da84247165ec229deae7b53999d3ad9ccf0d",
+      "shell/profile-timeline-3.0.png": "45ab043b35caff752322dfdebdcb5e02986dbb608616d9bc202dd8575c095e53"
+    },
+    "capturesRegenerated": false,
+    "captureRatio": 1,
+    "captureWidths": [393, 320]
   }
 }

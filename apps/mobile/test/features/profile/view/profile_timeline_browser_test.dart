@@ -103,6 +103,34 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  for (final entry in {
+    ProfileTimelineAvailability.unavailable: 'Activity could not be refreshed.',
+    ProfileTimelineAvailability.partial: 'Some activity is unavailable.',
+  }.entries) {
+    testWidgets('standalone browser reports ${entry.key.name} once', (
+      tester,
+    ) async {
+      await tester.pumpApp(
+        SingleChildScrollView(
+          child: ProfileTimelineBrowser(
+            items: const [],
+            availability: entry.key,
+            now: today,
+            onOpen: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(entry.value), findsOneWidget);
+      expect(find.text('No recent activity in this workspace'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+      await tester.pumpAndSettle();
+      expect(find.text(entry.value), findsOneWidget);
+      expect(find.text('No activity was returned for this day.'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets(
     'sparse agenda only includes returned days; date selection is accessible',
     (tester) async {

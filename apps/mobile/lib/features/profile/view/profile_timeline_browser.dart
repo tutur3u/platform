@@ -24,6 +24,7 @@ class ProfileTimelineBrowser extends StatefulWidget {
     this.loading = false,
     this.refreshing = false,
     this.availability = ProfileTimelineAvailability.complete,
+    this.statusReportedByParent = false,
     this.now,
     this.convertDate,
     this.pageSize = 5,
@@ -35,6 +36,7 @@ class ProfileTimelineBrowser extends StatefulWidget {
   final bool loading;
   final bool refreshing;
   final ProfileTimelineAvailability availability;
+  final bool statusReportedByParent;
   final DateTime? now;
   final TimelineDateConverter? convertDate;
   final int pageSize;
@@ -133,7 +135,9 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
               (_scroll.offset - _agendaOffset!).abs() > .5)) {
         _selected = anchor.day;
       }
-      _selectedByUser = true;
+      // Opening controls without activity is not an explicit date choice.
+      // Let the first response reveal its newest day unless _select was used.
+      if (anchor != null) _selectedByUser = true;
       _dates = !_dates;
       _week = _monday(_selected);
       final index = _groups.keys.toList().indexOf(_selected);
@@ -227,9 +231,13 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (widget.loading)
+                    if (widget.loading ||
+                        (widget.refreshing && widget.items.isEmpty))
                       const FinanceSkeletonBlock(height: 112, radius: 20)
-                    else if (entries.isEmpty)
+                    else if (entries.isEmpty &&
+                        !(widget.statusReportedByParent &&
+                            widget.availability !=
+                                ProfileTimelineAvailability.complete))
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Semantics(

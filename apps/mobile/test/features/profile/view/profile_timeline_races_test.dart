@@ -254,10 +254,12 @@ void main() {
       repository.requests.single.completeError(Exception('Offline'));
       await tester.pumpAndSettle();
       expect(find.text('No recent activity in this workspace'), findsNothing);
-      expect(find.text('Activity could not be refreshed.'), findsWidgets);
+      expect(find.text('Activity could not be refreshed.'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
       await tester.pumpAndSettle();
       expect(find.text('No activity was returned for this day.'), findsNothing);
+      expect(find.text('Activity could not be refreshed.'), findsOneWidget);
       await tester.tap(find.text('Retry'));
       await tester.pump();
       repository.requests.last.complete((
@@ -274,6 +276,104 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  for (final explicitDate in [false, true]) {
+    testWidgets(
+      'cold load follows first activity unless date picked: $explicitDate',
+      (tester) async {
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final older = DateTime(today.year, today.month, today.day - 8);
+        await mount(tester);
+        await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+        await tester.pumpAndSettle();
+        if (explicitDate) {
+          await tester.tap(
+            find.byKey(ValueKey('timeline-date-${today.toIso8601String()}')),
+          );
+          await tester.pumpAndSettle();
+        }
+        repository.requests.single.complete((
+          items: [
+            ProfileTimelineItem(
+              id: 'cold-newest',
+              type: 'task',
+              title: 'First loaded activity',
+              createdAt: older.add(const Duration(hours: 12)),
+              scope: 'personal',
+            ),
+          ],
+          partial: false,
+          limited: false,
+        ));
+        await tester.pumpAndSettle();
+        if (explicitDate) {
+          expect(find.text('First loaded activity'), findsNothing);
+          expect(
+            find.text('No activity was returned for this day.'),
+            findsOneWidget,
+          );
+        } else {
+          expect(find.text('First loaded activity'), findsOneWidget);
+          expect(
+            find.text('No activity was returned for this day.'),
+            findsNothing,
+          );
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final freshEmpty in [false, true]) {
+    testWidgets(
+      'empty cache stays provisional during refresh: freshEmpty=$freshEmpty',
+      (tester) async {
+        repository.cache = (
+          items: <ProfileTimelineItem>[],
+          partial: false,
+          limited: false,
+        );
+        await mount(tester);
+        await tester.pumpAndSettle();
+        expect(find.text('Loading profile...'), findsOneWidget);
+        expect(find.text('No recent activity in this workspace'), findsNothing);
+        final before = tester.getRect(
+          find.byKey(const ValueKey('timeline-browser')),
+        );
+        await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('No activity was returned for this day.'),
+          findsNothing,
+        );
+        repository.requests.single.complete(
+          freshEmpty
+              ? (items: <ProfileTimelineItem>[], partial: false, limited: false)
+              : snapshot('Fresh response activity'),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Loading profile...'), findsNothing);
+        expect(
+          tester.getRect(find.byKey(const ValueKey('timeline-browser'))),
+          before,
+        );
+        if (freshEmpty) {
+          expect(
+            find.text('No activity was returned for this day.'),
+            findsOneWidget,
+          );
+        } else {
+          expect(find.text('Fresh response activity'), findsOneWidget);
+          expect(
+            find.text('No activity was returned for this day.'),
+            findsNothing,
+          );
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   for (final capped in [false, true]) {
     testWidgets(
