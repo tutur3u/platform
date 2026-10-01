@@ -838,3 +838,14 @@ are recoverable UI states. A simulator without a valid input format cannot prove
 physical-device audio quality; verify recording, playback, interruption, and
 headset reconnection on hardware before claiming that a reported device crash or
 stutter is resolved.
+
+
+## Workspace picker search selection
+
+The mobile current-workspace and launch-default pickers keep search text and
+filtered results when the search field loses focus, including keyboard dismissal
+before a result tap completes. Clearing search is an explicit action. Each result
+uses its workspace ID for identity and selects its rendered workspace object,
+including after sorting, duplicate display names, and list refreshes. This rule
+applies to the sheet opened from the navbar, dashboard and Workspace Settings;
+it does not change membership discovery, permissions, or default persistence.

@@ -159,6 +159,7 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                   children: [
                     for (final workspace in sections.personal)
                       _WorkspaceTile(
+                        key: ValueKey('workspace-result-${workspace.id}'),
                         paletteModuleId: 'crm',
                         workspace: workspace,
                         isSelected: _isSelected(workspace),
@@ -178,6 +179,7 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                   children: [
                     for (final workspace in sections.system)
                       _WorkspaceTile(
+                        key: ValueKey('workspace-result-${workspace.id}'),
                         paletteModuleId: 'calendar',
                         workspace: workspace,
                         isSelected: _isSelected(workspace),
@@ -198,6 +200,7 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
                   children: [
                     for (final workspace in sections.team)
                       _WorkspaceTile(
+                        key: ValueKey('workspace-result-${workspace.id}'),
                         paletteModuleId: 'finance',
                         workspace: workspace,
                         isSelected: _isSelected(workspace),
@@ -258,20 +261,10 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
   }
 
   void _handleSearchFocusChanged() {
-    if (!mounted) return;
-    if (_searchFocusNode.hasFocus) {
-      if (!_isSearchVisible) {
-        setState(() => _isSearchVisible = true);
-      }
-      return;
-    }
-
-    if (_searchController.text.isNotEmpty) {
-      _searchController.clear();
-    }
-    if (_isSearchVisible) {
-      setState(() => _isSearchVisible = false);
-    }
+    // A result tap can dismiss the keyboard before its tap completes. Preserve
+    // the rendered results; clearing the query must be an explicit action.
+    if (!mounted || !_searchFocusNode.hasFocus) return;
+    if (!_isSearchVisible) setState(() => _isSearchVisible = true);
   }
 
   Future<void> _handleCreate(BuildContext context) async {
@@ -691,6 +684,7 @@ class _WorkspaceTile extends StatelessWidget {
     required this.isCurrent,
     required this.isDefault,
     required this.onTap,
+    super.key,
   });
 
   final String paletteModuleId;
