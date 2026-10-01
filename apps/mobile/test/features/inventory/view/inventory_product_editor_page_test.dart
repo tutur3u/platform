@@ -176,6 +176,26 @@ Future<void> _capture(WidgetTester tester, GlobalKey key, String name) async {
   });
 }
 
+Finder _amountField() => find.descendant(
+  of: find.byKey(const ValueKey('inventory-stock-amount-0')),
+  matching: find.byType(EditableText),
+);
+
+Future<void> _scrollToAmount(WidgetTester tester) async {
+  await tester.scrollUntilVisible(
+    find.byKey(const ValueKey('inventory-stock-amount-0')),
+    350,
+    maxScrolls: 10,
+    scrollable: find
+        .descendant(
+          of: find.byType(InventoryProductEditorPage),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
@@ -219,9 +239,19 @@ void main() {
       settingsRepository = SettingsRepository();
     });
 
-    for (final amount in <double?>[null, 0, 7.5]) {
+    for (final testCase in <({double? amount, bool clearQuantity})>[
+      (amount: null, clearQuantity: false),
+      (amount: 0, clearQuantity: false),
+      (amount: 7.5, clearQuantity: false),
+      (amount: 7.5, clearQuantity: true),
+    ]) {
+      final amount = testCase.amount;
+      final expectedAmount = testCase.clearQuantity ? null : amount;
       testWidgets(
-        'unrelated edit preserves stock amount $amount in actual PATCH payload',
+        testCase.clearQuantity
+            ? 'clearing finite quantity saves null and reloads as unlimited'
+            : 'unrelated edit preserves stock amount $amount '
+                  'in repository PATCH payload',
         (tester) async {
           tester.view
             ..devicePixelRatio = 1
@@ -282,6 +312,11 @@ void main() {
           final name = find.byType(EditableText).first;
           await tester.ensureVisible(name);
           await tester.enterText(name, 'Renamed synthetic product');
+          if (testCase.clearQuantity) {
+            await _scrollToAmount(tester);
+            await tester.enterText(_amountField(), '');
+            await tester.pumpAndSettle();
+          }
           await tester.tap(find.text('Save product').hitTestable());
           await tester.pumpAndSettle();
           expect(payload, isNotNull);
@@ -289,7 +324,7 @@ void main() {
           final savedStock = Map<String, dynamic>.from(
             (payload!['inventory'] as List).single as Map,
           );
-          expect(savedStock['amount'], amount);
+          expect(savedStock['amount'], expectedAmount);
           expect(invalidations, hasLength(1));
           expect(invalidations.single.$1, 'ws_1');
           expect(invalidations.single.$2, {
@@ -324,34 +359,83 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          await tester.scrollUntilVisible(
-            find.byKey(const ValueKey('inventory-stock-amount-0')),
-            350,
-            maxScrolls: 10,
-            scrollable: find
-                .descendant(
-                  of: find.byType(InventoryProductEditorPage),
-                  matching: find.byType(Scrollable),
-                )
-                .first,
-          );
-          await tester.pumpAndSettle();
+          await _scrollToAmount(tester);
           final quantity = tester.widget<EditableText>(
             find.descendant(
               of: find.byKey(const ValueKey('inventory-stock-amount-0')),
               matching: find.byType(EditableText),
             ),
           );
-          expect(quantity.controller.text, amount?.toString() ?? '');
+          expect(quantity.controller.text, expectedAmount?.toString() ?? '');
           await _capture(
             tester,
             reloadKey,
-            'editor-reload-${amount ?? 'unlimited'}',
+            testCase.clearQuantity
+                ? 'editor-finite-to-unlimited'
+                : 'editor-reload-${amount ?? 'unlimited'}',
           );
           expect(tester.takeException(), isNull);
         },
       );
     }
+
+    testWidgets(
+      'invalid negative and nonfinite pasted quantities never PATCH',
+      (tester) async {
+        tester.view
+          ..devicePixelRatio = 1
+          ..physicalSize = const Size(390, 1200);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        final api = _MockApiClient();
+        final cache = _MockCacheStore();
+        await _mountModal(
+          tester,
+          BlocProvider<WorkspaceCubit>.value(
+            value: workspaceCubit,
+            child: InventoryProductEditorPage(
+              productId: 'synthetic-product',
+              inventoryRepository: _ExistingProductRepository(
+                apiClient: api,
+                cacheStore: cache,
+                amount: 7.5,
+              ),
+              financeRepository: financeRepository,
+              settingsRepository: settingsRepository,
+            ),
+          ),
+        );
+        await _scrollToAmount(tester);
+        // The quantity field has no text formatter. These are feasible pasted
+        // strings; pressing Save exercises the mounted form's own validator.
+        for (final text in ['not-a-number', '-1', 'NaN', 'Infinity']) {
+          await tester.enterText(_amountField(), text);
+          await tester.pumpAndSettle();
+          expect(
+            tester.widget<EditableText>(_amountField()).controller.text,
+            text,
+          );
+          await tester.tap(find.text('Save product').hitTestable());
+          await tester.pumpAndSettle();
+          expect(
+            find.text('Enter a valid number.'),
+            findsOneWidget,
+            reason: text,
+          );
+          expect(find.byType(InventoryProductEditorPage), findsOneWidget);
+          verifyNever(() => api.patchJson(any(), any()));
+          verifyNever(
+            () => cache.invalidateTags(
+              any(),
+              workspaceId: any(named: 'workspaceId'),
+            ),
+          );
+          expect(tester.takeException(), isNull);
+        }
+      },
+    );
 
     testWidgets('hydrates remembered selections for a faster create flow', (
       tester,
