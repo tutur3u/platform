@@ -14,6 +14,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: calendar-generation-contract.yaml
