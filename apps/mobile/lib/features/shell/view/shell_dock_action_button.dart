@@ -18,46 +18,63 @@ class ShellDockActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Tooltip(
     message: action.tooltip ?? '',
-    child: FilledButton(
-      style: FilledButton.styleFrom(
-        backgroundColor: primary
-            ? Theme.of(context).colorScheme.onSurface
-            : Theme.of(context).colorScheme.surfaceContainerHigh,
-        foregroundColor: primary
-            ? Theme.of(context).colorScheme.surface
-            : Theme.of(context).colorScheme.onSurface,
-        minimumSize: const Size(48, 48),
-        padding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.sizeOf(context).shortestSide >= 600 ? 16 : 12,
-        ),
-        shape: const StadiumBorder(),
+    excludeFromSemantics: true,
+    child: ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: (MediaQuery.sizeOf(context).width * .35).clamp(48, 240),
       ),
-      onPressed: action.enabled && !action.isLoading
-          ? () {
-              unawaited(AppHaptics.selection());
-              action.onPressed?.call();
-            }
-          : null,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (action.isLoading)
-            const NovaLoadingIndicator(size: 24)
-          else
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              child: Icon(
-                action.icon,
-                key: ValueKey((action.id, action.icon)),
-                size: 24,
-                semanticLabel: action.tooltip,
-              ),
-            ),
-          if (MediaQuery.sizeOf(context).shortestSide >= 600) ...[
-            const SizedBox(width: 8),
-            Text(action.tooltip ?? ''),
-          ],
-        ],
+      child: FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: primary
+              ? Theme.of(context).colorScheme.onSurface
+              : Theme.of(context).colorScheme.surfaceContainerHigh,
+          foregroundColor: primary
+              ? Theme.of(context).colorScheme.surface
+              : Theme.of(context).colorScheme.onSurface,
+          minimumSize: const Size(48, 48),
+          padding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.sizeOf(context).shortestSide >= 600
+                ? 16
+                : 12,
+          ),
+          shape: const StadiumBorder(),
+        ),
+        onPressed: action.enabled && !action.isLoading
+            ? () {
+                unawaited(AppHaptics.selection());
+                action.onPressed?.call();
+              }
+            : null,
+        child: Semantics(
+          label: action.tooltip,
+          excludeSemantics: true,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (action.isLoading)
+                const NovaLoadingIndicator(size: 24)
+              else
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  child: Icon(
+                    action.icon,
+                    key: ValueKey((action.id, action.icon)),
+                    size: 24,
+                  ),
+                ),
+              if (MediaQuery.sizeOf(context).shortestSide >= 600) ...[
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    action.tooltip ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     ),
   );

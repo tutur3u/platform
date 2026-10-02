@@ -12,7 +12,12 @@ class ShellBrandTitle extends StatelessWidget {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Image.asset('assets/logos/transparent.png', width: 28, height: 28),
+        Image.asset(
+          'assets/logos/transparent.png',
+          width: 28,
+          height: 28,
+          semanticLabel: 'Tuturuuu',
+        ),
         const SizedBox(width: 10),
         Flexible(
           child: ReadableShellTitle(

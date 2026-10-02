@@ -17,9 +17,10 @@ names cannot substitute a different workspace when a list refreshes.
 
 The Flutter picker reuses the normal Apps header's brand size, title typography,
 and shared app-bar metrics, and the normal shell's floating action pills. Personal,
-system, and team rows use the existing theme's semantic accents. Header, errors,
-and results occupy one full-height scrollable body; a failed preference save keeps
-retained results usable, while an unresolved preference load still conceals choices.
+system, and team rows use the existing theme's semantic accents. The header stays
+fixed above one full-height scrollable body containing errors and results; a failed
+preference save keeps retained results usable, while an unresolved preference load
+still conceals choices.
 Retry revalidates preferences; hiding or restoring a row explicitly retries that
 change. The default and Hidden editors keep their existing selection semantics.
 Regression coverage: `apps/mobile/test/features/workspace/widgets/workspace_picker_sheet_test.dart`
