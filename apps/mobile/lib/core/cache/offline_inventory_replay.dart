@@ -1,6 +1,11 @@
 part of 'offline_mutation_queue.dart';
 
 extension OfflineInventoryReplay on OfflineMutationQueue {
+  bool _foregroundVerificationPending(String id) {
+    final error = _foregroundInventoryErrors[id];
+    return error is ApiException && error.isVerificationRequired;
+  }
+
   /// Persist the operation before any HTTP request, including online creates.
   /// Returns the authoritative resource after durable acknowledgment.
   Future<Map<String, dynamic>?> performInventoryMutation({
@@ -49,9 +54,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
           .where((item) => item.id == record.id)
           .firstOrNull;
       final observedError = _foregroundInventoryErrors[record.id];
-      if (observedError is ApiException &&
-          (observedError.statusCode == 401 ||
-              observedError.isVerificationRequired)) {
+      if (observedError is ApiException && observedError.statusCode == 401) {
         throw observedError;
       }
       if (remaining != null &&
@@ -311,6 +314,9 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
           .where(
             (node) =>
                 !attempted.contains(node.record.id) &&
+                // One verification opportunity per active Save. Automatic
+                // retries become noninteractive after its foreground scope ends.
+                !_foregroundVerificationPending(node.record.id) &&
                 !_cancelingIds.contains(node.record.id) &&
                 !(OfflineInventoryMutation.fromRecord(
                       node.record,

@@ -9,9 +9,15 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
         ApiClient(expectedUserId: record.userId);
     try {
       if (OfflineInventoryMutation.fromRecord(record) != null) {
-        await ApiClient.runForUser(
-          record.userId!,
-          () => _dispatchInventoryHttp(record, api),
+        await ApiClient.offlinePreparation(
+          () => ApiClient.runForUser(
+            record.userId!,
+            () => _dispatchInventoryHttp(record, api),
+          ),
+          allowChallenge:
+              borrowed != null &&
+              _foregroundInventoryResults.containsKey(record.id),
+          markBulk: false,
         );
         return;
       }
