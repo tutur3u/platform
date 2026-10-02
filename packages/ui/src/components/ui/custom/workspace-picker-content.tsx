@@ -106,7 +106,7 @@ export function WorkspacePickerContent({
           </Button>
         )}
         <WorkspaceIcon fallbackLogoUrl={TUTURUUU_LOGO_URL} name="Tuturuuu" />
-        <Title className="min-w-0 flex-1 font-semibold">
+        <Title className="min-w-0 flex-1 font-semibold text-lg leading-none">
           {restoring ? t('hidden_workspaces') : t('workspaces')}
         </Title>
         {dropdown ? (
@@ -133,7 +133,6 @@ export function WorkspacePickerContent({
         <div className="flex gap-2 px-4 pt-3">
           <Input
             ref={input}
-            autoFocus={dropdown}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={t('search_workspace')}
@@ -304,7 +303,9 @@ export function WorkspacePickerContent({
       <div
         className={
           dropdown
-            ? 'flex gap-2 border-t p-2'
+            ? restoring || !onCreate
+              ? 'hidden'
+              : 'flex gap-2 border-t p-2'
             : 'absolute right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] flex gap-3 rounded-full border bg-background p-2 shadow-lg'
         }
       >
@@ -335,8 +336,9 @@ export function WorkspacePickerContent({
   return dropdown ? (
     <PopoverContent
       align="start"
-      aria-label={t('workspaces')}
-      className="flex max-h-[min(32rem,var(--radix-popover-content-available-height))] w-80 max-w-[calc(100vw-1rem)] flex-col overflow-hidden p-0"
+      aria-label={t(restoring ? 'hidden_workspaces' : 'workspaces')}
+      collisionPadding={8}
+      className="flex max-h-[min(32rem,var(--radix-popover-content-available-height))] w-80 max-w-[min(calc(100vw-1rem),var(--radix-popover-content-available-width))] flex-col overflow-hidden p-0"
     >
       {content}
     </PopoverContent>

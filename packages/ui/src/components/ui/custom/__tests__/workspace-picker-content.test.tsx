@@ -202,7 +202,11 @@ describe('workspace browser dropdown', () => {
     );
     const dropdown = screen.getByRole('dialog', { name: 'workspaces' });
     expect(dropdown).toHaveAttribute('data-slot', 'popover-content');
-    expect(dropdown).not.toHaveClass('inset-0', 'h-dvh');
+    expect(dropdown).not.toHaveClass('inset-0');
+    expect(dropdown).not.toHaveClass('h-dvh');
+    expect(dropdown).toHaveClass(
+      'max-h-[min(32rem,var(--radix-popover-content-available-height))]'
+    );
     expect(dropdown).toHaveClass('overflow-hidden', 'flex-col');
     const input = screen.getByRole('textbox', { name: 'search_workspace' });
     const row = screen.getByRole('button', { name: 'Repeated name PRO' });
@@ -215,7 +219,8 @@ describe('workspace browser dropdown', () => {
     const create = screen.getByRole('button', {
       name: 'create_workspace_action',
     });
-    expect(create.parentElement).not.toHaveClass('absolute');
+    const createFooter = create.parentElement;
+    expect(createFooter).not.toHaveClass('absolute');
     fireEvent.click(create);
     expect(onCreate).toHaveBeenCalledOnce();
     fireEvent.change(input, { target: { value: 'missing' } });
@@ -224,6 +229,8 @@ describe('workspace browser dropdown', () => {
     ).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'hidden_workspaces' }));
     expect(input).toHaveValue('');
+    expect(dropdown).toHaveAccessibleName('hidden_workspaces');
+    expect(createFooter).toHaveClass('hidden');
     fireEvent.click(
       screen.getByRole('button', {
         name: 'restore_workspace: Another workspace',
