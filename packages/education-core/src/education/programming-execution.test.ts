@@ -99,15 +99,13 @@ describe('Programming versioned execution boundary', () => {
     expect(mocks.rpc.mock.calls[0]?.[1].p_problem_id).toBe(problemId);
   });
   it('rejects unpublished snapshots before enqueue', async () => {
-    mocks.rpc
-      .mockReset()
-      .mockResolvedValueOnce({
-        data: {
-          ...snapshot,
-          problem: { ...snapshot.problem, status: 'draft' },
-        },
-        error: null,
-      });
+    mocks.rpc.mockReset().mockResolvedValueOnce({
+      data: {
+        ...snapshot,
+        problem: { ...snapshot.problem, status: 'draft' },
+      },
+      error: null,
+    });
     await expect(
       enqueueProgrammingExecution(context, 'workspace', undefined, payload)
     ).rejects.toMatchObject({ status: 404 });
