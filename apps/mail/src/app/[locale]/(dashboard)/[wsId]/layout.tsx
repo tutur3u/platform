@@ -118,11 +118,11 @@ export default async function Layout({ children, params }: LayoutProps) {
       >
         <RealtimeLogProvider wsId={wsId}>
           <div data-workspace-slug={workspaceSlug}>
-            <MailWorkspace workspaceId={workspaceSlug}>
-              <MailActorProvider actorId={user.id}>
+            <MailActorProvider actorId={user.id}>
+              <MailWorkspace workspaceId={workspaceSlug}>
                 {children}
-              </MailActorProvider>
-            </MailWorkspace>
+              </MailWorkspace>
+            </MailActorProvider>
           </div>
         </RealtimeLogProvider>
       </Structure>

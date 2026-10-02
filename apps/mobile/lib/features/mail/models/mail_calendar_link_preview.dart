@@ -19,7 +19,7 @@ class MailCalendarLinkPreview {
 }
 
 Map<String, dynamic>? parseMailCalendarEventUrl(String value) {
-  final uri = Uri.tryParse(value);
+  final uri = Uri.tryParse(value.trim());
   if (uri == null ||
       ![
         'calendar.tuturuuu.com',

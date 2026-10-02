@@ -48,7 +48,20 @@ it('rejects stale CAS, corrupt metadata and attempts to replace another actor va
     updateCalendarAssociation(metadata, 'actor', key, null, link)
   ).toBeNull();
   expect(
-    updateCalendarAssociation(metadata, 'other', key, link, null)
+    updateCalendarAssociation(
+      {
+        mail_calendar_links: {
+          [key]: {
+            ...link,
+            invitation: { ...link.invitation, actorId: 'other' },
+          },
+        },
+      },
+      'actor',
+      key,
+      null,
+      null
+    )
   ).toBeNull();
   expect(
     updateCalendarAssociation('corrupt', 'actor', key, null, link)
@@ -85,4 +98,19 @@ it('survives reordered JSON persistence without accepting a forged key or provid
       target: { ...link.target, actorUserId: 'other' },
     })
   ).toBeNull();
+});
+
+it('rejects corrupt nested namespaces without discarding stored metadata', () => {
+  const link = fixture();
+  const key = invitationAssociationKey(link.invitation);
+  for (const namespace of [null, 'corrupt', [], 1]) {
+    const metadata = { unrelated: 'keep', mail_calendar_links: namespace };
+    expect(
+      updateCalendarAssociation(metadata, 'actor', key, null, link)
+    ).toBeNull();
+    expect(metadata.mail_calendar_links).toBe(namespace);
+  }
+  expect(
+    updateCalendarAssociation({ unrelated: 'keep' }, 'actor', key, null, link)
+  ).toMatchObject({ unrelated: 'keep', mail_calendar_links: { [key]: link } });
 });

@@ -92,6 +92,9 @@ export function updateCalendarAssociation(
     return null;
   const root = metadataSchema.safeParse(metadata);
   if (metadata !== null && !root.success) return null;
+  const namespace = root.success ? root.data.mail_calendar_links : undefined;
+  if (namespace !== undefined && !metadataSchema.safeParse(namespace).success)
+    return null;
   const existing = links(metadata);
   // Unknown or another actor's value may not be overwritten or removed.
   if (existing[key] !== undefined && !previous) return null;

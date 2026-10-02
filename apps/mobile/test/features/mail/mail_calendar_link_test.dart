@@ -86,6 +86,10 @@ void main() {
       'calendarWorkspaceId': ws,
       'eventId': event,
     });
+    expect(
+      parseMailCalendarEventUrl('  $url\n'),
+      parseMailCalendarEventUrl(url),
+    );
     for (final value in [
       'https://evil.example.test/en/$ws?eventId=$event',
       'https://calendar.tuturuuu.com/$ws',
