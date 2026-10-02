@@ -652,6 +652,7 @@ export async function DELETE(request: Request, { params }: Params) {
       skippedHabitId: linkedHabitResult.data?.habit_id ?? null,
     });
   } catch (error) {
+    if (error instanceof ColorOperationError) return operationFailure(error);
     const message = error instanceof Error ? error.message : '';
     if (message.toLowerCase().includes('source is unavailable or read-only')) {
       return NextResponse.json({ error: message }, { status: 400 });

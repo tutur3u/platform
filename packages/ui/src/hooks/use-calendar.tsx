@@ -94,7 +94,8 @@ const CalendarContext = createContext<{
   getGoogleEvents: () => CalendarEvent[];
   getEventLevel: (eventId: string) => number;
   addEvent: (
-    event: Omit<CalendarEvent, 'id'>
+    event: Omit<CalendarEvent, 'id'>,
+    options?: { requestId?: string }
   ) => Promise<CalendarEvent | undefined>;
   addEmptyEvent: (date: Date, isAllDay?: boolean) => CalendarEvent;
   addEmptyEventWithDuration: (startDate: Date, endDate: Date) => CalendarEvent;
@@ -573,7 +574,10 @@ export const CalendarProvider = ({
 
   // CRUD operations with Supabase
   const addEvent = useCallback(
-    async (event: Omit<CalendarEvent, 'id'>) => {
+    async (
+      event: Omit<CalendarEvent, 'id'>,
+      options?: { requestId?: string }
+    ) => {
       if (readOnly) {
         console.warn('Calendar is in read-only mode');
         return undefined;
@@ -599,10 +603,6 @@ export const CalendarProvider = ({
       if (!ws) throw new Error('No workspace selected');
 
       const payload: WorkspaceCalendarEventCreatePayload = {
-        requestId: creationRequests.current.forAttempt(
-          event,
-          !!pendingNewEvent
-        ),
         title: event.title || '',
         description: event.description || '',
         start_at: startDate.toISOString(),
@@ -615,6 +615,10 @@ export const CalendarProvider = ({
         ...(event.providerColor && { providerColor: event.providerColor }),
       };
       if (event.providerColor) delete payload.color;
+      payload.requestId = creationRequests.current.forAttempt(
+        { wsId: ws.id, ...payload },
+        options?.requestId
+      );
       const optimisticId = createOptimisticEventId();
       const optimisticEvent = {
         ...event,
@@ -654,27 +658,17 @@ export const CalendarProvider = ({
         // Refresh the query cache after adding an event
         refresh();
         setPendingNewEvent(null);
-        creationRequests.current.completeDraft();
         return data as CalendarEvent;
       } catch (error) {
         patchVisibleEvents([], { clearIds: [optimisticId] });
         throw error;
       }
     },
-    [
-      ws,
-      readOnly,
-      eventAdapter,
-      patchVisibleEvents,
-      queryClient,
-      refresh,
-      pendingNewEvent,
-    ]
+    [ws, readOnly, eventAdapter, patchVisibleEvents, queryClient, refresh]
   );
 
   const addEmptyEvent = useCallback(
     (date: Date, isAllDay?: boolean) => {
-      creationRequests.current.beginDraft();
       // Keep all-day boundaries in the user timezone.
       const selectedDate = dayjs(date);
 
@@ -736,7 +730,6 @@ export const CalendarProvider = ({
 
   const addEmptyEventWithDuration = useCallback(
     (startDate: Date, endDate: Date) => {
-      creationRequests.current.beginDraft();
       const roundedStartDate = roundToNearest15Minutes(startDate);
       const roundedEndDate = roundToNearest15Minutes(endDate);
 

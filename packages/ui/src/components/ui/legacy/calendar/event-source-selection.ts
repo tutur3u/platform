@@ -48,3 +48,29 @@ export function findEventSourceOption(
       option.workspaceCalendarId === event.source_calendar_id
   );
 }
+
+export function selectedEventSource(
+  options: CalendarSourceOption[],
+  event: Partial<CalendarEvent>,
+  selectedId: string | null,
+  defaultSource?: CalendarSourceOption
+) {
+  const selected = options.find((option) => option.id === selectedId);
+  const existing = !!event.id && event.id !== 'new';
+  return (
+    selected ??
+    findEventSourceOption(options, event) ??
+    (existing ? undefined : (defaultSource ?? options[0]))
+  );
+}
+export function eventSourceChanged(
+  options: CalendarSourceOption[],
+  event: Partial<CalendarEvent>,
+  selectedId: string | null
+) {
+  return (
+    selectedId !== null &&
+    options.some((option) => option.id === selectedId) &&
+    selectedId !== findEventSourceOption(options, event)?.id
+  );
+}

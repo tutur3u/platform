@@ -1,6 +1,11 @@
 import type { CalendarSourceOption } from '@tuturuuu/internal-api';
 import { expect, it } from 'vitest';
-import { findEventSourceOption } from './event-source-selection';
+import { eventModalSavePayload } from './event-save-payload';
+import {
+  eventSourceChanged,
+  findEventSourceOption,
+  selectedEventSource,
+} from './event-source-selection';
 
 const options = ['one', 'two'].map((id) => ({
   id,
@@ -38,4 +43,47 @@ it('fails closed when a legacy external calendar ID is ambiguous across accounts
       external_calendar_id: 'shared-provider-calendar',
     })?.id
   ).toBe('one');
+});
+
+it('leaves an unresolved existing event on its original source and preserves new defaults', () => {
+  const original = {
+    id: 'saved',
+    provider: 'google' as const,
+    source_calendar_id: 'missing',
+    external_calendar_id: 'shared-provider-calendar',
+  };
+  expect(
+    selectedEventSource(options, original, null, options[0])
+  ).toBeUndefined();
+  expect(eventSourceChanged(options, original, null)).toBe(false);
+  expect(
+    selectedEventSource(options, { id: 'new' }, null, options[0])?.id
+  ).toBe('one');
+  expect(selectedEventSource(options, original, 'two', options[0])?.id).toBe(
+    'two'
+  );
+  expect(eventSourceChanged(options, original, 'two')).toBe(true);
+});
+
+it('sends only a title edit when an existing source cannot be resolved', () => {
+  const original = {
+    id: 'saved',
+    title: 'Original',
+    color: 'BLUE' as const,
+    provider: 'google' as const,
+    source_calendar_id: 'missing',
+    start_at: '2026-10-02T10:00:00Z',
+    end_at: '2026-10-02T11:00:00Z',
+  };
+  const selected = selectedEventSource(options, original, null, options[0]);
+  expect(
+    eventModalSavePayload(
+      { ...original, title: 'Changed' },
+      original,
+      selected?.provider === 'google'
+        ? { provider: 'google', connectionId: selected.connectionId }
+        : undefined,
+      eventSourceChanged(options, original, null)
+    )
+  ).toEqual({ title: 'Changed' });
 });

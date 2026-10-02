@@ -40,6 +40,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { newCalendarCreationRequestId } from '@tuturuuu/ui/hooks/calendar-creation-request';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { notifySave } from '@tuturuuu/ui/save-notification';
@@ -74,7 +75,6 @@ import {
 import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
-import { getCalendarMeetingMetadata } from './calendar-meeting-link';
 import {
   COLOR_OPTIONS,
   DateError,
@@ -87,13 +87,17 @@ import {
 } from './event-form-components';
 import { EventModalHeader } from './event-modal-header';
 import { eventEndPickerBounds } from './event-picker-bounds';
-import { eventSavePayload } from './event-save-payload';
+import { eventModalDraft, eventModalSavePayload } from './event-save-payload';
 import {
-  findEventSourceOption,
+  eventSourceChanged,
+  selectedEventSource,
   sourceInputFromOption,
 } from './event-source-selection';
 import { ProviderColorPicker } from './provider-color-picker';
-import { saveCalendarEventDrafts } from './save-calendar-event-drafts';
+import {
+  prepareCalendarEventDrafts,
+  saveCalendarEventDrafts,
+} from './save-calendar-event-drafts';
 import { useCalendarSettings } from './settings/settings-context';
 import { useEventDraftSession } from './use-event-draft-session';
 
@@ -149,11 +153,12 @@ export function EventModal() {
     () => sourceData?.options ?? [],
     [sourceData?.options]
   );
-  const selectedSourceOption =
-    sourceOptions.find((option) => option.id === selectedSourceId) ??
-    findEventSourceOption(sourceOptions, event) ??
-    sourceData?.defaultSource ??
-    sourceOptions[0];
+  const selectedSourceOption = selectedEventSource(
+    sourceOptions,
+    event,
+    selectedSourceId,
+    sourceData?.defaultSource
+  );
 
   // State for AI event generation
   const [generatedEvents, setGeneratedEvents] =
@@ -238,7 +243,7 @@ export function EventModal() {
 
   const receiveGeneratedEvents = useEffectEvent(() => {
     const processedEvents = (object?.events || []) as Partial<CalendarEvent>[];
-    setGeneratedEvents(processedEvents);
+    setGeneratedEvents(prepareCalendarEventDrafts(processedEvents));
     setCurrentEventIndex(0);
     const firstEvent = processedEvents[0];
     if (
@@ -261,32 +266,16 @@ export function EventModal() {
     workspaceId: activeEvent?.ws_id,
     initialize: () => {
       if (activeEvent) {
-        const cleanEventData: Partial<CalendarEvent> = {
-          id: activeEvent.id,
-          title: activeEvent.title || '',
-          description: activeEvent.description || '',
-          start_at: activeEvent.start_at,
-          end_at: activeEvent.end_at,
-          color: activeEvent.color || 'BLUE',
-          location: activeEvent.location || '',
-          locked: activeEvent.locked || false,
-          ws_id: activeEvent.ws_id,
-          provider: activeEvent.provider,
-          source_calendar_id: activeEvent.source_calendar_id,
-          external_calendar_id: activeEvent.external_calendar_id,
-          external_event_id: activeEvent.external_event_id,
-          google_event_id: activeEvent.google_event_id,
-          google_calendar_id: activeEvent.google_calendar_id,
-          scheduling_metadata: getCalendarMeetingMetadata(activeEvent),
-        };
+        const cleanEventData = eventModalDraft(activeEvent);
 
         setEvent(cleanEventData);
-        const sourceOption = findEventSourceOption(
-          sourceOptions,
-          cleanEventData
-        );
         setSelectedSourceId(
-          sourceOption?.id ?? sourceData?.defaultSource?.id ?? null
+          selectedEventSource(
+            sourceOptions,
+            cleanEventData,
+            null,
+            sourceData?.defaultSource
+          )?.id ?? null
         );
 
         if (activeEvent.id !== 'new') {
@@ -304,6 +293,7 @@ export function EventModal() {
         const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
 
         const newEvent = {
+          requestId: newCalendarCreationRequestId(),
           title: '',
           description: '',
           start_at: now.toISOString(),
@@ -343,25 +333,17 @@ export function EventModal() {
 
     try {
       // Clean event data to only include fields that should be updated
-      const eventData = eventSavePayload(
-        {
-          title: event.title || '',
-          description: event.description || '',
-          start_at: event.start_at,
-          end_at: event.end_at,
-          color: event.color || 'BLUE',
-          location: event.location || '',
-          locked: event.locked || false,
-          source: sourceInputFromOption(selectedSourceOption),
-          providerColor: event.providerColor,
-        },
+      const eventData = eventModalSavePayload(
+        event,
         activeEvent,
-        findEventSourceOption(sourceOptions, activeEvent ?? {})?.id !==
-          selectedSourceOption?.id
+        sourceInputFromOption(selectedSourceOption),
+        eventSourceChanged(sourceOptions, activeEvent ?? {}, selectedSourceId)
       );
 
       if (activeEvent?.id === 'new') {
-        const saved = await addEvent(eventData as Omit<CalendarEvent, 'id'>);
+        const saved = await addEvent(eventData as Omit<CalendarEvent, 'id'>, {
+          requestId: event.requestId,
+        });
         if (!saved?.id) throw new Error();
       } else if (activeEvent?.id) {
         // For multi-day events, always use the original event ID

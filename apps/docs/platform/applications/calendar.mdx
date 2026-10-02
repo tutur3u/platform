@@ -581,7 +581,12 @@ provider-color commands return 409 while it is disabled. The shared web picker
 reads `providerColorWrites` from the actor-scoped color-options response and
 shows the legacy native palette until that capability is enabled; unsupported
 Microsoft sources retain the legacy palette. Color-only saves send only their
-color command and do not notify guests. Activation requires draining existing
+color command and do not notify guests. Native mobile resolves the Google
+connection from fresh, uniquely matching canonical source options. Its full
+palette requires the same capability; provider-color commands are online only,
+and combined content/date/color changes must be saved separately. Missing or
+ambiguous source mapping preserves the legacy mobile palette.
+Activation requires draining existing
 legacy writer activity after the schema and retained guards are deployed.
 
 Its routes support deterministic
@@ -594,7 +599,12 @@ before admission because their retry and compensation fences are not established
 
 Creation uses a UUIDv7 request ID retained across retries for the same draft. That
 ID owns the local event, encrypted intent and deterministic Google event ID.
-Reusing it for a different payload is a conflict. Recovery exposes only the
+The manual draft and every generated draft each retain a separate ID in state.
+An uncertain draft cannot reuse its ID after edits; recover the submitted intent
+before deliberately starting a new draft. Independent creation calls allocate
+new IDs unless their caller supplies an explicit retry ID. An unresolved existing
+calendar source never defaults to another account during an ordinary edit.
+Reusing an ID for a different payload is a conflict. Recovery exposes only the
 operation ID and phase, including terminal native transfers and deleted
 placeholders, and never returns sealed intent.
 

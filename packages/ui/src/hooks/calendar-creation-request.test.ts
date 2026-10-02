@@ -1,22 +1,54 @@
 import { validate, version } from 'uuid';
 import { expect, it } from 'vitest';
-import { createCalendarCreationRequests } from './calendar-creation-request';
+import {
+  createCalendarCreationRequests,
+  newCalendarCreationRequestId,
+} from './calendar-creation-request';
 
-it('retries a draft with one UUIDv7 until a new draft starts', () => {
+it('keeps explicit draft IDs on lost responses and separates manual and AI drafts', () => {
   const ids = createCalendarCreationRequests();
-  ids.beginDraft();
-  const first = ids.forAttempt({ title: 'draft' }, true);
-  expect(validate(first)).toBe(true);
-  expect(version(first)).toBe(7);
-  expect(ids.forAttempt({ title: 'same draft retry' }, true)).toBe(first);
-  ids.beginDraft();
-  expect(ids.forAttempt({}, true)).not.toBe(first);
+  const manual = newCalendarCreationRequestId();
+  const ai = [newCalendarCreationRequestId(), newCalendarCreationRequestId()];
+  expect(new Set([manual, ...ai]).size).toBe(3);
+  for (const [index, id] of [manual, ...ai].entries()) {
+    expect(validate(id)).toBe(true);
+    expect(version(id)).toBe(7);
+    const payload = {
+      title: `draft ${index}`,
+      source: { provider: 'google', connectionId: 'owned' },
+    };
+    expect(ids.forAttempt(payload, id)).toBe(id);
+    expect(ids.forAttempt({ ...payload }, id)).toBe(id);
+  }
 });
-it('keeps direct attempt identity on a lost-response retry without conflating new events', () => {
+it('rejects changed intent for an uncertain draft before dispatch', () => {
   const ids = createCalendarCreationRequests();
-  const event = { title: 'synthetic' };
-  expect(ids.forAttempt(event, false)).toBe(ids.forAttempt(event, false));
-  expect(ids.forAttempt({ ...event }, false)).not.toBe(
-    ids.forAttempt(event, false)
+  const id = newCalendarCreationRequestId();
+  ids.forAttempt({ title: 'Original' }, id);
+  expect(() => ids.forAttempt({ title: 'Edited' }, id)).toThrow(
+    'draft changed'
   );
+  expect(
+    ids.forAttempt({ title: 'Edited' }, newCalendarCreationRequestId())
+  ).not.toBe(id);
+});
+it('allocates a new independent intent per call unless the caller supplies a retry ID', () => {
+  const ids = createCalendarCreationRequests();
+  const event = { title: 'Same independent contents' };
+  expect(ids.forAttempt(event)).not.toBe(ids.forAttempt(event));
+});
+
+it('accepts the same serialized intent when object key order changes', () => {
+  const ids = createCalendarCreationRequests();
+  const id = newCalendarCreationRequestId();
+  ids.forAttempt(
+    { title: 'Same', source: { provider: 'google', connectionId: 'owned' } },
+    id
+  );
+  expect(
+    ids.forAttempt(
+      { source: { connectionId: 'owned', provider: 'google' }, title: 'Same' },
+      id
+    )
+  ).toBe(id);
 });
