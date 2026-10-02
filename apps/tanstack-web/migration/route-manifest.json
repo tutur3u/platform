@@ -30,12 +30,12 @@
         "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 20,
+        "legacyNext": 21,
         "migrated": 47,
-        "percentComplete": 70.15,
-        "remaining": 20,
+        "percentComplete": 69.12,
+        "remaining": 21,
         "terminal": 47,
-        "total": 67,
+        "total": 68,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 77,
+        "legacyNext": 78,
         "migrated": 148,
-        "percentComplete": 66.08,
-        "remaining": 77,
+        "percentComplete": 65.79,
+        "remaining": 78,
         "terminal": 150,
-        "total": 227,
+        "total": 228,
         "unknownStatus": 0
       }
     ],
@@ -363,12 +363,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 614,
+      "legacyNext": 615,
       "migrated": 215,
-      "percentComplete": 27.16,
-      "remaining": 614,
+      "percentComplete": 27.13,
+      "remaining": 615,
       "terminal": 229,
-      "total": 843,
+      "total": 844,
       "unknownStatus": 0
     }
   },
@@ -7664,6 +7664,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "layout:/:locale/contributors:apps/web/src/app/[locale]/(marketing)/contributors/layout.tsx",
+      "kind": "layout",
+      "methods": [],
+      "routePath": "/:locale/contributors",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/contributors/layout.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "layout:/:locale/documents/:documentId:apps/web/src/app/[locale]/(marketing)/documents/[documentId]/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -9552,7 +9561,7 @@
   "summary": {
     "apiRoutes": 601,
     "cronRoutes": 10,
-    "layouts": 67,
+    "layouts": 68,
     "pages": 156,
     "routeHandlers": 616,
     "methodCounts": {
@@ -9564,6 +9573,6 @@
       "DELETE": 101,
       "OPTIONS": 23
     },
-    "total": 843
+    "total": 844
   }
 }

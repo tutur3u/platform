@@ -1,10 +1,8 @@
 import { MeetTogetherPage } from '@tuturuuu/ui/legacy/meet/page';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Tuturuuu Meet Overview',
-  description:
-    'See what makes Tuturuuu Meet the intelligent meeting companion from Tuturuuu.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.meet',
   pathname: '/meet',
 });
 

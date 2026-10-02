@@ -1,11 +1,9 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  description:
-    'The maintained registry of subprocessors that may support Tuturuuu services.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.legal_subprocessors',
   pathname: '/legal/subprocessors',
-  title: 'Subprocessor Registry',
 });
 
 export default function SubprocessorsLayout({
