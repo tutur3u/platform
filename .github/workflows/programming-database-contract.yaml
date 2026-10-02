@@ -7,6 +7,9 @@ on:
       - "apps/database/scripts/verify-programming-database-contract.mjs"
       - "apps/database/scripts/run-supabase*.js"
       - "apps/database/scripts/programming-database-tap.mjs"
+      - "apps/database/scripts/programming-database-tap.test.mjs"
+      - "apps/database/tests/programming-disposable/session.mjs"
+      - "apps/database/tests/programming-disposable/session.test.mjs"
       - "tuturuuu.ci.ts"
       - ".github/workflows/programming-database-contract.yaml"
   workflow_dispatch:
