@@ -2,6 +2,7 @@ export const ci = {
   'actions-storage-report.yaml': true,
   'biome-check.yaml': true,
   'branch-name-check.yaml': true,
+  'calendar-generation-contract.yaml': true,
   'cancel-pr-runs-on-close.yaml': true,
   'check-and-bump-versions.yaml': true,
   'check-docs-links.yml': true,

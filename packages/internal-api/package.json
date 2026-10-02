@@ -326,6 +326,11 @@
       "types": "./dist/colab.d.ts",
       "import": "./dist/colab.js",
       "require": "./dist/colab.js"
+    },
+    "./chatgpt": {
+      "types": "./dist/chatgpt.d.ts",
+      "import": "./dist/chatgpt.js",
+      "require": "./dist/chatgpt.js"
     }
   },
   "devDependencies": {

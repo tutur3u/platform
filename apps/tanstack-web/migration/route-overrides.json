@@ -2624,22 +2624,20 @@
       "targetOwner": "rust-backend",
       "note": "Owner-only Hidden workspace preferences backed by existing user_workspace_configs and board-share guest user_configs owner RLS. GET/PUT support session and registered app auth, preserve canonical membership, and never publish private preference events. Rust parity pending."
     },
-    "api:/api/v1/workspaces/:wsId/programming/problems/:problemId:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/[problemId]/route.ts": {
+    "api:/api/ai/chatgpt:apps/web/src/app/api/ai/chatgpt/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "GET returns visible published learner cases or separately authorized author projection; PATCH uses atomic expected-revision writes, immutable global catalog and own-workspace author permissions. Private hidden cases and SQL diagnostics must not leak. Rust parity pending.",
-      "methods": {
-        "GET": {
-          "status": "legacy-next",
-          "targetOwner": "rust-backend",
-          "note": "First-class live Next.js handler; preserve scoped no-store reads and hidden-case isolation."
-        },
-        "PATCH": {
-          "status": "legacy-next",
-          "targetOwner": "rust-backend",
-          "note": "First-class live Next.js handler; preserve strict authorized atomic writes and status/cache parity."
-        }
-      }
+      "note": "First-class self-hosted ChatGPT plan sharing. Preserve deployment gating, session-only actor ownership, protected per-user filesystem credentials, serialized OAuth refresh, account-specific models and direct subscription billing. Hosted integration remains disabled pending OpenAI access. Rust implementation pending."
+    },
+    "api:/api/ai/chatgpt/new:apps/web/src/app/api/ai/chatgpt/new/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class self-hosted ChatGPT plan sharing. Preserve deployment gating, session-only actor ownership, protected per-user filesystem credentials, serialized OAuth refresh, account-specific models and direct subscription billing. Hosted integration remains disabled pending OpenAI access. Rust implementation pending."
+    },
+    "api:/api/v1/users/chatgpt:apps/web/src/app/api/v1/users/chatgpt/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class self-hosted ChatGPT plan sharing. Preserve deployment gating, session-only actor ownership, protected per-user filesystem credentials, serialized OAuth refresh, account-specific models and direct subscription billing. Hosted integration remains disabled pending OpenAI access. Rust implementation pending."
     },
     "api:/api/v1/workspaces/:wsId/programming/problems:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/route.ts": {
       "status": "legacy-next",
@@ -2652,6 +2650,23 @@
           "note": "First-class live Next.js handler; preserve scoped no-store reads and hidden-case isolation."
         },
         "POST": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "First-class live Next.js handler; preserve strict authorized atomic writes and status/cache parity."
+        }
+      }
+    },
+    "api:/api/v1/workspaces/:wsId/programming/problems/:problemId:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/[problemId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "GET returns visible published learner cases or separately authorized author projection; PATCH uses atomic expected-revision writes, immutable global catalog and own-workspace author permissions. Private hidden cases and SQL diagnostics must not leak. Rust parity pending.",
+      "methods": {
+        "GET": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "First-class live Next.js handler; preserve scoped no-store reads and hidden-case isolation."
+        },
+        "PATCH": {
           "status": "legacy-next",
           "targetOwner": "rust-backend",
           "note": "First-class live Next.js handler; preserve strict authorized atomic writes and status/cache parity."
