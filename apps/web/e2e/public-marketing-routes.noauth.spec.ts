@@ -356,7 +356,10 @@ test.describe('Public migrated marketing routes', () => {
       expect(response?.ok()).toBe(true);
       await expect(
         page
-          .getByRole('heading', { name: /Work Smarter\.\s+Live Better\./u })
+          .getByRole('heading', {
+            level: 1,
+            name: /Your Team\.\s+One Workspace\./u,
+          })
           .first()
       ).toBeVisible({ timeout: 30_000 });
       await expect(
