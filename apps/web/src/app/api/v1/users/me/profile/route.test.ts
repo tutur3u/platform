@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const f = vi.hoisted(() => ({
@@ -30,7 +31,7 @@ vi.mock('@/lib/api-auth', () => ({
 import { PATCH } from './route';
 
 const request = (body: unknown) =>
-  new Request('https://example.test/api/v1/users/me/profile', {
+  new NextRequest('https://example.test/api/v1/users/me/profile', {
     method: 'PATCH',
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' },
@@ -46,7 +47,7 @@ beforeEach(() => {
 describe('Canonical profile API', () => {
   it('rejects malformed JSON without touching the database', async () => {
     const response = await PATCH(
-      new Request('https://example.test/api/v1/users/me/profile', {
+      new NextRequest('https://example.test/api/v1/users/me/profile', {
         method: 'PATCH',
         body: '{',
       }),
