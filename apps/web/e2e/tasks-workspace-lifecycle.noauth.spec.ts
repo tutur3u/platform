@@ -137,15 +137,15 @@ async function completeTeamOnboarding(
   });
   await expect(workspaceSelector).toBeVisible({ timeout: 60_000 });
   await workspaceSelector.click();
-  const workspaceSelectTrigger = page.getByRole('button', {
-    name: 'Select a workspace',
+  // Revealing the sidebar section opens the picker once workspaces load.
+  const workspacePicker = page.getByRole('dialog', {
+    name: 'Workspaces',
+    exact: true,
   });
-  await expect(workspaceSelectTrigger).toBeVisible({ timeout: 60_000 });
-  await workspaceSelectTrigger.click();
-  await page
-    .locator('[cmdk-item]')
-    .filter({ hasText: /^Create$/u })
-    .click({ force: true });
+  await expect(workspacePicker).toBeVisible({ timeout: 60_000 });
+  await workspacePicker
+    .getByRole('button', { name: 'Create', exact: true })
+    .click();
 
   const createWorkspaceDialog = page.getByRole('dialog', {
     name: 'Create Workspace',
