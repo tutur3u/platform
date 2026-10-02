@@ -275,7 +275,7 @@ Before resubmitting an external beta, sign out of a test device, use **Email and
 password** on the production mobile build with the reviewer credentials, and
 follow the current login path: enter the email and tap **Continue with email**;
 enter the password directly if shown, or tap **Use password instead** if a code
-screen appears. Tap **Sign in** and complete the security check if prompted.
+screen appears. Complete the security check if prompted, then tap **Sign in**.
 Verify Home, Apps, Profile, Tasks, Calendar, Finance, and Notes in the account's
 personal workspace. Add representative non-sensitive sample data through the
 app if the review needs it. Record the tested build number and any non-obvious
@@ -385,7 +385,7 @@ to preserve manual text added while history loads. App Store Connect API failure
 and failed write readback fail verification rather than masquerading as missing
 history; they require a retry or investigation.
 
-Run focused release checks with `node --test scripts/mobile-deployment/*.test.mjs
+Run focused release checks with `node --experimental-strip-types --test scripts/mobile-deployment/*.test.mjs
 scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun check`
 for repository validation and `ttr resources run -- bun check:mobile` for the
 Flutter checks. Normally run the applicable mobile tests and native builds in
