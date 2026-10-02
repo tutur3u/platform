@@ -14,9 +14,9 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { Brand } from '@/components/brand';
+import { WorkspaceNavigation } from '@/components/workspace-navigation';
 import { WorkspacePicker } from '@/components/workspace-picker';
 import { WEB_APP_URL } from '@/constants/common';
-import { Link } from '@/i18n/navigation';
 import { getNavigationLinks } from './navigation';
 export const metadata = { robots: { index: false, follow: false } };
 export default async function Layout({
@@ -58,16 +58,7 @@ export default async function Layout({
       <Brand />
       <div className="lettin-workspace-bar flex flex-wrap items-center gap-4 px-6 py-3 text-sm">
         <WorkspacePicker current={workspace.id} workspaces={workspaces} />
-        {(await getNavigationLinks(workspace.id)).map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="flex items-center gap-2"
-          >
-            {link.icon}
-            {link.title}
-          </Link>
-        ))}
+        <WorkspaceNavigation links={await getNavigationLinks(workspace.id)} />
         <a href={`${WEB_APP_URL}/${workspace.id}/settings/members`}>
           {t('workspaceSettings')}
         </a>

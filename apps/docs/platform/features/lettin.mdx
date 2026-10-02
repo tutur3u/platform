@@ -1,12 +1,59 @@
 ---
-updatedAt: "2026-09-14"
-title: "(Tu)lettin"
+updatedAt: "2026-10-02"
+title: "Tulletin"
 description: "Workspace-based worldbuilding, creator invitations, and publishing."
 ---
 
 (Tu)lettin is the creator worldbuilding app at `lettin.tuturuuu.com`. Creators
 organize worlds, characters, locations, lore, stories, and linked wiki pages in
 a private notebook, then explicitly publish revisions for readers.
+
+## Creative studio and dedicated spaces
+
+Tulletin is the public creative identity of the existing Lettin app. Its domain,
+app-session audience (`lettin`), and storage remain unchanged. The homepage serves
+artists, storytellers, creators, and worldbuilders with a quiet illustrative
+atlas; the illustration is not presented as an actual creator project.
+
+The public `/spaces` directory presents the three creative spaces before login;
+only this exact path is public. Workspace space pages remain authenticated, covered
+by `apps/lettin/src/proxy.test.ts`.
+
+The workspace studio is the complete project shelf with title/description/tag
+search and all/private-draft/published filters. Dedicated routes are
+`/{wsId}/spaces/art`, `/{wsId}/spaces/story`, and `/{wsId}/spaces/world`.
+Art projects use the editable `art` tag; storytelling projects use `story`;
+worldbuilding uses `world`. Tags are matched without case sensitivity. A project
+can appear in multiple spaces. Existing projects without `art` or `story` default
+to the worldbuilding space, so historical work stays discoverable. The main shelf
+always includes all accessible projects. Removing a space tag changes its placement,
+not its content, ownership, or publication status.
+
+Starting a project offers blank, art, story, and world notebooks. Space pages
+preselect their matching starter. Starters save normal editable rich-text prompts
+and a matching tag through the existing create-world API. Nothing is published
+until the creator explicitly publishes. Spaces add no new access privileges.
+Public space cards preserve the chosen space through central
+login and default workspace selection. Unknown space names return a 404.
+Regression coverage: `apps/lettin/src/components/creative-spaces.test.ts` verifies
+legacy placement, multiple-space tags, unknown route rejection, and valid starter
+content in both languages. `creator-experience.test.tsx` covers shelf search/filter recovery and
+workspace-aware tool links.
+
+`/{wsId}/toolkit` gives workspace-aware links to Tasks, Drive, Calendar, Chat,
+Mind, Finance, and platform AI chat, plus Meet and the complete app directory.
+Tools open in their existing apps and enforce their own permissions, authentication,
+and any billing rules. These are navigation integrations; project content is not
+copied into those services or automatically synchronized. Meet and the app directory
+are global destinations. Public toolkit links open each app's entry point.
+
+The homepage uses a small wordmark, restrained serif headings, a brief introduction,
+and a single set of space cards. Slogans, workflow explanations, duplicate calls to
+action, and the full app launcher are omitted there. The full launcher is on the
+workspace toolkit page; dedicated space pages omit the space directory.
+
+Motion uses short entrance sequences and subtle state transitions. Essential content is visible without scroll-animation
+support; reduced-motion preferences disable animation and decorative hover movement.
 
 ## Access and roles
 

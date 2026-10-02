@@ -39,7 +39,14 @@ export function PublicExplorer({
       </header>
       {!filtered.length && (
         <p className="notebook-paper rounded-xl p-10">
-          {t(worlds.length ? 'noResults' : 'emptyPublic')}
+          {t(search ? 'noResults' : 'emptyPublic')}
+          <Link
+            className="lettin-secondary-link mt-5"
+            href={search ? '/worlds' : '/dashboard'}
+          >
+            {t(search ? 'clearFilters' : 'openNotebook')}
+            <ArrowRight size={16} />
+          </Link>
         </p>
       )}
       <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -49,7 +56,7 @@ export function PublicExplorer({
             href={`/worlds/${world.id}`}
             className="notebook-cover overflow-hidden"
           >
-            <div className="relative flex h-52 items-center justify-center overflow-hidden bg-secondary">
+            <div className="studio-world-art relative flex h-52 items-center justify-center overflow-hidden">
               {world.published.image ? (
                 // biome-ignore lint/performance/noImgElement: Artwork must bypass optimizer caching so private media access can be revoked.
                 <img
@@ -66,7 +73,7 @@ export function PublicExplorer({
               </span>
             </div>
             <div className="p-6">
-              <h2 className="break-words text-4xl uppercase leading-none">
+              <h2 className="break-words text-4xl leading-none">
                 {world.published.title}
               </h2>
               <p className="lettin-serif my-4 line-clamp-3 text-sm leading-relaxed">

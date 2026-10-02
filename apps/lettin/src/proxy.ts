@@ -115,6 +115,7 @@ function getNextValue(request: NextRequest) {
 function isPublicLettinPath(path: string) {
   return (
     path === '/' ||
+    path === '/spaces' ||
     path === '/worlds' ||
     path.startsWith('/worlds/') ||
     path.startsWith('/creators/') ||
