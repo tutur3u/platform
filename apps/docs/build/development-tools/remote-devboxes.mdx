@@ -380,7 +380,13 @@ only brokers commands and opens previews.
 
 Agents keep heartbeats on a 20-second cadence while dispatching independent jobs
 concurrently, with at most eight active jobs. Judge cases share a process-wide
-sandbox budget and always use fresh isolated containers. Maintenance and CLI
+sandbox budget and always use fresh isolated containers. Each case reserves
+`1 / parallelLimit` of the host budget, so mixed jobs cannot each claim the
+whole memory or CPU allocation. Eligible smaller reservations can pass a waiting
+full-budget case. Infrastructure failures cancel queued cases and wait for
+already admitted commands and container cleanup before reporting failure.
+Regression coverage lives in `devbox-sandbox-slots.test.ts` and
+`devbox-judge-case-batch.test.ts`. Maintenance and CLI
 restart jobs drain active work before changing the agent. An execution failure
 stops new dispatch and drains already active work before the agent exits. Readiness probes are
 cached for ten minutes and refreshed in the background; execution still fails
@@ -398,7 +404,12 @@ Stopping waits for already admitted container creation, with a fifteen-second
 wait bound; a timeout reports an unconfirmed stop and retains capacity ownership.
 It does not wait for the arbitrary project command to finish.
 File inventories and changed bytes are exported separately; credentials and
-runner metadata never enter project files. The platform must provide its signed
+runner metadata never enter project files. File/directory conflicts are checked
+against every path ancestor, and preview paths reject traversal before URL
+normalization. Export transport permits the worst-case JSON escaping of a valid
+two-MiB text project; unsupported paths or oversized files report the offending
+file instead of failing with an opaque schema error. The schema and Python
+export contracts cover these rules. The platform must provide its signed
 file-save callback before enabling the hosted playground workload. The scheduling
 primitives alone reject the reserved hosted Playground envelope without running a
 host command; its HTTP adapter ships together with the canonical file-save API.

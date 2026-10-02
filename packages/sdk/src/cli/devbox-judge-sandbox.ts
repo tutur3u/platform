@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { cpus, freemem, totalmem } from 'node:os';
 import { performance } from 'node:perf_hooks';
+import { runJudgeCaseBatch } from './devbox-judge-case-batch';
 import {
   createJudgeLanguageCommand,
   isJudgeLanguage,
@@ -9,7 +10,6 @@ import {
   judgeLanguageBinary,
   minimumJudgeMemoryMb,
 } from './devbox-judge-languages';
-import { withSandboxSlot } from './devbox-sandbox-slots';
 
 export interface JudgeResourceLimits {
   max_cpu_percent: number;
@@ -357,56 +357,54 @@ export async function runJudgeCases({
   const image = images[payload.language];
   if (!image)
     throw new Error(`Judge language ${payload.language} is unavailable.`);
-  const results = await Promise.all(
-    payload.cases.map((testCase, index) =>
-      withSandboxSlot(
-        Math.min(limits.max_sandboxes, limits.max_instances),
-        async () => {
-          const name = `ttr-judge-${randomUUID()}`;
-          const args = createJudgeDockerArgs({
-            image,
-            language: payload.language,
-            limits,
-            name,
-            source: payload.source,
-            ...capacity,
-          });
-          const run = await runDocker(
-            args,
-            testCase.input,
-            limits.sandbox_timeout_seconds
-          );
-          const passed =
-            run.code === 0 &&
-            !run.timedOut &&
-            !run.exceededOutput &&
-            run.output.trimEnd() === testCase.expected.trimEnd();
-          return {
-            index,
-            passed,
-            visible: testCase.visible,
-            durationMs: run.durationMs,
-            ...(testCase.visible
-              ? {
-                  output: run.output.slice(0, 4096),
-                  stderr: run.errorOutput,
-                }
-              : {}),
-            reason: run.timedOut
-              ? 'time_limit'
-              : run.exceededOutput
-                ? 'output_limit'
-                : run.code === 100
-                  ? 'compile_error'
-                  : run.code !== 0
-                    ? 'runtime_error'
-                    : passed
-                      ? 'passed'
-                      : 'wrong_answer',
-          };
-        }
-      )
-    )
+  const results = await runJudgeCaseBatch(
+    payload.cases.length,
+    Math.min(limits.max_sandboxes, limits.max_instances),
+    async (index) => {
+      const testCase = payload.cases[index]!;
+      const name = `ttr-judge-${randomUUID()}`;
+      const args = createJudgeDockerArgs({
+        image,
+        language: payload.language,
+        limits,
+        name,
+        source: payload.source,
+        ...capacity,
+      });
+      const run = await runDocker(
+        args,
+        testCase.input,
+        limits.sandbox_timeout_seconds
+      );
+      const passed =
+        run.code === 0 &&
+        !run.timedOut &&
+        !run.exceededOutput &&
+        run.output.trimEnd() === testCase.expected.trimEnd();
+      return {
+        index,
+        passed,
+        visible: testCase.visible,
+        durationMs: run.durationMs,
+        ...(testCase.visible
+          ? {
+              output: run.output.slice(0, 4096),
+              stderr: run.errorOutput,
+            }
+          : {}),
+        reason: run.timedOut
+          ? 'time_limit'
+          : run.exceededOutput
+            ? 'output_limit'
+            : run.code === 100
+              ? 'compile_error'
+              : run.code !== 0
+                ? 'runtime_error'
+                : passed
+                  ? 'passed'
+                  : 'wrong_answer',
+      };
+    }
   );
   return { passed: results.filter((result) => result.passed).length, results };
 }
