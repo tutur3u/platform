@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import test from 'node:test';
 import { boundedSession } from './session.mjs';
@@ -7,7 +8,8 @@ function child() {
   const process = new EventEmitter();
   process.stdout = new EventEmitter();
   process.stderr = new EventEmitter();
-  process.stdin = { end() {} };
+  process.stdin = new EventEmitter();
+  process.stdin.end = () => {};
   process.signals = [];
   process.kill = (signal) => {
     process.signals.push(signal);
@@ -51,4 +53,27 @@ test('early close without lock marker fails readiness rather than faking lock', 
   process.emit('close', 1);
   await assert.rejects(session.locked, /before acquiring lock/);
   assert.equal((await session.done).code, 1);
+});
+test('real early stdin closure rejects through caller finally instead of uncaught EPIPE', async () => {
+  const process = spawn(
+    globalThis.process.execPath,
+    [
+      '-e',
+      "require('node:fs').closeSync(0);process.stdout.write('READY');setTimeout(()=>{},2000)",
+    ],
+    { stdio: ['pipe', 'pipe', 'pipe'] }
+  );
+  await new Promise((resolve, reject) => {
+    process.stdout.once('data', resolve);
+    process.once('error', reject);
+  });
+  const session = boundedSession(process, 'synthetic payload', 500, 10);
+  let cleanupReached = false;
+  try {
+    await assert.rejects(session.done, /Fixture session input failed/);
+  } finally {
+    cleanupReached = true;
+  }
+  assert.equal(cleanupReached, true);
+  await assert.rejects(session.locked, /Fixture session input failed/);
 });
