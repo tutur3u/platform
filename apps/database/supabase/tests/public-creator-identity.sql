@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(35);
+select plan(39);
 insert into auth.users(id) values ('00000000-0000-4000-8000-000000009501'), ('00000000-0000-4000-8000-000000009502');
 insert into public.users(id) values ('00000000-0000-4000-8000-000000009501'), ('00000000-0000-4000-8000-000000009502') on conflict do nothing;
 select ok(not has_function_privilege('anon','public.update_public_user_profile(uuid,jsonb)','EXECUTE'),'anonymous users cannot forge a profile actor');
@@ -42,6 +42,17 @@ update private.user_profile_change_events set changed_at=now()-interval '7 days'
 select lives_ok($$select public.update_public_user_profile('00000000-0000-4000-8000-000000009501','{"display_name":"Name after seven days"}')$$,'seven day rolling window expires at its exact boundary');
 select ok(not has_table_privilege('authenticated','private.user_profile_change_events','INSERT'),'clients cannot forge their quota history');
 select ok(not has_table_privilege('authenticated','private.reserved_usernames','DELETE'),'clients cannot remove reserved usernames');
+
+set local request.jwt.claims = '{"sub":"00000000-0000-4000-8000-000000009501","role":"authenticated"}';
+set local role authenticated;
+select throws_ok($$insert into public.handles(value,creator_id) values('unbounded_claim_9501','00000000-0000-4000-8000-000000009501')$$,'42501',null,'clients cannot pre-reserve arbitrary usernames outside the atomic RPC');
+select throws_ok($$insert into public.handles(value,creator_id) values('forged_claim_9502','00000000-0000-4000-8000-000000009502')$$,'42501',null,'clients cannot forge another creator reservation');
+reset role;
+set local request.jwt.claims = '{"role":"service_role"}';
+set local role service_role;
+select lives_ok($$select public.update_public_user_profile('00000000-0000-4000-8000-000000009502','{"handle":"authorized_creator_9502"}')$$,'actual service role can claim a username atomically');
+reset role;
+select is((select creator_id from public.handles where value='authorized_creator_9502'),'00000000-0000-4000-8000-000000009502'::uuid,'authorized reservations retain the resolved actor');
 
 select * from finish();
 rollback;

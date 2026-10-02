@@ -31,6 +31,12 @@ $$;
 REVOKE ALL ON FUNCTION public.is_reserved_username(text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.is_reserved_username(text) TO service_role;
 
+-- All new reservations belong to the atomic server RPC. The legacy permissive
+-- INSERT policy otherwise lets any authenticated actor reserve arbitrary names
+-- or assign a reservation to another creator outside profile quotas.
+CREATE POLICY handles_require_atomic_claim ON public.handles AS RESTRICTIVE
+  FOR INSERT TO anon, authenticated WITH CHECK (false);
+
 -- Row-level locking serializes RPC and direct authenticated updates alike.
 CREATE FUNCTION public.enforce_public_user_profile_policy() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$

@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { isReservedUsername, isValidNewUsername } from '../username-policy';
 import reserved from '../username-policy.json';
@@ -41,9 +42,9 @@ describe('Canonical username policy', () => {
   });
   it('keeps every canonical reserved name enforced in the database migration', () => {
     const sql = readFileSync(
-      new URL(
-        '../../../../apps/database/supabase/migrations/20261002164500_public_creator_identity.sql',
-        import.meta.url
+      resolve(
+        __dirname,
+        '../../../../apps/database/supabase/migrations/20261002164500_public_creator_identity.sql'
       ),
       'utf8'
     );
