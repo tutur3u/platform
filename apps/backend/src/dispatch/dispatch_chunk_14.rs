@@ -32,11 +32,7 @@ pub(super) async fn dispatch_chunk_14(
         return Some(response);
     }
 
-    if let Some(response) =
-        workspaces_wsid_external_projects_assets_assetid::handle_workspaces_wsid_external_projects_assets_assetid_route(config, request, outbound).await
-    {
-        return Some(response);
-    }
+    // CMS asset reads remain on live Next.js; Rust dispatch is disabled pending guarded parity.
 
     if let Some(response) =
         workspaces_wsid_external_projects_field_definitions::handle_workspaces_wsid_external_projects_field_definitions_route(config, request, outbound).await

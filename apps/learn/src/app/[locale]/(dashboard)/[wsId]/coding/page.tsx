@@ -1,27 +1,32 @@
+import { listProgrammingProblems } from '@tuturuuu/internal-api/programming';
 import { connection } from 'next/server';
-import { resolveCodingSubject } from '@/lib/coding/access';
-import { listCodingChallenges } from '@/lib/coding/challenges';
-import { listReadyJudgeLanguages } from '@/lib/coding/store';
-import { CodingLab } from './coding-lab';
+import { redirect } from '@/i18n/navigation';
+import {
+  programmingApiOptions,
+  programmingStudentId,
+} from '@/lib/programming/server';
+import { programmingPageFailure } from '../programming/page-feedback';
 
-export default async function CodingPage({
+export default async function LegacyCodingPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ wsId: string }>;
+  params: Promise<{ locale: string; wsId: string }>;
   searchParams: Promise<{ studentId?: string }>;
 }) {
   await connection();
-  const [{ wsId }, { studentId }] = await Promise.all([params, searchParams]);
-  const subject = await resolveCodingSubject(wsId, studentId);
-  const availableLanguages = await listReadyJudgeLanguages().catch(() => []);
-  return (
-    <CodingLab
-      challenges={listCodingChallenges()}
-      availableLanguages={availableLanguages}
-      readOnly={subject.readOnly}
-      studentId={studentId}
-      wsId={wsId}
-    />
-  );
+  const [{ locale, wsId }, search] = await Promise.all([params, searchParams]);
+  let destination: string;
+  try {
+    const studentId = programmingStudentId(search.studentId);
+    const { problems } = await listProgrammingProblems(
+      wsId,
+      { mode: 'learner', studentId },
+      await programmingApiOptions()
+    );
+    destination = `/${wsId}/programming${problems[0] ? `/problems/${problems[0].id}` : ''}${studentId ? `?studentId=${encodeURIComponent(studentId)}` : ''}`;
+  } catch (error) {
+    return programmingPageFailure(error, locale, wsId);
+  }
+  return redirect({ locale, href: destination });
 }

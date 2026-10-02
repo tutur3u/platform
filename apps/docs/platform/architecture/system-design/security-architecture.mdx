@@ -19,6 +19,25 @@ This document focuses on **architecture-level security patterns**. For implement
 The platform is also mid-migration: `apps/web` (Next.js, port `7803`) is being replaced by `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`). See [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration) for how security responsibilities move into the Rust backend.
 </Warning>
 
+## Plan-aware egress and abuse allowances
+
+When `SECURITY_EGRESS_ENFORCEMENT_ENABLED=true`, live Next.js uses Postgres-backed
+request and private-download budgets independently of Redis. Free/anonymous
+traffic has separate shared ceilings; active paid personal subscriptions and
+current paid workspace memberships provide bounded account uplifts. Team CMS
+delivery uses the target workspace's subscription, while personal workspace
+media inherits the owner's paid account memberships. Free/Plus/Pro/Enterprise
+multipliers are 1/4/10/20, with a capped bonus for multiple paid workspaces.
+Trials, unpaid/expired subscriptions and zero-cost products do not increase limits.
+Paid plans do not bypass authentication, permissions, abuse challenges, or global
+byte containment. Anonymous public consumers keep strict client limits. Existing
+public Storage assets remain outside private relay budgets.
+
+See [Storage egress protection](/build/devops/storage-egress-protection) for exact
+base allowances, scope, cache/revocation timing, regression tests, and migration-first
+activation. This behavior is implemented in live Next.js; Rust parity is pending
+and protected paths must remain on Next.js before any future traffic cutover.
+
 ## 1. Consistent Security Enforcement at the API Boundary
 
 ### Architectural Choice

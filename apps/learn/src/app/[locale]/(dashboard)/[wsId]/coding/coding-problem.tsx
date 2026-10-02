@@ -4,7 +4,10 @@ import { useTranslations } from 'next-intl';
 import type { listCodingChallenges } from '@/lib/coding/challenges';
 import { CodingCases } from './coding-cases';
 
-type PublicChallenge = ReturnType<typeof listCodingChallenges>[number];
+type PublicChallenge = ReturnType<typeof listCodingChallenges>[number] & {
+  title?: string;
+  prompt?: string;
+};
 
 export function CodingProblem({ challenge }: { challenge: PublicChallenge }) {
   const t = useTranslations('coding');
@@ -15,10 +18,10 @@ export function CodingProblem({ challenge }: { challenge: PublicChallenge }) {
         {t(`difficulty.${challenge.difficulty}`)}
       </p>
       <h1 className="mt-2 font-semibold text-2xl tracking-tight">
-        {t(`challenges.${challenge.slug}.title`)}
+        {challenge.title ?? t(`challenges.${challenge.slug}.title`)}
       </h1>
       <p className="mt-5 whitespace-pre-line text-sm leading-7">
-        {t(`challenges.${challenge.slug}.prompt`)}
+        {challenge.prompt ?? t(`challenges.${challenge.slug}.prompt`)}
       </p>
       <h2 className="mt-7 border-b pb-2 font-semibold text-sm">
         {t('publicTests')}

@@ -13,6 +13,25 @@ export default defineConfig({
     environment: 'jsdom',
   },
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      // Exercise workspace source without compiling package distributions locally.
+      {
+        find: '@tuturuuu/types',
+        replacement: resolve(__dirname, '../../packages/types/src'),
+      },
+      {
+        find: '@tuturuuu/supabase/next',
+        replacement: resolve(__dirname, '../../packages/supabase/src/next'),
+      },
+      {
+        find: '@tuturuuu/internal-api',
+        replacement: resolve(__dirname, '../../packages/internal-api/src'),
+      },
+      {
+        find: 'server-only',
+        replacement: resolve(__dirname, './src/test/server-only-stub.ts'),
+      },
+    ],
   },
 });

@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { generateKeyPairSync } from 'node:crypto';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, test } from 'node:test';
 import { changesBetween, releaseHistory } from './release-history.mjs';
 
@@ -13,17 +17,7 @@ describe('mobile beta release history', () => {
 
     assert.deepEqual(changes, ['restore sessions', 'improve settings']);
     assert.deepEqual(calls, [
-      [
-        'git',
-        [
-          'log',
-          '--first-parent',
-          '--format=%s',
-          'old..new',
-          '--',
-          'apps/mobile',
-        ],
-      ],
+      ['git', ['log', '--format=%s', 'old..new', '--', 'apps/mobile']],
     ]);
   });
 
@@ -69,7 +63,7 @@ describe('mobile beta release history', () => {
         date: '2026-09-24',
         git: (_command, args) => {
           if (args[0] === 'merge-base') return '';
-          return args[3] === 'mobile-v0.11.0..previous'
+          return args[2] === 'mobile-v0.11.0..previous'
             ? 'feat(mobile): first patch (#1)'
             : 'fix(mobile): second patch (#2)';
         },
@@ -108,7 +102,7 @@ describe('mobile beta release history', () => {
           date: '2026-09-30',
           git: (_command, args) => {
             if (args[0] === 'merge-base') return '';
-            assert.equal(args[3], 'mobile-v0.21.0..current');
+            assert.equal(args[2], 'mobile-v0.21.0..current');
             return changes;
           },
         });
@@ -210,9 +204,8 @@ describe('mobile beta release history', () => {
           changes: ['reserve full floating header height'],
         },
       ]);
-      assert.deepEqual(calls[2].slice(0, 4), [
+      assert.deepEqual(calls[2].slice(0, 3), [
         'log',
-        '--first-parent',
         '--format=%s',
         'mobile-v0.11.0..current',
       ]);
@@ -229,4 +222,39 @@ describe('mobile beta release history', () => {
       globalThis.fetch = originalFetch;
     }
   });
+});
+
+test('finds product commits introduced by a merge without exposing its tracking subject', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'release-note-git-'));
+  const git = (...args) =>
+    execFileSync('git', args, { cwd: directory, encoding: 'utf8' }).trim();
+  const commit = (subject, content) => {
+    writeFileSync(join(directory, 'apps/mobile/change.txt'), content);
+    git('add', 'apps/mobile/change.txt');
+    git('commit', '-m', subject);
+  };
+  try {
+    git('init', '-b', 'main');
+    git('config', 'user.email', 'fixture@example.invalid');
+    git('config', 'user.name', 'Release fixture');
+    mkdirSync(join(directory, 'apps/mobile'), { recursive: true });
+    commit('feat(mobile): initial fixture', 'base');
+    const base = git('rev-parse', 'HEAD');
+    git('checkout', '-b', 'feature/product');
+    commit('fix(mobile): merge duplicate contacts', 'product');
+    git('checkout', 'main');
+    git(
+      'merge',
+      '--no-ff',
+      'feature/product',
+      '-m',
+      "Merge remote-tracking branch 'origin/main'"
+    );
+    const changes = changesBetween(base, 'HEAD', (command, args) =>
+      execFileSync(command, args, { cwd: directory, encoding: 'utf8' })
+    );
+    assert.deepEqual(changes, ['merge duplicate contacts']);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });

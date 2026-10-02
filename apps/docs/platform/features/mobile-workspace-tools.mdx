@@ -869,7 +869,7 @@ switch stops subsequent requests; an already-started request settles before
 another bulk run starts. Normal visits fill a bounded older history window with
 15-minute throttling, rather than rerunning Download all automatically.
 
-Bulk GETs are globally serialized on the device and spaced by at least 750 ms. This stays below the hourly session budget even
+Bulk GETs are globally serialized on the device and spaced by at least 750 ms at the request boundary, using a monotonic clock after queued authentication preparation. Early timer wakeups are rechecked; regression coverage lives in `offline_api_pacer_test.dart` and `api_client_offline_preparation_test.dart`. This stays below the hourly session budget even
 when the gateway and owning app both enforce the guard, with room for ordinary
 foreground reads.
 The shared server proxy enforces distributed IP and session read budgets on
