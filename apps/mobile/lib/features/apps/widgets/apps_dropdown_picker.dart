@@ -28,10 +28,13 @@ class AppsDropdownPicker extends StatelessWidget {
         '${title ?? context.l10n.navApps}, ${context.l10n.appsHubSearchHint}',
     child: Tooltip(
       message: context.l10n.navApps,
+      excludeFromSemantics: true,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => unawaited(showAppsPicker(context)),
-        child: ShellBrandTitle(title: title ?? context.l10n.navApps),
+        child: ExcludeSemantics(
+          child: ShellBrandTitle(title: title ?? context.l10n.navApps),
+        ),
       ),
     ),
   );
