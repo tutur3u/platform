@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { siteConfig } from '@/constants/configs';
 import english from '../../../../messages/en.json';
 import vietnamese from '../../../../messages/vi.json';
 
@@ -33,12 +34,15 @@ describe('portfolio public metadata', () => {
       expect(metadata.title).toBe(copy.title);
       expect(metadata.description).toBe(copy.description);
       expect(metadata.alternates?.canonical).toBe(
-        `https://tuturuuu.com${locale === 'vi' ? '/vi' : ''}/portfolio`
+        new URL(
+          locale === 'vi' ? '/vi/portfolio' : '/portfolio',
+          siteConfig.url
+        ).toString()
       );
       expect(metadata.alternates?.languages).toMatchObject({
-        'en-US': 'https://tuturuuu.com/portfolio',
-        'vi-VN': 'https://tuturuuu.com/vi/portfolio',
-        'x-default': 'https://tuturuuu.com/portfolio',
+        'en-US': new URL('/portfolio', siteConfig.url).toString(),
+        'vi-VN': new URL('/vi/portfolio', siteConfig.url).toString(),
+        'x-default': new URL('/portfolio', siteConfig.url).toString(),
       });
       expect(metadata.robots).toMatchObject({ index: true, follow: true });
     }
