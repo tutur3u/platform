@@ -983,3 +983,22 @@ full Xcode before claiming the iOS archive has been verified locally.
 2. Add its key to `tuturuuu.ts` unless you intentionally want it always on by default.
 3. Document the workflow in `apps/docs`.
 4. If it changes a docs-visible page, add that page to `apps/docs/docs.json`.
+
+
+### Calendar retained generation rollout
+
+The `calendar-generation-contract.yaml` workflow applies every migration in a
+throwaway local Supabase project, runs strict Calendar pgTAP fixtures, generates
+RPC types from that database, and removes its own project. Its artifact names
+include the exact source SHA. Run the same finite contract with
+`node apps/database/scripts/verify-calendar-generation-contract.mjs` only when
+local Docker is healthy and the resource queue admits the validation.
+
+The compatibility guard migration must reach production before deploying any
+Calendar code that consumes the provider operation ledger. First ship the guard
+without a ledger or feature activation, verify the automated production migration,
+then ship dependent Calendar changes. App deployment precedes production
+migrations; an absent RPC or API schema cache is not proof that a ledger is absent.
+The guard checks actual PostgreSQL relation presence and fails closed on partial
+or incompatible ledger schemas. Never replace a missing guard with an unguarded
+provider write.
