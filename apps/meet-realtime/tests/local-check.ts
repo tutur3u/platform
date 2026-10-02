@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import './local-worker-check';
 import { repositoryRoot, startLocalWorker } from './local-worker';
 
 const worker = await startLocalWorker();
