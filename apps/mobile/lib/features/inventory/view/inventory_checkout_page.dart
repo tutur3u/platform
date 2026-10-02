@@ -1,8 +1,9 @@
 import 'dart:async';
-
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -11,13 +12,22 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/controllers/inventory_season_pricing_controller.dart';
+import 'package:mobile/features/inventory/widgets/inventory_season_price_status.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+part 'inventory_checkout_operations.dart';
+part 'inventory_checkout_pricing.dart';
+part 'inventory_checkout_recovery.dart';
+part 'inventory_checkout_widgets.dart';
 
 Future<T?> showInventoryCheckoutPage<T>(
   BuildContext context, {
@@ -40,6 +50,9 @@ class InventoryCheckoutPage extends StatefulWidget {
     this.inventoryRepository,
     this.financeRepository,
     this.settingsRepository,
+    this.seasonController,
+    this.actorId,
+    this.actorChanges,
     super.key,
   });
 
@@ -48,6 +61,9 @@ class InventoryCheckoutPage extends StatefulWidget {
   final InventoryRepository? inventoryRepository;
   final FinanceRepository? financeRepository;
   final SettingsRepository? settingsRepository;
+  final InventorySeasonPricingController? seasonController;
+  final String? Function()? actorId;
+  final Stream<dynamic>? actorChanges;
 
   @override
   State<InventoryCheckoutPage> createState() => _InventoryCheckoutPageState();
@@ -63,8 +79,22 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   late final TextEditingController _searchController;
   late final TextEditingController _titleController;
   late final TextEditingController _noteController;
+  late final InventorySeasonPricingController _season;
+  Timer? _quoteTimer;
+  StreamSubscription<dynamic>? _authSubscription;
+  int _loadGeneration = 0;
+  String? _loadedActor;
+  String? _loadedWorkspace;
+  String? _scopeActor;
+  String? _scopeWorkspace;
+  int _scopeRevision = 0;
+  bool _reloadAfterSave = false;
+  bool _periodsAvailable = false;
+  bool _scopeChanged = false;
+  String? get _actorId => widget.actorId?.call() ?? currentCacheUserId();
   bool _loading = true;
   bool _saving = false;
+  bool _saleCompleted = false;
   bool _hasUnavailableOptions = false;
   int _activeTab = _tabBrowse;
   List<InventoryProduct> _products = const [];
@@ -91,107 +121,84 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     _noteController = TextEditingController(text: widget.sale?.note ?? '');
     _salesPeriods = widget.initialSalesPeriods;
     _periodId = widget.sale?.period?.id;
+    _season =
+        widget.seasonController ??
+        InventorySeasonPricingController(
+          fetch: _inventoryRepository.getSeasonQuote,
+          send: _inventoryRepository.sendScheduledSale,
+          lookupReceipt: _inventoryRepository.getSaleReceipt,
+          currentActor: () => _actorId,
+          isOnline: () async => (await Connectivity().checkConnectivity()).any(
+            (item) => item != ConnectivityResult.none,
+          ),
+        );
+    _season.addListener(_quoteChanged);
+    _authSubscription =
+        (widget.actorChanges ?? maybeSupabase?.auth.onAuthStateChange)?.listen(
+          (_) => _scopeReset(),
+        );
+    _quoteTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _season.tick();
+      if (_season.scheduled &&
+          !_season.loading &&
+          !_season.hasPending &&
+          !_season.fresh) {
+        unawaited(_season.refresh(automatic: true));
+      }
+    });
+    _scopeActor = _actorId;
+    _scopeWorkspace = _wsId;
+    _syncSeason();
     unawaited(_load());
   }
 
   @override
   void dispose() {
+    _quoteTimer?.cancel();
+    unawaited(_authSubscription?.cancel());
+    _season.removeListener(_quoteChanged);
+    if (widget.seasonController == null) _season.dispose();
     _searchController.dispose();
     _titleController.dispose();
     _noteController.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
-    final wsId = _wsId;
-    if (wsId == null) return;
-    setState(() => _loading = true);
+  Future<void> _load() => _loadData();
+  void _update(VoidCallback change) => setState(change);
 
-    var hasUnavailableOptions = false;
-    Future<T> loadOptional<T>(
-      Future<T> future,
-      T fallback,
-      String label,
-    ) async {
-      try {
-        return await future;
-      } on Object catch (error, stackTrace) {
-        hasUnavailableOptions = true;
-        debugPrint(
-          'Inventory checkout $label load failed: $error\n$stackTrace',
-        );
-        return fallback;
-      }
-    }
+  void _quoteChanged() {
+    if (mounted) setState(() {});
+  }
 
-    try {
-      final lastCategoryId = await loadOptional(
-        _settingsRepository.getLastIncomeCategory(wsId),
-        null,
-        'remembered category',
-      );
-      final results = await Future.wait<dynamic>([
-        loadOptional(
-          _inventoryRepository.getProductOptions(wsId),
-          _products,
-          'products',
-        ),
-        loadOptional(_financeRepository.getWallets(wsId), _wallets, 'wallets'),
-        loadOptional(
-          _financeRepository.getCategories(wsId),
-          _categories,
-          'categories',
-        ),
-        loadOptional(
-          _inventoryRepository.getSalesPeriods(wsId),
-          _salesPeriods,
-          'sales periods',
-        ),
-      ]);
-      if (!mounted) return;
-      setState(() {
-        _products = results[0] as List<InventoryProduct>;
-        _wallets = results[1] as List<Wallet>;
-        _categories = (results[2] as List<TransactionCategory>)
-            .where((item) => !(item.isExpense ?? false))
-            .toList(growable: false);
-        _salesPeriods = results[3] as List<InventorySalesPeriod>;
-        _hasUnavailableOptions = hasUnavailableOptions;
-        _walletId =
-            widget.sale?.walletId ??
-            _walletId ??
-            (_wallets.isEmpty ? null : _wallets.first.id);
-        final availableCategoryIds = _categories
-            .map((category) => category.id)
-            .whereType<String>()
-            .where((id) => id.isNotEmpty)
-            .toSet();
-        _manualCategoryId =
-            availableCategoryIds.contains(widget.sale?.categoryId)
-            ? widget.sale?.categoryId
-            : availableCategoryIds.contains(lastCategoryId)
-            ? lastCategoryId
-            : (_categories.isEmpty ? null : _categories.first.id);
-        final sale = widget.sale;
-        if (sale != null && _quantities.isEmpty) {
-          for (final line in sale.lines) {
-            if (line.productId.isEmpty) {
-              continue;
-            }
-            final roundedQuantity = line.quantity.round();
-            if (roundedQuantity <= 0) {
-              continue;
-            }
-            final key = '${line.productId}|${line.unitId}|${line.warehouseId}';
-            _quantities[key] = roundedQuantity;
-          }
-        }
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+  void _scopeReset() {
+    if (!mounted || (_scopeActor == _actorId && _scopeWorkspace == _wsId)) {
+      return;
     }
+    _loadGeneration++;
+    _scopeRevision++;
+    setState(() {
+      _scopeActor = _actorId;
+      _scopeWorkspace = _wsId;
+      _loadedActor = null;
+      _loadedWorkspace = null;
+      _loading = widget.sale == null;
+      _scopeChanged = widget.sale != null;
+      _saleCompleted = false;
+      _products = [];
+      _wallets = [];
+      _categories = [];
+      _salesPeriods = [];
+      _quantities.clear();
+      _periodId = null;
+      _walletId = null;
+      _manualCategoryId = null;
+      _periodsAvailable = false;
+      _titleController.clear();
+      _noteController.clear();
+    });
+    _syncSeason();
+    if (!_scopeChanged) unawaited(_load());
   }
 
   List<_SellableRow> get _allRows {
@@ -261,7 +268,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
 
   double get _cartTotal => _selectedRows.fold<double>(
     0,
-    (sum, row) => sum + (_quantityFor(row) * row.inventory.price),
+    (sum, row) => sum + (_quantityFor(row) * (_priceFor(row) ?? 0)),
   );
 
   Wallet? get _selectedWallet {
@@ -310,6 +317,9 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   }
 
   void _changeQuantity(_SellableRow row, int next) {
+    if (_season.hasPending || _saving) {
+      return;
+    }
     setState(() {
       if (next <= 0) {
         _quantities.remove(_rowKey(row));
@@ -319,110 +329,17 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     });
   }
 
-  Future<void> _submit() async {
-    final wsId = _wsId;
-    if (wsId == null || _saving) return;
-    if (_selectedRows.isEmpty ||
-        _walletId == null ||
-        _resolvedCategoryId == null) {
-      showInventoryToast(context, _validationMessage(), destructive: true);
-      return;
-    }
-
-    final walletId = _walletId;
-    final resolvedCategoryId = _resolvedCategoryId;
-    if (walletId == null || resolvedCategoryId == null) {
-      return;
-    }
-
-    setState(() => _saving = true);
-    try {
-      final sale = widget.sale;
-      if (sale != null) {
-        final updated = await _inventoryRepository.updateSale(
-          wsId: wsId,
-          saleId: sale.id,
-          notice: _titleController.text.trim().isEmpty
-              ? null
-              : _titleController.text.trim(),
-          note: _noteController.text.trim().isEmpty
-              ? null
-              : _noteController.text.trim(),
-          walletId: walletId,
-          categoryId: resolvedCategoryId,
-          products: _selectedRows
-              .map(
-                (row) => {
-                  'product_id': row.product.id,
-                  'unit_id': row.inventory.unitId,
-                  'warehouse_id': row.inventory.warehouseId,
-                  'quantity': _quantityFor(row),
-                  'price': row.inventory.price,
-                },
-              )
-              .toList(growable: false),
-          previous: sale,
-        );
-        await _inventoryRepository.setSalePeriod(
-          wsId: wsId,
-          saleId: sale.id,
-          source: sale.source,
-          periodId: _periodId,
-        );
-        await _settingsRepository.setLastIncomeCategory(
-          wsId,
-          resolvedCategoryId,
-        );
-        if (!mounted) return;
-        showInventoryToast(context, context.l10n.inventorySaleUpdated);
-        context.pop(updated);
-        return;
-      }
-
-      await _inventoryRepository.createSale(
-        wsId: wsId,
-        walletId: walletId,
-        categoryId: resolvedCategoryId,
-        content: _titleController.text.trim().isEmpty
-            ? null
-            : _titleController.text.trim(),
-        notes: _noteController.text.trim().isEmpty
-            ? null
-            : _noteController.text.trim(),
-        products: _selectedRows
-            .map(
-              (row) => {
-                'product_id': row.product.id,
-                'unit_id': row.inventory.unitId,
-                'warehouse_id': row.inventory.warehouseId,
-                'quantity': _quantityFor(row),
-                'price': row.inventory.price,
-                'category_id': row.product.categoryId,
-              },
-            )
-            .toList(growable: false),
-        periodId: _periodId,
-      );
-      await _settingsRepository.setLastIncomeCategory(wsId, resolvedCategoryId);
-
-      if (!mounted) return;
-      showInventoryToast(context, context.l10n.inventorySaleCreated);
-      context.pop(true);
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      showInventoryToast(context, error.message, destructive: true);
-    } on Exception catch (error) {
-      if (!mounted) return;
-      showInventoryToast(context, error.toString(), destructive: true);
-    } finally {
-      if (mounted) {
-        setState(() => _saving = false);
-      }
-    }
-  }
+  Future<void> _submit() => _submitSale();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      BlocListener<WorkspaceCubit, WorkspaceState>(
+        listenWhen: (a, b) => a.currentWorkspace?.id != b.currentWorkspace?.id,
+        listener: (_, _) => _scopeReset(),
+        child: PopScope(canPop: !_saving, child: _buildCheckout(context)),
+      );
+
+  Widget _buildCheckout(BuildContext context) {
     final l10n = context.l10n;
     final pageTitle = widget.sale == null
         ? l10n.inventoryCheckoutTitle
@@ -430,6 +347,12 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     final primaryActionLabel = widget.sale == null
         ? l10n.inventoryCheckoutSubmit
         : l10n.inventorySalesSave;
+
+    if (_season.hasPending ||
+        _season.completedInvoiceId != null ||
+        _season.journalFailed) {
+      return _buildRecovery(context);
+    }
 
     if (_loading) {
       return FinanceFullscreenFormScaffold(
@@ -443,26 +366,52 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     return FinanceFullscreenFormScaffold(
       title: pageTitle,
       primaryActionLabel: primaryActionLabel,
-      onPrimaryPressed: _saving ? null : _submit,
+      onPrimaryPressed:
+          _saving ||
+              _saleCompleted ||
+              !_season.journalReady ||
+              _scopeChanged ||
+              _blockedHistory ||
+              !_periodResolved ||
+              (!_season.hasPending && !_completeQuote)
+          ? null
+          : _submit,
       isSaving: _saving,
+      onClose: () {
+        if (_season.hasPending) {
+          showInventoryToast(
+            context,
+            l10n.inventorySeasonRetryPending,
+            destructive: true,
+          );
+        } else if (!_saving) {
+          context.pop();
+        }
+      },
       footerTop: _CheckoutFooterSummary(
         walletLabel: l10n.inventoryCheckoutWallet,
         walletValue: _selectedWalletName,
         itemsLabel: l10n.inventoryCheckoutTotalItems,
         itemsValue: '$_selectedItemsCount',
         totalLabel: l10n.inventoryCheckoutCartTotal,
-        totalValue: formatCurrency(_cartTotal, _selectedCurrency),
+        totalValue: _totalLabel,
       ),
       child: ListView(
         padding: const EdgeInsets.only(bottom: 12),
         children: [
+          if (_scheduled && widget.sale == null)
+            InventorySeasonPriceStatus(controller: _season),
+          if (_scopeChanged)
+            Text(l10n.inventoryCheckoutScopeChanged)
+          else if (_blockedHistory)
+            Text(l10n.inventorySeasonHistoricalReadOnly),
           InventoryHeroCard(
             title: pageTitle,
             icon: Icons.shopping_basket_outlined,
             metrics: [
               InventoryMetricTile(
                 label: l10n.inventoryCheckoutCartTotal,
-                value: formatCurrency(_cartTotal, 'VND'),
+                value: _totalLabel,
                 icon: Icons.payments_outlined,
               ),
               InventoryMetricTile(
@@ -560,6 +509,9 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _CheckoutProductCard(
                     row: row,
+                    price: _priceFor(row),
+                    seasonPricing: _scheduled,
+                    currency: _scheduled ? _selectedCurrency : 'VND',
                     quantity: _quantityFor(row),
                     onDecrement: () =>
                         _changeQuantity(row, _quantityFor(row) - 1),
@@ -587,14 +539,19 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                           ),
                         )
                         .toList(growable: false),
-                    onChanged: (value) => setState(() => _walletId = value),
+                    onChanged: _saving || _season.hasPending
+                        ? null
+                        : (value) {
+                            setState(() => _walletId = value);
+                            _syncSeason();
+                          },
                     decoration: InputDecoration(
                       labelText: l10n.inventoryCheckoutWallet,
                     ),
                   ),
                   const shad.Gap(12),
                   DropdownButtonFormField<String>(
-                    initialValue: _periodId ?? '',
+                    initialValue: _selectedPeriod?.id ?? '',
                     items: [
                       DropdownMenuItem<String>(
                         value: '',
@@ -607,11 +564,16 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                         ),
                       ),
                     ],
-                    onChanged: (value) => setState(
-                      () => _periodId = value == null || value.isEmpty
-                          ? null
-                          : value,
-                    ),
+                    onChanged: _saving || _season.hasPending
+                        ? null
+                        : (value) {
+                            setState(
+                              () => _periodId = value == null || value.isEmpty
+                                  ? null
+                                  : value,
+                            );
+                            _syncSeason();
+                          },
                     decoration: InputDecoration(
                       labelText: l10n.inventorySalesPeriodAssignmentLabel,
                       helperText: l10n.inventorySalesPeriodAssignmentHelp,
@@ -620,6 +582,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                   const shad.Gap(12),
                   TextField(
                     controller: _titleController,
+                    enabled: !_saving && !_season.hasPending,
                     decoration: InputDecoration(
                       labelText: l10n.inventorySalesTitle,
                     ),
@@ -627,6 +590,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                   const shad.Gap(12),
                   TextField(
                     controller: _noteController,
+                    enabled: !_saving && !_season.hasPending,
                     minLines: 2,
                     maxLines: 4,
                     decoration: InputDecoration(
@@ -645,8 +609,10 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                             ),
                           )
                           .toList(growable: false),
-                      onChanged: (value) =>
-                          setState(() => _manualCategoryId = value),
+                      onChanged: _saving || _season.hasPending
+                          ? null
+                          : (value) =>
+                                setState(() => _manualCategoryId = value),
                       decoration: InputDecoration(
                         labelText: l10n.inventoryCheckoutCategoryOverride,
                         helperText:
@@ -684,6 +650,9 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _CheckoutCartRowCard(
                     row: row,
+                    price: _priceFor(row),
+                    seasonPricing: _scheduled,
+                    currency: _scheduled ? _selectedCurrency : 'VND',
                     quantity: _quantityFor(row),
                     onRemove: () => _changeQuantity(row, 0),
                     onDecrement: () =>
@@ -695,600 +664,6 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
               ),
             ],
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _CheckoutOptionsAlert extends StatelessWidget {
-  const _CheckoutOptionsAlert({required this.onRetry});
-
-  final Future<void> Function() onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final accent = FinancePalette.of(context).accent;
-    return FinancePanel(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final message = Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.cloud_off_outlined, color: accent, size: 18),
-              ),
-              const shad.Gap(10),
-              Expanded(
-                child: Text(
-                  context.l10n.inventoryCheckoutOptionsUnavailable,
-                  style: theme.typography.small.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                    height: 1.35,
-                  ),
-                ),
-              ),
-            ],
-          );
-          final retry = shad.OutlineButton(
-            onPressed: onRetry,
-            size: shad.ButtonSize.small,
-            leading: const Icon(Icons.refresh_rounded, size: 16),
-            child: Text(context.l10n.commonRetry),
-          );
-          if (constraints.maxWidth < 430) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [message, const shad.Gap(10), retry],
-            );
-          }
-          return Row(
-            children: [
-              Expanded(child: message),
-              const shad.Gap(12),
-              retry,
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _SellableRow {
-  const _SellableRow({required this.product, required this.inventory});
-
-  final InventoryProduct product;
-  final InventoryStockEntry inventory;
-}
-
-class _CheckoutTabSelector extends StatelessWidget {
-  const _CheckoutTabSelector({
-    required this.browseLabel,
-    required this.cartLabel,
-    required this.cartCount,
-    required this.activeTab,
-    required this.onChanged,
-  });
-
-  final String browseLabel;
-  final String cartLabel;
-  final int cartCount;
-  final int activeTab;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = FinancePalette.of(context).accent;
-    final theme = shad.Theme.of(context);
-
-    Widget buildTab({
-      required int tab,
-      required String label,
-      required IconData icon,
-      String? badge,
-    }) {
-      final selected = activeTab == tab;
-      return Expanded(
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => onChanged(tab),
-            borderRadius: BorderRadius.circular(16),
-            child: Ink(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              decoration: BoxDecoration(
-                color: selected
-                    ? accent.withValues(alpha: 0.14)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    size: 16,
-                    color: selected
-                        ? accent
-                        : theme.colorScheme.mutedForeground,
-                  ),
-                  const shad.Gap(8),
-                  Flexible(
-                    child: Text(
-                      label,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: selected
-                            ? accent
-                            : theme.colorScheme.mutedForeground,
-                      ),
-                    ),
-                  ),
-                  if (badge != null) ...[
-                    const shad.Gap(8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? accent.withValues(alpha: 0.18)
-                            : theme.colorScheme.muted.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        badge,
-                        style: theme.typography.xSmall.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: selected
-                              ? accent
-                              : theme.colorScheme.mutedForeground,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.colorScheme.border.withValues(alpha: 0.72),
-        ),
-      ),
-      child: Row(
-        children: [
-          buildTab(
-            tab: _InventoryCheckoutPageState._tabBrowse,
-            label: browseLabel,
-            icon: Icons.storefront_outlined,
-          ),
-          const shad.Gap(4),
-          buildTab(
-            tab: _InventoryCheckoutPageState._tabCart,
-            label: cartLabel,
-            icon: Icons.shopping_cart_checkout_rounded,
-            badge: cartCount == 0 ? null : '$cartCount',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CategoryFilterChip extends StatelessWidget {
-  const _CategoryFilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = FinancePalette.of(context).accent;
-    final theme = shad.Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected
-                ? accent.withValues(alpha: 0.14)
-                : theme.colorScheme.card,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: selected
-                  ? accent.withValues(alpha: 0.4)
-                  : theme.colorScheme.border.withValues(alpha: 0.72),
-            ),
-          ),
-          child: Text(
-            label,
-            style: theme.typography.xSmall.copyWith(
-              fontWeight: FontWeight.w700,
-              color: selected ? accent : theme.colorScheme.mutedForeground,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CheckoutProductCard extends StatelessWidget {
-  const _CheckoutProductCard({
-    required this.row,
-    required this.quantity,
-    required this.onDecrement,
-    required this.onIncrement,
-  });
-
-  final _SellableRow row;
-  final int quantity;
-  final VoidCallback onDecrement;
-  final VoidCallback onIncrement;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final accent = FinancePalette.of(context).accent;
-    final amountLabel = row.inventory.amount == null
-        ? null
-        : [
-            row.inventory.amount!.toStringAsFixed(0),
-            row.inventory.unitName ?? '',
-          ].join(' ').trim();
-
-    return FinancePanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      row.product.name ?? 'Untitled product',
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const shad.Gap(6),
-                    Text(
-                      [
-                        if (row.product.owner?.name.isNotEmpty ?? false)
-                          row.product.owner!.name,
-                        if (row.inventory.unitName?.isNotEmpty ?? false)
-                          row.inventory.unitName!,
-                        if (row.inventory.warehouseName?.isNotEmpty ?? false)
-                          row.inventory.warehouseName!,
-                      ].join(' • '),
-                    ),
-                  ],
-                ),
-              ),
-              const shad.Gap(12),
-              Text(
-                formatCurrency(row.inventory.price, 'VND'),
-                style: theme.typography.large.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: accent,
-                ),
-              ),
-            ],
-          ),
-          const shad.Gap(12),
-          Row(
-            children: [
-              if (amountLabel != null)
-                FinanceStatChip(
-                  label: context.l10n.inventoryProductAmount,
-                  value: amountLabel,
-                  icon: Icons.inventory_2_outlined,
-                ),
-              const Spacer(),
-              _CheckoutStepper(
-                quantity: quantity,
-                onDecrement: quantity == 0 ? null : onDecrement,
-                onIncrement: onIncrement,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CheckoutCartRowCard extends StatelessWidget {
-  const _CheckoutCartRowCard({
-    required this.row,
-    required this.quantity,
-    required this.onRemove,
-    required this.onDecrement,
-    required this.onIncrement,
-  });
-
-  final _SellableRow row;
-  final int quantity;
-  final VoidCallback onRemove;
-  final VoidCallback onDecrement;
-  final VoidCallback onIncrement;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final subtotal = quantity * row.inventory.price;
-
-    return FinancePanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      row.product.name ?? 'Untitled product',
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const shad.Gap(6),
-                    Text(
-                      [
-                        if (row.product.owner?.name.isNotEmpty ?? false)
-                          row.product.owner!.name,
-                        if (row.inventory.unitName?.isNotEmpty ?? false)
-                          row.inventory.unitName!,
-                        if (row.inventory.warehouseName?.isNotEmpty ?? false)
-                          row.inventory.warehouseName!,
-                      ].join(' • '),
-                    ),
-                  ],
-                ),
-              ),
-              shad.GhostButton(
-                density: shad.ButtonDensity.compact,
-                onPressed: onRemove,
-                child: const Icon(Icons.close_rounded, size: 18),
-              ),
-            ],
-          ),
-          const shad.Gap(12),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      formatCurrency(subtotal, 'VND'),
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const shad.Gap(2),
-                    Text(
-                      '${formatCurrency(row.inventory.price, 'VND')} '
-                      '× $quantity',
-                      style: theme.typography.textSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _CheckoutStepper(
-                quantity: quantity,
-                onDecrement: quantity == 0 ? null : onDecrement,
-                onIncrement: onIncrement,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CheckoutStepper extends StatelessWidget {
-  const _CheckoutStepper({
-    required this.quantity,
-    required this.onDecrement,
-    required this.onIncrement,
-  });
-
-  final int quantity;
-  final VoidCallback? onDecrement;
-  final VoidCallback onIncrement;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.border.withValues(alpha: 0.72),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            onPressed: onDecrement,
-            icon: const Icon(Icons.remove_circle_outline_rounded),
-          ),
-          SizedBox(
-            width: 28,
-            child: Text(
-              '$quantity',
-              textAlign: TextAlign.center,
-              style: theme.typography.large.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          IconButton(
-            onPressed: onIncrement,
-            icon: const Icon(Icons.add_circle_outline_rounded),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CheckoutInfoRow extends StatelessWidget {
-  const _CheckoutInfoRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.colorScheme.border.withValues(alpha: 0.72),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: theme.typography.xSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const shad.Gap(6),
-          Text(
-            value.isEmpty ? '-' : value,
-            style: theme.typography.small.copyWith(fontWeight: FontWeight.w700),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CheckoutFooterSummary extends StatelessWidget {
-  const _CheckoutFooterSummary({
-    required this.walletLabel,
-    required this.walletValue,
-    required this.itemsLabel,
-    required this.itemsValue,
-    required this.totalLabel,
-    required this.totalValue,
-  });
-
-  final String walletLabel;
-  final String walletValue;
-  final String itemsLabel;
-  final String itemsValue;
-  final String totalLabel;
-  final String totalValue;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final palette = FinancePalette.of(context);
-
-    Widget buildItem({
-      required String label,
-      required String value,
-      CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.start,
-    }) {
-      return Expanded(
-        child: Column(
-          crossAxisAlignment: crossAxisAlignment,
-          children: [
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.xSmall.copyWith(
-                color: theme.colorScheme.mutedForeground,
-              ),
-            ),
-            const shad.Gap(4),
-            Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: palette.elevatedPanel,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.colorScheme.border.withValues(alpha: 0.68),
-        ),
-      ),
-      child: Row(
-        children: [
-          buildItem(label: walletLabel, value: walletValue),
-          const shad.Gap(12),
-          buildItem(label: itemsLabel, value: itemsValue),
-          const shad.Gap(12),
-          buildItem(
-            label: totalLabel,
-            value: totalValue,
-            crossAxisAlignment: CrossAxisAlignment.end,
-          ),
         ],
       ),
     );

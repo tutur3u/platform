@@ -6,11 +6,21 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { openGlobalCommandLauncher } from './events';
 import { GlobalCommandLauncher } from './global-command-launcher';
 
+const visibility = vi.hoisted(() => ({
+  hiddenIds: [] as string[],
+  read: vi.fn(),
+}));
 const listWorkspaces = vi.fn();
+vi.mock('@tuturuuu/internal-api/users', () => ({
+  getCurrentUserHiddenWorkspaces: (...args: unknown[]) =>
+    visibility.read(...args),
+  updateCurrentUserHiddenWorkspace: vi.fn(),
+}));
 const pathname = vi.fn(() => '/personal');
 
 class ResizeObserverMock {
@@ -62,6 +72,7 @@ function renderLauncher({
   currentWorkspaceId = 'personal-id',
   defaultTab = 'all',
   duplicateCount = 1,
+  visibilityUnknown = false,
   enableTasks = false,
   navItems = [
     {
@@ -73,6 +84,7 @@ function renderLauncher({
   onNavigate,
 }: Partial<Parameters<typeof GlobalCommandLauncher>[0]> & {
   duplicateCount?: number;
+  visibilityUnknown?: boolean;
 } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -82,20 +94,29 @@ function renderLauncher({
     },
   });
 
+  if (visibilityUnknown) {
+    visibility.read.mockImplementation(() => new Promise(() => {}));
+  } else {
+    visibility.read.mockResolvedValue({
+      hiddenWorkspaceIds: visibility.hiddenIds,
+    });
+  }
   render(
     <QueryClientProvider client={queryClient}>
-      <input aria-label="Editor" />
-      {Array.from({ length: duplicateCount }, (_, index) => (
-        <GlobalCommandLauncher
-          currentApp={currentApp}
-          currentWorkspaceId={currentWorkspaceId}
-          defaultTab={defaultTab}
-          enableTasks={enableTasks}
-          key={index}
-          navItems={navItems}
-          onNavigate={onNavigate}
-        />
-      ))}
+      <WorkspaceVisibilityProvider actorId="synthetic-actor">
+        <input aria-label="Editor" />
+        {Array.from({ length: duplicateCount }, (_, index) => (
+          <GlobalCommandLauncher
+            currentApp={currentApp}
+            currentWorkspaceId={currentWorkspaceId}
+            defaultTab={defaultTab}
+            enableTasks={enableTasks}
+            key={index}
+            navItems={navItems}
+            onNavigate={onNavigate}
+          />
+        ))}
+      </WorkspaceVisibilityProvider>
     </QueryClientProvider>
   );
 
@@ -105,9 +126,29 @@ function renderLauncher({
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  visibility.hiddenIds = [];
 });
 
 describe('GlobalCommandLauncher', () => {
+  it('omits only the current actor’s Hidden workspaces from discovery', async () => {
+    visibility.hiddenIds = ['alpha-workspace'];
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher();
+    openGlobalCommandLauncher();
+    expect(await screen.findByText('Personal')).toBeTruthy();
+    expect(screen.queryByText('Alpha Workspace')).toBeNull();
+    expect(visibility.read).toHaveBeenCalledWith('synthetic-actor');
+    expect(workspaces).toHaveLength(3);
+  });
+
+  it('keeps workspace discovery empty while private visibility is unknown', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher({ visibilityUnknown: true });
+    openGlobalCommandLauncher();
+    await waitFor(() => expect(listWorkspaces).toHaveBeenCalled());
+    expect(screen.queryByText('Personal')).toBeNull();
+    expect(screen.queryByText('Alpha Workspace')).toBeNull();
+  });
   it('opens from an input with Ctrl+K and marks current app and workspace', async () => {
     listWorkspaces.mockResolvedValue(workspaces);
     renderLauncher();

@@ -23,6 +23,11 @@ vi.mock('./personal-chat', () => ({
 }));
 vi.mock('./assistant-workspace-picker', () => ({
   AssistantWorkspacePicker: () => null,
+  useAssistantWorkspaceSelection: () => ({
+    allowed: true,
+    value: 'personal',
+    actor: null,
+  }),
 }));
 vi.mock('./mira-profile', () => ({
   MiraAvatar: () => null,

@@ -1,6 +1,7 @@
 import { Building, Calendar, Globe, User } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Filter } from '@tuturuuu/ui/custom/user-filters';
+import { VisibleWorkspaceFilter } from '@tuturuuu/ui/custom/workspace-select';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getTranslations } from 'next-intl/server';
 
@@ -30,7 +31,7 @@ export default async function LinkShortenerFilters({ wsId }: Props) {
   return (
     <>
       {wsId === ROOT_WORKSPACE_ID && (
-        <Filter
+        <VisibleWorkspaceFilter
           key="workspace-filter"
           tag="wsId"
           title={t('workspace')}

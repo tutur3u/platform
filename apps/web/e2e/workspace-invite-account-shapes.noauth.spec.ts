@@ -12,6 +12,7 @@ import {
   WEB_APP_SESSION_COOKIE_NAME,
 } from '@tuturuuu/auth/app-session';
 import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
+import { prepareAccountShapeRoutes } from './helpers/account-shape-readiness';
 import {
   assertSafeE2EEnvironment,
   LOCAL_E2E_APP_COORDINATION_SECRET,
@@ -422,6 +423,21 @@ test.describe('workspace invitation account-shape resilience', () => {
         ignoreHTTPSErrors: true,
       });
       await addAppCookies(contactsContext, CONTACTS_BASE_URL!, contactsToken);
+      financeContext = await browser.newContext({
+        extraHTTPHeaders: { authorization: `Bearer ${financeToken}` },
+        ignoreHTTPSErrors: true,
+      });
+      await addAppCookies(financeContext, FINANCE_BASE_URL!, financeToken);
+      const financePage = await financeContext.newPage();
+      await test.step('Prepare authenticated cold satellite routes', async () => {
+        await prepareAccountShapeRoutes({
+          contactsRequest: contactsContext!.request,
+          contactsBaseUrl: CONTACTS_BASE_URL!,
+          financePage,
+          financeBaseUrl: FINANCE_BASE_URL!,
+          workspaceId,
+        });
+      });
       // Compile the real authenticated inbox route before timed UI interaction.
       const inboxUrl = new URL('/api/v1/notifications', CONTACTS_BASE_URL!);
       inboxUrl.search = new URLSearchParams({
@@ -486,12 +502,6 @@ test.describe('workspace invitation account-shape resilience', () => {
       });
       await expect(contactsPage.getByText(notificationTitle)).toBeVisible();
 
-      financeContext = await browser.newContext({
-        extraHTTPHeaders: { authorization: `Bearer ${financeToken}` },
-        ignoreHTTPSErrors: true,
-      });
-      await addAppCookies(financeContext, FINANCE_BASE_URL!, financeToken);
-      const financePage = await financeContext.newPage();
       const financeNavigation = await financePage.goto(
         `${FINANCE_BASE_URL}/${workspaceId}/wallets`,
         { waitUntil: 'domcontentloaded' }

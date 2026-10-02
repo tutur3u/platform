@@ -1,0 +1,2 @@
+# Official SDK maintenance line; keep FastMCP API stable for this local bridge.
+mcp==1.28.1

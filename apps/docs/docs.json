@@ -44,7 +44,9 @@
                   "platform/features/meet-solo-mode",
                   "platform/features/meet-together",
                   "platform/features/mobile-workspace-tools",
+                  "platform/features/hidden-workspaces",
                   "platform/features/inventory-stock-health",
+                  "platform/features/inventory-season-pricing-mobile",
                   "platform/features/user-management",
                   {
                     "group": "Smart Scheduling",
@@ -308,6 +310,7 @@
               "build/development-tools/overview",
               "build/development-tools/development",
               "build/development-tools/codex-plugin",
+              "build/development-tools/chatgpt-mcp",
               "build/development-tools/monorepo-architecture",
               "build/development-tools/git-conventions",
               "build/development-tools/stacked-pull-requests",

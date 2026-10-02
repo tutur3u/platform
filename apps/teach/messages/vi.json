@@ -1,4 +1,13 @@
 {
+  "account_switcher": {
+    "accounts": "Tài khoản",
+    "current_account": "Tài khoản hiện tại",
+    "manage_accounts": "Quản lý tài khoản",
+    "please_wait": "Vui lòng đợi...",
+    "remove_account": "Xóa tài khoản",
+    "switch_account": "Chuyển tài khoản",
+    "unknown_user": "Người dùng không xác định"
+  },
   "ai_chat": {
     "incorrect": "không chính xác"
   },
@@ -156,6 +165,7 @@
     "add_option": "Thêm lựa chọn",
     "affected-product-required": "Sản phẩm bị ảnh hưởng *",
     "all": "Tất cả",
+    "all_workspaces_hidden": "Tất cả không gian làm việc của bạn đã ẩn. Khôi phục một không gian để chọn.",
     "apply_filters": "Áp dụng bộ lọc",
     "ascending": "Tăng dần",
     "attempt": "Lượt làm",
@@ -168,6 +178,7 @@
       "unchecked": "Cần làm"
     },
     "clear": "Xóa bỏ",
+    "clear_search": "Xóa tìm kiếm",
     "close": "Đóng",
     "collapsed": "Thu nhỏ",
     "completed": "Hoàn thành",
@@ -176,9 +187,11 @@
     "context": "Bối cảnh",
     "continue": "Tiếp tục",
     "correct": "Chính xác",
+    "current_workspace": "Không gian làm việc hiện tại",
     "dark": "Tối",
     "dashboard": "Bảng điều khiển",
     "date": "Ngày",
+    "default_workspace": "Không gian làm việc mặc định",
     "delete": "Xóa",
     "descending": "Giảm dần",
     "duration": "Thời lượng",
@@ -195,7 +208,13 @@
     "generate_explanation": "Tạo lời giải thích",
     "generate_with_ai": "Tạo với AI",
     "hidden": "Ẩn",
+    "hidden_workspaces": "Không gian làm việc đã ẩn",
+    "hidden_workspaces_description": "Chỉ bạn thấy danh sách này. Khôi phục để hiện lại trong danh sách không gian làm việc của bạn. Quyền truy cập của bạn và các thành viên khác không thay đổi.",
+    "hidden_workspaces_empty": "Bạn không có không gian làm việc đã ẩn",
+    "hidden_workspaces_load_error": "Không thể tải danh sách đã ẩn. Thử lại khi có kết nối.",
+    "hidden_workspaces_update_error": "Không thể cập nhật danh sách đã ẩn. Lựa chọn trước đó đã được khôi phục.",
     "hide_sidebar": "Ẩn thanh bên",
+    "hide_workspace": "Ẩn không gian làm việc",
     "home": "Trang chủ",
     "language": "Ngôn ngữ",
     "light": "Sáng",
@@ -205,6 +224,7 @@
     "media-optional": "Tệp đa phương tiện (Tùy chọn)",
     "next": "Tiếp theo",
     "no_content_yet": "Chưa có nội dung",
+    "no_workspace_found": "Không tìm thấy không gian làm việc",
     "open": "Mở",
     "option": "Lựa chọn",
     "order": "Thứ tự",
@@ -218,11 +238,13 @@
     "report-problem": "Để lại góp ý",
     "report-problem-description": "Hãy giúp chúng tôi cải thiện bằng cách báo cáo các vấn đề bạn gặp phải. Phản hồi của bạn rất có giá trị đối với chúng tôi.",
     "report-submitted-success": "Báo cáo đã được gửi thành công! Cảm ơn phản hồi của bạn.",
+    "restore_workspace": "Khôi phục không gian làm việc",
     "retry": "Thử lại",
     "save": "Lưu",
     "saved": "Đã lưu tất cả thay đổi",
     "saving": "Đang lưu...",
     "score": "Điểm",
+    "search_workspace": "Tìm kiếm không gian làm việc",
     "select-product-placeholder": "Chọn sản phẩm có vấn đề",
     "selected": "đã chọn",
     "settings": "Cài đặt",
@@ -1361,14 +1383,5 @@
       "private": "Riêng tư",
       "workspace": "Không gian làm việc"
     }
-  },
-  "account_switcher": {
-    "accounts": "Tài khoản",
-    "current_account": "Tài khoản hiện tại",
-    "manage_accounts": "Quản lý tài khoản",
-    "please_wait": "Vui lòng đợi...",
-    "remove_account": "Xóa tài khoản",
-    "switch_account": "Chuyển tài khoản",
-    "unknown_user": "Người dùng không xác định"
   }
 }

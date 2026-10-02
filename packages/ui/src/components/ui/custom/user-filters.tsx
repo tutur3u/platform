@@ -175,7 +175,8 @@ export function Filter({
           className={cn('h-8 border-dashed px-1', className)}
           disabled={disabled}
         >
-          {selectedSize > 0 ? null : (
+          {selectedSize > 0 &&
+          options.some((option) => selectedValues.has(option.value)) ? null : (
             <>
               {icon} {title}
             </>

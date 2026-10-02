@@ -92,7 +92,7 @@ test('external beta review creates test notes, enables notification, and submits
         data: {
           attributes: {
             demoAccountRequired: true,
-            demoAccountName: 'review@tuturuuu.com',
+            demoAccountName: 'review@tutur3u.com',
             demoAccountPassword: 'configured',
             notes: 'Sign in with Email and password',
           },
@@ -163,7 +163,7 @@ test('external beta review defers submission without private reviewer credential
         data: {
           attributes: {
             demoAccountRequired: accountConfigured,
-            demoAccountName: accountConfigured ? 'review@tuturuuu.com' : '',
+            demoAccountName: accountConfigured ? 'review@tutur3u.com' : '',
             demoAccountPassword: accountConfigured ? 'configured' : '',
             notes: '',
           },
@@ -247,7 +247,7 @@ test('external beta review proceeds while an older app version is waiting', asyn
         data: {
           attributes: {
             demoAccountRequired: true,
-            demoAccountName: 'review@tuturuuu.com',
+            demoAccountName: 'review@tutur3u.com',
             demoAccountPassword: 'configured',
             notes: 'Sign in with Email and password',
           },
@@ -411,7 +411,7 @@ test('review retry submits the newest ready build after the prior review ends', 
         data: {
           attributes: {
             demoAccountRequired: true,
-            demoAccountName: 'review@tuturuuu.com',
+            demoAccountName: 'review@tutur3u.com',
             demoAccountPassword: 'configured',
             notes: 'Sign in with Email and password',
           },
