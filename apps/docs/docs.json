@@ -297,6 +297,7 @@
                   "build/devops/hive-realtime-runbook",
                   "build/devops/log-drain-observability",
                   "build/devops/adaptive-abuse-rate-limits",
+                  "build/devops/storage-egress-protection",
                   "build/devops/github-actions-runbook",
                   "build/devops/vercel-cost-controls",
                   "build/devops/cloudflare-cron-control",

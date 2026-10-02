@@ -1,0 +1,62 @@
+name: Programming database contract
+on:
+  pull_request:
+    paths:
+      - "apps/database/supabase/migrations/**"
+      - "apps/database/supabase/tests/learn-programming-full-schema.sql"
+      - "apps/database/scripts/verify-programming-database-contract.mjs"
+      - "apps/database/scripts/run-supabase*.js"
+      - "apps/database/scripts/programming-database-tap.mjs"
+      - "apps/database/scripts/programming-database-tap.test.mjs"
+      - "apps/database/tests/programming-disposable/session.mjs"
+      - "apps/database/tests/programming-disposable/session.test.mjs"
+      - "tuturuuu.ci.ts"
+      - ".github/workflows/programming-database-contract.yaml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: programming-database-contract-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  check-ci:
+    permissions:
+      contents: read
+      deployments: read
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: programming-database-contract.yaml
+  contract:
+    needs: check-ci
+    if: always() && needs.check-ci.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+    steps:
+      - name: Require an enabled contract gate
+        env:
+          CONTRACT_ENABLED: ${{ needs.check-ci.outputs.should_run }}
+        run: test "$CONTRACT_ENABLED" = true
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Verify TAP parser and bounded fixture sessions
+        run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/tests/programming-disposable/session.test.mjs
+      - name: Apply complete schema, run strict pgTAP, generate actual schema types
+        run: node apps/database/scripts/verify-programming-database-contract.mjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: programming-database-types-${{ github.event.pull_request.head.sha || github.sha }}
+          path: packages/types/src/supabase.ts
+          if-no-files-found: error
+          retention-days: 3

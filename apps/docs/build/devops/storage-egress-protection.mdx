@@ -1,0 +1,213 @@
+---
+title: Storage egress protection
+description: Bound private workspace downloads and respond to signed URL replay attacks.
+---
+
+## Download boundary
+
+When `SECURITY_EGRESS_ENFORCEMENT_ENABLED=true`, Supabase-backed workspace read URLs created through `storage-core` and the SDK
+share APIs point to `/api/v1/storage/guarded-download/:token`. The token encrypts
+the upstream bearer URL with AES-GCM; callers never receive the Supabase URL.
+Existing Drive/Finance permission checks still control ticket issuance. Tickets
+remain bearer links: anyone with a ticket can read until it expires or is revoked,
+subject to the same shared download limits.
+
+The relay checks per-file and global request limits, inspects the object with HEAD,
+then atomically reserves its transfer size against global daily/monthly and workspace
+daily byte budgets before issuing a GET. Postgres locks participating keys in deterministic order.
+Aborted or failed downloads retain their reservation to keep accounting
+conservative. Single byte ranges reserve their exact span; upstreams must return that span.
+Upstream redirects, unknown lengths, and bodies exceeding their reservation are
+rejected. Responses use `private, no-store`; upstream credentials and redirects
+are never forwarded. Missing or unavailable budget RPC denies downloads with 503.
+
+The SDK download route uses the same relay. Cloudflare R2 URLs retain their
+existing provider behavior. Protected paths remain owned by live Next.js. Their
+old Rust dispatch arms are disabled: direct calls to the future Rust backend
+return 404, and traffic must not move there until guarded parity or an explicit
+Next.js fallback is implemented. The Rust backend is not deployed.
+
+## Configuration
+
+Deploy compatibility code with enforcement disabled, apply and verify the budget
+migration, then activate enforcement using the same Supabase project
+and configuration on every web replica. Redis is not required:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SECURITY_EGRESS_ENFORCEMENT_ENABLED` | `false` | Set true only after the migration is verified; controls issuance and API ceilings |
+| Supabase service role configuration | Required | Existing database reserves shared counters through a service-only RPC |
+| `WEB_APP_URL` | Required, with `NEXT_PUBLIC_WEB_APP_URL` / `NEXT_PUBLIC_APP_URL` fallback | Trusted public origin of the web relay |
+| `STORAGE_DOWNLOAD_SIGNING_SECRET` | `SUPABASE_SECRET_KEY` | Server-only encryption key; set a dedicated secret to rotate download tickets independently |
+| `STORAGE_DOWNLOAD_GLOBAL_DAILY_BYTES` | 5 GiB | Daily cap across all guarded workspaces |
+| `STORAGE_DOWNLOAD_GLOBAL_MONTHLY_BYTES` | 100 GiB | Monthly cap across all guarded workspaces |
+| `STORAGE_DOWNLOAD_FREE_WORKSPACE_DAILY_BYTES` | 256 MiB | Base daily workspace allowance, multiplied by eligible plan |
+| `STORAGE_DOWNLOAD_WORKSPACE_DAILY_BYTES` | Global daily cap | Absolute per-workspace ceiling after plan scaling |
+| `STORAGE_DOWNLOAD_FREE_DAILY_BYTES` | 512 MiB | Combined daily bytes for all free workspaces |
+| `STORAGE_DOWNLOAD_FREE_MONTHLY_BYTES` | 5 GiB | Combined monthly bytes for all free workspaces |
+| `STORAGE_DOWNLOAD_FREE_REQUESTS_PER_MINUTE` | 500 | Combined requests for free workspaces |
+| `STORAGE_DOWNLOAD_REQUESTS_PER_MINUTE` | 3000 | Requests including HEAD across the relay |
+| `STORAGE_DOWNLOAD_FILE_REQUESTS_PER_MINUTE` | 10 | Base requests for one file, multiplied by plan and shared across tickets/IPs |
+| `STORAGE_DOWNLOADS_DISABLED` | `false` | Set `true` to deny ticket issuance and relay requests |
+| `STORAGE_DOWNLOAD_REVOKED_BEFORE` | `0` | Reject tickets issued at or before this Unix timestamp |
+
+Byte/request overrides must be positive safe integers. Invalid settings deny
+downloads. Windows follow UTC calendar days/months; rate limits reset each UTC
+minute. Budget exhaustion returns 429 with `Retry-After`. These limits protect
+guarded private workspace downloads, not all organization usage or all storage
+buckets. Other services and public assets can still incur charges. Review caps
+against legitimate traffic before activation; failed and interrupted transfers
+retain their reservation. A progressing stream resets the two-minute idle deadline.
+
+## Respond to an incident
+
+1. Export billing usage and available logs. In Logs Explorer, aggregate Storage
+   GET paths, cache hits, response length, timing, and source networks. Treat
+   user-agent labels as untrusted; they do not identify the operator.
+2. Confirm whether the attacked link is a guarded ticket or an old direct
+   Supabase signed URL. App rate limits cannot intercept direct CDN requests.
+3. For guarded links, set `STORAGE_DOWNLOADS_DISABLED=true` across web replicas
+   to stop downloads; use the revocation cutoff to invalidate existing tickets
+   before restoring service. These environment changes require a runtime rollout.
+4. For previously issued direct signed URLs, ask Supabase support about
+   revocation. If authorized, remove the attacked object through the Storage API
+   and wait for CDN invalidation; preserve any necessary copy first. Never delete
+   metadata directly in SQL or assume an app deployment invalidates CDN URLs.
+5. Review the organization's Spend Cap separately. It is a provider safeguard
+   for covered usage, can restrict service at quota, and does not erase an invoice.
+6. Open a billing incident ticket with the invoice number, dates, object path,
+   counts, and size. Request metering review and a discretionary credit without
+   assuming a refund is available.
+
+[Supabase signed URL guidance](https://supabase.com/docs/guides/storage/serving/downloads)
+and [cost controls](https://supabase.com/docs/guides/platform/cost-control) describe
+provider-side options. Never include raw signed URLs, tokens, or keys in tickets,
+logs, fixtures, or source.
+
+## Verification and release
+
+Run the storage-core token/budget/relay tests and the API-key reserved-path tests,
+then use exact-commit CI for repository checks and the real web build. Verify in an
+authorized deployed environment with a small synthetic file: read/HEAD, one
+range, tampered/expired tickets, rate/budget exhaustion, and budget RPC outage. Never
+load-test large production objects to prove the limiter; use mocked upstreams
+and a disposable Postgres database for concurrent budget tests.
+
+Protection starts only after deployment. Existing direct URLs remain outside
+the relay, and the organization Spend Cap remains an independent setting.
+
+## CMS and existing APIs
+
+With enforcement enabled, the web proxy reserves a shared request slot before trusted CLI and versioned
+CMS asset bypasses. Existing web API routes use fixed delivery, auth, chat and other families, each
+with `API_GLOBAL_REQUESTS_PER_MINUTE` (default 10,000). A CMS flood cannot consume
+the auth/chat family allowance. Other workspace APIs also use
+`API_WORKSPACE_REQUESTS_PER_MINUTE` (base 200) per caller, workspace and family. Workspace CMS and external-app
+APIs additionally share `CMS_WORKSPACE_REQUESTS_PER_MINUTE` (base 60), per caller and workspace across
+asset IDs and query strings. Verified accounts/keys receive plan uplifts; anonymous
+readers retain free limits. Naming a target workspace never charges its shared allowance. OPTIONS does not
+consume a slot. Database failure or invalid configuration returns 503; exhausted
+limits return 429 with Retry-After. Existing authentication, scopes and caller
+limits still apply. Requests served entirely from a CDN cache may bypass the
+origin proxy; response byte protection applies at the download relay.
+
+Workspace CMS asset redirects are no-store. Stored source_url links pointing
+to the configured Supabase origin must be workspace-scoped signed private
+Storage URLs and are wrapped in guarded tickets. Existing public Storage source
+URLs are preserved and remain outside private download budgets; unsupported or
+cross-workspace private sources return 404. Public delivery JSON replaces private
+Supabase source_url and nested metadata provenance URLs with the asset API path. External
+hosts retain their normal URLs. WebGL server downloads use the same shared byte
+budgets as browser downloads. R2 delivery remains outside Supabase byte budgets.
+
+Before release, purge previously cached CMS asset redirects and revoke exposed
+Supabase URLs. Existing client-held URLs cannot be intercepted retrospectively.
+Public Supabase buckets and any unrelated direct signing call sites are not
+made private by an API proxy limit; audit them separately.
+
+## Account and workspace plan allowances
+
+Only active subscriptions with a positive fixed/seat price and a non-free catalog
+product count. Trials, past-due/canceled subscriptions, expired periods, deleted
+workspaces and zero-cost products confer no uplift. Each workspace counts once
+using its latest active subscription. Archived paid products remain eligible for
+existing customers. Actual billing/webhook reconciliation remains authoritative.
+
+The highest eligible plan supplies a multiplier: Free 1, Plus 4, Pro 10,
+Enterprise 20. Each additional paid workspace adds 25%, capped at a 2x bonus
+(five or more paid workspaces). A user's personal subscription and current joined
+paid workspaces contribute to the account allowance. A personal workspace inherits
+its owner's account allowance; a team/CMS workspace inherits its own subscription.
+Membership removal, downgrade or expiration is reflected after at most the
+30-second bounded entitlement cache. Failed lookups are not cached or replaced
+with a permissive default. Counter reservations always reach Postgres.
+
+`API_ACCOUNT_REQUESTS_PER_MINUTE` has a base of 120 per account/key and family;
+anonymous requests share a 120/minute IP subject. `API_FREE_REQUESTS_PER_MINUTE`
+(default 2,000) bounds each free/anonymous family across all subjects. These pools
+and caller-workspace dimensions are checked atomically with family caps;
+no target entitlement lookup is made from an untrusted URL;
+denied free traffic cannot increment the family counter and consume paid headroom.
+Authenticated accounts and validated API-key workspaces receive plan uplifts.
+Client-supplied user IDs, tier labels, workspace headers and decoded JWT claims
+are never trusted. Session/key verification caches only hashed credentials for
+30 seconds and does not authorize requests; each route retains its actual auth,
+MFA, permission, abuse challenge and revocation checks. Uncached provider/key
+verification itself is limited to 2,000/minute globally and 120/minute per IP.
+
+SDK post-auth caller limits scale using the validated key's workspace plan, while
+risk multipliers still apply. Its existing pre-auth IP ceiling remains unchanged,
+with the Redis-independent proxy also enforcing free/client pools.
+Anonymous public CMS readers retain the strict client/free-family allowance even
+when the target workspace is paid. Validated relay tickets charge shared workspace
+byte allowances using that workspace's paid plan. Public cache hits remain outside origin request accounting.
+All paid allowances remain below the unchanged global byte safety caps; paid
+membership does not grant unlimited egress or exempt attacks from containment.
+
+Regression coverage: `security-budget-policy.test.ts`, `api-cost-identity.test.ts`,
+`api-cost-guard.test.ts`, `storage-download-budget.test.ts` and service-only SQL
+`security-budget-entitlements.sql` prove scoped uplift, membership removal,
+trial/free/expired exclusions and bounded caching. The database fixture runs in
+an isolated CI database, never against production.
+
+## Postgres rollout and budget tradeoffs
+
+The deployment planner installs application code before migrating the database.
+Keep `SECURITY_EGRESS_ENFORCEMENT_ENABLED` unset/false during that interval. Apply
+and verify `20261002153000_security_egress_budgets.sql`, then set enforcement true
+and roll out that configuration to every web replica. Until activation, signing
+and direct SDK/server downloads retain the existing behavior and the new shared
+API ceilings are inactive. Existing encrypted tickets always retain their budget
+checks, even if issuance is rolled back. Backend outages never automatically
+fall back to the old behavior. Use `STORAGE_DOWNLOADS_DISABLED` for incident
+containment instead of disabling enforcement.
+The service-only RPC atomically checks all dimensions before incrementing any.
+Private counters have no browser access, store hashed file/workspace identities,
+and expire through a bounded pg_cron cleanup every minute. They never store
+request bodies, IP addresses, URLs, bearer tokens or user records. No per-request
+audit row and no Redis subscription are required.
+
+The RPC uses per-dimension transaction advisory locks with a 500 ms lock timeout and a
+2 second statement timeout. This favors a bounded bill over availability under
+a severe flood: database saturation returns 503 instead of allowing unmetered
+traffic. It adds shared counter RPCs to each origin API request and two to each download,
+plus cached entitlement reads (and bounded identity verification when needed).
+Provider WAF controls should reject floods before they reach the application;
+these counters protect accepted origin traffic and do not eliminate database or
+application hosting costs. There is no replica-local allowance or Redis/Postgres
+backend switch that could reset the authoritative budget.
+
+Supabase types are regenerated from the disposable CI database after applying the migration. The server-only
+RPC client validates reservation responses and aborts stalled calls after three seconds.
+
+## CI contract gate
+
+`security-egress-contract.yaml` applies the complete migration schema in an
+isolated disposable Supabase database, requires every assertion in
+`security-egress-budgets.sql` and `security-budget-entitlements.sql` to pass, and checks five concurrent database clients
+accept exactly 50 of 100 reservations against a shared allowance of 50. The job
+also generates Supabase types and uploads them as an artifact for the exact PR
+commit. CI must pass before merging; production migration application and
+activation remain separate from merging this change. Public asset metadata also
+rewrites nested Supabase provenance URLs to the asset API path to avoid exposing
+a second direct download route.

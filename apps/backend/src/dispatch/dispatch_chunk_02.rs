@@ -178,14 +178,7 @@ pub(super) async fn dispatch_chunk_02(
         return Some(response);
     }
 
-    if let Some(response) =
-        workspaces_external_projects_delivery::handle_workspaces_external_projects_delivery_route(
-            config, request, outbound,
-        )
-        .await
-    {
-        return Some(response);
-    }
+    // CMS delivery remains on live Next.js; Rust dispatch is disabled pending safe parity.
 
     if let Some(response) =
         workspaces_external_projects_sync_snapshot::handle_workspaces_external_projects_sync_snapshot_route(config, request, outbound).await

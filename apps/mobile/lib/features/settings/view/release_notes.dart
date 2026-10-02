@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:mobile/features/settings/view/release_note_policy.dart';
 
 class MobileReleaseNote {
   const MobileReleaseNote({
@@ -48,7 +49,9 @@ class MobileReleaseNotes {
           date: existing?.date ?? date,
           changes: List.unmodifiable(<String>{
             ...?existing?.changes,
-            ...changes.whereType<String>(),
+            ...changes.whereType<String>().where(
+              (change) => !ReleaseNotePolicy.isBookkeeping(change),
+            ),
           }),
         );
       }
@@ -105,7 +108,9 @@ class MobileReleaseNotes {
           .replaceAll(trailingReference, '')
           .replaceAll(RegExp(r'^\*\*[^*]+:\*\*\s*'), '')
           .trim();
-      if (description.isNotEmpty && !changes.contains(description)) {
+      if (description.isNotEmpty &&
+          !ReleaseNotePolicy.isBookkeeping(description) &&
+          !changes.contains(description)) {
         changes.add(description);
       }
     }

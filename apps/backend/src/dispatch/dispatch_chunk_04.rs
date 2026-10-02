@@ -21,11 +21,8 @@ pub(super) async fn dispatch_chunk_04(
         return Some(response);
     }
 
-    if let Some(response) =
-        storage_download_path::handle_storage_download_path_route(config, request, outbound).await
-    {
-        return Some(response);
-    }
+    // Storage downloads remain on Next.js until the shared byte-budget relay
+    // is ported. Dispatching the former direct-download port would bypass it.
 
     if let Some(response) = workspaces_inventory_sales::handle_workspaces_inventory_sales_route(
         config, request, outbound,
