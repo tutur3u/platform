@@ -73,7 +73,10 @@ sessions' containers. Local dev bundling does not authorize production deploys.
 Use `packages/realtime/channels` and `packages/realtime/documents` for shared
 broadcast/presence and Yjs rich-text collaboration. The Internal API factory owns
 client ticket/session requests. Supabase remains auth/database/storage; do not
-use its realtime channel factory. Native task channels implement the same wire
+use its realtime channel factory for new consumers. During the documented task
+rollout, an authorized server-only dual-publish bridge preserves supported old
+clients with the same private audiences; retire it only after the minimum
+supported clients and join telemetry satisfy the runbook criterion. Native task channels implement the same wire
 protocol, including authenticated in-place refresh and reconnect authorization.
 Native Meet embeds the canonical web editors rather than converting Yjs updates
 through a second rich-text implementation. Keep bridge actions room-scoped and

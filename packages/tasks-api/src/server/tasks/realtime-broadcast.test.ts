@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   publishBoardListRealtime,
   publishTaskRealtime,
@@ -8,7 +8,10 @@ const publisher = vi.hoisted(() => vi.fn());
 vi.mock('@tuturuuu/realtime/channels/server', () => ({
   publishChannelBroadcast: publisher,
 }));
-beforeEach(() => publisher.mockReset());
+beforeEach(() => {
+  publisher.mockReset();
+});
+afterEach(() => vi.useRealTimers());
 
 type QueryResult = {
   data: unknown;
@@ -119,5 +122,77 @@ describe('task realtime broadcast fanout', () => {
       expect.objectContaining({ type: 'broadcast' })
     );
     expect(channels).toHaveLength(3);
+  });
+});
+
+describe('published-client realtime transition', () => {
+  const publish = (sbAdmin: unknown, logWarning = vi.fn()) =>
+    publishBoardListRealtime({
+      actorUserId: '11111111-1111-4111-8111-111111111111',
+      boardId: '22222222-2222-4222-8222-222222222222',
+      event: 'list:upsert',
+      list: { id: '33333333-3333-4333-8333-333333333333' },
+      sbAdmin: sbAdmin as never,
+      logWarning,
+    });
+  const legacy = () => {
+    const send = vi.fn().mockResolvedValue('ok');
+    const channel = { send };
+    const sbAdmin = {
+      channel: vi.fn((_name: string, _options: unknown) => channel),
+      removeChannel: vi.fn().mockResolvedValue('ok'),
+    };
+    return { send, channel, sbAdmin };
+  };
+
+  it('publishes identical authorized events to both transports and cleans private legacy channels', async () => {
+    publisher.mockResolvedValue(undefined);
+    const { send, channel, sbAdmin } = legacy();
+    await publish(sbAdmin);
+    expect(sbAdmin.channel.mock.calls.map(([name]) => name)).toEqual(
+      publisher.mock.calls.map(([name]) => name)
+    );
+    expect(sbAdmin.channel).toHaveBeenCalledWith(expect.any(String), {
+      config: { broadcast: { self: false }, private: true },
+    });
+    expect(send.mock.calls.map(([message]) => message)).toEqual(
+      publisher.mock.calls.map(([, message]) => message)
+    );
+    expect(sbAdmin.removeChannel).toHaveBeenCalledWith(channel);
+    expect(sbAdmin.removeChannel).toHaveBeenCalledTimes(2);
+  });
+
+  it('still serves released clients when Cloudflare fails', async () => {
+    publisher.mockRejectedValue(new Error('Synthetic Cloudflare outage'));
+    const { send, sbAdmin } = legacy();
+    const warning = vi.fn();
+    await expect(publish(sbAdmin, warning)).resolves.toBeUndefined();
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(warning).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ transport: 'cloudflare' })
+    );
+  });
+
+  it('still serves new clients when legacy publication fails', async () => {
+    publisher.mockResolvedValue(undefined);
+    const { send, sbAdmin } = legacy();
+    send.mockRejectedValue(new Error('Synthetic legacy outage'));
+    await expect(publish(sbAdmin)).resolves.toBeUndefined();
+    expect(publisher).toHaveBeenCalledTimes(2);
+    expect(sbAdmin.removeChannel).toHaveBeenCalledTimes(2);
+  });
+
+  it('bounds hanging publication and legacy cleanup independently', async () => {
+    vi.useFakeTimers();
+    publisher.mockImplementation(() => new Promise(() => {}));
+    const { send, sbAdmin } = legacy();
+    send.mockImplementation(() => new Promise(() => {}));
+    sbAdmin.removeChannel.mockImplementation(() => new Promise(() => {}));
+    const result = publish(sbAdmin);
+    await vi.advanceTimersByTimeAsync(10001);
+    await expect(result).resolves.toBeUndefined();
+    expect(sbAdmin.removeChannel).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

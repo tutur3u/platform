@@ -60,8 +60,32 @@ downloads, room connection counts, idle warm environments and runner queue age.
 Replay all migrations in an isolated local stack, then run the focused
 `hosted-playgrounds.sql` pgTAP suite. Run realtime merge/token/admission tests and
 SDK isolation/concurrency tests. Queue broad checks through `ttr resources run`.
-Require exact-commit release app builds and worker validation in CI. Local
+Require exact-commit release app builds and worker validation in CI. The
+Programming database contract applies the complete tracked schema and seed, runs
+both the existing Programming fixture and all hosted-playground assertions with
+strict TAP validation, generates actual schema types, and stops its disposable
+stack before uploading the artifact. This SQL gate does not prove authenticated
+Drive HTTP, editor interaction, or gVisor execution. Local
 Wrangler dev bundling is permitted for requested runtime verification.
+
+### Existing-client transition
+
+Deploy the compatible Worker with its matching secret and checkpoint origin, and
+apply the resource-authorization SQL through the gated release process before
+shipping Cloudflare consumers. Existing task mutations temporarily publish the
+same authorized event to both Cloudflare and the existing private Supabase
+channels. New Web and mobile consumers use Cloudflare only. Each publication is
+independent and bounded to five seconds; legacy channel cleanup has its own
+five-second bound. Failure of either transport cannot suppress the other or fail
+the persisted mutation. No new client subscribes to Supabase through this bridge.
+
+Remove this server bridge only after the minimum supported native release uses
+Cloudflare, all supported cached Web clients have migrated, and join telemetry
+confirms the private legacy channels have no supported consumers. Keep it while
+store rollout or offline clients can still return on a supported older release.
+Coverage: `packages/tasks-api/src/server/tasks/realtime-broadcast.test.ts` proves
+identical authorized fanout, independent failures, timeouts and channel cleanup.
+Do not enable Playground capacity on existing Judge pools to bypass acceptance.
 
 Worker migration tags must remain chronological: existing Meet `v1`, then
 `v2-collaboration`, then `v3-channels`. Ship matching server/worker contracts before enabling any
