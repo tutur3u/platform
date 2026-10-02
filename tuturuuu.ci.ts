@@ -37,6 +37,7 @@ export const ci = {
   'release-ui-package.yaml': true,
   'release-utils-package.yaml': true,
   'sdk-version-bump.yaml': true,
+  'supabase-hosted-typegen.yaml': true,
   'supabase-production.yaml': true,
   'supabase-staging.yaml': true,
   'turbo-unit-tests.yaml': true,
