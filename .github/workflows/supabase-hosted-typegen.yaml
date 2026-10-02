@@ -43,6 +43,8 @@ jobs:
           printf 'SUPABASE_CLI_BINARY_OVERRIDE=%s\n' "$(command -v supabase)" >> "$GITHUB_ENV"
           command -v bpftool
           if ! sudo bpftool version >/dev/null 2>&1; then
+            sudo timeout 180 apt-get update -qq >/dev/null 2>&1
+            sudo timeout 180 apt-get install -y -qq --no-install-recommends linux-tools-generic >/dev/null 2>&1
             sudo python3 - <<'PYBPF'
           import glob, os, shutil, stat
           candidates = sorted(glob.glob('/usr/lib/linux-tools/*/bpftool'))
@@ -149,4 +151,7 @@ jobs:
             core.info('Committed only generated schema declarations to the verified backend branch.');
       - name: Stop the inert slice admission service
         if: always()
-        run: sudo systemctl stop tuturuuu-typegen-admission.service
+        run: |
+          if test "$(systemctl show tuturuuu-typegen-admission.service -p LoadState --value)" != not-found; then
+            sudo systemctl stop tuturuuu-typegen-admission.service
+          fi
