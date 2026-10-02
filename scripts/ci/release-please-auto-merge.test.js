@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
@@ -142,12 +143,10 @@ test('release merge builds the dist-only packages before running bun check', () 
     'the workspace must be built before bun check runs'
   );
 
-  for (const filter of setupFilters) {
-    assert.ok(
-      workflow.includes(`--filter=${filter}`),
-      `the workflow must build ${filter}, the same package bun setup builds`
-    );
-  }
+  assert.match(
+    workflow,
+    /command: node scripts\/ci\/build-release-setup\.mjs --concurrency=4/
+  );
 });
 
 test('release merge installs the Flutter toolchain bun check:mobile needs', () => {
@@ -399,4 +398,178 @@ test('release merge keeps ref names out of inline shell', () => {
     /run: \|[\s\S]*\$\{\{ steps\.plan\.outputs\.branch \}\}/,
     'ref names must reach the script through the environment'
   );
+});
+
+function simulateAdvancedMain({ mobile = false, failInstall = false } = {}) {
+  const step = workflow.slice(
+    workflow.indexOf('- name: Push verified release merge to main'),
+    workflow.indexOf('- name: Wait for exact main CI before production')
+  );
+  const script = step
+    .slice(
+      step.indexOf('command: |') + 'command: |'.length,
+      step.indexOf('          token:')
+    )
+    .split('\n')
+    .map((line) => line.replace(/^ {12}/, ''))
+    .join('\n');
+  // Execute the actual retry shell, replacing only external commands. An
+  // advanced checkout requires dependency setup before validation can succeed.
+  const harness = `
+    merged=false
+    installed=false
+    built=false
+    git() {
+      case "$1" in
+        fetch) return 0 ;;
+        merge-base) [[ "$merged" == true ]] ;;
+        diff)
+          if [[ "$*" == *--name-only* && "$MOBILE_CHANGED" == true ]]; then
+            echo apps/mobile/pubspec.yaml
+          fi
+          return 0 ;;
+        merge) merged=true; echo merge ;;
+        push) echo push ;;
+        *) return 99 ;;
+      esac
+    }
+    bun() {
+      case "$1" in
+        install)
+          [[ "$2" == --frozen-lockfile ]] || return 98
+          echo install
+          [[ "$FAIL_INSTALL" != true ]] || return 97
+          installed=true ;;
+        turbo:local)
+          [[ "$installed" == true ]] || return 96
+          echo build
+          built=true ;;
+        check|check:mobile)
+          [[ "$installed" == true && "$built" == true ]] || return 95
+          echo "$1" ;;
+        *) return 94 ;;
+      esac
+    }
+    node() { [[ "$1" == scripts/ci/build-release-setup.mjs ]] || return 93; bun turbo:local; }
+    flutter() { echo "flutter $*"; }
+    bash() { shift; "$@"; }
+  `;
+  return spawnSync('bash', ['-c', harness + script], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      MOBILE_CHANGED: String(mobile),
+      FAIL_INSTALL: String(failInstall),
+    },
+    encoding: 'utf8',
+  });
+}
+
+test('advanced release main refreshes the frozen graph and setup before checks and push', () => {
+  const result = simulateAdvancedMain();
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.stdout.trim().split('\n'), [
+    'merge',
+    'install',
+    'build',
+    'check',
+    'push',
+  ]);
+});
+
+test('advanced mobile release refreshes Flutter dependencies before mobile checks', () => {
+  const result = simulateAdvancedMain({ mobile: true });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.stdout.trim().split('\n'), [
+    'merge',
+    'install',
+    'build',
+    'flutter pub get',
+    'check',
+    'check:mobile',
+    'push',
+  ]);
+});
+
+test('failed frozen install never validates or pushes the advanced release head', () => {
+  const result = simulateAdvancedMain({ failInstall: true });
+  assert.equal(result.status, 97, result.stderr);
+  assert.deepEqual(result.stdout.trim().split('\n'), ['merge', 'install']);
+});
+
+test('setup filters follow changed canonical package scripts without executing shell text', async () => {
+  const { releaseSetupArgs } = await import('./build-release-setup.mjs');
+  const setup =
+    'bun i && bun portless:setup && bun turbo:local run build -F @tuturuuu/types -F changed_package';
+  assert.deepEqual(releaseSetupArgs(setup, 2), [
+    'turbo:local',
+    'run',
+    'build',
+    '--concurrency=2',
+    '--filter=@tuturuuu/types',
+    '--filter=changed_package',
+  ]);
+  for (const invalid of [
+    `${setup} && echo unsafe`,
+    `${setup} -F $(echo)`,
+    `${setup} -F`,
+    setup.replace(' -F changed_package', ' --filter=changed_package'),
+  ])
+    assert.throws(() => releaseSetupArgs(invalid, 2));
+});
+test('initial and advanced setup use the same step-scoped remote cache wrapper', () => {
+  const initial = workflow.slice(
+    workflow.indexOf('- name: Build workspace setup'),
+    workflow.indexOf('- name: Setup Flutter')
+  );
+  const retry = workflow.slice(
+    workflow.indexOf('- name: Push verified release merge to main'),
+    workflow.indexOf('- name: Wait for exact main CI before production')
+  );
+  for (const step of [initial, retry]) {
+    assert.match(
+      step,
+      /uses: \.\/\.github\/actions\/run-with-turbo-remote-cache/
+    );
+    assert.match(step, /token: .*secrets\.TURBO_TOKEN/);
+    assert.match(step, /team: .*vars\.TURBO_TEAM/);
+  }
+});
+
+test('release setup refuses local invocation before running a build', () => {
+  const root = fs.mkdtempSync(
+    path.join(require('node:os').tmpdir(), 'release-setup-refusal-')
+  );
+  try {
+    fs.writeFileSync(
+      path.join(root, 'bun'),
+      '#!/bin/sh\necho UNEXPECTED_BUILD >&2\nexit 97\n',
+      { mode: 0o755 }
+    );
+    for (const ciEnv of [
+      { CI: 'false', GITHUB_ACTIONS: 'false' },
+      { CI: 'true', GITHUB_ACTIONS: 'false' },
+      { CI: 'false', GITHUB_ACTIONS: 'true' },
+    ]) {
+      const result = spawnSync(
+        process.execPath,
+        ['scripts/ci/build-release-setup.mjs', '--concurrency=2'],
+        {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            ...ciEnv,
+            PATH: `${root}:${process.env.PATH}`,
+          },
+          encoding: 'utf8',
+          timeout: 5000,
+        }
+      );
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /Release setup build is CI-only/);
+      assert.doesNotMatch(result.stderr, /UNEXPECTED_BUILD/);
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });

@@ -160,12 +160,12 @@ jobs:
       # checkout has no `dist/**`, and @tuturuuu/types, @tuturuuu/supabase and
       # @tuturuuu/internal-api expose only built entrypoints to Node resolution.
       # Without this the suites fail with ERR_MODULE_NOT_FOUND. Keep the filter
-      # list in step with the `setup` script in package.json.
+      # list derived from the canonical `setup` script in package.json.
       - name: Build workspace setup
         if: steps.plan.outputs.should_merge == 'true'
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/masonry --filter=@tuturuuu/internal-api --filter=tuturuuu
+          command: node scripts/ci/build-release-setup.mjs --concurrency=4
           token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
@@ -211,43 +211,54 @@ jobs:
 
       - name: Push verified release merge to main
         if: steps.plan.outputs.should_merge == 'true' && inputs.dry_run != true
-        run: |
-          set -euo pipefail
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: |
+            set -euo pipefail
 
-          # Other PRs can land during the release checks. Bring their exact
-          # commits into this merge and recheck before attempting the push.
-          for attempt in 1 2 3 4; do
-            git fetch origin +refs/heads/main:refs/remotes/origin/main
-            if ! git merge-base --is-ancestor origin/main HEAD; then
-              mobile_changed=false
-              if [[ -n "$(git diff --name-only HEAD origin/main -- apps/mobile)" ]]; then
-                mobile_changed=true
+            # Other PRs can land during the release checks. Bring their exact
+            # commits into this merge and recheck before attempting the push.
+            for attempt in 1 2 3 4; do
+              git fetch origin +refs/heads/main:refs/remotes/origin/main
+              if ! git merge-base --is-ancestor origin/main HEAD; then
+                mobile_changed=false
+                if [[ -n "$(git diff --name-only HEAD origin/main -- apps/mobile)" ]]; then
+                  mobile_changed=true
+                fi
+
+                git merge --no-ff --no-edit origin/main
+                # The new head can change dependencies and dist-only package
+                # sources. Revalidate its installed graph, not the old checkout.
+                bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+                node scripts/ci/build-release-setup.mjs --concurrency=2
+                if [[ "$mobile_changed" == true ]]; then
+                  (cd apps/mobile && flutter pub get)
+                fi
+                bun check
+                if [[ "$mobile_changed" == true ]]; then
+                  bun check:mobile
+                fi
+                git diff --exit-code
+                git diff --cached --exit-code
               fi
 
-              git merge --no-ff --no-edit origin/main
-              bun check
-              if [[ "$mobile_changed" == true ]]; then
-                bun check:mobile
+              if git push origin HEAD:main; then
+                exit 0
               fi
-              git diff --exit-code
-              git diff --cached --exit-code
-            fi
 
-            if git push origin HEAD:main; then
-              exit 0
-            fi
+              # A non-fast-forward race is retryable. Auth or branch protection
+              # errors must fail rather than repeatedly running checks.
+              git fetch origin +refs/heads/main:refs/remotes/origin/main
+              if git merge-base --is-ancestor origin/main HEAD; then
+                exit 1
+              fi
+              echo "Main advanced during release push (attempt $attempt); retrying."
+            done
 
-            # A non-fast-forward race is retryable. Auth or branch protection
-            # errors must fail rather than repeatedly running checks.
-            git fetch origin +refs/heads/main:refs/remotes/origin/main
-            if git merge-base --is-ancestor origin/main HEAD; then
-              exit 1
-            fi
-            echo "Main advanced during release push (attempt $attempt); retrying."
-          done
-
-          echo "::error::Main kept advancing during release push."
-          exit 1
+            echo "::error::Main kept advancing during release push."
+            exit 1
+          token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Wait for exact main CI before production
         if: (steps.plan.outputs.should_merge == 'true' || steps.plan.outputs.needs_sync == 'true') && inputs.dry_run != true
