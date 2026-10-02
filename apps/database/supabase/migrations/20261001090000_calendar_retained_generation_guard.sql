@@ -15,6 +15,8 @@ begin
   if op is null then return null; end if;
   generation:=coalesce(op->>'current_generation',op->>'generation');
   if coalesce(generation,'') !~ '^[1-9][0-9]*$' or coalesce(op->>'phase','') not in ('reserved','prepared','dispatched','applied','superseded','canceled')
+    or pg_catalog.jsonb_typeof(op->'intent') is distinct from 'object'
+    or pg_catalog.jsonb_typeof(op->'intent'->'kind') is distinct from 'string'
     or coalesce(op->'intent'->>'kind','')='' or op->>'operation_id' is null or op->>'actor_id' is null then
     raise exception using errcode='55000',message='Calendar generation schema unavailable';
   end if;

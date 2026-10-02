@@ -5,6 +5,7 @@ on:
       - 'apps/database/supabase/migrations/**'
       - 'apps/database/supabase/tests/calendar-*.sql'
       - 'apps/database/scripts/verify-calendar-generation-contract.mjs'
+      - 'apps/database/scripts/run-supabase*.js'
       - '.github/workflows/calendar-generation-contract.yaml'
   workflow_dispatch:
 permissions:
@@ -22,12 +23,16 @@ jobs:
       workflow_name: calendar-generation-contract.yaml
   contract:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: always() && needs.check-ci.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
       SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
     steps:
+      - name: Require an enabled contract gate
+        env:
+          CONTRACT_ENABLED: ${{ needs.check-ci.outputs.should_run }}
+        run: test "$CONTRACT_ENABLED" = true
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
