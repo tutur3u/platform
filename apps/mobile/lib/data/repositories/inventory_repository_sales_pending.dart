@@ -7,10 +7,11 @@ _overlayPendingInventorySales(
   confirmed, {
   String? periodId,
   bool includeCreates = true,
+  List<PendingMutationRecord>? pending,
 }) {
   final rows = {for (final sale in confirmed.data) sale.id: sale};
   final originalIds = rows.keys.toSet();
-  final edits = OfflineMutationQueue.instance.pending.value.where(
+  final edits = (pending ?? OfflineMutationQueue.instance.pending.value).where(
     (edit) => edit.feature == 'inventory' && edit.workspaceId == wsId,
   );
   final assignedPeriods = <String, String?>{};
@@ -29,7 +30,9 @@ _overlayPendingInventorySales(
     if (includeCreates &&
         edit.method == 'POST' &&
         edit.path == InventoryEndpoints.invoices(wsId)) {
-      final assigned = assignedPeriods[saleId];
+      final assigned = assignedPeriods.containsKey(saleId)
+          ? assignedPeriods[saleId]
+          : payload['inventory_period_id'] as String?;
       if (periodId != null && assigned != periodId) continue;
       final products = payload['products'] as List<dynamic>? ?? const [];
       rows[saleId] = InventorySaleSummary(

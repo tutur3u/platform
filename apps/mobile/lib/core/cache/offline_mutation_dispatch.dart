@@ -2,7 +2,7 @@ part of 'offline_mutation_queue.dart';
 
 extension OfflineMutationDispatch on OfflineMutationQueue {
   Future<void> _dispatchHttpMutation(PendingMutationRecord record) async {
-    final api = ApiClient();
+    final api = ApiClient(expectedUserId: record.userId);
     try {
       final userId = record.userId;
       final workspaceId = record.workspaceId;

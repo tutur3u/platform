@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:mobile/core/cache/cache_context.dart';
@@ -41,38 +41,144 @@ String newLocalMutationId() {
       '${hex.substring(20)}';
 }
 
-class OfflineMutationQueue {
-  OfflineMutationQueue._();
+class OfflineMutationQueue with WidgetsBindingObserver {
+  OfflineMutationQueue._()
+    : _store = CacheStore.instance,
+      _userId = currentCacheUserId,
+      _checkConnectivity = Connectivity().checkConnectivity,
+      _connectivityChanges = Connectivity().onConnectivityChanged,
+      _authChanges = null;
+
+  @visibleForTesting
+  OfflineMutationQueue.forTesting({
+    required CacheStore store,
+    required String? Function() userId,
+    required Future<List<ConnectivityResult>> Function() checkConnectivity,
+    required Stream<List<ConnectivityResult>> connectivityChanges,
+    Stream<supa.AuthState>? authChanges,
+  }) : _store = store,
+       _userId = userId,
+       _checkConnectivity = checkConnectivity,
+       _connectivityChanges = connectivityChanges,
+       _authChanges = authChanges;
+
+  final CacheStore _store;
+  final String? Function() _userId;
+  final Future<List<ConnectivityResult>> Function() _checkConnectivity;
+  final Stream<List<ConnectivityResult>> _connectivityChanges;
+  final Stream<supa.AuthState>? _authChanges;
 
   static final OfflineMutationQueue instance = OfflineMutationQueue._();
 
   final Map<String, OfflineMutationDispatcher> _dispatchers = {};
+  final Set<String> _cancelingIds = {};
   final ValueNotifier<List<PendingMutationRecord>> pending = ValueNotifier([]);
+  final ValueNotifier<Set<String>> syncingIds = ValueNotifier({});
+  final ValueNotifier<int> syncRevision = ValueNotifier(0);
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   StreamSubscription<supa.AuthState>? _authSubscription;
   Timer? _retryTimer;
-  bool _isDraining = false;
+  Future<void>? _drainFuture;
+  DateTime? _serverCooldownUntil;
+  Future<void>? _initialization;
+  Future<void>? _syncFuture;
+  bool _syncRequested = false;
+  bool _resumeRequested = false;
   bool _drainRequested = false;
   bool _initialized = false;
 
-  Future<void> init() async {
-    if (_initialized) return;
-    await CacheStore.instance.init();
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
-      results,
-    ) {
-      final online = results.any((result) => result != ConnectivityResult.none);
-      if (online) {
-        unawaited(drain());
+  Future<void> init() {
+    if (_initialized) return Future<void>.value();
+    return _initialization ??= _initialize().whenComplete(() {
+      _initialization = null;
+    });
+  }
+
+  Future<void> _initialize() async {
+    await _store.init();
+    _dispatchers.putIfAbsent('*', () => _dispatchHttpMutation);
+    _connectivitySubscription = _connectivityChanges.listen((results) {
+      if (results.any((result) => result != ConnectivityResult.none)) {
+        _scheduleSync();
       }
-    });
-    _authSubscription = maybeSupabase?.auth.onAuthStateChange.listen((_) {
-      unawaited(refresh());
-    });
+    }, onError: (Object _) {});
+    _authSubscription = (_authChanges ?? maybeSupabase?.auth.onAuthStateChange)
+        ?.listen((state) {
+          if (state.event == supa.AuthChangeEvent.signedIn ||
+              state.event == supa.AuthChangeEvent.tokenRefreshed ||
+              state.event == supa.AuthChangeEvent.mfaChallengeVerified) {
+            _scheduleSync();
+          } else {
+            unawaited(refresh());
+          }
+        }, onError: (Object _) {});
+    WidgetsBinding.instance.addObserver(this);
     _initialized = true;
     await refresh();
-    _dispatchers.putIfAbsent('*', () => _dispatchHttpMutation);
-    unawaited(drain());
+    _scheduleSync();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _scheduleSync(onResume: true);
+  }
+
+  void _scheduleSync({bool onResume = false}) {
+    unawaited(
+      synchronize(onResume: onResume).then<void>(
+        (_) {},
+        onError: (Object _) {
+          debugPrint('Offline sync unavailable; edits remain stored.');
+        },
+      ),
+    );
+  }
+
+  /// Replay edits before revalidating visited resources.
+  Future<void> synchronize({bool onResume = false}) {
+    _resumeRequested |= onResume;
+    if (_syncFuture != null) {
+      _syncRequested = true;
+      return _syncFuture!;
+    }
+    return _syncFuture = _synchronize().whenComplete(() {
+      _syncFuture = null;
+    });
+  }
+
+  Future<void> _synchronize() async {
+    do {
+      _syncRequested = false;
+      final onResume = _resumeRequested;
+      _resumeRequested = false;
+      await ApiClient.offlinePreparation(
+        drain,
+        allowChallenge: false,
+        markBulk: false,
+      );
+      try {
+        final results = await _checkConnectivity();
+        if (!results.any((result) => result != ConnectivityResult.none)) {
+          if (_syncRequested) continue;
+          return;
+        }
+      } on Object {
+        return;
+      }
+      if (_serverCooldownUntil != null &&
+          DateTime.now().isBefore(_serverCooldownUntil!)) {
+        continue;
+      }
+      await ApiClient.offlinePreparation(
+        () => _store.refreshCachedResources(
+          currentUserId: _userId,
+          onResume: onResume,
+        ),
+        allowChallenge: false,
+        markBulk: false,
+      );
+      syncRevision.value++;
+    } while (_syncRequested);
   }
 
   Future<bool> enqueueIfOffline({
@@ -84,9 +190,10 @@ class OfflineMutationQueue {
     String? entityId,
     bool replaySafe = false,
   }) async {
+    await init();
     final hasPendingDependency = pending.value.any(
       (item) =>
-          item.userId == currentCacheUserId() &&
+          item.userId == _userId() &&
           item.workspaceId == workspaceId &&
           (item.feature == feature ||
               (item.feature == 'workspace' &&
@@ -96,7 +203,7 @@ class OfflineMutationQueue {
     List<ConnectivityResult> connectivity;
     if (!hasPendingDependency) {
       try {
-        connectivity = await Connectivity().checkConnectivity();
+        connectivity = await _checkConnectivity();
       } on Object {
         // A missing platform signal must not silently turn an online write into
         // a queued write (notably on desktop and in widget tests).
@@ -113,7 +220,7 @@ class OfflineMutationQueue {
         method: method,
         path: path,
         createdAt: DateTime.now().toUtc(),
-        userId: currentCacheUserId(),
+        userId: _userId(),
         workspaceId: workspaceId,
         payload: payload,
         optimisticPatch: entityId == null ? null : {'entityId': entityId},
@@ -143,7 +250,7 @@ class OfflineMutationQueue {
         method: method,
         path: path,
         createdAt: DateTime.now().toUtc(),
-        userId: currentCacheUserId(),
+        userId: _userId(),
         workspaceId: workspaceId,
         payload: payload,
         optimisticPatch: {'entityId': entityId},
@@ -162,40 +269,49 @@ class OfflineMutationQueue {
     OfflineMutationDispatcher dispatcher,
   ) {
     _dispatchers[feature] = dispatcher;
-    unawaited(drain());
+    _scheduleSync();
   }
 
   Future<void> enqueue(PendingMutationRecord record) async {
     await init();
-    if (record.userId == null || record.userId != currentCacheUserId()) {
+    if (record.userId == null || record.userId != _userId()) {
       throw StateError('An authenticated account is required to queue edits');
     }
-    await CacheStore.instance.savePendingMutation(record);
+    await _store.savePendingMutation(record);
     await refresh();
-    if (_isDraining) {
-      _drainRequested = true;
-    } else {
-      unawaited(drain());
-    }
+    _drainRequested = true;
+    _scheduleSync();
   }
 
-  Future<void> cancel(String id) async {
+  Future<bool> cancel(String id) async {
     await init();
-    await CacheStore.instance.deletePendingMutation(id);
-    await refresh();
+    if (syncingIds.value.contains(id)) return false;
+    _cancelingIds.add(id);
+    try {
+      await _store.deletePendingMutation(id);
+      await refresh();
+      return true;
+    } finally {
+      final drain = _drainFuture;
+      if (drain == null) {
+        _cancelingIds.remove(id);
+      } else {
+        unawaited(drain.whenComplete(() => _cancelingIds.remove(id)));
+      }
+    }
   }
 
   Future<List<PendingMutationRecord>> listPending() async {
     await init();
-    return (await CacheStore.instance.listPendingMutations())
-        .where((record) => record.userId == currentCacheUserId())
+    return (await _store.listPendingMutations())
+        .where((record) => record.userId == _userId())
         .toList(growable: false);
   }
 
   Future<void> refresh() async {
-    await CacheStore.instance.init();
-    pending.value = (await CacheStore.instance.listPendingMutations())
-        .where((record) => record.userId == currentCacheUserId())
+    await _store.init();
+    pending.value = (await _store.listPendingMutations())
+        .where((record) => record.userId == _userId())
         .toList(growable: false);
   }
 
@@ -204,27 +320,42 @@ class OfflineMutationQueue {
         .where((item) => item.id == id)
         .firstOrNull;
     if (record == null) return;
-    await CacheStore.instance.savePendingMutation(
+    await _store.savePendingMutation(
       record.copyWith(status: PendingMutationStatus.queued),
     );
     await refresh();
     await drain();
+    await synchronize();
   }
 
-  Future<void> drain() async {
-    if (_isDraining) {
-      _drainRequested = true;
+  Future<void> drain() {
+    if (_drainFuture != null) return _drainFuture!;
+    return _drainFuture = _drain().whenComplete(() {
+      _drainFuture = null;
+    });
+  }
+
+  Future<void> _drain() async {
+    await init();
+    do {
+      _drainRequested = false;
+      await _drainOnce();
+    } while (_drainRequested);
+  }
+
+  Future<void> _drainOnce() async {
+    if (_serverCooldownUntil != null &&
+        DateTime.now().isBefore(_serverCooldownUntil!)) {
       return;
     }
     try {
-      final connectivity = await Connectivity().checkConnectivity();
+      final connectivity = await _checkConnectivity();
       if (connectivity.every((result) => result == ConnectivityResult.none)) {
         return;
       }
     } on Object {
       return;
     }
-    _isDraining = true;
     try {
       final records = await listPending();
       final blockedScopes = <(String, String?)>{};
@@ -235,7 +366,11 @@ class OfflineMutationQueue {
       }
 
       for (final record in records) {
-        if (record.userId != currentCacheUserId()) continue;
+        if (_cancelingIds.contains(record.id) ||
+            record.userId == null ||
+            record.userId != _userId()) {
+          continue;
+        }
         final scope = (record.feature, record.workspaceId);
         if (record.status != PendingMutationStatus.queued) {
           blockedScopes.add(scope);
@@ -262,15 +397,31 @@ class OfflineMutationQueue {
           continue;
         }
 
+        syncingIds.value = {...syncingIds.value, record.id};
         try {
           await dispatcher(record);
-          await CacheStore.instance.deletePendingMutation(record.id);
+          await _store.deletePendingMutation(record.id);
+          try {
+            final module = record.feature == 'time_tracker'
+                ? 'timer'
+                : record.feature;
+            await _store.invalidateTags(
+              {'module:$module'},
+              userId: record.userId,
+              workspaceId: record.workspaceId,
+            );
+          } on Object {
+            // A cache failure after acknowledgment must never resend a write.
+          }
         } on Exception catch (error) {
           final status = switch (error) {
             ApiException(statusCode: 409 || 412) =>
               PendingMutationStatus.conflict,
-            ApiException(statusCode: 401 || 403) =>
-              PendingMutationStatus.failed,
+            ApiException(statusCode: 401 || 429) =>
+              PendingMutationStatus.queued,
+            ApiException(isVerificationRequired: true) =>
+              PendingMutationStatus.queued,
+            ApiException(statusCode: 403) => PendingMutationStatus.failed,
             _ when _isRetryable(error) && !record.replaySafe =>
               PendingMutationStatus.conflict,
             _ when _isRetryable(error) => PendingMutationStatus.queued,
@@ -281,14 +432,21 @@ class OfflineMutationQueue {
             lastError: error.toString(),
             status: status,
           );
-          await CacheStore.instance.savePendingMutation(nextRecord);
-          if (status == PendingMutationStatus.queued) {
+          await _store.savePendingMutation(nextRecord);
+          if (status == PendingMutationStatus.queued &&
+              !(error is ApiException &&
+                  (error.statusCode == 401 || error.isVerificationRequired))) {
             final exponent = nextRecord.attemptCount.clamp(1, 6);
-            final seconds = min(120, 1 << exponent);
+            final seconds = error is ApiException && error.statusCode == 429
+                ? max(60, error.retryAfter ?? 60)
+                : min(120, 1 << exponent);
+            if (error is ApiException && error.statusCode == 429) {
+              _serverCooldownUntil = DateTime.now().add(
+                Duration(seconds: seconds),
+              );
+            }
             _retryTimer?.cancel();
-            _retryTimer = Timer(Duration(seconds: seconds), () {
-              unawaited(drain());
-            });
+            _retryTimer = Timer(Duration(seconds: seconds), _scheduleSync);
           }
           // Edits inside a module/workspace can depend on a preceding create.
           // Other modules can keep syncing after a non-retryable conflict.
@@ -299,15 +457,12 @@ class OfflineMutationQueue {
                   (error.statusCode == 401 || error.statusCode == 403)) {
             break;
           }
+        } finally {
+          syncingIds.value = {...syncingIds.value}..remove(record.id);
         }
       }
     } finally {
       await refresh();
-      _isDraining = false;
-      if (_drainRequested) {
-        _drainRequested = false;
-        unawaited(drain());
-      }
     }
   }
 
@@ -325,6 +480,7 @@ class OfflineMutationQueue {
   }
 
   Future<void> dispose() async {
+    WidgetsBinding.instance.removeObserver(this);
     _retryTimer?.cancel();
     _retryTimer = null;
     await _connectivitySubscription?.cancel();

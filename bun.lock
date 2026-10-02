@@ -2988,6 +2988,7 @@
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/turnstile": "workspace:*",
         "@upstash/ratelimit": "^2.0.8",
         "@upstash/redis": "^1.38.4",
         "cn": "^0.3.0",

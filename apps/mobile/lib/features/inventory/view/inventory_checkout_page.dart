@@ -4,9 +4,13 @@ import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/data/models/inventory/inventory_checkout_defaults.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
@@ -16,6 +20,7 @@ import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/inventory/controllers/inventory_season_pricing_controller.dart';
+import 'package:mobile/features/inventory/widgets/inventory_product_image.dart';
 import 'package:mobile/features/inventory/widgets/inventory_season_price_status.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -25,6 +30,7 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'inventory_checkout_operations.dart';
+part 'inventory_checkout_cart.dart';
 part 'inventory_checkout_pricing.dart';
 part 'inventory_checkout_recovery.dart';
 part 'inventory_checkout_widgets.dart';
@@ -106,6 +112,11 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   String? _manualCategoryId;
   String? _selectedProductCategory;
   String? _periodId;
+  bool _periodSelectionExplicit = false;
+  bool _walletSelectionExplicit = false;
+  bool _categorySelectionExplicit = false;
+  bool _categoryOverride = false;
+  bool _reviewingCart = false;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -126,6 +137,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
         InventorySeasonPricingController(
           fetch: _inventoryRepository.getSeasonQuote,
           send: _inventoryRepository.sendScheduledSale,
+          enqueueOffline: _inventoryRepository.queueScheduledSale,
           lookupReceipt: _inventoryRepository.getSaleReceipt,
           currentActor: () => _actorId,
           isOnline: () async => (await Connectivity().checkConnectivity()).any(
@@ -190,7 +202,12 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
       _categories = [];
       _salesPeriods = [];
       _quantities.clear();
+      _reviewingCart = false;
       _periodId = null;
+      _periodSelectionExplicit = false;
+      _walletSelectionExplicit = false;
+      _categorySelectionExplicit = false;
+      _categoryOverride = false;
       _walletId = null;
       _manualCategoryId = null;
       _periodsAvailable = false;
@@ -215,6 +232,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     final query = _searchController.text.trim().toLowerCase();
     final rows = <_SellableRow>[];
     for (final row in _allRows) {
+      if (!_periodAllowsProduct(row.product.id)) continue;
       final categoryName = row.product.category?.trim();
       if (_selectedProductCategory != null &&
           _selectedProductCategory!.isNotEmpty &&
@@ -258,7 +276,8 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
       .where((value) => value.isNotEmpty)
       .toSet();
 
-  bool get _requiresManualCategory => _linkedCategoryIds.length != 1;
+  bool get _requiresManualCategory =>
+      _categoryOverride || _linkedCategoryIds.length != 1;
 
   String? get _resolvedCategoryId =>
       _requiresManualCategory ? _manualCategoryId : _linkedCategoryIds.first;
@@ -317,7 +336,10 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   }
 
   void _changeQuantity(_SellableRow row, int next) {
-    if (_season.hasPending || _saving) {
+    if (_season.hasPending ||
+        _saving ||
+        _reviewingCart ||
+        (next > _quantityFor(row) && !_periodAllowsProduct(row.product.id))) {
       return;
     }
     setState(() {
@@ -368,6 +390,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
       primaryActionLabel: primaryActionLabel,
       onPrimaryPressed:
           _saving ||
+              _reviewingCart ||
               _saleCompleted ||
               !_season.journalReady ||
               _scopeChanged ||
@@ -521,148 +544,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                 ),
               ),
           ] else ...[
-            FinancePanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FinanceSectionHeader(
-                    title: l10n.inventoryCheckoutCheckoutDetailsTitle,
-                  ),
-                  const shad.Gap(12),
-                  DropdownButtonFormField<String>(
-                    initialValue: _walletId,
-                    items: _wallets
-                        .map(
-                          (wallet) => DropdownMenuItem<String>(
-                            value: wallet.id,
-                            child: Text(wallet.name ?? ''),
-                          ),
-                        )
-                        .toList(growable: false),
-                    onChanged: _saving || _season.hasPending
-                        ? null
-                        : (value) {
-                            setState(() => _walletId = value);
-                            _syncSeason();
-                          },
-                    decoration: InputDecoration(
-                      labelText: l10n.inventoryCheckoutWallet,
-                    ),
-                  ),
-                  const shad.Gap(12),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedPeriod?.id ?? '',
-                    items: [
-                      DropdownMenuItem<String>(
-                        value: '',
-                        child: Text(l10n.inventorySalesPeriodUnassigned),
-                      ),
-                      ..._salesPeriods.map(
-                        (period) => DropdownMenuItem<String>(
-                          value: period.id,
-                          child: Text(period.name),
-                        ),
-                      ),
-                    ],
-                    onChanged: _saving || _season.hasPending
-                        ? null
-                        : (value) {
-                            setState(
-                              () => _periodId = value == null || value.isEmpty
-                                  ? null
-                                  : value,
-                            );
-                            _syncSeason();
-                          },
-                    decoration: InputDecoration(
-                      labelText: l10n.inventorySalesPeriodAssignmentLabel,
-                      helperText: l10n.inventorySalesPeriodAssignmentHelp,
-                    ),
-                  ),
-                  const shad.Gap(12),
-                  TextField(
-                    controller: _titleController,
-                    enabled: !_saving && !_season.hasPending,
-                    decoration: InputDecoration(
-                      labelText: l10n.inventorySalesTitle,
-                    ),
-                  ),
-                  const shad.Gap(12),
-                  TextField(
-                    controller: _noteController,
-                    enabled: !_saving && !_season.hasPending,
-                    minLines: 2,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      labelText: l10n.inventorySalesNote,
-                    ),
-                  ),
-                  const shad.Gap(12),
-                  if (_requiresManualCategory)
-                    DropdownButtonFormField<String>(
-                      initialValue: _manualCategoryId,
-                      items: _categories
-                          .map(
-                            (category) => DropdownMenuItem<String>(
-                              value: category.id,
-                              child: Text(category.name ?? ''),
-                            ),
-                          )
-                          .toList(growable: false),
-                      onChanged: _saving || _season.hasPending
-                          ? null
-                          : (value) =>
-                                setState(() => _manualCategoryId = value),
-                      decoration: InputDecoration(
-                        labelText: l10n.inventoryCheckoutCategoryOverride,
-                        helperText:
-                            l10n.inventoryCheckoutManualCategoryRequired,
-                      ),
-                    )
-                  else
-                    _CheckoutInfoRow(
-                      label: l10n.inventoryCheckoutAutoCategory,
-                      value:
-                          _categories
-                              .firstWhere(
-                                (item) => item.id == _resolvedCategoryId,
-                                orElse: () =>
-                                    const TransactionCategory(id: '', name: ''),
-                              )
-                              .name ??
-                          '',
-                    ),
-                ],
-              ),
-            ),
-            const shad.Gap(16),
-            if (_selectedRows.isEmpty)
-              FinanceEmptyState(
-                icon: Icons.shopping_cart_outlined,
-                title: l10n.inventoryCheckoutCartTab,
-                body: l10n.inventoryCheckoutCartEmpty,
-              )
-            else ...[
-              FinanceSectionHeader(title: l10n.inventoryCheckoutSelectedItems),
-              const shad.Gap(12),
-              ..._selectedRows.map(
-                (row) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _CheckoutCartRowCard(
-                    row: row,
-                    price: _priceFor(row),
-                    seasonPricing: _scheduled,
-                    currency: _scheduled ? _selectedCurrency : 'VND',
-                    quantity: _quantityFor(row),
-                    onRemove: () => _changeQuantity(row, 0),
-                    onDecrement: () =>
-                        _changeQuantity(row, _quantityFor(row) - 1),
-                    onIncrement: () =>
-                        _changeQuantity(row, _quantityFor(row) + 1),
-                  ),
-                ),
-              ),
-            ],
+            ..._cartContent(context),
           ],
         ],
       ),

@@ -17,9 +17,11 @@ Future<void> queueOrSendVoid({
   Map<String, dynamic>? payload,
   String? entityId,
   bool replaySafe = false,
+  OfflineMutationQueue? queue,
 }) async {
+  final mutations = queue ?? OfflineMutationQueue.instance;
   final localId = entityId ?? newLocalMutationId();
-  if (await OfflineMutationQueue.instance.enqueueIfOffline(
+  if (await mutations.enqueueIfOffline(
     feature: feature,
     method: method,
     path: path,
@@ -33,7 +35,7 @@ Future<void> queueOrSendVoid({
   try {
     await send();
   } on ApiException catch (error) {
-    if (!await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+    if (!await mutations.enqueueAfterNetworkFailure(
       error: error,
       feature: feature,
       method: method,
@@ -51,20 +53,16 @@ Future<void> queueOrSendVoid({
         error is! http.ClientException) {
       rethrow;
     }
-    final queued = await OfflineMutationQueue.instance
-        .enqueueAfterNetworkFailure(
-          error: const ApiException(
-            message: 'Network unavailable',
-            statusCode: 0,
-          ),
-          feature: feature,
-          method: method,
-          path: path,
-          workspaceId: workspaceId,
-          payload: payload ?? const {},
-          entityId: localId,
-          replaySafe: replaySafe,
-        );
+    final queued = await mutations.enqueueAfterNetworkFailure(
+      error: const ApiException(message: 'Network unavailable', statusCode: 0),
+      feature: feature,
+      method: method,
+      path: path,
+      workspaceId: workspaceId,
+      payload: payload ?? const {},
+      entityId: localId,
+      replaySafe: replaySafe,
+    );
     if (!queued) rethrow;
   }
 }
@@ -81,9 +79,11 @@ Future<T> queueOrSendValue<T>({
   Map<String, dynamic>? payload,
   String? entityId,
   bool replaySafe = false,
+  OfflineMutationQueue? queue,
 }) async {
+  final mutations = queue ?? OfflineMutationQueue.instance;
   final localId = entityId ?? newLocalMutationId();
-  if (await OfflineMutationQueue.instance.enqueueIfOffline(
+  if (await mutations.enqueueIfOffline(
     feature: feature,
     method: method,
     path: path,
@@ -97,7 +97,7 @@ Future<T> queueOrSendValue<T>({
   try {
     return await send();
   } on ApiException catch (error) {
-    if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+    if (await mutations.enqueueAfterNetworkFailure(
       error: error,
       feature: feature,
       method: method,
@@ -116,7 +116,7 @@ Future<T> queueOrSendValue<T>({
         error is! http.ClientException) {
       rethrow;
     }
-    if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+    if (await mutations.enqueueAfterNetworkFailure(
       error: const ApiException(message: 'Network unavailable', statusCode: 0),
       feature: feature,
       method: method,

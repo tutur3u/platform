@@ -119,3 +119,16 @@ Read only the section relevant to the current feature; paths are repository-rela
 - **Module Boundaries**: When a file grows beyond roughly 500 LOC, split it by concern and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
 - **Atomic Assistant Widgets**: In `features/assistant`, default to reusable stateless widgets under `widgets/` before adding more `part` files or growing a page-level state class. Keep the page/view focused on orchestration only.
 - **Small File Bias**: Treat ~200 LOC for Flutter widgets and ~300 LOC for pages/views as guidance for identifying cohesive extractions. Extract shared badges, bubbles, banners, sheets, and cards into dedicated widget files early.
+
+### Offline downloads
+
+Use the product decisions in
+`apps/docs/platform/features/mobile-workspace-tools.mdx` for offline preparation,
+and local search parity. Download all must remain explicit,
+scoped, sequential, paced, server-limited, and verified against durable storage;
+client delays never substitute for server enforcement. Keep cache reads and
+outbox overlays account/workspace scoped, preserve snapshots on verification
+challenges, and leave uncertain writes in review. Reuse ApiClient's preparation
+Zone so background work does not open captcha modals. Full downloads must use
+the same cache keys and payload shapes as normal reads; test first offline visits
+with normal UI page sizes rather than only the prepared request parameters.
