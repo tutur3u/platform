@@ -5,7 +5,7 @@ export const PUBLIC_MARKETING_ALIAS_CASES = [
     url: 'http://localhost/calendar/meet-together/plans/synthetic?mode=guest&invite=synthetic&tag=a&tag=b',
   },
   {
-    expectedLocation: 'http://localhost/meet-together/?mode=guest',
+    expectedLocation: 'http://localhost/meet-together?mode=guest',
     url: 'http://localhost/en/calendar/meet-together/?mode=guest',
   },
   {
