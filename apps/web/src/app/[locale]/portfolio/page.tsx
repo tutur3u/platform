@@ -1,4 +1,3 @@
-import { createLocalizedMarketingMetadata } from '@tuturuuu/utils/common/metadata';
 import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
 import { getLocale, getMessages } from 'next-intl/server';
 import type { CapabilityCopy } from '@/components/capabilities/product-scenes';
@@ -7,6 +6,7 @@ import {
   Portfolio,
   type PortfolioCopy,
 } from '@/components/portfolio/portfolio';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
 export const generateMetadata = createLocalizedMarketingMetadata({
   namespace: 'portfolio',
