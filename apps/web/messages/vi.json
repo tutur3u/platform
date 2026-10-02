@@ -10274,6 +10274,7 @@
       "title": "Điều khoản dịch vụ"
     },
     "visualizations_horse_racing": {
+      "bodyDescription": "Mô phỏng tương tác này minh họa cách xếp hạng N con ngựa khi mỗi lần chỉ có thể cho M con đua. Thuật toán xác định toàn bộ thứ hạng một cách hiệu quả với số cuộc đua ít nhất.",
       "description": "Khám phá mô phỏng đua ngựa tương tác và so sánh các thuật toán được sử dụng trong mô phỏng.",
       "title": "Trực quan hóa thuật toán đua ngựa"
     },

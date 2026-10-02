@@ -10274,6 +10274,7 @@
       "title": "Terms of Service"
     },
     "visualizations_horse_racing": {
+      "bodyDescription": "This interactive visualization demonstrates how to rank N horses when we can only race M horses at a time. The algorithm efficiently determines the complete ranking with the minimum number of races.",
       "description": "Explore an interactive horse racing visualization and compare the algorithms behind the simulation.",
       "title": "Horse Racing Algorithm Visualization"
     },

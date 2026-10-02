@@ -145,3 +145,23 @@ test('rejects legacy public assets that shadow metadata routes', (t) => {
     /conflicting public\/robots.txt/
   );
 });
+
+test('unknown page metadata exports cannot inherit an indexable layout', (t) => {
+  const { root, page } = fixture(t);
+  const sources = [
+    "export { generateMetadata } from './shared';",
+    "export { hidden as metadata } from './shared';",
+    'const hidden = {}; export { hidden as generateMetadata };',
+    'export const metadata = { robots: { index: false } };',
+    "export * from './shared';",
+  ];
+  sources.forEach((source, index) => {
+    page(
+      `hidden-${index}`,
+      `${source} const unrelated = createMarketingMetadata({ pathname: '/hidden-${index}' });`,
+      metadata(`/hidden-${index}`)
+    );
+  });
+  page('public', '// export const metadata = {}', metadata('/public'));
+  assert.deepEqual(discoverRoutes(root), ['/public']);
+});

@@ -18,11 +18,74 @@ function walk(directory) {
   });
 }
 
-function calls(source) {
-  const ast = parse(source, {
+function parseSource(source) {
+  return parse(source, {
     sourceType: 'module',
     plugins: ['typescript', 'jsx'],
   });
+}
+
+function hasMetadataExport(source) {
+  const names = new Set(['metadata', 'generateMetadata']);
+  return parseSource(source).program.body.some((node) => {
+    // A star re-export may supply metadata; never inherit an indexed layout.
+    if (node.type === 'ExportAllDeclaration') return true;
+    if (node.type !== 'ExportNamedDeclaration') return false;
+    if (
+      node.specifiers.some((specifier) =>
+        names.has(specifier.exported?.name ?? specifier.exported?.value)
+      )
+    )
+      return true;
+    const declaration = node.declaration;
+    if (names.has(declaration?.id?.name)) return true;
+    return (
+      declaration?.type === 'VariableDeclaration' &&
+      declaration.declarations.some((entry) => names.has(entry.id?.name))
+    );
+  });
+}
+
+function metadataDeclarationSource(source) {
+  const exports = parseSource(source).program.body.filter((node) =>
+    node.type.startsWith('Export')
+  );
+  // Unknown, static or re-exported metadata cannot establish indexing.
+  if (
+    exports.some(
+      (node) =>
+        node.type === 'ExportAllDeclaration' ||
+        node.specifiers?.some((specifier) =>
+          ['metadata', 'generateMetadata'].includes(
+            specifier.exported?.name ?? specifier.exported?.value
+          )
+        )
+    )
+  )
+    return '';
+  const declarations = exports.flatMap((node) => {
+    const declaration = node.declaration;
+    if (declaration?.id?.name === 'generateMetadata') return [declaration];
+    if (declaration?.type !== 'VariableDeclaration') return [];
+    return declaration.declarations.filter(
+      (entry) => entry.id?.name === 'generateMetadata'
+    );
+  });
+  if (
+    exports.some((node) =>
+      node.declaration?.declarations?.some(
+        (entry) => entry.id?.name === 'metadata'
+      )
+    )
+  )
+    return '';
+  return declarations
+    .map((node) => source.slice(node.start, node.end))
+    .join('\n');
+}
+
+function calls(source) {
+  const ast = parseSource(source);
   const result = [];
   function visit(node) {
     if (!node || typeof node !== 'object') return;
@@ -99,12 +162,9 @@ function discoverRoutes(root = ROOT) {
     const source = fs.readFileSync(page, 'utf8');
     if (hasRedirect(source)) continue;
     const layout = path.join(path.dirname(page), 'layout.tsx');
-    const hasPageMetadata =
-      /\bexport\s+(?:(?:async\s+)?function|const)\s+generateMetadata\b/u.test(
-        source
-      );
+    const hasPageMetadata = hasMetadataExport(source);
     const metadataSource = hasPageMetadata
-      ? source
+      ? metadataDeclarationSource(source)
       : fs.existsSync(layout)
         ? fs.readFileSync(layout, 'utf8')
         : '';
