@@ -24,6 +24,8 @@ import type {
   CodingExecutionKind,
   CodingExecutionSummary,
 } from '@/lib/coding/results';
+import type { ProgrammingDraftScope } from '@/lib/programming/drafts';
+import { useProgrammingDraft } from '@/lib/programming/use-draft';
 import {
   getCodingSubmission,
   listCodingExecutions,
@@ -42,9 +44,12 @@ const CodingEditor = dynamic(
   }
 );
 
-type PublicChallenge = ReturnType<typeof listCodingChallenges>[number];
+type PublicChallenge = ReturnType<typeof listCodingChallenges>[number] & {
+  title?: string;
+  prompt?: string;
+};
 type CodingHistoryPage = Awaited<ReturnType<typeof listCodingExecutions>>;
-type Attempt = {
+export type CodingAttempt = {
   challenge: string;
   customCase?: { input: string; expected: string };
   kind: CodingExecutionKind;
@@ -68,12 +73,24 @@ function useWideLayout() {
 
 export function CodingLab({
   availableLanguages,
+  initialSelected,
+  onNavigate,
+  draftScope,
+  api,
   challenges,
   readOnly,
   studentId,
   wsId,
 }: {
   availableLanguages: CodingLanguage[];
+  initialSelected?: string;
+  onNavigate?: (id: string) => void;
+  draftScope?: ProgrammingDraftScope;
+  api?: {
+    submit: (attempt: CodingAttempt) => Promise<string>;
+    get: (id: string) => Promise<CodingExecutionSummary | null>;
+    list: (id: string, before?: string) => Promise<CodingHistoryPage>;
+  };
   challenges: PublicChallenge[];
   readOnly: boolean;
   studentId?: string;
@@ -82,37 +99,109 @@ export function CodingLab({
   const t = useTranslations('coding');
   const wide = useWideLayout();
   const queryClient = useQueryClient();
-  const [selected, setSelected] = useState(challenges[0]?.slug ?? '');
-  const [language, setLanguage] = useState<CodingLanguage>(
+  const [selected, setSelected] = useState(
+    initialSelected ?? challenges[0]?.slug ?? ''
+  );
+  const [localLanguage, setLocalLanguage] = useState<CodingLanguage>(
     availableLanguages[0] ?? 'python'
   );
   const challenge = challenges.find((entry) => entry.slug === selected);
-  const [source, setSource] = useState(
+  const [localSource, setLocalSource] = useState(
     starterCode(availableLanguages[0] ?? 'python', challenge?.starterCode ?? '')
   );
   const drafts = useRef(new Map<string, string>());
-  const [customInput, setCustomInput] = useState('');
-  const [customExpected, setCustomExpected] = useState('');
+  const [localCustomInput, setLocalCustomInput] = useState('');
+  const [localCustomExpected, setLocalCustomExpected] = useState('');
   const [diagnostics, setDiagnostics] = useState(0);
   const consolePanel = usePanelRef();
   const [consoleCollapsed, setConsoleCollapsed] = useState(false);
-  const [tab, setTab] = useState<ConsoleTab>('cases');
-  const [submissionId, setSubmissionId] = useState<string | null>(null);
-  const [inspectedId, setInspectedId] = useState<string | null>(null);
-  const [lastAttempt, setLastAttempt] = useState<Attempt | null>(null);
-  const historyKey = ['coding-executions', wsId, studentId, selected];
+  const [localTab, setLocalTab] = useState<ConsoleTab>('cases');
+  const [localSubmissionId, setLocalSubmissionId] = useState<string | null>(
+    null
+  );
+  const [localInspectedId, setLocalInspectedId] = useState<string | null>(null);
+  const [lastAttempt, setLastAttempt] = useState<CodingAttempt | null>(null);
+  const persisted = useProgrammingDraft(
+    draftScope,
+    availableLanguages[0] ?? 'python'
+  );
+  const tab = draftScope ? persisted.draft.tab : localTab;
+  const language = draftScope ? persisted.draft.language : localLanguage;
+  const source = draftScope
+    ? (persisted.draft.sources[language] ??
+      starterCode(language, challenge?.starterCode ?? ''))
+    : localSource;
+  const customInput = draftScope
+    ? persisted.draft.customInput
+    : localCustomInput;
+  const customExpected = draftScope
+    ? persisted.draft.customExpected
+    : localCustomExpected;
+  const submissionId = draftScope
+    ? persisted.draft.submissionId
+    : localSubmissionId;
+  const inspectedId = draftScope
+    ? persisted.draft.inspectedId
+    : localInspectedId;
+  function setTab(next: ConsoleTab) {
+    if (draftScope)
+      persisted.update((previous) => ({ ...previous, tab: next }));
+    else setLocalTab(next);
+  }
+  function setLanguage(next: CodingLanguage) {
+    if (draftScope)
+      persisted.update((previous) => ({ ...previous, language: next }));
+    else setLocalLanguage(next);
+  }
+  function setSource(next: string, nextLanguage = language) {
+    if (draftScope)
+      persisted.update((previous) => ({
+        ...previous,
+        sources: { ...previous.sources, [nextLanguage]: next },
+      }));
+    else setLocalSource(next);
+  }
+  function setCustomInput(next: string) {
+    if (draftScope)
+      persisted.update((previous) => ({ ...previous, customInput: next }));
+    else setLocalCustomInput(next);
+  }
+  function setCustomExpected(next: string) {
+    if (draftScope)
+      persisted.update((previous) => ({ ...previous, customExpected: next }));
+    else setLocalCustomExpected(next);
+  }
+  function setSubmissionId(next: string | null) {
+    if (draftScope)
+      persisted.update((previous) => ({ ...previous, submissionId: next }));
+    else setLocalSubmissionId(next);
+  }
+  function setInspectedId(next: string | null) {
+    if (draftScope)
+      persisted.update((previous) => ({ ...previous, inspectedId: next }));
+    else setLocalInspectedId(next);
+  }
+  const historyKey = [
+    'coding-executions',
+    draftScope?.actorId,
+    wsId,
+    draftScope?.learnerId ?? studentId,
+    selected,
+  ];
 
   const submit = useMutation({
-    mutationFn: (attempt: Attempt) =>
-      submitCodingSolution(
-        wsId,
-        studentId,
-        attempt.challenge,
-        attempt.language,
-        attempt.source,
-        attempt.kind,
-        attempt.customCase
-      ),
+    mutationFn: (attempt: CodingAttempt) =>
+      api
+        ? api.submit(attempt)
+        : submitCodingSolution(
+            wsId,
+            studentId,
+            attempt.challenge,
+            attempt.language,
+            attempt.source,
+            attempt.kind,
+            attempt.customCase
+          ),
     onSuccess: (id, attempt) => {
       setLastAttempt(attempt);
       setSubmissionId(id);
@@ -124,8 +213,18 @@ export function CodingLab({
   });
   const submission = useQuery({
     enabled: Boolean(submissionId),
-    queryFn: () => getCodingSubmission(wsId, studentId, submissionId!),
-    queryKey: ['coding-execution', wsId, studentId, submissionId],
+    queryFn: () =>
+      api
+        ? api.get(submissionId!)
+        : getCodingSubmission(wsId, studentId, submissionId!),
+    queryKey: [
+      'coding-execution',
+      draftScope?.actorId,
+      wsId,
+      draftScope?.learnerId ?? studentId,
+      selected,
+      submissionId,
+    ],
     refetchInterval: (query) => {
       if (query.state.data === null) return false;
       const status = query.state.data?.status;
@@ -134,17 +233,42 @@ export function CodingLab({
         : false;
     },
   });
+  const inspected = useQuery({
+    enabled: Boolean(inspectedId),
+    queryFn: () =>
+      api
+        ? api.get(inspectedId!)
+        : getCodingSubmission(wsId, studentId, inspectedId!),
+    queryKey: [
+      'coding-inspected-execution',
+      draftScope?.actorId,
+      wsId,
+      draftScope?.learnerId ?? studentId,
+      selected,
+      inspectedId,
+    ],
+    refetchInterval: (query) =>
+      query.state.data?.status === 'queued' ||
+      query.state.data?.status === 'running'
+        ? 1500
+        : false,
+  });
   const history = useInfiniteQuery({
     enabled: Boolean(selected),
     getNextPageParam: (lastPage: CodingHistoryPage) => lastPage.nextCursor,
     initialPageParam: null as string | null,
     queryFn: ({ pageParam }): Promise<CodingHistoryPage> =>
-      listCodingExecutions(
-        wsId,
-        studentId,
-        selected,
-        typeof pageParam === 'string' ? pageParam : undefined
-      ),
+      api
+        ? api.list(
+            selected,
+            typeof pageParam === 'string' ? pageParam : undefined
+          )
+        : listCodingExecutions(
+            wsId,
+            studentId,
+            selected,
+            typeof pageParam === 'string' ? pageParam : undefined
+          ),
     queryKey: historyKey,
     refetchInterval:
       submission.data?.status === 'queued' ||
@@ -172,7 +296,9 @@ export function CodingLab({
         }
       : null;
   const activeExecution = inspectedId
-    ? (executions.find((entry) => entry.id === inspectedId) ?? null)
+    ? (inspected.data ??
+      executions.find((entry) => entry.id === inspectedId) ??
+      null)
     : (submission.data ?? optimisticExecution);
   const judgeReady = availableLanguages.includes(language);
   const isBusy =
@@ -189,8 +315,11 @@ export function CodingLab({
     nextLanguage: CodingLanguage
   ) {
     setSource(
-      drafts.current.get(draftKey(nextChallenge.slug, nextLanguage)) ??
-        starterCode(nextLanguage, nextChallenge.starterCode)
+      (draftScope
+        ? persisted.draft.sources[nextLanguage]
+        : drafts.current.get(draftKey(nextChallenge.slug, nextLanguage))) ??
+        starterCode(nextLanguage, nextChallenge.starterCode),
+      nextLanguage
     );
     setSubmissionId(null);
     setInspectedId(null);
@@ -202,6 +331,10 @@ export function CodingLab({
   function selectChallenge(slug: string) {
     const next = challenges.find((entry) => entry.slug === slug);
     if (!next) return;
+    if (onNavigate) {
+      onNavigate(slug);
+      return;
+    }
     setSelected(slug);
     openDraft(next, language);
   }
@@ -231,7 +364,7 @@ export function CodingLab({
     if (execution.language) setLanguage(execution.language);
     const nextLanguage = execution.language ?? language;
     drafts.current.set(draftKey(selected, nextLanguage), execution.source);
-    setSource(execution.source);
+    setSource(execution.source, nextLanguage);
     setInspectedId(execution.id);
     setTab('result');
   }
@@ -324,7 +457,11 @@ export function CodingLab({
                 </div>
                 <div className="min-h-0 flex-1">
                   <CodingEditor
-                    challenge={selected}
+                    challenge={
+                      draftScope
+                        ? `${draftScope.actorId}/${wsId}/${draftScope.learnerId}/${selected}`
+                        : selected
+                    }
                     language={language}
                     onChange={editSource}
                     onDiagnostics={setDiagnostics}
@@ -371,16 +508,26 @@ export function CodingLab({
           </ResizablePanelGroup>
         </ResizablePanel>
       </ResizablePanelGroup>
-      {readOnly || !judgeReady || submit.error || submission.error ? (
+      {readOnly ||
+      !judgeReady ||
+      submit.error ||
+      submission.error ||
+      inspected.error ? (
         <p
           className="shrink-0 border-t bg-muted px-3 py-2 text-foreground text-xs"
-          role={submit.error || submission.error ? 'alert' : 'status'}
+          role={
+            submit.error || submission.error || inspected.error
+              ? 'alert'
+              : 'status'
+          }
         >
           {readOnly
             ? t('parentReadOnly')
             : !judgeReady
               ? t('judgeUnavailable')
-              : (submit.error?.message ?? submission.error?.message)}
+              : (submit.error?.message ??
+                submission.error?.message ??
+                inspected.error?.message)}
         </p>
       ) : null}
     </div>
