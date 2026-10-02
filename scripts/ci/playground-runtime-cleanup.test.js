@@ -8,17 +8,22 @@ import test from 'node:test';
 const workflow = resolve(
   '.github/workflows/playground-runtime-acceptance.yaml'
 );
-const cleanup = JSON.parse(
+const steps = JSON.parse(
   execFileSync(
     'bun',
     [
       '-e',
-      "process.stdout.write(JSON.stringify(Bun.YAML.parse(require('node:fs').readFileSync(process.argv[1],'utf8')).jobs.acceptance.steps.at(-1).run))",
+      "process.stdout.write(JSON.stringify(Bun.YAML.parse(require('node:fs').readFileSync(process.argv[1],'utf8')).jobs.acceptance.steps))",
       workflow,
     ],
     { encoding: 'utf8' }
   )
 );
+
+const cleanup = steps.at(-1).run;
+const acceptance = steps.find(
+  (step) => step.name === 'Execute actual SDK sandbox and checkpoint acceptance'
+).run;
 
 function execute(mode) {
   const root = mkdtempSync(join(tmpdir(), 'playground-cleanup-contract-'));
@@ -104,4 +109,31 @@ test('a same-name registry owned by another pool is preserved and reported as a 
   const result = execute('wrong-owner');
   assert.equal(result.status, 1);
   assert.equal(result.calls.filter((call) => call[0] === 'rm').length, 0);
+});
+
+test('the real acceptance starts with only the installed Bun executable on PATH', () => {
+  const root = mkdtempSync(join(tmpdir(), 'playground-bun-path-'));
+  try {
+    const calls = join(root, 'calls');
+    writeFileSync(
+      join(root, 'bun'),
+      '#!/bin/sh\nprintf "%s\\n" "$@" > "$FAKE_CALLS"\n',
+      { mode: 0o700 }
+    );
+    const result = spawnSync('/bin/bash', ['-c', acceptance], {
+      encoding: 'utf8',
+      env: { PATH: root, FAKE_CALLS: calls },
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(readFileSync(calls, 'utf8').trim().split('\n'), [
+      'x',
+      '--no-install',
+      'vitest',
+      'run',
+      '--config',
+      'vitest.playground-acceptance.config.ts',
+    ]);
+  } finally {
+    rmSync(root, { recursive: true });
+  }
 });
