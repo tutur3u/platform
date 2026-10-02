@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   resolveOutboundSource: vi.fn(),
   resolveSource: vi.fn(),
   refreshSource: vi.fn(),
+  retained: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -29,6 +30,13 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('@/lib/api-auth', () => ({
   resolveSessionAuthContext: mocks.resolveAuth,
 }));
+vi.mock(
+  '@/lib/calendar/google-color-operations/retained-generation-request-access',
+  () => ({
+    getCalendarRetainedGeneration: mocks.retained,
+  })
+);
+
 vi.mock('@/lib/calendar/event-deduplication', () => ({
   deduplicateCalendarEvents: mocks.deduplicateEvents,
 }));
@@ -125,6 +133,8 @@ function insertQueryResult(data: unknown) {
 describe('workspace calendar event collection authorization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED', 'false');
+    mocks.retained.mockResolvedValue(null);
     mocks.resolveAuth.mockResolvedValue({
       ok: true,
       supabase: { rpc: vi.fn(async () => ({ data: true, error: null })) },
@@ -146,6 +156,8 @@ describe('workspace calendar event collection authorization', () => {
       is_encrypted: false,
     }));
   });
+
+  afterEach(() => vi.unstubAllEnvs());
 
   const invitationBody = {
     title: 'Planning',
@@ -215,7 +227,7 @@ describe('workspace calendar event collection authorization', () => {
           ...invitationBody,
           invitation: undefined,
           requestId: undefined,
-          providerColor: choice,
+          color: 'CYAN',
           scheduling_metadata: { google_color: { background: '#ffffff' } },
         }),
         params()
@@ -230,7 +242,10 @@ describe('workspace calendar event collection authorization', () => {
       warning.mockRestore();
       expect(mocks.createProviderEvent).toHaveBeenCalledWith({
         source,
-        event: expect.objectContaining({ providerColor: choice }),
+        event: expect.objectContaining({
+          color: 'CYAN',
+          providerColor: undefined,
+        }),
       });
       expect(query.insert).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -272,6 +287,7 @@ describe('workspace calendar event collection authorization', () => {
   ])(
     'rejects ambiguous, foreign or untrusted creation choices before provider writes',
     async (choice) => {
+      vi.stubEnv('CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED', 'true');
       mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
       mocks.resolveSource.mockResolvedValue({
         provider: 'google',
@@ -290,6 +306,45 @@ describe('workspace calendar event collection authorization', () => {
       expect(mocks.createProviderEvent).not.toHaveBeenCalled();
     }
   );
+
+  it('blocks the new provider-color namespace while disabled before any provider write', async () => {
+    const admin = { from: vi.fn() };
+    mocks.createAdminClient.mockResolvedValue(admin);
+    const response = await POST(
+      request('POST', {
+        ...invitationBody,
+        invitation: undefined,
+        providerColor: {
+          connectionId: invitationBody.source.connectionId,
+          kind: 'inherit',
+        },
+      }),
+      params()
+    );
+    expect(response.status).toBe(409);
+    expect(mocks.resolveSource).not.toHaveBeenCalled();
+    expect(mocks.createProviderEvent).not.toHaveBeenCalled();
+    expect(mocks.getWorkspaceKey).not.toHaveBeenCalled();
+    expect(admin.from).not.toHaveBeenCalled();
+  });
+
+  it('blocks an invitation with a retained retry identity even while disabled', async () => {
+    const admin = { from: vi.fn() };
+    mocks.createAdminClient.mockResolvedValue(admin);
+    mocks.retained.mockResolvedValue({ generation: '1', pending: true });
+    const req = request('POST', invitationBody);
+    const response = await POST(req, params());
+    expect(response.status).toBe(409);
+    expect(mocks.retained).toHaveBeenCalledWith(
+      req,
+      WS_ID,
+      invitationBody.requestId
+    );
+    expect(mocks.createInvitedMeeting).not.toHaveBeenCalled();
+    expect(mocks.createProviderEvent).not.toHaveBeenCalled();
+    expect(mocks.getWorkspaceKey).not.toHaveBeenCalled();
+    expect(admin.from).not.toHaveBeenCalled();
+  });
 
   it('routes explicit invitations through the durable send operation', async () => {
     const admin = { from: vi.fn() };

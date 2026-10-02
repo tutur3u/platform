@@ -74,13 +74,36 @@ export function recoverableColorRouteFixture() {
   const rowWrites = vi.fn();
   const rpc = vi.fn(
     async (
-      _name: string,
+      name: string,
       args: {
         p_action: string;
         p_input: Record<string, any>;
         p_actor_id: string;
       }
     ) => {
+      // The route now inspects the shared retained ledger before every writer,
+      // including when the feature flag is disabled. Model that read separately
+      // from color admission and the saga-only recovery lookup.
+      if (name === 'calendar_retained_generation')
+        return {
+          data: operation
+            ? {
+                generation,
+                pending: ['reserved', 'prepared', 'dispatched'].includes(
+                  operation.phase
+                ),
+                intentKind: operation.intent.kind,
+                phase: operation.phase,
+                operationId: operation.id,
+              }
+            : null,
+          error: null,
+        };
+      if (
+        name === 'calendar_provider_saga_operation' &&
+        args.p_action === 'lookup'
+      )
+        return { data: null, error: null };
       const input = args.p_input;
       const error = (code = '40001') => ({
         data: null,

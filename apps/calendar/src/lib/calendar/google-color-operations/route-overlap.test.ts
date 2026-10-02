@@ -167,15 +167,20 @@ describe('actual recoverable color route vertical slice', () => {
       expect(f.rowWrites).not.toHaveBeenCalled();
     }
   );
-  it('keeps source movement fail closed until its durable saga is wired', async () => {
+  it('rejects source movement combined with content before provider admission', async () => {
     const response = await PUT(
-      request('PUT', { source: { provider: 'tuturuuu' } }),
+      request('PUT', {
+        source: { provider: 'tuturuuu' },
+        title: 'Unsupported combined move',
+      }),
       params()
     );
     expect(response.status).toBe(409);
     expect(m.legacy).not.toHaveBeenCalled();
     expect(m.fixture.patch).not.toHaveBeenCalled();
-    expect(m.fixture.rpc).not.toHaveBeenCalled();
+    expect(m.fixture.rpc.mock.calls.map(([name]: [string]) => name)).toEqual([
+      'calendar_retained_generation',
+    ]);
   });
   it('blocks deletion behind a pending color operation before habit/task side effects', async () => {
     const f = m.fixture as ReturnType<typeof recoverableColorRouteFixture>;
@@ -340,6 +345,8 @@ describe('actual recoverable color route vertical slice', () => {
   it('keeps recovery unavailable when the candidate mode is disabled', async () => {
     vi.stubEnv('CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED', 'false');
     expect((await STATUS(request('GET'), params())).status).toBe(404);
-    expect(m.fixture.rpc).not.toHaveBeenCalled();
+    expect(m.fixture.rpc.mock.calls.map(([name]: [string]) => name)).toEqual([
+      'calendar_retained_generation',
+    ]);
   });
 });
