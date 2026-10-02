@@ -317,9 +317,13 @@ export async function processMessagesWithFiles(
   messages: ModelMessage[],
   wsId: string,
   chatId: string,
-  request?: Pick<Request, 'headers'>
+  request?: Pick<Request, 'headers'>,
+  excludeAudioVideoFiles = false
 ): Promise<ModelMessage[]> {
-  const chatFiles = await getAllChatFiles(wsId, chatId, request);
+  const chatFiles = (await getAllChatFiles(wsId, chatId, request)).filter(
+    (file) =>
+      !excludeAudioVideoFiles || !/^(audio|video)\//.test(file.mediaType)
+  );
   if (chatFiles.length === 0) {
     return messages;
   }

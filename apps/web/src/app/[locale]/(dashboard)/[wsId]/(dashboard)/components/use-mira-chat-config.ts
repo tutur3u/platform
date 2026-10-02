@@ -22,13 +22,13 @@ import {
   WORKSPACE_CONTEXT_EVENT,
   WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX,
 } from './mira-chat-constants';
+import { createMiraRequestPreparer } from './mira-chat-transport';
 import {
   fetchGatewayModels,
   type GatewayModelUi,
   MIRA_GATEWAY_MODELS_QUERY_KEY,
   modelSupportsFileInput,
 } from './mira-gateway-models';
-import { getMiraTempAuthHeaders } from './mira-temp-auth-client';
 
 interface UseMiraChatConfigParams {
   wsId: string;
@@ -100,6 +100,7 @@ export function resolveAvailableMiraModel({
   gatewayModels: GatewayModelUi[] | undefined;
   selectedModel: AIModelUI;
 }): AIModelUI {
+  if (selectedModel.value.startsWith('chatgpt/')) return selectedModel;
   if (!gatewayModels) return selectedModel;
 
   const findSelectableModel = (modelId: string) => {
@@ -221,7 +222,7 @@ export function useMiraChatConfig({
   ]);
 
   const supportsFileInput = useMemo(
-    () => modelSupportsFileInput(model),
+    () => model.value.startsWith('chatgpt/') || modelSupportsFileInput(model),
     [model]
   );
 
@@ -237,7 +238,7 @@ export function useMiraChatConfig({
       wsId,
       workspaceContextId: effectiveWorkspaceContextId,
       model: gatewayModelId,
-      isMiraMode: true,
+      isMiraMode: !gatewayModelId.startsWith('chatgpt/'),
       timezone: timezoneForChat,
       thinkingMode,
       creditSource: activeCreditSource,
@@ -264,7 +265,7 @@ export function useMiraChatConfig({
       new DefaultChatTransport({
         api: '/api/ai/chat',
         credentials: 'include',
-        headers: () => getMiraTempAuthHeaders(chatRequestBodyRef.current),
+        prepareSendMessagesRequest: createMiraRequestPreparer(),
         body: () => chatRequestBodyRef.current,
       }),
     []
@@ -310,7 +311,7 @@ export function useMiraChatConfig({
   }, [defaultLanguageModelId, wsId]);
 
   useEffect(() => {
-    if (!creditCredits) return;
+    if (!creditCredits || model.value.startsWith('chatgpt/')) return;
 
     const nextDefaultModel = toModelUi(defaultLanguageModelId);
     const isCurrentModelAllowed = matchesAllowedModel(

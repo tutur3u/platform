@@ -229,7 +229,10 @@ export async function prepareProcessedMessages(
   wsId: string | undefined,
   chatId: string,
   request?: Pick<Request, 'headers'>,
-  options?: { attachYoutubeVideoInput?: boolean }
+  options?: {
+    attachYoutubeVideoInput?: boolean;
+    excludeAudioVideoFiles?: boolean;
+  }
 ): Promise<{ processedMessages: ModelMessage[] } | { error: Response }> {
   const modelMessages = await convertToModelMessages(normalizedMessages);
   const validationError = validateModelMessages(modelMessages);
@@ -239,7 +242,13 @@ export async function prepareProcessedMessages(
 
   const processedMessages =
     wsId && chatId
-      ? await processMessagesWithFiles(modelMessages, wsId, chatId, request)
+      ? await processMessagesWithFiles(
+          modelMessages,
+          wsId,
+          chatId,
+          request,
+          options?.excludeAudioVideoFiles
+        )
       : modelMessages;
 
   return {
