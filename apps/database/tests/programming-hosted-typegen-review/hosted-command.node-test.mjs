@@ -219,9 +219,17 @@ for (const [binary, args, phase] of [
   });
 }
 
-for (const output of ['{}', 'null', '']) {
+for (const [output, shape] of [
+  ['{}', null],
+  ['null', null],
+  ['', 'empty'],
+  ['[', 'array-prefix'],
+  ['{', 'object-prefix'],
+  ['unavailable', 'non-json-prefix'],
+]) {
   test(`kernel admission rejects invalid inventory ${output || 'empty'}`, async (t) => {
     const { context } = await fixture(t);
+    const warning = t.mock.method(console, 'warn', () => {});
     await assert.rejects(
       verifyNetworkPolicy((args) =>
         command('sudo', ['-n', ...args], 5000, 1024 ** 2, {
@@ -230,9 +238,19 @@ for (const output of ['{}', 'null', '']) {
           execute: (_binary, argv) => (argv[1] === 'cat' ? '{}' : output),
         })
       ),
-      output
+      shape === null
         ? /Kernel filter inventory must be an array/
         : /Kernel filter inventory JSON unavailable/
+    );
+    assert.deepEqual(
+      warning.mock.calls.map((call) => call.arguments),
+      [
+        [
+          shape === null
+            ? 'Programming policy mismatch=kernel-shape'
+            : `Programming policy mismatch=kernel-json shape=${shape}`,
+        ],
+      ]
     );
   });
 }
