@@ -69,7 +69,6 @@ async function main() {
   }));
   if (values.client && !saved)
     throw new Error('Unknown saved ChatGPT registration');
-  let attempt: ReturnType<typeof createAuthorization>;
   let consumed = false;
   const server = createServer();
   await new Promise<void>((resolveListen, reject) => {
@@ -79,7 +78,7 @@ async function main() {
   const address = server.address();
   if (!address || typeof address === 'string')
     throw new Error('Callback listener is unavailable');
-  attempt = createAuthorization(
+  const attempt = createAuthorization(
     hostId,
     `http://127.0.0.1:${address.port}/auth/callback`,
     saved
