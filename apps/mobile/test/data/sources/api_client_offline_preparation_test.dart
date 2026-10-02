@@ -14,6 +14,22 @@ class _Auth extends Mock implements GoTrueClient {}
 
 class _Session extends Mock implements Session {}
 
+/// Records transport entry before MockClient buffers the request body.
+class _RecordingClient extends http.BaseClient {
+  _RecordingClient(this.transport, this.onGet);
+  final http.Client transport;
+  final void Function() onGet;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    if (request.method == 'GET') onGet();
+    return transport.send(request);
+  }
+
+  @override
+  void close() => transport.close();
+}
+
 void main() {
   late _Client client;
   late _Auth auth;
@@ -49,20 +65,24 @@ void main() {
   test(
     'bulk GETs across clients are sequential and paced; mutations are unmarked',
     () async {
-      final started = <DateTime>[];
+      final timer = Stopwatch()..start();
+      final started = <Duration>[];
       final paths = <String>[];
       final transport = MockClient((request) async {
         paths.add(request.url.path);
         if (request.method == 'GET') {
           expect(request.headers['x-tuturuuu-offline-download'], '1');
-          started.add(DateTime.now());
         } else {
           expect(request.headers['x-tuturuuu-offline-download'], isNull);
         }
         return http.Response('{}', 200);
       });
-      final first = api(transport);
-      final second = api(transport);
+      final recording = _RecordingClient(
+        transport,
+        () => started.add(timer.elapsed),
+      );
+      final first = api(recording);
+      final second = api(recording);
       await ApiClient.offlinePreparation(() async {
         await Future.wait([
           first.getJson('/first'),
@@ -74,7 +94,7 @@ void main() {
       expect(paths, ['/first', '/second', '/third', '/write']);
       for (var i = 1; i < started.length; i++) {
         expect(
-          started[i].difference(started[i - 1]).inMilliseconds,
+          (started[i] - started[i - 1]).inMilliseconds,
           greaterThanOrEqualTo(740),
         );
       }
@@ -86,13 +106,16 @@ void main() {
   test(
     'regular background refresh is paced without bulk verification marker',
     () async {
-      final started = <DateTime>[];
+      final timer = Stopwatch()..start();
+      final started = <Duration>[];
       final instance = api(
-        MockClient((request) async {
-          expect(request.headers['x-tuturuuu-offline-download'], isNull);
-          started.add(DateTime.now());
-          return http.Response('{}', 200);
-        }),
+        _RecordingClient(
+          MockClient((request) async {
+            expect(request.headers['x-tuturuuu-offline-download'], isNull);
+            return http.Response('{}', 200);
+          }),
+          () => started.add(timer.elapsed),
+        ),
       );
       await ApiClient.offlinePreparation(
         () async {
@@ -105,10 +128,64 @@ void main() {
         markBulk: false,
       );
       expect(
-        started.last.difference(started.first).inMilliseconds,
+        (started.last - started.first).inMilliseconds,
         greaterThanOrEqualTo(740),
       );
       instance.dispose();
+    },
+  );
+
+  test(
+    'slow auth preparation cannot compress JSON or list dispatch spacing',
+    () async {
+      var expired = true;
+      when(() => session.expiresAt).thenAnswer(
+        (_) =>
+            DateTime.now()
+                .add(
+                  expired
+                      ? const Duration(hours: -1)
+                      : const Duration(hours: 1),
+                )
+                .millisecondsSinceEpoch ~/
+            1000,
+      );
+      when(() => auth.refreshSession()).thenAnswer((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        expired = false;
+        return AuthResponse(session: session, user: user);
+      });
+      final timer = Stopwatch()..start();
+      final started = <Duration>[];
+      final first = api(
+        _RecordingClient(
+          MockClient((request) async {
+            expect(
+              request.headers['authorization'],
+              'Bearer synthetic-session',
+            );
+            expect(request.headers['x-tuturuuu-offline-download'], '1');
+            return http.Response('{"data":[]}', 200);
+          }),
+          () => started.add(timer.elapsed),
+        ),
+      );
+      try {
+        await ApiClient.offlinePreparation(() async {
+          await Future.wait([
+            first.getJson('/first'),
+            first.getJsonList('/second'),
+          ]);
+        });
+        expect(started, hasLength(2));
+        expect(
+          (started.last - started.first).inMilliseconds,
+          greaterThanOrEqualTo(740),
+        );
+        verify(() => auth.refreshSession()).called(1);
+      } finally {
+        first.dispose();
+      }
     },
   );
 

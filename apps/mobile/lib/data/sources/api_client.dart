@@ -184,16 +184,19 @@ class ApiClient {
 
     final response = await _performRequest(() async {
       final userId = requiresAuth ? _auth.currentUser?.id : null;
-      return await OfflineApiRequest.paced(() async {
-        if (requiresAuth) _checkRequestUser(userId);
-        return await _client.get(
-          url,
-          headers: await _getHeaders(
+      late Map<String, String> headers;
+      return await OfflineApiRequest.paced(
+        () {
+          if (requiresAuth) _checkRequestUser(userId);
+          return _client.get(url, headers: headers);
+        },
+        prepare: () async {
+          headers = await _getHeaders(
             requiresAuth: requiresAuth,
             offlineRead: true,
-          ),
-        );
-      });
+          );
+        },
+      );
     }, requiresAuth: requiresAuth);
 
     return _handleResponse(response);
@@ -210,16 +213,19 @@ class ApiClient {
 
     final response = await _performRequest(() async {
       final userId = requiresAuth ? _auth.currentUser?.id : null;
-      return await OfflineApiRequest.paced(() async {
-        if (requiresAuth) _checkRequestUser(userId);
-        return await _client.get(
-          url,
-          headers: await _getHeaders(
+      late Map<String, String> headers;
+      return await OfflineApiRequest.paced(
+        () {
+          if (requiresAuth) _checkRequestUser(userId);
+          return _client.get(url, headers: headers);
+        },
+        prepare: () async {
+          headers = await _getHeaders(
             requiresAuth: requiresAuth,
             offlineRead: true,
-          ),
-        );
-      });
+          );
+        },
+      );
     }, requiresAuth: requiresAuth);
 
     // Reuse existing error handling behavior.
