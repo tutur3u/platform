@@ -8,6 +8,7 @@ import { QUEUE_DEBOUNCE_MS } from './mira-chat-constants';
 
 interface UseMiraMessageQueueParams {
   attachedFiles: ChatFile[];
+  disabled?: boolean;
   chatId?: string;
   clearAttachedFiles: () => void;
   createChat: (userInput: string) => Promise<void>;
@@ -21,6 +22,7 @@ interface UseMiraMessageQueueParams {
 
 export function useMiraMessageQueue({
   attachedFiles,
+  disabled = false,
   chatId,
   clearAttachedFiles,
   createChat,
@@ -29,12 +31,18 @@ export function useMiraMessageQueue({
   status,
   stop,
 }: UseMiraMessageQueueParams) {
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
   const [queuedText, setQueuedText] = useState<string | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageQueueRef = useRef<string[]>([]);
   const pendingFlushAfterStopRef = useRef(false);
 
   const flushQueue = useCallback(async () => {
+    if (disabledRef.current) {
+      pendingFlushAfterStopRef.current = true;
+      return;
+    }
     const queue = [...messageQueueRef.current];
     const seen = new Set<string>();
     const unique: string[] = [];
@@ -92,6 +100,7 @@ export function useMiraMessageQueue({
 
   const handleSubmit = useCallback(
     (value: string) => {
+      if (disabledRef.current) return;
       if (!value.trim() && attachedFiles.length === 0) return;
 
       if (value.trim()) {
@@ -134,12 +143,12 @@ export function useMiraMessageQueue({
 
   useEffect(() => {
     const currentlyBusy = status === 'submitted' || status === 'streaming';
-    if (currentlyBusy || !pendingFlushAfterStopRef.current) {
+    if (disabled || currentlyBusy || !pendingFlushAfterStopRef.current) {
       return;
     }
 
     void flushQueue();
-  }, [flushQueue, status]);
+  }, [disabled, flushQueue, status]);
 
   const resetQueue = useCallback(() => {
     if (debounceTimerRef.current) {

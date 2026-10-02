@@ -154,6 +154,7 @@ export default function MiraChatPanel({
   } = useMiraChatAttachments({
     wsId,
     deleteFileFailedMessage: t('delete_file_failed'),
+    textAndImagesOnly: model.value.startsWith('chatgpt/'),
   });
 
   const {
@@ -204,7 +205,11 @@ export default function MiraChatPanel({
     transport,
     onError(error) {
       console.error('[Mira Chat] Stream error:', error);
-      toast.error(t('stream_error'));
+      toast.error(
+        model.value.startsWith('chatgpt/')
+          ? t('chatgpt.request_error')
+          : t('stream_error')
+      );
     },
   });
 
@@ -224,6 +229,7 @@ export default function MiraChatPanel({
 
   const sendMessageWithCurrentConfig = useCallback(
     async (message: UIMessage) => {
+      if (model.disabled) return false;
       try {
         await flushLiveConversation();
       } catch {
@@ -236,7 +242,7 @@ export default function MiraChatPanel({
       await sendMessage(message, { body: chatRequestBody });
       return true;
     },
-    [chatRequestBody, sendMessage, flushLiveConversation]
+    [model.disabled, chatRequestBody, sendMessage, flushLiveConversation]
   );
   sendMessageRef.current = sendMessageWithCurrentConfig;
 
@@ -244,7 +250,8 @@ export default function MiraChatPanel({
     (nextModel: typeof model) => {
       if (
         nextModel.value === model.value &&
-        nextModel.provider === model.provider
+        nextModel.provider === model.provider &&
+        nextModel.disabled === model.disabled
       ) {
         return;
       }
@@ -256,21 +263,33 @@ export default function MiraChatPanel({
 
   const handleThinkingModeChange = useCallback(
     (nextMode: typeof thinkingMode) => {
-      if (nextMode === thinkingMode) return;
+      if (model.value.startsWith('chatgpt/') || nextMode === thinkingMode)
+        return;
       setThinkingMode(nextMode);
       if (status === 'submitted' || status === 'streaming') stop();
     },
-    [setThinkingMode, status, stop, thinkingMode]
+    [model.value, setThinkingMode, status, stop, thinkingMode]
   );
 
   const handleCreditSourceChange = useCallback(
     (nextSource: typeof activeCreditSource) => {
-      if (nextSource === activeCreditSource) return;
+      if (
+        model.value.startsWith('chatgpt/') ||
+        nextSource === activeCreditSource
+      )
+        return;
       if (nextSource === 'workspace' && workspaceCreditLocked) return;
       setCreditSource(nextSource);
       if (status === 'submitted' || status === 'streaming') stop();
     },
-    [activeCreditSource, setCreditSource, status, stop, workspaceCreditLocked]
+    [
+      model.value,
+      activeCreditSource,
+      setCreditSource,
+      status,
+      stop,
+      workspaceCreditLocked,
+    ]
   );
 
   const handleCreditSourceToggle = useCallback(() => {
@@ -308,6 +327,7 @@ export default function MiraChatPanel({
 
   const { handleSubmit, queuedText, resetQueue } = useMiraMessageQueue({
     attachedFiles,
+    disabled: model.disabled,
     chatId: chat?.id,
     clearAttachedFiles,
     createChat,
@@ -365,9 +385,10 @@ export default function MiraChatPanel({
 
   const { hotkeyLabels, modelPickerHotkeySignal } = useMiraChatHotkeys({
     hasMessages,
-    onCreditSourceToggle: workspaceCreditLocked
-      ? undefined
-      : handleCreditSourceToggle,
+    onCreditSourceToggle:
+      workspaceCreditLocked || model.value.startsWith('chatgpt/')
+        ? undefined
+        : handleCreditSourceToggle,
     onExportChat: handleExportChat,
     onNewConversation: handleNewConversation,
     onThinkingModeChange: handleThinkingModeChange,
@@ -453,7 +474,8 @@ export default function MiraChatPanel({
               inputRef={inputRef}
               isBusy={isBusy}
               disabled={
-                voiceActive && (!live.composer || live.composer.connecting)
+                model.disabled ||
+                (voiceActive && (!live.composer || live.composer.connecting))
               }
               onFileRemove={handleFileRemove}
               onFilesSelected={

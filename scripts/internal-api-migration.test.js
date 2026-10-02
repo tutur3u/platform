@@ -32,6 +32,7 @@ test('migrated shared hooks no longer import the deprecated Supabase browser cli
     'packages/ui/src/hooks/use-workspace-members.ts',
     'packages/ui/src/hooks/use-workspace-user.ts',
     'packages/ui/src/hooks/use-workspace-permission.ts',
+    'packages/ui/src/hooks/use-visible-workspaces.ts',
     'apps/web/src/lib/calendar-preferences-settings-bridge.tsx',
     'apps/contacts/src/app/[locale]/[wsId]/posts/filters.tsx',
     'apps/mail/src/app/[locale]/(dashboard)/[wsId]/mail-client.tsx',
@@ -91,7 +92,7 @@ test('migrated shared hooks no longer import the deprecated Supabase browser cli
     );
     assert.match(
       source,
-      /@tuturuuu\/(internal-api(?:\/|')|utils\/task-helper')/,
+      /@tuturuuu\/(internal-api(?:\/|')|utils\/task-helper'|ui\/hooks\/use-visible-workspaces')/,
       `Expected ${file} to import the shared internal API package or helper wrapper`
     );
   }

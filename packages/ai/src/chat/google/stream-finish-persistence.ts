@@ -109,6 +109,7 @@ type PersistAssistantResponseParams = {
   observabilityContext?: unknown;
   persistenceRequestId?: string;
   wsId?: string;
+  skipCreditDeduction?: boolean;
 };
 
 function collectToolData(steps: StepLike[]) {
@@ -469,7 +470,9 @@ export async function persistAssistantResponse({
   observabilityContext,
   persistenceRequestId,
   wsId,
+  skipCreditDeduction = false,
 }: PersistAssistantResponseParams): Promise<boolean> {
+  if (skipCreditDeduction && response.finishReason !== 'stop') return false;
   const steps = response.steps ?? [];
   const { allToolCalls, allToolResults } = collectToolData(steps);
 
@@ -517,10 +520,9 @@ export async function persistAssistantResponse({
       .map((part) => part.text)
       .join('\n\n'),
     role: 'ASSISTANT',
-    model: (model.includes('/')
-      ? model.split('/').pop()!
-      : model
-    ).toLowerCase(),
+    model: skipCreditDeduction
+      ? model
+      : (model.includes('/') ? model.split('/').pop()! : model).toLowerCase(),
     finish_reason: response.finishReason,
     prompt_tokens: inputTokens,
     completion_tokens: outputTokens,
@@ -563,6 +565,7 @@ export async function persistAssistantResponse({
   }
 
   if (
+    !skipCreditDeduction &&
     (wsId || userId) &&
     (inputTokens > 0 ||
       outputTokens > 0 ||
