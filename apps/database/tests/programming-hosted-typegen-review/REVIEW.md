@@ -62,7 +62,7 @@ slice BEFORE the CLI lifecycle: IPAddressDeny=any; IPAddressAllow only loopback
 and 172.28.0.0/16, the dedicated Docker address pool. Both IPv4 and IPv6 traffic
 are filtered, with inheritance to container child cgroups. A privileged preflight
 reads the exact slice allow/deny properties and effective kernel ingress/egress
-program attachments via bpftool; missing tools, configuration, permissions or
+program attachments on its inert admission service leaf via bpftool; missing tools, configuration, permissions or
 attached filters abort before any helper start/reset. Checking configuration
 without attached filters is insufficient because unsupported kernels can ignore
 systemd IP filtering. [Systemd directive source](https://raw.githubusercontent.com/systemd/systemd/main/man/systemd.resource-control.xml),
