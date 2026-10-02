@@ -214,7 +214,8 @@ extension TaskRepositoryOfflinePreparation on TaskRepository {
         'tasks.projectLinkOptions',
       },
     );
-    manifest.checkScope();
-    manifest.retain('tasks', wsId);
+    manifest
+      ..checkScope()
+      ..retain('tasks', wsId);
   }
 }

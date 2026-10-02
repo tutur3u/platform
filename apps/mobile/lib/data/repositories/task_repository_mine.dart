@@ -33,8 +33,9 @@ extension _TaskRepositoryMine on TaskRepository {
       if (optimistic.overdue.isEmpty &&
           optimistic.today.isEmpty &&
           optimistic.upcoming.isEmpty &&
-          optimistic.completed.isEmpty)
+          optimistic.completed.isEmpty) {
         rethrow;
+      }
       response = const {};
     }
     if (completedPage == 0 && response['hasMoreCompleted'] == true) {
@@ -85,11 +86,13 @@ extension _TaskRepositoryMine on TaskRepository {
       return;
     }
     try {
-      if (!await hasNetworkConnection() || userId != currentCacheUserId())
+      if (!await hasNetworkConnection() || userId != currentCacheUserId()) {
         return;
+      }
       _historyWarmups[key] = DateTime.now();
-      if (_historyWarmups.length > 64)
+      if (_historyWarmups.length > 64) {
         _historyWarmups.remove(_historyWarmups.keys.first);
+      }
       for (var page = 1; page <= 5; page++) {
         if (userId != currentCacheUserId()) {
           return;

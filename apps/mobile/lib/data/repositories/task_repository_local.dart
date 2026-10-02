@@ -157,8 +157,9 @@ extension _TaskRepositoryLocal on TaskRepository {
               item.userId == currentCacheUserId() &&
               item.path == base &&
               item.method == 'POST',
-        ))
+        )) {
       return null;
+    }
     final source = overlayPendingCollection(
       workspaceId: wsId,
       feature: 'tasks',
