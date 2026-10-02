@@ -252,6 +252,11 @@ export async function handleProviderSagaMove(
       : {};
     const operation = await service.reserve({
       binding: { action: 'move', mode, source, destination },
+      // Ephemeral encrypted DB row: admission compares it under the row lock.
+      // It must never become a public binding or durable journal field.
+      ...(mode === 'insert'
+        ? { nativeSnapshot: { ...args.existingEvent } }
+        : {}),
       payload: {
         event,
         localPatch:

@@ -354,3 +354,62 @@ it('captures native destination fields from the same current provider read as th
   expect(operation.prepared.binding.baseETag).toBe('fresh-original-version');
   expect(sealed.event).toEqual(f.input.payload.event);
 });
+
+it.each([false, true])(
+  'passes native snapshot only to atomic admission and performs no provider access (stale=%s)',
+  async (stale) => {
+    const f = fixture();
+    const nativeSnapshot = {
+      title: 'stored ciphertext',
+      external_updated_at: null,
+    };
+    const originalRpc = f.rpc.getMockImplementation()!;
+    if (stale)
+      f.rpc.mockImplementation(async (name, params) =>
+        params.p_action === 'admit'
+          ? ({
+              data: null,
+              error: {
+                code: '40001',
+                message: 'Provider saga native snapshot changed',
+              },
+            } as never)
+          : originalRpc(name, params)
+      );
+    const service = await createRequestProviderSagaService(
+      new Request('https://synthetic.invalid'),
+      scope.wsId,
+      scope.eventId,
+      { provider: () => f.provider, project: vi.fn() }
+    );
+    const pending = service.reserve({
+      binding: {
+        ...f.input.binding,
+        mode: 'insert',
+        source: {
+          provider: 'tuturuuu',
+          wsId: scope.wsId,
+          eventId: scope.eventId,
+          workspaceCalendarId: null,
+        },
+      },
+      payload: f.input.payload,
+      nativeSnapshot,
+    });
+    if (stale)
+      await expect(pending).rejects.toMatchObject({ reason: 'conflict' });
+    else expect(await pending).toMatchObject({ phase: 'prepared' });
+    const admitted = f.rpc.mock.calls.find(
+      ([, params]) => params.p_action === 'admit'
+    )?.[1].p_input;
+    expect(admitted.nativeSnapshot).toEqual(nativeSnapshot);
+    expect(JSON.stringify(admitted.prepared)).not.toContain(
+      'stored ciphertext'
+    );
+    expect(admitted.prepared).not.toHaveProperty('nativeSnapshot');
+    expect(f.provider.observe).not.toHaveBeenCalled();
+    expect(f.provider.insert).not.toHaveBeenCalled();
+    expect(f.provider.move).not.toHaveBeenCalled();
+    expect(f.provider.deleteSource).not.toHaveBeenCalled();
+  }
+);

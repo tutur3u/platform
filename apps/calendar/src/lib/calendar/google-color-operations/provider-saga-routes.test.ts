@@ -36,8 +36,16 @@ vi.mock('../../workspace-encryption', () => ({
   decryptEventFromStorage: mocks.decrypt,
 }));
 vi.mock('./route-handlers', () => ({
-  operationFailure: (_error: unknown, operationId?: string) =>
-    Response.json({ ...(operationId ? { operationId } : {}) }, { status: 503 }),
+  operationFailure: (error: unknown, operationId?: string) =>
+    Response.json(
+      { ...(operationId ? { operationId } : {}) },
+      {
+        status:
+          error instanceof ColorOperationError && error.reason === 'conflict'
+            ? 409
+            : 503,
+      }
+    ),
 }));
 const wsId = '00000000-0000-4000-8000-000000004411';
 const eventId = '00000000-0000-4000-8000-000000004421';
@@ -220,3 +228,49 @@ it('rejects combined move/content and cross-account moves before admission', asy
   expect(mocks.factory).not.toHaveBeenCalled();
   expect(mocks.key).not.toHaveBeenCalled();
 });
+
+it.each([false, true])(
+  'atomically admits the stored native snapshot (stale=%s)',
+  async (stale) => {
+    const stored = {
+      id: eventId,
+      ws_id: wsId,
+      provider: 'tuturuuu',
+      title: 'encrypted-old',
+      description: 'encrypted-description',
+      is_encrypted: true,
+      start_at: '2026-10-02T10:00:00Z',
+      end_at: '2026-10-02T11:00:00Z',
+    };
+    mocks.decrypt.mockResolvedValue({
+      ...stored,
+      title: 'private decrypted intent',
+    });
+    if (stale)
+      mocks.reserve.mockRejectedValueOnce(
+        new ColorOperationError('conflict', 'Native snapshot changed')
+      );
+    const response = await handleProviderSagaMove({
+      ...args(),
+      eventId,
+      source: {
+        provider: 'tuturuuu',
+        workspaceCalendarId: wsId,
+        label: 'Native',
+        color: null,
+      },
+      destination: source,
+      existingEvent: stored as never,
+      updates: { source: {} },
+    });
+    expect(response.status).toBe(stale ? 409 : 200);
+    const input = mocks.reserve.mock.calls[0]?.[0];
+    expect(input.nativeSnapshot).toEqual(stored);
+    expect(input.payload.event.summary).toBe('private decrypted intent');
+    expect(input.binding).not.toHaveProperty('nativeSnapshot');
+    if (stale) {
+      expect(mocks.execute).not.toHaveBeenCalled();
+      expect(mocks.read).not.toHaveBeenCalled();
+    } else expect(mocks.execute).toHaveBeenCalledTimes(1);
+  }
+);

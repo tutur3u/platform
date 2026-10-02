@@ -153,6 +153,18 @@ begin
         raise exception using errcode='40001',message='Provider saga source changed';
       end if;
     end if;
+    -- Generation zero has no ledger: a native edit can commit after the route
+    -- decrypts its row. Compare the complete stored snapshot while holding the
+    -- event lock, before creating a ledger or allowing any provider effect.
+    -- Composite conversion normalizes timestamp representations; no writer is
+    -- required to maintain updated_at. The ephemeral snapshot is never stored.
+    if source_endpoint->>'provider'='tuturuuu' then
+      if jsonb_typeof(p_input->'nativeSnapshot') is distinct from 'object'
+        or not (p_input->'nativeSnapshot' ?& array(select jsonb_object_keys(to_jsonb(event_row))))
+        or jsonb_populate_record(null::public.workspace_calendar_events,p_input->'nativeSnapshot') is distinct from event_row then
+        raise exception using errcode='40001',message='Provider saga native snapshot changed';
+      end if;
+    end if;
     insert into private.calendar_google_color_operations(ws_id,event_id,operation_id,actor_id,generation,current_generation,identity,intent,request_hash,phase,prepared)
     values(p_ws_id,p_event_id,operation_id,p_actor_id,expected+1,expected+1,locator,
       jsonb_build_object('kind','saga','connectionId',locator->>'connectionId'),p_input->>'requestHash','prepared',prepared)

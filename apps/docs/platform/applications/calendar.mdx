@@ -617,7 +617,7 @@ native generation comparison for subsequent edits and deletion. Disabling the
 candidate cannot reopen legacy provider writes for a retained event. Legacy batch
 sync preflights every event before dispatch, and invited creation and automatic
 outbound mirroring remain blocked in candidate mode until they adopt the same
-boundary. Ledgerless ordinary native behavior remains unchanged.
+boundary. Ledgerless ordinary native behavior remains unchanged. Native-to-Google admission compares the complete stored native row under the event lock before creating its retained generation. A concurrent ledgerless edit returns a conflict without a provider write, without depending on a native mutation timestamp. The transient encrypted row comparison never enters the public binding or persisted journal; route/service regressions and `calendar-provider-saga.sql` cover stale rejection and fresh admission.
 
 Synthetic Google acceptance established stale-version delete and move rejection,
 identity-preserving movement, duplicate insert rejection, and rejection of late

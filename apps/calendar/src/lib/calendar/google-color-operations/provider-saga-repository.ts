@@ -137,7 +137,8 @@ export function createProviderSagaRepository(args: {
     admit(
       operation: ProviderSagaOperation,
       expectedGeneration: string,
-      placeholder?: Record<string, unknown>
+      placeholder?: Record<string, unknown>,
+      nativeSnapshot?: Record<string, unknown>
     ) {
       return call('admit', {
         id: operation.id,
@@ -147,6 +148,7 @@ export function createProviderSagaRepository(args: {
           .update(JSON.stringify(operation.prepared))
           .digest('hex'),
         ...(placeholder ? { placeholder } : {}),
+        ...(nativeSnapshot ? { nativeSnapshot } : {}),
       });
     },
   };

@@ -66,6 +66,7 @@ export async function createRequestProviderSagaService(
       binding: Omit<SagaBinding, 'operationId' | 'generation' | 'baseETag'>;
       payload: SagaPayload;
       placeholder?: Record<string, unknown>;
+      nativeSnapshot?: Record<string, unknown>;
     }) {
       if ('sourceICalUID' in input.payload || 'sourceSnapshot' in input.payload)
         throw new ColorOperationError(
@@ -237,7 +238,8 @@ export async function createRequestProviderSagaService(
           prepared,
         },
         current.generation,
-        input.placeholder
+        input.placeholder,
+        input.nativeSnapshot
       );
     },
   };
