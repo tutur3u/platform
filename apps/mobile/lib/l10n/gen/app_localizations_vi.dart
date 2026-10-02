@@ -9490,4 +9490,33 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryStockHealthUnknown => 'Chưa có dữ liệu';
+
+  @override
+  String get inventorySeasonPriceLoading => 'Đang kiểm tra giá mùa hiện tại…';
+
+  @override
+  String get inventorySeasonPriceUnavailable => 'Giá mùa không khả dụng hoặc đã hết hạn. Kết nối, làm mới và kiểm tra giỏ hàng trước khi bán.';
+
+  @override
+  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone) {
+    return 'Giá mùa · $currency · tại $asOf (UTC) · ngày mùa theo $timeZone';
+  }
+
+  @override
+  String get inventorySeasonRecoveryTitle => 'Khôi phục đơn bán hàng';
+
+  @override
+  String get inventorySeasonRecoveryCheck => 'Kiểm tra kết quả bán hàng';
+
+  @override
+  String get inventorySeasonRecoveryUnavailable => 'Không thể truy cập bộ lưu trữ khôi phục. Tạm khóa tạo đơn cho đến khi có thể khôi phục an toàn.';
+
+  @override
+  String get inventorySeasonRetryPending => 'Chưa xác định được kết quả bán hàng. Kiểm tra yêu cầu đã lưu trước khi gửi lại đúng nội dung. Bạn có thể rời màn hình và khôi phục trong tài khoản, không gian làm việc này; không tạo đơn thay thế.';
+
+  @override
+  String get inventoryCheckoutScopeChanged => 'Tài khoản hoặc không gian làm việc đã thay đổi. Đóng màn hình này và mở lại đơn bán trong không gian làm việc của đơn.';
+
+  @override
+  String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
 }

@@ -18246,6 +18246,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unavailable'**
   String get inventoryStockHealthUnknown;
+
+  /// No description provided for @inventorySeasonPriceLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking current season prices…'**
+  String get inventorySeasonPriceLoading;
+
+  /// No description provided for @inventorySeasonPriceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Season prices unavailable or expired. Connect, refresh and review the cart before selling.'**
+  String get inventorySeasonPriceUnavailable;
+
+  /// No description provided for @inventorySeasonPriceAsOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Season prices · {currency} · as of {asOf} (UTC) · season dates in {timeZone}'**
+  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone);
+
+  /// No description provided for @inventorySeasonRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recover sale'**
+  String get inventorySeasonRecoveryTitle;
+
+  /// No description provided for @inventorySeasonRecoveryCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check sale result'**
+  String get inventorySeasonRecoveryCheck;
+
+  /// No description provided for @inventorySeasonRecoveryUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale recovery storage is unavailable. Creation is blocked until this operation can be recovered safely.'**
+  String get inventorySeasonRecoveryUnavailable;
+
+  /// No description provided for @inventorySeasonRetryPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.'**
+  String get inventorySeasonRetryPending;
+
+  /// No description provided for @inventoryCheckoutScopeChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The account or workspace changed. Close this checkout and reopen the sale in its owning workspace.'**
+  String get inventoryCheckoutScopeChanged;
+
+  /// No description provided for @inventorySeasonHistoricalReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled sale history is read only here. Recorded prices are preserved.'**
+  String get inventorySeasonHistoricalReadOnly;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

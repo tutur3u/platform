@@ -9556,4 +9556,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryStockHealthUnknown => 'Unavailable';
+
+  @override
+  String get inventorySeasonPriceLoading => 'Checking current season prices…';
+
+  @override
+  String get inventorySeasonPriceUnavailable => 'Season prices unavailable or expired. Connect, refresh and review the cart before selling.';
+
+  @override
+  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone) {
+    return 'Season prices · $currency · as of $asOf (UTC) · season dates in $timeZone';
+  }
+
+  @override
+  String get inventorySeasonRecoveryTitle => 'Recover sale';
+
+  @override
+  String get inventorySeasonRecoveryCheck => 'Check sale result';
+
+  @override
+  String get inventorySeasonRecoveryUnavailable => 'Sale recovery storage is unavailable. Creation is blocked until this operation can be recovered safely.';
+
+  @override
+  String get inventorySeasonRetryPending => 'Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.';
+
+  @override
+  String get inventoryCheckoutScopeChanged => 'The account or workspace changed. Close this checkout and reopen the sale in its owning workspace.';
+
+  @override
+  String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
 }

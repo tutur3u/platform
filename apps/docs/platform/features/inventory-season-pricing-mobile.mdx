@@ -1,0 +1,142 @@
+---
+title: Mobile season prices
+description: Authoritative scheduled sale prices and durable mobile checkout recovery.
+updatedAt: "2026-10-02"
+---
+
+Mobile checkout consumes authoritative season prices for **new scheduled sales**.
+Operators explicitly select a sales period and wallet. Legacy/unassigned checkout
+continues using its existing creation flow. This slice does not author prices,
+manage periods, edit scheduled history, or claim complete web parity.
+
+## Current-price contract
+
+Checkout reads uncached period metadata and
+`GET /api/v1/workspaces/{wsId}/inventory/sales-periods/{periodId}/prices`.
+The response contains price rows and a server `as_of` instant. Resolution uses the
+selected period, product, unit, warehouse and explicit wallet currency. Effective
+intervals are half-open `[valid_from, valid_to)`; duplicate applicable rows,
+malformed responses and missing prices block the sale. Product allow/block lists
+apply separately. Period dates are inclusive in the period's IANA timezone,
+checked against server time, with final eligibility checked atomically by the
+server. No device-timezone date or catalog fallback decides scheduled pricing.
+
+The compact checkout shows season, currency, UTC quote time and period timezone.
+Quotes expire after 15 seconds of local receipt age and are refreshed while the
+checkout is open. Automatic failures retry at most once every ten seconds;
+manual refresh remains immediate. Failed refreshes clear visible quotes. Missing lines display an
+unavailable amount rather than a zero-priced sale or a mixed-currency total.
+
+## Atomic creation and retry
+
+Scheduled sales require online access and call the existing authenticated
+`POST /api/v1/workspaces/{wsId}/finance/invoices` directly, with
+`price_mode: custom`, `inventory_period_id`, `inventory_request_id` and immutable
+`price_id` on each line. They never enter the offline mutation queue and never
+create an invoice followed by a separate period assignment. The backend derives
+configured workspace currency, checks wallet currency and precision, validates
+current prices/stock, and persists historical snapshots plus period assignment in
+one transaction. The UI currency is a quote-selection constraint, not authority
+to change workspace currency. Zero prices are legitimate only when explicitly
+returned by the server.
+
+Before any scheduled POST, checkout writes and verifies an encrypted operation
+journal using the existing secure-storage adapter. It retains the exact request
+UUID/body, original currency, quote provenance and frozen product display labels
+in an actor/workspace scope. Cache eviction, logout, scope switches and controller
+recreation do not erase unresolved operations. Read, corruption, version and write
+failures block creation; they never become an empty cart. One app-wide scope lock
+prevents simultaneous checkouts preparing distinct operations. Separate business
+drafts on another device are outside this local journal contract.
+
+An unresolved operation opens a dedicated recovery view. Metadata Retry and cart
+editing are unavailable there; current catalog, wallet, category and period
+metadata cannot strand recovery or route it into legacy creation. Operators can
+leave and resume in the owning account/workspace. No automatic/offline replay
+occurs.
+
+An actor/workspace switch during a POST or receipt lookup clears the mounted
+checkout immediately and queues the current scope's catalog reload until the
+active save finishes. Every switch advances a scope revision, including A→B→A;
+a late response cannot acknowledge, navigate or display an error on the reset
+form merely because its actor/workspace pair matches again. The original scoped
+journal retains its UUID and immutable body. Returning to its owning scope opens
+recovery (or the recorded confirmed result); switching away loads the new scope.
+
+An explicit Check sale result action calls the authenticated uncached
+`GET /api/v1/workspaces/{wsId}/inventory/sale-requests/{requestId}`. The server
+verifies current canonical membership and create-sales action permission, derives
+the actor from authentication and selects only that actor's workspace/request
+receipt. It returns only state, request ID and committed invoice ID. The existing
+private receipt/tombstone stays authoritative after invoice deletion. Lost
+permissions and unavailable rollout schema are errors, never an empty receipt.
+
+`not_observed` is not proof an earlier transaction cannot still commit. This
+explicit action may resend only the original UUID and immutable payload. Every
+HTTP rejection retains uncertainty, including 400/401/403/409/422/503. Changed
+DEFAULT_CURRENCY can reject resubmission while the original is in flight; future
+receipt lookup resolves a committed outcome independently of current pricing
+configuration. No replacement request/key or revised cart is allowed. If the
+original never commits and continues to be rejected, the operation stays blocked
+for manual reconciliation. This slice does not add a terminal server rejection or
+cancellation protocol or permit unsafe journal reset.
+
+A valid invoice response or matching receipt makes checkout terminal. Cache
+invalidation and remembered-category preferences are best-effort maintenance and
+cannot turn confirmed creation into a resubmittable cart. Confirmation is stored
+before its journal can be acknowledged. A confirmation-write failure retains the
+prepared record for next-entry receipt reconciliation while keeping known success
+terminal in the current view. Acknowledgement removes only a matching confirmed
+record. Acknowledgement does not reopen the terminal controller/cart: another sale
+requires a new checkout instance. Corrupt or unknown-version journals intentionally
+fail closed for manual reconciliation; deletion without a verified receipt could
+produce a duplicate invoice. Expired quotes stay non-actionable and hidden while
+refreshing, and stale-state notifications occur only on freshness transitions.
+Sale-edit scope changes show an explicit instruction to close and reopen in the
+owning workspace. Scheduled history stays read only and ordinary historical line prices
+remain their recorded prices.
+
+## Permissions and rollout limits
+
+Canonical actor/workspace membership remains server-owned. Hidden-module
+preferences do not grant or revoke authorization. Period discovery currently
+requires view-sales permission while quote GET also permits create-sales. A
+create-only actor may therefore be unable to discover a period; mobile fails
+closed rather than broadening access. Missing pricing schema/RPC (503), denial,
+invalid timezone, missing metadata or wallet-price currency mismatch block
+scheduled submission. Source presence on main does not prove production migration
+availability. Legacy selected-period assignment retains its existing separate
+creation/assignment semantics; mode changes racing that legacy path still need
+server rollout/integration review.
+
+Revenue/profit remain withheld: the analytics aggregate still needs verified
+currency, linked checkout/invoice deduplication, refund/cancellation and reporting
+timezone semantics. This change does not modify any financial aggregation.
+
+## Regression evidence
+
+`apps/mobile/test/features/inventory/season_pricing/` covers interval boundaries,
+currency separation, malformed quotes, timezone eligibility, product scope,
+expiry/offline/denial, actor/workspace races, exact-payload idempotent retry, direct
+atomic repository transport and mounted checkout/historical guards. The existing
+partial-option checkout regression remains in the focused suite.
+
+Recovery regressions cover persistent-store round trips, write-before-send,
+restart/scope isolation, late completion, concurrent checkouts, rejection identity
+retention, denied lookup and confirmed receipt handling. Mounted tests exercise
+preference/cache failures after success, metadata Retry removal while uncertain,
+and recovery after metadata denial. Twelve mounted scope-switch cases cover
+actor and workspace A→B/A→B→A during delayed POST success, timeout and receipt
+responses; they assert current-scope readiness and preserved original identity.
+Route tests verify permissions, canonical actor
+filters, minimal output and unavailable versus not-observed semantics.
+
+Native keychain/keystore durability and exact-head mobile/API CI remain release
+gates. Mocked storage does not prove native persistence or deployed endpoint
+availability. This read-only satellite API uses the existing receipt schema;
+no database migration or application is part of the recovery follow-up.
+
+Ordinary catalog rows and legacy history keep their VND denomination even when
+a selected wallet has another currency; no FX conversion is implied. Scheduled
+rows retain their scheduled/recorded currency. Recovered confirmed sales remember
+the income category with the same best-effort policy as initial submissions.
