@@ -112,7 +112,7 @@ select throws_ok($$select public.fixture_inventory_create(122,'product',jsonb_se
 select is((select count(*) from private.inventory_offline_create_receipts where resource='product'), 1::bigint, 'failed product transactions never publish an acknowledgment receipt');
 select is((select count(*) from public.workspace_products where ws_id='00005743-0000-4000-8000-000000000011'), 1::bigint, 'failed product transactions leave no partial products');
 create function public.fixture_inventory_period_payload() returns jsonb language sql as $$
- select jsonb_build_object('name','Synthetic period','product_scope','allow',
+ select jsonb_build_object('name','Synthetic period','product_scope','allowlist',
  'product_ids',jsonb_build_array(
  (select response->'data'->>'id' from contract_results where kind='product')));
 $$;
