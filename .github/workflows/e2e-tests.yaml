@@ -208,7 +208,7 @@ jobs:
   e2e:
     name: Playwright E2E (${{ matrix.label }})
     needs: [relevance, prepare-e2e-images]
-    if: ${{ always() && github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' && needs.relevance.outputs.run_web == 'true' }}
+    if: ${{ always() && !cancelled() && github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' && needs.relevance.outputs.run_web == 'true' }}
     timeout-minutes: 45
     runs-on: ubuntu-latest
     permissions:

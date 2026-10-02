@@ -305,6 +305,7 @@ test('E2E proof reuse gates allocation and publishes only trusted successful cou
     /outputs\.run_web == 'true'/u
   );
   assert.match(workflow.jobs.e2e.if, /outputs\.run_web == 'true'/u);
+  assert.match(workflow.jobs.e2e.if, /!cancelled\(\)/u);
   assert.match(
     workflow.jobs['inventory-storefront-cache-e2e'].if,
     /outputs\.run_inventory == 'true'/u
