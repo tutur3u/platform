@@ -534,7 +534,6 @@ class _TransactionCategoriesViewState
   Future<void> _handleWorkspaceChanged(String? workspaceId) async {
     _categoriesRequestId++;
     _tagsRequestId++;
-
     if (!mounted) return;
 
     if (workspaceId == null) {
@@ -552,6 +551,7 @@ class _TransactionCategoriesViewState
       return;
     }
 
+    setState(() => _workspaceCurrency = null);
     await _loadCurrentTab();
   }
 
@@ -588,8 +588,8 @@ class _TransactionCategoriesViewState
 
     if (!forceRefresh && resolvedCategories != null) {
       final currency = await repository
-          .getWorkspaceDefaultCurrency(wsId)
-          .catchError((_) => _workspaceCurrency ?? 'USD');
+          .readWorkspaceDefaultCurrencyFromCache(wsId)
+          .catchError((_) => null);
       if (!mounted || requestId != _categoriesRequestId) return;
       setState(() {
         _categories = resolvedCategories;
@@ -687,8 +687,8 @@ class _TransactionCategoriesViewState
 
     if (!forceRefresh && resolvedTags != null) {
       final currency = await repository
-          .getWorkspaceDefaultCurrency(wsId)
-          .catchError((_) => _workspaceCurrency ?? 'USD');
+          .readWorkspaceDefaultCurrencyFromCache(wsId)
+          .catchError((_) => null);
       if (!mounted || requestId != _tagsRequestId) return;
       setState(() {
         _tags = resolvedTags;

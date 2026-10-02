@@ -90,6 +90,7 @@ class CacheStore {
   final Map<String, ({CacheKey key, List<String> tags})> _flightScopes = {};
   final Map<String, int> _keyRevisions = {};
   int _revision = 0;
+  final Map<String, Future<void>> _replicaWrites = {};
   final Map<(String?, String?, String?), int> _scopeRevisions = {};
   final Map<(String?, String?, String?), int> _clearingScopes = {};
 
@@ -443,6 +444,14 @@ class CacheStore {
       return;
     }
     if (expectedRevision == null) _advanceKey(key.value);
+    final writeRevision = _revisionFor(key);
+    void checkCurrent() {
+      checkScope?.call();
+      if (_isClearing(key) || writeRevision != _revisionFor(key)) {
+        throw StateError('Cache write was invalidated.');
+      }
+    }
+
     if (_nonPersistentResourceNamespaces.contains(key.namespace)) {
       _dropRecord(key.value);
       await _resourceBox.delete(key.value);
@@ -466,9 +475,13 @@ class CacheStore {
     );
     _putRecord(record);
     await _resourceBox.put(key.value, record.toJson());
+    checkCurrent();
     await _replicaMigration;
-    await _replaceReplicaSource(record);
+    checkCurrent();
+    await _replaceReplicaSource(record, checkCurrent: checkCurrent);
+    checkCurrent();
     await _pruneResourceCache();
+    checkCurrent();
   }
 
   Future<void> remove(CacheKey key) async {

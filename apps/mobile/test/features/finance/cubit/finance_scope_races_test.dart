@@ -67,11 +67,19 @@ void main() {
   late _Repository repo;
   late _Store store;
   String? user;
+  late OfflineMutationQueue queue;
 
   setUp(() {
     repo = _Repository();
-    when(() => repo.mutationQueue).thenReturn(OfflineMutationQueue.instance);
     store = _Store();
+    queue = OfflineMutationQueue.forTesting(
+      store: store,
+      userId: () => user,
+      checkConnectivity: () async => [ConnectivityResult.none],
+      connectivityChanges: const Stream<List<ConnectivityResult>>.empty(),
+    );
+    addTearDown(queue.dispose);
+    when(() => repo.mutationQueue).thenReturn(queue);
     user = 'actor';
     FinanceCubit.clearUserCache(null);
     when(() => repo.getExchangeRates()).thenAnswer((_) async => const []);
@@ -273,7 +281,7 @@ void main() {
     addTearDown(cubit.close);
     final load = cubit.load('sync-metadata');
     await _settle();
-    OfflineMutationQueue.instance.syncRevision.value++;
+    queue.syncRevision.value++;
     await _settle();
     metadata.complete('VND');
     await load;
@@ -283,6 +291,36 @@ void main() {
     expect(cubit.state.workspaceCurrency, 'VND');
     expect(cubit.state.status, TransactionListStatus.loaded);
   });
+
+  test(
+    'overlapping workspace loads do not retain another workspace search',
+    () async {
+      final metadata = Completer<String>();
+      final page = Completer<InfiniteTransactionResponse>();
+      when(
+        () => repo.getWorkspaceDefaultCurrency('new-search'),
+      ).thenAnswer((_) => metadata.future);
+      when(
+        () => repo.getTransactionsInfinite(wsId: 'new-search', search: 'tea'),
+      ).thenAnswer((_) => page.future);
+      final cubit = transactions();
+      addTearDown(cubit.close);
+      await cubit.load('old-search');
+      final newer = cubit.load('new-search');
+      await _settle();
+      final search = cubit.setSearch('tea');
+      await _settle();
+      await cubit.load('old-search');
+      expect(cubit.state.search, isEmpty);
+      expect(store.writes.last.workspaceId, 'old-search');
+      expect(store.writes.last.params, {'search': ''});
+      metadata.complete('VND');
+      page.complete(_page('stale-search'));
+      await Future.wait([newer, search]);
+      expect(cubit.state.search, isEmpty);
+      expect(cubit.state.transactions.single.id, 'default');
+    },
+  );
 
   test('same workspace refresh preserves current search', () async {
     final cubit = transactions();
@@ -302,7 +340,7 @@ void main() {
       await cubit.loadFinanceData('previous-owner');
       clearInteractions(repo);
       user = 'other';
-      OfflineMutationQueue.instance.syncRevision.value++;
+      queue.syncRevision.value++;
       await _settle();
       verifyNever(() => repo.getWallets('previous-owner'));
     },
@@ -320,7 +358,7 @@ void main() {
     addTearDown(cubit.close);
     await cubit.loadFinanceData('injected-sync');
     clearInteractions(repo);
-    OfflineMutationQueue.instance.syncRevision.value++;
+    queue.syncRevision.value++;
     await _settle();
     verifyNever(() => repo.getWallets('injected-sync'));
     otherQueue.syncRevision.value++;

@@ -29,6 +29,7 @@ void main() {
   late int status;
   late List<Uri> reads;
   Completer<void>? gate;
+  Completer<void>? requestsDispatched;
 
   const permissionKey = CacheKey(
     namespace: 'workspace.permissions',
@@ -63,12 +64,16 @@ void main() {
     status = 200;
     reads = [];
     gate = null;
+    requestsDispatched = null;
     client = SupabaseClient(
       'https://example.test',
       'test-key',
       postgrestOptions: const PostgrestClientOptions(retryEnabled: false),
       httpClient: MockClient((request) async {
         reads.add(request.url);
+        if (reads.length >= 3 && requestsDispatched?.isCompleted == false) {
+          requestsDispatched!.complete();
+        }
         final granted = grant;
         final responseStatus = status;
         await gate?.future;
@@ -261,10 +266,9 @@ void main() {
     () async {
       final blocked = Completer<void>();
       gate = blocked;
+      requestsDispatched = Completer<void>();
       final older = repository.getPermissions(wsId: 'ws');
-      while (reads.length < 3) {
-        await Future<void>.delayed(Duration.zero);
-      }
+      await requestsDispatched!.future.timeout(const Duration(seconds: 5));
       gate = null;
       grant = false;
       final newer = await repository.getPermissions(wsId: 'ws');
