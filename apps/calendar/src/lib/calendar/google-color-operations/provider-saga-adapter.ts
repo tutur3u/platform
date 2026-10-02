@@ -189,6 +189,9 @@ export function createProviderSagaAdapter(args: {
         await calendar.events.insert({
           calendarId: endpoint.identity.calendarId,
           requestBody,
+          ...(payload.eventLabelVersion === undefined
+            ? {}
+            : { eventLabelVersion: payload.eventLabelVersion }),
           sendUpdates: payload.sendUpdates,
         });
       } catch (error) {

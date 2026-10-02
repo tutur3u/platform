@@ -171,6 +171,15 @@ describe('disabled provider saga SDK adapter', () => {
     );
     expect(allowed).toHaveBeenCalledTimes(resolve.mock.calls.length);
   });
+  it.each([0, 1] as const)(
+    'keeps sealed event label version %s in the SDK query, not the event body',
+    async (eventLabelVersion) => {
+      await adapter().insert(create, { ...payload, eventLabelVersion });
+      const call = insert.mock.calls[0]?.[0];
+      expect(call.eventLabelVersion).toBe(eventLabelVersion);
+      expect(call.requestBody).not.toHaveProperty('eventLabelVersion');
+    }
+  );
   it('recovers an ambiguous successful insert by observing its marker, without repeat dispatch', async () => {
     insert.mockImplementationOnce(async () => {
       events.set(`destination/${targetId}`, target());
