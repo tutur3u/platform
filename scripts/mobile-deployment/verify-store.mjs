@@ -4,8 +4,13 @@ import { sign } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
-
 import { isTuturuuuReviewEmail } from '../../packages/utils/src/email/reviewer-domain.mjs';
+import {
+  BetaHistoryUnavailableError,
+  ensureBuildWhatsNew,
+  originalBuildHistory,
+  uploadedBuildTestNotes,
+} from './build-test-notes.mjs';
 
 const APP_ID = 'com.tuturuuu.app.mobile';
 const APPLE_ORIGIN = 'https://api.appstoreconnect.apple.com';
@@ -178,7 +183,25 @@ export async function distributeTestFlightBuild(apple, appId, buildId, config) {
       'TestFlight group assignment was not confirmed by App Store Connect'
     );
   }
-  if (selected.some((group) => group.attributes?.isInternalGroup === false)) {
+  let notesReady = true;
+  if (config.loadTestNotes) {
+    try {
+      await ensureBuildWhatsNew(apple, buildId, () =>
+        config.loadTestNotes(apple, buildId)
+      );
+      console.log(`Verified per-build What to Test for ${buildId}.`);
+    } catch (error) {
+      if (!(error instanceof BetaHistoryUnavailableError)) throw error;
+      notesReady = false;
+      console.log(
+        'Per-build What to Test could not be verified from the original upload history. Keep internal testing available; prepare version-specific notes manually before new external review.'
+      );
+    }
+  }
+  if (
+    selected.some((group) => group.attributes?.isInternalGroup === false) &&
+    notesReady
+  ) {
     const reviewState = await submitExternalBetaReview(
       apple,
       appId,
@@ -520,13 +543,37 @@ async function connectApple() {
   return { apple, appId: apps.data[0].id };
 }
 
-function betaDistributionConfig() {
+function betaDistributionConfig(expectedBuildNumber) {
   return {
     enabled: process.env.TESTFLIGHT_BETA_ENABLED ?? 'true',
     groups: process.env.TESTFLIGHT_BETA_GROUPS ?? 'all',
-    whatsNew:
-      process.env.TESTFLIGHT_BETA_WHATS_NEW?.trim() ||
-      'Please test the latest improvements and share any issues or feedback.',
+    loadTestNotes: async (apple, buildId) => {
+      const resource = await apple(
+        `/v1/builds/${buildId}?include=preReleaseVersion`
+      );
+      const build = resource.data;
+      const versionId = build?.relationships?.preReleaseVersion?.data?.id;
+      const version = resource.included?.find(
+        (item) => item.type === 'preReleaseVersions' && item.id === versionId
+      )?.attributes?.version;
+      const number = build?.attributes?.version;
+      if (!version || !number)
+        throw new BetaHistoryUnavailableError(
+          'Selected beta build identity is missing'
+        );
+      if (expectedBuildNumber !== undefined) {
+        if (
+          String(number) !== String(expectedBuildNumber) ||
+          version !== process.env.MOBILE_BUILD_NAME
+        ) {
+          throw new BetaHistoryUnavailableError(
+            'Uploaded beta build identity mismatch'
+          );
+        }
+        return uploadedBuildTestNotes(version, number, process.env.GITHUB_SHA);
+      }
+      return originalBuildHistory(number, version);
+    },
   };
 }
 
@@ -556,7 +603,7 @@ export async function verifyTestFlight(buildNumber) {
         apple,
         appId,
         build.id,
-        betaDistributionConfig()
+        betaDistributionConfig(buildNumber)
       );
       await expireSupersededTestFlightBuilds(apple, appId);
       console.log(
