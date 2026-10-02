@@ -14,6 +14,7 @@ import {
   getSidebarCollapsedState,
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
 import { cookies, headers } from 'next/headers';
@@ -108,30 +109,32 @@ export default async function DashboardLayout({
   );
 
   return (
-    <SidebarProvider
-      initialBehavior={sidebarBehavior}
-      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
-    >
-      <Structure
-        bootstrap={bootstrap}
-        defaultCollapsed={defaultCollapsed}
-        footerActions={
-          <>
-            <div className="min-w-0 flex-1">
-              <AppUserNav />
-            </div>
-            <NotificationPopover userId={bootstrap.profile.id} />
-          </>
-        }
-        links={await getNavigationLinks(wsId)}
-        notificationPopover={
-          <NotificationPopover userId={bootstrap.profile.id} />
-        }
-        userPopover={<AppUserNav hideMetadata />}
-        wsId={wsId}
+    <WorkspaceVisibilityProvider actorId={bootstrap.profile.id}>
+      <SidebarProvider
+        initialBehavior={sidebarBehavior}
+        initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
       >
-        {children}
-      </Structure>
-    </SidebarProvider>
+        <Structure
+          bootstrap={bootstrap}
+          defaultCollapsed={defaultCollapsed}
+          footerActions={
+            <>
+              <div className="min-w-0 flex-1">
+                <AppUserNav />
+              </div>
+              <NotificationPopover userId={bootstrap.profile.id} />
+            </>
+          }
+          links={await getNavigationLinks(wsId)}
+          notificationPopover={
+            <NotificationPopover userId={bootstrap.profile.id} />
+          }
+          userPopover={<AppUserNav hideMetadata />}
+          wsId={wsId}
+        >
+          {children}
+        </Structure>
+      </SidebarProvider>
+    </WorkspaceVisibilityProvider>
   );
 }

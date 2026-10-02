@@ -1,11 +1,16 @@
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import type React from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TaskFilters } from '../../shared/task-filter.types';
 import { TaskFilter } from './task-filter';
 
+vi.mock('@tuturuuu/internal-api/users', () => ({
+  getCurrentUserHiddenWorkspaces: async () => ({ hiddenWorkspaceIds: [] }),
+  updateCurrentUserHiddenWorkspace: vi.fn(),
+}));
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
@@ -77,13 +82,15 @@ function renderTaskFilter(
 
   render(
     <QueryClientProvider client={queryClient}>
-      <TaskFilter
-        currentUserId="user-1"
-        filters={baseFilters}
-        onFiltersChange={onFiltersChange}
-        wsId="ws-1"
-        {...overrides}
-      />
+      <WorkspaceVisibilityProvider actorId="synthetic-actor">
+        <TaskFilter
+          currentUserId="user-1"
+          filters={baseFilters}
+          onFiltersChange={onFiltersChange}
+          wsId="ws-1"
+          {...overrides}
+        />
+      </WorkspaceVisibilityProvider>
     </QueryClientProvider>
   );
 

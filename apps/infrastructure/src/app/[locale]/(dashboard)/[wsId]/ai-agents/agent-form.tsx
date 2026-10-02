@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { buildAgentPayload, DEFAULT_MODEL } from './ai-agents-utils';
 import {
   DiscordChannelFields,
@@ -34,6 +35,7 @@ export function AgentForm({
   onSubmit: (payload: SaveAiAgentPayload, reset?: () => void) => void;
 }) {
   const t = useTranslations('ai-agents-settings');
+  const [workspaceReady, setWorkspaceReady] = useState(false);
   const discord = agent?.channels.find(
     (channel) => channel.adapter === 'discord'
   );
@@ -44,10 +46,11 @@ export function AgentForm({
       className="space-y-5 rounded-lg border border-border bg-card p-4"
       onSubmit={(event) => {
         event.preventDefault();
+        if (isPending || !workspaceReady) return;
         const form = event.currentTarget;
-        onSubmit(buildAgentPayload(new FormData(form), agent), () =>
-          form.reset()
-        );
+        const data = new FormData(form);
+        if (!data.get('workspaceId')) return;
+        onSubmit(buildAgentPayload(data, agent), () => form.reset());
       }}
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
@@ -63,6 +66,7 @@ export function AgentForm({
           />
         </div>
         <WorkspacePicker
+          onAvailabilityChange={setWorkspaceReady}
           defaultValue={
             discord?.workspaceId || zalo?.workspaceId || ROOT_WORKSPACE_ID
           }
@@ -142,7 +146,7 @@ export function AgentForm({
       </Tabs>
 
       <div className="flex justify-end">
-        <Button disabled={isPending} type="submit">
+        <Button disabled={isPending || !workspaceReady} type="submit">
           {isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (

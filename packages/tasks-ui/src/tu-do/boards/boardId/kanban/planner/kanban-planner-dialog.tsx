@@ -93,6 +93,7 @@ export function KanbanPlannerDialog({
 
             <PlannerSection title={t('new_plan')}>
               <PlannerCreatePlanPanel
+                createDisabled={planner.workspaceActionsDisabled}
                 createPending={planner.createPlanMutation.isPending}
                 mode={planner.mode}
                 onCreatePlan={() => planner.createPlanMutation.mutate()}
@@ -105,6 +106,7 @@ export function KanbanPlannerDialog({
             <PlannerSection title={t('edit_plan')} disabled={!hasSelectedPlan}>
               {planner.selectedPlan && (
                 <PlannerEditPlanPanel
+                  saveDisabled={planner.workspaceActionsDisabled}
                   editMode={planner.editMode}
                   editStatus={planner.editStatus}
                   editTitle={planner.editTitle}
@@ -128,6 +130,7 @@ export function KanbanPlannerDialog({
             >
               {planner.selectedPlan && (
                 <PlannerTargetControls
+                  workspaceActionsDisabled={planner.workspaceActionsDisabled}
                   addWorkspacePending={planner.addWorkspaceMutation.isPending}
                   boards={planner.boards}
                   createItemPending={planner.createItemMutation.isPending}
