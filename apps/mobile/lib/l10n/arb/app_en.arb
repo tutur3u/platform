@@ -4061,5 +4061,17 @@
                 "type": "String"
             }
         }
+    },
+    "meetCollaboration": "Collaborate",
+    "meetCollaborationUnavailable": "Collaboration is unavailable. Rejoin the meeting and try again.",
+    "meetScreenFixtureTitle": "Native screen capture test",
+    "meetScreenFixtureHint": "This test sends your selected screen only to a receiver on this device. It does not join a hosted meeting. Stop sharing when finished.",
+    "meetScreenFixtureFrames": "Decoded receiver frames: {count}",
+    "@meetScreenFixtureFrames": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
     }
 }

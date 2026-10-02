@@ -10,12 +10,18 @@ on:
       - main
     paths:
       - "apps/mobile/**"
+      - "apps/meet-realtime/**"
+      - "packages/realtime/**"
+      - "bun.lock"
       - ".github/workflows/mobile.yaml"
   pull_request:
     branches:
       - main
     paths:
       - "apps/mobile/**"
+      - "apps/meet-realtime/**"
+      - "packages/realtime/**"
+      - "bun.lock"
       - ".github/workflows/mobile.yaml"
 
 permissions:
@@ -119,9 +125,34 @@ jobs:
           TZ: America/New_York
         run: flutter test test/features/calendar/calendar_date_time_test.dart -r expanded
 
+  realtime-parity:
+    name: Mobile and web Cloudflare parity
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+          cache: true
+      - run: bun install --frozen-lockfile
+      - run: flutter pub get
+        working-directory: apps/mobile
+      - name: Verify native/web room protocol against local Cloudflare
+        run: bun apps/meet-realtime/tests/mobile-local-check.ts
+
   build:
     name: build
-    needs: [check-ci, quality, tests]
+    needs: [check-ci, quality, tests, realtime-parity]
     if: always() && needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -129,4 +160,5 @@ jobs:
         env:
           QUALITY_RESULT: ${{ needs.quality.result }}
           TEST_RESULT: ${{ needs.tests.result }}
-        run: test "$QUALITY_RESULT" = success && test "$TEST_RESULT" = success
+          REALTIME_RESULT: ${{ needs.realtime-parity.result }}
+        run: test "$QUALITY_RESULT" = success && test "$TEST_RESULT" = success && test "$REALTIME_RESULT" = success

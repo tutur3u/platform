@@ -9687,4 +9687,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
+
+  @override
+  String get meetCollaboration => 'Collaborate';
+
+  @override
+  String get meetCollaborationUnavailable => 'Collaboration is unavailable. Rejoin the meeting and try again.';
+
+  @override
+  String get meetScreenFixtureTitle => 'Native screen capture test';
+
+  @override
+  String get meetScreenFixtureHint => 'This test sends your selected screen only to a receiver on this device. It does not join a hosted meeting. Stop sharing when finished.';
+
+  @override
+  String meetScreenFixtureFrames(int count) {
+    return 'Decoded receiver frames: $count';
+  }
 }

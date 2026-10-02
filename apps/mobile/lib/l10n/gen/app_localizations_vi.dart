@@ -9621,4 +9621,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
+
+  @override
+  String get meetCollaboration => 'Cộng tác';
+
+  @override
+  String get meetCollaborationUnavailable => 'Cộng tác hiện không khả dụng. Hãy vào lại cuộc họp rồi thử lại.';
+
+  @override
+  String get meetScreenFixtureTitle => 'Kiểm thử chia sẻ màn hình gốc';
+
+  @override
+  String get meetScreenFixtureHint => 'Kiểm thử chỉ gửi màn hình bạn chọn đến bộ nhận trên thiết bị này, không tham gia cuộc họp trực tuyến. Dừng chia sẻ khi hoàn tất.';
+
+  @override
+  String meetScreenFixtureFrames(int count) {
+    return 'Số khung hình đã giải mã: $count';
+  }
 }

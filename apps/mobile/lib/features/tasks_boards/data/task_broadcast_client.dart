@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mobile/core/realtime/cloudflare_channel.dart';
+import 'package:mobile/data/sources/api_client.dart';
 
 const taskBoardRealtimeChannelPrefix = 'board-realtime';
 const taskUserRealtimeChannelPrefix = 'task-user-realtime';
-const privateTaskRealtimeChannelConfig = RealtimeChannelConfig(private: true);
 
 typedef TaskBroadcastHandler = void Function(TaskBroadcastEvent event);
 
@@ -125,24 +125,19 @@ abstract class TaskBroadcastClient {
   });
 }
 
-class SupabaseTaskBroadcastClient implements TaskBroadcastClient {
-  SupabaseTaskBroadcastClient({SupabaseClient? supabase})
-    : _supabase = supabase;
+class CloudflareTaskBroadcastClient implements TaskBroadcastClient {
+  CloudflareTaskBroadcastClient({ApiClient? apiClient})
+    : _api = apiClient ?? ApiClient();
+  final ApiClient _api;
 
-  final SupabaseClient? _supabase;
-
-  SupabaseClient? get _client {
-    final explicitClient = _supabase;
-    if (explicitClient != null) {
-      return explicitClient;
-    }
-
-    try {
-      return Supabase.instance.client;
-    } on Object {
-      return null;
-    }
-  }
+  CloudflareChannel _channel(
+    String topic,
+    void Function(Map<String, dynamic>) onMessage,
+  ) => CloudflareChannel(
+    resolveTicket: () =>
+        _api.postJson('/api/v1/realtime/channels', {'topic': topic}),
+    onMessage: onMessage,
+  );
 
   @override
   TaskBroadcastSubscription subscribeToBoard({
@@ -172,19 +167,16 @@ class SupabaseTaskBroadcastClient implements TaskBroadcastClient {
     required String event,
     required Map<String, dynamic> payload,
   }) async {
-    final supabase = _client;
-    if (supabase == null) {
-      return;
-    }
-
-    final channel = supabase.channel(
-      channelName,
-      opts: privateTaskRealtimeChannelConfig,
-    );
+    final channel = _channel(channelName, (_) {});
     try {
-      await channel.sendBroadcastMessage(event: event, payload: payload);
+      await channel.connect();
+      await channel.send({
+        'type': 'broadcast',
+        'event': event,
+        'payload': payload,
+      });
     } finally {
-      await supabase.removeChannel(channel);
+      await channel.close();
     }
   }
 
@@ -192,27 +184,18 @@ class SupabaseTaskBroadcastClient implements TaskBroadcastClient {
     required String channelName,
     required TaskBroadcastHandler onEvent,
   }) {
-    final supabase = _client;
-    if (supabase == null) {
-      return TaskBroadcastSubscription(() async {});
-    }
-
-    final channel = supabase.channel(
-      channelName,
-      opts: privateTaskRealtimeChannelConfig,
-    );
-
-    for (final eventName in _taskBroadcastEvents) {
-      channel.onBroadcast(
-        event: eventName,
-        callback: (payload) {
-          _dispatchPayload(eventName, payload, onEvent);
-        },
-      );
-    }
-
-    channel.subscribe();
-    return TaskBroadcastSubscription(() => supabase.removeChannel(channel));
+    final channel = _channel(channelName, (message) {
+      final event = message['event'];
+      final payload = message['payload'];
+      if (message['type'] == 'broadcast' &&
+          event is String &&
+          _taskBroadcastEvents.contains(event) &&
+          payload is Map<String, dynamic>) {
+        _dispatchPayload(event, payload, onEvent);
+      }
+    });
+    unawaited(channel.connect());
+    return TaskBroadcastSubscription(channel.close);
   }
 
   void _dispatchPayload(

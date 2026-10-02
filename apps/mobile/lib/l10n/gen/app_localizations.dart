@@ -18492,6 +18492,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scheduled sale history is read only here. Recorded prices are preserved.'**
   String get inventorySeasonHistoricalReadOnly;
+
+  /// No description provided for @meetCollaboration.
+  ///
+  /// In en, this message translates to:
+  /// **'Collaborate'**
+  String get meetCollaboration;
+
+  /// No description provided for @meetCollaborationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Collaboration is unavailable. Rejoin the meeting and try again.'**
+  String get meetCollaborationUnavailable;
+
+  /// No description provided for @meetScreenFixtureTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Native screen capture test'**
+  String get meetScreenFixtureTitle;
+
+  /// No description provided for @meetScreenFixtureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This test sends your selected screen only to a receiver on this device. It does not join a hosted meeting. Stop sharing when finished.'**
+  String get meetScreenFixtureHint;
+
+  /// No description provided for @meetScreenFixtureFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'Decoded receiver frames: {count}'**
+  String meetScreenFixtureFrames(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

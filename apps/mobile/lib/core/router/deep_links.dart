@@ -190,11 +190,21 @@ String? _moduleLocation(Uri uri, List<String> segments) {
     'documents' => _documentsLocation(segments),
     'cms' => Routes.cms,
     'crm' => Routes.crm,
-    'meet' => Routes.meet,
+    'meet' => _meetLocation(uri),
     'timer' => _timerLocation(uri, segments),
     'settings' => _settingsLocation(segments),
     _ => null,
   };
+}
+
+/// Carry only the meeting code into native calls.
+/// Authentication and capture consent stay with the destination app.
+String _meetLocation(Uri uri) {
+  final code = uri.queryParameters['room'];
+  if (code == null || !RegExp(r'^[a-z0-9-]{6,80}$').hasMatch(code)) {
+    return Routes.meet;
+  }
+  return '${Routes.meet}?room=${Uri.encodeQueryComponent(code)}';
 }
 
 String? _tasksLocation(Uri uri, List<String> segments) {

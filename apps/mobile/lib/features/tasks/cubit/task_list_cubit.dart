@@ -22,7 +22,7 @@ class TaskListCubit extends Cubit<TaskListState> {
     TaskListState? initialState,
   }) : _repo = taskRepository,
        _taskBroadcastClient =
-           taskBroadcastClient ?? SupabaseTaskBroadcastClient(),
+           taskBroadcastClient ?? CloudflareTaskBroadcastClient(),
        super(initialState ?? const TaskListState());
 
   final TaskRepository _repo;

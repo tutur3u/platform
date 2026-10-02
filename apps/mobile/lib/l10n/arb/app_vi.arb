@@ -4064,5 +4064,17 @@
                 "type": "String"
             }
         }
+    },
+    "meetCollaboration": "Cộng tác",
+    "meetCollaborationUnavailable": "Cộng tác hiện không khả dụng. Hãy vào lại cuộc họp rồi thử lại.",
+    "meetScreenFixtureTitle": "Kiểm thử chia sẻ màn hình gốc",
+    "meetScreenFixtureHint": "Kiểm thử chỉ gửi màn hình bạn chọn đến bộ nhận trên thiết bị này, không tham gia cuộc họp trực tuyến. Dừng chia sẻ khi hoàn tất.",
+    "meetScreenFixtureFrames": "Số khung hình đã giải mã: {count}",
+    "@meetScreenFixtureFrames": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
     }
 }
