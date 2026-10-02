@@ -9660,4 +9660,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
+
+  @override
+  String get calendarGoogleColorInherit => 'Use calendar color';
+
+  @override
+  String calendarGoogleColorLabel(String id) {
+    return 'Custom label $id';
+  }
+
+  @override
+  String calendarGoogleColorEvent(String id) {
+    return 'Google color $id';
+  }
+
+  @override
+  String get calendarProviderColorSeparateEdit => 'Save other changes before changing the Google color.';
 }

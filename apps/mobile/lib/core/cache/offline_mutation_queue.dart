@@ -28,10 +28,16 @@ part 'offline_mutation_dependencies.dart';
 typedef OfflineMutationDispatcher =
     Future<void> Function(PendingMutationRecord record);
 
-String newLocalMutationId() {
+String newLocalMutationId({bool timeOrdered = false}) {
   final random = Random.secure();
   final bytes = List<int>.generate(16, (_) => random.nextInt(256));
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  if (timeOrdered) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    for (var index = 0; index < 6; index++) {
+      bytes[index] = (timestamp >> ((5 - index) * 8)) & 0xff;
+    }
+  }
+  bytes[6] = (bytes[6] & 0x0f) | (timeOrdered ? 0x70 : 0x40);
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   final hex = bytes
       .map((byte) => byte.toRadixString(16).padLeft(2, '0'))

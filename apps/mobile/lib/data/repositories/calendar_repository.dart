@@ -4,6 +4,7 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/data/models/google_calendar_color.dart';
 import 'package:mobile/data/repositories/calendar_pending_overlay.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
@@ -14,9 +15,12 @@ import 'package:mobile/data/sources/api_client.dart';
 /// that encrypted fields (title, description, location) are returned
 /// as plaintext to the client.
 class CalendarRepository {
-  CalendarRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+  CalendarRepository({ApiClient? apiClient, OfflineMutationQueue? offlineQueue})
+    : _api = apiClient ?? ApiClient(),
+      _offlineQueue = offlineQueue ?? OfflineMutationQueue.instance;
 
   final ApiClient _api;
+  final OfflineMutationQueue _offlineQueue;
 
   static String _basePath(String wsId) =>
       '/api/v1/workspaces/$wsId/calendar/events';
@@ -90,11 +94,15 @@ class CalendarRepository {
         if (result.data != null) result.data!,
       ], await OfflineMutationQueue.instance.listPending());
       for (final event in events) {
-        if (event.id == eventId) return event;
+        if (event.id == eventId) {
+          return event;
+        }
       }
       return null;
     } on ApiException catch (e) {
-      if (e.statusCode == 404) return null;
+      if (e.statusCode == 404) {
+        return null;
+      }
       if (e.statusCode == 0) {
         final local = overlayPendingCalendarEvents(
           wsId,
@@ -102,7 +110,9 @@ class CalendarRepository {
           await OfflineMutationQueue.instance.listPending(),
         );
         for (final event in local) {
-          if (event.id == eventId) return event;
+          if (event.id == eventId) {
+            return event;
+          }
         }
       }
       rethrow;
@@ -113,40 +123,95 @@ class CalendarRepository {
     String wsId,
     Map<String, dynamic> data,
   ) async {
-    final id = newLocalMutationId();
+    final id = newLocalMutationId(timeOrdered: true);
+    final payload = {...data, 'requestId': id};
     final path = _basePath(wsId);
-    if (await OfflineMutationQueue.instance.enqueueIfOffline(
+    if (await _offlineQueue.enqueueIfOffline(
       feature: 'calendar',
       method: 'POST',
       path: path,
       workspaceId: wsId,
-      payload: data,
+      payload: payload,
       entityId: id,
     )) {
-      return CalendarEvent.fromJson({...data, 'id': id, 'ws_id': wsId});
+      return CalendarEvent.fromJson({...payload, 'id': id, 'ws_id': wsId});
     }
     try {
-      final response = await _api.postJson(path, data);
+      final response = await _api.postJson(path, payload);
       await CacheStore.instance.invalidateTags({
         'module:calendar',
         'workspace:$wsId',
       });
       return CalendarEvent.fromJson(response);
     } on ApiException catch (error) {
-      if (await OfflineMutationQueue.instance.enqueueAfterNetworkFailure(
+      if (await _offlineQueue.enqueueAfterNetworkFailure(
         error: error,
         feature: 'calendar',
         method: 'POST',
         path: path,
         workspaceId: wsId,
-        payload: data,
+        payload: payload,
         entityId: id,
         replaySafe: false,
       )) {
-        return CalendarEvent.fromJson({...data, 'id': id, 'ws_id': wsId});
+        return CalendarEvent.fromJson({...payload, 'id': id, 'ws_id': wsId});
       }
       rethrow;
     }
+  }
+
+  Future<GoogleCalendarColorOptions?> getGoogleColorOptionsForEvent(
+    String wsId,
+    CalendarEvent event,
+  ) async {
+    if (event.provider != 'google' || event.sourceCalendarId == null) {
+      return null;
+    }
+    final response = await _api.getJson(
+      '/api/v1/workspaces/$wsId/calendar/default-source',
+    );
+    final matches = (response['options'] as List? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .where(
+          (connection) =>
+              connection['workspaceCalendarId'] == event.sourceCalendarId &&
+              connection['provider'] == 'google',
+        )
+        .toList();
+    if (matches.length != 1 || matches.single['connectionId'] is! String) {
+      return null;
+    }
+    return await getGoogleColorOptions(
+      wsId,
+      matches.single['connectionId'] as String,
+    );
+  }
+
+  Future<GoogleCalendarColorOptions> getGoogleColorOptions(
+    String wsId,
+    String connectionId,
+  ) async {
+    final query = Uri(queryParameters: {'connectionId': connectionId}).query;
+    final response = await _api.getJson(
+      '/api/v1/workspaces/$wsId/calendar/colors?$query',
+    );
+    return GoogleCalendarColorOptions.fromJson(response, connectionId);
+  }
+
+  /// Provider choices need a fresh connection and are never queued offline.
+  Future<CalendarEvent?> updateProviderColor(
+    String wsId,
+    String eventId,
+    GoogleCalendarColorChoice choice,
+  ) async {
+    await _api.putJson('${_basePath(wsId)}/$eventId', {
+      'providerColor': choice.toJson(),
+    });
+    await CacheStore.instance.invalidateTags({
+      'module:calendar',
+      'workspace:$wsId',
+    });
+    return await getEventById(wsId, eventId);
   }
 
   Future<void> updateEvent(

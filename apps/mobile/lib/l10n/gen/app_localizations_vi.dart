@@ -9594,4 +9594,20 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
+
+  @override
+  String get calendarGoogleColorInherit => 'Dùng màu lịch';
+
+  @override
+  String calendarGoogleColorLabel(String id) {
+    return 'Nhãn tùy chỉnh $id';
+  }
+
+  @override
+  String calendarGoogleColorEvent(String id) {
+    return 'Màu Google $id';
+  }
+
+  @override
+  String get calendarProviderColorSeparateEdit => 'Lưu các thay đổi khác trước khi đổi màu Google.';
 }

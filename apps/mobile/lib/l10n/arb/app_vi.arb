@@ -4055,5 +4055,23 @@
                 "type": "String"
             }
         }
+    },
+    "calendarGoogleColorInherit": "Dùng màu lịch",
+    "calendarGoogleColorLabel": "Nhãn tùy chỉnh {id}",
+    "calendarGoogleColorEvent": "Màu Google {id}",
+    "calendarProviderColorSeparateEdit": "Lưu các thay đổi khác trước khi đổi màu Google.",
+    "@calendarGoogleColorLabel": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
+    },
+    "@calendarGoogleColorEvent": {
+        "placeholders": {
+            "id": {
+                "type": "String"
+            }
+        }
     }
 }

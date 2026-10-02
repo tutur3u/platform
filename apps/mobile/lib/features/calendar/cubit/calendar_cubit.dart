@@ -7,14 +7,14 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/calendar_event_deduplication.dart';
+import 'package:mobile/data/models/google_calendar_color.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 
 part 'calendar_state.dart';
 part 'calendar_cache_state.dart';
-
-const _sentinel = Object();
+part 'calendar_provider_color_actions.dart';
 
 class CalendarCubit extends Cubit<CalendarState> {
   CalendarCubit({
@@ -31,6 +31,7 @@ class CalendarCubit extends Cubit<CalendarState> {
        );
 
   CalendarViewMode _defaultViewMode;
+  void _publishProviderState(CalendarState next) => emit(next);
 
   void setTimezone(String? timezone) {
     if (state.timezone == timezone) return;
@@ -485,7 +486,6 @@ class CalendarCubit extends Cubit<CalendarState> {
     }
   }
 
-  /// Updates an event optimistically, then confirms with server.
   Future<void> updateEvent(
     String wsId,
     String eventId, {
@@ -504,7 +504,6 @@ class CalendarCubit extends Cubit<CalendarState> {
 
     if (isClosed || _wsId != wsId) return;
     final rollback = _captureRollback(wsId, eventId);
-    // Optimistic local update.
     final updatedEvents = state.events.map((e) {
       if (e.id != eventId) return e;
       return e.copyWith(
