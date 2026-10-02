@@ -81,7 +81,18 @@ open('binary.bin', 'wb').write(b'\\x00\\xff')
 os.symlink('/etc/passwd', 'outside.txt')
 print('isolated')
 PY
-python3 -m http.server 8080 --bind 127.0.0.1 </dev/null >/tmp/preview.log 2>&1 &`,
+python3 -m http.server 8080 --bind 127.0.0.1 </dev/null >/tmp/preview.log 2>&1 &
+python3 - <<'PY'
+import time, urllib.request
+for attempt in range(20):
+    try:
+        with urllib.request.urlopen('http://127.0.0.1:8080/index.html', timeout=0.2) as response:
+            assert response.status == 200
+        break
+    except OSError:
+        time.sleep(0.1)
+else: raise AssertionError('loopback preview did not start')
+PY`,
     }),
     limits,
     async (delta) => {

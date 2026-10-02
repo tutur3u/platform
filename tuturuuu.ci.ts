@@ -9,6 +9,7 @@ export const ci = {
   'check-migration-timestamps.yml': true,
   'check-migrations.yml': true,
   'programming-database-contract.yaml': true,
+  'programming-app-builds.yaml': true,
   'playground-runtime-acceptance.yaml': true,
   'codecov.yaml': true,
   'colab-cloudflare.yaml': true,
