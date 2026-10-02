@@ -1,0 +1,206 @@
+.creator-toolkit {
+  border: 1px solid var(--muted);
+  border-radius: 1rem;
+  background: var(--card);
+  padding: clamp(1.2rem, 3vw, 3rem);
+}
+.toolkit-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+.toolkit-heading h2 {
+  margin-top: 0.8rem;
+  font-size: clamp(2rem, 3vw, 3rem);
+  line-height: 1.05;
+}
+.toolkit-heading > p {
+  max-width: 22rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  line-height: 1.8;
+}
+.toolkit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+.toolkit-link {
+  display: flex;
+  gap: 0.8rem;
+  align-items: start;
+  min-width: 0;
+  padding: 1.2rem;
+  border: 1px solid var(--muted);
+  border-radius: 0.7rem;
+  transition:
+    background 200ms ease,
+    transform 200ms ease;
+}
+.toolkit-link > svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.toolkit-link > svg:last-child {
+  margin-left: auto;
+  color: var(--muted-foreground);
+}
+.toolkit-link h3 {
+  font-family: var(--font-lettin-body), sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+.toolkit-link p {
+  margin-top: 0.35rem;
+  color: var(--muted-foreground);
+  font-size: 0.65rem;
+  line-height: 1.6;
+}
+.toolkit-link:hover {
+  background: var(--background);
+  transform: translateY(-2px);
+}
+.toolkit-more {
+  margin-top: 1rem;
+}
+.toolkit-more > summary {
+  display: flex;
+  width: fit-content;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.7rem 0;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+.toolkit-more[open] > summary svg {
+  transform: rotate(180deg);
+}
+.toolkit-footnote {
+  margin-top: 1rem;
+  font-size: 0.6rem;
+  line-height: 1.8;
+  color: var(--muted-foreground);
+}
+.studio-shelf-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.studio-shelf-bar label {
+  flex: 1;
+  min-width: min(100%, 16rem);
+}
+.studio-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.studio-filters button {
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--muted);
+  border-radius: 999px;
+  font-size: 0.7rem;
+}
+.studio-filters button[aria-pressed="true"] {
+  background: var(--foreground);
+  color: var(--background);
+}
+.studio-filters button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.studio-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+}
+.studio-stats strong {
+  color: var(--foreground);
+  font-size: 1.3rem;
+  margin-right: 0.4rem;
+}
+.studio-world-art {
+  position: relative;
+  background: var(--lettin-lilac);
+  background-image:
+    radial-gradient(
+      ellipse at 75% 120%,
+      var(--secondary) 0 40%,
+      transparent 40.5%
+    ),
+    radial-gradient(circle at 20% 30%, var(--accent) 0 15%, transparent 15.5%);
+}
+.studio-world-art-1 {
+  background-color: var(--lettin-sky);
+}
+.studio-template-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.studio-template-options button {
+  border: 1px solid var(--border);
+  padding: 0.8rem;
+  border-radius: 0.5rem;
+  text-align: left;
+  font-size: 0.8rem;
+}
+.studio-template-options button[aria-pressed="true"] {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.studio-template-options button:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+.studio-create-dialog {
+  background: var(--card);
+  color: var(--foreground);
+}
+.studio-world-art-2 {
+  background-color: var(--secondary);
+  background-image:
+    radial-gradient(
+      ellipse at 15% 110%,
+      var(--lettin-lilac) 0 50%,
+      transparent 50.5%
+    ),
+    radial-gradient(
+      circle at 75% 25%,
+      var(--lettin-sky) 0 15%,
+      transparent 15.5%
+    );
+}
+
+@media (max-width: 1050px) {
+  .toolkit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .toolkit-heading {
+    flex-direction: column;
+    align-items: start;
+    gap: 1rem;
+  }
+  .toolkit-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toolkit-link {
+    transition: none;
+  }
+  .toolkit-link:hover {
+    transform: none;
+  }
+}

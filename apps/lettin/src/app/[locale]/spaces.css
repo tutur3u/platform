@@ -1,0 +1,211 @@
+.toolkit-page-hero {
+  border-radius: 1rem;
+  background: var(--card);
+  color: var(--foreground);
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+.toolkit-page-hero > svg {
+  color: var(--accent);
+  margin-bottom: 1.25rem;
+}
+.toolkit-page-hero .lettin-kicker {
+  color: var(--muted-foreground);
+}
+.toolkit-page-hero h1 {
+  max-width: 16ch;
+  margin-top: 1.2rem;
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  line-height: 1;
+}
+.toolkit-page-hero > p:last-child {
+  max-width: 36rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  line-height: 1.8;
+  margin-top: 1.5rem;
+}
+.spaces-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+}
+.spaces-heading h2 {
+  margin-top: 0.6rem;
+  font-size: 2rem;
+  line-height: 1.05;
+}
+.spaces-heading > p {
+  max-width: 24rem;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.8;
+}
+.spaces-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.space-door {
+  border: 1px solid var(--muted);
+  border-radius: 0.8rem;
+  overflow: hidden;
+  background: var(--card);
+  transition: border-color 300ms ease;
+}
+.space-door:hover {
+  border-color: var(--accent);
+}
+.space-door:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 4px;
+}
+.space-door-art {
+  position: relative;
+  height: 8rem;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--lettin-lilac);
+}
+.space-door-art > span {
+  position: absolute;
+  width: 12rem;
+  height: 12rem;
+  border: 1px solid var(--foreground);
+  border-radius: 50%;
+  transform: translate(30%, 10%);
+  opacity: 0.25;
+}
+.space-door-art > svg {
+  position: relative;
+}
+.space-door-for-story .space-door-art {
+  background: var(--secondary);
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0 24px,
+    color-mix(in oklch, var(--foreground) 12%, transparent) 24px 25px
+  );
+}
+.space-door-for-world .space-door-art {
+  background: var(--lettin-sky);
+  background-image: radial-gradient(
+    ellipse at 25% 110%,
+    var(--lettin-lilac) 0 50%,
+    transparent 50.5%
+  );
+}
+.space-door-copy {
+  padding: 1.5rem;
+}
+.space-door-copy h3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+.space-door-copy > span {
+  display: block;
+  margin-top: 1rem;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  line-height: 1.8;
+}
+.space-header {
+  border: 1px solid var(--muted);
+  border-radius: 1rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: var(--card);
+  position: relative;
+  overflow: hidden;
+}
+.space-header::after {
+  content: "";
+  position: absolute;
+  width: 18rem;
+  height: 18rem;
+  border: 1px solid var(--muted);
+  border-radius: 50%;
+  right: -5rem;
+  top: -8rem;
+  pointer-events: none;
+}
+.space-header-art {
+  background: color-mix(in oklch, var(--lettin-lilac) 22%, var(--card));
+}
+.space-header-story {
+  background: color-mix(in oklch, var(--secondary) 22%, var(--card));
+}
+.space-header-world {
+  background: color-mix(in oklch, var(--lettin-sky) 22%, var(--card));
+}
+@media (max-width: 700px) {
+  .spaces-grid {
+    grid-template-columns: 1fr;
+  }
+  .spaces-heading {
+    flex-direction: column;
+    align-items: start;
+    gap: 1rem;
+  }
+  .space-door-art {
+    height: 10rem;
+  }
+}
+.workspace-creative-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.workspace-creative-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  transition: background 160ms ease;
+}
+.workspace-creative-nav a:hover {
+  background: var(--muted);
+}
+.workspace-creative-nav a[aria-current="page"] {
+  background: var(--foreground);
+  color: var(--background);
+}
+.workspace-creative-nav a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace-creative-nav a {
+    transition: none;
+  }
+}
+.space-header-illustration {
+  position: absolute;
+  right: 2%;
+  top: 0;
+  height: 100%;
+  width: min(45%, 22rem);
+  stroke: var(--foreground);
+  stroke-width: 1;
+  opacity: 0.12;
+  pointer-events: none;
+}
+.space-header > div,
+.space-header > [data-slot="dialog-trigger"] {
+  position: relative;
+  z-index: 1;
+}
+@media (max-width: 700px) {
+  .space-header-illustration {
+    width: 55%;
+    opacity: 0.08;
+  }
+}
