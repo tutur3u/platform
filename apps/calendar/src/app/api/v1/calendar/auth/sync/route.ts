@@ -4,6 +4,13 @@ import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import dayjs from 'dayjs';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import {
+  googleColorOperationModeEnabled,
+  handleRecoverableGoogleDelete,
+  handleRecoverableGooglePut,
+  unsupportedGoogleMutation,
+} from '@/lib/calendar/google-color-operations/route-handlers';
+import { authorizeLegacySync } from '../legacy-sync-access';
 
 interface CalendarEvent extends BaseCalendarEvent {
   id?: string; // Add the optional 'id' property
@@ -41,7 +48,7 @@ const getGoogleColorId = (color?: string): string => {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { event }: { event: CalendarEvent } = body;
+  const { event, wsId }: { event: CalendarEvent; wsId?: string } = body;
 
   const authContext = await resolveSessionAuthContext(request, {
     allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
@@ -49,11 +56,18 @@ export async function POST(request: Request) {
 
   if (!authContext.ok) return authContext.response;
   const { supabase, user } = authContext;
+  const access = await authorizeLegacySync(request, supabase, {
+    eventId: event.id && event.id !== 'new' ? event.id : undefined,
+    wsId,
+  });
+  if ('error' in access) return access.error;
+  if (googleColorOperationModeEnabled()) return unsupportedGoogleMutation();
 
   const { data: googleTokens, error: googleTokensError } = await supabase
     .from('calendar_auth_tokens')
     .select('*')
     .eq('user_id', user.id)
+    .eq('ws_id', access.wsId)
     .single();
 
   if (googleTokensError) {
@@ -117,7 +131,8 @@ export async function POST(request: Request) {
       const { error: updateError } = await supabase
         .from('workspace_calendar_events')
         .update({ google_event_id: googleEventId })
-        .eq('id', event.id); // Use the local event ID passed from frontend
+        .eq('id', event.id)
+        .eq('ws_id', access.wsId); // Use the local event ID passed from frontend
 
       if (updateError) {
         console.error(
@@ -186,10 +201,24 @@ export async function PUT(request: Request) {
   });
   if (!authContext.ok) return authContext.response;
   const { supabase, user } = authContext;
+  const access = await authorizeLegacySync(request, supabase, {
+    eventId,
+    googleEventId: googleCalendarEventId,
+  });
+  if ('error' in access) return access.error;
+  if (googleColorOperationModeEnabled()) {
+    return handleRecoverableGooglePut({
+      request,
+      rawWsId: access.wsId,
+      eventId: access.event!.id,
+      updates: eventUpdates as Record<string, unknown>,
+    });
+  }
   const { data: googleTokens, error: googleTokensError } = await supabase
     .from('calendar_auth_tokens')
     .select('*')
     .eq('user_id', user.id)
+    .eq('ws_id', access.wsId)
     .single();
   if (googleTokensError || !googleTokens?.access_token) {
     console.error('Google Tokens Error or Missing:', googleTokensError);
@@ -218,7 +247,8 @@ export async function PUT(request: Request) {
       const { data: existingEvent } = await supabase
         .from('workspace_calendar_events')
         .select('start_at, end_at')
-        .eq('google_event_id', googleCalendarEventId)
+        .eq('id', access.event!.id)
+        .eq('ws_id', access.wsId)
         .single();
 
       // Check if this is an all-day event (we need both dates to determine this properly)
@@ -303,7 +333,8 @@ export async function PUT(request: Request) {
       await supabase
         .from('workspace_calendar_events')
         .update({ google_event_id: null })
-        .eq('id', eventId);
+        .eq('id', access.event!.id)
+        .eq('ws_id', access.wsId);
       return NextResponse.json(
         { error: 'Event not found on Google Calendar', eventNotFound: true },
         { status: 404 }
@@ -317,7 +348,7 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { googleCalendarEventId } = await request.json();
+  const { googleCalendarEventId, eventId } = await request.json();
 
   if (!googleCalendarEventId) {
     return NextResponse.json(
@@ -331,10 +362,23 @@ export async function DELETE(request: Request) {
   });
   if (!authContext.ok) return authContext.response;
   const { supabase, user } = authContext;
+  const access = await authorizeLegacySync(request, supabase, {
+    eventId,
+    googleEventId: googleCalendarEventId,
+  });
+  if ('error' in access) return access.error;
+  if (googleColorOperationModeEnabled()) {
+    return handleRecoverableGoogleDelete({
+      request,
+      rawWsId: access.wsId,
+      eventId: access.event!.id,
+    });
+  }
   const { data: googleTokens, error: googleTokensError } = await supabase
     .from('calendar_auth_tokens')
     .select('*')
     .eq('user_id', user.id)
+    .eq('ws_id', access.wsId)
     .single();
   if (googleTokensError || !googleTokens?.access_token) {
     console.error('Google Tokens Error or Missing:', googleTokensError);

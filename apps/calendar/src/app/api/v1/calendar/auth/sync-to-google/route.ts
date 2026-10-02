@@ -3,6 +3,12 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import dayjs from 'dayjs';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import {
+  googleColorOperationModeEnabled,
+  handleRecoverableGooglePut,
+  unsupportedGoogleMutation,
+} from '@/lib/calendar/google-color-operations/route-handlers';
+import { authorizeCalendarEventManagement } from '@/lib/calendar-event-permission';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const getGoogleAuthClient = (tokens: {
@@ -69,11 +75,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const access = await authorizeCalendarEventManagement(
+      request,
+      normalizedWsId
+    );
+    if ('error' in access) return access.error;
+
     // Get Google auth tokens
     console.log('🔵 [API] Fetching Google auth tokens...');
     const { data: googleTokens, error: tokensError } = await supabase
       .from('calendar_auth_tokens')
-      .select('access_token, refresh_token')
+      .select('id, access_token, refresh_token')
       .eq('user_id', user.id)
       .eq('ws_id', normalizedWsId)
       .maybeSingle();
@@ -100,7 +112,8 @@ export async function POST(request: Request) {
         .from('calendar_connections')
         .select('calendar_id, is_enabled')
         .eq('ws_id', normalizedWsId)
-        .eq('is_enabled', true);
+        .eq('is_enabled', true)
+        .eq('auth_token_id', googleTokens.id);
 
     console.log('🔵 [API] Calendar connections result:', {
       count: calendarConnections?.length || 0,
@@ -164,6 +177,37 @@ export async function POST(request: Request) {
         syncedCount: 0,
         errorCount: 0,
         totalEvents: 0,
+      });
+    }
+
+    if (googleColorOperationModeEnabled()) {
+      const writable = tuturuuuEvents.filter((event) => !event.locked);
+      // Preflight the entire batch: no partial dispatch before discovering an
+      // unsupported create. A missing remote event never falls back to insert.
+      if (writable.some((event) => !event.google_event_id))
+        return unsupportedGoogleMutation();
+      let syncedCount = 0;
+      for (const event of writable) {
+        const result = await handleRecoverableGooglePut({
+          request,
+          rawWsId: normalizedWsId,
+          eventId: event.id,
+          updates: {
+            title: event.title,
+            description: event.description ?? '',
+            location: event.location ?? '',
+            start_at: event.start_at,
+            end_at: event.end_at,
+          },
+        });
+        if (!result.ok) return result;
+        syncedCount++;
+      }
+      return NextResponse.json({
+        success: true,
+        syncedCount,
+        errorCount: 0,
+        totalEvents: tuturuuuEvents.length,
       });
     }
 
@@ -268,7 +312,8 @@ export async function POST(request: Request) {
                   google_event_id: newEvent.data.id,
                   google_calendar_id: targetCalendarId,
                 })
-                .eq('id', event.id);
+                .eq('id', event.id)
+                .eq('ws_id', normalizedWsId);
 
               syncedCount++;
             } else {
@@ -304,7 +349,8 @@ export async function POST(request: Request) {
               google_event_id: newEvent.data.id,
               google_calendar_id: targetCalendarId,
             })
-            .eq('id', event.id);
+            .eq('id', event.id)
+            .eq('ws_id', normalizedWsId);
 
           console.log(`🔵 [API] Updated Tuturuuu event with Google IDs:`, {
             eventId: event.id,
