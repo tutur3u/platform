@@ -65,11 +65,21 @@ export class HostedMcpReads {
   async workspaces() {
     const grant = await this.permitted('mcp:workspaces:read');
     const rows = await this.reads.workspaces();
+    const candidates = rows.filter(
+      (row) =>
+        row.access_type === 'member' && grant.workspaceIds.includes(row.id)
+    );
+    const currentGrant = await this.permitted('mcp:workspaces:read');
+    const currentMembers = new Set(
+      (await this.reads.workspaces())
+        .filter((row) => row.access_type === 'member')
+        .map((row) => row.id)
+    );
     const visible = [];
-    for (const row of rows) {
+    for (const row of candidates) {
       if (
-        row.access_type === 'member' &&
-        grant.workspaceIds.includes(row.id) &&
+        currentMembers.has(row.id) &&
+        currentGrant.workspaceIds.includes(row.id) &&
         (await this.authority.workspaceVisibility(
           this.actor.userId,
           row.id
@@ -78,19 +88,7 @@ export class HostedMcpReads {
         visible.push({ id: row.id, name: name(row.name) });
       }
     }
-    const currentGrant = await this.permitted('mcp:workspaces:read');
-    const currentMembers = new Set(
-      (await this.reads.workspaces())
-        .filter((row) => row.access_type === 'member')
-        .map((row) => row.id)
-    );
-    return workspaceOutput.parse({
-      workspaces: visible.filter(
-        (row) =>
-          currentMembers.has(row.id) &&
-          currentGrant.workspaceIds.includes(row.id)
-      ),
-    });
+    return workspaceOutput.parse({ workspaces: visible });
   }
 
   async tasks(input: unknown) {

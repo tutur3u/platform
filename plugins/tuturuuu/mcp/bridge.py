@@ -4,7 +4,8 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-import selectors
+import queue
+import threading
 import time
 from collections.abc import Callable
 from typing import Literal
@@ -34,6 +35,8 @@ def run_cli(arguments: list[str]) -> object:
     if os.environ.get(READS_ENV) != "1":
         raise BridgeError("Local reads are disabled. Enable them only after reviewing the MCP setup guide.")
     process = None
+    stop = None
+    reader = None
     try:
         process = subprocess.Popen(
             ["ttr", *arguments, "--json", "--no-update-check"],
@@ -41,23 +44,52 @@ def run_cli(arguments: list[str]) -> object:
         )
         deadline = time.monotonic() + 20
         payload = bytearray()
-        with selectors.DefaultSelector() as ready:
-            ready.register(process.stdout, selectors.EVENT_READ)
-            while True:
-                remaining = deadline - time.monotonic()
-                if remaining <= 0 or not ready.select(remaining):
-                    raise subprocess.TimeoutExpired("ttr", 20)
-                chunk = os.read(process.stdout.fileno(), min(65536, MAX_OUTPUT_BYTES + 1 - len(payload)))
-                if not chunk:
-                    break
-                payload.extend(chunk)
-                if len(payload) > MAX_OUTPUT_BYTES:
-                    raise BridgeError("Tuturuuu response exceeds the local read limit.")
+        chunks = queue.Queue(maxsize=1)
+        stop = threading.Event()
+        def read_stdout():
+            try:
+                while not stop.is_set():
+                    chunk = process.stdout.read1(65536)
+                    while not stop.is_set():
+                        try:
+                            chunks.put(chunk, timeout=0.1)
+                            break
+                        except queue.Full:
+                            continue
+                    if not chunk:
+                        return
+            except OSError:
+                # Public errors never contain the reader's exception details.
+                while not stop.is_set():
+                    try:
+                        chunks.put(None, timeout=0.1)
+                        return
+                    except queue.Full:
+                        continue
+        reader = threading.Thread(target=read_stdout, daemon=True)
+        reader.start()
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired("ttr", 20)
+            try:
+                chunk = chunks.get(timeout=remaining)
+            except queue.Empty:
+                raise subprocess.TimeoutExpired("ttr", 20) from None
+            if chunk is None:
+                raise OSError("stdout read failed")
+            if not chunk:
+                break
+            payload.extend(chunk)
+            if len(payload) > MAX_OUTPUT_BYTES:
+                raise BridgeError("Tuturuuu response exceeds the local read limit.")
         if process.wait(timeout=max(0, deadline - time.monotonic())) != 0:
             raise BridgeError("Tuturuuu read failed. Check your local CLI login and workspace access.")
     except (OSError, subprocess.TimeoutExpired):
         raise BridgeError("Tuturuuu CLI unavailable or timed out. Check your local CLI session.") from None
     finally:
+        if stop is not None:
+            stop.set()
         if process is not None:
             if process.poll() is None:
                 process.terminate()
@@ -66,6 +98,8 @@ def run_cli(arguments: list[str]) -> object:
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
+            if reader is not None:
+                reader.join(timeout=1)
             if process.stdout is not None:
                 process.stdout.close()
     try:

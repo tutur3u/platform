@@ -445,13 +445,29 @@ describe('review boundary regressions', () => {
     expect(denied.status).toBe(405);
     expect(denied.headers.get('Allow')).toBe('POST');
   });
-  it('checks visibility once, then rejects membership removed during discovery', async () => {
+  it('rejects membership removed before the final visibility check', async () => {
     const f = setup();
     vi.mocked(f.reads.workspaces)
       .mockResolvedValueOnce([
         { id: workspace, name: 'Private', access_type: 'member' },
       ])
       .mockResolvedValueOnce([]);
+    expect(await f.service.workspaces()).toEqual({ workspaces: [] });
+    expect(f.authority.workspaceVisibility).not.toHaveBeenCalled();
+  });
+  it('checks visibility after membership refresh so newly hidden rows stay private', async () => {
+    const f = setup();
+    let hidden = false;
+    const rows = [{ id: workspace, name: 'Private', access_type: 'member' }];
+    vi.mocked(f.reads.workspaces)
+      .mockResolvedValueOnce(rows)
+      .mockImplementationOnce(async () => {
+        hidden = true;
+        return rows;
+      });
+    vi.mocked(f.authority.workspaceVisibility).mockImplementation(async () =>
+      hidden ? 'hidden' : 'visible'
+    );
     expect(await f.service.workspaces()).toEqual({ workspaces: [] });
     expect(f.authority.workspaceVisibility).toHaveBeenCalledOnce();
   });

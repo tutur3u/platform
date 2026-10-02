@@ -26,6 +26,9 @@ class WiringTests(unittest.TestCase):
     def check(self):
         WIRING.validate_portable_mcp(self.root, self.manifest)
 
+    def test_valid_packaged_wiring_is_accepted(self):
+        self.check()
+
     def test_extra_compatibility_server_is_rejected(self):
         p = self.root / ".mcp.json"
         value = json.loads(p.read_text())

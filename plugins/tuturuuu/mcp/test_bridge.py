@@ -1,13 +1,14 @@
 """Offline security and MCP contract tests; no real CLI or network calls."""
 import asyncio
 import json
+import io
 import os
 from pathlib import Path
 import sys
 import tempfile
 import subprocess
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from bridge import BridgeError, ReadBridge, run_cli
 
@@ -119,6 +120,14 @@ class BridgeTests(unittest.TestCase):
     def test_subprocess_noninteractive_json_and_disabled_update(self):
         with self.fake_cli("import sys\nassert sys.argv[1:] == ['workspaces','list','--json','--no-update-check']\nassert sys.stdin.read() == ''\nprint('[]')\n"):
             self.assertEqual(run_cli(["workspaces", "list"]), [])
+
+    def test_pipe_reader_uses_platform_independent_buffered_reads(self):
+        process = Mock(stdout=io.BytesIO(b'[]'))
+        process.wait.return_value = 0
+        process.poll.return_value = 0
+        with patch.dict(os.environ, {"TUTURUUU_MCP_READS_ENABLED": "1"}), patch("bridge.subprocess.Popen", return_value=process):
+            self.assertEqual(run_cli(["workspaces", "list"]), [])
+        process.terminate.assert_not_called()
 
     def test_malformed_and_streaming_oversized_cli_output_fail_closed(self):
         for code in ("print('{invalid')\n", "import os\nwhile True: os.write(1, b'x' * 65536)\n"):
