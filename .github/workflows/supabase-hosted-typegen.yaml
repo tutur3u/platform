@@ -128,6 +128,15 @@ jobs:
             const ref = await github.rest.git.getRef({...repo, ref: `heads/${branch}`});
             if (ref.data.object.sha !== expectedHead) throw new Error('Backend candidate advanced; refusing source write');
             const commit = await github.rest.git.getCommit({...repo, commit_sha: expectedHead});
+            const sourceCommit = await github.rest.git.getCommit({...repo, commit_sha: context.sha});
+            const targetTree = await github.rest.git.getTree({...repo, tree_sha: commit.data.tree.sha, recursive: 'true'});
+            const sourceTree = await github.rest.git.getTree({...repo, tree_sha: sourceCommit.data.tree.sha, recursive: 'true'});
+            if (targetTree.data.truncated || sourceTree.data.truncated) throw new Error('Incomplete source identity inventory');
+            for (const path of ['apps/database/supabase', 'apps/database/package.json']) {
+              const target = targetTree.data.tree.find(entry => entry.path === path);
+              const source = sourceTree.data.tree.find(entry => entry.path === path);
+              if (!target?.sha || source?.sha !== target.sha || source.type !== target.type) throw new Error('Complete schema input or pinned CLI identity mismatch');
+            }
             const content = fs.readFileSync('packages/types/src/supabase.ts', 'utf8');
             for (const marker of ['programming_problems:', 'programming_problem_cases:', 'public:', 'private:', 'storage:']) {
               if (!content.includes(marker)) throw new Error('Generated schema contract missing');
