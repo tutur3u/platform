@@ -71,21 +71,3 @@ $$;
 revoke all on function public.calendar_native_generation_mutation(text,uuid,uuid,uuid,jsonb) from public,anon,authenticated;
 grant execute on function public.calendar_native_generation_mutation(text,uuid,uuid,uuid,jsonb) to service_role;
 
--- Runtime admission remains necessary even after the candidate flag is disabled:
--- a retained operation may have dispatched before a rollback of that flag.
-create function public.calendar_retained_generation(p_ws_id uuid,p_event_id uuid,p_actor_id uuid)
-returns jsonb language plpgsql security definer set search_path='' as $$
-declare op private.calendar_google_color_operations;
-begin
-  if not exists(select 1 from public.workspace_members m where m.ws_id=p_ws_id and m.user_id=p_actor_id and m.type='MEMBER')
-    or public.has_workspace_permission(p_ws_id,p_actor_id,'manage_calendar') is not true then
-    raise exception using errcode='42501',message='Calendar generation access unavailable';
-  end if;
-  select * into op from private.calendar_google_color_operations where ws_id=p_ws_id and event_id=p_event_id;
-  if not found then return null; end if;
-  return jsonb_build_object('generation',op.current_generation::text,'pending',op.phase in ('reserved','prepared','dispatched'),
-    'intentKind',op.intent->>'kind','phase',op.phase,'operationId',case when op.actor_id=p_actor_id then op.operation_id::text else null end);
-end;
-$$;
-revoke all on function public.calendar_retained_generation(uuid,uuid,uuid) from public,anon,authenticated;
-grant execute on function public.calendar_retained_generation(uuid,uuid,uuid) to service_role;

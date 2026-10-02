@@ -145,6 +145,19 @@ export const SagaPayloadSchema = z
     event: z.record(z.string(), z.unknown()),
     localPatch: z.record(z.string(), z.unknown()),
     sendUpdates: z.enum(['all', 'none', 'externalOnly']),
+    eventLabelVersion: z.union([z.literal(0), z.literal(1)]).optional(),
+    sourceICalUID: z.string().min(1).optional(),
+    sourceSnapshot: z
+      .object({
+        title: z.string(),
+        description: z.string(),
+        location: z.string().nullable(),
+        start_at: z.string(),
+        end_at: z.string(),
+        color: z.string().optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type SagaPayload = z.infer<typeof SagaPayloadSchema>;
