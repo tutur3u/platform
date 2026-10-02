@@ -6,6 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
 
 import {
+  BetaHistoryUnavailableError,
   ensureBuildWhatsNew,
   originalBuildHistory,
   uploadedBuildTestNotes,
@@ -189,7 +190,8 @@ export async function distributeTestFlightBuild(apple, appId, buildId, config) {
         config.loadTestNotes(apple, buildId)
       );
       console.log(`Verified per-build What to Test for ${buildId}.`);
-    } catch {
+    } catch (error) {
+      if (!(error instanceof BetaHistoryUnavailableError)) throw error;
       notesReady = false;
       console.log(
         'Per-build What to Test could not be verified from the original upload history. Keep internal testing available; prepare version-specific notes manually before new external review.'
@@ -556,13 +558,17 @@ function betaDistributionConfig(expectedBuildNumber) {
       )?.attributes?.version;
       const number = build?.attributes?.version;
       if (!version || !number)
-        throw new Error('Selected beta build identity is missing');
+        throw new BetaHistoryUnavailableError(
+          'Selected beta build identity is missing'
+        );
       if (expectedBuildNumber !== undefined) {
         if (
           String(number) !== String(expectedBuildNumber) ||
           version !== process.env.MOBILE_BUILD_NAME
         ) {
-          throw new Error('Uploaded beta build identity mismatch');
+          throw new BetaHistoryUnavailableError(
+            'Uploaded beta build identity mismatch'
+          );
         }
         return uploadedBuildTestNotes(version, number, process.env.GITHUB_SHA);
       }

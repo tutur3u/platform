@@ -3,6 +3,8 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+export class BetaHistoryUnavailableError extends Error {}
+
 export function renderBuildTestNotes(history, identity) {
   if (
     !identity ||
@@ -10,57 +12,78 @@ export function renderBuildTestNotes(history, identity) {
     !/^[a-f0-9]{40}$/.test(identity.sourceSha ?? '') ||
     !/^[1-9]\d*$/.test(String(identity.number ?? ''))
   )
-    throw new Error('Invalid beta build provenance');
+    throw new BetaHistoryUnavailableError('Invalid beta build provenance');
   if (
     history?.build &&
     (history.build.version !== identity.version ||
       String(history.build.number) !== String(identity.number) ||
       history.build.sourceSha !== identity.sourceSha)
   )
-    throw new Error('Beta history does not match the uploaded build');
+    throw new BetaHistoryUnavailableError(
+      'Beta history does not match the uploaded build'
+    );
   const entries = history?.releases?.filter(
     (item) => item.version === identity.version
   );
   if (entries?.length !== 1)
-    throw new Error('Exact beta version history is unavailable');
+    throw new BetaHistoryUnavailableError(
+      'Exact beta version history is unavailable'
+    );
   const changes = entries[0].changes;
   if (
     !Array.isArray(changes) ||
     !changes.length ||
     changes.some((item) => typeof item !== 'string' || !item.trim())
   ) {
-    throw new Error('Exact beta version has no test notes');
+    throw new BetaHistoryUnavailableError(
+      'Exact beta version has no test notes'
+    );
   }
   let notes = `Please test ${identity.version}:`;
   for (const change of changes) {
     const bullet = `\n- ${change.trim()}`;
-    if (notes.length + bullet.length > 4000) break;
+    if (notes.length + bullet.length > 4000)
+      throw new BetaHistoryUnavailableError(
+        'Beta change exceeds the test notes limit'
+      );
     notes += bullet;
   }
   if (!notes.includes('\n- '))
-    throw new Error('Beta change exceeds the test notes limit');
+    throw new BetaHistoryUnavailableError(
+      'Beta change exceeds the test notes limit'
+    );
   return notes;
 }
 
 export async function ensureBuildWhatsNew(apple, buildId, notes) {
   const path = `/v1/builds/${buildId}/betaBuildLocalizations?limit=200`;
-  const resources = await apple(path);
-  if (resources.links?.next)
-    throw new Error('Ambiguous beta localization pagination');
-  const english =
-    resources.data?.filter((item) => item.attributes?.locale === 'en-US') ?? [];
-  if (english.length > 1)
-    throw new Error('Multiple English beta localizations');
-  if (
-    typeof english[0]?.attributes?.whatsNew === 'string' &&
-    english[0].attributes.whatsNew.trim()
-  ) {
-    return 'preserved';
-  }
+  const readEnglish = async () => {
+    const resources = await apple(path);
+    if (resources.links?.next)
+      throw new Error('Ambiguous beta localization pagination');
+    const english =
+      resources.data?.filter((item) => item.attributes?.locale === 'en-US') ??
+      [];
+    if (english.length > 1)
+      throw new Error('Multiple English beta localizations');
+    if (
+      typeof english[0]?.attributes?.whatsNew === 'string' &&
+      english[0].attributes.whatsNew.trim()
+    ) {
+      return null;
+    }
+    return english;
+  };
+  let english = await readEnglish();
+  if (english === null) return 'preserved';
   notes = typeof notes === 'function' ? await notes() : notes;
   if (typeof notes !== 'string' || !notes.trim() || notes.length > 4000) {
-    throw new Error('Version-specific beta test notes are unavailable');
+    throw new BetaHistoryUnavailableError(
+      'Version-specific beta test notes are unavailable'
+    );
   }
+  english = await readEnglish();
+  if (english === null) return 'preserved';
   const existing = english[0];
   if (existing && !existing.id)
     throw new Error('Beta localization identity is missing');
@@ -98,7 +121,7 @@ export async function ensureBuildWhatsNew(apple, buildId, notes) {
 }
 
 // Read only the original upload's nonsecret history artifact, never today's checkout.
-export async function originalBuildHistory(
+async function readOriginalBuildHistory(
   number,
   version,
   { run = execFileSync } = {}
@@ -199,7 +222,7 @@ export async function originalBuildHistory(
   }
 }
 
-export async function uploadedBuildTestNotes(version, number, sourceSha) {
+async function readUploadedBuildTestNotes(version, number, sourceSha) {
   const history = JSON.parse(
     await readFile(
       new URL('../../apps/mobile/assets/release_history.json', import.meta.url),
@@ -213,4 +236,25 @@ export async function uploadedBuildTestNotes(version, number, sourceSha) {
     number: String(number),
     sourceSha,
   });
+}
+
+export async function originalBuildHistory(...args) {
+  try {
+    return await readOriginalBuildHistory(...args);
+  } catch (error) {
+    throw new BetaHistoryUnavailableError(
+      'Original beta history is unavailable',
+      { cause: error }
+    );
+  }
+}
+export async function uploadedBuildTestNotes(...args) {
+  try {
+    return await readUploadedBuildTestNotes(...args);
+  } catch (error) {
+    throw new BetaHistoryUnavailableError(
+      'Uploaded beta history is unavailable',
+      { cause: error }
+    );
+  }
 }

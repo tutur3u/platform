@@ -378,6 +378,13 @@ build in review, and builds attached to an App Store release. GitHub's scheduled
 runs can start late, so this is a best-effort interval rather than a guaranteed
 five-minute submission time.
 
+Per-build notes defer to a manual handoff when exact upload history is unavailable
+or the complete history exceeds Apple's 4,000-character limit. The verifier never
+silently drops later changes. It re-reads English notes immediately before writing
+to preserve manual text added while history loads. App Store Connect API failures
+and failed write readback fail verification rather than masquerading as missing
+history; they require a retry or investigation.
+
 Run focused release checks with `node --test scripts/mobile-deployment/*.test.mjs
 scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun check`
 for repository validation and `ttr resources run -- bun check:mobile` for the

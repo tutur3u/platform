@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  BetaHistoryUnavailableError,
   ensureBuildWhatsNew,
   originalBuildHistory,
   renderBuildTestNotes,
@@ -58,28 +59,29 @@ test('does not infer missing, empty or ambiguous version history', () => {
 });
 
 function localizationApi(initial, { readbackFails = false } = {}) {
-  let english = initial;
+  const resources = initial ? [initial] : [];
   const calls = [];
   const other = {
     id: 'vi',
     attributes: { locale: 'vi', whatsNew: 'Existing Vietnamese notes' },
   };
+  resources.push(other);
   return {
     calls,
     apple: async (path, options = {}) => {
       calls.push({ path, options });
       if (path === '/v1/builds/build/betaBuildLocalizations?limit=200')
-        return { data: [...(english ? [english] : []), other] };
+        return { data: structuredClone(resources) };
       const body = JSON.parse(options.body);
-      if (!readbackFails)
-        english = {
-          id: 'english',
-          attributes: {
-            locale: 'en-US',
-            whatsNew: body.data.attributes.whatsNew,
-          },
-        };
-      return { data: english };
+      let saved = resources.find((item) => item.id === body.data.id);
+      if (!readbackFails) {
+        if (saved) Object.assign(saved.attributes, body.data.attributes);
+        else {
+          saved = { id: 'english', attributes: body.data.attributes };
+          resources.push(saved);
+        }
+      }
+      return { data: saved };
     },
   };
 }
@@ -95,6 +97,16 @@ for (const initial of [
     assert.equal(mutations.length, 1);
     assert.equal(mutations[0].options.method, initial ? 'PATCH' : 'POST');
     assert.ok(!mutations[0].path.includes('/vi'));
+    const saved = await api.apple(
+      '/v1/builds/build/betaBuildLocalizations?limit=200'
+    );
+    assert.deepEqual(
+      saved.data.find((item) => item.id === 'vi'),
+      {
+        id: 'vi',
+        attributes: { locale: 'vi', whatsNew: 'Existing Vietnamese notes' },
+      }
+    );
     assert.equal(
       api.calls.at(-1).path,
       '/v1/builds/build/betaBuildLocalizations?limit=200'
@@ -180,7 +192,7 @@ for (const artifactMismatch of [false, true]) {
     if (artifactMismatch) {
       await assert.rejects(
         originalBuildHistory('307001', '0.20.4', { run }),
-        /does not match/
+        /history is unavailable/
       );
     } else {
       assert.match(
@@ -294,7 +306,8 @@ for (const deferral of ['metadata', 'unsafe reviewer', 'pending', 'history']) {
         enabled: 'true',
         groups: 'all',
         loadTestNotes: async () => {
-          if (deferral === 'history') throw new Error('Source mismatch');
+          if (deferral === 'history')
+            throw new BetaHistoryUnavailableError('Source mismatch');
           return renderBuildTestNotes(history, identity);
         },
       }),
@@ -307,3 +320,89 @@ for (const deferral of ['metadata', 'unsafe reviewer', 'pending', 'history']) {
     );
   });
 }
+
+test('complete history fits or defers, never silently drops later changes', () => {
+  const notes = (changes) =>
+    renderBuildTestNotes(
+      { ...history, releases: [{ version: identity.version, changes }] },
+      identity
+    );
+  assert.equal(notes(['one', 'two']), 'Please test 0.20.4:\n- one\n- two');
+  assert.throws(() => notes(['x'.repeat(4001)]), BetaHistoryUnavailableError);
+  assert.throws(
+    () => notes(['one', 'x'.repeat(4001)]),
+    BetaHistoryUnavailableError
+  );
+});
+test('manual text added while history loads is preserved', async () => {
+  let reads = 0;
+  const apple = async (_path, options = {}) => {
+    assert.equal(options.method, undefined);
+    return {
+      data:
+        ++reads === 1
+          ? []
+          : [
+              {
+                id: 'manual',
+                attributes: { locale: 'en-US', whatsNew: 'New manual edit' },
+              },
+            ],
+    };
+  };
+  assert.equal(
+    await ensureBuildWhatsNew(apple, 'build', async () => 'History notes'),
+    'preserved'
+  );
+});
+for (const [resource, message] of [
+  [{ links: { next: 'another-page' }, data: [] }, /pagination/],
+  [
+    { data: [1, 2].map((id) => ({ id, attributes: { locale: 'en-US' } })) },
+    /Multiple/,
+  ],
+  [{ data: [{ attributes: { locale: 'en-US' } }] }, /identity/],
+]) {
+  test(`rejects ambiguous localization: ${message}`, async () => {
+    await assert.rejects(
+      ensureBuildWhatsNew(async () => resource, 'build', 'Notes'),
+      message
+    );
+  });
+}
+for (const notes of [null, 42, '', 'x'.repeat(4001)]) {
+  test(`rejects invalid supplied notes ${typeof notes}`, async () => {
+    await assert.rejects(
+      ensureBuildWhatsNew(async () => ({ data: [] }), 'build', notes),
+      BetaHistoryUnavailableError
+    );
+  });
+}
+test('store API and failed localization writes fail distribution', async () => {
+  for (const stage of ['read', 'write', 'readback']) {
+    const api = localizationApi(undefined, {
+      readbackFails: stage === 'readback',
+    });
+    const groups = [{ id: 'internal', attributes: { isInternalGroup: true } }];
+    const apple = async (path, options = {}) => {
+      if (path.includes('betaBuildLocalizations')) {
+        if (
+          (stage === 'read' && !options.method) ||
+          (stage === 'write' && options.method)
+        )
+          throw new Error('Store API failed');
+        return api.apple(path, options);
+      }
+      if (path.includes('/betaGroups?')) return { data: groups };
+      return { data: { relationships: { betaGroups: { data: groups } } } };
+    };
+    await assert.rejects(
+      distributeTestFlightBuild(apple, 'app', 'build', {
+        enabled: 'true',
+        groups: 'all',
+        loadTestNotes: async () => 'Notes',
+      }),
+      /Store API failed|readback failed/
+    );
+  }
+});

@@ -177,7 +177,12 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
     '${{ github.token }}'
   );
+  assert.equal(betaStep.env.TESTFLIGHT_BETA_WHATS_NEW, undefined);
   const retry = parsed.jobs['retry-ios-testflight-review'];
+  assert.equal(
+    step(retry, 'Retry newest eligible build').env.TESTFLIGHT_BETA_WHATS_NEW,
+    undefined
+  );
   assert.equal(retry.environment, 'mobile-store-beta');
   assert.equal(
     retry.if,
