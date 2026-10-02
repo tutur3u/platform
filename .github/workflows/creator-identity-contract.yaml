@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'apps/database/supabase/migrations/**'
+      - 'apps/database/supabase/seed.sql'
       - 'apps/database/supabase/tests/public-creator-identity.sql'
       - 'apps/database/supabase/tests/profile-media-upload-limits.sql'
       - 'packages/utils/src/username-policy*'

@@ -31,6 +31,19 @@ $$;
 REVOKE ALL ON FUNCTION public.is_reserved_username(text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.is_reserved_username(text) TO service_role;
 
+-- Older canonical profiles can reference a reservation with no recorded owner.
+-- Preserve those identities without transferring any explicitly owned handle.
+CREATE FUNCTION private.reconcile_creator_handle_owners() RETURNS void
+LANGUAGE sql SECURITY DEFINER SET search_path = '' AS $$
+  UPDATE public.handles h SET creator_id = u.id FROM public.users u
+    WHERE h.value = u.handle AND h.creator_id IS NULL
+      AND NOT EXISTS (SELECT 1 FROM public.users other
+        WHERE other.handle = h.value AND other.id <> u.id);
+$$;
+REVOKE ALL ON FUNCTION private.reconcile_creator_handle_owners() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION private.reconcile_creator_handle_owners() TO service_role;
+SELECT private.reconcile_creator_handle_owners();
+
 -- All new reservations belong to the atomic server RPC. The legacy permissive
 -- INSERT policy otherwise lets any authenticated actor reserve arbitrary names
 -- or assign a reservation to another creator outside profile quotas.

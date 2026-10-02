@@ -1,7 +1,10 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(39);
+select plan(53);
+select is((select creator_id from public.handles where value='local'),'00000000-0000-0000-0000-000000000001'::uuid,'full-schema seed reserves the canonical handle for its actual actor');
+select lives_ok($$select public.update_public_user_profile('00000000-0000-0000-0000-000000000001','{"handle":"local"}')$$,'the existing canonical seed handle remains a valid no-op');
+select is((select count(*) from private.user_profile_change_events where user_id='00000000-0000-0000-0000-000000000001' and field='handle'),1::bigint,'existing-handle no-op adds no quota event to the seeded initial claim');
 insert into auth.users(id) values ('00000000-0000-4000-8000-000000009501'), ('00000000-0000-4000-8000-000000009502');
 insert into public.users(id) values ('00000000-0000-4000-8000-000000009501'), ('00000000-0000-4000-8000-000000009502') on conflict do nothing;
 select ok(not has_function_privilege('anon','public.update_public_user_profile(uuid,jsonb)','EXECUTE'),'anonymous users cannot forge a profile actor');
@@ -53,6 +56,35 @@ set local role service_role;
 select lives_ok($$select public.update_public_user_profile('00000000-0000-4000-8000-000000009502','{"handle":"authorized_creator_9502"}')$$,'actual service role can claim a username atomically');
 reset role;
 select is((select creator_id from public.handles where value='authorized_creator_9502'),'00000000-0000-4000-8000-000000009502'::uuid,'authorized reservations retain the resolved actor');
+
+-- Emulate pre-migration identities without weakening production enforcement.
+insert into auth.users(id) values ('00000000-0000-4000-8000-000000009503'), ('00000000-0000-4000-8000-000000009504'), ('00000000-0000-4000-8000-000000009505'), ('00000000-0000-4000-8000-000000009506');
+insert into public.users(id) values ('00000000-0000-4000-8000-000000009503'), ('00000000-0000-4000-8000-000000009504'), ('00000000-0000-4000-8000-000000009505'), ('00000000-0000-4000-8000-000000009506') on conflict do nothing;
+insert into public.handles(value,creator_id) values
+  ('legacy_null_9503',null),
+  ('legacy_wrong_9504','00000000-0000-4000-8000-000000009506'),
+  ('legacy_orphan_9500',null),
+  ('old','00000000-0000-4000-8000-000000009505'),
+  ('legacy_owned_9506','00000000-0000-4000-8000-000000009506');
+alter table public.users disable trigger enforce_public_user_profile_policy;
+update public.users set handle = case id
+  when '00000000-0000-4000-8000-000000009503' then 'legacy_null_9503'
+  when '00000000-0000-4000-8000-000000009504' then 'legacy_wrong_9504'
+  when '00000000-0000-4000-8000-000000009505' then 'old'
+  when '00000000-0000-4000-8000-000000009506' then 'legacy_owned_9506' end
+  where id in ('00000000-0000-4000-8000-000000009503','00000000-0000-4000-8000-000000009504','00000000-0000-4000-8000-000000009505','00000000-0000-4000-8000-000000009506');
+alter table public.users enable trigger enforce_public_user_profile_policy;
+select lives_ok($$select private.reconcile_creator_handle_owners()$$,'legacy owner reconciliation runs against actual pre-migration row shapes');
+select is((select creator_id from public.handles where value='legacy_null_9503'),'00000000-0000-4000-8000-000000009503'::uuid,'a unique canonical profile receives its null-owner reservation');
+select is((select creator_id from public.handles where value='legacy_wrong_9504'),'00000000-0000-4000-8000-000000009506'::uuid,'conflicting non-null ownership is never reassigned');
+select is((select creator_id from public.handles where value='legacy_orphan_9500'),null::uuid,'unclaimed null reservations remain untouched');
+select is((select creator_id from public.handles where value='legacy_owned_9506'),'00000000-0000-4000-8000-000000009506'::uuid,'existing canonical ownership remains intact');
+select lives_ok($$select private.reconcile_creator_handle_owners()$$,'reconciliation is safe to repeat');
+select is((select creator_id from public.handles where value='legacy_null_9503'),'00000000-0000-4000-8000-000000009503'::uuid,'repeated reconciliation preserves the matched owner');
+select lives_ok($$select public.update_public_user_profile('00000000-0000-4000-8000-000000009505','{"handle":"old"}')$$,'unchanged short legacy handles remain valid');
+select is((select count(*) from private.user_profile_change_events where user_id='00000000-0000-4000-8000-000000009505' and field='handle'),0::bigint,'legacy no-op saves consume no allowance');
+select throws_ok($$select public.update_public_user_profile('00000000-0000-4000-8000-000000009503','{"handle":"legacy_orphan_9500"}')$$,'23505',null,'unclaimed old reservations cannot be newly claimed');
+select ok(not has_function_privilege('authenticated','private.reconcile_creator_handle_owners()','EXECUTE'),'clients cannot invoke privileged legacy reconciliation');
 
 select * from finish();
 rollback;

@@ -212,3 +212,10 @@ Those ticket reservation bounds cover current-user avatar uploads. Existing
 workspace and shared profile-link ticket endpoints retain their own authorization
 and API abuse budgets; the shared avatar bucket byte/MIME ceilings also apply
 to their uploads.
+
+Legacy handle rows with no recorded owner are attributed only when an existing
+canonical profile references that handle; explicitly owned reservations are never
+reassigned. Full-schema local seeds assign each synthetic reservation to its
+profile actor before updating the profile, so bootstrap obeys the same ownership
+and cooldown checks. The identity pgTAP fixture covers seeded ownership and a
+no-op save without consuming another allowance.
