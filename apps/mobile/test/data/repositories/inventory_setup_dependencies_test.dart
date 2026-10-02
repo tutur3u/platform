@@ -71,15 +71,11 @@ void main() {
     if (directory.existsSync()) directory.deleteSync(recursive: true);
   });
 
-  Future<void> product(
-    String category,
-    String warehouse, {
-    required bool update,
-  }) {
+  Future<void> product(Map<String, String> refs, {required bool update}) {
     final rows = [
       InventoryStockEntry(
-        unitId: 'unit',
-        warehouseId: warehouse,
+        unitId: refs['unit'] ?? 'unit',
+        warehouseId: refs['warehouse'] ?? 'warehouse',
         amount: 1,
         minAmount: 0,
         price: 5,
@@ -90,64 +86,98 @@ void main() {
             wsId: 'ws',
             productId: 'product',
             name: 'New',
-            categoryId: category,
-            ownerId: 'owner',
+            categoryId: refs['category'] ?? 'category',
+            ownerId: refs['owner'] ?? 'owner',
+            manufacturerId: refs['manufacturer'],
+            financeCategoryId: refs['financeCategory'],
             inventory: rows,
           )
         : repository.createProduct(
             wsId: 'ws',
             name: 'New',
-            categoryId: category,
-            ownerId: 'owner',
+            categoryId: refs['category'] ?? 'category',
+            ownerId: refs['owner'] ?? 'owner',
+            manufacturerId: refs['manufacturer'],
+            financeCategoryId: refs['financeCategory'],
             inventory: rows,
           );
   }
 
+  final paths = {
+    'category': InventoryEndpoints.productCategories('ws'),
+    'warehouse': InventoryEndpoints.productWarehouses('ws'),
+    'owner': InventoryEndpoints.owners('ws'),
+    'manufacturer': InventoryEndpoints.manufacturers('ws'),
+    'unit': InventoryEndpoints.productUnits('ws'),
+    'financeCategory': FinanceEndpoints.categories('ws'),
+  };
   for (final update in [false, true]) {
-    for (final warehouse in [false, true]) {
-      test(
-        '${update ? 'update' : 'create'} rejects pending '
-        '${warehouse ? 'warehouse' : 'category'} before product enqueue',
-        () async {
-          final path = warehouse
-              ? InventoryEndpoints.productWarehouses('ws')
-              : InventoryEndpoints.productCategories('ws');
-          await queue.enqueueIfOffline(
-            feature: 'inventory',
-            method: 'POST',
-            path: path,
+    test('${update ? 'update' : 'create'} accepts confirmed references '
+        'without optional setup fields', () async {
+      await product({}, update: update);
+      final payload = (await queue.listPending()).single.payload!;
+      expect(payload.containsKey('manufacturer_id'), isTrue);
+      expect(payload['manufacturer_id'], isNull);
+      expect(payload.containsKey('finance_category_id'), isFalse);
+    });
+    test(
+      '${update ? 'update' : 'create'} keeps mappings feature scoped',
+      () async {
+        for (final feature in ['inventory', 'finance']) {
+          await store.saveLocalIdMapping(
+            userId: 'user',
             workspaceId: 'ws',
-            entityId: 'local',
-            payload: {'name': 'Local'},
+            feature: feature,
+            localId: 'shared-local',
+            serverId: 'server-$feature',
           );
-          await expectLater(
-            product(
-              warehouse ? 'category' : 'local',
-              warehouse ? 'local' : 'warehouse',
-              update: update,
-            ),
-            throwsA(isA<InventorySetupAwaitingSync>()),
-          );
-          final pending = await queue.listPending();
-          expect(pending, hasLength(1));
-          expect(pending.single.path, path);
-          verifyNever(() => api.postJson(any(), any()));
-          verifyNever(() => api.patchJson(any(), any()));
-        },
-      );
+        }
+        await product({
+          'category': 'shared-local',
+          'financeCategory': 'shared-local',
+        }, update: update);
+        final payload = (await queue.listPending()).single.payload!;
+        expect(payload['category_id'], 'server-inventory');
+        expect(payload['finance_category_id'], 'server-finance');
+      },
+    );
+    for (final kind in paths.keys) {
+      test('${update ? 'update' : 'create'} rejects pending '
+          '$kind before product enqueue', () async {
+        final path = paths[kind]!;
+        await queue.enqueueIfOffline(
+          feature: kind == 'financeCategory' ? 'finance' : 'inventory',
+          method: 'POST',
+          path: path,
+          workspaceId: 'ws',
+          entityId: 'local',
+          payload: {'name': 'Local'},
+        );
+        await expectLater(
+          product({kind: 'local'}, update: update),
+          throwsA(isA<InventorySetupAwaitingSync>()),
+        );
+        final pending = await queue.listPending();
+        expect(pending, hasLength(1));
+        expect(pending.single.path, path);
+        verifyNever(() => api.postJson(any(), any()));
+        verifyNever(() => api.patchJson(any(), any()));
+      });
     }
     test('${update ? 'update' : 'create'} queues reconciled server references '
         'after setup sync', () async {
-      for (final kind in ['category', 'warehouse']) {
+      for (final kind in paths.keys) {
         await store.saveLocalIdMapping(
           userId: 'user',
           workspaceId: 'ws',
-          feature: 'inventory',
+          feature: kind == 'financeCategory' ? 'finance' : 'inventory',
           localId: 'local-$kind',
           serverId: 'server-$kind',
         );
       }
-      await product('local-category', 'local-warehouse', update: update);
+      await product({
+        for (final kind in paths.keys) kind: 'local-$kind',
+      }, update: update);
       final pending = await queue.listPending();
       expect(pending, hasLength(1));
       expect(pending.single.payload!['category_id'], 'server-category');
@@ -155,6 +185,17 @@ void main() {
         ((pending.single.payload!['inventory'] as List).single
             as Map<String, dynamic>)['warehouse_id'],
         'server-warehouse',
+      );
+      expect(
+        pending.single.payload!['finance_category_id'],
+        'server-financeCategory',
+      );
+      expect(pending.single.payload!['owner_id'], 'server-owner');
+      expect(pending.single.payload!['manufacturer_id'], 'server-manufacturer');
+      expect(
+        ((pending.single.payload!['inventory'] as List).single
+            as Map<String, dynamic>)['unit_id'],
+        'server-unit',
       );
       verifyNever(() => api.postJson(any(), any()));
       verifyNever(() => api.patchJson(any(), any()));
