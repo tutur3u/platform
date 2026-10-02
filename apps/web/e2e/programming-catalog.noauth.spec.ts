@@ -45,7 +45,6 @@ test.describe('Programming catalog with actual Next auth and disposable database
     const outsider = await browser.newContext({ extraHTTPHeaders: headers });
     const workspaceId = randomUUID();
     const otherWorkspaceId = randomUUID();
-    const studentId = randomUUID();
     const runId = randomUUID();
     const ownedUsers: string[] = [];
     const ownedWorkspaces: string[] = [];
@@ -105,16 +104,16 @@ test.describe('Programming catalog with actual Next auth and disposable database
           value: 'true',
         });
       }
-      await insert(request, 'workspace_users', {
-        id: studentId,
-        ws_id: workspaceId,
-        full_name: 'Disposable Programming learner',
-      });
-      await insert(request, 'workspace_user_linked_users', {
-        ws_id: workspaceId,
-        virtual_user_id: studentId,
-        platform_user_id: ownedUsers[0],
-      });
+      // The real membership trigger creates the creator's virtual-user link.
+      // Reuse it: inserting a second link would violate (platform_user_id, ws_id).
+      const linked = await request.get(
+        `${databaseOrigin}/rest/v1/workspace_user_linked_users?ws_id=eq.${workspaceId}&platform_user_id=eq.${ownedUsers[0]}&select=virtual_user_id`,
+        { headers: databaseHeaders }
+      );
+      expect(linked.status()).toBe(200);
+      const links = (await linked.json()) as Array<{ virtual_user_id: string }>;
+      expect(links).toHaveLength(1);
+      expect(links[0]?.virtual_user_id).toEqual(expect.any(String));
 
       const catalog = `${origin}/api/v1/workspaces/${workspaceId}/programming/problems`;
       const created = await author.request.post(catalog, { data: payload });
