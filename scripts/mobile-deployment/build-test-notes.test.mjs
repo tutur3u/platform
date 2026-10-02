@@ -463,3 +463,47 @@ test('repairs only known bookkeeping in existing English metadata, preserving ge
   );
   assert.equal(api.calls.filter((call) => call.options.method).length, 1);
 });
+
+for (const prose of [
+  'Please verify keyboard navigation and calendar retries.',
+  'Please test 0.20.4:\nCheck keyboard navigation on an iPhone.',
+]) {
+  test(`preserves manual prose during metadata repair: ${prose}`, async () => {
+    const api = localizationApi({
+      id: 'english',
+      attributes: {
+        locale: 'en-US',
+        whatsNew: `${prose}\n- Merge branch 'main'`,
+      },
+    });
+    await ensureBuildWhatsNew(api.apple, 'build', () => {
+      throw new Error('Manual prose must not be replaced with generated notes');
+    });
+    const write = api.calls.find((call) => call.options.method === 'PATCH');
+    assert.equal(
+      JSON.parse(write.options.body).data.attributes.whatsNew,
+      prose
+    );
+  });
+}
+
+test('a generated header alone loads genuine build-specific notes', async () => {
+  const api = localizationApi({
+    id: 'english',
+    attributes: {
+      locale: 'en-US',
+      whatsNew: "Please test 0.20.4:\n- Merge branch 'main'",
+    },
+  });
+  let loads = 0;
+  await ensureBuildWhatsNew(api.apple, 'build', () => {
+    loads++;
+    return 'Please test 0.20.4:\n- Keyboard navigation';
+  });
+  assert.equal(loads, 1);
+  const write = api.calls.find((call) => call.options.method === 'PATCH');
+  assert.equal(
+    JSON.parse(write.options.body).data.attributes.whatsNew,
+    'Please test 0.20.4:\n- Keyboard navigation'
+  );
+});

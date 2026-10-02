@@ -58,5 +58,25 @@
   {
     "subject": "Merge branch 'main' into production",
     "bookkeeping": true
+  },
+  {
+    "subject": "Merge branch 'main' of https://github.com/tutur3u/platform",
+    "bookkeeping": true
+  },
+  {
+    "subject": "Merge branch 'main' of https://github.com/tutur3u/platform into 'fix/mobile'",
+    "bookkeeping": true
+  },
+  {
+    "subject": "Merge branch 'main' ([abcdef](https://github.com/tutur3u/platform/commit/abcdef))",
+    "bookkeeping": true
+  },
+  {
+    "subject": "merge duplicate contacts ([abcdef](https://github.com/tutur3u/platform/commit/abcdef))",
+    "bookkeeping": false
+  },
+  {
+    "subject": "Merge branch 'main' of the editor's project view",
+    "bookkeeping": false
   }
 ]

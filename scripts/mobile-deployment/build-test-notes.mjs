@@ -89,7 +89,11 @@ export async function ensureBuildWhatsNew(apple, buildId, notes) {
     const current = resources[0]?.attributes?.whatsNew;
     if (typeof current !== 'string') return null;
     const filtered = policy.filterReleaseBookkeeping(current);
-    return /(?:^|\n)\s*[-*]\s+\S/u.test(filtered) ? filtered : null;
+    const content = filtered.trim();
+    // A generated heading alone has no product notes; manual prose does.
+    return content && !/^Please test \d+\.\d+\.\d+:$/u.test(content)
+      ? filtered
+      : null;
   };
   notes =
     retainedNotes(english) ??

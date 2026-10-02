@@ -7,7 +7,7 @@ class ReleaseNotePolicy {
     RegExp(
       '^merge (?:remote-tracking )?(?:branch(?:es)?|tag|commit) '
       r'[\x27\x22][^\x27\x22\n]+[\x27\x22](?: (?:and [\x27\x22][^'
-      r'\x27\x22\n]+[\x27\x22]|into (?:[\x27\x22][^\x27\x22\n]+[\'
+      r'\x27\x22\n]+[\x27\x22]|of \S+|into (?:[\x27\x22][^\x27\x22\n]+[\'
       r'x27\x22]|\S+)))*$',
       caseSensitive: false,
     ),
@@ -34,6 +34,13 @@ class ReleaseNotePolicy {
         .replaceFirst(RegExp(r'^\w+(?:\([^)]*\))?!?:\s*'), '')
         .replaceFirst(RegExp(r'^\*\*[^*]+:\*\*\s*'), '')
         .replaceFirst(RegExp(r'\s*\(#\d+\)$'), '')
+        .replaceAll(
+          RegExp(
+            r'\s*\(\[[^\]]+\]\(https://github\.com/tutur3u/platform/'
+            r'(?:commit|issues|pull)/[^)]+\)\)',
+          ),
+          '',
+        )
         .trim();
     return _patterns.any((pattern) => pattern.hasMatch(description));
   }

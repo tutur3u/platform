@@ -1,6 +1,6 @@
 {
   "patterns": [
-    "^merge (?:remote-tracking )?(?:branch(?:es)?|tag|commit) ['\"][^'\"\\n]+['\"](?: (?:and ['\"][^'\"\\n]+['\"]|into (?:['\"][^'\"\\n]+['\"]|\\S+)))*$",
+    "^merge (?:remote-tracking )?(?:branch(?:es)?|tag|commit) ['\"][^'\"\\n]+['\"](?: (?:and ['\"][^'\"\\n]+['\"]|of \\S+|into (?:['\"][^'\"\\n]+['\"]|\\S+)))*$",
     "^merge pull request #\\d+ from \\S+$",
     "^merge (?:current |latest )?(?:main|production|origin/(?:main|production|release-please--branches--\\S+))(?: (?:into|to) (?:main|production))?$",
     "^(?:sync|synchronize) (?:current |latest )?(?:main|production)(?: (?:to|into|with|from) (?:main|production))$",

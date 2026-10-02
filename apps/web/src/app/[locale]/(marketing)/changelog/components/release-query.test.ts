@@ -1,4 +1,6 @@
+import { isReleaseBookkeeping } from '@tuturuuu/utils/release-note-policy';
 import { describe, expect, it } from 'vitest';
+import policyFixtures from '../../../../../../../../scripts/ci/release-note-policy.fixture.json';
 import {
   classifyHeading,
   type PlatformRelease,
@@ -364,3 +366,10 @@ it('omits bookkeeping even when deduplication retained multiple commit links', (
       .map((change) => change.description)
   ).toEqual(['merge duplicate contacts']);
 });
+
+it.each(policyFixtures)(
+  'shared Web policy classifies $subject',
+  ({ subject, bookkeeping }) => {
+    expect(isReleaseBookkeeping(subject)).toBe(bookkeeping);
+  }
+);
