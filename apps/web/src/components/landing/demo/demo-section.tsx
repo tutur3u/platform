@@ -31,7 +31,7 @@ export function DemoSection() {
         </>
       }
     >
-      <Reveal blur direction="scale">
+      <Reveal direction="scale">
         <Panel className="p-1.5 sm:p-2">
           <Grain className="rounded-3xl" />
           <DemoTabs />

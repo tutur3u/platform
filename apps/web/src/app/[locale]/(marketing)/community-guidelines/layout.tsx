@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Community Guidelines',
-  description:
-    'Community Guidelines for Tuturuuu JSC — standards of behavior and expectations for our open-source community.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.community_guidelines',
   pathname: '/community-guidelines',
 });
 

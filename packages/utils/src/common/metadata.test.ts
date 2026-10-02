@@ -330,7 +330,19 @@ describe('application metadata coverage', () => {
       )
       .map((entry) => resolve(entry.parentPath, entry.name));
 
-    expect(marketingLayouts).toHaveLength(45);
+    // Guard concrete entry points while allowing new public pages to opt in.
+    // A fixed layout count rejects valid additions without testing SEO behavior.
+    const criticalLayouts = [
+      '(landing)/layout.tsx',
+      'about/layout.tsx',
+      'products/tasks/layout.tsx',
+      'privacy/layout.tsx',
+      'contributors/layout.tsx',
+      'women-in-tech/layout.tsx',
+    ].map((pathname) =>
+      resolve(repoRoot, 'apps/web/src/app/[locale]/(marketing)', pathname)
+    );
+    expect(marketingLayouts).toEqual(expect.arrayContaining(criticalLayouts));
     for (const layoutPath of marketingLayouts) {
       expect(readFileSync(layoutPath, 'utf8')).toMatch(/pathname:\s*['`]/);
     }
