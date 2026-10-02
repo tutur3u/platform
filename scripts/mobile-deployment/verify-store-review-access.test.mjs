@@ -226,6 +226,18 @@ test('metadata deferral preserves verified internal and external group assignmen
     }),
     groups
   );
+  const metadataRead = calls.findIndex(
+    ({ path }) => path === '/v1/apps/app/betaAppReviewDetail'
+  );
+  const lastAssignment = calls.findLastIndex(
+    ({ options }) => options.method === 'POST'
+  );
+  assert.ok(metadataRead > lastAssignment);
+  assert.ok(
+    calls
+      .slice(lastAssignment + 1, metadataRead)
+      .some(({ path }) => path === '/v1/builds/build?include=betaGroups')
+  );
   assert.deepEqual([...assigned].sort(), ['external', 'internal']);
   const writes = calls.filter(({ options }) => options.method === 'POST');
   assert.equal(writes.length, 2);
