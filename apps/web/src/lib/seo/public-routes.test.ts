@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { APP_PUBLIC_PATHS } from '@/constants/public_paths';
 import { getPublicLocalizedPath, PUBLIC_SEO_ROUTES } from './public-routes';
 
 describe('public SEO routes', () => {
@@ -12,6 +13,21 @@ describe('public SEO routes', () => {
 
     for (const pathname of pathnames) {
       expect(pathname).toMatch(/^\/(?:[^/]+(?:\/[^/]+)*)?$/);
+    }
+  });
+
+  it('only advertises routes reachable by anonymous crawlers in both locales', () => {
+    for (const { pathname } of PUBLIC_SEO_ROUTES) {
+      for (const locale of ['en', 'vi'] as const) {
+        const url = getPublicLocalizedPath(pathname, locale);
+        if (pathname === '/') continue;
+        expect(
+          APP_PUBLIC_PATHS.some(
+            (prefix) => url === prefix || url.startsWith(`${prefix}/`)
+          ),
+          url
+        ).toBe(true);
+      }
     }
   });
 

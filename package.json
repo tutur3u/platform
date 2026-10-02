@@ -1,6 +1,7 @@
 {
   "name": "tutur3u",
   "devDependencies": {
+    "@babel/parser": "7.29.9",
     "@biomejs/biome": "^2.5.13",
     "@lingual/i18n-check": "0.9.5",
     "@tuturuuu/typescript-config": "workspace:*",

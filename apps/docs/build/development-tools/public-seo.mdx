@@ -1,9 +1,15 @@
 ---
 title: Public SEO and Sitemap Maintenance
+updatedAt: '2026-10-02'
 description: How public pages enter the bilingual sitemap and how published content refreshes without redeploying.
 ---
 
 ## Public page discovery
+
+Public marketing URLs keep English unprefixed and Vietnamese under `/vi`,
+independent of browser preferences. New root paths must also be public in
+`apps/web/src/constants/public_paths.ts`; the route tests verify anonymous access
+for every sitemap-listed path in both locales.
 
 `apps/web/src/app/sitemap.ts` owns `/sitemap.xml`; `robots.ts` advertises it at
 `/robots.txt`. Do not add copies under `apps/web/public`: static assets conflict

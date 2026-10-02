@@ -51,6 +51,7 @@ describe('published changelog sitemap reader', () => {
       'published_at',
       expect.any(String)
     );
+    expect(filters.order).toHaveBeenCalledWith('id', { ascending: true });
     expect(range.mock.calls).toEqual([
       [0, 999],
       [1000, 1999],

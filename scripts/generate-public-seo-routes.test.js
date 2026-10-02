@@ -88,12 +88,26 @@ test('discovers new public pages while excluding redirects, drafts, dynamic and 
   assert.deepEqual(generate({ root }), ['/', '/products/forms']);
 });
 
+test('ignores redirect mentions in comments, strings and JSX text', (t) => {
+  const { root, page } = fixture(t);
+  page(
+    'about',
+    `// redirect('/login')
+    const example = "permanentRedirect('/login')";
+    export default function Page() { return <div>redirect('/login')</div>; }`,
+    metadata('/about')
+  );
+  assert.deepEqual(discoverRoutes(root), ['/about']);
+});
+
 test('extracts literal metadata through comments and nested options without treating templates as static routes', () => {
   assert.deepEqual(
     getMetadataPaths(`
     createMarketingMetadata({ title: "A, B }", keywords: ['pathname', '/wrong'], /* note */ pathname: '/about' });
     getMarketingMetadata({ pathname: \`/changelog/\${slug}\` }, locale);
     createMarketingMetadata({ pathname: '/hidden', indexable: false });
+    createMarketingMetadata({ pathname: '/unknown', ...options });
+    // createMarketingMetadata({ pathname: '/comment' });
   `),
     ['/about']
   );
@@ -108,5 +122,14 @@ test('rejects legacy public assets that shadow metadata routes', (t) => {
   assert.throws(
     () => generate({ root, check: true }),
     /conflicting public\/sitemap.xml/
+  );
+  fs.unlinkSync(path.join(root, 'apps/web/public/sitemap.xml'));
+  fs.writeFileSync(
+    path.join(root, 'apps/web/public/robots.txt'),
+    'User-agent: *'
+  );
+  assert.throws(
+    () => generate({ root, check: true }),
+    /conflicting public\/robots.txt/
   );
 });

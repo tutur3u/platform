@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { tokenizer } = require('acorn');
+const { parse } = require('@babel/parser');
 
 const ROOT = path.resolve(__dirname, '..');
 const MARKETING = 'apps/web/src/app/[locale]/(marketing)';
@@ -18,51 +18,63 @@ function walk(directory) {
   });
 }
 
+function calls(source) {
+  const ast = parse(source, {
+    sourceType: 'module',
+    plugins: ['typescript', 'jsx'],
+  });
+  const result = [];
+  function visit(node) {
+    if (!node || typeof node !== 'object') return;
+    if (node.type === 'CallExpression') result.push(node);
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) value.forEach(visit);
+      else if (value && typeof value === 'object') visit(value);
+    }
+  }
+  visit(ast);
+  return result;
+}
+
 function hasRedirect(source) {
-  return /\b(?:redirect|permanentRedirect)\s*\(/u.test(source);
+  return calls(source).some(
+    (call) =>
+      call.callee.type === 'Identifier' &&
+      ['redirect', 'permanentRedirect'].includes(call.callee.name)
+  );
 }
 
 function getMetadataConfigs(source) {
-  const configs = [];
-  // Tokenize only each helper's object literal: Acorn skips comments and quoted
-  // text while retaining nesting, without requiring a TS/JSX compiler at build.
-  const pattern =
-    /\b(createMarketingMetadata|createLocalizedMarketingMetadata|getMarketingMetadata)\s*\(\s*(?=\{)/gu;
-  for (const match of source.matchAll(pattern)) {
-    if (!HELPERS.has(match[1])) continue;
-    const tokens = tokenizer(source.slice(match.index + match[0].length), {
-      ecmaVersion: 'latest',
-    });
-    let depth = 0;
-    const properties = new Map();
-    let key = null;
-    let expectingValue = false;
-    for (;;) {
-      const token = tokens.getToken();
-      const label = token.type.label;
-      if (label === 'eof') break;
-      if (['{', '[', '('].includes(label)) depth += 1;
-      if (['}', ']', ')'].includes(label)) depth -= 1;
-      if (depth === 0) break;
-      if (depth !== 1) continue;
-      if (label === ',') {
-        key = null;
-        expectingValue = false;
-      } else if (label === ':') expectingValue = true;
-      else if (expectingValue) {
-        properties.set(key, { label, value: token.value });
-        expectingValue = false;
-      } else if (label === 'name' || label === 'string') key = token.value;
-    }
-    const indexable = properties.get('indexable');
+  return calls(source).flatMap((call) => {
+    if (call.callee.type !== 'Identifier' || !HELPERS.has(call.callee.name))
+      return [];
+    const options = call.arguments[0];
+    if (options?.type !== 'ObjectExpression') return [];
+    // Unknown spreads/computed properties can override indexing. Fail closed.
+    if (
+      options.properties.some(
+        (property) => property.type !== 'ObjectProperty' || property.computed
+      )
+    )
+      return [];
+    const properties = new Map(
+      options.properties.map((property) => [
+        property.key.name ?? property.key.value,
+        property.value,
+      ])
+    );
     const pathname = properties.get('pathname');
-    if (pathname?.label === 'string')
-      configs.push({
+    const indexable = properties.get('indexable');
+    if (pathname?.type !== 'StringLiteral') return [];
+    return [
+      {
         pathname: pathname.value,
-        indexable: !indexable || indexable.label === 'true',
-      });
-  }
-  return configs;
+        indexable:
+          !indexable ||
+          (indexable.type === 'BooleanLiteral' && indexable.value === true),
+      },
+    ];
+  });
 }
 
 function getMetadataPaths(source) {

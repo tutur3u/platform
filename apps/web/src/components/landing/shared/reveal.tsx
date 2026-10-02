@@ -30,8 +30,6 @@ interface RevealProps {
   direction?: RevealDirection;
   delay?: number;
   duration?: number;
-  /** Adds a defocus-to-focus pass; use sparingly, it is the expensive one. */
-  blur?: boolean;
   once?: boolean;
 }
 
@@ -41,7 +39,6 @@ export function Reveal({
   direction = 'up',
   delay = 0,
   duration = 0.7,
-  blur = false,
   once = true,
 }: RevealProps) {
   const reduced = useReducedMotion();
@@ -65,7 +62,6 @@ export function Reveal({
         x: 0,
         y: 0,
         scale: 1,
-        ...(blur ? { filter: 'blur(0px)' } : {}),
       }}
     >
       {children}
