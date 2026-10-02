@@ -100,6 +100,18 @@ test('ignores redirect mentions in comments, strings and JSX text', (t) => {
   assert.deepEqual(discoverRoutes(root), ['/about']);
 });
 
+test('discovers declared public pages outside the marketing group, excluding private dynamic routes', (t) => {
+  const { root, page } = fixture(t);
+  page(
+    '../portfolio',
+    'export default function Page() {}',
+    metadata('/portfolio')
+  );
+  page('../(auth)/login', '', metadata('/login', 'indexable: false'));
+  page('../(dashboard)/[wsId]/private', '', metadata('/private'));
+  assert.deepEqual(discoverRoutes(root), ['/portfolio']);
+});
+
 test('extracts literal metadata through comments and nested options without treating templates as static routes', () => {
   assert.deepEqual(
     getMetadataPaths(`

@@ -2,10 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { APP_PUBLIC_PATHS } from '@/constants/public_paths';
 
 describe('app public paths', () => {
-  it('allows anonymous crawlers to reach localized legal documents', () => {
-    expect(APP_PUBLIC_PATHS).toEqual(
-      expect.arrayContaining(['/legal', '/en/legal', '/vi/legal'])
-    );
+  it('allows anonymous crawlers to reach actual localized legal document URLs', () => {
+    for (const document of ['dpa', 'sla', 'subprocessors']) {
+      for (const locale of ['', '/en', '/vi']) {
+        const url = `${locale}/legal/${document}`;
+        expect(
+          APP_PUBLIC_PATHS.some(
+            (prefix) => url === prefix || url.startsWith(`${prefix}/`)
+          ),
+          url
+        ).toBe(true);
+      }
+    }
   });
   it('allows anonymous access to the localized pitch', () => {
     expect(APP_PUBLIC_PATHS).toEqual(

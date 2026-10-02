@@ -8,6 +8,7 @@ describe('public SEO routes', () => {
 
     expect(new Set(pathnames).size).toBe(pathnames.length);
     expect(pathnames).toContain('/');
+    expect(pathnames).toContain('/portfolio');
     expect(pathnames).not.toContain('/pricing');
     expect(pathnames).not.toContain('/onboarding');
 
@@ -20,6 +21,8 @@ describe('public SEO routes', () => {
     for (const { pathname } of PUBLIC_SEO_ROUTES) {
       for (const locale of ['en', 'vi'] as const) {
         const url = getPublicLocalizedPath(pathname, locale);
+        // Root exceptions are guarded against the actual proxy auth options in
+        // __tests__/proxy.test.ts, including the otherwise unlisted /vi path.
         if (pathname === '/') continue;
         expect(
           APP_PUBLIC_PATHS.some(

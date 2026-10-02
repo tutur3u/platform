@@ -3,7 +3,7 @@ const path = require('node:path');
 const { parse } = require('@babel/parser');
 
 const ROOT = path.resolve(__dirname, '..');
-const MARKETING = 'apps/web/src/app/[locale]/(marketing)';
+const PUBLIC_PAGES = 'apps/web/src/app/[locale]';
 const OUTPUT = 'apps/web/src/lib/seo/public-routes.generated.json';
 const HELPERS = new Set([
   'createMarketingMetadata',
@@ -84,7 +84,7 @@ function getMetadataPaths(source) {
 }
 
 function discoverRoutes(root = ROOT) {
-  const directory = path.join(root, MARKETING);
+  const directory = path.join(root, PUBLIC_PAGES);
   const routes = new Set();
   for (const page of walk(directory).filter(
     (file) => path.basename(file) === 'page.tsx'

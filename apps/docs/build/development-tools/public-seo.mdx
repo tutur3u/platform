@@ -16,7 +16,8 @@ for every sitemap-listed path in both locales.
 with the Next.js metadata routes.
 
 The public route manifest is generated from concrete pages under
-`apps/web/src/app/[locale]/(marketing)`. A page enters the manifest when its page
+`apps/web/src/app/[locale]`, including public pages outside the marketing route
+group such as `/portfolio`. A page enters the manifest when its page
 or colocated layout calls a marketing metadata helper with a literal `pathname`
 matching its actual route. Redirect pages, dynamic segments, and metadata marked
 `indexable: false` are excluded. Pages without their own matching metadata stay
