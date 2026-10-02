@@ -8323,6 +8323,9 @@ export type Database = {
           id: string;
           kind: string;
           language: string | null;
+          problem_bound: boolean;
+          problem_id: string | null;
+          problem_revision: number | null;
           run_id: string;
           source: string;
           user_id: string;
@@ -8334,6 +8337,9 @@ export type Database = {
           id?: string;
           kind?: string;
           language?: string | null;
+          problem_bound?: boolean;
+          problem_id?: string | null;
+          problem_revision?: number | null;
           run_id: string;
           source: string;
           user_id: string;
@@ -8345,12 +8351,22 @@ export type Database = {
           id?: string;
           kind?: string;
           language?: string | null;
+          problem_bound?: boolean;
+          problem_id?: string | null;
+          problem_revision?: number | null;
           run_id?: string;
           source?: string;
           user_id?: string;
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'learn_coding_submissions_problem_id_fkey';
+            columns: ['problem_id'];
+            isOneToOne: false;
+            referencedRelation: 'learn_programming_problems';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'learn_coding_submissions_run_id_fkey';
             columns: ['run_id'];
@@ -8368,6 +8384,118 @@ export type Database = {
           {
             foreignKeyName: 'learn_coding_submissions_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      learn_programming_problem_cases: {
+        Row: {
+          expected: string;
+          input: string;
+          position: number;
+          problem_id: string;
+          visible: boolean;
+        };
+        Insert: {
+          expected: string;
+          input: string;
+          position: number;
+          problem_id: string;
+          visible?: boolean;
+        };
+        Update: {
+          expected?: string;
+          input?: string;
+          position?: number;
+          problem_id?: string;
+          visible?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'learn_programming_problem_cases_problem_id_fkey';
+            columns: ['problem_id'];
+            isOneToOne: false;
+            referencedRelation: 'learn_programming_problems';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      learn_programming_problems: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          difficulty: string;
+          id: string;
+          prompt: Json;
+          revision: number;
+          slug: string;
+          starter_code: string;
+          status: string;
+          title: Json;
+          topic: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          difficulty: string;
+          id?: string;
+          prompt: Json;
+          revision?: number;
+          slug: string;
+          starter_code?: string;
+          status?: string;
+          title: Json;
+          topic: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          difficulty?: string;
+          id?: string;
+          prompt?: Json;
+          revision?: number;
+          slug?: string;
+          starter_code?: string;
+          status?: string;
+          title?: Json;
+          topic?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'learn_programming_problems_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'learn_programming_problems_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'learn_programming_problems_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'learn_programming_problems_updated_by_fkey';
+            columns: ['updated_by'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
@@ -17032,6 +17160,20 @@ export type Database = {
         };
         Returns: string;
       };
+      enqueue_learn_programming_execution: {
+        Args: {
+          p_actor_id: string;
+          p_command: string[];
+          p_expected_revision: number;
+          p_kind: string;
+          p_language: string;
+          p_problem_id: string;
+          p_source: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       ensure_user_group_metric_category_ids: {
         Args: { p_category_ids?: string[]; p_ws_id: string };
         Returns: string[];
@@ -18900,6 +19042,14 @@ export type Database = {
         Args: { p_retry_after: number };
         Returns: undefined;
       };
+      read_learn_programming_execution: {
+        Args: { p_problem_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      read_learn_programming_problem: {
+        Args: { p_author?: boolean; p_problem_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       reconcile_orphaned_approved_post_email_queue: {
         Args: {
           p_cutoff?: string;
@@ -19049,6 +19199,16 @@ export type Database = {
       };
       restore_cascaded_user_group_attendance: { Args: never; Returns: number };
       safe_parse_inet: { Args: { p_value: string }; Returns: unknown };
+      save_learn_programming_problem: {
+        Args: {
+          p_actor_id: string;
+          p_expected_revision?: number;
+          p_problem: Json;
+          p_problem_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       search_ai_studio_policy_workspaces: {
         Args: { p_limit?: number; p_offset?: number; p_query?: string };
         Returns: {
