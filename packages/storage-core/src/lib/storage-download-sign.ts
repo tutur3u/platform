@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { isSecurityEgressEnforcementEnabled } from './security-budget';
 import {
   createStorageDownloadUrl,
   StorageDownloadError,
@@ -24,10 +25,18 @@ export async function createGuardedSupabaseStorageReadUrl(
       .from('workspaces')
       .createSignedUrl(path, expiresIn, { transform: transform as never });
     if (error || !data?.signedUrl) {
-      throw new StorageDownloadError('Failed to generate download URL', 502);
+      throw new StorageDownloadError(
+        'Failed to generate download URL',
+        error &&
+          (String(error.status) === '404' || /not found/iu.test(error.message))
+          ? 404
+          : 502
+      );
     }
     // The CDN bearer credential is encrypted, never returned to the caller.
-    return createStorageDownloadUrl(data.signedUrl, wsId, expiresIn);
+    return isSecurityEgressEnforcementEnabled()
+      ? createStorageDownloadUrl(data.signedUrl, wsId, expiresIn)
+      : data.signedUrl;
   } catch (error) {
     if (error instanceof StorageDownloadError) throw error;
     // Some URL/fetch errors carry their raw input, including bearer query params.

@@ -1,3 +1,4 @@
+import { StorageDownloadError } from '@tuturuuu/storage-core/storage-download-token';
 import {
   WORKSPACE_STORAGE_PROVIDER_OPTIONS,
   WORKSPACE_STORAGE_PROVIDER_R2,
@@ -166,13 +167,22 @@ export async function GET(
     }
 
     if (asset.source_url) {
-      const sourceUrl = new URL(asset.source_url);
-      if (!['http:', 'https:'].includes(sourceUrl.protocol)) {
+      try {
+        const sourceUrl = new URL(asset.source_url);
+        if (!['http:', 'https:'].includes(sourceUrl.protocol)) {
+          return privateJson({ error: 'Asset not available' }, 404);
+        }
+        return redirect(
+          guardExternalProjectAssetSourceUrl(sourceUrl.toString(), resolvedWsId)
+        );
+      } catch (error) {
+        if (error instanceof StorageDownloadError && error.status === 503)
+          return privateJson(
+            { error: 'Asset delivery temporarily unavailable' },
+            503
+          );
         return privateJson({ error: 'Asset not available' }, 404);
       }
-      return redirect(
-        guardExternalProjectAssetSourceUrl(sourceUrl.toString(), resolvedWsId)
-      );
     }
 
     if (!asset.storage_path) {

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { reserveStorageDownloadBudget } from './storage-download-budget';
+import { resolveStorageDownloadRange } from './storage-download-range';
 import {
   readStorageDownloadTicket,
   StorageDownloadError,
@@ -59,6 +60,7 @@ export async function relayStorageDownload(request: Request, token: string) {
   let abort: AbortController | undefined;
   let timeout: ReturnType<typeof setTimeout> | undefined;
   let cleanup: (() => void) | undefined;
+  let objectSize: number | undefined;
   try {
     const ticket = readStorageDownloadTicket(token);
     const range = request.headers.get('range');
@@ -68,7 +70,11 @@ export async function relayStorageDownload(request: Request, token: string) {
     await reserveStorageDownloadBudget(ticket);
     abort = new AbortController();
     const controller = abort;
-    timeout = setTimeout(() => controller.abort(), 120_000);
+    const resetIdleTimeout = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => controller.abort(), 120_000);
+    };
+    resetIdleTimeout();
     const abortOnDisconnect = () => controller.abort();
     if (request.signal.aborted) controller.abort();
     request.signal.addEventListener('abort', abortOnDisconnect, { once: true });
@@ -83,8 +89,7 @@ export async function relayStorageDownload(request: Request, token: string) {
       signal: controller.signal,
       headers: { 'Accept-Encoding': 'identity' },
     };
-    // Inspect without downloading bytes. Reserve the full object even for
-    // ranges, so partial-download tricks cannot undercount egress.
+    // Inspect without downloading bytes; ranges reserve their exact span.
     const head = await fetch(ticket.url, { ...options, method: 'HEAD' });
     if (!head.ok) {
       finish();
@@ -93,17 +98,35 @@ export async function relayStorageDownload(request: Request, token: string) {
         head.status === 404 ? 404 : 502
       );
     }
-    const reservedBytes = contentLength(head);
+    objectSize = contentLength(head);
+    const resolvedRange = range
+      ? resolveStorageDownloadRange(range, objectSize)
+      : undefined;
+    const reservedBytes = resolvedRange?.bytes ?? objectSize;
     if (request.method === 'HEAD') {
       finish();
       return new Response(null, { headers: responseHeaders(head) });
     }
     await reserveStorageDownloadBudget(ticket, reservedBytes);
+    resetIdleTimeout();
     const upstream = await fetch(ticket.url, {
       ...options,
-      headers: { ...options.headers, ...(range ? { Range: range } : {}) },
+      headers: {
+        ...options.headers,
+        ...(resolvedRange ? { Range: resolvedRange.header } : {}),
+      },
     });
+    if (upstream.status === 416) {
+      controller.abort();
+      finish();
+      throw new StorageDownloadError('Range not satisfiable', 416);
+    }
     if (
+      (resolvedRange &&
+        (upstream.status !== 206 ||
+          upstream.headers.get('content-range') !==
+            resolvedRange.contentRange ||
+          contentLength(upstream) !== reservedBytes)) ||
       !upstream.ok ||
       !upstream.body ||
       contentLength(upstream) > reservedBytes ||
@@ -134,6 +157,7 @@ export async function relayStorageDownload(request: Request, token: string) {
             await reader.cancel();
             throw new Error('Storage body exceeded reservation');
           }
+          resetIdleTimeout();
           stream.enqueue(value);
         } catch {
           controller.abort();
@@ -155,6 +179,9 @@ export async function relayStorageDownload(request: Request, token: string) {
     abort?.abort();
     cleanup?.();
     clearTimeout(timeout);
-    return failure(error);
+    const response = failure(error);
+    if (response.status === 416 && objectSize !== undefined)
+      response.headers.set('Content-Range', `bytes */${objectSize}`);
+    return response;
   }
 }

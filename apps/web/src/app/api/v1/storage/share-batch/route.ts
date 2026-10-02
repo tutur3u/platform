@@ -70,7 +70,7 @@ export const POST = withApiAuth(
       const supabase = await createDynamicAdminClient();
 
       // Process all paths in parallel
-      const results = await Promise.allSettled(
+      const results = await Promise.all(
         pathRequests.map(async ({ originalPath, sanitizedPath }) => {
           // Construct the full storage path with workspace ID
           const storagePath = `${wsId}/${sanitizedPath}`;
@@ -104,42 +104,10 @@ export const POST = withApiAuth(
       const data: SignedUrlData[] = [];
       const errors: Array<{ path: string; error: string }> = [];
 
-      results.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          const item = result.value;
-          if (item.error) {
-            // Include failed items in data array with error field
-            data.push({
-              path: item.path,
-              signedUrl: '',
-              error: item.error,
-            });
-            // Also add to errors array for convenience
-            errors.push({ path: item.path, error: item.error });
-          } else {
-            // Successful items
-            data.push({
-              path: item.path,
-              signedUrl: item.signedUrl,
-              expiresAt: item.expiresAt,
-              expiresIn: item.expiresIn,
-            });
-          }
-        } else {
-          // Promise rejected
-          const path =
-            pathRequests[results.indexOf(result)]?.originalPath || 'unknown';
-          data.push({
-            path,
-            signedUrl: '',
-            error: result.reason?.message || 'Unexpected error',
-          });
-          errors.push({
-            path,
-            error: result.reason?.message || 'Unexpected error',
-          });
-        }
-      });
+      for (const item of results) {
+        data.push(item);
+        if (item.error) errors.push({ path: item.path, error: item.error });
+      }
 
       return NextResponse.json({
         message: 'Batch signed URLs generated',

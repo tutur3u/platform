@@ -1,9 +1,11 @@
+// @vitest-environment node
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ eval: vi.fn() }));
+const mocks = vi.hoisted(() => ({ eval: vi.fn(), enabled: vi.fn() }));
 vi.mock('@tuturuuu/storage-core/security-budget', () => ({
   reserveSecurityBudget: mocks.eval,
+  isSecurityEgressEnforcementEnabled: mocks.enabled,
 }));
 
 import { guardApiCost } from './api-cost-guard';
@@ -11,8 +13,13 @@ import { guardApiCost } from './api-cost-guard';
 const request = (path: string, method = 'GET') =>
   new NextRequest(`https://example.test${path}`, { method });
 beforeEach(() => {
-  vi.unstubAllEnvs();
+  vi.spyOn(Date, 'now').mockReturnValue(1_800_000_000_000);
+  mocks.enabled.mockReset().mockReturnValue(true);
   mocks.eval.mockReset().mockResolvedValue([1, 0]);
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
 });
 describe('API cost guard', () => {
   it('shares CMS ceilings across files, query strings, credentials and external app paths', async () => {
@@ -53,4 +60,30 @@ describe('API cost guard', () => {
     expect(response?.headers.get('Cache-Control')).toContain('no-store');
     expect(Number(response?.headers.get('Retry-After'))).toBeGreaterThan(0);
   });
+});
+
+it('preserves existing APIs before migration activation without querying Postgres', async () => {
+  mocks.enabled.mockReturnValue(false);
+  expect(await guardApiCost(request('/api/v1/anything'))).toBeNull();
+  expect(mocks.eval).not.toHaveBeenCalled();
+});
+
+it('canonicalizes encoded workspace IDs and separates authentication capacity', async () => {
+  await guardApiCost(
+    request('/api/v1/workspaces/ws-1/external-projects/assets/a')
+  );
+  const plain = mocks.eval.mock.calls[0]![0];
+  await guardApiCost(
+    request('/api/v1/workspaces/%77s-1/external-projects/assets/a')
+  );
+  expect(mocks.eval.mock.calls[1]![0]).toEqual(plain);
+  await guardApiCost(request('/api/v1/auth/session'));
+  expect(mocks.eval.mock.calls[2]![0][0][0]).not.toBe(plain[0][0]);
+  expect(
+    (
+      await guardApiCost(
+        request('/api/v1/workspaces/%zz/external-projects/assets/a')
+      )
+    )?.status
+  ).toBe(400);
 });

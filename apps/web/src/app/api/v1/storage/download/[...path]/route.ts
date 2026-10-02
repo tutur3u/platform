@@ -1,3 +1,4 @@
+import { isSecurityEgressEnforcementEnabled } from '@tuturuuu/storage-core/security-budget';
 /**
  * Storage Download API
  * GET /api/v1/storage/download/[...path]
@@ -14,6 +15,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { rejectReservedStoragePath } from '@/legacy-api-routes/v1/storage/reserved-path';
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
+import {
+  encodeDownloadFilename,
+  storageDownloadErrorResponse,
+} from '@/lib/storage-download-response';
 
 const transformQuerySchema = z
   .object({
@@ -78,6 +83,34 @@ export const GET = withApiAuth(
       const storagePath = posix.join(wsId, filePath);
       const fileName = posix.basename(filePath);
 
+      if (!isSecurityEgressEnforcementEnabled()) {
+        if (process.env.STORAGE_DOWNLOADS_DISABLED === 'true') {
+          return createErrorResponse(
+            'Unavailable',
+            'Storage downloads are temporarily disabled',
+            503,
+            'STORAGE_DISABLED'
+          );
+        }
+        const { data, error } = await supabase.storage
+          .from('workspaces')
+          .download(storagePath, transform ? { transform } : undefined);
+        if (error || !data)
+          return createErrorResponse(
+            'Not Found',
+            'File not found',
+            404,
+            'FILE_NOT_FOUND'
+          );
+        return new NextResponse(data, {
+          headers: {
+            'Content-Type': data.type || 'application/octet-stream',
+            'Content-Disposition': `attachment; filename*=UTF-8''${encodeDownloadFilename(fileName)}`,
+            'Cache-Control': 'private, no-store',
+          },
+        });
+      }
+
       const url = await createGuardedSupabaseStorageReadUrl(
         supabase,
         wsId,
@@ -91,7 +124,7 @@ export const GET = withApiAuth(
       if (response.ok) {
         response.headers.set(
           'Content-Disposition',
-          `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`
+          `attachment; filename*=UTF-8''${encodeDownloadFilename(fileName)}`
         );
       }
       return new NextResponse(response.body, {
@@ -99,6 +132,8 @@ export const GET = withApiAuth(
         headers: response.headers,
       });
     } catch (error) {
+      const storageError = storageDownloadErrorResponse(error);
+      if (storageError) return storageError;
       if (error instanceof z.ZodError) {
         return createErrorResponse(
           'Bad Request',

@@ -13,6 +13,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { downloadGuardedSupabaseStorageObject } from './storage-download-object';
 
 beforeEach(() => {
+  vi.stubEnv('SECURITY_EGRESS_ENFORCEMENT_ENABLED', 'true');
   mocks.sign
     .mockReset()
     .mockResolvedValue(

@@ -129,7 +129,7 @@ describe('download relay protects every file transfer', () => {
     expect(mocks.fetch).toHaveBeenCalledTimes(2);
   });
 
-  it('supports one range conservatively and rejects multiple ranges', async () => {
+  it('reserves the exact span of one range and rejects multiple ranges', async () => {
     mocks.fetch.mockResolvedValueOnce(head('100')).mockResolvedValueOnce(
       new Response('ab', {
         status: 206,
@@ -144,7 +144,7 @@ describe('download relay protects every file transfer', () => {
     );
     expect(response.status).toBe(206);
     expect(await response.text()).toBe('ab');
-    expect(mocks.reserve).toHaveBeenLastCalledWith(expect.any(Object), 100);
+    expect(mocks.reserve).toHaveBeenLastCalledWith(expect.any(Object), 2);
     expect(mocks.fetch.mock.calls[1]?.[1].headers.Range).toBe('bytes=0-1');
     mocks.fetch.mockClear();
     expect(
@@ -158,6 +158,91 @@ describe('download relay protects every file transfer', () => {
       ).status
     ).toBe(416);
     expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+
+  it('normalizes suffix ranges and rejects unsatisfiable ranges without a GET', async () => {
+    mocks.fetch.mockResolvedValueOnce(head('100')).mockResolvedValueOnce(
+      new Response('ab', {
+        status: 206,
+        headers: { 'Content-Length': '2', 'Content-Range': 'bytes 98-99/100' },
+      })
+    );
+    const response = await relayStorageDownload(
+      new Request('https://web.example.test/file', {
+        headers: { Range: 'bytes=-2' },
+      }),
+      token
+    );
+    expect(await response.text()).toBe('ab');
+    expect(mocks.fetch.mock.calls[1]?.[1].headers.Range).toBe('bytes=98-99');
+    mocks.fetch.mockClear().mockResolvedValueOnce(head('100'));
+    const invalid = await relayStorageDownload(
+      new Request('https://web.example.test/file', {
+        headers: { Range: 'bytes=100-' },
+      }),
+      token
+    );
+    expect(invalid.status).toBe(416);
+    expect(invalid.headers.get('content-range')).toBe('bytes */100');
+    expect(mocks.fetch).toHaveBeenCalledOnce();
+  });
+
+  it('preserves upstream 416 and refuses ignored or mismatched ranges', async () => {
+    for (const upstreamResponse of [
+      new Response(null, { status: 416 }),
+      new Response('data', { headers: { 'Content-Length': '4' } }),
+      new Response('ab', {
+        status: 206,
+        headers: { 'Content-Length': '2', 'Content-Range': 'bytes 2-3/100' },
+      }),
+    ]) {
+      mocks.fetch
+        .mockResolvedValueOnce(head('100'))
+        .mockResolvedValueOnce(upstreamResponse);
+      const response = await relayStorageDownload(
+        new Request('https://web.example.test/file', {
+          headers: { Range: 'bytes=0-1' },
+        }),
+        token
+      );
+      expect(response.status).toBe(upstreamResponse.status === 416 ? 416 : 502);
+      if (response.status === 416)
+        expect(response.headers.get('content-range')).toBe('bytes */100');
+      expect(mocks.fetch.mock.calls.at(-1)?.[1].signal.aborted).toBe(true);
+    }
+  });
+
+  it('keeps progressing streams alive beyond two minutes using an idle deadline', async () => {
+    vi.useFakeTimers();
+    let upstreamController: ReadableStreamDefaultController<Uint8Array>;
+    const upstreamBody = new ReadableStream<Uint8Array>({
+      start(controller) {
+        upstreamController = controller;
+      },
+    });
+    mocks.fetch
+      .mockResolvedValueOnce(head())
+      .mockResolvedValueOnce(
+        new Response(upstreamBody, { headers: { 'Content-Length': '4' } })
+      );
+    try {
+      const response = await relayStorageDownload(
+        new Request('https://web.example.test/file'),
+        token
+      );
+      const reader = response.body!.getReader();
+      for (let i = 0; i < 4; i++) {
+        const read = reader.read();
+        await vi.advanceTimersByTimeAsync(60_000);
+        upstreamController!.enqueue(new Uint8Array([65]));
+        expect((await read).value).toEqual(new Uint8Array([65]));
+        expect(mocks.fetch.mock.calls.at(-1)?.[1].signal.aborted).toBe(false);
+      }
+      upstreamController!.close();
+      await reader.read();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('aborts changed objects and lying upstream streams', async () => {

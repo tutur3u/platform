@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import {
+  isSecurityEgressEnforcementEnabled,
   reserveSecurityBudget,
   type SecurityBudgetDimension,
 } from '@tuturuuu/storage-core/security-budget';
@@ -15,22 +16,45 @@ function configuredLimit(name: string, fallback: number) {
 
 /** Shared ceilings supplement caller limits, including trusted/CMS bypasses. */
 export async function guardApiCost(request: NextRequest) {
-  if (request.method === 'OPTIONS') return null;
+  if (!isSecurityEgressEnforcementEnabled() || request.method === 'OPTIONS')
+    return null;
   const minute = Math.floor(Date.now() / 60_000);
-  const keys = [`api-cost:v1:global:${minute}`];
-  const workspace = request.nextUrl.pathname.match(
-    /^\/api\/v1\/workspaces\/([^/]+)\/(?:external-projects|external-apps)(?:\/|$)/u
-  )?.[1];
+  const path = request.nextUrl.pathname;
+  const workspaceSegment = path.match(/^\/api\/v1\/workspaces\/([^/]+)/u)?.[1];
+  // Fixed families prevent a delivery flood from spending auth/chat capacity,
+  // without allowing arbitrary path strings to allocate new family counters.
+  const cms = /\/(?:external-projects|external-apps)(?:\/|$)/u.test(path);
+  const family =
+    cms || /^\/api\/v1\/storage(?:\/|$)/u.test(path)
+      ? 'delivery'
+      : /\/(?:auth|sessions|oauth|app-token)(?:\/|$)/u.test(path)
+        ? 'auth'
+        : /\/(?:chat|ai|messages)(?:\/|$)/u.test(path)
+          ? 'chat'
+          : 'other';
+  const keys = [`api-cost:v1:family:${family}:${minute}`];
+  let workspace: string | undefined;
+  try {
+    workspace = workspaceSegment
+      ? decodeURIComponent(workspaceSegment).toLowerCase()
+      : undefined;
+    if (workspace?.includes('/') || workspace?.includes('%')) throw new Error();
+  } catch {
+    return NextResponse.json(
+      { message: 'Invalid workspace path' },
+      { status: 400 }
+    );
+  }
   try {
     const limits = [configuredLimit('API_GLOBAL_REQUESTS_PER_MINUTE', 10000)];
     if (workspace) {
-      // Ignore query strings, asset IDs, credentials and caller IPs. All existing
-      // CMS endpoints for this workspace consume the same read/write ceiling.
-      const hash = createHash('sha256')
-        .update(workspace.toLowerCase())
-        .digest('hex');
-      keys.push(`api-cost:v1:cms:${hash}:${minute}`);
-      limits.push(configuredLimit('CMS_WORKSPACE_REQUESTS_PER_MINUTE', 600));
+      const hash = createHash('sha256').update(workspace).digest('hex');
+      keys.push(`api-cost:v1:workspace:${family}:${hash}:${minute}`);
+      limits.push(
+        cms
+          ? configuredLimit('CMS_WORKSPACE_REQUESTS_PER_MINUTE', 600)
+          : configuredLimit('API_WORKSPACE_REQUESTS_PER_MINUTE', 2000)
+      );
     }
     const dimensions: SecurityBudgetDimension[] = keys.map((key, index) => [
       key,
@@ -54,7 +78,6 @@ export async function guardApiCost(request: NextRequest) {
       }
     );
   } catch {
-    console.error('Shared API cost protection unavailable');
     return NextResponse.json(
       { message: 'API protection temporarily unavailable' },
       {

@@ -18,6 +18,7 @@ import {
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
+import { storageDownloadErrorResponse } from '@/lib/storage-download-response';
 
 // Request body schema
 const shareSchema = z.object({
@@ -79,6 +80,8 @@ export const POST = withApiAuth(
         },
       });
     } catch (error) {
+      const storageError = storageDownloadErrorResponse(error);
+      if (storageError) return storageError;
       console.error('Unexpected error creating signed URL:', error);
       return createErrorResponse(
         'Internal Server Error',

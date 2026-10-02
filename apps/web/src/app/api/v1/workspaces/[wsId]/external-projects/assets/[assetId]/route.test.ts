@@ -1,10 +1,11 @@
+// @vitest-environment node
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', async (importOriginal) => ({
   ...(await importOriginal<typeof import('next/server')>()),
   connection: vi.fn(),
 }));
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   WorkspaceStorageError: class WorkspaceStorageError extends Error {
@@ -77,6 +78,53 @@ describe('external project asset route', () => {
       misconfigured: false,
       provider: 'supabase',
     });
+  });
+
+  afterEach(() => vi.unstubAllEnvs());
+  it('preserves public sources and returns 404 for invalid legacy private sources', async () => {
+    vi.stubEnv('SECURITY_EGRESS_ENFORCEMENT_ENABLED', 'true');
+    vi.stubEnv('SUPABASE_SERVER_URL', 'https://storage.example.test');
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+    );
+    for (const [source, status] of [
+      [
+        'https://storage.example.test/storage/v1/object/public/avatars/a.png',
+        307,
+      ],
+      [
+        'https://storage.example.test/storage/v1/object/sign/workspaces/ws-2/a.png?token=test-only',
+        404,
+      ],
+      ['malformed', 404],
+    ] as const) {
+      const single = vi.fn(async () => ({
+        data: {
+          id: 'asset-1',
+          source_url: source,
+          metadata: {},
+          storage_path: null,
+          workspace_external_project_entries: { status: 'published' },
+          ws_id: 'ws-1',
+        },
+        error: null,
+      }));
+      mocks.createAdminClient.mockResolvedValue({
+        from: () => ({
+          select: () => ({ eq: () => ({ eq: () => ({ single }) }) }),
+        }),
+      });
+      const response = await GET(
+        new Request(
+          'http://localhost/api/v1/workspaces/ws-1/external-projects/assets/asset-1'
+        ),
+        {
+          params: Promise.resolve({ wsId: 'ws-1', assetId: 'asset-1' }),
+        }
+      );
+      expect(response.status).toBe(status);
+      if (status === 307) expect(response.headers.get('location')).toBe(source);
+    }
   });
 
   it('forwards Supabase image transform params when resolving an asset', async () => {

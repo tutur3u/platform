@@ -15,13 +15,18 @@ const ticket = {
 
 describe('shared download reservations', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
     vi.stubEnv('STORAGE_DOWNLOADS_DISABLED', 'false');
     vi.stubEnv('STORAGE_DOWNLOAD_GLOBAL_DAILY_BYTES', '100');
     vi.stubEnv('STORAGE_DOWNLOAD_GLOBAL_MONTHLY_BYTES', '200');
     vi.stubEnv('STORAGE_DOWNLOAD_WORKSPACE_DAILY_BYTES', '80');
     mocks.reserve.mockReset().mockResolvedValue([1, 0]);
   });
-  afterEach(() => vi.unstubAllEnvs());
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.useRealTimers();
+  });
 
   it('reserves every byte dimension in one atomic invocation without exposing credentials', async () => {
     await reserveStorageDownloadBudget(ticket, 45);

@@ -44,7 +44,10 @@ import type {
   YoolaExternalProjectLoreCapsuleLoadingItem,
   YoolaExternalProjectSectionLoadingItem,
 } from '@tuturuuu/types';
-import { safeExternalProjectDeliverySourceUrl } from './asset-delivery-url';
+import {
+  safeExternalProjectDeliveryMetadata,
+  safeExternalProjectDeliverySourceUrl,
+} from './asset-delivery-url';
 import { invalidateWorkspaceExternalProjectCache } from './cache';
 import {
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
@@ -2973,7 +2976,10 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
             block_id: asset.block_id,
             entry_id: asset.entry_id,
             id: asset.id,
-            metadata: asset.metadata,
+            metadata: safeExternalProjectDeliveryMetadata(
+              asset.metadata,
+              buildDeliveryAssetUrl(workspaceId, asset)
+            ),
             sort_order: asset.sort_order,
             source_url: safeExternalProjectDeliverySourceUrl(
               asset.source_url,

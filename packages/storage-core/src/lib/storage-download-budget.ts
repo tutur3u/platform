@@ -109,7 +109,6 @@ export async function reserveStorageDownloadBudget(
   } catch (error) {
     if (error instanceof StorageDownloadError) throw error;
     // Never log the upstream URL, encrypted bearer ticket, or database credentials.
-    console.error('Storage download protection unavailable');
     throw new StorageDownloadError(
       'Storage download protection is unavailable',
       503

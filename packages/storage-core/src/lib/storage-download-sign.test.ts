@@ -12,7 +12,9 @@ describe('private Storage URL issuance', () => {
     storage: { from: () => ({ createSignedUrl: sign }) },
   } as unknown as TypedSupabaseClient;
   beforeEach(() => {
+    vi.stubEnv('SECURITY_EGRESS_ENFORCEMENT_ENABLED', 'true');
     vi.stubEnv('STORAGE_DOWNLOAD_SIGNING_SECRET', 'synthetic-test-secret');
+    vi.stubEnv('STORAGE_DOWNLOAD_REVOKED_BEFORE', '0');
     vi.stubEnv('STORAGE_DOWNLOADS_DISABLED', 'false');
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://storage.example.test');
     vi.stubEnv('SUPABASE_SERVER_URL', 'https://storage.example.test');
@@ -60,4 +62,26 @@ describe('private Storage URL issuance', () => {
     ).rejects.toMatchObject({ status: 503 });
     expect(sign).not.toHaveBeenCalled();
   });
+  it('preserves legacy URLs before explicit migration activation', async () => {
+    vi.stubEnv('SECURITY_EGRESS_ENFORCEMENT_ENABLED', 'false');
+    await expect(
+      createGuardedSupabaseStorageReadUrl(supabase, 'ws-1', 'ws-1/file.zip')
+    ).resolves.toContain('token=private-cdn-credential');
+  });
+});
+
+it('preserves missing-object status without exposing provider details', async () => {
+  const client = {
+    storage: {
+      from: () => ({
+        createSignedUrl: async () => ({
+          data: null,
+          error: { status: 404, message: 'Object not found' },
+        }),
+      }),
+    },
+  } as unknown as TypedSupabaseClient;
+  await expect(
+    createGuardedSupabaseStorageReadUrl(client, 'ws-1', 'ws-1/missing')
+  ).rejects.toMatchObject({ status: 404 });
 });

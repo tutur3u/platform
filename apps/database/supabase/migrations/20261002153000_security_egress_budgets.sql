@@ -37,11 +37,8 @@ BEGIN
      <> jsonb_array_length(p_dimensions) THEN
     RAISE EXCEPTION 'Duplicate budget keys';
   END IF;
-  -- One bounded transaction makes all dimensions atomic across replicas. Check
-  -- caller-ordered global limits first, so denied floods cannot create new keys.
-  PERFORM pg_advisory_xact_lock(1734829102);
+  -- Validate before locking or allocating counters.
   FOR dimension IN SELECT value FROM jsonb_array_elements(p_dimensions) LOOP
-    position := position + 1;
     bucket := dimension->>'key';
     amount := (dimension->>'amount')::bigint;
     maximum := (dimension->>'maximum')::bigint;
@@ -52,19 +49,31 @@ BEGIN
        OR ttl IS NULL OR ttl NOT BETWEEN 1 AND 2764800 THEN
       RAISE EXCEPTION 'Invalid budget dimension';
     END IF;
-    INSERT INTO private.security_budget_counters(key, used, expires_at)
-      VALUES (bucket, 0, now_at + make_interval(secs => ttl))
-      ON CONFLICT (key) DO NOTHING;
-    SELECT used INTO current_usage FROM private.security_budget_counters
-      WHERE key = bucket FOR UPDATE;
+  END LOOP;
+  -- Deterministic per-key ordering prevents deadlocks without serializing
+  -- unrelated API families, workspaces or storage windows.
+  FOR bucket IN SELECT value->>'key' FROM jsonb_array_elements(p_dimensions)
+    ORDER BY value->>'key' LOOP
+    PERFORM pg_advisory_xact_lock(hashtextextended('security-budget:v1:' || bucket, 0));
+  END LOOP;
+  -- Check every dimension before allocating any row. A rejected fresh key
+  -- must not consume storage, nor increment an earlier accepted dimension.
+  FOR dimension IN SELECT value FROM jsonb_array_elements(p_dimensions) LOOP
+    position := position + 1;
+    amount := (dimension->>'amount')::bigint;
+    maximum := (dimension->>'maximum')::bigint;
+    SELECT COALESCE((SELECT used FROM private.security_budget_counters
+      WHERE key = dimension->>'key'), 0) INTO current_usage;
     IF amount > maximum OR current_usage > maximum - amount THEN
       RETURN ARRAY[0::bigint, position::bigint];
     END IF;
   END LOOP;
   FOR dimension IN SELECT value FROM jsonb_array_elements(p_dimensions) LOOP
-    UPDATE private.security_budget_counters
-      SET used = used + (dimension->>'amount')::bigint
-      WHERE key = dimension->>'key';
+    INSERT INTO private.security_budget_counters(key, used, expires_at)
+      VALUES (dimension->>'key', (dimension->>'amount')::bigint,
+        now_at + make_interval(secs => (dimension->>'ttl')::integer))
+      ON CONFLICT (key) DO UPDATE SET used =
+        private.security_budget_counters.used + EXCLUDED.used;
   END LOOP;
   RETURN ARRAY[1::bigint, 0::bigint];
 END;

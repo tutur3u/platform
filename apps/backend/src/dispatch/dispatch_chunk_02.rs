@@ -178,7 +178,7 @@ pub(super) async fn dispatch_chunk_02(
         return Some(response);
     }
 
-    // CMS delivery delegates to Next.js until safe asset source parity is implemented.
+    // CMS delivery remains on live Next.js; Rust dispatch is disabled pending safe parity.
 
     if let Some(response) =
         workspaces_external_projects_sync_snapshot::handle_workspaces_external_projects_sync_snapshot_route(config, request, outbound).await

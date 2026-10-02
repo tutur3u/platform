@@ -1045,20 +1045,19 @@ async function guardGuestWorkspaceRoute({
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
+    const versionedAsset = isVersionedExternalProjectAssetDeliveryRequest(
+      req.method,
+      req.nextUrl
+    );
+    if (!versionedAsset) {
+      const malformed = await blockMalformedApiAuthCookieRequest(req);
+      if (malformed) return malformed;
+      const suspicious = await blockSuspiciousAnonymousApiRequest(req);
+      if (suspicious) return suspicious;
+    }
     const costResponse = await guardApiCost(req);
     if (costResponse) return costResponse;
-    if (isVersionedExternalProjectAssetDeliveryRequest(req.method, req.nextUrl))
-      return NextResponse.next();
-    const malformedAuthCookieResponse =
-      await blockMalformedApiAuthCookieRequest(req);
-    if (malformedAuthCookieResponse) {
-      return malformedAuthCookieResponse;
-    }
-    const suspiciousAnonymousApiResponse =
-      await blockSuspiciousAnonymousApiRequest(req);
-    if (suspiciousAnonymousApiResponse) {
-      return suspiciousAnonymousApiResponse;
-    }
+    if (versionedAsset) return NextResponse.next();
     const additionalRoutePolicies = (await hasWorkspaceEmailRateLimitOverrides(
       req.nextUrl.pathname
     ))

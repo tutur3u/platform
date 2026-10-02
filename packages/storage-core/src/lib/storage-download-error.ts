@@ -4,6 +4,6 @@ export class WorkspaceStorageError extends Error {
     public readonly status = 500
   ) {
     super(message);
-    this.name = 'WorkspaceStorageError';
+    this.name = new.target.name;
   }
 }

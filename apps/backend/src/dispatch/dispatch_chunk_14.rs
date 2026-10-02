@@ -32,7 +32,7 @@ pub(super) async fn dispatch_chunk_14(
         return Some(response);
     }
 
-    // CMS asset reads delegate to Next.js until guarded download parity is implemented.
+    // CMS asset reads remain on live Next.js; Rust dispatch is disabled pending guarded parity.
 
     if let Some(response) =
         workspaces_wsid_external_projects_field_definitions::handle_workspaces_wsid_external_projects_field_definitions_route(config, request, outbound).await

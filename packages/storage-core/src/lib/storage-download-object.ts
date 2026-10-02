@@ -1,5 +1,6 @@
 import 'server-only';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { isSecurityEgressEnforcementEnabled } from './security-budget';
 import { relayStorageDownload } from './storage-download-relay';
 import { createGuardedSupabaseStorageReadUrl } from './storage-download-sign';
 import { StorageDownloadError } from './storage-download-token';
@@ -10,6 +11,23 @@ export async function downloadGuardedSupabaseStorageObject(
   wsId: string,
   path: string
 ) {
+  if (!isSecurityEgressEnforcementEnabled()) {
+    if (process.env.STORAGE_DOWNLOADS_DISABLED === 'true') {
+      throw new StorageDownloadError(
+        'Storage downloads are temporarily disabled',
+        503
+      );
+    }
+    const { data, error } = await supabase.storage
+      .from('workspaces')
+      .download(path);
+    if (error || !data)
+      throw new StorageDownloadError('Storage object unavailable', 404);
+    return {
+      buffer: new Uint8Array(await data.arrayBuffer()),
+      contentType: data.type || null,
+    };
+  }
   const url = await createGuardedSupabaseStorageReadUrl(supabase, wsId, path);
   const token = new URL(url).pathname.split('/').at(-1)!;
   const response = await relayStorageDownload(new Request(url), token);

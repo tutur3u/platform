@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 const mocks = vi.hoisted(() => ({ rpc: vi.fn(), abort: vi.fn() }));
@@ -12,6 +12,7 @@ beforeEach(() => {
   mocks.rpc.mockReset().mockReturnValue({ abortSignal: mocks.abort });
   mocks.abort.mockReset();
 });
+afterEach(() => vi.unstubAllEnvs());
 it('reserves through the existing database without Redis', async () => {
   vi.stubEnv('UPSTASH_REDIS_REST_URL', '');
   vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', '');
@@ -24,7 +25,6 @@ it('reserves through the existing database without Redis', async () => {
       { key: 'api-cost:v1:global:1', amount: 1, maximum: 100, ttl: 120 },
     ],
   });
-  vi.unstubAllEnvs();
 });
 it('rejects unavailable RPCs and malformed responses instead of falling back', async () => {
   for (const response of [
