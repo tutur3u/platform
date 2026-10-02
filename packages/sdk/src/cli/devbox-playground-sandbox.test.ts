@@ -350,6 +350,12 @@ describe('managed playground removal ownership', () => {
     expect(smoke.at(-1)).toContain('command -v python3');
     expect(smoke.at(-1)).not.toContain('/usr/bin/python3');
     await runPlaygroundJob(payload(), limits);
+    const managed = docker.mock.calls.find(([args]) =>
+      args.includes('--detach')
+    )![0] as string[];
+    const helperPath = managed.find((arg) => arg.startsWith('--env=PATH='));
+    expect(helperPath).toBeDefined();
+    expect(smoke).toContain(helperPath);
     const execs = docker.mock.calls.filter(
       ([args]) => args[0] === 'exec' && !args.includes('sh')
     );
