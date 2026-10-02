@@ -8,8 +8,11 @@ const walletUrl = `https://finance.tuturuuu.localhost:1355/${workspaceId}/wallet
 function fixture({
   status = 200,
   body,
+  countBody = body,
+  listBody = body,
   financeStatus = 200,
   financeUrl = walletUrl,
+  financeContentType = 'text/html; charset=utf-8',
   finishedError = null,
 } = {}) {
   const calls = [];
@@ -26,7 +29,12 @@ function fixture({
             status: () => status,
             async json() {
               calls.push('complete JSON');
-              return body ?? { count: 1, notifications: [] };
+              const responseBody = new URL(url).pathname.endsWith(
+                '/unread-count'
+              )
+                ? countBody
+                : listBody;
+              return responseBody ?? { count: 1, notifications: [] };
             },
           };
         },
@@ -37,7 +45,7 @@ function fixture({
           return {
             status: () => financeStatus,
             url: () => financeUrl,
-            headers: () => ({ 'content-type': 'text/html; charset=utf-8' }),
+            headers: () => ({ 'content-type': financeContentType }),
             async finished() {
               calls.push('complete HTML');
               return finishedError;
@@ -87,6 +95,27 @@ test('rejects malformed successful notification responses', async () => {
     prepareAccountShapeRoutes(fixture({ body: {} }).options),
     /invalid/
   );
+});
+
+test('rejects malformed notification list after a valid unread count', async () => {
+  const { options, calls } = fixture({
+    countBody: { count: 1 },
+    listBody: { count: 1 },
+  });
+  await assert.rejects(
+    prepareAccountShapeRoutes(options),
+    /invalid \/api\/v1\/notifications body/
+  );
+  assert.equal(calls.length, 4);
+  assert.equal(new URL(calls[2].url).pathname, '/api/v1/notifications');
+});
+
+test('rejects a successful Finance response without an HTML content type', async () => {
+  const { options, calls } = fixture({
+    financeContentType: 'application/json',
+  });
+  await assert.rejects(prepareAccountShapeRoutes(options), /HTML unavailable/);
+  assert.equal(calls.includes('complete HTML'), false);
 });
 
 test('does not accept a redirected login page as Finance readiness', async () => {
