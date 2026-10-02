@@ -327,6 +327,7 @@ export default function MiraChatPanel({
 
   const { handleSubmit, queuedText, resetQueue } = useMiraMessageQueue({
     attachedFiles,
+    disabled: model.disabled,
     chatId: chat?.id,
     clearAttachedFiles,
     createChat,

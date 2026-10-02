@@ -141,10 +141,14 @@ export function useMiraChatActions({
 
   const createChat = useCallback(
     async (userInput: string) => {
+      if (model.disabled) {
+        setInput(userInput);
+        return;
+      }
       setPendingPrompt(userInput);
       await createChatMutation(userInput).catch(() => {});
     },
-    [setPendingPrompt, createChatMutation]
+    [model.disabled, setInput, setPendingPrompt, createChatMutation]
   );
 
   const resetConversationState = useCallback(() => {

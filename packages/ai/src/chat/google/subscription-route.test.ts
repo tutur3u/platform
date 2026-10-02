@@ -133,4 +133,22 @@ describe('subscription chat billing boundary', () => {
       code: 'CHATGPT_CONNECTION_REQUIRED',
     });
   });
+  it('rejects subscription IDs on the funded route before allocation or billing', async () => {
+    const response = await createPOST()(
+      new Request('http://localhost/api/ai/chat', {
+        method: 'POST',
+        body: JSON.stringify({
+          model: 'chatgpt/oaiapp_test/account-model',
+          messages: [],
+        }),
+      }) as NextRequest
+    );
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      code: 'CHATGPT_ROUTE_REQUIRED',
+    });
+    expect(mocks.creditPreflight).not.toHaveBeenCalled();
+    expect(mocks.resolvePlanModel).not.toHaveBeenCalled();
+    expect(mocks.streamText).not.toHaveBeenCalled();
+  });
 });

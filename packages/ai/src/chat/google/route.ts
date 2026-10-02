@@ -59,6 +59,7 @@ import {
   splitSystemMessages,
 } from './route-message-preparation';
 import { prepareMiraRuntime } from './route-mira-runtime';
+import { validateSubscriptionRoute } from './route-subscription-boundary';
 import {
   buildAbortedStreamFinishResponse,
   persistAssistantResponse,
@@ -134,6 +135,11 @@ export function createPOST(
         taskBoardContext,
       } = parsedBody.data;
       const isMiraMode = _options.subscription ? false : requestedMiraMode;
+      const subscriptionError = validateSubscriptionRoute(
+        model,
+        !!_options.subscription
+      );
+      if (subscriptionError) return subscriptionError;
       const thinkingMode = rawThinkingMode === 'thinking' ? 'thinking' : 'fast';
 
       if (!messages) {

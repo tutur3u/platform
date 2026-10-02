@@ -22,13 +22,13 @@ import {
   WORKSPACE_CONTEXT_EVENT,
   WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX,
 } from './mira-chat-constants';
+import { createMiraRequestPreparer } from './mira-chat-transport';
 import {
   fetchGatewayModels,
   type GatewayModelUi,
   MIRA_GATEWAY_MODELS_QUERY_KEY,
   modelSupportsFileInput,
 } from './mira-gateway-models';
-import { getMiraTempAuthHeaders } from './mira-temp-auth-client';
 
 interface UseMiraChatConfigParams {
   wsId: string;
@@ -265,16 +265,7 @@ export function useMiraChatConfig({
       new DefaultChatTransport({
         api: '/api/ai/chat',
         credentials: 'include',
-        headers: () =>
-          chatRequestBodyRef.current.model.startsWith('chatgpt/')
-            ? {}
-            : getMiraTempAuthHeaders(chatRequestBodyRef.current),
-        prepareSendMessagesRequest: ({ id, messages, body }) => ({
-          api: chatRequestBodyRef.current.model.startsWith('chatgpt/')
-            ? '/api/ai/chatgpt'
-            : '/api/ai/chat',
-          body: { ...body, id, messages },
-        }),
+        prepareSendMessagesRequest: createMiraRequestPreparer(),
         body: () => chatRequestBodyRef.current,
       }),
     []

@@ -4,6 +4,36 @@ import { describe, expect, it, vi } from 'vitest';
 import { useMiraMessageQueue } from '../use-mira-message-queue';
 
 describe('useMiraMessageQueue', () => {
+  it('preserves a queued prompt when the model disconnects before the debounce flush', async () => {
+    vi.useFakeTimers();
+    try {
+      const createChat = vi.fn(async () => {});
+      const clearAttachedFiles = vi.fn();
+      const { result, rerender } = renderHook(
+        ({ disabled }) =>
+          useMiraMessageQueue({
+            disabled,
+            attachedFiles: [],
+            createChat,
+            clearAttachedFiles,
+            sendMessageWithCurrentConfig: vi.fn(),
+            snapshotAttachmentsForMessage: vi.fn(),
+            status: 'ready',
+          }),
+        { initialProps: { disabled: false } }
+      );
+      act(() => result.current.handleSubmit('Keep this prompt'));
+      rerender({ disabled: true });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(createChat).not.toHaveBeenCalled();
+      expect(clearAttachedFiles).not.toHaveBeenCalled();
+      expect(result.current.queuedText).toBe('Keep this prompt');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it('waits for the chat to leave submitted before flushing a queued retry', async () => {
     const sendMessageWithCurrentConfig = vi.fn<(message: UIMessage) => void>();
     const stop = vi.fn();
