@@ -110,6 +110,8 @@ begin
     -- Existing runner accepts ten command cases; reserve one custom-test slot.
     if jsonb_typeof(p_problem -> 'cases') is distinct from 'array'
         or jsonb_array_length(p_problem -> 'cases') not between 1 and 9
+        or exists (select 1 from jsonb_array_elements(p_problem -> 'cases') c
+            where jsonb_typeof(c -> 'visible') is distinct from 'boolean')
         or not exists (select 1 from jsonb_array_elements(p_problem -> 'cases') c
             where c -> 'visible' = 'true'::jsonb) then
         raise exception 'Invalid problem cases' using errcode = '22023';
