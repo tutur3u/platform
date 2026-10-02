@@ -36,6 +36,11 @@ select throws_ok($q$select pg_temp.save_problem((select id from fixture_identity
 select is((select revision from private.learn_programming_problems where id=(select id from fixture_identity)),2::bigint,'failed case transaction preserves revision');
 select is((select input from private.learn_programming_problem_cases where problem_id=(select id from fixture_identity) and position=1),'hidden-input','failed case transaction preserves private cases');
 select throws_ok($q$select pg_temp.save_problem(null,null,jsonb_set(pg_temp.problem_payload(),'{cases}','[{"input":"hidden","expected":"hidden","visible":false}]'::jsonb))$q$,'22023','Invalid problem cases','catalog requires a visible case');
+select is((select count(*) from private.learn_programming_problem_cases where problem_id=(select id from fixture_identity)),2::bigint,'failed case transaction preserves case count');
+select is((select jsonb_agg(jsonb_build_object('position',position,'input',input,'expected',expected,'visible',visible) order by position) from private.learn_programming_problem_cases where problem_id=(select id from fixture_identity)), '[{"position":0,"input":"visible-input","expected":"visible-output","visible":true},{"position":1,"input":"hidden-input","expected":"hidden-output","visible":false}]'::jsonb,'failed case transaction preserves every case field');
+select throws_ok($q$select pg_temp.save_problem(null,null,jsonb_set(pg_temp.problem_payload(),'{cases,1,visible}','"true"'::jsonb))$q$,'22023','Invalid problem cases','string visibility is rejected before cast');
+select throws_ok($q$select pg_temp.save_problem(null,null,jsonb_set(pg_temp.problem_payload(),'{cases,1,visible}','"invalid"'::jsonb))$q$,'22023','Invalid problem cases','invalid visibility is rejected with contract error');
+select throws_ok($q$select pg_temp.save_problem(null,null,jsonb_set(pg_temp.problem_payload(),'{cases,1}',(pg_temp.problem_payload()->'cases'->1)-'visible'))$q$,'22023','Invalid problem cases','missing visibility is rejected before insert');
 select throws_ok($q$select pg_temp.save_problem(null,1)$q$,'22023','Invalid create revision','create cannot supply update revision');
 select * from finish();
 rollback;

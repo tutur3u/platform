@@ -66,6 +66,12 @@ export async function createProgrammingRepository(): Promise<ProgrammingReposito
     );
   return {
     async list({ wsId, publishedOnly, cursor }) {
+      if (
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          wsId
+        )
+      )
+        throw new ProgrammingError('Invalid workspace', 400);
       let query = client.from('learn_programming_problems').select(columns);
       query = publishedOnly
         ? query.or(`ws_id.eq.${wsId},ws_id.is.null`).eq('status', 'published')
