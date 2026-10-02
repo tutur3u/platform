@@ -121,6 +121,109 @@ async function executorFixture(action: 'patch' | 'delete' = 'patch') {
   };
 }
 describe('encrypted immutable generic Google mutations', () => {
+  it('seals the invited self response against the original version and replays it unchanged', async () => {
+    const f = fixture();
+    f.get.mockResolvedValueOnce({
+      data: {
+        etag: 'invitation-version',
+        attendees: [
+          { email: 'Other@example.test', responseStatus: 'accepted' },
+          {
+            email: 'Invited@example.test',
+            self: true,
+            responseStatus: 'needsAction',
+          },
+        ],
+        organizer: { self: false },
+      },
+    });
+    const prepared = await f.provider.prepare({
+      operationId: id,
+      generation: '1',
+      identity,
+      action: 'patch',
+      providerPatch: {},
+      sendUpdates: 'all',
+      meetingResponse: {
+        accountEmail: 'invited@example.test',
+        response: 'tentative',
+      },
+    });
+    expect(JSON.stringify(prepared)).not.toContain('Invited@');
+    await f.provider.dispatch(identity, prepared);
+    await f.provider.dispatch(identity, prepared);
+    expect(f.get).toHaveBeenCalledTimes(1);
+    for (const [request, options] of f.patch.mock.calls) {
+      expect(request).toMatchObject({
+        sendUpdates: 'all',
+        requestBody: {
+          attendeesOmitted: true,
+          attendees: [
+            { email: 'Invited@example.test', responseStatus: 'tentative' },
+          ],
+        },
+      });
+      expect(options).toEqual({
+        headers: { 'If-Match': 'invitation-version' },
+      });
+    }
+  });
+  it('rejects a cancelled meeting as conflict before sealing a response', async () => {
+    const f = fixture();
+    f.get.mockResolvedValueOnce({
+      data: { etag: 'cancelled-version', status: 'cancelled' },
+    });
+    await expect(
+      f.provider.prepare({
+        operationId: id,
+        generation: '1',
+        identity,
+        action: 'patch',
+        providerPatch: {},
+        meetingResponse: {
+          accountEmail: 'invited@example.test',
+          response: 'accepted',
+        },
+      })
+    ).rejects.toMatchObject({ reason: 'conflict' });
+    expect(f.patch).not.toHaveBeenCalled();
+  });
+  it.each([
+    {
+      attendees: [{ email: 'invited@example.test', self: true }],
+      organizer: { self: true },
+    },
+    {
+      attendees: [{ email: 'someoneelse@example.test', self: true }],
+      organizer: { self: false },
+    },
+    {
+      attendees: [{ email: 'invited@example.test', self: false }],
+      organizer: { self: false },
+    },
+  ])(
+    'rejects an organizer or a different account before sealing/dispatch: %j',
+    async (event) => {
+      const f = fixture();
+      f.get.mockResolvedValueOnce({
+        data: { etag: 'invitation-version', ...event },
+      });
+      await expect(
+        f.provider.prepare({
+          operationId: id,
+          generation: '1',
+          identity,
+          action: 'patch',
+          providerPatch: {},
+          meetingResponse: {
+            accountEmail: 'invited@example.test',
+            response: 'accepted',
+          },
+        })
+      ).rejects.toMatchObject({ reason: 'unauthorized' });
+      expect(f.patch).not.toHaveBeenCalled();
+    }
+  );
   it('persists no sensitive request content and preserves the server marker plus existing private properties', async () => {
     const f = fixture();
     const prepared = await f.prepare();

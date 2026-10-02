@@ -73,9 +73,15 @@ export function createGoogleMutationProvider(args: {
       sendUpdates?: 'all' | 'externalOnly' | 'none';
       eventLabelVersion?: 0 | 1;
       providerPatch: Record<string, unknown>;
+      meetingResponse?: {
+        accountEmail: string;
+        response: 'accepted' | 'declined' | 'tentative';
+      };
       localPatch?: { locked?: boolean };
     }): Promise<PreparedGoogleMutation> {
-      const providerPatch = Patch.parse(input.providerPatch);
+      let providerPatch: Record<string, unknown> = Patch.parse(
+        input.providerPatch
+      );
       const localPatch = LocalPatch.parse(input.localPatch ?? {});
       // Fetch before reservation is safe: the repository's generation comparison
       // excludes concurrent local writers; If-Match excludes intervening Google
@@ -85,11 +91,46 @@ export function createGoogleMutationProvider(args: {
         calendarId: input.identity.calendarId,
         eventId: input.identity.providerEventId,
       });
+      if (input.meetingResponse && current.status === 'cancelled')
+        throw new ColorOperationError('conflict', 'This meeting was cancelled');
       if (!current.etag || current.status === 'cancelled')
         throw new ColorOperationError(
           'unavailable',
           'Google version unavailable'
         );
+      if (input.meetingResponse) {
+        const response = z
+          .object({
+            accountEmail: z.email(),
+            response: z.enum(['accepted', 'declined', 'tentative']),
+          })
+          .strict()
+          .parse(input.meetingResponse);
+        if (
+          input.action !== 'patch' ||
+          Object.keys(providerPatch).length ||
+          Object.keys(localPatch).length
+        )
+          throw new ColorOperationError(
+            'identity',
+            'Invalid meeting operation'
+          );
+        const self = current.attendees?.find(
+          (guest) =>
+            guest.self &&
+            guest.email?.toLowerCase() === response.accountEmail.toLowerCase()
+        );
+        if (!self || current.organizer?.self)
+          throw new ColorOperationError(
+            'unauthorized',
+            'Only the invited account can respond'
+          );
+        // Derived from this exact version, never caller-supplied attendees.
+        providerPatch = {
+          attendeesOmitted: true,
+          attendees: [{ email: self.email, responseStatus: response.response }],
+        } as Record<string, unknown>;
+      }
       const binding: MutationBinding = {
         operationId: input.operationId,
         generation: input.generation,

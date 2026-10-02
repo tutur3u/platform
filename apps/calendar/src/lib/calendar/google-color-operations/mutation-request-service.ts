@@ -123,6 +123,35 @@ export async function createRequestGoogleMutationService(
       throw new ColorOperationError('conflict', 'Google mutation in progress');
     return current;
   }
+  async function reserve(input: {
+    action: 'patch' | 'delete';
+    providerPatch: Record<string, unknown>;
+    localPatch?: { locked?: boolean };
+    sendUpdates: 'all' | 'externalOnly' | 'none';
+    eventLabelVersion?: 0 | 1;
+    meetingResponse?: {
+      accountEmail: string;
+      response: 'accepted' | 'declined' | 'tentative';
+    };
+  }) {
+    const current = await available();
+    const id = randomUUID();
+    const generation = (BigInt(current.generation) + 1n).toString();
+    const prepared = await provider.prepare({
+      ...input,
+      identity,
+      operationId: id,
+      generation,
+    });
+    // Only the generation checked by SQL can admit this exact sealed intent;
+    // a race after the provider read never adopts another generation or ETag.
+    const operation = await repository.admit(
+      { id, generation, identity, phase: 'prepared', prepared },
+      current.generation
+    );
+    operationId = operation.id;
+    return operation;
+  }
   return {
     identity,
     inspect,
@@ -143,30 +172,25 @@ export async function createRequestGoogleMutationService(
           choice.kind === 'event' ? (0 as const) : (1 as const),
       };
     },
-    async reserve(input: {
-      action: 'patch' | 'delete';
-      providerPatch: Record<string, unknown>;
-      localPatch?: { locked?: boolean };
-      sendUpdates: 'all' | 'externalOnly' | 'none';
-      eventLabelVersion?: 0 | 1;
-    }) {
-      const current = await available();
-      const id = randomUUID();
-      const generation = (BigInt(current.generation) + 1n).toString();
-      const prepared = await provider.prepare({
-        ...input,
-        identity,
-        operationId: id,
-        generation,
+    reserve: (input: Omit<Parameters<typeof reserve>[0], 'meetingResponse'>) =>
+      reserve(input),
+    async reserveResponse(response: 'accepted' | 'declined' | 'tentative') {
+      await available();
+      const current = await access.provider(identity);
+      if (!current.source.accountEmail)
+        throw new ColorOperationError(
+          'unauthorized',
+          'Connected calendar account unavailable'
+        );
+      return reserve({
+        action: 'patch',
+        providerPatch: {},
+        sendUpdates: 'all',
+        meetingResponse: {
+          accountEmail: current.source.accountEmail,
+          response,
+        },
       });
-      // Only the generation checked by SQL can admit this exact sealed intent;
-      // a race after the provider read never adopts another generation or ETag.
-      const operation = await repository.admit(
-        { id, generation, identity, phase: 'prepared', prepared },
-        current.generation
-      );
-      operationId = operation.id;
-      return operation;
     },
     execute: (id: string) => {
       operationId = id;

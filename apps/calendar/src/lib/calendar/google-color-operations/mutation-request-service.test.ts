@@ -5,9 +5,10 @@ const fixtures = vi.hoisted(() => ({
   discover: vi.fn(),
   assertAllowed: vi.fn(),
   prepare: vi.fn(),
+  provider: vi.fn(),
 }));
 vi.mock('./request-access', () => ({
-  createRequestColorOperationAccess: () => ({ ...fixtures, provider: vi.fn() }),
+  createRequestColorOperationAccess: () => ({ ...fixtures }),
 }));
 vi.mock('./mutation-provider', () => ({
   createGoogleMutationProvider: () => ({ prepare: fixtures.prepare }),
@@ -56,6 +57,9 @@ function fixture() {
     userId: '66666666-6666-4666-8666-666666666666',
   });
   fixtures.assertAllowed.mockResolvedValue(undefined);
+  fixtures.provider.mockResolvedValue({
+    source: { accountEmail: 'invited@example.test' },
+  });
   fixtures.prepare.mockImplementation(async (input) => ({
     binding: {
       operationId: input.operationId,
@@ -97,6 +101,39 @@ describe('request mutation admission contract', () => {
     ).rejects.toMatchObject({ reason: 'conflict' });
     expect(fixtures.prepare).not.toHaveBeenCalled();
     expect(f.rpc).toHaveBeenCalledTimes(1);
+  });
+  it('derives meeting-response identity from the freshly authorized account and seals notification policy', async () => {
+    fixture();
+    const service = await createRequestGoogleMutationService(
+      new Request('https://example.test'),
+      identity.wsId,
+      identity.eventId
+    );
+    await service.reserveResponse('accepted');
+    expect(fixtures.provider).toHaveBeenCalledWith(identity);
+    expect(fixtures.prepare).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerPatch: {},
+        sendUpdates: 'all',
+        meetingResponse: {
+          accountEmail: 'invited@example.test',
+          response: 'accepted',
+        },
+      })
+    );
+  });
+  it('rejects a missing connected-account email before provider preparation', async () => {
+    fixture();
+    fixtures.provider.mockResolvedValueOnce({ source: { accountEmail: null } });
+    const service = await createRequestGoogleMutationService(
+      new Request('https://example.test'),
+      identity.wsId,
+      identity.eventId
+    );
+    await expect(service.reserveResponse('declined')).rejects.toMatchObject({
+      reason: 'unauthorized',
+    });
+    expect(fixtures.prepare).not.toHaveBeenCalled();
   });
   it('preserves bigint generations across JSON admission without Number precision loss', async () => {
     const f = fixture();
