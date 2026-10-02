@@ -1058,8 +1058,8 @@ test('TanStack contact route stays terminal across Rust APIs and Start page', ()
       targetOwner: 'rust-backend',
     },
     {
-      id: 'api:/api/v1/users/me/profile:apps/web/src/legacy-api-routes/v1/users/me/profile/route.ts',
-      methods: ['GET', 'PATCH'],
+      id: 'api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts',
+      methods: ['GET', 'HEAD', 'PATCH'],
       targetOwner: 'rust-backend',
     },
     {
