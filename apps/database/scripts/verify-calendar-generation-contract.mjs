@@ -56,7 +56,9 @@ metadata.typegenOutput = 'packages/types/src/supabase.ts';
 console.log(
   `Exact source: ${headSha}; isolated project: ${metadata.projectId}`
 );
-for (const file of trackedFiles) {
+for (const file of trackedFiles.filter(
+  (file) => !file.endsWith('/supabase/config.toml')
+)) {
   if (
     !readFileSync(file).equals(
       readFileSync(
