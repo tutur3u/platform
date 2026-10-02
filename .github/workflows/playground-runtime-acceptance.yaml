@@ -10,6 +10,7 @@ on:
       - 'packages/types/src/primitives/playgrounds.ts'
       - 'bun.lock'
       - 'tuturuuu.ci.ts'
+      - 'scripts/ci/playground-runtime-cleanup.test.js'
       - '.github/workflows/playground-runtime-acceptance.yaml'
   workflow_dispatch:
 permissions:
@@ -45,6 +46,8 @@ jobs:
           bun-version: 1.4.1
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Verify cleanup failure and ownership contracts
+        run: node --test scripts/ci/playground-runtime-cleanup.test.js
       - name: Install verified official gVisor on this disposable VM
         run: |
           set -euo pipefail
@@ -82,19 +85,28 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          # No production runner daemon, network, host mounts, or credentials are used.
-          inventory="$(docker ps -aq --filter "label=ttr.pool=$TUTURUUU_PLAYGROUND_POOL_ID")"
-          ids=()
-          if [[ -n "$inventory" ]]; then mapfile -t ids <<< "$inventory"; fi
-          for id in "${ids[@]}"; do
-            [[ "$id" =~ ^[a-f0-9]{12,64}$ ]]
-            docker rm --force --volumes "$id"
-          done
+          # Attempt every exact-owned target, then fail if any cleanup was unconfirmed.
+          failed=0
+          inventory=''
+          if ! inventory="$(docker ps -aq --filter "label=ttr.pool=$TUTURUUU_PLAYGROUND_POOL_ID")"; then failed=1; fi
+          while IFS= read -r id; do
+            if [[ -z "$id" ]]; then continue; fi
+            if [[ ! "$id" =~ ^[a-f0-9]{12,64}$ ]]; then failed=1; continue; fi
+            docker rm --force --volumes "$id" || failed=1
+          done <<< "$inventory"
           registry="ttr-acceptance-registry-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           if docker container inspect "$registry" >/dev/null 2>&1; then
-            actual="$(docker inspect "$registry" --format '{{index .Config.Labels "ttr.acceptance"}}')"
-            test "$actual" = "$TUTURUUU_PLAYGROUND_POOL_ID"
-            docker rm --force --volumes "$registry"
+            actual=''
+            if ! actual="$(docker inspect "$registry" --format '{{index .Config.Labels "ttr.acceptance"}}')"; then failed=1; fi
+            if [[ "$actual" = "$TUTURUUU_PLAYGROUND_POOL_ID" ]]; then
+              docker rm --force --volumes "$registry" || failed=1
+            else
+              failed=1
+            fi
           fi
-          remaining="$(docker ps -aq --filter "label=ttr.pool=$TUTURUUU_PLAYGROUND_POOL_ID")"
-          test -z "$remaining"
+          remaining=''
+          if ! remaining="$(docker ps -aq --filter "label=ttr.pool=$TUTURUUU_PLAYGROUND_POOL_ID")"; then failed=1; fi
+          if [[ -n "$remaining" ]]; then failed=1; fi
+          if ! remaining="$(docker ps -aq --filter "label=ttr.acceptance=$TUTURUUU_PLAYGROUND_POOL_ID")"; then failed=1; fi
+          if [[ -n "$remaining" ]]; then failed=1; fi
+          exit "$failed"
