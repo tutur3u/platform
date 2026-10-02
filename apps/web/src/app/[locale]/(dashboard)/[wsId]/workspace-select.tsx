@@ -19,6 +19,7 @@ export function WorkspaceSelect({
 }) {
   return (
     <SharedWorkspaceSelect
+      presentation="dropdown"
       wsId={wsId}
       hideLeading={hideLeading}
       standalone={standalone}
