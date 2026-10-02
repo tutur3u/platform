@@ -1,6 +1,4 @@
-import { DocumentPanel } from './document-panel';
-
-('use client');
+'use client';
 
 import { useQuery } from '@tanstack/react-query';
 import { Circle, Code2, FileText, Leaf, WifiOff } from '@tuturuuu/icons';
@@ -37,6 +35,7 @@ import { CallSettings } from './call-settings';
 import { type CallLayout, CallStage } from './call-stage';
 import { type CallPanel, ControlBar } from './control-bar';
 import { CopyInvite } from './copy-invite';
+import { DocumentPanel } from './document-panel';
 import { LeaveDialog } from './leave-dialog';
 import { Lobby } from './lobby';
 import { MeetingTitle } from './meeting-title';
