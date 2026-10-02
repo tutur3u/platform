@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Careers',
-  description:
-    'Discover open roles and learn what it is like to build Tuturuuu.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.careers',
   pathname: '/careers',
 });
 

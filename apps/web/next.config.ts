@@ -8,7 +8,11 @@ import {
   resolveTuturuuuInfrastructureAppUrl,
 } from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
+import { generate as generatePublicSeoRoutes } from '../../scripts/generate-public-seo-routes';
 import { createSatelliteApiRewrites } from './src/lib/satellite-api-rewrites';
+
+// Discover indexable public pages on every dev/build, including Docker builds.
+generatePublicSeoRoutes();
 
 const withNextIntl = createNextIntlPlugin();
 const offlineConfig = getOfflineTurbopackConfig({

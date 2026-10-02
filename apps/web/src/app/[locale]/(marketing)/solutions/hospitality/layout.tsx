@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Hospitality Solution',
-  description:
-    'Deliver memorable guest experiences using Tuturuuu in hospitality.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.solutions_hospitality',
   pathname: '/solutions/hospitality',
 });
 

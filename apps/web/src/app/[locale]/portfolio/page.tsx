@@ -1,25 +1,17 @@
 import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
-import type { Metadata } from 'next';
-import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import { getLocale, getMessages } from 'next-intl/server';
 import type { CapabilityCopy } from '@/components/capabilities/product-scenes';
 import type { VisualCopy } from '@/components/pitch/diagram-primitives';
 import {
   Portfolio,
   type PortfolioCopy,
 } from '@/components/portfolio/portfolio';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('portfolio');
-  const locale = await getLocale();
-  return {
-    title: t('title'),
-    description: t('description'),
-    alternates: {
-      canonical: locale === 'vi' ? '/vi/portfolio' : '/portfolio',
-      languages: { en: '/portfolio', vi: '/vi/portfolio' },
-    },
-  };
-}
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'portfolio',
+  pathname: '/portfolio',
+});
 
 export default async function PortfolioPage() {
   const messages = await getMessages();
