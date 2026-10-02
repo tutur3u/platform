@@ -9447,6 +9447,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailInvitationFailed => 'Could not confirm your response. Retry the same response to check its status.';
 
   @override
+  String get mailCalendarLinkTitle => 'Link to Calendar';
+
+  @override
+  String get mailCalendarLinkUrl => 'Calendar event link';
+
+  @override
+  String get mailCalendarLinkPreview => 'Preview link';
+
+  @override
+  String get mailCalendarLinkConfirm => 'Confirm link';
+
+  @override
+  String get mailCalendarLinkOriginal => 'Original invitation';
+
+  @override
+  String get mailCalendarLinkSelected => 'Selected Calendar event';
+
+  @override
+  String get mailCalendarLinkNotice => 'Linking keeps both records. Replies still go to the original organizer.';
+
+  @override
+  String get mailCalendarLinkChanged => 'The invitation or event changed. Preview again.';
+
+  @override
+  String get mailCalendarLinkUnavailable => 'This event is unavailable in your account.';
+
+  @override
+  String get mailCalendarLinkFailed => 'Unable to update the link. Try again.';
+
+  @override
+  String get mailCalendarLinkInvalid => 'Paste a Calendar event link containing the selected event.';
+
+  @override
+  String get mailCalendarLinkLinked => 'Calendar event linked';
+
+  @override
+  String get mailCalendarLinkUnlink => 'Remove link';
+
+  @override
+  String get mailCalendarLinkOpen => 'Open linked event';
+
+  @override
   String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
     return '$leadTime · $occurrence ($timezone)';
   }

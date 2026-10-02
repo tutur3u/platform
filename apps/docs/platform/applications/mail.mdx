@@ -869,3 +869,36 @@ Pending archive refreshes compare the captured conversation revision before
 hiding stale results. A newer inbound message in the same conversation remains
 visible because it falls outside the earlier archive action. Failure restores
 optimistic flags or missing old rows without replacing newer conversation data.
+
+### Explicit invitation links to Calendar
+
+On web and mobile, an actionable invitation can be associated with an existing
+Calendar event by pasting its Calendar event link, viewing both records, and
+confirming. The preview separates the original invitation's organizer, invited
+identity, time, physical location and conference action from the selected event's
+account, organizer, attendees and location. A self-organized private hold remains
+a separate event even when the title and time match. No event is copied, merged,
+deleted or reparented, and linking never sends an RSVP. Replies continue to use
+the original invitation's validated scheduling protocol and identity.
+
+The association belongs to the actor and original Mail message. The server
+rechecks current invitation access, Calendar workspace/account/source access,
+provider UID and occurrence identity, and preview authority at confirmation.
+Unknown identity, superseded invitations, updates/cancellations and revoked
+permissions fail closed. A changed preview requires a new preview; an uncertain
+network retry reuses its receipt. Metadata compare-and-swap preserves reply claims
+and other actors' associations. Remove link deletes only the actor's association;
+it never deletes the Calendar event. Opening a linked event requires a fresh
+Calendar-authorized target. Ordinary ICS attachments do not expose these controls.
+On mobile, replacing the Mail repository clears the link preview and saved target
+even when workspace, mailbox and message stay the same. Delayed results from the
+previous repository are discarded; `mail_calendar_link_test.dart` covers this
+boundary.
+
+Mail-owned association endpoints use the existing message path followed by
+`/calendar-link`: GET reads the actor's association and authorized target; POST
+`/preview` previews `{ calendarWorkspaceId, eventId }`; PUT confirms that selection
+with `receipt`; DELETE removes the saved association with `receipt`. All responses
+are private and uncached. Calendar owns the read-only event authority endpoint;
+Mail accesses it using the configured Calendar origin and existing forwarded
+cookie/Bearer authentication, with no Calendar table access.
