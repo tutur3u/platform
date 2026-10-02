@@ -89,12 +89,13 @@ test('migrated shared hooks no longer import the deprecated Supabase browser cli
       /@tuturuuu\/supabase\/next\/client/,
       `Expected ${file} to stop importing @tuturuuu/supabase/next/client`
     );
-    const internalApiSource =
+    const internalApiFile =
       file ===
       'apps/track/src/app/[locale]/(dashboard)/[wsId]/components/workspace-select-dialog.tsx'
-        ? read('packages/ui/src/hooks/use-visible-workspaces.ts')
-        : source;
-    if (internalApiSource !== source) {
+        ? 'packages/ui/src/hooks/use-visible-workspaces.ts'
+        : file;
+    const internalApiSource = read(internalApiFile);
+    if (internalApiFile !== file) {
       assert.match(source, /@tuturuuu\/ui\/hooks\/use-visible-workspaces'/);
       assert.doesNotMatch(
         internalApiSource,
@@ -104,7 +105,7 @@ test('migrated shared hooks no longer import the deprecated Supabase browser cli
     assert.match(
       internalApiSource,
       /@tuturuuu\/(internal-api(?:\/|')|utils\/task-helper')/,
-      `Expected ${file} to import the shared internal API package or helper wrapper`
+      `Expected ${internalApiFile} to import the shared internal API package or helper wrapper`
     );
   }
 });
