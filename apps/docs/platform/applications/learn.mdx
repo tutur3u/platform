@@ -51,7 +51,9 @@ hardware-normalized benchmark or rank users by these numbers. Hidden-case
 timings are omitted from learner responses.
 
 `packages/education-core` contains reusable server-only education domain logic;
-it does not own HTTP traffic. The Tulearn helpers in
+it does not own HTTP traffic. Programming catalog clients are exposed through
+`@tuturuuu/internal-api/programming`; keep new catalog consumers on that scoped
+entry point instead of extending the legacy education client module. The Tulearn helpers in
 `packages/internal-api/src/tulearn.ts` select the Learn origin for learner
 contracts. Explicit exceptions such as platform profile updates keep the Web
 origin.

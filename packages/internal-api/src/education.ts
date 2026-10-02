@@ -1269,12 +1269,3 @@ export async function deleteWorkspaceStorageObject(
     }
   );
 }
-
-export {
-  createProgrammingProblem,
-  editProgrammingProblem,
-  getProgrammingAuthorProblem,
-  getProgrammingProblem,
-  listProgrammingProblems,
-  programmingQueryKey,
-} from './programming';
