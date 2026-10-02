@@ -225,6 +225,13 @@ jobs:
               fi
 
               git merge --no-ff --no-edit origin/main
+              # The new head can change dependencies and dist-only package
+              # sources. Revalidate its installed graph, not the old checkout.
+              bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+              bun turbo:local run build --concurrency=2 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/masonry --filter=@tuturuuu/internal-api --filter=tuturuuu
+              if [[ "$mobile_changed" == true ]]; then
+                (cd apps/mobile && flutter pub get)
+              fi
               bun check
               if [[ "$mobile_changed" == true ]]; then
                 bun check:mobile

@@ -711,8 +711,11 @@ commit instead of silently adopting newer work. The run summary distinguishes
 planned work, a completed local merge, dry runs, and completed promotion.
 
 If another PR lands on `main` during release validation, the push step fetches
-and merges the new head, reruns `bun check` and any affected mobile checks, then
-retries the push up to four times. A merge conflict or a push error unrelated to
+and merges the new head, reinstalls its frozen dependency graph and rebuilds the
+dist-only setup packages before rerunning `bun check`. Affected mobile changes
+also refresh `flutter pub get` before mobile checks. The push retries up to four
+times. An install or setup failure stops the retry; checks must never validate a
+new source commit against dependencies installed for an older checkout. A merge conflict or a push error unrelated to
 main advancing fails the run. The exact-SHA CI gate still runs after the push.
 
 Validation runs at two Turbo tasks and two Vitest workers, with the worker limit

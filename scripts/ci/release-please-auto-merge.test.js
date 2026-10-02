@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
@@ -399,4 +400,97 @@ test('release merge keeps ref names out of inline shell', () => {
     /run: \|[\s\S]*\$\{\{ steps\.plan\.outputs\.branch \}\}/,
     'ref names must reach the script through the environment'
   );
+});
+
+function simulateAdvancedMain({ mobile = false, failInstall = false } = {}) {
+  const step = workflow.slice(
+    workflow.indexOf('- name: Push verified release merge to main'),
+    workflow.indexOf('- name: Wait for exact main CI before production')
+  );
+  const script = step
+    .slice(step.indexOf('run: |') + 'run: |'.length)
+    .split('\n')
+    .map((line) => line.replace(/^ {10}/, ''))
+    .join('\n');
+  // Execute the actual retry shell, replacing only external commands. An
+  // advanced checkout requires dependency setup before validation can succeed.
+  const harness = `
+    merged=false
+    installed=false
+    built=false
+    git() {
+      case "$1" in
+        fetch) return 0 ;;
+        merge-base) [[ "$merged" == true ]] ;;
+        diff)
+          if [[ "$*" == *--name-only* && "$MOBILE_CHANGED" == true ]]; then
+            echo apps/mobile/pubspec.yaml
+          fi
+          return 0 ;;
+        merge) merged=true; echo merge ;;
+        push) echo push ;;
+        *) return 99 ;;
+      esac
+    }
+    bun() {
+      case "$1" in
+        install)
+          [[ "$2" == --frozen-lockfile ]] || return 98
+          echo install
+          [[ "$FAIL_INSTALL" != true ]] || return 97
+          installed=true ;;
+        turbo:local)
+          [[ "$installed" == true ]] || return 96
+          echo build
+          built=true ;;
+        check|check:mobile)
+          [[ "$installed" == true && "$built" == true ]] || return 95
+          echo "$1" ;;
+        *) return 94 ;;
+      esac
+    }
+    flutter() { echo "flutter $*"; }
+    bash() { shift; "$@"; }
+  `;
+  return spawnSync('bash', ['-c', harness + script], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      MOBILE_CHANGED: String(mobile),
+      FAIL_INSTALL: String(failInstall),
+    },
+    encoding: 'utf8',
+  });
+}
+
+test('advanced release main refreshes the frozen graph and setup before checks and push', () => {
+  const result = simulateAdvancedMain();
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.stdout.trim().split('\n'), [
+    'merge',
+    'install',
+    'build',
+    'check',
+    'push',
+  ]);
+});
+
+test('advanced mobile release refreshes Flutter dependencies before mobile checks', () => {
+  const result = simulateAdvancedMain({ mobile: true });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.stdout.trim().split('\n'), [
+    'merge',
+    'install',
+    'build',
+    'flutter pub get',
+    'check',
+    'check:mobile',
+    'push',
+  ]);
+});
+
+test('failed frozen install never validates or pushes the advanced release head', () => {
+  const result = simulateAdvancedMain({ failInstall: true });
+  assert.equal(result.status, 97, result.stderr);
+  assert.deepEqual(result.stdout.trim().split('\n'), ['merge', 'install']);
 });
