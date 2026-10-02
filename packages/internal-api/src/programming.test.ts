@@ -27,6 +27,20 @@ describe('Programming web facade', () => {
       'Bearer synthetic'
     );
   });
+  it('keeps browser calls same-origin unless a base URL is explicitly supplied', async () => {
+    vi.stubGlobal('window', {});
+    try {
+      const fetch = vi
+        .fn()
+        .mockResolvedValue(Response.json({ problems: [], nextCursor: null }));
+      await listProgrammingProblems('workspace', {}, { fetch });
+      expect(fetch.mock.calls[0]?.[0]).toBe(
+        '/api/v1/workspaces/workspace/programming/problems'
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
   it('uses explicit author shape without a learner selection', async () => {
     const fetch = vi
       .fn()

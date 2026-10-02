@@ -34,16 +34,19 @@ function database({
             return { data: { value: enabled ? 'true' : 'false' }, error: null };
           if (table === 'workspace_user_linked_users')
             return {
-              data: self
-                ? {
-                    virtual_user_id: 'self',
-                    workspace_users: {
-                      id: 'self',
-                      full_name: 'Self',
-                      ws_id: wsId,
-                    },
-                  }
-                : null,
+              data:
+                self &&
+                constraints.get('platform_user_id') === user.id &&
+                constraints.get('ws_id') === wsId
+                  ? {
+                      virtual_user_id: 'self',
+                      workspace_users: {
+                        id: 'self',
+                        full_name: 'Self',
+                        ws_id: wsId,
+                      },
+                    }
+                  : null,
               error: null,
             };
           if (table === 'tulearn_parent_student_links')
@@ -91,6 +94,16 @@ describe('Programming uses the real Tulearn subject resolver', () => {
       studentPlatformUserId: 'actor',
       studentWorkspaceUserId: 'self',
     });
+    expect(filters).toContainEqual([
+      'workspace_user_linked_users',
+      'platform_user_id',
+      user.id,
+    ]);
+    expect(filters).toContainEqual([
+      'workspace_user_linked_users',
+      'ws_id',
+      wsId,
+    ]);
     expect(
       filters.some(([table]) => table === 'tulearn_parent_student_links')
     ).toBe(false);
