@@ -70,7 +70,7 @@ describe('shared download reservations', () => {
     mocks.reserve.mockResolvedValue([0, 2]);
     await expect(
       reserveStorageDownloadBudget(ticket, 45)
-    ).rejects.toMatchObject({ status: 429, retryAfter: expect.any(Number) });
+    ).rejects.toMatchObject({ status: 429, retryAfter: 1_440_000 });
   });
 
   it('fails closed on database errors or malformed responses', async () => {

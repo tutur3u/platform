@@ -15,7 +15,6 @@ import {
 import { isSecurityEgressEnforcementEnabled } from '@tuturuuu/storage-core/security-budget';
 import {
   getSecurityBudgetPolicy,
-  MAX_SECURITY_BUDGET_MULTIPLIER,
   scaledSecurityBudgetLimit,
 } from '@tuturuuu/storage-core/security-budget-policy';
 import type { PermissionId } from '@tuturuuu/types';
@@ -254,13 +253,7 @@ export function withApiAuth<T = unknown>(
         if (preAuthConfig !== false) {
           const preAuthResult = await checkRateLimit(
             `ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
-            isSecurityEgressEnforcementEnabled()
-              ? {
-                  ...preAuthConfig,
-                  maxRequests:
-                    preAuthConfig.maxRequests * MAX_SECURITY_BUDGET_MULTIPLIER,
-                }
-              : preAuthConfig
+            preAuthConfig
           );
           if (!('allowed' in preAuthResult)) {
             return preAuthResult;

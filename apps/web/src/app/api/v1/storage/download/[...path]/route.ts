@@ -95,13 +95,18 @@ export const GET = withApiAuth(
         const { data, error } = await supabase.storage
           .from('workspaces')
           .download(storagePath, transform ? { transform } : undefined);
-        if (error || !data)
+        if (error || !data) {
+          const notFound =
+            error &&
+            (String(error.status) === '404' ||
+              /not found/iu.test(error.message));
           return createErrorResponse(
-            'Not Found',
-            'File not found',
-            404,
-            'FILE_NOT_FOUND'
+            notFound ? 'Not Found' : 'Internal Server Error',
+            notFound ? 'File not found' : 'Failed to download file',
+            notFound ? 404 : 500,
+            notFound ? 'FILE_NOT_FOUND' : 'DOWNLOAD_FAILED'
           );
+        }
         return new NextResponse(data, {
           headers: {
             'Content-Type': data.type || 'application/octet-stream',

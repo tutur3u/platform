@@ -111,7 +111,10 @@ describe('download relay protects every file transfer', () => {
     expect(
       (
         await relayStorageDownload(
-          new Request('https://web.example.test/file', { method: 'HEAD' }),
+          new Request('https://web.example.test/file', {
+            method: 'HEAD',
+            headers: { Range: 'bytes=invalid' },
+          }),
           token
         )
       ).status
@@ -287,3 +290,20 @@ describe('download relay protects every file transfer', () => {
     expect(mocks.fetch).not.toHaveBeenCalled();
   });
 });
+
+it.each([
+  'bytes=0-999999999999999999999999',
+  'bytes=-999999999999999999999999',
+])(
+  'clamps oversized range endpoints to the inspected object: %s',
+  async (range) => {
+    const { resolveStorageDownloadRange } = await import(
+      './storage-download-range'
+    );
+    expect(resolveStorageDownloadRange(range, 100)).toEqual({
+      header: 'bytes=0-99',
+      contentRange: 'bytes 0-99/100',
+      bytes: 100,
+    });
+  }
+);

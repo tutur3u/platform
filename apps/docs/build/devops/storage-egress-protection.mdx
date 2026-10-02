@@ -102,9 +102,10 @@ With enforcement enabled, the web proxy reserves a shared request slot before tr
 CMS asset bypasses. Existing web API routes use fixed delivery, auth, chat and other families, each
 with `API_GLOBAL_REQUESTS_PER_MINUTE` (default 10,000). A CMS flood cannot consume
 the auth/chat family allowance. Other workspace APIs also use
-`API_WORKSPACE_REQUESTS_PER_MINUTE` (base 200) per workspace and family. Workspace CMS and external-app
-APIs additionally share `CMS_WORKSPACE_REQUESTS_PER_MINUTE` (base 60), across
-asset IDs, query strings, credentials and client IP addresses. OPTIONS does not
+`API_WORKSPACE_REQUESTS_PER_MINUTE` (base 200) per caller, workspace and family. Workspace CMS and external-app
+APIs additionally share `CMS_WORKSPACE_REQUESTS_PER_MINUTE` (base 60), per caller and workspace across
+asset IDs and query strings. Verified accounts/keys receive plan uplifts; anonymous
+readers retain free limits. Naming a target workspace never charges its shared allowance. OPTIONS does not
 consume a slot. Database failure or invalid configuration returns 503; exhausted
 limits return 429 with Retry-After. Existing authentication, scopes and caller
 limits still apply. Requests served entirely from a CDN cache may bypass the
@@ -144,7 +145,8 @@ with a permissive default. Counter reservations always reach Postgres.
 `API_ACCOUNT_REQUESTS_PER_MINUTE` has a base of 120 per account/key and family;
 anonymous requests share a 120/minute IP subject. `API_FREE_REQUESTS_PER_MINUTE`
 (default 2,000) bounds each free/anonymous family across all subjects. These pools
-are checked atomically with family caps before arbitrary target workspace lookups;
+and caller-workspace dimensions are checked atomically with family caps;
+no target entitlement lookup is made from an untrusted URL;
 denied free traffic cannot increment the family counter and consume paid headroom.
 Authenticated accounts and validated API-key workspaces receive plan uplifts.
 Client-supplied user IDs, tier labels, workspace headers and decoded JWT claims
@@ -154,11 +156,11 @@ MFA, permission, abuse challenge and revocation checks. Uncached provider/key
 verification itself is limited to 2,000/minute globally and 120/minute per IP.
 
 SDK post-auth caller limits scale using the validated key's workspace plan, while
-risk multipliers still apply. Its pre-auth ceiling allows the maximum bounded
-plan multiplier, with the Redis-independent proxy enforcing free/client pools.
+risk multipliers still apply. Its existing pre-auth IP ceiling remains unchanged,
+with the Redis-independent proxy also enforcing free/client pools.
 Anonymous public CMS readers retain the strict client/free-family allowance even
-when the target workspace is paid. Target workspace and relay allowances still
-reflect its paid plan. Public cache hits remain outside origin request accounting.
+when the target workspace is paid. Validated relay tickets charge shared workspace
+byte allowances using that workspace's paid plan. Public cache hits remain outside origin request accounting.
 All paid allowances remain below the unchanged global byte safety caps; paid
 membership does not grant unlimited egress or exempt attacks from containment.
 

@@ -16,7 +16,7 @@ vi.mock('@tuturuuu/auth/api-keys', () => ({
   hasAnyPermission: () => true,
 }));
 vi.mock('@tuturuuu/utils/abuse-protection', () => ({
-  extractIPFromHeaders: () => 'unknown',
+  extractIPFromHeaders: () => '192.0.2.1',
   isIPBlocked: vi.fn(),
 }));
 vi.mock('@tuturuuu/storage-core/security-budget', () => ({
@@ -47,20 +47,16 @@ const request = () =>
   });
 beforeEach(() => {
   mocks.enabled.mockReset().mockReturnValue(true);
-  mocks.key
-    .mockReset()
-    .mockResolvedValue({
-      wsId: 'workspace-verified',
-      keyId: 'key-1',
-      permissions: ['manage_drive'],
-    });
-  mocks.policy
-    .mockReset()
-    .mockResolvedValue({
-      tier: 'PRO',
-      multiplier: 12.5,
-      paidWorkspaceCount: 2,
-    });
+  mocks.key.mockReset().mockResolvedValue({
+    wsId: 'workspace-verified',
+    keyId: 'key-1',
+    permissions: ['manage_drive'],
+  });
+  mocks.policy.mockReset().mockResolvedValue({
+    tier: 'PRO',
+    multiplier: 12.5,
+    paidWorkspaceCount: 2,
+  });
   mocks.rate.mockReset().mockResolvedValue({ allowed: true, headers: {} });
   handler.mockClear();
 });
@@ -70,6 +66,10 @@ it('scales only from the authenticated key workspace before existing risk handli
     rateLimit: { windowMs: 60000, maxRequests: 50 },
   });
   expect((await route(request())).status).toBe(200);
+  expect(mocks.rate).toHaveBeenCalledWith('ip:read:192.0.2.1', {
+    windowMs: 60000,
+    maxRequests: 50,
+  });
   expect(mocks.policy).toHaveBeenCalledWith({
     workspaceId: 'workspace-verified',
   });

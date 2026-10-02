@@ -54,7 +54,9 @@ export async function guardApiCost(request: NextRequest) {
     return null;
   const minute = Math.floor(Date.now() / 60_000);
   const path = request.nextUrl.pathname;
-  const workspaceSegment = path.match(/^\/api\/v1\/workspaces\/([^/]+)/u)?.[1];
+  const workspaceSegment = path.match(
+    /^\/api\/(?:v1\/)?workspaces\/([^/]+)/u
+  )?.[1];
   // Fixed families prevent a delivery flood from spending auth/chat capacity,
   // without allowing arbitrary path strings to allocate new family counters.
   const cms = /\/(?:external-projects|external-apps)(?:\/|$)/u.test(path);
@@ -115,22 +117,13 @@ export async function guardApiCost(request: NextRequest) {
       limits[index]!,
       120,
     ]);
-    // Reject exhausted free/client pools before looking up an arbitrary target
-    // workspace. Atomic checks keep denied free traffic from spending paid headroom.
-    const response = await reserve(dimensions);
-    if (response || !workspace) return response;
-    const workspacePolicy =
-      workspace === 'personal' && userId
-        ? accountPolicy
-        : await getSecurityBudgetPolicy({ workspaceId: workspace });
-    const hash = createHash('sha256')
-      .update(
-        workspace === 'personal' && userId ? `personal:${userId}` : workspace
-      )
-      .digest('hex');
-    return await reserve([
-      [
-        `api-cost:v1:workspace:${family}:${hash}:${minute}`,
+    if (workspace) {
+      const hash = createHash('sha256').update(workspace).digest('hex');
+      // A URL is not proof of access. Scope this dimension to the verified
+      // caller (or anonymous IP), never a shared target workspace allowance.
+      // Workspace byte budgets are charged only by validated download tickets.
+      dimensions.push([
+        `api-cost:v1:client-workspace:${family}:${subject}:${hash}:${minute}`,
         1,
         scaledSecurityBudgetLimit(
           configuredLimit(
@@ -139,11 +132,14 @@ export async function guardApiCost(request: NextRequest) {
               : 'API_WORKSPACE_REQUESTS_PER_MINUTE',
             cms ? 60 : 200
           ),
-          workspacePolicy
+          accountPolicy
         ),
         120,
-      ],
-    ]);
+      ]);
+    }
+    // One atomic reservation prevents a rejected dimension from spending
+    // family capacity or any other caller allowance.
+    return await reserve(dimensions);
   } catch {
     return limitResponse(503);
   }

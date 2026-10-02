@@ -27,8 +27,11 @@ vi.mock('server-only', () => ({}));
 
 import { guardApiCost } from './api-cost-guard';
 
-const request = (path: string, method = 'GET') =>
-  new NextRequest(`https://example.test${path}`, { method });
+const request = (path: string, method = 'GET', ip = '192.0.2.1') =>
+  new NextRequest(`https://example.test${path}`, {
+    method,
+    headers: { 'x-forwarded-for': ip },
+  });
 beforeEach(() => {
   vi.spyOn(Date, 'now').mockReturnValue(1_800_000_000_000);
   mocks.identity.mockReset().mockResolvedValue({});
@@ -43,25 +46,19 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe('API cost guard', () => {
-  it('shares CMS ceilings across files, query strings, credentials and external app paths', async () => {
+  it('shares caller CMS ceilings across files, query strings and external app paths', async () => {
     await guardApiCost(
       request('/api/v1/workspaces/ws-1/external-projects/assets/a?v=1')
     );
-    const first = [
-      ...mocks.eval.mock.calls[0]![0],
-      ...mocks.eval.mock.calls[1]![0],
-    ];
+    const first = mocks.eval.mock.calls[0]![0];
     await guardApiCost(
       request('/api/v1/workspaces/ws-1/external-apps/cron-jobs', 'POST')
     );
-    expect([
-      ...mocks.eval.mock.calls[2]![0],
-      ...mocks.eval.mock.calls[3]![0],
-    ]).toEqual(first);
+    expect(mocks.eval.mock.calls[1]![0]).toEqual(first);
     expect(first).toHaveLength(4);
     expect(
       first.map((dimension: [string, number, number, number]) => dimension[2])
-    ).toEqual([10000, 2000, 120, 600]);
+    ).toEqual([10000, 2000, 120, 60]);
   });
   it('bounds existing APIs globally and leaves OPTIONS available', async () => {
     await guardApiCost(request('/api/v1/storage/share', 'POST'));
@@ -99,13 +96,13 @@ it('canonicalizes encoded workspace IDs and separates authentication capacity', 
   await guardApiCost(
     request('/api/v1/workspaces/ws-1/external-projects/assets/a')
   );
-  const plain = mocks.eval.mock.calls[1]![0];
+  const plain = mocks.eval.mock.calls[0]![0];
   await guardApiCost(
     request('/api/v1/workspaces/%77s-1/external-projects/assets/a')
   );
-  expect(mocks.eval.mock.calls[3]![0]).toEqual(plain);
+  expect(mocks.eval.mock.calls[1]![0]).toEqual(plain);
   await guardApiCost(request('/api/v1/auth/session'));
-  expect(mocks.eval.mock.calls[4]![0][0][0]).not.toBe(plain[0][0]);
+  expect(mocks.eval.mock.calls[2]![0][0][0]).not.toBe(plain[0][0]);
   expect(
     (
       await guardApiCost(
@@ -153,9 +150,42 @@ it('scales machine APIs only from a verified API-key workspace, with a shared ke
     keyId: 'key-1',
   });
   await guardApiCost(request('/api/v1/storage/share', 'POST'));
-  expect(mocks.eval.mock.calls[0]![0]).toHaveLength(2);
+  expect(mocks.eval.mock.calls[0]![0]).toHaveLength(3);
   expect(mocks.eval.mock.calls[0]![0][1][2]).toBe(1200);
   expect(mocks.policy).toHaveBeenCalledWith({
     workspaceId: '11111111-1111-4111-8111-111111111111',
   });
+});
+
+it('never looks up or charges a victim workspace from an untrusted URL', async () => {
+  const path =
+    '/api/v1/workspaces/11111111-1111-4111-8111-111111111111/external-projects/assets/a';
+  await guardApiCost(request(path, 'GET', '192.0.2.1'));
+  await guardApiCost(request(path, 'GET', '192.0.2.2'));
+  expect(mocks.policy).not.toHaveBeenCalled();
+  const first = mocks.eval.mock.calls[0]![0];
+  const second = mocks.eval.mock.calls[1]![0];
+  expect(first[0]).toEqual(second[0]);
+  expect(first[1]).toEqual(second[1]);
+  expect(first[3][0]).not.toEqual(second[3][0]);
+});
+
+it('uses one atomic reservation even when the caller-workspace dimension rejects', async () => {
+  mocks.eval.mockResolvedValue([0, 4]);
+  const response = await guardApiCost(
+    request('/api/workspaces/ws-1/external-projects/assets/a')
+  );
+  expect(response?.status).toBe(429);
+  expect(mocks.eval).toHaveBeenCalledOnce();
+  expect(mocks.eval.mock.calls[0]![0]).toHaveLength(4);
+});
+
+it('shares caller-workspace limits between versioned and non-versioned paths', async () => {
+  await guardApiCost(
+    request('/api/workspaces/ws-1/external-projects/assets/a')
+  );
+  await guardApiCost(
+    request('/api/v1/workspaces/ws-1/external-projects/assets/a')
+  );
+  expect(mocks.eval.mock.calls[0]![0]).toEqual(mocks.eval.mock.calls[1]![0]);
 });

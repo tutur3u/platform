@@ -83,5 +83,8 @@ it('preserves missing-object status without exposing provider details', async ()
   } as unknown as TypedSupabaseClient;
   await expect(
     createGuardedSupabaseStorageReadUrl(client, 'ws-1', 'ws-1/missing')
-  ).rejects.toMatchObject({ status: 404 });
+  ).rejects.toMatchObject({
+    status: 404,
+    message: 'Failed to generate download URL',
+  });
 });

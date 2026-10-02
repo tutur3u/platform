@@ -9,7 +9,6 @@ export function resolveStorageDownloadRange(value: string, size: number) {
   const last = match[2] ? Number(match[2]) : undefined;
   if (
     (first !== undefined && (!Number.isSafeInteger(first) || first >= size)) ||
-    (last !== undefined && !Number.isSafeInteger(last)) ||
     (first === undefined && last === 0) ||
     (first !== undefined && last !== undefined && last < first)
   )

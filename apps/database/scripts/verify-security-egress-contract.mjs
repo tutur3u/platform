@@ -46,8 +46,8 @@ const metadata = await stageDisposableProject({
   basePort: ports.basePort,
   trackedFiles,
   testPath: `supabase/tests/${fixtures[0]}`,
+  typegenOutput: 'packages/types/src/supabase.ts',
 });
-metadata.typegenOutput = 'packages/types/src/supabase.ts';
 console.log(
   `Exact source: ${headSha}; isolated project: ${metadata.projectId}`
 );
@@ -155,6 +155,28 @@ const runner = async (command, args, cwd) => {
         `Concurrent reservation mismatch: ${successes}/100 accepted`
       );
     }
+    const used = execFileSync(
+      'docker',
+      [
+        'exec',
+        container,
+        'psql',
+        '-X',
+        '-A',
+        '-t',
+        '-v',
+        'ON_ERROR_STOP=1',
+        '-U',
+        'supabase_admin',
+        '--dbname',
+        'postgres',
+        '-c',
+        "SELECT used FROM private.security_budget_counters WHERE key = 'api-cost:v1:concurrency-ci';",
+      ],
+      { encoding: 'utf8' }
+    ).trim();
+    if (used !== '50')
+      throw new Error(`Concurrent stored counter mismatch: ${used}`);
     console.log('Concurrent clients: exactly 50 of 100 reservations accepted');
     return { code: 0 };
   }

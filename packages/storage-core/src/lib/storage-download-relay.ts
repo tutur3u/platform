@@ -63,7 +63,8 @@ export async function relayStorageDownload(request: Request, token: string) {
   let objectSize: number | undefined;
   try {
     const ticket = readStorageDownloadTicket(token);
-    const range = request.headers.get('range');
+    const range =
+      request.method === 'GET' ? request.headers.get('range') : null;
     if (range && !/^bytes=(?:\d+-\d*|-\d+)$/u.test(range)) {
       throw new StorageDownloadError('Only one byte range is supported', 416);
     }
