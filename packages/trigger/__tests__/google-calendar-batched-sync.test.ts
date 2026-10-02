@@ -1,559 +1,213 @@
-// Mocks must come next, before any imports that use them!
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Set required env vars for Supabase at the VERY TOP
-process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
-process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-publishable-key';
-process.env.SUPABASE_SECRET_KEY = 'test-secret-key';
-process.env.GOOGLE_CLIENT_ID = 'test-client-id';
-process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
-process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/callback';
-
-// Declare mock variables that will be reassigned in beforeEach
-let upsertMock: any;
-let orMock: any;
-let deleteMock: any;
-let mockSupabaseClient: any;
-
-// Create a mock for createAdminClient that we can control
-const createAdminClientMock = vi.fn();
-
+const mocks = vi.hoisted(() => ({ rpc: vi.fn(), updated: vi.fn() }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: createAdminClientMock,
+  createAdminClient: async () => ({ rpc: mocks.rpc }),
 }));
-
-// Mock the calendar sync coordination utility
-vi.mock('./calendar-sync-coordination', () => ({
-  updateLastUpsert: vi.fn(() => Promise.resolve()),
+vi.mock('../src/calendar-sync-coordination', () => ({
+  updateLastUpsert: mocks.updated,
 }));
-
-// Mock the calendar utils
 vi.mock('@tuturuuu/utils/calendar-utils', () => ({
-  convertGoogleAllDayEvent: vi.fn((start, end, _) => ({
+  convertGoogleAllDayEvent: (start: string, end: string) => ({
     start_at: start,
     end_at: end,
-  })),
+  }),
 }));
+vi.mock('@tuturuuu/google', () => ({ OAuth2Client: vi.fn() }));
 
-// Mock the google library to avoid loading heavy googleapis
-vi.mock('@tuturuuu/google', () => ({
-  calendar_v3: {},
-  OAuth2Client: vi.fn(),
-}));
+import {
+  syncGoogleCalendarEventsForWorkspaceBatched,
+  syncWorkspaceBatched,
+} from '../src/google-calendar-sync';
 
-// Dynamically import the actual functions after env and mocks are set
-let syncGoogleCalendarEventsForWorkspaceBatched: any;
-let syncWorkspaceBatched: any;
-
-beforeAll(async () => {
-  const mod = await import('../src/google-calendar-sync.js');
-  syncGoogleCalendarEventsForWorkspaceBatched =
-    mod.syncGoogleCalendarEventsForWorkspaceBatched;
-  syncWorkspaceBatched = mod.syncWorkspaceBatched;
-}, 30000);
-
-// Mock Google Calendar events for testing
-const createMockGoogleEvent = (
-  id: string,
-  title: string,
-  start: string,
-  end: string,
-  status = 'confirmed'
-) => ({
+const wsId = '33333333-3333-4333-8333-333333333333';
+const capture = {
+  id: '11111111-1111-4111-8111-111111111111',
+  wsId,
+  calendarId: 'selected',
+  authTokenId: '22222222-2222-4222-8222-222222222222',
+};
+const event = (id: string, status = 'confirmed') => ({
   id,
-  summary: title,
-  description: `Description for ${title}`,
-  start: { dateTime: start },
-  end: { dateTime: end },
-  location: `Location for ${title}`,
-  colorId: '1',
   status,
+  summary: id,
+  colorId: '1',
+  start: { dateTime: '2026-10-02T10:00:00Z' },
+  end: { dateTime: '2026-10-02T11:00:00Z' },
 });
-
-describe('Google Calendar Batched Sync', () => {
-  beforeEach(() => {
-    // Reset environment
-    delete process.env.LOCALE;
-
-    // Create completely fresh mock instances for each test
-    upsertMock = vi.fn(() => Promise.resolve({ error: null as any }));
-    orMock = vi.fn(() => Promise.resolve({ error: null as any }));
-    deleteMock = vi.fn(() => ({ or: orMock }));
-    mockSupabaseClient = {
-      from: vi.fn((table: string) => {
-        // Only return our tracked mocks for the events table
-        if (table === 'workspace_calendar_events') {
-          return {
-            upsert: upsertMock,
-            delete: deleteMock,
-          };
-        }
-        // For other tables (like sync_coordination), return separate mocks
-        return {
-          upsert: vi.fn(() => Promise.resolve({ error: null as any })),
-          delete: vi.fn(() => ({
-            or: vi.fn(() => Promise.resolve({ error: null as any })),
-          })),
-        };
-      }),
-    };
-
-    // Clear and update createAdminClient to return the fresh mockSupabaseClient
-    createAdminClientMock.mockClear();
-    createAdminClientMock.mockImplementation(() =>
-      Promise.resolve(mockSupabaseClient)
+const sync = (events: ReturnType<typeof event>[]) =>
+  syncGoogleCalendarEventsForWorkspaceBatched(
+    wsId,
+    events,
+    'selected',
+    {},
+    capture
+  );
+const calls = () =>
+  mocks.rpc.mock.calls.map(([name, args]) => ({ name, args }));
+beforeEach(() => {
+  vi.resetAllMocks();
+  mocks.rpc.mockImplementation(async (_, args) => ({
+    error: null,
+    data: {
+      inserted: args.p_events.length,
+      updated: 0,
+      deleted: args.p_tombstones.length,
+      deferred: 0,
+    },
+  }));
+});
+describe('guarded Google batch persistence', () => {
+  it('formats rows and sends the pre-read capture through the guarded RPC', async () => {
+    expect(await sync([event('one')])).toEqual({
+      ws_id: wsId,
+      success: true,
+      eventsSynced: 1,
+      eventsDeleted: 0,
+      eventsDeferred: 0,
+    });
+    expect(calls()).toEqual([
+      {
+        name: 'apply_calendar_google_import',
+        args: {
+          p_capture_id: capture.id,
+          p_tombstones: [],
+          p_events: [
+            expect.objectContaining({
+              ws_id: wsId,
+              external_calendar_id: 'selected',
+              external_event_id: 'one',
+              title: 'one',
+              color: 'INDIGO',
+              start_at: '2026-10-02T10:00:00Z',
+              locked: true,
+              scheduling_metadata: {
+                google_color: expect.objectContaining({
+                  calendar_id: 'selected',
+                  color_id: '1',
+                  resolution: 'unresolved',
+                }),
+              },
+            }),
+          ],
+        },
+      },
+    ]);
+  });
+  it('passes canceled identities as bound tombstones', async () => {
+    const result = await sync([event('one', 'cancelled')]);
+    expect(result.eventsDeleted).toBe(1);
+    expect(calls()[0]?.args).toEqual({
+      p_capture_id: capture.id,
+      p_events: [],
+      p_tombstones: ['one'],
+    });
+  });
+  it('handles mixed events with separate guarded upsert and deletion batches', async () => {
+    const result = await sync([
+      event('one'),
+      event('two', 'cancelled'),
+      event('three'),
+    ]);
+    expect(result).toMatchObject({
+      success: true,
+      eventsSynced: 2,
+      eventsDeleted: 1,
+    });
+    expect(mocks.rpc).toHaveBeenCalledTimes(2);
+  });
+  it('does not dispatch an empty batch', async () => {
+    expect(await sync([])).toMatchObject({
+      success: true,
+      eventsSynced: 0,
+      eventsDeleted: 0,
+    });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it.each(['upsert', 'delete'])(
+    'does not mark a failed %s batch complete or expose raw database errors',
+    async (kind) => {
+      mocks.rpc.mockResolvedValue({
+        data: null,
+        error: new Error('private database detail'),
+      });
+      expect(
+        await sync([
+          event('one', kind === 'delete' ? 'cancelled' : 'confirmed'),
+        ])
+      ).toEqual({
+        ws_id: wsId,
+        success: false,
+        error: 'Google calendar batch sync failed',
+      });
+      expect(mocks.updated).not.toHaveBeenCalled();
+    }
+  );
+  it('splits upserts at 100 rows without allocating a new capture', async () => {
+    const result = await sync(
+      Array.from({ length: 150 }, (_, i) => event(String(i)))
+    );
+    expect(result.eventsSynced).toBe(150);
+    expect(calls().map(({ args }) => args.p_events.length)).toEqual([100, 50]);
+    expect(calls().every(({ args }) => args.p_capture_id === capture.id)).toBe(
+      true
     );
   });
-
-  describe('syncGoogleCalendarEventsForWorkspaceBatched', () => {
-    it('should process events in batches for upserts', async () => {
-      const ws_id = 'test-workspace';
-      const events = [
-        createMockGoogleEvent(
-          'event1',
-          'Test Event 1',
-          '2024-01-15T10:00:00Z',
-          '2024-01-15T11:00:00Z'
-        ),
-        createMockGoogleEvent(
-          'event2',
-          'Test Event 2',
-          '2024-01-15T14:00:00Z',
-          '2024-01-15T15:00:00Z'
-        ),
-        createMockGoogleEvent(
-          'event3',
-          'Test Event 3',
-          '2024-01-15T16:00:00Z',
-          '2024-01-15T17:00:00Z'
-        ),
-      ];
-
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
-        ws_id,
-        events
-      );
-
-      expect(result).toEqual({
-        ws_id: 'test-workspace',
-        success: true,
-        eventsSynced: 3,
-        eventsDeleted: 0,
-      });
-
-      // Verify upsert was called
-      expect(upsertMock).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({
-            color: 'INDIGO',
-            scheduling_metadata: expect.objectContaining({
-              google_color: expect.objectContaining({
-                version: 1,
-                calendar_id: 'primary',
-                color_id: '1',
-                inherited: false,
-                resolution: 'unresolved',
-              }),
-            }),
-            description: 'Description for Test Event 1',
-            end_at: '2024-01-15T11:00:00Z',
-            google_event_id: 'event1',
-            start_at: '2024-01-15T10:00:00Z',
-            title: 'Test Event 1',
-            ws_id: 'test-workspace',
-            location: 'Location for Test Event 1',
-            locked: true,
-          }),
-          expect.objectContaining({
-            color: 'INDIGO',
-            scheduling_metadata: expect.objectContaining({
-              google_color: expect.objectContaining({
-                version: 1,
-                calendar_id: 'primary',
-                color_id: '1',
-                inherited: false,
-                resolution: 'unresolved',
-              }),
-            }),
-            description: 'Description for Test Event 2',
-            end_at: '2024-01-15T15:00:00Z',
-            google_event_id: 'event2',
-            title: 'Test Event 2',
-            ws_id: 'test-workspace',
-            location: 'Location for Test Event 2',
-            locked: true,
-            start_at: '2024-01-15T14:00:00Z',
-          }),
-          expect.objectContaining({
-            color: 'INDIGO',
-            scheduling_metadata: expect.objectContaining({
-              google_color: expect.objectContaining({
-                version: 1,
-                calendar_id: 'primary',
-                color_id: '1',
-                inherited: false,
-                resolution: 'unresolved',
-              }),
-            }),
-            description: 'Description for Test Event 3',
-            end_at: '2024-01-15T17:00:00Z',
-            google_event_id: 'event3',
-            start_at: '2024-01-15T16:00:00Z',
-            title: 'Test Event 3',
-            ws_id: 'test-workspace',
-            location: 'Location for Test Event 3',
-            locked: true,
-          }),
-        ]),
-        {
-          onConflict: 'ws_id,provider,external_calendar_id,external_event_id',
-          ignoreDuplicates: false,
-        }
-      );
-    });
-
-    it('should process events in batches for deletes', async () => {
-      const ws_id = 'test-workspace';
-      const events = [
-        createMockGoogleEvent(
-          'event1',
-          'Cancelled Event 1',
-          '2024-01-15T10:00:00Z',
-          '2024-01-15T11:00:00Z',
-          'cancelled'
-        ),
-        createMockGoogleEvent(
-          'event2',
-          'Cancelled Event 2',
-          '2024-01-15T14:00:00Z',
-          '2024-01-15T15:00:00Z',
-          'cancelled'
-        ),
-        createMockGoogleEvent(
-          'event3',
-          'Cancelled Event 3',
-          '2024-01-15T16:00:00Z',
-          '2024-01-15T17:00:00Z',
-          'cancelled'
-        ),
-      ];
-
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
-        ws_id,
-        events
-      );
-
-      expect(result).toEqual({
-        ws_id: 'test-workspace',
-        success: true,
-        eventsSynced: 0,
-        eventsDeleted: 3,
-      });
-
-      // Verify delete was called
-      expect(deleteMock).toHaveBeenCalled();
-    });
-
-    it('should handle mixed events (confirmed and cancelled)', async () => {
-      const ws_id = 'test-workspace';
-      const events = [
-        createMockGoogleEvent(
-          'event1',
-          'Confirmed Event',
-          '2024-01-15T10:00:00Z',
-          '2024-01-15T11:00:00Z',
-          'confirmed'
-        ),
-        createMockGoogleEvent(
-          'event2',
-          'Cancelled Event',
-          '2024-01-15T14:00:00Z',
-          '2024-01-15T15:00:00Z',
-          'cancelled'
-        ),
-        createMockGoogleEvent(
-          'event3',
-          'Another Confirmed Event',
-          '2024-01-15T16:00:00Z',
-          '2024-01-15T17:00:00Z',
-          'confirmed'
-        ),
-      ];
-
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
-        ws_id,
-        events
-      );
-
-      expect(result).toEqual({
-        ws_id: 'test-workspace',
-        success: true,
-        eventsSynced: 2,
-        eventsDeleted: 1,
-      });
-    });
-
-    it('should handle empty events array', async () => {
-      const ws_id = 'test-workspace';
-      const events: any[] = [];
-
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
-        ws_id,
-        events
-      );
-
-      expect(result).toEqual({
-        ws_id: 'test-workspace',
-        success: true,
-        eventsSynced: 0,
-        eventsDeleted: 0,
-      });
-    });
-
-    it('should handle upsert errors gracefully', async () => {
-      const ws_id = 'test-workspace';
-      const events = [
-        createMockGoogleEvent(
-          'event1',
-          'Test Event 1',
-          '2024-01-15T10:00:00Z',
-          '2024-01-15T11:00:00Z'
-        ),
-      ];
-
-      // Mock upsert error
-      upsertMock.mockImplementationOnce(() =>
-        Promise.resolve({ error: new Error('Upsert failed') })
-      );
-
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
-        ws_id,
-        events
-      );
-
-      expect(result).toEqual({
-        ws_id: 'test-workspace',
-        success: false,
-        error: 'Upsert failed',
-      });
-    });
-
-    it('should handle delete errors gracefully', async () => {
-      const ws_id = 'test-workspace';
-      const events = [
-        createMockGoogleEvent(
-          'event1',
-          'Cancelled Event',
-          '2024-01-15T10:00:00Z',
-          '2024-01-15T11:00:00Z',
-          'cancelled'
-        ),
-      ];
-
-      // Mock delete error by making orMock return an error
-      orMock.mockImplementationOnce(() =>
-        Promise.resolve({ error: new Error('Delete failed') })
-      );
-
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
-        ws_id,
-        events
-      );
-
-      expect(result).toEqual({
-        ws_id: 'test-workspace',
-        success: false,
-        error: 'Delete failed',
-      });
-    });
-
-    it('should process large batches correctly', async () => {
-      const ws_id = 'test-workspace';
-      const events: any[] = [];
-
-      // Create 150 events (more than BATCH_SIZE of 100)
-      for (let i = 1; i <= 150; i++) {
-        events.push(
-          createMockGoogleEvent(
-            `event${i}`,
-            `Test Event ${i}`,
-            '2024-01-15T10:00:00Z',
-            '2024-01-15T11:00:00Z'
-          )
-        );
-      }
-
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
-        ws_id,
-        events
-      );
-
-      expect(result).toEqual({
-        ws_id: 'test-workspace',
-        success: true,
-        eventsSynced: 150,
-        eventsDeleted: 0,
-      });
-
-      // Verify upsert was called multiple times for batching
-      expect(upsertMock).toHaveBeenCalledTimes(2); // 150 events / 100 batch size = 2 calls
-    });
-
-    it('should process large delete batches correctly', async () => {
-      const ws_id = 'test-workspace';
-      const events: any[] = [];
-
-      // Create 75 cancelled events (more than DELETE_BATCH_SIZE of 50)
-      for (let i = 1; i <= 75; i++) {
-        events.push(
-          createMockGoogleEvent(
-            `event${i}`,
-            `Cancelled Event ${i}`,
-            '2024-01-15T10:00:00Z',
-            '2024-01-15T11:00:00Z',
-            'cancelled'
-          )
-        );
-      }
-
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
-        ws_id,
-        events
-      );
-
-      expect(result).toEqual({
-        ws_id: 'test-workspace',
-        success: true,
-        eventsSynced: 0,
-        eventsDeleted: 75,
-      });
-
-      // Verify delete was called multiple times for batching
-      expect(deleteMock).toHaveBeenCalledTimes(2); // 75 events / 50 batch size = 2 calls
-    });
+  it('splits tombstones at 50 identities', async () => {
+    expect(
+      (
+        await sync(
+          Array.from({ length: 75 }, (_, i) => event(String(i), 'cancelled'))
+        )
+      ).eventsDeleted
+    ).toBe(75);
+    expect(calls().map(({ args }) => args.p_tombstones.length)).toEqual([
+      50, 25,
+    ]);
   });
-
-  describe('syncWorkspaceBatched', () => {
-    it('should call the batched sync function with correct payload', async () => {
-      const payload = {
-        ws_id: 'test-workspace',
-        events_to_sync: [
-          createMockGoogleEvent(
-            'event1',
-            'Test Event 1',
-            '2024-01-15T10:00:00Z',
-            '2024-01-15T11:00:00Z'
-          ),
-          createMockGoogleEvent(
-            'event2',
-            'Test Event 2',
-            '2024-01-15T14:00:00Z',
-            '2024-01-15T15:00:00Z'
-          ),
-        ],
-      };
-
-      const result = await syncWorkspaceBatched(payload);
-
-      expect(result).toEqual({
-        ws_id: 'test-workspace',
-        success: true,
-        eventsSynced: 2,
-        eventsDeleted: 0,
-      });
+  it('reports durable deferred entries separately from applied rows', async () => {
+    mocks.rpc.mockResolvedValue({
+      error: null,
+      data: { inserted: 0, updated: 1, deleted: 0, deferred: 1 },
     });
-
-    it('should handle empty events array', async () => {
-      const payload = {
-        ws_id: 'test-workspace',
-        events_to_sync: [],
-      };
-
-      const result = await syncWorkspaceBatched(payload);
-
-      expect(result).toEqual({
-        ws_id: 'test-workspace',
-        success: true,
-        eventsSynced: 0,
-        eventsDeleted: 0,
-      });
+    expect(await sync([event('one'), event('two')])).toMatchObject({
+      success: true,
+      eventsSynced: 1,
+      eventsDeferred: 1,
     });
-
-    it('should propagate errors from the batched sync function', async () => {
-      const payload = {
-        ws_id: 'test-workspace',
-        events_to_sync: [
-          createMockGoogleEvent(
-            'event1',
-            'Test Event 1',
-            '2024-01-15T10:00:00Z',
-            '2024-01-15T11:00:00Z'
-          ),
-        ],
-      };
-
-      // Mock error in the underlying function
-      upsertMock.mockImplementationOnce(() =>
-        Promise.resolve({ error: new Error('Database error') })
-      );
-
-      const result = await syncWorkspaceBatched(payload);
-
-      expect(result).toEqual({
-        ws_id: 'test-workspace',
-        success: false,
-        error: 'Database error',
-      });
-    });
+    expect(mocks.updated).toHaveBeenCalledWith(wsId, expect.any(Object));
   });
-
-  describe('Batch Configuration', () => {
-    it('should use correct batch sizes for different operations', async () => {
-      const ws_id = 'test-workspace';
-      const events: any[] = [];
-
-      // Create events that will test both upsert and delete batching
-      for (let i = 1; i <= 120; i++) {
-        if (i <= 60) {
-          events.push(
-            createMockGoogleEvent(
-              `event${i}`,
-              `Confirmed Event ${i}`,
-              '2024-01-15T10:00:00Z',
-              '2024-01-15T11:00:00Z',
-              'confirmed'
-            )
-          );
-        } else {
-          events.push(
-            createMockGoogleEvent(
-              `event${i}`,
-              `Cancelled Event ${i}`,
-              '2024-01-15T10:00:00Z',
-              '2024-01-15T11:00:00Z',
-              'cancelled'
-            )
-          );
-        }
-      }
-
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
-        ws_id,
-        events
-      );
-
-      expect(result).toEqual({
-        ws_id: 'test-workspace',
-        success: true,
-        eventsSynced: 60,
-        eventsDeleted: 60,
-      });
-
-      // Verify upsert was called once (60 events / 100 batch size = 1 call)
-      expect(upsertMock).toHaveBeenCalledTimes(1);
-
-      // Verify delete was called twice (60 events / 50 batch size = 2 calls)
-      expect(deleteMock).toHaveBeenCalledTimes(2);
+  it('rejects a capture for another workspace before persistence', async () => {
+    const result = await syncWorkspaceBatched({
+      ws_id: 'another',
+      events_to_sync: [event('one')],
+      calendarId: 'selected',
+      capture,
     });
+    expect(result.success).toBe(false);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it('rejects a capture for another provider calendar before persistence', async () => {
+    const result = await syncWorkspaceBatched({
+      ws_id: wsId,
+      events_to_sync: [event('one')],
+      calendarId: 'other',
+      capture,
+    });
+    expect(result.success).toBe(false);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it('passes the supplied capture through the public batch wrapper', async () => {
+    expect(
+      (
+        await syncWorkspaceBatched({
+          ws_id: wsId,
+          events_to_sync: [event('one')],
+          calendarId: 'selected',
+          capture,
+        })
+      ).success
+    ).toBe(true);
+    expect(calls()[0]?.args.p_capture_id).toBe(capture.id);
   });
 });
