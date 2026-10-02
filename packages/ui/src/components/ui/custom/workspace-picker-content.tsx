@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '../dialog';
 import { Input } from '../input';
-import { PopoverContent } from '../popover';
+import { PopoverClose, PopoverContent } from '../popover';
 import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
 import { WorkspaceIcon } from './workspace-select-icon';
 
@@ -110,14 +110,16 @@ export function WorkspacePickerContent({
           {restoring ? t('hidden_workspaces') : t('workspaces')}
         </Title>
         {dropdown ? (
-          <Button
-            size="icon"
-            variant="ghost"
-            aria-label={t('close')}
-            onClick={onClose}
-          >
-            <X />
-          </Button>
+          <PopoverClose asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={t('close')}
+              onClick={onClose}
+            >
+              <X />
+            </Button>
+          </PopoverClose>
         ) : (
           <DialogClose asChild>
             <Button size="icon" variant="ghost" aria-label={t('close')}>

@@ -242,3 +242,26 @@ describe('workspace browser dropdown', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 });
+
+it.each([false, true])(
+  'closes its popover with an optional callback: %s',
+  async (withCallback) => {
+    const onClose = vi.fn();
+    render(
+      <Popover defaultOpen>
+        <PopoverTrigger>Choose workspace</PopoverTrigger>
+        <WorkspacePickerContent
+          presentation="dropdown"
+          workspaces={[one]}
+          visibility={visibility()}
+          onSelect={vi.fn()}
+          onDefault={vi.fn()}
+          onClose={withCallback ? onClose : undefined}
+        />
+      </Popover>
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(onClose).toHaveBeenCalledTimes(withCallback ? 1 : 0);
+  }
+);
