@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
@@ -33,8 +34,15 @@ class _MockApiClient extends Mock implements ApiClient {}
 
 class _MockCacheStore extends Mock implements CacheStore {}
 
+class _OnlineMutationQueue extends Mock implements OfflineMutationQueue {}
+
 class _FakeInventoryRepository extends InventoryRepository {
-  _FakeInventoryRepository({super.apiClient, super.cacheStore});
+  _FakeInventoryRepository({
+    super.apiClient,
+    super.cacheStore,
+    super.mutationQueue,
+    super.cacheUserId,
+  });
   @override
   Future<List<InventoryLookupItem>> getManufacturers(
     String wsId, {
@@ -87,6 +95,8 @@ class _ExistingProductRepository extends _FakeInventoryRepository {
     required super.apiClient,
     required this.amount,
     super.cacheStore,
+    super.mutationQueue,
+    super.cacheUserId,
   });
   final double? amount;
 
@@ -275,17 +285,17 @@ void main() {
               Set<String>.from(call.positionalArguments[0] as Iterable),
             ));
           });
-          const connectivity = MethodChannel(
-            'dev.fluttercommunity.plus/connectivity',
-          );
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-              .setMockMethodCallHandler(connectivity, (_) async => ['wifi']);
-          addTearDown(
-            () => TestDefaultBinaryMessengerBinding
-                .instance
-                .defaultBinaryMessenger
-                .setMockMethodCallHandler(connectivity, null),
-          );
+          final mutations = _OnlineMutationQueue();
+          when(
+            () => mutations.enqueueIfOffline(
+              feature: 'inventory',
+              method: 'PATCH',
+              path: '/api/v1/workspaces/ws_1/products/synthetic-product',
+              workspaceId: 'ws_1',
+              payload: any(named: 'payload'),
+              entityId: 'synthetic-product',
+            ),
+          ).thenAnswer((_) async => false);
           when(() => api.patchJson(any(), any())).thenAnswer((call) async {
             payload = Map<String, dynamic>.from(
               call.positionalArguments[1] as Map,
@@ -301,6 +311,8 @@ void main() {
                 inventoryRepository: _ExistingProductRepository(
                   apiClient: api,
                   cacheStore: cache,
+                  mutationQueue: mutations,
+                  cacheUserId: () => 'editor-actor',
                   amount: amount,
                 ),
                 financeRepository: financeRepository,
@@ -321,6 +333,22 @@ void main() {
           await tester.pumpAndSettle();
           expect(payload, isNotNull);
           expect(payload!['name'], 'Renamed synthetic product');
+          verify(
+            () => mutations.enqueueIfOffline(
+              feature: 'inventory',
+              method: 'PATCH',
+              path: '/api/v1/workspaces/ws_1/products/synthetic-product',
+              workspaceId: 'ws_1',
+              payload: payload,
+              entityId: 'synthetic-product',
+            ),
+          ).called(1);
+          verify(
+            () => api.patchJson(
+              '/api/v1/workspaces/ws_1/products/synthetic-product',
+              payload!,
+            ),
+          ).called(1);
           final savedStock = Map<String, dynamic>.from(
             (payload!['inventory'] as List).single as Map,
           );

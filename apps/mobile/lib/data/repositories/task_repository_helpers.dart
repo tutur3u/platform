@@ -31,6 +31,10 @@ Future<List<Map<String, dynamic>>> _overlayTaskRows(
       ...payload,
       if (payload['listId'] != null) 'list_id': payload['listId'],
     },
+    normalizeUpdate: (payload) => {
+      ...payload,
+      if (payload['listId'] != null) 'list_id': payload['listId'],
+    },
     matchesQuery: (row) =>
         (listId == null || row['list_id'] == listId) &&
         (deletedOnly ? row['deleted'] == true : row['deleted'] != true),

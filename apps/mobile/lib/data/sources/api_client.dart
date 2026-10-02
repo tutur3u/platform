@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_verification.dart';
+import 'package:mobile/data/sources/offline_api_request.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/auth/required_mfa_policy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -24,6 +25,18 @@ class ApiClient {
        _client = httpClient ?? http.Client(),
        _authClient = authClient,
        _clock = clock ?? DateTime.now;
+
+  static Future<T> offlinePreparation<T>(
+    Future<T> Function() operation, {
+    bool allowChallenge = true,
+    bool markBulk = true,
+    bool Function()? shouldContinue,
+  }) => OfflineApiRequest.run(
+    operation,
+    allowChallenge: allowChallenge,
+    markBulk: markBulk,
+    shouldContinue: shouldContinue,
+  );
 
   final http.Client _client;
   final SupabaseClient? _authClient;
@@ -43,8 +56,8 @@ class ApiClient {
     final response = await _performStreamedRequest(() async {
       final request = http.Request('GET', _url(path))
         ..followRedirects = false
-        ..headers.addAll(await _getHeaders(accept: '*/*'));
-      return await _client.send(request);
+        ..headers.addAll(await _getHeaders(accept: '*/*', offlineRead: true));
+      return await OfflineApiRequest.paced(() => _client.send(request));
     });
     if (response.statusCode != 200 ||
         (response.contentLength != null &&
@@ -53,6 +66,9 @@ class ApiClient {
       throw ApiException(
         message: 'Download failed',
         statusCode: response.statusCode,
+        isVerificationRequired:
+            response.statusCode == 403 &&
+            response.headers['x-abuse-challenge'] == 'turnstile',
       );
     }
     final bytes = BytesBuilder(copy: false);
@@ -105,6 +121,7 @@ class ApiClient {
     String accept = 'application/json',
     String? contentType,
     bool requiresAuth = true,
+    bool offlineRead = false,
   }) async {
     String? token;
     final userId = requiresAuth ? _auth.currentUser?.id : null;
@@ -137,6 +154,8 @@ class ApiClient {
     return {
       if (contentType != null) 'Content-Type': contentType,
       'Accept': accept,
+      if (requiresAuth && offlineRead && OfflineApiRequest.active)
+        'x-tuturuuu-offline-download': '1',
       if (token != null) 'Authorization': 'Bearer $token',
       if (requiresAuth && ApiVerification.token != null)
         'x-tuturuuu-turnstile-token': ApiVerification.token!,
@@ -150,13 +169,19 @@ class ApiClient {
   }) async {
     final url = _url(path);
 
-    final response = await _performRequest(
-      () async => await _client.get(
-        url,
-        headers: await _getHeaders(requiresAuth: requiresAuth),
-      ),
-      requiresAuth: requiresAuth,
-    );
+    final response = await _performRequest(() async {
+      final userId = requiresAuth ? _auth.currentUser?.id : null;
+      return await OfflineApiRequest.paced(() async {
+        if (requiresAuth) _checkRequestUser(userId);
+        return await _client.get(
+          url,
+          headers: await _getHeaders(
+            requiresAuth: requiresAuth,
+            offlineRead: true,
+          ),
+        );
+      });
+    }, requiresAuth: requiresAuth);
 
     return _handleResponse(response);
   }
@@ -170,13 +195,19 @@ class ApiClient {
   }) async {
     final url = _url(path);
 
-    final response = await _performRequest(
-      () async => await _client.get(
-        url,
-        headers: await _getHeaders(requiresAuth: requiresAuth),
-      ),
-      requiresAuth: requiresAuth,
-    );
+    final response = await _performRequest(() async {
+      final userId = requiresAuth ? _auth.currentUser?.id : null;
+      return await OfflineApiRequest.paced(() async {
+        if (requiresAuth) _checkRequestUser(userId);
+        return await _client.get(
+          url,
+          headers: await _getHeaders(
+            requiresAuth: requiresAuth,
+            offlineRead: true,
+          ),
+        );
+      });
+    }, requiresAuth: requiresAuth);
 
     // Reuse existing error handling behavior.
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -316,9 +347,13 @@ class ApiClient {
     return await _performStreamedRequest(() async {
       final request = http.Request('GET', url)
         ..headers.addAll(
-          await _getHeaders(accept: accept, requiresAuth: requiresAuth),
+          await _getHeaders(
+            accept: accept,
+            requiresAuth: requiresAuth,
+            offlineRead: true,
+          ),
         );
-      return await _client.send(request);
+      return await OfflineApiRequest.paced(() => _client.send(request));
     }, requiresAuth: requiresAuth);
   }
 
@@ -413,7 +448,8 @@ class ApiClient {
       }
       if (requiresAuth &&
           response.statusCode == 403 &&
-          response.headers['x-abuse-challenge'] == 'turnstile') {
+          response.headers['x-abuse-challenge'] == 'turnstile' &&
+          OfflineApiRequest.allowsChallenge) {
         final token = await ApiVerification.requestToken?.call();
         _checkRequestUser(userId);
         if (token != null && token.isNotEmpty) {
@@ -451,7 +487,8 @@ class ApiClient {
       }
       if (requiresAuth &&
           response.statusCode == 403 &&
-          response.headers['x-abuse-challenge'] == 'turnstile') {
+          response.headers['x-abuse-challenge'] == 'turnstile' &&
+          OfflineApiRequest.allowsChallenge) {
         final token = await ApiVerification.requestToken?.call();
         _checkRequestUser(userId);
         if (token != null && token.isNotEmpty) {
@@ -516,6 +553,10 @@ class ApiClient {
             _retryAfter(response.headers['retry-after']) ??
             parsed?['retryAfter'] as int?,
         code: parsed?['code'] as String?,
+        isVerificationRequired:
+            response.statusCode == 403 &&
+            (response.headers['x-abuse-challenge'] == 'turnstile' ||
+                parsed?['code'] == 'ABUSE_CHALLENGE_REQUIRED'),
       );
     }
 
@@ -568,12 +609,14 @@ class ApiException implements Exception {
     required this.statusCode,
     this.retryAfter,
     this.code,
+    this.isVerificationRequired = false,
   });
 
   final String message;
   final int statusCode;
   final int? retryAfter;
   final String? code;
+  final bool isVerificationRequired;
 
   @override
   String toString() => 'ApiException($statusCode): $message';

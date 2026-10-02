@@ -16,9 +16,12 @@ import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/cache/replica_entity_record.dart';
 import 'package:path_provider/path_provider.dart';
 
+part 'cache_store_refresh.dart';
+part 'cache_store_revalidation.dart';
 part 'cache_store_storage.dart';
 part 'cache_store_replica.dart';
 part 'cache_store_scopes.dart';
+part 'cache_store_reconciliation.dart';
 
 typedef CacheJsonDecoder<T> = T Function(Object? json);
 typedef CacheDirectoryResolver = Future<Directory> Function();
@@ -38,6 +41,18 @@ class CacheStore {
        _directoryResolver = directoryResolver;
 
   static final CacheStore instance = CacheStore._();
+
+  /// Awaits fresh repository reads after the caller has displayed cached data.
+  static Future<T> awaitRevalidation<T>(Future<T> Function() operation) =>
+      _CacheRevalidationScope.run(operation);
+
+  static bool get awaitingRevalidation => _CacheRevalidationScope.active;
+
+  /// Publishes a cached first phase, then awaits one fresh phase when needed.
+  static Future<T> readWithRevalidation<T>(
+    Future<T> Function() operation, {
+    required void Function(T) onSnapshot,
+  }) => _CacheRevalidationScope.read(operation, onSnapshot);
 
   static const _resourceBoxName = 'offline_cache_v1';
   static const _mutationBoxName = 'offline_mutations_v1';
@@ -67,6 +82,11 @@ class CacheStore {
   int _maxBytes = allowedMaxBytes[1];
   Future<void>? _initialization;
   final Map<String, Future<Object?>> _inFlight = {};
+  final Map<
+    String,
+    ({CacheKey key, CachePolicy policy, Future<void> Function() refresh})
+  >
+  _refreshTasks = {};
   final Map<String, ({CacheKey key, List<String> tags})> _flightScopes = {};
   final Map<String, int> _keyRevisions = {};
   int _revision = 0;
@@ -82,10 +102,13 @@ class CacheStore {
     _resourceBytes += utf8.encode(record.jsonPayload).length;
   }
 
+  final ValueNotifier<int> resourceRemovalRevision = ValueNotifier(0);
+
   void _dropRecord(String key) {
     final previous = _memory.remove(key);
     if (previous != null) {
       _resourceBytes -= utf8.encode(previous.jsonPayload).length;
+      resourceRemovalRevision.value++;
     }
   }
 
@@ -447,6 +470,7 @@ class CacheStore {
   Future<void> remove(CacheKey key) async {
     _advanceKey(key.value);
     await init();
+    _refreshTasks.remove(key.value);
     _dropRecord(key.value);
     await _resourceBox.delete(key.value);
     await _replicaMigration;
@@ -493,6 +517,12 @@ class CacheStore {
     String? namespace,
     bool resourceOnly = false,
   }) async {
+    _refreshTasks.removeWhere(
+      (_, task) =>
+          (userId == null || task.key.userId == userId) &&
+          (workspaceId == null || task.key.workspaceId == workspaceId) &&
+          (namespace == null || task.key.namespace == namespace),
+    );
     final scope = (userId, workspaceId, namespace);
     _scopeRevisions[scope] = ++_revision;
     _clearingScopes[scope] = (_clearingScopes[scope] ?? 0) + 1;
@@ -571,74 +601,6 @@ class CacheStore {
     }
     records.sort((left, right) => left.createdAt.compareTo(right.createdAt));
     return records;
-  }
-
-  Future<CacheReadResult<T>> prefetch<T>({
-    required CacheKey key,
-    required CachePolicy policy,
-    required CacheJsonDecoder<T> decode,
-    required Future<Object?> Function() fetch,
-    bool forceRefresh = false,
-    List<String> tags = const <String>[],
-  }) async {
-    final revision = _revisionFor(key);
-    if (_isClearing(key)) {
-      return CacheReadResult<T>(state: CacheEntryState.missing);
-    }
-    final cached = await read<T>(key: key, decode: decode);
-    if (_isClearing(key) || revision != _revisionFor(key)) {
-      return CacheReadResult<T>(state: CacheEntryState.missing);
-    }
-    final flightKey = '$revision:${key.value}';
-    Future<Object?> refresh() => _inFlight.putIfAbsent(flightKey, () {
-      _flightScopes[flightKey] = (key: key, tags: tags);
-      return Future<Object?>.sync(fetch)
-          .then((payload) async {
-            // Never resurrect data invalidated by a mutation or account logout.
-            if (revision == _revisionFor(key)) {
-              try {
-                await write(
-                  key: key,
-                  policy: policy,
-                  payload: payload,
-                  tags: tags,
-                  expectedRevision: revision,
-                );
-              } on Object {
-                debugPrint(
-                  'Cache persistence unavailable; using network data.',
-                );
-              }
-            }
-            return payload;
-          })
-          .whenComplete(() {
-            // Remove the reference without returning/awaiting this same future.
-            // ignore: discarded_futures
-            _inFlight.remove(flightKey);
-            _flightScopes.remove(flightKey);
-          });
-    });
-
-    // Auth-sensitive resources handle permission failures in their callers.
-    // Preserve their explicit refresh contract so a background 403 cannot
-    // leave a denied snapshot visible without triggering caller cleanup.
-    if (cached.hasValue && !forceRefresh && policy.allowBackgroundRefresh) {
-      unawaited(refresh().then<void>((_) {}, onError: (Object _) {}));
-      return cached;
-    }
-
-    final payload = await refresh();
-    if (_isClearing(key) || revision != _revisionFor(key)) {
-      return CacheReadResult<T>(state: CacheEntryState.missing);
-    }
-
-    return CacheReadResult<T>(
-      state: CacheEntryState.fresh,
-      data: decode(payload),
-      fetchedAt: DateTime.now(),
-      hasValue: true,
-    );
   }
 
   CachedResourceRecord _markRecordStale(

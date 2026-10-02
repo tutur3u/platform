@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => ({
   blocked: vi.fn(),
   prefixes: [] as string[],
 }));
+vi.mock('../offline-download-guard', () => ({
+  guardOfflineDownloadRequest: async () => null,
+}));
 vi.mock('../required-mfa-runtime', () => ({
   enforceRequiredMfaRequest: async () => null,
 }));

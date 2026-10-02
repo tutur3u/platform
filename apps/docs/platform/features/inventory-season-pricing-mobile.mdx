@@ -11,7 +11,8 @@ manage periods, edit scheduled history, or claim complete web parity.
 
 ## Current-price contract
 
-Checkout reads uncached period metadata and
+Checkout caches period metadata and server quotes for offline drafts. Online
+checkout refreshes
 `GET /api/v1/workspaces/{wsId}/inventory/sales-periods/{periodId}/prices`.
 The response contains price rows and a server `as_of` instant. Resolution uses the
 selected period, product, unit, warehouse and explicit wallet currency. Effective
@@ -22,25 +23,44 @@ checked against server time, with final eligibility checked atomically by the
 server. No device-timezone date or catalog fallback decides scheduled pricing.
 
 The compact checkout shows season, currency, UTC quote time and period timezone.
-Quotes expire after 15 seconds of local receipt age and are refreshed while the
+Online quotes expire after 15 seconds of local receipt age and are refreshed while the
 checkout is open. Automatic failures retry at most once every ten seconds;
 manual refresh remains immediate. Failed refreshes clear visible quotes. Missing lines display an
 unavailable amount rather than a zero-priced sale or a mixed-currency total.
 
+## Offline draft contract
+
+A downloaded catalog, period, wallet, category, and season quote allow a new sale
+to be drafted offline. Checkout explicitly labels saved prices and the pending
+server check. It stores immutable price IDs and a stable request UUID, displays
+queued status instead of a confirmed amount, and synchronizes on reconnect. The
+server remains authoritative for eligibility, current prices, currency, and stock;
+a stale or conflicting draft stays visible for review. Cached time permits draft
+validation but never proves a completed sale. Missing cached prices still block a
+scheduled draft. Existing uncertain online operations continue through the
+journal recovery view and cannot become new outbox drafts.
+
+Regression: `season_pricing_controller_test.dart` covers cached-price drafting
+without an HTTP send or confirmed journal entry; `finance_inventory_offline_test.dart`
+covers persisted product/sale data and offline CRUD. See
+[mobile offline preparation](/platform/features/mobile-workspace-tools) for cache
+capacity, downloads, server protection, and provider exceptions.
+
 ## Atomic creation and retry
 
-Scheduled sales require online access and call the existing authenticated
+Online scheduled sales call the existing authenticated
 `POST /api/v1/workspaces/{wsId}/finance/invoices` directly, with
 `price_mode: custom`, `inventory_period_id`, `inventory_request_id` and immutable
-`price_id` on each line. They never enter the offline mutation queue and never
-create an invoice followed by a separate period assignment. The backend derives
+`price_id` on each line. Confirmed online operations use the recovery journal;
+offline drafts retain the same request UUID and price IDs in the encrypted outbox.
+Neither flow creates an invoice followed by a separate period assignment. The backend derives
 configured workspace currency, checks wallet currency and precision, validates
 current prices/stock, and persists historical snapshots plus period assignment in
 one transaction. The UI currency is a quote-selection constraint, not authority
 to change workspace currency. Zero prices are legitimate only when explicitly
 returned by the server.
 
-Before any scheduled POST, checkout writes and verifies an encrypted operation
+Before an online scheduled POST, checkout writes and verifies an encrypted operation
 journal using the existing secure-storage adapter. It retains the exact request
 UUID/body, original currency, quote provenance and frozen product display labels
 in an actor/workspace scope. Cache eviction, logout, scope switches and controller
@@ -52,8 +72,9 @@ drafts on another device are outside this local journal contract.
 An unresolved operation opens a dedicated recovery view. Metadata Retry and cart
 editing are unavailable there; current catalog, wallet, category and period
 metadata cannot strand recovery or route it into legacy creation. Operators can
-leave and resume in the owning account/workspace. No automatic/offline replay
-occurs.
+leave and resume in the owning account/workspace. Unresolved journal operations
+do not automatically replay. This recovery rule is separate from an offline draft
+that has never been submitted.
 
 An actor/workspace switch during a POST or receipt lookup clears the mounted
 checkout immediately and queues the current scope's catalog reload until the
@@ -96,6 +117,33 @@ Sale-edit scope changes show an explicit instruction to close and reopen in the
 owning workspace. Scheduled history stays read only and ordinary historical line prices
 remain their recorded prices.
 
+
+## Checkout defaults and current-cart reconciliation
+
+Mobile reads the same workspace checkout defaults as Inventory web through the
+existing product-form-options API, including the revenue wallet, finance category,
+and default sales period. The configured period is selected only when active and
+current in its timezone. If it is unavailable, exactly one current scheduled
+period is selected; ambiguous periods require operator choice. Cached defaults
+are included in offline preparation. Explicit wallet/category/period choices,
+including an unassigned period, survive metadata refreshes within the same actor
+and workspace. Historical edits keep their recorded period and prices.
+
+All selected periods apply their allowlist/blocklist product rules to browsing
+and submission, including legacy periods. **Reconcile cart** explicitly refreshes
+current metadata and season quotes, removes cart rows whose product/stock option
+is unavailable or no longer allowed, and removes scheduled rows lacking a valid
+quote. The result shows removed rows or a refreshed total for operator review
+before submission. This action is limited to the current editable cart: it does
+not reassign historical sales, change frozen unresolved journal bodies, bypass
+server checks, or claim an offline draft is confirmed. Account/workspace changes
+discard late results. A later server rule change can still reject submission.
+
+Regression coverage: `checkout_defaults_test.dart` covers timezone-aware defaults
+and product scope parity; `legacy_period_sale_test.dart` covers atomic submission
+and rule rejection; `season_pricing_checkout_test.dart` covers automatic selection
+and explicit removal of disallowed cart rows.
+
 ## Permissions and rollout limits
 
 Canonical actor/workspace membership remains server-owned. Hidden-module
@@ -105,9 +153,12 @@ create-only actor may therefore be unable to discover a period; mobile fails
 closed rather than broadening access. Missing pricing schema/RPC (503), denial,
 invalid timezone, missing metadata or wallet-price currency mismatch block
 scheduled submission. Source presence on main does not prove production migration
-availability. Legacy selected-period assignment retains its existing separate
-creation/assignment semantics; mode changes racing that legacy path still need
-server rollout/integration review.
+availability. New legacy-period sales now send `inventory_period_id` and a stable
+`inventory_request_id` in the invoice request, using the live server's atomic
+period invoice operation. Period eligibility and product rules are checked before
+committing the invoice; mobile never creates an invoice and then assigns its
+period as a separate creation step. Unassigned legacy sales retain their existing
+creation behavior.
 
 Revenue/profit remain withheld: the analytics aggregate still needs verified
 currency, linked checkout/invoice deduplication, refund/cancellation and reporting

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -34,7 +36,10 @@ class InventoryPage extends StatefulWidget {
   State<InventoryPage> createState() => _InventoryPageState();
 }
 
-class _InventoryPageState extends State<InventoryPage> {
+class _InventoryPageState extends State<InventoryPage>
+    with OfflineSyncRefresh<InventoryPage> {
+  @override
+  Future<void> refreshAfterOfflineSync() => _reload();
   late final InventoryRepository _repository;
   Future<InventoryOverview>? _future;
   Future<InventoryStockHealth>? _stockHealth;
@@ -61,7 +66,9 @@ class _InventoryPageState extends State<InventoryPage> {
       });
       return;
     }
-    final future = _repository.getOverview(wsId, forceRefresh: forceRefresh);
+    final future = CacheStore.awaitRevalidation(
+      () => _repository.getOverview(wsId, forceRefresh: forceRefresh),
+    );
     final stockHealth = _repository.getStockHealth(wsId);
     setState(() {
       _future = future;

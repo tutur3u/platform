@@ -21,9 +21,13 @@ class PendingSyncFrame extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder(
-    valueListenable: OfflineMutationQueue.instance.pending,
-    builder: (context, records, _) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Listenable.merge([
+      OfflineMutationQueue.instance.pending,
+      OfflineMutationQueue.instance.syncingIds,
+    ]),
+    builder: (context, _) {
+      final records = OfflineMutationQueue.instance.pending.value;
       PendingMutationRecord? mutation;
       for (final record in records) {
         if ((record.workspaceId != workspaceId &&
@@ -55,7 +59,10 @@ class PendingSyncFrame extends StatelessWidget {
         PendingMutationStatus.failed => Theme.of(context).colorScheme.error,
       };
       final label = switch (status) {
-        PendingMutationStatus.queued => context.l10n.offlineEditQueued,
+        PendingMutationStatus.queued =>
+          OfflineMutationQueue.instance.syncingIds.value.contains(mutation.id)
+              ? context.l10n.offlineEditSyncing
+              : context.l10n.offlineEditQueued,
         PendingMutationStatus.conflict => context.l10n.offlineEditConflict,
         PendingMutationStatus.failed => context.l10n.offlineEditFailed,
       };

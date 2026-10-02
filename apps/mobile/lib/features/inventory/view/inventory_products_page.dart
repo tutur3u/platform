@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -18,6 +20,7 @@ import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
@@ -39,7 +42,10 @@ class InventoryProductsPage extends StatefulWidget {
   State<InventoryProductsPage> createState() => _InventoryProductsPageState();
 }
 
-class _InventoryProductsPageState extends State<InventoryProductsPage> {
+class _InventoryProductsPageState extends State<InventoryProductsPage>
+    with OfflineSyncRefresh<InventoryProductsPage> {
+  @override
+  Future<void> refreshAfterOfflineSync() => _loadInitial();
   static const int _pageSize = 24;
 
   late final InventoryRepository _inventoryRepository;
@@ -121,11 +127,13 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
 
     try {
       final results = await Future.wait<dynamic>([
-        _inventoryRepository.getProducts(
-          wsId,
-          query: _searchController.text,
-          pageSize: _pageSize,
-          forceRefresh: forceRefresh,
+        CacheStore.awaitRevalidation(
+          () => _inventoryRepository.getProducts(
+            wsId,
+            query: _searchController.text,
+            pageSize: _pageSize,
+            forceRefresh: forceRefresh,
+          ),
         ),
         _financeRepository.getWorkspaceDefaultCurrency(wsId),
         _permissionsRepository.getPermissions(wsId: wsId),
@@ -249,6 +257,26 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
     }
   }
 
+  Future<void> _deleteProduct(InventoryProduct product) async {
+    final wsId = _wsId;
+    if (wsId == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AsyncDeleteConfirmationDialog(
+        toastContext: context,
+        title: context.l10n.commonDelete,
+        message: context.l10n.inventoryProductDeleteConfirm,
+        cancelLabel: context.l10n.commonCancel,
+        confirmLabel: context.l10n.commonDelete,
+        onConfirm: () => _inventoryRepository.deleteProduct(
+          wsId: wsId,
+          productId: product.id,
+        ),
+      ),
+    );
+    if (confirmed == true && mounted && _wsId == wsId) await _loadInitial();
+  }
+
   @override
   Widget build(BuildContext context) {
     return shad.Scaffold(
@@ -348,6 +376,9 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
                                 child: InventoryProductCard(
                                   product: product,
                                   currency: _currency,
+                                  onDelete: _canManageCatalog
+                                      ? () => _deleteProduct(product)
+                                      : null,
                                   onTap: _canManageCatalog
                                       ? () => _openEditor(productId: product.id)
                                       : null,

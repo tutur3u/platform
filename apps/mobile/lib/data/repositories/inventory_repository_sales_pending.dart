@@ -7,10 +7,11 @@ _overlayPendingInventorySales(
   confirmed, {
   String? periodId,
   bool includeCreates = true,
+  List<PendingMutationRecord>? pending,
 }) {
   final rows = {for (final sale in confirmed.data) sale.id: sale};
   final originalIds = rows.keys.toSet();
-  final edits = OfflineMutationQueue.instance.pending.value.where(
+  final edits = (pending ?? OfflineMutationQueue.instance.pending.value).where(
     (edit) => edit.feature == 'inventory' && edit.workspaceId == wsId,
   );
   final assignedPeriods = <String, String?>{};

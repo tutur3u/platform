@@ -1,3 +1,4 @@
+import 'package:mobile/core/cache/local_search.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -69,11 +70,6 @@ List<Transaction> overlayPendingTransactions(
     if (walletId != null && resolvedWallet != walletId) continue;
     final description =
         payload['description'] as String? ?? existing?.description ?? '';
-    if (search != null &&
-        search.isNotEmpty &&
-        !description.toLowerCase().contains(search.toLowerCase())) {
-      continue;
-    }
     rows[id] = Transaction.fromJson({
       ...?existing?.toJson(),
       'id': id,
@@ -98,11 +94,24 @@ List<Transaction> overlayPendingTransactions(
           mutation.createdAt.toIso8601String(),
     });
   }
-  final result = rows.values.toList(growable: false)
-    ..sort(
-      (a, b) => (b.takenAt ?? b.createdAt ?? DateTime(0)).compareTo(
-        a.takenAt ?? a.createdAt ?? DateTime(0),
-      ),
-    );
+  final result =
+      rows.values
+          .where(
+            (row) =>
+                search == null ||
+                search.isEmpty ||
+                (row.description != '[CONFIDENTIAL]' &&
+                    localIlike(row.description, search)),
+          )
+          .toList(growable: false)
+        ..sort((a, b) {
+          final taken = (b.takenAt ?? DateTime(0)).compareTo(
+            a.takenAt ?? DateTime(0),
+          );
+          if (taken != 0) return taken;
+          return (b.createdAt ?? DateTime(0)).compareTo(
+            a.createdAt ?? DateTime(0),
+          );
+        });
   return result;
 }

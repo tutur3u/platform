@@ -160,6 +160,50 @@ void main() {
   });
   tearDown(() => controller.dispose());
   test(
+    'cached prices queue a draft without claiming a confirmed sale',
+    () async {
+      controller.dispose();
+      online = false;
+      final queued = <Map<String, dynamic>>[];
+      final confirmed = quote();
+      controller =
+          InventorySeasonPricingController(
+            journal: MemorySaleStore().journal,
+            fetch: (_, _) async => InventorySeasonQuote(
+              asOf: confirmed.asOf,
+              prices: confirmed.prices,
+              isCached: true,
+            ),
+            send: (_, payload) async {
+              sent.add(payload);
+              return 'server-sale';
+            },
+            enqueueOffline: (_, payload) async {
+              queued.add(payload);
+              return 'stable-id';
+            },
+            isOnline: () async => online,
+            now: () => now,
+            requestId: () => 'stable-id',
+          )..configure(
+            actorId: 'actor',
+            workspaceId: 'ws',
+            selectedPeriod: period(),
+            currency: 'USD',
+          );
+      await controller.refresh();
+      expect(controller.offlineDraft, isTrue);
+      expect(controller.ready, isTrue);
+      expect(await submit(), 'stable-id');
+      expect(sent, isEmpty);
+      expect(queued.single['inventory_request_id'], 'stable-id');
+      expect(queued.single['inventory_period_id'], 'season');
+      expect(controller.queuedOffline, isTrue);
+      expect(controller.operation, isNull);
+      expect(controller.ready, isFalse);
+    },
+  );
+  test(
     'server timezone date and fresh quote required; uses quote price IDs',
     () async {
       await controller.refresh();

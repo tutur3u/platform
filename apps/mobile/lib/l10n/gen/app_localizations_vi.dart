@@ -9335,6 +9335,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cacheCategoryOther => 'Dữ liệu khác';
 
   @override
+  String get offlineEditSyncing => 'Đang đồng bộ…';
+
+  @override
   String get offlineEditQueued => 'Đang chờ đồng bộ';
 
   @override
@@ -9594,6 +9597,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryStockHealthUnknown => 'Chưa có dữ liệu';
 
   @override
+  String get inventoryProductDeleteConfirm => 'Xóa sản phẩm này? Nếu giao dịch đã có tham chiếu đến sản phẩm, máy chủ sẽ lưu trữ sản phẩm khi đồng bộ.';
+
+  @override
+  String get inventorySeasonPriceCached => 'Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.';
+
+  @override
   String get inventorySeasonPriceLoading => 'Đang kiểm tra giá mùa hiện tại…';
 
   @override
@@ -9621,4 +9630,61 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
+
+  @override
+  String get offlinePreparationTitle => 'Dữ liệu ngoại tuyến';
+
+  @override
+  String get offlinePreparationCacheAll => 'Tải tất cả';
+
+  @override
+  String get offlinePreparationDescription => 'Tải dữ liệu không gian làm việc để dùng ngoại tuyến. Bộ nhớ đệm chịu giới hạn lưu trữ; tệp và dịch vụ trực tuyến vẫn có thể cần kết nối.';
+
+  @override
+  String get offlinePreparationQueued => 'Chưa tải';
+
+  @override
+  String get offlinePreparationWaiting => 'Đang chờ';
+
+  @override
+  String get offlinePreparationDownloading => 'Đang tải';
+
+  @override
+  String get offlinePreparationReady => 'Đã tải';
+
+  @override
+  String get offlinePreparationFailed => 'Tải thất bại';
+
+  @override
+  String get offlinePreparationUnavailable => 'Không khả dụng';
+
+  @override
+  String offlinePreparationLastSuccess(String time) {
+    return 'Lần tải gần nhất: $time';
+  }
+
+  @override
+  String offlinePreparationProgress(int completed, int total) {
+    return 'Đã tải $completed/$total mô-đun';
+  }
+
+  @override
+  String get offlinePreparationNeedsRefresh => 'Cần làm mới';
+
+  @override
+  String get inventoryCheckoutReconcileCart => 'Đối soát giỏ hàng';
+
+  @override
+  String get inventoryCheckoutReconcileCartHelp => 'Làm mới giá và loại bỏ sản phẩm không còn phù hợp với kỳ bán hàng này.';
+
+  @override
+  String get inventoryCheckoutCartReconciled => 'Đã cập nhật giỏ hàng. Kiểm tra tổng tiền trước khi tạo đơn.';
+
+  @override
+  String inventoryCheckoutCartRemoved(int count) {
+    return 'Đã loại bỏ $count sản phẩm không còn khả dụng. Kiểm tra giỏ hàng trước khi tạo đơn.';
+  }
+
+  @override
+  String get inventoryCheckoutPeriodRulesChanged => 'Một số sản phẩm không phù hợp với kỳ bán hàng này. Đối soát giỏ hàng để tiếp tục.';
 }

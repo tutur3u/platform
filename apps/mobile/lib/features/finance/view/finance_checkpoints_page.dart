@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -201,6 +202,23 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     bool forceRefresh = false,
   }) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    await CacheStore.readWithRevalidation(() async {
+      if (!mounted ||
+          context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
+        return;
+      }
+      await _loadPhase(
+        showLoader: showLoader && !CacheStore.awaitingRevalidation,
+        forceRefresh: forceRefresh,
+      );
+    }, onSnapshot: (_) {});
+  }
+
+  Future<void> _loadPhase({
+    bool showLoader = true,
+    bool forceRefresh = false,
+  }) async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
 
     final requestToken = ++_requestToken;
@@ -284,13 +302,20 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     }
 
     try {
-      final checkpoints = await context
-          .read<FinanceRepository>()
-          .getWalletCheckpoints(
-            wsId: wsId,
-            walletId: walletId,
-            forceRefresh: forceRefresh,
-          );
+      final checkpoints = await CacheStore.readWithRevalidation(
+        () => context.read<FinanceRepository>().getWalletCheckpoints(
+          wsId: wsId,
+          walletId: walletId,
+          forceRefresh: forceRefresh,
+        ),
+        onSnapshot: (checkpoints) {
+          if (!mounted || requestToken != _requestToken) return;
+          setState(() {
+            _selectedWalletCheckpoints = checkpoints;
+            _isLoadingWallet = false;
+          });
+        },
+      );
       if (!mounted || requestToken != _requestToken) return;
       setState(() {
         _selectedWalletCheckpoints = checkpoints;

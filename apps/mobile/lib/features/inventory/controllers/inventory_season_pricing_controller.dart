@@ -11,8 +11,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 part 'inventory_season_pricing_recovery.dart';
 
-/// Scoped quotes and a durable operation journal; never automatic offline
-/// replay.
+/// Confirmed sales use a durable journal; cached-price drafts use the outbox.
 class InventorySeasonPricingController extends ChangeNotifier {
   InventorySeasonPricingController({
     required this.fetch,
@@ -20,6 +19,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
     required this.isOnline,
     InventorySaleJournal? journal,
     this.lookupReceipt,
+    this.enqueueOffline,
     this.currentActor,
     DateTime Function()? now,
     String Function()? requestId,
@@ -31,6 +31,9 @@ class InventorySeasonPricingController extends ChangeNotifier {
   final Future<InventorySeasonQuote> Function(String, String) fetch;
   final Future<String> Function(String, Map<String, dynamic>) send;
   final Future<bool> Function() isOnline;
+  final Future<String> Function(String, Map<String, dynamic>)? enqueueOffline;
+  bool queuedOffline = false;
+  bool get offlineDraft => quote?.isCached == true && enqueueOffline != null;
   final InventorySaleJournal journal;
   final Future<String?> Function(String, String)? lookupReceipt;
   final String? Function()? currentActor;
@@ -69,7 +72,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
       journalReady &&
       completedInvoiceId == null &&
       scheduled &&
-      fresh &&
+      (fresh || offlineDraft) &&
       !loading &&
       _eligiblePeriod();
 
@@ -98,6 +101,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
     _pending = null;
     operation = null;
     completedInvoiceId = null;
+    queuedOffline = false;
     restoring = true;
     journalFailed = false;
     _lastFetchAttempt = null;
@@ -195,7 +199,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
     loading = true;
     _notify();
     try {
-      if (!await isOnline()) {
+      if (!await isOnline() && enqueueOffline == null) {
         throw StateError('Scheduled sales require online access');
       }
       final result = await fetch(workspace, periodId);
@@ -238,8 +242,9 @@ class InventorySeasonPricingController extends ChangeNotifier {
       throw StateError('Operation recovery required');
     }
     final admission = _generation;
-    if (!await isOnline()) {
-      throw StateError('Scheduled sales require online access');
+    final online = await isOnline();
+    if (!online && !offlineDraft) {
+      throw StateError('Cached season prices are required for offline sales');
     }
     if (sending || admission != _generation || _disposed) {
       throw StateError('Scope changed');
@@ -293,6 +298,25 @@ class InventorySeasonPricingController extends ChangeNotifier {
                 }),
               )
               as Map<String, dynamic>;
+    }
+    if (!online && _pending != null) {
+      sending = true;
+      _notify();
+      try {
+        final id = await enqueueOffline!(_workspace!, _pending!);
+        if (admission == _generation && !_disposed) {
+          queuedOffline = true;
+          completedInvoiceId = id;
+          _pending = null;
+          _notify();
+        }
+        return id;
+      } finally {
+        if (admission == _generation && !_disposed) {
+          sending = false;
+          _notify();
+        }
+      }
     }
     return await _attemptOperation(admission);
   }

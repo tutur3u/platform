@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/cache_storage_snapshot.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/features/settings/view/cache_storage_chart.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -53,6 +54,7 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
     setState(() => _busy = true);
     try {
       await CacheStore.instance.setMaxStorageBytes(bytes);
+      OfflinePreparationCoordinator.instance.invalidateRetainedData();
       await _refresh();
     } on Object {
       if (mounted) setState(() => _error = context.l10n.cacheStorageError);
@@ -83,6 +85,7 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
     setState(() => _busy = true);
     try {
       await CacheStore.instance.clearResourceCache();
+      OfflinePreparationCoordinator.instance.invalidateRetainedData();
       await _refresh();
     } on Object {
       if (mounted) setState(() => _error = context.l10n.cacheStorageError);

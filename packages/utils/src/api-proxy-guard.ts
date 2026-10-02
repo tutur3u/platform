@@ -11,7 +11,12 @@ import {
   getCachedTrustEntries,
   hasCachedIpBlockAppealRelief,
 } from './abuse-protection/edge-trust';
+import {
+  isFinanceInvoiceCreateSupportRead,
+  isFinanceRead,
+} from './api-proxy-read-policy';
 import { DEV_MODE, MAX_PAYLOAD_SIZE } from './constants';
+import { guardOfflineDownloadRequest } from './offline-download-guard';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
 import { enforceRequiredMfaRequest } from './required-mfa-runtime';
 import {
@@ -112,23 +117,6 @@ type RateLimiter = {
 const limiterCache = new Map<string, Limiters>();
 const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
   /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
-const UUID_PATH_SEGMENT =
-  '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}';
-const FINANCE_INVOICE_CREATE_SUPPORT_READ_PATH_PATTERN = new RegExp(
-  `^/api/v1/workspaces/[^/]+/(?:finance/invoices(?:/subscription/context)?|inventory/products|promotions|settings/(?:configs|[^/]+)|user-groups(?:/linked-products|/${UUID_PATH_SEGMENT}/linked-products)|users(?:/${UUID_PATH_SEGMENT}(?:/(?:linked-promotions|referral-discounts|user-groups))?)?|wallets)/?$`,
-  'u'
-);
-const FINANCE_INVOICE_TRANSACTION_CATEGORIES_PATH_PATTERN =
-  /^\/api\/workspaces\/[^/]+\/transactions\/categories\/?$/u;
-const FINANCE_READ_PATH_PATTERNS = [
-  /^\/api\/workspaces\/[^/]+\/finance(?:\/|$)/u,
-  /^\/api\/workspaces\/[^/]+\/transactions(?:\/|$)/u,
-  /^\/api\/workspaces\/[^/]+\/wallets(?:\/|$)/u,
-  /^\/api\/workspaces\/[^/]+\/tags(?:\/|$)/u,
-  /^\/api\/v1\/workspaces\/[^/]+\/finance(?:\/|$)/u,
-  /^\/api\/v1\/workspaces\/[^/]+\/wallets(?:\/|$)/u,
-] as const;
-
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
 
 function parsePositiveIntEnv(
@@ -390,31 +378,6 @@ const FINANCE_READ_RATE_LIMITS: RateLimitProfile = {
   ],
   mutate: DEFAULT_MUTATE_RATE_LIMITS,
 };
-
-function isFinanceInvoiceCreateSupportRead(req: NextRequest) {
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    return false;
-  }
-
-  return (
-    FINANCE_INVOICE_CREATE_SUPPORT_READ_PATH_PATTERN.test(
-      req.nextUrl.pathname
-    ) ||
-    FINANCE_INVOICE_TRANSACTION_CATEGORIES_PATH_PATTERN.test(
-      req.nextUrl.pathname
-    )
-  );
-}
-
-function isFinanceRead(req: NextRequest) {
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    return false;
-  }
-
-  return FINANCE_READ_PATH_PATTERNS.some((pattern) =>
-    pattern.test(req.nextUrl.pathname)
-  );
-}
 
 function isUsersDatabaseReadOverPost(req: NextRequest) {
   if (req.method !== 'POST') {
@@ -1351,6 +1314,9 @@ export async function guardApiProxyRequest(
       }
     }
   }
+
+  const offlineResponse = await guardOfflineDownloadRequest(req);
+  if (offlineResponse) return offlineResponse;
 
   const allowDescriptionYjsState =
     /\/api\/v1\/workspaces\/[^/]+\/tasks\/[^/]+\/description$/.test(
