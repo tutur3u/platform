@@ -295,3 +295,19 @@ test('bridge policy rejects missing drop rules or an earlier accept', () => {
     })
   );
 });
+
+test('owned process startup diagnostics expose only fixed kinds from bounded stderr', async () => {
+  const observed = [];
+  await runOwnedProcess(
+    process.execPath,
+    [
+      '-e',
+      'process.stderr.write("private-fixture " + "x".repeat(5000) + " failed to pull image: secret-fixture-token\\nFATAL: private database text\\n");',
+    ],
+    {
+      timeoutMs: 5000,
+      onDiagnostic: (kind) => observed.push(kind),
+    }
+  );
+  assert.deepEqual(observed, ['image-pull', 'database']);
+});

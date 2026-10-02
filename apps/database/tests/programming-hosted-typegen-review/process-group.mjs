@@ -11,6 +11,7 @@ export function runOwnedProcess(
     intervalMs = 2000,
     signalSource = process,
     onSpawn = () => {},
+    onDiagnostic,
     env = process.env,
     cwd,
   } = {}
@@ -21,10 +22,43 @@ export function runOwnedProcess(
   return new Promise((resolve, reject) => {
     const child = spawn(binary, args, {
       detached: true,
-      stdio: 'ignore',
+      stdio: onDiagnostic ? ['ignore', 'ignore', 'pipe'] : 'ignore',
       env,
       cwd,
     });
+    if (onDiagnostic) {
+      let pending = '';
+      const observed = new Set();
+      const patterns = [
+        [
+          'image-pull',
+          /failed to pull|pull access denied|manifest unknown|no matching manifest/i,
+        ],
+        [
+          'container-runtime',
+          /OCI runtime|failed to create.*container|Error response from daemon/i,
+        ],
+        ['service-health', /not healthy|health check failed|unhealthy/i],
+        [
+          'connection',
+          /connection refused|failed to connect|network.*unreachable/i,
+        ],
+        ['database', /SQLSTATE|ERROR:|FATAL:/],
+        [
+          'configuration',
+          /missing.*environment|invalid.*config|config.*invalid/i,
+        ],
+      ];
+      child.stderr.on('data', (chunk) => {
+        pending = (pending + chunk.toString('utf8')).slice(-4096);
+        for (const [kind, pattern] of patterns) {
+          if (!observed.has(kind) && pattern.test(pending)) {
+            observed.add(kind);
+            onDiagnostic(kind);
+          }
+        }
+      });
+    }
     let failure;
     let settled = false;
     let deadline;
@@ -41,6 +75,7 @@ export function runOwnedProcess(
     const finish = async (error) => {
       if (settled) return;
       settled = true;
+      child.stderr?.destroy();
       clearTimeout(deadline);
       clearInterval(monitor);
       signalSource.off('SIGTERM', interrupt);

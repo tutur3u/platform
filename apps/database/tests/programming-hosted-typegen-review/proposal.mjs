@@ -408,6 +408,8 @@ async function run() {
   await checkNetworkPolicy(); // Fail closed before the CLI can start/apply SQL.
   try {
     await resumeRecordedProject(state, {
+      onDiagnostic: (kind) =>
+        console.info(`Programming lifecycle diagnostic=${kind}`),
       onTick: async () => {
         if (
           existsSync(
