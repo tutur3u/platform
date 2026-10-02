@@ -183,6 +183,9 @@
     "4-days": "4 ngày",
     "current": "Hiện tại",
     "day": "Ngày",
+    "google_event_color": "Màu Google {id}",
+    "inherit_calendar_color": "Dùng màu lịch",
+    "provider_color_label": "Màu sự kiện Google",
     "sync_recovery": {
       "calendar_failed": "Các lịch khác vẫn có thể đồng bộ. Bạn có thể tạm dừng lịch này trong khi khắc phục kết nối.",
       "calendar_paused": "Đã tạm dừng đồng bộ lịch này. Các sự kiện đã lưu vẫn hiển thị.",

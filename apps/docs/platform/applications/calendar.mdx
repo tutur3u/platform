@@ -442,11 +442,12 @@ an explicit event's resolved RGB snapshot stale until the event is fetched again
 Unrelated title/time updates read the current Google event, preserve its exact
 color or label identity and use its ETag to reject concurrent changes. Native
 creates map their canonical color argument to the Google event palette.
-This backend foundation does not provide the full provider color picker or opaque
-UI rendering yet. Color-only edits and cross-calendar create/delete fallback for
-custom labels require the corresponding route and UI followup; these tests do not
-establish complete two-way color editing. Sync never rewrites a calendar's label
-array or implicitly publishes a private native calendar to Google.
+The capability-gated shared web picker uses exact event IDs, calendar-scoped
+label IDs, and inherited color; its choices preserve opaque provider RGB.
+Microsoft and disabled-candidate surfaces keep their canonical palette. These
+source paths require the recovery schema and exact-commit build validation before
+activation. Sync never rewrites a calendar's label array or implicitly publishes
+a private native calendar to Google.
 
 
 ### Recoverable Google color operation development
@@ -545,3 +546,43 @@ intent contract. They do not establish a persistent all-day intent flag or verif
 live provider writes. Focused mounted tests exercise navigation, labels, grouping,
 and fetch boundaries; deployed browser verification and exact-head CI remain
 separate release checks.
+
+
+### Recoverable creation and calendar transfers
+
+The candidate mode remains disabled by default. New event, label, and inherited
+provider-color commands return 409 while it is disabled. The shared web picker
+reads `providerColorWrites` from the actor-scoped color-options response and
+shows the legacy native palette until that capability is enabled; unsupported
+Microsoft sources retain the legacy palette. Color-only saves send only their
+color command and do not notify guests. Activation requires draining existing
+legacy writer activity after the schema and retained guards are deployed.
+
+Its routes support deterministic
+Google creation, source-only movement between two calendars of the same Google
+account, native-to-Google creation, and conditional Google-to-native transfer.
+Google move preserves the provider event identity and iCalendar UID; a move may
+include a local lock change, but combined content/color/time changes return 409
+before provider effects. Cross-account copy/delete and Microsoft sagas return 409
+before admission because their retry and compensation fences are not established.
+
+Creation uses a UUIDv7 request ID retained across retries for the same draft. That
+ID owns the local event, encrypted intent and deterministic Google event ID.
+Reusing it for a different payload is a conflict. Recovery exposes only the
+operation ID and phase, including terminal native transfers and deleted
+placeholders, and never returns sealed intent.
+
+Retained event generations are consulted independently of the feature flag. A
+pending generation blocks competing writes; a completed native transfer uses a
+native generation comparison for subsequent edits and deletion. Disabling the
+candidate cannot reopen legacy provider writes for a retained event. Legacy batch
+sync preflights every event before dispatch, and invited creation and automatic
+outbound mirroring remain blocked in candidate mode until they adopt the same
+boundary. Ledgerless ordinary native behavior remains unchanged.
+
+Synthetic Google acceptance established stale-version delete and move rejection,
+identity-preserving movement, duplicate insert rejection, and rejection of late
+recreation after a tombstone. This does not establish Microsoft behavior or
+permission on customer events. Source regressions cover stable draft request IDs,
+lost-response retry, unsupported operation rejection before keys/admission, and
+public native recovery without private intent.

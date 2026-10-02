@@ -6,6 +6,10 @@ const mocks = vi.hoisted(() => ({
   one: vi.fn(),
   eq: vi.fn(),
 }));
+vi.mock(
+  '@/lib/calendar/google-color-operations/retained-generation-request-access',
+  () => ({ getCalendarRetainedGeneration: vi.fn(async () => null) })
+);
 vi.mock('@/lib/calendar-event-permission', () => ({
   authorizeCalendarEventManagement: mocks.authorize,
 }));

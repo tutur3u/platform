@@ -14,6 +14,7 @@ export interface WorkspaceCalendarEventUpdatePayload {
 }
 
 export interface WorkspaceCalendarEventCreatePayload {
+  requestId?: string;
   providerColor?: GoogleProviderColorChoice;
   title: string;
   start_at: string;

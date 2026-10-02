@@ -11,6 +11,7 @@ export type GoogleProviderColorOption = {
 };
 export type GoogleProviderColorOptions = {
   provider: 'google';
+  providerColorWrites?: boolean;
   connectionId: string;
   calendarId: string;
   sourceColor: { background: string; foreground: string | null };

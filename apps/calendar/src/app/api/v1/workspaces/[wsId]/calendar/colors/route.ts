@@ -5,6 +5,7 @@ import {
   GoogleColorChoiceError,
   loadGoogleColorOptions,
 } from '@/lib/calendar/google-color-choices';
+import { googleColorOperationModeEnabled } from '@/lib/calendar/google-color-operations/route-handlers';
 import { refreshOwnedGoogleSourceColor } from '@/lib/calendar/google-source-color-refresh';
 import { createGoogleAuthClient } from '@/lib/calendar/provider-writes';
 import { resolveCalendarSource } from '@/lib/calendar/source-resolver';
@@ -50,9 +51,17 @@ export async function GET(
       source,
       background: options.sourceColor.background,
     });
-    return NextResponse.json(options, {
-      headers: { 'Cache-Control': 'private, no-store' },
-    });
+    const providerColorWrites = googleColorOperationModeEnabled();
+    return NextResponse.json(
+      {
+        ...options,
+        options: providerColorWrites ? options.options : [],
+        providerColorWrites,
+      },
+      {
+        headers: { 'Cache-Control': 'private, no-store' },
+      }
+    );
   } catch (error) {
     const sourceUnavailable =
       error instanceof Error &&

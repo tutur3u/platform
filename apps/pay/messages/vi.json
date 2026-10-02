@@ -272,6 +272,11 @@
     "yearly-plans": "Hàng năm",
     "yr": "năm"
   },
+  "calendar": {
+    "google_event_color": "Màu Google {id}",
+    "inherit_calendar_color": "Dùng màu lịch",
+    "provider_color_label": "Màu sự kiện Google"
+  },
   "calendar-sidebar": {
     "ready": "Sẵn sàng"
   },

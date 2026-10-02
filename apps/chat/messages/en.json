@@ -8,6 +8,11 @@
     "switch_account": "Switch Account",
     "unknown_user": "Unknown User"
   },
+  "calendar": {
+    "google_event_color": "Google color {id}",
+    "inherit_calendar_color": "Use calendar color",
+    "provider_color_label": "Google event color"
+  },
   "chat": {
     "accept_friend": "Accept",
     "add_friend_by_email": "Add friend by email",

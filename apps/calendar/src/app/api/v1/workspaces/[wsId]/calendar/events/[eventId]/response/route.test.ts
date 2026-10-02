@@ -11,6 +11,10 @@ const mocks = vi.hoisted(() => ({
   eq: vi.fn(),
   one: vi.fn(),
 }));
+vi.mock(
+  '@/lib/calendar/google-color-operations/retained-generation-request-access',
+  () => ({ getCalendarRetainedGeneration: vi.fn(async () => null) })
+);
 vi.mock('@/lib/calendar/google-color-operations/route-handlers', () => ({
   googleColorOperationModeEnabled: mocks.enabled,
   handleRecoverableGoogleResponse: mocks.recover,
@@ -165,15 +169,15 @@ describe('authenticated meeting responses', () => {
     expect(await result.json()).toEqual({ operationId: 'pending' });
     expect(mocks.respond).not.toHaveBeenCalled();
   });
-  it('keeps Microsoft responses on their existing provider path in candidate mode', async () => {
+  it('rejects unsupported Microsoft responses in candidate mode before provider dispatch', async () => {
     mocks.enabled.mockReturnValue(true);
     mocks.one.mockResolvedValueOnce({
       data: { ...event, provider: 'microsoft' },
       error: null,
     });
     mocks.resolve.mockResolvedValueOnce({ provider: 'microsoft' });
-    expect((await request()).status).toBe(200);
+    expect((await request()).status).toBe(409);
     expect(mocks.recover).not.toHaveBeenCalled();
-    expect(mocks.respond).toHaveBeenCalledTimes(1);
+    expect(mocks.respond).not.toHaveBeenCalled();
   });
 });

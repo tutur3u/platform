@@ -6,7 +6,9 @@ import { z } from 'zod';
 import { GoogleColorChoiceError } from '../google-color-choices';
 import { createRequestGoogleMutationService } from './mutation-request-service';
 import { ColorOperationError } from './protocol';
+import { createRoutedProviderSagaService } from './provider-saga-route-service';
 import { createRequestColorOperationService } from './request-service';
+import { getCalendarRetainedGeneration } from './retained-generation-request-access';
 
 /** Candidate route slice stays disabled until every competing writer and source
  * move/create saga participates in the same durable generation boundary. */
@@ -25,7 +27,7 @@ export function unsupportedGoogleMutation() {
   );
 }
 
-function operationFailure(error: unknown, operationId?: string) {
+export function operationFailure(error: unknown, operationId?: string) {
   if (
     error instanceof GoogleColorChoiceError &&
     [400, 409].includes(error.status)
@@ -126,11 +128,6 @@ export async function handleGoogleColorRecovery(
   eventId: string,
   action: 'inspect' | 'execute' | 'cancel'
 ) {
-  if (!googleColorOperationModeEnabled())
-    return NextResponse.json(
-      { error: 'Google color recovery is unavailable' },
-      { status: 404 }
-    );
   let operationId: string | undefined;
   try {
     const parsed =
@@ -154,6 +151,41 @@ export async function handleGoogleColorRecovery(
         { status: 400 }
       );
     operationId = parsed.success ? parsed.data.operationId : undefined;
+    const retained = await getCalendarRetainedGeneration(
+      request,
+      rawWsId,
+      eventId
+    );
+    if (!googleColorOperationModeEnabled() && !retained)
+      return NextResponse.json(
+        { error: 'Calendar recovery is unavailable' },
+        { status: 404 }
+      );
+    const sagaId = operationId ?? retained?.operationId;
+    if (sagaId) {
+      const sagaService = await createRoutedProviderSagaService(
+        request,
+        rawWsId,
+        eventId,
+        sagaId
+      );
+      const saga = await sagaService.find(sagaId);
+      if (saga) {
+        await sagaService.access.assertAllowed(saga.prepared.binding);
+        const result =
+          action === 'inspect'
+            ? saga
+            : action === 'execute'
+              ? await sagaService.execute(sagaId)
+              : await sagaService.cancel(sagaId);
+        return NextResponse.json(
+          action === 'inspect'
+            ? { operation: { operationId: result.id, phase: result.phase } }
+            : { operationId: result.id, phase: result.phase },
+          { headers: { 'Cache-Control': 'private, no-store' } }
+        );
+      }
+    }
     const mutationService = await createRequestGoogleMutationService(
       request,
       rawWsId,

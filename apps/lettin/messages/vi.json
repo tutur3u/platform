@@ -1,4 +1,9 @@
 {
+  "calendar": {
+    "google_event_color": "Màu Google {id}",
+    "inherit_calendar_color": "Dùng màu lịch",
+    "provider_color_label": "Màu sự kiện Google"
+  },
   "command_launcher": {
     "aliases_slot": "Cũng khớp: {aliases}",
     "app_categories": {

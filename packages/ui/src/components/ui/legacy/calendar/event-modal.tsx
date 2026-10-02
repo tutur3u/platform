@@ -25,11 +25,7 @@ import {
   Unlock,
   X,
 } from '@tuturuuu/icons';
-import {
-  type CalendarSourceInput,
-  type CalendarSourceOption,
-  getWorkspaceCalendarDefaultSource,
-} from '@tuturuuu/internal-api';
+import { getWorkspaceCalendarDefaultSource } from '@tuturuuu/internal-api';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -82,7 +78,6 @@ import { getCalendarMeetingMetadata } from './calendar-meeting-link';
 import {
   COLOR_OPTIONS,
   DateError,
-  EventColorPicker,
   EventDateTimePicker,
   EventDescriptionInput,
   EventLocationInput,
@@ -92,6 +87,12 @@ import {
 } from './event-form-components';
 import { EventModalHeader } from './event-modal-header';
 import { eventEndPickerBounds } from './event-picker-bounds';
+import { eventSavePayload } from './event-save-payload';
+import {
+  findEventSourceOption,
+  sourceInputFromOption,
+} from './event-source-selection';
+import { ProviderColorPicker } from './provider-color-picker';
 import { saveCalendarEventDrafts } from './save-calendar-event-drafts';
 import { useCalendarSettings } from './settings/settings-context';
 import { useEventDraftSession } from './use-event-draft-session';
@@ -106,53 +107,6 @@ const AIFormSchema = z.object({
     .default(() => Intl.DateTimeFormat().resolvedOptions().timeZone),
   smart_scheduling: z.boolean().default(true),
 });
-
-function sourceInputFromOption(
-  option?: CalendarSourceOption | null
-): CalendarSourceInput | undefined {
-  if (!option) return undefined;
-
-  if (option.provider === 'tuturuuu') {
-    return {
-      provider: 'tuturuuu',
-      workspaceCalendarId: option.workspaceCalendarId,
-    };
-  }
-
-  return {
-    provider: option.provider,
-    connectionId: option.connectionId,
-  };
-}
-
-function findEventSourceOption(
-  options: CalendarSourceOption[],
-  event: Partial<CalendarEvent>
-) {
-  if (event.provider === 'google' || event.provider === 'microsoft') {
-    return options.find((option) => {
-      if (option.provider === 'tuturuuu') return false;
-      if (option.provider !== event.provider) return false;
-      if (
-        event.source_calendar_id &&
-        option.workspaceCalendarId === event.source_calendar_id
-      ) {
-        return true;
-      }
-
-      return (
-        option.externalCalendarId ===
-        (event.external_calendar_id ?? event.google_calendar_id)
-      );
-    });
-  }
-
-  return options.find(
-    (option) =>
-      option.provider === 'tuturuuu' &&
-      option.workspaceCalendarId === event.source_calendar_id
-  );
-}
 
 export function EventModal() {
   const toast = notifySave;
@@ -389,16 +343,22 @@ export function EventModal() {
 
     try {
       // Clean event data to only include fields that should be updated
-      const eventData: Partial<CalendarEvent> = {
-        title: event.title || '',
-        description: event.description || '',
-        start_at: event.start_at,
-        end_at: event.end_at,
-        color: event.color || 'BLUE',
-        location: event.location || '',
-        locked: event.locked || false,
-        source: sourceInputFromOption(selectedSourceOption),
-      };
+      const eventData = eventSavePayload(
+        {
+          title: event.title || '',
+          description: event.description || '',
+          start_at: event.start_at,
+          end_at: event.end_at,
+          color: event.color || 'BLUE',
+          location: event.location || '',
+          locked: event.locked || false,
+          source: sourceInputFromOption(selectedSourceOption),
+          providerColor: event.providerColor,
+        },
+        activeEvent,
+        findEventSourceOption(sourceOptions, activeEvent ?? {})?.id !==
+          selectedSourceOption?.id
+      );
 
       if (activeEvent?.id === 'new') {
         const saved = await addEvent(eventData as Omit<CalendarEvent, 'id'>);
@@ -409,7 +369,8 @@ export function EventModal() {
         const eventId = activeEvent.id;
 
         if (eventId && eventId !== 'new') {
-          await updateEvent(eventId, eventData);
+          if (Object.keys(eventData).length)
+            await updateEvent(eventId, eventData);
         } else {
           throw new Error('Invalid event ID');
         }
@@ -993,7 +954,13 @@ export function EventModal() {
                       </div>
                       <Select
                         value={selectedSourceOption?.id}
-                        onValueChange={(value) => setSelectedSourceId(value)}
+                        onValueChange={(value) => {
+                          setSelectedSourceId(value);
+                          setEvent((previous) => ({
+                            ...previous,
+                            providerColor: undefined,
+                          }));
+                        }}
                         disabled={sourceOptions.length === 0 || isSaving}
                       >
                         <SelectTrigger id="event-source" className="w-full">
@@ -1087,10 +1054,21 @@ export function EventModal() {
 
                       {/* Color and Options Row */}
                       <div className="flex items-end justify-between gap-4">
-                        <EventColorPicker
+                        <ProviderColorPicker
+                          wsId={wsId}
+                          source={selectedSourceOption}
                           value={event.color || 'BLUE'}
-                          onChange={(value) =>
-                            setEvent({ ...event, color: value })
+                          metadata={event.scheduling_metadata}
+                          choice={event.providerColor}
+                          onNativeChange={(value) =>
+                            setEvent({
+                              ...event,
+                              color: value,
+                              providerColor: undefined,
+                            })
+                          }
+                          onProviderChange={(providerColor) =>
+                            setEvent({ ...event, providerColor })
                           }
                         />
                         <button

@@ -1,6 +1,8 @@
+import type { GoogleProviderColorChoice } from './google-calendar-color';
 import type { SupportedColor } from './SupportedColors';
 
 export interface CalendarEvent {
+  providerColor?: GoogleProviderColorChoice;
   id: string;
   title?: string;
   description?: string;

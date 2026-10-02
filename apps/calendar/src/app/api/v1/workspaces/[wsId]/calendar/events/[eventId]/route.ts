@@ -1,25 +1,26 @@
 import type { Json, TablesUpdate } from '@tuturuuu/types';
-import {
-  MAX_LONG_TEXT_LENGTH,
-  MAX_NAME_LENGTH,
-  MAX_SEARCH_LENGTH,
-} from '@tuturuuu/utils/constants';
 import { googleColorCompatibilityValue } from '@tuturuuu/utils/google-calendar-colors';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { CalendarEventColorSchema } from '@/lib/calendar/event-color';
 import { hydrateEventSourceColors } from '@/lib/calendar/event-source-colors';
+import { updateEventSchema } from '@/lib/calendar/event-update-schema';
+import { GoogleColorChoiceError } from '@/lib/calendar/google-color-choices';
+import { handleRetainedNativeMutation } from '@/lib/calendar/google-color-operations/native-generation-routes';
+import { ColorOperationError } from '@/lib/calendar/google-color-operations/protocol';
 import {
-  GoogleColorChoiceError,
-  GoogleProviderColorChoiceSchema,
-} from '@/lib/calendar/google-color-choices';
+  handleProviderSagaMove,
+  unsupportedProviderSaga,
+} from '@/lib/calendar/google-color-operations/provider-saga-routes';
+import { getCalendarRetainedGeneration } from '@/lib/calendar/google-color-operations/retained-generation-request-access';
 import {
   googleColorOperationModeEnabled,
   handleRecoverableGoogleDelete,
   handleRecoverableGooglePut,
+  operationFailure,
 } from '@/lib/calendar/google-color-operations/route-handlers';
 import { refreshOwnedGoogleSourceColor } from '@/lib/calendar/google-source-color-refresh';
 import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
+import { applyProviderSyncFields } from '@/lib/calendar/provider-sync-fields';
 import {
   createProviderEvent,
   deleteProviderEvent,
@@ -42,69 +43,11 @@ import {
   getWorkspaceKey,
 } from '@/lib/workspace-encryption';
 
-const CalendarSourceSchema = z.discriminatedUnion('provider', [
-  z.object({
-    provider: z.literal('tuturuuu'),
-    workspaceCalendarId: z.guid().optional().nullable(),
-  }),
-  z.object({
-    provider: z.literal('google'),
-    connectionId: z.guid(),
-  }),
-  z.object({
-    provider: z.literal('microsoft'),
-    connectionId: z.guid(),
-  }),
-]);
-
-const updateEventSchema = z.object({
-  title: z.string().max(MAX_NAME_LENGTH).optional(),
-  description: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
-  location: z.string().max(MAX_SEARCH_LENGTH).optional(),
-  start_at: z.string().datetime().optional(),
-  end_at: z.string().datetime().optional(),
-  color: CalendarEventColorSchema.optional(),
-  providerColor: GoogleProviderColorChoiceSchema.optional(),
-  locked: z.boolean().optional(),
-  source: CalendarSourceSchema.optional(),
-});
-
 interface Params {
   params: Promise<{
     wsId: string;
     eventId: string;
   }>;
-}
-
-function applyProviderSyncFields(
-  updatePayload: TablesUpdate<'workspace_calendar_events'>,
-  args: {
-    error: unknown;
-    settingsAvailable: boolean;
-    synced: boolean;
-  }
-) {
-  if (!args.settingsAvailable) return;
-
-  if (args.synced) {
-    (updatePayload as any).last_synced_at = new Date().toISOString();
-    (updatePayload as any).sync_error = null;
-    (updatePayload as any).sync_status = 'synced';
-    return;
-  }
-
-  if (args.error) {
-    const message =
-      args.error instanceof Error
-        ? args.error.message
-        : 'External calendar sync failed';
-    (updatePayload as any).sync_error = message.slice(0, 1000);
-    (updatePayload as any).sync_status = 'failed';
-    return;
-  }
-
-  (updatePayload as any).sync_error = null;
-  (updatePayload as any).sync_status = 'local_only';
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -175,12 +118,20 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     const updates = validationResult.data;
+    if (updates.providerColor && !googleColorOperationModeEnabled())
+      return unsupportedProviderSaga();
     if (updates.providerColor && updates.color !== undefined)
       return NextResponse.json(
         { error: 'Choose either native color or provider color' },
         { status: 400 }
       );
 
+    const retained = await getCalendarRetainedGeneration(
+      request,
+      rawWsId,
+      eventId
+    );
+    if (retained?.pending) return unsupportedProviderSaga();
     const { data: existingEvent, error: existingError } = await sbAdmin
       .from('workspace_calendar_events')
       .select('*')
@@ -208,16 +159,52 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    if (
-      googleColorOperationModeEnabled() &&
-      existingEvent.provider === 'google'
-    ) {
-      return handleRecoverableGooglePut({
-        request,
-        rawWsId,
-        eventId,
-        updates,
-      });
+    if (googleColorOperationModeEnabled() || retained) {
+      if (updates.source) {
+        const source = await resolveCalendarSourceForEvent({
+          sbAdmin,
+          wsId,
+          userId,
+          event: existingEvent,
+        });
+        const destination = await resolveCalendarSource({
+          sbAdmin,
+          wsId,
+          userId,
+          source: updates.source,
+        });
+        return handleProviderSagaMove({
+          request,
+          rawWsId,
+          wsId,
+          eventId,
+          sbAdmin,
+          existingEvent,
+          source,
+          destination,
+          updates,
+        });
+      }
+      if (existingEvent.provider === 'google')
+        return handleRecoverableGooglePut({
+          request,
+          rawWsId,
+          eventId,
+          updates,
+        });
+      if (existingEvent.provider === 'microsoft')
+        return unsupportedProviderSaga();
+      if (retained)
+        return handleRetainedNativeMutation({
+          request,
+          rawWsId,
+          wsId,
+          eventId,
+          sbAdmin,
+          updates,
+        });
+      if (await resolveOutboundSyncSource({ sbAdmin, wsId, userId }))
+        return unsupportedProviderSaga();
     }
 
     const decryptedExisting = await decryptEventFromStorage(
@@ -528,6 +515,7 @@ export async function PUT(request: Request, { params }: Params) {
     const decryptedEvent = await decryptEventFromStorage(data, wsId);
     return NextResponse.json(decryptedEvent);
   } catch (error) {
+    if (error instanceof ColorOperationError) return operationFailure(error);
     if (error instanceof SyntaxError)
       return NextResponse.json(
         { error: 'Invalid JSON payload' },
@@ -558,6 +546,12 @@ export async function DELETE(request: Request, { params }: Params) {
   const { sbAdmin, wsId, userId } = access;
 
   try {
+    const retained = await getCalendarRetainedGeneration(
+      request,
+      rawWsId,
+      eventId
+    );
+    if (retained?.pending) return unsupportedProviderSaga();
     const { data: existingEvent, error: existingError } = await sbAdmin
       .from('workspace_calendar_events')
       .select('*')
@@ -585,11 +579,20 @@ export async function DELETE(request: Request, { params }: Params) {
       );
     }
 
-    if (
-      googleColorOperationModeEnabled() &&
-      existingEvent.provider === 'google'
-    )
-      return handleRecoverableGoogleDelete({ request, rawWsId, eventId });
+    if (googleColorOperationModeEnabled() || retained) {
+      if (existingEvent.provider === 'google')
+        return handleRecoverableGoogleDelete({ request, rawWsId, eventId });
+      if (existingEvent.provider === 'microsoft')
+        return unsupportedProviderSaga();
+      if (retained)
+        return handleRetainedNativeMutation({
+          request,
+          rawWsId,
+          wsId,
+          eventId,
+          sbAdmin,
+        });
+    }
 
     if (
       existingEvent.provider === 'google' ||

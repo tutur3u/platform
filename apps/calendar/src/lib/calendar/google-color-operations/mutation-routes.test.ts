@@ -12,6 +12,20 @@ const fixture = vi.hoisted(() => ({
   inspect: vi.fn(),
   cancel: vi.fn(),
   colorCreate: vi.fn(),
+  retained: vi.fn(),
+  sagaFind: vi.fn(),
+  sagaAllowed: vi.fn(),
+}));
+vi.mock('./retained-generation-request-access', () => ({
+  getCalendarRetainedGeneration: fixture.retained,
+}));
+vi.mock('./provider-saga-route-service', () => ({
+  createRoutedProviderSagaService: vi.fn(async () => ({
+    find: fixture.sagaFind,
+    access: { assertAllowed: fixture.sagaAllowed },
+    execute: fixture.execute,
+    cancel: fixture.cancel,
+  })),
 }));
 vi.mock('./mutation-request-service', () => ({
   createRequestGoogleMutationService: fixture.create,
@@ -35,6 +49,9 @@ const args = () => ({
 });
 beforeEach(() => {
   vi.clearAllMocks();
+  fixture.retained.mockResolvedValue(null);
+  fixture.sagaFind.mockResolvedValue(null);
+  fixture.sagaAllowed.mockResolvedValue(undefined);
   vi.stubEnv('CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED', 'true');
   fixture.create.mockResolvedValue({
     ...fixture,
@@ -223,4 +240,31 @@ describe('generation-fenced Calendar mutation route contracts', () => {
     expect(result.status).toBe(409);
     expect(fixture.readEvent).not.toHaveBeenCalled();
   });
+});
+
+it('inspects a retained native terminal saga even with the feature mode disabled', async () => {
+  vi.stubEnv('CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED', 'false');
+  fixture.retained.mockResolvedValue({
+    operationId,
+    intentKind: 'saga',
+    pending: false,
+  });
+  const binding = { destination: { provider: 'tuturuuu' } };
+  fixture.sagaFind.mockResolvedValue({
+    id: operationId,
+    phase: 'applied',
+    prepared: { binding, journal: { ciphertext: 'private' } },
+  });
+  const response = await handleGoogleColorRecovery(
+    new Request(`https://fixture.invalid/recovery?operationId=${operationId}`),
+    'workspace',
+    'event',
+    'inspect'
+  );
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({
+    operation: { operationId, phase: 'applied' },
+  });
+  expect(fixture.sagaAllowed).toHaveBeenCalledWith(binding);
+  expect(fixture.create).not.toHaveBeenCalled();
 });

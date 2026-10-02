@@ -38,12 +38,28 @@ describe('authenticated native Calendar gateway', () => {
     expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
 
-  it.each(['POST', 'PUT', 'PATCH', 'DELETE'])(
-    'rejects color options mutation %s before auth or forwarding',
-    async (method) => {
+  it('forwards actor-authenticated source mapping GET to the Calendar owner', async () => {
+    const deps = dependencies();
+    const path = '/api/v1/workspaces/personal/calendar/default-source';
+    expect((await forwardCalendarRequest(request(path), deps)).status).toBe(
+      200
+    );
+    expect(deps.verifyToken).toHaveBeenCalledWith('valid-session');
+    expect(deps.fetch.mock.calls[0]?.[0]).toBe(
+      `https://calendar.tuturuuu.com${path}`
+    );
+  });
+
+  it.each(
+    ['colors', 'default-source'].flatMap((resource) =>
+      ['POST', 'PUT', 'PATCH', 'DELETE'].map((method) => [resource, method])
+    )
+  )(
+    'rejects readonly Calendar %s mutation %s before auth or forwarding',
+    async (resource, method) => {
       const deps = dependencies();
       const response = await forwardCalendarRequest(
-        request('/api/v1/workspaces/personal/calendar/colors', { method }),
+        request(`/api/v1/workspaces/personal/calendar/${resource}`, { method }),
         deps
       );
       expect(response.status).toBe(405);

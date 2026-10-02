@@ -183,6 +183,9 @@
     "4-days": "4 Days",
     "current": "Current",
     "day": "Day",
+    "google_event_color": "Google color {id}",
+    "inherit_calendar_color": "Use calendar color",
+    "provider_color_label": "Google event color",
     "sync_recovery": {
       "calendar_failed": "Other calendars can keep syncing. You can pause this calendar while its connection is repaired.",
       "calendar_paused": "Sync paused for this calendar. Saved events remain available.",

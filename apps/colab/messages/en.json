@@ -38,6 +38,11 @@
   "betterDraft": "Add a little clarity",
   "brand": "Colab",
   "budgetUsed": "Used",
+  "calendar": {
+    "google_event_color": "Google color {id}",
+    "inherit_calendar_color": "Use calendar color",
+    "provider_color_label": "Google event color"
+  },
   "cancel": "Cancel",
   "capacity": "Participant limit",
   "checkConflict": "Check availability first",

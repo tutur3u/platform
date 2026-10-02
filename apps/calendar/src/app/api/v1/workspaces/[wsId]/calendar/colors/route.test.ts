@@ -6,6 +6,10 @@ const mocks = vi.hoisted(() => ({
   options: vi.fn(),
   auth: vi.fn(),
 }));
+vi.mock('@/lib/calendar/google-color-operations/route-handlers', () => ({
+  googleColorOperationModeEnabled: () =>
+    process.env.CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED === 'true',
+}));
 vi.mock('next/server', async (original) => ({
   ...(await original<typeof import('next/server')>()),
   connection: vi.fn(),
@@ -95,4 +99,25 @@ describe('Google color options API', () => {
     );
     expect((await GET(request(), params())).status).toBe(502);
   });
+});
+
+it('does not advertise new provider-color choices while candidate writes are disabled', async () => {
+  vi.stubEnv('CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED', 'false');
+  mocks.authorize.mockResolvedValue({ sbAdmin: {}, wsId, userId: 'actor' });
+  mocks.source.mockResolvedValue({ provider: 'google', connectionId });
+  mocks.options.mockResolvedValue({
+    options: {
+      provider: 'google',
+      connectionId,
+      sourceColor: { background: '#d06b64', foreground: null },
+      options: [{ kind: 'label', id: 'opaque' }],
+    },
+  });
+  const response = await GET(request(), params());
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    options: [],
+    providerColorWrites: false,
+  });
+  vi.unstubAllEnvs();
 });

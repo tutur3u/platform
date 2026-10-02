@@ -1,6 +1,9 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { unsupportedProviderSaga } from '@/lib/calendar/google-color-operations/provider-saga-routes';
+import { getCalendarRetainedGeneration } from '@/lib/calendar/google-color-operations/retained-generation-request-access';
+import { operationFailure } from '@/lib/calendar/google-color-operations/route-handlers';
 import { authorizeCalendarEventManagement } from '@/lib/calendar-event-permission';
 
 /** Resolve legacy identifiers through the authenticated client's RLS before
@@ -53,5 +56,13 @@ export async function authorizeLegacySync(
     };
   const access = await authorizeCalendarEventManagement(request, wsId);
   if ('error' in access) return access;
+  if (event) {
+    try {
+      if (await getCalendarRetainedGeneration(request, wsId, event.id))
+        return { error: unsupportedProviderSaga() };
+    } catch (error) {
+      return { error: operationFailure(error) };
+    }
+  }
   return { ...access, event };
 }

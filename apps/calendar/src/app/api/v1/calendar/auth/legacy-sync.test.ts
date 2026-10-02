@@ -14,6 +14,10 @@ const mocks = vi.hoisted(() => ({
   single: vi.fn(),
   events: [] as Record<string, unknown>[],
 }));
+vi.mock(
+  '@/lib/calendar/google-color-operations/retained-generation-request-access',
+  () => ({ getCalendarRetainedGeneration: vi.fn(async () => null) })
+);
 vi.mock('@tuturuuu/google', () => ({
   google: { calendar: mocks.google },
   OAuth2Client: vi.fn(),

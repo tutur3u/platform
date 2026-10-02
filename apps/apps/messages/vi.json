@@ -20,6 +20,11 @@
       "line2": "Một hệ thống kết nối liền mạch."
     }
   },
+  "calendar": {
+    "google_event_color": "Màu Google {id}",
+    "inherit_calendar_color": "Dùng màu lịch",
+    "provider_color_label": "Màu sự kiện Google"
+  },
   "chat": {
     "first_activity": "Hoạt động đầu tiên",
     "last_activity": "Hoạt động gần nhất",

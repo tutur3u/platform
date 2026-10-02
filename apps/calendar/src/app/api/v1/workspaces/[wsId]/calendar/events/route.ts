@@ -18,6 +18,16 @@ import {
   GoogleColorChoiceError,
   GoogleProviderColorChoiceSchema,
 } from '@/lib/calendar/google-color-choices';
+import { ColorOperationError } from '@/lib/calendar/google-color-operations/protocol';
+import {
+  handleProviderSagaCreate,
+  unsupportedProviderSaga,
+} from '@/lib/calendar/google-color-operations/provider-saga-routes';
+import { getCalendarRetainedGeneration } from '@/lib/calendar/google-color-operations/retained-generation-request-access';
+import {
+  googleColorOperationModeEnabled,
+  operationFailure,
+} from '@/lib/calendar/google-color-operations/route-handlers';
 import { refreshOwnedGoogleSourceColor } from '@/lib/calendar/google-source-color-refresh';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import {
@@ -195,6 +205,8 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const body = await request.json();
     const event = CreateEventSchema.parse(body);
+    if (event.providerColor && !googleColorOperationModeEnabled())
+      return unsupportedProviderSaga();
     if (event.providerColor && body.color !== undefined)
       throw new GoogleColorChoiceError(
         'Choose either native color or provider color'
@@ -213,6 +225,27 @@ export async function POST(request: Request, { params }: Params) {
       throw new GoogleColorChoiceError(
         'Color choice does not belong to the selected Google calendar'
       );
+    const retained = event.requestId
+      ? await getCalendarRetainedGeneration(request, wsId, event.requestId)
+      : null;
+    if (googleColorOperationModeEnabled() || retained) {
+      if (event.invitation || source.provider === 'microsoft')
+        return unsupportedProviderSaga();
+      if (source.provider === 'google')
+        return handleProviderSagaCreate({
+          request,
+          rawWsId: wsId,
+          wsId,
+          sbAdmin,
+          source,
+          event,
+        });
+      if (
+        retained ||
+        (await resolveOutboundSyncSource({ sbAdmin, wsId, userId }))
+      )
+        return unsupportedProviderSaga();
+    }
     if (event.invitation) {
       if (!event.requestId)
         return NextResponse.json(
@@ -364,6 +397,7 @@ export async function POST(request: Request, { params }: Params) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof ColorOperationError) return operationFailure(error);
     if (error instanceof SyntaxError)
       return NextResponse.json(
         { error: 'Invalid JSON payload' },

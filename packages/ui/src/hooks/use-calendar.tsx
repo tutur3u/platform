@@ -3,7 +3,6 @@ import {
   deleteWorkspaceCalendarEvent,
   updateWorkspaceCalendarEvent,
   type WorkspaceCalendarEventCreatePayload,
-  type WorkspaceCalendarEventUpdatePayload,
 } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
@@ -28,8 +27,13 @@ import {
   useState,
 } from 'react';
 import { getTaskApiUrl } from '../lib/tasks-app-url';
+import {
+  createCalendarCreationRequests,
+  createOptimisticEventId,
+} from './calendar-creation-request';
 import { roundToNearest15Minutes } from './calendar-date-utils';
 import { createCalendarEventLookup } from './calendar-event-lookup';
+import { calendarEventUpdatePayload } from './calendar-event-write-payload';
 import { useCalendarSync } from './use-calendar-sync';
 import { useOpenInitialCalendarEvent } from './use-open-initial-calendar-event';
 
@@ -37,17 +41,6 @@ type TaskDragData = {
   name?: string;
   priority?: string | null;
   totalDuration?: number;
-};
-
-const createOptimisticEventId = () => {
-  if (
-    typeof crypto !== 'undefined' &&
-    typeof crypto.randomUUID === 'function'
-  ) {
-    return `optimistic-${crypto.randomUUID()}`;
-  }
-
-  return `optimistic-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 };
 
 const noStoreFetchOptions = {
@@ -265,11 +258,7 @@ export type CalendarEventAdapter = {
   ) => Promise<CalendarEvent | undefined> | CalendarEvent | undefined;
 };
 
-/**
- * Syncs task total_duration after a calendar event is resized or moved.
- * - Uses canonical workspace calendar events as the source of truth
- * - If total scheduled time exceeds task's total_duration, auto-increase it
- */
+/** Increase task duration when its canonical calendar schedule exceeds it. */
 async function syncTaskDurationAfterEventChange(
   supabase: any,
   eventId: string,
@@ -442,6 +431,7 @@ export const CalendarProvider = ({
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [previewEventId, setPreviewEventId] = useState<string | null>(null);
   const [isModalHidden, setModalHidden] = useState(false);
+  const creationRequests = useRef(createCalendarCreationRequests());
   const [pendingNewEvent, setPendingNewEvent] =
     useState<Partial<CalendarEvent> | null>(null);
   const [defaultNewEventTab, setDefaultNewEventTab] = useState<'manual' | 'ai'>(
@@ -589,7 +579,6 @@ export const CalendarProvider = ({
         return undefined;
       }
 
-      // Round start and end times to nearest 15-minute interval
       const startDate = roundToNearest15Minutes(new Date(event.start_at));
       const endDate = roundToNearest15Minutes(new Date(event.end_at));
 
@@ -610,6 +599,10 @@ export const CalendarProvider = ({
       if (!ws) throw new Error('No workspace selected');
 
       const payload: WorkspaceCalendarEventCreatePayload = {
+        requestId: creationRequests.current.forAttempt(
+          event,
+          !!pendingNewEvent
+        ),
         title: event.title || '',
         description: event.description || '',
         start_at: startDate.toISOString(),
@@ -619,7 +612,9 @@ export const CalendarProvider = ({
         locked: true,
         task_id: (event as CalendarEvent & { task_id?: string | null }).task_id,
         source: event.source,
+        ...(event.providerColor && { providerColor: event.providerColor }),
       };
+      if (event.providerColor) delete payload.color;
       const optimisticId = createOptimisticEventId();
       const optimisticEvent = {
         ...event,
@@ -659,21 +654,28 @@ export const CalendarProvider = ({
         // Refresh the query cache after adding an event
         refresh();
         setPendingNewEvent(null);
+        creationRequests.current.completeDraft();
         return data as CalendarEvent;
       } catch (error) {
         patchVisibleEvents([], { clearIds: [optimisticId] });
         throw error;
       }
     },
-    [ws, readOnly, eventAdapter, patchVisibleEvents, queryClient, refresh]
+    [
+      ws,
+      readOnly,
+      eventAdapter,
+      patchVisibleEvents,
+      queryClient,
+      refresh,
+      pendingNewEvent,
+    ]
   );
 
   const addEmptyEvent = useCallback(
     (date: Date, isAllDay?: boolean) => {
-      // NOTE: This implementation uses createAllDayEvent helper for proper timezone handling
-      // This ensures all-day events are created at midnight in the user's timezone rather than UTC
-      // The workaround is necessary because dayjs timezone handling for all-day events can be inconsistent
-      // across different browsers and timezone configurations
+      creationRequests.current.beginDraft();
+      // Keep all-day boundaries in the user timezone.
       const selectedDate = dayjs(date);
 
       let start_at: string;
@@ -701,10 +703,8 @@ export const CalendarProvider = ({
         end_at = endTime.toISOString();
       }
 
-      // Use default color
       const defaultColor = 'BLUE';
 
-      // Create a new event with default values
       const newEvent: CalendarEvent = {
         id: 'new',
         title: '',
@@ -736,14 +736,12 @@ export const CalendarProvider = ({
 
   const addEmptyEventWithDuration = useCallback(
     (startDate: Date, endDate: Date) => {
-      // Round start and end times to nearest 15-minute interval
+      creationRequests.current.beginDraft();
       const roundedStartDate = roundToNearest15Minutes(startDate);
       const roundedEndDate = roundToNearest15Minutes(endDate);
 
-      // Use default color
       const defaultColor = 'BLUE';
 
-      // Create a new event with default values
       const newEvent: CalendarEvent = {
         id: 'new',
         title: '',
@@ -832,22 +830,7 @@ export const CalendarProvider = ({
 
       try {
         // Clean up the update data to ensure no undefined values and exclude system fields
-        const cleanUpdateData: WorkspaceCalendarEventUpdatePayload = {
-          ...(updateData.title !== undefined && { title: updateData.title }),
-          ...(updateData.description !== undefined && {
-            description: updateData.description,
-          }),
-          ...(updateData.start_at !== undefined && {
-            start_at: updateData.start_at,
-          }),
-          ...(updateData.end_at !== undefined && { end_at: updateData.end_at }),
-          ...(updateData.color !== undefined && { color: updateData.color }),
-          ...(updateData.location !== undefined && {
-            location: updateData.location,
-          }),
-          ...(updateData.locked !== undefined && { locked: updateData.locked }),
-          ...(updateData.source !== undefined && { source: updateData.source }),
-        };
+        const cleanUpdateData = calendarEventUpdatePayload(updateData);
 
         // ws is guaranteed to be defined here (validated above at line 732)
         const wsId = ws!.id;

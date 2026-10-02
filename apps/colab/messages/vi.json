@@ -38,6 +38,11 @@
   "betterDraft": "Thêm sự rõ ràng",
   "brand": "Colab",
   "budgetUsed": "Đã dùng",
+  "calendar": {
+    "google_event_color": "Màu Google {id}",
+    "inherit_calendar_color": "Dùng màu lịch",
+    "provider_color_label": "Màu sự kiện Google"
+  },
   "cancel": "Hủy",
   "capacity": "Giới hạn người tham gia",
   "checkConflict": "Kiểm tra lịch trống trước",

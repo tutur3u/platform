@@ -3,6 +3,8 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import dayjs from 'dayjs';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { unsupportedProviderSaga } from '@/lib/calendar/google-color-operations/provider-saga-routes';
+import { getCalendarRetainedGeneration } from '@/lib/calendar/google-color-operations/retained-generation-request-access';
 import {
   googleColorOperationModeEnabled,
   handleRecoverableGooglePut,
@@ -178,6 +180,16 @@ export async function POST(request: Request) {
         errorCount: 0,
         totalEvents: 0,
       });
+    }
+
+    // Preflight the entire batch before any provider dispatch, regardless of
+    // feature mode. A legacy batch may not compete with retained generations.
+    for (const event of tuturuuuEvents) {
+      if (
+        !event.locked &&
+        (await getCalendarRetainedGeneration(request, normalizedWsId, event.id))
+      )
+        return unsupportedProviderSaga();
     }
 
     if (googleColorOperationModeEnabled()) {
