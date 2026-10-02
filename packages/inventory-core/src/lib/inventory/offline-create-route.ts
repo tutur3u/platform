@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Json } from '@tuturuuu/types';
 import {
   Effect,
   runEffectAsResult,
@@ -143,16 +144,15 @@ export async function handleOfflineCreate(request: Request, rawWsId: string) {
   const result = await runEffectAsResult(
     Effect.tryPromise({
       try: async () => {
-        const { data, error } = await sbAdmin.schema('private').rpc(
-          'apply_inventory_offline_create' as never,
-          {
+        const { data, error } = await sbAdmin
+          .schema('private')
+          .rpc('apply_inventory_offline_create', {
             p_actor_id: actorId,
             p_ws_id: wsId,
             p_operation_id: operationId,
             p_resource: kind,
-            p_payload: validatedPayload,
-          } as never
-        );
+            p_payload: validatedPayload as Json,
+          });
         if (error) throw error;
         const parsed = resultSchema.safeParse(data);
         if (!parsed.success || parsed.data.resource !== kind) {
