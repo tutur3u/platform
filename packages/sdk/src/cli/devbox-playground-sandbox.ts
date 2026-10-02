@@ -237,6 +237,27 @@ async function ensureEnvironment(
     release();
   }
 }
+async function waitForPendingCreation() {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      creating,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                'Playground creation is still pending; stop was not confirmed'
+              )
+            ),
+          15_000
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 export async function getPlaygroundReadiness() {
   try {
     validatePoolOwner();
@@ -303,6 +324,8 @@ export async function runPlaygroundJob(
   );
   validatePoolOwner();
   if (payload.operation === 'stop') {
+    // Wait only for admitted creation, never the arbitrary user command.
+    await waitForPendingCreation();
     await removeEnvironment(payload.projectId);
     return { code: 0, output: '', files: null, preview: null };
   }

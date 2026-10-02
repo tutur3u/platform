@@ -126,6 +126,86 @@ describe('managed playground removal ownership', () => {
     ]);
   });
 
+  it('waits for an admitted start before stop confirms removal', async () => {
+    const { runPlaygroundJob, playgroundEnvironmentCount } = await import(
+      './devbox-playground-sandbox'
+    );
+    let release!: () => void;
+    const startup = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let exists = false;
+    let stopped = false;
+    const order: string[] = [];
+    docker.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'run') {
+        await startup;
+        exists = true;
+        order.push('started');
+      }
+      if (args[0] === 'rm') {
+        const code = exists ? 0 : 1;
+        exists = false;
+        order.push('removed');
+        return result(code);
+      }
+      if (args[0] === 'ps') return result(0, exists ? 'abcdef012345' : '');
+      if (args[0] === 'exec' && !args.includes('--interactive'))
+        return result(0, '[]');
+      return result();
+    });
+    const run = runPlaygroundJob(payload(), limits);
+    await vi.waitFor(() =>
+      expect(docker.mock.calls.some(([args]) => args[0] === 'run')).toBe(true)
+    );
+    const stop = runPlaygroundJob(payload(first, 'stop'), limits).then(() => {
+      stopped = true;
+    });
+    try {
+      for (let index = 0; index < 12; index++) await Promise.resolve();
+      expect(stopped).toBe(false);
+      release();
+      await Promise.all([run, stop]);
+      expect(order).toEqual(['started', 'removed']);
+      expect(exists).toBe(false);
+      expect(playgroundEnvironmentCount()).toBe(0);
+    } finally {
+      release();
+      await Promise.allSettled([run, stop]);
+    }
+  });
+  it('fails stop truthfully when creation outlives its bounded wait', async () => {
+    const { runPlaygroundJob } = await import('./devbox-playground-sandbox');
+    let release!: () => void;
+    const startup = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    docker.mockImplementation(async (args: string[]) => {
+      if (args[0] === 'run') await startup;
+      if (args[0] === 'exec' && !args.includes('--interactive'))
+        return result(0, '[]');
+      return result();
+    });
+    const run = runPlaygroundJob(payload(), limits);
+    await vi.waitFor(() =>
+      expect(docker.mock.calls.some(([args]) => args[0] === 'run')).toBe(true)
+    );
+    const outcome = expect(
+      runPlaygroundJob(payload(first, 'stop'), limits)
+    ).rejects.toThrow('stop was not confirmed');
+    await vi.advanceTimersByTimeAsync(15_000);
+    await outcome;
+    expect(docker.mock.calls.some(([args]) => args[0] === 'rm')).toBe(false);
+    release();
+    await run;
+    // The timed-out stop did not forget or release the eventual environment.
+    const { playgroundEnvironmentCount } = await import(
+      './devbox-playground-sandbox'
+    );
+    expect(playgroundEnvironmentCount()).toBe(1);
+    await runPlaygroundJob(payload(first, 'stop'), limits);
+    expect(playgroundEnvironmentCount()).toBe(0);
+  });
   it('requires a configured pool owner even for stop operations', async () => {
     vi.stubEnv('TUTURUUU_PLAYGROUND_POOL_ID', '');
     const { runPlaygroundJob } = await import('./devbox-playground-sandbox');

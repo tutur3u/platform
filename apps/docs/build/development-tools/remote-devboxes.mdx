@@ -394,6 +394,9 @@ maximum lifetime. Environment count is bounded by the runner's resource limits.
 A failed container removal retains its capacity reservation until a successful
 removal or healthy Docker inventory confirms the container is absent. Failed
 startup orphan cleanup blocks new environments rather than oversubscribing the host.
+Stopping waits for already admitted container creation, with a fifteen-second
+wait bound; a timeout reports an unconfirmed stop and retains capacity ownership.
+It does not wait for the arbitrary project command to finish.
 File inventories and changed bytes are exported separately; credentials and
 runner metadata never enter project files. The platform must provide its signed
 file-save callback before enabling the hosted playground workload.
