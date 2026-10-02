@@ -34,6 +34,47 @@ test('quoted JSON and plaintext credentials are redacted without leaking values'
   assert.doesNotMatch(JSON.stringify(json), /fixture-/u);
 });
 
+test('equals-form authorization schemes redact the entire credential value', () => {
+  for (const header of [
+    'Authorization',
+    'Proxy-Authorization',
+    'Cookie',
+    'Set-Cookie',
+  ]) {
+    const output = redactText(
+      `${header}=Bearer fixture-private; token=fixture-other\nstatus=failed`,
+      {}
+    );
+    assert.doesNotMatch(output, /fixture-/u);
+    assert.match(output, /status=failed/u);
+  }
+});
+
+test('unstructured multiline YAML credentials fail closed for scalars and collections', () => {
+  for (const input of [
+    'TOKEN: |\n  fixture-private\n',
+    'TOKEN: |\n\n  fixture-private\n',
+    'TOKEN:\n\n  - fixture-private\n',
+    'TOKEN: |- # multiline\n  fixture-private\n',
+    'refresh-token: >2-\n  fixture-private\n',
+    'session:\n  - fixture-private\n',
+    'env:\n  PASSWORD:\n    value: fixture-private\n',
+    '- "Authorization": >+\r\n    Bearer fixture-private\r\n',
+    'SECRET=\n  fixture-private\n',
+  ]) {
+    const output = sanitize(input, {});
+    assert.equal(
+      output,
+      '<redacted: structured credential diagnostics omitted>\n'
+    );
+    assert.doesNotMatch(output, /fixture-/u);
+  }
+  assert.equal(
+    redactText('status: failed\n  details: timeout\n', {}),
+    'status: failed\n  details: timeout\n'
+  );
+});
+
 test('report sanitization writes only safe text to the uploaded diagnostics directory', (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-diagnostics-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));

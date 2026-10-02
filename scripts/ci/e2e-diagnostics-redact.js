@@ -16,7 +16,13 @@ function redactText(value, env = process.env) {
     /["']?name["']?\s*:\s*["'][^"']*(?:token|secret|key|password|cookie|credential|authorization|session)[^"']*["']/i;
   const sensitiveCollection =
     /["']?[A-Z0-9_-]*(?:TOKEN|SECRET|KEY|PASSWORD|COOKIE|CREDENTIAL|AUTHORIZATION|SESSION)[A-Z0-9_-]*["']?\s*[:=]\s*[[{]/i;
-  if (structuredHeader.test(value) || sensitiveCollection.test(value))
+  const sensitiveYaml =
+    /(?:^|\n)[ \t]*(?:-[ \t]+)?["']?[A-Z0-9_-]*(?:TOKEN|SECRET|KEY|PASSWORD|COOKIE|CREDENTIAL|AUTHORIZATION|SESSION)[A-Z0-9_-]*["']?[ \t]*[:=][ \t]*(?:[|>][0-9+-]*[ \t]*(?:#[^\r\n]*)?\r?$|(?:#[^\r\n]*)?\r?\n(?:[ \t]*\r?\n)*[ \t]+\S)/im;
+  if (
+    structuredHeader.test(value) ||
+    sensitiveCollection.test(value) ||
+    sensitiveYaml.test(value)
+  )
     return '<redacted: structured credential diagnostics omitted>\n';
   let result = value;
   for (const [name, secret] of Object.entries(env)) {
@@ -25,7 +31,7 @@ function redactText(value, env = process.env) {
   }
   return result
     .replace(
-      /\b((?:set-cookie|cookie|authorization|proxy-authorization)\s*:\s*)[^\r\n]*/gi,
+      /\b((?:set-cookie|cookie|authorization|proxy-authorization)\s*[:=]\s*)[^\r\n]*/gi,
       '$1<redacted>'
     )
     .replace(sensitiveQuery, '$1<redacted>')

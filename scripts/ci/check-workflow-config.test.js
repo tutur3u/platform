@@ -879,15 +879,14 @@ test('Inventory and Storefront cache invalidation stays protected by E2E', () =>
   assert.match(dependencyBuildStep?.with?.token || '', /secrets\.TURBO_TOKEN/u);
   assert.match(dependencyBuildStep?.with?.team || '', /TURBO_TEAM/u);
   assert.equal(stepNamed('Start local Supabase')?.run, 'bun sb:start');
+  const runStep = stepNamed('Verify cache invalidation and instant navigation');
+  assert.equal(runStep?.run, 'bun test:e2e -- --reporter=line,html,json');
+  assert.equal(runStep?.['working-directory'], 'apps/inventory');
+  const redactStep = stepNamed('Sanitize cache E2E failure diagnostics');
+  assert.equal(redactStep?.id, 'redact-inventory');
   assert.equal(
-    stepNamed('Verify cache invalidation and instant navigation')?.run,
-    'bun test:e2e -- --reporter=line,html,json'
-  );
-  assert.equal(
-    stepNamed('Verify cache invalidation and instant navigation')?.[
-      'working-directory'
-    ],
-    'apps/inventory'
+    redactStep?.run,
+    'node scripts/ci/e2e-diagnostics-redact.js --report tmp/e2e-inventory-results.json --output tmp/e2e-diagnostics/inventory-results.json'
   );
   const artifactStep = stepNamed('Upload cache E2E failure artifact');
   assert.equal(artifactStep?.uses, 'actions/upload-artifact@v7');
