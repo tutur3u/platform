@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
+import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { handleLocale } from './locale-proxy';
 
 describe('public marketing locale URLs', () => {
@@ -12,7 +13,7 @@ describe('public marketing locale URLs', () => {
           const response = handleLocale({
             req: new NextRequest(`https://tuturuuu.com${pathname}`, {
               headers: {
-                cookie: `NEXT_LOCALE=${cookieLocale}`,
+                cookie: `${LOCALE_COOKIE_NAME}=${cookieLocale}`,
                 'accept-language': language,
               },
             }),
@@ -48,7 +49,10 @@ describe('public marketing locale URLs', () => {
   it('keeps unprefixed marketing URLs English despite a Vietnamese preference', () => {
     const response = handleLocale({
       req: new NextRequest('https://tuturuuu.com/products/tasks', {
-        headers: { cookie: 'NEXT_LOCALE=vi', 'accept-language': 'vi' },
+        headers: {
+          cookie: `${LOCALE_COOKIE_NAME}=vi`,
+          'accept-language': 'vi',
+        },
       }),
     });
     expect(response.headers.get('location')).toBeNull();

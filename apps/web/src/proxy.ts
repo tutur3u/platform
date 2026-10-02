@@ -444,9 +444,8 @@ function handlePublicMarketingRedirectRoute(
   }
 
   if (
-    locale &&
-    (pathnameWithoutLocale === '/calendar/meet-together' ||
-      pathnameWithoutLocale.startsWith('/calendar/meet-together/'))
+    pathnameWithoutLocale === '/calendar/meet-together' ||
+    pathnameWithoutLocale.startsWith('/calendar/meet-together/')
   ) {
     return redirectToPath(
       req,
