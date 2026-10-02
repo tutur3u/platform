@@ -121,7 +121,10 @@ function ProfileForm({
       const normalized = {
         ...fields,
         display_name: fields.display_name.trim(),
-        handle: fields.handle.trim().toLowerCase(),
+        handle:
+          fields.handle === savedFields.handle
+            ? fields.handle
+            : fields.handle.trim().toLowerCase(),
         avatar_url: fields.avatar_url.trim(),
         banner_url: fields.banner_url.trim(),
       };
