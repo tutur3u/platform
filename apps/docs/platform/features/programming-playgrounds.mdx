@@ -88,7 +88,10 @@ response, the newer editor content or deletion is preserved in the room and
 checkpointed separately. A lost HTTP acknowledgement after a successful database
 commit can leave the room's revision behind Drive; later saves fail with a
 conflict rather than overwriting it. Automatic lost-response reconciliation is
-not implemented, and reconnecting alone is not a recovery guarantee.
+not implemented, and reconnecting alone is not a recovery guarantee. The same
+fail-closed revision conflict can occur if the committed candidate and newer
+editor changes exceed the combined room budget; valid peer edits stay in the
+room, while the committed Drive revision remains authoritative.
 
 The runner sends its complete path inventory and only changed bytes. A file changed only in the editor
 is retained; files created by the runner appear in every participant's editor.

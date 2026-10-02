@@ -517,6 +517,61 @@ try {
       ),
     'newer editor bytes receive their own checkpoint'
   );
+  // Two independently valid documents must not exceed the combined room budget.
+  const boundedBefore = programmingDocumentSnapshot(editor.doc);
+  const budgetFiles = Array.from(
+    { length: 128 - boundedBefore.files.length },
+    (_, i) => ({ path: `budget-${i}.txt`, content: '' })
+  );
+  const budgetRun = randomUUID();
+  activeRun = budgetRun;
+  runnerCommitStarted = false;
+  holdRunnerCommit = new Promise<void>((resolve) => {
+    releaseCommit = resolve;
+  });
+  const boundedExport = request(
+    'runner-files',
+    'POST',
+    {
+      revision,
+      files: budgetFiles,
+      paths: [...boundedBefore.files, ...budgetFiles].map((file) => file.path),
+      baseline: Object.fromEntries(
+        boundedBefore.files.map((file) => [
+          file.path,
+          createHash('sha256').update(file.content).digest('hex'),
+        ])
+      ),
+    },
+    ticket('runner-files', 'owner', { runId: budgetRun, runnerId })
+  );
+  await until(() => runnerCommitStarted, '128-file candidate awaits commit');
+  owner.doc
+    .getMap<Y.Text>('files')
+    .set('late-budget.txt', new Y.Text('editor'));
+  owner.update();
+  await until(
+    () =>
+      programmingDocumentSnapshot(editor.doc).files.some(
+        (file) => file.path === 'late-budget.txt'
+      ),
+    'late editor file reaches room'
+  );
+  const boundedLive = programmingDocumentSnapshot(editor.doc);
+  releaseCommit();
+  assert.equal((await boundedExport).status, 409);
+  holdRunnerCommit = undefined;
+  assert.deepEqual(
+    programmingDocumentSnapshot(editor.doc),
+    boundedLive,
+    '129-file merge fails closed without discarding valid peer edits'
+  );
+  const boundedReload = await connect('owner');
+  assert.deepEqual(
+    programmingDocumentSnapshot(boundedReload.doc),
+    boundedLive,
+    'combined budget rejection leaves durable room unchanged'
+  );
   owner.doc.getMap<Y.Text>('files').set('../escape', new Y.Text('bad'));
   owner.update();
   await until(
