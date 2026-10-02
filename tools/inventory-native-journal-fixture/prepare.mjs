@@ -108,10 +108,18 @@ export function prepare(args = process.argv.slice(2)) {
     resolve(fixture, 'lib/main.dart'),
     resolve(destination, 'lib/main.dart')
   );
+  copyFileSync(
+    resolve(fixture, 'lib/fixture_runner.dart'),
+    resolve(destination, 'lib/fixture_runner.dart')
+  );
   mkdirSync(resolve(destination, 'test'), { recursive: true });
   copyFileSync(
     resolve(fixture, 'test/main_test.dart'),
     resolve(destination, 'test/main_test.dart')
+  );
+  copyFileSync(
+    resolve(fixture, 'test/journal_test.dart'),
+    resolve(destination, 'test/journal_test.dart')
   );
   copyFileSync(
     journal,

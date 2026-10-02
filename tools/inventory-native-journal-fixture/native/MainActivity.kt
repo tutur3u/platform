@@ -27,6 +27,22 @@ class MainActivity : FlutterActivity() {
                             check(temporary.renameTo(File(filesDir, "journal-proof.json")))
                             result.success(null)
                         } catch (failure: Exception) {
+                            runCatching {
+                                val run = intent.getStringExtra("journal_run") ?: ""
+                                val sha = intent.getStringExtra("journal_source_sha") ?: ""
+                                val digest = intent.getStringExtra("journal_sha256") ?: ""
+                                val phase = intent.getStringExtra("journal_phase")
+                                check(run.matches(Regex("[0-9]+-[0-9]+-android")))
+                                check(sha.matches(Regex("[0-9a-f]{40}")))
+                                check(digest.matches(Regex("[0-9a-f]{64}")))
+                                check(phase in listOf("write", "read", "cleanup", "verify-clean"))
+                                val marker = JSONObject()
+                                    .put("phase", phase).put("run_id", run)
+                                    .put("source_sha", sha).put("journal_sha256", digest)
+                                    .put("process_id", Process.myPid())
+                                    .put("passed", false).put("error", "report_failed")
+                                File(filesDir, "journal-proof.json").writeText(marker.toString())
+                            }
                             result.error("report_failed", "Fixture report failed", null)
                         }
                     }

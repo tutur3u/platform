@@ -112,9 +112,9 @@ export function collectArtifacts(
     const xcode = attempt('xcode_version_unavailable', () =>
       tool('xcodebuild', ['-version'])
     );
-    environment.xcode = text(/^Xcode ([0-9.]+)/m.exec(xcode ?? '')?.[1]);
+    environment.xcode = text(/^Xcode ([0-9.]+)$/m.exec(xcode ?? '')?.[1]);
     environment.xcode_build = text(
-      /^Build version ([A-Za-z0-9]+)/m.exec(xcode ?? '')?.[1]
+      /^Build version ([A-Za-z0-9]+)$/m.exec(xcode ?? '')?.[1]
     );
   }
   const build = attempt('build_status_unavailable', () =>
@@ -145,6 +145,8 @@ export function collectArtifacts(
     if (raw?.runtime?.[name] !== undefined)
       runtime[name] = text(raw.runtime[name], /^[0-9A-Za-z._+-]{1,96}$/);
   }
+  if (!Array.isArray(raw?.phases) || raw.phases.length !== 4)
+    errors.push('native_proof_malformed');
   const phases = (Array.isArray(raw?.phases) ? raw.phases : [])
     .slice(0, 4)
     .map((phase) => {
@@ -175,6 +177,7 @@ export function collectArtifacts(
     environment.dart,
     environment.engine_revision,
     platform === 'android' ? environment.java : environment.xcode,
+    ...(platform === 'ios' ? [environment.xcode_build] : []),
     environment.secure_storage_versions.flutter_secure_storage,
   ];
   if (versions.some((value) => !text(value)))
@@ -199,11 +202,19 @@ export function collectArtifacts(
     ) &&
     new Set(phases.map((phase) => phase.process_id)).size === 4;
   const passed =
-    errors.length === 0 && environment.build.passed && nativePassed;
+    errors.length === 0 &&
+    environment.build.stage === 'complete' &&
+    environment.build.passed &&
+    environment.build.exit_code === 0 &&
+    nativePassed;
   const proof = {
     ...input,
     passed,
-    error: passed ? null : 'evidence_incomplete',
+    error: passed
+      ? null
+      : raw?.error === 'native_report_failed'
+        ? 'native_report_failed'
+        : 'evidence_incomplete',
     runtime,
     phases,
     collection_errors: [...new Set(errors)],

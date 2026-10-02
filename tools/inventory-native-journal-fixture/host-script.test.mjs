@@ -372,12 +372,119 @@ test('complete collection whitelists metadata and requires all proof phases and 
         readFileSync(resolve(directory, 'artifacts', name), 'utf8'),
         /RAW_SECRET/
       );
+    for (const status of [
+      { stage: 'pub_get', passed: true, exit_code: 0 },
+      { stage: 'build', passed: true, exit_code: 0 },
+      { stage: 'complete', passed: true, exit_code: 1 },
+      { stage: 'complete', passed: true, exit_code: null },
+      { stage: 'unknown', passed: true, exit_code: 0 },
+    ]) {
+      writeFileSync(
+        resolve(directory, 'build-status.json'),
+        JSON.stringify(status)
+      );
+      assert.equal(collectArtifacts('android', directory, { command }), false);
+    }
+    writeFileSync(
+      resolve(directory, 'build-status.json'),
+      JSON.stringify({ stage: 'complete', passed: true, exit_code: 0 })
+    );
+    for (const extra of [{ ...proof.phases[0] }, { passed: false }, null]) {
+      writeFileSync(
+        resolve(directory, 'native-proof.json'),
+        JSON.stringify({ ...proof, phases: [...proof.phases, extra] })
+      );
+      assert.equal(collectArtifacts('android', directory, { command }), false);
+      const rejected = JSON.parse(
+        readFileSync(resolve(directory, 'artifacts/native-proof.json'))
+      );
+      assert.ok(rejected.collection_errors.includes('native_proof_malformed'));
+    }
     proof.phases.pop();
     writeFileSync(
       resolve(directory, 'native-proof.json'),
       JSON.stringify(proof)
     );
     assert.equal(collectArtifacts('android', directory, { command }), false);
+    for (const error of ['native_report_failed', 'RAW_SECRET']) {
+      writeFileSync(
+        resolve(directory, 'native-proof.json'),
+        JSON.stringify({
+          ...proof,
+          passed: false,
+          error,
+        })
+      );
+      assert.equal(collectArtifacts('android', directory, { command }), false);
+      const collected = JSON.parse(
+        readFileSync(resolve(directory, 'artifacts/native-proof.json'))
+      );
+      assert.equal(
+        collected.error,
+        error === 'native_report_failed'
+          ? 'native_report_failed'
+          : 'evidence_incomplete'
+      );
+      assert.doesNotMatch(JSON.stringify(collected), /RAW_SECRET/);
+    }
+  }));
+
+test('iOS collection requires a valid Xcode build as well as its version', () =>
+  temporary((directory) => {
+    const input = {
+      platform: 'ios',
+      source_sha: 'a'.repeat(40),
+      run_id: '1-1-ios',
+      journal_sha256: 'b'.repeat(64),
+    };
+    writeFileSync(
+      resolve(directory, 'proof-input.json'),
+      JSON.stringify(input)
+    );
+    writeFileSync(
+      resolve(directory, 'pubspec.lock'),
+      'packages:\n  flutter_secure_storage:\n    version: "11.1.1"\n'
+    );
+    writeFileSync(
+      resolve(directory, 'build-status.json'),
+      JSON.stringify({ stage: 'complete', passed: true, exit_code: 0 })
+    );
+    writeFileSync(
+      resolve(directory, 'native-proof.json'),
+      JSON.stringify({
+        ...input,
+        passed: true,
+        runtime: {
+          identifier: 'iOS-26',
+          version: '26.0',
+          build: '23A1',
+          device_id: 'synthetic-device',
+        },
+        phases: ['write', 'read', 'cleanup', 'verify-clean'].map(
+          (phase, index) => ({
+            ...input,
+            phase,
+            passed: true,
+            process_id: index + 1,
+          })
+        ),
+      })
+    );
+    for (const [build, expected] of [
+      ['23A1', true],
+      ['', false],
+      ['RAW_SECRET!', false],
+    ]) {
+      const command = (exe) =>
+        exe === 'flutter'
+          ? JSON.stringify({
+              frameworkVersion: '3.47.0',
+              dartSdkVersion: '3.12.0',
+              engineRevision: 'c'.repeat(40),
+            })
+          : `Xcode 26.0\nBuild version ${build}`;
+      assert.equal(collectArtifacts('ios', directory, { command }), expected);
+    }
   }));
 
 test('malformed phase entries produce all three sanitized failure artifacts', () =>

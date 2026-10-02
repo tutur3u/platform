@@ -131,13 +131,25 @@ collection codes; collection attempts all three allowed files without a minimum
 disk floor. Actual filesystem write failure still fails collection.
 
 Raw emulator logs go to /dev/null; full device properties and simulator catalog
-are not uploaded. The catalog is temporary selection input only. Raw build/pub output stays suppressed; the build wrapper retains only the failed stage and numeric exit code in bounded JSON and prints the same fixed diagnostic. No compiler text or command output is exported. Native exception text is replaced by fixed fixture error
+are not uploaded. The catalog is temporary selection input only. Raw build/pub
+output stays suppressed; the build wrapper retains only the failed stage and
+numeric exit code in bounded JSON and prints the same fixed diagnostic. The
+three uploaded JSON artifacts exclude compiler text and raw command output.
+Setup commands such as sdkmanager and avdmanager can retain output in GitHub
+Actions logs. Native exception text is replaced by fixed fixture error
 codes and report artifacts whitelist synthetic identifiers/results. The fixture
 has no provider clients, credentials, customer accounts or non-synthetic payload
 sources. Tool/runtime versions, native OS process IDs, generated simulator IDs and available free-disk metadata are intentionally real environment metadata; actors/workspaces/request bodies remain synthetic.
 There is no broad storage deletion; cleanup is confined to this run's synthetic
 keys and disposable emulator/simulator. CI job cancellation cleanup is best-effort
 with ephemeral runner teardown as the backstop.
+
+If the Android bridge cannot write or rename its report, it attempts a fixed-code
+failure marker with the launch's phase/run/SHA/source digest and native PID before
+returning `report_failed`. The host accepts this diagnostic only with matching
+identity and a fresh PID, fails the proof, and retains `native_report_failed` in
+the bounded artifact. If marker writing also fails, the host still times out with
+`native_proof_failed`; this is best-effort diagnosis, not recovery or a PASS path.
 
 The draft follows recovery PR #5708, but is not part of its product assembly.
 Native compilation, runtime proof, production auth lifecycle, physical-device
@@ -161,8 +173,19 @@ there with Node24, then check out the reviewed candidate only if enabled. Missin
 or disabled explicit switchboard registration fails closed. No deployments-read
 permission, secrets, GitHub environments or signing settings are added.
 
-`node --test tools/inventory-native-journal-fixture/host-script.test.mjs` tests
+`node --test tools/inventory-native-journal-fixture/*.test.mjs` tests
 platform ID/rendering, disk thresholds, artifact allowlisting/caps and trusted
 workflow ordering/guards using only host JavaScript. Importing preparation helpers
-executes no SDK/native command. Host tests execute the actual trusted config script in temporary fixture configurations and assert positive output, disabled/missing registration rejection, and missing-output rejection. They also exercise prewrite artifact rejection, partial-failure collection, and sanitized build status. Dedicated mocked Dart tests cover channel failures and cleanup-sentinel survival; they do not prove native storage. Native compilation and all runtime gates remain
+executes no SDK/native command. Host tests execute the actual trusted config
+script in temporary configurations and check registration and output guards,
+prewrite artifact rejection, failure collection, complete build status, exact
+phase counts, Xcode build metadata, and matching failure-marker identities.
+The pure `lib/fixture_runner.dart` orchestration is tested in `test/main_test.dart`
+with injected phase/exercise/report callbacks and synthetic identities, including
+success and missing-identity paths. A cached Flutter/Flutter-test-only harness can
+run those tests without storage plugin native hooks or installs. The native app
+uses that same runner with the real `exercise` callback and compile-time identity.
+`test/journal_test.dart` separately tests cleanup-sentinel survival using the
+production journal adapter's injected storage; its plugin dependency can require
+native hooks. Neither suite proves native durability. Native compilation and all runtime gates remain
 unexecuted; the corrected workflow file remains an inert proposal.

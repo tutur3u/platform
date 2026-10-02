@@ -5,15 +5,16 @@ import 'package:flutter/services.dart';
 
 // CI copies this exact production source; it never substitutes storage methods.
 import 'inventory_sale_journal.dart';
+import 'fixture_runner.dart' as runner;
 
 const _channel = MethodChannel('fixture/sale_journal');
 const _run = String.fromEnvironment('FIXTURE_RUN');
-const _sha = String.fromEnvironment('SOURCE_SHA');
-const _sourceDigest = String.fromEnvironment('JOURNAL_SHA256');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final result = await runFixture(
+  final result = await runner.runFixture(
+    exercisePhase: exercise,
+    requestIds: records.map((record) => record.requestId).toList(),
     phase: () => _channel.invokeMethod<String>('phase'),
     report: (value) => _channel.invokeMethod<void>('report', jsonEncode(value)),
   );
@@ -29,47 +30,6 @@ Future<void> main() async {
       ),
     ),
   );
-}
-
-Future<Map<String, dynamic>> runFixture({
-  required Future<String?> Function() phase,
-  required Future<void> Function(Map<String, dynamic>) report,
-  Future<void> Function(String?)? exercisePhase,
-}) async {
-  String? selected;
-  var passed = false;
-  String? error;
-  try {
-    selected = await phase();
-    require(selected != null, 'Missing fixture phase');
-  } on Object {
-    error = 'phase_channel_failed';
-  }
-  if (error == null) {
-    try {
-      require(_run.isNotEmpty && _sha.length == 40, 'Missing fixture identity');
-      await (exercisePhase ?? exercise)(selected);
-      passed = true;
-    } on Object {
-      error = 'fixture_assertion_failed';
-    }
-  }
-  final result = <String, dynamic>{
-    'phase': selected,
-    'passed': passed,
-    'error': error,
-    'run_id': _run,
-    'source_sha': _sha,
-    'journal_sha256': _sourceDigest,
-    'request_ids': records.map((record) => record.requestId).toList(),
-  };
-  try {
-    await report(result);
-  } on Object {
-    result['passed'] = false;
-    result['error'] = 'report_channel_failed';
-  }
-  return result;
 }
 
 void require(bool condition, String message) {

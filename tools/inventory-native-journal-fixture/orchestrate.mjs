@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { applicationId } from './prepare.mjs';
+import { isMatchingReportFailure } from './report-failure.mjs';
 
 const [platform, fixture, device, emulator] = process.argv.slice(2);
 if (
@@ -102,6 +103,15 @@ try {
         '--es',
         'journal_phase',
         phase,
+        '--es',
+        'journal_run',
+        expected.run_id,
+        '--es',
+        'journal_source_sha',
+        expected.source_sha,
+        '--es',
+        'journal_sha256',
+        expected.journal_sha256,
       ]);
     }
     const deadline = Date.now() + 90_000;
@@ -123,6 +133,17 @@ try {
         /* File is absent until the new process reports completion. */
       }
       await new Promise((done) => setTimeout(done, 500));
+    }
+    if (
+      isMatchingReportFailure(
+        report,
+        expected,
+        phase,
+        evidence.phases.map((prior) => prior.process_id)
+      )
+    ) {
+      evidence.error = 'native_report_failed';
+      throw Error('Native report failed');
     }
     if (
       !report?.passed ||
@@ -158,7 +179,10 @@ try {
   evidence.passed = true;
 } catch {
   evidence.passed = false;
-  evidence.error = 'native_proof_failed';
+  evidence.error =
+    evidence.error === 'native_report_failed'
+      ? 'native_report_failed'
+      : 'native_proof_failed';
   process.exitCode = 1;
 } finally {
   writeFileSync(
