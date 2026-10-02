@@ -8,7 +8,12 @@ export function makeRequest(
 ) {
   return new NextRequest(`http://localhost${pathname}`, {
     method,
-    headers,
+    headers: {
+      ...(method !== 'GET' && method !== 'HEAD'
+        ? { 'content-type': 'application/json' }
+        : {}),
+      ...headers,
+    },
     body: method === 'GET' || method === 'HEAD' ? undefined : body,
   });
 }

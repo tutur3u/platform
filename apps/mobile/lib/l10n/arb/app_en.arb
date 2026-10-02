@@ -4115,7 +4115,7 @@
     "inventoryCheckoutReconcileCart": "Reconcile cart",
     "inventoryCheckoutReconcileCartHelp": "Refresh prices and remove items that no longer match this period.",
     "inventoryCheckoutCartReconciled": "Cart updated. Review the total before submitting.",
-    "inventoryCheckoutCartRemoved": "Removed {count} unavailable items. Review the cart before submitting.",
+    "inventoryCheckoutCartRemoved": "{count, plural, one{Removed {count} unavailable item. Review the cart before submitting.} other{Removed {count} unavailable items. Review the cart before submitting.}}",
     "inventoryCheckoutPeriodRulesChanged": "Some items do not match this period. Reconcile the cart to continue.",
     "@inventoryCheckoutCartRemoved": {
         "placeholders": {
@@ -4123,5 +4123,6 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "inventorySetupSyncFirst": "Sync this new item before editing or deleting it."
 }

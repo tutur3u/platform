@@ -249,19 +249,22 @@ void main() {
       settingsRepository = SettingsRepository();
     });
 
-    for (final testCase in <({double? amount, bool clearQuantity})>[
-      (amount: null, clearQuantity: false),
-      (amount: 0, clearQuantity: false),
-      (amount: 7.5, clearQuantity: false),
-      (amount: 7.5, clearQuantity: true),
-    ]) {
+    for (final testCase
+        in <({double? amount, bool clearQuantity, bool offline})>[
+          (amount: null, clearQuantity: false, offline: false),
+          (amount: 0, clearQuantity: false, offline: false),
+          (amount: 7.5, clearQuantity: false, offline: false),
+          (amount: 7.5, clearQuantity: true, offline: false),
+          (amount: 7.5, clearQuantity: false, offline: true),
+        ]) {
       final amount = testCase.amount;
       final expectedAmount = testCase.clearQuantity ? null : amount;
+      final payloadKind = testCase.offline ? 'offline queue' : 'PATCH';
       testWidgets(
         testCase.clearQuantity
             ? 'clearing finite quantity saves null and reloads as unlimited'
             : 'unrelated edit preserves stock amount $amount '
-                  'in repository PATCH payload',
+                  'in repository $payloadKind payload',
         (tester) async {
           tester.view
             ..devicePixelRatio = 1
@@ -295,7 +298,14 @@ void main() {
               payload: any(named: 'payload'),
               entityId: 'synthetic-product',
             ),
-          ).thenAnswer((_) async => false);
+          ).thenAnswer((call) async {
+            if (testCase.offline) {
+              payload = Map<String, dynamic>.from(
+                call.namedArguments[#payload] as Map,
+              );
+            }
+            return testCase.offline;
+          });
           when(() => api.patchJson(any(), any())).thenAnswer((call) async {
             payload = Map<String, dynamic>.from(
               call.positionalArguments[1] as Map,
@@ -343,23 +353,29 @@ void main() {
               entityId: 'synthetic-product',
             ),
           ).called(1);
-          verify(
-            () => api.patchJson(
-              '/api/v1/workspaces/ws_1/products/synthetic-product',
-              payload!,
-            ),
-          ).called(1);
+          if (testCase.offline) {
+            verifyNever(() => api.patchJson(any(), any()));
+          } else {
+            verify(
+              () => api.patchJson(
+                '/api/v1/workspaces/ws_1/products/synthetic-product',
+                payload!,
+              ),
+            ).called(1);
+          }
           final savedStock = Map<String, dynamic>.from(
             (payload!['inventory'] as List).single as Map,
           );
           expect(savedStock['amount'], expectedAmount);
-          expect(invalidations, hasLength(1));
-          expect(invalidations.single.$1, 'ws_1');
-          expect(invalidations.single.$2, {
-            'inventory:overview',
-            'inventory:catalog',
-            'inventory:audit',
-          });
+          expect(invalidations, hasLength(testCase.offline ? 0 : 1));
+          if (!testCase.offline) {
+            expect(invalidations.single.$1, 'ws_1');
+            expect(invalidations.single.$2, {
+              'inventory:overview',
+              'inventory:catalog',
+              'inventory:audit',
+            });
+          }
           expect(
             await settingsRepository.getLastInventoryProductOwner('ws_1'),
             'owner_2',

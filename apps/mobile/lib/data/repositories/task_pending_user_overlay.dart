@@ -11,6 +11,7 @@ UserTasksPage overlayPendingUserTasks({
   required UserTasksPage source,
   required List<PendingMutationRecord> pending,
   DateTime? now,
+  List<Map<String, dynamic>> cachedLists = const [],
 }) {
   final base = '/api/v1/workspaces/$workspaceId/tasks';
   final relevant = pending
@@ -48,6 +49,9 @@ UserTasksPage overlayPendingUserTasks({
     for (final task in source.completed) task.id: 'completed',
   };
   final lists = {
+    for (final row in cachedLists)
+      if (row['id'] is String && row['status'] is String)
+        row['id'] as String: TaskListInfo.fromJson(row),
     for (final task in original)
       if (task.list != null) task.list!.id: task.list!,
   };
@@ -74,14 +78,21 @@ UserTasksPage overlayPendingUserTasks({
   final clock = (now ?? DateTime.now()).toLocal();
   final start = DateTime(clock.year, clock.month, clock.day);
   final end = DateTime(clock.year, clock.month, clock.day + 1);
+  final upcomingEnd = DateTime(clock.year, clock.month, clock.day + 8);
   for (final row in rows) {
     if (row['assignee_ids'] is List &&
         !(row['assignee_ids'] as List).contains(userId)) {
       continue;
     }
     final knownList = lists[row['list_id']];
-    if (knownList != null) row['list'] = knownList.toJson();
+    if (knownList != null) {
+      row['list'] = knownList.toJson();
+    } else if (row['list'] is Map &&
+        (row['list'] as Map)['id'] != row['list_id']) {
+      continue; // Unknown destination cannot inherit the previous list status.
+    }
     final task = UserTask.fromJson(row);
+    if (task.list?.status == 'closed') continue;
     if (!affected.contains(task.id)) {
       switch (originalBuckets[task.id]) {
         case 'overdue':
@@ -94,19 +105,37 @@ UserTasksPage overlayPendingUserTasks({
           completed.add(task);
       }
     } else if (row['completed'] == true ||
-        row['completed'] != false && task.isDone) {
+        row['completed'] != false &&
+            (task.isDone || task.list?.status == 'review')) {
       completed.add(task);
-    } else if (task.endDate != null && task.endDate!.isBefore(start)) {
+    } else if (task.endDate != null && task.endDate!.isBefore(clock)) {
       overdue.add(task);
     } else if (task.endDate != null && task.endDate!.isBefore(end) ||
         task.startDate != null &&
             !task.startDate!.isBefore(start) &&
             task.startDate!.isBefore(end)) {
       today.add(task);
-    } else {
+    } else if (task.endDate == null || task.endDate!.isBefore(upcomingEnd)) {
       upcoming.add(task);
     }
   }
+  int byDate(UserTask a, UserTask b) =>
+      (a.endDate ?? DateTime(1970)).compareTo(b.endDate ?? DateTime(1970));
+  overdue.sort(byDate);
+  today.sort(byDate);
+  const priorities = {'critical': 4, 'high': 3, 'normal': 2, 'low': 1};
+  upcoming.sort((a, b) {
+    if (a.endDate != null && b.endDate != null) return byDate(a, b);
+    if (a.endDate != null) return -1;
+    if (b.endDate != null) return 1;
+    final priority = (priorities[b.priority ?? 'normal'] ?? 0).compareTo(
+      priorities[a.priority ?? 'normal'] ?? 0,
+    );
+    if (priority != 0) return priority;
+    return (b.createdAt ?? DateTime(1970)).compareTo(
+      a.createdAt ?? DateTime(1970),
+    );
+  });
   final activeDelta =
       overdue.length +
       today.length +

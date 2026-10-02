@@ -32,7 +32,7 @@ extension InventoryCacheSnapshot on InventoryRepository {
     final data = overlayPendingProducts(
       wsId,
       cached.data,
-      OfflineMutationQueue.instance.pending.value,
+      _mutationQueue.pending.value,
       query: query.trim(),
     );
     return (data: data, count: cached.count + data.length - cached.data.length);
@@ -54,7 +54,12 @@ extension InventoryCacheSnapshot on InventoryRepository {
       params: {'limit': '$limit', 'offset': '0', 'periodId': periodId ?? ''},
     );
     if (cached == null) return null;
-    return _overlayPendingInventorySales(wsId, cached, periodId: periodId);
+    return _overlayPendingInventorySales(
+      wsId,
+      cached,
+      periodId: periodId,
+      pending: _mutationQueue.pending.value,
+    );
   }
 
   List<InventorySalesPeriod>? peekSalesPeriods(String wsId) => _peekInventory(

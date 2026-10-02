@@ -517,6 +517,7 @@ class InventoryRepository {
       wsId,
       periods,
       includeArchived: includeArchived,
+      pending: await _mutationQueue.listPending(),
     );
   }
 

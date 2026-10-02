@@ -31,13 +31,14 @@ void main() {
       final output = Platform.environment['OFFLINE_RENDER_DIR'];
       if (output != null) {
         await tester.runAsync(() async {
-          final loader = FontLoader('Roboto')
-            ..addFont(
-              File(
-                Platform.environment['PROFILE_MATERIAL_FONT']!,
-              ).readAsBytes().then(ByteData.sublistView),
-            );
-          await loader.load();
+          final materialFont = Platform.environment['PROFILE_MATERIAL_FONT'];
+          if (materialFont != null) {
+            final loader = FontLoader('Roboto')
+              ..addFont(
+                File(materialFont).readAsBytes().then(ByteData.sublistView),
+              );
+            await loader.load();
+          }
           final manifest =
               jsonDecode(await rootBundle.loadString('FontManifest.json'))
                   as List<dynamic>;
@@ -80,8 +81,9 @@ void main() {
       );
       addTearDown(auth.close);
       addTearDown(workspace.close);
+      final restoration = Completer<Map<String, DateTime>>();
       final coordinator = OfflinePreparationCoordinator.forTesting(
-        load: (_, _) async => {},
+        load: (_, _) => restoration.future,
         write: (_, _, _) async {},
       );
       final pending = Completer<void>();
@@ -136,6 +138,13 @@ void main() {
         });
       }
 
+      await tester.pump();
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull,
+      );
+      expect(financeCalls, 0);
+      restoration.complete({});
       await tester.pumpAndSettle();
       expect(find.text('Download all'), findsOneWidget);
       await tester.ensureVisible(find.text('Download all'));

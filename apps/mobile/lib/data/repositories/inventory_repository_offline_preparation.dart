@@ -133,6 +133,7 @@ extension InventoryOfflinePreparation on InventoryRepository {
       workspaceId: wsId,
       namespaces: {
         'inventory.products',
+        'inventory.product-options',
         'inventory.product',
         'inventory.product-image',
         'inventory.sales',
@@ -148,7 +149,12 @@ List<Map<String, dynamic>> _downloadRows(Map<String, dynamic> response) {
   if (response['data'] is! List) {
     throw const FormatException('Missing offline collection.');
   }
-  return (response['data'] as List<dynamic>).cast<Map<String, dynamic>>();
+  final source = response['data'] as List<dynamic>;
+  final rows = source.whereType<Map<String, dynamic>>().toList();
+  if (rows.length != source.length) {
+    throw const FormatException('Missing offline collection.');
+  }
+  return rows;
 }
 
 int _downloadCount(Map<String, dynamic> response) {

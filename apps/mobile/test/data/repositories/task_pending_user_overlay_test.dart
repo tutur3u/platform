@@ -97,4 +97,39 @@ void main() {
     expect(result.completed.map((task) => task.id), ['one', 'two']);
     expect(result.totalActiveTasks, 0);
   });
+  test(
+    'same-day past due edits are overdue and far future edits leave upcoming',
+    () {
+      final past = project([
+        mutation('PUT', 'two', {'end_date': '2026-10-02T10:00:00'}),
+      ]);
+      expect(past.overdue.single.id, 'two');
+      final far = project([
+        mutation('PUT', 'two', {'end_date': '2026-11-02T10:00:00'}),
+      ]);
+      expect(far.upcoming, isEmpty);
+    },
+  );
+  test(
+    'bulk destination metadata classifies review and removes closed lists',
+    () {
+      UserTasksPage move(String status) => overlayPendingUserTasks(
+        workspaceId: 'ws',
+        userId: 'me',
+        source: source,
+        now: now,
+        cachedLists: [
+          {'id': 'destination', 'status': status},
+        ],
+        pending: [
+          mutation('PUT', 'bulk', {
+            'taskIds': ['one'],
+            'operation': {'type': 'move_to_list', 'listId': 'destination'},
+          }, path: '/api/v1/workspaces/ws/tasks/bulk'),
+        ],
+      );
+      expect(move('review').completed.single.id, 'one');
+      expect(move('closed').today, isEmpty);
+    },
+  );
 }

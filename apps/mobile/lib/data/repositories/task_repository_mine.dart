@@ -8,6 +8,7 @@ extension _TaskRepositoryMine on TaskRepository {
     int completedPage = 0,
     int completedLimit = 20,
   }) async {
+    final userId = currentCacheUserId();
     final query = _encodeQueryParameters({
       'wsId': wsId,
       'isPersonal': isPersonal.toString(),
@@ -23,21 +24,41 @@ extension _TaskRepositoryMine on TaskRepository {
         rethrow;
       }
       final pending = await OfflineMutationQueue.instance.listPending();
-      if (!pending.any(
-        (item) => item.workspaceId == wsId && item.feature == 'tasks',
-      )) {
+      final optimistic = overlayPendingUserTasks(
+        workspaceId: wsId,
+        userId: currentCacheUserId(),
+        source: UserTasksPage.fromJson(const {}),
+        pending: pending,
+      );
+      if (optimistic.overdue.isEmpty &&
+          optimistic.today.isEmpty &&
+          optimistic.upcoming.isEmpty &&
+          optimistic.completed.isEmpty)
         rethrow;
-      }
       response = const {};
     }
     if (completedPage == 0 && response['hasMoreCompleted'] == true) {
       unawaited(_warmCompletedHistory(wsId, isPersonal, completedLimit));
     }
+    final pending = await OfflineMutationQueue.instance.listPending();
+    final cachedLists = await queryLocalRows(
+      store: CacheStore.instance,
+      userId: userId,
+      workspaceId: wsId,
+      namespaces: const ['tasks.boardLists'],
+    );
+    if (userId != currentCacheUserId()) {
+      throw const ApiException(
+        message: 'Task account changed.',
+        statusCode: 401,
+      );
+    }
     return overlayPendingUserTasks(
       workspaceId: wsId,
-      userId: currentCacheUserId(),
+      userId: userId,
       source: UserTasksPage.fromJson(response),
-      pending: await OfflineMutationQueue.instance.listPending(),
+      pending: pending,
+      cachedLists: cachedLists,
     );
   }
 
@@ -63,11 +84,12 @@ extension _TaskRepositoryMine on TaskRepository {
         DateTime.now().difference(previous) < const Duration(minutes: 15)) {
       return;
     }
-    _historyWarmups[key] = DateTime.now();
     try {
-      if (!await hasNetworkConnection()) {
+      if (!await hasNetworkConnection() || userId != currentCacheUserId())
         return;
-      }
+      _historyWarmups[key] = DateTime.now();
+      if (_historyWarmups.length > 64)
+        _historyWarmups.remove(_historyWarmups.keys.first);
       for (var page = 1; page <= 5; page++) {
         if (userId != currentCacheUserId()) {
           return;

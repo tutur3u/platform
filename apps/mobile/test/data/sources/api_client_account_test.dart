@@ -37,6 +37,56 @@ void main() {
           1000,
     );
   });
+  test('scoped owner rejects account switch before injected request', () async {
+    var requests = 0;
+    final api = ApiClient(
+      baseUrl: 'https://example.test',
+      authClient: client,
+      httpClient: MockClient((_) async {
+        requests++;
+        return http.Response('{}', 200);
+      }),
+    );
+    await expectLater(
+      ApiClient.runForUser('user-a', () async {
+        await Future<void>.delayed(Duration.zero);
+        when(() => auth.currentUser).thenReturn(
+          const User(
+            id: 'user-b',
+            appMetadata: {},
+            userMetadata: {},
+            aud: 'authenticated',
+            createdAt: '2026-01-01',
+          ),
+        );
+        return await api.getJson('/tasks');
+      }),
+      throwsA(isA<ApiException>()),
+    );
+    expect(requests, 0);
+    expect(() => api.checkUser('user-a'), throwsA(isA<ApiException>()));
+    api.dispose();
+  });
+  test('nested owner scope restores the outer injected client owner', () async {
+    var requests = 0;
+    final api = ApiClient(
+      baseUrl: 'https://example.test',
+      authClient: client,
+      httpClient: MockClient((_) async {
+        requests++;
+        return http.Response('{}', 200);
+      }),
+    );
+    await ApiClient.runForUser('user-a', () async {
+      await expectLater(
+        ApiClient.runForUser('user-b', () => api.getJson('/tasks')),
+        throwsA(isA<ApiException>()),
+      );
+      await api.getJson('/tasks');
+    });
+    expect(requests, 1);
+    api.dispose();
+  });
   tearDown(() => ApiVerification.requestToken = null);
   for (final token in <String?>[null, 'one-use']) {
     test('explicit challenge retries at most once: $token', () async {

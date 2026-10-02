@@ -26,14 +26,15 @@ class FinanceCubit extends Cubit<FinanceState> {
     String? Function()? currentUserId,
   }) : _repo = financeRepository,
        _store = cacheStore ?? CacheStore.instance,
+       _mutationQueue = financeRepository.mutationQueue,
        _currentUserId = currentUserId ?? currentCacheUserId,
        super(const FinanceState()) {
-    OfflineMutationQueue.instance.syncRevision.addListener(_onOfflineSync);
+    _mutationQueue.syncRevision.addListener(_onOfflineSync);
   }
 
   void _onOfflineSync() {
     final wsId = _requestedWorkspaceId;
-    if (isClosed || wsId == null) {
+    if (isClosed || wsId == null || _requestedUserId != _currentUserId()) {
       return;
     }
     unawaited(loadFinanceData(wsId).then<void>((_) {}, onError: (Object _) {}));
@@ -42,16 +43,18 @@ class FinanceCubit extends Cubit<FinanceState> {
   @override
   Future<void> close() {
     _generation++;
-    OfflineMutationQueue.instance.syncRevision.removeListener(_onOfflineSync);
+    _mutationQueue.syncRevision.removeListener(_onOfflineSync);
     return super.close();
   }
 
   final FinanceRepository _repo;
+  final OfflineMutationQueue _mutationQueue;
   final CacheStore _store;
   final String? Function() _currentUserId;
   int _generation = 0;
   String? _requestedWorkspaceId;
   String? _loadedUserId;
+  String? _requestedUserId;
 
   bool _isCurrent(int generation, String? userId, String wsId) =>
       !isClosed &&
@@ -159,6 +162,7 @@ class FinanceCubit extends Cubit<FinanceState> {
     final generation = ++_generation;
     final userId = _currentUserId();
     _requestedWorkspaceId = wsId;
+    _requestedUserId = userId;
     final hasVisibleData =
         _loadedWorkspaceId == wsId && _loadedUserId == userId;
     if (!hasVisibleData) {

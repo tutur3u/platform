@@ -206,6 +206,16 @@ void main() {
         cacheUserId: () => 'stock-health-actor',
       );
       expect((await repository.getStockHealth('ws')).activeProducts, 12);
+      final before = await store.read<Map<String, dynamic>>(
+        key: CacheKey(
+          namespace: 'inventory.stock-health',
+          userId: 'stock-health-actor',
+          workspaceId: 'ws',
+          locale: currentCacheLocaleTag(),
+        ),
+        decode: (json) => Map<String, dynamic>.from(json! as Map),
+      );
+      expect(before.hasValue, isTrue);
       when(
         () => api.getJson(path),
       ).thenThrow(const ApiException(message: 'Forbidden', statusCode: 403));

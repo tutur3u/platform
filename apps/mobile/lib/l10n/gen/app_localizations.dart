@@ -18628,7 +18628,7 @@ abstract class AppLocalizations {
   /// No description provided for @inventoryCheckoutCartRemoved.
   ///
   /// In en, this message translates to:
-  /// **'Removed {count} unavailable items. Review the cart before submitting.'**
+  /// **'{count, plural, one{Removed {count} unavailable item. Review the cart before submitting.} other{Removed {count} unavailable items. Review the cart before submitting.}}'**
   String inventoryCheckoutCartRemoved(int count);
 
   /// No description provided for @inventoryCheckoutPeriodRulesChanged.
@@ -18636,6 +18636,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Some items do not match this period. Reconcile the cart to continue.'**
   String get inventoryCheckoutPeriodRulesChanged;
+
+  /// No description provided for @inventorySetupSyncFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync this new item before editing or deleting it.'**
+  String get inventorySetupSyncFirst;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -88,7 +88,6 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage>
             _entries = result.data;
             _count = result.count;
             _hasMore = _entries.length < _count;
-            _isLoadingInitial = false;
           });
         },
       );

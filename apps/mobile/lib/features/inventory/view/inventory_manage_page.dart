@@ -285,7 +285,7 @@ class _InventoryManagePageState extends State<InventoryManagePage>
                 return const InventoryOverviewSkeleton();
               }
 
-              if (snapshot.hasError || data == null) {
+              if (data == null) {
                 return Center(
                   child: FinanceEmptyState(
                     icon: Icons.error_outline,
@@ -314,6 +314,12 @@ class _InventoryManagePageState extends State<InventoryManagePage>
                       32 + MediaQuery.paddingOf(context).bottom,
                     ),
                     children: [
+                      if (snapshot.hasError)
+                        shad.SecondaryButton(
+                          onPressed: () =>
+                              unawaited(_reload(forceRefresh: true)),
+                          child: Text(l10n.commonRetry),
+                        ),
                       Align(
                         alignment: AlignmentDirectional.centerEnd,
                         child: shad.OutlineButton(

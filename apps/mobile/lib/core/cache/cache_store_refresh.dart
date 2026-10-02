@@ -7,19 +7,12 @@ extension CacheStoreRefresh on CacheStore {
     required CacheJsonDecoder<T> decode,
     required Future<Object?> Function() fetch,
     bool forceRefresh = false,
+    bool registerRefresh = true,
+    void Function()? checkScope,
     List<String> tags = const <String>[],
   }) async {
     final awaitFresh = forceRefresh || CacheStore.awaitingRevalidation;
-    _registerRefresh(key, policy, () async {
-      await prefetch<T>(
-        key: key,
-        policy: policy,
-        decode: decode,
-        fetch: fetch,
-        forceRefresh: true,
-        tags: tags,
-      );
-    });
+    checkScope?.call();
     final revision = _revisionFor(key);
     if (_isClearing(key)) {
       return CacheReadResult<T>(state: CacheEntryState.missing);
@@ -28,12 +21,27 @@ extension CacheStoreRefresh on CacheStore {
     if (_isClearing(key) || revision != _revisionFor(key)) {
       return CacheReadResult<T>(state: CacheEntryState.missing);
     }
+    checkScope?.call();
+    if (registerRefresh) {
+      _registerRefresh(key, policy, () async {
+        await prefetch<T>(
+          key: key,
+          policy: policy,
+          decode: decode,
+          fetch: fetch,
+          forceRefresh: true,
+          checkScope: checkScope,
+          tags: tags,
+        );
+      });
+    }
     final flightKey = '$revision:${key.value}';
     Future<Object?> refresh() => _inFlight.putIfAbsent(flightKey, () {
       _flightScopes[flightKey] = (key: key, tags: tags);
       return Future<Object?>.sync(fetch)
           .then((payload) async {
             // Never resurrect data invalidated by a mutation or account logout.
+            checkScope?.call();
             if (revision == _revisionFor(key)) {
               try {
                 await write(
@@ -42,6 +50,7 @@ extension CacheStoreRefresh on CacheStore {
                   payload: payload,
                   tags: tags,
                   expectedRevision: revision,
+                  checkScope: checkScope,
                 );
               } on Object {
                 debugPrint(

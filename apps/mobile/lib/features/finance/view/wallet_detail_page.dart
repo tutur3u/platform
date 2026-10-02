@@ -65,6 +65,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
   bool _isLoadingMore = false;
   String? _error;
   int _requestToken = 0;
+  int _initialLoadGeneration = 0;
 
   @override
   void initState() {
@@ -222,15 +223,31 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
 
   Future<void> _loadInitial({bool showLoader = true}) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    await CacheStore.readWithRevalidation(() async {
-      if (!mounted ||
-          context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
-        return;
+    if (wsId == null) return;
+    final loadGeneration = ++_initialLoadGeneration;
+    setState(() {
+      _isLoadingInitial = true;
+      _isLoadingMore = false;
+      _error = null;
+    });
+    try {
+      await CacheStore.readWithRevalidation(() async {
+        if (!mounted ||
+            loadGeneration != _initialLoadGeneration ||
+            context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
+          return;
+        }
+        await _loadInitialPhase(
+          showLoader: showLoader && !CacheStore.awaitingRevalidation,
+        );
+      }, onSnapshot: (_) {});
+    } finally {
+      if (mounted &&
+          loadGeneration == _initialLoadGeneration &&
+          context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId) {
+        setState(() => _isLoadingInitial = false);
       }
-      await _loadInitialPhase(
-        showLoader: showLoader && !CacheStore.awaitingRevalidation,
-      );
-    }, onSnapshot: (_) {});
+    }
   }
 
   Future<void> _loadInitialPhase({bool showLoader = true}) async {
@@ -267,6 +284,8 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         return;
       }
 
+      // Publish the retained wallet before awaiting an uncached page.
+      setState(() => _wallet = wallet);
       final workspaceCurrencyFuture = repository.getWorkspaceDefaultCurrency(
         wsId,
         forceRefresh: showLoader && CacheStore.awaitingRevalidation,
@@ -283,10 +302,12 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         walletId: widget.walletId,
       );
 
-      final workspaceCurrency = await workspaceCurrencyFuture;
-      final exchangeRates = await exchangeRatesFuture;
-      final stats = await statsFuture;
-      final firstPage = await transactionsFuture;
+      final (workspaceCurrency, exchangeRates, stats, firstPage) = await (
+        workspaceCurrencyFuture,
+        exchangeRatesFuture,
+        statsFuture,
+        transactionsFuture,
+      ).wait;
 
       if (!mounted || requestToken != _requestToken) return;
 
@@ -311,10 +332,6 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     } on Exception {
       if (!mounted || requestToken != _requestToken) return;
       setState(() => _error = context.l10n.commonSomethingWentWrong);
-    } finally {
-      if (mounted && requestToken == _requestToken) {
-        setState(() => _isLoadingInitial = false);
-      }
     }
   }
 

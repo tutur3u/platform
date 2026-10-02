@@ -6,7 +6,6 @@ class _InventorySaleDetailDialog extends StatefulWidget {
     required this.saleId,
     required this.currency,
     required this.inventoryRepository,
-    required this.financeRepository,
     required this.canUpdateSales,
     required this.canDeleteSales,
   });
@@ -15,7 +14,6 @@ class _InventorySaleDetailDialog extends StatefulWidget {
   final String saleId;
   final String currency;
   final InventoryRepository inventoryRepository;
-  final FinanceRepository financeRepository;
   final bool canUpdateSales;
   final bool canDeleteSales;
 
@@ -71,7 +69,7 @@ class _InventorySaleDetailDialogState
 
   Future<void> _showDeleteDialog(InventorySaleDetail sale) async {
     final sheetNavigator = Navigator.of(context);
-    await shad.showDialog<bool>(
+    final deleted = await shad.showDialog<bool>(
       context: context,
       builder: (_) => AsyncDeleteConfirmationDialog(
         toastContext: context,
@@ -87,10 +85,10 @@ class _InventorySaleDetailDialogState
             context,
             _feedback(context.l10n.inventorySaleDeleted),
           );
-          sheetNavigator.pop(true);
         },
       ),
     );
+    if (deleted == true && mounted) sheetNavigator.pop(true);
   }
 
   @override

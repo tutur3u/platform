@@ -22,6 +22,7 @@ class TaskListCubit extends Cubit<TaskListState> {
     TaskBroadcastClient? taskBroadcastClient,
     TaskListState? initialState,
   }) : _repo = taskRepository,
+       _cacheUserId = currentCacheUserId(),
        _taskBroadcastClient =
            taskBroadcastClient ?? SupabaseTaskBroadcastClient(),
        super(initialState ?? const TaskListState()) {
@@ -73,8 +74,14 @@ class TaskListCubit extends Cubit<TaskListState> {
     required bool isPersonal,
     bool forceRefresh = false,
   }) async {
+    final actor = currentCacheUserId();
     await CacheStore.instance.prefetch<UserTasksPage>(
       key: _cacheKey(wsId: wsId, isPersonal: isPersonal),
+      checkScope: () {
+        if (actor != currentCacheUserId()) {
+          throw StateError('Task account changed.');
+        }
+      },
       policy: _cachePolicy,
       decode: (json) => UserTasksPage.fromJson(_decodeCacheJson(json)),
       fetch: () async => (await taskRepository.getMyTasks(
@@ -223,6 +230,11 @@ class TaskListCubit extends Cubit<TaskListState> {
         payload: page.toJson(),
         tags: [_cacheTag, 'workspace:$wsId', 'module:tasks'],
       );
+      if (isClosed ||
+          requestVersion != _requestVersion ||
+          cacheUserId != currentCacheUserId()) {
+        return;
+      }
 
       emit(
         state.copyWith(

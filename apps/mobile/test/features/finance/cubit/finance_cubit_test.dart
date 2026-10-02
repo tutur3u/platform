@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -17,6 +18,9 @@ void main() {
 
     setUp(() {
       repository = _MockFinanceRepository();
+      when(
+        () => repository.mutationQueue,
+      ).thenReturn(OfflineMutationQueue.instance);
     });
 
     blocTest<FinanceCubit, FinanceState>(

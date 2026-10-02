@@ -110,11 +110,13 @@ extension TaskRepositoryOfflinePreparation on TaskRepository {
       );
     }
     final boards = <Map<String, dynamic>>[];
+    Map<String, dynamic>? firstBoardPage;
     for (var page = 1; page <= 1000; page++) {
       final result = await read(
         'boards',
         '$base/task-boards?page=$page&pageSize=200&status=all',
       );
+      if (page == 1) firstBoardPage = result;
       if (result['boards'] is! List) {
         throw const FormatException(
           'Missing boards in offline preparation response.',
@@ -134,7 +136,15 @@ extension TaskRepositoryOfflinePreparation on TaskRepository {
         );
       }
     }
-    await read('boards', '$base/task-boards?page=1&pageSize=20&status=all');
+    await manifest.save(
+      CacheKey(
+        namespace: 'tasks.boards',
+        userId: userId,
+        workspaceId: wsId,
+        params: {'path': '$base/task-boards?page=1&pageSize=20&status=all'},
+      ),
+      {...firstBoardPage!, 'boards': boards.take(20).toList()},
+    );
     for (final board in boards) {
       final id = board['id'] as String;
       await read('boardDetail', '$base/task-boards/$id');
@@ -182,6 +192,29 @@ extension TaskRepositoryOfflinePreparation on TaskRepository {
       'tasks',
     );
     await manifest.verify();
+    await manifest.reconcile(
+      workspaceId: wsId,
+      namespaces: {
+        'tasks.workspaceMembers',
+        'tasks.estimation',
+        'tasks.labels',
+        'tasks.projects',
+        'tasks.initiatives',
+        'tasks.projectUpdates',
+        'tasks.boards',
+        'tasks.boardDetail',
+        'tasks.boardLists',
+        'tasks.deletedTasks',
+        'tasks.boardTasks',
+        'tasks.detail',
+        'tasks.relationships',
+        'tasks.mine',
+        'tasks.timeLinkOptions',
+        'tasks.list',
+        'tasks.projectLinkOptions',
+      },
+    );
+    manifest.checkScope();
     manifest.retain('tasks', wsId);
   }
 }
