@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:mobile/data/sources/offline_api_pacer.dart';
+
 /// Marks an explicit or silent preparation without sharing CAPTCHA tokens.
 /// All instances share one pacing lane; foreground requests remain independent.
 class OfflineApiRequest {
@@ -8,7 +10,7 @@ class OfflineApiRequest {
   static final Object _challengeKey = Object();
   static final Object _continueKey = Object();
   static Future<void> _lane = Future<void>.value();
-  static DateTime? _lastStarted;
+  static final _pacer = OfflineApiPacer();
 
   static bool get active => Zone.current[_bulkKey] == true;
   static bool get allowsChallenge => Zone.current[_challengeKey] != false;
@@ -35,22 +37,26 @@ class OfflineApiRequest {
     }
   }
 
-  static Future<T> paced<T>(Future<T> Function() request) {
-    if (Zone.current[_paceKey] != true) return request();
+  static Future<T> paced<T>(
+    Future<T> Function() request, {
+    Future<void> Function()? prepare,
+  }) {
+    if (Zone.current[_paceKey] != true) {
+      return () async {
+        if (prepare != null) await prepare();
+        return await request();
+      }();
+    }
     final completion = Completer<T>();
     _lane = _lane.then((_) async {
       try {
         _checkScope();
-        final lastStarted = _lastStarted;
-        if (lastStarted != null) {
-          final remaining =
-              const Duration(milliseconds: 750) -
-              DateTime.now().difference(lastStarted);
-          if (remaining > Duration.zero) await Future<void>.delayed(remaining);
-        }
-        _lastStarted = DateTime.now();
+        if (prepare != null) await prepare();
         _checkScope();
-        final result = await request();
+        final result = await _pacer.run(() {
+          _checkScope();
+          return request();
+        });
         _checkScope();
         completion.complete(result);
       } on Object catch (error, stackTrace) {
