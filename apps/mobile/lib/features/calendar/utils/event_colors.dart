@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/data/models/calendar_event.dart';
 
 /// Maps event color strings (from Supabase) to Flutter colors.
 abstract final class EventColors {
@@ -33,18 +34,44 @@ abstract final class EventColors {
     return _colorMap[color.toUpperCase()] ?? _defaultColor;
   }
 
-  /// Returns a bright variant of the color for event title text.
-  ///
-  /// Lightens the base color by blending with white so it pops on both
-  /// light and dark backgrounds — especially visible on dark themes.
-  static Color bright(String? color) {
-    final base = fromString(color);
-    return Color.lerp(base, Colors.white, 0.35)!;
+  /// Opaque provider RGB, using current source RGB only for inherited intent.
+  static Color forEvent(CalendarEvent event) {
+    final metadata = event.schedulingMetadata?['google_color'];
+    if (metadata is Map &&
+        metadata['version'] == 1 &&
+        metadata['inherited'] is bool) {
+      final inherited = metadata['inherited'] == true;
+      final resolved =
+          (inherited ? _rgb(event.sourceColor) : null) ??
+          _rgb(metadata['background']);
+      if (resolved != null) return resolved;
+    }
+    return fromString(event.color);
   }
 
-  /// Returns a low-opacity variant for card backgrounds.
-  static Color background(String? color) =>
-      fromString(color).withValues(alpha: 0.25);
+  static Color? _rgb(Object? value) {
+    if (value is! String || !RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(value)) {
+      return null;
+    }
+    return Color(0xff000000 | int.parse(value.substring(1), radix: 16));
+  }
+
+  /// Higher contrast black/white remains readable in both themes.
+  static Color foreground(CalendarEvent event) {
+    final luminance = forEvent(event).computeLuminance();
+    return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05)
+        ? Colors.black
+        : Colors.white;
+  }
+
+  static Color bright(String? color) {
+    final luminance = fromString(color).computeLuminance();
+    return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05)
+        ? Colors.black
+        : Colors.white;
+  }
+
+  static Color background(String? color) => fromString(color);
 
   /// All available color names for the color picker.
   static List<String> get allColors => [

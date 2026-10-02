@@ -1,14 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import { CalendarPreferencesProvider } from '@tuturuuu/ui/hooks/use-calendar-preferences';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventPreviewPopover } from './event-preview-popover';
 import { formatEventPreviewTime } from './event-preview-time';
 
+const colorState = vi.hoisted(() => ({
+  metadata: undefined as unknown,
+  source: undefined as string | undefined,
+}));
 vi.mock('@tuturuuu/ui/hooks/use-calendar', () => ({
   useCalendar: () => ({
     previewEvent: {
       id: 'synthetic-event',
       title: 'Synthetic timezone regression',
+      color: 'BLUE',
+      scheduling_metadata: colorState.metadata,
+      _calendarColor: colorState.source,
       start_at: '2026-09-30T11:00:00Z',
       end_at: '2026-09-30T13:00:00Z',
     },
@@ -20,6 +27,30 @@ vi.mock('@tuturuuu/ui/hooks/use-calendar', () => ({
   }),
 }));
 vi.mock('next-intl', () => ({ useLocale: () => 'en-US' }));
+
+beforeEach(() => {
+  colorState.metadata = undefined;
+  colorState.source = undefined;
+});
+it.each([false, true])(
+  'preview dot selects provider/inherited intent: %s',
+  (inherited) => {
+    colorState.source = '#ff80ab';
+    colorState.metadata = {
+      google_color: { version: 1, inherited, background: '#00ff88' },
+    };
+    const { container } = render(
+      <CalendarPreferencesProvider
+        value={{ timezone: 'UTC', timeFormat: '24h' }}
+      >
+        <EventPreviewPopover />
+      </CalendarPreferencesProvider>
+    );
+    expect(container.querySelector('.rounded-full')).toHaveStyle({
+      backgroundColor: inherited ? '#ff80ab' : '#00ff88',
+    });
+  }
+);
 
 describe('calendar quick preview timezone', () => {
   it('renders the actual preview in the calendar zone and 24-hour preference', () => {

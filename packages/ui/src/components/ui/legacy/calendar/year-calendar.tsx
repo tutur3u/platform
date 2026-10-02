@@ -4,6 +4,7 @@ import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { cn } from '@tuturuuu/utils/format';
 import { eachDayOfInterval, endOfMonth, getDay, startOfMonth } from 'date-fns';
 import { useTranslations } from 'next-intl';
@@ -24,32 +25,6 @@ interface YearCalendarProps {
   firstDayOfWeek?: number;
   onDayClick?: (date: Date) => void;
   onMonthClick?: (date: Date) => void;
-}
-
-const normalizeColor = (color: string): string => {
-  if (!color) return 'primary';
-  const normalized = color.trim().toLowerCase();
-  if (normalized === '#6b7280' || normalized === 'grey') return 'gray';
-  return normalized;
-};
-
-const EVENT_DOT_COLORS: Record<string, string> = {
-  blue: 'bg-dynamic-blue',
-  red: 'bg-dynamic-red',
-  green: 'bg-dynamic-green',
-  purple: 'bg-dynamic-purple',
-  yellow: 'bg-dynamic-yellow',
-  orange: 'bg-dynamic-orange',
-  pink: 'bg-dynamic-pink',
-  cyan: 'bg-dynamic-cyan',
-  indigo: 'bg-dynamic-indigo',
-  gray: 'bg-dynamic-gray',
-  primary: 'bg-primary',
-};
-
-function getEventDotColor(color: string): string {
-  const normalized = normalizeColor(color);
-  return EVENT_DOT_COLORS[normalized] || 'bg-primary';
 }
 
 function getWeekdayLabels(
@@ -148,7 +123,7 @@ function MiniMonth({
         const seenColors = new Set<string>();
         const dots: string[] = [];
         for (const event of events) {
-          const color = getEventDotColor(event.color || 'primary');
+          const color = calendarEventStyle(event).backgroundColor;
           if (!seenColors.has(color) && dots.length < 3) {
             seenColors.add(color);
             dots.push(color);
@@ -287,7 +262,11 @@ function DayCell({
       {hasEvents && !showLunar && (
         <div className="absolute -bottom-0.5 flex gap-px">
           {eventDots.map((color, i) => (
-            <div key={i} className={cn('h-1 w-1 rounded-full', color)} />
+            <div
+              key={i}
+              className="h-1 w-1 rounded-full"
+              style={{ backgroundColor: color }}
+            />
           ))}
         </div>
       )}
@@ -295,7 +274,11 @@ function DayCell({
       {hasEvents && showLunar && (
         <div className="absolute top-0 right-0 flex gap-px">
           {eventDots.slice(0, 1).map((color, i) => (
-            <div key={i} className={cn('h-1 w-1 rounded-full', color)} />
+            <div
+              key={i}
+              className="h-1 w-1 rounded-full"
+              style={{ backgroundColor: color }}
+            />
           ))}
         </div>
       )}

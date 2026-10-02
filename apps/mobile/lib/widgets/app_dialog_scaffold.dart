@@ -8,7 +8,8 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 class AppDialogScaffold extends StatelessWidget {
   const AppDialogScaffold({
     required this.title,
-    required this.child,
+    this.child,
+    this.slivers,
     this.description,
     this.icon,
     this.actions = const [],
@@ -17,19 +18,31 @@ class AppDialogScaffold extends StatelessWidget {
     this.maxWidth = 560,
     this.maxHeightFactor = 0.88,
     this.scrollable = true,
+    this.scrollHeader = false,
     super.key,
-  });
+  }) : assert(
+         (child == null) != (slivers == null),
+         'Supply exactly one of child or slivers.',
+       );
 
   final String title;
   final String? description;
   final IconData? icon;
-  final Widget child;
+  final Widget? child;
+
+  /// Lazy body slivers share one bounded viewport with the heading.
+  /// Supply either [child] or [slivers].
+  final List<Widget>? slivers;
   final List<Widget> actions;
   final Widget? headerTrailing;
   final EdgeInsetsGeometry padding;
   final double maxWidth;
   final double maxHeightFactor;
   final bool scrollable;
+
+  /// Let a non-sliver heading and body share the scrollable viewport.
+  /// Use for choice sheets whose scaled heading can exhaust the body height.
+  final bool scrollHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +53,81 @@ class AppDialogScaffold extends StatelessWidget {
     final body = scrollable
         ? SingleChildScrollView(padding: padding, child: child)
         : Padding(padding: padding, child: child);
+
+    final header = <Widget>[
+      Padding(
+        padding: EdgeInsets.fromLTRB(20, isCompact ? 18 : 20, 20, 0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (icon != null) ...[
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+              ),
+              const shad.Gap(12),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.typography.h4.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (description?.trim().isNotEmpty ?? false) ...[
+                    const shad.Gap(6),
+                    Text(
+                      description!,
+                      style: theme.typography.textSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (headerTrailing != null) ...[
+              const shad.Gap(12),
+              headerTrailing!,
+            ],
+          ],
+        ),
+      ),
+      const shad.Gap(18),
+    ];
+
+    final scrollContent = slivers == null
+        ? scrollable && scrollHeader
+              ? SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ...header,
+                      Padding(padding: padding, child: child),
+                    ],
+                  ),
+                )
+              : body
+        : CustomScrollView(
+            shrinkWrap: true,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(mainAxisSize: MainAxisSize.min, children: header),
+              ),
+              SliverPadding(
+                padding: padding,
+                sliver: SliverMainAxisGroup(slivers: slivers!),
+              ),
+            ],
+          );
 
     return SafeArea(
       top: false,
@@ -96,69 +184,15 @@ class AppDialogScaffold extends StatelessWidget {
                             ),
                           ),
                         ],
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            20,
-                            isCompact ? 18 : 20,
-                            20,
-                            0,
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (icon != null) ...[
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary.withValues(
-                                      alpha: 0.10,
-                                    ),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: Icon(
-                                    icon,
-                                    color: theme.colorScheme.primary,
-                                    size: 20,
-                                  ),
-                                ),
-                                const shad.Gap(12),
-                              ],
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      title,
-                                      style: theme.typography.h4.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                    if (description?.trim().isNotEmpty ??
-                                        false) ...[
-                                      const shad.Gap(6),
-                                      Text(
-                                        description!,
-                                        style: theme.typography.textSmall
-                                            .copyWith(
-                                              color: theme
-                                                  .colorScheme
-                                                  .mutedForeground,
-                                            ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              if (headerTrailing != null) ...[
-                                const shad.Gap(12),
-                                headerTrailing!,
-                              ],
-                            ],
+                        if (slivers == null && !(scrollable && scrollHeader))
+                          ...header,
+                        Flexible(
+                          child: NotificationListener<ScrollNotification>(
+                            // Both dialog body variants keep scrolling local.
+                            onNotification: (_) => true,
+                            child: scrollContent,
                           ),
                         ),
-                        const shad.Gap(18),
-                        Flexible(child: body),
                         if (actions.isNotEmpty)
                           Container(
                             width: double.infinity,
