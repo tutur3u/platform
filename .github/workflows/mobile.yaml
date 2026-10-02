@@ -15,8 +15,6 @@ on:
       - "bun.lock"
       - ".github/workflows/mobile.yaml"
   pull_request:
-    branches:
-      - main
     paths:
       - "apps/mobile/**"
       - "apps/meet-realtime/**"
