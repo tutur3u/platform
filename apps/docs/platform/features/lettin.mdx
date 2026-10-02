@@ -170,3 +170,29 @@ in a disposable Supabase project, runs strict pgTAP assertions, and generates
 actual database types. Its exact-head artifact is the type-generation source;
 manual production schema pushes are prohibited. This contract does not authorize
 production migration or deployment.
+
+
+New usernames require 5–32 lowercase letters, digits, or underscores and start
+with a letter or digit. Common platform/service names and major brands are
+reserved; separator variants and obvious official/support/numeric brand aliases
+are reserved too. Ordinary names containing a brand syllable, such as
+`pineapple`, remain valid. The canonical pool lives in
+`packages/utils/src/username-policy.json` and is checked against the database
+migration in regression tests. Existing usernames remain readable and unchanged
+legacy values do not consume a change.
+
+Every actual username change, including clearing it, starts a rolling 14-day
+cooldown. Display names can change twice in a rolling 7-day window. No-op saves
+consume neither allowance. Row triggers enforce both rules on direct writes as
+well as the shared RPC; conflicting, invalid, or rate-limited saves roll back the
+whole patch. The private per-user change history is pruned to 28 days when a
+change succeeds. Public identity read surfaces never select this private history.
+
+Avatar uploads have a Storage-enforced 2 MiB ceiling; banners use 5 MiB. Both
+allow PNG, JPEG, WebP, and GIF and retain shared public identity semantics.
+Restrictive Storage policies require server-issued, budgeted upload tickets;
+ordinary authenticated bucket uploads cannot bypass quotas. These changes build
+on the shared Postgres counter foundation in storage anti-abuse PR #5736 and
+require the complete dependent release. The identity contract additionally tests
+reserved names, rolling-window boundaries, no-ops, direct-write enforcement,
+atomic rollback, byte/MIME ceilings, and raw upload denial.
