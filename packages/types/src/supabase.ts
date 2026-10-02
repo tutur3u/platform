@@ -42533,6 +42533,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      calendar_retained_generation: {
+        Args: { p_actor_id: string; p_event_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       can_access_task_plan: {
         Args: {
           p_plan_id: string;
