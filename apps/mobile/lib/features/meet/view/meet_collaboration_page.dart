@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
+import 'package:mobile/features/meet/data/meet_collaboration_owner.dart';
 import 'package:mobile/features/meet/data/meet_collaboration_policy.dart';
 import 'package:mobile/features/meet/data/meet_preview_proxy.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -28,9 +30,19 @@ class _MeetCollaborationPageState extends State<MeetCollaborationPage> {
     (_) => Random.secure().nextInt(256).toRadixString(16).padLeft(2, '0'),
   ).join();
   late final ApiClient _api = widget.apiClient ?? ApiClient();
+  late final String? _admittedUserId = widget.call.selfUserId;
+  late final _owner = MeetCollaborationOwner(
+    userId: _admittedUserId,
+    currentUserId: () => supabase.auth.currentUser?.id,
+    isAdmitted: () =>
+        !widget.call.ended &&
+        widget.call.admission == 'admitted' &&
+        widget.call.selfUserId == _admittedUserId,
+  );
   late final _preview = MeetPreviewProxy(
     meetingId: widget.call.meetingId,
     api: _api,
+    owner: _owner,
   );
   late final Future<void> _previewReady = _preview.start();
   InAppWebViewController? _web;
@@ -58,6 +70,12 @@ class _MeetCollaborationPageState extends State<MeetCollaborationPage> {
   }
 
   void _settingsChanged() {
+    try {
+      _owner.check();
+    } on ApiException {
+      if (mounted) setState(() => _failed = true);
+      return;
+    }
     final web = _web;
     if (web == null) return;
     unawaited(
@@ -75,7 +93,9 @@ class _MeetCollaborationPageState extends State<MeetCollaborationPage> {
   MeetCollaborationPolicy get _policy =>
       MeetCollaborationPolicy(editor: _editor, nonce: _nonce);
   Future<Object?> _request(List<dynamic> args) async {
+    _owner.check();
     final current = await _web?.getUrl();
+    _owner.check();
     final request = _policy.authorize(
       arguments: args,
       currentUrl: current == null ? null : Uri.parse(current.toString()),
@@ -88,6 +108,7 @@ class _MeetCollaborationPageState extends State<MeetCollaborationPage> {
         '/api/v1/meetings/${Uri.encodeComponent(widget.call.meetingId)}/collaboration';
     if (action == 'room') {
       await _previewReady;
+      _owner.check();
       return {
         'canManage': widget.call.role == 'host',
         'previewBaseUrl': _preview.baseUrl,
@@ -95,15 +116,19 @@ class _MeetCollaborationPageState extends State<MeetCollaborationPage> {
       };
     }
     if (const {'document', 'programming'}.contains(action)) {
-      return await _api.getJson('$path?action=$action');
+      return await _owner.run(() => _api.getJson('$path?action=$action'));
     }
     if (const {'readRun', 'readTest'}.contains(action)) {
       final operation = action == 'readRun' ? 'run' : 'test';
-      return await _api.getJson(
-        '$path?action=$operation&id=${(payload! as Map)['id']}',
+      return await _owner.run(
+        () => _api.getJson(
+          '$path?action=$operation&id=${(payload! as Map)['id']}',
+        ),
       );
     }
-    return await _api.postJson(path, {'action': action, 'payload': payload});
+    return await _owner.run(
+      () => _api.postJson(path, {'action': action, 'payload': payload}),
+    );
   }
 
   @override

@@ -80,6 +80,7 @@ class CloudflareChannel {
       );
       await previous?.cancel();
       await old?.sink.close();
+      if (_closed || generation != _generation) return;
       if (_tracked != null) {
         candidate.sink.add(jsonEncode({'type': 'track', 'payload': _tracked}));
       }
@@ -101,6 +102,7 @@ class CloudflareChannel {
   }
 
   Future<void> _refreshTicket(int generation) async {
+    if (_closed || generation != _generation) return;
     try {
       final ticket = await resolveTicket();
       if (_closed || generation != _generation) return;

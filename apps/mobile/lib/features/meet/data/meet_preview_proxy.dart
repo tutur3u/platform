@@ -4,12 +4,18 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/meet/data/meet_collaboration_owner.dart';
 
 /// Loopback preview capability. Platform session tokens stay in native code.
 class MeetPreviewProxy {
-  MeetPreviewProxy({required this.meetingId, required this.api});
+  MeetPreviewProxy({
+    required this.meetingId,
+    required this.api,
+    required this.owner,
+  });
   final String meetingId;
   final ApiClient api;
+  final MeetCollaborationOwner owner;
   final String _capability = List.generate(
     32,
     (_) => Random.secure().nextInt(256).toRadixString(16).padLeft(2, '0'),
@@ -54,9 +60,16 @@ class MeetPreviewProxy {
       };
       final path =
           '/api/v1/meetings/${Uri.encodeComponent(meetingId)}/collaboration/preview/$port/$suffix?${Uri(queryParameters: query).query}';
+      owner.check();
       final response = await api
           .getStream(path, accept: '*/*', followRedirects: false)
           .timeout(const Duration(seconds: 15));
+      try {
+        owner.check();
+      } on Object {
+        await response.stream.listen(null).cancel();
+        rethrow;
+      }
       request.response.statusCode = response.statusCode;
       for (final key in [
         'content-type',
@@ -73,11 +86,13 @@ class MeetPreviewProxy {
       await for (final chunk in response.stream.timeout(
         const Duration(seconds: 15),
       )) {
+        owner.check();
         if (bytes.length + chunk.length > 600000) {
           throw const FormatException('Preview exceeds limit');
         }
         bytes.add(chunk);
       }
+      owner.check();
       request.response.add(bytes.takeBytes());
     } on Object {
       request.response.statusCode = 503;

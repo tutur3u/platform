@@ -1117,6 +1117,16 @@ loopback capability serves private preview assets. External navigation and
 preview requests cannot invoke the collaboration bridge. The call continues
 while the collaboration panel is open.
 
+Native collaboration actions and private preview responses are pinned to the
+user admitted when the panel opens. Switching accounts, revoking admission or
+ending the call denies further requests and suppresses late private results;
+preview capability possession does not transfer room access. Disposed channels
+never schedule new ticket refreshes after asynchronous socket cleanup. This
+policy applies to the native panel and its loopback proxy; normal web admission
+continues to be enforced by the server. Regression coverage includes
+`meet_collaboration_owner_test.dart`, `meet_preview_proxy_test.dart` and
+`cloudflare_channel_test.dart`.
+
 Both clients refresh short-lived channel tickets on the existing socket. Actual
 reconnects reauthorize admission and replay missing document updates. Expired
 access closes quiet connections; disconnected editing and persistence failures

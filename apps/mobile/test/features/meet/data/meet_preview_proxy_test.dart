@@ -3,12 +3,84 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/meet/data/meet_collaboration_owner.dart';
 import 'package:mobile/features/meet/data/meet_preview_proxy.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _Api extends Mock implements ApiClient {}
 
 void main() {
+  test(
+    'account switch denies an existing preview capability before HTTP',
+    () async {
+      final api = _Api();
+      var current = 'actor-a';
+      final proxy = MeetPreviewProxy(
+        meetingId: 'fixed-meeting',
+        api: api,
+        owner: MeetCollaborationOwner(
+          userId: current,
+          currentUserId: () => current,
+          isAdmitted: () => true,
+        ),
+      );
+      await proxy.start();
+      try {
+        current = 'actor-b';
+        final response = await http.get(Uri.parse('${proxy.baseUrl}3000/'));
+        expect(response.statusCode, 503);
+        expect(response.bodyBytes, isEmpty);
+        verifyNever(
+          () => api.getStream(any(), accept: '*/*', followRedirects: false),
+        );
+      } finally {
+        await proxy.close();
+      }
+    },
+  );
+
+  test(
+    'account switch during preview streaming forwards no private bytes',
+    () async {
+      final api = _Api();
+      var current = 'actor-a';
+      final consumed = Completer<void>();
+      final resume = Completer<void>();
+      Stream<List<int>> body() async* {
+        consumed.complete();
+        yield [1, 2, 3];
+        await resume.future;
+        yield [4, 5, 6];
+      }
+
+      when(
+        () => api.getStream(any(), accept: '*/*', followRedirects: false),
+      ).thenAnswer((_) async => http.StreamedResponse(body(), 200));
+      final proxy = MeetPreviewProxy(
+        meetingId: 'fixed-meeting',
+        api: api,
+        owner: MeetCollaborationOwner(
+          userId: current,
+          currentUserId: () => current,
+          isAdmitted: () => true,
+        ),
+      );
+      await proxy.start();
+      try {
+        final request = http.get(Uri.parse('${proxy.baseUrl}3000/'));
+        await consumed.future;
+        current = 'actor-b';
+        resume.complete();
+        final response = await request;
+        expect(response.statusCode, 503);
+        expect(response.bodyBytes, isEmpty);
+      } finally {
+        if (!resume.isCompleted) resume.complete();
+        await proxy.close();
+      }
+    },
+  );
+
   test(
     'private loopback previews bind the meeting and hide platform headers',
     () async {
@@ -29,7 +101,15 @@ void main() {
           },
         );
       });
-      final proxy = MeetPreviewProxy(meetingId: 'fixed-meeting', api: api);
+      final proxy = MeetPreviewProxy(
+        meetingId: 'fixed-meeting',
+        api: api,
+        owner: MeetCollaborationOwner(
+          userId: 'actor-a',
+          currentUserId: () => 'actor-a',
+          isAdmitted: () => true,
+        ),
+      );
       final client = http.Client();
       await proxy.start();
       try {
@@ -80,7 +160,15 @@ void main() {
       (_) async =>
           http.StreamedResponse(Stream.value(List.filled(600001, 1)), 200),
     );
-    final proxy = MeetPreviewProxy(meetingId: 'fixed-meeting', api: api);
+    final proxy = MeetPreviewProxy(
+      meetingId: 'fixed-meeting',
+      api: api,
+      owner: MeetCollaborationOwner(
+        userId: 'actor-a',
+        currentUserId: () => 'actor-a',
+        isAdmitted: () => true,
+      ),
+    );
     await proxy.start();
     try {
       final response = await http.get(Uri.parse('${proxy.baseUrl}3000/'));

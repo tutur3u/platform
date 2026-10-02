@@ -4,8 +4,66 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/realtime/cloudflare_channel.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+class _Channel extends Mock implements WebSocketChannel {}
+
+class _Sink extends Mock implements WebSocketSink {}
 
 void main() {
+  test(
+    'closing during old socket cleanup never resumes authorization',
+    () async {
+      final old = _Channel();
+      final next = _Channel();
+      final oldSink = _Sink();
+      final nextSink = _Sink();
+      final oldStream = StreamController<dynamic>();
+      final nextStream = StreamController<dynamic>();
+      final cleanupStarted = Completer<void>();
+      final cleanup = Completer<void>();
+      when(() => old.ready).thenAnswer((_) async {});
+      when(() => next.ready).thenAnswer((_) async {});
+      when(() => old.stream).thenAnswer((_) => oldStream.stream);
+      when(() => next.stream).thenAnswer((_) => nextStream.stream);
+      when(() => old.sink).thenReturn(oldSink);
+      when(() => next.sink).thenReturn(nextSink);
+      when(oldSink.close).thenAnswer((_) {
+        if (!cleanupStarted.isCompleted) cleanupStarted.complete();
+        return cleanup.future;
+      });
+      when(nextSink.close).thenAnswer((_) async {});
+      var tickets = 0;
+      var connections = 0;
+      final channel = CloudflareChannel(
+        refreshInterval: const Duration(milliseconds: 40),
+        resolveTicket: () async => {
+          'endpoint': 'wss://example.test/channels',
+          'token': 'ticket-${++tickets}',
+        },
+        connectSocket: (_) => connections++ == 0 ? old : next,
+        onMessage: (_) {},
+      );
+      try {
+        await channel.connect();
+        final reconnecting = channel.connect();
+        await cleanupStarted.future.timeout(const Duration(seconds: 2));
+        await channel.close();
+        cleanup.complete();
+        await reconnecting;
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        expect(tickets, 2);
+        expect(connections, 2);
+        verify(nextSink.close).called(1);
+      } finally {
+        if (!cleanup.isCompleted) cleanup.complete();
+        await channel.close();
+        await oldStream.close();
+        await nextStream.close();
+      }
+    },
+  );
   test(
     'reauthorizes reconnects, sends frames, and closes subscriptions',
     () async {
