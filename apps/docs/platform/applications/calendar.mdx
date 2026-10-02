@@ -596,6 +596,9 @@ Google move preserves the provider event identity and iCalendar UID; a move may
 include a local lock change, but combined content/color/time changes return 409
 before provider effects. Cross-account copy/delete and Microsoft sagas return 409
 before admission because their retry and compensation fences are not established.
+Google-to-Google moves of events with a calendar-scoped label also return 409
+before key resolution or admission because that label cannot be carried safely
+to another calendar. This restriction applies to legacy and candidate moves.
 
 Creation uses a UUIDv7 request ID retained across retries for the same draft. That
 ID owns the local event, encrypted intent and deterministic Google event ID.
@@ -622,3 +625,5 @@ recreation after a tombstone. This does not establish Microsoft behavior or
 permission on customer events. Source regressions cover stable draft request IDs,
 lost-response retry, unsupported operation rejection before keys/admission, and
 public native recovery without private intent.
+The admission and provider adapter label-move regressions live in
+`provider-saga-request-service.test.ts` and `provider-saga-adapter.test.ts`.
