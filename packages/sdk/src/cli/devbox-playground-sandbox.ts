@@ -23,6 +23,8 @@ import {
 } from './devbox-playground-files';
 import { sandboxDocker } from './devbox-sandbox-process';
 
+const PLAYGROUND_PATH =
+  '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
 const IMAGE = /^[-\w./:]+@sha256:[a-f0-9]{64}$/;
 const POOL_OWNER = process.env.TUTURUUU_PLAYGROUND_POOL_ID;
 const PREFIX = `ttr-playground-${POOL_OWNER ?? 'unconfigured'}-`;
@@ -104,7 +106,7 @@ export function createPlaygroundDockerArgs(
     `--label=ttr.created=${Date.now()}`,
     '--workdir=/project',
     `--tmpfs=/project:rw,nosuid,size=${Math.min(512, Math.floor(limits.sandbox_memory_mb / 2))}m,uid=65534,gid=65534`,
-    '--env=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+    `--env=PATH=${PLAYGROUND_PATH}`,
     '--env=GOCACHE=/tmp/go-cache',
     '--env=GOMODCACHE=/tmp/go-mod',
     '--env=GOTOOLCHAIN=local',
@@ -317,6 +319,7 @@ export async function getPlaygroundReadiness() {
           '--memory-swap=128m',
           '--cpus=0.25',
           '--pids-limit=32',
+          `--env=PATH=${PLAYGROUND_PATH}`,
           image,
           'sh',
           '-c',
