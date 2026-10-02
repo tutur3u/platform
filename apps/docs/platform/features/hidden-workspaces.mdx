@@ -11,11 +11,10 @@ notifications. Only its owner can read or change the preference.
 ## Workspace sheet and recovery
 
 The native mobile picker fills the screen, with the Tuturuuu logo, Workspaces
-heading, floating Search/Create controls, close and Back support. The apps/web
-workspace selector uses a standard anchored dropdown at every browser viewport,
+heading, floating Search/Create controls, close and Back support. Browser workspace
+selectors, including apps/web and shared satellite selectors, use a standard anchored dropdown at every browser viewport,
 including narrow screens. Search stays visible, the list scrolls within the
-dropdown, and Escape/outside click closes it. Shared satellite selectors retain
-their existing presentation. Search and
+dropdown, and Escape/outside click closes it. Search and
 sorting retain workspace IDs and the objects from the rendered results. Duplicate
 names cannot substitute a different workspace when a list refreshes.
 
@@ -109,7 +108,8 @@ Inventory continues using the selected authorized workspace and its currency.
 The dropdown interaction regression in
 `packages/ui/src/components/ui/custom/__tests__/workspace-picker-content.test.tsx`
 covers its bounded container, search, Hidden recovery, selection and Escape.
-The apps/web selector wrapper explicitly opts into that presentation.
+The shared browser selector defaults to this presentation; apps/web also opts
+into it explicitly. Fullscreen workspace selection is reserved for native mobile.
 
 ## Verification and integration hold
 

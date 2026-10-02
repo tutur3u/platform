@@ -94,7 +94,7 @@ export function WorkspaceSelect({
   triggerClassName,
   platformWorkspaceSetupUrl,
   cacheScope,
-  presentation = 'fullscreen',
+  presentation = 'dropdown',
 }: {
   wsId: string;
   hideLeading?: boolean;
