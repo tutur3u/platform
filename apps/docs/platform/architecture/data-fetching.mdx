@@ -844,7 +844,7 @@ export function TaskDetails({ wsId, taskId }: { wsId: string; taskId: string }) 
 4. **Don't use Realtime for infrequent updates**
    ```typescript
    // ❌ Bad: Waste of resources
-   supabase.channel('user-profiles-changes')
+   realtime.channel('user-profiles-changes')
    ```
 
 ## Related Documentation

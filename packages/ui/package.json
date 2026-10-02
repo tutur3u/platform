@@ -114,6 +114,7 @@
     "@tuturuuu/hooks": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
+    "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@types/debug": "^4.1.13",
@@ -515,7 +516,8 @@
     "./custom/satellite-notification-popover": "./src/components/ui/custom/satellite-notification-popover.tsx",
     "./custom/notification-runtime": "./src/components/ui/custom/notification-runtime.tsx",
     "./finance/invoices/query-invalidation": "./src/components/ui/finance/invoices/query-invalidation.ts",
-    "./finance/shared/charts/use-finance-confidential-visibility": "./src/components/ui/finance/shared/charts/use-finance-confidential-visibility.ts"
+    "./finance/shared/charts/use-finance-confidential-visibility": "./src/components/ui/finance/shared/charts/use-finance-confidential-visibility.ts",
+    "./text-editor/collaboration-carets": "./src/components/ui/text-editor/collaboration-carets.ts"
   },
   "packageManager": "bun@1.4.1"
 }

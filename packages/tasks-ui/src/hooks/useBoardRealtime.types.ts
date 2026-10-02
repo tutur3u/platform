@@ -1,4 +1,4 @@
-import type { createClient } from '@tuturuuu/supabase/next/client';
+import type { createClient } from '@tuturuuu/internal-api/realtime';
 
 export type RealtimeChannel = ReturnType<
   ReturnType<typeof createClient>['channel']

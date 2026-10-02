@@ -1,8 +1,8 @@
 'use client';
 
+import type { RealtimePresenceState } from '@tuturuuu/internal-api/realtime';
+import { createRealtimeClient } from '@tuturuuu/internal-api/realtime';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
 import type {
   PresenceLocation,
@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getBoardRealtimeChannelName } from './useBoardRealtime.types';
 
 type BoardPresenceChannel = ReturnType<
-  ReturnType<typeof createClient>['channel']
+  ReturnType<typeof createRealtimeClient>['channel']
 >;
 
 export type BoardPresenceState = WorkspacePresenceState;
@@ -100,12 +100,12 @@ export function useBoardPresence(
     if (setupPromiseRef.current) return setupPromiseRef.current;
 
     const promise = (async () => {
-      const supabase = createClient();
+      const realtime = createRealtimeClient();
 
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await realtime.auth.getUser();
 
         if (!user?.id || isCleanedUpRef.current) return false;
 
@@ -130,7 +130,7 @@ export function useBoardPresence(
 
         if (isCleanedUpRef.current) return false;
 
-        const channel = supabase.channel(channelName, {
+        const channel = realtime.channel(channelName, {
           config: {
             presence: {
               enabled: true,
@@ -179,7 +179,7 @@ export function useBoardPresence(
                 setupPromiseRef.current = null;
                 lastTrackSignatureRef.current = null;
                 if (deadChannel) {
-                  supabase.removeChannel(deadChannel).catch(() => {});
+                  realtime.removeChannel(deadChannel).catch(() => {});
                 }
                 resolve(false);
               }
@@ -209,7 +209,7 @@ export function useBoardPresence(
       setupPromiseRef.current = null;
       if (channelRef.current) {
         channelRef.current.untrack?.().catch(() => {});
-        createClient().removeChannel(channelRef.current);
+        createRealtimeClient().removeChannel(channelRef.current);
         channelRef.current = null;
         lastTrackSignatureRef.current = null;
       }

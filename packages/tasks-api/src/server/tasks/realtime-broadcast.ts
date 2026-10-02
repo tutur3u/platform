@@ -1,14 +1,8 @@
+import { publishChannelBroadcast } from '@tuturuuu/realtime/channels/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 export const BOARD_TASK_REALTIME_CHANNEL_PREFIX = 'board-realtime';
 export const TASK_USER_REALTIME_CHANNEL_PREFIX = 'task-user-realtime';
-
-const PRIVATE_TASK_REALTIME_CHANNEL_CONFIG = {
-  config: {
-    broadcast: { self: false },
-    private: true,
-  },
-} as const;
 
 export type TaskRealtimeEvent =
   | 'task:upsert'
@@ -115,7 +109,6 @@ function boardRealtimeChannelName(boardId: string) {
 }
 
 async function sendTaskBroadcast({
-  sbAdmin,
   channelNames,
   event,
   payload,
@@ -127,25 +120,11 @@ async function sendTaskBroadcast({
   payload: Record<string, unknown>;
   logWarning?: BroadcastLogFn;
 }) {
-  if (
-    typeof sbAdmin.channel !== 'function' ||
-    typeof sbAdmin.removeChannel !== 'function'
-  ) {
-    logWarning?.('Task realtime broadcast skipped: channel API unavailable', {
-      channelNames,
-      event,
-    });
-    return;
-  }
-
+  // Fanout scopes are derived from the authorized task mutation, never caller input.
   await Promise.all(
     channelNames.map(async (channelName) => {
-      const channel = sbAdmin.channel(
-        channelName,
-        PRIVATE_TASK_REALTIME_CHANNEL_CONFIG
-      );
       try {
-        await channel.send({
+        await publishChannelBroadcast(channelName, {
           type: 'broadcast',
           event,
           payload,
@@ -155,13 +134,6 @@ async function sendTaskBroadcast({
           channelName,
           error,
           event,
-        });
-      } finally {
-        await sbAdmin.removeChannel(channel).catch((error) => {
-          logWarning?.('Task realtime channel cleanup failed', {
-            channelName,
-            error,
-          });
         });
       }
     })

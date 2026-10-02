@@ -1,0 +1,271 @@
+---
+title: Programming realtime runbook
+description: Operate shared coding rooms, Drive checkpoints and managed playground pools.
+updatedAt: 2026-10-02
+---
+
+## Service boundaries
+
+Meet's Cloudflare worker hosts separate MeetRoom, CollaborationRoom and ChannelRoom Durable
+Objects. The programming document is authoritative inside its coding room;
+Supabase stores resource ownership, revisions and runner jobs; personal Drive
+stores file bytes. Web remains the live API source of truth. Rust migration
+registration does not move production traffic.
+
+Use `packages/realtime/collaboration` for future shared document services and
+`packages/realtime/core/token` for signed transport. Validate audiences and ticket
+kinds at each boundary. Browser join, server seed and Drive checkpoint capabilities
+are separate. Refreshing a join ticket rechecks current admission and entitlement.
+Never place runner tokens, storage credentials or platform service secrets in a
+container environment or browser payload.
+
+## Configuration
+
+- Web and the worker share `MEET_REALTIME_TOKEN_SECRET`.
+- Web uses `CLOUDFLARE_CHANNELS_URL` for `/channels`.
+- Native mobile uses `MEET_EDITOR_BASE_URL` for the trusted Meet editor origin.
+- Web uses `PROGRAMMING_REALTIME_URL` for the coding WebSocket endpoint.
+- Worker `PLATFORM_API_BASE_URL` identifies the HTTPS checkpoint API origin.
+- Managed agents use `TUTURUUU_PLAYGROUND_IMAGES`, a language-to-digest JSON map.
+- `TUTURUUU_PLAYGROUND_POOL_ID` must uniquely identify one service-owned pool.
+  Startup cleanup only targets containers bearing that pool identity.
+- `TUTURUUU_PLAYGROUND_NETWORK` optionally selects an operator-controlled Docker
+  network. Default is `none`. Before enabling dependency downloads, enforce egress
+  restrictions against private networks, instance metadata and platform internals.
+
+Images need the selected runtime, `/usr/bin/python3` for safe file sync/export,
+and preview tooling. Cache approved images before enabling the feature. Readiness
+must prove gVisor and resource controls, not merely Docker installation. Judge
+and playground features use separate runner pools so warm containers cannot
+consume another pool's reserved capacity. Infrastructure feature controls are
+operator opt-ins; customer registration alone grants no arbitrary-code capacity.
+
+## Persistence and cost
+
+Room document writes are coalesced independently of cursor/pointer messages.
+Drive checkpoints use snapshot hashes and changed-file deltas. Continuous typing
+must not indefinitely postpone an alarm. Runner exports are bounded to 30-second
+intervals and final command completion. Ticket refresh probes room initialization
+before downloading any Drive objects.
+
+Inspect checkpoint failures by category: expired entitlement, busy runner,
+optimistic revision conflict, Drive quota, payload limit or worker origin/secret
+configuration. Do not log source files, stdin, room tokens or raw storage errors.
+Keep failed durable state for reconciliation; do not overwrite a newer Drive
+revision to make an error disappear. Watch callback counts, changed bytes, Drive
+downloads, room connection counts, idle warm environments and runner queue age.
+
+## Validation and rollout
+
+Replay all migrations in an isolated local stack, then run the focused
+`hosted-playgrounds.sql` pgTAP suite. Run realtime merge/token/admission tests and
+SDK isolation/concurrency tests. Queue broad checks through `ttr resources run`.
+Require exact-commit release app builds and worker validation in CI. Local
+Wrangler dev bundling is permitted for requested runtime verification.
+
+Worker migration tags must remain chronological: existing Meet `v1`, then
+`v2-collaboration`, then `v3-channels`. Ship matching server/worker contracts before enabling any
+pool. Deployment and production migration require the repository's authorized
+release process; this page does not authorize them.
+
+## Mobile screen sharing
+
+Check `navigator.mediaDevices.getDisplayMedia` at invocation. Invoke it directly
+from a user click before asynchronous network or state transitions. Secure origin,
+focus, browser permission and operating-system permission are required. Missing
+APIs and denied capture must produce visible guidance rather than an empty action.
+
+Current [MDN compatibility data](https://github.com/mdn/browser-compat-data/blob/main/api/MediaDevices.json)
+lists no getDisplayMedia support for Chrome/Firefox on Android or Safari on iOS.
+A missing native picker on those browsers is a platform limitation. They may still
+receive a remote screen and participate in the shared coding editor. Desktop
+capture tests and mocked mobile failure tests do not prove native mobile capture;
+record real-device browser/version evidence when support changes.
+
+## Local Cloudflare runtime verification
+
+Use the real Wrangler local Worker and SQLite Durable Object runtime instead of
+mocking the object methods. No Cloudflare deployment or production token is
+required for the coding-room protocol test. From the repository root, choose a
+disposable `MEET_REALTIME_TOKEN_SECRET` and use the same value as
+`PROGRAMMING_LOCAL_TOKEN_SECRET` in the second terminal. Never copy production
+secrets into fixtures or commit `.dev.vars`.
+
+```sh
+ttr resources status --json
+ttr resources run -- bunx wrangler dev --local \
+  --config apps/meet-realtime/wrangler.jsonc \
+  --ip 127.0.0.1 --port 8876 \
+  --persist-to /tmp/tuturuuu-programming-local-state \
+  --var MEET_REALTIME_TOKEN_SECRET:$MEET_REALTIME_TOKEN_SECRET \
+  --var PLATFORM_API_BASE_URL:http://127.0.0.1:8877
+```
+
+After Wrangler reports ready, run the finite check in another terminal. Do not
+edit imported worker sources while the check runs: hot reload terminates active
+requests and sockets. The worker owns the shared validation slot; avoid nesting a
+second resource claim for its client probe.
+
+```sh
+PROGRAMMING_LOCAL_TOKEN_SECRET="$MEET_REALTIME_TOKEN_SECRET" \
+  bun apps/meet-realtime/tests/programming-local-check.ts
+```
+
+The probe serves its own signed checkpoint fixture on loopback port 8877 and
+uses fresh UUIDs for every room. It checks expired/invalid authentication,
+concurrent Yjs updates, viewer denial, cursor/pointer delivery, changed-file
+checkpoint payloads, no-op save suppression and recovery after invalid updates.
+It closes its sockets and fixture server on completion. Stop Wrangler with Ctrl-C
+to release the validation slot. Remove only the disposable persistence directory
+created for this run when it is no longer needed.
+
+This is a real transport and Durable Object integration check with a fixture at
+the Drive callback boundary. It does not prove browser layout, real Drive writes,
+runner execution, mobile capture or SFU media delivery. Replay the private schema
+and `hosted-playgrounds.sql` against a disposable Supabase stack separately. For
+full-stack testing, run the Web API against that same stack, point the worker's
+`PLATFORM_API_BASE_URL` at it, and point Web's `PROGRAMMING_REALTIME_URL` at
+`ws://127.0.0.1:8876/collaboration`. The signed callback must then reach the actual
+checkpoint handler and the user's isolated personal Drive storage. Keep root
+production API origin defaults out of this test environment.
+
+Wrangler does not emulate Cloudflare Realtime SFU or hosted TURN. Audio/video
+checks need a configured non-production provider or an explicitly labelled
+transport fixture; a `/health` response is insufficient evidence. Managed
+execution additionally requires digest-pinned images and a configured gVisor
+runtime. Never silently replace gVisor with runc to make a sandbox test pass.
+
+## Local Android device setup
+
+Install the official Android Studio SDK tools, a supported platform/system image,
+and Flutter matching the CI stable channel. Use `ANDROID_HOME` for the SDK.
+On Linux, the current T3 device hub also checks `~/Library/Android/sdk`; when
+its environment does not inherit `ANDROID_HOME`, a user-owned symlink to
+`~/Android/Sdk` allows discovery without replacing an existing SDK. Confirm
+`adb devices` and `sys.boot_completed` before diagnosing a device panel failure.
+
+Call T3 `device_list`, then `device_open`, and retain all returned agent-device
+config/session flags for each emulator. Multiple devices need distinct AVDs and
+sessions. Install an exact-SHA CI APK where available. The default development
+artifact does not include configured auth/API defines; opening its login screen
+does not prove native capture. A test app must point to an isolated backend with
+valid test authentication. Test Android MediaProjection consent, cancellation,
+publication, OS stop/revoke, and browser-to-app meeting handoff separately. iOS
+ReplayKit requires a macOS/Xcode host and its broadcast extension.
+
+## Shared channels and rich-text documents
+
+Supabase continues to provide database, authentication and storage. Realtime
+broadcast, presence, task fanout, forms, whiteboards and rich-text editors use
+Cloudflare via `@tuturuuu/internal-api/realtime`. Do not introduce Supabase
+`.channel()` consumers. Servers publish only after authorizing the affected
+resource; clients obtain service-authorized, role-scoped short-lived tickets.
+
+Run all three finite Worker probes sequentially against the local runtime:
+`channels-local-check.ts`, `documents-local-check.ts` and
+`programming-local-check.ts`. The rich-text probe verifies concurrent web/mobile
+operations, authenticated awareness, departing cursors, signed checkpoints,
+durable snapshots, in-place refresh and cross-account refresh denial. Its
+checkpoint endpoint is a fixture, not a real database write.
+
+Cloudflare fetch supports `redirect: 'manual'`, rather than `redirect: 'error'`.
+Checkpoint callbacks reject non-success responses without following redirects.
+Document checkpoints use monotonic versions captured with their state, skip
+unchanged hashes, and back off failed callbacks up to 60 seconds. An empty room
+stops after three failures and resumes when a participant reconnects. Durable
+state remains available even when the workspace Document checkpoint fails.
+
+The mobile channel regression uses actual loopback WebSockets and verifies
+reauthorization, one-socket refresh, malformed-frame handling, cleanup and
+insecure-endpoint rejection. Run it through the resource queue:
+
+```sh
+cd apps/mobile
+ttr resources run -- flutter test test/core/realtime/cloudflare_channel_test.dart
+```
+
+Native private previews use a random app-owned loopback port and a separate
+capability from the editor bridge. Only authenticated, bounded GET asset requests
+are proxied; platform headers and cookies are never forwarded to user programs.
+Android allows cleartext only for loopback; iOS allows local networking. Validate
+these settings with the native preview tests and an exact-commit configured APK.
+
+### Cross-client protocol check
+
+From the repository root run
+`ttr resources run -- bun apps/meet-realtime/tests/mobile-local-check.ts`.
+This finite harness owns the local Worker on 8876 and ticket fixture on 8878,
+starts a web peer, then runs the actual Dart channel against the same Durable
+Object. It verifies bidirectional events, account-bound presence, native ticket
+refresh without presence loss and departure. It stops its Worker and fixtures
+on completion. Ports must be free; the fixture does not use real account sessions
+or prove WebView rendering. Run native bridge and preview security tests in
+`apps/mobile/test/features/meet/data` separately.
+
+### Automated local suite and CI
+
+`ttr resources run -- bun apps/meet-realtime/tests/local-check.ts` starts a
+fresh disposable Worker, runs all three protocol probes sequentially and cleans
+up its own persistence and process. The Meet Cloudflare CI validation job runs
+the same finite suite. Mobile CI additionally runs the cross-client harness and
+requires its result before the mobile aggregate gate succeeds. These fixtures
+use no hosted Cloudflare credentials and do not deploy a Worker.
+
+### Runner exports and wire contract parity
+
+Run file exports through `/collaboration/runner-files` with a service-only,
+run-and-runner-bound capability. Do not write directly to Drive around the room:
+that advances the storage revision without updating the shared document. The
+room serializes exports, checks their baseline hashes against current editor
+content, atomically persists accepted CRDT state and runner metadata, then
+checkpoints through the signed platform callback. Conflicts preserve editor state
+and must remain visible. Local programming probes exercise generated files,
+deletions, editor-only files, retry bandwidth and conflicting writes.
+
+Both TypeScript and Dart validate incoming channel frames against the cases in
+`packages/realtime/fixtures/channel-server-frames.json`. Extend this fixture and
+both validators whenever the wire envelope changes. Native presence is replayed
+on reconnect, while in-place ticket refresh retains the existing socket. Run the
+mobile channel/schema tests as well as the real cross-client Worker harness;
+passing schema tests alone does not establish runtime parity.
+
+Private web previews use `/_ttr-preview/<capability>/` within the existing owner
+or meeting preview path. The capability expires after 60 seconds and binds the
+project, owner, port and meeting surface. It authorizes GET assets only, never a
+user session. Keep the opaque iframe sandbox, blocked runtime connections and
+no-referrer policy. Native loopback previews retain their separate random
+capability. Test module imports, stylesheets, binary responses and scope/expiry
+denial in `playground-preview.test.ts`; reload an expired preview.
+
+### Native capture device fixture
+
+Android CI builds `lib/main_realtime_fixture.dart` as a separate debug artifact,
+`android-meet-capture-fixture-apk`, alongside the regular development APK. Install
+that exact-commit artifact on a disposable emulator/device through T3 Device.
+It deliberately skips account bootstrap and joins no meeting. Press Share screen,
+accept native OS consent, and check that **decoded receiver frames increase**.
+The fixture uses the production `MeetScreenCapture` service and two WebRTC peers
+on the same device, with no external ICE/TURN servers. Screen bytes are not saved
+or sent to Cloudflare. Cancel consent, use in-app Stop and the system Stop action,
+then repeat capture. Confirm the counter stops, controls reset, and no projection
+service remains after Stop. Consent must remain a separate user action.
+
+This verifies native capture and local encode/decode, not hosted SFU publication,
+admission, or native WebView rendering. Run the bridge, preview, capture and real
+Cloudflare cross-client tests separately. Android PR builds include base-chained
+stack layers. No local release build is needed. iOS ReplayKit acceptance still
+requires a macOS/Xcode host and a physical device for app-switching/receiver
+coverage; do not claim it from an Android result.
+
+## Document backup status
+
+Web and the native collaboration shell show a warning when the workspace Document
+checkpoint is deferred or conflicts with an external edit. The Cloudflare durable
+document remains available, and editing continues. A successful retry clears the
+warning. Rejoining clients receive the stored checkpoint status. Only the Worker
+can publish `document-checkpoint`; client attempts close with policy code 1008.
+
+`packages/realtime/src/documents/provider.test.ts` validates status handling and
+`apps/meet-realtime/tests/documents-local-check.ts` covers conflict, recovery,
+rejoining, and forged save confirmations against local Cloudflare. These probes
+use a signed callback fixture; they do not prove production Drive availability.

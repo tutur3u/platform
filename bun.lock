@@ -112,7 +112,7 @@
     },
     "apps/calendar": {
       "name": "@tuturuuu/calendar",
-      "version": "0.31.0",
+      "version": "0.32.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@hookform/resolvers": "^5.9.1",
@@ -301,7 +301,7 @@
     },
     "apps/contacts": {
       "name": "@tuturuuu/contacts",
-      "version": "0.26.0",
+      "version": "0.26.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@hookform/resolvers": "^5.9.1",
@@ -365,7 +365,7 @@
     },
     "apps/database": {
       "name": "@tuturuuu/database",
-      "version": "1.38.0",
+      "version": "1.38.1",
       "devDependencies": {
         "supabase": "2.117.0",
         "typescript": "7.0.2",
@@ -453,7 +453,7 @@
     },
     "apps/finance": {
       "name": "@tuturuuu/finance",
-      "version": "0.31.1",
+      "version": "0.32.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.9.0",
         "@hookform/resolvers": "^5.9.1",
@@ -687,7 +687,7 @@
     },
     "apps/infrastructure": {
       "name": "@tuturuuu/infrastructure",
-      "version": "0.30.1",
+      "version": "0.31.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@aws-sdk/client-s3": "3.1131.0",
@@ -757,7 +757,7 @@
     },
     "apps/inventory": {
       "name": "@tuturuuu/inventory",
-      "version": "0.33.0",
+      "version": "0.34.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@tanstack/react-query": "^5.102.8",
@@ -820,6 +820,8 @@
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/offline": "workspace:*",
+        "@tuturuuu/programming-ui": "workspace:*",
+        "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/turnstile": "workspace:*",
@@ -836,6 +838,7 @@
         "postgres": "^3.4.9",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
+        "server-only": "^0.0.1",
         "zod": "^4.6.2",
       },
       "devDependencies": {
@@ -897,7 +900,7 @@
     },
     "apps/mail": {
       "name": "@tuturuuu/mail",
-      "version": "0.26.1",
+      "version": "0.27.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@aws-sdk/client-s3": "3.1131.0",
@@ -967,6 +970,7 @@
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/apis": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/education-core": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/meet-core": "workspace:*",
@@ -1397,7 +1401,7 @@
     },
     "apps/storefront": {
       "name": "@tuturuuu/storefront",
-      "version": "0.29.0",
+      "version": "0.29.1",
       "dependencies": {
         "@tanstack/react-query": "^5.102.8",
         "@tuturuuu/auth": "workspace:*",
@@ -1489,7 +1493,7 @@
     },
     "apps/tasks": {
       "name": "@tuturuuu/tasks",
-      "version": "0.36.2",
+      "version": "0.36.3",
       "dependencies": {
         "@ai-sdk/google": "^4.0.69",
         "@formatjs/intl-localematcher": "^0.9.0",
@@ -1754,6 +1758,7 @@
         "@tuturuuu/inventory-core": "workspace:*",
         "@tuturuuu/legal": "workspace:*",
         "@tuturuuu/masonry": "workspace:*",
+        "@tuturuuu/meet-core": "workspace:*",
         "@tuturuuu/microsoft": "workspace:*",
         "@tuturuuu/mind-core": "workspace:*",
         "@tuturuuu/mind-ui": "workspace:*",
@@ -2085,7 +2090,7 @@
     },
     "packages/email-service": {
       "name": "@tuturuuu/email-service",
-      "version": "0.6.1",
+      "version": "0.6.2",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.1131.0",
         "@tuturuuu/supabase": "workspace:*",
@@ -2234,8 +2239,9 @@
     },
     "packages/internal-api": {
       "name": "@tuturuuu/internal-api",
-      "version": "0.47.0",
+      "version": "0.48.0",
       "dependencies": {
+        "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
       },
@@ -2248,7 +2254,7 @@
     },
     "packages/inventory-core": {
       "name": "@tuturuuu/inventory-core",
-      "version": "0.8.3",
+      "version": "0.9.0",
       "dependencies": {
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
@@ -2310,8 +2316,10 @@
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/apis": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/education-core": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/programming-ui": "workspace:*",
         "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/storage-core": "workspace:*",
@@ -2490,13 +2498,42 @@
         "vitest": "^5.0.0",
       },
     },
+    "packages/programming-ui": {
+      "name": "@tuturuuu/programming-ui",
+      "version": "0.0.0",
+      "dependencies": {
+        "@monaco-editor/react": "4.7.0",
+        "@tanstack/react-query": "5.102.8",
+        "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/realtime": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "monaco-editor": "0.57.0",
+        "next-intl": "4.14.4",
+        "react": "19.2.8",
+        "yjs": "13.6.33",
+      },
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/react": "^19.2.18",
+        "typescript": "^7.0.2",
+        "vitest": "^5.0.0",
+      },
+      "peerDependencies": {
+        "next": "16.3.5",
+      },
+    },
     "packages/realtime": {
       "name": "@tuturuuu/realtime",
       "version": "0.10.0",
       "dependencies": {
+        "lib0": "^0.2.119",
         "mdast-util-from-markdown": "^2.0.3",
         "mdast-util-gfm": "^3.1.0",
         "micromark-extension-gfm": "^3.0.0",
+        "y-prosemirror": "^1.3.7",
+        "y-protocols": "^1.0.7",
         "yjs": "^13.6.33",
         "zod": "^4.6.2",
       },
@@ -2571,6 +2608,7 @@
       "dependencies": {
         "@aws-sdk/client-s3": "3.1131.0",
         "@aws-sdk/s3-request-presigner": "^3.1131.0",
+        "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
@@ -2617,6 +2655,7 @@
       "dependencies": {
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
@@ -2700,7 +2739,7 @@
     },
     "packages/trigger": {
       "name": "@tuturuuu/trigger",
-      "version": "0.3.2",
+      "version": "0.3.3",
       "dependencies": {
         "@tuturuuu/google": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
@@ -2726,7 +2765,7 @@
     },
     "packages/types": {
       "name": "@tuturuuu/types",
-      "version": "0.33.0",
+      "version": "0.33.1",
       "dependencies": {
         "@tiptap/react": "3.31.3",
         "react": "^19.2.8",
@@ -2749,7 +2788,7 @@
     },
     "packages/ui": {
       "name": "@tuturuuu/ui",
-      "version": "0.37.0",
+      "version": "0.37.2",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -2826,6 +2865,7 @@
         "@tuturuuu/hooks": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "@types/debug": "^4.1.13",
@@ -2916,7 +2956,7 @@
     },
     "packages/users-core": {
       "name": "@tuturuuu/users-core",
-      "version": "0.9.3",
+      "version": "0.9.4",
       "dependencies": {
         "@tuturuuu/apis": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
@@ -2976,7 +3016,7 @@
     },
     "packages/utils": {
       "name": "@tuturuuu/utils",
-      "version": "0.33.1",
+      "version": "0.33.3",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@noble/ciphers": "^2.4.0",
@@ -4781,6 +4821,8 @@
 
     "@tuturuuu/playground": ["@tuturuuu/playground@workspace:apps/playground"],
 
+    "@tuturuuu/programming-ui": ["@tuturuuu/programming-ui@workspace:packages/programming-ui"],
+
     "@tuturuuu/realtime": ["@tuturuuu/realtime@workspace:packages/realtime"],
 
     "@tuturuuu/redis": ["@tuturuuu/redis@workspace:apps/redis"],
@@ -6163,7 +6205,7 @@
 
     "leac": ["leac@0.6.0", "", {}, "sha512-y+SqErxb8h7nE/fiEX07jsbuhrpO9lL8eca7/Y1nuWV2moNlXhyd59iDGcRf6moVyDMbmTNzL40SUyrFU/yDpg=="],
 
-    "lib0": ["lib0@0.2.117", "", { "dependencies": { "isomorphic.js": "^0.2.4" }, "bin": { "0serve": "bin/0serve.js", "0gentesthtml": "bin/gentesthtml.js", "0ecdsa-generate-keypair": "bin/0ecdsa-generate-keypair.js" } }, "sha512-DeXj9X5xDCjgKLU/7RR+/HQEVzuuEUiwldwOGsHK/sfAfELGWEyTcf0x+uOvCvK3O2zPmZePXWL85vtia6GyZw=="],
+    "lib0": ["lib0@0.2.119", "", { "dependencies": { "isomorphic.js": "^0.2.4" }, "bin": { "0serve": "bin/0serve.js", "0gentesthtml": "bin/gentesthtml.js", "0ecdsa-generate-keypair": "bin/0ecdsa-generate-keypair.js" } }, "sha512-vh+TiejVy8Xm+hCdnRfn9BthGNvNUZdEXltNjVZL3TzRIKP3s1lnQh8pWd/Q0wCgY0FPAGVVjFF4ZiHUV3LFgA=="],
 
     "libbase64": ["libbase64@1.3.0", "", {}, "sha512-GgOXd0Eo6phYgh0DJtjQ2tO8dc0IVINtZJeARPeiIJqge+HdsWSuaDTe8ztQ7j/cONByDZ3zeB325AHiv5O0dg=="],
 
@@ -7861,6 +7903,8 @@
 
     "@testing-library/dom/dom-accessibility-api": ["dom-accessibility-api@0.5.16", "", {}, "sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg=="],
 
+    "@tiptap/y-tiptap/lib0": ["lib0@0.2.117", "", { "dependencies": { "isomorphic.js": "^0.2.4" }, "bin": { "0serve": "bin/0serve.js", "0gentesthtml": "bin/gentesthtml.js", "0ecdsa-generate-keypair": "bin/0ecdsa-generate-keypair.js" } }, "sha512-DeXj9X5xDCjgKLU/7RR+/HQEVzuuEUiwldwOGsHK/sfAfELGWEyTcf0x+uOvCvK3O2zPmZePXWL85vtia6GyZw=="],
+
     "@tuturuuu/lettin/@tiptap/react": ["@tiptap/react@3.31.2", "", { "dependencies": { "@types/use-sync-external-store": "^0.0.6", "fast-equals": "^5.3.3", "use-sync-external-store": "^1.4.0" }, "optionalDependencies": { "@tiptap/extension-bubble-menu": "^3.31.2", "@tiptap/extension-floating-menu": "^3.31.2" }, "peerDependencies": { "@tiptap/core": "3.31.2", "@tiptap/pm": "3.31.2", "@types/react": "^17.0.0 || ^18.0.0 || ^19.0.0", "@types/react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0", "react": "^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-ZHg1t9zwINlSgK9+Ky6K6bRP2pnX0/Z0W0DOV9B6sRhmxxK1xsUZ7o/spJ0FjKVqPYYi/Py2cQzX72nyiu2knQ=="],
 
     "@tuturuuu/lettin/@tiptap/starter-kit": ["@tiptap/starter-kit@3.31.2", "", { "dependencies": { "@tiptap/core": "3.31.2", "@tiptap/extension-blockquote": "3.31.2", "@tiptap/extension-bold": "3.31.2", "@tiptap/extension-bullet-list": "3.31.2", "@tiptap/extension-code": "3.31.2", "@tiptap/extension-code-block": "3.31.2", "@tiptap/extension-document": "3.31.2", "@tiptap/extension-dropcursor": "3.31.2", "@tiptap/extension-gapcursor": "3.31.2", "@tiptap/extension-hard-break": "3.31.2", "@tiptap/extension-heading": "3.31.2", "@tiptap/extension-horizontal-rule": "3.31.2", "@tiptap/extension-italic": "3.31.2", "@tiptap/extension-link": "3.31.2", "@tiptap/extension-list": "3.31.2", "@tiptap/extension-list-item": "3.31.2", "@tiptap/extension-list-keymap": "3.31.2", "@tiptap/extension-ordered-list": "3.31.2", "@tiptap/extension-paragraph": "3.31.2", "@tiptap/extension-strike": "3.31.2", "@tiptap/extension-text": "3.31.2", "@tiptap/extension-underline": "3.31.2", "@tiptap/extensions": "3.31.2", "@tiptap/pm": "3.31.2" } }, "sha512-oMw5Kxcqkp/ehfHVxBhJ8L4MK/yaPF55H4hU74kLzVT9G1lRYz22hHAOF3s8NJ4dDf6GUXvKnfXMNLsypaR07Q=="],
@@ -8180,6 +8224,12 @@
     "wrangler/miniflare": ["miniflare@5.20260911.0-alpha", "", { "dependencies": { "@cspotcode/source-map-support": "0.8.1", "sharp": "0.35.4", "undici": "7.29.0", "workerd": "1.20260911.1", "ws": "8.21.0", "youch": "4.1.0-beta.10" } }, "sha512-CRieJmvHx+7rNqnA5SKdsYsER6rfkUIE/jruIUw+fLhsQ4sORfuMtr3+FQzsQ9/y8lhk061V4Fl1DFdHiyBB6g=="],
 
     "xtend/object-keys": ["object-keys@0.4.0", "", {}, "sha512-ncrLw+X55z7bkl5PnUvHwFK9FcGuFYo9gtjws2XtSzL+aZ8tm830P60WJ0dSmFVaSalWieW5MD7kEdnXda9yJw=="],
+
+    "y-prosemirror/lib0": ["lib0@0.2.117", "", { "dependencies": { "isomorphic.js": "^0.2.4" }, "bin": { "0serve": "bin/0serve.js", "0gentesthtml": "bin/gentesthtml.js", "0ecdsa-generate-keypair": "bin/0ecdsa-generate-keypair.js" } }, "sha512-DeXj9X5xDCjgKLU/7RR+/HQEVzuuEUiwldwOGsHK/sfAfELGWEyTcf0x+uOvCvK3O2zPmZePXWL85vtia6GyZw=="],
+
+    "y-protocols/lib0": ["lib0@0.2.117", "", { "dependencies": { "isomorphic.js": "^0.2.4" }, "bin": { "0serve": "bin/0serve.js", "0gentesthtml": "bin/gentesthtml.js", "0ecdsa-generate-keypair": "bin/0ecdsa-generate-keypair.js" } }, "sha512-DeXj9X5xDCjgKLU/7RR+/HQEVzuuEUiwldwOGsHK/sfAfELGWEyTcf0x+uOvCvK3O2zPmZePXWL85vtia6GyZw=="],
+
+    "yjs/lib0": ["lib0@0.2.117", "", { "dependencies": { "isomorphic.js": "^0.2.4" }, "bin": { "0serve": "bin/0serve.js", "0gentesthtml": "bin/gentesthtml.js", "0ecdsa-generate-keypair": "bin/0ecdsa-generate-keypair.js" } }, "sha512-DeXj9X5xDCjgKLU/7RR+/HQEVzuuEUiwldwOGsHK/sfAfELGWEyTcf0x+uOvCvK3O2zPmZePXWL85vtia6GyZw=="],
 
     "@ai-sdk/gateway/@ai-sdk/provider-utils/@workflow/serde": ["@workflow/serde@4.1.0", "", {}, "sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ=="],
 

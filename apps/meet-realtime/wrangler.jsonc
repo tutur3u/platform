@@ -4,6 +4,9 @@
   "main": "src/worker.ts",
   "compatibility_date": "2026-06-20",
   "compatibility_flags": ["nodejs_compat"],
+  "alias": {
+    "@tuturuuu/types/primitives/playgrounds": "../../packages/types/src/primitives/playgrounds.ts"
+  },
   "dev": {
     "port": 8786,
     "local_protocol": "http"
@@ -14,6 +17,11 @@
   },
   "durable_objects": {
     "bindings": [
+      { "name": "CHANNEL_ROOM", "class_name": "ChannelRoomDurableObject" },
+      {
+        "name": "COLLABORATION_ROOM",
+        "class_name": "CollaborationRoomDurableObject"
+      },
       {
         "name": "MEET_ROOM",
         "class_name": "MeetRoomDurableObject"
@@ -24,7 +32,12 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["MeetRoomDurableObject"]
-    }
+    },
+    {
+      "tag": "v2-collaboration",
+      "new_sqlite_classes": ["CollaborationRoomDurableObject"]
+    },
+    { "tag": "v3-channels", "new_sqlite_classes": ["ChannelRoomDurableObject"] }
   ],
   "secrets": {
     "required": [

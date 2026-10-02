@@ -1,0 +1,92 @@
+---
+title: Programming playgrounds
+description: Hosted projects, personal Drive saves and collaborative programming in Learn and Meet.
+updatedAt: 2026-10-02
+---
+
+## Product decisions
+
+Learn exposes hosted playgrounds inside Programming. The first version uses
+platform-managed runners explicitly enabled by Infrastructure operators.
+Registered customer devboxes are not selected automatically. Supported language
+templates are Python, JavaScript, TypeScript, C, C++, Java, Rust, Go, Ruby, PHP and
+shell. Creation only offers languages reported ready by the managed pool.
+
+Normal access requires a paid personal-workspace subscription or the active
+`feature.learn.playgrounds` account benefit. Workspace membership or somebody
+else's paid team subscription does not confer personal playground access.
+Owners may invite named accounts as editors or viewers. Invited accounts must
+also have playground access. Only owners manage collaborators.
+
+Meet is an intentional exception: a current, confirmed `@tuturuuu.com` room
+admin elevates programming and playground access for all admitted participants
+in that room. The server checks the host's auth identity. This does not grant a
+permanent benefit, expose workspace archives or bypass the waiting room. Closing
+the meeting prevents fresh coding tickets; outstanding tickets expire shortly.
+The host selects a Learn problem or owner-controlled playground for the room.
+Learn problem execution uses public tests; hidden test data is never shared.
+
+## Files and environments
+
+Project files live in the owner's **personal workspace Tuturuuu Drive**, including
+when the project is opened from an organization education workspace or meeting.
+Server metadata points to immutable file objects. Each successful checkpoint
+advances an optimistic revision. Unchanged file objects are reused; stale writers
+must retry after reconciling their state.
+
+Editing is collaborative through Yjs documents. Remote cursors identify the
+active file and position; pointers are normalized to the coding pane. Presence
+is transient and never written to Drive. Learn and Meet reuse the same workbench
+and realtime protocol.
+
+Background saves coalesce changes and send changed text plus a path inventory.
+No-change snapshots and ticket refreshes avoid file transfers. Runner-created
+files are exported at bounded intervals and after commands complete. Dependencies
+and caches are kept in the warm isolated environment, not copied to Drive.
+Only regular UTF-8 text files are saved: at most 128 files, 256 KiB per file and
+2 MiB per project. Symlinks, binary files, `node_modules`, `.git`, `__pycache__`,
+`target` and `.venv` are excluded. Oversized files report a save failure.
+
+Managed containers use gVisor, pinned images, non-root users, resource limits and
+no host mounts or credentials. Warm environments retain installed dependencies
+until they sleep after 15 minutes idle or reach a two-hour lifetime. Drive files
+persist across sleeps; templates and project commands rebuild dependencies when
+needed. Network access is disabled unless operators configure a dedicated,
+restricted managed network.
+
+## Previews and recovery
+
+Private app previews require current project or admitted meeting authorization.
+The preview document executes in a sandboxed iframe with an opaque origin. It
+cannot read Tuturuuu cookies or expose a public runner port. Web module and CSS
+assets use a 60-second capability limited to one project and port; native assets
+use a separate loopback capability and authenticated proxy. Reload the preview
+after capability expiry. GET documents, modules, stylesheets and binary assets
+are supported; runtime API requests, WebSockets and form submission are disabled.
+Unsupported preview
+behaviors must remain explicit rather than weakening the application origin.
+
+Keep the room open when Drive reports a save failure. Durable room state and
+Drive confirmation are distinct. A busy project or conflicting revision must
+not be silently overwritten. Stopping an environment terminates its processes;
+only files already checkpointed to Drive survive.
+
+Regression evidence belongs in `apps/database/supabase/tests/hosted-playgrounds.sql`,
+`packages/realtime/src/collaboration`, Meet admission tests and SDK sandbox tests.
+See [the runbook](/build/devops/programming-realtime-runbook) for rollout gates
+and operational diagnostics.
+
+### Runner exports and collaborative edits
+
+Runner file exports join the same durable Yjs document as web and mobile editors
+before entering the owner's personal Drive revision stream. The runner sends its
+complete path inventory and only changed bytes. A file changed only in the editor
+is retained; files created by the runner appear in every participant's editor.
+If both sides change the same file, or the runner deletes a file edited by a
+participant, the export is rejected with a visible save conflict. Retrying an
+acknowledged export does not upload unchanged bytes. This applies to personal
+Learn projects and admitted Meet programming rooms. Failed initial template saves
+release only an unpublished project's quota; existing projects are retained.
+
+Regression evidence: `runner-files.test.ts`, the local programming Worker probe,
+`playground-service.test.ts`, and the hosted-playgrounds pgTAP suite.

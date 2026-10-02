@@ -8491,7 +8491,8 @@
     "timezones": "Timezones",
     "translations": "Translations",
     "users": "Users",
-    "workspaces": "Workspaces"
+    "workspaces": "Workspaces",
+    "account_benefits": "Account benefits"
   },
   "integrations-page": {
     "sepay-connected-description": "SePay connected successfully. Bank-account sync and webhook provisioning are ready to verify from this workspace.",
@@ -23232,5 +23233,32 @@
     "unnamed_wallet": "Unnamed Wallet",
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
+  },
+  "accountBenefits": {
+    "title": "Account benefits",
+    "description": "Grant features, early access and bonus AI credits with an audited reason.",
+    "userId": "Account ID",
+    "benefit": "Benefit type",
+    "feature": "Feature access",
+    "earlyAccess": "Early access",
+    "credits": "Bonus AI credits",
+    "key": "Benefit key",
+    "amount": "Credit amount",
+    "expiry": "Expires at (optional)",
+    "reason": "Reason",
+    "grant": "Grant benefit",
+    "failed": "Benefit request failed. Try again.",
+    "revoked": "Revoked",
+    "expired": "Expired",
+    "active": "Active",
+    "revoke": "Revoke"
+  },
+  "navigation": {
+    "account-benefits": "Account benefits"
+  },
+  "devboxes": {
+    "features": {
+      "playground": "Hosted playgrounds"
+    }
   }
 }

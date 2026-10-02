@@ -4235,7 +4235,11 @@
       "waiting_media": "Đang chờ phương tiện — tự động khôi phục kết nối",
       "waiting_room": "Đang chờ vào ({count})",
       "you": "Bạn",
-      "your_name": "Tên của bạn"
+      "your_name": "Tên của bạn",
+      "screen_browser_unsupported": "Trình duyệt này không thể chia sẻ màn hình. Hãy tham gia bằng trình duyệt máy tính được hỗ trợ; bạn vẫn có thể xem màn hình của người khác ở đây.",
+      "screen_permission_denied": "Chụp màn hình đã bị hủy hoặc từ chối. Cho phép chụp trong hộp chọn trình duyệt và cài đặt hệ thống. Nếu Android hoặc iOS không hiện hộp chọn, hãy dùng trình duyệt máy tính.",
+      "screen_user_gesture_required": "Nhấn Chia sẻ màn hình lần nữa trong thẻ cuộc họp đang hoạt động để mở hộp chọn trình duyệt.",
+      "share_from_mobile_app": "Mở ứng dụng di động"
     },
     "details": {
       "back": "Quay lại danh sách cuộc họp",
@@ -4381,6 +4385,16 @@
       "empty": "Bản ghi này không có dữ liệu âm thanh để phiên âm. Bản ghi đã lưu vẫn còn khả dụng.",
       "too_large": "Bản ghi này quá lớn để phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng.",
       "unsupported_type": "Định dạng bản ghi này chưa thể được phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng."
+    },
+    "collaboration": {
+      "document": "Tài liệu chung",
+      "connecting": "Đang kết nối tài liệu chung…",
+      "unavailable": "Tài liệu chung hiện không khả dụng.",
+      "live": "Trực tiếp · đồng bộ tự động",
+      "reconnecting": "Đang kết nối lại…",
+      "placeholder": "Cùng nhau viết…",
+      "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",
+      "checkpoint_deferred": "Bản lưu tại không gian làm việc đang bị chậm. Nội dung cộng tác vẫn được giữ trong phòng trong khi hệ thống thử lưu lại."
     }
   },
   "meet_workspace": {
@@ -9111,5 +9125,50 @@
     "plural": "Wallets",
     "singular": "Wallet",
     "wallet": "Phương thức thanh toán"
+  },
+  "programmingPlayground": {
+    "title": "Playground được lưu trữ",
+    "description": "Xây dựng và chạy dự án trên môi trường được quản lý. Tệp thuộc Tuturuuu Drive cá nhân của bạn.",
+    "paidRequired": "Cần tài khoản trả phí hoặc quyền lợi playground",
+    "benefitHint": "Quyền lợi tài khoản được quản lý trong Infrastructure.",
+    "name": "Tên dự án",
+    "language": "Ngôn ngữ",
+    "create": "Tạo dự án",
+    "noRunners": "Chưa có môi trường ngôn ngữ được quản lý sẵn sàng.",
+    "empty": "Dự án của bạn sẽ xuất hiện ở đây.",
+    "failed": "Yêu cầu thất bại. Thay đổi chưa lưu vẫn còn trong phòng. Hãy thử lại.",
+    "accessError": "Không thể truy cập lập trình. Kiểm tra quyền tài khoản hoặc phòng.",
+    "connecting": "Đang kết nối…",
+    "open": "Mở",
+    "offline": "Đang kết nối lại…",
+    "save": "Lưu vào Drive",
+    "run": "Chạy",
+    "stop": "Dừng môi trường",
+    "share": "Mời cộng tác",
+    "accountId": "ID tài khoản cộng tác",
+    "invite": "Cho phép chỉnh sửa",
+    "revoke": "Thu hồi quyền",
+    "shared": "Đã cập nhật quyền cộng tác.",
+    "test": "Chạy kiểm thử công khai",
+    "files": "Tệp dự án",
+    "newFile": "Đường dẫn tệp mới",
+    "addFile": "Thêm tệp",
+    "driveHint": "Lưu nền ghi các tệp đã thay đổi vào Drive cá nhân.",
+    "command": "Lệnh",
+    "stdin": "Đầu vào chuẩn",
+    "console": "Bảng điều khiển",
+    "running": "Đang chạy…",
+    "saveFailed": "Lưu Drive thất bại. Giữ phòng mở và thử lại.",
+    "saved": "Đã lưu vào Drive",
+    "backgroundSave": "Thay đổi được lưu trong nền",
+    "previewPort": "Cổng xem trước",
+    "preview": "Xem trước riêng tư",
+    "resource": "Tài nguyên lập trình",
+    "problem": "Bài tập Learn",
+    "playground": "Playground được lưu trữ",
+    "resourceId": "ID bài tập hoặc dự án",
+    "close": "Đóng phòng lập trình",
+    "chooseResource": "Chủ phòng có thể mở bài tập Learn hoặc playground cho cuộc họp này.",
+    "coding": "Lập trình cùng nhau"
   }
 }

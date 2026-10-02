@@ -5,6 +5,14 @@ import SupabaseProvider, {
   SUPABASE_PROVIDER_SYNC_ORIGIN,
 } from '../supabase-provider';
 
+const realtimeMock = vi.hoisted(() => ({ channel: null as unknown }));
+vi.mock('@tuturuuu/internal-api/realtime', () => ({
+  createRealtimeClient: () => ({
+    channel: () => realtimeMock.channel,
+    removeChannel: vi.fn(),
+  }),
+}));
+
 function createRealtimeChannel() {
   let subscribeHandler:
     | ((status: string, err?: { message?: string }) => void)
@@ -22,6 +30,7 @@ function createRealtimeChannel() {
     },
   };
 
+  realtimeMock.channel = channel;
   return channel;
 }
 

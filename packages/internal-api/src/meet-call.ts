@@ -243,3 +243,107 @@ export function updateMeetPublicInfoSettings(
     body: JSON.stringify({ publicLinkPreview }),
   });
 }
+
+export type MeetingProgrammingSelection = {
+  kind: 'playground' | 'problem';
+  id: string;
+  language: import('@tuturuuu/types/primitives/playgrounds').PlaygroundLanguage;
+};
+export type MeetingProgrammingJoin =
+  import('./playgrounds').ProgrammingCollaborationJoin & {
+    selection: MeetingProgrammingSelection;
+    problem?: import('@tuturuuu/types/primitives/programming').ProgrammingProblem;
+  };
+const programmingCallPath = (id: string) =>
+  `/api/meet-call/${encodePathSegment(id)}/programming`;
+export function getMeetProgramming(id: string) {
+  return getInternalApiClient().json<
+    MeetingProgrammingJoin | { selection: null }
+  >(programmingCallPath(id), { cache: 'no-store' });
+}
+export function selectMeetProgramming(
+  id: string,
+  selection: MeetingProgrammingSelection | null
+) {
+  return getInternalApiClient().json<{
+    selection: MeetingProgrammingSelection | null;
+  }>(programmingCallPath(id), {
+    method: 'PUT',
+    body: JSON.stringify(selection),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+export function testMeetProgramming(id: string, source: string) {
+  return getInternalApiClient().json<{ id: string }>(programmingCallPath(id), {
+    method: 'POST',
+    body: JSON.stringify({ source }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+export function getMeetProgrammingTest(id: string, test: string) {
+  return getInternalApiClient().json<{ status: string; output: string | null }>(
+    `${programmingCallPath(id)}?test=${encodePathSegment(test)}`,
+    { cache: 'no-store' }
+  );
+}
+
+export function checkpointMeetProgramming(id: string) {
+  return getInternalApiClient().json<MeetingProgrammingJoin>(
+    `${programmingCallPath(id)}?checkpoint`,
+    { method: 'POST', cache: 'no-store' }
+  );
+}
+export function createMeetPlayground(
+  id: string,
+  payload: {
+    name: string;
+    language: import('@tuturuuu/types/primitives/playgrounds').PlaygroundLanguage;
+  }
+) {
+  return getInternalApiClient().json<{ id: string }>(
+    `${programmingCallPath(id)}?create`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+}
+export function runMeetPlayground(
+  id: string,
+  payload: { operation: 'run' | 'stop'; requestId: string; stdin?: string }
+) {
+  return getInternalApiClient().json<{ runId: string }>(
+    `${programmingCallPath(id)}?run`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+}
+export function getMeetPlaygroundRun(id: string, run: string) {
+  return getInternalApiClient().json<
+    import('@tuturuuu/types/primitives/playgrounds').PlaygroundExecutionResult
+  >(`${programmingCallPath(id)}?run=${encodePathSegment(run)}`, {
+    cache: 'no-store',
+  });
+}
+
+export interface MeetingDocumentJoin {
+  documentId: string;
+  revision: number;
+  state: number[];
+  endpoint: string;
+  token: string;
+  role: 'editor';
+  user: { id: string; user_metadata: { display_name: string } };
+}
+export function getMeetDocument(
+  meetingId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<MeetingDocumentJoin>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/document`
+  );
+}

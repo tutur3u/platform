@@ -1,12 +1,16 @@
-'use client';
+import { DocumentPanel } from './document-panel';
+
+('use client');
+
 import { useQuery } from '@tanstack/react-query';
-import { Circle, Leaf, WifiOff } from '@tuturuuu/icons';
+import { Circle, Code2, FileText, Leaf, WifiOff } from '@tuturuuu/icons';
 import { MeetLivePanel } from '@tuturuuu/meet-core/features/live-assistant/live-panel';
 import { RoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import { meetingAudioSources } from '@tuturuuu/meet-core/features/meeting-ai/audio-sources';
 import { MeetingAiPanel } from '@tuturuuu/meet-core/features/meeting-ai/meeting-ai-panel';
 import { NotesSharingControl } from '@tuturuuu/meet-core/features/meeting-ai/notes-sharing-control';
 import { useMeetingAi } from '@tuturuuu/meet-core/features/meeting-ai/use-meeting-ai';
+import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
@@ -25,6 +29,7 @@ import {
   selectSelf,
 } from '../lib/call-state';
 import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
+import { encodeRoomCode } from '../lib/room-code';
 import { CallEnded } from './call-ended';
 import { CallExtras } from './call-extras';
 import { CallResourceNotice, resourceErrorKey } from './call-resource-notice';
@@ -39,6 +44,7 @@ import {
   PlaybackVolumeControl,
   PlaybackVolumeProvider,
 } from './playback-volume';
+import { ProgrammingPanel } from './programming-panel';
 import { ReactionOverlay } from './reaction-overlay';
 import { ResizableCallPanel } from './resizable-call-panel';
 import { RoomCountdown } from './room-countdown';
@@ -83,6 +89,10 @@ function CallShellContent({
   const [saving, setSaving] = useState(false);
   const [leaveDialog, setLeaveDialog] = useState(false);
   const [ending, setEnding] = useState(false);
+  const programmingT = useTranslations('programmingPlayground');
+  const [showProgramming, setShowProgramming] = useState(false);
+  const [showDocument, setShowDocument] = useState(false);
+  const collaborationT = useTranslations('meet.collaboration');
   const [showAi, setShowAi] = useState(false);
   const [outputDeviceId, setOutputDeviceId] = useState('');
   const [mentionRequest, setMentionRequest] = useState(0);
@@ -194,6 +204,21 @@ function CallShellContent({
         const key = getMediaErrorKey(error, device);
         toast.error(t(key), {
           id,
+          action:
+            device === 'screen' &&
+            ['screen_browser_unsupported', 'screen_permission_denied'].includes(
+              key
+            ) &&
+            MEETING_APP === 'meet'
+              ? {
+                  label: t('share_from_mobile_app'),
+                  onClick: () => {
+                    window.location.assign(
+                      `https://tuturuuu.com/personal/meet?room=${encodeRoomCode(meetingId)}`
+                    );
+                  },
+                }
+              : undefined,
           description:
             key === 'media_failed'
               ? t('media_error_code', { code: getMediaErrorDiagnostic(error) })
@@ -409,15 +434,29 @@ function CallShellContent({
               <ScreenAudioStatus stream={room.screenStream} />
             </div>
           )}
-          <CallStage
-            onChat={askMira}
-            audioSuppressed={sharedAudio.shared}
-            outputDeviceId={outputDeviceId}
-            room={room}
-            layout={layout}
-            focus={focus}
-            onFocus={focusFeed}
-          />
+          {showProgramming && (
+            <ProgrammingPanel
+              meetingId={meetingId}
+              canManage={canManage}
+              selection={state.settings.programming ?? null}
+            />
+          )}
+          {showDocument && (
+            <DocumentPanel meetingId={meetingId} accountId={accountId} />
+          )}
+          <div
+            className={showProgramming || showDocument ? 'hidden' : 'h-full'}
+          >
+            <CallStage
+              onChat={askMira}
+              audioSuppressed={sharedAudio.shared}
+              outputDeviceId={outputDeviceId}
+              room={room}
+              layout={layout}
+              focus={focus}
+              onFocus={focusFeed}
+            />
+          </div>
           <ReactionOverlay state={state} />
         </main>
         {showAi && canReadNotes && (
@@ -507,25 +546,56 @@ function CallShellContent({
             : undefined
         }
         extraControls={
-          <CallExtras
-            layout={layout}
-            setLayout={(next) => {
-              setLayout(next);
-              setFocus(null);
-            }}
-            look={room.cameraLook}
-            setLook={(look) => {
-              void room.setCameraLook(look).catch((error) => {
-                if (
-                  !(
-                    error instanceof DOMException && error.name === 'AbortError'
+          <>
+            {MEETING_APP === 'meet' && (
+              <Button
+                size="icon"
+                variant={showProgramming ? 'secondary' : 'ghost'}
+                aria-label={programmingT('coding')}
+                aria-pressed={showProgramming}
+                onClick={() => {
+                  setShowDocument(false);
+                  setShowProgramming((value) => !value);
+                }}
+              >
+                <Code2 className="size-5" />
+              </Button>
+            )}
+            {MEETING_APP === 'meet' && (
+              <Button
+                size="icon"
+                variant={showDocument ? 'secondary' : 'ghost'}
+                aria-label={collaborationT('document')}
+                aria-pressed={showDocument}
+                onClick={() => {
+                  setShowProgramming(false);
+                  setShowDocument((value) => !value);
+                }}
+              >
+                <FileText className="size-5" />
+              </Button>
+            )}
+            <CallExtras
+              layout={layout}
+              setLayout={(next) => {
+                setLayout(next);
+                setFocus(null);
+              }}
+              look={room.cameraLook}
+              setLook={(look) => {
+                void room.setCameraLook(look).catch((error) => {
+                  if (
+                    !(
+                      error instanceof DOMException &&
+                      error.name === 'AbortError'
+                    )
                   )
-                )
-                  toast.error(t('effects_failed'));
-              });
-            }}
-            react={room.react}
-          />
+                    toast.error(t('effects_failed'));
+                });
+              }}
+              react={room.react}
+            />
+          </>
         }
       />
       <LeaveDialog

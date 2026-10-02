@@ -2,7 +2,7 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createRealtimeClient } from '@tuturuuu/internal-api/realtime';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useCallback, useEffect, useRef } from 'react';
 import {
@@ -248,15 +248,15 @@ export function useTaskUserRealtime(userId: string | null | undefined) {
       }
     };
 
-    const supabase = createClient();
+    const realtime = createRealtimeClient();
     if (
-      typeof supabase.channel !== 'function' ||
-      typeof supabase.removeChannel !== 'function'
+      typeof realtime.channel !== 'function' ||
+      typeof realtime.removeChannel !== 'function'
     ) {
       return;
     }
 
-    const channel = supabase.channel(
+    const channel = realtime.channel(
       getTaskUserRealtimeChannelName(userId),
       PRIVATE_TASK_REALTIME_CHANNEL_CONFIG
     );
@@ -332,7 +332,7 @@ export function useTaskUserRealtime(userId: string | null | undefined) {
         clearTimeout(invalidateTimerRef.current);
         invalidateTimerRef.current = null;
       }
-      void supabase.removeChannel(channel);
+      void realtime.removeChannel(channel);
     };
   }, [broadcast, queryClient, userId]);
 

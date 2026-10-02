@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createRealtimeClient } from '@tuturuuu/internal-api/realtime';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -191,7 +191,7 @@ export function useBoardRealtime(
             destroyTimerRef.current = null;
             if (channel && channelRef.current === channel) {
               channelRef.current = null;
-              createClient().removeChannel(channel);
+              createRealtimeClient().removeChannel(channel);
             }
           }, 100);
         };
@@ -199,15 +199,15 @@ export function useBoardRealtime(
     }
 
     // ── Fresh creation path ────────────────────────────────────────
-    const supabase = createClient();
+    const realtime = createRealtimeClient();
 
     // Clean up stale channel from a previous config if present
     if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
+      realtime.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
-    const channel = supabase.channel(
+    const channel = realtime.channel(
       getBoardRealtimeChannelName(boardId),
       PRIVATE_TASK_REALTIME_CHANNEL_CONFIG
     );
@@ -332,7 +332,7 @@ export function useBoardRealtime(
         destroyTimerRef.current = null;
         if (ch && channelRef.current === ch) {
           channelRef.current = null;
-          createClient().removeChannel(ch);
+          createRealtimeClient().removeChannel(ch);
         }
       }, 100);
     };

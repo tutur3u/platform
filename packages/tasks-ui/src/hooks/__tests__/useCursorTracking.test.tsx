@@ -3,7 +3,7 @@
  */
 
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createRealtimeClient } from '@tuturuuu/internal-api/realtime';
 import type { RefObject } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PRIVATE_TASK_REALTIME_CHANNEL_CONFIG } from '../useBoardRealtime.types';
@@ -13,18 +13,18 @@ type BroadcastListener = (message: {
   payload: Record<string, unknown>;
 }) => void;
 
-type MockSupabaseClient = {
+type MockRealtimeClient = {
   channel: ReturnType<typeof vi.fn>;
   removeChannel: ReturnType<typeof vi.fn>;
 };
 
 type MockCreateClientFn = {
-  (): MockSupabaseClient;
-  mockReturnValue: (value: MockSupabaseClient) => void;
+  (): MockRealtimeClient;
+  mockReturnValue: (value: MockRealtimeClient) => void;
 };
 
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: vi.fn(),
+vi.mock('@tuturuuu/internal-api/realtime', () => ({
+  createRealtimeClient: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/utils/constants', () => ({
@@ -88,7 +88,8 @@ describe('useCursorTracking', () => {
     };
     mockRemoveChannel = vi.fn();
 
-    const mockCreateClient = createClient as unknown as MockCreateClientFn;
+    const mockCreateClient =
+      createRealtimeClient as unknown as MockCreateClientFn;
     mockCreateClient.mockReturnValue({
       channel: vi.fn(() => mockChannel),
       removeChannel: mockRemoveChannel,
@@ -110,7 +111,9 @@ describe('useCursorTracking', () => {
       })
     );
 
-    const supabaseInstance = (createClient as unknown as MockCreateClientFn)();
+    const supabaseInstance = (
+      createRealtimeClient as unknown as MockCreateClientFn
+    )();
     expect(supabaseInstance.channel).toHaveBeenCalledWith(
       'board-realtime-board-1',
       PRIVATE_TASK_REALTIME_CHANNEL_CONFIG

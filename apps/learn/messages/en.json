@@ -722,7 +722,8 @@
     "marks": "Marks",
     "practice": "Practice",
     "reports": "Reports",
-    "settings": "Learn settings"
+    "settings": "Learn settings",
+    "playgrounds": "Playgrounds"
   },
   "notifications": {
     "accept": "Accept",
@@ -817,7 +818,8 @@
     "title": "Programming",
     "topic": "Topic",
     "vietnamese": "Vietnamese",
-    "visibleCase": "Visible to learners"
+    "visibleCase": "Visible to learners",
+    "playgrounds": "Playgrounds"
   },
   "reports": {
     "description": "Read teacher feedback as simple progress notes for students and parents.",
@@ -1101,5 +1103,50 @@
       "private": "Private",
       "workspace": "Workspace"
     }
+  },
+  "programmingPlayground": {
+    "title": "Hosted playgrounds",
+    "description": "Build and run projects on managed environments. Files belong to your personal Tuturuuu Drive.",
+    "paidRequired": "A paid account or playground benefit is required",
+    "benefitHint": "Account benefits are managed in Infrastructure.",
+    "name": "Project name",
+    "language": "Language",
+    "create": "Create project",
+    "noRunners": "No managed language environments are ready.",
+    "empty": "Your projects will appear here.",
+    "failed": "Request failed. Your unsaved edits remain in this room. Try again.",
+    "accessError": "Programming access is unavailable. Check your account or room access.",
+    "connecting": "Connecting…",
+    "open": "Open",
+    "offline": "Reconnecting…",
+    "save": "Save to Drive",
+    "run": "Run",
+    "stop": "Stop environment",
+    "share": "Invite collaborators",
+    "accountId": "Collaborator account ID",
+    "invite": "Allow editing",
+    "revoke": "Revoke access",
+    "shared": "Collaboration access updated.",
+    "test": "Run public tests",
+    "files": "Project files",
+    "newFile": "New file path",
+    "addFile": "Add file",
+    "driveHint": "Background saves write changed files to personal Drive.",
+    "command": "Command",
+    "stdin": "Standard input",
+    "console": "Console",
+    "running": "Running…",
+    "saveFailed": "Drive save failed. Keep this room open and retry.",
+    "saved": "Saved to Drive",
+    "backgroundSave": "Changes save in the background",
+    "previewPort": "Preview port",
+    "preview": "Private preview",
+    "resource": "Programming resource",
+    "problem": "Learn problem",
+    "playground": "Hosted playground",
+    "resourceId": "Problem or project ID",
+    "close": "Close coding room",
+    "chooseResource": "The host can open a Learn problem or playground for this meeting.",
+    "coding": "Co-programming"
   }
 }

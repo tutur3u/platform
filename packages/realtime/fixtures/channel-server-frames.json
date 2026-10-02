@@ -1,0 +1,73 @@
+[
+  {
+    "name": "broadcast object",
+    "valid": true,
+    "frame": {
+      "type": "broadcast",
+      "event": "task:upsert",
+      "payload": { "id": "task" }
+    }
+  },
+  {
+    "name": "broadcast null",
+    "valid": true,
+    "frame": { "type": "broadcast", "event": "ping", "payload": null }
+  },
+  {
+    "name": "empty presence",
+    "valid": true,
+    "frame": { "type": "presence", "state": {} }
+  },
+  {
+    "name": "multiple presence sessions",
+    "valid": true,
+    "frame": {
+      "type": "presence",
+      "state": {
+        "actor": [
+          { "presence_ref": "session-a", "file": "main.py" },
+          { "presence_ref": "session-b" }
+        ]
+      }
+    }
+  },
+  { "name": "unknown frame", "valid": false, "frame": { "type": "unknown" } },
+  {
+    "name": "missing payload",
+    "valid": false,
+    "frame": { "type": "broadcast", "event": "task:upsert" }
+  },
+  {
+    "name": "empty event",
+    "valid": false,
+    "frame": { "type": "broadcast", "event": "", "payload": {} }
+  },
+  {
+    "name": "extra envelope field",
+    "valid": false,
+    "frame": {
+      "type": "broadcast",
+      "event": "ping",
+      "payload": {},
+      "unexpected": true
+    }
+  },
+  {
+    "name": "missing presence reference",
+    "valid": false,
+    "frame": {
+      "type": "presence",
+      "state": { "actor": [{ "file": "main.py" }] }
+    }
+  },
+  {
+    "name": "invalid presence session",
+    "valid": false,
+    "frame": { "type": "presence", "state": { "actor": [null] } }
+  },
+  {
+    "name": "invalid presence state",
+    "valid": false,
+    "frame": { "type": "presence", "state": [] }
+  }
+]
