@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Tables } from '@tuturuuu/types';
 import { EXOCORPSE_WORKSPACE_ID, exocorpseWikiCollections } from './lettin.js';
 /** Caller must verify staff email and source workspace permission before invoking. */
 export async function readExocorpseWikiSource() {
@@ -29,9 +30,25 @@ export async function readExocorpseWikiSource() {
       throw new Error('Exocorpse import exceeds 1000 records');
   }
   const ids = entries.map((entry) => entry.id);
-  const blocks = [],
-    assets = [],
-    relations = [];
+  const blocks: Pick<
+    Tables<'workspace_external_project_blocks'>,
+    'entry_id' | 'block_type' | 'content' | 'title' | 'sort_order'
+  >[] = [];
+  const assets: Pick<
+    Tables<'workspace_external_project_assets'>,
+    | 'id'
+    | 'entry_id'
+    | 'asset_type'
+    | 'source_url'
+    | 'storage_path'
+    | 'alt_text'
+    | 'metadata'
+    | 'sort_order'
+  >[] = [];
+  const relations: Pick<
+    Tables<'workspace_external_project_entry_relations'>,
+    'from_entry_id' | 'to_entry_id' | 'relation_type' | 'metadata'
+  >[] = [];
   // Keep PostgREST URLs and response pages bounded.
   for (let offset = 0; offset < ids.length; offset += 50) {
     const batch = ids.slice(offset, offset + 50);
