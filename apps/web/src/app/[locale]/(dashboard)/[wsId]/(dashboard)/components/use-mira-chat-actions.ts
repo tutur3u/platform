@@ -2,6 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import type { UIMessage } from '@tuturuuu/ai/types';
+import { createChatGPTChat } from '@tuturuuu/internal-api/chatgpt';
 import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
@@ -72,6 +73,14 @@ export function useMiraChatActions({
 }: UseMiraChatActionsParams) {
   const { mutateAsync: createChatMutation } = useMutation({
     mutationFn: async (userInput: string) => {
+      if (gatewayModelId.startsWith('chatgpt/')) {
+        const data = await createChatGPTChat({
+          id: stableChatId,
+          model: gatewayModelId,
+          message: userInput,
+        });
+        return { ...data, userInput };
+      }
       const res = await fetch('/api/ai/chat/new', {
         credentials: 'include',
         cache: 'no-store',

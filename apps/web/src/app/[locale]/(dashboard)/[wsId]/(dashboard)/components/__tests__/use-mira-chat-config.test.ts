@@ -26,6 +26,22 @@ describe('getEffectiveMiraWorkspaceContextId', () => {
 });
 
 describe('resolveAvailableMiraModel', () => {
+  it('never silently replaces a selected ChatGPT model with a credit-funded model', () => {
+    const selectedModel = {
+      value: 'chatgpt/oaiapp_test/account-model',
+      provider: 'chatgpt',
+      label: 'Account model',
+    };
+    expect(
+      resolveAvailableMiraModel({
+        allowedModels: [],
+        defaultLanguageModelId: 'google/gemini',
+        gatewayModels: [],
+        selectedModel,
+      })
+    ).toBe(selectedModel);
+  });
+
   const enabledModels = [
     {
       label: 'Gemini 3.1 Flash-Lite',

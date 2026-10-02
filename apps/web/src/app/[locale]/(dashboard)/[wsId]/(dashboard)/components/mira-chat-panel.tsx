@@ -204,7 +204,11 @@ export default function MiraChatPanel({
     transport,
     onError(error) {
       console.error('[Mira Chat] Stream error:', error);
-      toast.error(t('stream_error'));
+      toast.error(
+        model.value.startsWith('chatgpt/')
+          ? t('chatgpt.request_error')
+          : t('stream_error')
+      );
     },
   });
 

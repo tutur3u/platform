@@ -1,0 +1,110 @@
+---
+title: ChatGPT Subscriptions
+description: Use a personal ChatGPT plan for eligible chat requests in a local or self-hosted Tuturuuu installation.
+---
+
+Local and self-hosted installations can connect personal ChatGPT accounts through
+[OpenAI's open-source plan-sharing flow](https://developers.openai.com/siwc/token-sharing-open-source).
+The hosted Tuturuuu service does not enable this integration. Hosted support needs
+OpenAI's separate access path; open-source licensing does not establish hosted eligibility.
+
+## Enable your installation
+
+Use a Node.js web runtime with persistent, private filesystem storage. Set these
+server environment variables and restart the web app:
+
+```sh
+TUTURUUU_DEPLOYMENT_MODE=self-hosted
+OPENAI_CHATGPT_ENABLED=true
+CHATGPT_SUBSCRIPTIONS_DIR=/absolute/private/path/chatgpt
+```
+
+Mount that directory persistently for containers. Restrict it to the runtime owner;
+directories use `0700` and credential files use `0600` on Unix. The default path is
+`~/.config/tuturuuu/chatgpt`. Never place it inside public assets, source control,
+logs, analytics, backups accessible to workspace members, or browser storage.
+Serverless installations with ephemeral filesystems are not supported by this flow.
+
+## Connect your account
+
+Sign in to Tuturuuu and open **ChatGPT plan** beside the chat model picker. Expand
+the connection instructions to get a command containing your Tuturuuu user UUID.
+From the repository root on the computer running your browser:
+
+```sh
+bun scripts/chatgpt-connect.ts --user <TUTURUUU_USER_UUID>
+```
+
+The utility opens the system browser at OpenAI's **Continue with ChatGPT** flow.
+It binds a random-port callback to `127.0.0.1`, checks state, PKCE, signature,
+issuer, audience, expiration and nonce, and verifies ChatGPT plan permission.
+It does not require an OpenAI API key or client secret. Never paste tokens into
+Tuturuuu's browser UI or support conversations.
+
+Each account/workspace registration has its own issued client ID and credential
+record. To reconnect a saved registration, add `--client <ISSUED_CLIENT_ID>`.
+Do not copy one account's client ID onto another account's tokens.
+
+For a remote self-hosted server, complete OAuth locally, transfer the protected
+credential file over SSH to a private temporary path, then run the import utility
+on the server with the same Tuturuuu user UUID:
+
+```sh
+bun scripts/chatgpt-connect.ts --user <TUTURUUU_USER_UUID> --import /private/transferred-file.json
+```
+
+The credential filename is the SHA-256 digest of the Tuturuuu user UUID followed
+by `.json` in `CHATGPT_SUBSCRIPTIONS_DIR`. The import preserves the server's own
+host ID. Securely remove the temporary transfer file after import. Stop using the
+local session so only the server refreshes the imported rotating refresh token.
+OpenAI currently does not offer host-specific revocation for transferred sessions.
+
+## Use your plan
+
+Refresh the **ChatGPT plan** menu and select an account and model. The catalog is
+read from OpenAI with that account's OAuth token; gateway plan allowlists do not
+filter the subscription catalog. **Using ChatGPT plan** remains visible near the
+composer, with a link to [Manage usage](https://chatgpt.com/settings/usage).
+
+ChatGPT mode supports streaming chat with text and compatible image/file inputs.
+It sends the required conversation history to the public Responses API with
+`store: false` and `stream: true`. It does not use ChatGPT's private backend API.
+ChatGPT mode currently does not run Mira workspace tools, memory-provider calls,
+web search, voice, transcription, or image generation. Select a Tuturuuu model
+explicitly to use those existing features. Unsupported audio/video attachments
+are rejected before subscription inference.
+
+Subscription requests bypass Tuturuuu model allocation, credit preflight, output
+credit caps, memory-provider wrappers, and credit deductions. New conversations
+get a local title derived from their first message, without a hidden AI title call.
+History stays in Tuturuuu under its existing user ownership checks.
+
+ChatGPT plan and app limits still apply. A failed, incomplete, or interrupted
+stream is not a completed answer. Tuturuuu never automatically retries it using
+Tuturuuu-funded AI. Follow **Manage usage**, reconnect the account if necessary,
+or explicitly choose another model. Disconnect clears that registration's local
+tokens and attempts remote refresh-token revocation. If revocation is not
+confirmed, disconnect the app in ChatGPT Settings too.
+
+## Operations and verification
+
+Filesystem locks serialize refreshes across workers sharing the directory. If a
+process dies while holding a `.lock` directory, requests fail closed after ten
+seconds. Confirm no server worker or connection utility is using that registration
+before removing only its stale lock directory. Do not delete credential files to
+clear a lock. Use a shared filesystem that provides atomic directory creation and
+rename; separate containers with copied sessions must not independently refresh.
+
+Focused checks:
+
+```sh
+ttr resources run -- bun run --cwd apps/web test src/lib/chatgpt
+ttr resources run -- bun run --cwd packages/ai test src/chat/google/stream-finish-persistence.test.ts
+ttr resources run -- bun check
+ttr resources run -- bun run --cwd apps/web build
+```
+
+Mocked tests and a successful build do not establish real subscription eligibility.
+Complete a real OAuth connection, choose an account-specific model, receive a
+completed streamed answer, verify persisted history, and confirm that Tuturuuu
+credits were not charged before claiming live provider verification.

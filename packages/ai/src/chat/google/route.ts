@@ -4,7 +4,13 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { consumeStream, smoothStream, stepCountIs, streamText } from 'ai';
+import {
+  consumeStream,
+  type LanguageModel,
+  smoothStream,
+  stepCountIs,
+  streamText,
+} from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { normalizeStableModelId } from '../../credits/model-mapping';
 import {
@@ -26,6 +32,7 @@ import { ChatRequestBodySchema, mapToUIMessages } from './chat-request-schema';
 import { resolveChatTools } from './chat-tools';
 import { systemInstruction } from './default-system-instruction';
 import { prepareMiraToolStep } from './mira-step-preparation';
+import { createGoogleChatProviderOptions } from './provider-options';
 import { resolveChatReasoningSettings } from './reasoning-settings';
 import {
   beginAiPersistenceRequest,
@@ -60,6 +67,14 @@ import {
 export function createPOST(
   _options: {
     serverAPIKeyFallback?: boolean;
+    /** Direct user-funded chat. It bypasses gateway memory, credits, and provider tools. */
+    subscription?: {
+      resolveModel: (
+        userId: string,
+        model: string | undefined
+      ) => Promise<LanguageModel>;
+      onError: () => string;
+    };
     /** Gateway provider prefix for bare model names (e.g., 'openai', 'anthropic', 'vertex'). Defaults to 'google'. */
     defaultProvider?: string;
     requireWorkspaceId?: boolean;
@@ -104,7 +119,7 @@ export function createPOST(
         messages,
         wsId,
         workspaceContextId,
-        isMiraMode,
+        isMiraMode: requestedMiraMode,
         timezone,
         thinkingMode: rawThinkingMode,
         creditSource: requestedCreditSourceRaw,
@@ -113,6 +128,7 @@ export function createPOST(
         persistenceRequestId,
         taskBoardContext,
       } = parsedBody.data;
+      const isMiraMode = _options.subscription ? false : requestedMiraMode;
       const thinkingMode = rawThinkingMode === 'thinking' ? 'thinking' : 'fast';
 
       if (!messages) {
@@ -124,6 +140,23 @@ export function createPOST(
         (await _options.resolveAuth?.(req)) ?? (await resolveAiRouteAuth(req));
       if (!auth.ok) return auth.response;
       const { messageInsertMode = 'rpc', supabase, user } = auth;
+      let subscriptionModel: LanguageModel | undefined;
+      if (_options.subscription) {
+        try {
+          subscriptionModel = await _options.subscription.resolveModel(
+            user.id,
+            model
+          );
+        } catch {
+          return NextResponse.json(
+            {
+              error: _options.subscription.onError(),
+              code: 'CHATGPT_CONNECTION_REQUIRED',
+            },
+            { status: 403 }
+          );
+        }
+      }
 
       if (isMiraMode && !(await isInternalTuturuuuAiUser(auth))) {
         return NextResponse.json(
@@ -174,7 +207,7 @@ export function createPOST(
         requestedCreditSourceRaw ?? 'workspace';
       let billingWsId: string | null = normalizedWsId ?? null;
 
-      if (requestedCreditSource === 'personal') {
+      if (!_options.subscription && requestedCreditSource === 'personal') {
         const { data: personalWorkspace, error: personalWorkspaceError } =
           await sbAdmin
             .from('workspaces')
@@ -220,7 +253,7 @@ export function createPOST(
         }
 
         billingWsId = personalWorkspace.id;
-      } else if (requestedCreditWsId) {
+      } else if (!_options.subscription && requestedCreditWsId) {
         if (normalizedWsId && requestedCreditWsId !== normalizedWsId) {
           return NextResponse.json(
             {
@@ -263,7 +296,9 @@ export function createPOST(
 
       let resolvedModelId: string;
       try {
-        if (billingWsId) {
+        if (subscriptionModel && model) {
+          resolvedModelId = model;
+        } else if (billingWsId) {
           const resolvedPlanModel = await resolvePlanModel({
             capability: 'language',
             requestedModel: model,
@@ -355,6 +390,26 @@ export function createPOST(
         return preparedMessages.error;
       }
       const { processedMessages } = preparedMessages;
+      if (
+        subscriptionModel &&
+        processedMessages.some(
+          (message) =>
+            Array.isArray(message.content) &&
+            message.content.some(
+              (part) =>
+                part.type === 'file' && /^(audio|video)\//.test(part.mediaType)
+            )
+        )
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'ChatGPT plan sharing does not support audio or video inputs',
+          },
+          { status: 400 }
+        );
+      }
+
       const promptMessages = splitSystemMessages(processedMessages);
 
       const persistUserMessageError = await persistLatestUserMessage({
@@ -420,12 +475,14 @@ export function createPOST(
         return persistUserMessageError;
       }
 
-      const creditPreflight = await performCreditPreflight({
-        wsId: billingWsId ?? normalizedWsId ?? undefined,
-        model: resolvedModelId,
-        userId: user.id,
-        sbAdmin,
-      });
+      const creditPreflight = subscriptionModel
+        ? { cappedMaxOutput: null }
+        : await performCreditPreflight({
+            wsId: billingWsId ?? normalizedWsId ?? undefined,
+            model: resolvedModelId,
+            userId: user.id,
+            sbAdmin,
+          });
       if ('error' in creditPreflight) {
         return creditPreflight.error;
       }
@@ -452,15 +509,17 @@ export function createPOST(
 
       const effectiveSource = isMiraMode ? 'Mira' : 'Rewise';
 
-      const resolvedGatewayModel = await withAiMemory({
-        customId: chatId,
-        model: google(resolvedModelId.split('/').slice(-1)[0]!),
-        product: isMiraMode ? 'mira' : 'rewise',
-        source: effectiveSource,
-        surface: 'shared_chat',
-        userId: user.id,
-        wsId: billingWsId ?? normalizedWsId,
-      });
+      const resolvedGatewayModel =
+        subscriptionModel ??
+        (await withAiMemory({
+          customId: chatId,
+          model: google(resolvedModelId.split('/').slice(-1)[0]!),
+          product: isMiraMode ? 'mira' : 'rewise',
+          source: effectiveSource,
+          surface: 'shared_chat',
+          userId: user.id,
+          wsId: billingWsId ?? normalizedWsId,
+        }));
 
       const reasoningSettings = resolveChatReasoningSettings(thinkingMode);
       const forceWorkspaceArtifact = shouldPresentWorkspaceArtifact(
@@ -540,6 +599,7 @@ export function createPOST(
             effectiveSource,
             wsId: billingWsId ?? normalizedWsId ?? undefined,
             observabilityContext,
+            skipCreditDeduction: !!subscriptionModel,
             persistenceRequestId,
           }),
       });
@@ -556,7 +616,7 @@ export function createPOST(
           promptMessages.system
         ),
         ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
-        tools: resolveChatTools(miraTools),
+        tools: subscriptionModel ? undefined : resolveChatTools(miraTools),
         ...(miraTools
           ? {
               stopWhen: stepCountIs(25),
@@ -566,54 +626,9 @@ export function createPOST(
               >,
             }
           : {}),
-        providerOptions: {
-          google: {
-            thinkingConfig: {
-              includeThoughts: reasoningSettings.includeThoughts,
-            },
-            safetySettings: [
-              {
-                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                threshold: 'BLOCK_NONE',
-              },
-              {
-                category: 'HARM_CATEGORY_HATE_SPEECH',
-                threshold: 'BLOCK_NONE',
-              },
-              {
-                category: 'HARM_CATEGORY_HARASSMENT',
-                threshold: 'BLOCK_NONE',
-              },
-              {
-                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                threshold: 'BLOCK_NONE',
-              },
-            ],
-          },
-          vertex: {
-            thinkingConfig: {
-              includeThoughts: reasoningSettings.includeThoughts,
-            },
-            safetySettings: [
-              {
-                category: 'HARM_CATEGORY_HARASSMENT',
-                threshold: 'BLOCK_NONE',
-              },
-              {
-                category: 'HARM_CATEGORY_HATE_SPEECH',
-                threshold: 'BLOCK_NONE',
-              },
-              {
-                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                threshold: 'BLOCK_NONE',
-              },
-              {
-                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                threshold: 'BLOCK_NONE',
-              },
-            ],
-          },
-        },
+        providerOptions: subscriptionModel
+          ? undefined
+          : createGoogleChatProviderOptions(reasoningSettings.includeThoughts),
         onAbort: async ({ steps }) =>
           persistChatAssistantResponse(buildAbortedStreamFinishResponse(steps)),
         onFinish: persistChatAssistantResponse,
@@ -631,6 +646,9 @@ export function createPOST(
         consumeSseStream: consumeStream,
         sendReasoning: true,
         sendSources: true,
+        ...(_options.subscription
+          ? { onError: _options.subscription.onError }
+          : {}),
       });
     } catch (error) {
       if (releaseClaimedPersistenceLease) {
@@ -642,6 +660,11 @@ export function createPOST(
           });
         }
       }
+      if (_options.subscription)
+        return NextResponse.json(
+          { error: _options.subscription.onError() },
+          { status: 502 }
+        );
       if (error instanceof Error) {
         console.log(error.message);
         return NextResponse.json(

@@ -2618,6 +2618,21 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Workspace-scoped tutoring route accepts verified Contacts and platform app sessions or Supabase auth, then enforces tutoring permissions. Rust parity pending."
+    },
+    "api:/api/ai/chatgpt:apps/web/src/app/api/ai/chatgpt/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class self-hosted ChatGPT plan sharing. Preserve deployment gating, session-only actor ownership, protected per-user filesystem credentials, serialized OAuth refresh, account-specific models and direct subscription billing. Hosted integration remains disabled pending OpenAI access. Rust implementation pending."
+    },
+    "api:/api/ai/chatgpt/new:apps/web/src/app/api/ai/chatgpt/new/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class self-hosted ChatGPT plan sharing. Preserve deployment gating, session-only actor ownership, protected per-user filesystem credentials, serialized OAuth refresh, account-specific models and direct subscription billing. Hosted integration remains disabled pending OpenAI access. Rust implementation pending."
+    },
+    "api:/api/v1/users/chatgpt:apps/web/src/app/api/v1/users/chatgpt/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class self-hosted ChatGPT plan sharing. Preserve deployment gating, session-only actor ownership, protected per-user filesystem credentials, serialized OAuth refresh, account-specific models and direct subscription billing. Hosted integration remains disabled pending OpenAI access. Rust implementation pending."
     }
   }
 }

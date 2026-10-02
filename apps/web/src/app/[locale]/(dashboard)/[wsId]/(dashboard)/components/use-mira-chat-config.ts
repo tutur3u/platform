@@ -100,6 +100,7 @@ export function resolveAvailableMiraModel({
   gatewayModels: GatewayModelUi[] | undefined;
   selectedModel: AIModelUI;
 }): AIModelUI {
+  if (selectedModel.value.startsWith('chatgpt/')) return selectedModel;
   if (!gatewayModels) return selectedModel;
 
   const findSelectableModel = (modelId: string) => {
@@ -221,7 +222,7 @@ export function useMiraChatConfig({
   ]);
 
   const supportsFileInput = useMemo(
-    () => modelSupportsFileInput(model),
+    () => model.value.startsWith('chatgpt/') || modelSupportsFileInput(model),
     [model]
   );
 
@@ -237,7 +238,7 @@ export function useMiraChatConfig({
       wsId,
       workspaceContextId: effectiveWorkspaceContextId,
       model: gatewayModelId,
-      isMiraMode: true,
+      isMiraMode: !gatewayModelId.startsWith('chatgpt/'),
       timezone: timezoneForChat,
       thinkingMode,
       creditSource: activeCreditSource,
@@ -264,7 +265,16 @@ export function useMiraChatConfig({
       new DefaultChatTransport({
         api: '/api/ai/chat',
         credentials: 'include',
-        headers: () => getMiraTempAuthHeaders(chatRequestBodyRef.current),
+        headers: () =>
+          chatRequestBodyRef.current.model.startsWith('chatgpt/')
+            ? {}
+            : getMiraTempAuthHeaders(chatRequestBodyRef.current),
+        prepareSendMessagesRequest: ({ id, messages, body }) => ({
+          api: chatRequestBodyRef.current.model.startsWith('chatgpt/')
+            ? '/api/ai/chatgpt'
+            : '/api/ai/chat',
+          body: { ...body, id, messages },
+        }),
         body: () => chatRequestBodyRef.current,
       }),
     []
@@ -310,7 +320,7 @@ export function useMiraChatConfig({
   }, [defaultLanguageModelId, wsId]);
 
   useEffect(() => {
-    if (!creditCredits) return;
+    if (!creditCredits || model.value.startsWith('chatgpt/')) return;
 
     const nextDefaultModel = toModelUi(defaultLanguageModelId);
     const isCurrentModelAllowed = matchesAllowedModel(
