@@ -888,9 +888,11 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
   marker, and completed successful `main` staging migration before running
   `supabase db push --include-all`. Failed, cancelled and other non-success
   workflow callbacks skip before allocating the evaluation job and use a unique
-  ignored-run concurrency group, so they cannot replace a legitimate pending
-  migration. Successful callbacks and manual runs retain the same globally
-  serialized migration group with active-run cancellation disabled.
+  ignored-run concurrency group. Successful callbacks from mismatched workflow/branch
+  pairs and manual dispatches outside `refs/heads/production` are isolated the same
+  way, so they cannot replace a legitimate pending migration. Only successful
+  production-planner/production and staging/main callbacks, plus manual production
+  branch runs, retain the global migration group with active-run cancellation disabled.
 
 ### Mobile iOS native assets
 

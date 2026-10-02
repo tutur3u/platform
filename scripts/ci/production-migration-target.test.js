@@ -69,7 +69,7 @@ if (request.endsWith('/git/ref/heads/production')) {
     }
   });
   response = [
-    marker(99, 'b'.repeat(40), '2026-01-05'),
+    marker(99, process.env.UNRELATED_SHA, '2026-01-05'),
     marker(16, process.env.MARKER_SHA, '2026-01-01'),
     marker(17, process.env.MARKER_SHA, '2026-01-02'),
     marker(98, sha, '2026-01-04', {workflowName: 'other-workflow.yaml'}),
@@ -94,6 +94,7 @@ process.stdout.write(projection < 0 ? json : execFileSync('jq',
     GH_TOKEN: 'synthetic-test-only',
     REPOSITORY: 'example/platform',
     CURRENT_SHA: productionSha,
+    UNRELATED_SHA: stagingSha,
     CURRENT_REF_NAME: 'main',
     EVENT_NAME: 'workflow_run',
     TRIGGER_BRANCH: 'main',
@@ -259,10 +260,20 @@ function expressionValue(expression, github) {
   );
 }
 
-const concurrencyExpression = workflow.match(/ {2}group: \$\{\{ (.*) \}\}/)[1];
-const admissionExpression = workflow.match(
-  /name: Evaluate production prerequisites\n {4}if: \$\{\{ (.*) \}\}/
-)[1];
+function requiredExpression(pattern, description) {
+  const match = workflow.match(pattern);
+  assert.ok(match, `Missing ${description}; expected ${pattern}`);
+  return match[1];
+}
+
+const concurrencyExpression = requiredExpression(
+  / {2}group: \$\{\{ (.*) \}\}/,
+  'top-level migration concurrency expression'
+);
+const admissionExpression = requiredExpression(
+  /name: Evaluate production prerequisites\n {4}if: \$\{\{ (.*) \}\}/,
+  'evaluate-prerequisites admission expression'
+);
 
 for (const conclusion of [
   'failure',
@@ -290,20 +301,108 @@ for (const conclusion of [
   });
 }
 
-for (const event of [
-  { event_name: 'workflow_dispatch', run_id: 43, event: {} },
-  {
-    event_name: 'workflow_run',
-    run_id: 44,
-    event: { workflow_run: { conclusion: 'success' } },
-  },
+for (const [label, event] of [
+  [
+    'manual production',
+    {
+      event_name: 'workflow_dispatch',
+      ref: 'refs/heads/production',
+      event: {},
+    },
+  ],
+  [
+    'production planner',
+    {
+      event_name: 'workflow_run',
+      event: {
+        workflow_run: {
+          conclusion: 'success',
+          name: 'Production Deployment Planner',
+          head_branch: 'production',
+        },
+      },
+    },
+  ],
+  [
+    'main staging',
+    {
+      event_name: 'workflow_run',
+      event: {
+        workflow_run: {
+          conclusion: 'success',
+          name: 'Supabase Staging Migration',
+          head_branch: 'main',
+        },
+      },
+    },
+  ],
 ]) {
-  test(`real ${event.event_name} migration retains the globally serialized group`, () => {
-    assert.equal(expressionValue(admissionExpression, event), true);
+  test(`eligible ${label} migration retains the global serialized group`, () => {
+    const context = { ...event, run_id: 43 };
+    assert.equal(expressionValue(admissionExpression, context), true);
     assert.equal(
-      expressionValue(concurrencyExpression, event),
+      expressionValue(concurrencyExpression, context),
       'supabase-production-migration'
     );
     assert.match(workflow, /cancel-in-progress: false/);
+  });
+}
+
+for (const [label, event] of [
+  [
+    'staging on production',
+    {
+      event_name: 'workflow_run',
+      event: {
+        workflow_run: {
+          conclusion: 'success',
+          name: 'Supabase Staging Migration',
+          head_branch: 'production',
+        },
+      },
+    },
+  ],
+  [
+    'planner on main',
+    {
+      event_name: 'workflow_run',
+      event: {
+        workflow_run: {
+          conclusion: 'success',
+          name: 'Production Deployment Planner',
+          head_branch: 'main',
+        },
+      },
+    },
+  ],
+  [
+    'unexpected successful workflow',
+    {
+      event_name: 'workflow_run',
+      event: {
+        workflow_run: {
+          conclusion: 'success',
+          name: 'Other workflow',
+          head_branch: 'production',
+        },
+      },
+    },
+  ],
+  [
+    'manual main',
+    { event_name: 'workflow_dispatch', ref: 'refs/heads/main', event: {} },
+  ],
+  [
+    'manual tag named production',
+    { event_name: 'workflow_dispatch', ref: 'refs/tags/production', event: {} },
+  ],
+]) {
+  test(`ineligible ${label} cannot displace a legitimate pending migration`, () => {
+    const context = { ...event, run_id: 47 };
+    assert.equal(expressionValue(admissionExpression, context), false);
+    assert.equal(
+      expressionValue(concurrencyExpression, context),
+      'supabase-production-migration-ignored-47'
+    );
   });
 }
