@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.32.1](https://github.com/tutur3u/platform/compare/calendar-v0.32.0...calendar-v0.32.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* **calendar:** bind source color hydration to persisted identity ([00269c3](https://github.com/tutur3u/platform/commit/00269c315cd2ac8e1c9607f450100db8537cada2))
+* **calendar:** preserve opaque rendering cues and hydrate source colors ([33847dd](https://github.com/tutur3u/platform/commit/33847ddcd8a3cf2b5cef8ebf50ca4c1700424a27))
+* **calendar:** preserve read availability and multi-day contrast ([0cfa6b5](https://github.com/tutur3u/platform/commit/0cfa6b5496633dd6f9da4ad9522b5d7a4c769b8a))
+* **calendar:** render opaque readable event colors ([#5694](https://github.com/tutur3u/platform/issues/5694)) ([6e3d81d](https://github.com/tutur3u/platform/commit/6e3d81d6fdd6f8155f12e36ede58d31fde0ac362))
+* **calendar:** retain source scope for legacy primary rows ([550d5d0](https://github.com/tutur3u/platform/commit/550d5d07b69c5b9ab16eb423c2d0d7eb54cea9a8))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/calendar-v0.31.0...calendar-v0.32.0) (2026-10-01)
 
 

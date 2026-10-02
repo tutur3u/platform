@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.37.2](https://github.com/tutur3u/platform/compare/ui-v0.37.1...ui-v0.37.2) (2026-10-02)
+
+
+### Bug Fixes
+
+* **calendar:** bind source color hydration to persisted identity ([00269c3](https://github.com/tutur3u/platform/commit/00269c315cd2ac8e1c9607f450100db8537cada2))
+* **calendar:** preserve month hover color contrast ([6fd591c](https://github.com/tutur3u/platform/commit/6fd591c46f4c90d6f4c685c63b140728dd0339fe))
+* **calendar:** preserve opaque rendering cues and hydrate source colors ([33847dd](https://github.com/tutur3u/platform/commit/33847ddcd8a3cf2b5cef8ebf50ca4c1700424a27))
+* **calendar:** preserve resolved contrast during event hover ([79001b3](https://github.com/tutur3u/platform/commit/79001b32ad1c813119f8f7df934e7142bbbd7585))
+* **calendar:** render opaque readable event colors ([#5694](https://github.com/tutur3u/platform/issues/5694)) ([6e3d81d](https://github.com/tutur3u/platform/commit/6e3d81d6fdd6f8155f12e36ede58d31fde0ac362))
+* **calendar:** restore timer restart and metadata color refresh ([58c17ff](https://github.com/tutur3u/platform/commit/58c17ff6a89624678cc207cd9551bc54f15f53d2)) ([#5722](https://github.com/tutur3u/platform/issues/5722)) ([8954e54](https://github.com/tutur3u/platform/commit/8954e5476fd04ada4cb846e909fa26b8a669cda3))
+
 ## [0.37.1](https://github.com/tutur3u/platform/compare/ui-v0.37.0...ui-v0.37.1) (2026-10-01)
 
 

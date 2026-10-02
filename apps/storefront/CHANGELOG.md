@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.1](https://github.com/tutur3u/platform/compare/storefront-v0.29.0...storefront-v0.29.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* **storefront:** compose header locale links in the client graph ([52d6918](https://github.com/tutur3u/platform/commit/52d691884fa24aed0d9fbc55541601441c7df71f)) ([#5695](https://github.com/tutur3u/platform/issues/5695)) ([0aea2e2](https://github.com/tutur3u/platform/commit/0aea2e2675a2d6ead8b74ef6228cfcb239396298))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/storefront-v0.28.0...storefront-v0.29.0) (2026-09-25)
 
 
