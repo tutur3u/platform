@@ -19,9 +19,9 @@ type Present = Extract<SagaObservation, { absent: false }>;
 export type ProviderSagaCapabilities = {
   googleInsert?: boolean;
   googleConditionalDelete?: boolean;
-  // Atomic move/Graph conditional mutation and ambiguous recovery acceptance
-  // remain unverified. They cannot be enabled by a request or stored journal.
-  googleMove?: false;
+  // Capabilities are supplied only by server assembly after endpoint acceptance.
+  // Graph conditional mutation and ambiguous recovery remain unverified.
+  googleMove?: boolean;
   microsoft?: false;
 };
 function failure(reason: ConstructorParameters<typeof ColorOperationError>[0]) {
@@ -205,11 +205,72 @@ export function createProviderSagaAdapter(args: {
       }
       return ownedTarget(binding, await observe(binding, endpoint));
     },
-    async move(_binding: SagaBinding, _payload: SagaPayload) {
-      // No endpoint acceptance proves events.move honors the original If-Match.
-      // Sealed payload is retained, but neither atomic version fencing nor
-      // move-plus-edited-content/notification acceptance has been verified.
-      throw failure('unavailable');
+    async move(rawBinding: SagaBinding, rawPayload: SagaPayload) {
+      const binding = SagaBindingSchema.parse(rawBinding);
+      const payload = SagaPayloadSchema.parse(rawPayload);
+      if (
+        !capabilities.googleMove ||
+        binding.mode !== 'google-move' ||
+        !binding.source ||
+        !binding.baseETag ||
+        !payload.sourceICalUID ||
+        Object.keys(payload.event).length > 0
+      )
+        throw failure('unavailable');
+      const source = admittedEndpoint(binding, binding.source);
+      const destination = admittedEndpoint(binding, binding.destination);
+      const inspect = async () => {
+        const original = await observe(binding, source);
+        const target = await observe(binding, destination);
+        if (original.absent && !target.absent) {
+          if (target.event.iCalUID !== payload.sourceICalUID)
+            throw failure('identity');
+          return { recovered: target, original, target };
+        }
+        return { recovered: null, original, target };
+      };
+      const initial = await inspect();
+      if (initial.recovered) return initial.recovered;
+      if (initial.original.absent) throw failure('unavailable');
+      if (!initial.target.absent) throw failure('conflict');
+      if (initial.original.event.iCalUID !== payload.sourceICalUID)
+        throw failure('identity');
+      if (initial.original.etag !== binding.baseETag) throw failure('conflict');
+      // Attendee notification behavior has not passed provider acceptance.
+      if (
+        Array.isArray(initial.original.event.attendees) &&
+        initial.original.event.attendees.length > 0
+      )
+        throw failure('unavailable');
+      try {
+        const calendar = await client(binding, source);
+        await calendar.events.move(
+          {
+            calendarId: source.identity.calendarId,
+            eventId: source.identity.providerEventId!,
+            destination: destination.identity.calendarId,
+            sendUpdates: payload.sendUpdates,
+          },
+          { headers: { 'If-Match': binding.baseETag } }
+        );
+      } catch (error) {
+        if (error instanceof ColorOperationError) throw error;
+        const after = await inspect();
+        if (after.recovered) return after.recovered;
+        if (
+          status(error) === 412 ||
+          (!after.original.absent && after.original.etag !== binding.baseETag)
+        )
+          throw failure('conflict');
+        throw failure(
+          [401, 403].includes(status(error) ?? 0)
+            ? 'unauthorized'
+            : 'unavailable'
+        );
+      }
+      const after = await inspect();
+      if (!after.recovered) throw failure('unavailable');
+      return after.recovered;
     },
     async deleteSource(rawBinding: SagaBinding, rawPayload: SagaPayload) {
       const binding = SagaBindingSchema.parse(rawBinding);

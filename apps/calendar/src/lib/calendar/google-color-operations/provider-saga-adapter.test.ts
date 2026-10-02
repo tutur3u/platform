@@ -60,10 +60,11 @@ const list = vi.fn();
 const get = vi.fn();
 const insert = vi.fn();
 const remove = vi.fn();
+const move = vi.fn();
 const resolve = vi.fn();
 const calendar = {
   calendarList: { get: list },
-  events: { get, insert, delete: remove },
+  events: { get, insert, delete: remove, move },
 } as unknown as calendar_v3.Calendar;
 function adapter(enabled = true) {
   return createProviderSagaAdapter({
@@ -300,5 +301,141 @@ describe('disabled provider saga SDK adapter', () => {
       })
     ).rejects.toMatchObject({ reason: 'identity' });
     expect(remove).not.toHaveBeenCalled();
+  });
+});
+
+const atomic: SagaBinding = {
+  ...transfer,
+  mode: 'google-move',
+  destination: {
+    ...destination,
+    identity: { ...destination.identity, providerEventId: 'original' },
+  },
+};
+const movePayload = {
+  event: {},
+  localPatch: {},
+  sendUpdates: 'none' as const,
+  sourceICalUID: 'sealed-source-uid',
+};
+function movingAdapter() {
+  return createProviderSagaAdapter({
+    access: { assertAllowed: allowed },
+    resolveGoogle: resolve,
+    capabilities: { googleMove: true },
+  });
+}
+function sourceEvent(etag = 'original-etag') {
+  return { id: 'original', etag, iCalUID: 'sealed-source-uid' };
+}
+describe('conditionally fenced same-account Google move', () => {
+  beforeEach(() => {
+    events.set('source/original', sourceEvent());
+    move.mockImplementation(async () => {
+      events.delete('source/original');
+      events.set('destination/original', { ...sourceEvent('moved-etag') });
+      return {};
+    });
+  });
+  it('moves only original version and sealed notification intent, then confirms both endpoints', async () => {
+    expect(await movingAdapter().move(atomic, movePayload)).toMatchObject({
+      absent: false,
+      eventId: 'original',
+      etag: 'moved-etag',
+    });
+    expect(move).toHaveBeenCalledWith(
+      {
+        calendarId: 'source',
+        eventId: 'original',
+        destination: 'destination',
+        sendUpdates: 'none',
+      },
+      { headers: { 'If-Match': 'original-etag' } }
+    );
+    expect(resolve.mock.calls.length).toBe(
+      list.mock.calls.length + get.mock.calls.length + move.mock.calls.length
+    );
+  });
+  it('recovers lost success and repeated execution without dispatching another move', async () => {
+    move.mockImplementationOnce(async () => {
+      events.delete('source/original');
+      events.set('destination/original', sourceEvent('moved-etag'));
+      throw new Error('private transport details');
+    });
+    await movingAdapter().move(atomic, movePayload);
+    await movingAdapter().move(atomic, movePayload);
+    expect(move).toHaveBeenCalledTimes(1);
+  });
+  it('never adopts independently created destination ID with a different UID', async () => {
+    events.delete('source/original');
+    events.set('destination/original', {
+      ...sourceEvent(),
+      iCalUID: 'unrelated-uid',
+    });
+    await expect(
+      movingAdapter().move(atomic, movePayload)
+    ).rejects.toMatchObject({ reason: 'identity' });
+    expect(move).not.toHaveBeenCalled();
+  });
+  it('rejects a destination collision even with matching UID while source still exists', async () => {
+    events.set('destination/original', sourceEvent());
+    await expect(
+      movingAdapter().move(atomic, movePayload)
+    ).rejects.toMatchObject({ reason: 'conflict' });
+    expect(move).not.toHaveBeenCalled();
+  });
+  it('keeps ambiguous absent destination pending without repeating a mutation', async () => {
+    move.mockRejectedValueOnce(new Error('private diagnostics'));
+    await expect(
+      movingAdapter().move(atomic, movePayload)
+    ).rejects.toMatchObject({
+      reason: 'unavailable',
+      message: 'Provider saga operation unavailable',
+    });
+    expect(move).toHaveBeenCalledTimes(1);
+  });
+  it('does not replace original ETag after provider conflict', async () => {
+    move.mockImplementationOnce(async () => {
+      events.set('source/original', sourceEvent('changed-etag'));
+      throw { response: { status: 412 } };
+    });
+    await expect(
+      movingAdapter().move(atomic, movePayload)
+    ).rejects.toMatchObject({ reason: 'conflict' });
+    await expect(
+      movingAdapter().move(atomic, movePayload)
+    ).rejects.toMatchObject({ reason: 'conflict' });
+    expect(move).toHaveBeenCalledTimes(1);
+  });
+  it('rejects edited content or missing fingerprint before provider access', async () => {
+    await expect(
+      movingAdapter().move(atomic, {
+        ...movePayload,
+        event: { summary: 'edit' },
+      })
+    ).rejects.toMatchObject({ reason: 'unavailable' });
+    await expect(
+      movingAdapter().move(atomic, { ...movePayload, sourceICalUID: undefined })
+    ).rejects.toMatchObject({ reason: 'unavailable' });
+    expect(resolve).not.toHaveBeenCalled();
+  });
+  it('refuses attendee notifications pending acceptance and rechecks actor revocation before dispatch', async () => {
+    events.set('source/original', {
+      ...sourceEvent(),
+      attendees: [{ email: 'synthetic@example.invalid' }],
+    });
+    await expect(
+      movingAdapter().move(atomic, movePayload)
+    ).rejects.toMatchObject({ reason: 'unavailable' });
+    expect(move).not.toHaveBeenCalled();
+    events.set('source/original', sourceEvent());
+    allowed
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('revoked'));
+    await expect(movingAdapter().move(atomic, movePayload)).rejects.toThrow();
+    expect(move).not.toHaveBeenCalled();
   });
 });
