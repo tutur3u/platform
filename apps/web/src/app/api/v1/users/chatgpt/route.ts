@@ -3,7 +3,11 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { revokeRegistration } from '@/lib/chatgpt/oauth';
 import { getChatGPTAccess, listChatGPTModels } from '@/lib/chatgpt/provider';
-import { chatGPTEnabled, withChatGPTStore } from '@/lib/chatgpt/storage';
+import {
+  chatGPTEnabled,
+  readChatGPTStore,
+  withChatGPTStore,
+} from '@/lib/chatgpt/storage';
 
 export const GET = withSessionAuth(async (_request, { user }) => {
   await connection();
@@ -13,14 +17,14 @@ export const GET = withSessionAuth(async (_request, { user }) => {
       { headers: { 'Cache-Control': 'no-store' } }
     );
   try {
-    const accounts = await withChatGPTStore(user.id, async (store) =>
-      store.registrations.map((entry) => ({
+    const accounts = (await readChatGPTStore(user.id)).registrations.map(
+      (entry) => ({
         clientId: entry.clientId,
         label: `${entry.email ?? 'ChatGPT'} · ${entry.clientId.slice(-8)}`,
         connected:
           !!entry.refreshToken &&
           entry.scopes.includes('chatgpt.tokens.use.direct'),
-      }))
+      })
     );
     const catalog = await Promise.all(
       accounts.map(async (account) => {

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 // @vitest-environment node
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -45,6 +46,9 @@ describe('ChatGPT OAuth public client', () => {
       'https://api.openai.com/v1'
     );
     expect(first.url.searchParams.get('code_challenge_method')).toBe('S256');
+    expect(first.url.searchParams.get('code_challenge')).toBe(
+      createHash('sha256').update(first.verifier).digest('base64url')
+    );
     const saved = createAuthorization(host, callback, {
       clientId: 'oaiapp_saved',
       subject: 'synthetic-subject',
@@ -53,6 +57,12 @@ describe('ChatGPT OAuth public client', () => {
     expect(saved.url.searchParams.get('agent_name_hint')).toBeNull();
     expect(saved.state).not.toBe(first.state);
     expect(saved.nonce).not.toBe(first.nonce);
+    expect(saved.url.searchParams.get('code_challenge')).toBe(
+      createHash('sha256').update(saved.verifier).digest('base64url')
+    );
+    expect(saved.url.searchParams.get('code_challenge')).not.toBe(
+      first.url.searchParams.get('code_challenge')
+    );
   });
   it('rejects state mismatch, missing issued client ID, and account registration substitution', () => {
     const attempt = createAuthorization(host, callback);

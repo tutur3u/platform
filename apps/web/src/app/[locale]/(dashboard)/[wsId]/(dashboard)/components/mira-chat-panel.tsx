@@ -263,21 +263,33 @@ export default function MiraChatPanel({
 
   const handleThinkingModeChange = useCallback(
     (nextMode: typeof thinkingMode) => {
-      if (nextMode === thinkingMode) return;
+      if (model.value.startsWith('chatgpt/') || nextMode === thinkingMode)
+        return;
       setThinkingMode(nextMode);
       if (status === 'submitted' || status === 'streaming') stop();
     },
-    [setThinkingMode, status, stop, thinkingMode]
+    [model.value, setThinkingMode, status, stop, thinkingMode]
   );
 
   const handleCreditSourceChange = useCallback(
     (nextSource: typeof activeCreditSource) => {
-      if (nextSource === activeCreditSource) return;
+      if (
+        model.value.startsWith('chatgpt/') ||
+        nextSource === activeCreditSource
+      )
+        return;
       if (nextSource === 'workspace' && workspaceCreditLocked) return;
       setCreditSource(nextSource);
       if (status === 'submitted' || status === 'streaming') stop();
     },
-    [activeCreditSource, setCreditSource, status, stop, workspaceCreditLocked]
+    [
+      model.value,
+      activeCreditSource,
+      setCreditSource,
+      status,
+      stop,
+      workspaceCreditLocked,
+    ]
   );
 
   const handleCreditSourceToggle = useCallback(() => {
@@ -372,9 +384,10 @@ export default function MiraChatPanel({
 
   const { hotkeyLabels, modelPickerHotkeySignal } = useMiraChatHotkeys({
     hasMessages,
-    onCreditSourceToggle: workspaceCreditLocked
-      ? undefined
-      : handleCreditSourceToggle,
+    onCreditSourceToggle:
+      workspaceCreditLocked || model.value.startsWith('chatgpt/')
+        ? undefined
+        : handleCreditSourceToggle,
     onExportChat: handleExportChat,
     onNewConversation: handleNewConversation,
     onThinkingModeChange: handleThinkingModeChange,

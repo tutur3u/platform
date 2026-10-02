@@ -72,6 +72,11 @@ async function readStore(path: string): Promise<ChatGPTStore> {
   }
 }
 
+/** Atomic rename permits coherent read-only snapshots without a refresh lock. */
+export async function readChatGPTStore(userId: string) {
+  return readStore(credentialPath(userId));
+}
+
 async function writeStore(path: string, store: ChatGPTStore) {
   const temporary = `${path}.${randomUUID()}.tmp`;
   let failed = false;

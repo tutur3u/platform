@@ -17,7 +17,7 @@ const { values } = parseArgs({
   options: {
     user: { type: 'string' },
     client: { type: 'string' },
-    import: { type: 'string' },
+    'import-file': { type: 'string' },
     help: { type: 'boolean' },
   },
 });
@@ -25,7 +25,7 @@ const { values } = parseArgs({
 async function main() {
   if (values.help || !values.user) {
     console.log(
-      'Usage: bun scripts/chatgpt-connect.ts --user <Tuturuuu user UUID> [--client <issued client ID>] [--import <protected credential file>]'
+      'Usage: bun scripts/chatgpt-connect.ts --user <Tuturuuu user UUID> [--client <issued client ID>] [--import-file <protected credential file>]'
     );
     console.log(
       'Completes ChatGPT plan sign-in locally. Credentials stay in protected runtime storage.'
@@ -35,8 +35,10 @@ async function main() {
   const userId = values.user;
   // This validates the owner before opening a browser or reading an import.
   credentialPath(userId);
-  if (values.import) {
-    const imported = JSON.parse(await readFile(values.import, 'utf8')) as {
+  if (values['import-file']) {
+    const imported = JSON.parse(
+      await readFile(values['import-file'], 'utf8')
+    ) as {
       registrations?: unknown[];
     };
     if (!imported || !Array.isArray(imported.registrations))
@@ -159,7 +161,7 @@ async function main() {
           : [attempt.url.toString()];
       const browser = spawn(command, args, { stdio: 'ignore' });
       browser.once('exit', (code) => {
-        if (code && !consumed) {
+        if (code !== 0 && !consumed) {
           clearTimeout(timeout);
           reject(new Error('Could not open the system browser'));
         }

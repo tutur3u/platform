@@ -8,7 +8,12 @@ import { chatGPTEnabled } from '@/lib/chatgpt/storage';
 const bodySchema = z.object({
   id: z.uuid(),
   model: z.string(),
-  message: z.string().trim().min(1).max(100_000),
+  message: z
+    .string()
+    .trim()
+    .min(1)
+    .max(100_000)
+    .refine((value) => !value.includes('\0')),
 });
 
 export const POST = withSessionAuth(async (request, { user, supabase }) => {

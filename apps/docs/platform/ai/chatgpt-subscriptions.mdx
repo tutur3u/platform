@@ -51,7 +51,7 @@ credential file over SSH to a private temporary path, then run the import utilit
 on the server with the same Tuturuuu user UUID:
 
 ```sh
-bun scripts/chatgpt-connect.ts --user <TUTURUUU_USER_UUID> --import /private/transferred-file.json
+bun scripts/chatgpt-connect.ts --user <TUTURUUU_USER_UUID> --import-file /private/transferred-file.json
 ```
 
 The credential filename is the SHA-256 digest of the Tuturuuu user UUID followed
