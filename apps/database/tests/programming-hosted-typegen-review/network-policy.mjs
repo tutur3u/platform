@@ -1,6 +1,8 @@
 export const networkPolicy = Object.freeze({
   slice: 'tuturuuu-typegen.slice',
   cgroupPath: '/sys/fs/cgroup/tuturuuu.slice/tuturuuu-typegen.slice',
+  admissionCgroupPath:
+    '/sys/fs/cgroup/tuturuuu.slice/tuturuuu-typegen.slice/tuturuuu-typegen-admission.service',
   containerPool: '172.28.0.0/16',
   dns: ['127.0.0.1'],
 });
@@ -65,13 +67,13 @@ async function readNetworkPolicy(run) {
   const daemon = JSON.parse(await run(['cat', '/etc/docker/daemon.json']));
   console.info('Programming policy checkpoint=kernel-json');
   const kernelOutput = await run([
-      'bpftool',
-      '-j',
-      'cgroup',
-      'show',
-      networkPolicy.cgroupPath,
-      'effective',
-    ]);
+    'bpftool',
+    '-j',
+    'cgroup',
+    'show',
+    networkPolicy.admissionCgroupPath,
+    'effective',
+  ]);
   let programs;
   try {
     programs = JSON.parse(kernelOutput);

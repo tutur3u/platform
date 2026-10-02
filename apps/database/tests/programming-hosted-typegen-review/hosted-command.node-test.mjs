@@ -218,3 +218,21 @@ for (const [binary, args, phase] of [
     );
   });
 }
+
+for (const output of ['{}', 'null', '']) {
+  test(`kernel admission rejects invalid inventory ${output || 'empty'}`, async (t) => {
+    const { context } = await fixture(t);
+    await assert.rejects(
+      verifyNetworkPolicy((args) =>
+        command('sudo', ['-n', ...args], 5000, 1024 ** 2, {
+          nativeBinary: process.execPath,
+          context: () => context,
+          execute: (_binary, argv) => (argv[1] === 'cat' ? '{}' : output),
+        })
+      ),
+      output
+        ? /Kernel filter inventory must be an array/
+        : /Kernel filter inventory JSON unavailable/
+    );
+  });
+}

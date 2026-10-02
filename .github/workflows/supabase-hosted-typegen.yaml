@@ -41,7 +41,6 @@ jobs:
           test -z "$(docker ps -aq)"
           test -z "$(docker volume ls -q)"
           printf 'SUPABASE_CLI_BINARY_OVERRIDE=%s\n' "$(command -v supabase)" >> "$GITHUB_ENV"
-          command -v bpftool
           if ! sudo bpftool version >/dev/null 2>&1; then
             sudo timeout 180 apt-get update -qq >/dev/null 2>&1
             sudo timeout 180 apt-get install -y -qq --no-install-recommends linux-tools-generic >/dev/null 2>&1
@@ -67,10 +66,15 @@ jobs:
           sudo systemctl start tuturuuu-typegen.slice
           sudo systemd-run --unit=tuturuuu-typegen-admission --slice=tuturuuu-typegen.slice --property=Type=exec /bin/sleep infinity >/dev/null 2>&1
           test -d /sys/fs/cgroup/tuturuuu.slice/tuturuuu-typegen.slice
-          if ! sudo bpftool -j cgroup show /sys/fs/cgroup/tuturuuu.slice/tuturuuu-typegen.slice effective >/dev/null 2>&1; then
-            printf 'Kernel slice inspection failed before project preparation.\n'
-            exit 1
-          fi
+          sudo bpftool -j cgroup show /sys/fs/cgroup/tuturuuu.slice/tuturuuu-typegen.slice/tuturuuu-typegen-admission.service effective | python3 -c '
+          import json, sys
+          programs = json.load(sys.stdin)
+          if not isinstance(programs, list):
+              raise SystemExit("Kernel filter inventory must be an array.")
+          types = {program.get("attach_type") for program in programs}
+          if not ({"ingress", "cgroup_inet_ingress"} & types and {"egress", "cgroup_inet_egress"} & types):
+              raise SystemExit("Kernel ingress or egress admission filter missing.")
+          '
           sudo python3 - <<'PYCONFIG'
           import json
           from pathlib import Path
