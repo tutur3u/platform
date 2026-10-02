@@ -357,16 +357,20 @@ export class CollaborationRoomDurableObject implements DurableObject {
             latest.get(path) !== before.get(path)
         );
         const vector = Y.encodeStateVector(this.doc);
-        Y.applyUpdate(this.doc, result.update);
-        const files = this.doc.getMap<Y.Text>('files');
-        this.doc.transact(() => {
+        Y.applyUpdate(candidate, Y.encodeStateAsUpdate(this.doc));
+        const files = candidate.getMap<Y.Text>('files');
+        candidate.transact(() => {
           for (const path of preserve) {
             const content = latest.get(path);
             if (content === undefined) files.delete(path);
             else files.set(path, new Y.Text(content));
           }
         }, 'concurrent-editor');
-        result.update = Y.encodeStateAsUpdate(this.doc, vector);
+        PlaygroundFiles.parse(programmingDocumentSnapshot(candidate).files);
+        if (Y.encodeStateAsUpdate(candidate).byteLength > 3_000_000)
+          throw new Error('Combined document exceeds budget');
+        result.update = Y.encodeStateAsUpdate(candidate, vector);
+        Y.applyUpdate(this.doc, result.update);
         metadata.revision = saved.revision;
         metadata.fileHashes = hashes;
         metadata.checkpointHash = createHash('sha256')
