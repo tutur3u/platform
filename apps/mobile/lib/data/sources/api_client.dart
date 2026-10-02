@@ -21,9 +21,11 @@ class ApiClient {
     http.Client? httpClient,
     SupabaseClient? authClient,
     DateTime Function()? clock,
+    String? expectedUserId,
   }) : _baseUrl = baseUrl?.replaceAll(RegExp(r'/$'), ''),
        _client = httpClient ?? http.Client(),
        _authClient = authClient,
+       _expectedUserId = expectedUserId,
        _clock = clock ?? DateTime.now;
 
   static Future<T> offlinePreparation<T>(
@@ -40,6 +42,8 @@ class ApiClient {
 
   final http.Client _client;
   final SupabaseClient? _authClient;
+  // A queued operation keeps its owner across all requests and async gaps.
+  final String? _expectedUserId;
   final DateTime Function() _clock;
   GoTrueClient get _auth => (_authClient ?? supabase).auth;
   final String? _baseUrl;
@@ -127,6 +131,7 @@ class ApiClient {
     final userId = requiresAuth ? _auth.currentUser?.id : null;
 
     if (requiresAuth) {
+      _checkRequestUser(userId);
       token = _auth.currentSession?.accessToken;
       final hadTokenBeforeRefresh = token != null && token.isNotEmpty;
 
@@ -390,6 +395,7 @@ class ApiClient {
     final url = _url(path);
 
     final streamedResponse = await _performStreamedRequest(() async {
+      final userId = requiresAuth ? _auth.currentUser?.id : null;
       final request = http.MultipartRequest(method, url)
         ..headers.addAll(await _getHeaders(requiresAuth: requiresAuth));
 
@@ -415,6 +421,7 @@ class ApiClient {
         );
       }
 
+      if (requiresAuth) _checkRequestUser(userId);
       return await _client.send(request);
     }, requiresAuth: requiresAuth);
 
@@ -423,7 +430,9 @@ class ApiClient {
   }
 
   void _checkRequestUser(String? userId) {
-    if (userId == null || _auth.currentUser?.id != userId) {
+    if (userId == null ||
+        _auth.currentUser?.id != userId ||
+        (_expectedUserId != null && _expectedUserId != userId)) {
       throw const ApiException(
         message: 'Account changed during request',
         statusCode: 401,

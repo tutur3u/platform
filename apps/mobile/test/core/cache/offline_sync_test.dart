@@ -308,4 +308,32 @@ void main() {
       PendingMutationStatus.failed,
     );
   });
+  test('account mismatch during replay keeps the owning edit queued', () async {
+    final entered = Completer<void>();
+    final resume = Completer<void>();
+    queue.registerDispatcher('notes', (record) async {
+      entered.complete();
+      await resume.future;
+      if (record.userId != userId) {
+        throw const ApiException(
+          message: 'Account changed during request',
+          statusCode: 401,
+        );
+      }
+    });
+    await queue.enqueue(edit('account-switch'));
+    await queue.synchronize();
+    online = true;
+    final drain = queue.drain();
+    await entered.future;
+    userId = 'user-2';
+    resume.complete();
+    await drain;
+    userId = 'user-1';
+    final records = await queue.listPending();
+    expect(records.single.status, PendingMutationStatus.queued);
+    expect(records.single.userId, 'user-1');
+    expect(records.single.attemptCount, 1);
+    online = false;
+  });
 }

@@ -289,7 +289,12 @@ snapshots. Assistant review decisions queue with revision conflicts surfaced for
 manual review; a queued review card uses the pending frame. Live call tokens and
 assistant generation still require a connection.
 Pending Notes, Mail, Finance, Calendar, and Inventory product edits are stored in the account-scoped encrypted
-mutation queue and replayed in order per module and workspace on reconnect. A
+mutation queue and replayed in order per module and workspace on reconnect. Every
+authenticated replay request remains bound to the queued edit's account, including
+after asynchronous local-ID resolution and between requests in a multi-step
+operation. Switching accounts pauses that edit in the queue; it cannot send with
+the new account's credentials. API account and offline-sync regression tests cover
+this boundary. A
 conflict holds dependent edits in that scope while other modules continue. A queued item uses a dashed
 border and lower opacity until the server confirms it; conflicts and failed
 writes remain visible in Settings > Offline changes for retry or removal.
