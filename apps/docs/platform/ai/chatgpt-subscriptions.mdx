@@ -82,6 +82,12 @@ credit caps, memory-provider wrappers, and credit deductions. New conversations
 get a local title derived from their first message, without a hidden AI title call.
 History stays in Tuturuuu under its existing user ownership checks.
 
+The request's captured model selects both the endpoint and authentication, even
+if the composer selection changes while sending. The funded endpoint rejects
+`chatgpt/` models before authentication, model fallback, persistence, or credit
+work. Regression coverage lives in `mira-chat-transport.test.ts` and
+`subscription-route.test.ts`.
+
 ChatGPT plan and app limits still apply. A failed, incomplete, or interrupted
 stream is not a completed answer. Tuturuuu never automatically retries it using
 Tuturuuu-funded AI. Follow **Manage usage**, reconnect the account if necessary,
@@ -103,11 +109,12 @@ Focused checks:
 ```sh
 ttr resources run -- bun run --cwd apps/web test src/lib/chatgpt
 ttr resources run -- bun run --cwd packages/ai test src/chat/google/stream-finish-persistence.test.ts
-ttr resources run -- bun check
-ttr resources run -- bun run --cwd apps/web build
 ```
 
-Mocked tests and a successful build do not establish real subscription eligibility.
+Require type-check, lint, test, and the owning web build in CI for the exact
+commit; do not run `bun check` or builds locally.
+
+Mocked tests and a successful CI build do not establish real subscription eligibility.
 Complete a real OAuth connection, choose an account-specific model, receive a
 completed streamed answer, verify persisted history, and confirm that Tuturuuu
 credits were not charged before claiming live provider verification.

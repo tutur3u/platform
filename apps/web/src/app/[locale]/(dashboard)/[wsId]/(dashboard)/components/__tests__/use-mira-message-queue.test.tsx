@@ -30,6 +30,12 @@ describe('useMiraMessageQueue', () => {
       expect(createChat).not.toHaveBeenCalled();
       expect(clearAttachedFiles).not.toHaveBeenCalled();
       expect(result.current.queuedText).toBe('Keep this prompt');
+      await act(async () => rerender({ disabled: false }));
+      expect(createChat).toHaveBeenCalledExactlyOnceWith('Keep this prompt');
+      expect(clearAttachedFiles).toHaveBeenCalledOnce();
+      expect(result.current.queuedText).toBeNull();
+      await act(async () => rerender({ disabled: false }));
+      expect(createChat).toHaveBeenCalledOnce();
     } finally {
       vi.useRealTimers();
     }

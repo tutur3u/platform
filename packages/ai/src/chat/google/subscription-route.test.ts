@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   creditPreflight: vi.fn(),
@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   withAiMemory: vi.fn(),
   streamText: vi.fn(),
   prepareMiraRuntime: vi.fn(),
+  beginPersistence: vi.fn().mockResolvedValue({ lease: null, response: null }),
+  persistUserMessage: vi.fn().mockResolvedValue(null),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({}),
@@ -38,7 +40,7 @@ vi.mock('./route-message-preparation', () => ({
     processedMessages: [{ role: 'user', content: 'Hello' }],
   }),
   splitSystemMessages: (messages: unknown) => ({ messages, system: [] }),
-  persistLatestUserMessage: async () => null,
+  persistLatestUserMessage: mocks.persistUserMessage,
   persistRequestScopedUserMessage: async () => null,
   extractLatestUserMessageContent: () => 'Hello',
   mergeSystemInstructions: () => 'Instructions',
@@ -47,7 +49,7 @@ vi.mock('./route-mira-runtime', () => ({
   prepareMiraRuntime: mocks.prepareMiraRuntime,
 }));
 vi.mock('./request-persistence-lease', () => ({
-  beginAiPersistenceRequest: async () => ({ lease: null, response: null }),
+  beginAiPersistenceRequest: mocks.beginPersistence,
   createAiPersistenceFinisher: () => vi.fn(),
   releaseAiPersistenceRequest: vi.fn(),
 }));
@@ -59,6 +61,7 @@ vi.mock('ai', async (importOriginal) => ({
 import { createPOST } from './route';
 
 describe('subscription chat billing boundary', () => {
+  beforeEach(() => vi.clearAllMocks());
   it('uses the injected subscription model with no credit or memory-provider calls', async () => {
     const model = { modelId: 'synthetic-account-model' } as never;
     const resolveModel = vi.fn().mockResolvedValue(model);
@@ -133,22 +136,40 @@ describe('subscription chat billing boundary', () => {
       code: 'CHATGPT_CONNECTION_REQUIRED',
     });
   });
-  it('rejects subscription IDs on the funded route before allocation or billing', async () => {
-    const response = await createPOST()(
-      new Request('http://localhost/api/ai/chat', {
-        method: 'POST',
-        body: JSON.stringify({
-          model: 'chatgpt/oaiapp_test/account-model',
-          messages: [],
-        }),
-      }) as NextRequest
-    );
-    expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({
-      code: 'CHATGPT_ROUTE_REQUIRED',
-    });
-    expect(mocks.creditPreflight).not.toHaveBeenCalled();
-    expect(mocks.resolvePlanModel).not.toHaveBeenCalled();
-    expect(mocks.streamText).not.toHaveBeenCalled();
-  });
+  it.each([
+    'chatgpt/oaiapp_test/account-model',
+    ' chatgpt/oaiapp_test/account-model ',
+    ' ChatGPT/oaiapp_test/account-model ',
+  ])(
+    'rejects subscription ID %s on the funded route before effects',
+    async (selectedModel) => {
+      const resolveAuth = vi.fn();
+      const response = await createPOST({
+        serverAPIKeyFallback: true,
+        resolveAuth,
+      })(
+        new Request('http://localhost/api/ai/chat', {
+          method: 'POST',
+          body: JSON.stringify({
+            model: selectedModel,
+            wsId: '11111111-1111-4111-8111-111111111111',
+            messages: [
+              { role: 'user', parts: [{ type: 'text', text: 'Synthetic' }] },
+            ],
+          }),
+        }) as NextRequest
+      );
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({
+        code: 'CHATGPT_ROUTE_REQUIRED',
+      });
+      expect(mocks.creditPreflight).not.toHaveBeenCalled();
+      expect(mocks.resolvePlanModel).not.toHaveBeenCalled();
+      expect(mocks.streamText).not.toHaveBeenCalled();
+      expect(resolveAuth).not.toHaveBeenCalled();
+      expect(mocks.withAiMemory).not.toHaveBeenCalled();
+      expect(mocks.beginPersistence).not.toHaveBeenCalled();
+      expect(mocks.persistUserMessage).not.toHaveBeenCalled();
+    }
+  );
 });

@@ -5,7 +5,7 @@ export function validateSubscriptionRoute(
   model: string | undefined,
   subscription: boolean
 ) {
-  if (!subscription && model?.startsWith('chatgpt/')) {
+  if (!subscription && model?.trim().toLowerCase().startsWith('chatgpt/')) {
     return NextResponse.json(
       {
         error: 'Use the ChatGPT subscription endpoint for this model',

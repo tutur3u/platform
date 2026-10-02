@@ -103,4 +103,88 @@ describe('real SDK transport request identity', () => {
       }
     }
   );
+  it('routes the merged per-send model instead of the constructor body', async () => {
+    const resolveAuth = vi.fn();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response('data: [DONE]\n\n'));
+    const transport = new DefaultChatTransport({
+      body: { model: 'google/model', wsId: 'constructor-workspace' },
+      prepareSendMessagesRequest: createMiraRequestPreparer(resolveAuth),
+      fetch: fetchMock,
+    });
+    await transport.sendMessages({
+      trigger: 'submit-message',
+      chatId: 'synthetic-chat',
+      messageId: undefined,
+      abortSignal: undefined,
+      messages: [],
+      body: {
+        model: 'chatgpt/oaiapp_synthetic/account-model',
+        wsId: 'send-workspace',
+      },
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/ai/chatgpt');
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      model: 'chatgpt/oaiapp_synthetic/account-model',
+      wsId: 'send-workspace',
+    });
+    expect(resolveAuth).not.toHaveBeenCalled();
+  });
+
+  it('retains funded request scope while temporary auth resolution awaits', async () => {
+    const authGate = deferred();
+    const authEntered = deferred();
+    let composer = {
+      model: 'google/model',
+      wsId: 'original-workspace',
+      creditWsId: 'original-credit-workspace',
+    };
+    const resolveAuth = vi.fn(async () => {
+      authEntered.release();
+      await authGate.promise;
+      return { [AI_TEMP_AUTH_HEADER]: 'synthetic-original-scope' };
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response('data: [DONE]\n\n'));
+    const transport = new DefaultChatTransport({
+      body: () => composer,
+      prepareSendMessagesRequest: createMiraRequestPreparer(resolveAuth),
+      fetch: fetchMock,
+    });
+    const pending = transport.sendMessages({
+      trigger: 'submit-message',
+      chatId: 'synthetic-chat',
+      messageId: undefined,
+      abortSignal: undefined,
+      messages: [],
+    });
+    await authEntered.promise;
+    composer = {
+      model: 'chatgpt/oaiapp_synthetic/account-model',
+      wsId: 'changed-workspace',
+      creditWsId: 'changed-credit-workspace',
+    };
+    authGate.release();
+    await pending;
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toBe('/api/ai/chat');
+    expect(resolveAuth).toHaveBeenCalledWith({
+      wsId: 'original-workspace',
+      creditWsId: 'original-credit-workspace',
+      creditSource: undefined,
+    });
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      model: 'google/model',
+      wsId: 'original-workspace',
+    });
+    expect(new Headers(init.headers).get(AI_TEMP_AUTH_HEADER)).toBe(
+      'synthetic-original-scope'
+    );
+  });
 });

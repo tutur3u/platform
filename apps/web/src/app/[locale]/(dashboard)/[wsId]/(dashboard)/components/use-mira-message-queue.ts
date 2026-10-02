@@ -39,7 +39,10 @@ export function useMiraMessageQueue({
   const pendingFlushAfterStopRef = useRef(false);
 
   const flushQueue = useCallback(async () => {
-    if (disabledRef.current) return;
+    if (disabledRef.current) {
+      pendingFlushAfterStopRef.current = true;
+      return;
+    }
     const queue = [...messageQueueRef.current];
     const seen = new Set<string>();
     const unique: string[] = [];
@@ -140,12 +143,12 @@ export function useMiraMessageQueue({
 
   useEffect(() => {
     const currentlyBusy = status === 'submitted' || status === 'streaming';
-    if (currentlyBusy || !pendingFlushAfterStopRef.current) {
+    if (disabled || currentlyBusy || !pendingFlushAfterStopRef.current) {
       return;
     }
 
     void flushQueue();
-  }, [flushQueue, status]);
+  }, [disabled, flushQueue, status]);
 
   const resetQueue = useCallback(() => {
     if (debounceTimerRef.current) {
