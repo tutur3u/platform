@@ -113,7 +113,7 @@ export function createRequestProviderSagaAccess(
         'storage',
         'Provider saga event unavailable'
       );
-    const matches = (endpoint: SagaEndpoint) =>
+    const matches = (endpoint: SagaEndpoint, assignedEventId?: string) =>
       row &&
       row.provider === endpoint.provider &&
       row.source_calendar_id === endpoint.workspaceCalendarId &&
@@ -121,7 +121,7 @@ export function createRequestProviderSagaAccess(
         ((row.external_calendar_id ?? row.google_calendar_id) ===
           endpoint.identity.calendarId &&
           (row.external_event_id ?? row.google_event_id) ===
-            endpoint.identity.providerEventId));
+            (assignedEventId ?? endpoint.identity.providerEventId)));
     const initial = binding.source ? matches(binding.source) : !row;
     const placeholder =
       binding.action === 'create' &&
@@ -142,6 +142,7 @@ export function createRequestProviderSagaAccess(
       const saved = operation as unknown as {
         phase?: string;
         prepared?: { binding?: unknown };
+        checkpoint?: { targetEventId?: string };
       } | null;
       const storedBinding = SagaBindingSchema.safeParse(
         saved?.prepared?.binding
@@ -149,7 +150,7 @@ export function createRequestProviderSagaAccess(
       if (
         operationError ||
         saved?.phase !== 'applied' ||
-        !matches(binding.destination) ||
+        !matches(binding.destination, saved?.checkpoint?.targetEventId) ||
         !storedBinding.success ||
         JSON.stringify(storedBinding.data) !== JSON.stringify(binding)
       )

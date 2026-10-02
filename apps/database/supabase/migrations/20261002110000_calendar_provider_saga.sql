@@ -69,6 +69,7 @@ begin
   select * into event_row from public.workspace_calendar_events where ws_id=p_ws_id and id=p_event_id for update;
   has_event:=found;
   select * into op from private.calendar_google_color_operations where ws_id=p_ws_id and event_id=p_event_id for update;
+  if p_action='lookup' and (op.operation_id is distinct from (p_input->>'id')::uuid or op.intent->>'kind' is distinct from 'saga') then return null; end if;
   prepared:=case when p_action in ('admit','inspect') then p_input->'prepared' else op.prepared end;
   binding:=prepared->'binding'; source_endpoint:=binding->'source'; destination:=binding->'destination';
   action:=binding->>'action'; mode:=binding->>'mode'; operation_id:=(p_input->>'id')::uuid;
@@ -172,7 +173,7 @@ begin
     if op.operation_id is distinct from operation_id or op.intent->>'kind' is distinct from 'saga' then
       raise exception using errcode='40001',message='Provider saga changed';
     end if;
-    if p_action='read' then return private.calendar_provider_saga_json(op); end if;
+    if p_action in ('read','lookup') then return private.calendar_provider_saga_json(op); end if;
     if op.generation::text is distinct from p_input->>'generation' or op.current_generation<>op.generation then
       raise exception using errcode='40001',message='Provider saga generation changed';
     end if;
@@ -246,7 +247,13 @@ begin
         sync_error=case when outcome='superseded' then 'Provider move was superseded' end where ws_id=p_ws_id and id=p_event_id;
       if not found then raise exception using errcode='40001',message='Provider saga event unavailable'; end if;
       delete from private.calendar_google_color_write_permits where transaction_id=txid_current() and ws_id=p_ws_id and event_id=p_event_id;
-      if endpoint->>'provider'<>'tuturuuu' then locator:=endpoint->'identity'||jsonb_build_object('providerEventId',snapshot->>'providerEventId'); end if;
+      if endpoint->>'provider'<>'tuturuuu' then
+        locator:=endpoint->'identity'||jsonb_build_object('providerEventId',snapshot->>'providerEventId');
+      else
+        -- Retired provider scopes remain mapped separately; the current locator
+        -- must not let a fresh old-source import restore a transferred resource.
+        locator:=locator||jsonb_build_object('calendarId','native:'||coalesce(endpoint->>'workspaceCalendarId','default'), 'providerEventId',p_event_id::text);
+      end if;
       update private.calendar_google_color_operations set phase=outcome,identity=locator,
         intent=jsonb_build_object('kind','saga','connectionId',locator->>'connectionId'),completion=snapshot||jsonb_build_object('checkpoint',checkpoint),updated_at=now()
         where ws_id=p_ws_id and event_id=p_event_id returning * into op;

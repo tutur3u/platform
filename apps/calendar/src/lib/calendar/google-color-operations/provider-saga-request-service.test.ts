@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createProviderSagaCodec } from './provider-saga-codec';
 import type {
   ProviderSagaAdapter,
   SagaEndpoint,
@@ -43,21 +44,23 @@ const destination: SagaEndpoint = {
 function fixture() {
   vi.clearAllMocks();
   const rpc = vi.fn(async (_name, params) =>
-    params.p_action === 'inspect'
-      ? {
-          data: { generation: '9007199254740993', operation: null },
-          error: null,
-        }
-      : {
-          data: {
-            id: params.p_input.id,
-            generation: params.p_input.prepared.binding.generation,
-            phase: 'prepared',
-            prepared: params.p_input.prepared,
-            checkpoint: null,
-          },
-          error: null,
-        }
+    params.p_action === 'lookup'
+      ? { data: null, error: null }
+      : params.p_action === 'inspect'
+        ? {
+            data: { generation: '9007199254740993', operation: null },
+            error: null,
+          }
+        : {
+            data: {
+              id: params.p_input.id,
+              generation: params.p_input.prepared.binding.generation,
+              phase: 'prepared',
+              prepared: params.p_input.prepared,
+              checkpoint: null,
+            },
+            error: null,
+          }
   );
   mocks.authorization.mockResolvedValue({
     userId: '00000000-0000-4000-8000-000000008701',
@@ -115,22 +118,24 @@ describe('request saga preparation and generation admission', () => {
       identity: { providerEventId: `tt${operation.id.replaceAll('-', '')}` },
     });
     expect(f.provider.observe).toHaveBeenCalledTimes(1);
-    expect(f.rpc.mock.calls[1]?.[1].p_input.expectedGeneration).toBe(
+    expect(f.rpc.mock.calls[2]?.[1].p_input.expectedGeneration).toBe(
       '9007199254740993'
     );
   });
   it('blocks a pending cross-kind generation before source GET or key lookup', async () => {
     const f = fixture();
-    f.rpc.mockResolvedValueOnce({
-      data: {
-        generation: '8',
-        operation: {
-          id: '00000000-0000-4000-8000-000000008751',
-          phase: 'dispatched',
+    f.rpc
+      .mockResolvedValueOnce({ data: null, error: null } as never)
+      .mockResolvedValueOnce({
+        data: {
+          generation: '8',
+          operation: {
+            id: '00000000-0000-4000-8000-000000008751',
+            phase: 'dispatched',
+          },
         },
-      },
-      error: null,
-    } as never);
+        error: null,
+      } as never);
     const service = await createRequestProviderSagaService(
       new Request('https://example.test'),
       scope.wsId,
@@ -145,6 +150,7 @@ describe('request saga preparation and generation admission', () => {
   it('does not refresh original provider version when a competing admission wins', async () => {
     const f = fixture();
     f.rpc
+      .mockResolvedValueOnce({ data: null, error: null } as never)
       .mockResolvedValueOnce({
         data: { generation: '0', operation: null },
         error: null,
@@ -161,4 +167,150 @@ describe('request saga preparation and generation admission', () => {
     });
     expect(f.provider.observe).toHaveBeenCalledTimes(1);
   });
+});
+
+it('reuses exact immutable preparation on lost HTTP response and rejects request ID payload changes', async () => {
+  const f = fixture();
+  const service = await createRequestProviderSagaService(
+    new Request('https://example.test'),
+    scope.wsId,
+    scope.eventId,
+    { provider: () => f.provider, project: vi.fn() }
+  );
+  const input = {
+    ...f.input,
+    operationId: '00000000-0000-4000-8000-000000008751',
+  };
+  const operation = await service.reserve(input);
+  f.rpc.mockResolvedValueOnce({
+    data: { ...operation, phase: 'applied' },
+    error: null,
+  } as never);
+  expect(await service.reserve(input)).toMatchObject({
+    id: operation.id,
+    phase: 'applied',
+  });
+  expect(f.provider.observe).toHaveBeenCalledTimes(1);
+  f.rpc.mockResolvedValueOnce({ data: operation, error: null } as never);
+  await expect(
+    service.reserve({
+      ...input,
+      payload: { ...input.payload, event: { summary: 'Changed intent' } },
+    })
+  ).rejects.toMatchObject({ reason: 'conflict' });
+  expect(f.provider.observe).toHaveBeenCalledTimes(1);
+});
+
+it('captures Google move UID once inside the original encrypted journal and rejects caller override', async () => {
+  const f = fixture();
+  vi.mocked(f.provider.observe).mockResolvedValue({
+    absent: false,
+    eventId: 'original',
+    etag: 'original-version',
+    marker: null,
+    event: { iCalUID: 'synthetic-source-uid' },
+  });
+  const service = await createRequestProviderSagaService(
+    new Request('https://example.test'),
+    scope.wsId,
+    scope.eventId,
+    { provider: () => f.provider, project: vi.fn() }
+  );
+  const input = {
+    ...f.input,
+    binding: {
+      ...f.input.binding,
+      mode: 'google-move' as const,
+      destination: {
+        ...destination,
+        identity: {
+          ...destination.identity,
+          authTokenId: scope.authTokenId,
+          providerEventId: 'original',
+        },
+      },
+    },
+    payload: { ...f.input.payload, event: {} },
+  };
+  const operation = await service.reserve(input);
+  expect(JSON.stringify(operation.prepared)).not.toContain(
+    'synthetic-source-uid'
+  );
+  await expect(
+    service.reserve({
+      ...input,
+      payload: { ...input.payload, sourceICalUID: 'forged' },
+    })
+  ).rejects.toMatchObject({ reason: 'identity' });
+  expect(f.provider.observe).toHaveBeenCalledTimes(1);
+});
+
+it('rejects attendee-bearing transfer before generation admission', async () => {
+  const f = fixture();
+  vi.mocked(f.provider.observe).mockResolvedValueOnce({
+    absent: false,
+    eventId: 'original',
+    etag: 'original-version',
+    marker: null,
+    event: { attendees: [{ email: 'synthetic@example.invalid' }] },
+  });
+  const service = await createRequestProviderSagaService(
+    new Request('https://example.test'),
+    scope.wsId,
+    scope.eventId,
+    { provider: () => f.provider, project: vi.fn() }
+  );
+  await expect(service.reserve(f.input)).rejects.toMatchObject({
+    reason: 'unavailable',
+  });
+  expect(
+    f.rpc.mock.calls.every(([, params]) => params.p_action !== 'admit')
+  ).toBe(true);
+});
+
+it('captures native destination fields from the same current provider read as the deletion ETag', async () => {
+  const f = fixture();
+  vi.mocked(f.provider.observe).mockResolvedValueOnce({
+    absent: false,
+    eventId: 'original',
+    etag: 'fresh-original-version',
+    marker: null,
+    event: {
+      id: 'original',
+      etag: 'fresh-original-version',
+      summary: 'Fresh provider title',
+      description: 'Fresh provider description',
+      start: { dateTime: '2026-10-02T10:00:00Z' },
+      end: { dateTime: '2026-10-02T11:00:00Z' },
+    },
+  });
+  const service = await createRequestProviderSagaService(
+    new Request('https://example.test'),
+    scope.wsId,
+    scope.eventId,
+    { provider: () => f.provider, project: vi.fn() }
+  );
+  const operation = await service.reserve({
+    ...f.input,
+    binding: {
+      ...f.input.binding,
+      mode: 'external-to-native',
+      destination: {
+        provider: 'tuturuuu',
+        wsId: scope.wsId,
+        eventId: scope.eventId,
+        workspaceCalendarId: '00000000-0000-4000-8000-000000008791',
+      },
+    },
+  });
+  const sealed = await createProviderSagaCodec({ access: mocks }).open(
+    operation.prepared.binding,
+    operation.prepared.journal
+  );
+  expect(sealed.sourceSnapshot).toMatchObject({
+    title: 'Fresh provider title',
+    description: 'Fresh provider description',
+  });
+  expect(operation.prepared.binding.baseETag).toBe('fresh-original-version');
+  expect(sealed.event).toEqual(f.input.payload.event);
 });

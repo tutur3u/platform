@@ -90,10 +90,36 @@ select ok(exists(select 1 from public.workspace_calendar_events where id='000000
 select is(public.fixture_saga_create_call('cancel','{"id":"00000000-0000-4000-8000-000000008753","generation":"1"}')->>'phase','canceled','unsent creation cancels without deleting a provider resource');
 select ok(not exists(select 1 from public.workspace_calendar_events where id='00000000-0000-4000-8000-000000008743'),'unsent creation cancellation removes only owned placeholder');
 select is(public.fixture_saga_create_call('read','{"id":"00000000-0000-4000-8000-000000008753"}')->>'generation','1','canceled creation retains its generation tombstone');
+insert into private.workspace_calendars(id,ws_id,name,calendar_type) values('00000000-0000-4000-8000-000000008791','00000000-0000-4000-8000-000000008711','Native transfer','custom');
+create function public.fixture_native_endpoint() returns jsonb language sql as $$
+ select jsonb_build_object('provider','tuturuuu','wsId','00000000-0000-4000-8000-000000008711','eventId','00000000-0000-4000-8000-000000008741','workspaceCalendarId','00000000-0000-4000-8000-000000008791');
+$$;
+create function public.fixture_native_saga(action text,input jsonb) returns jsonb language sql as $$
+ select public.calendar_provider_saga_operation(action,'00000000-0000-4000-8000-000000008711','00000000-0000-4000-8000-000000008741','00000000-0000-4000-8000-000000008701',input);
+$$;
+select is(public.fixture_native_saga('admit',jsonb_build_object('id','00000000-0000-4000-8000-000000008754','expectedGeneration','1','requestHash',repeat('b',64),
+ 'prepared',jsonb_build_object('binding',jsonb_build_object('operationId','00000000-0000-4000-8000-000000008754','generation','2','action','move','mode','external-to-native',
+ 'source',public.fixture_saga_endpoint(true),'destination',public.fixture_native_endpoint(),'baseETag','target-original'),'journal','{"version":1,"ciphertext":"sealed-native"}'::jsonb)))->>'phase','prepared','native transfer admits the same retained generation');
+select is(public.fixture_native_saga('dispatch','{"id":"00000000-0000-4000-8000-000000008754","generation":"2"}')->>'phase','dispatched','native transfer remains fenced during source deletion');
+select throws_ok($$select public.calendar_native_generation_mutation('patch','00000000-0000-4000-8000-000000008711','00000000-0000-4000-8000-000000008741','00000000-0000-4000-8000-000000008701','{"expectedGeneration":"2","patch":{"locked":false}}')$$,'40001',null,'native writer cannot overwrite an external pending transfer');
+select is(public.fixture_native_saga('checkpoint','{"id":"00000000-0000-4000-8000-000000008754","generation":"2","checkpoint":{"step":"source-deleted"}}')->'checkpoint'->>'step','source-deleted','native projection requires confirmed source absence');
+select is(public.fixture_native_saga('finalize',jsonb_build_object('id','00000000-0000-4000-8000-000000008754','generation','2','snapshot',jsonb_build_object('outcome','applied','endpoint',public.fixture_native_endpoint(),'metadata','{}'::jsonb,'compatibilityColor','BLUE',
+ 'projection','{"title":"encrypted-native-title","description":"encrypted-native-description","is_encrypted":true,"start_at":"2026-10-02T12:00:00Z","end_at":"2026-10-02T13:00:00Z"}'::jsonb)))->>'phase','applied','native destination finalizes encrypted snapshot atomically');
+select is(public.calendar_native_generation_mutation('inspect','00000000-0000-4000-8000-000000008711','00000000-0000-4000-8000-000000008741','00000000-0000-4000-8000-000000008701')->>'generation','2','native successor observes retained generation');
+select is(public.calendar_native_generation_mutation('patch','00000000-0000-4000-8000-000000008711','00000000-0000-4000-8000-000000008741','00000000-0000-4000-8000-000000008701','{"expectedGeneration":"2","patch":{"title":"encrypted-next-title","is_encrypted":true}}')->>'title','encrypted-next-title','native successor edits through transaction-owned permit');
+select throws_ok($$select public.calendar_native_generation_mutation('patch','00000000-0000-4000-8000-000000008711','00000000-0000-4000-8000-000000008741','00000000-0000-4000-8000-000000008701','{"expectedGeneration":"2","patch":{"locked":false}}')$$,'40001',null,'stale native successor cannot overwrite newer generation');
+select is(public.apply_calendar_google_import((public.capture_calendar_google_import('00000000-0000-4000-8000-000000008711','new-calendar','00000000-0000-4000-8000-000000008721')->>'id')::uuid,
+ jsonb_build_array((select to_jsonb(e)||'{"id":"00000000-0000-4000-8000-000000008748","provider":"google","external_calendar_id":"new-calendar","external_event_id":"tt00000000000040008000000000008751","google_calendar_id":"new-calendar","google_event_id":"tt00000000000040008000000000008751"}'::jsonb from public.workspace_calendar_events e where id='00000000-0000-4000-8000-000000008741')))->>'deferred','1','fresh retired provider source remains fenced after native successor generation');
+select is((select provider::text from public.workspace_calendar_events where id='00000000-0000-4000-8000-000000008741'),'tuturuuu','retired provider import does not reclaim native destination');
+select is(public.calendar_native_generation_mutation('delete','00000000-0000-4000-8000-000000008711','00000000-0000-4000-8000-000000008741','00000000-0000-4000-8000-000000008701','{"expectedGeneration":"3"}')->>'deleted','true','native successor deletion retains provider tombstone');
+select is((select current_generation::text from private.calendar_google_color_operations where event_id='00000000-0000-4000-8000-000000008741'),'4','native deletion advances retained logical generation');
+select ok(not has_function_privilege('authenticated','public.calendar_native_generation_mutation(text,uuid,uuid,uuid,jsonb)','EXECUTE'),'customer clients cannot forge native write permits');
 update public.calendar_auth_tokens set is_active=false where id='00000000-0000-4000-8000-000000008721';
-select throws_ok($$select public.fixture_saga_call('read')$$,'42501',null,'revoked source/account denies even terminal saga recovery');
+select throws_ok($$select public.fixture_native_saga('read','{"id":"00000000-0000-4000-8000-000000008754"}')$$,'42501',null,'revoked source/account denies even terminal saga recovery');
 select * from finish();
 rollback;
+drop function if exists public.fixture_native_saga(text,jsonb);
+drop function if exists public.fixture_native_endpoint();
 drop function public.fixture_saga_competitor();
 drop function public.fixture_saga_create_call(text,jsonb);
 drop function public.fixture_saga_create_input();

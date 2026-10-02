@@ -21,6 +21,8 @@ export type ProviderSagaOperation = {
   checkpoint: SagaCheckpoint | null;
 };
 export type ProviderSagaCompletion = {
+  binding: SagaBinding;
+  sealedEvent: SagaPayload['event'];
   outcome: 'applied' | 'superseded';
   endpoint: SagaEndpoint;
   observation: SagaObservation | null;
@@ -91,6 +93,8 @@ export function createProviderSagaExecutor(args: {
       ) => {
         await authorized();
         return repository.finalize(operation, {
+          binding,
+          sealedEvent: payload.sourceSnapshot ?? payload.event,
           outcome,
           endpoint,
           observation,

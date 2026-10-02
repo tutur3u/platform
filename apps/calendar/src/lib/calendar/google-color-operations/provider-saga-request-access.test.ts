@@ -43,13 +43,17 @@ const binding: SagaBinding = {
     },
   },
 };
-function fixture() {
+function fixture(savedBinding = binding, assignedEventId?: string) {
   vi.clearAllMocks();
   let tokenActive = true;
   let moved = false;
   const filters: Array<[string, unknown]> = [];
   const rpc = vi.fn().mockResolvedValue({
-    data: { phase: 'applied', prepared: { binding } },
+    data: {
+      phase: 'applied',
+      prepared: { binding: savedBinding },
+      checkpoint: assignedEventId ? { targetEventId: assignedEventId } : null,
+    },
     error: null,
   });
   const admin = {
@@ -68,12 +72,15 @@ function fixture() {
           data:
             table === 'workspace_calendar_events'
               ? {
-                  provider: 'google',
+                  provider: moved
+                    ? savedBinding.destination.provider
+                    : 'google',
                   source_calendar_id: null,
                   external_calendar_id: moved ? 'new' : 'old',
                   external_event_id: moved
-                    ? binding.destination.provider === 'google'
-                      ? binding.destination.identity.providerEventId
+                    ? savedBinding.destination.provider !== 'tuturuuu'
+                      ? (assignedEventId ??
+                        savedBinding.destination.identity.providerEventId)
                       : ''
                     : 'original',
                 }
@@ -178,5 +185,45 @@ describe('fresh dual-endpoint saga request authorization', () => {
     await expect(f.access.assertAllowed(binding)).rejects.toMatchObject({
       reason: 'identity',
     });
+  });
+});
+
+it('authenticates a server-assigned Graph destination ID from the immutable server checkpoint', async () => {
+  const graphBinding: SagaBinding = {
+    ...binding,
+    destination: {
+      ...binding.destination,
+      provider: 'microsoft',
+      identity: {
+        ...(binding.destination.provider === 'tuturuuu'
+          ? {}
+          : binding.destination.identity),
+        providerEventId: null,
+      },
+    } as SagaBinding['destination'],
+  };
+  const f = fixture(graphBinding, 'assigned-graph-event');
+  mocks.resolveSource.mockImplementation(async ({ source }) => ({
+    ...source,
+    workspaceCalendarId: null,
+    externalCalendarId:
+      source.connectionId === '00000000-0000-4000-8000-000000008731'
+        ? 'old'
+        : 'new',
+    accessToken: 'stale-snapshot',
+    refreshToken: 'stale-snapshot',
+  }));
+  f.move();
+  await expect(f.access.assertAllowed(graphBinding)).resolves.toBeUndefined();
+  f.rpc.mockResolvedValueOnce({
+    data: {
+      phase: 'applied',
+      prepared: { binding: graphBinding },
+      checkpoint: { targetEventId: 'different-graph-event' },
+    },
+    error: null,
+  });
+  await expect(f.access.assertAllowed(graphBinding)).rejects.toMatchObject({
+    reason: 'identity',
   });
 });

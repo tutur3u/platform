@@ -98,6 +98,14 @@ export function createProviderSagaRepository(args: {
   };
   return {
     ...repository,
+    async find(id: string) {
+      const data = await rpc('lookup', { id });
+      if (data === null) return null;
+      const operation = ProviderSagaOperationSchema.parse(data);
+      if (operation.id !== id)
+        throw new ColorOperationError('identity', 'Provider saga changed');
+      return operation;
+    },
     async inspect(prepared: ProviderSagaOperation['prepared']) {
       const result = z
         .object({
