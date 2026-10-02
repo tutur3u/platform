@@ -290,3 +290,23 @@ rerun is authorized here. This activation plan grants no M4/system changes,
 production credentials/access, customer writes, merge/deploy, or file transfer.
 Generated files/provenance stay ephemeral as explained above; separately authorized
 retrieval/integration remains necessary for a durable generated-type handoff.
+
+
+## Hosted startup verification limit
+
+The temporary branch-only executable workflow and source-writer step are retired.
+The checked-in workflow remains a text fixture and is absent from the active CI
+switchboard. It does not enable a hosted database lifecycle on main or production.
+Actual hosted admission verified the inherited service-leaf ingress/egress BPF
+filters, exact slice allow/deny policy and IPv4/IPv6 bridge firewall. Project
+staging passed, but the Supabase start phase failed; scoped cleanup and admission
+service shutdown succeeded. Native helper stdio remains suppressed, so no raw
+startup output is published and the cause has not been verified. Synthetic
+process diagnostics do not prove the underlying native startup error.
+
+The Programming foundation separately passed complete local disposable schema
+replay, 20 real SQL assertions, full-schema type generation and exact cleanup.
+That proof does not establish hosted startup, hosted resource enforcement during
+SQL execution, or production deployment. Future hosted activation requires its
+own admitted runtime verification and does not follow from merging this inert
+source proposal.
