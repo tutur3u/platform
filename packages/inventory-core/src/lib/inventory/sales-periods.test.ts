@@ -2,11 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
+import { preparePeriodPricingPayload } from './period-pricing';
 import { listInventorySalesPeriods } from './sales-periods';
 
 function chain(result: unknown) {
   const query: Record<string, unknown> = {};
-  for (const method of ['eq', 'in', 'order', 'select']) {
+  for (const method of ['eq', 'in', 'order', 'select', 'limit']) {
     query[method] = vi.fn(() => query);
   }
   // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable and the test double mirrors that contract.
@@ -74,5 +75,28 @@ describe('listInventorySalesPeriods', () => {
     ]);
     expect(rpc).toHaveBeenCalledTimes(2);
     expect(from).not.toHaveBeenCalledWith('inventory_sales_period_assignments');
+  });
+});
+
+describe('pricing migration rollout', () => {
+  it('preserves legacy period writes when pricing columns are absent', async () => {
+    const sb = {
+      schema: () => ({ from: () => chain({ error: { code: '42703' } }) }),
+    } as never;
+    expect(
+      await preparePeriodPricingPayload(sb, {
+        name: 'Legacy',
+        pricing_mode: 'legacy',
+        time_zone: 'Asia/Ho_Chi_Minh',
+      })
+    ).toEqual({ name: 'Legacy' });
+  });
+  it('fails closed for scheduled writes when pricing columns are absent', async () => {
+    const sb = {
+      schema: () => ({ from: () => chain({ error: { code: '42703' } }) }),
+    } as never;
+    await expect(
+      preparePeriodPricingPayload(sb, { pricing_mode: 'scheduled' })
+    ).rejects.toMatchObject({ code: 'PGRST202' });
   });
 });

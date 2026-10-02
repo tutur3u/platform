@@ -8648,7 +8648,7 @@
       "review_handoff": "Email: {email}\nMật khẩu: {password}",
       "review_help": "Dùng địa chỉ @tutur3u.com mới do tổ chức quản lý và có quy tắc chuyển tiếp email hoạt động. Miền không dành cho nhân viên này tránh các quyền nội bộ của @tuturuuu.com. Mật khẩu mạnh chỉ hiện một lần.",
       "review_kind": "Người đánh giá ứng dụng",
-      "review_notes": "Ở màn hình đầu tiên, nhập email demo và chọn Tiếp tục bằng email. Trên màn hình mã, chọn Dùng mật khẩu thay thế rồi nhập mật khẩu demo. Mở không gian làm việc cá nhân và dùng Ứng dụng để khám phá Công việc, Lịch, Tài chính, Ghi chú và Thư. Trang chủ và Hồ sơ cũng có thể truy cập. Thư chỉ dùng trong không gian đánh giá cá nhân của tài khoản này. Tài khoản này dùng hệ thống production.",
+      "review_notes": "Ở màn hình đầu tiên, nhập email demo và chọn Tiếp tục với email. Nếu màn hình mật khẩu xuất hiện, nhập mật khẩu demo. Nếu màn hình mã xuất hiện, chọn Dùng mật khẩu thay thế rồi nhập mật khẩu demo; không cần truy cập hộp thư. Hoàn tất kiểm tra bảo mật nếu được yêu cầu, rồi chọn Đăng nhập. Mở không gian làm việc cá nhân và dùng Ứng dụng để khám phá Công việc, Lịch, Tài chính, Ghi chú và Thư. Trang chủ và Hồ sơ cũng có thể truy cập. Thư chỉ dùng trong không gian đánh giá cá nhân của tài khoản này. Tài khoản này dùng hệ thống production.",
       "rotate": "Đổi mật khẩu",
       "rotate_password": "Đổi mật khẩu người đánh giá",
       "send_invite": "Gửi lời mời",

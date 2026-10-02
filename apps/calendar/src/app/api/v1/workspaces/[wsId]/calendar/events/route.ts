@@ -176,14 +176,15 @@ export async function GET(request: Request, { params }: Params) {
       await decryptEventsFromStorage(events || [], wsId)
     );
 
+    const hydratedEvents = await hydrateEventSourceColors({
+      sbAdmin,
+      wsId,
+      userId,
+      events: decryptedEvents,
+    });
     return NextResponse.json({
-      data: await hydrateEventSourceColors({
-        sbAdmin,
-        wsId,
-        userId,
-        events: decryptedEvents,
-      }),
-      count: decryptedEvents.length,
+      data: hydratedEvents,
+      count: hydratedEvents.length,
     });
   } catch (error) {
     console.error('Calendar events API error', { wsId, error });

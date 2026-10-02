@@ -134,7 +134,7 @@
     "sonner": "^2.0.8",
     "use-debounce": "^10.1.1",
     "uuid": "^14.0.2",
-    "yjs": "^13.6.32",
+    "yjs": "^13.6.33",
     "zod": "^4.6.2"
   },
   "devDependencies": {

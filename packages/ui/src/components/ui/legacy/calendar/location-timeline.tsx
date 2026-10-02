@@ -15,6 +15,7 @@ import {
 } from '@tuturuuu/icons';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -29,11 +30,9 @@ dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-// Module-level utility for timezone-aware dayjs conversion
 const createDayjsDate = (d: Date | string, tz?: string) =>
   tz === 'auto' ? dayjs(d) : dayjs(d).tz(tz);
 
-// Types
 interface EventSpan {
   event: CalendarEvent;
   startIndex: number;
@@ -849,16 +848,14 @@ const LocationPill = ({
         <div
           className={cn(
             'group absolute flex h-4 items-center justify-center gap-1 rounded-full px-2 font-medium text-[10px] shadow-sm transition-all',
-            styles.bg,
-            styles.text,
-            styles.hover,
-            'hover:shadow-md',
+            'hover:shadow-md hover:ring-1 hover:ring-current',
             isDragging ? 'cursor-grabbing' : 'cursor-pointer'
           )}
           style={{
+            ...calendarEventStyle(event),
             left: `calc(${(displayStartIndex * 100) / visibleDates.length}% + 4px)`,
             width: `calc(${(displaySpan * 100) / visibleDates.length}% - 8px)`,
-            opacity: isDragging ? 0.7 : 1,
+            opacity: 1,
           }}
           title={`${event.title}${displaySpan > 1 ? ` (${displaySpan} days)` : ''}`}
         >

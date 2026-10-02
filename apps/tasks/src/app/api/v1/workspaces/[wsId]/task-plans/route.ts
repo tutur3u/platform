@@ -11,6 +11,7 @@ import {
   taskPlanRouteErrorResponse,
   taskPlanSchemaUnavailableResponse,
 } from './_utils';
+import { getAccessibleTaskPlanIds } from './authorized-query';
 
 async function hydratePlans(auth: TaskPlanRouteAuth, plans: any[]) {
   if (plans.length === 0) return plans;
@@ -78,19 +79,29 @@ export async function GET(request: NextRequest, context: TaskPlanRouteContext) {
   const status = url.searchParams.get('status') || undefined;
 
   try {
-    let query = (auth.supabase as any)
-      .from('task_plans')
-      .select(TASK_PLAN_SELECT)
-      .order('period_start', { ascending: false })
-      .order('created_at', { ascending: false });
-
-    if (periodType) query = query.eq('period_type', periodType);
-    if (status) query = query.eq('status', status);
-
-    const { data, error } = await query;
-    if (error) throw error;
-
-    const plans = await hydratePlans(auth, data ?? []);
+    const planIds = await getAccessibleTaskPlanIds(auth);
+    if (!planIds.length) {
+      return NextResponse.json({ ok: true, schemaAvailable: true, plans: [] });
+    }
+    const accessiblePlans: any[] = [];
+    for (let index = 0; index < planIds.length; index += 100) {
+      let query = (auth.supabase as any)
+        .from('task_plans')
+        .select(TASK_PLAN_SELECT)
+        .in('id', planIds.slice(index, index + 100));
+      if (periodType) query = query.eq('period_type', periodType);
+      if (status) query = query.eq('status', status);
+      const { data, error } = await query;
+      if (error) throw error;
+      accessiblePlans.push(...(data ?? []));
+    }
+    accessiblePlans.sort(
+      (a, b) =>
+        b.period_start.localeCompare(a.period_start) ||
+        b.created_at.localeCompare(a.created_at)
+    );
+    // Preserve the configured PostgREST list limit, after filters and ordering.
+    const plans = await hydratePlans(auth, accessiblePlans.slice(0, 1000));
     return NextResponse.json({
       ok: true,
       schemaAvailable: true,
@@ -114,6 +125,17 @@ export async function POST(
   if (auth instanceof NextResponse) return auth;
 
   try {
+    const { data: personalWorkspace, error: workspaceError } =
+      await auth.supabase.rpc('is_task_plan_personal_workspace', {
+        p_ws_id: auth.wsId,
+        p_user_id: auth.user.id,
+      });
+    if (workspaceError) throw workspaceError;
+    if (personalWorkspace !== true)
+      return taskPlanErrorResponse(
+        'Plans require your personal workspace',
+        403
+      );
     const body = planCreateSchema.parse(await request.json());
     const intendedWorkspaceIds = Array.from(
       new Set(

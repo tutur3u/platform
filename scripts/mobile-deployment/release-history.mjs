@@ -212,7 +212,21 @@ if (process.argv[1]?.endsWith('/release-history.mjs')) {
       sha: process.env.GITHUB_SHA,
       date: new Date().toISOString().slice(0, 10),
     });
-    await writeFile(output, `${JSON.stringify({ releases }, null, 2)}\n`);
+    const build = {
+      version: process.env.MOBILE_BUILD_NAME,
+      number: process.env.MOBILE_BUILD_NUMBER,
+      sourceSha: process.env.GITHUB_SHA,
+    };
+    if (
+      !/^[1-9]\d*$/.test(build.number ?? '') ||
+      !/^[a-f0-9]{40}$/.test(build.sourceSha ?? '')
+    ) {
+      throw new Error('Beta history build provenance is missing');
+    }
+    await writeFile(
+      output,
+      `${JSON.stringify({ build, releases }, null, 2)}\n`
+    );
     process.stdout.write(
       `Bundled notes for ${releases.length} mobile beta versions.\n`
     );

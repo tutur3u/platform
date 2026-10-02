@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.38.1](https://github.com/tutur3u/platform/compare/database-v1.38.0...database-v1.38.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **calendar:** preserve Google color identity and inheritance ([#5657](https://github.com/tutur3u/platform/issues/5657)) ([0c2aac6](https://github.com/tutur3u/platform/commit/0c2aac6a1a2b6e9f6eb66bde1e783bf407603cff))
+* **database:** order unapplied calendar metadata migration after main ([5f9d3c2](https://github.com/tutur3u/platform/commit/5f9d3c2863d58d0f097e0742e18ed0f9eb3b8bda))
+* **database:** persist calendar import scheduling metadata ([7860633](https://github.com/tutur3u/platform/commit/7860633bfa927cabcd5fa50d1fdea9559bdf9c8f))
+* **database:** persist calendar scheduling metadata through import RPC ([#5665](https://github.com/tutur3u/platform/issues/5665)) ([3c940de](https://github.com/tutur3u/platform/commit/3c940dea4c327c8d427120571c9561436e7bb78f))
+* **database:** preserve cross-workspace audit actor pagination ([9319864](https://github.com/tutur3u/platform/commit/9319864206260ad37d5b58739a95f74c18b4c7ae))
+
+
+### Performance Improvements
+
+* **database:** avoid repeated audit snapshot anchor reads ([#5660](https://github.com/tutur3u/platform/issues/5660)) ([3120acb](https://github.com/tutur3u/platform/commit/3120acb6cb723547f47440e6e43b0472bcca8030))
+* **database:** extract audit anchors once per snapshot ([8c0415f](https://github.com/tutur3u/platform/commit/8c0415f3f3eb83f2019607a57e863459e21c5770))
+* **database:** page user group audit before enrichment ([f191a50](https://github.com/tutur3u/platform/commit/f191a50b52a14525445addb98a336a04b5ac5a89)) ([#5652](https://github.com/tutur3u/platform/issues/5652)) ([8c93a07](https://github.com/tutur3u/platform/commit/8c93a07a987fee70555d3e33609ab4f1d31dc8b0))
+
 ## [1.38.0](https://github.com/tutur3u/platform/compare/database-v1.37.0...database-v1.38.0) (2026-09-29)
 
 

@@ -4035,6 +4035,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySearchProducts => 'Search products';
 
   @override
+  String get inventoryLoadedLowStock => 'Low stock in loaded products';
+
+  @override
+  String get inventoryStockNoRows => 'No stock rows configured.';
+
+  @override
+  String get inventoryStockUnlimited => 'Unlimited';
+
+  @override
+  String get inventoryStockUnlimitedHint => 'Leave quantity empty for unlimited stock.';
+
+  @override
   String get inventoryTitle => 'Inventory';
 
   @override
@@ -8756,6 +8768,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profilePrivateActivity => 'Your private activity';
 
   @override
+  String get profileTimelineDescription => 'Creation activity in this workspace over the last 30 days. Calendar events are workspace activity.';
+
+  @override
+  String get profileTimelineLimited => 'Showing recent activity only. Some sources reached the display limit.';
+
+  @override
+  String get profileTimelineUnavailable => 'Activity could not be refreshed.';
+
+  @override
   String get profileTimelineTitle => 'Activity timeline';
 
   @override
@@ -8768,7 +8789,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineEmpty => 'No recent activity in this workspace';
 
   @override
-  String get profileTimelinePartial => 'Some activity is unavailable. Retry';
+  String get profileTimelinePartial => 'Some activity is unavailable.';
 
   @override
   String profileTimelineTasks(int count) {
@@ -9460,6 +9481,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsTimezoneRateLimited => 'Too many requests. Please wait before retrying.';
+
+  @override
   String get settingsTimezoneError => 'Could not load or save timezone. Tap to retry.';
 
   @override
@@ -9470,4 +9494,128 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileTimelineTab => 'Timeline';
+
+  @override
+  String get profileTimelineShowDates => 'Show date selector';
+
+  @override
+  String get profileTimelineHideDates => 'Close dates and browse agenda';
+
+  @override
+  String get profileTimelineAgenda => 'Days with activity';
+
+  @override
+  String get profileTimelineDayEmpty => 'No activity was returned for this day.';
+
+  @override
+  String get profileTimelineHasActivity => 'Activity in loaded snapshot';
+
+  @override
+  String get profileTimelineMoreDays => 'Show more loaded days';
+
+  @override
+  String meetNoticeJoined(String name) {
+    return '$name joined the meeting';
+  }
+
+  @override
+  String meetNoticeWaiting(String name) {
+    return '$name is asking to join';
+  }
+
+  @override
+  String meetNoticeChat(String name) {
+    return '$name sent a message';
+  }
+
+  @override
+  String get meetNoticeView => 'View';
+
+  @override
+  String get meetNotificationSound => 'Notification sound';
+
+  @override
+  String get meetShareScreen => 'Share screen';
+
+  @override
+  String get meetStopSharing => 'Stop sharing';
+
+  @override
+  String get meetScreenShareHint => 'Your selected screen will be visible to everyone in this meeting until you stop sharing. Use the system chooser to select what to share. System audio is not shared.';
+
+  @override
+  String get meetScreenShareFailed => 'Screen sharing did not start. Check capture permissions and try again.';
+
+  @override
+  String get inventoryStockHealthTitle => 'Stock health';
+
+  @override
+  String get inventoryStockHealthScope => 'Current active products · all stock rows, including archived warehouses';
+
+  @override
+  String inventoryStockHealthAsOf(String timestamp) {
+    return 'Server snapshot: $timestamp UTC';
+  }
+
+  @override
+  String get inventoryStockHealthIncomplete => 'Partial snapshot: some counts or the server timestamp are unavailable.';
+
+  @override
+  String get inventoryStockHealthUnavailable => 'Stock health is unavailable. Pull to refresh to try again.';
+
+  @override
+  String get inventoryStockHealthDenied => 'You do not have access to stock analytics.';
+
+  @override
+  String get inventoryStockHealthLoading => 'Loading stock health…';
+
+  @override
+  String get inventoryStockHealthActive => 'Active products';
+
+  @override
+  String get inventoryStockHealthUnconfigured => 'Products without stock rows';
+
+  @override
+  String get inventoryStockHealthLow => 'Low stock rows';
+
+  @override
+  String get inventoryStockHealthOut => 'Out of stock rows';
+
+  @override
+  String get inventoryStockHealthUnlimited => 'Unlimited stock rows';
+
+  @override
+  String get inventoryStockHealthOverlap => 'Low/out counts can overlap. Low/out quantity checks exclude Unlimited rows; Unlimited rows are counted separately. Bars compare row counts.';
+
+  @override
+  String get inventoryStockHealthUnknown => 'Unavailable';
+
+  @override
+  String get inventorySeasonPriceLoading => 'Checking current season prices…';
+
+  @override
+  String get inventorySeasonPriceUnavailable => 'Season prices unavailable or expired. Connect, refresh and review the cart before selling.';
+
+  @override
+  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone) {
+    return 'Season prices · $currency · as of $asOf (UTC) · season dates in $timeZone';
+  }
+
+  @override
+  String get inventorySeasonRecoveryTitle => 'Recover sale';
+
+  @override
+  String get inventorySeasonRecoveryCheck => 'Check sale result';
+
+  @override
+  String get inventorySeasonRecoveryUnavailable => 'Sale recovery storage is unavailable. Creation is blocked until this operation can be recovered safely.';
+
+  @override
+  String get inventorySeasonRetryPending => 'Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.';
+
+  @override
+  String get inventoryCheckoutScopeChanged => 'The account or workspace changed. Close this checkout and reopen the sale in its owning workspace.';
+
+  @override
+  String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
 }

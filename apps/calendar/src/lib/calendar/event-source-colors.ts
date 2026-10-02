@@ -25,7 +25,12 @@ export async function hydrateEventSourceColors<T extends SourceEvent>(args: {
     .eq('user_id', args.userId)
     .eq('provider', 'google')
     .eq('is_active', true);
-  if (tokenError) throw tokenError;
+  if (tokenError) {
+    console.warn('Calendar source color hydration unavailable', {
+      stage: 'accounts',
+    });
+    return args.events;
+  }
   if (!tokens?.length) return args.events;
   const { data: connections, error } = await args.sbAdmin
     .from('calendar_connections')
@@ -37,16 +42,22 @@ export async function hydrateEventSourceColors<T extends SourceEvent>(args: {
       'auth_token_id',
       tokens.map((token) => token.id)
     );
-  if (error) throw error;
+  if (error) {
+    console.warn('Calendar source color hydration unavailable', {
+      stage: 'connections',
+    });
+    return args.events;
+  }
   return args.events.map((event) => {
-    if (event.provider !== 'google') return event;
+    if (event.provider !== 'google' || !event.source_calendar_id) return event;
     const calendarId = event.external_calendar_id ?? event.google_calendar_id;
+    // Calendar IDs (including shared IDs) cannot establish account ownership.
+    // Hydrate only a persisted source link within the viewer's owned accounts.
     const matches =
       connections?.filter(
         (source) =>
           source.calendar_id === calendarId &&
-          (!event.source_calendar_id ||
-            source.workspace_calendar_id === event.source_calendar_id)
+          source.workspace_calendar_id === event.source_calendar_id
       ) ?? [];
     const color =
       matches.length === 1 ? opaqueGoogleColor(matches[0]?.color) : null;

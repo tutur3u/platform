@@ -1,7 +1,11 @@
 'use client';
 
+import { Button } from '@tuturuuu/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import type { CodingExecutionSummary } from '@/lib/coding/results';
+import { CodingCases } from './coding-cases';
 
 export type ConsoleTab = 'cases' | 'result' | 'history';
 
@@ -45,55 +49,28 @@ export function CodingConsole({
 }) {
   const t = useTranslations('coding');
   return (
-    <section
+    <Tabs
+      value={tab}
+      onValueChange={(value) => setTab(value as ConsoleTab)}
       aria-label={t('console')}
-      className="flex h-full min-h-0 flex-col bg-background"
+      className="flex h-full min-h-0 flex-col gap-0 bg-background"
     >
-      <div className="flex shrink-0 items-center gap-1 border-b px-3 py-1.5">
+      <TabsList className="h-auto w-full shrink-0 justify-start rounded-none border-b bg-background px-3 py-1.5">
         {(['cases', 'result', 'history'] as const).map((entry) => (
-          <button
-            aria-pressed={tab === entry}
-            className={`rounded-md px-3 py-1.5 font-medium text-xs transition-colors ${
-              tab === entry
-                ? 'bg-accent text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-            key={entry}
-            onClick={() => setTab(entry)}
-            type="button"
-          >
+          <TabsTrigger key={entry} value={entry} className="flex-none text-xs">
             {t(`tabs.${entry}`)}
-          </button>
+          </TabsTrigger>
         ))}
-      </div>
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      </TabsList>
+      <TabsContent
+        value={tab}
+        className="mt-0 min-h-0 flex-1 overflow-auto p-4"
+      >
         {tab === 'cases' ? (
           <div className="grid gap-4 xl:grid-cols-2">
-            {publicCases.map((testCase, index) => (
-              <div className="rounded-lg border p-3" key={testCase.input}>
-                <p className="mb-3 font-medium text-sm">
-                  {t('publicCase', { number: index + 1 })}
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <p className="mb-1 text-muted-foreground text-xs">
-                      {t('input')}
-                    </p>
-                    <pre className="max-h-28 overflow-auto rounded-md bg-muted/60 p-2 font-mono text-xs">
-                      {testCase.input}
-                    </pre>
-                  </div>
-                  <div>
-                    <p className="mb-1 text-muted-foreground text-xs">
-                      {t('expectedOutput')}
-                    </p>
-                    <pre className="max-h-28 overflow-auto rounded-md bg-muted/60 p-2 font-mono text-xs">
-                      {testCase.output}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            ))}
+            <div className="xl:col-span-2">
+              <CodingCases cases={publicCases} />
+            </div>
             <div className="rounded-lg border p-3 xl:col-span-2">
               <p className="mb-1 font-medium text-sm">{t('customCase')}</p>
               <p className="mb-3 text-muted-foreground text-xs">
@@ -102,7 +79,7 @@ export function CodingConsole({
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-1 text-muted-foreground text-xs">
                   {t('input')}
-                  <textarea
+                  <Textarea
                     className="min-h-24 resize-y rounded-md border bg-background p-2 font-mono text-foreground text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     maxLength={4096}
                     onChange={(event) =>
@@ -114,7 +91,7 @@ export function CodingConsole({
                 </label>
                 <label className="grid gap-1 text-muted-foreground text-xs">
                   {t('expectedOutput')}
-                  <textarea
+                  <Textarea
                     className="min-h-24 resize-y rounded-md border bg-background p-2 font-mono text-foreground text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     maxLength={4096}
                     onChange={(event) =>
@@ -244,7 +221,9 @@ export function CodingConsole({
                   key={execution.id}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="text-left font-medium text-sm hover:underline"
                       onClick={() => {
                         onSelectExecution(execution.id);
@@ -263,14 +242,16 @@ export function CodingConsole({
                             total: execution.result.total,
                           })
                         : t(`status.${execution.status}`)}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="rounded-md border px-2 py-1 text-xs hover:bg-accent"
                       onClick={() => onRestore(execution)}
                       type="button"
                     >
                       {t('restoreCode')}
-                    </button>
+                    </Button>
                   </div>
                   <p className="mt-1 text-muted-foreground text-xs">
                     {new Date(execution.createdAt).toLocaleString()} ·{' '}
@@ -290,18 +271,20 @@ export function CodingConsole({
               </p>
             )}
             {hasMore ? (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
                 disabled={historyLoading}
                 onClick={onLoadMore}
                 type="button"
               >
                 {t('loadMore')}
-              </button>
+              </Button>
             ) : null}
           </div>
         ) : null}
-      </div>
-    </section>
+      </TabsContent>
+    </Tabs>
   );
 }

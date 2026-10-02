@@ -12,6 +12,7 @@ import {
   WEB_APP_SESSION_COOKIE_NAME,
 } from '@tuturuuu/auth/app-session';
 import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
+import { prepareAccountShapeRoutes } from './helpers/account-shape-readiness';
 import {
   assertSafeE2EEnvironment,
   LOCAL_E2E_APP_COORDINATION_SECRET,
@@ -78,6 +79,19 @@ async function addAppCookies(
       value: token,
     }))
   );
+}
+
+async function expectNoUserRows(
+  request: APIRequestContext,
+  table: string,
+  userId: string
+) {
+  const response = await request.get(
+    `${SUPABASE_URL}/rest/v1/${table}?user_id=eq.${userId}&select=user_id`,
+    { failOnStatusCode: false, headers: serviceHeaders() }
+  );
+  expect(response.status(), await response.text()).toBe(200);
+  await expect(response.json()).resolves.toEqual([]);
 }
 
 async function createLocalAuthUser(
@@ -161,17 +175,15 @@ async function mintAppSessionFromSupabase(
   const oneTimeToken = new URL(returnBody.returnUrl!).searchParams.get('token');
   expect(oneTimeToken).toEqual(expect.any(String));
 
-  const verificationResponse = await request.post(
+  const verifyResponse = await request.post(
     `${WEB_BASE_URL}/api/v1/auth/cross-app-token/verify`,
     {
       data: { targetApp, token: oneTimeToken },
       failOnStatusCode: false,
     }
   );
-  expect(verificationResponse.status(), await verificationResponse.text()).toBe(
-    200
-  );
-  const verification = (await verificationResponse.json()) as {
+  expect(verifyResponse.status(), await verifyResponse.text()).toBe(200);
+  const verification = (await verifyResponse.json()) as {
     appSessionToken?: string;
     userId?: string;
   };
@@ -230,23 +242,16 @@ async function createWorkspaceInvitationFixture({
   await postRestRow({
     request,
     table: emailInvite ? 'workspace_email_invites' : 'workspace_invites',
-    data: emailInvite
-      ? {
-          email: user.email,
-          role_id: roleId,
-          type: 'MEMBER',
-          ws_id: workspaceId,
-        }
-      : {
-          role_id: roleId,
-          type: 'MEMBER',
-          user_id: user.id,
-          ws_id: workspaceId,
-        },
+    data: {
+      role_id: roleId,
+      type: 'MEMBER',
+      ws_id: workspaceId,
+      ...(emailInvite ? { email: user.email } : { user_id: user.id }),
+    },
   });
 }
 
-async function getWorkspaceUserLink(
+async function getUserLink(
   request: APIRequestContext,
   workspaceId: string,
   userId: string
@@ -318,7 +323,6 @@ test.describe('workspace invitation account-shape resilience', () => {
     let contactsContext: BrowserContext | null = null;
     let financeContext: BrowserContext | null = null;
     let webContext: BrowserContext | null = null;
-
     try {
       const user = await createLocalAuthUser(request, {
         confirmed: true,
@@ -331,7 +335,6 @@ test.describe('workspace invitation account-shape resilience', () => {
         filter: `user_id=eq.${user.id}`,
       });
       await createWorkspaceInvitationFixture({ request, user, workspaceId });
-
       const signInResponse = await passwordSignIn(request, email);
       expect(signInResponse.status(), await signInResponse.text()).toBe(200);
       const signIn = (await signInResponse.json()) as LocalSupabaseSession;
@@ -346,7 +349,6 @@ test.describe('workspace invitation account-shape resilience', () => {
         returnUrl: `${FINANCE_BASE_URL}/${workspaceId}/wallets`,
         targetApp: 'finance',
       });
-
       const acceptResponse = await request.post(
         `${WEB_BASE_URL}/api/workspaces/${workspaceId}/accept-invite`,
         {
@@ -355,31 +357,14 @@ test.describe('workspace invitation account-shape resilience', () => {
         }
       );
       expect(acceptResponse.status(), await acceptResponse.text()).toBe(200);
-
-      const onboardingResponse = await request.get(
-        `${SUPABASE_URL}/rest/v1/onboarding_progress?user_id=eq.${user.id}&select=user_id`,
-        { failOnStatusCode: false, headers: serviceHeaders() }
-      );
-      expect(onboardingResponse.status(), await onboardingResponse.text()).toBe(
-        200
-      );
-      await expect(onboardingResponse.json()).resolves.toEqual([]);
-      const privateDetailsResponse = await request.get(
-        `${SUPABASE_URL}/rest/v1/user_private_details?user_id=eq.${user.id}&select=user_id`,
-        { failOnStatusCode: false, headers: serviceHeaders() }
-      );
-      expect(
-        privateDetailsResponse.status(),
-        await privateDetailsResponse.text()
-      ).toBe(200);
-      await expect(privateDetailsResponse.json()).resolves.toEqual([]);
-
-      const link = await getWorkspaceUserLink(request, workspaceId, user.id);
+      for (const table of ['onboarding_progress', 'user_private_details']) {
+        await expectNoUserRows(request, table, user.id);
+      }
+      const link = await getUserLink(request, workspaceId, user.id);
       expect(link.workspace_users.display_name).toBe(
         `User ${user.id.slice(0, 8)}`
       );
       expect(link.workspace_users.email).toBe('');
-
       for (const targetApp of WORKSPACE_SATELLITE_TARGETS) {
         const response = await request.get(
           `${WEB_BASE_URL}/api/v1/workspaces?q=${encodeURIComponent(`E2E Account Shape ${suffix}`)}`,
@@ -396,7 +381,6 @@ test.describe('workspace invitation account-shape resilience', () => {
           expect.arrayContaining([expect.objectContaining({ id: workspaceId })])
         );
       }
-
       await postRestRow({
         request,
         schema: 'private',
@@ -421,7 +405,6 @@ test.describe('workspace invitation account-shape resilience', () => {
           ws_id: workspaceId,
         },
       });
-
       const walletsResponse = await request.get(
         `${FINANCE_BASE_URL}/api/workspaces/${workspaceId}/wallets`,
         {
@@ -435,12 +418,49 @@ test.describe('workspace invitation account-shape resilience', () => {
           expect.objectContaining({ name: `Incomplete wallet ${suffix}` }),
         ])
       );
-
       contactsContext = await browser.newContext({
         extraHTTPHeaders: { authorization: `Bearer ${contactsToken}` },
         ignoreHTTPSErrors: true,
       });
       await addAppCookies(contactsContext, CONTACTS_BASE_URL!, contactsToken);
+      financeContext = await browser.newContext({
+        extraHTTPHeaders: { authorization: `Bearer ${financeToken}` },
+        ignoreHTTPSErrors: true,
+      });
+      await addAppCookies(financeContext, FINANCE_BASE_URL!, financeToken);
+      const financePage = await financeContext.newPage();
+      await test.step('Prepare authenticated cold satellite routes', async () => {
+        await prepareAccountShapeRoutes({
+          contactsRequest: contactsContext!.request,
+          contactsBaseUrl: CONTACTS_BASE_URL!,
+          financePage,
+          financeBaseUrl: FINANCE_BASE_URL!,
+          workspaceId,
+        });
+      });
+      // Compile the real authenticated inbox route before timed UI interaction.
+      const inboxUrl = new URL('/api/v1/notifications', CONTACTS_BASE_URL!);
+      inboxUrl.search = new URLSearchParams({
+        limit: '15',
+        offset: '0',
+        unreadOnly: 'true',
+        readOnly: 'false',
+        wsId: workspaceId,
+      }).toString();
+      const expectedNotification = expect.objectContaining({
+        id: notificationId,
+        title: notificationTitle,
+        user_id: user.id,
+        ws_id: workspaceId,
+      });
+      const warmInbox = await contactsContext.request.get(inboxUrl.href, {
+        failOnStatusCode: false,
+        timeout: 15_000,
+      });
+      expect(warmInbox.status(), await warmInbox.text()).toBe(200);
+      await expect(warmInbox.json()).resolves.toMatchObject({
+        notifications: expect.arrayContaining([expectedNotification]),
+      });
       const contactsPage = await contactsContext.newPage();
       for (const route of ['/users', '/reports?view=periodic']) {
         const navigation = await contactsPage.goto(
@@ -454,17 +474,37 @@ test.describe('workspace invitation account-shape resilience', () => {
           contactsPage.getByRole('button', { name: 'Notifications' })
         ).toBeVisible();
       }
-      await contactsPage.getByRole('button', { name: 'Notifications' }).click();
+      const notificationButton = contactsPage.getByRole('button', {
+        name: 'Notifications',
+      });
+      await expect(notificationButton).toBeEnabled();
+      const inboxResponseWait = contactsPage.waitForResponse(
+        (response) => {
+          const url = new URL(response.url());
+          return (
+            response.request().method() === 'GET' &&
+            url.origin === inboxUrl.origin &&
+            url.pathname === inboxUrl.pathname &&
+            [...inboxUrl.searchParams].every(
+              ([key, value]) => url.searchParams.get(key) === value
+            )
+          );
+        },
+        { timeout: 15_000 }
+      );
+      const [inboxResponse] = await Promise.all([
+        inboxResponseWait,
+        notificationButton.click(),
+      ]);
+      expect(inboxResponse.status(), await inboxResponse.text()).toBe(200);
+      await expect(inboxResponse.json()).resolves.toMatchObject({
+        notifications: expect.arrayContaining([expectedNotification]),
+      });
       await expect(contactsPage.getByText(notificationTitle)).toBeVisible();
 
-      financeContext = await browser.newContext({
-        extraHTTPHeaders: { authorization: `Bearer ${financeToken}` },
-        ignoreHTTPSErrors: true,
-      });
-      await addAppCookies(financeContext, FINANCE_BASE_URL!, financeToken);
-      const financePage = await financeContext.newPage();
       const financeNavigation = await financePage.goto(
-        `${FINANCE_BASE_URL}/${workspaceId}/wallets`
+        `${FINANCE_BASE_URL}/${workspaceId}/wallets`,
+        { waitUntil: 'domcontentloaded' }
       );
       expect(financeNavigation?.status()).toBeLessThan(400);
       await expect(financePage).not.toHaveURL(
@@ -489,15 +529,7 @@ test.describe('workspace invitation account-shape resilience', () => {
       await expect(
         accountSettingsPage.getByText('Manage Accounts', { exact: true })
       ).toBeVisible();
-      const onboardingAfterWebSession = await request.get(
-        `${SUPABASE_URL}/rest/v1/onboarding_progress?user_id=eq.${user.id}&select=user_id`,
-        { failOnStatusCode: false, headers: serviceHeaders() }
-      );
-      expect(
-        onboardingAfterWebSession.status(),
-        await onboardingAfterWebSession.text()
-      ).toBe(200);
-      await expect(onboardingAfterWebSession.json()).resolves.toEqual([]);
+      await expectNoUserRows(request, 'onboarding_progress', user.id);
     } finally {
       await contactsContext?.close();
       await financeContext?.close();
@@ -523,7 +555,6 @@ test.describe('workspace invitation account-shape resilience', () => {
     const reportTitle = `Verified account report ${suffix}`;
     let userId: string | null = null;
     let contactsContext: BrowserContext | null = null;
-
     try {
       const user = await createLocalAuthUser(request, {
         confirmed: false,
@@ -545,12 +576,10 @@ test.describe('workspace invitation account-shape resilience', () => {
           user_id: user.id,
         },
       });
-
       const unverifiedSignIn = await passwordSignIn(request, email);
       const unverifiedBody = await unverifiedSignIn.text();
       expect(unverifiedSignIn.status(), unverifiedBody).toBe(400);
       expect(unverifiedBody).toMatch(/email.*not.*confirm/iu);
-
       const pendingInviteResponse = await request.get(
         `${SUPABASE_URL}/rest/v1/workspace_email_invites?ws_id=eq.${workspaceId}&email=eq.${encodeURIComponent(email)}&select=ws_id`,
         { failOnStatusCode: false, headers: serviceHeaders() }
@@ -558,7 +587,6 @@ test.describe('workspace invitation account-shape resilience', () => {
       await expect(pendingInviteResponse.json()).resolves.toEqual([
         { ws_id: workspaceId },
       ]);
-
       await setEmailConfirmed(request, user.id);
       const verifiedSignIn = await passwordSignIn(request, email);
       expect(verifiedSignIn.status(), await verifiedSignIn.text()).toBe(200);
@@ -570,7 +598,6 @@ test.describe('workspace invitation account-shape resilience', () => {
         returnUrl: `${CONTACTS_BASE_URL}/${workspaceId}/reports`,
         targetApp: 'contacts',
       });
-
       const acceptResponse = await request.post(
         `${WEB_BASE_URL}/api/workspaces/${workspaceId}/accept-invite`,
         {
@@ -579,12 +606,7 @@ test.describe('workspace invitation account-shape resilience', () => {
         }
       );
       expect(acceptResponse.status(), await acceptResponse.text()).toBe(200);
-      const originalLink = await getWorkspaceUserLink(
-        request,
-        workspaceId,
-        user.id
-      );
-
+      const originalLink = await getUserLink(request, workspaceId, user.id);
       await postRestRow({
         request,
         table: 'workspace_user_groups',
@@ -603,7 +625,7 @@ test.describe('workspace invitation account-shape resilience', () => {
           user_id: originalLink.virtual_user_id,
         },
       });
-      const createReportResponse = await request.post(
+      const reportResponse = await request.post(
         `${CONTACTS_BASE_URL}/api/v1/workspaces/${workspaceId}/users/reports`,
         {
           data: {
@@ -621,11 +643,7 @@ test.describe('workspace invitation account-shape resilience', () => {
           headers: { authorization: `Bearer ${contactsToken}` },
         }
       );
-      expect(
-        createReportResponse.status(),
-        await createReportResponse.text()
-      ).toBe(200);
-
+      expect(reportResponse.status(), await reportResponse.text()).toBe(200);
       await deleteRestRows({
         request,
         table: 'workspace_user_linked_users',
@@ -648,7 +666,6 @@ test.describe('workspace invitation account-shape resilience', () => {
         page.getByRole('heading', { name: 'This page could not be found.' })
       ).toHaveCount(0);
       await expect(page.getByText(reportTitle)).toBeVisible();
-
       const reportsResponse = await request.get(
         `${CONTACTS_BASE_URL}/api/v1/workspaces/${workspaceId}/users/reports?cadence=monthly&q=${encodeURIComponent(reportTitle)}`,
         {
@@ -664,21 +681,14 @@ test.describe('workspace invitation account-shape resilience', () => {
           ]),
         })
       );
-
-      const repairedLink = await getWorkspaceUserLink(
-        request,
-        workspaceId,
-        user.id
-      );
+      const repairedLink = await getUserLink(request, workspaceId, user.id);
       expect(repairedLink.virtual_user_id).toBe(originalLink.virtual_user_id);
-      const onboardingResponse = await request.get(
+      const onboarding = await request.get(
         `${SUPABASE_URL}/rest/v1/onboarding_progress?user_id=eq.${user.id}&select=completed_at,current_step`,
         { failOnStatusCode: false, headers: serviceHeaders() }
       );
-      expect(onboardingResponse.status(), await onboardingResponse.text()).toBe(
-        200
-      );
-      await expect(onboardingResponse.json()).resolves.toEqual([
+      expect(onboarding.status(), await onboarding.text()).toBe(200);
+      await expect(onboarding.json()).resolves.toEqual([
         { completed_at: null, current_step: 'profile' },
       ]);
     } finally {

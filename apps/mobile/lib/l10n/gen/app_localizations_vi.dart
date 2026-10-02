@@ -4011,6 +4011,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySearchProducts => 'Tìm sản phẩm';
 
   @override
+  String get inventoryLoadedLowStock => 'Tồn kho thấp trong sản phẩm đã tải';
+
+  @override
+  String get inventoryStockNoRows => 'Chưa cấu hình dòng tồn kho.';
+
+  @override
+  String get inventoryStockUnlimited => 'Không giới hạn';
+
+  @override
+  String get inventoryStockUnlimitedHint => 'Để trống số lượng để không giới hạn tồn kho.';
+
+  @override
   String get inventoryTitle => 'Tồn kho';
 
   @override
@@ -8714,6 +8726,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profilePrivateActivity => 'Hoạt động riêng tư của bạn';
 
   @override
+  String get profileTimelineDescription => 'Hoạt động tạo trong không gian làm việc này trong 30 ngày qua. Sự kiện lịch là hoạt động của không gian làm việc.';
+
+  @override
+  String get profileTimelineLimited => 'Chỉ hiển thị hoạt động gần đây. Một số nguồn đã đạt giới hạn hiển thị.';
+
+  @override
+  String get profileTimelineUnavailable => 'Không thể làm mới hoạt động.';
+
+  @override
   String get profileTimelineTitle => 'Dòng thời gian hoạt động';
 
   @override
@@ -8726,7 +8747,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineEmpty => 'Không có hoạt động gần đây trong không gian này';
 
   @override
-  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị. Thử lại';
+  String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị.';
 
   @override
   String profileTimelineTasks(int count) {
@@ -9394,6 +9415,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get settingsTimezoneRateLimited => 'Quá nhiều yêu cầu. Vui lòng chờ trước khi thử lại.';
+
+  @override
   String get settingsTimezoneError => 'Không thể tải hoặc lưu múi giờ. Nhấn để thử lại.';
 
   @override
@@ -9404,4 +9428,128 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileTimelineTab => 'Dòng thời gian';
+
+  @override
+  String get profileTimelineShowDates => 'Hiện thanh chọn ngày';
+
+  @override
+  String get profileTimelineHideDates => 'Đóng thanh ngày và xem dòng hoạt động';
+
+  @override
+  String get profileTimelineAgenda => 'Những ngày có hoạt động';
+
+  @override
+  String get profileTimelineDayEmpty => 'Không có hoạt động nào được trả về cho ngày này.';
+
+  @override
+  String get profileTimelineHasActivity => 'Có hoạt động trong dữ liệu đã tải';
+
+  @override
+  String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
+
+  @override
+  String meetNoticeJoined(String name) {
+    return '$name đã tham gia cuộc họp';
+  }
+
+  @override
+  String meetNoticeWaiting(String name) {
+    return '$name đang yêu cầu tham gia';
+  }
+
+  @override
+  String meetNoticeChat(String name) {
+    return '$name đã gửi tin nhắn';
+  }
+
+  @override
+  String get meetNoticeView => 'Xem';
+
+  @override
+  String get meetNotificationSound => 'Âm thanh thông báo';
+
+  @override
+  String get meetShareScreen => 'Chia sẻ màn hình';
+
+  @override
+  String get meetStopSharing => 'Dừng chia sẻ';
+
+  @override
+  String get meetScreenShareHint => 'Màn hình bạn chọn sẽ hiển thị với mọi người trong cuộc họp cho đến khi bạn dừng chia sẻ. Dùng hộp thoại hệ thống để chọn nội dung cần chia sẻ. Âm thanh hệ thống không được chia sẻ.';
+
+  @override
+  String get meetScreenShareFailed => 'Chưa thể chia sẻ màn hình. Kiểm tra quyền ghi màn hình và thử lại.';
+
+  @override
+  String get inventoryStockHealthTitle => 'Tình trạng tồn kho';
+
+  @override
+  String get inventoryStockHealthScope => 'Sản phẩm đang hoạt động · mọi dòng tồn kho, gồm kho đã lưu trữ';
+
+  @override
+  String inventoryStockHealthAsOf(String timestamp) {
+    return 'Ảnh chụp từ máy chủ: $timestamp UTC';
+  }
+
+  @override
+  String get inventoryStockHealthIncomplete => 'Ảnh chụp chưa đầy đủ: một vài số đếm hoặc thời gian máy chủ bị thiếu.';
+
+  @override
+  String get inventoryStockHealthUnavailable => 'Không thể tải tình trạng tồn kho. Kéo để làm mới và thử lại.';
+
+  @override
+  String get inventoryStockHealthDenied => 'Bạn không có quyền xem phân tích tồn kho.';
+
+  @override
+  String get inventoryStockHealthLoading => 'Đang tải tình trạng tồn kho…';
+
+  @override
+  String get inventoryStockHealthActive => 'Sản phẩm đang hoạt động';
+
+  @override
+  String get inventoryStockHealthUnconfigured => 'Sản phẩm chưa có dòng tồn kho';
+
+  @override
+  String get inventoryStockHealthLow => 'Dòng tồn kho thấp';
+
+  @override
+  String get inventoryStockHealthOut => 'Dòng hết hàng';
+
+  @override
+  String get inventoryStockHealthUnlimited => 'Dòng tồn kho không giới hạn';
+
+  @override
+  String get inventoryStockHealthOverlap => 'Số dòng thấp/hết hàng có thể trùng nhau. Kiểm tra thấp/hết hàng theo số lượng không tính dòng không giới hạn; các dòng này được đếm riêng. Biểu đồ so sánh số dòng.';
+
+  @override
+  String get inventoryStockHealthUnknown => 'Chưa có dữ liệu';
+
+  @override
+  String get inventorySeasonPriceLoading => 'Đang kiểm tra giá mùa hiện tại…';
+
+  @override
+  String get inventorySeasonPriceUnavailable => 'Giá mùa không khả dụng hoặc đã hết hạn. Kết nối, làm mới và kiểm tra giỏ hàng trước khi bán.';
+
+  @override
+  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone) {
+    return 'Giá mùa · $currency · tại $asOf (UTC) · ngày mùa theo $timeZone';
+  }
+
+  @override
+  String get inventorySeasonRecoveryTitle => 'Khôi phục đơn bán hàng';
+
+  @override
+  String get inventorySeasonRecoveryCheck => 'Kiểm tra kết quả bán hàng';
+
+  @override
+  String get inventorySeasonRecoveryUnavailable => 'Không thể truy cập bộ lưu trữ khôi phục. Tạm khóa tạo đơn cho đến khi có thể khôi phục an toàn.';
+
+  @override
+  String get inventorySeasonRetryPending => 'Chưa xác định được kết quả bán hàng. Kiểm tra yêu cầu đã lưu trước khi gửi lại đúng nội dung. Bạn có thể rời màn hình và khôi phục trong tài khoản, không gian làm việc này; không tạo đơn thay thế.';
+
+  @override
+  String get inventoryCheckoutScopeChanged => 'Tài khoản hoặc không gian làm việc đã thay đổi. Đóng màn hình này và mở lại đơn bán trong không gian làm việc của đơn.';
+
+  @override
+  String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
 }

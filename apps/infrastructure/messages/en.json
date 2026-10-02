@@ -8648,7 +8648,7 @@
       "review_handoff": "Email: {email}\nPassword: {password}",
       "review_help": "Use a new organization-controlled @tutur3u.com address with a working forwarding rule. This non-staff domain avoids internal access granted to @tuturuuu.com. A strong password is shown once.",
       "review_kind": "App reviewer",
-      "review_notes": "On the first screen, enter the demo email and tap Continue with email. On the code screen, tap Use password instead, then enter the demo password. Open the personal workspace and use Apps to explore Tasks, Calendar, Finance, Notes, and Mail. Home and Profile are also available. Mail is limited to this account's personal review workspace. This account uses the live production backend.",
+      "review_notes": "On the first screen, enter the demo email and tap Continue with email. If the password screen appears, enter the demo password. If a code screen appears, tap Use password instead, then enter the demo password; no inbox access is needed. Complete the security check if prompted, then tap Sign in. Open the personal workspace and use Apps to explore Tasks, Calendar, Finance, Notes, and Mail. Home and Profile are also available. Mail is limited to this account's personal review workspace. This account uses the live production backend.",
       "rotate": "Rotate password",
       "rotate_password": "Rotate reviewer password",
       "send_invite": "Send invitation",

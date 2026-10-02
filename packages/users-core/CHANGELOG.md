@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.4](https://github.com/tutur3u/platform/compare/users-core-v0.9.3...users-core-v0.9.4) (2026-10-01)
+
+
+### Bug Fixes
+
+* **contacts:** keep indicator creation actions reachable ([909df6b](https://github.com/tutur3u/platform/commit/909df6b4c906a62b29fca0c0a0346122116edf66)) ([#5655](https://github.com/tutur3u/platform/issues/5655)) ([79a2547](https://github.com/tutur3u/platform/commit/79a2547c572a3f2f15a544e44f6f92675a94e303))
+
 ## [0.9.3](https://github.com/tutur3u/platform/compare/users-core-v0.9.2...users-core-v0.9.3) (2026-09-29)
 
 

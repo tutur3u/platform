@@ -572,31 +572,33 @@ export function useMeetRoom({
       const previous = mediaRef.current;
       mediaRef.current = next;
       setMedia(next);
-      publishPresence(next);
+      if (activeRef.current) publishPresence(next);
       try {
         await queueLocalTracks(stream ?? new MediaStream(), next);
       } catch (error) {
+        const restored = recoverMediaState(
+          previous,
+          next,
+          mediaRef.current,
+          !!localStreamRef.current
+            ?.getAudioTracks()
+            .some((track) => track.enabled)
+        );
+        restored.screenEnabled &&=
+          activeRef.current &&
+          (screenStreamRef.current
+            ?.getVideoTracks()
+            .some((track) => track.readyState === 'live') ??
+            false);
+        if (!restored.screenEnabled) {
+          for (const track of screenStreamRef.current?.getTracks() ?? [])
+            track.stop();
+          screenStreamRef.current = null;
+          setScreenStream(null);
+        }
+        mediaRef.current = restored;
+        setMedia(restored);
         if (activeRef.current) {
-          const restored = recoverMediaState(
-            previous,
-            next,
-            mediaRef.current,
-            !!localStreamRef.current
-              ?.getAudioTracks()
-              .some((track) => track.enabled)
-          );
-          restored.screenEnabled &&=
-            screenStreamRef.current
-              ?.getVideoTracks()
-              .some((track) => track.readyState === 'live') ?? false;
-          if (!restored.screenEnabled) {
-            for (const track of screenStreamRef.current?.getTracks() ?? [])
-              track.stop();
-            screenStreamRef.current = null;
-            setScreenStream(null);
-          }
-          mediaRef.current = restored;
-          setMedia(restored);
           for (const track of localStreamRef.current?.getAudioTracks() ?? [])
             track.enabled = restored.audioEnabled;
           effects.setEnabled(restored.videoEnabled);

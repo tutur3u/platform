@@ -23,6 +23,7 @@ import {
   buildTaskPlanDigest,
   isTaskPlanSchemaUnavailableError,
   planShareCreateSchema,
+  requireTaskPlanAccess,
   resolveTaskPlanRouteAuth,
   taskPlanRouteErrorResponse,
 } from './_utils';
@@ -60,6 +61,7 @@ describe('task plan route utilities', () => {
   it('detects missing schema errors from Postgres and PostgREST', () => {
     expect(isTaskPlanSchemaUnavailableError({ code: '42P01' })).toBe(true);
     expect(isTaskPlanSchemaUnavailableError({ code: 'PGRST204' })).toBe(true);
+    expect(isTaskPlanSchemaUnavailableError({ code: 'PGRST202' })).toBe(true);
     expect(
       isTaskPlanSchemaUnavailableError({
         message: "Could not find the 'task_plan_items' table",
@@ -130,5 +132,45 @@ describe('task plan route utilities', () => {
     );
     expect(digest).toContain('- Ship planner (team-ws)');
     expect(digest).toContain('- Draft retrospective');
+  });
+});
+
+describe('plan owner versus shared editor boundary', () => {
+  it('requires ownership for share mutation', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: true, error: null });
+    const query = {
+      select: vi.fn(() => query),
+      eq: vi.fn(() => query),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    };
+    const auth = {
+      user: { id: 'editor' },
+      supabase: { rpc, from: vi.fn(() => query) },
+    } as never;
+    expect(
+      await requireTaskPlanAccess({
+        auth,
+        permission: 'edit',
+        planId: 'shared-plan',
+      })
+    ).toEqual({ ok: true });
+    const denied = await requireTaskPlanAccess({
+      auth,
+      permission: 'owner',
+      planId: 'shared-plan',
+    });
+    expect('error' in denied && denied.error?.status).toBe(403);
+    expect(query.eq).toHaveBeenCalledWith('owner_id', 'editor');
+    query.maybeSingle.mockResolvedValue({
+      data: { id: 'shared-plan' } as never,
+      error: null,
+    });
+    expect(
+      await requireTaskPlanAccess({
+        auth,
+        permission: 'owner',
+        planId: 'shared-plan',
+      })
+    ).toEqual({ ok: true });
   });
 });

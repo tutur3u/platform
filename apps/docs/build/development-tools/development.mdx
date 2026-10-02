@@ -64,6 +64,23 @@ explicitly excluded from the age gate in `bunfig.toml`; keep each trusted
 family's exact-name list aligned with the packages resolved in `bun.lock` and
 cover the list with a policy test.
 
+Discord's Python environment is resolved separately in `apps/discord/uv.lock`.
+For targeted transitive updates, use `uv lock --upgrade-package pyjwt
+--upgrade-package urllib3`, then confirm that unrelated package records and the
+project's Python floor are unchanged. Validate artifact hashes against PyPI and
+run the owning locked Python CI, including the offline dependency security tests
+in `tests/test_dependency_security.py`.
+
+PyJWT 2.15.1 includes malformed-payload/JWKS hardening and accepts valid trailing
+Base64URL padding while continuing to reject invalid characters. urllib3 2.8.0
+bounds chunk-size lines and fixes HTTPS proxy TLS configuration and Deflate
+streaming. Proxy-specific trust settings belong in `proxy_ssl_context` and the
+proxy identity options; destination TLS settings are separate. These dependencies
+are reached through Supabase Auth/MSAL and Requests, respectively. A locked CI
+environment does not establish the version in an already deployed Modal image:
+`app.py` has a separate floating `.pip_install(...)` recipe. Verify that image's
+resolved versions during the separately authorized deployment process.
+
 To complete the initial setup, please restart your IDE so that it can recognize the newly installed dependencies. Additionally, some recommended VS Code Extensions may only work after restarting your IDE.
 
 <Tip>
@@ -564,6 +581,29 @@ bun check:mobile
 `apps/mobile`. Flutter test output is streamed by default so slow suites still
 show progress instead of appearing stuck.
 
+### Verify dependency patches
+
+Check the official stable version and publication time before resolving an update.
+Keep `bunfig.toml`'s release-age policy in force. Resolve a small coherent group in
+an isolated checkout using the package manager, then compare resolved entries and
+workspace declarations in the lockfile. A new nested entry can be required when a
+transitive consumer pins the old version exactly; report that constraint rather
+than claiming every consumer uses the new version.
+
+For example, DOMPurify 3.4.16 fixes in-place raw-text and hook-detachment behavior.
+Test the real browser and isomorphic packages with the owning app configurations,
+including safe markup, executable attributes and whole-document forms. An old
+version that fails the targeted regression provides a useful negative control.
+The contacts preview uses DOMPurify; Mail uses a separate `sanitize-html` contract,
+so tests of one sanitizer do not verify the other. Monaco 0.57.0 pins DOMPurify
+3.4.15, including in its current stable registry metadata; upgrading compatible
+consumers does not remove that pin.
+
+Queue installs and test stages through `ttr resources run` after fresh resource
+checks, leaving urgent validation ahead of dependency maintenance. A focused test
+fixture does not establish full workspace resolution, type-checking or app builds.
+Require those results from CI on the exact implementation commit.
+
 ### Mobile release builds
 
 The native build commands verify or hydrate each flavor's ignored Firebase SDK
@@ -660,3 +700,25 @@ does not establish that a failure is a flake. A push changing this test/config
 already triggers `e2e-tests.yaml`; use that exact-head run rather than creating
 a duplicate manual dispatch. Manual dispatch currently selects the full E2E
 workflow, rather than an individual cache-contract job.
+
+### Validating Undici dependency upgrades
+
+The direct Undici 8.x owners are Infrastructure and Web. Update their package
+declarations through Bun and review the lock diff: a scoped direct upgrade should
+change those workspace entries and the shared 8.x resolution. A recursive update
+can also refresh SDK/Discord consumers on maintained 6.x and 7.x lines; validate
+those as a separate consumer group rather than assuming the direct owners cover
+them. Preserve the repository's minimum release age and lifecycle-script policy.
+
+Run the existing managed-cron network and chat link-preview tests in both owning
+apps using their actual Vitest configs. These checks preserve public-address DNS
+validation, private-address rejection and redirect handling with injected
+transport dependencies. They do not establish real socket, HTTP/2 or Worker
+transport behavior. Web's `src/lib/undici-compatibility.test.ts` additionally uses
+the actual library to preserve a literal `__proto__` cookie as an own property of
+a null-prototype result and retain an epoch expiry when clearing a cookie.
+
+Require exact-commit Infrastructure and Web type checks and builds on hosted CI
+after frozen-lock installation. Do not run local builds. A skipped build job is
+not verification. Infrastructure's existing preview workflow also deploys; use a
+CI-only build route when deployment is outside the authorized scope.

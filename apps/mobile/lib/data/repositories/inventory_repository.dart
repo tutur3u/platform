@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
@@ -6,19 +7,25 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/models/inventory/inventory_season_price.dart';
+import 'package:mobile/data/models/inventory/inventory_stock_health.dart';
 import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 part 'inventory_repository_cache.dart';
 part 'inventory_repository_product_mutations.dart';
-part 'inventory_repository_setup_pending.dart';
-part 'inventory_repository_sales_period_mutations.dart';
 part 'inventory_repository_sales_pending.dart';
+part 'inventory_repository_sales_period_mutations.dart';
+part 'inventory_repository_season_pricing.dart';
+part 'inventory_repository_setup_pending.dart';
 
 class InventoryRepository {
-  InventoryRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+  InventoryRepository({ApiClient? apiClient, CacheStore? cacheStore})
+    : _api = apiClient ?? ApiClient(),
+      _cacheStore = cacheStore ?? CacheStore.instance;
 
   final ApiClient _api;
+  final CacheStore _cacheStore;
 
   Map<String, dynamic> _buildProductPayload({
     required String name,
@@ -120,6 +127,14 @@ class InventoryRepository {
         .whereType<Map<String, dynamic>>()
         .map(InventoryLookupItem.fromJson)
         .toList(growable: false);
+  }
+
+  /// Reads confirmed server counts without a persistent aggregate cache.
+  Future<InventoryStockHealth> getStockHealth(String wsId) async {
+    final response = await _api.getJson(
+      InventoryEndpoints.analyticsSummary(wsId),
+    );
+    return InventoryStockHealth.fromJson(response);
   }
 
   Future<InventoryOverview> getOverview(
@@ -644,6 +659,18 @@ class InventoryRepository {
     );
   }
 
+  Future<List<InventorySalesPeriod>> getCheckoutSalesPeriods(String wsId) =>
+      _getCheckoutSalesPeriods(wsId);
+
+  Future<InventorySeasonQuote> getSeasonQuote(String wsId, String periodId) =>
+      _getSeasonQuote(wsId, periodId);
+
+  Future<String?> getSaleReceipt(String wsId, String requestId) =>
+      _getSaleReceipt(wsId, requestId);
+
+  Future<String> sendScheduledSale(String wsId, Map<String, dynamic> payload) =>
+      _sendScheduledSale(wsId, payload);
+
   Future<String> createSale({
     required String wsId,
     required String walletId,
@@ -652,43 +679,15 @@ class InventoryRepository {
     String? notes,
     String? categoryId,
     String? periodId,
-  }) async {
-    final path = InventoryEndpoints.invoices(wsId);
-    final payload = {
-      'customer_id': null,
-      'content': content ?? 'Mobile inventory sale',
-      'notes': notes,
-      'wallet_id': walletId,
-      'category_id': categoryId,
-      'products': products,
-    };
-    final invoiceId = await queueOrSendValue<String>(
-      feature: 'inventory',
-      method: 'POST',
-      path: path,
-      workspaceId: wsId,
-      payload: payload,
-      pendingValue: (id) => id,
-      send: () async {
-        final response = await _api.postJson(path, payload);
-        return response['invoice_id'] as String;
-      },
-    );
-    if (periodId != null && periodId.isNotEmpty) {
-      await setSalePeriod(
-        wsId: wsId,
-        saleId: invoiceId,
-        source: 'finance_invoice',
-        periodId: periodId,
-      );
-    }
-    await _invalidateInventory(wsId, const [
-      'inventory:overview',
-      'inventory:sales',
-      'inventory:audit',
-    ]);
-    return invoiceId;
-  }
+  }) => _createLegacySale(
+    wsId: wsId,
+    walletId: walletId,
+    products: products,
+    content: content,
+    notes: notes,
+    categoryId: categoryId,
+    periodId: periodId,
+  );
 
   void dispose() => _api.dispose();
 }

@@ -511,6 +511,32 @@ ordering against an atomic storage double; they do not substitute for SQL,
 import, owning build or deployment proof.
 
 
+### Opaque event rendering
+
+Web and mobile event surfaces render opaque fills with the higher-contrast black
+or white foreground. Persisted `google_color` RGB is used when available; only
+known inherited intent uses a valid current source RGB. Authenticated list/item
+reads join the current stored connection RGB only for a persisted source calendar
+link in the actor's active Google accounts. Unbound legacy rows, mismatched source
+links, and ambiguous or unavailable account matches retain the event snapshot. Active sync
+refreshes that connection even without an event delta. This read join does not
+fetch or mutate Google and does not infer intent for legacy rows. Native and legacy events
+without resolved provider metadata retain their canonical event color. Rendering
+does not infer old color intent, fetch a provider palette, or rewrite events.
+
+Timed, all-day, agenda, month/year, location and drag previews use the same
+read-only color policy. Past events use text decoration rather than translucent
+fills; optimistic/preview status uses outlines. Hovering an overlapped lower card
+hides upper cards instead of blending their fills, and restores them when the
+hover ends. Focus/drag/resize states retain opaque backgrounds. The existing
+`preservePastEventOpacity` option keeps its intent by suppressing past-event
+decoration. Mobile source RGB survives date projections and local cache
+serialization. Regression coverage lives in `calendar-event-colors.test.ts`,
+`event-card.test.tsx`, `calendar-views.test.tsx`, `dynamic-island.test.tsx` and
+mobile `event_colors_test.dart`. These checks do not establish full palette
+editing, legacy-row refresh, or completed Google write reconciliation.
+
+
 ## Calendar navigation dates and query boundaries
 
 The legacy calendar treats its selected date and visible grid dates as calendar

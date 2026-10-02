@@ -70,6 +70,10 @@ import { appendDiagnosticReference } from './auth-diagnostic-copy';
 import { resolveAuthRedirectOrigin } from './auth-redirect-origin';
 import { ProfileLoadingState } from './internal-app-account-confirmation-parts';
 import { InvalidReturnUrlWarning } from './invalid-return-url-warning';
+import {
+  LoginEmailModePreference,
+  processEmailInput,
+} from './login-email-mode';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
 import { PasskeyLoginButton } from './passkey-login-button';
 import { RequiredMfaEnrollment } from './required-mfa-enrollment';
@@ -408,20 +412,7 @@ export default function LoginForm({
   const returnAppName =
     resolvedReturnApp?.appName ?? getReturnAppName(returnApp);
 
-  const processEmailInput = useCallback((value: string): string => {
-    const trimmedValue = value.trim();
-
-    if (trimmedValue.includes('@')) {
-      return trimmedValue;
-    }
-
-    if (trimmedValue.length > 0) {
-      return `${trimmedValue}@tuturuuu.com`;
-    }
-
-    return trimmedValue;
-  }, []);
-
+  const emailModePreference = useRef(new LoginEmailModePreference());
   const emailSchema = z.string().transform(processEmailInput).pipe(z.email());
 
   const emailFormSchema = z.object({
@@ -538,6 +529,10 @@ export default function LoginForm({
   const passwordValue = passwordForm.watch('password');
   const otpValue = otpForm.watch('otp');
   const webOtpEnabled = otpSettingsQuery.data?.otpEnabled ?? false;
+  const preferredEmailMode = emailModePreference.current.resolve(
+    processEmailInput(emailValue),
+    webOtpEnabled
+  );
   const formatDiagnosticDescription = useCallback(
     (description?: string | null, diagnosticCode?: string | null) =>
       appendDiagnosticReference({
@@ -1115,7 +1110,7 @@ export default function LoginForm({
       passwordLoginWithInternalApi(payload),
   });
 
-  const sendEmailOtp = async () => {
+  const sendEmailOtp = async (explicitChoice = false) => {
     const isValid = await emailForm.trigger('email');
     if (!isValid || !locale) {
       return;
@@ -1124,6 +1119,8 @@ export default function LoginForm({
     const normalizedEmail = emailSchema.parse(emailForm.getValues('email'));
     emailForm.setValue('email', normalizedEmail, { shouldValidate: true });
     passwordForm.setValue('email', normalizedEmail, { shouldDirty: true });
+    if (explicitChoice)
+      emailModePreference.current.choose(normalizedEmail, 'otp');
 
     setLoading(true);
 
@@ -1155,7 +1152,7 @@ export default function LoginForm({
               result.diagnosticCode
             ),
           });
-          openPasswordStage(normalizedEmail);
+          openOtpStage({ preserveOtpValue: authStage === 'otp' });
         }
 
         setLoading(false);
@@ -1170,7 +1167,7 @@ export default function LoginForm({
       toast.error(t('login.failed_to_send'), {
         description: t('login.failed_to_send'),
       });
-      openPasswordStage(normalizedEmail);
+      openOtpStage({ preserveOtpValue: authStage === 'otp' });
       setLoading(false);
     }
   };
@@ -1462,7 +1459,7 @@ export default function LoginForm({
     handleOAuthLogin
   );
 
-  const advanceToPasswordStage = async () => {
+  const advanceToPasswordStage = async (explicitChoice = true) => {
     const isValid = await emailForm.trigger('email');
 
     if (!isValid) return;
@@ -1470,9 +1467,10 @@ export default function LoginForm({
     const normalizedEmail = emailSchema.parse(emailForm.getValues('email'));
 
     emailForm.setValue('email', normalizedEmail, { shouldValidate: true });
+    if (explicitChoice)
+      emailModePreference.current.choose(normalizedEmail, 'password');
     openPasswordStage(normalizedEmail);
   };
-
   const returnToIdentifyStage = () => {
     const currentEmail = emailForm.getValues('email');
 
@@ -1954,11 +1952,11 @@ export default function LoginForm({
                       if (loading || isResolvingOtpEnablement) {
                         return;
                       }
-                      if (webOtpEnabled) {
+                      if (preferredEmailMode === 'otp') {
                         void sendEmailOtp();
                         return;
                       }
-                      void advanceToPasswordStage();
+                      void advanceToPasswordStage(false);
                     }}
                     className="space-y-5"
                   >
@@ -2051,7 +2049,8 @@ export default function LoginForm({
                         isResolvingOtpEnablement ||
                         loading ||
                         !emailIsValid ||
-                        (webOtpEnabled && isCaptchaBlockingPasswordSubmit)
+                        (preferredEmailMode === 'otp' &&
+                          isCaptchaBlockingPasswordSubmit)
                       }
                     >
                       {loading || isResolvingOtpEnablement ? (
@@ -2219,7 +2218,7 @@ export default function LoginForm({
                         type="button"
                         variant="ghost"
                         className="h-11 rounded-2xl"
-                        onClick={advanceToPasswordStage}
+                        onClick={() => void advanceToPasswordStage()}
                         disabled={loading}
                       >
                         {t('login.use_password_instead')}
@@ -2359,7 +2358,7 @@ export default function LoginForm({
                         type="button"
                         variant="ghost"
                         className="h-11 w-full rounded-2xl"
-                        onClick={() => void sendEmailOtp()}
+                        onClick={() => void sendEmailOtp(true)}
                         disabled={loading}
                       >
                         {t('login.use_code_instead')}

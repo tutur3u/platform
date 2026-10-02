@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const pricedEdit = vi.hoisted(() => vi.fn());
+vi.mock('@tuturuuu/inventory-core/priced-product-edit', () => ({
+  editPricedProduct: pricedEdit,
+}));
+
 const mocks = vi.hoisted(() => ({
   authorizeInventoryWorkspace: vi.fn(),
   createAdminClient: vi.fn(),
@@ -114,6 +119,7 @@ async function deleteProduct() {
 describe('inventory product delete route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    pricedEdit.mockResolvedValue(null);
     mocks.authorizeInventoryWorkspace.mockResolvedValue({
       ok: true,
       value: {
@@ -193,6 +199,7 @@ describe('inventory product delete route', () => {
 describe('inventory product update route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    pricedEdit.mockResolvedValue(null);
     mocks.authorizeInventoryWorkspace.mockResolvedValue({
       ok: true,
       value: {

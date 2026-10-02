@@ -1,0 +1,178 @@
+// Derived from flutter_webrtc 1.6.2+hotfix.3, MIT license.
+// See MeetSocketConnection.LICENSE and meet-calls.mdx for the bounded patch.
+//
+//  FlutterSocketConnection.m
+//  RCTWebRTC
+//
+//  Created by Alex-Dan Bumbu on 08/01/2021.
+//
+
+#include <sys/socket.h>
+#include <sys/un.h>
+
+#import "FlutterSocketConnection.h"
+
+@interface FlutterSocketConnection ()
+
+@property(nonatomic, assign) int serverSocket;
+@property(nonatomic, assign) BOOL closed;
+@property(nonatomic, strong) dispatch_source_t listeningSource;
+
+@property(nonatomic, strong) NSThread* networkThread;
+
+@property(nonatomic, strong) NSInputStream* inputStream;
+@property(nonatomic, strong) NSOutputStream* outputStream;
+
+@end
+
+@implementation FlutterSocketConnection
+
+- (instancetype)initWithFilePath:(nonnull NSString*)filePath {
+  self = [super init];
+
+  [self setupNetworkThread];
+
+  self.serverSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (self.serverSocket < 0) {
+    NSLog(@"failure creating socket");
+    return nil;
+  }
+
+  if (![self setupSocketWithFileAtPath:filePath]) {
+    close(self.serverSocket);
+    return nil;
+  }
+
+  return self;
+}
+
+- (void)openWithStreamDelegate:(id<NSStreamDelegate>)streamDelegate {
+  @synchronized(self) {
+  if (self.closed || self.listeningSource) return;
+  int status = listen(self.serverSocket, 10);
+  if (status < 0) {
+    NSLog(@"failure: socket listening");
+    return;
+  }
+
+  dispatch_source_t listeningSource =
+      dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, self.serverSocket, 0, NULL);
+  dispatch_source_set_event_handler(listeningSource, ^{
+    @synchronized(self) {
+    if (self.closed || self.inputStream) return;
+    int clientSocket = accept(self.serverSocket, NULL, NULL);
+    if (clientSocket < 0) {
+      NSLog(@"failure accepting connection");
+      return;
+    }
+
+    CFReadStreamRef readStream;
+    CFWriteStreamRef writeStream;
+
+    CFStreamCreatePairWithSocket(kCFAllocatorDefault, clientSocket, &readStream, &writeStream);
+
+    self.inputStream = (__bridge_transfer NSInputStream*)readStream;
+    self.inputStream.delegate = streamDelegate;
+    [self.inputStream setProperty:(__bridge id)kCFBooleanTrue
+                           forKey:(__bridge NSString*)kCFStreamPropertyShouldCloseNativeSocket];
+
+    self.outputStream = (__bridge_transfer NSOutputStream*)writeStream;
+    [self.outputStream setProperty:(__bridge id)kCFBooleanTrue
+                            forKey:(__bridge NSString*)kCFStreamPropertyShouldCloseNativeSocket];
+
+    [self.networkThread start];
+    [self performSelector:@selector(scheduleStreams)
+                 onThread:self.networkThread
+               withObject:nil
+            waitUntilDone:true];
+
+    [self.inputStream open];
+    [self.outputStream open];
+    // One broadcast transport per listener; reconnect creates a new owner.
+    dispatch_source_cancel(self.listeningSource);
+    }
+  });
+
+  int descriptor = self.serverSocket;
+  dispatch_source_set_cancel_handler(listeningSource, ^{
+    if (descriptor >= 0) close(descriptor);
+  });
+  self.listeningSource = listeningSource;
+  dispatch_resume(listeningSource);
+  }
+}
+
+- (void)close {
+  @synchronized(self) {
+    if (self.closed) return;
+    self.closed = YES;
+    // Accept/start and stop share ownership. A late handler cannot open streams.
+    if ([self.networkThread isExecuting]) {
+      [self performSelector:@selector(unscheduleStreams)
+                   onThread:self.networkThread
+                 withObject:nil
+              waitUntilDone:true];
+      self.inputStream.delegate = nil;
+      self.outputStream.delegate = nil;
+      [self.inputStream close];
+      [self.outputStream close];
+      [self.networkThread cancel];
+    }
+    int descriptor = self.serverSocket;
+    self.serverSocket = -1;
+    if (self.listeningSource) {
+      // Release the descriptor only after in-flight dispatch handlers finish.
+      dispatch_source_cancel(self.listeningSource);
+      self.listeningSource = nil;
+    } else if (descriptor >= 0) {
+      close(descriptor);
+    }
+  }
+}
+
+// MARK: - Private Methods
+
+- (void)setupNetworkThread {
+  self.networkThread = [[NSThread alloc] initWithBlock:^{
+    do {
+      @autoreleasepool {
+        [[NSRunLoop currentRunLoop] run];
+      }
+    } while (![NSThread currentThread].isCancelled);
+  }];
+  self.networkThread.qualityOfService = NSQualityOfServiceUserInitiated;
+}
+
+- (BOOL)setupSocketWithFileAtPath:(NSString*)filePath {
+  struct sockaddr_un addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sun_family = AF_UNIX;
+
+  if (filePath.length > sizeof(addr.sun_path)) {
+    NSLog(@"failure: path too long");
+    return false;
+  }
+
+  unlink(filePath.UTF8String);
+  strncpy(addr.sun_path, filePath.UTF8String, sizeof(addr.sun_path) - 1);
+
+  int status = bind(self.serverSocket, (struct sockaddr*)&addr, sizeof(addr));
+  if (status < 0) {
+    NSLog(@"failure: socket binding");
+    return false;
+  }
+
+  return true;
+}
+
+- (void)scheduleStreams {
+  [self.inputStream scheduleInRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
+  [self.outputStream scheduleInRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
+}
+
+- (void)unscheduleStreams {
+  [self.inputStream removeFromRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
+  [self.outputStream removeFromRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
+}
+
+@end
