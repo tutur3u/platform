@@ -15,6 +15,7 @@ const nativeId = randomUUID();
 const endpoint = 'ws://127.0.0.1:8876/channels';
 let nativeMessages = 0;
 let nativeTickets = 0;
+const webStatuses: string[] = [];
 function ticket(userId: string) {
   return {
     endpoint,
@@ -25,7 +26,9 @@ function ticket(userId: string) {
         topic,
         userId,
         role: 'editor',
-        exp: Math.floor(Date.now() / 1000) + 5,
+        // Web renews proactively on its normal 45-second cadence. Native
+        // deliberately keeps short tickets to exercise one-second renewal.
+        exp: Math.floor(Date.now() / 1000) + (userId === webId ? 60 : 5),
       },
       secret
     ),
@@ -50,6 +53,7 @@ try {
           nativeId,
           nativeMessages,
           nativeTickets,
+          webStatuses,
           presence: channel.presenceState(),
         });
       return new Response(null, { status: 404 });
@@ -75,12 +79,17 @@ try {
         }
       )
       .subscribe((status) => {
+        webStatuses.push(status);
+        if (webStatuses.length > 16) webStatuses.shift();
         if (status === 'SUBSCRIBED') {
           clearTimeout(timeout);
           resolve();
         }
       });
   });
+  // Cross the old five-second Web expiry before starting Dart. Cold CI
+  // startup must not invalidate a healthy peer while native refresh stays tested.
+  await new Promise((resolve) => setTimeout(resolve, 6000));
   const test = Bun.spawn(
     [
       'flutter',
@@ -98,11 +107,15 @@ try {
       stderr: 'inherit',
     }
   );
-  assert.equal(
-    await test.exited,
-    0,
-    'Dart/web Cloudflare interoperability failed'
-  );
+  const exitCode = await test.exited;
+  if (exitCode !== 0) {
+    console.error('Dart/web fixture state', {
+      webStatuses,
+      nativeMessages,
+      nativeTickets,
+    });
+  }
+  assert.equal(exitCode, 0, 'Dart/web Cloudflare interoperability failed');
   assert.equal(nativeMessages, 1);
   assert(nativeTickets >= 2, 'Native channel did not refresh its ticket');
   console.log(
