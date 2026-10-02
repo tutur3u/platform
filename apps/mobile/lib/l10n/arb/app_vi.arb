@@ -3898,7 +3898,7 @@
     "cacheCategoryFinance": "Tài chính",
     "cacheCategoryOther": "Dữ liệu khác",
     "offlineEditSyncing": "Đang đồng bộ…",
-    "inventorySetupSyncFirst": "Đồng bộ mục mới này trước khi chỉnh sửa hoặc xóa.",
+    "inventorySetupSyncFirst": "Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.",
     "offlineEditQueued": "Đang chờ đồng bộ",
     "offlineEditConflict": "Cần xem lại trước khi đồng bộ",
     "offlineEditFailed": "Đồng bộ thất bại",

@@ -609,7 +609,6 @@ class _InventoryProductEditorPageState
   Future<void> _save() async {
     final wsId = _wsId;
     if (wsId == null || _saving) return;
-
     final entries = _validateForm();
     if (entries == null) {
       return;
@@ -656,7 +655,6 @@ class _InventoryProductEditorPageState
           _financeCategoryId,
         ),
       ]);
-
       if (!mounted) return;
       showInventoryToast(context, context.l10n.inventoryProductSaved);
       context.pop(true);
@@ -666,7 +664,9 @@ class _InventoryProductEditorPageState
       showInventoryToast(context, error.message, destructive: true);
     } on Exception catch (error) {
       if (!mounted) return;
-      final message = error.toString();
+      final message = error is InventorySetupAwaitingSync
+          ? context.l10n.inventorySetupSyncFirst
+          : error.toString();
       setState(() => _formError = message);
       showInventoryToast(context, message, destructive: true);
     } finally {

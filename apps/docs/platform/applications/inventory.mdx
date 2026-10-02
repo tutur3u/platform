@@ -31,6 +31,16 @@ Manage clears previous rows and add controls when the authenticated account or
 selected workspace changes. An open setup sheet cannot submit into a different
 account/workspace scope. These UI safeguards supplement server authorization.
 
+Native product create/update rejects a category or warehouse that is still a
+pending setup create without a server-ID mapping, before sending or queueing the
+product. Existing mappings are resolved within the owning account and workspace.
+The editor asks the user to sync first; confirmed references remain usable. This
+rule does not detect a stale selection after a successful setup create whose API
+returns no server ID; that contract/provenance follow-up is tracked in
+[issue #5737](https://github.com/tutur3u/platform/issues/5737). Repository
+regressions in `inventory_setup_dependencies_test.dart` cover both product writes,
+unresolved pending references, and mapped server references.
+
 This compact presentation does not establish parity for web commerce checkout,
 payment providers, stock ledgers, scoped analytics, costing or effective season
 pricing. Those require their existing authorized API contracts and separate
