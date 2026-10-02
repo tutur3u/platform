@@ -30,8 +30,11 @@ export async function uploadCurrentUserProfileMedia(
       cache: 'no-store',
     }
   );
-  const response = await client.fetch(ticket.uploadUrl, {
+  // A signed Storage ticket is its own authority; never forward API credentials.
+  const storageFetch = options?.fetch ?? globalThis.fetch;
+  const response = await storageFetch(ticket.uploadUrl, {
     method: 'PUT',
+    credentials: 'omit',
     headers: { 'Content-Type': file.type },
     body: file,
     cache: 'no-store',

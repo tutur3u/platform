@@ -347,3 +347,7 @@ verbatim after checking only the authenticated actor’s canonical handle. Chang
 invalid handles return 400 without claiming a reservation; the locked atomic SQL
 RPC repeats the new-handle checks and remains authoritative across concurrent saves. API regressions cover
 short, reserved, and historically mixed-case no-ops and SQL error mapping.
+
+Signed profile-media PUTs use only the Storage ticket and image MIME header, with
+cookies omitted; API authorization/default headers remain on the ticket request.
+`packages/internal-api/src/profile-media.test.ts` guards this transport boundary.
