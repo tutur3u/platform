@@ -580,11 +580,7 @@ class MeetNativeMedia extends ChangeNotifier {
         const Duration(seconds: 2),
       );
       final outbound = stats.where((entry) => entry.type == 'outbound-rtp');
-      final packets = outbound.fold<int>(0, (total, entry) {
-        final value = entry.values['packetsSent'];
-        return total +
-            (value is num ? value.toInt() : int.tryParse('$value') ?? 0);
-      });
+      final packets = outgoingMeetPackets(outbound);
       debugPrint(
         'Meet publisher health: state=${await publisher.getConnectionState()} '
         'outboundStreams=${outbound.length} packetsSent=$packets '

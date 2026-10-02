@@ -55,7 +55,7 @@ jobs:
           pub-cache: true
 
       - name: Verify pinned Meet WebRTC overlay
-        run: node --test apps/mobile/android/overlays/flutter_webrtc/verify-overlay.test.mjs
+        run: node --test android/overlays/flutter_webrtc/verify-overlay.test.mjs
 
       - name: Install dependencies
         run: flutter pub get
