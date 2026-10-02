@@ -176,7 +176,13 @@ describe('satellite workspace settings panels', () => {
       ),
       'utf8'
     );
-    expect(breadcrumbSource).toContain('popoverModal');
+    expect(breadcrumbSource).toContain('<WorkspaceSelect');
+    expect(breadcrumbSource).toContain('wsId={wsId}');
+    expect(breadcrumbSource).toContain(
+      'fetchWorkspaces={fetchSatelliteWorkspaces}'
+    );
+    expect(breadcrumbSource).toContain('resolveNextPathname=');
+    expect(breadcrumbSource).toContain('disableCreateNewWorkspace');
     expect(breadcrumbSource).toContain('resolveSatelliteSettingsWorkspacePath');
   });
 });

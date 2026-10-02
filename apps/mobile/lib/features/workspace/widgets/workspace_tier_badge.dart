@@ -59,16 +59,18 @@ class WorkspaceTierBadge extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 5),
-            Text(
-              label,
-              style: theme.typography.xSmall.copyWith(
-                color: _textColor(
-                  normalizedTier,
-                  colorScheme,
-                  accentColor,
-                  hasAccentOverride: hasAccentOverride,
+            Flexible(
+              child: Text(
+                label,
+                style: theme.typography.xSmall.copyWith(
+                  color: _textColor(
+                    normalizedTier,
+                    colorScheme,
+                    accentColor,
+                    hasAccentOverride: hasAccentOverride,
+                  ),
+                  fontWeight: FontWeight.w800,
                 ),
-                fontWeight: FontWeight.w800,
               ),
             ),
           ],

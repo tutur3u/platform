@@ -13,6 +13,7 @@ import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provid
 import { WorkspacePresenceProvider } from '@tuturuuu/tasks-ui/tu-do/providers/workspace-presence-provider';
 import { TaskDialogWrapper } from '@tuturuuu/tasks-ui/tu-do/shared/task-dialog-wrapper';
 import { TasksRouteProvider } from '@tuturuuu/tasks-ui/tu-do/tasks-route-context';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
@@ -84,66 +85,68 @@ export default async function Layout({ children, params }: LayoutProps) {
   });
 
   return (
-    <SidebarProvider
-      initialBehavior={sidebarBehavior}
-      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
-    >
-      <Structure
-        wsId={wsId}
-        workspace={workspace}
-        defaultCollapsed={defaultCollapsed}
-        links={navigationLinks}
-        actions={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <NavbarActions userId={user.id} />
-          </Suspense>
-        }
-        notificationPopover={<NotificationPopover userId={user.id} />}
-        userPopover={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <UserNav hideMetadata />
-          </Suspense>
-        }
+    <WorkspaceVisibilityProvider actorId={user.id}>
+      <SidebarProvider
+        initialBehavior={sidebarBehavior}
+        initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
       >
-        <TasksRouteProvider prefix="">
-          <RealtimeLogProvider wsId={wsId}>
-            <WorkspacePresenceProvider
-              wsId={wsId}
-              tier={workspace.tier ?? null}
-              enabled={!workspace.personal}
+        <Structure
+          wsId={wsId}
+          workspace={workspace}
+          defaultCollapsed={defaultCollapsed}
+          links={navigationLinks}
+          actions={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+              }
             >
-              <TaskDialogWrapper
-                isPersonalWorkspace={!!workspace.personal}
-                routePrefix=""
+              <NavbarActions userId={user.id} />
+            </Suspense>
+          }
+          notificationPopover={<NotificationPopover userId={user.id} />}
+          userPopover={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              <UserNav hideMetadata />
+            </Suspense>
+          }
+        >
+          <TasksRouteProvider prefix="">
+            <RealtimeLogProvider wsId={wsId}>
+              <WorkspacePresenceProvider
                 wsId={wsId}
+                tier={workspace.tier ?? null}
+                enabled={!workspace.personal}
               >
-                <SettingsDialogHost
-                  user={user}
-                  workspace={workspace}
-                  wsId={wsId}
-                />
-                <TasksCommandLauncher
+                <TaskDialogWrapper
                   isPersonalWorkspace={!!workspace.personal}
-                  navLinks={navigationLinks}
-                  workspaceSlug={workspaceSlug}
+                  routePrefix=""
                   wsId={wsId}
-                />
-                {children}
-              </TaskDialogWrapper>
-            </WorkspacePresenceProvider>
-          </RealtimeLogProvider>
-        </TasksRouteProvider>
-      </Structure>
-    </SidebarProvider>
+                >
+                  <SettingsDialogHost
+                    user={user}
+                    workspace={workspace}
+                    wsId={wsId}
+                  />
+                  <TasksCommandLauncher
+                    isPersonalWorkspace={!!workspace.personal}
+                    navLinks={navigationLinks}
+                    workspaceSlug={workspaceSlug}
+                    wsId={wsId}
+                  />
+                  {children}
+                </TaskDialogWrapper>
+              </WorkspacePresenceProvider>
+            </RealtimeLogProvider>
+          </TasksRouteProvider>
+        </Structure>
+      </SidebarProvider>
+    </WorkspaceVisibilityProvider>
   );
 }

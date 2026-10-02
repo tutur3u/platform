@@ -1,42 +1,23 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { Calendar, Download, RefreshCw } from '@tuturuuu/icons';
-import type { Workspace } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { AnalyticsCharts } from '@tuturuuu/ui/legacy/calendar/settings/analytics-charts';
 import { SummaryCards } from '@tuturuuu/ui/legacy/calendar/settings/summary-cards';
 import { SyncLogsTable } from '@tuturuuu/ui/legacy/calendar/settings/sync-logs-table';
 import { useMemo, useState } from 'react';
+import { useVisibleWorkspaces } from '../../../../../hooks/use-visible-workspaces';
 import type { SyncLog } from './types';
-
-const getWorkspaces = async () => {
-  const workspaces = await fetch('/api/workspaces');
-  if (!workspaces.ok) {
-    throw new Error(`Failed to fetch workspaces: ${workspaces.status}`);
-  }
-  return workspaces.json();
-};
 
 export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
   const [filterType, setFilterType] = useState('all');
   const [filterWorkspace, setFilterWorkspace] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Get workspaces from API
-  const workspacesQuery = useQuery({
-    queryKey: ['workspaces'],
-    queryFn: () => getWorkspaces(),
-    refetchInterval: 1000 * 60 * 5, // 5 minutes
+  const workspacesQuery = useVisibleWorkspaces(true, undefined, {
+    refetchInterval: 300_000,
   });
-
-  // Fallback to mock workspaces if API fails
-  const workspaces: Workspace[] = workspacesQuery.data || [
-    { id: 'ws_1', name: 'Marketing Team' },
-    { id: 'ws_2', name: 'Engineering' },
-    { id: 'ws_3', name: 'Sales Department' },
-    { id: 'ws_4', name: 'Executive Team' },
-  ];
+  const workspaces = workspacesQuery.data ?? [];
 
   const filteredLogs = useMemo(() => {
     return syncLogs.filter((log) => {

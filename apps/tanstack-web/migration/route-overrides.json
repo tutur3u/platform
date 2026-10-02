@@ -2619,6 +2619,11 @@
       "targetOwner": "rust-backend",
       "note": "Workspace-scoped tutoring route accepts verified Contacts and platform app sessions or Supabase auth, then enforces tutoring permissions. Rust parity pending."
     },
+    "api:/api/v1/users/me/hidden-workspaces:apps/web/src/app/api/v1/users/me/hidden-workspaces/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Owner-only Hidden workspace preferences backed by existing user_workspace_configs and board-share guest user_configs owner RLS. GET/PUT support session and registered app auth, preserve canonical membership, and never publish private preference events. Rust parity pending."
+    },
     "api:/api/ai/chatgpt:apps/web/src/app/api/ai/chatgpt/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

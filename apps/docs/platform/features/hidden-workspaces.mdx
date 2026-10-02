@@ -1,0 +1,232 @@
+---
+updatedAt: "2026-10-01"
+title: 'Hidden workspaces'
+description: 'Private workspace choices, recovery and membership separation.'
+---
+
+Hidden is a preference of the signed-in user. It never archives, leaves or deletes
+an organization, changes another member's choices, revokes access or silences
+notifications. Only its owner can read or change the preference.
+
+## Workspace sheet and recovery
+
+The web and mobile picker fills the screen, with the Tuturuuu logo, Workspaces
+heading, floating Search/Create controls, close and Back support. Search and
+sorting retain workspace IDs and the objects from the rendered results. Duplicate
+names cannot substitute a different workspace when a list refreshes.
+
+Hidden workspaces are absent from current/default choices and workspace filters.
+Settings → Hidden workspaces opens a focused restore editor; restoring changes
+only the private preference, without selecting a scope or changing the default.
+A picker with all workspaces Hidden also offers recovery. Empty preferences,
+unknown preferences, no memberships and all-Hidden memberships are distinct.
+
+Mobile switches an actively hidden selection to a visible default, personal or
+deterministic first visible workspace. Hiding the last visible workspace clears
+the active UI selection and opens the selection/recovery surface. The stored
+default remains unchanged and is skipped during normal mobile selection while
+Hidden. A browser keeps its existing authorized workspace URL when a choice is
+hidden; it offers no Hidden choices in the sheet. Existing authorized deep links
+and notification navigation may enter a Hidden workspace without restoring it.
+These rules change discovery, not permission checks.
+
+The following local widget capture uses a synthetic guest fixture, bundled font
+and the shared app theme. It contains no real account or workspace data.
+
+<img src="/images/hidden-workspaces-restore-synthetic.png" alt="Branded Hidden workspaces restore editor for a synthetic guest fixture" width="390" />
+
+Global launchers and Settings selectors receive the verified actor at the app root.
+Nested route providers for the same actor share that lifetime, so navigation
+reuses private list caches. Logout or account replacement purges the owner caches
+and rejects delayed responses. Without verified identity, discovery stays empty.
+This includes the External SDK example until it supplies an authorized per-user
+session; workspace API keys do not identify a preference owner.
+
+## Persistence and actor boundaries
+
+The existing `public.user_workspace_configs` table stores
+`(user_id, ws_id, id = 'HIDDEN_WORKSPACE', value = 'true')`. An absent row means
+visible. Board-share-only guests have no membership row, so their preferences use
+existing owner-only `public.user_configs` rows:
+`(user_id, id = 'HIDDEN_WORKSPACE:<workspace UUID>', value = 'true')`.
+The owner GET returns the union, with valid UUID IDs only. This uses one key per
+workspace and avoids concurrent updates overwriting a whole list. Restore clears both stores across either membership transition. A former member
+who still has a validated board share cannot delete the old member row through
+membership RLS, so the server performs only that exact owner/workspace/key cleanup
+after current access validation. No membership is created or RLS policy changed. There is no new schema or grant. `user_private_details` must not be used:
+its shared-member read policy would expose a preference intended to be private.
+
+`GET /api/v1/users/me/hidden-workspaces?expectedActorId=<actor>` returns only the
+owner's Hidden IDs with `Cache-Control: private, no-store`. `PUT` accepts
+`workspaceId`, `hidden` and `expectedActorId`. The shared first-party app-session audience explicitly includes this endpoint, including Git. Owner GET additionally accepts the existing `cli:access` scope for CLI/MCP discovery; PUT does not accept CLI sessions. Unknown visibility fails discovery closed, while explicit MCP reads still use OAuth grants and canonical resource authorization.
+The server derives the owner from
+the authenticated session, compares the expected actor to reject a delayed
+account-switch request, and verifies canonical membership of either MEMBER or GUEST before writing.
+For choices discovered through direct task-board shares without membership, it
+instead validates a live view/edit share for the actor's canonical user ID or
+owner email, on an undeleted board in the requested workspace. Share inspection
+is server-only and read-only; preference writes remain owner-bound. Unknown or
+failed access discovery denies the mutation. No membership is added. The existing
+owner/membership RLS already permits both; no permission or policy is expanded. App
+sessions also stamp and filter by the server actor when using their scoped
+administrative client. The response is never joined into workspace/member APIs,
+profile activity, audit summaries or notifications.
+
+Web query keys and mobile encrypted cache keys include the authenticated actor.
+Optimistic changes suppress duplicate writes, invalidate/revalidate private
+queries, ignore stale refreshes and roll back failed server mutations. A confirmed
+server update is not undone because a device cache write fails. Cold offline
+state cannot claim an empty preference list; cached preferences remain usable
+while refresh errors offer retry. Logout/account replacement invalidates mounted
+work and prevents late responses from updating another account's state.
+Membership refreshes also retain cache-invalidation fences: a response that
+arrives after its cache scope is cleared cannot confirm an empty membership or
+cancel reminders. The actor is checked before a delayed response is cached.
+`reminder_membership_provenance_test.dart` covers both invalidation and account
+replacement against the actual repository and encrypted cache.
+
+## Canonical membership and consumers
+
+Mobile `WorkspaceState.workspaces` remains canonical for reminders, access,
+notifications, deep links, task-board navigation, quotas and workspace data.
+`visibleWorkspaces` and `hiddenWorkspaces` are separate UI projections. A list
+with every membership Hidden never sets `emptyMembershipConfirmed`.
+
+Web `listWorkspaces`, workspace summary APIs and permission discovery remain
+canonical. Actor-scoped UI hooks project visible choices for the shared picker,
+satellite command search, Track move/copy/missed-entry selectors, Tasks source/
+planner/create-board/personal-placement choices, Meet assistant/follow-up choices,
+Infrastructure AI workspace choices, Mira workspace context, calendar-sync
+workspace filters and root link-shortener filters. An optional Infrastructure
+Internal/root choice must also respect Hidden/unknown state. A
+current-workspace fallback does not reinsert a Hidden choice into those lists.
+Inventory continues using the selected authorized workspace and its currency.
+
+## Verification and integration hold
+
+Focused synthetic tests cover search/sort/duplicate names/refreshed objects,
+current/default selection, owner cache isolation, optimistic rollback, stale
+reads, logout, deep links and narrow large-text/keyboard/Back recovery. No real
+workspace hide/create/delete operation is used for testing.
+
+The rollback-only native SQL fixture lives at
+`apps/database/verification/hidden-workspaces-privacy.sql`. Run it only in a
+resource-admitted disposable project with current migrations. Its 15 assertions
+check existing privileges/RLS, independent users, workspace-admin owner denial,
+restore and unchanged canonical membership. It adds no grants or schema objects.
+Synthetic actors must have `auth.users` rows and authenticated JWT claims: the
+existing restrictive account MFA policy correctly denies public-only profiles.
+
+The admitted disposable run passed all 15 assertions against 1,331 current
+migrations. Rollback verified no synthetic users/workspaces remained; cleanup
+verified no project containers or volumes remained. The fixture SHA-256 was
+`43c6e05754b59a9c1cf052e2cf4cc09be5f54690e1dfc27b0140d146c9362356`.
+
+MCP discovery and consent choices exclude Hidden/unknown visibility. Explicit
+reads/navigation continue to require user-selected OAuth workspace grants,
+canonical membership and operation permissions. Hidden is not access revocation.
+
+The mobile Settings integration depends on compact Settings PR #5692, reconciled
+at `dbf74ec222`. Its account-scoped restore row is in the root group immediately
+after Workspace, independent of current selection, membership role or admin
+permissions. Actual Shell/root cases verify guest, no-active and all-Hidden
+recovery, one Settings navigation item, search/Back without writes, explicit
+restore without selecting/current-default changes, and 320px/2× text scrolling.
+The all-Hidden selection surface already provides recovery without an active scope.
+Settings root/Workspace routes also remain reachable without an active scope.
+Satellite general Settings recovery does not wait for workspace/admin permissions. Exact-commit parent CI remains required before merge.
+
+The guest mutation and audience follow-up have synthetic API/session proofs,
+including actual production CLI tokens and signed satellite bearer/rewritten-cookie
+sessions. The original 15-assertion member/admin DB proof remains unchanged.
+One additional parent-admitted disposable run applied the same 1,331 migrations
+and passed all 26 assertions in `hidden-workspaces-board-guests.sql`: the first
+17 prove board-share guest owner privacy and admin denial; nine more cover both
+restore transitions, genuine actor/MFA, preserved memberships/board shares, exact
+server-owner cleanup, and no re-hiding after membership returns. Controlled fixture
+membership changes are separate from the Hidden operations. Rollback and owned
+container/volume cleanup passed. No grants, policies or live data were changed.
+
+The applied fixture SHA-256 is
+`a36184027422006227bc4f4a797371c98586816255971e9f1a7adb38993ee510`;
+the migration aggregate is
+`cbdcebb2ccd342f23719b3ebcb879a8d2ad12c20d860cf62ce5e23d0f3ef051d`.
+In this migrated disposable database, neither preference table belongs to a
+publication and both use default replica identity. Captured noninternal triggers
+only update timestamps or enforce strict text limits. Six existing public audit,
+activity and notification table counts stayed unchanged during the guest
+preference operations. This is local migrated-schema evidence, not a claim about
+production catalog drift or every external logging system.
+
+## Discovery follow-up
+
+Chat's paginated context rail caches canonical pages under the authenticated actor
+and the visibility revision represented by the Hidden-ID signature
+and applies Hidden only to its displayed workspace/personal choices. Delayed pages
+cannot publish after an account switch. Sparse discovery advances up to eight
+canonical 48-row pages per request toward twelve visible team choices, with
+actor/cancellation checks between pages. An accessible Load more action keeps
+remaining pages reachable when the rail has no overflow. TaskFilter queries source boards only for
+visible retained source workspace IDs and displays only their selected choices;
+it does not rewrite saved filters or change task aggregation when visibility changes.
+Both caches are removed when the actor provider unmounts. Git's Hidden audience
+is explicitly allowed without adding Git to unrelated current-user APIs.
+
+## Destination and verification follow-ups
+
+Infrastructure forms submit only a currently visible selected workspace; a stale
+Hidden default is cleared until a visible workspace is selected. Planner creation,
+save, destination addition and item creation wait for verified visible choices.
+An intended Hidden destination cannot silently turn a requested task into a draft.
+Normal meeting chat defers workspace discovery until a Mira mention.
+Meet chat and live assistant actions require a current visible destination and
+recheck actor lifetime after awaited preparation. Infrastructure submission stays
+disabled until a visible workspace is selected. Existing running sessions retain their
+canonical authorization.
+
+Mira preserves its existing Personal fallback choice when the actor has no personal
+workspace; its existing resolver selects an authorized canonical fallback. A real
+personal workspace excluded by Hidden preferences is a different state and is
+omitted from the picker. No personal workspace is created by this UI rule.
+
+## SQL assertion harness and pending execution
+
+The privacy and board-guest fixtures now enable `ON_ERROR_STOP` and raise SQL
+exceptions for false or null assertions. The owner restore assertion checks the
+actual absence of the current actor's preference. Synthetic actors, authorization
+contexts and final rollback remain unchanged; no helper grants are added.
+
+`apps/database/scripts/verify-hidden-workspaces.js` is a pure, injected-executor
+harness. It accepts legacy stdout assertions and psql stderr NOTICE assertions,
+requires successful exit and every unique expected assertion (15 or 26), and
+checks guest event counts and private storage publication metadata. Negative
+controls must fail for the intended false, null or skipped owner restore assertion;
+a startup or permission error cannot satisfy a negative control. Each execution
+uses a fresh session, followed by a separate owner rollback check, including
+failed executions. Its static tests simulate transcripts; they do not execute SQL.
+Current corrected fixtures and negative controls remain **runtime unexecuted**.
+Earlier fixture runtime evidence does not verify these revised bytes.
+
+The proposed next runtime lane is one cached PostgreSQL 17 container, with an
+explicit parent admission and unique owned identity. Pin the locally resolved image
+ID; use `--pull=never`, `--network=none`, no host ports, CPU 1, memory 2 GiB and
+128 PIDs. Use a bounded disposable data mount, a 3 GiB incremental disk limit,
+15 minutes execution plus 5 minutes cleanup, and reject admission below 10 GiB
+free disk or elevated memory pressure; stop below 6 GiB free. No image pulls,
+seeds, external network, ordinary/shared database access or global Docker pruning.
+Cleanup removes only its recorded container and disposable mount and verifies
+both are gone, even after failure.
+
+This database-only proposal requires an offline pristine schema/bootstrap from
+pinned tracked migrations and the cached image. Required auth functions, roles,
+RLS, event tables and publication metadata must be installed unchanged. If the
+bootstrap cannot replay without missing Supabase dependencies, stop and report
+that dependency; do not invent replacement policies or broaden grants. Only then
+can the two fixtures, three negative controls and five rollback checks provide
+15/26 assertion evidence. This does not claim full Supabase service, API, realtime
+or production-schema parity, and does not authorize starting a database.
+
+The board-guest ASSERT21 data-changing CTE is scoped inside its consuming
+assertion query. Structural regression coverage rejects a CTE left before a DO
+block; this coverage is not a PostgreSQL grammar check. Revised SQL still needs
+fresh admitted runtime validation.

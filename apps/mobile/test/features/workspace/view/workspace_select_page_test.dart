@@ -37,6 +37,7 @@ void main() {
 
     setUp(() {
       workspaceCubit = _MockWorkspaceCubit();
+      when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
     });
 
     testWidgets('renders personal, internal, and team sections', (
@@ -44,6 +45,8 @@ void main() {
     ) async {
       const state = WorkspaceState(
         status: WorkspaceStatus.loaded,
+        visibilityResolved: true,
+        visibilityStatus: WorkspaceStatus.loaded,
         workspaces: [teamWorkspace, systemWorkspace, personalWorkspace],
         currentWorkspace: teamWorkspace,
       );

@@ -20,7 +20,6 @@ export function SettingsWorkspaceBreadcrumb({
       disableCreateNewWorkspace
       fallbackLogoUrl={TUTURUUU_LOCAL_LOGO_URL}
       fetchWorkspaces={fetchSatelliteWorkspaces}
-      popoverModal
       resolveNextPathname={({ nextSlug }) =>
         resolveSatelliteSettingsWorkspacePath({ activeTab, appId, nextSlug })
       }

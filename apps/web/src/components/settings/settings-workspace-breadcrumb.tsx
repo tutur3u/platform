@@ -16,7 +16,6 @@ export function SettingsWorkspaceBreadcrumb({
       disableCreateNewWorkspace
       fallbackLogoUrl={TUTURUUU_LOCAL_LOGO_URL}
       fetchWorkspaces={fetchWorkspaces}
-      popoverModal
       resolveNextPathname={({ nextSlug }) =>
         `/${nextSlug}?settingsDialog=open&settingsTab=${encodeURIComponent(activeTab)}`
       }

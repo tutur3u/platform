@@ -12,6 +12,7 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
@@ -71,43 +72,45 @@ export default async function Layout({ children, params }: LayoutProps) {
   );
 
   return (
-    <SidebarProvider
-      initialBehavior={sidebarBehavior}
-      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
-    >
-      <Structure
-        actions={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <NavbarActions userId={user.id} />
-          </Suspense>
-        }
-        currentUserId={user.id}
-        defaultConversationScope={defaultConversationScope}
-        defaultCollapsed={defaultCollapsed}
-        links={await getNavigationLinks({ personalOrWsId: workspaceSlug })}
-        notificationPopover={<NotificationPopover userId={user.id} />}
-        userPopover={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <UserNav hideMetadata />
-          </Suspense>
-        }
-        workspace={workspace}
-        wsId={wsId}
+    <WorkspaceVisibilityProvider actorId={user.id}>
+      <SidebarProvider
+        initialBehavior={sidebarBehavior}
+        initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
       >
-        <RealtimeLogProvider wsId={wsId}>
-          <div data-workspace-slug={workspaceSlug}>{children}</div>
-        </RealtimeLogProvider>
-      </Structure>
-    </SidebarProvider>
+        <Structure
+          actions={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              <NavbarActions userId={user.id} />
+            </Suspense>
+          }
+          currentUserId={user.id}
+          defaultConversationScope={defaultConversationScope}
+          defaultCollapsed={defaultCollapsed}
+          links={await getNavigationLinks({ personalOrWsId: workspaceSlug })}
+          notificationPopover={<NotificationPopover userId={user.id} />}
+          userPopover={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              <UserNav hideMetadata />
+            </Suspense>
+          }
+          workspace={workspace}
+          wsId={wsId}
+        >
+          <RealtimeLogProvider wsId={wsId}>
+            <div data-workspace-slug={workspaceSlug}>{children}</div>
+          </RealtimeLogProvider>
+        </Structure>
+      </SidebarProvider>
+    </WorkspaceVisibilityProvider>
   );
 }

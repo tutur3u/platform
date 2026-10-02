@@ -11,6 +11,10 @@ import {
   type InternalApiClientOptions,
   withTaskApiBaseUrl,
 } from './client';
+import type {
+  UserConfigResponse,
+  UserWorkspaceConfigResponse,
+} from './user-config-types';
 
 export interface CurrentWorkspaceUserLink {
   platform_user_id: string;
@@ -45,15 +49,6 @@ export async function getCurrentWorkspaceUserLink(
     return null;
   }
 }
-
-type UserConfigResponse = {
-  value: string | null;
-};
-
-type UserWorkspaceConfigResponse = {
-  value: string | null;
-};
-
 export const SHOW_VERSION_BADGE_CONFIG_ID = 'SHOW_VERSION_BADGE';
 export const TASK_DEFAULT_BOARD_ID_CONFIG_ID = 'TASK_DEFAULT_BOARD_ID';
 export const TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID =
@@ -1271,3 +1266,7 @@ export async function uploadUserProfileLinkAvatar(
 
   return { publicUrl };
 }
+export {
+  getCurrentUserHiddenWorkspaces,
+  updateCurrentUserHiddenWorkspace,
+} from './hidden-workspaces';

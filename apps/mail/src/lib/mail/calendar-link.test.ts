@@ -32,7 +32,12 @@ const hold: AuthorizedCalendarLinkTarget = {
     provider: 'google',
     calendarId: 'calendar',
     connectionId: 'connection',
-    accountOwnerId: 'actor',
+    accountOwnerId: 'account-row',
+    actorUserId: 'actor',
+    accountEmail: 'self@example.test',
+    sourceCalendarId: 'source',
+    externalCalendarId: 'calendar',
+    iCalUid: 'hold-uid',
     externalEventId: 'google-private-hold',
     occurrence: null,
   },
@@ -44,6 +49,46 @@ const hold: AuthorizedCalendarLinkTarget = {
   start: '2026-10-02T13:30:00+07:00',
   end: '2026-10-02T15:00:00+07:00',
   accountLabel: 'Personal account',
+  calendarUrl: null,
+  authority: {
+    identity: {
+      workspaceId: 'personal',
+      eventId: 'hold',
+      provider: 'google',
+      calendarId: 'calendar',
+      connectionId: 'connection',
+      accountOwnerId: 'account-row',
+      actorUserId: 'actor',
+      accountEmail: 'self@example.test',
+      sourceCalendarId: 'source',
+      externalCalendarId: 'calendar',
+      externalEventId: 'google-private-hold',
+      iCalUid: 'hold-uid',
+      occurrence: null,
+    },
+    revision: 'revision',
+    etag: 'etag',
+    title: 'Meeting',
+    organizer: { email: 'self@example.test', name: 'Self' },
+    attendees: [],
+    attendeesRestricted: false,
+    location: { displayName: 'Hold location', address: null },
+    joinUrl: null,
+    start: {
+      value: '2026-10-02T13:30:00+07:00',
+      valueType: 'DATE-TIME',
+      tzid: null,
+    },
+    end: {
+      value: '2026-10-02T15:00:00+07:00',
+      valueType: 'DATE-TIME',
+      tzid: null,
+    },
+    timeZone: null,
+    recurrence: { kind: 'single', seriesEventId: null },
+    accessRole: 'owner',
+    accountLabel: 'Personal account',
+  },
 };
 const selection = {
   actorId: 'actor',
@@ -144,7 +189,7 @@ it('rechecks both permissions and source revisions at confirmation', async () =>
 it('does not borrow another account connection or accept a resolver mismatch', async () => {
   const service = createCalendarLinkService(deps);
   for (const identity of [
-    { ...hold.identity, accountOwnerId: 'other' },
+    { ...hold.identity, actorUserId: 'other' },
     { ...hold.identity, connectionId: null },
     { ...hold.identity, eventId: 'different' },
     { ...hold.identity, workspaceId: 'different' },
@@ -216,11 +261,27 @@ it('unlink deletes only own association after Calendar revocation and is idempot
   target = null;
   const reads = vi.mocked(deps.readTarget).mock.calls.length;
   expect(
-    (await service.unlink('actor', 'box', 'request', hold.identity)).status
+    (
+      await service.unlink(
+        'actor',
+        'box',
+        'request',
+        hold.identity,
+        preview!.receipt
+      )
+    ).status
   ).toBe('unlinked');
   expect(saved).toBeNull();
   expect(
-    (await service.unlink('actor', 'box', 'request', hold.identity)).status
+    (
+      await service.unlink(
+        'actor',
+        'box',
+        'request',
+        hold.identity,
+        preview!.receipt
+      )
+    ).status
   ).toBe('unlinked');
   expect(deps.readTarget).toHaveBeenCalledTimes(reads);
   expect(source).toEqual(original);
@@ -231,16 +292,30 @@ it('unlink refuses a changed target and preserves a concurrently replaced associ
   await service.confirm(selection, preview!.receipt);
   expect(
     (
-      await service.unlink('actor', 'box', 'request', {
-        ...hold.identity,
-        eventId: 'other',
-      })
+      await service.unlink(
+        'actor',
+        'box',
+        'request',
+        {
+          ...hold.identity,
+          eventId: 'other',
+        },
+        preview!.receipt
+      )
     ).status
   ).toBe('changed');
   expect(saved?.target.eventId).toBe('hold');
   deps.saveAssociation = vi.fn(async () => false);
   expect(
-    (await service.unlink('actor', 'box', 'request', hold.identity)).status
+    (
+      await service.unlink(
+        'actor',
+        'box',
+        'request',
+        hold.identity,
+        preview!.receipt
+      )
+    ).status
   ).toBe('conflict');
   expect(saved?.target.eventId).toBe('hold');
 });
@@ -312,7 +387,7 @@ it.each(['Custom:Zone', 'Custom;Zone'])(
     expect(first.occurrence).toEqual({
       value: '20261002T133000',
       valueType: 'DATE-TIME',
-      timezone: zone,
+      tzid: zone,
     });
     expect(invitationAssociationKey(first)).toBe(
       invitationAssociationKey(second)
@@ -327,7 +402,7 @@ it('preserves identity, preview receipts and duplicate confirmation across reord
       occurrence: {
         value: '20261002T133000',
         valueType: 'DATE-TIME',
-        timezone: 'Custom:Zone',
+        tzid: 'Custom:Zone',
       },
     },
   };
@@ -347,4 +422,28 @@ it('preserves identity, preview receipts and duplicate confirmation across reord
     'linked'
   );
   expect(deps.saveAssociation).toHaveBeenCalledTimes(1);
+});
+
+it('does not adopt a refreshed same-target association after an earlier DELETE receipt check', async () => {
+  const service = createCalendarLinkService(deps);
+  const first = await service.preview(selection);
+  await service.confirm(selection, first!.receipt);
+  const earlierDeleteRead = saved!;
+  // Another tab confirms new authoritative metadata for the SAME event.
+  target!.authority.revision = 'new-revision';
+  const refreshed = await service.preview(selection);
+  await service.confirm(selection, refreshed!.receipt);
+  const replacement = saved;
+  vi.mocked(deps.saveAssociation).mockClear();
+  expect(
+    await service.unlink(
+      'actor',
+      'box',
+      'request',
+      earlierDeleteRead.target,
+      earlierDeleteRead.receipt
+    )
+  ).toEqual({ status: 'changed' });
+  expect(saved).toBe(replacement);
+  expect(deps.saveAssociation).not.toHaveBeenCalled();
 });
