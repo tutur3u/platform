@@ -17,6 +17,7 @@ import {
   chooseAvailablePortBlock,
   deriveIsolatedIdentity,
   isPortAvailable,
+  METADATA_FILE,
   readLifecycleMetadata,
   removeDisposableRoot,
   stageDisposableProject,
@@ -412,12 +413,7 @@ async function run() {
         console.info(`Programming lifecycle diagnostic=${kind}`),
       onTick: async () => {
         if (
-          existsSync(
-            path.join(
-              state.metadata.disposableRoot,
-              '.tuturuuu-isolated-supabase.json'
-            )
-          )
+          existsSync(path.join(state.metadata.disposableRoot, METADATA_FILE))
         ) {
           const metadata = await readOwnedMetadata(
             state.metadata.disposableRoot
