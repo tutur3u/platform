@@ -1,0 +1,69 @@
+name: Creator identity database contract
+on:
+  pull_request:
+    paths:
+      - 'apps/database/supabase/migrations/**'
+      - 'apps/database/supabase/tests/public-creator-identity.sql'
+      - 'apps/database/scripts/verify-creator-identity-contract.mjs'
+      - 'apps/database/scripts/run-supabase*.js'
+      - '.github/workflows/creator-identity-contract.yaml'
+      - 'apps/backend/src/contact/**'
+      - 'apps/backend/src/contact.rs'
+      - 'apps/web/src/app/api/v1/users/me/profile/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: creator-identity-contract-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  check-ci:
+    permissions:
+      contents: read
+      deployments: read
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: creator-identity-contract.yaml
+  contract:
+    needs: check-ci
+    if: always() && needs.check-ci.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+    steps:
+      - name: Require an enabled contract gate
+        env:
+          CONTRACT_ENABLED: ${{ needs.check-ci.outputs.should_run }}
+        run: test "$CONTRACT_ENABLED" = true
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Apply complete schema, run strict pgTAP, generate actual RPC types
+        run: node apps/database/scripts/verify-creator-identity-contract.mjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: creator-identity-types-${{ github.event.pull_request.head.sha || github.sha }}
+          path: packages/types/src/supabase.ts
+          if-no-files-found: error
+          retention-days: 3
+  rust-profile-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Validate backend profile parity and dispatcher
+        working-directory: apps/backend
+        run: cargo test --lib --locked

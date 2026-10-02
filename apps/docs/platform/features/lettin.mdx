@@ -148,3 +148,25 @@ unrelated repository blockers separately from Lettin's focused validation.
 Artwork cleanup runs before uploads and claims at most ten unused objects in that world per request after a seven-day grace period. Draft and published references are retained. Claimed objects cannot be newly referenced; failed R2 deletions remain queued for the next upload. A world with no further uploads retains its unused artwork.
 
 Public catalogues use 24-card pages with server-side search and creator filters; full entry documents are loaded only when opening one world.
+
+
+## Shared creator identity
+
+Tulletin uses Tuturuuu's canonical `users.display_name`, `avatar_url`, `bio`,
+`handle`, and additive `banner_url` fields. A username is globally reserved in
+`handles`; renaming retains earlier reservations. Existing legacy usernames
+remain readable. Public creator surfaces select only public fields and require
+published notebooks; they never expose email or private account details.
+
+`update_public_user_profile` is a service-role-only transaction. The API must
+resolve the authenticated actor before calling it. A conflicting username or
+invalid image rejects the complete patch and reserves no new username. Image
+URLs use HTTPS; avatar, banner, bio, and username can be cleared explicitly.
+The database contract fixture `public-creator-identity.sql` covers actor grants,
+claims, conflicts, rollback, rename, clearing, and private-field rejection.
+
+The `Creator identity database contract` PR workflow applies the complete schema
+in a disposable Supabase project, runs strict pgTAP assertions, and generates
+actual database types. Its exact-head artifact is the type-generation source;
+manual production schema pushes are prohibited. This contract does not authorize
+production migration or deployment.
