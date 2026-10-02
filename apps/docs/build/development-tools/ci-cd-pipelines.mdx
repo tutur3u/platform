@@ -52,3 +52,17 @@ Tuturuuu currently automates:
 
 Use this page for orientation. Use the DevOps pages for the runbook you actually need
 while operating the system.
+
+
+### Learn preview build validation
+
+The trusted manual `vercel-preview-learn.yaml` workflow builds the checked-out
+`preview_ref` with a 35-minute timeout and the existing two-task Turbo limit.
+It records a `build` marker using `git rev-parse HEAD`, rather than the main
+workflow dispatch SHA. It does not deploy the artifacts. Learn build markers
+cannot advance the successful deployment baseline; existing Platform marker
+compatibility remains unchanged. A successful build proves compilation, while
+actual-device validation and deployment are separate gates.
+
+Focused checks: `node --test scripts/ci/learn-preview-build.test.js
+scripts/ci/github-deployment-markers.test.js scripts/ci/release-workflows.test.js`.

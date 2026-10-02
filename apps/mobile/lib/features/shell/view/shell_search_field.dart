@@ -41,6 +41,11 @@ class _ShellSearchFieldState extends State<ShellSearchField> {
   }
 
   void _submit(String query) {
+    final submit = widget.action.onSearchSubmitted;
+    if (submit != null) {
+      submit(query);
+      return;
+    }
     if (query.trim().isEmpty) {
       _close();
       return;
@@ -57,7 +62,7 @@ class _ShellSearchFieldState extends State<ShellSearchField> {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    height: mobileSectionAppBarHeight,
+    height: mobileSectionAppBarHeightFor(context),
     child: Row(
       children: [
         const SizedBox.square(

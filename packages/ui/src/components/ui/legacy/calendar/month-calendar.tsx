@@ -7,6 +7,7 @@ import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
+import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import { cn } from '@tuturuuu/utils/format';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
@@ -32,7 +33,6 @@ import {
 import { formatLunarDay, getLunarDate } from '../../../../lib/lunar-calendar';
 import { Button } from '../../button';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
-import { calendarEventTone } from './calendar-event-tone';
 import { calendarDraftDate } from './calendar-period';
 import { useCalendarSettings } from './settings/settings-context';
 
@@ -70,9 +70,9 @@ function MonthEvent({
       type="button"
       onClick={() => onOpen(event.id)}
       title={title}
+      style={calendarEventStyle(event)}
       className={cn(
-        'flex w-full min-w-0 items-center gap-1 rounded px-1 py-1 text-left text-[10px] leading-tight transition-colors hover:brightness-110 focus-visible:outline-2 focus-visible:outline-ring sm:px-1.5 sm:text-xs',
-        calendarEventTone(event.color),
+        'flex w-full min-w-0 items-center gap-1 rounded px-1 py-1 text-left text-[10px] leading-tight transition-colors hover:ring-1 hover:ring-current focus-visible:outline-2 focus-visible:outline-ring sm:px-1.5 sm:text-xs',
         allDay && 'font-medium'
       )}
     >
@@ -80,7 +80,7 @@ function MonthEvent({
         <ArrowLeft className="size-2.5 shrink-0" />
       ) : (
         !allDay && (
-          <span className="hidden shrink-0 tabular-nums opacity-70 lg:inline">
+          <span className="hidden shrink-0 tabular-nums lg:inline">
             {(zone && zone !== 'auto'
               ? dayjs(event.start_at).tz(zone)
               : dayjs(event.start_at)

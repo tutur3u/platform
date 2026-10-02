@@ -456,16 +456,9 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
                         ),
                         const shad.Gap(18),
                         if (_sales.isEmpty)
-                          FinanceEmptyState(
+                          InventoryEmptyPanel(
                             icon: Icons.receipt_long_outlined,
-                            title: l10n.inventorySalesLabel,
                             body: l10n.inventorySalesEmpty,
-                            action: _canCreateSales
-                                ? shad.SecondaryButton(
-                                    onPressed: _openCheckout,
-                                    child: Text(l10n.inventoryCheckoutTitle),
-                                  )
-                                : null,
                           )
                         else ...[
                           FinanceSectionHeader(

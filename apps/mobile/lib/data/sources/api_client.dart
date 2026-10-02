@@ -19,12 +19,15 @@ class ApiClient {
     String? baseUrl,
     http.Client? httpClient,
     SupabaseClient? authClient,
+    DateTime Function()? clock,
   }) : _baseUrl = baseUrl?.replaceAll(RegExp(r'/$'), ''),
        _client = httpClient ?? http.Client(),
-       _authClient = authClient;
+       _authClient = authClient,
+       _clock = clock ?? DateTime.now;
 
   final http.Client _client;
   final SupabaseClient? _authClient;
+  final DateTime Function() _clock;
   GoTrueClient get _auth => (_authClient ?? supabase).auth;
   final String? _baseUrl;
   static const int _expiryBufferMs = 60 * 1000;
@@ -509,12 +512,28 @@ class ApiClient {
       throw ApiException(
         message: effectiveMessage,
         statusCode: response.statusCode,
-        retryAfter: parsed?['retryAfter'] as int?,
+        retryAfter:
+            _retryAfter(response.headers['retry-after']) ??
+            parsed?['retryAfter'] as int?,
         code: parsed?['code'] as String?,
       );
     }
 
     return parsed ?? {};
+  }
+
+  int? _retryAfter(String? header) {
+    if (header == null) return null;
+    final seconds = int.tryParse(header.trim());
+    if (seconds != null) return seconds >= 0 ? seconds : null;
+    try {
+      final remaining = parseHttpDate(header).difference(_clock());
+      return remaining.isNegative
+          ? 0
+          : (remaining.inMicroseconds / Duration.microsecondsPerSecond).ceil();
+    } on FormatException {
+      return null;
+    }
   }
 
   /// Parse JSON string into Map.
