@@ -449,7 +449,7 @@ function handlePublicMarketingRedirectRoute(
   ) {
     return redirectToPath(
       req,
-      pathnameWithoutLocale.replace('/calendar/meet-together', '/meet-together')
+      `${pathnameWithoutLocale.replace('/calendar/meet-together', '/meet-together')}${req.nextUrl.search}${req.nextUrl.hash}`
     );
   }
 

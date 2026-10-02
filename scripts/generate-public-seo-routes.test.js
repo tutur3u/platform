@@ -108,7 +108,7 @@ test('discovers declared public pages outside the marketing group, excluding pri
     metadata('/portfolio')
   );
   page('../(auth)/login', '', metadata('/login', 'indexable: false'));
-  page('../(dashboard)/[wsId]/private', '', metadata('/private'));
+  page('../(dashboard)/[wsId]/private', '', metadata('/[wsId]/private'));
   assert.deepEqual(discoverRoutes(root), ['/portfolio']);
 });
 
