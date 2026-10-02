@@ -79,7 +79,7 @@ export async function authorizeMcp(
   if (!config.securityReviewComplete)
     throw new McpAccessError(503, 'Hosted MCP is not enabled.');
   const match =
-    /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/u.exec(
+    /^Bearer[ \t]+([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/iu.exec(
       request.headers.get('authorization') ?? ''
     );
   const token = match?.[1];

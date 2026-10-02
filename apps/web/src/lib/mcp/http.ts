@@ -95,19 +95,22 @@ export function createHostedMcpHandler(
         url.pathname !== expected.pathname ||
         url.search ||
         (request.headers.has('host') &&
-          request.headers.get('host') !== expected.host)
+          request.headers.get('host')?.toLowerCase() !== expected.host)
       ) {
         throw new McpAccessError(403, 'MCP request origin is invalid.');
       }
       const origin = request.headers.get('origin');
       if (origin && !config.allowedOrigins.has(origin))
         throw new McpAccessError(403, 'MCP request origin is invalid.');
-      if (request.method !== 'POST')
-        return errorResponse(
+      if (request.method !== 'POST') {
+        const response = errorResponse(
           405,
           'Use POST for stateless MCP requests.',
           config.metadataUrl
         );
+        response.headers.set('Allow', 'POST');
+        return response;
+      }
       if (
         !/^application\/json(?:\s*;|$)/iu.test(
           request.headers.get('content-type') ?? ''

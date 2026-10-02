@@ -19,9 +19,14 @@ class WorkspaceResult(BaseModel):
     workspaces: list[Workspace]
 
 
+class TaskSummary(BaseModel):
+    id: str
+    name: str
+
+
 class TaskResult(BaseModel):
     workspace_id: str
-    tasks: list[Workspace]
+    tasks: list[TaskSummary]
     limit: int
     offset: int
 

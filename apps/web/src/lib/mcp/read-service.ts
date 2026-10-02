@@ -84,19 +84,13 @@ export class HostedMcpReads {
         .filter((row) => row.access_type === 'member')
         .map((row) => row.id)
     );
-    const currentVisible = [];
-    for (const row of visible) {
-      if (
-        currentMembers.has(row.id) &&
-        currentGrant.workspaceIds.includes(row.id) &&
-        (await this.authority.workspaceVisibility(
-          this.actor.userId,
-          row.id
-        )) === 'visible'
-      )
-        currentVisible.push(row);
-    }
-    return workspaceOutput.parse({ workspaces: currentVisible });
+    return workspaceOutput.parse({
+      workspaces: visible.filter(
+        (row) =>
+          currentMembers.has(row.id) &&
+          currentGrant.workspaceIds.includes(row.id)
+      ),
+    });
   }
 
   async tasks(input: unknown) {

@@ -28,7 +28,9 @@ export function hostedMcpTools(reads: HostedMcpReads) {
       outputSchema: workspaceOutput,
       annotations,
       run: async (input: unknown) => {
-        z.object({}).strict().parse(input);
+        z.object({})
+          .strict()
+          .parse(input === undefined ? {} : input);
         return reads.workspaces();
       },
     },

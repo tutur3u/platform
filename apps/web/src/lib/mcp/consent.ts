@@ -16,6 +16,7 @@ const choiceSchema = z
   .strict();
 const detailsSchema = z.object({
   authorization_id: z.string().min(1).max(512),
+  resource: z.url(),
   redirect_uri: z.url(),
   client: z.object({ id: z.string().min(1).max(512) }),
   user: z.object({ id: uuid }),
@@ -60,6 +61,7 @@ export async function prepareMcpConsent(
     !actor.mfaAllowed ||
     !actor.csrfVerified ||
     provider.data.user.id !== actor.userId ||
+    provider.data.resource !== config.resource ||
     !config.allowedClientIds.has(provider.data.client.id) ||
     !dependencies.redirectUris
       .get(provider.data.client.id)

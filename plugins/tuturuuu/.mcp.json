@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "tuturuuu-readonly": {
-      "command": "python3.12",
+      "command": "python3",
       "args": [
         "mcp/server.py"
       ],

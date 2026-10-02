@@ -9,7 +9,7 @@
   },
   "homepage": "https://tuturuuu.com",
   "repository": "https://github.com/tutur3u/platform",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": ["tuturuuu", "platform", "codex", "monorepo"],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",

@@ -7,7 +7,14 @@
     "noUncheckedIndexedAccess": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@tuturuuu/internal-api/*": ["../../../packages/internal-api/src/*"],
+      "@tuturuuu/types/*": ["../../../packages/types/src/*"],
+      "@tuturuuu/supabase/*": ["../../../packages/supabase/src/*"],
+      "@tuturuuu/types": ["../../../packages/types/src/index.ts"]
+    },
+    "types": ["node"]
   },
-  "include": ["../../../apps/web/src/lib/mcp/**/*.ts"]
+  "include": ["../../../apps/web/src/lib/mcp/**/*.ts", "./*.test.ts"]
 }

@@ -47,7 +47,7 @@ export function createProviderReadClient(
     if (!response.ok || !response.body) {
       await response.body?.cancel();
       throw new McpAccessError(
-        401,
+        response.status === 401 || response.status === 403 ? 401 : 503,
         'MCP provider authorization is unavailable.'
       );
     }

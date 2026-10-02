@@ -2,6 +2,9 @@
 import asyncio
 import json
 import os
+from pathlib import Path
+import sys
+import tempfile
 import subprocess
 import unittest
 from unittest.mock import patch
@@ -61,6 +64,7 @@ class BridgeTests(unittest.TestCase):
 
     def test_discovery_hidden_unknown_and_explicit_reads(self):
         self.assertEqual(self.bridge.workspaces(), [])
+        self.assertEqual(self.calls, [])
         actors = []
         def hidden(actor):
             actors.append(actor)
@@ -91,39 +95,41 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(bridge.workspaces(), [])
 
     def test_gate_blocks_subprocess(self):
-        with patch.dict(os.environ, {}, clear=True), patch("bridge.subprocess.run") as run:
+        with patch.dict(os.environ, {}, clear=True), patch("bridge.subprocess.Popen") as run:
             with self.assertRaises(BridgeError):
                 run_cli(["workspaces", "list"])
             run.assert_not_called()
 
     def test_cli_error_never_exposes_stderr_or_exception(self):
         with patch.dict(os.environ, {"TUTURUUU_MCP_READS_ENABLED": "1"}):
-            for outcome in (subprocess.CompletedProcess([], 1, stderr="secret"), OSError("secret"), subprocess.TimeoutExpired("secret", 20)):
-                with patch("bridge.subprocess.run", side_effect=outcome if isinstance(outcome, Exception) else None, return_value=outcome):
-                    with self.assertRaises(BridgeError) as error:
+            for error in (OSError("synthetic-private"), subprocess.TimeoutExpired("synthetic-private", 20)):
+                with patch("bridge.subprocess.Popen", side_effect=error):
+                    with self.assertRaises(BridgeError) as result:
                         run_cli(["workspaces", "list"])
-                    self.assertNotIn("secret", str(error.exception))
+                    self.assertNotIn("synthetic-private", str(result.exception))
+
+    def fake_cli(self, code):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        executable = Path(directory.name) / "ttr"
+        executable.write_text(f"#!{sys.executable}\n" + code)
+        executable.chmod(0o700)
+        return patch.dict(os.environ, {"TUTURUUU_MCP_READS_ENABLED": "1", "PATH": directory.name})
 
     def test_subprocess_noninteractive_json_and_disabled_update(self):
-        def run(argv, **kwargs):
-            self.assertEqual(argv, ["ttr", "workspaces", "list", "--json", "--no-update-check"])
-            self.assertEqual(kwargs["stdin"], subprocess.DEVNULL)
-            self.assertEqual(kwargs["stderr"], subprocess.DEVNULL)
-            self.assertEqual(kwargs["timeout"], 20)
-            self.assertNotIn("shell", kwargs)
-            kwargs["stdout"].write(b'[]')
-            return subprocess.CompletedProcess(argv, 0)
-        with patch.dict(os.environ, {"TUTURUUU_MCP_READS_ENABLED": "1"}), patch("bridge.subprocess.run", side_effect=run):
+        with self.fake_cli("import sys\nassert sys.argv[1:] == ['workspaces','list','--json','--no-update-check']\nassert sys.stdin.read() == ''\nprint('[]')\n"):
             self.assertEqual(run_cli(["workspaces", "list"]), [])
 
-    def test_malformed_and_large_cli_output_fail_closed(self):
-        for payload in (b'{invalid', b'x' * 1_048_577):
-            def run(argv, **kwargs):
-                kwargs["stdout"].write(payload)
-                return subprocess.CompletedProcess(argv, 0)
-            with patch.dict(os.environ, {"TUTURUUU_MCP_READS_ENABLED": "1"}), patch("bridge.subprocess.run", side_effect=run):
-                with self.assertRaises(BridgeError):
-                    run_cli(["workspaces", "list"])
+    def test_malformed_and_streaming_oversized_cli_output_fail_closed(self):
+        for code in ("print('{invalid')\n", "import os\nwhile True: os.write(1, b'x' * 65536)\n"):
+            with self.fake_cli(code), self.assertRaises(BridgeError):
+                run_cli(["workspaces", "list"])
+
+    def test_failed_cli_output_never_exposes_stderr(self):
+        with self.fake_cli("import sys\nprint('synthetic-private', file=sys.stderr)\nsys.exit(1)\n"):
+            with self.assertRaises(BridgeError) as result:
+                run_cli(["workspaces", "list"])
+            self.assertNotIn("synthetic-private", str(result.exception))
 
 
 class McpContractTests(unittest.TestCase):
@@ -146,6 +152,8 @@ class McpContractTests(unittest.TestCase):
             from jsonschema import validate
             schema = next(t.outputSchema for t in tools if t.name == "list_workspace_tasks")
             validate(structured, schema)
+            self.assertIn("TaskSummary", schema.get("$defs", {}))
+            self.assertNotIn("Workspace", schema.get("$defs", {}))
         asyncio.run(verify())
 
     def test_stdio_initialize_and_fail_closed_call(self):
@@ -166,8 +174,8 @@ class McpContractTests(unittest.TestCase):
                     listing = await session.list_tools()
                     self.assertEqual(len(listing.tools), 3)
                     result = await session.call_tool("list_workspaces", {})
-                    self.assertTrue(result.isError)
-                    self.assertIn("disabled", result.content[0].text)
+                    self.assertFalse(bool(result.isError))
+                    self.assertEqual(result.structuredContent, {"workspaces": []})
                     invalid = await session.call_tool("list_workspace_tasks", {"workspace_id": WS, "limit": 51})
                     self.assertTrue(invalid.isError)
         asyncio.run(verify())

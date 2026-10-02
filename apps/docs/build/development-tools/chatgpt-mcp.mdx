@@ -75,17 +75,17 @@ response is capped at 1 MiB; temporary output is deleted after each call.
 Setup is deliberate and separate from installation of repository dependencies:
 
 ```bash
-# Use a reviewed Python 3.12 environment and an already installed ttr CLI.
+# Use a reviewed Python 3.10+ environment and an already installed ttr CLI.
 # Run dependency setup and validation through the shared FIFO resource queue.
-ttr resources run -- python3.12 -m pip install -r plugins/tuturuuu/mcp/requirements.txt
+ttr resources run -- python3 -m pip install --require-hashes -r plugins/tuturuuu/mcp/requirements.lock
 # Authenticate manually using the existing user CLI flow if needed.
 # Enabling reads authorizes requested workspace/task data to reach the MCP host.
 export TUTURUUU_MCP_READS_ENABLED=1
-python3.12 plugins/tuturuuu/mcp/server.py
+python3 plugins/tuturuuu/mcp/server.py
 ```
 
-Install the SDK in the Python 3.12 environment that the host uses to launch the
-manifest's `python3.12` command. A repo-local virtualenv is not copied into plugin
+Install the SDK in the Python 3.10+ environment that the host uses to launch the
+manifest's `python3` command. A repo-local virtualenv is not copied into plugin
 caches. Codex's compatibility overlay explicitly forwards only
 `TUTURUUU_MCP_READS_ENABLED` via `.mcp.json` `env_vars`; start/restart the host
 with that variable after review. No manifest hardcodes enablement. Both manifests
@@ -115,7 +115,7 @@ source changes; cached packages do not follow source edits automatically.
 Offline verification (synthetic responses; does not authenticate or call APIs):
 
 ```bash
-ttr resources run -- python3.12 -m unittest discover -s plugins/tuturuuu/mcp -p 'test_*.py'
+ttr resources run -- python3 -m unittest discover -s plugins/tuturuuu/mcp -p 'test_*.py'
 python3 plugins/tuturuuu/scripts/validate_plugin.py
 ```
 
@@ -394,3 +394,15 @@ patch/vendor inputs, then inspected before export. No donor/global dependency or
 credential mutation occurred. Focused evidence does not replace exact-commit CI
 lint/type/build checks, live provider refresh/revocation, private-board/RLS fixtures
 or permitted-account delivery checks; the parent owns integration and monitoring.
+
+Provider consent must prove the authorization transaction was issued for the exact
+MCP resource before grant reservation. The installed provider SDK currently omits
+that resource field, so its unaugmented authorization details intentionally fail
+closed. A reviewed provider resource-binding integration is still required before
+activation; the source factory does not infer audience from configuration or user input.
+
+The packaged local bridge uses `python3` (Python 3.10 or newer), with a generated
+transitive dependency hash lock and pip cache in CI. A missing trusted Hidden
+discovery reader returns an empty workspace list without launching the CLI. Local
+CLI output is bounded while reading the pipe; oversized output terminates the child
+before it can accumulate in a temporary file.

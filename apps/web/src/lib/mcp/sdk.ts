@@ -1,6 +1,7 @@
 // Official SDK transport owned by the web package. No public route is registered.
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
+import { z } from 'zod';
 import type { McpTransport } from './http';
 import { callHostedMcpTool, hostedMcpTools } from './tools';
 
@@ -24,11 +25,15 @@ export function createSdkTransport(): McpTransport {
           tool.name,
           {
             description: tool.description,
-            inputSchema: tool.inputSchema.shape,
+            inputSchema:
+              tool.name === 'list_workspaces'
+                ? z.object({}).strict().default({})
+                : tool.inputSchema,
             outputSchema: tool.outputSchema.shape,
             annotations: tool.annotations,
           },
-          async (input: unknown) => callHostedMcpTool(tool, input)
+          async (input: unknown) =>
+            callHostedMcpTool(tool, input === undefined ? {} : input)
         );
       }
       try {

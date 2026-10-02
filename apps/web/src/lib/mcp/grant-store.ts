@@ -39,7 +39,7 @@ export function createGrantReader(
 ): McpAuthority['readGrant'] {
   return async (userId, clientId, grantId) => {
     const row = await store.readCurrent(userId, clientId, grantId);
-    if (row === null) return null;
+    if (row === null || row === undefined) return null;
     const parsed = grantSchema.safeParse(row);
     if (
       !parsed.success ||

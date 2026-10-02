@@ -81,7 +81,7 @@ export interface McpAuthority {
 export type WorkspaceSummary = {
   id: string;
   name: string;
-  access_type?: string;
+  access_type: string;
 };
 export type TaskSummary = { id: string; name: string; workspace_id: string };
 export type CalendarSummary = {

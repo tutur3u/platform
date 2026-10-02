@@ -4,7 +4,8 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-import tempfile
+import selectors
+import time
 from collections.abc import Callable
 from typing import Literal
 from uuid import UUID
@@ -32,21 +33,41 @@ def run_cli(arguments: list[str]) -> object:
     # executable, env, origin, token, config path, or arbitrary CLI flags are accepted.
     if os.environ.get(READS_ENV) != "1":
         raise BridgeError("Local reads are disabled. Enable them only after reviewing the MCP setup guide.")
-    with tempfile.TemporaryFile() as output:
-        try:
-            completed = subprocess.run(
-                ["ttr", *arguments, "--json", "--no-update-check"],
-                stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.DEVNULL,
-                timeout=20, check=False,
-            )
-        except (OSError, subprocess.TimeoutExpired):
-            raise BridgeError("Tuturuuu CLI unavailable or timed out. Check your local CLI session.") from None
-        if completed.returncode != 0:
+    process = None
+    try:
+        process = subprocess.Popen(
+            ["ttr", *arguments, "--json", "--no-update-check"],
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        )
+        deadline = time.monotonic() + 20
+        payload = bytearray()
+        with selectors.DefaultSelector() as ready:
+            ready.register(process.stdout, selectors.EVENT_READ)
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0 or not ready.select(remaining):
+                    raise subprocess.TimeoutExpired("ttr", 20)
+                chunk = os.read(process.stdout.fileno(), min(65536, MAX_OUTPUT_BYTES + 1 - len(payload)))
+                if not chunk:
+                    break
+                payload.extend(chunk)
+                if len(payload) > MAX_OUTPUT_BYTES:
+                    raise BridgeError("Tuturuuu response exceeds the local read limit.")
+        if process.wait(timeout=max(0, deadline - time.monotonic())) != 0:
             raise BridgeError("Tuturuuu read failed. Check your local CLI login and workspace access.")
-        output.seek(0)
-        payload = output.read(MAX_OUTPUT_BYTES + 1)
-    if len(payload) > MAX_OUTPUT_BYTES:
-        raise BridgeError("Tuturuuu response exceeds the local read limit.")
+    except (OSError, subprocess.TimeoutExpired):
+        raise BridgeError("Tuturuuu CLI unavailable or timed out. Check your local CLI session.") from None
+    finally:
+        if process is not None:
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=1)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+            if process.stdout is not None:
+                process.stdout.close()
     try:
         return json.loads(payload)
     except (ValueError, UnicodeDecodeError):
@@ -77,10 +98,10 @@ class ReadBridge:
         return workspace_uuid(user.get("id"))
 
     def workspaces(self) -> list[dict]:
-        actor = self.actor()
-        rows = self.memberships()
         if self.visibility is None:
             return []
+        actor = self.actor()
+        rows = self.memberships()
         try:
             data = self.visibility(actor)
             if not isinstance(data, dict) or set(data) != {"hiddenWorkspaceIds"}:

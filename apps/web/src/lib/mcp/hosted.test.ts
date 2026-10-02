@@ -4,6 +4,7 @@ import { authorizeMcp } from './authorization';
 import type { McpAuthority, McpConfig, McpGrant, McpReads } from './contracts';
 import { createHostedMcpHandler } from './http';
 import { createProviderSessionCheck } from './provider';
+import { createProviderReadClient } from './provider-client';
 import { HostedMcpReads } from './read-service';
 import { callHostedMcpTool, hostedMcpTools } from './tools';
 
@@ -412,5 +413,64 @@ describe('stateless HTTP and provider seams', () => {
     });
     expect((await check('synthetic-token', session)).sessionActive).toBe(false);
     expect(policy).toHaveBeenCalledWith(user, session);
+  });
+});
+
+describe('review boundary regressions', () => {
+  it.each(['bearer   ', 'BEARER\t'])(
+    'accepts compliant authorization scheme %s',
+    async (prefix) => {
+      const f = setup();
+      await authorizeMcp(
+        f.request({ authorization: `${prefix}synthetic.payload.signature` }),
+        config,
+        f.authority,
+        f.verify
+      );
+      expect(f.verify).toHaveBeenCalledWith('synthetic.payload.signature');
+    }
+  );
+  it('compares host case-insensitively and advertises POST on 405', async () => {
+    const f = setup();
+    const handler = createHostedMcpHandler(config, {
+      authority: f.authority,
+      verify: f.verify,
+      reads: () => f.reads,
+      transport: () => ({ dispatch: async () => Response.json({ ok: true }) }),
+    });
+    expect(
+      (await handler(f.request({ host: 'MCP.EXAMPLE.INVALID' }))).status
+    ).toBe(200);
+    const denied = await handler(new Request(config.resource));
+    expect(denied.status).toBe(405);
+    expect(denied.headers.get('Allow')).toBe('POST');
+  });
+  it('checks visibility once, then rejects membership removed during discovery', async () => {
+    const f = setup();
+    vi.mocked(f.reads.workspaces)
+      .mockResolvedValueOnce([
+        { id: workspace, name: 'Private', access_type: 'member' },
+      ])
+      .mockResolvedValueOnce([]);
+    expect(await f.service.workspaces()).toEqual({ workspaces: [] });
+    expect(f.authority.workspaceVisibility).toHaveBeenCalledOnce();
+  });
+});
+
+it.each([
+  [401, 401],
+  [403, 401],
+  [429, 503],
+  [500, 503],
+  [200, 503],
+])('maps provider status %i to access status %i', async (status, expected) => {
+  const provider = createProviderReadClient(
+    config,
+    'sb_publishable_synthetic',
+    'synthetic-token',
+    vi.fn(async () => new Response(null, { status }))
+  );
+  await expect(provider.auth.getUser('synthetic-token')).rejects.toMatchObject({
+    status: expected,
   });
 });

@@ -8,6 +8,8 @@ import re
 import sys
 from pathlib import Path
 
+from portable_mcp import validate_portable_mcp
+
 
 FRONTMATTER_RE = re.compile(r"\A---\n(?P<body>.*?)\n---\n", re.DOTALL)
 REFERENCE_RE = re.compile(r"`(references/[^`]+)`")
@@ -619,36 +621,6 @@ def validate_portable_text_under(plugin_root: Path) -> None:
             continue
         check_no_machine_paths(path, read_text(path))
 
-
-def validate_portable_mcp(plugin_root: Path, manifest: dict) -> None:
-    portable = json.loads(read_text(plugin_root / "plugin.json"))
-    if portable.get("$schema") != "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json":
-        fail("portable plugin must declare the Agent Plugins schema")
-    for key in ("name", "description", "author", "homepage", "repository", "license", "keywords"):
-        if portable.get(key) != manifest.get(key):
-            fail(f"portable identity differs from compatibility manifest: {key}")
-    # Omitting the inline overlay preserves ALL existing OpenAI interface settings.
-    if "extensions" in portable:
-        fail("portable plugin currently uses the compatibility OpenAI overlay")
-    if manifest.get("mcpServers") != "./.mcp.json":
-        fail("compatibility manifest must reference the local MCP config")
-    config = json.loads(read_text(plugin_root / "mcp.json"))
-    if config.get("$schema") != "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json":
-        fail("portable MCP config must declare the Agent Plugins schema")
-    fallback = json.loads(read_text(plugin_root / ".mcp.json"))
-    servers = config.get("mcpServers", {})
-    if set(servers) != {"tuturuuu-readonly"}:
-        fail("only the local read MCP server is supported")
-    for name, server in servers.items():
-        if server.get("type") != "stdio":
-            fail("local MCP must use stdio, never unauthenticated HTTP")
-        expected = {"command": "python3.12", "args": ["mcp/server.py"], "cwd": "./"}
-        if {key: value for key, value in server.items() if key != "type"} != expected:
-            fail("local MCP command must use the packaged server")
-        if fallback.get("mcpServers", {}).get(name) != {**expected, "env_vars": ["TUTURUUU_MCP_READS_ENABLED"]}:
-            fail("portable and compatibility MCP wiring differ")
-        if not (plugin_root / "mcp" / "server.py").is_file():
-            fail("missing local MCP entrypoint")
 
 
 def main() -> None:

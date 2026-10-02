@@ -17,11 +17,13 @@ GATE = 'TUTURUUU_MCP_READS_ENABLED'
 
 
 class ManifestTests(unittest.TestCase):
+    tool = "list_workspaces"
+    arguments = {}
     def parameters(self, portable):
         from mcp import StdioServerParameters
         manifest = ROOT / ('mcp.json' if portable else '.mcp.json')
         server = json.loads(manifest.read_text())['mcpServers']['tuturuuu-readonly']
-        self.assertEqual(server['command'], 'python3.12')
+        self.assertEqual(server['command'], 'python3')
         self.assertEqual(server['cwd'], './')
         self.assertEqual(server['args'], ['mcp/server.py'])
         self.assertNotIn('env', server)
@@ -46,15 +48,15 @@ class ManifestTests(unittest.TestCase):
             async with stdio_client(parameters) as (read, write):
                 async with ClientSession(read, write) as session:
                     await session.initialize()
-                    return await session.call_tool('list_workspaces', {})
+                    return await session.call_tool(self.tool, self.arguments)
         return asyncio.run(verify())
 
     def test_manifest_gate_omitted_and_disabled(self):
         with patch.dict(os.environ, {}, clear=True):
             for portable in (False, True):
                 result = self.call(self.parameters(portable))
-                self.assertTrue(result.isError)
-                self.assertIn('disabled', result.content[0].text)
+                self.assertFalse(bool(result.isError))
+                self.assertEqual(result.structuredContent, {"workspaces": []})
 
     def test_legacy_explicit_opt_in_forwarded_without_credentials(self):
         with patch.dict(os.environ, {GATE: '1', 'UNRELATED_SECRET': 'do-not-forward'}, clear=True):
@@ -63,6 +65,8 @@ class ManifestTests(unittest.TestCase):
             # Empty PATH from the SDK's default env means CLI is unavailable;
             # reaching that error proves the gate received the opt-in value.
             parameters.env['PATH'] = '/nonexistent'
+            self.tool = 'list_workspace_tasks'
+            self.arguments = {'workspace_id': '00000000-0000-4000-8000-000000000001'}
             result = self.call(parameters)
             self.assertTrue(result.isError)
             self.assertIn('unavailable', result.content[0].text)
@@ -70,5 +74,5 @@ class ManifestTests(unittest.TestCase):
     def test_portable_cannot_silently_enable_reads(self):
         with patch.dict(os.environ, {GATE: '1'}, clear=True):
             result = self.call(self.parameters(True))
-            self.assertTrue(result.isError)
-            self.assertIn('disabled', result.content[0].text)
+            self.assertFalse(bool(result.isError))
+            self.assertEqual(result.structuredContent, {"workspaces": []})

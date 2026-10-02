@@ -96,6 +96,7 @@ describe('consent and persistent store binding contracts', () => {
   };
   const details = {
     authorization_id: 'synthetic-authorization',
+    resource: config.resource,
     redirect_uri: 'https://client.example.invalid/callback',
     client: { id: 'approved-client' },
     user: { id: user },
@@ -143,6 +144,8 @@ describe('consent and persistent store binding contracts', () => {
   it('rejects actor switching, forged redirect, auto-consent and write scopes', async () => {
     for (const changed of [
       { ...details, user: { id: other } },
+      { ...details, resource: 'https://other.example.invalid/mcp' },
+      { ...details, resource: undefined },
       { ...details, redirect_uri: 'https://evil.example.invalid' },
       { redirect_url: details.redirect_uri },
     ]) {
@@ -177,6 +180,13 @@ describe('consent and persistent store binding contracts', () => {
       )
     ).rejects.toMatchObject({ status: 403 });
   });
+  it.each([null, undefined])(
+    'normalizes missing stored grant %s',
+    async (missing) => {
+      const reader = createGrantReader({ readCurrent: async () => missing });
+      expect(await reader(user, 'approved-client', grantId)).toBeNull();
+    }
+  );
   it('checks stored ownership rather than trusting an adapter row', async () => {
     const reader = createGrantReader({
       readCurrent: async () => ({ ...grant, userId: other }),
