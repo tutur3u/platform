@@ -1,0 +1,16 @@
+[Unit]
+Description=On-demand ephemeral GitHub Actions runners for tutur3u/platform
+After=default.target
+
+[Service]
+Type=simple
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=%h/tuturuuu-runners
+ExecStart=/usr/bin/python3 %h/tuturuuu-runners/autoscaler.py --config %h/tuturuuu-runners/config.json
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=100
+UMask=0077
+
+[Install]
+WantedBy=default.target

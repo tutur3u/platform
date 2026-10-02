@@ -16,7 +16,7 @@ jobs:
     name: Check branch name
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.TUTURUUU_LINUX_RUNNERS_ENABLED == 'true' && github.event_name == 'push' && 'tuturuuu-linux' || 'ubuntu-latest' }}
     steps:
       - name: Check branch name
         run: |

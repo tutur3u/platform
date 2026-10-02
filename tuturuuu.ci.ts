@@ -20,6 +20,7 @@ export const ci = {
   'tanstack-route-manifest.yaml': false,
   'i18n-check.yaml': true,
   'lettin-cloudflare.yaml': true,
+  'linux-runner-smoke.yaml': true,
   'meet-cloudflare.yaml': true,
   'parley-cloudflare.yaml': true,
   'mobile.yaml': true,

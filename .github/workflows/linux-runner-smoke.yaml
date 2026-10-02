@@ -1,0 +1,54 @@
+name: Linux Runner Smoke Test
+
+on:
+  push:
+    branches: [main, chore/linux-runner-autoscaling]
+    paths:
+      - infrastructure/github-runners/**
+      - .github/workflows/linux-runner-smoke.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: linux-runner-smoke.yaml
+
+  smoke:
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true' && vars.TUTURUUU_LINUX_RUNNERS_ENABLED == 'true'
+    runs-on: tuturuuu-linux
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - name: Verify tools and container boundaries
+        run: |
+          set -euo pipefail
+          test "$(id -u)" != 0
+          test ! -S /var/run/docker.sock
+          if sudo -n true 2>/dev/null; then
+            echo 'Unexpected privilege escalation' >&2
+            exit 1
+          fi
+          test "$(cat /sys/fs/cgroup/memory.max)" = 4294967296
+          test "$(cat /sys/fs/cgroup/cpu.max)" = '300000 100000'
+          node --version
+          bun --version
+          git --version
+          python3 --version
+          printf 'Runner: %s; matrix: %s\n' "$RUNNER_NAME" '${{ matrix.runner }}'
+          # Keep the jobs alive together so the operator can verify parallelism.
+          sleep 30

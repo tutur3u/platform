@@ -67,6 +67,7 @@
                 "group": "Architecture",
                 "pages": [
                   "platform/architecture/routing",
+                  "platform/architecture/github-runners",
                   "platform/architecture/tanstack-rust-migration",
                   "platform/architecture/tanstack-rust-migration-plan",
                   "platform/architecture/data-fetching",

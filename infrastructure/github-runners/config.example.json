@@ -1,0 +1,15 @@
+{
+  "repository": "tutur3u/platform",
+  "label": "tuturuuu-linux",
+  "pool": "tuturuuu-sokora",
+  "image": "tuturuuu-actions-runner:2.337.0",
+  "network": "tuturuuu-runners",
+  "max_runners": 4,
+  "cpus": 3,
+  "memory_gib": 4,
+  "reserve_memory_gib": 8,
+  "reserve_disk_gib": 30,
+  "idle_timeout": 300,
+  "poll_seconds": 30,
+  "state_dir": "/home/sokora/tuturuuu-runners/state"
+}

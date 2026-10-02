@@ -1,0 +1,125 @@
+---
+title: "On-demand Linux CI runners"
+description: "Operate the bounded ephemeral runner pool on sokora-ubuntu."
+---
+
+The `tuturuuu-linux` label targets fresh Docker containers on `sokora-ubuntu`
+for `tutur3u/platform`. A user systemd service polls GitHub every 30 seconds,
+starts runners for queued matching jobs, and scales back to zero after work.
+GitHub's just-in-time configuration allows each runner to execute one job.
+The controller also checks queued jobs in workflows that are already running,
+including matrix jobs and jobs waiting on dependencies.
+
+## Capacity and isolation
+
+The pool is capped at four concurrent runners. Each container has three CPU
+threads, 4 GiB memory with no swap, and a 1,024-process limit. New runners wait
+when available host memory is below 12 GiB or disk space is below 30 GiB.
+These checks supplement the container limits; they do not reserve host memory.
+Existing services and runners share the machine's remaining resources.
+
+Runners execute as the unprivileged `runner` user with all Linux capabilities
+dropped and privilege escalation disabled. No host filesystem directories or
+Docker socket are mounted. They use a dedicated bridge with inter-container
+communication disabled. This network still permits outbound access, including
+host/LAN destinations; containers share the host kernel and are not VM isolation.
+Use this pool for trusted repository code only. Docker jobs, service containers,
+and jobs requiring `sudo` need a different runner.
+
+The controller uses the host's existing `gh` authentication. It passes only a
+one-job JIT credential to the runner over stdin. This credential is present in
+Docker metadata while the container exists. Host GitHub credentials never enter
+the job container. Administrators with host Docker access can inspect containers.
+For a dedicated long-term identity, configure `gh` with a repository-scoped
+token or replace the authentication adapter with a GitHub App installation token.
+Do not commit tokens or runner configuration credentials.
+
+## Workflow routing
+
+Set repository variable `TUTURUUU_LINUX_RUNNERS_ENABLED` to `true` to route the
+Biome format/lint jobs and branch-name check here for `push` and
+`workflow_dispatch`. Memory-heavy monorepo type checks and other jobs retain their existing runner selection. The
+switchboard jobs still use GitHub-hosted runners. Pull-request events remain on
+GitHub-hosted runners; the controller provisions only for repository pushes,
+manual dispatches, and scheduled runs.
+
+The variable must be enabled only while the host and controller are available.
+GitHub does not automatically fall back from a custom label to hosted runners.
+Disable the variable to route newly created jobs back to `ubuntu-latest`:
+
+```bash
+gh variable set TUTURUUU_LINUX_RUNNERS_ENABLED --repo tutur3u/platform --body false
+```
+
+Already queued jobs retain their label. Cancel and re-run them after disabling
+the variable. Public-repository contributors can change workflow definitions;
+the event guard is a routing policy, not a security boundary enforced by GitHub.
+Never deliberately dispatch untrusted code onto this host.
+
+## Installation
+
+Requires Docker Engine, Python 3, `gh` with repository admin access, and an
+active user systemd manager. Enable user lingering for reboot persistence.
+The installation on this machine is under `/home/sokora/tuturuuu-runners`.
+The versioned source is in `infrastructure/github-runners`.
+
+```bash
+mkdir -p ~/tuturuuu-runners/state ~/.config/systemd/user
+chmod 700 ~/tuturuuu-runners
+cp infrastructure/github-runners/autoscaler.py ~/tuturuuu-runners/
+cp infrastructure/github-runners/config.example.json ~/tuturuuu-runners/config.json
+cp infrastructure/github-runners/tuturuuu-runners.service ~/.config/systemd/user/
+docker network create --driver bridge \
+  --opt com.docker.network.bridge.enable_icc=false tuturuuu-runners
+docker build --network host -t tuturuuu-actions-runner:2.337.0 infrastructure/github-runners
+python3 ~/tuturuuu-runners/autoscaler.py --config ~/tuturuuu-runners/config.json --once
+systemctl --user daemon-reload
+systemctl --user enable --now tuturuuu-runners.service
+```
+
+Adjust the example config paths and pool name for another host. Use a distinct
+pool name per host. `--network host` applies only to the trusted image build;
+job containers use the dedicated bridge. No Kubernetes cluster is required.
+
+## Monitoring and recovery
+
+```bash
+systemctl --user status tuturuuu-runners
+journalctl --user -u tuturuuu-runners --since '10 minutes ago'
+cat ~/tuturuuu-runners/state/status.json
+docker ps --filter label=tuturuuu.pool=tuturuuu-sokora
+gh api repos/tutur3u/platform/actions/runners
+```
+
+Check the timestamp in `status.json`: an old timestamp means reconciliation is
+failing. API errors prevent provisioning and do not terminate running jobs.
+Controller restarts recover managed containers from Docker labels and preserve
+running jobs. Completed containers are removed on the next successful poll;
+unused runners expire after five minutes. GitHub normally removes completed JIT
+registrations automatically; the controller removes stale owned registrations.
+It never manages other pools or existing macOS runners.
+
+Retired runner logs are stored in `~/tuturuuu-runners/state/logs` for seven days
+with user-only permissions. Container logs rotate at 10 MiB with two files.
+Treat logs as sensitive CI output. The writable container filesystem has no
+per-runner disk quota; the free-space guard only stops new provisioning.
+
+To drain the pool, disable the repository variable, wait for running jobs to
+finish and the pool to reach zero, then stop the service. Stopping the controller
+alone leaves containers intact and pauses cleanup until the service restarts.
+
+## Validation and updates
+
+```bash
+python3 -m unittest discover -s infrastructure/github-runners -p 'test_*.py'
+gh workflow run linux-runner-smoke.yaml --repo tutur3u/platform
+```
+
+The smoke test runs four jobs together and verifies checkout, Node 24, Bun,
+memory/CPU limits, absence of the host Docker socket, and denied `sudo` access.
+Before the workflow is merged, the setup branch's push runs the same smoke test.
+
+Refresh the pinned official runner image version and digest before its GitHub
+support expires. Rebuild the custom image, change the config image tag, and
+restart the controller. New runners use the new image; running jobs finish on
+their original image. The controller does not perform unattended image updates.
