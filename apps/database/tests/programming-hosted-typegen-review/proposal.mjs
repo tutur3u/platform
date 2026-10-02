@@ -31,6 +31,7 @@ import {
 } from './cli-environment.mjs';
 import { runHostedCommand } from './hosted-command.mjs';
 import {
+  CliProbeFailure,
   resolveHostedNativeCli,
   runCliProbe,
   verificationFailureStatus,
@@ -101,7 +102,18 @@ export function command(
       timeout,
       maxBuffer,
     }
-  );
+  ).catch((error) => {
+    if (error instanceof CliProbeFailure) {
+      const phase =
+        {
+          docker: 'docker-command',
+          git: 'git-command',
+          sudo: 'policy-command',
+        }[binary] ?? 'command';
+      throw new CliProbeFailure(phase, error.outcome);
+    }
+    throw error;
+  });
 }
 function checkNetworkPolicy() {
   return verifyNetworkPolicy((args) =>

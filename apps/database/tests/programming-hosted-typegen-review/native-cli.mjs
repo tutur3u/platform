@@ -17,6 +17,9 @@ import {
 
 const phases = new Set([
   'command',
+  'docker-command',
+  'git-command',
+  'policy-command',
   'prepare',
   'run',
   'cleanup',
