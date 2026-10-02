@@ -1,4 +1,5 @@
 import 'server-only';
+import { matchesProgrammingHistory } from '@tuturuuu/education-core/education/programming-history';
 import { importedProgrammingSlug } from '@tuturuuu/education-core/education/programming-imported-catalog';
 import { ProgrammingProblemId } from '@tuturuuu/education-core/education/programming-schema';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -49,6 +50,10 @@ type RunnerRow = {
 };
 
 type SubmissionRow = {
+  ws_id: string;
+  user_id: string;
+  problem_id: string | null;
+  problem_bound: boolean;
   challenge_slug: string;
   created_at: string;
   id: string;
@@ -257,13 +262,27 @@ export async function readCodingSubmission({
   const client = await privateClient();
   let query = client
     .from<SubmissionRow>('learn_coding_submissions')
-    .select('id,challenge_slug,source,run_id,created_at,kind,language')
+    .select(
+      'id,challenge_slug,source,run_id,created_at,kind,language,ws_id,user_id,problem_id,problem_bound'
+    )
     .eq('id', id)
     .eq('user_id', userId)
     .eq('ws_id', wsId);
   if (problemId) query = bindProgrammingHistory(query, problemId);
   const submission = assertRows(await query.limit(1))[0];
-  if (!submission) return null;
+  if (
+    !submission ||
+    (problemId &&
+      !matchesProgrammingHistory(submission, {
+        wsId,
+        learnerId: userId,
+        problemId: ProgrammingProblemId.parse(problemId),
+        importedGlobalSlug: importedProgrammingSlug(
+          ProgrammingProblemId.parse(problemId)
+        ),
+      }))
+  )
+    return null;
   return (await hydrateExecutions(client, [submission]))[0] ?? null;
 }
 
@@ -283,7 +302,9 @@ export async function listCodingExecutions({
   const client = await privateClient();
   let query = client
     .from<SubmissionRow>('learn_coding_submissions')
-    .select('id,challenge_slug,source,run_id,created_at,kind,language')
+    .select(
+      'id,challenge_slug,source,run_id,created_at,kind,language,ws_id,user_id,problem_id,problem_bound'
+    )
     .eq('user_id', userId)
     .eq('ws_id', wsId);
   query = problemId
@@ -304,12 +325,24 @@ export async function listCodingExecutions({
       `created_at.lt.${createdAt},and(created_at.eq.${createdAt},id.lt.${id})`
     );
   }
-  const rows = assertRows(
+  const selectedRows = assertRows(
     await query
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
       .limit(26)
   );
+  const rows = problemId
+    ? selectedRows.filter((row) =>
+        matchesProgrammingHistory(row, {
+          wsId,
+          learnerId: userId,
+          problemId: ProgrammingProblemId.parse(problemId),
+          importedGlobalSlug: importedProgrammingSlug(
+            ProgrammingProblemId.parse(problemId)
+          ),
+        })
+      )
+    : selectedRows;
   return {
     items: await hydrateExecutions(client, rows.slice(0, 25)),
     nextCursor:
@@ -335,7 +368,7 @@ export async function notifyProgrammingSubmission({
     const result = await client
       .from<Pick<SubmissionRow, 'run_id'>>('learn_coding_submissions')
       .select('run_id')
-      .eq('id', ProgrammingProblemId.parse(id))
+      .eq('id', id)
       .eq('problem_id', ProgrammingProblemId.parse(problemId))
       .eq('ws_id', wsId)
       .eq('user_id', userId)

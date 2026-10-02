@@ -784,6 +784,8 @@
     "expected": "Expected output",
     "input": "Input",
     "invalidPayload": "Check the fields and test case limits before saving.",
+    "invalidRequest": "Invalid Programming request",
+    "invalidRequestDescription": "Check the problem, learner selection, and history cursor in this URL.",
     "nextPage": "Next problems",
     "open": "Open problem",
     "problemTitle": "Title",

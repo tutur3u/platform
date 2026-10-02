@@ -49,8 +49,14 @@ export async function getProgrammingSubmission(
 ) {
   return safeProgrammingAction(async () => {
     const { subject } = await programmingLearnerScope(wsId, studentId);
-    ProgrammingProblemId.parse(problemId);
-    ProgrammingProblemId.parse(submissionId);
+    const parsedProblemId = ProgrammingProblemId.safeParse(problemId);
+    if (!parsedProblemId.success)
+      throw new ProgrammingError('Invalid problem ID', 400);
+    problemId = parsedProblemId.data;
+    const parsedSubmissionId = ProgrammingProblemId.safeParse(submissionId);
+    if (!parsedSubmissionId.success)
+      throw new ProgrammingError('Invalid submission ID', 400);
+    submissionId = parsedSubmissionId.data;
     await getProgrammingProblem(
       subject.wsId,
       problemId,
@@ -73,7 +79,10 @@ export async function listProgrammingExecutions(
 ) {
   return safeProgrammingAction(async () => {
     const { subject } = await programmingLearnerScope(wsId, studentId);
-    ProgrammingProblemId.parse(problemId);
+    const parsedProblemId = ProgrammingProblemId.safeParse(problemId);
+    if (!parsedProblemId.success)
+      throw new ProgrammingError('Invalid problem ID', 400);
+    problemId = parsedProblemId.data;
     const { problem } = await getProgrammingProblem(
       subject.wsId,
       problemId,

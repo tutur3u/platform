@@ -98,14 +98,21 @@ Courses, modules, quiz sets, flashcards, assignments, monthly reports, and marks
 
 ## Programming route and operations
 
-Learn owns the learner-facing Programming workspace at `/[wsId]/coding`. It starts with
+Learn owns the learner-facing Programming workspace at `/[wsId]/programming`; `/[wsId]/coding` redirects there. It starts with
 curated array, search, and stack exercises. Students in a workspace with
 `ENABLE_EDUCATION=true` can submit solutions; parents with read-only learner
-access cannot. The initial challenge catalog is platform-authored and shared
-across eligible education workspaces. Python, JavaScript, TypeScript, C, C++,
+access cannot. The audited imported catalog is shared across eligible education workspaces; workspace managers can additionally author private workspace catalogs. Python, JavaScript, TypeScript, C, C++,
 Java, Rust, Go, Ruby, and PHP use the same standard-input/standard-output
 exercise contract. The selected language only becomes runnable when a platform
 Judge runner reports a cached pinned image for it.
+
+The fixed Judge command budget is 48,000 base64url characters for the combined
+source, catalog cases, and optional custom case. Individual field limits are upper
+bounds, not independently reserved capacity. Author saves reject catalogs that
+cannot fit even minimal source; execution validates the complete combined payload
+and rejects oversized commands before enqueue. Learners may reduce source or
+custom input to fit the shared budget. This applies to both workspace and imported
+catalogs and preserves the existing runner contract.
 
 The Programming workspace uses a full-bleed shell at this route, with shared
 Select, Button, Textarea, Tooltip, Tabs, and Accordion controls. Public test

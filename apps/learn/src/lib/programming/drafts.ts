@@ -63,10 +63,17 @@ export function readProgrammingDraft(
  * is supplied by the page; storage does not convey authorization to any API. */
 export class ProgrammingDraftStore {
   private snapshots = new Map<string, ProgrammingDraft>();
+  private dirty = new Set<string>();
+  private timer: ReturnType<typeof setTimeout> | undefined;
   private listeners = new Map<string, Set<() => void>>();
   constructor(
     private storage: () => Pick<Storage, 'getItem' | 'setItem'> | null
-  ) {}
+  ) {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pagehide', () => this.flush());
+      window.addEventListener('beforeunload', () => this.flush());
+    }
+  }
   get(key: string, fallback: ProgrammingDraft) {
     const current = this.snapshots.get(key);
     if (current) return current;
@@ -85,10 +92,20 @@ export class ProgrammingDraftStore {
   ) {
     const next = update(this.get(key, fallback));
     this.snapshots.set(key, next);
-    try {
-      this.storage()?.setItem(key, JSON.stringify(next));
-    } catch {}
+    this.dirty.add(key);
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.flush(), 200);
     for (const listener of this.listeners.get(key) ?? []) listener();
+  }
+  flush() {
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = undefined;
+    for (const key of this.dirty) {
+      try {
+        this.storage()?.setItem(key, JSON.stringify(this.snapshots.get(key)));
+      } catch {}
+    }
+    this.dirty.clear();
   }
   subscribe(key: string, callback: () => void) {
     const listeners = this.listeners.get(key) ?? new Set();

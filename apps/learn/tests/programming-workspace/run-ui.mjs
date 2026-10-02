@@ -65,14 +65,15 @@ for (const namespace of ['ui', 'utils', 'icons', 'types']) {
       });
   }
 }
-// Exact exports before wildcard exports.
-aliases.sort(
-  (a, b) =>
-    Number(a.find instanceof RegExp) - Number(b.find instanceof RegExp) ||
-    (typeof a.find === 'string' && typeof b.find === 'string'
-      ? b.find.length - a.find.length
-      : 0)
-);
+// Exact anchored exports before wildcard exports, independent of manifest order.
+aliases.sort((a, b) => {
+  const pattern = (entry) =>
+    typeof entry.find === 'string' ? entry.find : entry.find.source;
+  return (
+    Number(pattern(a).includes('(.+)')) - Number(pattern(b).includes('(.+)')) ||
+    pattern(b).length - pattern(a).length
+  );
+});
 let server, browser, page;
 const check = (name) => {
   results.checks.push({ name, status: 'pass' });

@@ -30,13 +30,16 @@ export function CanonicalHarness() {
   const [url, setUrl] = useState(() => location.pathname + location.search);
   const [actorId, setActor] = useState('synthetic-actor');
   useEffect(() => {
-    const update = () => setUrl(location.pathname + location.search);
+    const update = () => {
+      state.historyFixture = new URL(location.href).searchParams.has('history');
+      setUrl(location.pathname + location.search);
+    };
+    update();
+    Object.assign(window, { qaCanonical: { state, navigate, setActor } });
     window.addEventListener('popstate', update);
     return () => window.removeEventListener('popstate', update);
   }, []);
-  Object.assign(window, { qaCanonical: { state, navigate, setActor } });
   const route = new URL(url, location.origin);
-  state.historyFixture = route.searchParams.has('history');
   const selected = fixtures.find((entry) => route.pathname.endsWith(entry.id));
   if (selected)
     return (

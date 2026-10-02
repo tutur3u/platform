@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   type ProgrammingDraft,
   ProgrammingDraftStore,
@@ -46,6 +46,7 @@ describe('Programming reload/navigation draft scope', () => {
       customExpected: 'expected',
       inspectedId: 'selected',
     }));
+    first.flush();
     const reloaded = new ProgrammingDraftStore(() => storage);
     expect(reloaded.get(key, fallback)).toMatchObject({
       language: 'javascript',
@@ -65,6 +66,13 @@ describe('Programming reload/navigation draft scope', () => {
       throw new Error('Unavailable');
     });
     const key = programmingDraftKey(scope);
+    let otherNotifications = 0;
+    const otherUnsubscribe = store.subscribe(
+      programmingDraftKey({ ...scope, problemId: 'other' }),
+      () => {
+        otherNotifications++;
+      }
+    );
     let notifications = 0;
     const unsubscribe = store.subscribe(key, () => {
       notifications++;
@@ -78,6 +86,34 @@ describe('Programming reload/navigation draft scope', () => {
     unsubscribe();
     store.update(key, fallback, (draft) => ({ ...draft, customInput: 'next' }));
     expect(notifications).toBe(1);
+    expect(otherNotifications).toBe(0);
+    otherUnsubscribe();
+    store.flush();
+  });
+  it('updates snapshots immediately while coalescing storage writes and flushing on navigation', () => {
+    vi.useFakeTimers();
+    try {
+      const storage = { getItem: () => null, setItem: vi.fn() };
+      const store = new ProgrammingDraftStore(() => storage);
+      const key = programmingDraftKey(scope);
+      store.update(key, fallback, (draft) => ({ ...draft, customInput: 'a' }));
+      store.update(key, fallback, (draft) => ({ ...draft, customInput: 'ab' }));
+      expect(store.get(key, fallback).customInput).toBe('ab');
+      expect(storage.setItem).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(200);
+      expect(storage.setItem).toHaveBeenCalledTimes(1);
+      store.update(key, fallback, (draft) => ({
+        ...draft,
+        customInput: 'abc',
+      }));
+      window.dispatchEvent(new Event('pagehide'));
+      expect(storage.setItem).toHaveBeenCalledTimes(2);
+      expect(JSON.parse(storage.setItem.mock.calls[1]![1]).customInput).toBe(
+        'abc'
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
   it('rejects corrupt or unsupported persisted data without affecting the editor', () => {
     for (const value of [

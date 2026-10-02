@@ -25,9 +25,15 @@ export async function programmingPageFailure(
       const t = await getTranslations('programming');
       return (
         <section role="alert" className="p-6">
-          <h1 className="font-semibold text-xl">{t('accessDenied')}</h1>
+          <h1 className="font-semibold text-xl">
+            {t(error.status === 400 ? 'invalidRequest' : 'accessDenied')}
+          </h1>
           <p className="mt-2 text-muted-foreground">
-            {t('accessDeniedDescription')}
+            {t(
+              error.status === 400
+                ? 'invalidRequestDescription'
+                : 'accessDeniedDescription'
+            )}
           </p>
         </section>
       );

@@ -65,6 +65,8 @@ test.describe('Programming catalog with actual Next auth and disposable database
       ],
     };
 
+    const cleanupFailures: string[] = [];
+    let primaryFailure = false;
     try {
       for (const [context, suffix] of [
         [author, 'author'],
@@ -187,27 +189,44 @@ test.describe('Programming catalog with actual Next auth and disposable database
         },
       });
       expect(oversized.status()).toBe(400);
+    } catch (error) {
+      primaryFailure = true;
+      throw error;
     } finally {
-      for (const id of ownedWorkspaces.reverse()) {
-        const removed = await request.delete(
-          `${databaseOrigin}/rest/v1/workspaces?id=eq.${id}`,
-          { headers: databaseHeaders }
-        );
-        expect(removed.status(), 'remove only owned disposable workspace').toBe(
-          204
-        );
+      for (const [label, ids, path, expected] of [
+        [
+          'workspace',
+          ownedWorkspaces.reverse(),
+          'rest/v1/workspaces?id=eq.',
+          204,
+        ],
+        ['user', ownedUsers, 'auth/v1/admin/users/', 200],
+      ] as const) {
+        for (const id of ids) {
+          try {
+            const removed = await request.delete(
+              `${databaseOrigin}/${path}${id}`,
+              { headers: databaseHeaders }
+            );
+            if (removed.status() !== expected)
+              cleanupFailures.push(`${label}:${removed.status()}`);
+          } catch {
+            cleanupFailures.push(`${label}:request failed`);
+          }
+        }
       }
-      for (const id of ownedUsers) {
-        const removed = await request.delete(
-          `${databaseOrigin}/auth/v1/admin/users/${id}`,
-          { headers: databaseHeaders }
-        );
-        expect(removed.status(), 'remove only owned disposable auth user').toBe(
-          200
-        );
-      }
-      await author.close();
-      await outsider.close();
+      const closed = await Promise.allSettled([
+        author.close(),
+        outsider.close(),
+      ]);
+      if (closed.some((result) => result.status === 'rejected'))
+        cleanupFailures.push('context:close failed');
+      if (primaryFailure && cleanupFailures.length)
+        console.warn('Disposable Programming cleanup failed', cleanupFailures);
     }
+    if (cleanupFailures.length)
+      throw new Error(
+        `Disposable Programming cleanup failed: ${cleanupFailures.join(', ')}`
+      );
   });
 });

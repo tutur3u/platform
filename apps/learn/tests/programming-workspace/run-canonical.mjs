@@ -58,14 +58,15 @@ for (const namespace of ['ui', 'utils', 'icons', 'types']) {
       });
   }
 }
-// Exact exports before wildcard exports.
-aliases.sort(
-  (a, b) =>
-    Number(a.find instanceof RegExp) - Number(b.find instanceof RegExp) ||
-    (typeof a.find === 'string' && typeof b.find === 'string'
-      ? b.find.length - a.find.length
-      : 0)
-);
+// Exact anchored exports before wildcard exports, independent of manifest order.
+aliases.sort((a, b) => {
+  const pattern = (entry) =>
+    typeof entry.find === 'string' ? entry.find : entry.find.source;
+  return (
+    Number(pattern(a).includes('(.+)')) - Number(pattern(b).includes('(.+)')) ||
+    pattern(b).length - pattern(a).length
+  );
+});
 let server, browser, page;
 const check = (name) => {
   results.checks.push({ name, status: 'pass' });
@@ -274,6 +275,14 @@ async function run() {
   await page
     .getByRole('heading', { name: 'Edit problem', exact: true })
     .waitFor();
+  await page.getByRole('button', { name: 'Test case 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Test case 2', exact: true }).click();
+  const remove = page.getByRole('button', {
+    name: 'Remove test case',
+    exact: true,
+  });
+  assert.equal(await remove.first().isDisabled(), true);
+  assert.equal(await remove.nth(1).isDisabled(), false);
   const add = page.getByRole('button', { name: 'Add test case', exact: true });
   for (let i = 2; i < 9; i++) await add.click();
   assert.equal(await add.isDisabled(), true);
@@ -359,6 +368,10 @@ async function run() {
   });
   const blocked = await browser.newPage({
     viewport: { width: 1440, height: 1000 },
+  });
+  blocked.on('pageerror', (error) => results.consoleErrors.push(error.message));
+  blocked.on('console', (message) => {
+    if (message.type() === 'error') results.consoleErrors.push(message.text());
   });
   await blocked.addInitScript(() => {
     Object.defineProperty(window, 'sessionStorage', {

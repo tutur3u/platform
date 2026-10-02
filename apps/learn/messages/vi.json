@@ -784,6 +784,8 @@
     "expected": "Đầu ra mong đợi",
     "input": "Đầu vào",
     "invalidPayload": "Kiểm tra các trường và giới hạn ca kiểm thử trước khi lưu.",
+    "invalidRequest": "Yêu cầu Lập trình không hợp lệ",
+    "invalidRequestDescription": "Kiểm tra bài tập, học sinh đã chọn và con trỏ lịch sử trong URL này.",
     "nextPage": "Bài tập tiếp theo",
     "open": "Mở bài tập",
     "problemTitle": "Tiêu đề",

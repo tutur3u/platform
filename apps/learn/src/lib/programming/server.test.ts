@@ -64,7 +64,10 @@ beforeEach(() => {
                 ? { type: 'MEMBER' }
                 : null
               : table === 'workspace_secrets'
-                ? { value: 'true' }
+                ? values.get('name') === 'ENABLE_EDUCATION' &&
+                  values.get('ws_id') === wsId
+                  ? { value: 'true' }
+                  : null
                 : null,
           error: null,
         }),
@@ -78,6 +81,12 @@ describe('Programming verified actor matches gateway app-session authorization',
   it('accepts a real signed Learn app session without a Supabase JWT and performs actual author membership checks', async () => {
     const { context, access } = await programmingAuthorScope(wsId);
     expect(access.ok).toBe(true);
+    expect(filters).toContainEqual([
+      'workspace_secrets',
+      'name',
+      'ENABLE_EDUCATION',
+    ]);
+    expect(filters).toContainEqual(['workspace_secrets', 'ws_id', wsId]);
     expect(context.user.id).toBe(actor);
     expect(filters).toContainEqual(['workspace_members', 'user_id', actor]);
     expect(mocks.sessionUser).not.toHaveBeenCalled();

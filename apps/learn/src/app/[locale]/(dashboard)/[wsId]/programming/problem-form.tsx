@@ -312,7 +312,12 @@ export function ProgrammingProblemForm({
                         variant="ghost"
                         size="icon"
                         aria-label={t('removeCase')}
-                        disabled={value.cases.length <= 1}
+                        disabled={
+                          value.cases.length <= 1 ||
+                          (test.visible &&
+                            value.cases.filter((entry) => entry.visible)
+                              .length === 1)
+                        }
                         onClick={() => {
                           setValue((previous) => ({
                             ...previous,

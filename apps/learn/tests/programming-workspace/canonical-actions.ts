@@ -9,7 +9,9 @@ export const state = {
   saveStatus: 200,
   saved: null as ProgrammingProblemInput | null,
   deferred: false,
-  historyFixture: false,
+  historyFixture:
+    typeof location !== 'undefined' &&
+    new URL(location.href).searchParams.has('history'),
   getCalls: [] as Parameters<typeof RealGet>[],
   resolve: null as (() => void) | null,
 };
@@ -67,7 +69,7 @@ export async function listProgrammingExecutions(
           kind: 'test' as const,
           result: null,
         })),
-        nextCursor: `${older.createdAt}|${olderId}`,
+        nextCursor: `${older.createdAt}|77777777-7777-4777-8777-000000000024`,
       };
 }
 export async function saveProgrammingProblem(

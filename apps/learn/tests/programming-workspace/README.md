@@ -85,3 +85,9 @@ ordinal, UUID, challenge and Run/Submit kind. This same browser wait predicate h
 a regression proving that an older identical 1/1 verdict cannot pass. Stored
 fixture attempts are read by submission id. The tags identify fresh UI renders;
 they provide no evidence of real judge correctness.
+
+Run the canonical catalog/authoring/history/navigation harness within FIFO:
+
+```sh
+ttr resources run -- node --experimental-strip-types apps/learn/tests/programming-workspace/run-canonical.mjs
+```
