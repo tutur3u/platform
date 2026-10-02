@@ -44,7 +44,7 @@ import type { SyncLog } from './types';
 
 interface SyncLogsTableProps {
   syncLogs: SyncLog[];
-  workspaces: Workspace[];
+  workspaces: Pick<Workspace, 'id' | 'name'>[];
   filterType: string;
   filterWorkspace: string;
   searchTerm: string;
@@ -221,11 +221,8 @@ export function SyncLogsTable({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Workspaces</SelectItem>
-                {workspaces.map((workspace, index) => (
-                  <SelectItem
-                    key={`${workspace.id}-${index}`}
-                    value={workspace.id}
-                  >
+                {workspaces.map((workspace) => (
+                  <SelectItem key={workspace.id} value={workspace.id}>
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-blue-500" />
                       {workspace.name}

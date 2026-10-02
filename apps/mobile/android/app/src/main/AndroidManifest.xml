@@ -38,6 +38,7 @@
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notification" />
         <service android:name=".live.LiveScreenCaptureService" android:exported="false" android:foregroundServiceType="mediaProjection|microphone" />
+        <service android:name=".meet.MeetScreenShareService" android:exported="false" android:foregroundServiceType="mediaProjection" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

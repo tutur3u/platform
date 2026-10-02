@@ -240,6 +240,11 @@ abstract final class FinanceEndpoints {
 
 /// Inventory endpoint paths.
 abstract final class InventoryEndpoints {
+  static String saleReceipt(String wsId, String requestId) =>
+      '/api/v1/workspaces/${Uri.encodeComponent(wsId)}/inventory/sale-requests/${Uri.encodeComponent(requestId)}';
+  static String seasonPrices(String wsId, String periodId) =>
+      '/api/v1/workspaces/${Uri.encodeComponent(wsId)}/inventory/sales-periods/${Uri.encodeComponent(periodId)}/prices';
+
   static String access(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/access';
 

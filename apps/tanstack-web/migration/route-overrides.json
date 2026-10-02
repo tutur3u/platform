@@ -2619,22 +2619,10 @@
       "targetOwner": "rust-backend",
       "note": "Workspace-scoped tutoring route accepts verified Contacts and platform app sessions or Supabase auth, then enforces tutoring permissions. Rust parity pending."
     },
-    "api:/api/v1/workspaces/:wsId/programming/problems:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/route.ts": {
+    "api:/api/v1/users/me/hidden-workspaces:apps/web/src/app/api/v1/users/me/hidden-workspaces/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "GET published learner/active-parent catalog or explicitly authorized workspace author catalog; POST requires manage_users, explicit membership and education, with trusted actor/workspace and strict payloads. Private hidden cases and SQL diagnostics must not leak. Rust parity pending.",
-      "methods": {
-        "GET": {
-          "status": "legacy-next",
-          "targetOwner": "rust-backend",
-          "note": "First-class live Next.js handler; preserve scoped no-store reads and hidden-case isolation."
-        },
-        "POST": {
-          "status": "legacy-next",
-          "targetOwner": "rust-backend",
-          "note": "First-class live Next.js handler; preserve strict authorized atomic writes and status/cache parity."
-        }
-      }
+      "note": "Owner-only Hidden workspace preferences backed by existing user_workspace_configs and board-share guest user_configs owner RLS. GET/PUT support session and registered app auth, preserve canonical membership, and never publish private preference events. Rust parity pending."
     },
     "api:/api/v1/workspaces/:wsId/programming/problems/:problemId:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/[problemId]/route.ts": {
       "status": "legacy-next",
@@ -2647,6 +2635,23 @@
           "note": "First-class live Next.js handler; preserve scoped no-store reads and hidden-case isolation."
         },
         "PATCH": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "First-class live Next.js handler; preserve strict authorized atomic writes and status/cache parity."
+        }
+      }
+    },
+    "api:/api/v1/workspaces/:wsId/programming/problems:apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "GET published learner/active-parent catalog or explicitly authorized workspace author catalog; POST requires manage_users, explicit membership and education, with trusted actor/workspace and strict payloads. Private hidden cases and SQL diagnostics must not leak. Rust parity pending.",
+      "methods": {
+        "GET": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "First-class live Next.js handler; preserve scoped no-store reads and hidden-case isolation."
+        },
+        "POST": {
           "status": "legacy-next",
           "targetOwner": "rust-backend",
           "note": "First-class live Next.js handler; preserve strict authorized atomic writes and status/cache parity."

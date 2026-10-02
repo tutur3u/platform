@@ -1,8 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { CircleUserRound, Move, RefreshCw, Users } from '@tuturuuu/icons';
-import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -10,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
 import {
   Select,
   SelectContent,
@@ -30,12 +29,6 @@ interface WorkspaceSelectDialogProps {
   isMoving: boolean;
 }
 
-interface Workspace {
-  id: string;
-  name: string;
-  personal?: boolean;
-}
-
 export function WorkspaceSelectDialog({
   isOpen,
   onClose,
@@ -46,12 +39,14 @@ export function WorkspaceSelectDialog({
 }: WorkspaceSelectDialogProps) {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
   const t = useTranslations('time-tracker.workspace_select_dialog');
+  const common = useTranslations('common');
 
-  const { data: workspaces, isLoading } = useQuery<Workspace[]>({
-    queryKey: ['workspaces'],
-    queryFn: async () => (await listWorkspaces()) as Workspace[],
-    enabled: isOpen,
-  });
+  const {
+    data: workspaces,
+    isLoading,
+    error,
+    refetch,
+  } = useVisibleWorkspaces(isOpen);
 
   const availableWorkspaces = workspaces
     ?.filter((ws) => ws.id !== currentWorkspaceId)
@@ -63,7 +58,7 @@ export function WorkspaceSelectDialog({
     });
 
   const handleMove = async () => {
-    if (!selectedWorkspaceId) {
+    if (!availableWorkspaces?.some((ws) => ws.id === selectedWorkspaceId)) {
       toast.error(t('errors.selectWorkspace'));
       return;
     }
@@ -105,7 +100,14 @@ export function WorkspaceSelectDialog({
 
           <div className="space-y-2">
             <div className="font-medium text-sm">{t('selectTarget')}</div>
-            {isLoading ? (
+            {error ? (
+              <div role="alert">
+                {common('hidden_workspaces_load_error')}
+                <Button variant="outline" onClick={() => void refetch()}>
+                  {common('retry')}
+                </Button>
+              </div>
+            ) : isLoading ? (
               <div className="flex items-center gap-2 py-3">
                 <RefreshCw className="h-4 w-4 animate-spin" />
                 <span className="text-muted-foreground text-sm">
@@ -162,7 +164,10 @@ export function WorkspaceSelectDialog({
             <Button
               onClick={handleMove}
               disabled={
-                isMoving || !selectedWorkspaceId || !availableWorkspaces?.length
+                isMoving ||
+                !availableWorkspaces?.some(
+                  (ws) => ws.id === selectedWorkspaceId
+                )
               }
               className="flex-1"
             >

@@ -33,7 +33,11 @@ import {
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AssistantWorkspacePicker } from '../call/components/assistant-workspace-picker';
+import {
+  AssistantWorkspacePicker,
+  isCurrentAssistantWorkspace,
+  useAssistantWorkspaceSelection,
+} from '../call/components/assistant-workspace-picker';
 import { MiraAvatar } from '../call/components/mira-profile';
 import type { MeetRoomController } from '../call/lib/room-controller';
 import { liveVoiceSchema } from './contracts';
@@ -88,6 +92,12 @@ export function MeetLivePanel({
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [workspace, setWorkspace] = useState('personal');
+  const workspaceScope = useAssistantWorkspaceSelection(
+    workspace,
+    room.state.selfUserId
+  );
+  const currentWorkspaceScope = useRef(workspaceScope);
+  currentWorkspaceScope.current = workspaceScope;
   const [voice, setVoice] = useState<MeetLiveVoice>('Aoede');
   const active = !['idle', 'error', 'ended'].includes(live.status);
   const ready = ['listening', 'paused'].includes(live.status);
@@ -109,17 +119,25 @@ export function MeetLivePanel({
   const currentRoom = useRef(room);
   currentRoom.current = room;
   const start = async (mode: 'personal' | 'room') => {
-    if (audioSuppressed) return;
+    if (
+      audioSuppressed ||
+      !isCurrentAssistantWorkspace(workspaceScope, workspaceScope)
+    )
+      return;
+    const requestedScope = workspaceScope;
     const restoreMicrophone = mode === 'personal' && room.media.audioEnabled;
     const muteRevision = room.getSelectedDevices().microphoneRevision + 1;
     if (restoreMicrophone) await room.toggleMicrophone();
-    const started = await live.start(
-      mode,
-      streams,
-      room.getSelectedDevices().audio,
-      workspace === 'personal' ? undefined : workspace,
-      voice
-    );
+    const current = currentWorkspaceScope.current;
+    const started =
+      isCurrentAssistantWorkspace(current, requestedScope) &&
+      (await live.start(
+        mode,
+        streams,
+        room.getSelectedDevices().audio,
+        workspace === 'personal' ? undefined : workspace,
+        voice
+      ));
     if (
       !started &&
       restoreMicrophone &&
@@ -194,7 +212,7 @@ export function MeetLivePanel({
               <button
                 type="button"
                 className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                disabled={audioSuppressed}
+                disabled={audioSuppressed || !workspaceScope.allowed}
                 onClick={() => void start('personal')}
               >
                 <Headphones className="size-6" />
@@ -207,7 +225,11 @@ export function MeetLivePanel({
                 <button
                   type="button"
                   className="order-first space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                  disabled={audioSuppressed || !!room.state.liveAssistant}
+                  disabled={
+                    audioSuppressed ||
+                    !workspaceScope.allowed ||
+                    !!room.state.liveAssistant
+                  }
                   onClick={() => void start('room')}
                 >
                   <Users className="size-6" />

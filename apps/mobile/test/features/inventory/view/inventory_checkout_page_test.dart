@@ -28,6 +28,10 @@ class _CheckoutInventoryRepository extends InventoryRepository {
   }) async => [];
 
   @override
+  Future<List<InventorySalesPeriod>> getCheckoutSalesPeriods(String wsId) =>
+      getSalesPeriods(wsId);
+
+  @override
   Future<List<InventorySalesPeriod>> getSalesPeriods(
     String wsId, {
     bool includeArchived = true,

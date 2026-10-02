@@ -3,7 +3,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { usePlaybackVolume } from '../components/playback-volume';
-import { collectCallNotices } from '../lib/call-notifications';
+import { type CallNotice, collectCallNotices } from '../lib/call-notifications';
 import type { CallState } from '../lib/call-state';
 
 export function useCallNotifications(
@@ -16,11 +16,22 @@ export function useCallNotifications(
 ) {
   const volume = usePlaybackVolume();
   const t = useTranslations('meet.call');
+  const pending = useRef(new Map<string, CallNotice>());
+  const [visibilityRevision, setVisibilityRevision] = useState(0);
+  useEffect(() => {
+    const visible = () => {
+      if (document.visibilityState !== 'hidden')
+        setVisibilityRevision((value) => value + 1);
+    };
+    document.addEventListener('visibilitychange', visible);
+    return () => document.removeEventListener('visibilitychange', visible);
+  }, []);
   const previous = useRef(state);
   const wasConnected = useRef(false);
   const [sound, setSound] = useState(true);
   const audio = useRef<AudioContext | null>(null);
   const lastSound = useRef(0);
+  const waitingSeen = useRef(new Set<string>());
   const chatToasts = useRef(new Set<string>());
   useEffect(() => {
     if (activePanel !== 'chat') return;
@@ -54,14 +65,55 @@ export function useCallNotifications(
     };
   }, []);
   useEffect(() => {
+    // Visibility changes flush queued notices even without a room update.
+    void visibilityRevision;
     const notices =
       enabled && connected && wasConnected.current
-        ? collectCallNotices(previous.current, state)
+        ? collectCallNotices(previous.current, state).filter(
+            (notice) => notice.kind !== 'waiting'
+          )
         : [];
+    if (
+      enabled &&
+      connected &&
+      state.admission === 'admitted' &&
+      !state.ended &&
+      state.role === 'host'
+    ) {
+      for (const person of state.waiting) {
+        if (!waitingSeen.current.has(person.userId))
+          notices.push({
+            id: `waiting:${person.userId}`,
+            kind: 'waiting',
+            name: person.displayName,
+          });
+      }
+      waitingSeen.current = new Set(
+        state.waiting.map((person) => person.userId)
+      );
+    }
     previous.current = state;
     wasConnected.current = connected;
+    if (!enabled || !connected || state.ended || state.admission !== 'admitted')
+      pending.current.clear();
     for (const notice of notices) {
-      if (notice.kind === 'chat' && activePanel === 'chat') continue;
+      pending.current.set(notice.id, notice);
+      // Bound background accumulation without retaining entire room history.
+      if (pending.current.size > 50)
+        pending.current.delete(pending.current.keys().next().value!);
+    }
+    if (document.visibilityState === 'hidden') return;
+    const visibleNotices = [...pending.current.values()].filter(
+      (notice) =>
+        (notice.kind !== 'chat' || activePanel !== 'chat') &&
+        (notice.kind !== 'waiting' ||
+          (state.role === 'host' &&
+            state.waiting.some(
+              (person) => notice.id === `waiting:${person.userId}`
+            )))
+    );
+    pending.current.clear();
+    for (const notice of visibleNotices) {
       if (notice.kind === 'chat') chatToasts.current.add(notice.id);
       const panel = notice.kind === 'chat' ? 'chat' : 'participants';
       toast.info(t(`notice_${notice.kind}`, { name: notice.name }), {
@@ -78,7 +130,7 @@ export function useCallNotifications(
     }
     const context = audio.current;
     if (
-      !notices.length ||
+      !visibleNotices.length ||
       !sound ||
       volume === 0 ||
       audioSuppressed ||
@@ -93,7 +145,7 @@ export function useCallNotifications(
     gain.connect(context.destination);
     const start = context.currentTime;
     oscillator.frequency.setValueAtTime(
-      notices.some((notice) => notice.kind === 'waiting') ? 660 : 520,
+      visibleNotices.some((notice) => notice.kind === 'waiting') ? 660 : 520,
       start
     );
     oscillator.frequency.setValueAtTime(780, start + 0.09);
@@ -108,6 +160,7 @@ export function useCallNotifications(
     };
   }, [
     state,
+    visibilityRevision,
     enabled,
     connected,
     sound,

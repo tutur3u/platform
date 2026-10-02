@@ -61,6 +61,7 @@
     "@mantine/core": "^9.6.1",
     "@mantine/hooks": "^9.6.1",
     "@marsidev/react-turnstile": "^1.6.1",
+    "@modelcontextprotocol/sdk": "1.31.0",
     "@octokit/auth-app": "^8.3.1",
     "@octokit/rest": "^22.0.1",
     "@react-email/render": "^2.1.0",
@@ -224,7 +225,7 @@
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
     "typescript": "7.0.2",
-    "undici": "^8.10.2",
+    "undici": "^8.11.2",
     "vitest": "^5.0.0"
   },
   "packageManager": "bun@1.4.1",

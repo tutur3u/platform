@@ -93,3 +93,14 @@ export function normalizeWorkspaceSwitchPath(
 
   return pathname;
 }
+
+export function resolveGuestWorkspaceLanding(
+  workspace: Pick<
+    InternalApiWorkspaceSummary,
+    'access_type' | 'guest_landing_path'
+  >
+) {
+  return workspace.access_type === 'guest'
+    ? workspace.guest_landing_path || '/tasks/boards'
+    : null;
+}

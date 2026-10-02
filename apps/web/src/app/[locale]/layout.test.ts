@@ -23,7 +23,7 @@ describe('Web root layout', () => {
       /export function AppThemeProvider[\s\S]*<NextThemesProvider/
     );
     expect(providersSource).toMatch(
-      /export function Providers[\s\S]*<QueryProvider>/
+      /export async function Providers[\s\S]*<QueryProvider>/
     );
   });
 });

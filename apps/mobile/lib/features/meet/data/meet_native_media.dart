@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
+import 'package:mobile/features/meet/data/meet_media_health.dart';
 import 'package:mobile/features/meet/data/meet_peer_negotiation.dart';
+import 'package:mobile/features/meet/data/meet_screen_capture.dart';
 import 'package:mobile/features/meet/data/meet_signaling.dart';
 
 typedef MeetRoomTrack = Map<String, dynamic>;
@@ -35,6 +37,69 @@ class MeetNativeMedia extends ChangeNotifier {
   var _disposed = false;
   var _receiveGeneration = 0;
   Future<void> _queue = Future<void>.value();
+
+  final screenCapture = MeetScreenCapture();
+  bool get screenEnabled => screenCapture.track?.enabled == true;
+
+  Future<void> setScreenEnabled({
+    required bool enabled,
+    required String title,
+    required String stopLabel,
+  }) {
+    // Revoke the native session immediately, independently of SFU negotiation.
+    final stopping = enabled ? null : screenCapture.stop();
+    return _serialize(() async {
+      if (enabled) {
+        if (!_admitted) return;
+        await screenCapture.start(
+          title: title,
+          stopLabel: stopLabel,
+          onStopped: () {
+            unawaited(
+              setScreenEnabled(
+                enabled: false,
+                title: title,
+                stopLabel: stopLabel,
+              ).catchError((Object _) {}),
+            );
+          },
+        );
+        if (_disposed || !_admitted || !screenEnabled) {
+          await screenCapture.stop();
+          return;
+        }
+        try {
+          await _publishPending();
+        } on Object {
+          await screenCapture.stop();
+          rethrow;
+        }
+      } else {
+        await stopping;
+        await _resetPublisher();
+        await _publishPending();
+      }
+      notifyListeners();
+    });
+  }
+
+  Future<void> stopCapture() {
+    _admitted = false;
+    screenCapture.cancel();
+    // Revoke immediately even if a network negotiation is still queued.
+    _audio?.enabled = false;
+    _video?.enabled = false;
+    screenCapture.track?.enabled = false;
+    return _serialize(() async {
+      _admitted = false;
+      await screenCapture.stop();
+      await _discardLocalCapture(kinds: {'audio', 'video'});
+      audioEnabled = false;
+      videoEnabled = false;
+      await _resetPublisher();
+      notifyListeners();
+    });
+  }
 
   bool audioEnabled = false;
   bool videoEnabled = false;
@@ -276,6 +341,8 @@ class MeetNativeMedia extends ChangeNotifier {
         ('$self-audio', _audio!),
       if (videoEnabled && _video != null && !_published.contains('$self-video'))
         ('$self-video', _video!),
+      if (screenEnabled && !_published.contains('$self-screen'))
+        ('$self-screen', screenCapture.track!),
     ];
     if (pending.isEmpty) return;
     debugPrint('Meet publisher starting ${pending.length} local tracks');
@@ -320,7 +387,7 @@ class MeetNativeMedia extends ChangeNotifier {
           'location': 'local',
           'mid': mid,
           'trackName': name,
-          'kind': kind,
+          'kind': name.endsWith('-screen') ? 'screen' : kind,
         });
       }
       final response = await signaling.request({
@@ -343,10 +410,13 @@ class MeetNativeMedia extends ChangeNotifier {
         transceivers.map((entry) => (entry.$1, entry.$3.sender)),
       );
       if (stalled.isNotEmpty) {
-        stalledKinds = {
-          for (final (name, track, _) in transceivers)
-            if (stalled.contains(name)) track.kind ?? '',
-        };
+        stalledKinds = stalledMeetCaptureKinds(
+          transceivers.map((entry) => (entry.$1, entry.$2)),
+          stalled,
+        );
+        if (stalled.any((name) => name.endsWith('-screen'))) {
+          await screenCapture.stop();
+        }
         failureStage = 'send';
         throw StateError('Local media capture is not sending packets');
       }
@@ -386,13 +456,7 @@ class MeetNativeMedia extends ChangeNotifier {
         final stats = await sender.getStats().timeout(
           const Duration(seconds: 2),
         );
-        final packets = stats
-            .where((entry) => entry.type == 'outbound-rtp')
-            .fold<int>(0, (total, entry) {
-              final value = entry.values['packetsSent'];
-              return total +
-                  (value is num ? value.toInt() : int.tryParse('$value') ?? 0);
-            });
+        final packets = outgoingMeetPackets(stats);
         if (packets > 0) stalled.remove(name);
       }
       if (stalled.isEmpty) return stalled;
@@ -470,7 +534,9 @@ class MeetNativeMedia extends ChangeNotifier {
             .where((track) => track['trackName'] == name)
             .firstOrNull;
         if (owner == null) continue;
-        _midOwners[mid] = owner['userId'] as String;
+        _midOwners[mid] = name.endsWith('-screen')
+            ? '${owner['userId']}:screen'
+            : owner['userId'] as String;
         _subscribed.add('${owner['sessionId']}:$name');
         accepted++;
       }
@@ -514,11 +580,7 @@ class MeetNativeMedia extends ChangeNotifier {
         const Duration(seconds: 2),
       );
       final outbound = stats.where((entry) => entry.type == 'outbound-rtp');
-      final packets = outbound.fold<int>(0, (total, entry) {
-        final value = entry.values['packetsSent'];
-        return total +
-            (value is num ? value.toInt() : int.tryParse('$value') ?? 0);
-      });
+      final packets = outgoingMeetPackets(outbound);
       debugPrint(
         'Meet publisher health: state=${await publisher.getConnectionState()} '
         'outboundStreams=${outbound.length} packetsSent=$packets '
@@ -603,12 +665,17 @@ class MeetNativeMedia extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _audio?.enabled = false;
+    _video?.enabled = false;
+    _admitted = false;
+    screenCapture.cancel();
     unawaited(_release());
     super.dispose();
   }
 
   Future<void> _release() async {
     await _queue;
+    await screenCapture.stop();
     await _publisher?.dispose();
     await _subscriber?.dispose();
     for (final stream in _streams) {

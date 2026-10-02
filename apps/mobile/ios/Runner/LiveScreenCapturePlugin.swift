@@ -11,11 +11,13 @@ final class LiveScreenCapturePlugin: NSObject, FlutterPlugin, FlutterStreamHandl
   private var startedAt: Date?
 
   static func register(with registrar: FlutterPluginRegistrar) {
-    let instance = LiveScreenCapturePlugin()
-    registrar.addMethodCallDelegate(instance, channel: FlutterMethodChannel(name: "mobile/live_screen_capture", binaryMessenger: registrar.messenger()))
-    FlutterEventChannel(name: "mobile/live_screen_capture/events", binaryMessenger: registrar.messenger()).setStreamHandler(instance)
-    NotificationCenter.default.addObserver(instance, selector: #selector(stop), name: UIApplication.willTerminateNotification, object: nil)
-    NotificationCenter.default.addObserver(instance, selector: #selector(stop), name: UIApplication.protectedDataWillBecomeUnavailableNotification, object: nil)
+    for name in ["mobile/live_screen_capture", "mobile/meet_live_screen_capture"] {
+      let instance = LiveScreenCapturePlugin()
+      registrar.addMethodCallDelegate(instance, channel: FlutterMethodChannel(name: name, binaryMessenger: registrar.messenger()))
+      FlutterEventChannel(name: "\(name)/events", binaryMessenger: registrar.messenger()).setStreamHandler(instance)
+      NotificationCenter.default.addObserver(instance, selector: #selector(stop), name: UIApplication.willTerminateNotification, object: nil)
+      NotificationCenter.default.addObserver(instance, selector: #selector(stop), name: UIApplication.protectedDataWillBecomeUnavailableNotification, object: nil)
+    }
   }
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -30,12 +32,19 @@ final class LiveScreenCapturePlugin: NSObject, FlutterPlugin, FlutterStreamHandl
       let directory = try? LiveScreenSession.directory(group: "group.\(identifier).live") else {
       result(FlutterError(code: "capture_unavailable", message: "Screen capture unavailable", details: nil)); return
     }
+    let transport = arguments["transport"] as? String
+    guard transport == nil || transport == "meet" else {
+      result(FlutterError(code: "capture_unavailable", message: "Unknown screen transport", details: nil)); return
+    }
+    guard LiveScreenSession.current(in: directory) == nil else {
+      result(FlutterError(code: "capture_busy", message: "Another screen sharing session is active", details: nil)); return
+    }
     do {
       // This dedicated directory contains only transient, capture-session data.
       for file in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) {
         try FileManager.default.removeItem(at: file)
       }
-      let session = LiveScreenSession(id: UUID().uuidString, heartbeat: Date().timeIntervalSince1970, stopMessage: stopMessage)
+      let session = LiveScreenSession(id: UUID().uuidString, heartbeat: Date().timeIntervalSince1970, stopMessage: stopMessage, transport: transport)
       try session.write(in: directory)
       self.session = session; self.directory = directory; startedAt = Date(); lastStatus = ""
       let picker = RPSystemBroadcastPickerView(frame: CGRect(x: 0, y: 0, width: 48, height: 48))
@@ -56,7 +65,8 @@ final class LiveScreenCapturePlugin: NSObject, FlutterPlugin, FlutterStreamHandl
   private func poll() {
     guard let session, let directory else { return }
     do {
-      try LiveScreenSession(id: session.id, heartbeat: Date().timeIntervalSince1970, stopMessage: session.stopMessage).write(in: directory)
+      guard LiveScreenSession.current(in: directory)?.id == session.id else { stop(); return }
+      try LiveScreenSession(id: session.id, heartbeat: Date().timeIntervalSince1970, stopMessage: session.stopMessage, transport: session.transport).write(in: directory)
       let status = (try? String(contentsOf: session.status(in: directory), encoding: .utf8)) ?? ""
       if status != lastStatus && !status.isEmpty {
         lastStatus = status
@@ -70,7 +80,7 @@ final class LiveScreenCapturePlugin: NSObject, FlutterPlugin, FlutterStreamHandl
           abs(Date().timeIntervalSince1970 - heartbeat) < 10 else { stop(); return }
       }
       let frame = session.frame(in: directory)
-      if lastStatus == "started", let data = try? Data(contentsOf: frame), data.count <= 512 * 1024 {
+      if session.transport != "meet", lastStatus == "started", let data = try? Data(contentsOf: frame), data.count <= 512 * 1024 {
         try? FileManager.default.removeItem(at: frame)
         sink?(["type": "frame", "bytes": FlutterStandardTypedData(bytes: data)])
       }
@@ -80,7 +90,9 @@ final class LiveScreenCapturePlugin: NSObject, FlutterPlugin, FlutterStreamHandl
   @objc private func stop() {
     timer?.cancel(); timer = nil
     if let directory, let session {
-      try? FileManager.default.removeItem(at: directory.appendingPathComponent("session.json"))
+      if LiveScreenSession.current(in: directory)?.id == session.id {
+        try? FileManager.default.removeItem(at: directory.appendingPathComponent("session.json"))
+      }
       try? FileManager.default.removeItem(at: session.frame(in: directory))
       try? FileManager.default.removeItem(at: session.status(in: directory))
       try? FileManager.default.removeItem(at: session.alive(in: directory))

@@ -4,6 +4,7 @@ struct LiveScreenSession: Codable {
   let id: String
   let heartbeat: TimeInterval
   let stopMessage: String
+  var transport: String? = nil
 
   static func directory(group: String) throws -> URL {
     guard let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group) else {
@@ -18,9 +19,15 @@ struct LiveScreenSession: Codable {
   static func current(in directory: URL) -> LiveScreenSession? {
     guard let data = try? Data(contentsOf: directory.appendingPathComponent("session.json")),
       let session = try? JSONDecoder().decode(Self.self, from: data),
-      UUID(uuidString: session.id) != nil,
-      abs(Date().timeIntervalSince1970 - session.heartbeat) < 10 else { return nil }
-    return session
+      UUID(uuidString: session.id) != nil else { return nil }
+    let now = Date().timeIntervalSince1970
+    if abs(now - session.heartbeat) < 10 { return session }
+    // A consented Meet broadcast may outlive Runner's foreground timer when the
+    // user shares another app. The extension lease ends with its socket/session.
+    if session.transport == "meet",
+      let alive = try? String(contentsOf: session.alive(in: directory), encoding: .utf8),
+      let heartbeat = TimeInterval(alive), abs(now - heartbeat) < 10 { return session }
+    return nil
   }
 
   func write(in directory: URL) throws {

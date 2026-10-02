@@ -5,6 +5,7 @@ import {
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
 import { type ReactNode, Suspense } from 'react';
+import { getSatelliteAppSessionUser } from '../auth';
 import { SatelliteVersionBadge } from '../components/version-badge-gate';
 import { ClientProviders } from './client-providers';
 
@@ -47,14 +48,29 @@ export function Providers({
       */}
       <Suspense fallback={loadingFallback}>
         <NextIntlClientProvider>
-          <ClientProviders currentApp={launchableApp}>
+          <VerifiedClientProviders currentApp={launchableApp}>
             {children}
             <Suspense fallback={null}>
               <SatelliteVersionBadge appName={appName} />
             </Suspense>
-          </ClientProviders>
+          </VerifiedClientProviders>
         </NextIntlClientProvider>
       </Suspense>
     </ThemeProvider>
+  );
+}
+
+async function VerifiedClientProviders({
+  children,
+  currentApp,
+}: {
+  children: ReactNode;
+  currentApp?: LaunchableAppSlug;
+}) {
+  const user = currentApp ? await getSatelliteAppSessionUser(currentApp) : null;
+  return (
+    <ClientProviders actorId={user?.id} currentApp={currentApp}>
+      {children}
+    </ClientProviders>
   );
 }

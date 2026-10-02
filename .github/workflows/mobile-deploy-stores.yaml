@@ -107,6 +107,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           MOBILE_BUILD_NAME: ${{ steps.version_name.outputs.build_name }}
+          MOBILE_BUILD_NUMBER: ${{ steps.credentials.outputs.build_number }}
         run: node ../../scripts/mobile-deployment/release-history.mjs
 
       - name: Share beta release history with both stores
@@ -485,9 +486,10 @@ jobs:
       - name: Verify TestFlight and distribute to beta groups
         timeout-minutes: 35
         env:
+          MOBILE_BUILD_NAME: ${{ needs.mobile-credentials-preflight.outputs.build_name }}
           TESTFLIGHT_BETA_ENABLED: ${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}
           TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}
-          TESTFLIGHT_BETA_WHATS_NEW: ${{ vars.TESTFLIGHT_BETA_WHATS_NEW }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: node ../../scripts/mobile-deployment/verify-store.mjs ios "${{ needs.mobile-credentials-preflight.outputs.build_number }}"
 
       - name: Cleanup iOS release files
@@ -552,7 +554,7 @@ jobs:
         env:
           TESTFLIGHT_BETA_ENABLED: ${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}
           TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}
-          TESTFLIGHT_BETA_WHATS_NEW: ${{ vars.TESTFLIGHT_BETA_WHATS_NEW }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/mobile-deployment/verify-store.mjs ios-pending
 
       - name: Cleanup iOS release files

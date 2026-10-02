@@ -35,7 +35,6 @@ class MeetRoomContentHeader extends StatelessWidget {
               call.title ?? fallbackTitle ?? l10n.meetTitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
           if (remaining != null)

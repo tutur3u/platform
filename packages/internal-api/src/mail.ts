@@ -681,3 +681,5 @@ export async function updateMailCatchAllConfiguration(
     }
   );
 }
+
+export * from './mail-calendar-link';

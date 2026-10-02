@@ -5,11 +5,9 @@ import {
   createWorkspaceLabel,
   createWorkspaceTaskBoard,
   createWorkspaceTaskProject,
-  InternalApiError,
   listWorkspaceBoardsWithLists,
   listWorkspaceLabels,
   listWorkspaceMembers,
-  listWorkspaces,
   listWorkspaceTaskBoards,
   listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
@@ -19,6 +17,8 @@ import { useTaskUserRealtime } from '@tuturuuu/tasks-ui/hooks/useTaskUserRealtim
 import { useTaskDialog } from '@tuturuuu/tasks-ui/tu-do/hooks/useTaskDialog';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { AI_CREDITS_QUERY_KEY } from '@tuturuuu/ui/hooks/use-ai-credits';
+import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
+import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useBoardConfig } from '@tuturuuu/utils/task-helper';
@@ -36,6 +36,7 @@ import {
   useCompletedTasksQuery,
   useMyTasksQuery,
 } from './use-my-tasks-query';
+import { loadCanonicalWorkspaceBoardCatalog } from './workspace-board-catalog';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -266,64 +267,19 @@ export function useMyTasksState({
     return cleanup;
   }, [onUpdate, handleUpdate]);
 
-  // Fetch user's workspaces (only if in personal workspace)
-  const { data: workspacesData } = useQuery({
-    queryKey: ['user-workspaces'],
+  const actor = useWorkspaceActor();
+  const { data: workspacesData } = useVisibleWorkspaces(isPersonal);
+  const { data: canonicalBoards = [] } = useQuery({
+    queryKey: ['all-user-boards', userId],
     queryFn: async () => {
-      return listWorkspaces();
+      actor!.assertActive();
+      const result = await loadCanonicalWorkspaceBoardCatalog();
+      actor!.assertActive();
+      return result;
     },
-    enabled: isPersonal,
+    enabled: isPersonal && actor?.actorId === userId,
   });
 
-  const { data: allBoardsData = [] } = useQuery({
-    queryKey: ['all-user-boards'],
-    queryFn: async () => {
-      const workspaces = await listWorkspaces();
-      const fetchAllWorkspaceBoards = async (workspaceId: string) => {
-        const pageSize = 200;
-        const boards: Awaited<
-          ReturnType<typeof listWorkspaceTaskBoards>
-        >['boards'] = [];
-        let page = 1;
-
-        try {
-          while (true) {
-            const payload = await listWorkspaceTaskBoards(workspaceId, {
-              page,
-              pageSize,
-              status: 'all',
-            });
-            const pageBoards = payload.boards ?? [];
-            boards.push(...pageBoards);
-            if (pageBoards.length < pageSize) break;
-            page += 1;
-          }
-        } catch (error) {
-          if (error instanceof InternalApiError && error.status === 403) {
-            return [];
-          }
-          throw error;
-        }
-
-        return boards;
-      };
-      const boardGroups = await Promise.all(
-        workspaces.map((workspace) => fetchAllWorkspaceBoards(workspace.id))
-      );
-
-      return boardGroups
-        .flat()
-        .filter((board) => !board.deleted_at)
-        .map((board) => ({
-          id: board.id,
-          name: board.name,
-          ws_id: board.ws_id,
-        }));
-    },
-    enabled: isPersonal,
-  });
-
-  // Check if current workspace has any boards (eager, for auto-creation)
   const { data: wsBoardCount, isLoading: wsBoardCountLoading } = useQuery({
     queryKey: ['workspace', wsId, 'board-count'],
     queryFn: async () => {
@@ -411,7 +367,6 @@ export function useMyTasksState({
     disableAutoCreateBoard,
   ]);
 
-  // Fetch boards with lists for selected workspace
   const { data: boardsDataRaw, isLoading: boardsLoading } = useQuery({
     queryKey: ['workspace', selectedWorkspaceId, 'boards-with-lists'],
     queryFn: async () => {
@@ -434,7 +389,6 @@ export function useMyTasksState({
     [isPersonal, workspacesData, wsId]
   );
 
-  // Fetch workspace labels
   const { data: workspaceLabels = [] } = useQuery({
     queryKey: ['workspaceLabels', ...allWorkspaceIds],
     queryFn: async () => {
@@ -1041,7 +995,9 @@ export function useMyTasksState({
 
     // Data
     workspacesData,
-    allBoardsData,
+    allBoardsData: canonicalBoards.filter((board) =>
+      workspacesData?.some((workspace) => workspace.id === board.ws_id)
+    ),
     boardsData,
     boardsLoading,
     workspaceLabels,

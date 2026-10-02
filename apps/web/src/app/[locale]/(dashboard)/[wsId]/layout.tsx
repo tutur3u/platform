@@ -1,6 +1,7 @@
 import { AppGuideOverlay } from '@tuturuuu/satellite/app-guide-overlay';
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import type { Metadata } from 'next';
@@ -340,56 +341,58 @@ export default async function Layout({ children, params }: LayoutProps) {
   const DashboardShellClient = await loadDashboardShellClient();
 
   return (
-    <DashboardShellClient
-      wsId={wsId}
-      user={user}
-      workspace={workspace}
-      defaultCollapsed={defaultCollapsed}
-      links={visibleNavigationLinks}
-      sidebarBehavior={sidebarBehavior}
-      sidebarBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
-      isGuestWorkspace={isGuestWorkspace}
-      tier={workspace.tier ?? null}
-      enablePresence={!workspace.personal && !isGuestWorkspace}
-      isPersonalWorkspace={!!workspace.personal}
-      showPersonalWorkspaceCollaborationBanner={!!workspace.personal}
-      personalWorkspacePrompt={personalWorkspacePrompt}
-      actions={
-        <Suspense
-          key={user.id}
-          fallback={
-            <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-          }
-        >
-          <NavbarActionsSlot user={user} workspace={workspace} />
+    <WorkspaceVisibilityProvider actorId={user.id}>
+      <DashboardShellClient
+        wsId={wsId}
+        user={user}
+        workspace={workspace}
+        defaultCollapsed={defaultCollapsed}
+        links={visibleNavigationLinks}
+        sidebarBehavior={sidebarBehavior}
+        sidebarBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
+        isGuestWorkspace={isGuestWorkspace}
+        tier={workspace.tier ?? null}
+        enablePresence={!workspace.personal && !isGuestWorkspace}
+        isPersonalWorkspace={!!workspace.personal}
+        showPersonalWorkspaceCollaborationBanner={!!workspace.personal}
+        personalWorkspacePrompt={personalWorkspacePrompt}
+        actions={
+          <Suspense
+            key={user.id}
+            fallback={
+              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+            }
+          >
+            <NavbarActionsSlot user={user} workspace={workspace} />
+          </Suspense>
+        }
+        notificationPopover={
+          <Suspense
+            key={user.id}
+            fallback={
+              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+            }
+          >
+            <NotificationPopoverSlot userId={user.id} />
+          </Suspense>
+        }
+        userPopover={
+          <Suspense
+            key={user.id}
+            fallback={
+              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+            }
+          >
+            <UserPopoverSlot user={user} workspace={workspace} />
+          </Suspense>
+        }
+      >
+        <AppGuideOverlay />
+        {children}
+        <Suspense fallback={null}>
+          <VersionBadgeGate appName={siteConfig.name} userEmail={user.email} />
         </Suspense>
-      }
-      notificationPopover={
-        <Suspense
-          key={user.id}
-          fallback={
-            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-          }
-        >
-          <NotificationPopoverSlot userId={user.id} />
-        </Suspense>
-      }
-      userPopover={
-        <Suspense
-          key={user.id}
-          fallback={
-            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-          }
-        >
-          <UserPopoverSlot user={user} workspace={workspace} />
-        </Suspense>
-      }
-    >
-      <AppGuideOverlay />
-      {children}
-      <Suspense fallback={null}>
-        <VersionBadgeGate appName={siteConfig.name} userEmail={user.email} />
-      </Suspense>
-    </DashboardShellClient>
+      </DashboardShellClient>
+    </WorkspaceVisibilityProvider>
   );
 }

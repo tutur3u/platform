@@ -263,6 +263,8 @@ GoRouter createAppRouter(
 
       // Workspace loaded but none selected → go to picker
       if (!isWsSelectRoute &&
+          state.matchedLocation != Routes.settings &&
+          state.matchedLocation != Routes.settingsWorkspace &&
           wsState.status == WorkspaceStatus.loaded &&
           !wsState.hasWorkspace) {
         return Routes.workspaceSelect;
