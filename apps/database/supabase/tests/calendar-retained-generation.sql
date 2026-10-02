@@ -1,0 +1,36 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
+select no_plan();
+insert into auth.users(id) values('00000000-0000-4000-8000-000000008801');
+insert into public.users(id) values('00000000-0000-4000-8000-000000008801') on conflict do nothing;
+insert into public.workspaces(id,name,personal,creator_id) values('00000000-0000-4000-8000-000000008811','Synthetic retained contract',false,'00000000-0000-4000-8000-000000008801');
+insert into public.workspace_members(ws_id,user_id,type) values('00000000-0000-4000-8000-000000008811','00000000-0000-4000-8000-000000008801','MEMBER') on conflict do nothing;
+update public.workspace_default_permissions set enabled=true where ws_id='00000000-0000-4000-8000-000000008811' and permission='manage_calendar';
+insert into public.workspace_default_permissions(ws_id,permission,enabled) select '00000000-0000-4000-8000-000000008811','manage_calendar',true where not exists(select 1 from public.workspace_default_permissions where ws_id='00000000-0000-4000-8000-000000008811' and permission='manage_calendar');
+-- This foundation test intentionally owns only its transactional synthetic table.
+-- Later feature branches use the real ledger instead and skip this fixture.
+create function public.fixture_retained() returns jsonb language sql as $$
+ select public.calendar_retained_generation('00000000-0000-4000-8000-000000008811','00000000-0000-4000-8000-000000008841','00000000-0000-4000-8000-000000008801');
+$$;
+select is(public.fixture_retained(),null::jsonb,'actual database relation absence preserves ledgerless traffic');
+select ok(not has_function_privilege('authenticated','public.calendar_retained_generation(uuid,uuid,uuid)','EXECUTE'),'customers cannot forge guard actors');
+select throws_ok($$select public.calendar_retained_generation('00000000-0000-4000-8000-000000008811','00000000-0000-4000-8000-000000008841','00000000-0000-4000-8000-000000008802')$$,'42501',null,'nonmember cannot inspect ledger even when absent');
+create table private.calendar_google_color_operations(ws_id uuid,event_id uuid,operation_id uuid,actor_id uuid,generation bigint,phase text,intent jsonb);
+select is(public.fixture_retained(),null::jsonb,'existing ledger with no scoped event preserves ledgerless traffic');
+insert into private.calendar_google_color_operations values('00000000-0000-4000-8000-000000008811','00000000-0000-4000-8000-000000008841','00000000-0000-4000-8000-000000008851','00000000-0000-4000-8000-000000008801',9007199254740993,'dispatched','{"kind":"saga"}');
+select is(public.fixture_retained()->>'generation','9007199254740993','earliest generation remains a lossless decimal string');
+select is(public.fixture_retained()->>'pending','true','dispatched operation remains visible independently of feature flag');
+select is(public.fixture_retained()->>'operationId','00000000-0000-4000-8000-000000008851','only original actor receives recovery locator');
+update private.calendar_google_color_operations set actor_id='00000000-0000-4000-8000-000000008802';
+select is(public.fixture_retained()->'operationId','null'::jsonb,'different actor cannot receive operation locator');
+alter table private.calendar_google_color_operations add current_generation bigint;
+update private.calendar_google_color_operations set current_generation=9007199254740994,phase='applied';
+select is(public.fixture_retained()->>'generation','9007199254740994','later schema follows retained current generation');
+select is(public.fixture_retained()->>'pending','false','terminal retained generation is not pending');
+update private.calendar_google_color_operations set intent='{}';
+select throws_ok($$select public.fixture_retained()$$,'55000',null,'partial row schema fails closed rather than returning ledgerless');
+alter table private.calendar_google_color_operations rename column ws_id to incompatible_ws_id;
+select throws_ok($$select public.fixture_retained()$$,'42703',null,'partial relation schema fails closed');
+select * from finish();
+rollback;
