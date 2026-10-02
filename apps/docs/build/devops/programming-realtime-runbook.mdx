@@ -293,3 +293,12 @@ can publish `document-checkpoint`; client attempts close with policy code 1008.
 `apps/meet-realtime/tests/documents-local-check.ts` covers conflict, recovery,
 rejoining, and forged save confirmations against local Cloudflare. These probes
 use a signed callback fixture; they do not prove production Drive availability.
+
+
+## Disposable gVisor acceptance
+
+`playground-runtime-acceptance.yaml` uses a disposable GitHub Linux VM, the verified official `runsc` point release `20260928.0` with its companion binaries, and a digest-pinned Python fixture built only in CI. The fixture is published to a localhost-only disposable registry; no shared registry or production runner receives it. The job has read-only repository permissions and no application secrets. It runs the actual SDK through `packages/sdk/vitest.playground-acceptance.config.ts`, separately from ordinary mocked unit tests.
+
+The acceptance covers non-root/read-only/no-host-mount/no-network execution, resource configuration, text-only checkpoint deltas, Unicode preservation, traversal rejection, private loopback previews, capacity, and actual process-tree/container retirement after output and time limits. Cleanup always checks exact per-run ownership labels, removes its registry volume, and requires an empty owned sandbox inventory. A failed inventory or cleanup is a failed gate.
+
+This proves synthetic Python sandbox behavior only. It does not provision a managed playground pool, prove every language image, authorize production flags, or prove authenticated Drive uploads. Operator-managed pool readiness, approved immutable language images, and the real account Drive acceptance remain separate prerequisites. Existing Judge pools must stay separate and unchanged. See the [runtime fixture regression](https://github.com/tutur3u/platform/blob/main/packages/sdk/src/cli/devbox-playground-runtime.acceptance.ts) and [official runtime installation](https://gvisor.dev/docs/user_guide/install/).
