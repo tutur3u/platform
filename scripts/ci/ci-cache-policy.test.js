@@ -408,10 +408,33 @@ test('Actions caches use stable platform keys and mobile caches omit outputs', (
       }
 
       assert.doesNotMatch(
-        step,
+        step.match(/^\s*key:.*$/mu)?.[0] ?? '',
         /github\.(?:run_id|run_attempt)/u,
         workflowName
       );
+      if (
+        workflowName === 'e2e-tests.yaml' &&
+        /key: \$\{\{ (matrix\.cache_key|needs\.relevance\.outputs\.inventory_key) \}\}/u.test(
+          step
+        )
+      ) {
+        const { fingerprint, DEFAULT_MATRIX } = require('./e2e-result-plan');
+        const platform = { os: 'Linux', arch: 'X64', image: 'test' };
+        const key = fingerprint([], DEFAULT_MATRIX[0], platform);
+        assert.notEqual(
+          key,
+          fingerprint([], DEFAULT_MATRIX[0], { ...platform, os: 'Windows' })
+        );
+        assert.notEqual(
+          key,
+          fingerprint([], DEFAULT_MATRIX[0], { ...platform, arch: 'ARM64' })
+        );
+        assert.notEqual(
+          key,
+          fingerprint([], DEFAULT_MATRIX[0], { ...platform, image: 'new' })
+        );
+        continue;
+      }
       assert.match(step, /runner\.os/u, `${workflowName} cache key needs OS`);
       assert.match(
         step,

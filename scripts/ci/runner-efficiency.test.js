@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 
 const { readWorkflow } = require('./workflow-yaml-test-helper');
+const { DEFAULT_MATRIX } = require('./e2e-result-plan');
 
 test('translation checks run once per PR update and still cover both protected branches and forks', () => {
   const workflow = readWorkflow('i18n-check.yaml');
@@ -32,16 +33,12 @@ test('exactly one E2E matrix job is eligible to write the shared Docker cache', 
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
     "${{ always() && env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && github.ref == 'refs/heads/main' && matrix.mode == 'shard' && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}"
   );
-  const eligible = job.strategy.matrix.include.filter(
+  const eligible = DEFAULT_MATRIX.filter(
     (entry) => entry.mode === 'shard' && entry.shard === 1
   );
   assert.equal(eligible.length, 1);
   assert.equal(eligible[0].id, 1);
-  assert.equal(
-    job.strategy.matrix.include.length,
-    10,
-    'Do not remove test cohorts'
-  );
+  assert.equal(DEFAULT_MATRIX.length, 10, 'Do not remove test cohorts');
   assert.equal(job.strategy['fail-fast'], false);
 });
 
@@ -52,9 +49,7 @@ test('failed invitation cohorts retain distinct diagnostic artifacts', () => {
   );
   // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
   assert.equal(upload.with.name, 'e2e-failure-${{ matrix.id }}');
-  const names = job.strategy.matrix.include.map(
-    (entry) => `e2e-failure-${entry.id}`
-  );
+  const names = DEFAULT_MATRIX.map((entry) => `e2e-failure-${entry.id}`);
   assert.equal(new Set(names).size, names.length);
 });
 

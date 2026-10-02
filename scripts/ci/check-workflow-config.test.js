@@ -884,7 +884,7 @@ test('Inventory and Storefront cache invalidation stays protected by E2E', () =>
   assert.equal(stepNamed('Start local Supabase')?.run, 'bun sb:start');
   assert.equal(
     stepNamed('Verify cache invalidation and instant navigation')?.run,
-    'bun test:e2e -- --reporter=line,html'
+    'bun test:e2e -- --reporter=line,html,json'
   );
   assert.equal(
     stepNamed('Verify cache invalidation and instant navigation')?.[
