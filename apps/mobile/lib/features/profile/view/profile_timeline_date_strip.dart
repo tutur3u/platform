@@ -98,7 +98,8 @@ class ProfileTimelineDateStrip extends StatelessWidget {
                   activityDays: activityDays,
                   onSelect: onSelect,
                 )
-              : Align(
+              : showToggle
+              ? Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     l10n.profileTimelineAgenda,
@@ -106,7 +107,8 @@ class ProfileTimelineDateStrip extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
+                )
+              : const SizedBox.shrink(),
         ),
       ],
     );

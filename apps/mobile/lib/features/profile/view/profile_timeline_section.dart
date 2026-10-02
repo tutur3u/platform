@@ -158,6 +158,11 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Text(
+          l10n.profileTimelineDescription,
+          style: shad.Theme.of(context).typography.textSmall,
+        ),
+        const shad.Gap(8),
         if (_limited || _failed || _partial)
           Row(
             children: [

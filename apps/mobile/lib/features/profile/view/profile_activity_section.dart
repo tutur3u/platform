@@ -163,7 +163,9 @@ class _ProfileActivitySectionState extends State<ProfileActivitySection> {
           builder: (context, constraints) {
             final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
             final columns = constraints.maxWidth >= 480 * scale ? 3 : 1;
-            final width = (constraints.maxWidth - 12 * (columns - 1)) / columns;
+            final width =
+                ((constraints.maxWidth - 12 * (columns - 1)) / columns)
+                    .floorToDouble();
             return Wrap(
               spacing: 12,
               runSpacing: 8,

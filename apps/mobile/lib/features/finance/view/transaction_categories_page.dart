@@ -164,7 +164,6 @@ class _TransactionCategoriesViewState
   }
 
   void _switchTab(int value) {
-    if (_activeTab == value) return;
     setState(() {
       _activeTab = value;
       if (value == _tabCategories) {
@@ -257,7 +256,9 @@ class _TransactionCategoriesViewState
             ShellChromeActions(
               ownerId: 'finance-manage-create',
               locations: const {Routes.categories},
-              onResetSection: () => _switchTab(_tabCategories),
+              onResetSection: () {
+                if (_activeTab != _tabCategories) _switchTab(_tabCategories);
+              },
               actions: [
                 ShellActionSpec(
                   id: 'finance-manage-create',

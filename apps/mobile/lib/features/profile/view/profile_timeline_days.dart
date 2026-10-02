@@ -101,7 +101,11 @@ class ProfileTimelineDays extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                subtitle: Text('${_milestone(context, item)} · ${time(item)}'),
+                subtitle: Text(
+                  item.title?.trim().isNotEmpty == true
+                      ? '${_milestone(context, item)} · ${time(item)}'
+                      : time(item),
+                ),
                 trailing: _canOpen(item)
                     ? const Icon(Icons.chevron_right_rounded, size: 18)
                     : null,

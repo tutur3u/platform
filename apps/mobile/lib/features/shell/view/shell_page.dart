@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
     hide NavigationBar, NavigationBarTheme, Scaffold;
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -614,10 +615,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   }
 
   static int _calculateSelectedIndex(String location) {
-    if (location == Routes.notifications ||
-        location == Routes.notificationsArchive) {
-      return 3;
-    }
+    if (location == Routes.notifications) return 3;
     if (location == Routes.profileRoot) return 4;
     if (location.startsWith(Routes.assistant)) return 1;
     if (location.startsWith(Routes.apps)) return 2;

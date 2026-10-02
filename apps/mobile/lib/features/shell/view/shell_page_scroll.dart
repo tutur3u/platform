@@ -42,8 +42,10 @@ extension _ShellPageScroll on _ShellPageState {
         ),
         child: NotificationListener<ScrollNotification>(
           onNotification: (notification) {
-            if (notification is ScrollStartNotification &&
-                notification.dragDetails != null) {
+            if ((notification is ScrollStartNotification &&
+                    notification.dragDetails != null) ||
+                (notification is UserScrollNotification &&
+                    notification.direction != ScrollDirection.idle)) {
               _lastScrolledDockRoute = null;
             }
             return _capturePageScrollable(

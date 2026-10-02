@@ -137,11 +137,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     builder: (context, state) {
                       return ShellChromeActions(
                         ownerId: 'notifications-root',
-                        onResetSection: _selectedTab == NotificationsTab.inbox
-                            ? null
-                            : () => setState(
-                                () => _selectedTab = NotificationsTab.inbox,
-                              ),
+                        onResetSection: () => setState(
+                          () => _selectedTab = NotificationsTab.inbox,
+                        ),
                         locations: const {
                           Routes.notifications,
                           Routes.notificationsArchive,

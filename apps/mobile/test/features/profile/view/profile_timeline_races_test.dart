@@ -58,6 +58,13 @@ class _Repository extends ProfileTimelineRepository {
   }
 }
 
+Finder _limitedTooltip() => find.byWidgetPredicate(
+  (widget) =>
+      widget is Tooltip &&
+      widget.message?.contains('Some sources reached the display limit') ==
+          true,
+);
+
 void main() {
   late _Auth auth;
   late _Workspace workspace;
@@ -117,34 +124,15 @@ void main() {
     (tester) async {
       repository.cache = snapshot('Cached task', partial: true, limited: true);
       await mount(tester);
+      expect(find.textContaining('over the last 30 days'), findsOneWidget);
       expect(find.text('Cached task'), findsOneWidget);
       expect(find.text('Some activity is unavailable.'), findsOneWidget);
-      expect(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is Tooltip &&
-              widget.message?.contains(
-                    'Some sources reached the display limit',
-                  ) ==
-                  true,
-        ),
-        findsOneWidget,
-      );
+      expect(_limitedTooltip(), findsOneWidget);
       repository.requests.single.completeError(Exception('Offline'));
       await tester.pumpAndSettle();
       expect(find.text('Cached task'), findsOneWidget);
       expect(find.text('Some activity is unavailable.'), findsOneWidget);
-      expect(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is Tooltip &&
-              widget.message?.contains(
-                    'Some sources reached the display limit',
-                  ) ==
-                  true,
-        ),
-        findsOneWidget,
-      );
+      expect(_limitedTooltip(), findsOneWidget);
       await tester.tap(find.text('Retry'));
       await tester.pump();
       expect(repository.requests.length, 2);
@@ -152,17 +140,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Fresh task'), findsOneWidget);
       expect(find.text('Some activity is unavailable.'), findsNothing);
-      expect(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is Tooltip &&
-              widget.message?.contains(
-                    'Some sources reached the display limit',
-                  ) ==
-                  true,
-        ),
-        findsNothing,
-      );
+      expect(_limitedTooltip(), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
@@ -186,17 +164,7 @@ void main() {
     await tester.pump();
     expect(find.text('Old cached task'), findsNothing);
     expect(find.text('Some activity is unavailable.'), findsNothing);
-    expect(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is Tooltip &&
-            widget.message?.contains(
-                  'Some sources reached the display limit',
-                ) ==
-                true,
-      ),
-      findsNothing,
-    );
+    expect(_limitedTooltip(), findsNothing);
     expect(repository.requests, isEmpty);
     repository.cacheReads.last.complete(snapshot('New cached task'));
     await tester.pump();
@@ -223,17 +191,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.text('Old task'), findsNothing);
-    expect(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is Tooltip &&
-            widget.message?.contains(
-                  'Some sources reached the display limit',
-                ) ==
-                true,
-      ),
-      findsNothing,
-    );
+    expect(_limitedTooltip(), findsNothing);
     expect(repository.requests.length, 2);
     repository.requests.first.complete(snapshot('Stale task', partial: true));
     await tester.pump();
@@ -252,17 +210,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.text('Private task'), findsNothing);
-    expect(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is Tooltip &&
-            widget.message?.contains(
-                  'Some sources reached the display limit',
-                ) ==
-                true,
-      ),
-      findsNothing,
-    );
+    expect(_limitedTooltip(), findsNothing);
     repository.requests.single.complete(snapshot('Late private task'));
     await tester.pumpAndSettle();
     expect(find.text('Late private task'), findsNothing);

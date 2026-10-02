@@ -132,6 +132,22 @@ void _registerDockReselectionChecks(
       expect(controller.offset, greaterThan(0));
       await tapNotifications();
       expect(archived, isTrue);
+      // A wheel gesture after dock scrolling must restart the sequence.
+      if (!rapid) {
+        await _pumpForTransitions(tester);
+        final scrollable = tester.state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byKey(const ValueKey('dock-test-list')),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        scrollable.position.pointerScroll(300);
+        await tester.pump();
+        await tapNotifications();
+        expect(archived, isTrue);
+      }
       if (!rapid) await _pumpForTransitions(tester);
       await tapNotifications();
       await _pumpForTransitions(tester);
