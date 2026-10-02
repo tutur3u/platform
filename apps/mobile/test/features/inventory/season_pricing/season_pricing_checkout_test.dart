@@ -230,7 +230,9 @@ void main() {
       await tester.tap(find.text('Reconcile cart'));
       await tester.pumpAndSettle();
       expect(
-        find.textContaining('Removed 1 unavailable items'),
+        find.text(
+          'Removed 1 unavailable item. Review the cart before submitting.',
+        ),
         findsOneWidget,
       );
       expect(
