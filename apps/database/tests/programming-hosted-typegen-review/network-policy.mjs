@@ -61,7 +61,9 @@ export function verifyNetworkPolicy(run) {
   return readNetworkPolicy(run);
 }
 async function readNetworkPolicy(run) {
+  console.info('Programming policy checkpoint=daemon-json');
   const daemon = JSON.parse(await run(['cat', '/etc/docker/daemon.json']));
+  console.info('Programming policy checkpoint=kernel-json');
   const programs = JSON.parse(
     await run([
       'bpftool',
@@ -72,6 +74,11 @@ async function readNetworkPolicy(run) {
       'effective',
     ])
   );
+  console.info('Programming policy checkpoint=slice-addresses');
+  if (!Array.isArray(programs)) {
+    console.warn('Programming policy mismatch=kernel-shape');
+    throw new Error('Kernel filter inventory must be an array');
+  }
   const allow = await run([
     'systemctl',
     'show',
@@ -88,7 +95,9 @@ async function readNetworkPolicy(run) {
     'IPAddressDeny',
     '--value',
   ]);
+  console.info('Programming policy checkpoint=assertions');
   assertNetworkPolicy({ daemon, programs, allow, deny });
+  console.info('Programming policy checkpoint=firewall');
   for (const firewall of ['iptables', 'ip6tables']) {
     assertFirewallPolicy({
       rules: await run([firewall, '-S', 'TTR-TYPEGEN-EGRESS']),
