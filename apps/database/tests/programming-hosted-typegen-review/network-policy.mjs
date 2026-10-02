@@ -12,6 +12,7 @@ export function assertNetworkPolicy({ daemon, programs, allow, deny }) {
     JSON.stringify(daemon.dns) !== JSON.stringify(networkPolicy.dns) ||
     daemon.ipv6 !== false
   ) {
+    console.warn('Programming policy mismatch=daemon');
     throw new Error('Disposable Docker network policy mismatch');
   }
   const allowed = allow.trim().split(/\s+/).sort();
@@ -21,6 +22,7 @@ export function assertNetworkPolicy({ daemon, programs, allow, deny }) {
     JSON.stringify(deny.trim().split(/\s+/).sort()) !==
       JSON.stringify(['0.0.0.0/0', '::/0'].sort())
   ) {
+    console.warn('Programming policy mismatch=addresses');
     throw new Error('Slice IP allow/deny policy mismatch');
   }
   const types = new Set(programs.map((program) => program.attach_type));
@@ -28,6 +30,7 @@ export function assertNetworkPolicy({ daemon, programs, allow, deny }) {
     !(types.has('ingress') || types.has('cgroup_inet_ingress')) ||
     !(types.has('egress') || types.has('cgroup_inet_egress'))
   ) {
+    console.warn('Programming policy mismatch=kernel');
     throw new Error('Kernel IP filters missing; refusing lifecycle');
   }
 }
@@ -48,6 +51,7 @@ export function assertFirewallPolicy({ rules, dockerUser, forward }) {
     forward.split('\n').find((rule) => rule.startsWith('-A ')) !==
       '-A FORWARD -j TTR-TYPEGEN-EGRESS'
   ) {
+    console.warn('Programming policy mismatch=firewall');
     throw new Error('Bridge egress firewall missing or reordered');
   }
 }
