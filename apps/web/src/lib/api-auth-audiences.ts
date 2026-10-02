@@ -34,6 +34,10 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
   targetApp: AppSessionTargetApp | readonly AppSessionTargetApp[];
 }[] = [
   {
+    pattern: /^\/api\/v1\/users\/me\/hidden-workspaces(?:\/|$)/u,
+    targetApp: [...ALL_SATELLITE_APP_SESSION_TARGETS, 'git'],
+  },
+  {
     pattern: /^\/api\/v1\/ai\/whitelist(?:\/|$)/u,
     targetApp: ALL_SATELLITE_APP_SESSION_TARGETS,
   },
@@ -46,7 +50,7 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
   },
   {
     pattern:
-      /^\/api\/v1\/users\/me\/(?:avatar|configs|default-workspace|email|profile)(?:\/|$)/u,
+      /^\/api\/v1\/users\/me\/(?:avatar|configs|default-workspace|email|hidden-workspaces|profile)(?:\/|$)/u,
     targetApp: ALL_SATELLITE_APP_SESSION_TARGETS,
   },
   {

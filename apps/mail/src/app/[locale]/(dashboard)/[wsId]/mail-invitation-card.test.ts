@@ -14,6 +14,7 @@ import { MailInvitationCard } from './mail-invitation-card';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), respond: vi.fn() }));
 vi.mock('@tuturuuu/internal-api', () => ({
+  getMailCalendarLink: vi.fn(async () => ({ target: null, association: null })),
   getMailInvitation: api.get,
   respondToMailInvitation: api.respond,
 }));

@@ -6,6 +6,7 @@ import {
   buildWorkspaceSetupHandoffUrl,
   mergeWorkspaceSelectWorkspaces,
   normalizeWorkspaceSwitchPath,
+  resolveGuestWorkspaceLanding,
   resolveWorkspaceAvatarUrl,
 } from '../workspace-select-helpers';
 
@@ -126,44 +127,6 @@ describe('mergeWorkspaceSelectWorkspaces', () => {
       /<AvatarFallback[\s\S]*<AvatarImage/u
     );
   });
-
-  it('lays out the short create and join actions in the command item grid', () => {
-    const workspaceSelectSource = readFileSync(
-      join(process.cwd(), 'src/components/ui/custom/workspace-select.tsx'),
-      'utf8'
-    );
-
-    expect(workspaceSelectSource).toContain(
-      '[&_[cmdk-group-items]]:grid-cols-2'
-    );
-    expect(workspaceSelectSource).toContain(
-      "t('common.create_workspace_action')"
-    );
-    expect(workspaceSelectSource).toContain(
-      "t('common.join_workspace_action')"
-    );
-  });
-
-  it('supports a modal popover so nested settings pickers remain scrollable', () => {
-    const workspaceSelectSource = readFileSync(
-      join(process.cwd(), 'src/components/ui/custom/workspace-select.tsx'),
-      'utf8'
-    );
-
-    expect(workspaceSelectSource).toContain('popoverModal = false');
-    expect(workspaceSelectSource).toContain('<Popover modal={popoverModal}');
-  });
-
-  it('focuses workspace search as soon as the picker opens', () => {
-    const workspaceSelectSource = readFileSync(
-      join(process.cwd(), 'src/components/ui/custom/workspace-select.tsx'),
-      'utf8'
-    );
-
-    expect(workspaceSelectSource).toContain(
-      '<CommandInput autoFocus placeholder="Search workspace..." />'
-    );
-  });
 });
 
 describe('normalizeWorkspaceSwitchPath', () => {
@@ -199,4 +162,27 @@ describe('normalizeWorkspaceSwitchPath', () => {
       )
     ).toBe('/workspace-1/users');
   });
+});
+
+it.each([null, ''])(
+  'preserves the boards fallback for a guest without a landing path (%s)',
+  (guest_landing_path) => {
+    expect(
+      resolveGuestWorkspaceLanding({ access_type: 'guest', guest_landing_path })
+    ).toBe('/tasks/boards');
+  }
+);
+it('preserves explicit guest landing while members retain normal path resolution', () => {
+  expect(
+    resolveGuestWorkspaceLanding({
+      access_type: 'guest',
+      guest_landing_path: '/tasks/boards/shared-board',
+    })
+  ).toBe('/tasks/boards/shared-board');
+  expect(
+    resolveGuestWorkspaceLanding({
+      access_type: 'member',
+      guest_landing_path: null,
+    })
+  ).toBeNull();
 });

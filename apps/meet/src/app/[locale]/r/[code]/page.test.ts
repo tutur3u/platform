@@ -1,4 +1,5 @@
 import { encodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -66,12 +67,20 @@ import RoomPage from './page';
 
 const id = '00000000-0000-4000-8000-000000000001';
 const code = encodeRoomCode(id);
+const actorId = '00000000-0000-4000-8000-000000000002';
+function callResult(result: Awaited<ReturnType<typeof RoomPage>>) {
+  if (result.type === WorkspaceVisibilityProvider) {
+    expect(result.props.actorId).toBe(actorId);
+    return result.props.children;
+  }
+  return result;
+}
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.publicInfo.mockResolvedValue(null);
   mocks.policy.mockResolvedValue({ ended: false, canReadNotes: false });
   mocks.access.mockResolvedValue({
-    user: { id, email: 'guest@example.com' },
+    user: { id: actorId, email: 'guest@example.com' },
     meeting: { id, ws_id: id, name: 'Invited call' },
     isHost: false,
     canReadWorkspace: false,
@@ -87,9 +96,11 @@ beforeEach(() => {
 });
 
 it('renders the invited call for a non-member after sign-in', async () => {
-  const result = await RoomPage({
-    params: Promise.resolve({ code, locale: 'en' }),
-  });
+  const result = callResult(
+    await RoomPage({
+      params: Promise.resolve({ code, locale: 'en' }),
+    })
+  );
   expect(result.props).toMatchObject({
     meetingId: id,
     meetingName: 'Invited call',
@@ -102,7 +113,7 @@ it('renders the invited call for a non-member after sign-in', async () => {
 
 it('leaves a personal workspace call through its canonical URL', async () => {
   mocks.access.mockResolvedValue({
-    user: { id },
+    user: { id: actorId },
     meeting: { id, ws_id: id },
     isHost: true,
     canReadWorkspace: true,
@@ -110,9 +121,11 @@ it('leaves a personal workspace call through its canonical URL', async () => {
     displayName: 'Host',
     workspaceSlug: 'personal',
   });
-  const result = await RoomPage({
-    params: Promise.resolve({ code, locale: 'en' }),
-  });
+  const result = callResult(
+    await RoomPage({
+      params: Promise.resolve({ code, locale: 'en' }),
+    })
+  );
   expect(result.props.leaveHref).toBe(`/personal/meetings/${id}`);
 });
 
@@ -140,7 +153,7 @@ it('does not turn a forbidden invite into an unrelated home-page redirect', asyn
 
 it('returns workspace guests to home without opening the meeting archive', async () => {
   mocks.access.mockResolvedValue({
-    user: { id },
+    user: { id: actorId },
     meeting: { id, ws_id: id },
     isHost: false,
     canReadWorkspace: false,
@@ -148,22 +161,26 @@ it('returns workspace guests to home without opening the meeting archive', async
     displayName: 'Collaborator',
     workspaceSlug: 'internal',
   });
-  const result = await RoomPage({
-    params: Promise.resolve({ code, locale: 'en' }),
-  });
+  const result = callResult(
+    await RoomPage({
+      params: Promise.resolve({ code, locale: 'en' }),
+    })
+  );
   expect(result.props.leaveHref).toBe('/');
 });
 
 it('asks for a missing name before creating the realtime session', async () => {
   mocks.access.mockResolvedValue({
-    user: { id },
+    user: { id: actorId },
     meeting: { id, ws_id: id, name: 'Invited call' },
     canReadWorkspace: false,
     needsDisplayName: true,
   });
-  const result = await RoomPage({
-    params: Promise.resolve({ code, locale: 'en' }),
-  });
+  const result = callResult(
+    await RoomPage({
+      params: Promise.resolve({ code, locale: 'en' }),
+    })
+  );
   expect(result.props).toMatchObject({
     meetingName: 'Invited call',
     leaveHref: '/',
@@ -177,19 +194,23 @@ it('renders a closed room without starting a call or requesting a profile name',
     needsDisplayName: true,
   });
   mocks.policy.mockResolvedValue({ ended: true, canReadNotes: false });
-  const result = await RoomPage({
-    params: Promise.resolve({ code, locale: 'en' }),
-  });
+  const result = callResult(
+    await RoomPage({
+      params: Promise.resolve({ code, locale: 'en' }),
+    })
+  );
   expect(result.props).toMatchObject({ canReadNotes: false, canManage: false });
   expect(mocks.session).not.toHaveBeenCalled();
 });
 
 it('opens an authorized ended-room notes deep link without joining', async () => {
   mocks.policy.mockResolvedValue({ ended: true, canReadNotes: true });
-  const result = await RoomPage({
-    params: Promise.resolve({ code, locale: 'en' }),
-    searchParams: Promise.resolve({ notes: '1' }),
-  });
+  const result = callResult(
+    await RoomPage({
+      params: Promise.resolve({ code, locale: 'en' }),
+      searchParams: Promise.resolve({ notes: '1' }),
+    })
+  );
   expect(result.props).toMatchObject({
     canReadNotes: true,
     initialShowNotes: true,
@@ -205,9 +226,11 @@ it('renders only opted-in public details before sign-in without granting room ac
     ended: false,
   };
   mocks.publicInfo.mockResolvedValue(info);
-  const result = await RoomPage({
-    params: Promise.resolve({ code, locale: 'vi' }),
-  });
+  const result = callResult(
+    await RoomPage({
+      params: Promise.resolve({ code, locale: 'vi' }),
+    })
+  );
   expect(result.props).toEqual({ info, returnTo: `/vi/r/${code}` });
   expect(mocks.session).not.toHaveBeenCalled();
 });

@@ -40,6 +40,13 @@ export default defineConfig({
         ),
       },
       {
+        find: '@tuturuuu/supabase/next/realtime-log-provider',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/realtime-log-provider.tsx'
+        ),
+      },
+      {
         find: '@tuturuuu/supabase/next/auth-session-user',
         replacement: resolve(
           __dirname,

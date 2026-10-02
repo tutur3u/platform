@@ -1,5 +1,14 @@
 {
-    "commonLoading": "Đang tải",
+  "workspaceHiddenTitle": "Không gian làm việc đã ẩn",
+  "workspaceHideAction": "Ẩn",
+  "workspaceRestoreAction": "Hiện lại",
+  "workspaceHiddenDescription": "Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.",
+  "workspaceHiddenEmpty": "Không có không gian làm việc đã ẩn",
+  "workspaceHiddenLoadError": "Không thể làm mới danh sách đã ẩn. Danh sách đã lưu được giữ lại.",
+  "workspaceHiddenUpdateError": "Không thể lưu thay đổi. Hãy thử lại khi có kết nối.",
+  "workspaceAllHidden": "Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.",
+  "workspacePickerClose": "Đóng danh sách không gian làm việc",
+  "commonLoading": "Đang tải",
     "@@locale": "vi",
     "appTitle": "Tuturuuu",
     "chatAccept": "Chấp nhận",
@@ -3928,6 +3937,20 @@
     },
     "mailInvitationPending": "Phản hồi đang chờ xử lý. Kiểm tra lại trước khi trả lời.",
     "mailInvitationFailed": "Chưa xác nhận được phản hồi. Thử lại cùng phản hồi để kiểm tra trạng thái.",
+    "mailCalendarLinkTitle": "Liên kết với Lịch",
+    "mailCalendarLinkUrl": "Liên kết sự kiện Lịch",
+    "mailCalendarLinkPreview": "Xem trước liên kết",
+    "mailCalendarLinkConfirm": "Xác nhận liên kết",
+    "mailCalendarLinkOriginal": "Lời mời gốc",
+    "mailCalendarLinkSelected": "Sự kiện Lịch đã chọn",
+    "mailCalendarLinkNotice": "Liên kết giữ cả hai bản ghi. Phản hồi vẫn gửi đến người tổ chức ban đầu.",
+    "mailCalendarLinkChanged": "Lời mời hoặc sự kiện đã thay đổi. Vui lòng xem trước lại.",
+    "mailCalendarLinkUnavailable": "Sự kiện này không khả dụng trong tài khoản của bạn.",
+    "mailCalendarLinkFailed": "Không thể cập nhật liên kết. Vui lòng thử lại.",
+    "mailCalendarLinkInvalid": "Dán liên kết Lịch của sự kiện đã chọn.",
+    "mailCalendarLinkLinked": "Đã liên kết sự kiện Lịch",
+    "mailCalendarLinkUnlink": "Gỡ liên kết",
+    "mailCalendarLinkOpen": "Mở sự kiện đã liên kết",
     "remindersOccurrenceDetails": "{leadTime} · {occurrence} ({timezone})",
     "@remindersOccurrenceDetails": {
         "placeholders": {
@@ -3969,6 +3992,36 @@
     "profileTimelineDayEmpty": "Không có hoạt động nào được trả về cho ngày này.",
     "profileTimelineHasActivity": "Có hoạt động trong dữ liệu đã tải",
     "profileTimelineMoreDays": "Hiện thêm ngày đã tải",
+    "meetNoticeJoined": "{name} đã tham gia cuộc họp",
+    "meetNoticeWaiting": "{name} đang yêu cầu tham gia",
+    "meetNoticeChat": "{name} đã gửi tin nhắn",
+    "meetNoticeView": "Xem",
+    "meetNotificationSound": "Âm thanh thông báo",
+    "meetShareScreen": "Chia sẻ màn hình",
+    "meetStopSharing": "Dừng chia sẻ",
+    "meetScreenShareHint": "Màn hình bạn chọn sẽ hiển thị với mọi người trong cuộc họp cho đến khi bạn dừng chia sẻ. Dùng hộp thoại hệ thống để chọn nội dung cần chia sẻ. Âm thanh hệ thống không được chia sẻ.",
+    "meetScreenShareFailed": "Chưa thể chia sẻ màn hình. Kiểm tra quyền ghi màn hình và thử lại.",
+    "@meetNoticeJoined": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "@meetNoticeWaiting": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "@meetNoticeChat": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
     "inventoryStockHealthTitle": "Tình trạng tồn kho",
     "inventoryStockHealthScope": "Sản phẩm đang hoạt động · mọi dòng tồn kho, gồm kho đã lưu trữ",
     "inventoryStockHealthAsOf": "Ảnh chụp từ máy chủ: {timestamp} UTC",
@@ -3986,6 +4039,28 @@
     "@inventoryStockHealthAsOf": {
         "placeholders": {
             "timestamp": {
+                "type": "String"
+            }
+        }
+    },
+    "inventorySeasonPriceLoading": "Đang kiểm tra giá mùa hiện tại…",
+    "inventorySeasonPriceUnavailable": "Giá mùa không khả dụng hoặc đã hết hạn. Kết nối, làm mới và kiểm tra giỏ hàng trước khi bán.",
+    "inventorySeasonPriceAsOf": "Giá mùa · {currency} · tại {asOf} (UTC) · ngày mùa theo {timeZone}",
+    "inventorySeasonRecoveryTitle": "Khôi phục đơn bán hàng",
+    "inventorySeasonRecoveryCheck": "Kiểm tra kết quả bán hàng",
+    "inventorySeasonRecoveryUnavailable": "Không thể truy cập bộ lưu trữ khôi phục. Tạm khóa tạo đơn cho đến khi có thể khôi phục an toàn.",
+    "inventorySeasonRetryPending": "Chưa xác định được kết quả bán hàng. Kiểm tra yêu cầu đã lưu trước khi gửi lại đúng nội dung. Bạn có thể rời màn hình và khôi phục trong tài khoản, không gian làm việc này; không tạo đơn thay thế.",
+    "inventoryCheckoutScopeChanged": "Tài khoản hoặc không gian làm việc đã thay đổi. Đóng màn hình này và mở lại đơn bán trong không gian làm việc của đơn.",
+    "inventorySeasonHistoricalReadOnly": "Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.",
+    "@inventorySeasonPriceAsOf": {
+        "placeholders": {
+            "currency": {
+                "type": "String"
+            },
+            "asOf": {
+                "type": "String"
+            },
+            "timeZone": {
                 "type": "String"
             }
         }

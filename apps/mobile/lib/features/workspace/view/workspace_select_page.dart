@@ -9,6 +9,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/create_workspace_dialog.dart';
 import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
+import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/features/workspace/widgets/workspace_tier_badge.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -65,6 +66,36 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
             );
           }
 
+          if (context.read<WorkspaceCubit>().hasAuthenticatedActor &&
+              !state.visibilityResolved) {
+            return state.visibilityStatus == WorkspaceStatus.error
+                ? _ErrorView(
+                    error: l10n.workspaceHiddenLoadError,
+                    onRetry: () => context
+                        .read<WorkspaceCubit>()
+                        .refreshHiddenWorkspaces(),
+                  )
+                : const Center(child: NovaLoadingIndicator());
+          }
+          if (state.workspaces.isNotEmpty && state.visibleWorkspaces.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(l10n.workspaceAllHidden, textAlign: TextAlign.center),
+                    const shad.Gap(16),
+                    shad.PrimaryButton(
+                      onPressed: () =>
+                          showWorkspacePickerSheet(context, hiddenOnly: true),
+                      child: Text(l10n.workspaceHiddenTitle),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
           if (state.workspaces.isEmpty) {
             return _EmptyView(
               onCreateWorkspace: () => showCreateWorkspaceDialog(context),
@@ -135,7 +166,7 @@ class _WorkspaceListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final sections = splitWorkspaceSections(state.workspaces);
+    final sections = splitWorkspaceSections(state.visibleWorkspaces);
 
     return ResponsiveWrapper(
       maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),

@@ -1,14 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  CheckIcon,
-  ChevronDown,
-  Link,
-  Loader2,
-  PlusCircle,
-  Star,
-} from '@tuturuuu/icons';
+import { ChevronDown } from '@tuturuuu/icons';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { updateCurrentUserDefaultWorkspace } from '@tuturuuu/internal-api/users';
 import {
@@ -35,18 +28,14 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { useForm } from '../../../hooks/use-form';
 import { useWorkspaceUser } from '../../../hooks/use-workspace-user';
+import {
+  useWorkspaceActor,
+  useWorkspaceVisibility,
+} from '../../../hooks/use-workspace-visibility';
 import { zodResolver } from '../../../resolvers';
 import { Badge } from '../badge';
 import { Button } from '../button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from '../command';
+import { Command } from '../command';
 import {
   Dialog,
   DialogContent,
@@ -54,6 +43,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '../dialog';
 import {
   Form,
@@ -64,12 +54,13 @@ import {
   FormMessage,
 } from '../form';
 import { Input } from '../input';
-import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
+import { WorkspacePickerContent } from './workspace-picker-content';
 import {
   buildWorkspaceSetupHandoffUrl,
   mergeWorkspaceSelectWorkspaces,
   normalizeWorkspaceSwitchPath,
+  resolveGuestWorkspaceLanding,
   resolveWorkspaceAvatarUrl,
 } from './workspace-select-helpers';
 import { WorkspaceIcon } from './workspace-select-icon';
@@ -100,7 +91,6 @@ export function WorkspaceSelect({
   fallbackLogoUrl = TUTURUUU_LOGO_URL,
   resolveNextPathname,
   triggerClassName,
-  popoverModal = false,
   platformWorkspaceSetupUrl,
   cacheScope,
 }: {
@@ -119,8 +109,6 @@ export function WorkspaceSelect({
     nextSlug: string;
   }) => string;
   triggerClassName?: string;
-  /** Keep the picker interactive and scrollable when rendered inside a modal. */
-  popoverModal?: boolean;
   /** Platform origin used to prepare a newly created satellite workspace. */
   platformWorkspaceSetupUrl?: string;
   /** Authenticated identity used to isolate user-specific picker caches. */
@@ -132,14 +120,22 @@ export function WorkspaceSelect({
   const pathname = usePathname();
   const queryClient = useQueryClient();
 
+  const actorScope = useWorkspaceActor();
+  const visibility = useWorkspaceVisibility();
+  const actorId = actorScope?.actorId ?? cacheScope;
   const resolvedWorkspaceId =
     wsId && wsId !== PERSONAL_WORKSPACE_SLUG
       ? resolveWorkspaceId(wsId)
       : undefined;
   const { data: listedWorkspaces } = useQuery({
-    queryKey: ['workspaces', ...(cacheScope ? [cacheScope] : [])],
-    queryFn: fetchWorkspaces,
-    enabled: !!wsId,
+    queryKey: ['workspace-ui-list', actorId],
+    queryFn: async () => {
+      actorScope?.assertActive();
+      const result = await fetchWorkspaces();
+      actorScope?.assertActive();
+      return result;
+    },
+    enabled: Boolean(wsId && actorId),
   });
   const hasListedCurrentWorkspace = Boolean(
     resolvedWorkspaceId &&
@@ -150,19 +146,21 @@ export function WorkspaceSelect({
   const { data: currentWorkspaceFallback } = useQuery({
     queryKey: [
       'workspace-select-current-workspace',
+      actorId,
       resolvedWorkspaceId,
-      ...(cacheScope ? [cacheScope] : []),
     ],
     queryFn: async () =>
       (await getWorkspace(resolvedWorkspaceId!)) as InternalApiWorkspaceSummary,
-    enabled: Boolean(resolvedWorkspaceId && !hasListedCurrentWorkspace),
+    enabled: Boolean(
+      actorId && resolvedWorkspaceId && !hasListedCurrentWorkspace
+    ),
     retry: 1,
   });
   const workspaces = mergeWorkspaceSelectWorkspaces(
     listedWorkspaces,
     currentWorkspaceFallback
   );
-  const { data: currentUser } = useWorkspaceUser();
+  const { data: currentUser } = useWorkspaceUser(actorId);
   const defaultWorkspaceId = currentUser?.default_workspace_id || null;
 
   const form = useForm({
@@ -185,8 +183,8 @@ export function WorkspaceSelect({
   const [loading, setLoading] = useState(false);
   const [joiningByHandle, setJoiningByHandle] = useState(false);
   const invitationController = useWorkspaceInvitations({
-    cacheScope,
-    enabled: Boolean(wsId),
+    cacheScope: actorId,
+    enabled: Boolean(wsId && actorId),
     onAccepted: (invitation) => {
       setOpen(false);
       const slug = invitation.workspace.handle || invitation.workspace.id;
@@ -202,7 +200,7 @@ export function WorkspaceSelect({
       updateCurrentUserDefaultWorkspace(workspaceId),
     onSuccess: (_, workspaceId) => {
       queryClient.setQueryData(
-        ['workspace-user'],
+        ['workspace-user', ...(actorId ? [actorId] : [])],
         (previous: WorkspaceUser | undefined) =>
           previous
             ? {
@@ -216,7 +214,9 @@ export function WorkspaceSelect({
       void queryClient.invalidateQueries({ queryKey: ['default-workspace'] });
       void queryClient.invalidateQueries({ queryKey: ['user'] });
       void queryClient.invalidateQueries({ queryKey: ['user-workspaces'] });
-      void queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['workspace-ui-list', actorId],
+      });
       router.refresh();
     },
     onError: (error) => {
@@ -287,146 +287,31 @@ export function WorkspaceSelect({
     }
   }
 
-  const personalWorkspace = workspaces?.find(
-    (ws) => ws?.personal === true && ws.access_type !== 'guest'
+  const personalWorkspace = workspaces.find(
+    (ws) => ws.personal && ws.access_type !== 'guest'
   );
-  const rootWorkspace = workspaces?.find(
-    (ws) => ws?.id === ROOT_WORKSPACE_ID && ws.access_type !== 'guest'
-  );
-  const nonPersonalWorkspaces =
-    workspaces?.filter(
-      (ws) =>
-        !ws?.personal &&
-        ws?.id !== ROOT_WORKSPACE_ID &&
-        ws.access_type !== 'guest'
-    ) || [];
-  const guestWorkspaces =
-    workspaces?.filter((ws) => ws.access_type === 'guest') || [];
-
-  const groups = [
-    rootWorkspace && {
-      id: 'root',
-      label: t('common.system'),
-      teams: [
-        {
-          id: rootWorkspace.id,
-          label: rootWorkspace.name || t('common.root'),
-          value: ROOT_WORKSPACE_ID,
-          avatarUrl: resolveWorkspaceAvatarUrl(rootWorkspace.avatar_url, {
-            rootWorkspaceLogoUrl: TUTURUUU_LOGO_URL,
-          }),
-          tier: rootWorkspace.tier as
-            | 'FREE'
-            | 'PLUS'
-            | 'PRO'
-            | 'ENTERPRISE'
-            | null,
-        },
-      ],
-    },
-    personalWorkspace && {
-      id: 'personal',
-      label: t('common.personal_account'),
-      teams: [
-        {
-          id: personalWorkspace.id,
-          label: personalWorkspace.name || 'Personal',
-          value: PERSONAL_WORKSPACE_SLUG,
-          avatarUrl: resolveWorkspaceAvatarUrl(personalWorkspace.avatar_url),
-          tier: personalWorkspace.tier as
-            | 'FREE'
-            | 'PLUS'
-            | 'PRO'
-            | 'ENTERPRISE'
-            | null,
-        },
-      ],
-    },
-    nonPersonalWorkspaces.length > 0 && {
-      id: 'workspaces',
-      label: t('common.workspaces'),
-      teams: nonPersonalWorkspaces.map(
-        (workspace: InternalApiWorkspaceSummary) => ({
-          id: workspace.id,
-          label: workspace.name || 'Untitled',
-          value: toWorkspaceSlug(workspace.id, {
-            personal: workspace?.personal,
-          }),
-          // Signal creator-owned workspaces for UI
-          isCreator: workspace?.created_by_me === true,
-          avatarUrl: resolveWorkspaceAvatarUrl(workspace.avatar_url),
-          tier: workspace.tier || null,
-        })
-      ),
-    },
-    guestWorkspaces.length > 0 && {
-      id: 'guest-workspaces',
-      label: t('common.guest_workspaces'),
-      teams: guestWorkspaces.map((workspace: InternalApiWorkspaceSummary) => ({
-        id: workspace.id,
-        label: workspace.name || 'Untitled',
-        value: toWorkspaceSlug(workspace.id, {
-          personal: workspace?.personal,
-        }),
-        accessType: 'guest' as const,
-        avatarUrl: resolveWorkspaceAvatarUrl(workspace.avatar_url),
-        guestBoardCount: workspace.guest_board_count ?? 0,
-        guestLandingPath: workspace.guest_landing_path ?? '/tasks/boards',
-        guestProducts: workspace.guest_products ?? ['tasks'],
-        guestPermission: workspace.guest_highest_permission ?? 'view',
-        tier: workspace.tier || null,
-      })),
-    },
-  ].filter(Boolean) as {
-    id: string;
-    label: string;
-    teams: {
-      id: string;
-      label: string;
-      value: string | undefined;
-      isCreator?: boolean;
-      avatarUrl?: string | null;
-      accessType?: 'member' | 'guest';
-      guestBoardCount?: number;
-      guestLandingPath?: string | null;
-      guestPermission?: 'view' | 'edit' | null;
-      guestProducts?: Array<'tasks'>;
-      tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
-      isRoot?: boolean;
-    }[];
-  }[];
-
-  const onValueChange = (nextSlug: string) => {
-    const selectedTeam = groups
-      .flatMap((group) => group.teams)
-      .find((team) => team.value === nextSlug);
-    const usesGuestLandingPath =
-      selectedTeam?.accessType === 'guest' && selectedTeam.guestLandingPath;
-    let newPathname = usesGuestLandingPath
-      ? `/${nextSlug}${selectedTeam.guestLandingPath}`
-      : pathname
-        ? (resolveNextPathname?.({
-            currentPathname: pathname,
-            nextSlug,
-          }) ?? pathname.replace(/^\/[^/]+/, `/${nextSlug}`))
-        : undefined;
-    if (newPathname && !usesGuestLandingPath) {
-      newPathname = normalizeWorkspaceSwitchPath(newPathname, nextSlug);
-    }
-    if (newPathname) {
-      router.push(newPathname);
-    }
-  };
-
   const hasSelectableWorkspaces =
     workspaces.length > 0 || invitations.length > 0;
   useOpenWorkspaceSelectWhenRevealed(hasSelectableWorkspaces, setOpen);
-
+  const onValueChange = (selected: InternalApiWorkspaceSummary) => {
+    const nextSlug = toWorkspaceSlug(selected.id, {
+      personal: selected.personal,
+    });
+    const guestLanding = resolveGuestWorkspaceLanding(selected);
+    let nextPath = guestLanding
+      ? `/${nextSlug}${guestLanding}`
+      : pathname
+        ? (resolveNextPathname?.({ currentPathname: pathname, nextSlug }) ??
+          pathname.replace(/^\/[^/]+/, `/${nextSlug}`))
+        : getWorkspaceLandingPath(nextSlug);
+    if (!guestLanding)
+      nextPath = normalizeWorkspaceSwitchPath(nextPath, nextSlug);
+    router.push(nextPath);
+  };
   const workspace =
     wsId === PERSONAL_WORKSPACE_SLUG
       ? personalWorkspace
-      : (workspaces.find((ws) => ws.id === resolvedWorkspaceId) ??
-        guestWorkspaces.find((ws) => ws.id === resolvedWorkspaceId));
+      : workspaces.find((ws) => ws.id === resolvedWorkspaceId);
   if (!wsId) return <div />;
 
   async function onJoinByHandleSubmit(
@@ -442,7 +327,9 @@ export function WorkspaceSelect({
       setShowJoinWorkspaceDialog(false);
       setOpen(false);
 
-      void queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['workspace-ui-list', actorId],
+      });
       void queryClient.invalidateQueries({ queryKey: ['user-workspaces'] });
       void queryClient.invalidateQueries({ queryKey: ['workspace-user'] });
 
@@ -530,8 +417,8 @@ export function WorkspaceSelect({
           setShowNewWorkspaceDialog(open);
         }}
       >
-        <Popover modal={popoverModal} open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild disabled={!hasSelectableWorkspaces}>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild disabled={!hasSelectableWorkspaces}>
             <Button
               size="xs"
               variant="outline"
@@ -598,202 +485,39 @@ export function WorkspaceSelect({
                 <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
               )}
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full max-w-[16rem] p-0">
-            <Command>
-              <CommandInput autoFocus placeholder="Search workspace..." />
-              <CommandEmpty>No workspace found.</CommandEmpty>
-              <CommandList className="max-h-64">
+          </DialogTrigger>
+          <WorkspacePickerContent
+            workspaces={workspaces ?? []}
+            currentId={workspace?.id}
+            defaultId={defaultWorkspaceId}
+            visibility={visibility}
+            onSelect={(selected) => {
+              onValueChange(selected);
+              setOpen(false);
+            }}
+            onDefault={(id) => updateDefaultWorkspaceMutation.mutate(id)}
+            onCreate={
+              disableCreateNewWorkspace
+                ? undefined
+                : () => {
+                    setOpen(false);
+                    setShowNewWorkspaceDialog(true);
+                  }
+            }
+            onJoin={() => {
+              setOpen(false);
+              setShowJoinWorkspaceDialog(true);
+            }}
+            invitations={
+              <Command>
                 <WorkspaceInvitationItems
                   controller={invitationController}
                   fallbackLogoUrl={fallbackLogoUrl}
                 />
-                {groups.map((group) => (
-                  <CommandGroup key={group.label} heading={group.label}>
-                    {group.teams.map(
-                      (team: {
-                        id: string;
-                        label: string;
-                        value: string | undefined;
-                        isCreator?: boolean;
-                        avatarUrl?: string | null;
-                        accessType?: 'member' | 'guest';
-                        guestBoardCount?: number;
-                        guestLandingPath?: string | null;
-                        guestPermission?: 'view' | 'edit' | null;
-                        guestProducts?: Array<'tasks'>;
-                        tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
-                        isRoot?: boolean;
-                      }) => {
-                        const isCurrentWorkspace = wsId === team.value;
-                        const isDefaultWorkspace =
-                          defaultWorkspaceId === team.id;
-                        const isUpdatingDefaultWorkspace =
-                          updateDefaultWorkspaceMutation.isPending &&
-                          updateDefaultWorkspaceMutation.variables === team.id;
-
-                        return (
-                          <CommandItem
-                            key={team.value}
-                            value={`${team.label} ${team.value || ''}`}
-                            onSelect={() => {
-                              if (!team?.value || team?.value === wsId) return;
-                              onValueChange(team.value);
-                              setOpen(false);
-                            }}
-                            className={cn(
-                              'gap-1.5 text-sm',
-                              isCurrentWorkspace && 'bg-accent'
-                            )}
-                            disabled={!team}
-                          >
-                            <WorkspaceIcon
-                              fallbackLogoUrl={fallbackLogoUrl}
-                              name={team.label}
-                              avatarUrl={team.avatarUrl}
-                            />
-                            <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                              <span className="line-clamp-1 min-w-0 flex-1 text-xs">
-                                {team.label}
-                              </span>
-                              {showTierBadges && (
-                                <Badge
-                                  variant="outline"
-                                  className={cn(
-                                    'h-4 shrink-0 px-1 py-0 font-medium text-[10px]',
-                                    (!team.tier || team.tier === 'FREE') &&
-                                      'border-muted-foreground/30 bg-muted/50 text-muted-foreground',
-                                    team.tier === 'PLUS' &&
-                                      'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue',
-                                    team.tier === 'PRO' &&
-                                      'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
-                                    team.tier === 'ENTERPRISE' &&
-                                      'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
-                                  )}
-                                >
-                                  {team.tier || 'FREE'}
-                                </Badge>
-                              )}
-                              {team.accessType === 'guest' && (
-                                <>
-                                  <Badge
-                                    variant="outline"
-                                    className="h-4 shrink-0 border-dynamic-green/50 bg-dynamic-green/10 px-1 py-0 font-medium text-[10px] text-dynamic-green"
-                                  >
-                                    {t('common.guest_access')}
-                                  </Badge>
-                                  <Badge
-                                    variant="outline"
-                                    className="h-4 shrink-0 border-dynamic-blue/50 bg-dynamic-blue/10 px-1 py-0 font-medium text-[10px] text-dynamic-blue"
-                                  >
-                                    {t('common.tasks_only')}
-                                  </Badge>
-                                </>
-                              )}
-                            </div>
-                            <div className="flex shrink-0 items-center gap-0.5">
-                              {team.accessType !== 'guest' && (
-                                <Button
-                                  type="button"
-                                  variant={
-                                    isDefaultWorkspace ? 'secondary' : 'ghost'
-                                  }
-                                  size="xs"
-                                  className={cn(
-                                    'h-6 w-6 shrink-0 rounded-sm p-0',
-                                    isDefaultWorkspace &&
-                                      'bg-dynamic-amber/12 text-dynamic-amber hover:bg-dynamic-amber/18 hover:text-dynamic-amber'
-                                  )}
-                                  aria-label="Default workspace"
-                                  title="Default workspace"
-                                  disabled={
-                                    isDefaultWorkspace ||
-                                    isUpdatingDefaultWorkspace ||
-                                    updateDefaultWorkspaceMutation.isPending
-                                  }
-                                  onMouseDown={(event) => {
-                                    event.preventDefault();
-                                  }}
-                                  onClick={(event) => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-
-                                    if (
-                                      isDefaultWorkspace ||
-                                      isUpdatingDefaultWorkspace
-                                    ) {
-                                      return;
-                                    }
-
-                                    updateDefaultWorkspaceMutation.mutate(
-                                      team.id
-                                    );
-                                  }}
-                                >
-                                  {isUpdatingDefaultWorkspace ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <Star
-                                      className={cn(
-                                        'h-3 w-3',
-                                        isDefaultWorkspace && 'fill-current'
-                                      )}
-                                    />
-                                  )}
-                                </Button>
-                              )}
-                              <CheckIcon
-                                className={cn(
-                                  'h-3.5 w-3.5 shrink-0',
-                                  isCurrentWorkspace
-                                    ? 'opacity-100'
-                                    : 'opacity-0'
-                                )}
-                              />
-                            </div>
-                          </CommandItem>
-                        );
-                      }
-                    )}
-                  </CommandGroup>
-                ))}
-              </CommandList>
-              <CommandSeparator />
-              <CommandGroup
-                className={cn(
-                  '[&_[cmdk-group-items]]:grid [&_[cmdk-group-items]]:gap-1',
-                  disableCreateNewWorkspace
-                    ? '[&_[cmdk-group-items]]:grid-cols-1'
-                    : '[&_[cmdk-group-items]]:grid-cols-2'
-                )}
-              >
-                {!disableCreateNewWorkspace && (
-                  <CommandItem
-                    className="h-9 justify-center gap-1.5 px-2"
-                    disabled={disableCreateNewWorkspace}
-                    onSelect={() => {
-                      setOpen(false);
-                      setShowNewWorkspaceDialog(true);
-                    }}
-                  >
-                    <PlusCircle className="size-4" />
-                    <span>{t('common.create_workspace_action')}</span>
-                  </CommandItem>
-                )}
-                <CommandItem
-                  className="h-9 justify-center gap-1.5 px-2"
-                  onSelect={() => {
-                    setOpen(false);
-                    setShowJoinWorkspaceDialog(true);
-                  }}
-                >
-                  <Link className="size-4" />
-                  <span>{t('common.join_workspace_action')}</span>
-                </CommandItem>
-              </CommandGroup>
-            </Command>
-          </PopoverContent>
-        </Popover>
+              </Command>
+            }
+          />
+        </Dialog>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('common.create_workspace')}</DialogTitle>
@@ -848,3 +572,7 @@ export function WorkspaceSelect({
     </>
   );
 }
+
+export { HiddenWorkspacesSettings } from './hidden-workspaces-settings';
+
+export { VisibleWorkspaceFilter } from './visible-workspace-filter';

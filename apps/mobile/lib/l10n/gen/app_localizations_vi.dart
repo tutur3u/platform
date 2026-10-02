@@ -12,6 +12,33 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';
+
+  @override
+  String get workspaceHideAction => 'Ẩn';
+
+  @override
+  String get workspaceRestoreAction => 'Hiện lại';
+
+  @override
+  String get workspaceHiddenDescription => 'Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.';
+
+  @override
+  String get workspaceHiddenEmpty => 'Không có không gian làm việc đã ẩn';
+
+  @override
+  String get workspaceHiddenLoadError => 'Không thể làm mới danh sách đã ẩn. Danh sách đã lưu được giữ lại.';
+
+  @override
+  String get workspaceHiddenUpdateError => 'Không thể lưu thay đổi. Hãy thử lại khi có kết nối.';
+
+  @override
+  String get workspaceAllHidden => 'Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.';
+
+  @override
+  String get workspacePickerClose => 'Đóng danh sách không gian làm việc';
+
+  @override
   String get commonLoading => 'Đang tải';
 
   @override
@@ -9381,6 +9408,48 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailInvitationFailed => 'Chưa xác nhận được phản hồi. Thử lại cùng phản hồi để kiểm tra trạng thái.';
 
   @override
+  String get mailCalendarLinkTitle => 'Liên kết với Lịch';
+
+  @override
+  String get mailCalendarLinkUrl => 'Liên kết sự kiện Lịch';
+
+  @override
+  String get mailCalendarLinkPreview => 'Xem trước liên kết';
+
+  @override
+  String get mailCalendarLinkConfirm => 'Xác nhận liên kết';
+
+  @override
+  String get mailCalendarLinkOriginal => 'Lời mời gốc';
+
+  @override
+  String get mailCalendarLinkSelected => 'Sự kiện Lịch đã chọn';
+
+  @override
+  String get mailCalendarLinkNotice => 'Liên kết giữ cả hai bản ghi. Phản hồi vẫn gửi đến người tổ chức ban đầu.';
+
+  @override
+  String get mailCalendarLinkChanged => 'Lời mời hoặc sự kiện đã thay đổi. Vui lòng xem trước lại.';
+
+  @override
+  String get mailCalendarLinkUnavailable => 'Sự kiện này không khả dụng trong tài khoản của bạn.';
+
+  @override
+  String get mailCalendarLinkFailed => 'Không thể cập nhật liên kết. Vui lòng thử lại.';
+
+  @override
+  String get mailCalendarLinkInvalid => 'Dán liên kết Lịch của sự kiện đã chọn.';
+
+  @override
+  String get mailCalendarLinkLinked => 'Đã liên kết sự kiện Lịch';
+
+  @override
+  String get mailCalendarLinkUnlink => 'Gỡ liên kết';
+
+  @override
+  String get mailCalendarLinkOpen => 'Mở sự kiện đã liên kết';
+
+  @override
   String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
     return '$leadTime · $occurrence ($timezone)';
   }
@@ -9448,6 +9517,39 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
 
   @override
+  String meetNoticeJoined(String name) {
+    return '$name đã tham gia cuộc họp';
+  }
+
+  @override
+  String meetNoticeWaiting(String name) {
+    return '$name đang yêu cầu tham gia';
+  }
+
+  @override
+  String meetNoticeChat(String name) {
+    return '$name đã gửi tin nhắn';
+  }
+
+  @override
+  String get meetNoticeView => 'Xem';
+
+  @override
+  String get meetNotificationSound => 'Âm thanh thông báo';
+
+  @override
+  String get meetShareScreen => 'Chia sẻ màn hình';
+
+  @override
+  String get meetStopSharing => 'Dừng chia sẻ';
+
+  @override
+  String get meetScreenShareHint => 'Màn hình bạn chọn sẽ hiển thị với mọi người trong cuộc họp cho đến khi bạn dừng chia sẻ. Dùng hộp thoại hệ thống để chọn nội dung cần chia sẻ. Âm thanh hệ thống không được chia sẻ.';
+
+  @override
+  String get meetScreenShareFailed => 'Chưa thể chia sẻ màn hình. Kiểm tra quyền ghi màn hình và thử lại.';
+
+  @override
   String get inventoryStockHealthTitle => 'Tình trạng tồn kho';
 
   @override
@@ -9490,4 +9592,33 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryStockHealthUnknown => 'Chưa có dữ liệu';
+
+  @override
+  String get inventorySeasonPriceLoading => 'Đang kiểm tra giá mùa hiện tại…';
+
+  @override
+  String get inventorySeasonPriceUnavailable => 'Giá mùa không khả dụng hoặc đã hết hạn. Kết nối, làm mới và kiểm tra giỏ hàng trước khi bán.';
+
+  @override
+  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone) {
+    return 'Giá mùa · $currency · tại $asOf (UTC) · ngày mùa theo $timeZone';
+  }
+
+  @override
+  String get inventorySeasonRecoveryTitle => 'Khôi phục đơn bán hàng';
+
+  @override
+  String get inventorySeasonRecoveryCheck => 'Kiểm tra kết quả bán hàng';
+
+  @override
+  String get inventorySeasonRecoveryUnavailable => 'Không thể truy cập bộ lưu trữ khôi phục. Tạm khóa tạo đơn cho đến khi có thể khôi phục an toàn.';
+
+  @override
+  String get inventorySeasonRetryPending => 'Chưa xác định được kết quả bán hàng. Kiểm tra yêu cầu đã lưu trước khi gửi lại đúng nội dung. Bạn có thể rời màn hình và khôi phục trong tài khoản, không gian làm việc này; không tạo đơn thay thế.';
+
+  @override
+  String get inventoryCheckoutScopeChanged => 'Tài khoản hoặc không gian làm việc đã thay đổi. Đóng màn hình này và mở lại đơn bán trong không gian làm việc của đơn.';
+
+  @override
+  String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
 }

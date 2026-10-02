@@ -31,6 +31,7 @@ import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
 import 'package:mobile/features/settings/view/workspace_timezone_settings_tile.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/features/workspace/widgets/hidden_workspaces_settings_row.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';

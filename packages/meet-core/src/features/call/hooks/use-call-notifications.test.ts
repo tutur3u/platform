@@ -135,3 +135,113 @@ it('suppresses chat toasts in the open panel without replaying them on close', (
   rerender({ state: next, panel: 'chat' });
   expect(mocks.dismiss).toHaveBeenCalledWith('chat:two');
 });
+
+it('replays hidden notices once when visibility returns without a room update', () => {
+  let visibility = 'hidden';
+  vi.spyOn(document, 'visibilityState', 'get').mockImplementation(
+    () => visibility as DocumentVisibilityState
+  );
+  const initial: CallState = {
+    ...INITIAL_CALL_STATE,
+    admission: 'admitted',
+    role: 'host',
+    selfUserId: 'self',
+  };
+  const open = vi.fn();
+  const { rerender } = renderHook(
+    ({ state }) => useCallNotifications(state, true, true, open, null),
+    { initialProps: { state: initial } }
+  );
+  rerender({
+    state: {
+      ...initial,
+      chat: [
+        {
+          id: 'hidden',
+          body: 'Waiting',
+          userId: 'peer',
+          displayName: 'Peer',
+          createdAt: '',
+        },
+      ],
+    },
+  });
+  expect(mocks.info).not.toHaveBeenCalled();
+  visibility = 'visible';
+  act(() => document.dispatchEvent(new Event('visibilitychange')));
+  expect(mocks.info).toHaveBeenCalledOnce();
+  expect(mocks.info.mock.calls[0]![1].id).toBe('chat:hidden');
+  act(() => document.dispatchEvent(new Event('visibilitychange')));
+  expect(mocks.info).toHaveBeenCalledOnce();
+});
+
+it('bounds hidden notices and discards them when the room disconnects', () => {
+  let visibility = 'hidden';
+  vi.spyOn(document, 'visibilityState', 'get').mockImplementation(
+    () => visibility as DocumentVisibilityState
+  );
+  const initial: CallState = {
+    ...INITIAL_CALL_STATE,
+    admission: 'admitted',
+    role: 'host',
+    selfUserId: 'self',
+  };
+  const open = vi.fn();
+  const { rerender } = renderHook(
+    ({ state, connected }) =>
+      useCallNotifications(state, true, connected, open, null),
+    { initialProps: { state: initial, connected: true } }
+  );
+  const crowded = {
+    ...initial,
+    chat: Array.from({ length: 55 }, (_, n) => ({
+      id: `${n}`,
+      body: 'Hidden',
+      userId: 'peer',
+      displayName: 'Peer',
+      createdAt: '',
+    })),
+  };
+  rerender({ state: crowded, connected: true });
+  visibility = 'visible';
+  act(() => document.dispatchEvent(new Event('visibilitychange')));
+  expect(mocks.info).toHaveBeenCalledTimes(50);
+  expect(mocks.info.mock.calls[0]![1].id).toBe('chat:5');
+  mocks.info.mockClear();
+  visibility = 'hidden';
+  rerender({
+    state: {
+      ...crowded,
+      chat: [...crowded.chat, { ...crowded.chat[0]!, id: 'later' }],
+    },
+    connected: true,
+  });
+  rerender({ state: crowded, connected: false });
+  visibility = 'visible';
+  act(() => document.dispatchEvent(new Event('visibilitychange')));
+  expect(mocks.info).not.toHaveBeenCalled();
+});
+
+it('drops queued host requests if host authority is lost while hidden', () => {
+  let visibility = 'hidden';
+  vi.spyOn(document, 'visibilityState', 'get').mockImplementation(
+    () => visibility as DocumentVisibilityState
+  );
+  const initial: CallState = {
+    ...INITIAL_CALL_STATE,
+    admission: 'admitted',
+    role: 'host',
+    selfUserId: 'self',
+  };
+  const open = vi.fn();
+  const { rerender } = renderHook(
+    ({ state }) => useCallNotifications(state, true, true, open, null),
+    { initialProps: { state: initial } }
+  );
+  const waiting = [{ userId: 'request', displayName: 'Request' }];
+  rerender({ state: { ...initial, waiting } });
+  rerender({ state: { ...initial, waiting, role: 'viewer' } });
+  visibility = 'visible';
+  act(() => document.dispatchEvent(new Event('visibilitychange')));
+  expect(mocks.info).not.toHaveBeenCalled();
+});
