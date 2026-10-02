@@ -48,3 +48,13 @@ Use the repository isolated lifecycle with this focused test and the approved
 baseline above. A successful lifecycle must include scoped stop/removal as well
 as migration, SQL, and type-generation results. Neither fixture executes user
 code or enables a runner.
+
+The enabled `programming-database-contract.yaml` PR gate checks out the exact PR
+head, replays the complete repository schema in the isolated lifecycle, requires
+every numbered pgTAP assertion and its final plan to pass, and uploads actual
+generated public types under the source SHA. It has read-only repository access
+and a 45-minute job deadline. Owned project stop/removal is required for success;
+failed cleanup retains recovery metadata. This acceptance gate does not activate
+the separate inert hosted typegen proposals. Individual concurrent fixture
+sessions reject their deadline and escalate from SIGTERM to SIGKILL after a grace
+period even if the Docker client never closes.

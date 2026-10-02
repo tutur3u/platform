@@ -3,6 +3,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { boundedSession } from './session.mjs';
 
 // One admitted normal-FIFO stage. Never execute against any supplied DB URL.
 const here = import.meta.dirname;
@@ -236,12 +237,6 @@ try {
   const id = created.match(/[0-9a-f]{8}-[0-9a-f-]{27}/)?.[0];
   assert.ok(id, 'Missing concurrent fixture identity');
   function session(text) {
-    let output = '',
-      errors = '',
-      announce;
-    const locked = new Promise((resolve) => {
-      announce = resolve;
-    });
     const child = spawn(
       'docker',
       [
@@ -259,24 +254,7 @@ try {
       ],
       { stdio: ['pipe', 'pipe', 'pipe'] }
     );
-    const timer = setTimeout(() => child.kill('SIGTERM'), timeout());
-    child.stdout.on('data', (data) => {
-      output += data;
-      if (output.includes('FIXTURE_LOCKED')) announce();
-    });
-    child.stderr.on('data', (data) => {
-      errors += data;
-    });
-    const done = new Promise((resolve, reject) => {
-      child.on('error', reject);
-      child.on('close', (code) => {
-        clearTimeout(timer);
-        if (!output.includes('FIXTURE_LOCKED')) announce();
-        resolve({ code, output, errors });
-      });
-    });
-    child.stdin.end(text);
-    return { locked, done };
+    return boundedSession(child, text, timeout());
   }
   const updatedPayload = JSON.stringify({
     ...JSON.parse(authorPayload),
