@@ -886,7 +886,11 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
   remain pinned to their successful production run's SHA. The workflow still
   requires that target's successful planner result, production platform deployment
   marker, and completed successful `main` staging migration before running
-  `supabase db push --include-all`.
+  `supabase db push --include-all`. Failed, cancelled and other non-success
+  workflow callbacks skip before allocating the evaluation job and use a unique
+  ignored-run concurrency group, so they cannot replace a legitimate pending
+  migration. Successful callbacks and manual runs retain the same globally
+  serialized migration group with active-run cancellation disabled.
 
 ### Mobile iOS native assets
 

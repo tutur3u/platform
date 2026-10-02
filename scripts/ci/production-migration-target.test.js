@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const workflow = fs.readFileSync(
   path.resolve(__dirname, '../../.github/workflows/supabase-production.yaml'),
@@ -222,8 +223,67 @@ test('resolved immutable target precedes checkout and pending-range configuratio
     /target_sha: \$\{\{ steps\.resolve_target\.outputs\.target_sha \}\}/
   );
   assert.doesNotMatch(stepScript(evaluateStep), /TARGET_SHA=""/);
-  assert.match(
-    workflow,
-    /group: supabase-production-migration\n {2}cancel-in-progress: false/
-  );
+  assert.match(workflow, /cancel-in-progress: false/);
 });
+
+function expressionValue(expression, github) {
+  // These actual workflow expressions use the shared JS/GHA boolean/string
+  // operators and format(), so synthetic events exercise their admission values.
+  return vm.runInNewContext(
+    expression,
+    {
+      github,
+      format: (pattern, value) => pattern.replace('{0}', String(value)),
+    },
+    { timeout: 100 }
+  );
+}
+
+const concurrencyExpression = workflow.match(/ {2}group: \$\{\{ (.*) \}\}/)[1];
+const admissionExpression = workflow.match(
+  /name: Evaluate production prerequisites\n {4}if: \$\{\{ (.*) \}\}/
+)[1];
+
+for (const conclusion of [
+  'failure',
+  'cancelled',
+  'timed_out',
+  'skipped',
+  'neutral',
+  null,
+]) {
+  test(`ignored ${conclusion} callback cannot replace a pending migration`, () => {
+    const event = {
+      event_name: 'workflow_run',
+      run_id: 41,
+      event: { workflow_run: { conclusion } },
+    };
+    assert.equal(expressionValue(admissionExpression, event), false);
+    assert.equal(
+      expressionValue(concurrencyExpression, event),
+      'supabase-production-migration-ignored-41'
+    );
+    assert.equal(
+      expressionValue(concurrencyExpression, { ...event, run_id: 42 }),
+      'supabase-production-migration-ignored-42'
+    );
+  });
+}
+
+for (const event of [
+  { event_name: 'workflow_dispatch', run_id: 43, event: {} },
+  {
+    event_name: 'workflow_run',
+    run_id: 44,
+    event: { workflow_run: { conclusion: 'success' } },
+  },
+]) {
+  test(`real ${event.event_name} migration retains the globally serialized group`, () => {
+    assert.equal(expressionValue(admissionExpression, event), true);
+    assert.equal(
+      expressionValue(concurrencyExpression, event),
+      'supabase-production-migration'
+    );
+    assert.match(workflow, /cancel-in-progress: false/);
+  });
+}

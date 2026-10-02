@@ -13,12 +13,13 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: supabase-production-migration
+  group: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success' && format('supabase-production-migration-ignored-{0}', github.run_id) || 'supabase-production-migration' }}
   cancel-in-progress: false
 
 jobs:
   evaluate-prerequisites:
     name: Evaluate production prerequisites
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
     permissions:
