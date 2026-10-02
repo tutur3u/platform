@@ -3,7 +3,11 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const { createReceipt, recordReceipt } = require('./e2e-result-receipt');
+const {
+  createReceipt,
+  recordReceipt,
+  runnerMatches,
+} = require('./e2e-result-receipt');
 
 const provenance = {
   key: 'e2e-passed-v1-2026-10-02-scope-sha',
@@ -88,4 +92,27 @@ test('untrusted refs and manual dispatch never publish a receipt', (t) => {
     assert.equal(proof, null);
     assert.equal(fs.readFileSync(output, 'utf8'), 'reusable=false\n');
   }
+});
+
+test('proof publication requires the actual runner to match the planned platform', () => {
+  const env = {
+    E2E_EXPECTED_RUNNER: JSON.stringify({
+      image: '20261002.1',
+      os: 'Linux',
+      arch: 'X64',
+    }),
+    ImageVersion: '20261002.1',
+    RUNNER_OS: 'Linux',
+    RUNNER_ARCH: 'X64',
+  };
+  assert.equal(runnerMatches(env), true);
+  for (const mismatch of [
+    { ImageVersion: '20261003.1' },
+    { RUNNER_OS: 'Windows' },
+    { RUNNER_ARCH: 'ARM64' },
+    { E2E_EXPECTED_RUNNER: 'null' },
+    { E2E_EXPECTED_RUNNER: '{}' },
+    { E2E_EXPECTED_RUNNER: 'invalid' },
+  ])
+    assert.equal(runnerMatches({ ...env, ...mismatch }), false);
 });

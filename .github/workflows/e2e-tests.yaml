@@ -65,6 +65,7 @@ jobs:
       run_inventory: ${{ steps.plan.outputs.run_inventory }}
       matrix: ${{ steps.plan.outputs.matrix }}
       inventory_key: ${{ steps.plan.outputs.inventory_key }}
+      runner_context: ${{ steps.plan.outputs.runner_context }}
     steps:
       - name: Check out code and comparison history
         uses: actions/checkout@v7
@@ -394,6 +395,7 @@ jobs:
         id: proof
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
+          E2E_EXPECTED_RUNNER: ${{ needs.relevance.outputs.runner_context }}
           E2E_SUITE_ID: ${{ matrix.id }}
           E2E_PROOF_KEY: ${{ matrix.cache_key }}
           E2E_RESULTS_PATH: tmp/e2e-web-results.json
@@ -499,6 +501,7 @@ jobs:
         id: proof
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
+          E2E_EXPECTED_RUNNER: ${{ needs.relevance.outputs.runner_context }}
           E2E_SUITE_ID: inventory-storefront
           E2E_PROOF_KEY: ${{ needs.relevance.outputs.inventory_key }}
           E2E_RESULTS_PATH: tmp/e2e-inventory-results.json

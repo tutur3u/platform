@@ -275,6 +275,9 @@ async function plan({
     run_web: jobs.length > 0,
     run_inventory: inventory.run,
     inventory_key: inventory.key,
+    runner_context: safe
+      ? { image: context.image, os: context.os, arch: context.arch }
+      : null,
     provenance,
   };
 }
@@ -295,7 +298,7 @@ async function main(env = process.env) {
   if (env.GITHUB_OUTPUT)
     fs.appendFileSync(
       env.GITHUB_OUTPUT,
-      `matrix=${JSON.stringify(result.matrix)}\nrun_web=${result.run_web}\nrun_inventory=${result.run_inventory}\ninventory_key=${result.inventory_key}\n`
+      `matrix=${JSON.stringify(result.matrix)}\nrun_web=${result.run_web}\nrun_inventory=${result.run_inventory}\ninventory_key=${result.inventory_key}\nrunner_context=${JSON.stringify(result.runner_context)}\n`
     );
   const lines = [
     '### E2E input proof reuse',

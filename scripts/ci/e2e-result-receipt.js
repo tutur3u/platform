@@ -39,6 +39,26 @@ function createReceipt(report, { key, suite, sha, runId, attempt, now }) {
   };
 }
 
+function runnerMatches(env) {
+  try {
+    const expected = JSON.parse(env.E2E_EXPECTED_RUNNER);
+    return Boolean(
+      expected &&
+        typeof expected.image === 'string' &&
+        expected.image.length > 0 &&
+        typeof expected.os === 'string' &&
+        expected.os.length > 0 &&
+        typeof expected.arch === 'string' &&
+        expected.arch.length > 0 &&
+        expected.image === env.ImageVersion &&
+        expected.os === env.RUNNER_OS &&
+        expected.arch === env.RUNNER_ARCH
+    );
+  } catch {
+    return false;
+  }
+}
+
 function recordReceipt(env = process.env) {
   let receipt = null;
   // Defense in depth: workflow_dispatch runs fully but never publishes proofs.
@@ -78,4 +98,4 @@ function recordReceipt(env = process.env) {
 }
 
 if (require.main === module) recordReceipt();
-module.exports = { createReceipt, recordReceipt };
+module.exports = { createReceipt, recordReceipt, runnerMatches };
