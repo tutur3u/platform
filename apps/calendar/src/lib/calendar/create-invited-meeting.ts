@@ -9,6 +9,10 @@ import {
 } from '@/lib/workspace-encryption';
 import { DefaultCalendarEventColorSchema } from './event-color';
 import { refreshOwnedGoogleSourceColor } from './google-source-color-refresh';
+import {
+  assertLegacyCalendarWriteAllowed,
+  LegacyCalendarWriteError,
+} from './legacy-provider-generation-guard';
 import { MeetingCreateError, withMeetingRequest } from './meeting-request';
 import { createProviderEvent } from './provider-writes';
 import type { ResolvedCalendarSource } from './source-resolver';
@@ -66,6 +70,25 @@ export async function createInvitedMeeting({
   }
   const color = DefaultCalendarEventColorSchema.parse(input.color);
   const id = meetingRequestIdentity(wsId, userId, input.requestId);
+  if (input.providerColor)
+    throw new MeetingCreateError(
+      409,
+      'Provider color invitations require recoverable delivery support'
+    );
+  try {
+    await assertLegacyCalendarWriteAllowed({
+      sbAdmin,
+      wsId,
+      userId,
+      eventIds: [id],
+      blockCandidate:
+        process.env.CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED === 'true',
+    });
+  } catch (error) {
+    if (error instanceof LegacyCalendarWriteError)
+      throw new MeetingCreateError(error.status, error.message);
+    throw error;
+  }
   const requestHash = createHash('sha256')
     .update(
       JSON.stringify({
@@ -75,13 +98,6 @@ export async function createInvitedMeeting({
         start: new Date(input.start_at).toISOString(),
         end: new Date(input.end_at).toISOString(),
         color,
-        providerColor:
-          input.providerColor?.kind === 'inherit'
-            ? {
-                connectionId: input.providerColor.connectionId,
-                kind: 'inherit',
-              }
-            : input.providerColor,
         locked: input.locked ?? false,
         timeZone: input.invitation.timeZone,
         guests: [...input.invitation.guests].sort((a, b) =>

@@ -8,6 +8,10 @@ const mocks = vi.hoisted(() => ({
   source: vi.fn(),
   outboundSource: vi.fn(),
 }));
+vi.mock(
+  '@/lib/calendar/google-color-operations/retained-generation-request-access',
+  () => ({ getCalendarRetainedGeneration: vi.fn(async () => null) })
+);
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.admin,
@@ -174,7 +178,13 @@ function database(seed: Row[] = []) {
       },
     };
   }
-  return { rows, client: { from } };
+  const rpc = vi.fn(async (name: string, input: Record<string, unknown>) => {
+    expect(name).toBe('calendar_retained_generation');
+    expect(input).toMatchObject({ p_ws_id: WS_ID, p_actor_id: 'actor' });
+    expect(input.p_event_id).toEqual(expect.any(String));
+    return { data: null, error: null };
+  });
+  return { rows, client: { from, rpc } };
 }
 const params = () => ({ params: Promise.resolve({ wsId: WS_ID }) });
 const event = {

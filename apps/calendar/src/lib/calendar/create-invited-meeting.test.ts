@@ -100,7 +100,13 @@ function database() {
     };
     return builder;
   });
-  return { rows, control, client: { from } as unknown as TypedSupabaseClient };
+  const rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+  return {
+    rows,
+    control,
+    rpc,
+    client: { from, rpc } as unknown as TypedSupabaseClient,
+  };
 }
 const source: ResolvedCalendarSource = {
   provider: 'google',
@@ -153,6 +159,20 @@ beforeEach(() => {
 });
 
 describe('durable invitation creation', () => {
+  it('rejects new provider colors before reserving or sending invitations', async () => {
+    input.providerColor = { connectionId: 'connection', kind: 'inherit' };
+    await expect(create()).rejects.toMatchObject({ status: 409 });
+    expect(db.rpc).not.toHaveBeenCalled();
+    expect(db.rows.size).toBe(0);
+    expect(mocks.provider).not.toHaveBeenCalled();
+  });
+  it('rejects retained generations even when candidate mode is off', async () => {
+    db.rpc.mockResolvedValue({ data: { generation: '1' }, error: null });
+    await expect(create()).rejects.toMatchObject({ status: 409 });
+    expect(db.rows.size).toBe(0);
+    expect(mocks.provider).not.toHaveBeenCalled();
+  });
+
   it.each(cacheFailureModes)(
     'retains invitation identity and RGB when optional cache fails: %s',
     async (mode) => {
