@@ -28,11 +28,11 @@ vi.mock('@/lib/devboxes/agent-store', () => ({
   shutdownDevboxRunner: shutdownDevboxRunnerMock,
 }));
 
+import { POST as events } from '@/legacy-api-routes/v1/devboxes/agents/events/route';
+import { GET as poll } from '@/legacy-api-routes/v1/devboxes/agents/poll/route';
+import { POST as shutdown } from '@/legacy-api-routes/v1/devboxes/agents/shutdown/route';
 import { DEVBOX_AGENT_API_ENABLED_ENV } from '@/lib/devboxes/agent-traffic-gate';
-import { POST as events } from './events/route';
 import { POST as heartbeat } from './heartbeat/route';
-import { GET as poll } from './poll/route';
-import { POST as shutdown } from './shutdown/route';
 
 const originalDevboxAgentApiEnabled = process.env[DEVBOX_AGENT_API_ENABLED_ENV];
 
@@ -190,6 +190,43 @@ describe('devbox agent routes', () => {
     });
   });
 
+  it('accepts bounded playground readiness without changing old heartbeat contracts', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
+    const capabilities = {
+      playground: {
+        ready: true,
+        languages: ['python', 'shell'],
+        environments: 1,
+      },
+    };
+    heartbeatDevboxRunnerMock.mockResolvedValue({ message: 'accepted' });
+    expect((await heartbeat(createRequest({ capabilities }))).status).toBe(200);
+    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith(
+      'runner-1',
+      capabilities
+    );
+  });
+  it.each([
+    { ready: 'true', languages: ['python'], environments: 0 },
+    { ready: true, languages: ['unknown'], environments: 0 },
+    { ready: true, languages: Array(12).fill('python'), environments: 0 },
+    { ready: true, languages: [], environments: -1 },
+    { ready: true, languages: [], environments: 9 },
+    { ready: true, languages: [], environments: 1.5 },
+    { ready: true, languages: [], environments: 0, command: ['unsafe'] },
+  ])(
+    'rejects malformed playground readiness without writing: %j',
+    async (playground) => {
+      enableDevboxAgentApi();
+      mockAuthorizedRunner(true);
+      expect(
+        (await heartbeat(createRequest({ capabilities: { playground } })))
+          .status
+      ).toBe(400);
+      expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    }
+  );
   it('shuts down the authenticated runner', async () => {
     shutdownDevboxRunnerMock.mockResolvedValue({
       message: 'Devbox runner removed from the cluster.',
