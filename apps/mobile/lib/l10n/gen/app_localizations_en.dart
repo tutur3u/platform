@@ -9404,7 +9404,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineEditSyncing => 'Syncing…';
 
   @override
-  String get inventorySetupSyncFirst => 'Sync this new item before editing or deleting it.';
+  String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
 
   @override
   String get offlineEditQueued => 'Waiting to sync';

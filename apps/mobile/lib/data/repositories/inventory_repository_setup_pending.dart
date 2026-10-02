@@ -40,6 +40,79 @@ extension InventorySetupOfflineWrites on InventoryRepository {
     }
   }
 
+  Future<Map<String, dynamic>> _confirmedProductPayload(
+    String wsId,
+    Map<String, dynamic> payload,
+  ) async {
+    final owner = _cacheUserId();
+    final pending = await _mutationQueue.listPending();
+    final mappings = <String, Map<String, String>>{};
+    if (owner != null) {
+      for (final feature in ['inventory', 'finance']) {
+        mappings[feature] = await _cacheStore.localIdMappings(
+          userId: owner,
+          workspaceId: wsId,
+          feature: feature,
+        );
+        _api.checkUser(owner);
+      }
+    }
+    String resolve(String path, String id, {String feature = 'inventory'}) {
+      final mapped = mappings[feature]?[id];
+      if (mapped != null && mapped != id) return mapped;
+      if (pending.any(
+        (item) =>
+            item.feature == feature &&
+            item.workspaceId == wsId &&
+            (owner == null || item.userId == owner) &&
+            item.path == path &&
+            item.method == 'POST' &&
+            item.entityId == id,
+      )) {
+        throw InventorySetupAwaitingSync();
+      }
+      return id;
+    }
+
+    return {
+      ...payload,
+      'category_id': resolve(
+        InventoryEndpoints.productCategories(wsId),
+        payload['category_id'] as String,
+      ),
+      if (payload['owner_id'] != null)
+        'owner_id': resolve(
+          InventoryEndpoints.owners(wsId),
+          payload['owner_id'] as String,
+        ),
+      if (payload['manufacturer_id'] != null)
+        'manufacturer_id': resolve(
+          InventoryEndpoints.manufacturers(wsId),
+          payload['manufacturer_id'] as String,
+        ),
+      if (payload['finance_category_id'] != null)
+        'finance_category_id': resolve(
+          FinanceEndpoints.categories(wsId),
+          payload['finance_category_id'] as String,
+          feature: 'finance',
+        ),
+      'inventory': [
+        for (final row in payload['inventory'] as List<Map<String, Object?>>)
+          {
+            ...row,
+            'unit_id': resolve(
+              InventoryEndpoints.productUnits(wsId),
+              row['unit_id']! as String,
+            ),
+            'warehouse_id': resolve(
+              InventoryEndpoints.productWarehouses(wsId),
+              row['warehouse_id']! as String,
+            ),
+          },
+      ],
+    };
+  }
+
   Future<void> updateSetupItem({
     required String wsId,
     required InventorySetupKind kind,

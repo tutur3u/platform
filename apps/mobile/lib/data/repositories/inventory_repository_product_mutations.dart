@@ -35,15 +35,18 @@ extension InventoryProductMutations on InventoryRepository {
     String? financeCategoryId,
   }) async {
     final path = InventoryEndpoints.createProduct(wsId);
-    final payload = _buildProductPayload(
-      name: name,
-      categoryId: categoryId,
-      ownerId: ownerId,
-      inventory: inventory,
-      manufacturerId: manufacturerId,
-      description: description,
-      usage: usage,
-      financeCategoryId: financeCategoryId,
+    final payload = await _confirmedProductPayload(
+      wsId,
+      _buildProductPayload(
+        name: name,
+        categoryId: categoryId,
+        ownerId: ownerId,
+        inventory: inventory,
+        manufacturerId: manufacturerId,
+        description: description,
+        usage: usage,
+        financeCategoryId: financeCategoryId,
+      ),
     );
     final id = newLocalMutationId();
     if (await _mutationQueue.enqueueIfOffline(
@@ -91,15 +94,18 @@ extension InventoryProductMutations on InventoryRepository {
     String? financeCategoryId,
   }) async {
     final path = InventoryEndpoints.product(wsId, productId);
-    final payload = _buildProductPayload(
-      name: name,
-      categoryId: categoryId,
-      ownerId: ownerId,
-      inventory: inventory,
-      manufacturerId: manufacturerId,
-      description: description,
-      usage: usage,
-      financeCategoryId: financeCategoryId,
+    final payload = await _confirmedProductPayload(
+      wsId,
+      _buildProductPayload(
+        name: name,
+        categoryId: categoryId,
+        ownerId: ownerId,
+        inventory: inventory,
+        manufacturerId: manufacturerId,
+        description: description,
+        usage: usage,
+        financeCategoryId: financeCategoryId,
+      ),
     );
     if (await _mutationQueue.enqueueIfOffline(
       feature: 'inventory',

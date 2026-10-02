@@ -17962,7 +17962,7 @@ abstract class AppLocalizations {
   /// No description provided for @inventorySetupSyncFirst.
   ///
   /// In en, this message translates to:
-  /// **'Sync this new item before editing or deleting it.'**
+  /// **'Sync this new item before using, editing, or deleting it.'**
   String get inventorySetupSyncFirst;
 
   /// No description provided for @offlineEditQueued.
