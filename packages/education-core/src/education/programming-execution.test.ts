@@ -15,7 +15,7 @@ vi.mock('./programming-repository', () => ({
   createPrivateProgrammingTransport: mocks.transport,
 }));
 const context = { user: { id: 'actor' }, supabase: {} } as EducationAuthContext;
-const problemId = '11111111-1111-4111-8111-111111111111';
+const problemId = 'abcdef11-1111-4111-8111-111111111111';
 const payload = {
   problemId,
   source: 'print(1)',
@@ -90,6 +90,28 @@ describe('Programming versioned execution boundary', () => {
     );
     expect(command.cases[1].expected).toBe('PRIVATE ANSWER');
     expect(command.cases[1]).not.toHaveProperty('problem_id');
+  });
+  it('normalizes uppercase UUIDs before snapshot matching', async () => {
+    await enqueueProgrammingExecution(context, 'workspace', undefined, {
+      ...payload,
+      problemId: problemId.toUpperCase(),
+    });
+    expect(mocks.rpc.mock.calls[0]?.[1].p_problem_id).toBe(problemId);
+  });
+  it('rejects unpublished snapshots before enqueue', async () => {
+    mocks.rpc
+      .mockReset()
+      .mockResolvedValueOnce({
+        data: {
+          ...snapshot,
+          problem: { ...snapshot.problem, status: 'draft' },
+        },
+        error: null,
+      });
+    await expect(
+      enqueueProgrammingExecution(context, 'workspace', undefined, payload)
+    ).rejects.toMatchObject({ status: 404 });
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
   });
   it('test execution includes public/custom cases only', async () => {
     await enqueueProgrammingExecution(context, 'workspace', undefined, {

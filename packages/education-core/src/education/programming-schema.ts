@@ -1,19 +1,31 @@
 import { PROGRAMMING_CATALOG_CASE_LIMIT } from '@tuturuuu/types/primitives/programming';
 import { z } from 'zod';
 
+const withoutNul = (max: number) =>
+  z
+    .string()
+    .max(max)
+    .refine((value) => !value.includes('\0'));
+
 const localizedText = (max: number) =>
   z
     .object({
-      en: z.string().trim().min(1).max(max),
-      vi: z.string().trim().min(1).max(max),
+      en: withoutNul(max)
+        .transform((value) => value.trim())
+        .refine((value) => value.length > 0),
+      vi: withoutNul(max)
+        .transform((value) => value.trim())
+        .refine((value) => value.length > 0),
     })
     .strict();
 
-export const ProgrammingProblemId = z.guid();
+export const ProgrammingProblemId = z
+  .guid()
+  .transform((value) => value.toLowerCase());
 export const ProgrammingCaseSchema = z
   .object({
-    input: z.string().max(4096),
-    expected: z.string().max(4096),
+    input: withoutNul(4096),
+    expected: withoutNul(4096),
     visible: z.boolean(),
   })
   .strict();

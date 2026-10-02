@@ -97,15 +97,40 @@ describe('Programming privacy and author payload contracts', () => {
       }).success
     ).toBe(false);
   });
+  it('rejects NUL in case text and every localized author field', () => {
+    for (const field of ['input', 'expected']) {
+      expect(
+        ProgrammingProblemInputSchema.safeParse({
+          ...input,
+          cases: [{ input: '', expected: '', visible: true, [field]: '\0' }],
+        }).success
+      ).toBe(false);
+    }
+    for (const field of ['title', 'prompt'] as const)
+      for (const locale of ['en', 'vi']) {
+        expect(
+          ProgrammingProblemInputSchema.safeParse({
+            ...input,
+            [field]: { ...input[field], [locale]: 'Invalid\0' },
+          }).success
+        ).toBe(false);
+      }
+  });
   it('rejects catalogs that cannot fit even a minimal unchanged execution envelope', () => {
-    const oversized = Array.from({ length: 50 }, () => ({
+    const oversized = Array.from({ length: 5 }, () => ({
       input: 'x'.repeat(4096),
       expected: 'x'.repeat(4096),
       visible: true,
     }));
     expect(
       ProgrammingProblemInputSchema.safeParse({ ...input, cases: oversized })
-        .success
-    ).toBe(false);
+        .error?.issues
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          message: 'Test cases exceed the existing judge payload limit.',
+        }),
+      ])
+    );
   });
 });

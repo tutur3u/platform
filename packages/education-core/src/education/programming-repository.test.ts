@@ -103,6 +103,10 @@ describe('Programming actual repository cursor pages', () => {
       ['eq', 'status', 'published'],
     ]);
     expect(calls).toContainEqual(['gt', 'id', first.nextCursor]);
+    expect(calls.filter(([name]) => name === 'order')).toEqual([
+      ['order', 'id', { ascending: true }],
+      ['order', 'id', { ascending: true }],
+    ]);
   });
   it('author pages keep global published scope and reject malformed cursors before storage', async () => {
     const repo = await createProgrammingRepository();
