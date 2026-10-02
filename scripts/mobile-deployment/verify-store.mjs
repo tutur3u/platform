@@ -5,6 +5,8 @@ import { readFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
 
+import { isTuturuuuReviewEmail } from '../../packages/utils/src/email/reviewer-domain.mjs';
+
 const APP_ID = 'com.tuturuuu.app.mobile';
 const APPLE_ORIGIN = 'https://api.appstoreconnect.apple.com';
 const GOOGLE_ORIGIN = 'https://androidpublisher.googleapis.com';
@@ -219,13 +221,13 @@ export async function pendingExternalBetaReview(apple, appId, buildId) {
   return null;
 }
 
-// Matches the routed-domain rule in isTuturuuuReviewEmail used by provisioning.
+// Uses the same routed-domain rule as reviewer provisioning.
 // Metadata cannot prove the account is enabled, unreserved, or usable for review.
 export function betaReviewAccessConfigured(attributes) {
   return (
     attributes?.demoAccountRequired === true &&
     typeof attributes.demoAccountName === 'string' &&
-    /^[^\s@]+@tutur3u\.com$/i.test(attributes.demoAccountName.trim()) &&
+    isTuturuuuReviewEmail(attributes.demoAccountName) &&
     typeof attributes.demoAccountPassword === 'string' &&
     attributes.demoAccountPassword.trim().length > 0 &&
     typeof attributes.notes === 'string' &&
