@@ -12,6 +12,20 @@ Learn and Teach use the Tuturuuu platform design language. Authenticated workspa
 - Use color only where it carries meaning, such as progress or status. Avoid arbitrary accent blocks, flashing motion, and endless floating animation. Respect reduced-motion settings.
 - Design loading, empty, error, and disabled states with the same surface system.
 
+## Programming workspace
+
+Use actual `@tuturuuu/ui` Select, Button, Textarea, Tooltip, Tabs, Accordion,
+and Resizable components for Programming controls and panels. Keep the Monaco
+editor integration specialized. Icon actions need localized accessible names
+and tooltips, and collapsed panels must remove their contents from keyboard
+interaction. Public case accordions never receive hidden judge cases.
+
+Programming is a full-bleed workspace exception to the dashboard max-width
+container. Opt into the shared shell's `contentFullBleed` behavior while
+retaining mobile header clearance and safe-area handling. Use semantic theme
+colors for informational readiness notices. Code uses the locally bundled
+JetBrains Mono with its colocated complete OFL and source notice.
+
 ## Ownership and behavior
 
 Learn owns learner and parent-facing education flows; Teach owns teacher operations and authoring. Preserve current routes, data contracts, and cross-app handoffs. Learn and Teach use central platform login and local `/verify-token` completion. Product pages should not duplicate shell chrome or implement local login portals.

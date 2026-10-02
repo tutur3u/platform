@@ -6,20 +6,20 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import { ChevronDown, ChevronUp } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
+  usePanelRef,
 } from '@tuturuuu/ui/resizable';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { listCodingChallenges } from '@/lib/coding/challenges';
-import {
-  CODING_LANGUAGES,
-  type CodingLanguage,
-  starterCode,
-} from '@/lib/coding/languages';
+import { type CodingLanguage, starterCode } from '@/lib/coding/languages';
 import type {
   CodingExecutionKind,
   CodingExecutionSummary,
@@ -30,7 +30,9 @@ import {
   submitCodingSolution,
 } from './actions';
 import { CodingConsole, type ConsoleTab } from './coding-console';
+import { programmingFont } from './coding-font';
 import { CodingProblem } from './coding-problem';
+import { CodingToolbar } from './coding-toolbar';
 
 const CodingEditor = dynamic(
   () => import('./coding-editor').then((module) => module.CodingEditor),
@@ -92,6 +94,8 @@ export function CodingLab({
   const [customInput, setCustomInput] = useState('');
   const [customExpected, setCustomExpected] = useState('');
   const [diagnostics, setDiagnostics] = useState(0);
+  const consolePanel = usePanelRef();
+  const [consoleCollapsed, setConsoleCollapsed] = useState(false);
   const [tab, setTab] = useState<ConsoleTab>('cases');
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [inspectedId, setInspectedId] = useState<string | null>(null);
@@ -114,6 +118,7 @@ export function CodingLab({
       setSubmissionId(id);
       setInspectedId(null);
       setTab('result');
+      consolePanel.current?.expand();
       void queryClient.invalidateQueries({ queryKey: historyKey });
     },
   });
@@ -234,61 +239,22 @@ export function CodingLab({
   if (!challenge) return null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-background text-foreground shadow-sm">
-      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2">
-        <label className="min-w-36 flex-1 sm:max-w-64">
-          <span className="sr-only">{t('challengeList')}</span>
-          <select
-            className="h-9 w-full rounded-md border bg-background px-2 font-medium text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            onChange={(event) => selectChallenge(event.target.value)}
-            value={selected}
-          >
-            {challenges.map((entry) => (
-              <option key={entry.slug} value={entry.slug}>
-                {t(`challenges.${entry.slug}.title`)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <span className="hidden rounded-md bg-muted px-2 py-1 text-muted-foreground text-xs sm:inline-flex">
-          {t(`topics.${challenge.topic}`)} ·{' '}
-          {t(`difficulty.${challenge.difficulty}`)}
-        </span>
-        <span className="flex-1" />
-        <label>
-          <span className="sr-only">{t('language')}</span>
-          <select
-            className="h-9 rounded-md border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            onChange={(event) =>
-              selectLanguage(event.target.value as CodingLanguage)
-            }
-            value={language}
-          >
-            {CODING_LANGUAGES.map((entry) => (
-              <option key={entry} value={entry}>
-                {t(`languages.${entry}`)}
-                {availableLanguages.includes(entry) ? '' : ` · ${t('offline')}`}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          className="h-9 rounded-md border px-3 font-medium text-sm hover:bg-accent disabled:opacity-50"
-          disabled={readOnly || !judgeReady || isBusy || !source.trim()}
-          onClick={() => execute('test')}
-          type="button"
-        >
-          {t('runTests')}
-        </button>
-        <button
-          className="h-9 rounded-md bg-primary px-3 font-medium text-primary-foreground text-sm disabled:opacity-50"
-          disabled={readOnly || !judgeReady || isBusy || !source.trim()}
-          onClick={() => execute('submit')}
-          type="button"
-        >
-          {submit.isPending ? t('submitting') : t('submit')}
-        </button>
-      </header>
+    <div
+      className={`flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground ${programmingFont.variable} [--font-mono:var(--font-programming-mono)]`}
+    >
+      <CodingToolbar
+        availableLanguages={availableLanguages}
+        challenge={challenge}
+        challenges={challenges}
+        disabled={readOnly || !judgeReady || isBusy || !source.trim()}
+        language={language}
+        onSubmit={() => execute('submit')}
+        onTest={() => execute('test')}
+        selected={selected}
+        selectChallenge={selectChallenge}
+        selectLanguage={selectLanguage}
+        submitting={submit.isPending}
+      />
 
       <ResizablePanelGroup
         className="min-h-0 flex-1"
@@ -313,11 +279,48 @@ export function CodingLab({
               <div className="flex h-full min-h-0 flex-col">
                 <div className="flex shrink-0 items-center justify-between border-b px-3 py-2 text-xs">
                   <span className="font-medium">{t('editor')}</span>
-                  <span className="text-muted-foreground">
-                    {language === 'javascript' || language === 'typescript'
-                      ? t('localChecks', { count: diagnostics })
-                      : t('syntaxHighlighting')}
-                  </span>
+                  <div className="flex min-w-0 items-center gap-2">
+                    {language === 'javascript' || language === 'typescript' ? (
+                      <span className="hidden text-muted-foreground sm:inline">
+                        {t('localChecks', { count: diagnostics })}
+                      </span>
+                    ) : null}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          aria-controls="programming-console"
+                          aria-expanded={!consoleCollapsed}
+                          aria-label={t(
+                            consoleCollapsed
+                              ? 'expandConsole'
+                              : 'collapseConsole'
+                          )}
+                          variant="ghost"
+                          size="icon"
+                          className="size-7"
+                          onClick={() =>
+                            consoleCollapsed
+                              ? consolePanel.current?.expand()
+                              : consolePanel.current?.collapse()
+                          }
+                        >
+                          {consoleCollapsed ? (
+                            <ChevronUp className="size-4" aria-hidden="true" />
+                          ) : (
+                            <ChevronDown
+                              className="size-4"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t(
+                          consoleCollapsed ? 'expandConsole' : 'collapseConsole'
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                 </div>
                 <div className="min-h-0 flex-1">
                   <CodingEditor
@@ -332,32 +335,46 @@ export function CodingLab({
               </div>
             </ResizablePanel>
             <ResizableHandle aria-label={t('resizeConsole')} withHandle />
-            <ResizablePanel defaultSize={38} id="coding-console" minSize={20}>
-              <CodingConsole
-                activeExecution={activeExecution}
-                customExpected={customExpected}
-                customInput={customInput}
-                executions={executions}
-                hasMore={Boolean(history.hasNextPage)}
-                historyLoading={history.isFetching}
-                onCustomExpectedChange={setCustomExpected}
-                onCustomInputChange={setCustomInput}
-                onLoadMore={() => void history.fetchNextPage()}
-                onRestore={restoreCode}
-                onSelectExecution={setInspectedId}
-                publicCases={challenge.publicCases}
-                selectedId={inspectedId ?? submissionId}
-                setTab={setTab}
-                tab={tab}
-              />
+            <ResizablePanel
+              defaultSize={consoleCollapsed ? 0 : 38}
+              id="coding-console"
+              minSize={20}
+              collapsible
+              collapsedSize={0}
+              panelRef={consolePanel}
+              onResize={(size) => setConsoleCollapsed(size.asPercentage === 0)}
+            >
+              <div
+                id="programming-console"
+                className="h-full min-h-0"
+                inert={consoleCollapsed}
+              >
+                <CodingConsole
+                  activeExecution={activeExecution}
+                  customExpected={customExpected}
+                  customInput={customInput}
+                  executions={executions}
+                  hasMore={Boolean(history.hasNextPage)}
+                  historyLoading={history.isFetching}
+                  onCustomExpectedChange={setCustomExpected}
+                  onCustomInputChange={setCustomInput}
+                  onLoadMore={() => void history.fetchNextPage()}
+                  onRestore={restoreCode}
+                  onSelectExecution={setInspectedId}
+                  publicCases={challenge.publicCases}
+                  selectedId={inspectedId ?? submissionId}
+                  setTab={setTab}
+                  tab={tab}
+                />
+              </div>
             </ResizablePanel>
           </ResizablePanelGroup>
         </ResizablePanel>
       </ResizablePanelGroup>
       {readOnly || !judgeReady || submit.error || submission.error ? (
         <p
-          className="shrink-0 border-t px-3 py-1.5 text-destructive text-xs"
-          role="alert"
+          className="shrink-0 border-t bg-muted px-3 py-2 text-foreground text-xs"
+          role={submit.error || submission.error ? 'alert' : 'status'}
         >
           {readOnly
             ? t('parentReadOnly')

@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/mail-v0.26.1...mail-v0.27.0) (2026-10-01)
+
+
+### Features
+
+* **mail:** add canonical Calendar association preview service ([bcf5a0e](https://github.com/tutur3u/platform/commit/bcf5a0e3107f703d76b1abc27221e682fedcdd7f)) ([#5671](https://github.com/tutur3u/platform/issues/5671)) ([c9de495](https://github.com/tutur3u/platform/commit/c9de4957d92c1403c1827bf1fa7aaf48761a98aa))
+
+
+### Bug Fixes
+
+* **mail:** add invitation RSVP and settle final inbox archive ([#5668](https://github.com/tutur3u/platform/issues/5668)) ([48a1687](https://github.com/tutur3u/platform/commit/48a1687f253cb7df72716fd4c289a0dcf1aa329d))
+* **mail:** canonicalize calendar link occurrence and receipts ([be3c1a6](https://github.com/tutur3u/platform/commit/be3c1a6ca9fdd274c4260dd322169ffb8f81ab67))
+* **mail:** preserve archived rows during web inbox refresh ([#5670](https://github.com/tutur3u/platform/issues/5670)) ([2ab9d7c](https://github.com/tutur3u/platform/commit/2ab9d7c36aa7a4dc0e4f850ab200cf8c030ea9d3))
+* **mail:** preserve recurrence and replay state ([89afe35](https://github.com/tutur3u/platform/commit/89afe35adb557e9f09fd7a023284f005fa9a9d7b))
+* **mail:** preserve web archive state during inbox refresh ([ba6b143](https://github.com/tutur3u/platform/commit/ba6b143b1a30034e992e1b12031f589d4d352c69))
+* **mail:** reject malformed timezone rule assignments ([34aad60](https://github.com/tutur3u/platform/commit/34aad608bd537ef37b8e88b02a4c393707c9b618))
+* **mail:** retain new messages during pending thread archives ([95adcf9](https://github.com/tutur3u/platform/commit/95adcf97c27770a0caacff77bb091fb1cde94e98))
+* **mail:** support invitation replies and settle empty inbox ([57e27ab](https://github.com/tutur3u/platform/commit/57e27ab6582e6cb5a1b6be43039ebf795cf908a2))
+
 ## [0.26.1](https://github.com/tutur3u/platform/compare/mail-v0.26.0...mail-v0.26.1) (2026-09-29)
 
 

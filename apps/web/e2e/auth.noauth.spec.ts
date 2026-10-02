@@ -234,12 +234,12 @@ test.describe('Authentication (unauthenticated)', () => {
   });
 
   test('login flow handles both OTP and password paths', async ({ page }) => {
-    // Enable OTP: verify the OTP stage appears after the identify step,
+    // External accounts keep OTP first when enabled after the identify step,
     // and the password fallback is visible.
     const previousOtpState = await setWebOtpEnabled(true);
 
     try {
-      const otpStageOnlyEmail = `otp-stage-only-${Date.now()}@tuturuuu.com`;
+      const otpStageOnlyEmail = `otp-stage-only-${Date.now()}@example.com`;
       await page.route('**/api/v1/auth/otp/send', async (route) => {
         await route.fulfill({
           contentType: 'application/json',
@@ -287,6 +287,64 @@ test.describe('Authentication (unauthenticated)', () => {
       await resetDbRateLimits();
     }
   });
+
+  for (const domain of ['tuturuuu.com', 'tutur3u.com']) {
+    test(`internal ${domain} defaults to password and keeps email code available`, async ({
+      page,
+    }) => {
+      const email = `password-default-${Date.now()}@${domain}`;
+      let codeRequests = 0;
+      await page.route('**/api/v1/auth/otp/settings?client=web', (route) =>
+        route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ otpEnabled: true }),
+        })
+      );
+      await page.route('**/api/v1/auth/otp/send', async (route) => {
+        expect(route.request().postDataJSON().email).toBe(email);
+        codeRequests++;
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true }),
+        });
+      });
+      await page.goto(`/${DEFAULT_LOCALE}/login`, {
+        waitUntil: 'domcontentloaded',
+      });
+
+      const emailInput = page
+        .getByPlaceholder('Enter your email or username')
+        .first();
+      await expect(emailInput).toBeEnabled({ timeout: 30_000 });
+      await emailInput.fill(email);
+      await page.getByRole('button', { name: /continue with email/i }).click();
+
+      const passwordInput = page.getByPlaceholder('Enter your password');
+      await expect(passwordInput).toBeVisible({ timeout: 15_000 });
+      await expect(getOtpCodeInput(page)).not.toBeVisible();
+      expect(codeRequests).toBe(0);
+
+      const useCode = page.getByRole('button', {
+        name: /use email code instead/i,
+      });
+      await expect(useCode).toBeEnabled();
+      await useCode.click();
+      await expect(getOtpCodeInput(page)).toBeVisible({ timeout: 15_000 });
+      await expect.poll(() => codeRequests).toBe(1);
+      await page.getByRole('button', { name: /use password instead/i }).click();
+      await expect(passwordInput).toBeVisible();
+      expect(codeRequests).toBe(1);
+
+      await page.getByRole('button', { name: /^back$/i }).click();
+      await expect(emailInput).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: /continue with passkey/i })
+      ).toBeEnabled();
+      await expect(
+        page.getByRole('button', { name: /continue with google/i })
+      ).toBeEnabled();
+    });
+  }
 
   test('login flow works with OTP disabled (password-only)', async ({
     page,
@@ -339,7 +397,7 @@ test.describe('Authentication (unauthenticated)', () => {
 
     try {
       await clearMailpitMessages();
-      const otpEmail = `otp-login-${Date.now()}@tuturuuu.com`;
+      const otpEmail = `otp-login-${Date.now()}@example.com`;
 
       await page.goto(`/${DEFAULT_LOCALE}/login`, {
         waitUntil: 'domcontentloaded',

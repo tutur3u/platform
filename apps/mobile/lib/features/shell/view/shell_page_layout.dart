@@ -111,6 +111,7 @@ extension _ShellPageLayout on _ShellPageState {
                                     _rootTabReplayTokens[Routes.assistant] ?? 0,
                               ),
                               (_) => AppsScreen(
+                                isActive: widget.matchedLocation == Routes.apps,
                                 replayToken:
                                     _rootTabReplayTokens[Routes.apps] ?? 0,
                               ),
@@ -501,7 +502,7 @@ extension _ShellPageLayout on _ShellPageState {
         .firstOrNull;
     if (searchAction != null) {
       return shad.AppBar(
-        height: mobileSectionAppBarHeight,
+        height: mobileSectionAppBarHeightFor(context),
         padding: mobileSectionAppBarPadding,
         backgroundColor: Colors.transparent,
         child: ShellSearchField(
@@ -516,12 +517,15 @@ extension _ShellPageLayout on _ShellPageState {
       injectedMiniNavRegistration: injectedMiniNavRegistration,
     );
     return shad.AppBar(
-      height: mobileSectionAppBarHeight,
+      height: mobileSectionAppBarHeightFor(context),
       padding: mobileSectionAppBarPadding,
       backgroundColor: Colors.transparent,
       trailingGap: 6,
       trailing: [
-        _ShellTrailingActions(matchedLocation: widget.matchedLocation),
+        SizedBox(
+          height: mobileSectionAppBarHeight,
+          child: _ShellTrailingActions(matchedLocation: widget.matchedLocation),
+        ),
       ],
       child: SizedBox(
         width: double.infinity,

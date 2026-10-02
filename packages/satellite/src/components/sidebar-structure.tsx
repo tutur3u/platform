@@ -44,6 +44,7 @@ export interface SidebarStructureProps {
   brandActions?: ReactNode;
   brandHref?: string;
   childContainerClassName?: string;
+  contentFullBleed?: boolean;
   children: ReactNode;
   defaultCollapsed?: boolean;
   links: (NavLink | null)[];
@@ -75,6 +76,7 @@ export function SidebarStructure({
   brandActions,
   brandHref = '/',
   childContainerClassName,
+  contentFullBleed,
   children,
   defaultCollapsed = false,
   links,
@@ -168,6 +170,7 @@ export function SidebarStructure({
       >
         <SatelliteShell
           actions={actions}
+          contentFullBleed={contentFullBleed}
           feedbackButton={
             <SidebarFooterActions
               isCollapsed={isCollapsed}

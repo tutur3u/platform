@@ -5,6 +5,7 @@ import * as monaco from 'monaco-editor';
 import { useTheme } from 'next-themes';
 import { useCallback, useRef } from 'react';
 import type { CodingLanguage } from '@/lib/coding/languages';
+import { programmingFont } from './coding-font';
 
 loader.config({ monaco });
 
@@ -102,6 +103,22 @@ export function CodingEditor({
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       onRunRef.current();
     });
+    // Monaco measures fonts under document.body, outside the lab's CSS-variable
+    // scope. Use the concrete family below and refresh cached fallback metrics
+    // once the self-hosted font has loaded.
+    let disposed = false;
+    editor.onDidDispose(() => {
+      disposed = true;
+    });
+    void document.fonts
+      .load(`13px ${programmingFont.style.fontFamily}`)
+      .then(() => document.fonts.ready)
+      .then(() => {
+        if (disposed) return;
+        monaco.editor.remeasureFonts();
+        editor.layout();
+      })
+      .catch(() => undefined);
     editor.focus();
   }, []);
 
@@ -114,7 +131,7 @@ export function CodingEditor({
       onValidate={(markers) => onDiagnostics(markers.length)}
       options={{
         automaticLayout: true,
-        fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+        fontFamily: programmingFont.style.fontFamily,
         fontSize: 13,
         lineHeight: 21,
         minimap: { enabled: false },

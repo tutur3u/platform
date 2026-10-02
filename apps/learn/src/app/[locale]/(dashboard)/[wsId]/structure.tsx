@@ -70,9 +70,10 @@ export function Structure({
       brandHref={WEB_APP_URL}
       childContainerClassName={
         isCodingLab
-          ? 'h-[calc(100dvh-5.5rem)] min-h-[30rem] w-full md:h-[calc(100dvh-2rem)]'
+          ? 'flex h-full min-h-0 w-full flex-col'
           : 'mx-auto w-full max-w-[1500px] px-4 py-5 md:px-6 md:py-8'
       }
+      contentFullBleed={isCodingLab}
       defaultCollapsed={defaultCollapsed}
       links={studentLinks}
       notificationPopover={notificationPopover}
@@ -104,7 +105,9 @@ export function Structure({
       wsId={wsId}
     >
       {hasLinkedStudents ? (
-        <div className="mb-5 md:hidden">
+        <div
+          className={isCodingLab ? 'shrink-0 p-2 md:hidden' : 'mb-5 md:hidden'}
+        >
           <LearnerStudentSelect bootstrap={bootstrap} wsId={wsId} />
         </div>
       ) : null}

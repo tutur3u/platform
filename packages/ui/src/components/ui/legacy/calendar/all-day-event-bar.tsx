@@ -2,6 +2,7 @@ import { Calendar, ChevronDown, ChevronUp } from '@tuturuuu/icons';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -37,13 +38,11 @@ interface EventSpan {
   startIndex: number;
   endIndex: number;
   span: number;
-  // Add indicators for cut-off events
   isCutOffStart: boolean; // Event starts before visible range
   isCutOffEnd: boolean; // Event ends after visible range
   actualStartDate: dayjs.Dayjs; // Actual start date of the event
   actualEndDate: dayjs.Dayjs; // Actual end date of the event
   row: number; // Add row property for proper stacking
-  // For merged events
   isMerged?: boolean;
   mergedEventIds?: string[];
 }
@@ -881,9 +880,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         {regularSpans.map((eventSpan) => {
           const { event, startIndex, span, row, isCutOffStart, isCutOffEnd } =
             eventSpan;
-          const { bg, border, text } = getEventStyles(event.color || 'BLUE');
 
-          // Use the assigned row directly instead of calculating it
+          const eventStyle = calendarEventStyle(event);
           const eventRow = row;
 
           // Check if this event should be visible based on expansion state
@@ -933,17 +931,15 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   ? 'cursor-grabbing'
                   : 'cursor-grab hover:cursor-grab',
                 // Visual feedback for dragging
-                isDraggedEvent && 'scale-95 opacity-30',
-                // Normal styling
-                bg,
-                border,
-                text,
+                isDraggedEvent && 'scale-95 outline outline-dashed',
                 isPendingMutation &&
-                  'opacity-60 outline outline-dashed outline-1 outline-primary/50',
+                  'outline outline-dashed outline-1 outline-primary',
                 // Special styling for cut-off events
                 (isCutOffStart || isCutOffEnd) && 'border-dashed'
               )}
               style={{
+                ...eventStyle,
+                borderColor: eventStyle.color,
                 left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
                 width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
                 top: `${eventRow * 1.6 + 0.25 + topOffset}rem`,
@@ -993,10 +989,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             'transform backdrop-blur-sm transition-none',
             getEventStyles(dragState.draggedEvent.color || 'BLUE').bg,
             getEventStyles(dragState.draggedEvent.color || 'BLUE').border,
-            getEventStyles(dragState.draggedEvent.color || 'BLUE').text,
-            'opacity-90'
+            getEventStyles(dragState.draggedEvent.color || 'BLUE').text
           )}
           style={{
+            ...calendarEventStyle(dragState.draggedEvent),
             left: `${dragState.currentX + 15}px`,
             top: `${dragState.currentY - 20}px`,
             height: '1.35rem',
