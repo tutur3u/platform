@@ -306,6 +306,9 @@ export async function prepare({
     ),
   });
   const block = await ports(identity);
+  console.info('Programming preparation checkpoint=policy-validation');
+  const policyIdentity = await policy();
+  console.info('Programming preparation checkpoint=project-staging');
   const fields = {
     cliVersion,
     services,
@@ -313,7 +316,7 @@ export async function prepare({
     initialFreeBytes: free,
     minimumFreeBytesObserved: free,
     migrationFingerprint: await fingerprint(),
-    network: await policy(),
+    network: policyIdentity,
     images: {},
     runSucceeded: false,
     cleanupVerified: false,
