@@ -335,12 +335,14 @@ test('diagnostic drain is bounded when an escaped fixture retains stderr', async
         `
       const { spawn } = require('node:child_process');
       const { writeFileSync } = require('node:fs');
-      const holder = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {
+      const holder = spawn(process.execPath, ['-e',
+        'setTimeout(() => process.stderr.write("FATAL: synthetic late diagnostic"), 80); setInterval(() => {}, 1000)'
+      ], {
         detached: true, stdio: ['ignore', 'ignore', process.stderr],
       });
       holder.once('spawn', () => {
         writeFileSync(process.argv[1], String(holder.pid));
-        process.stderr.write('FATAL: synthetic fixture diagnostic\\n', () => holder.unref());
+        holder.unref();
       });
     `,
         marker,
