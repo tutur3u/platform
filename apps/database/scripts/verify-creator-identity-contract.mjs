@@ -34,7 +34,10 @@ const trackedFiles = execFileSync(
 )
   .split('\0')
   .filter(Boolean);
-const fixtures = ['public-creator-identity.sql'];
+const fixtures = [
+  'public-creator-identity.sql',
+  'profile-media-upload-limits.sql',
+];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
   repositoryRoot,

@@ -4,6 +4,9 @@ on:
     paths:
       - 'apps/database/supabase/migrations/**'
       - 'apps/database/supabase/tests/public-creator-identity.sql'
+      - 'apps/database/supabase/tests/profile-media-upload-limits.sql'
+      - 'packages/utils/src/username-policy*'
+      - 'packages/utils/src/__tests__/username-policy.test.ts'
       - 'apps/database/scripts/verify-creator-identity-contract.mjs'
       - 'apps/database/scripts/run-supabase*.js'
       - '.github/workflows/creator-identity-contract.yaml'
