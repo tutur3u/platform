@@ -7,6 +7,7 @@ import {
   chooseAvailablePortBlock,
   deriveIsolatedIdentity,
   hasProjectCollision,
+  removeDisposableRoot,
   runIsolatedLifecycle,
   stageDisposableProject,
 } from './run-supabase-isolated.js';
@@ -56,24 +57,30 @@ metadata.typegenOutput = 'packages/types/src/supabase.ts';
 console.log(
   `Exact source: ${headSha}; isolated project: ${metadata.projectId}`
 );
-for (const file of trackedFiles.filter(
-  (file) => !file.endsWith('/supabase/config.toml')
-)) {
-  if (
-    !readFileSync(file).equals(
-      readFileSync(
-        path.resolve(
-          metadata.disposableRoot,
-          file.replace('apps/database/', '')
+let binaryPath;
+try {
+  for (const file of trackedFiles.filter(
+    (file) => !file.endsWith('/supabase/config.toml')
+  )) {
+    if (
+      !readFileSync(file).equals(
+        readFileSync(
+          path.resolve(
+            metadata.disposableRoot,
+            file.replace('apps/database/', '')
+          )
         )
       )
     )
-  )
-    throw new Error(`Isolated source snapshot mismatch: ${file}`);
+      throw new Error(`Isolated source snapshot mismatch: ${file}`);
+  }
+  binaryPath = await ensureSupabaseBinary(
+    path.resolve(repositoryRoot, 'apps/database')
+  );
+} catch (error) {
+  await removeDisposableRoot(metadata.disposableRoot);
+  throw error;
 }
-const binaryPath = await ensureSupabaseBinary(
-  path.resolve(repositoryRoot, 'apps/database')
-);
 const excluded =
   'gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor';
 const runner = async (command, args, cwd) => {

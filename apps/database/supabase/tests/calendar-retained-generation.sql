@@ -30,6 +30,12 @@ select is(public.fixture_retained()->>'generation','9007199254740994','later sch
 select is(public.fixture_retained()->>'pending','false','terminal retained generation is not pending');
 update private.calendar_google_color_operations set intent='{}';
 select throws_ok($$select public.fixture_retained()$$,'55000',null,'partial row schema fails closed rather than returning ledgerless');
+update private.calendar_google_color_operations set intent='{"kind":123}';
+select throws_ok($$select public.fixture_retained()$$,'55000',null,'numeric intent kind fails closed');
+update private.calendar_google_color_operations set intent='{"kind":{"name":"saga"}}';
+select throws_ok($$select public.fixture_retained()$$,'55000',null,'object intent kind fails closed');
+update private.calendar_google_color_operations set intent='{"kind":["saga"]}';
+select throws_ok($$select public.fixture_retained()$$,'55000',null,'array intent kind fails closed');
 alter table private.calendar_google_color_operations rename column ws_id to incompatible_ws_id;
 select throws_ok($$select public.fixture_retained()$$,'42703',null,'partial relation schema fails closed');
 select * from finish();
