@@ -1,8 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ reserve: vi.fn() }));
+const mocks = vi.hoisted(() => ({ reserve: vi.fn(), policy: vi.fn() }));
 vi.mock('server-only', () => ({}));
 vi.mock('./security-budget', () => ({ reserveSecurityBudget: mocks.reserve }));
+
+vi.mock('./security-budget-policy', async (original) => ({
+  ...(await original<typeof import('./security-budget-policy')>()),
+  getSecurityBudgetPolicy: mocks.policy,
+}));
 
 import { reserveStorageDownloadBudget } from './storage-download-budget';
 
@@ -21,6 +26,11 @@ describe('shared download reservations', () => {
     vi.stubEnv('STORAGE_DOWNLOAD_GLOBAL_DAILY_BYTES', '100');
     vi.stubEnv('STORAGE_DOWNLOAD_GLOBAL_MONTHLY_BYTES', '200');
     vi.stubEnv('STORAGE_DOWNLOAD_WORKSPACE_DAILY_BYTES', '80');
+    mocks.policy.mockReset().mockResolvedValue({
+      tier: 'PRO',
+      multiplier: 10,
+      paidWorkspaceCount: 1,
+    });
     mocks.reserve.mockReset().mockResolvedValue([1, 0]);
   });
   afterEach(() => {
@@ -92,5 +102,33 @@ describe('shared download reservations', () => {
       reserveStorageDownloadBudget(ticket, 45)
     ).rejects.toMatchObject({ status: 503 });
     expect(mocks.reserve).not.toHaveBeenCalled();
+  });
+});
+
+describe('plan-aware reservations', () => {
+  beforeEach(() => {
+    vi.stubEnv('STORAGE_DOWNLOADS_DISABLED', 'false');
+    mocks.reserve.mockReset().mockResolvedValue([1, 0]);
+  });
+  afterEach(() => vi.unstubAllEnvs());
+  it('gives free workspaces strict shared pools while paid memberships expand workspace/file limits', async () => {
+    mocks.policy.mockResolvedValue({
+      tier: 'FREE',
+      multiplier: 1,
+      paidWorkspaceCount: 0,
+    });
+    await reserveStorageDownloadBudget(ticket, 45);
+    expect(mocks.reserve.mock.calls.at(-1)?.[0]).toHaveLength(5);
+    await reserveStorageDownloadBudget(ticket);
+    expect(mocks.reserve.mock.calls.at(-1)?.[0]).toHaveLength(3);
+    expect(mocks.reserve.mock.calls.at(-1)?.[0][1][2]).toBe(10);
+    mocks.policy.mockResolvedValue({
+      tier: 'PRO',
+      multiplier: 12.5,
+      paidWorkspaceCount: 2,
+    });
+    await reserveStorageDownloadBudget(ticket);
+    expect(mocks.reserve.mock.calls.at(-1)?.[0]).toHaveLength(2);
+    expect(mocks.reserve.mock.calls.at(-1)?.[0][1][2]).toBe(125);
   });
 });

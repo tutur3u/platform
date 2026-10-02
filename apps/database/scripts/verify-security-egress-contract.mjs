@@ -34,7 +34,10 @@ const trackedFiles = execFileSync(
 )
   .split('\0')
   .filter(Boolean);
-const fixtures = ['security-egress-budgets.sql'];
+const fixtures = [
+  'security-egress-budgets.sql',
+  'security-budget-entitlements.sql',
+];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
   repositoryRoot,

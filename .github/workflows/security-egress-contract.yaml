@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - 'apps/database/supabase/migrations/**'
-      - 'apps/database/supabase/tests/security-egress-budgets.sql'
+      - 'apps/database/supabase/tests/security-*.sql'
       - 'apps/database/scripts/verify-security-egress-contract.mjs'
       - 'apps/database/scripts/run-supabase*.js'
       - '.github/workflows/security-egress-contract.yaml'

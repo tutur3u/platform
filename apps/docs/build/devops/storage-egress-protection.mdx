@@ -41,9 +41,13 @@ and configuration on every web replica. Redis is not required:
 | `STORAGE_DOWNLOAD_SIGNING_SECRET` | `SUPABASE_SECRET_KEY` | Server-only encryption key; set a dedicated secret to rotate download tickets independently |
 | `STORAGE_DOWNLOAD_GLOBAL_DAILY_BYTES` | 5 GiB | Daily cap across all guarded workspaces |
 | `STORAGE_DOWNLOAD_GLOBAL_MONTHLY_BYTES` | 100 GiB | Monthly cap across all guarded workspaces |
-| `STORAGE_DOWNLOAD_WORKSPACE_DAILY_BYTES` | 2 GiB | Daily cap per workspace |
+| `STORAGE_DOWNLOAD_FREE_WORKSPACE_DAILY_BYTES` | 256 MiB | Base daily workspace allowance, multiplied by eligible plan |
+| `STORAGE_DOWNLOAD_WORKSPACE_DAILY_BYTES` | Global daily cap | Absolute per-workspace ceiling after plan scaling |
+| `STORAGE_DOWNLOAD_FREE_DAILY_BYTES` | 512 MiB | Combined daily bytes for all free workspaces |
+| `STORAGE_DOWNLOAD_FREE_MONTHLY_BYTES` | 5 GiB | Combined monthly bytes for all free workspaces |
+| `STORAGE_DOWNLOAD_FREE_REQUESTS_PER_MINUTE` | 500 | Combined requests for free workspaces |
 | `STORAGE_DOWNLOAD_REQUESTS_PER_MINUTE` | 3000 | Requests including HEAD across the relay |
-| `STORAGE_DOWNLOAD_FILE_REQUESTS_PER_MINUTE` | 30 | Requests for one file, shared across tickets and IPs |
+| `STORAGE_DOWNLOAD_FILE_REQUESTS_PER_MINUTE` | 10 | Base requests for one file, multiplied by plan and shared across tickets/IPs |
 | `STORAGE_DOWNLOADS_DISABLED` | `false` | Set `true` to deny ticket issuance and relay requests |
 | `STORAGE_DOWNLOAD_REVOKED_BEFORE` | `0` | Reject tickets issued at or before this Unix timestamp |
 
@@ -98,8 +102,8 @@ With enforcement enabled, the web proxy reserves a shared request slot before tr
 CMS asset bypasses. Existing web API routes use fixed delivery, auth, chat and other families, each
 with `API_GLOBAL_REQUESTS_PER_MINUTE` (default 10,000). A CMS flood cannot consume
 the auth/chat family allowance. Other workspace APIs also use
-`API_WORKSPACE_REQUESTS_PER_MINUTE` (default 2,000) per workspace and family. Workspace CMS and external-app
-APIs additionally share `CMS_WORKSPACE_REQUESTS_PER_MINUTE` (default 600), across
+`API_WORKSPACE_REQUESTS_PER_MINUTE` (base 200) per workspace and family. Workspace CMS and external-app
+APIs additionally share `CMS_WORKSPACE_REQUESTS_PER_MINUTE` (base 60), across
 asset IDs, query strings, credentials and client IP addresses. OPTIONS does not
 consume a slot. Database failure or invalid configuration returns 503; exhausted
 limits return 429 with Retry-After. Existing authentication, scopes and caller
@@ -119,6 +123,50 @@ Before release, purge previously cached CMS asset redirects and revoke exposed
 Supabase URLs. Existing client-held URLs cannot be intercepted retrospectively.
 Public Supabase buckets and any unrelated direct signing call sites are not
 made private by an API proxy limit; audit them separately.
+
+## Account and workspace plan allowances
+
+Only active subscriptions with a positive fixed/seat price and a non-free catalog
+product count. Trials, past-due/canceled subscriptions, expired periods, deleted
+workspaces and zero-cost products confer no uplift. Each workspace counts once
+using its latest active subscription. Archived paid products remain eligible for
+existing customers. Actual billing/webhook reconciliation remains authoritative.
+
+The highest eligible plan supplies a multiplier: Free 1, Plus 4, Pro 10,
+Enterprise 20. Each additional paid workspace adds 25%, capped at a 2x bonus
+(five or more paid workspaces). A user's personal subscription and current joined
+paid workspaces contribute to the account allowance. A personal workspace inherits
+its owner's account allowance; a team/CMS workspace inherits its own subscription.
+Membership removal, downgrade or expiration is reflected after at most the
+30-second bounded entitlement cache. Failed lookups are not cached or replaced
+with a permissive default. Counter reservations always reach Postgres.
+
+`API_ACCOUNT_REQUESTS_PER_MINUTE` has a base of 120 per account/key and family;
+anonymous requests share a 120/minute IP subject. `API_FREE_REQUESTS_PER_MINUTE`
+(default 2,000) bounds each free/anonymous family across all subjects. These pools
+are checked atomically with family caps before arbitrary target workspace lookups;
+denied free traffic cannot increment the family counter and consume paid headroom.
+Authenticated accounts and validated API-key workspaces receive plan uplifts.
+Client-supplied user IDs, tier labels, workspace headers and decoded JWT claims
+are never trusted. Session/key verification caches only hashed credentials for
+30 seconds and does not authorize requests; each route retains its actual auth,
+MFA, permission, abuse challenge and revocation checks. Uncached provider/key
+verification itself is limited to 2,000/minute globally and 120/minute per IP.
+
+SDK post-auth caller limits scale using the validated key's workspace plan, while
+risk multipliers still apply. Its pre-auth ceiling allows the maximum bounded
+plan multiplier, with the Redis-independent proxy enforcing free/client pools.
+Anonymous public CMS readers retain the strict client/free-family allowance even
+when the target workspace is paid. Target workspace and relay allowances still
+reflect its paid plan. Public cache hits remain outside origin request accounting.
+All paid allowances remain below the unchanged global byte safety caps; paid
+membership does not grant unlimited egress or exempt attacks from containment.
+
+Regression coverage: `security-budget-policy.test.ts`, `api-cost-identity.test.ts`,
+`api-cost-guard.test.ts`, `storage-download-budget.test.ts` and service-only SQL
+`security-budget-entitlements.sql` prove scoped uplift, membership removal,
+trial/free/expired exclusions and bounded caching. The database fixture runs in
+an isolated CI database, never against production.
 
 ## Postgres rollout and budget tradeoffs
 
@@ -140,7 +188,8 @@ audit row and no Redis subscription are required.
 The RPC uses per-dimension transaction advisory locks with a 500 ms lock timeout and a
 2 second statement timeout. This favors a bounded bill over availability under
 a severe flood: database saturation returns 503 instead of allowing unmetered
-traffic. It adds an RPC to each origin API request and two to each download.
+traffic. It adds shared counter RPCs to each origin API request and two to each download,
+plus cached entitlement reads (and bounded identity verification when needed).
 Provider WAF controls should reject floods before they reach the application;
 these counters protect accepted origin traffic and do not eliminate database or
 application hosting costs. There is no replica-local allowance or Redis/Postgres
@@ -153,7 +202,7 @@ RPC client validates reservation responses and aborts stalled calls after three 
 
 `security-egress-contract.yaml` applies the complete migration schema in an
 isolated disposable Supabase database, requires every assertion in
-`security-egress-budgets.sql` to pass, and checks five concurrent database clients
+`security-egress-budgets.sql` and `security-budget-entitlements.sql` to pass, and checks five concurrent database clients
 accept exactly 50 of 100 reservations against a shared allowance of 50. The job
 also generates Supabase types and uploads them as an artifact for the exact PR
 commit. CI must pass before merging; production migration application and

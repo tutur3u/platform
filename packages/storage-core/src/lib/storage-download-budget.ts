@@ -3,6 +3,11 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import { reserveSecurityBudget } from './security-budget';
 import {
+  getSecurityBudgetPolicy,
+  type SecurityBudgetPolicy,
+  scaledSecurityBudgetLimit,
+} from './security-budget-policy';
+import {
   StorageDownloadError,
   type StorageDownloadTicket,
 } from './storage-download-token';
@@ -37,6 +42,15 @@ export async function reserveStorageDownloadBudget(
   if (bytes !== undefined && (!Number.isSafeInteger(bytes) || bytes < 0)) {
     throw new StorageDownloadError('Unable to determine download size', 502);
   }
+  let policy: SecurityBudgetPolicy;
+  try {
+    policy = await getSecurityBudgetPolicy({ workspaceId: ticket.wsId });
+  } catch {
+    throw new StorageDownloadError(
+      'Storage download protection is unavailable',
+      503
+    );
+  }
   const now = new Date();
   const day = now.toISOString().slice(0, 10);
   const month = day.slice(0, 7);
@@ -58,7 +72,10 @@ export async function reserveStorageDownloadBudget(
           [
             `${prefix}:file:${file}:${minute}`,
             1,
-            limit('STORAGE_DOWNLOAD_FILE_REQUESTS_PER_MINUTE', 30),
+            scaledSecurityBudgetLimit(
+              limit('STORAGE_DOWNLOAD_FILE_REQUESTS_PER_MINUTE', 10),
+              policy
+            ),
             120,
           ],
         ] as const)
@@ -78,12 +95,51 @@ export async function reserveStorageDownloadBudget(
           [
             `${prefix}:workspace:${workspace}:${day}`,
             bytes,
-            limit('STORAGE_DOWNLOAD_WORKSPACE_DAILY_BYTES', 2 * GiB),
+            scaledSecurityBudgetLimit(
+              limit(
+                'STORAGE_DOWNLOAD_FREE_WORKSPACE_DAILY_BYTES',
+                256 * 1024 ** 2
+              ),
+              policy,
+              limit(
+                'STORAGE_DOWNLOAD_WORKSPACE_DAILY_BYTES',
+                limit('STORAGE_DOWNLOAD_GLOBAL_DAILY_BYTES', 5 * GiB)
+              )
+            ),
             172800,
           ],
         ] as const);
+  const freeDimensions =
+    policy.tier === 'FREE'
+      ? bytes === undefined
+        ? [
+            [
+              `${prefix}:free-requests:${minute}`,
+              1,
+              limit('STORAGE_DOWNLOAD_FREE_REQUESTS_PER_MINUTE', 500),
+              120,
+            ] as const,
+          ]
+        : [
+            [
+              `${prefix}:free-bytes:${day}`,
+              bytes,
+              limit('STORAGE_DOWNLOAD_FREE_DAILY_BYTES', 512 * 1024 ** 2),
+              172800,
+            ] as const,
+            [
+              `${prefix}:free-bytes:${month}`,
+              bytes,
+              limit('STORAGE_DOWNLOAD_FREE_MONTHLY_BYTES', 5 * GiB),
+              32 * 86400,
+            ] as const,
+          ]
+      : [];
   try {
-    const result = await reserveSecurityBudget(dimensions);
+    const result = await reserveSecurityBudget([
+      ...dimensions,
+      ...freeDimensions,
+    ]);
     if (!Array.isArray(result) || result.length !== 2 || result[0] !== 1) {
       if (Array.isArray(result) && result[0] === 0) {
         const nextDay = Date.parse(`${day}T00:00:00Z`) + 86400_000;
@@ -95,7 +151,7 @@ export async function reserveStorageDownloadBudget(
         const reset =
           bytes === undefined
             ? (minute + 1) * 60_000
-            : result[1] === 2
+            : result[1] === 2 || result[1] === 5
               ? nextMonth
               : nextDay;
         throw new StorageDownloadError(

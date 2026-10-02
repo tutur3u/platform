@@ -89,3 +89,57 @@ SELECT cron.schedule('security-budget-cleanup', '* * * * *', $job$
     WHERE expires_at < now() ORDER BY expires_at LIMIT 20000
   );
 $job$);
+
+-- Only authoritative active paid subscriptions confer higher abuse allowances.
+-- Personal workspaces inherit their owner's current paid memberships; public
+-- team/CMS delivery inherits only the target workspace's subscription.
+CREATE FUNCTION public.get_security_budget_entitlement(
+  p_ws_id uuid DEFAULT NULL, p_user_id uuid DEFAULT NULL
+) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = pg_catalog
+SET statement_timeout = '2s'
+AS $$
+DECLARE
+  account_id uuid := p_user_id;
+  result jsonb;
+BEGIN
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    RAISE EXCEPTION 'Service role required' USING ERRCODE = '42501';
+  END IF;
+  IF account_id IS NULL THEN
+    SELECT creator_id INTO account_id FROM public.workspaces
+      WHERE id = p_ws_id AND personal AND NOT deleted;
+  END IF;
+  WITH eligible AS (
+    SELECT w.id FROM public.workspaces w WHERE w.id = p_ws_id AND NOT w.deleted
+    UNION
+    SELECT w.id FROM public.workspace_members m
+      JOIN public.workspaces w ON w.id = m.ws_id
+      WHERE m.user_id = account_id AND NOT w.deleted
+    UNION
+    SELECT w.id FROM public.workspaces w
+      WHERE w.personal AND w.creator_id = account_id AND NOT w.deleted
+  ), latest AS (
+    SELECT DISTINCT ON (s.ws_id) s.ws_id, s.product_id, s.current_period_end
+    FROM public.workspace_subscriptions s JOIN eligible e ON e.id = s.ws_id
+    WHERE s.status = 'active'
+    ORDER BY s.ws_id, s.created_at DESC, s.id DESC
+  ), paid AS (
+    SELECT l.ws_id, CASE p.tier::text
+      WHEN 'ENTERPRISE' THEN 3 WHEN 'PRO' THEN 2 WHEN 'PLUS' THEN 1 ELSE 0 END AS rank
+    FROM latest l JOIN private.workspace_subscription_products p ON p.id = l.product_id
+    WHERE (l.current_period_end IS NULL OR l.current_period_end::timestamptz > now())
+      AND p.tier::text <> 'FREE' AND p.pricing_model::text <> 'free'
+      AND (COALESCE(p.price, 0) > 0 OR COALESCE(p.price_per_seat, 0) > 0)
+  )
+  SELECT jsonb_build_object(
+    'tier', CASE COALESCE(max(rank), 0)
+      WHEN 3 THEN 'ENTERPRISE' WHEN 2 THEN 'PRO' WHEN 1 THEN 'PLUS' ELSE 'FREE' END,
+    'paidWorkspaceCount', count(*)
+  ) INTO result FROM paid;
+  RETURN result;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.get_security_budget_entitlement(uuid, uuid)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_security_budget_entitlement(uuid, uuid) TO service_role;

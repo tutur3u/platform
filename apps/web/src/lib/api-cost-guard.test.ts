@@ -2,11 +2,28 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ eval: vi.fn(), enabled: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  eval: vi.fn(),
+  enabled: vi.fn(),
+  policy: vi.fn(),
+  identity: vi.fn(),
+}));
 vi.mock('@tuturuuu/storage-core/security-budget', () => ({
   reserveSecurityBudget: mocks.eval,
   isSecurityEgressEnforcementEnabled: mocks.enabled,
 }));
+
+vi.mock('./api-cost-identity', () => ({
+  resolveApiCostIdentity: mocks.identity,
+}));
+vi.mock('@tuturuuu/storage-core/security-budget-policy', async (original) => ({
+  ...(await original<
+    typeof import('@tuturuuu/storage-core/security-budget-policy')
+  >()),
+  getSecurityBudgetPolicy: mocks.policy,
+}));
+
+vi.mock('server-only', () => ({}));
 
 import { guardApiCost } from './api-cost-guard';
 
@@ -14,6 +31,10 @@ const request = (path: string, method = 'GET') =>
   new NextRequest(`https://example.test${path}`, { method });
 beforeEach(() => {
   vi.spyOn(Date, 'now').mockReturnValue(1_800_000_000_000);
+  mocks.identity.mockReset().mockResolvedValue({});
+  mocks.policy
+    .mockReset()
+    .mockResolvedValue({ tier: 'PRO', multiplier: 10, paidWorkspaceCount: 1 });
   mocks.enabled.mockReset().mockReturnValue(true);
   mocks.eval.mockReset().mockResolvedValue([1, 0]);
 });
@@ -26,19 +47,25 @@ describe('API cost guard', () => {
     await guardApiCost(
       request('/api/v1/workspaces/ws-1/external-projects/assets/a?v=1')
     );
-    const first = mocks.eval.mock.calls[0]![0];
+    const first = [
+      ...mocks.eval.mock.calls[0]![0],
+      ...mocks.eval.mock.calls[1]![0],
+    ];
     await guardApiCost(
       request('/api/v1/workspaces/ws-1/external-apps/cron-jobs', 'POST')
     );
-    expect(mocks.eval.mock.calls[1]![0]).toEqual(first);
-    expect(first).toHaveLength(2);
+    expect([
+      ...mocks.eval.mock.calls[2]![0],
+      ...mocks.eval.mock.calls[3]![0],
+    ]).toEqual(first);
+    expect(first).toHaveLength(4);
     expect(
       first.map((dimension: [string, number, number, number]) => dimension[2])
-    ).toEqual([10000, 600]);
+    ).toEqual([10000, 2000, 120, 600]);
   });
   it('bounds existing APIs globally and leaves OPTIONS available', async () => {
     await guardApiCost(request('/api/v1/storage/share', 'POST'));
-    expect(mocks.eval.mock.calls[0]![0]).toHaveLength(1);
+    expect(mocks.eval.mock.calls[0]![0]).toHaveLength(3);
     mocks.eval.mockClear();
     expect(
       await guardApiCost(request('/api/v1/storage/share', 'OPTIONS'))
@@ -72,13 +99,13 @@ it('canonicalizes encoded workspace IDs and separates authentication capacity', 
   await guardApiCost(
     request('/api/v1/workspaces/ws-1/external-projects/assets/a')
   );
-  const plain = mocks.eval.mock.calls[0]![0];
+  const plain = mocks.eval.mock.calls[1]![0];
   await guardApiCost(
     request('/api/v1/workspaces/%77s-1/external-projects/assets/a')
   );
-  expect(mocks.eval.mock.calls[1]![0]).toEqual(plain);
+  expect(mocks.eval.mock.calls[3]![0]).toEqual(plain);
   await guardApiCost(request('/api/v1/auth/session'));
-  expect(mocks.eval.mock.calls[2]![0][0][0]).not.toBe(plain[0][0]);
+  expect(mocks.eval.mock.calls[4]![0][0][0]).not.toBe(plain[0][0]);
   expect(
     (
       await guardApiCost(
@@ -86,4 +113,49 @@ it('canonicalizes encoded workspace IDs and separates authentication capacity', 
       )
     )?.status
   ).toBe(400);
+});
+
+it('scales verified accounts by paid memberships without spending the free traffic pool', async () => {
+  mocks.identity.mockResolvedValue({
+    userId: '11111111-1111-4111-8111-111111111111',
+  });
+  mocks.policy.mockResolvedValue({
+    tier: 'PRO',
+    multiplier: 12.5,
+    paidWorkspaceCount: 2,
+  });
+  await guardApiCost(request('/api/v1/anything'));
+  const dimensions = mocks.eval.mock.calls.at(-1)![0];
+  expect(dimensions).toHaveLength(2);
+  expect(dimensions[1][2]).toBe(1500);
+  expect(dimensions.map((d: [string]) => d[0]).join()).not.toContain(
+    'free-family'
+  );
+});
+
+it('does not read target entitlements after free/client pool exhaustion', async () => {
+  mocks.eval.mockResolvedValue([0, 2]);
+  expect(
+    (
+      await guardApiCost(
+        request(
+          '/api/v1/workspaces/11111111-1111-4111-8111-111111111111/external-projects/assets/a'
+        )
+      )
+    )?.status
+  ).toBe(429);
+  expect(mocks.policy).not.toHaveBeenCalled();
+});
+
+it('scales machine APIs only from a verified API-key workspace, with a shared key subject', async () => {
+  mocks.identity.mockResolvedValue({
+    workspaceId: '11111111-1111-4111-8111-111111111111',
+    keyId: 'key-1',
+  });
+  await guardApiCost(request('/api/v1/storage/share', 'POST'));
+  expect(mocks.eval.mock.calls[0]![0]).toHaveLength(2);
+  expect(mocks.eval.mock.calls[0]![0][1][2]).toBe(1200);
+  expect(mocks.policy).toHaveBeenCalledWith({
+    workspaceId: '11111111-1111-4111-8111-111111111111',
+  });
 });
