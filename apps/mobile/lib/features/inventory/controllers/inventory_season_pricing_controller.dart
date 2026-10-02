@@ -56,6 +56,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
   bool _disposed = false;
   bool loading = false;
   bool sending = false;
+  bool _lastNotifiedFresh = false;
   Map<String, dynamic>? _pending;
   bool get hasPending => _pending != null;
   bool get scheduled => period?.isScheduled ?? false;
@@ -110,6 +111,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
     quote = null;
     prices = const {};
     _receivedAt = null;
+    _lastNotifiedFresh = false;
     loading = false;
   }
 
@@ -204,6 +206,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
       quote = result;
       prices = resolved;
       _receivedAt = now();
+      _lastNotifiedFresh = fresh;
     } on Object {
       if (token == _generation && !_disposed) _clear();
     } finally {
@@ -215,7 +218,11 @@ class InventorySeasonPricingController extends ChangeNotifier {
   }
 
   void tick() {
-    if (scheduled && !fresh) _notify();
+    if (!scheduled) return;
+    final currentFresh = fresh;
+    if (currentFresh == _lastNotifiedFresh) return;
+    _lastNotifiedFresh = currentFresh;
+    _notify();
   }
 
   Future<String> submit({

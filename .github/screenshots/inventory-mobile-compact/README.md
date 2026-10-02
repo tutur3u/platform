@@ -62,7 +62,43 @@ The fractional Overview capture was regenerated from the assembled #5700 UI
 uses a synthetic authenticated actor and a synthetic stock-health response;
 its `2.5 / 2.5`, rejected `2.5 / 3`, product-label and injected-repository
 ownership assertions remain intact. No real API is used for this capture.
-Combined focused suites passed **33 tests**; scoped fatal-info analysis passed.
+This historical pre-main-reconciliation run passed **33 tests across seven
+files**, including the existing checkout test. Its log is
+`task-15/parent-reconcile-evidence/validation.log`; it is separate from the
+original ten-test compact-only command above and the later assembly below.
+Scoped fatal-info analysis passed for that historical source.
 The regenerated image was inspected and shows stock health plus the fractional
 low-stock row. Pending-stock context evidence remains the parent owner's image.
 Seasonal checkout implementation remains on a separate branch.
+
+## Later validation provenance
+
+At normal main-reconciliation head
+`4500fe605fc5b77bb671d968f5022eb4bd15f0d9`, FIFO 42717 / test PID 42723
+passed **34 tests across six affected files** in 10.30s; scoped analyzer 43813
+reported no issues. This run includes the two added Manage regressions and
+excludes the existing checkout test from the older seven-file, 33-test run.
+From `apps/mobile`, the exact selection was:
+
+```sh
+flutter test --no-pub --concurrency=1 \
+  test/features/inventory/stock_health/inventory_stock_health_test.dart \
+  test/features/inventory/widgets/inventory_ui_test.dart \
+  test/features/inventory/widgets/inventory_sales_periods_test.dart \
+  test/features/inventory/widgets/inventory_compact_test.dart \
+  test/features/inventory/view/inventory_product_editor_page_test.dart \
+  test/features/inventory/view/inventory_manage_page_test.dart
+```
+
+Proof is in `task-10/evidence/stock-health-main-reconcile/validation.log` and
+`validation-results.json`, produced by
+`task-10/inventory-stock-health-main-validation.py` through normal FIFO.
+
+At review-correction head `4b800e7f0a943f9f212433fe9cdd1847d282b922`,
+FIFO 80850 / test PID 80884 passed **11 stock-health tests in one file**, including
+the new Vietnamese panel case and capture-directory check. Localization
+generation, formatting and scoped analyzer 80941 passed. Proof is in
+`task-10/evidence/stock-health-review/validation.log` and
+`validation-results.json`. The full six-file assembly was not rerun at this
+head; 34 is the verified earlier assembly count, not a current-head rerun claim.
+No runtime tests were rerun for this documentation-only clarification.

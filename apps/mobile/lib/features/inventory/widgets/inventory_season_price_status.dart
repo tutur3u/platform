@@ -55,5 +55,9 @@ class InventorySeasonPriceStatus extends StatelessWidget {
 }
 
 /// Explicit currency code, with ISO currency precision (including 0/3 decimals).
-String formatSeasonPrice(double value, String currency) =>
-    NumberFormat.currency(name: currency, symbol: '$currency ').format(value);
+String formatSeasonPrice(double value, String currency, {String? locale}) =>
+    NumberFormat.currency(
+      name: currency,
+      symbol: '$currency ',
+      locale: locale,
+    ).format(value).trim();

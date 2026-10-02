@@ -361,4 +361,43 @@ void main() {
       expect(await journal.read('actor', 'ws'), isNull);
     },
   );
+  test(
+    'live actor change fences delayed restoration before configure',
+    () async {
+      final store = MemorySaleStore();
+      final original = make(store);
+      await original.refresh();
+      await expectLater(submit(original), throwsA(isA<ApiException>()));
+      final raw = store.values.values.single;
+      final started = Completer<void>();
+      final read = Completer<String?>();
+      var actor = 'actor';
+      final c =
+          InventorySeasonPricingController(
+            journal: InventorySaleJournal(
+              read: (_) {
+                started.complete();
+                return read.future;
+              },
+            ),
+            currentActor: () => actor,
+            fetch: (_, _) async => quote(),
+            send: (_, _) async => 'unused',
+            isOnline: () async => true,
+          )..configure(
+            actorId: 'actor',
+            workspaceId: 'ws',
+            selectedPeriod: period(),
+            currency: 'USD',
+          );
+      addTearDown(c.dispose);
+      await started.future;
+      actor = 'other';
+      read.complete(raw);
+      await c.refresh();
+      expect(c.operation, isNull);
+      expect(c.completedInvoiceId, isNull);
+      expect(c.journalReady, isFalse);
+    },
+  );
 }

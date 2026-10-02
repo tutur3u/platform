@@ -9493,6 +9493,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineTab => 'Timeline';
 
   @override
+  String get profileTimelineShowDates => 'Show date selector';
+
+  @override
+  String get profileTimelineHideDates => 'Close dates and browse agenda';
+
+  @override
+  String get profileTimelineAgenda => 'Days with activity';
+
+  @override
+  String get profileTimelineDayEmpty => 'No activity was returned for this day.';
+
+  @override
+  String get profileTimelineHasActivity => 'Activity in loaded snapshot';
+
+  @override
+  String get profileTimelineMoreDays => 'Show more loaded days';
+
+  @override
   String get inventoryStockHealthTitle => 'Stock health';
 
   @override
@@ -9558,6 +9576,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventorySeasonRetryPending => 'Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.';
+
+  @override
+  String get inventoryCheckoutScopeChanged => 'The account or workspace changed. Close this checkout and reopen the sale in its owning workspace.';
 
   @override
   String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';

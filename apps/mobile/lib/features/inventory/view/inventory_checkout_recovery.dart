@@ -40,6 +40,11 @@ extension _InventoryCheckoutRecovery on _InventoryCheckoutPageState {
       await _season.retryPending();
       if (!mounted || !_matchesSaveScope(revision, actor, workspace)) return;
       _update(() => _saleCompleted = true);
+      final category = _season.operation?.payload['category_id'];
+      if (workspace != null && category is String) {
+        await _rememberCategory(workspace, category);
+      }
+      if (!mounted || !_matchesSaveScope(revision, actor, workspace)) return;
       unawaited(_acknowledgeReceipt());
       showInventoryToast(context, context.l10n.inventorySaleCreated);
       if (context.canPop()) context.pop(true);

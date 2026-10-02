@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/config/api_config.dart';
@@ -135,5 +137,27 @@ void main() {
     verify(() => cache.invalidateTags(any(), workspaceId: 'ws')).called(1);
     // No separate assignment, optimistic ID, or offline replay.
     expect(api.readPath, isNull);
+  });
+  test('confirmed receipt awaits best-effort cache invalidation', () async {
+    final cache = _Cache();
+    final invalidating = Completer<void>();
+    final started = Completer<void>();
+    when(() => cache.invalidateTags(any(), workspaceId: 'ws')).thenAnswer((_) {
+      started.complete();
+      return invalidating.future;
+    });
+    final repository = InventoryRepository(
+      apiClient: _Api(),
+      cacheStore: cache,
+    );
+    var finished = false;
+    final pending = repository.sendScheduledSale('ws', {}).then((id) {
+      finished = true;
+      return id;
+    });
+    await started.future;
+    expect(finished, isFalse);
+    invalidating.completeError(StateError('Local cache unavailable'));
+    expect(await pending, 'invoice');
   });
 }

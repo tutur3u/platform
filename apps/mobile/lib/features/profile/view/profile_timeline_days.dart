@@ -7,8 +7,9 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Sort snapshots as well as API results; cache order is not an API guarantee.
 Map<DateTime, List<ProfileTimelineItem>> groupProfileTimelineDays(
-  List<ProfileTimelineItem> items,
-) {
+  List<ProfileTimelineItem> items, {
+  DateTime Function(DateTime)? convertDate,
+}) {
   final sorted = [...items]
     ..sort((a, b) {
       final order = b.createdAt.compareTo(a.createdAt);
@@ -18,7 +19,7 @@ Map<DateTime, List<ProfileTimelineItem>> groupProfileTimelineDays(
     });
   final days = <DateTime, List<ProfileTimelineItem>>{};
   for (final item in sorted) {
-    final date = item.createdAt.toLocal();
+    final date = convertDate?.call(item.createdAt) ?? item.createdAt.toLocal();
     final day = DateTime(date.year, date.month, date.day);
     days.putIfAbsent(day, () => []).add(item);
   }
@@ -29,19 +30,26 @@ class ProfileTimelineDays extends StatelessWidget {
   const ProfileTimelineDays({
     required this.items,
     required this.onOpen,
+    this.convertDate,
+    this.now,
+    this.itemKey,
     super.key,
   });
 
   final List<ProfileTimelineItem> items;
   final ValueChanged<ProfileTimelineItem> onOpen;
+  final DateTime Function(DateTime)? convertDate;
+  final DateTime? now;
+  final Key Function(ProfileTimelineItem)? itemKey;
 
   @override
   Widget build(BuildContext context) {
-    final groups = groupProfileTimelineDays(items);
+    final groups = groupProfileTimelineDays(items, convertDate: convertDate);
     final theme = shad.Theme.of(context);
     final locale = Localizations.localeOf(context).toString();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final localNow = now ?? DateTime.now();
+    final date = convertDate?.call(localNow) ?? localNow.toLocal();
+    final today = DateTime(date.year, date.month, date.day);
     // Calendar arithmetic remains correct across daylight-saving boundaries.
     final yesterday = DateTime(today.year, today.month, today.day - 1);
     return Column(
@@ -88,14 +96,16 @@ class ProfileTimelineDays extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(left: 12),
                   child: SettingsTile(
+                    key: itemKey?.call(item),
                     icon: _icon(item.type),
                     title: _milestone(context, item),
                     value: item.title?.trim().isNotEmpty == true
                         ? item.title!.trim()
                         : null,
-                    subtitle: DateFormat.jm(
-                      locale,
-                    ).format(item.createdAt.toLocal()),
+                    subtitle: DateFormat.jm(locale).format(
+                      convertDate?.call(item.createdAt) ??
+                          item.createdAt.toLocal(),
+                    ),
                     onTap: _canOpen(item) ? () => onOpen(item) : null,
                     showChevron: _canOpen(item),
                   ),

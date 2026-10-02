@@ -1,0 +1,432 @@
+{
+  "previousHead": "5c47ed56eef5a257f6ea50a8c4d7c794960fff1b",
+  "synthetic": true,
+  "installedDeviceQA": false,
+  "cases": [
+    {
+      "title": [80.244140625, 28],
+      "synthetic": true,
+      "scale": 1,
+      "width": 320,
+      "bar": [0, 0, 320, 54],
+      "intrinsicTitleHeight": 28,
+      "paragraphBounds": [54, 13, 134.244140625, 41],
+      "firstTitleGlyphInkPixels": 90,
+      "contentTop": 64,
+      "selector": null,
+      "pngSha256": "da8f16d839543682397f999abd00910bae92a6fe3d570e7ed07b1d68b682c747"
+    },
+    {
+      "title": [160.48828125, 56],
+      "synthetic": true,
+      "scale": 2,
+      "width": 320,
+      "bar": [0, 0, 320, 80],
+      "intrinsicTitleHeight": 56,
+      "paragraphBounds": [54, 12, 214.48828125, 68],
+      "firstTitleGlyphInkPixels": 358,
+      "contentTop": 90,
+      "selector": null,
+      "pngSha256": "3108222910a49b571e656af8157b707d3c644dcc5bd780e7fd3a856b2a1a2a7d"
+    },
+    {
+      "title": [227.5, 84],
+      "synthetic": true,
+      "scale": 3,
+      "width": 320,
+      "bar": [0, 0, 320, 108],
+      "intrinsicTitleHeight": 84,
+      "paragraphBounds": [54, 12, 281.5, 96],
+      "firstTitleGlyphInkPixels": 840,
+      "contentTop": 118,
+      "selector": null,
+      "pngSha256": "8e5de7c65336ec34c018738ec85e700653e97878df1fda10c5cc466575d258cd"
+    },
+    {
+      "title": [80.244140625, 28],
+      "synthetic": true,
+      "scale": 1,
+      "width": 393,
+      "bar": [0, 0, 393, 54],
+      "intrinsicTitleHeight": 28,
+      "paragraphBounds": [54, 13, 134.244140625, 41],
+      "firstTitleGlyphInkPixels": 90,
+      "contentTop": 64,
+      "selector": null,
+      "pngSha256": "641fc88c2a44f2163b143f04457b346d8d6f313e36144213fca70aea869f234c"
+    },
+    {
+      "title": [160.48828125, 56],
+      "synthetic": true,
+      "scale": 2,
+      "width": 393,
+      "bar": [0, 0, 393, 80],
+      "intrinsicTitleHeight": 56,
+      "paragraphBounds": [54, 12, 214.48828125, 68],
+      "firstTitleGlyphInkPixels": 358,
+      "contentTop": 90,
+      "selector": null,
+      "pngSha256": "67d8f4b17c0400b1f0fa52ca83796ab4e79080772159b71962e6a76f6acfcb80"
+    },
+    {
+      "title": [240.732421875, 84],
+      "synthetic": true,
+      "scale": 3,
+      "width": 393,
+      "bar": [0, 0, 393, 108],
+      "intrinsicTitleHeight": 84,
+      "paragraphBounds": [54, 12, 294.732421875, 96],
+      "firstTitleGlyphInkPixels": 840,
+      "contentTop": 118,
+      "selector": null,
+      "pngSha256": "3db977286870609e6275392115514ef889826442be4f29e07b16f5ede66010ba"
+    },
+    {
+      "title": [62.8310546875, 28],
+      "synthetic": true,
+      "scale": 1,
+      "width": 320,
+      "bar": [0, 0, 320, 54],
+      "intrinsicTitleHeight": 28,
+      "paragraphBounds": [54, 13, 116.8310546875, 41],
+      "firstTitleGlyphInkPixels": 76,
+      "contentTop": 64,
+      "selector": [162, 4, 266, 50],
+      "pngSha256": "5f946a9133e3a7f752fb830f20590ede11ddece3302900e8a37f04d9fb615c13"
+    },
+    {
+      "title": [85.5, 56],
+      "synthetic": true,
+      "scale": 2,
+      "width": 320,
+      "bar": [0, 0, 320, 80],
+      "intrinsicTitleHeight": 56,
+      "paragraphBounds": [54, 12, 139.5, 68],
+      "firstTitleGlyphInkPixels": 344,
+      "contentTop": 90,
+      "selector": [162, 17, 266, 63],
+      "pngSha256": "c58ee88b77821469aeb5838f6265a968ac05d46354b7062a68202e39d54ce8f3"
+    },
+    {
+      "title": [85.5, 84],
+      "synthetic": true,
+      "scale": 3,
+      "width": 320,
+      "bar": [0, 0, 320, 108],
+      "intrinsicTitleHeight": 84,
+      "paragraphBounds": [54, 12, 139.5, 96],
+      "firstTitleGlyphInkPixels": 780,
+      "contentTop": 118,
+      "selector": [162, 31, 266, 77],
+      "pngSha256": "0a8e6e205ea5339994b0bc67c207b5a9ea3c1a2048b2e3f1e5356d5550abfec1"
+    },
+    {
+      "title": [62.8310546875, 28],
+      "synthetic": true,
+      "scale": 1,
+      "width": 393,
+      "bar": [0, 0, 393, 54],
+      "intrinsicTitleHeight": 28,
+      "paragraphBounds": [54, 13, 116.8310546875, 41],
+      "firstTitleGlyphInkPixels": 76,
+      "contentTop": 64,
+      "selector": [235, 4, 339, 50],
+      "pngSha256": "dc78b95472adff8e614cae6a30fba8d2e2f3aa4360cf1f0743b7b6235709b31b"
+    },
+    {
+      "title": [125.662109375, 56],
+      "synthetic": true,
+      "scale": 2,
+      "width": 393,
+      "bar": [0, 0, 393, 80],
+      "intrinsicTitleHeight": 56,
+      "paragraphBounds": [54, 12, 179.662109375, 68],
+      "firstTitleGlyphInkPixels": 344,
+      "contentTop": 90,
+      "selector": [235, 17, 339, 63],
+      "pngSha256": "50f5bb53ef4a9ea44fc8ffee861e17e4abed606ed7b9b665f22e76ead95c09e2"
+    },
+    {
+      "title": [158.5, 84],
+      "synthetic": true,
+      "scale": 3,
+      "width": 393,
+      "bar": [0, 0, 393, 108],
+      "intrinsicTitleHeight": 84,
+      "paragraphBounds": [54, 12, 212.5, 96],
+      "firstTitleGlyphInkPixels": 780,
+      "contentTop": 118,
+      "selector": [235, 31, 339, 77],
+      "pngSha256": "a38e8c05701184e04edd25515dd3fca22afc43c6360b52800bc450575d9ce8fe"
+    },
+    {
+      "title": [85.5, 28],
+      "synthetic": true,
+      "scale": 1,
+      "width": 320,
+      "bar": [0, 0, 320, 54],
+      "intrinsicTitleHeight": 28,
+      "paragraphBounds": [54, 13, 139.5, 41],
+      "firstTitleGlyphInkPixels": 142,
+      "contentTop": null,
+      "selector": null,
+      "pngSha256": "34f02e8e6e680d240e5636a1ec1708e06590d196b9bcd85e0f92872b47e3bb96"
+    },
+    {
+      "title": [85.5, 56],
+      "synthetic": true,
+      "scale": 2,
+      "width": 320,
+      "bar": [0, 0, 320, 80],
+      "intrinsicTitleHeight": 56,
+      "paragraphBounds": [54, 12, 139.5, 68],
+      "firstTitleGlyphInkPixels": 579,
+      "contentTop": null,
+      "selector": null,
+      "pngSha256": "a0af0632b6cea44f1661c8750ba13fa2e2dee604263bc5ebc0bc0e15d93f62a0"
+    },
+    {
+      "title": [85.5, 84],
+      "synthetic": true,
+      "scale": 3,
+      "width": 320,
+      "bar": [0, 0, 320, 108],
+      "intrinsicTitleHeight": 84,
+      "paragraphBounds": [54, 12, 139.5, 96],
+      "firstTitleGlyphInkPixels": 1334,
+      "contentTop": null,
+      "selector": null,
+      "pngSha256": "82c5bfd629f531d52d946c36698acfdcc722f3a3001276503645d7ded8040c90"
+    },
+    {
+      "title": [94.5634765625, 28],
+      "synthetic": true,
+      "scale": 1,
+      "width": 393,
+      "bar": [0, 0, 393, 54],
+      "intrinsicTitleHeight": 28,
+      "paragraphBounds": [54, 13, 148.5634765625, 41],
+      "firstTitleGlyphInkPixels": 142,
+      "contentTop": null,
+      "selector": null,
+      "pngSha256": "8ebbcc7518eccc4363933bd3942b020b7d732d934bcbfbeed65a9a6f31caba91"
+    },
+    {
+      "title": [158.5, 56],
+      "synthetic": true,
+      "scale": 2,
+      "width": 393,
+      "bar": [0, 0, 393, 80],
+      "intrinsicTitleHeight": 56,
+      "paragraphBounds": [54, 12, 212.5, 68],
+      "firstTitleGlyphInkPixels": 579,
+      "contentTop": null,
+      "selector": null,
+      "pngSha256": "2dfad1cc39cc3adc9cba973daab94bdfd371a4aea05dabac1abd831902990961"
+    },
+    {
+      "title": [158.5, 84],
+      "synthetic": true,
+      "scale": 3,
+      "width": 393,
+      "bar": [0, 0, 393, 108],
+      "intrinsicTitleHeight": 84,
+      "paragraphBounds": [54, 12, 212.5, 96],
+      "firstTitleGlyphInkPixels": 1334,
+      "contentTop": null,
+      "selector": null,
+      "pngSha256": "34d8d1ff274edf37c8951cd7954913e553a0aa8f5c3cb8f25a6e078707df26ad"
+    },
+    {
+      "title": [85.5, 28],
+      "synthetic": true,
+      "scale": 1,
+      "width": 320,
+      "bar": [0, 0, 320, 54],
+      "intrinsicTitleHeight": 28,
+      "paragraphBounds": [54, 13, 139.5, 41],
+      "firstTitleGlyphInkPixels": 142,
+      "contentTop": null,
+      "selector": null,
+      "pngSha256": "be8e1bf2a320f8c257f12a6827b48c2feff23ad185eb6b3d917efd8a3bdf2c84"
+    },
+    {
+      "title": [85.5, 56],
+      "synthetic": true,
+      "scale": 2,
+      "width": 320,
+      "bar": [0, 0, 320, 80],
+      "intrinsicTitleHeight": 56,
+      "paragraphBounds": [54, 12, 139.5, 68],
+      "firstTitleGlyphInkPixels": 579,
+      "contentTop": null,
+      "selector": null,
+      "pngSha256": "f53aea098d8b7af5194deabfc18bc2fe3118cc1c13074969f11d90fa54de5bb3"
+    },
+    {
+      "title": [85.5, 84],
+      "synthetic": true,
+      "scale": 3,
+      "width": 320,
+      "bar": [0, 0, 320, 108],
+      "intrinsicTitleHeight": 84,
+      "paragraphBounds": [54, 12, 139.5, 96],
+      "firstTitleGlyphInkPixels": 1334,
+      "contentTop": null,
+      "selector": null,
+      "pngSha256": "faa4542824116e1be64657edca3c5b4aa4409e26d4675849ab9682ef1286d0ed"
+    },
+    {
+      "title": [88.322265625, 28],
+      "synthetic": true,
+      "scale": 1,
+      "width": 393,
+      "bar": [0, 0, 393, 54],
+      "intrinsicTitleHeight": 28,
+      "paragraphBounds": [54, 13, 142.322265625, 41],
+      "firstTitleGlyphInkPixels": 142,
+      "contentTop": null,
+      "selector": null,
+      "pngSha256": "df8ce5b6f399c075f1f4cd29aecb120aa405d2d97f9fdbbbf133b2f9f7347f7a"
+    },
+    {
+      "title": [158.5, 56],
+      "synthetic": true,
+      "scale": 2,
+      "width": 393,
+      "bar": [0, 0, 393, 80],
+      "intrinsicTitleHeight": 56,
+      "paragraphBounds": [54, 12, 212.5, 68],
+      "firstTitleGlyphInkPixels": 579,
+      "contentTop": null,
+      "selector": null,
+      "pngSha256": "b4594652a3001365e3009878f31023af41f35b9a0c2081793525fe8162f489b6"
+    },
+    {
+      "title": [158.5, 84],
+      "synthetic": true,
+      "scale": 3,
+      "width": 393,
+      "bar": [0, 0, 393, 108],
+      "intrinsicTitleHeight": 84,
+      "paragraphBounds": [54, 12, 212.5, 96],
+      "firstTitleGlyphInkPixels": 1334,
+      "contentTop": null,
+      "selector": null,
+      "pngSha256": "1c9b11122a5c4cc02379f0b9da2b8ff1761d22abc7087698e036d265472166df"
+    }
+  ],
+  "normalSizeComparisons": [
+    {
+      "title": "Settings",
+      "width": 320,
+      "previousCaptureSha256": "da8f16d839543682397f999abd00910bae92a6fe3d570e7ed07b1d68b682c747",
+      "currentCaptureSha256": "da8f16d839543682397f999abd00910bae92a6fe3d570e7ed07b1d68b682c747",
+      "byteIdentical": true
+    },
+    {
+      "title": "Settings",
+      "width": 393,
+      "previousCaptureSha256": "641fc88c2a44f2163b143f04457b346d8d6f313e36144213fca70aea869f234c",
+      "currentCaptureSha256": "641fc88c2a44f2163b143f04457b346d8d6f313e36144213fca70aea869f234c",
+      "byteIdentical": true
+    },
+    {
+      "title": "Profile",
+      "width": 320,
+      "previousCaptureSha256": "5f946a9133e3a7f752fb830f20590ede11ddece3302900e8a37f04d9fb615c13",
+      "currentCaptureSha256": "5f946a9133e3a7f752fb830f20590ede11ddece3302900e8a37f04d9fb615c13",
+      "byteIdentical": true
+    },
+    {
+      "title": "Profile",
+      "width": 393,
+      "previousCaptureSha256": "dc78b95472adff8e614cae6a30fba8d2e2f3aa4360cf1f0743b7b6235709b31b",
+      "currentCaptureSha256": "dc78b95472adff8e614cae6a30fba8d2e2f3aa4360cf1f0743b7b6235709b31b",
+      "byteIdentical": true
+    },
+    {
+      "title": "Mira Chat",
+      "width": 320,
+      "previousCaptureSha256": "34f02e8e6e680d240e5636a1ec1708e06590d196b9bcd85e0f92872b47e3bb96",
+      "currentCaptureSha256": "34f02e8e6e680d240e5636a1ec1708e06590d196b9bcd85e0f92872b47e3bb96",
+      "byteIdentical": true
+    },
+    {
+      "title": "Mira Chat",
+      "width": 393,
+      "previousCaptureSha256": "8ebbcc7518eccc4363933bd3942b020b7d732d934bcbfbeed65a9a6f31caba91",
+      "currentCaptureSha256": "8ebbcc7518eccc4363933bd3942b020b7d732d934bcbfbeed65a9a6f31caba91",
+      "byteIdentical": true
+    },
+    {
+      "title": "Mira Live",
+      "width": 320,
+      "previousCaptureSha256": "be8e1bf2a320f8c257f12a6827b48c2feff23ad185eb6b3d917efd8a3bdf2c84",
+      "currentCaptureSha256": "be8e1bf2a320f8c257f12a6827b48c2feff23ad185eb6b3d917efd8a3bdf2c84",
+      "byteIdentical": true
+    },
+    {
+      "title": "Mira Live",
+      "width": 393,
+      "previousCaptureSha256": "df8ce5b6f399c075f1f4cd29aecb120aa405d2d97f9fdbbbf133b2f9f7347f7a",
+      "currentCaptureSha256": "df8ce5b6f399c075f1f4cd29aecb120aa405d2d97f9fdbbbf133b2f9f7347f7a",
+      "byteIdentical": true
+    }
+  ],
+  "validation": {
+    "defaultFont": 25,
+    "cachedRoboto": 25,
+    "uniqueCases": 25,
+    "analysis": "eight changed items clean",
+    "normalFIFO": true,
+    "noPub": true,
+    "concurrency": 1,
+    "controls": {
+      "passed": 15,
+      "failed": 0
+    },
+    "commands": [
+      "flutter analyze --no-pub <six changed runtime files and two owning tests>",
+      "flutter test --no-pub --concurrency=1 test/features/shell/view/shared_navbar_large_text_test.dart test/features/shell/view/floating_header_geometry_test.dart (default font, then cached Roboto with capture output)",
+      "flutter test --no-pub --concurrency=1 test/features/shell/view/shell_top_bar_title_test.dart test/features/shell/view/shell_chrome_actions_test.dart"
+    ],
+    "uniqueCasesIncludingControls": 40
+  },
+  "corrections": {
+    "paintedPrefix": "Selection box for the first original title character plus actual dark pixel assertion; no 320/3x scenario skipped. Ellipsis remains unless it hides all original glyphs, then clipped prefix.",
+    "scrollGeometry": "didChangeDependencies refreshes cached inset for theme/default style/text scale/direction/viewPadding; onScroll reads cached values only. Threshold regression changes theme/scale/safe area/accessibility while preserving state.",
+    "height": "MobileSectionAppBar computes and reuses one measured height per build.",
+    "documentation": "Editable titles scroll horizontally under a fade; read-only titles ellipsize or clip a prefix at extreme width."
+  },
+  "sourceSha256": {
+    "apps/docs/platform/features/mobile-workspace-tools.mdx": "abebb6f77d6dc3a7782eb1b3ede00ec63ae031ed9ea9234d2e3335d70714295a",
+    "apps/mobile/lib/features/shell/view/mobile_section_app_bar.dart": "2b482229a7e76ac6f87a4aa7a22876f219ba0ece07f04641c4f3cded6b025a23",
+    "apps/mobile/lib/features/shell/view/floating_shell_dock.dart": "a44c04f1e82f5705ea684c0d1b5b36308f7c54eb8cadc0c8a17b94958781c1f2",
+    "apps/mobile/lib/features/shell/view/readable_shell_title.dart": "616ff2619d5d28fc912f1c19ba60fbb30ab5018c88ed0df3c01047f00981940b",
+    "apps/mobile/lib/features/shell/view/shell_top_bar_title.dart": "bc063df0c28f16914590834663736c8c2ddf6c2482cae018f4d3b43a61882ee1",
+    "apps/mobile/lib/features/assistant/widgets/assistant_mode_title.dart": "61124e0366a72aa6b3a42964e684bf5764f37a03581524f5a7b2e9ba668cee8c",
+    "apps/mobile/lib/features/apps/widgets/apps_dropdown_picker.dart": "7bd0642aea3a9d1263b4b7ccd97c9ee273d00e39fb835cf0ce2fa2024bf90275",
+    "apps/mobile/test/features/shell/view/shared_navbar_large_text_test.dart": "b760de5c5d87f3d7a5431459372ced89a29f9d46d0e19e3f79db3ad4eed63341",
+    "apps/mobile/test/features/shell/view/floating_header_geometry_test.dart": "a45abd76f87d59456be71d9643c08f446a32317032e1ce2e26c27c09c0fdf29a"
+  },
+  "logSha256": {
+    "/tmp/navbar-review-analysis.log": "f1ef8da37ab3f6b9d0863ae2ecf7e36841666ab5e8ea13834eb818bf5b2fdfe6",
+    "/tmp/navbar-review-default-tests.log": "274a29dfee0e341fbb33a06f224ac3fa1967a29c6eaf713e6fc7da3afd9c19f7",
+    "/tmp/navbar-review-roboto-tests.log": "c9b3355c3ebc87ae12fd74f079aa60779fd15bd80293fcba2388d1c9f9728bf8",
+    "/tmp/navbar-review-controls.log": "3e0edb8e62f1c07262efd94002c71b27de37360eec85b767fa24f5bc2370f23f"
+  },
+  "searchFieldUnchangedFromPreviousHead": true,
+  "assemblyRequirement": "Preserve separately merged #5691 onSearchSubmitted callback during parent integration; this follow-up does not edit search submission/action callbacks.",
+  "limitations": [
+    "A narrow 320px/3x title can show only a clipped prefix, not the complete name. Full semantics retained.",
+    "This evidence is mounted widget rendering, not installed-device QA.",
+    "Parent owns new-head CI, independent review and integration."
+  ],
+  "postValidationFormatting": {
+    "file": "apps/mobile/test/features/shell/view/shared_navbar_large_text_test.dart",
+    "testedSourceSha256": "0d88260fab80e0a82701c4a70033195cb498d20cb7c2ef12f2aeafb54112dede",
+    "formattedSourceSha256": "b760de5c5d87f3d7a5431459372ced89a29f9d46d0e19e3f79db3ad4eed63341",
+    "change": "Dart formatter reindentation only; no runtime or assertion change; no test rerun for formatting."
+  }
+}

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -132,6 +133,8 @@ void main() {
     InventorySaleDetail? sale,
     _Settings? settings,
     GlobalKey? captureKey,
+    String? Function()? actorId,
+    Stream<dynamic>? actorChanges,
   }) async {
     tester.view
       ..devicePixelRatio = 1
@@ -161,7 +164,8 @@ void main() {
             financeRepository: _Finance(),
             settingsRepository: settings ?? _Settings(),
             seasonController: controller,
-            actorId: () => 'actor',
+            actorId: actorId ?? () => 'actor',
+            actorChanges: actorChanges,
           ),
         ),
       ),
@@ -507,6 +511,95 @@ void main() {
       await tester.drainShadToastTimers();
     });
   }
+  testWidgets('legacy sale edit explains account scope lock without a period', (
+    tester,
+  ) async {
+    final changes = StreamController<void>.broadcast();
+    addTearDown(changes.close);
+    var actor = 'actor';
+    final controller = InventorySeasonPricingController(
+      journal: MemorySaleStore().journal,
+      fetch: (_, _) async => quote(),
+      send: (_, _) async => 'unused',
+      isOnline: () async => true,
+    );
+    const sale = InventorySaleDetail(
+      id: 'legacy',
+      paidAmount: 0,
+      itemsCount: 0,
+      totalQuantity: 0,
+      owners: [],
+      source: 'finance_invoice',
+      lines: [],
+    );
+    await mount(
+      tester,
+      _Inventory(),
+      controller,
+      sale: sale,
+      actorId: () => actor,
+      actorChanges: changes.stream,
+    );
+    actor = 'other';
+    changes.add(null);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('The account or workspace changed.'),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<FinanceFullscreenFormScaffold>(
+            find.byType(FinanceFullscreenFormScaffold),
+          )
+          .onPrimaryPressed,
+      isNull,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets(
+    'recovered sale remembers category without reopening on preference failure',
+    (tester) async {
+      var posts = 0;
+      final settings = _Settings(failWrite: true);
+      final controller = InventorySeasonPricingController(
+        journal: MemorySaleStore().journal,
+        lookupReceipt: (_, _) async => null,
+        fetch: (_, _) async => quote(),
+        send: (_, _) async {
+          posts++;
+          if (posts == 1) {
+            throw const ApiException(message: 'Lost', statusCode: 0);
+          }
+          return 'invoice';
+        },
+        isOnline: () async => true,
+        now: () => DateTime.utc(2026, 10),
+      );
+      await mount(tester, _Inventory(), controller, settings: settings);
+      await tester.tap(find.byIcon(Icons.add_circle_outline_rounded).first);
+      await selectSeason(tester);
+      await tester.tap(find.text('Create sale'));
+      await tester.pumpAndSettle();
+      await tester.drainShadToastTimers();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Check sale result'));
+      await tester.pumpAndSettle();
+      expect(posts, 2);
+      expect(settings.writes, 1);
+      expect(controller.completedInvoiceId, 'invoice');
+      expect(
+        tester
+            .widget<FinanceFullscreenFormScaffold>(
+              find.byType(FinanceFullscreenFormScaffold),
+            )
+            .onPrimaryPressed,
+        isNull,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.drainShadToastTimers();
+    },
+  );
 }
 
 class _FailCache extends Mock implements CacheStore {}
