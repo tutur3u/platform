@@ -426,14 +426,9 @@ async function run() {
             throw error;
           });
           if (
-            [
-              'starting',
-              'resetting',
-              'testing',
-              'typegen',
-              'stopping',
-              'cleaned',
-            ].includes(metadata.status) &&
+            ['starting', 'resetting', 'testing', 'typegen'].includes(
+              metadata.status
+            ) &&
             metadata.status !== state.lifecyclePhase
           ) {
             state.lifecyclePhase = metadata.status;
