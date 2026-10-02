@@ -116,6 +116,26 @@ describe('Programming privacy and author payload contracts', () => {
         ).toBe(false);
       }
   });
+  it('checks localized length after trimming while rejecting NUL and empty text', () => {
+    for (const [field, max] of [
+      ['title', 255],
+      ['prompt', 16_000],
+    ] as const)
+      for (const locale of ['en', 'vi'] as const) {
+        const parse = (value: string) =>
+          ProgrammingProblemInputSchema.safeParse({
+            ...input,
+            [field]: { ...input[field], [locale]: value },
+          });
+        const padded = parse(`  ${'x'.repeat(max)}  `);
+        expect(padded.success).toBe(true);
+        if (padded.success)
+          expect(padded.data[field][locale]).toBe('x'.repeat(max));
+        expect(parse(`  ${'x'.repeat(max + 1)}  `).success).toBe(false);
+        expect(parse('   ').success).toBe(false);
+        expect(parse('\0  Valid  ').success).toBe(false);
+      }
+  });
   it('rejects catalogs that cannot fit even a minimal unchanged execution envelope', () => {
     const oversized = Array.from({ length: 5 }, () => ({
       input: 'x'.repeat(4096),
