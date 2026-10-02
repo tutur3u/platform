@@ -14,6 +14,7 @@ import {
 interface UseMiraChatAttachmentsParams {
   wsId: string;
   chatId?: string;
+  textAndImagesOnly?: boolean;
   deleteFileFailedMessage: string;
 }
 
@@ -21,6 +22,7 @@ export function useMiraChatAttachments({
   wsId,
   chatId,
   deleteFileFailedMessage,
+  textAndImagesOnly = false,
 }: UseMiraChatAttachmentsParams) {
   const queryClient = useQueryClient();
   const [attachedFiles, setAttachedFiles] = useState<ChatFile[]>([]);
@@ -56,17 +58,26 @@ export function useMiraChatAttachments({
 
   const handleFilesSelected = useCallback(
     async (files: File[]) => {
-      const newChatFiles: ChatFile[] = files.map((file) => ({
-        id: generateRandomUUID(),
-        file,
-        previewUrl:
-          file.type.startsWith('image/') || file.type.startsWith('video/')
-            ? URL.createObjectURL(file)
-            : null,
-        storagePath: null,
-        signedUrl: null,
-        status: 'pending' as const,
-      }));
+      const newChatFiles: ChatFile[] = files
+        .filter(
+          (file) =>
+            !textAndImagesOnly ||
+            (!/^(audio|video)\//.test(file.type) &&
+              !/\.(mp4|webm|mov|mp3|wav|m4a|aac|ogg|flac|opus)$/i.test(
+                file.name
+              ))
+        )
+        .map((file) => ({
+          id: generateRandomUUID(),
+          file,
+          previewUrl:
+            file.type.startsWith('image/') || file.type.startsWith('video/')
+              ? URL.createObjectURL(file)
+              : null,
+          storagePath: null,
+          signedUrl: null,
+          status: 'pending' as const,
+        }));
 
       setAttachedFiles((prev) => [...prev, ...newChatFiles]);
 
@@ -140,6 +151,7 @@ export function useMiraChatAttachments({
       deleteChatFileFromStorageMutation,
       deleteFileFailedMessage,
       fetchSignedReadUrlsMutation,
+      textAndImagesOnly,
       uploadChatFileMutation,
       wsId,
     ]
