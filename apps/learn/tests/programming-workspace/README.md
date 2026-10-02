@@ -48,6 +48,15 @@ checks and 17 workspace checks, no console/page errors, focused lint/typecheck p
 This portable followup relocates/sanitizes that harness; its validation is recorded
 in the PR handoff separately. Customer pixels/Library metadata stay outside Git.
 
+The canonical frontend slice additionally provides `run-canonical.mjs`, a finite
+loopback browser check for the actual catalog, author CRUD form and database DTO
+workspace adapter. Its navigation/server actions use synthetic in-memory fixtures;
+no actual app authorization, API or database requests occur. It checks draft reload,
+Back/Forward, problem/language and actor switching, unavailable session storage,
+late mutation isolation, case capacity, conflict preservation and parent phone UX.
+Results are ignored under `evidence/canonical`; missing dependencies are blockers,
+never an instruction to install. Run only within the admitted normal FIFO budget.
+
 Review regressions can run without a browser or server:
 
 ```bash
@@ -76,3 +85,9 @@ ordinal, UUID, challenge and Run/Submit kind. This same browser wait predicate h
 a regression proving that an older identical 1/1 verdict cannot pass. Stored
 fixture attempts are read by submission id. The tags identify fresh UI renders;
 they provide no evidence of real judge correctness.
+
+Run the canonical catalog/authoring/history/navigation harness within FIFO:
+
+```sh
+ttr resources run -- node --experimental-strip-types apps/learn/tests/programming-workspace/run-canonical.mjs
+```

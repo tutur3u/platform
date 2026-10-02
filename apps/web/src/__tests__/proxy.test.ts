@@ -30,14 +30,15 @@ const mocks = vi.hoisted(() => ({
   listPendingWorkspaceInvitations: vi.fn(),
   isExactTuturuuuDotComEmail: vi.fn(),
 }));
-
+vi.mock('@/lib/api-cost-guard', () => ({
+  guardApiCost: vi.fn().mockResolvedValue(null),
+}));
 vi.mock('@tuturuuu/auth/proxy', () => ({
   createCentralizedAuthProxy: (
     ...args: Parameters<typeof mocks.createCentralizedAuthProxy>
   ) => mocks.createCentralizedAuthProxy(...args),
   propagateAuthCookies: vi.fn(),
 }));
-
 vi.mock('@tuturuuu/auth/cli-session', () => ({
   verifyCliAccessToken: (
     ...args: Parameters<typeof mocks.verifyCliAccessToken>
@@ -59,8 +60,7 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
     mocks.createAdminClient(...args),
-  createClient: (...args: Parameters<typeof mocks.createClient>) =>
-    mocks.createClient(...args),
+  createClient: mocks.createClient,
 }));
 
 vi.mock('@tuturuuu/supabase/next/proxy', () => ({

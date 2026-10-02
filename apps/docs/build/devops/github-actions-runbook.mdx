@@ -878,11 +878,21 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
 - Its deploy step links the staging project and runs
   `supabase db push --include-all`.
 - `supabase-production.yaml` runs after the production deployment planner and
-  also re-evaluates after a matching `main` staging migration succeeds. It still
-  checks the latest planner result, a successful production platform deployment
-  marker, and a completed successful staging migration for the same commit
-  before running
-  `supabase db push --include-all`.
+  also re-evaluates the current immutable `production` commit after any successful
+  `main` staging migration. The staging event's incoming SHA may be newer and
+  unpromoted, so it does not become the production migration target. Target
+  resolution precedes checkout and the pending-migration range/configuration
+  checks. Manual dispatch remains restricted to `production`; planner completions
+  remain pinned to their successful production run's SHA. The workflow still
+  requires that target's successful planner result, production platform deployment
+  marker, and completed successful `main` staging migration before running
+  `supabase db push --include-all`. Failed, cancelled and other non-success
+  workflow callbacks skip before allocating the evaluation job and use a unique
+  ignored-run concurrency group. Successful callbacks from mismatched workflow/branch
+  pairs and manual dispatches outside `refs/heads/production` are isolated the same
+  way, so they cannot replace a legitimate pending migration. Only successful
+  production-planner/production and staging/main callbacks, plus manual production
+  branch runs, retain the global migration group with active-run cancellation disabled.
 
 ### Mobile iOS native assets
 

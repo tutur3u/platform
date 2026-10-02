@@ -13,12 +13,13 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: supabase-production-migration
+  group: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production') || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main')))) && 'supabase-production-migration' || format('supabase-production-migration-ignored-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
   evaluate-prerequisites:
     name: Evaluate production prerequisites
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production') || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main'))) }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
     permissions:
@@ -27,42 +28,13 @@ jobs:
       deployments: read
     outputs:
       should_deploy: ${{ steps.evaluate.outputs.should_deploy }}
-      target_sha: ${{ steps.evaluate.outputs.target_sha }}
-    env:
-      TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      target_sha: ${{ steps.resolve_target.outputs.target_sha }}
     steps:
-      - name: Check out migration target
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          ref: ${{ env.TARGET_SHA }}
-
-      - name: Use Node.js 24
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-
-      - name: Compute pending migration changes
-        id: changed_files
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          WORKFLOW_NAME: supabase-production.yaml
-        run: >-
-          node --experimental-strip-types scripts/ci/resolve-changed-files.ts
-          --head-sha "$TARGET_SHA" --ref-name production
-
-      - name: Check migration configuration
-        id: check_config
-        env:
-          CHANGED_FILES_FILE: ${{ steps.changed_files.outputs.changed_files_path }}
-          WORKFLOW_NAME: supabase-production.yaml
-        run: node --experimental-strip-types scripts/ci/check-workflow-config.ts
-
-      - name: Evaluate prerequisite status
-        id: evaluate
+      - name: Resolve immutable production migration target
+        id: resolve_target
         env:
           GH_TOKEN: ${{ github.token }}
-          DATABASE_AFFECTED: ${{ steps.check_config.outputs.should_run }}
+          REPOSITORY: ${{ github.repository }}
           CURRENT_SHA: ${{ github.sha }}
           CURRENT_REF_NAME: ${{ github.ref_name }}
           EVENT_NAME: ${{ github.event_name }}
@@ -72,13 +44,9 @@ jobs:
           TRIGGER_WORKFLOW: ${{ github.event.workflow_run.name }}
         run: |
           set -euo pipefail
-
-          SHOULD_DEPLOY=false
           TARGET_SHA=""
 
-          if [ "$DATABASE_AFFECTED" != "true" ]; then
-            echo "::notice::Skipping production migration because no database changes are pending."
-          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             if [ "$CURRENT_REF_NAME" != "production" ]; then
               echo "::notice::Skipping production migration because manual dispatches must run from the production branch. Current ref is '$CURRENT_REF_NAME'."
             else
@@ -100,14 +68,70 @@ jobs:
             elif [ "$TRIGGER_CONCLUSION" != "success" ]; then
               echo "::notice::Skipping production migration re-evaluation because the staging migration trigger concluded with '$TRIGGER_CONCLUSION'."
             else
-              TARGET_SHA="$TRIGGER_SHA"
+              TARGET_SHA=$(gh api "repos/$REPOSITORY/git/ref/heads/production" \
+                --jq '.object | if .type == "commit" then .sha else "" end')
+              if [ -z "$TARGET_SHA" ]; then
+                echo "::error::The current production ref did not resolve to a commit."
+                exit 1
+              fi
               echo "Staging migration completed. Re-checking production migration prerequisites for $TARGET_SHA..."
             fi
           else
             echo "::notice::Skipping production migration because the triggering workflow was '$TRIGGER_WORKFLOW'."
           fi
 
-          if [ -n "$TARGET_SHA" ]; then
+          if [ -n "$TARGET_SHA" ] && ! [[ "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::The production migration target must be a full commit SHA."
+            exit 1
+          fi
+          echo "target_sha=$TARGET_SHA" >> "$GITHUB_OUTPUT"
+          echo "TARGET_SHA=$TARGET_SHA" >> "$GITHUB_ENV"
+
+      - name: Check out migration target
+        if: steps.resolve_target.outputs.target_sha != ''
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ env.TARGET_SHA }}
+
+      - name: Use Node.js 24
+        if: steps.resolve_target.outputs.target_sha != ''
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Compute pending migration changes
+        if: steps.resolve_target.outputs.target_sha != ''
+        id: changed_files
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_NAME: supabase-production.yaml
+        run: >-
+          node --experimental-strip-types scripts/ci/resolve-changed-files.ts
+          --head-sha "$TARGET_SHA" --ref-name production
+
+      - name: Check migration configuration
+        if: steps.resolve_target.outputs.target_sha != ''
+        id: check_config
+        env:
+          CHANGED_FILES_FILE: ${{ steps.changed_files.outputs.changed_files_path }}
+          WORKFLOW_NAME: supabase-production.yaml
+        run: node --experimental-strip-types scripts/ci/check-workflow-config.ts
+
+      - name: Evaluate prerequisite status
+        if: steps.resolve_target.outputs.target_sha != ''
+        id: evaluate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DATABASE_AFFECTED: ${{ steps.check_config.outputs.should_run }}
+        run: |
+          set -euo pipefail
+
+          SHOULD_DEPLOY=false
+
+          if [ "$DATABASE_AFFECTED" != "true" ]; then
+            echo "::notice::Skipping production migration because no database changes are pending."
+          else
             echo "Checking production deployment planner status..."
             VERCEL_RUN=$(gh api \
               "repos/${{ github.repository }}/actions/workflows/vercel-production.yaml/runs?branch=production&head_sha=$TARGET_SHA&per_page=1" \
@@ -209,7 +233,6 @@ jobs:
           fi
 
           echo "should_deploy=$SHOULD_DEPLOY" >> "$GITHUB_OUTPUT"
-          echo "target_sha=$TARGET_SHA" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Migrate production database

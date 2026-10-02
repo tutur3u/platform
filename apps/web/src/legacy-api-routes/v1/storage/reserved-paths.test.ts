@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('server-only', () => ({}));
+
 const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 const RESERVED_FILE_PATH =
   '.tuturuuu/mobile-deployment-vault/production/android/google-services.ciphertext.json';
@@ -136,7 +138,9 @@ describe('API-key storage reserved mobile deployment paths', () => {
   });
 
   it('rejects downloads from the mobile deployment vault prefix', async () => {
-    const { GET } = await import('./download/[...path]/route');
+    const { GET } = await import(
+      '@/app/api/v1/storage/download/[...path]/route'
+    );
 
     const response = await GET(
       new Request(
@@ -179,7 +183,7 @@ describe('API-key storage reserved mobile deployment paths', () => {
   });
 
   it('rejects signed share URLs for the mobile deployment vault prefix', async () => {
-    const { POST } = await import('./share/route');
+    const { POST } = await import('@/app/api/v1/storage/share/route');
 
     const response = await POST(
       createJsonRequest('POST', '/api/v1/storage/share', {
@@ -192,7 +196,7 @@ describe('API-key storage reserved mobile deployment paths', () => {
   });
 
   it('rejects batch signed share URLs that include the mobile deployment vault prefix', async () => {
-    const { POST } = await import('./share-batch/route');
+    const { POST } = await import('@/app/api/v1/storage/share-batch/route');
 
     const response = await POST(
       createJsonRequest('POST', '/api/v1/storage/share-batch', {

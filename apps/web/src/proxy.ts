@@ -41,6 +41,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { BASE_URL, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { guardApiCost } from './lib/api-cost-guard';
 import { getChatAppOrigin } from './lib/chat-app-url';
 import { getContactsAppOrigin } from './lib/contacts-app-url';
 import { getDriveAppOrigin } from './lib/drive-app-url';
@@ -1044,21 +1045,19 @@ async function guardGuestWorkspaceRoute({
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
-    if (isVersionedExternalProjectAssetDeliveryRequest(req.method, req.nextUrl))
-      return NextResponse.next();
-
-    const malformedAuthCookieResponse =
-      await blockMalformedApiAuthCookieRequest(req);
-    if (malformedAuthCookieResponse) {
-      return malformedAuthCookieResponse;
+    const versionedAsset = isVersionedExternalProjectAssetDeliveryRequest(
+      req.method,
+      req.nextUrl
+    );
+    if (!versionedAsset) {
+      const malformed = await blockMalformedApiAuthCookieRequest(req);
+      if (malformed) return malformed;
+      const suspicious = await blockSuspiciousAnonymousApiRequest(req);
+      if (suspicious) return suspicious;
     }
-
-    const suspiciousAnonymousApiResponse =
-      await blockSuspiciousAnonymousApiRequest(req);
-    if (suspiciousAnonymousApiResponse) {
-      return suspiciousAnonymousApiResponse;
-    }
-
+    const costResponse = await guardApiCost(req);
+    if (costResponse) return costResponse;
+    if (versionedAsset) return NextResponse.next();
     const additionalRoutePolicies = (await hasWorkspaceEmailRateLimitOverrides(
       req.nextUrl.pathname
     ))

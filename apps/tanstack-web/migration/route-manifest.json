@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 532,
+        "legacyNext": 533,
         "migrated": 62,
-        "percentComplete": 12.21,
-        "remaining": 532,
+        "percentComplete": 12.19,
+        "remaining": 533,
         "terminal": 74,
-        "total": 606,
+        "total": 607,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 542,
+        "legacyNext": 543,
         "migrated": 67,
-        "percentComplete": 12.72,
-        "remaining": 542,
+        "percentComplete": 12.7,
+        "remaining": 543,
         "terminal": 79,
-        "total": 621,
+        "total": 622,
         "unknownStatus": 0
       },
       {
@@ -363,12 +363,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 620,
+      "legacyNext": 621,
       "migrated": 215,
-      "percentComplete": 26.97,
-      "remaining": 620,
+      "percentComplete": 26.94,
+      "remaining": 621,
       "terminal": 229,
-      "total": 849,
+      "total": 850,
       "unknownStatus": 0
     }
   },
@@ -2569,13 +2569,13 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/storage/download/*path:apps/web/src/legacy-api-routes/v1/storage/download/[...path]/route.ts",
+      "id": "api:/api/v1/storage/download/*path:apps/web/src/app/api/v1/storage/download/[...path]/route.ts",
       "kind": "api",
       "methods": [
         "GET"
       ],
       "routePath": "/api/v1/storage/download/*path",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/storage/download/[...path]/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/storage/download/[...path]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -2591,6 +2591,19 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/storage/guarded-download/:token:apps/web/src/app/api/v1/storage/guarded-download/[token]/route.ts",
+      "kind": "api",
+      "methods": [
+        "GET",
+        "HEAD",
+        "OPTIONS"
+      ],
+      "routePath": "/api/v1/storage/guarded-download/:token",
+      "sourceFile": "apps/web/src/app/api/v1/storage/guarded-download/[token]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/storage/list:apps/web/src/legacy-api-routes/v1/storage/list/route.ts",
       "kind": "api",
       "methods": [
@@ -2602,24 +2615,24 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/storage/share-batch:apps/web/src/legacy-api-routes/v1/storage/share-batch/route.ts",
+      "id": "api:/api/v1/storage/share-batch:apps/web/src/app/api/v1/storage/share-batch/route.ts",
       "kind": "api",
       "methods": [
         "POST"
       ],
       "routePath": "/api/v1/storage/share-batch",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/storage/share-batch/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/storage/share-batch/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/storage/share:apps/web/src/legacy-api-routes/v1/storage/share/route.ts",
+      "id": "api:/api/v1/storage/share:apps/web/src/app/api/v1/storage/share/route.ts",
       "kind": "api",
       "methods": [
         "POST"
       ],
       "routePath": "/api/v1/storage/share",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/storage/share/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/storage/share/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -3932,7 +3945,7 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/external-projects/assets/:assetId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/assets/:assetId:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route.ts",
       "kind": "api",
       "methods": [
         "GET",
@@ -3940,7 +3953,7 @@
         "DELETE"
       ],
       "routePath": "/api/v1/workspaces/:wsId/external-projects/assets/:assetId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9622,20 +9635,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 606,
+    "apiRoutes": 607,
     "cronRoutes": 10,
     "layouts": 68,
     "pages": 156,
-    "routeHandlers": 621,
+    "routeHandlers": 622,
     "methodCounts": {
-      "GET": 313,
-      "HEAD": 7,
+      "GET": 314,
+      "HEAD": 8,
       "POST": 306,
       "PUT": 56,
       "PATCH": 64,
       "DELETE": 101,
-      "OPTIONS": 23
+      "OPTIONS": 24
     },
-    "total": 849
+    "total": 850
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -13,6 +14,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../helpers/helpers.dart';
 
 void main() {
+  testWidgets(
+    'Apps brand button announces one label and retains tap semantics',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpApp(const Scaffold(body: AppsDropdownPicker()));
+      await tester.pumpAndSettle();
+      final control = find.byWidgetPredicate(
+        (widget) => widget is Semantics && widget.properties.button == true,
+      );
+      expect(control, findsOneWidget);
+      final expected = tester.widget<Semantics>(control).properties.label;
+      final data = tester.getSemantics(control).getSemanticsData();
+      expect(data.label, expected);
+      expect(data.hasAction(SemanticsAction.tap), isTrue);
+      expect(data.flagsCollection.isButton, isTrue);
+      expect(find.bySemanticsLabel('Tuturuuu'), findsNothing);
+      handle.dispose();
+    },
+  );
+
   for (final size in [
     const Size(390, 844),
     const Size(1024, 768),
