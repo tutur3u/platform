@@ -409,6 +409,35 @@ async function run() {
   try {
     await resumeRecordedProject(state, {
       onTick: async () => {
+        if (
+          existsSync(
+            path.join(
+              state.metadata.disposableRoot,
+              '.tuturuuu-isolated-supabase.json'
+            )
+          )
+        ) {
+          const metadata = await readOwnedMetadata(
+            state.metadata.disposableRoot
+          ).catch((error) => {
+            if (error.code === 'ENOENT') return {};
+            throw error;
+          });
+          if (
+            [
+              'starting',
+              'resetting',
+              'testing',
+              'typegen',
+              'stopping',
+              'cleaned',
+            ].includes(metadata.status) &&
+            metadata.status !== state.lifecyclePhase
+          ) {
+            state.lifecyclePhase = metadata.status;
+            console.info(`Programming lifecycle checkpoint=${metadata.status}`);
+          }
+        }
         const free = freeBytes();
         state.minimumFreeBytesObserved = Math.min(
           state.minimumFreeBytesObserved,
