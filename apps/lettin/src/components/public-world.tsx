@@ -97,7 +97,7 @@ export function PublicWorld({
               className="h-auto w-full justify-start whitespace-normal break-words text-left"
               onClick={() => select(e.id)}
             >
-              {e.published.title}
+              {e.draft.title}
             </Button>
           ))}
         </nav>
@@ -157,7 +157,7 @@ export function PublicWorld({
                       variant="outline"
                       onClick={() => select(e.id)}
                     >
-                      {e.published.title}
+                      {e.draft.title}
                     </Button>
                   ))}
                 </div>

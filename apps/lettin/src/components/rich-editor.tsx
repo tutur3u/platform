@@ -1,5 +1,4 @@
 'use client';
-import type { Editor, JSONContent } from '@tiptap/react';
 import type { LettinNode } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -8,6 +7,7 @@ import {
   serializeEditorMarkdown,
 } from '@tuturuuu/ui/text-editor/editor';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 
@@ -34,7 +34,9 @@ export function RichEditor({
   onSourceModeChange?: (editing: boolean) => void;
 }) {
   const t = useTranslations('lettin');
-  const editorRef = useRef<Editor | null>(null);
+  const editorRef = useRef<
+    Parameters<typeof serializeEditorMarkdown>[0] | null
+  >(null);
   const [source, setSource] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);

@@ -23,5 +23,16 @@ export async function readCreatorIdentity(
     .maybeSingle();
   if (bannerError && !['42703', 'PGRST204'].includes(bannerError.code))
     throw new Error('Unable to read creator banner');
-  return { ...data, banner_url: banner?.banner_url ?? null };
+  const parsedBanner = z
+    .object({ banner_url: z.string().nullable() })
+    .nullable()
+    .safeParse(banner);
+  if (!bannerError && !parsedBanner.success)
+    throw new Error('Unable to read creator banner');
+  return {
+    ...data,
+    banner_url: parsedBanner.success
+      ? (parsedBanner.data?.banner_url ?? null)
+      : null,
+  };
 }
