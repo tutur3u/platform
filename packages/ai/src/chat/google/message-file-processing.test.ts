@@ -102,6 +102,16 @@ describe('processMessagesWithFiles', () => {
       'ws-1',
       'chat-1'
     );
+    const subscription = await processMessagesWithFiles(
+      [{ role: 'user', content: 'Continue with text' }],
+      'ws-1',
+      'chat-1',
+      undefined,
+      true
+    );
+    expect(subscription).toEqual([
+      { role: 'user', content: 'Continue with text' },
+    ]);
     const parts = result[0]?.content;
     expect(Array.isArray(parts)).toBe(true);
     expect(parts).toContainEqual(

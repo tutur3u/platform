@@ -15,6 +15,42 @@ import {
 } from './stream-finish-persistence';
 
 describe('stream finish persistence', () => {
+  it.each(['stop', 'error', 'length', 'other'])(
+    'handles subscription completion %s without charging credits',
+    async (finishReason) => {
+      const insert = vi.fn().mockReturnValue({
+        select: () => ({
+          single: async () => ({
+            data: { id: 'synthetic-message' },
+            error: null,
+          }),
+        }),
+      });
+      const persisted = await persistAssistantResponse({
+        chatId: 'chat',
+        userId: 'user',
+        model: 'chatgpt/oaiapp_test/account-model',
+        effectiveSource: 'Rewise',
+        skipCreditDeduction: true,
+        sbAdmin: { from: () => ({ insert }) },
+        response: {
+          finishReason,
+          text: 'Answer',
+          totalUsage: { inputTokens: 10, outputTokens: 5 },
+        },
+      });
+      expect(persisted).toBe(finishReason === 'stop');
+      expect(mocks.deductAiCredits).not.toHaveBeenCalled();
+      if (finishReason === 'stop')
+        expect(insert).toHaveBeenCalledWith(
+          expect.objectContaining({
+            model: 'chatgpt/oaiapp_test/account-model',
+          })
+        );
+      else expect(insert).not.toHaveBeenCalled();
+    }
+  );
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.deductAiCredits.mockResolvedValue({
