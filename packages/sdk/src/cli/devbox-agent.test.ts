@@ -125,6 +125,38 @@ describe('Devbox agent upgrade handoff', () => {
     await loop;
     expect(started).toEqual(['first', 'second', 'maintenance']);
   });
+  it('does not dispatch newly claimed jobs after an in-flight execution failure', async () => {
+    let rejectJob!: (error: Error) => void;
+    const execution = new Promise<never>((_, reject) => {
+      rejectJob = reject;
+    });
+    let resolvePoll!: (result: unknown) => void;
+    pollJobs.mockResolvedValueOnce({
+      ok: true,
+      jobs: [{ runId: 'first', command: ['echo'] }],
+    });
+    pollJobs.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePoll = resolve;
+        })
+    );
+    executeJob.mockReturnValue(execution);
+    const loop = runDevboxAgentLoop({
+      baseUrl: 'https://example.test',
+      token: 'fixture',
+    });
+    const outcome = expect(loop).rejects.toThrow('synthetic execution failure');
+    await vi.waitFor(() => expect(pollJobs).toHaveBeenCalledTimes(2));
+    rejectJob(new Error('synthetic execution failure'));
+    // Allow the execution catch/finally to settle while the second claim remains pending.
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    resolvePoll({ ok: true, jobs: [{ runId: 'second', command: ['echo'] }] });
+    await outcome;
+    expect(executeJob).toHaveBeenCalledTimes(1);
+  });
   it('bounds a multi-job claim at eight active jobs without leaving heartbeat timers behind', async () => {
     vi.useFakeTimers();
     let release!: () => void;

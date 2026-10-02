@@ -60,8 +60,32 @@ downloads, room connection counts, idle warm environments and runner queue age.
 Replay all migrations in an isolated local stack, then run the focused
 `hosted-playgrounds.sql` pgTAP suite. Run realtime merge/token/admission tests and
 SDK isolation/concurrency tests. Queue broad checks through `ttr resources run`.
-Require exact-commit release app builds and worker validation in CI. Local
+Require exact-commit release app builds and worker validation in CI. The
+Programming database contract applies the complete tracked schema and seed, runs
+both the existing Programming fixture and all hosted-playground assertions with
+strict TAP validation, generates actual schema types, and stops its disposable
+stack before uploading the artifact. This SQL gate does not prove authenticated
+Drive HTTP, editor interaction, or gVisor execution. Local
 Wrangler dev bundling is permitted for requested runtime verification.
+
+### Existing-client transition
+
+Deploy the compatible Worker with its matching secret and checkpoint origin, and
+apply the resource-authorization SQL through the gated release process before
+shipping Cloudflare consumers. Existing task mutations temporarily publish the
+same authorized event to both Cloudflare and the existing private Supabase
+channels. New Web and mobile consumers use Cloudflare only. Each publication is
+independent and bounded to five seconds; legacy channel cleanup has its own
+five-second bound. Failure of either transport cannot suppress the other or fail
+the persisted mutation. No new client subscribes to Supabase through this bridge.
+
+Remove this server bridge only after the minimum supported native release uses
+Cloudflare, all supported cached Web clients have migrated, and join telemetry
+confirms the private legacy channels have no supported consumers. Keep it while
+store rollout or offline clients can still return on a supported older release.
+Coverage: `packages/tasks-api/src/server/tasks/realtime-broadcast.test.ts` proves
+identical authorized fanout, independent failures, timeouts and channel cleanup.
+Do not enable Playground capacity on existing Judge pools to bypass acceptance.
 
 Worker migration tags must remain chronological: existing Meet `v1`, then
 `v2-collaboration`, then `v3-channels`. Ship matching server/worker contracts before enabling any
@@ -270,11 +294,14 @@ can publish `document-checkpoint`; client attempts close with policy code 1008.
 rejoining, and forged save confirmations against local Cloudflare. These probes
 use a signed callback fixture; they do not prove production Drive availability.
 
-## Application build evidence
 
-`programming-app-builds.yaml` compiles Web, Learn and Infrastructure, including
-shared dependencies, on pull requests (including stacked branches). It uses
-synthetic public configuration and has read-only permissions; it does not deploy
-or load production credentials. Require its application jobs on the final SHA,
-alongside the Meet Cloudflare build and mobile checks. Local application builds
-remain prohibited on the shared development machine.
+## Disposable gVisor acceptance
+
+`playground-runtime-acceptance.yaml` uses a disposable GitHub Linux VM, the verified official `runsc` point release `20260928.0` with its companion binaries, and a digest-pinned Python fixture built only in CI. The fixture is published to a localhost-only disposable registry; no shared registry or production runner receives it. The job has read-only repository permissions and no application secrets. It runs the actual SDK through `packages/sdk/vitest.playground-acceptance.config.ts`, separately from ordinary mocked unit tests.
+
+The acceptance covers non-root/read-only/no-host-mount/no-network execution, resource configuration, text-only checkpoint deltas, Unicode preservation, traversal rejection, private loopback previews, capacity, and actual process-tree/container retirement after output and time limits. Cleanup always checks exact per-run ownership labels, removes its registry volume, and requires an empty owned sandbox inventory. A failed inventory or cleanup is a failed gate.
+
+This proves synthetic Python sandbox behavior only. It does not provision a managed playground pool, prove every language image, authorize production flags, or prove authenticated Drive uploads. Operator-managed pool readiness, approved immutable language images, and the real account Drive acceptance remain separate prerequisites. Existing Judge pools must stay separate and unchanged. See the [runtime fixture regression](https://github.com/tutur3u/platform/blob/main/packages/sdk/src/cli/devbox-playground-runtime.acceptance.ts) and [official runtime installation](https://gvisor.dev/docs/user_guide/install/).
+
+
+`programming-app-builds.yaml` is shared parent-stack infrastructure: secretless actual builds of Web, Learn, and Infrastructure check out the exact PR source SHA. The existing Meet Cloudflare validation builds both Worker bundles and executes the real local channel/document/programming probes; its deploy job remains production-only. Neither build gate is a production rollout or authenticated Drive acceptance.
