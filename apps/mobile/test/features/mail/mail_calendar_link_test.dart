@@ -205,6 +205,45 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets(
+    'discards old repository preview when the same message uses a new client',
+    (tester) async {
+      final pending = Completer<Map<String, dynamic>>();
+      when(
+        () => repository.previewCalendarLink(any(), any(), any(), any()),
+      ).thenAnswer((_) => pending.future);
+      final replacement = _Repository();
+      when(
+        () => replacement.calendarLink(any(), any(), any()),
+      ).thenAnswer((_) async => {'target': null, 'association': null});
+      final active = ValueNotifier<MailRepository>(repository);
+      addTearDown(active.dispose);
+      await tester.pumpApp(
+        ValueListenableBuilder<MailRepository>(
+          valueListenable: active,
+          builder: (context, value, child) => card(value),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), url);
+      await tap(tester, 'Preview link');
+      active.value = replacement;
+      await tester.pumpAndSettle();
+      pending.complete({'preview': preview()});
+      await tester.pumpAndSettle();
+      expect(find.text('Confirm link'), findsNothing);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller?.text,
+        '',
+      );
+      verify(
+        () => replacement.calendarLink('mail-ws', 'box', 'message'),
+      ).called(1);
+      verifyNever(
+        () => replacement.confirmCalendarLink(any(), any(), any(), any()),
+      );
+    },
+  );
   testWidgets('unlinks only the saved association receipt', (tester) async {
     when(() => repository.calendarLink(any(), any(), any())).thenAnswer(
       (_) async => {

@@ -43,7 +43,8 @@ class _MailCalendarLinkState extends State<MailCalendarLink> {
   void didUpdateWidget(covariant MailCalendarLink oldWidget) {
     super.didUpdateWidget(oldWidget);
     if ('${oldWidget.workspaceId}/${oldWidget.mailboxId}/${oldWidget.messageId}' !=
-        _scope) {
+            _scope ||
+        oldWidget.repository != widget.repository) {
       _generation++;
       _url.clear();
       _linked = null;

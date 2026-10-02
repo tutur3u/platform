@@ -890,6 +890,10 @@ network retry reuses its receipt. Metadata compare-and-swap preserves reply clai
 and other actors' associations. Remove link deletes only the actor's association;
 it never deletes the Calendar event. Opening a linked event requires a fresh
 Calendar-authorized target. Ordinary ICS attachments do not expose these controls.
+On mobile, replacing the Mail repository clears the link preview and saved target
+even when workspace, mailbox and message stay the same. Delayed results from the
+previous repository are discarded; `mail_calendar_link_test.dart` covers this
+boundary.
 
 Mail-owned association endpoints use the existing message path followed by
 `/calendar-link`: GET reads the actor's association and authorized target; POST
