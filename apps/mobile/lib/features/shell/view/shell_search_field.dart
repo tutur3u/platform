@@ -62,7 +62,7 @@ class _ShellSearchFieldState extends State<ShellSearchField> {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    height: mobileSectionAppBarHeight,
+    height: mobileSectionAppBarHeightFor(context),
     child: Row(
       children: [
         const SizedBox.square(

@@ -174,9 +174,32 @@ class WorkspaceRepository {
   }
 
   Future<List<Workspace>> _fetchWorkspacesRemote() async {
-    // Persist only after getWorkspaces verifies the initiating actor below.
-    // The generic read-through helper stores before that account check.
-    final list = await _api.getJsonList('/api/v1/workspaces');
+    final actor = _cacheUserId();
+    // Keep cache invalidation as a membership fence, while verifying the actor
+    // before the read-through helper can persist a delayed response.
+    final result = await _cacheStore.prefetch<List<dynamic>>(
+      key: CacheKey(
+        namespace: 'workspace.list',
+        userId: actor,
+        workspaceId: 'personal',
+        params: const {'path': '/api/v1/workspaces'},
+      ),
+      policy: CachePolicies.moduleData,
+      decode: (payload) => List<dynamic>.from(payload! as List),
+      fetch: () async {
+        final response = await _api.getJsonList('/api/v1/workspaces');
+        if (_cacheUserId() != actor) {
+          throw StateError('Workspace account changed');
+        }
+        return response;
+      },
+      forceRefresh: true,
+      tags: const ['module:workspace', 'workspace:personal'],
+    );
+    if (!result.hasValue) {
+      throw StateError('Workspace response invalidated during refresh');
+    }
+    final list = result.data!;
     return list
         .whereType<Map<String, dynamic>>()
         .map(_workspaceFromJson)

@@ -92,7 +92,7 @@
     "actualOutput": "Your output",
     "case": "Case {number}",
     "caseTime": "Case wall time",
-    "challengeList": "Coding challenges",
+    "challengeList": "Programming problems",
     "challenges": {
       "balanced-brackets": {
         "prompt": "Given a string containing only (), [], and {}, print YES if every opening bracket is closed in the correct order. Otherwise print NO.",
@@ -107,6 +107,7 @@
         "title": "Two Sum"
       }
     },
+    "collapseConsole": "Collapse test console",
     "console": "Test and execution console",
     "customCase": "Custom test case",
     "customCaseHint": "Add an input and expected output to run it alongside the public cases. Custom cases are saved in your execution history.",
@@ -118,6 +119,7 @@
     "editor": "Your solution",
     "emptyHistory": "No executions for this challenge yet.",
     "emptyOutput": "No output",
+    "expandConsole": "Expand test console",
     "expectedOutput": "Expected output",
     "eyebrow": "Algorithms and data structures",
     "hiddenCase": "Hidden case {number}",
@@ -179,7 +181,6 @@
     },
     "submit": "Submit solution",
     "submitting": "Submitting…",
-    "syntaxHighlighting": "Syntax highlighting · Ctrl/⌘ Enter to run",
     "tabs": {
       "cases": "Test cases",
       "history": "History",
@@ -187,7 +188,7 @@
     },
     "timeRange": "Visible case range: {min}–{max}.",
     "timingNote": "Times include sandbox startup and, for compiled languages, compilation. Compare the range across runs; small differences are normal.",
-    "title": "Coding Lab",
+    "title": "Programming",
     "topics": {
       "arrays": "Arrays",
       "search": "Search",
@@ -715,7 +716,7 @@
   "navigation": {
     "aiChat": "AI Chat",
     "assignments": "Assignments",
-    "coding": "Coding Lab",
+    "coding": "Programming",
     "courses": "Courses",
     "home": "Home",
     "marks": "Marks",

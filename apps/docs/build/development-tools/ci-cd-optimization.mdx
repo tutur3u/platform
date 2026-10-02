@@ -105,7 +105,7 @@ The shared logic is organized in four pieces:
 
 ### Reusable and inline gates
 
-Test, Coverage, and Type Check opt into `check_release_only: true` on the
+Test and Coverage opt into `check_release_only: true` on the
 existing `ci-check.yml` job. One full-history sparse checkout at `github.sha`
 now resolves both the CI switchboard and the release-only comparison; callers
 use its separate `should_run` and `run_checks` outputs. Other callers retain
@@ -114,9 +114,10 @@ SHAs and malformed manifests still default to running checks. A failed preflight
 cannot schedule the heavy jobs; shard aggregates still require every shard to
 succeed.
 
-This removes three redundant runner allocations per push that creates all three
-workflows, without changing tests, shard counts, aggregate check names, or
-coverage uploads. It does not estimate elapsed time savings. Before removing the
+The shared-preflight change removed three redundant runner allocations per push
+that creates Test, Coverage, and Type Check, without changing tests, shard counts,
+aggregate check names, or coverage uploads. The singleton Type Check exception
+below removes one additional allocation. It does not estimate elapsed time savings. Before removing the
 `Check release-only changes` jobs, live effective branch rules for `main` and
 `production` and ruleset `8839175` were checked: they required PR approval,
 code-owner review, and resolved threads, with no required status-check contexts;
@@ -132,6 +133,45 @@ node --test --test-concurrency=1 \
   scripts/ci/check-workflow-config.test.js \
   scripts/ci/resolve-changed-files.test.js
 ```
+
+Type Check is a singleton exception: `type-check.yaml` evaluates the same
+changed-file, CI configuration, and release-only scripts directly inside its
+existing `Type Check` job. One full-history checkout pinned to `github.sha`
+serves preflight and the existing heavy steps. Only when both decisions are
+`true` do Bun setup, cache restore, install, dependency builds, and type checking
+run. Missing or uncertain comparisons still run checks; preflight script errors
+fail the named job before any heavy step. A disabled configuration skips release
+comparison as well as heavy steps; its absent release output cannot enable work.
+There is no condition override that continues after a failed step. Keep inline
+resolve/config/release wiring aligned with `ci-check.yml`; the workflow comment
+records intentional differences and `type-check-inline-workflow.test.js`
+compares the actual shell commands to protect parity.
+
+A configuration-disabled or release-only run now reports a successful
+`Type Check` job with heavy steps skipped and an explicit skip summary,
+instead of a skipped job. It does not claim compilation occurred. Effective
+GitHub rules for `main` and `production` still had no required status-check
+contexts when this change was prepared on October 1, 2026. The job name,
+triggers, runner label, and secrets remain unchanged. The whole singleton job
+explicitly uses `permissions: { contents: read }`; unspecified token permissions
+are `none`. This keeps preflight read-only and removes the heavy job's inherited
+write access. Checkout and Node setup need repository read access. Type Check's
+changed-file resolver uses push payloads or manual dispatch, not deployment API
+markers, and does not inject a token into its preflight environment. Bun setup,
+install, compiler commands, and the skip summary need no GitHub write grant.
+GitHub cache save/restore uses the Actions runtime token; Turbo remote caching
+uses its existing separately scoped credential. The workflow has no artifact
+upload, publishing, deployment, or custom check/status API step, so no privileged
+job is needed. GitHub Actions generates the named job check. Deployment-aware
+callers continue using the reusable gate with `deployments: read`.
+
+This singleton layout removes one additional runner allocation relative to the
+shared-preflight layout (two to one), or two relative to the earlier separate
+CI-config and release-only layout (three to one). It cannot affect runs already
+queued under older workflow source and does not establish the cause of hosted
+runner delays. Verify it with
+`node --test --test-concurrency=1 scripts/ci/type-check-inline-workflow.test.js`
+alongside the focused contracts above.
 
 Non-Vercel gated workflows can declare a `check-ci` job that calls
 `ci-check.yml`, then gate their real job on the result. Platform preview is

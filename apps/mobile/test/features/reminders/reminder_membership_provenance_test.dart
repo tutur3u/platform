@@ -28,8 +28,12 @@ class _Settings extends Mock implements SettingsRepository {}
 // Only unrelated selection/default reads are isolated. Membership uses the
 // actual repository, read-through helper and encrypted CacheStore.
 class _Repository extends WorkspaceRepository {
-  _Repository(_Api api, CacheStore store)
-    : super(apiClient: api, cacheStore: store, cacheUserId: () => 'user');
+  _Repository(_Api api, CacheStore store, {String? Function()? actor})
+    : super(
+        apiClient: api,
+        cacheStore: store,
+        cacheUserId: actor ?? () => 'user',
+      );
 
   @override
   Future<Workspace?> getDefaultWorkspace() async => null;
@@ -75,6 +79,40 @@ void main() {
     await Hive.close();
     await directory.delete(recursive: true);
   });
+
+  test(
+    'account replacement rejects a delayed membership before caching',
+    () async {
+      final api = _Api();
+      var actor = 'user';
+      final repository = _Repository(api, store, actor: () => actor);
+      final entered = Completer<void>();
+      final response = Completer<List<dynamic>>();
+      when(() => api.getJsonList('/api/v1/workspaces')).thenAnswer((_) {
+        entered.complete();
+        return response.future;
+      });
+      final request = repository.getWorkspaces();
+      final rejected = expectLater(request, throwsStateError);
+      await entered.future;
+      actor = 'replacement';
+      response.complete([
+        {'id': 'private-workspace', 'name': 'Private'},
+      ]);
+      await rejected;
+      expect((await repository.readCachedWorkspaces()).hasValue, isFalse);
+      final original = await store.read<List<dynamic>>(
+        key: const CacheKey(
+          namespace: 'workspace.list',
+          userId: 'user',
+          workspaceId: 'personal',
+          params: {'path': '/api/v1/workspaces'},
+        ),
+        decode: (payload) => List<dynamic>.from(payload! as List),
+      );
+      expect(original.hasValue, isFalse);
+    },
+  );
 
   for (final scenario in [
     'failed API',

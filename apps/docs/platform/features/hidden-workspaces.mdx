@@ -79,6 +79,11 @@ server update is not undone because a device cache write fails. Cold offline
 state cannot claim an empty preference list; cached preferences remain usable
 while refresh errors offer retry. Logout/account replacement invalidates mounted
 work and prevents late responses from updating another account's state.
+Membership refreshes also retain cache-invalidation fences: a response that
+arrives after its cache scope is cleared cannot confirm an empty membership or
+cancel reminders. The actor is checked before a delayed response is cached.
+`reminder_membership_provenance_test.dart` covers both invalidation and account
+replacement against the actual repository and encrypted cache.
 
 ## Canonical membership and consumers
 

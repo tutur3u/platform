@@ -11,19 +11,25 @@ class _Repository extends TimezoneSettingsRepository {
     'b': 'Europe/London',
   };
   Completer<String>? delayed;
+  Completer<String>? delayedPersonal;
   bool failSave = false;
   bool failLoad = false;
+  bool failWorkspace = false;
   int writes = 0;
   @override
   Future<String> loadPersonal() async {
+    if (delayedPersonal != null) return await delayedPersonal!.future;
     if (failLoad) throw Exception('load failed');
     return personal;
   }
 
   @override
-  Future<String> loadWorkspace(String id) => id == 'a' && delayed != null
-      ? delayed!.future
-      : Future.value(workspaces[id] ?? 'auto');
+  Future<String> loadWorkspace(String id) async {
+    if (failWorkspace) throw Exception('workspace load failed');
+    if (id == 'a' && delayed != null) return await delayed!.future;
+    return workspaces[id] ?? 'auto';
+  }
+
   @override
   Future<String> savePersonal(String zone) async {
     if (failSave) throw Exception('failed');
@@ -52,6 +58,87 @@ void main() {
     await cubit.close();
     repository.dispose();
   });
+  for (final scope in ['resume', 'workspace', 'account']) {
+    test(
+      'overlapping $scope load preserves only eligible personal snapshot',
+      () async {
+        repository
+          ..personal = 'Europe/Paris'
+          ..failWorkspace = true;
+        await cubit.load(userId: 'user', workspaceId: 'a');
+        expect(cubit.state.personalLoaded, isTrue);
+        final personal = Completer<String>();
+        final workspace = Completer<String>();
+        repository
+          ..failWorkspace = false
+          ..delayedPersonal = personal
+          ..delayed = workspace;
+        final pending = cubit.reload();
+        expect(cubit.state.loading, isTrue);
+        expect(cubit.state.personal, 'Europe/Paris');
+        expect(cubit.state.personalLoaded, isTrue);
+        expect(cubit.state.resolved, isFalse);
+        repository
+          ..delayedPersonal = null
+          ..delayed = null
+          ..failLoad = true;
+        await cubit.load(
+          userId: scope == 'account' ? 'another-user' : 'user',
+          workspaceId: scope == 'workspace' ? 'b' : 'a',
+        );
+        final expectedPersonal = scope == 'account' ? 'auto' : 'Europe/Paris';
+        final expectedWorkspace =
+            repository.workspaces[scope == 'workspace' ? 'b' : 'a'];
+        expect(cubit.state.personal, expectedPersonal);
+        expect(cubit.state.personalLoaded, scope != 'account');
+        expect(cubit.state.workspace, expectedWorkspace);
+        expect(cubit.state.resolved, isFalse);
+        await cubit.save('Europe/London');
+        expect(repository.writes, 0);
+        personal.complete('America/Chicago');
+        workspace.complete('Australia/Sydney');
+        await pending;
+        expect(cubit.state.personal, expectedPersonal);
+        expect(cubit.state.workspace, expectedWorkspace);
+        expect(cubit.state.resolved, isFalse);
+      },
+    );
+  }
+  for (final changeWorkspace in [false, true]) {
+    test(
+      'overlapping partial workspace stays scoped: $changeWorkspace',
+      () async {
+        repository.failLoad = true;
+        await cubit.load(userId: 'user', workspaceId: 'a');
+        final personal = Completer<String>();
+        final workspace = Completer<String>();
+        repository
+          ..delayedPersonal = personal
+          ..delayed = workspace;
+        final pending = cubit.reload();
+        expect(cubit.state.workspace, 'Asia/Ho_Chi_Minh');
+        expect(cubit.state.workspaceLoaded, isTrue);
+        expect(cubit.state.resolved, isFalse);
+        repository
+          ..delayedPersonal = null
+          ..delayed = null
+          ..failWorkspace = true;
+        await cubit.load(
+          userId: 'user',
+          workspaceId: changeWorkspace ? 'b' : 'a',
+        );
+        final expected = changeWorkspace ? 'auto' : 'Asia/Ho_Chi_Minh';
+        expect(cubit.state.workspace, expected);
+        expect(cubit.state.workspaceLoaded, !changeWorkspace);
+        personal.complete('Europe/Paris');
+        workspace.complete('Australia/Sydney');
+        await pending;
+        expect(cubit.state.workspace, expected);
+        expect(cubit.state.workspaceLoaded, !changeWorkspace);
+        expect(cubit.state.resolved, isFalse);
+      },
+    );
+  }
   test(
     'persists personal preference, reloads, and resolves automatic fallback',
     () async {

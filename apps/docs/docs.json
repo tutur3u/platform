@@ -45,6 +45,7 @@
                   "platform/features/meet-together",
                   "platform/features/mobile-workspace-tools",
                   "platform/features/hidden-workspaces",
+                  "platform/features/inventory-stock-health",
                   "platform/features/user-management",
                   {
                     "group": "Smart Scheduling",

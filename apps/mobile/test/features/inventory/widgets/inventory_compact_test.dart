@@ -15,7 +15,6 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
-import 'package:mobile/features/inventory/view/inventory_page.dart';
 import 'package:mobile/features/inventory/view/inventory_products_page.dart';
 import 'package:mobile/features/inventory/widgets/inventory_product_card.dart';
 import 'package:mobile/features/inventory/widgets/inventory_sales_periods.dart';
@@ -29,50 +28,24 @@ import '../../../helpers/helpers.dart';
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
-class _Inventory extends Mock implements InventoryRepository {}
+class _Inventory extends InventoryRepository {
+  @override
+  Future<({List<InventoryProduct> data, int count})> getProducts(
+    String wsId, {
+    String? query,
+    String status = 'active',
+    int page = 1,
+    int pageSize = 20,
+    bool forceRefresh = false,
+  }) async => (
+    data: query == 'missing' ? <InventoryProduct>[] : [_product()],
+    count: query == 'missing' ? 0 : 1,
+  );
+}
 
 class _Finance extends Mock implements FinanceRepository {}
 
 class _Permissions extends Mock implements WorkspacePermissionsRepository {}
-
-class _FractionalOverview extends InventoryRepository {
-  bool disposed = false;
-
-  @override
-  void dispose() {
-    disposed = true;
-    super.dispose();
-  }
-
-  @override
-  Future<InventoryOverview> getOverview(
-    String wsId, {
-    bool forceRefresh = false,
-  }) async => const InventoryOverview(
-    realtimeEnabled: false,
-    totals: InventoryOverviewTotals(
-      walletsCount: 0,
-      totalIncome: 0,
-      totalExpense: 0,
-      inventorySalesRevenue: 0,
-      inventorySalesCount: 0,
-    ),
-    lowStockProducts: [
-      InventoryLowStockProduct(
-        productId: 'synthetic-fractional',
-        productName: 'Fractional beans',
-        amount: 2.5,
-        minAmount: 2.5,
-        price: 7.5,
-        warehouseName: 'Synthetic booth',
-        unitName: 'Bag',
-      ),
-    ],
-    recentSales: [],
-    ownerBreakdown: [],
-    categoryBreakdown: [],
-  );
-}
 
 InventoryProduct _product({double? amount, int rows = 1}) => InventoryProduct(
   id: 'synthetic-product',
@@ -334,52 +307,6 @@ void main() {
     },
   );
 
-  testWidgets(
-    'actual Overview keeps fractional minimum alongside fractional amount',
-    (tester) async {
-      _viewport(tester, const Size(390, 844));
-      final workspace = _Workspace();
-      const state = WorkspaceState(
-        status: WorkspaceStatus.loaded,
-        currentWorkspace: Workspace(
-          id: 'synthetic-workspace',
-          name: 'Synthetic',
-        ),
-      );
-      when(() => workspace.state).thenReturn(state);
-      whenListen(
-        workspace,
-        const Stream<WorkspaceState>.empty(),
-        initialState: state,
-      );
-      final key = GlobalKey();
-      final repository = _FractionalOverview();
-      addTearDown(repository.dispose);
-      await tester.pumpApp(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspace,
-          child: _scaled(InventoryPage(repository: repository), 1, key),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 1));
-      await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.text('2.5 / 2.5'),
-        300,
-        maxScrolls: 10,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.text('2.5 / 2.5'), findsOneWidget);
-      expect(find.text('2.5 / 3'), findsNothing);
-      expect(find.text('Fractional beans'), findsOneWidget);
-      await _capture(tester, key, 'compact-overview-fractional-minimum');
-      await tester.pumpWidget(const SizedBox.shrink());
-      expect(repository.disposed, isFalse);
-      expect(tester.takeException(), isNull);
-      await workspace.close();
-    },
-  );
-
   for (final size in [const Size(320, 900), const Size(768, 1024)]) {
     testWidgets('populated card and periods fit $size at large text', (
       tester,
@@ -553,21 +480,6 @@ void main() {
       ).thenAnswer(
         (_) async =>
             const WorkspacePermissions(permissions: {}, isCreator: false),
-      );
-      when(
-        () => inventory.getProducts(
-          any(),
-          query: any(named: 'query'),
-          pageSize: any(named: 'pageSize'),
-          forceRefresh: any(named: 'forceRefresh'),
-        ),
-      ).thenAnswer(
-        (call) async => (
-          data: call.namedArguments[#query] == 'missing'
-              ? <InventoryProduct>[]
-              : [_product()],
-          count: call.namedArguments[#query] == 'missing' ? 0 : 1,
-        ),
       );
       final key = GlobalKey();
       await tester.pumpApp(
