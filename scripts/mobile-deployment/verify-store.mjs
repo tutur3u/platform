@@ -5,6 +5,8 @@ import { readFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
 
+import { isTuturuuuReviewEmail } from '../../packages/utils/src/email/reviewer-domain.mjs';
+
 const APP_ID = 'com.tuturuuu.app.mobile';
 const APPLE_ORIGIN = 'https://api.appstoreconnect.apple.com';
 const GOOGLE_ORIGIN = 'https://androidpublisher.googleapis.com';
@@ -219,6 +221,20 @@ export async function pendingExternalBetaReview(apple, appId, buildId) {
   return null;
 }
 
+// Uses the same routed-domain rule as reviewer provisioning.
+// Metadata cannot prove the account is enabled, unreserved, or usable for review.
+export function betaReviewAccessConfigured(attributes) {
+  return (
+    attributes?.demoAccountRequired === true &&
+    typeof attributes.demoAccountName === 'string' &&
+    isTuturuuuReviewEmail(attributes.demoAccountName) &&
+    typeof attributes.demoAccountPassword === 'string' &&
+    attributes.demoAccountPassword.trim().length > 0 &&
+    typeof attributes.notes === 'string' &&
+    attributes.notes.trim().length > 0
+  );
+}
+
 export async function submitExternalBetaReview(
   apple,
   appId,
@@ -243,14 +259,9 @@ export async function submitExternalBetaReview(
     }
     const reviewDetail = await apple(`/v1/apps/${appId}/betaAppReviewDetail`);
     const reviewAttributes = reviewDetail.data?.attributes;
-    if (
-      reviewAttributes?.demoAccountRequired !== true ||
-      !reviewAttributes.demoAccountName?.trim() ||
-      !reviewAttributes.demoAccountPassword?.trim() ||
-      !reviewAttributes.notes?.trim()
-    ) {
+    if (!betaReviewAccessConfigured(reviewAttributes)) {
       console.log(
-        'External TestFlight review NOT submitted: reviewer access metadata is missing. Set the private demo account fields and credential-free review notes in App Store Connect Test Information; the review queue will retry.'
+        'External TestFlight review NOT submitted: reviewer access metadata is missing or the reviewer address is unsafe. Use a routed @tutur3u.com reviewer address and set the private demo account fields and credential-free review notes in App Store Connect Test Information; the review queue will retry.'
       );
       return 'deferred';
     }

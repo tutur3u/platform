@@ -31,11 +31,7 @@ export const isExactTuturuuuDotComEmail = (email?: string | null): boolean => {
   return /^[^\s@]+@tuturuuu\.com$/i.test(email.trim());
 };
 
-/** Routed QA domain. It is deliberately outside all staff-email allowlists. */
-export const isTuturuuuReviewEmail = (email?: string | null): boolean => {
-  if (!email) return false;
-  return /^[^\s@]+@tutur3u\.com$/i.test(email.trim());
-};
+export { isTuturuuuReviewEmail } from './reviewer-domain.mjs';
 
 export const isEmail = (text: string): boolean => {
   const emailRegex =
