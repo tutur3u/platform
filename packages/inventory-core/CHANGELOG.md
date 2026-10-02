@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.8.3...inventory-core-v0.9.0) (2026-10-02)
+
+
+### Features
+
+* **inventory:** add effective season prices and atomic checkout ([3131afc](https://github.com/tutur3u/platform/commit/3131afce8c0ad910e1156c5034201f9cfdd15e88))
+* **inventory:** effective season prices and atomic checkout ([#5669](https://github.com/tutur3u/platform/issues/5669)) ([ac6c605](https://github.com/tutur3u/platform/commit/ac6c605eb75b440bfd0b8072c23b5cc974c46069))
+
+
+### Bug Fixes
+
+* **inventory:** preserve seasonal checkout and editing contracts ([b210088](https://github.com/tutur3u/platform/commit/b21008869420afd9ccd5e149280f4020c60e7ddf))
+* **inventory:** serialize pricing transitions and mixed-mode edits ([3b6bcdf](https://github.com/tutur3u/platform/commit/3b6bcdf8870db3618cbeb7bbf0a0f3e76465b11c))
+
 ## [0.8.3](https://github.com/tutur3u/platform/compare/inventory-core-v0.8.2...inventory-core-v0.8.3) (2026-09-23)
 
 
