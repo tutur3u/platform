@@ -99,7 +99,7 @@ extension InventorySeasonPricingRepository on InventoryRepository {
     if (id is! String || id.isEmpty) {
       throw const FormatException('Missing invoice ID');
     }
-    unawaited(_invalidateScheduledReads(wsId));
+    await _invalidateScheduledReads(wsId);
     return id;
   }
 

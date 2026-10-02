@@ -321,6 +321,7 @@ void main() {
   test('scope switch while online check waits prevents POST', () async {
     controller.dispose();
     final check = Completer<bool>();
+    final started = Completer<void>();
     controller =
         InventorySeasonPricingController(
           journal: MemorySaleStore().journal,
@@ -330,14 +331,20 @@ void main() {
             sent.add(payload);
             return 'unused';
           },
-          isOnline: () => check.future,
+          isOnline: () {
+            started.complete();
+            return check.future;
+          },
         )..configure(
           actorId: 'actor',
           workspaceId: 'ws',
           selectedPeriod: period(),
           currency: 'USD',
         );
+    await Future<void>.delayed(Duration.zero);
+    expect(controller.journalReady, isTrue);
     final pending = submit();
+    await started.future;
     controller.configure(
       actorId: 'new',
       workspaceId: 'new-ws',
@@ -347,6 +354,21 @@ void main() {
     check.complete(true);
     await expectLater(pending, throwsStateError);
     expect(sent, isEmpty);
+  });
+  test('expiry notifies once rather than on every stale timer tick', () async {
+    await controller.refresh();
+    var notifications = 0;
+    controller
+      ..addListener(() => notifications++)
+      ..tick();
+    expect(notifications, 0);
+    now = now.add(const Duration(seconds: 15));
+    controller
+      ..tick()
+      ..tick()
+      ..tick();
+    expect(notifications, 1);
+    expect(controller.ready, isFalse);
   });
   test('403/503 responses remove visible quote', () async {
     for (final code in [403, 503]) {

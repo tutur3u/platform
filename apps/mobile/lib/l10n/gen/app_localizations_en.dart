@@ -9578,5 +9578,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySeasonRetryPending => 'Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.';
 
   @override
+  String get inventoryCheckoutScopeChanged => 'The account or workspace changed. Close this checkout and reopen the sale in its owning workspace.';
+
+  @override
   String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
 }

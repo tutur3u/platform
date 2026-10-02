@@ -28,7 +28,8 @@ run pub get. This is the dependency method used for the recorded local run.
 
 Save the complete code below as an intentionally untracked
 `apps/mobile/test/legacy_recovery_characterization_test.dart` in that isolated
-legacy checkout. Run just that file through the shared resource FIFO:
+legacy checkout. Never copy this temporary file into the corrected checkout;
+verify it is absent before any unfiltered corrected-head Flutter test run. Run just that file through the shared resource FIFO:
 
 ```sh
 ttr resources status --json
@@ -158,8 +159,9 @@ void main() {
 ## Corrected-source acceptance
 
 At recovery head `25db5cf63ecbad9b9cb6062a76816ffbe8bbf8fa`, use the versioned
-`apps/mobile/test/features/inventory/season_pricing/` and existing checkout
-partial-options test. Run with `flutter test --no-pub --concurrency=1` through the
+`apps/mobile/test/features/inventory/season_pricing/` and the corrected checkout
+partial-options test in a separate corrected-head worktree. Confirm the temporary
+legacy characterization file is absent first. Run with `flutter test --no-pub --concurrency=1` through the
 same bounded FIFO. The recorded run contains 40 unique passing mobile tests and
 scoped fatal-info Dart analysis reports No issues found. The new receipt route
 has 7 passing Vitest tests with one worker and no file parallelism; Biome is clean.
@@ -201,8 +203,9 @@ POST transaction changes. Response is no-store state/request_id/invoice_id only.
 recovery action may resend only the original key/body after lookup; there is no
 background or blind replay, new key, revised payload or unsafe journal reset.
 
-Keep PR #5705 blocked for reviewed follow-up integration and exact-head mobile/API
-CI including type-check/build, native OS persistence acceptance, receipt endpoint
-availability and existing pricing migration verification. Requests that remain
+Source readiness requires reviewed follow-up integration and exact-head mobile/API
+CI including type-check/build. Native OS persistence acceptance, receipt endpoint
+availability and existing pricing migration verification remain separate release
+acceptance; a source merge does not establish those runtime outcomes. Requests that remain
 uncommitted and rejected require manual reconciliation; this follow-up does not
 add terminal cancellation/rejection or cross-device business-draft deduplication.

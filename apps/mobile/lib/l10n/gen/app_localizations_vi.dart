@@ -9512,5 +9512,8 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySeasonRetryPending => 'Chưa xác định được kết quả bán hàng. Kiểm tra yêu cầu đã lưu trước khi gửi lại đúng nội dung. Bạn có thể rời màn hình và khôi phục trong tài khoản, không gian làm việc này; không tạo đơn thay thế.';
 
   @override
+  String get inventoryCheckoutScopeChanged => 'Tài khoản hoặc không gian làm việc đã thay đổi. Đóng màn hình này và mở lại đơn bán trong không gian làm việc của đơn.';
+
+  @override
   String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
 }

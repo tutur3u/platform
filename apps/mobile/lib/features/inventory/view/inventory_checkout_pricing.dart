@@ -58,6 +58,6 @@ extension _InventoryCheckoutPricing on _InventoryCheckoutPageState {
   String get _totalLabel => _completeQuote
       ? (_scheduled
             ? formatSeasonPrice(_cartTotal, _selectedCurrency)
-            : formatCurrency(_cartTotal, _selectedCurrency))
+            : formatCurrency(_cartTotal, 'VND'))
       : '—';
 }

@@ -1,5 +1,7 @@
 ---
 title: Mobile season prices
+description: Authoritative scheduled sale prices and durable mobile checkout recovery.
+updatedAt: "2026-10-02"
 ---
 
 Mobile checkout consumes authoritative season prices for **new scheduled sales**.
@@ -85,7 +87,13 @@ cannot turn confirmed creation into a resubmittable cart. Confirmation is stored
 before its journal can be acknowledged. A confirmation-write failure retains the
 prepared record for next-entry receipt reconciliation while keeping known success
 terminal in the current view. Acknowledgement removes only a matching confirmed
-record. Scheduled history stays read only and ordinary historical line prices
+record. Acknowledgement does not reopen the terminal controller/cart: another sale
+requires a new checkout instance. Corrupt or unknown-version journals intentionally
+fail closed for manual reconciliation; deletion without a verified receipt could
+produce a duplicate invoice. Expired quotes stay non-actionable and hidden while
+refreshing, and stale-state notifications occur only on freshness transitions.
+Sale-edit scope changes show an explicit instruction to close and reopen in the
+owning workspace. Scheduled history stays read only and ordinary historical line prices
 remain their recorded prices.
 
 ## Permissions and rollout limits
@@ -127,3 +135,8 @@ Native keychain/keystore durability and exact-head mobile/API CI remain release
 gates. Mocked storage does not prove native persistence or deployed endpoint
 availability. This read-only satellite API uses the existing receipt schema;
 no database migration or application is part of the recovery follow-up.
+
+Ordinary catalog rows and legacy history keep their VND denomination even when
+a selected wallet has another currency; no FX conversion is implied. Scheduled
+rows retain their scheduled/recorded currency. Recovered confirmed sales remember
+the income category with the same best-effort policy as initial submissions.

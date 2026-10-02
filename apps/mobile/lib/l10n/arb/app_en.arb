@@ -3993,6 +3993,7 @@
     "inventorySeasonRecoveryCheck": "Check sale result",
     "inventorySeasonRecoveryUnavailable": "Sale recovery storage is unavailable. Creation is blocked until this operation can be recovered safely.",
     "inventorySeasonRetryPending": "Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.",
+    "inventoryCheckoutScopeChanged": "The account or workspace changed. Close this checkout and reopen the sale in its owning workspace.",
     "inventorySeasonHistoricalReadOnly": "Scheduled sale history is read only here. Recorded prices are preserved.",
     "@inventorySeasonPriceAsOf": {
         "placeholders": {

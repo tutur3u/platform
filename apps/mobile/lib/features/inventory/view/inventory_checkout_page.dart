@@ -401,7 +401,10 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
         children: [
           if (_scheduled && widget.sale == null)
             InventorySeasonPriceStatus(controller: _season),
-          if (_blockedHistory) Text(l10n.inventorySeasonHistoricalReadOnly),
+          if (_scopeChanged)
+            Text(l10n.inventoryCheckoutScopeChanged)
+          else if (_blockedHistory)
+            Text(l10n.inventorySeasonHistoricalReadOnly),
           InventoryHeroCard(
             title: pageTitle,
             icon: Icons.shopping_basket_outlined,
@@ -508,7 +511,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                     row: row,
                     price: _priceFor(row),
                     seasonPricing: _scheduled,
-                    currency: _selectedCurrency,
+                    currency: _scheduled ? _selectedCurrency : 'VND',
                     quantity: _quantityFor(row),
                     onDecrement: () =>
                         _changeQuantity(row, _quantityFor(row) - 1),
@@ -649,7 +652,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                     row: row,
                     price: _priceFor(row),
                     seasonPricing: _scheduled,
-                    currency: _selectedCurrency,
+                    currency: _scheduled ? _selectedCurrency : 'VND',
                     quantity: _quantityFor(row),
                     onRemove: () => _changeQuantity(row, 0),
                     onDecrement: () =>

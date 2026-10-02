@@ -30,13 +30,13 @@ extension _SeasonRecovery on InventorySeasonPricingController {
         workspace,
         () => journal.read(actor, workspace),
       );
-      if (token != _generation || _disposed) return;
+      if (!_owns(token, actor)) return;
       if (record != null) _adopt(record);
       journalFailed = false;
     } on Object {
-      if (token == _generation && !_disposed) journalFailed = true;
+      if (_owns(token, actor)) journalFailed = true;
     } finally {
-      if (token == _generation && !_disposed) {
+      if (_owns(token, actor)) {
         restoring = false;
         _notify();
       }

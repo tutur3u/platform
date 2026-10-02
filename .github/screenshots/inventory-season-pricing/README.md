@@ -18,7 +18,7 @@ The feature document is
 period discovery's view-sales vs price GET's view/create-sales permission gap,
 server as-of half-open quote resolution, IANA date eligibility, currency precision,
 uncached reads, 15-second receipt freshness, online-only direct atomic POST,
-immutable price IDs, ten-second automatic retry throttling, exact request retry, and the current mounted-checkout-only
+immutable price IDs, ten-second automatic retry throttling, exact request retry, and the current in-flight UI only
 pending state. Process termination still requires operator reconciliation of an
 uncertain sale. Financial aggregate contract gaps remain documented in the parent
 stock-health correctness report; no unsupported financial chart is added.
@@ -48,3 +48,6 @@ ceiling. Necessary checkout parts shrink the existing oversized page while
 preserving its public import and ordinary sale method overrides. Root owns
 exact-head CI, independent review, native checks, migration availability and any
 future integration/deployment.
+
+Unresolved operations persist in the encrypted actor/workspace journal and are
+restored across process restart. Only the in-flight UI state is checkout-scoped.

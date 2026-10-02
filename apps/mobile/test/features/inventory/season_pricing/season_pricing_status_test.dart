@@ -26,6 +26,9 @@ void main() {
     expect(formatSeasonPrice(12.345, 'BHD'), contains('BHD 12.345'));
     expect(formatSeasonPrice(12, 'VND'), 'VND 12');
     expect(formatSeasonPrice(12.5, 'USD'), 'USD 12.50');
+    final trailing = formatSeasonPrice(12.5, 'USD', locale: 'vi');
+    expect(trailing, endsWith('USD'));
+    expect(trailing, trailing.trim());
   });
   for (final width in [320.0, 768.0]) {
     testWidgets('quote provenance fits $width at large text', (tester) async {

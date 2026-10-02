@@ -18283,6 +18283,12 @@ abstract class AppLocalizations {
   /// **'Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.'**
   String get inventorySeasonRetryPending;
 
+  /// No description provided for @inventoryCheckoutScopeChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The account or workspace changed. Close this checkout and reopen the sale in its owning workspace.'**
+  String get inventoryCheckoutScopeChanged;
+
   /// No description provided for @inventorySeasonHistoricalReadOnly.
   ///
   /// In en, this message translates to:
