@@ -271,3 +271,18 @@ period is a no-op. Price authoring forwards the scoped catalog pagination so
 products after the first page can be selected without preloading another dialog.
 
 Atomic pricing-aware edit routing also applies before a product has its first authored price and while a legacy period is being converted. The database transaction resolves current state under its locks; routing never relies on an earlier mode or price-existence read. Checkout, stock editing and price authoring acquire stock tuples before the product row to avoid mixed legacy/scheduled lock inversion. If price support is installed but its edit transaction is unavailable, edits fail closed instead of falling back to separate writes.
+
+### Transactional offline create validation
+
+The proposed automatic dependency sync uses a separate deduplicated create
+contract. Its private receipt and all resource, stock, history and audit effects
+commit together. Reusing an operation identity with different input is rejected.
+The service authorizes the captured account, workspace and resource permission
+before invoking this contract; customers cannot read receipts or forge actors.
+
+`.github/workflows/inventory-offline-contract.yaml` validates the exact PR head
+by applying the complete schema in a disposable hosted database, running strict
+`inventory-offline-create.sql` pgTAP assertions, and generating
+`packages/types/src/supabase.ts` as an artifact. A queued workflow is not schema
+or type parity evidence. This contract checkpoint alone does not enable the
+native scheduler or replace the current sync-first safety guard.
