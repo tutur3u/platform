@@ -52,6 +52,19 @@ List<String> ready(
     .toList();
 
 void main() {
+  test(
+    'same-timestamp edits preserve input enqueue order rather than random IDs',
+    () {
+      final product = ref('local', resource: 'product');
+      final graph = OfflineDependencyGraph([
+        node('z-first', 0, serial: product),
+        node('a-second', 0, serial: product),
+      ]);
+      expect(ready(graph), ['z-first']);
+      expect(ready(graph, done: {'z-first'}), ['a-second']);
+    },
+  );
+
   test('later prerequisites run first while independent writes progress', () {
     final category = ref('local');
     final graph = OfflineDependencyGraph([

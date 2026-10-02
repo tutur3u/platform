@@ -1,3 +1,5 @@
+import 'package:mobile/core/cache/offline_resource_reference.dart';
+
 class PendingMutationRecord {
   const PendingMutationRecord({
     required this.id,
@@ -13,6 +15,9 @@ class PendingMutationRecord {
     this.lastError,
     this.status = PendingMutationStatus.queued,
     this.replaySafe = false,
+    this.requiredReferences = const {},
+    this.acknowledgedServerId,
+    this.dependencyIssue,
   });
 
   factory PendingMutationRecord.fromJson(Map<dynamic, dynamic> json) {
@@ -37,6 +42,13 @@ class PendingMutationRecord {
         orElse: () => PendingMutationStatus.queued,
       ),
       replaySafe: json['replaySafe'] == true,
+      requiredReferences: (json['requiredReferences'] as List<dynamic>? ?? [])
+          .map((value) => OfflineResourceReference.fromJson(value as Map))
+          .toSet(),
+      acknowledgedServerId: json['acknowledgedServerId'] as String?,
+      dependencyIssue: OfflineDependencyIssue.values
+          .where((value) => value.name == json['dependencyIssue'])
+          .firstOrNull,
     );
   }
 
@@ -53,8 +65,16 @@ class PendingMutationRecord {
   final String? lastError;
   final PendingMutationStatus status;
 
-  /// True only when the server deduplicates retries with this record's ID.
+  /// True only when the server deduplicates this operation identity on retry.
   final bool replaySafe;
+
+  /// Durable known-local references survive prerequisite cancellation/restart.
+  final Set<OfflineResourceReference> requiredReferences;
+
+  /// Observed server acknowledgment is persisted before publishing the mapping.
+  /// Recovery completes local publication without sending the create again.
+  final String? acknowledgedServerId;
+  final OfflineDependencyIssue? dependencyIssue;
 
   String? get entityId => optimisticPatch?['entityId'] as String?;
 
@@ -62,6 +82,10 @@ class PendingMutationRecord {
     int? attemptCount,
     String? lastError,
     PendingMutationStatus? status,
+    Set<OfflineResourceReference>? requiredReferences,
+    String? acknowledgedServerId,
+    OfflineDependencyIssue? dependencyIssue,
+    bool clearDependencyIssue = false,
   }) {
     return PendingMutationRecord(
       id: id,
@@ -77,6 +101,11 @@ class PendingMutationRecord {
       lastError: lastError ?? this.lastError,
       status: status ?? this.status,
       replaySafe: replaySafe,
+      requiredReferences: requiredReferences ?? this.requiredReferences,
+      acknowledgedServerId: acknowledgedServerId ?? this.acknowledgedServerId,
+      dependencyIssue: clearDependencyIssue
+          ? null
+          : dependencyIssue ?? this.dependencyIssue,
     );
   }
 
@@ -94,7 +123,21 @@ class PendingMutationRecord {
     'lastError': lastError,
     'status': status.name,
     'replaySafe': replaySafe,
+    'requiredReferences': requiredReferences
+        .map((ref) => ref.toJson())
+        .toList(),
+    'acknowledgedServerId': acknowledgedServerId,
+    'dependencyIssue': dependencyIssue?.name,
   };
 }
 
 enum PendingMutationStatus { queued, conflict, failed }
+
+/// Safe diagnostics never contain payloads, raw identifiers or credentials.
+enum OfflineDependencyIssue {
+  waiting,
+  missing,
+  cycle,
+  ambiguous,
+  contractUnavailable,
+}

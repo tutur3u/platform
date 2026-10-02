@@ -23,10 +23,16 @@ class OfflineDependencyNode {
 /// It does not dispatch, mutate records, or infer dependencies from prose.
 class OfflineDependencyGraph {
   OfflineDependencyGraph(Iterable<OfflineDependencyNode> source) {
-    nodes = source.toList()
+    final ordered = source.toList();
+    final positions = {
+      for (var i = 0; i < ordered.length; i++) ordered[i].record.id: i,
+    };
+    nodes = ordered
       ..sort((a, b) {
         final time = a.record.createdAt.compareTo(b.record.createdAt);
-        return time != 0 ? time : a.record.id.compareTo(b.record.id);
+        return time != 0
+            ? time
+            : positions[a.record.id]!.compareTo(positions[b.record.id]!);
       });
     final producers = <OfflineResourceReference, List<String>>{};
     for (final node in nodes) {
