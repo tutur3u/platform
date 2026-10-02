@@ -229,15 +229,15 @@ export function createLocalMediaControls({
     screenPending = true;
     try {
       if (mediaRef.current.screenEnabled) {
+        await applyMedia(
+          { ...mediaRef.current, screenEnabled: false },
+          localStreamRef.current
+        );
         for (const track of screenStreamRef.current?.getTracks() ?? []) {
           track.stop();
         }
         screenStreamRef.current = null;
         setScreenStream(null);
-        await applyMedia(
-          { ...mediaRef.current, screenEnabled: false },
-          localStreamRef.current
-        );
         return;
       }
 
@@ -296,7 +296,11 @@ export function createLocalMediaControls({
         for (const track of display.getTracks()) track.stop();
         screenStreamRef.current = null;
         setScreenStream(null);
-        mediaRef.current = { ...mediaRef.current, screenEnabled: false };
+        // Restore rendered state and presence through the same media flow.
+        await applyMedia(
+          { ...mediaRef.current, screenEnabled: false },
+          localStreamRef.current
+        ).catch(() => undefined);
         throw error;
       }
     } finally {

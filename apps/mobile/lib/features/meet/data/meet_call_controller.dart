@@ -159,7 +159,10 @@ class MeetCallController extends ChangeNotifier {
   void _onStatus(String next) {
     if (_disposed) return;
     status = next;
-    if (next != 'open') _noticeTracker.resetConnection();
+    if (next != 'open') {
+      _noticeTracker.resetConnection();
+      _lastPresenceMedia = null;
+    }
     if (next == 'open') {
       if (error == 'connection') error = null;
       if (_connectedBefore) {
@@ -413,7 +416,16 @@ class MeetCallController extends ChangeNotifier {
     }
   }
 
+  (bool, bool, bool)? _lastPresenceMedia;
+
   void _sendPresence({bool join = false}) {
+    final current = (
+      media.audioEnabled,
+      media.videoEnabled,
+      media.screenEnabled,
+    );
+    if (!join && current == _lastPresenceMedia) return;
+    _lastPresenceMedia = current;
     _signaling.send({
       'type': join ? 'presence.join' : 'presence.update',
       'media': {

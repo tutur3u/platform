@@ -171,6 +171,7 @@ it('classifies missing screen capture and allows another attempt', async () => {
 
 it('stops capture and clears sharing when screen publication fails', async () => {
   const stop = vi.fn();
+  let renderedSharing = false;
   const video = { stop, addEventListener: vi.fn() };
   const display = {
     getTracks: () => [video],
@@ -192,8 +193,10 @@ it('stops capture and clears sharing when screen publication fails', async () =>
     mediaRef,
     setLocalStream: vi.fn(),
     setScreenStream: vi.fn(),
-    applyMedia: vi.fn(async () => {
-      throw new Error('synthetic publication failure');
+    applyMedia: vi.fn(async (next) => {
+      mediaRef.current = next;
+      renderedSharing = next.screenEnabled;
+      if (next.screenEnabled) throw new Error('synthetic publication failure');
     }),
   });
   await expect(controls.toggleScreenShare()).rejects.toThrow(
@@ -202,4 +205,60 @@ it('stops capture and clears sharing when screen publication fails', async () =>
   expect(stop).toHaveBeenCalledOnce();
   expect(screenStreamRef.current).toBeNull();
   expect(mediaRef.current.screenEnabled).toBe(false);
+  expect(renderedSharing).toBe(false);
 });
+
+it.each([false, true])(
+  'retains capture until disabling publication succeeds (failure: %s)',
+  async (fails) => {
+    const stop = vi.fn();
+    const display = { getTracks: () => [{ stop }] } as unknown as MediaStream;
+    const screenStreamRef = { current: display as MediaStream | null };
+    const mediaRef = {
+      current: {
+        audioEnabled: false,
+        videoEnabled: false,
+        screenEnabled: true,
+      },
+    };
+    let finish!: () => void;
+    let reject!: (error: Error) => void;
+    const publishing = new Promise<void>((resolve, fail) => {
+      finish = resolve;
+      reject = fail;
+    });
+    const setScreenStream = vi.fn();
+    const controls = createLocalMediaControls({
+      activeRef: { current: true },
+      effects: new CameraEffects(),
+      localStreamRef: { current: null },
+      screenStreamRef,
+      mediaRef,
+      setLocalStream: vi.fn(),
+      setScreenStream,
+      applyMedia: vi.fn(async (next) => {
+        await publishing;
+        mediaRef.current = next;
+      }),
+    });
+    const disabling = controls.toggleScreenShare();
+    expect(stop).not.toHaveBeenCalled();
+    expect(screenStreamRef.current).toBe(display);
+    if (fails) {
+      const rejected = expect(disabling).rejects.toThrow('Disable failed');
+      reject(new Error('Disable failed'));
+      await rejected;
+      expect(stop).not.toHaveBeenCalled();
+      expect(screenStreamRef.current).toBe(display);
+      expect(mediaRef.current.screenEnabled).toBe(true);
+      expect(setScreenStream).not.toHaveBeenCalled();
+    } else {
+      finish();
+      await disabling;
+      expect(stop).toHaveBeenCalledOnce();
+      expect(screenStreamRef.current).toBeNull();
+      expect(mediaRef.current.screenEnabled).toBe(false);
+      expect(setScreenStream).toHaveBeenCalledWith(null);
+    }
+  }
+);

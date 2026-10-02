@@ -8,6 +8,10 @@ public final class MeetScreenCaptureBridge {
         OrientationAwareScreenCapturer.armMeetCapture(generation, stopped);
     }
 
+    public static void stop(long generation) {
+        OrientationAwareScreenCapturer.stopMeetCapture(generation);
+    }
+
     public static void disarm(long generation) {
         OrientationAwareScreenCapturer.disarmMeetCapture(generation);
     }

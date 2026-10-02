@@ -33,10 +33,13 @@ public class OrientationAwareScreenCapturer implements VideoCapturer, VideoSink 
     private final MediaProjection.Callback mediaProjectionCallback;
     private final CaptureOwner meetOwner;
     private static CaptureOwner pendingMeetOwner;
+    private static final java.util.Map<Long, CaptureOwner> activeMeetOwners =
+            new java.util.HashMap<>();
 
     private static final class CaptureOwner {
         final long generation;
         final Runnable stopped;
+        OrientationAwareScreenCapturer capturer;
         final java.util.concurrent.atomic.AtomicBoolean notified =
                 new java.util.concurrent.atomic.AtomicBoolean(false);
         CaptureOwner(long generation, Runnable stopped) {
@@ -56,9 +59,27 @@ public class OrientationAwareScreenCapturer implements VideoCapturer, VideoSink 
         }
     }
 
-    private static synchronized CaptureOwner claimMeetCapture() {
+    public static void stopMeetCapture(long generation) {
+        CaptureOwner owner;
+        synchronized (OrientationAwareScreenCapturer.class) {
+            disarmMeetCapture(generation);
+            owner = activeMeetOwners.remove(generation);
+        }
+        if (owner != null) owner.capturer.stopCapture();
+    }
+
+    private static synchronized void releaseMeetCapture(CaptureOwner owner) {
+        if (owner != null) activeMeetOwners.remove(owner.generation, owner);
+    }
+
+    private static synchronized CaptureOwner claimMeetCapture(
+            OrientationAwareScreenCapturer capturer) {
         CaptureOwner owner = pendingMeetOwner;
         pendingMeetOwner = null;
+        if (owner != null) {
+            owner.capturer = capturer;
+            activeMeetOwners.put(owner.generation, owner);
+        }
         return owner;
     }
     private int width;
@@ -89,13 +110,13 @@ public class OrientationAwareScreenCapturer implements VideoCapturer, VideoSink 
     public OrientationAwareScreenCapturer(Intent mediaProjectionPermissionResultData,
                                           MediaProjection.Callback mediaProjectionCallback) {
         this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
-        this.meetOwner = claimMeetCapture();
+        this.meetOwner = claimMeetCapture(this);
         this.mediaProjectionCallback = meetOwner == null ? mediaProjectionCallback :
                 new MediaProjection.Callback() {
                     @Override
                     public void onStop() {
                         try {
-                            mediaProjectionCallback.onStop();
+                            if (mediaProjectionCallback != null) mediaProjectionCallback.onStop();
                         } finally {
                             // Revoke/lock stops the real capturer before reporting to Dart.
                             // stopCapture unregisters THIS wrapper, preventing recursion.
@@ -125,6 +146,7 @@ public class OrientationAwareScreenCapturer implements VideoCapturer, VideoSink 
         if (newW != this.oldWidth || newH != this.oldHeight) {
             changeCaptureFormat(newW, newH, 15);
         }
+        numCapturedFrames++;
         capturerObserver.onFrameCaptured(frame);
     }
 
@@ -165,6 +187,7 @@ public class OrientationAwareScreenCapturer implements VideoCapturer, VideoSink 
     public synchronized void startCapture(
             final int width, final int height, final int ignoredFramerate) {
         //checkNotDisposed();
+        if (isStopped) throw new IllegalStateException("Meet capture was cancelled");
 
         this.isPortrait = isDeviceOrientationPortrait();
         if (this.isPortrait) {
@@ -194,8 +217,14 @@ public class OrientationAwareScreenCapturer implements VideoCapturer, VideoSink 
         // waiting on the SurfaceTextureHelper thread via invokeAtFrontUninterruptibly, while
         // that same thread's onFrame() -> changeCaptureFormat() (synchronized) tried to
         // re-enter the same monitor, causing a deadlock (ANR).
-        if (isDisposed || isStopped) return;
-        isStopped = true;
+        // Wait for synchronized startup, but never hold the monitor while
+        // waiting on the helper thread (onFrame can enter changeCaptureFormat).
+        synchronized (this) {
+            if (isDisposed || isStopped) return;
+            isStopped = true;
+        }
+        releaseMeetCapture(meetOwner);
+        if (surfaceTextureHelper == null) return;
         ThreadUtils.invokeAtFrontUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
             @Override
             public void run() {

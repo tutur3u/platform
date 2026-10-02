@@ -43,6 +43,12 @@ class MeetScreenCapture {
     if (!supported) throw UnsupportedError('Native screen capture unavailable');
     if (stream != null) return;
     final generation = _generation;
+    void reportStopped() {
+      if (generation != _generation) return;
+      cancel();
+      onStopped();
+    }
+
     try {
       if (defaultTargetPlatform == TargetPlatform.android) {
         if (!await Helper.requestCapturePermission()) {
@@ -52,13 +58,11 @@ class MeetScreenCapture {
         _subscription = _events.receiveBroadcastStream().listen(
           (event) {
             if (event == 'stopped') {
-              cancel();
-              onStopped();
+              reportStopped();
             }
           },
           onError: (Object _) {
-            cancel();
-            onStopped();
+            reportStopped();
           },
         );
         await _methods.invokeMethod<void>('start', {
@@ -85,13 +89,11 @@ class MeetScreenCapture {
               started.complete();
             }
             if (event['type'] == 'stopped') {
-              cancel();
-              onStopped();
+              reportStopped();
             }
           },
           onError: (Object error) {
-            cancel();
-            onStopped();
+            reportStopped();
           },
         );
         // Get OS broadcast consent before allocating the WebRTC listener.
@@ -122,10 +124,7 @@ class MeetScreenCapture {
         return;
       }
       if (track == null) throw StateError('Screen capture returned no video');
-      track!.onEnded = () {
-        cancel();
-        onStopped();
-      };
+      track!.onEnded = reportStopped;
     } on Object {
       await stop();
       rethrow;
@@ -138,15 +137,6 @@ class MeetScreenCapture {
     cancel();
     final captured = stream;
     stream = null;
-    await _subscription?.cancel();
-    _subscription = null;
-    if (captured != null) {
-      for (final track in captured.getTracks()) {
-        track.onEnded = null;
-        await track.stop();
-      }
-      await captured.dispose();
-    }
     if (!kIsWeb &&
         defaultTargetPlatform == TargetPlatform.iOS &&
         _capture == null) {
@@ -161,6 +151,23 @@ class MeetScreenCapture {
         await _methods.invokeMethod<void>('stop');
       } on Object {
         /* Engine/extension is already detached. */
+      }
+    }
+    await _subscription?.cancel();
+    _subscription = null;
+    if (captured != null) {
+      for (final track in captured.getTracks()) {
+        track.onEnded = null;
+        try {
+          await track.stop();
+        } on Object {
+          // Native revocation may already have disposed this track.
+        }
+      }
+      try {
+        await captured.dispose();
+      } on Object {
+        // A detached engine has already released the stream.
       }
     }
   }

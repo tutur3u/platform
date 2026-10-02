@@ -47,6 +47,8 @@
 }
 
 - (void)openWithStreamDelegate:(id<NSStreamDelegate>)streamDelegate {
+  @synchronized(self) {
+  if (self.closed || self.listeningSource) return;
   int status = listen(self.serverSocket, 10);
   if (status < 0) {
     NSLog(@"failure: socket listening");
@@ -57,7 +59,7 @@
       dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, self.serverSocket, 0, NULL);
   dispatch_source_set_event_handler(listeningSource, ^{
     @synchronized(self) {
-    if (self.closed) return;
+    if (self.closed || self.inputStream) return;
     int clientSocket = accept(self.serverSocket, NULL, NULL);
     if (clientSocket < 0) {
       NSLog(@"failure accepting connection");
@@ -71,12 +73,12 @@
 
     self.inputStream = (__bridge_transfer NSInputStream*)readStream;
     self.inputStream.delegate = streamDelegate;
-    [self.inputStream setProperty:@"kCFBooleanTrue"
-                           forKey:@"kCFStreamPropertyShouldCloseNativeSocket"];
+    [self.inputStream setProperty:(__bridge id)kCFBooleanTrue
+                           forKey:(__bridge NSString*)kCFStreamPropertyShouldCloseNativeSocket];
 
     self.outputStream = (__bridge_transfer NSOutputStream*)writeStream;
-    [self.outputStream setProperty:@"kCFBooleanTrue"
-                            forKey:@"kCFStreamPropertyShouldCloseNativeSocket"];
+    [self.outputStream setProperty:(__bridge id)kCFBooleanTrue
+                            forKey:(__bridge NSString*)kCFStreamPropertyShouldCloseNativeSocket];
 
     [self.networkThread start];
     [self performSelector:@selector(scheduleStreams)
@@ -86,11 +88,18 @@
 
     [self.inputStream open];
     [self.outputStream open];
+    // One broadcast transport per listener; reconnect creates a new owner.
+    dispatch_source_cancel(self.listeningSource);
     }
   });
 
+  int descriptor = self.serverSocket;
+  dispatch_source_set_cancel_handler(listeningSource, ^{
+    if (descriptor >= 0) close(descriptor);
+  });
   self.listeningSource = listeningSource;
   dispatch_resume(listeningSource);
+  }
 }
 
 - (void)close {
@@ -113,9 +122,6 @@
     self.serverSocket = -1;
     if (self.listeningSource) {
       // Release the descriptor only after in-flight dispatch handlers finish.
-      dispatch_source_set_cancel_handler(self.listeningSource, ^{
-        if (descriptor >= 0) close(descriptor);
-      });
       dispatch_source_cancel(self.listeningSource);
       self.listeningSource = nil;
     } else if (descriptor >= 0) {

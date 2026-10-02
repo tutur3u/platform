@@ -27,3 +27,6 @@ Android exact-commit CI compilation and consented synthetic physical-device test
 remain necessary: OS chip stop, lock, notification Stop, repeated stop, restart,
 and unrelated assistant capture. Source verification alone does not prove those
 runtime outcomes.
+
+Generated build intermediates live in the plugin build directory inside the pub
+cache. That directory must be writable; the pinned upstream source stays unchanged.

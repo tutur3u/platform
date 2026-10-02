@@ -30,7 +30,13 @@ class MeetRoomContentHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Row(
         children: [
-          const Spacer(),
+          Expanded(
+            child: Text(
+              call.title ?? fallbackTitle ?? l10n.meetTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           if (remaining != null)
             Semantics(
               label: l10n.meetTimeRemaining,

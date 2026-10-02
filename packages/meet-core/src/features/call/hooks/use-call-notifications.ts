@@ -3,7 +3,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { usePlaybackVolume } from '../components/playback-volume';
-import { collectCallNotices } from '../lib/call-notifications';
+import { type CallNotice, collectCallNotices } from '../lib/call-notifications';
 import type { CallState } from '../lib/call-state';
 
 export function useCallNotifications(
@@ -16,6 +16,16 @@ export function useCallNotifications(
 ) {
   const volume = usePlaybackVolume();
   const t = useTranslations('meet.call');
+  const pending = useRef(new Map<string, CallNotice>());
+  const [visibilityRevision, setVisibilityRevision] = useState(0);
+  useEffect(() => {
+    const visible = () => {
+      if (document.visibilityState !== 'hidden')
+        setVisibilityRevision((value) => value + 1);
+    };
+    document.addEventListener('visibilitychange', visible);
+    return () => document.removeEventListener('visibilitychange', visible);
+  }, []);
   const previous = useRef(state);
   const wasConnected = useRef(false);
   const [sound, setSound] = useState(true);
@@ -55,6 +65,8 @@ export function useCallNotifications(
     };
   }, []);
   useEffect(() => {
+    // Visibility changes flush queued notices even without a room update.
+    void visibilityRevision;
     const notices =
       enabled && connected && wasConnected.current
         ? collectCallNotices(previous.current, state).filter(
@@ -82,10 +94,25 @@ export function useCallNotifications(
     }
     previous.current = state;
     wasConnected.current = connected;
-    const visibleNotices = notices.filter(
-      (notice) => notice.kind !== 'chat' || activePanel !== 'chat'
-    );
+    if (!enabled || !connected || state.ended || state.admission !== 'admitted')
+      pending.current.clear();
+    for (const notice of notices) {
+      pending.current.set(notice.id, notice);
+      // Bound background accumulation without retaining entire room history.
+      if (pending.current.size > 50)
+        pending.current.delete(pending.current.keys().next().value!);
+    }
     if (document.visibilityState === 'hidden') return;
+    const visibleNotices = [...pending.current.values()].filter(
+      (notice) =>
+        (notice.kind !== 'chat' || activePanel !== 'chat') &&
+        (notice.kind !== 'waiting' ||
+          (state.role === 'host' &&
+            state.waiting.some(
+              (person) => notice.id === `waiting:${person.userId}`
+            )))
+    );
+    pending.current.clear();
     for (const notice of visibleNotices) {
       if (notice.kind === 'chat') chatToasts.current.add(notice.id);
       const panel = notice.kind === 'chat' ? 'chat' : 'participants';
@@ -133,6 +160,7 @@ export function useCallNotifications(
     };
   }, [
     state,
+    visibilityRevision,
     enabled,
     connected,
     sound,

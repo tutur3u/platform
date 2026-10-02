@@ -104,8 +104,8 @@ class MeetScreenSharePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ev
     private fun cancelCapture() {
         val generation = activeGeneration
         if (generation == 0L) return
-        MeetScreenCaptureBridge.disarm(generation)
         activeGeneration = 0L
+        MeetScreenCaptureBridge.stop(generation)
     }
 
     private fun reportStopped(generation: Long) {
