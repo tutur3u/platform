@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
+const { execFileSync } = require('node:child_process');
 const {
   createReceipt,
   recordReceipt,
@@ -115,4 +116,46 @@ test('proof publication requires the actual runner to match the planned platform
     { E2E_EXPECTED_RUNNER: 'invalid' },
   ])
     assert.equal(runnerMatches({ ...env, ...mismatch }), false);
+});
+
+test('a main success on a mismatched runner does not publish any receipt', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-runner-mismatch-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const report = path.join(dir, 'report.json');
+  const output = path.join(dir, 'output');
+  fs.writeFileSync(report, JSON.stringify(passing));
+  const env = {
+    GITHUB_EVENT_NAME: 'push',
+    GITHUB_REF: 'refs/heads/main',
+    E2E_RESULTS_PATH: report,
+    GITHUB_OUTPUT: output,
+    E2E_PROOF_KEY: provenance.key,
+    E2E_SUITE_ID: provenance.suite,
+    GITHUB_SHA: provenance.sha,
+    GITHUB_RUN_ID: provenance.runId,
+    GITHUB_RUN_ATTEMPT: provenance.attempt,
+    E2E_EXPECTED_RUNNER: JSON.stringify({
+      image: 'planned',
+      os: 'Linux',
+      arch: 'X64',
+    }),
+    ImageVersion: 'different',
+    RUNNER_OS: 'Linux',
+    RUNNER_ARCH: 'X64',
+  };
+  execFileSync(
+    process.execPath,
+    [
+      '-e',
+      'require(process.argv[1]).recordReceipt(JSON.parse(process.argv[2]))',
+      require.resolve('./e2e-result-receipt'),
+      JSON.stringify(env),
+    ],
+    { cwd: dir }
+  );
+  assert.equal(fs.readFileSync(output, 'utf8'), 'reusable=false\n');
+  assert.equal(
+    fs.existsSync(path.join(dir, 'tmp/e2e-proof-receipt.json')),
+    false
+  );
 });

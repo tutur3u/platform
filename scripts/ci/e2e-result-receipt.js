@@ -64,7 +64,8 @@ function recordReceipt(env = process.env) {
   // Defense in depth: workflow_dispatch runs fully but never publishes proofs.
   if (
     env.GITHUB_EVENT_NAME === 'push' &&
-    env.GITHUB_REF === 'refs/heads/main'
+    env.GITHUB_REF === 'refs/heads/main' &&
+    runnerMatches(env)
   ) {
     try {
       const report = JSON.parse(fs.readFileSync(env.E2E_RESULTS_PATH, 'utf8'));
