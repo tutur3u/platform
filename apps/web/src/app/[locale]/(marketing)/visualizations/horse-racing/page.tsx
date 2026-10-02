@@ -1,10 +1,8 @@
 import { HorseRacingVisualization } from '@/components/visualizations/horse-racing/visualization';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Horse Racing Algorithm Visualization',
-  description:
-    'Interactive visualization of the horse racing ranking algorithm that determines the ranking of N horses when we can only race M horses at a time.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.visualizations_horse_racing',
   pathname: '/visualizations/horse-racing',
 });
 

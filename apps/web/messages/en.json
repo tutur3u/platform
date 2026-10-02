@@ -8851,11 +8851,11 @@
       }
     },
     "cta": {
-      "description": "Free to start, open source, and yours to self-host. No credit card, no sales call, no lock-in.",
+      "description": "Start with the tools your team needs today. Explore the open-source workspace, try the free plan, and add more as your work grows.",
       "note": "No credit card required. Free forever plan available.",
       "primary": "Get Started Free",
       "secondary": "Talk to Sales",
-      "title": "Ready to work smarter?",
+      "title": "Bring your team’s work together",
       "trust": {
         "openSource": "Open Source & Transparent",
         "security": "Enterprise-Grade Security",
@@ -9225,18 +9225,18 @@
         "subtitle": "Add the ones you need, ignore the rest. One workspace, one login, one bill.",
         "title": "And the rest of the suite"
       },
-      "subtitle": "Eighteen apps that already share your context, instead of eighteen subscriptions that know nothing about each other.",
+      "subtitle": "Bring tasks, calendars, documents, and everyday business tools into a shared workspace, so your team can spend less time switching apps.",
       "title": "One workspace. Every part of the job."
     },
     "hero": {
       "cta": {
         "primary": "Get Started Free",
-        "secondary": "Watch Demo"
+        "secondary": "Explore the workspace"
       },
-      "description": "One workspace for everything you are juggling, and an assistant that plans your days around the life you actually want.",
+      "description": "Manage projects, plan your team’s time, and keep documents and business tools together. Mira helps you turn plans into action.",
       "title": {
-        "line1": "Work Smarter.",
-        "line2": "Live Better."
+        "line1": "Your Team.",
+        "line2": "One Workspace."
       },
       "trust": {
         "free": "Free forever plan",
@@ -9529,6 +9529,27 @@
         }
       },
       "title": "Built in the open"
+    },
+    "teamFaq": {
+      "items": {
+        "ai": {
+          "answer": "Mira is Tuturuuu’s AI assistant. Use it to ask questions, plan work, and get help with tasks in your workspace. Available actions depend on your permissions and connected tools.",
+          "question": "What does Mira help with?"
+        },
+        "openSource": {
+          "answer": "Yes. Tuturuuu’s source code is available on GitHub. You can inspect the code, contribute to the project, and review the documentation for self-hosting.",
+          "question": "Is Tuturuuu open source?"
+        },
+        "start": {
+          "answer": "Create a workspace, invite your teammates, and start with tasks and a shared calendar. Explore the product pages to choose the tools that fit your team’s workflow.",
+          "question": "How can my team get started?"
+        },
+        "workspace": {
+          "answer": "Tuturuuu is an open-source workspace that brings project tasks, calendars, documents, and business tools together. Teams can organize their work in one place and use Mira for AI assistance.",
+          "question": "What is Tuturuuu?"
+        }
+      },
+      "title": "Find the right workspace for your team"
     }
   },
   "link-shortener": {
@@ -10118,6 +10139,128 @@
         "description": "Automate the handoffs between your tools.",
         "label": "Workflows"
       }
+    }
+  },
+  "marketingSeo": {
+    "about": {
+      "description": "Learn why we are building Tuturuuu: an open-source workspace that connects team collaboration, everyday operations, and AI assistance.",
+      "title": "About Tuturuuu and Our Connected Workspace"
+    },
+    "acceptable_use": {
+      "description": "Read the rules for using Tuturuuu responsibly, including prohibited activities and how acceptable use is enforced.",
+      "title": "Acceptable Use Policy"
+    },
+    "blog": {
+      "description": "Explore what is coming to the Tuturuuu blog, and find published product updates, open-source development, and ways to connect with the team.",
+      "title": "Workspace Guides and Product Stories"
+    },
+    "branding": {
+      "description": "Find Tuturuuu logos, visual assets, and brand guidelines for consistent, accurate use in your projects and communications.",
+      "title": "Tuturuuu Brand Assets and Guidelines"
+    },
+    "careers": {
+      "description": "Explore opportunities to help build Tuturuuu, an open-source workspace for teams, and learn about our approach to work and collaboration.",
+      "title": "Careers at Tuturuuu"
+    },
+    "changelog": {
+      "description": "See what changed in Tuturuuu. Read product updates and explore platform release notes by app, version, features, and fixes.",
+      "title": "Product Updates and Release Notes"
+    },
+    "community_guidelines": {
+      "description": "Understand the expectations for respectful participation, collaboration, and contributions in the Tuturuuu community.",
+      "title": "Community Guidelines"
+    },
+    "contact": {
+      "description": "Talk to the Tuturuuu team about your workspace, product questions, partnerships, or feedback. Find the right channel to get started.",
+      "title": "Contact Tuturuuu"
+    },
+    "contributors": {
+      "description": "Meet the people helping build Tuturuuu and explore contributions to our open-source workspace.",
+      "title": "Tuturuuu Open-Source Contributors"
+    },
+    "home": {
+      "description": "Bring team tasks, calendars, documents, and business tools together in one open-source workspace. Plan and collaborate with AI assistance from Mira.",
+      "title": "All-in-One Workspace for Teams"
+    },
+    "legal_dpa": {
+      "description": "Read the Tuturuuu data processing agreement and the responsibilities that apply when processing personal data.",
+      "title": "Data Processing Agreement"
+    },
+    "legal_sla": {
+      "description": "Review the Tuturuuu service level agreement for service availability, support, and applicable commitments.",
+      "title": "Service Level Agreement"
+    },
+    "legal_subprocessors": {
+      "description": "Review the subprocessors and service providers involved in delivering Tuturuuu and processing data.",
+      "title": "Subprocessors and Service Providers"
+    },
+    "meet": {
+      "description": "Explore Tuturuuu Meet to coordinate availability and plan team meetings within your connected workspace.",
+      "title": "Team Meetings and Availability Planning"
+    },
+    "partners": {
+      "description": "Explore ways to work with Tuturuuu on integrations, product development, and bringing a connected workspace to more teams.",
+      "title": "Partner with Tuturuuu"
+    },
+    "privacy": {
+      "description": "Read how Tuturuuu collects, uses, and protects personal information, and learn about your privacy choices and rights.",
+      "title": "Privacy Policy"
+    },
+    "security": {
+      "description": "Learn how Tuturuuu approaches workspace security, data protection, responsible disclosure, and transparency in our open-source platform.",
+      "title": "Workspace Security and Privacy"
+    },
+    "security_bug_bounty": {
+      "description": "Find the scope, reporting process, and guidelines for responsibly disclosing a security vulnerability to Tuturuuu.",
+      "title": "Report a Security Vulnerability"
+    },
+    "solutions_construction": {
+      "description": "Coordinate construction projects, team tasks, schedules, documents, and operational records in a connected Tuturuuu workspace.",
+      "title": "Construction Project Workspace"
+    },
+    "solutions_education": {
+      "description": "Organize education team tasks, schedules, documents, and learning operations in one connected workspace with Tuturuuu.",
+      "title": "Workspace for Education Teams"
+    },
+    "solutions_healthcare": {
+      "description": "Explore Tuturuuu for coordinating healthcare team tasks, schedules, inventory, and everyday operations.",
+      "title": "Workspace for Healthcare Operations"
+    },
+    "solutions_hospitality": {
+      "description": "Connect hospitality team tasks, schedules, stock, and operational records in a shared Tuturuuu workspace.",
+      "title": "Workspace for Hospitality Teams"
+    },
+    "solutions_manufacturing": {
+      "description": "Coordinate manufacturing team tasks, inventory, schedules, and documents with connected Tuturuuu business tools.",
+      "title": "Workspace for Manufacturing Operations"
+    },
+    "solutions_pharmacies": {
+      "description": "Explore a connected workspace for pharmacy team coordination, inventory, schedules, and business operations with Tuturuuu.",
+      "title": "Workspace for Pharmacy Operations"
+    },
+    "solutions_realestate": {
+      "description": "Keep real estate contacts, team tasks, schedules, and documents together in a connected Tuturuuu workspace.",
+      "title": "Workspace for Real Estate Teams"
+    },
+    "solutions_restaurants": {
+      "description": "Organize restaurant team tasks, inventory, schedules, and financial records in a connected Tuturuuu workspace.",
+      "title": "Workspace for Restaurant Operations"
+    },
+    "solutions_retail": {
+      "description": "Connect retail inventory, customer records, team tasks, and finances with Tuturuuu business management tools.",
+      "title": "Workspace for Retail Teams"
+    },
+    "terms": {
+      "description": "Review the terms that govern your use of Tuturuuu, including accounts, responsibilities, and service conditions.",
+      "title": "Terms of Service"
+    },
+    "visualizations_horse_racing": {
+      "description": "Explore an interactive horse racing visualization and compare the algorithms behind the simulation.",
+      "title": "Horse Racing Algorithm Visualization"
+    },
+    "women_in_tech": {
+      "description": "Celebrate the women who helped build Tuturuuu. Explore stories of engineers, leaders, and partners shaping technology in Vietnam and beyond.",
+      "title": "Vietnamese Women’s Day 2025: Women in Tech"
     }
   },
   "meet-together": {
@@ -13358,8 +13501,8 @@
         "title": "What is actually running"
       },
       "seo": {
-        "description": "See how Tuturuuu AI accelerates automation and everyday workflows.",
-        "title": "AI Workspace"
+        "description": "Plan work, ask questions, and get help from Mira inside your connected Tuturuuu workspace, with actions guided by your permissions.",
+        "title": "AI Assistant for Team Workspaces"
       },
       "title": "Five systems, one assistant you talk to",
       "useCases": {
@@ -13437,8 +13580,8 @@
         "title": "Scheduling without the back and forth"
       },
       "seo": {
-        "description": "Coordinate schedules with the shared Tuturuuu calendar experience.",
-        "title": "Shared Team Calendar"
+        "description": "Plan meetings, deadlines, and focus time with a shared team calendar. Keep schedules connected to your tasks in Tuturuuu.",
+        "title": "Shared Calendar and Team Scheduling"
       },
       "title": "A calendar that defends your day",
       "useCases": {
@@ -13595,8 +13738,8 @@
         "title": "The relationship, written down"
       },
       "seo": {
-        "description": "Track relationships and deals inside the connected Tuturuuu CRM.",
-        "title": "Customer Relationship Management"
+        "description": "Keep customer contacts and relationship records organized in Tuturuuu. Connect your team’s follow-up work with tasks and workspace tools.",
+        "title": "CRM and Contact Management for Teams"
       },
       "title": "Every customer, and everything you promised them",
       "useCases": {
@@ -13674,8 +13817,8 @@
         }
       },
       "seo": {
-        "description": "Collaborate on docs with AI-assisted workflows in Tuturuuu.",
-        "title": "Collaborative Documents"
+        "description": "Write and organize team documents in Tuturuuu. Keep project context, tasks, and shared files close to the work they support.",
+        "title": "Collaborative Documents for Teams"
       },
       "title": "Write it down where the work already lives",
       "useCases": {
@@ -13832,8 +13975,8 @@
         "title": "The bookkeeping, mostly handled"
       },
       "seo": {
-        "description": "Manage invoices, budgets, and spend control with Tuturuuu Finance.",
-        "title": "Finance and Expense Management"
+        "description": "Track transactions, manage wallets, and organize budgets in Tuturuuu. Give your team a clearer view of income, expenses, and financial records.",
+        "title": "Team Finance, Budgets and Expense Tracking"
       },
       "title": "Know where the money went, without the spreadsheet",
       "useCases": {
@@ -14227,8 +14370,8 @@
         "title": "Less inbox, more done"
       },
       "seo": {
-        "description": "Power outreach and shared inboxes with Tuturuuu Mail.",
-        "title": "Team Email and Shared Inboxes"
+        "description": "Organize email alongside your team’s tasks, calendar, and workspace tools with Tuturuuu Mail.",
+        "title": "Email Management in Your Team Workspace"
       },
       "title": "An inbox that hands work to the rest of your day",
       "useCases": {
@@ -14387,8 +14530,8 @@
         "title": "Enough control to print it once"
       },
       "seo": {
-        "description": "Generate and track QR codes tied to the work behind them.",
-        "title": "QR Codes for Your Workspace"
+        "description": "Create custom QR codes with colors, logos, and export options using Tuturuuu Tools. Explore QR codes for links, events, and business materials.",
+        "title": "Custom QR Code Generator"
       },
       "title": "A code for the thing you keep repeating",
       "useCases": {
@@ -14545,8 +14688,8 @@
         }
       },
       "seo": {
-        "description": "Keep projects on track with Tuturuuu Tasks and collaborative boards.",
-        "title": "Project and Task Management"
+        "description": "Organize projects with shared task boards, assignees, priorities, and due dates. Keep your team’s next steps clear with Tuturuuu Tasks.",
+        "title": "Project and Task Management for Teams"
       },
       "title": "Work that stays where you left it",
       "useCases": {
@@ -14624,8 +14767,8 @@
         "title": "A timer that stays close to the work"
       },
       "seo": {
-        "description": "See where the hours actually went, per person and per project.",
-        "title": "Time Tracking"
+        "description": "Track time against real tasks and review where your team’s hours go. Keep time entries connected to projects in Tuturuuu.",
+        "title": "Team Time Tracking and Task Timers"
       },
       "title": "Hours you can account for",
       "useCases": {

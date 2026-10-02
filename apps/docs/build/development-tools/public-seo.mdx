@@ -1,0 +1,89 @@
+---
+title: Public SEO and Sitemap Maintenance
+description: How public pages enter the bilingual sitemap and how published content refreshes without redeploying.
+---
+
+## Public page discovery
+
+`apps/web/src/app/sitemap.ts` owns `/sitemap.xml`; `robots.ts` advertises it at
+`/robots.txt`. Do not add copies under `apps/web/public`: static assets conflict
+with the Next.js metadata routes.
+
+The public route manifest is generated from concrete pages under
+`apps/web/src/app/[locale]/(marketing)`. A page enters the manifest when its page
+or colocated layout calls a marketing metadata helper with a literal `pathname`
+matching its actual route. Redirect pages, dynamic segments, and metadata marked
+`indexable: false` are excluded. Pages without their own matching metadata stay
+out: inherited homepage canonicals must not qualify private or utility pages.
+
+Use `createLocalizedMarketingMetadata` with an English and Vietnamese message
+namespace containing `title` and `description`. Canonicals use unprefixed English
+URLs and `/vi` Vietnamese URLs. Both sitemap entries contain reciprocal language
+alternates and an English `x-default`.
+
+The Next config regenerates `public-routes.generated.json` before every dev/build,
+including Docker builds. Commit a refreshed manifest with the page change:
+
+```bash
+node scripts/generate-public-seo-routes.js
+node scripts/generate-public-seo-routes.js --check
+```
+
+`bun check` runs the second command and rejects stale manifests or conflicting
+static metadata assets. Dynamic content requires a publication-aware reader;
+never crawl arbitrary workspace, user, invitation, or shared-document routes.
+
+## Automatic content updates
+
+The sitemap opts into request-time rendering with `connection()`. Published
+editorial changelog entries are read with an anonymous Supabase client, preserving
+RLS and preventing a signed-in visitor from exposing privileged content.
+
+The reader requires `is_published`, a publication timestamp at or before the
+refresh time, and a valid single-segment slug. It paginates in a stable order and
+caches successful results with a one-hour revalidation interval. New entries and
+publication changes become discoverable on a subsequent request after that
+interval; deployment is unnecessary. Next may serve a stale result while its
+refresh completes. The maximum cache lifetime is one day. Query failures reject
+the refresh instead of caching a partial or empty successful sitemap.
+
+`lastmod` uses the later of actual publication and update timestamps. Static pages
+omit it because a build timestamp is not a reliable content modification date.
+The sitemap avoids invented freshness and does not depend on Git history being
+available in a deployment container.
+
+The reader stops at 20,000 changelog records to stay below the protocol limit of
+50,000 URLs after adding both locales and public pages. Reaching capacity fails
+explicitly: split the sitemap before increasing that bound.
+
+## Copy and structured data
+
+Keep page titles specific and descriptions aligned with visible product behavior.
+Use the public product pages for feature details; avoid unsupported customer
+counts, compliance claims, ratings, or automated actions. The homepage FAQ and
+main editorial sections are present in server-rendered HTML. Interactive demos
+and repository statistics can remain deferred.
+
+The homepage emits Organization, WebSite, WebPage, and WebApplication JSON-LD.
+The page language and description match its translated metadata. Escape `<` when
+serializing JSON-LD into HTML. Structured data does not guarantee a rich result.
+
+## Verification and search monitoring
+
+Run focused generator, sitemap-reader, and structured-data tests, then `bun check`
+and the web app build through the shared resource queue. For a deployed release:
+
+- Inspect `/sitemap.xml` and `/robots.txt` for successful XML/text responses.
+- Check new product routes and published changelog entries in both languages.
+- Inspect initial HTML for canonical, language alternates, translated titles,
+  descriptions, visible homepage copy, and JSON-LD.
+- Validate JSON-LD with Schema.org Validator or Google's Rich Results Test.
+- Submit `https://tuturuuu.com/sitemap.xml` in Google Search Console and Bing
+  Webmaster Tools. Use URL Inspection and indexing reports to track discovery.
+
+Search Console ownership and submission are external account operations. Code
+checks and sitemap delivery prove crawlability, not search rankings or indexing.
+
+References: [Google sitemap guidance](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap),
+[localized pages](https://developers.google.com/search/docs/specialty/international/localized-versions),
+and [Next.js sitemap metadata routes](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap).

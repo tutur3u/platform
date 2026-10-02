@@ -20,11 +20,10 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { sourceSizeCheck } = require('./check-source-size.js');
-
+const { publicSeoCheck } = require('./generate-public-seo-routes.js');
 const ROOT_DIR = path.resolve(__dirname, '..');
 const CHECK_QUEUE_ROOT = path.join(os.tmpdir(), 'tuturuuu-bun-check');
 const CHECK_QUEUE_POLL_MS = 250;
-
 const useTable = process.argv.includes('--table');
 const showTiming = process.argv.includes('--timing');
 const showDetails = process.argv.includes('--details');
@@ -271,6 +270,7 @@ const checks = [
     validateOutput: validateBiomeOutput,
   },
   sourceSizeCheck,
+  publicSeoCheck,
   {
     name: 'server-console',
     command: 'node',
