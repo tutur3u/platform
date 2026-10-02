@@ -25,3 +25,50 @@ it('bounds concurrent cases across jobs and releases failed slots', async () => 
   ).toHaveLength(9);
   expect(await withSandboxSlot(1, async () => 42)).toBe(42);
 });
+
+it('admits eligible small reservations past a waiting full-budget case', async () => {
+  let releaseFirst!: () => void;
+  const first = withSandboxSlot(
+    8,
+    () =>
+      new Promise<void>((resolve) => {
+        releaseFirst = resolve;
+      })
+  );
+  await Promise.resolve();
+  const order: string[] = [];
+  const full = withSandboxSlot(1, async () => {
+    order.push('full');
+  });
+  const small = withSandboxSlot(8, async () => {
+    order.push('small');
+  });
+  await small;
+  expect(order).toEqual(['small']);
+  releaseFirst();
+  await Promise.all([first, full]);
+  expect(order).toEqual(['small', 'full']);
+});
+
+it('never mixes a full host reservation with another job', async () => {
+  let release!: () => void;
+  const first = withSandboxSlot(
+    1,
+    () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+      })
+  );
+  await Promise.resolve();
+  let admitted = 0;
+  const small = Array.from({ length: 8 }, () =>
+    withSandboxSlot(8, async () => {
+      admitted++;
+    })
+  );
+  await Promise.resolve();
+  expect(admitted).toBe(0);
+  release();
+  await Promise.all([first, ...small]);
+  expect(admitted).toBe(8);
+});

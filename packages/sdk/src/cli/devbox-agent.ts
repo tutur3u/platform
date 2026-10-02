@@ -29,23 +29,27 @@ function connectWake(origin: string, token: string): WebSocket {
   });
 }
 
-function waitForWake(socket: WebSocket | null, timeoutMs: number) {
+function waitForWake(
+  socket: WebSocket | null,
+  timeoutMs: number,
+  localWake: EventTarget
+) {
   return new Promise<void>((resolve) => {
-    if (!socket || socket.readyState === WebSocket.CLOSED) {
-      setTimeout(resolve, timeoutMs);
-      return;
-    }
     const finish = () => {
       clearTimeout(timeout);
-      socket.removeEventListener('message', finish);
-      socket.removeEventListener('close', finish);
-      socket.removeEventListener('error', finish);
+      socket?.removeEventListener('message', finish);
+      socket?.removeEventListener('close', finish);
+      socket?.removeEventListener('error', finish);
+      localWake.removeEventListener('wake', finish);
       resolve();
     };
     const timeout = setTimeout(finish, timeoutMs);
-    socket.addEventListener('message', finish, { once: true });
-    socket.addEventListener('close', finish, { once: true });
-    socket.addEventListener('error', finish, { once: true });
+    localWake.addEventListener('wake', finish, { once: true });
+    if (socket && socket.readyState !== WebSocket.CLOSED) {
+      socket.addEventListener('message', finish, { once: true });
+      socket.addEventListener('close', finish, { once: true });
+      socket.addEventListener('error', finish, { once: true });
+    }
   });
 }
 
@@ -75,6 +79,7 @@ export async function runDevboxAgentLoop({
   let running = true;
   let wakeSocket: WebSocket | null = null;
   let pendingWake = false;
+  const localWake = new EventTarget();
   let nextHeartbeatAt = 0;
   const active = new Set<Promise<void>>();
   let restartRequested = false;
@@ -184,6 +189,7 @@ export async function runDevboxAgentLoop({
             .finally(() => {
               active.delete(task);
               pendingWake = true;
+              localWake.dispatchEvent(new Event('wake'));
             });
           active.add(task);
           if (maintenance) {
@@ -207,12 +213,24 @@ export async function runDevboxAgentLoop({
       if (controlOrigin)
         await waitForWake(
           wakeSocket,
-          Math.max(1, nextHeartbeatAt - Date.now())
+          Math.max(1, nextHeartbeatAt - Date.now()),
+          localWake
         );
-      else await new Promise((resolve) => setTimeout(resolve, 5000));
+      else await waitForWake(null, 5000, localWake);
     }
   } finally {
-    await Promise.all(active);
+    while (active.size > 0) {
+      await waitForJobs();
+      if (active.size > 0 && Date.now() >= nextHeartbeatAt) {
+        try {
+          await heartbeat();
+        } catch (error) {
+          failure ??= error;
+          nextHeartbeatAt = Date.now() + 20_000;
+          console.warn('Devbox heartbeat failed while draining active jobs.');
+        }
+      }
+    }
     wakeSocket?.close();
   }
   if (failure) throw failure;

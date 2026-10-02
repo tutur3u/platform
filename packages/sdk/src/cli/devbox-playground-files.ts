@@ -1,3 +1,5 @@
+// Two MiB of valid control-heavy text can require twelve MiB of JSON escaping.
+export const PLAYGROUND_EXPORT_BYTES = 16 * 1024 * 1024;
 // Runs INSIDE the unprivileged container. Never resolves customer paths on the host.
 export const PLAYGROUND_SYNC_SCRIPT = `
 import json, os, stat, sys
@@ -29,7 +31,7 @@ for entry in files:
 with open('/tmp/.ttr-files.json','w') as handle: json.dump(paths,handle)
 `;
 export const PLAYGROUND_EXPORT_SCRIPT = `
-import json, os, stat, sys
+import json, os, re, stat, sys
 files=[]; total=0
 excluded={'node_modules','.git','__pycache__','target','.venv'}
 for directory, folders, names in os.walk('/project',followlinks=False):
@@ -38,10 +40,13 @@ for directory, folders, names in os.walk('/project',followlinks=False):
         path=os.path.join(directory,name)
         info=os.lstat(path)
         if not stat.S_ISREG(info.st_mode): continue
-        if info.st_size>262144: raise ValueError('File exceeds Drive save limit')
+        relative=os.path.relpath(path,'/project')
+        if len(relative)>240 or any(not re.fullmatch(r'[a-zA-Z0-9_.@+-]+', p) or p in ('.','..') for p in relative.split('/')):
+            raise ValueError('Unsupported Drive file path: '+relative)
+        if info.st_size>262144: raise ValueError('File exceeds Drive save limit: '+relative)
         fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
         with os.fdopen(fd,'rb') as handle: data=handle.read(262145)
-        if len(data)>262144: raise ValueError('File grew beyond limit')
+        if len(data)>262144: raise ValueError('File grew beyond limit: '+relative)
         try: content=data.decode('utf-8')
         except UnicodeDecodeError: continue
         if chr(0) in content: continue
