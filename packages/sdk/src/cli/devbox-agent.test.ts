@@ -201,4 +201,91 @@ describe('Devbox agent upgrade handoff', () => {
       vi.useRealTimers();
     }
   });
+  it('wakes a control-plane idle wait when local execution finishes', async () => {
+    vi.useFakeTimers();
+    class FixtureSocket extends EventTarget {
+      static CLOSED = 3;
+      readyState = 1;
+      close() {
+        this.readyState = FixtureSocket.CLOSED;
+      }
+    }
+    vi.stubGlobal('WebSocket', FixtureSocket);
+    vi.stubEnv('TUTURUUU_DEVBOX_CONTROL_URL', 'https://control.example.test');
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    executeJob.mockImplementation(async (job: { runId: string }) => {
+      if (job.runId === 'first') await pending;
+      return { exitCode: 0, status: 'succeeded' };
+    });
+    pollJobs.mockResolvedValueOnce({
+      ok: true,
+      jobs: [{ runId: 'first', command: ['echo'] }],
+    });
+    pollJobs.mockResolvedValueOnce({ ok: true, jobs: [] });
+    pollJobs.mockResolvedValue({
+      ok: true,
+      jobs: [{ runId: 'restart', command: ['__ttr_restart_agent_v1__'] }],
+    });
+    const loop = runDevboxAgentLoop({
+      baseUrl: 'https://example.test',
+      token: 'fixture',
+    });
+    try {
+      await vi.waitFor(() => expect(pollJobs).toHaveBeenCalledTimes(2));
+      const before = Date.now();
+      release();
+      await vi.waitFor(() => expect(pollJobs).toHaveBeenCalledTimes(3));
+      expect(Date.now() - before).toBeLessThan(1000);
+      await loop;
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      release();
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  });
+  it('keeps active leases heartbeating while draining after another job fails', async () => {
+    vi.useFakeTimers();
+    let fail!: (error: Error) => void;
+    let release!: () => void;
+    const failed = new Promise<never>((_, reject) => {
+      fail = reject;
+    });
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    executeJob.mockImplementation(async (job: { runId: string }) => {
+      if (job.runId === 'failed') await failed;
+      else await pending;
+      return { exitCode: 0, status: 'succeeded' };
+    });
+    pollJobs.mockResolvedValue({
+      ok: true,
+      jobs: [
+        { runId: 'failed', command: ['echo'] },
+        { runId: 'active', command: ['echo'] },
+      ],
+    });
+    const loop = runDevboxAgentLoop({
+      baseUrl: 'https://example.test',
+      token: 'fixture',
+      once: true,
+    });
+    const outcome = expect(loop).rejects.toThrow('synthetic failure');
+    try {
+      await vi.waitFor(() => expect(executeJob).toHaveBeenCalledTimes(2));
+      fail(new Error('synthetic failure'));
+      await vi.advanceTimersByTimeAsync(40_000);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+      release();
+      await outcome;
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      release();
+      vi.useRealTimers();
+    }
+  });
 });

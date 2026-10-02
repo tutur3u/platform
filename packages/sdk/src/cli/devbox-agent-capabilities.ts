@@ -13,10 +13,6 @@ import {
 } from 'node:os';
 import packageJson from '../../package.json';
 import { getJudgeReadiness } from './devbox-judge-sandbox';
-import {
-  getPlaygroundReadiness,
-  playgroundEnvironmentCount,
-} from './devbox-playground-sandbox';
 
 const VERSION_TIMEOUT_MS = 1500;
 let staticCapabilitiesPromise: Promise<{
@@ -41,10 +37,8 @@ let judgeReadinessPromise: Promise<
   Awaited<ReturnType<typeof getJudgeReadiness>>
 > | null = null;
 let judgeReadinessAt = 0;
-let readinessSnapshot: {
-  judge: Awaited<ReturnType<typeof getJudgeReadiness>>;
-  playground: Awaited<ReturnType<typeof getPlaygroundReadiness>>;
-} | null = null;
+let readinessSnapshot: Awaited<ReturnType<typeof getJudgeReadiness>> | null =
+  null;
 let refreshing: Promise<void> | null = null;
 
 function firstLine(value: string) {
@@ -121,16 +115,12 @@ export async function createDevboxAgentCapabilities() {
   staticCapabilitiesPromise ??= readStaticCapabilities();
   if (!readinessSnapshot) {
     judgeReadinessPromise ??= getJudgeReadiness();
-    const [judge, playground] = await Promise.all([
-      judgeReadinessPromise,
-      getPlaygroundReadiness(),
-    ]);
-    readinessSnapshot = { judge, playground };
+    readinessSnapshot = await judgeReadinessPromise;
     judgeReadinessAt = Date.now();
   } else if (Date.now() - judgeReadinessAt > 600_000 && !refreshing) {
-    refreshing = Promise.all([getJudgeReadiness(), getPlaygroundReadiness()])
-      .then(([judge, playground]) => {
-        readinessSnapshot = { judge, playground };
+    refreshing = getJudgeReadiness()
+      .then((judge) => {
+        readinessSnapshot = judge;
         judgeReadinessAt = Date.now();
       })
       .catch(() => {
@@ -141,12 +131,11 @@ export async function createDevboxAgentCapabilities() {
       });
   }
   const staticCapabilities = await staticCapabilitiesPromise;
-  const { judge, playground } = readinessSnapshot;
+  const judge = readinessSnapshot;
 
   return {
     ...staticCapabilities,
     judge,
-    playground: { ...playground, environments: playgroundEnvironmentCount() },
     reportedAt: new Date().toISOString(),
     resources: {
       cpu: {

@@ -388,8 +388,11 @@ already admitted commands and container cleanup before reporting failure.
 Regression coverage lives in `devbox-sandbox-slots.test.ts` and
 `devbox-judge-case-batch.test.ts`. Maintenance and CLI
 restart jobs drain active work before changing the agent. An execution failure
-stops new dispatch and drains already active work before the agent exits. Readiness probes are
-cached for ten minutes and refreshed in the background; execution still fails
+stops new dispatch and drains already active work before the agent exits. Heartbeats
+continue during that drain, and local completions wake idle claim polling. The
+parent scheduling client omits Playground capabilities until both heartbeat
+contracts support them; `devbox-agent-capabilities.test.ts` exercises its emitted
+body against both current handlers. Judge readiness probes are cached for ten minutes and refreshed in the background; execution still fails
 closed if required isolation or language images are unavailable.
 
 Platform-managed playground workers opt in through operator configuration. They
@@ -399,10 +402,16 @@ dependencies while warm, expire after fifteen idle minutes and have a two-hour
 maximum lifetime. Environment count is bounded by the runner's resource limits.
 A failed container removal retains its capacity reservation until a successful
 removal or healthy Docker inventory confirms the container is absent. Failed
-startup orphan cleanup blocks new environments rather than oversubscribing the host.
-Stopping waits for already admitted container creation, with a fifteen-second
+startup orphan cleanup blocks new environments and is retried on the next
+admission. Creation and stop removal share the same pool lock. Same-project runs
+serialize synchronization, execution and saves; stop invalidates queued runs
+without waiting for a running command. Stopping waits for admitted creation, with a fifteen-second
 wait bound; a timeout reports an unconfirmed stop and retains capacity ownership.
-It does not wait for the arbitrary project command to finish.
+It does not wait for the arbitrary project command to finish. Python helpers use
+the pinned image PATH, including images that install Python under `/usr/local/bin`.
+A failed background save emits a fixed diagnostic and makes the run report
+incomplete persistence rather than silently claiming success. These lifecycle
+rules are covered by `devbox-playground-sandbox.test.ts`.
 File inventories and changed bytes are exported separately; credentials and
 runner metadata never enter project files. File/directory conflicts are checked
 against every path ancestor, and preview paths reject traversal before URL

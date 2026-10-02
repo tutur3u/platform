@@ -8,7 +8,32 @@ export async function sandboxDocker(
   const child = spawn('docker', args, {
     shell: false,
     stdio: 'pipe',
-    env: { PATH: process.env.PATH },
+    // Docker CLI selectors stay on the trusted host; none are container --env.
+    env: Object.fromEntries(
+      [
+        'PATH',
+        'HOME',
+        'DOCKER_HOST',
+        'DOCKER_CONTEXT',
+        'DOCKER_CONFIG',
+        'DOCKER_TLS',
+        'DOCKER_TLS_VERIFY',
+        'DOCKER_CERT_PATH',
+        'DOCKER_API_VERSION',
+        'SSH_AUTH_SOCK',
+        'XDG_RUNTIME_DIR',
+        'HTTP_PROXY',
+        'HTTPS_PROXY',
+        'ALL_PROXY',
+        'NO_PROXY',
+        'http_proxy',
+        'https_proxy',
+        'all_proxy',
+        'no_proxy',
+      ].flatMap((key) =>
+        process.env[key] === undefined ? [] : [[key, process.env[key]]]
+      )
+    ),
   });
   const chunks: Buffer[] = [];
   const errors: Buffer[] = [];

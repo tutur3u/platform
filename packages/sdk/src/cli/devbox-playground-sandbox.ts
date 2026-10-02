@@ -16,6 +16,7 @@ import {
   readJudgeDockerCapacity,
 } from './devbox-judge-sandbox';
 import {
+  PLAYGROUND_EXPORT_BYTES,
   PLAYGROUND_EXPORT_SCRIPT,
   PLAYGROUND_PREVIEW_SCRIPT,
   PLAYGROUND_SYNC_SCRIPT,
@@ -156,25 +157,82 @@ async function clearOrphanedEnvironments() {
     '--filter',
     `label=ttr.pool=${POOL_OWNER}`,
   ]);
-  if (result.code !== 0) throw new Error('Playground Docker inventory failed');
+  if (result.code !== 0 || result.exceeded || result.timedOut)
+    throw new Error('Playground Docker inventory failed');
   for (const id of result.output.trim().split('\n').filter(Boolean)) {
     if (/^[0-9a-f]{12,64}$/.test(id)) await removeContainer(id, `id=${id}`);
+  }
+}
+async function withPoolLock<T>(action: () => Promise<T>, bounded = false) {
+  const previous = creating;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  creating = previous.then(() => gate);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      previous,
+      ...(bounded
+        ? [
+            new Promise<never>((_, reject) => {
+              timer = setTimeout(
+                () =>
+                  reject(
+                    new Error(
+                      'Playground creation is still pending; stop was not confirmed'
+                    )
+                  ),
+                15_000
+              );
+            }),
+          ]
+        : []),
+    ]);
+    return await action();
+  } finally {
+    if (timer) clearTimeout(timer);
+    // The chain still awaits previous even after a bounded acquisition times out.
+    release();
+  }
+}
+const runningProjects = new Map<
+  string,
+  { tail: Promise<void>; generation: number }
+>();
+async function withProjectRun<T>(projectId: string, action: () => Promise<T>) {
+  const existing = runningProjects.get(projectId);
+  const state = existing ?? { tail: Promise.resolve(), generation: 0 };
+  const generation = state.generation;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const previous = existing?.tail;
+  const tail = previous ? previous.then(() => gate) : gate;
+  state.tail = tail;
+  runningProjects.set(projectId, state);
+  if (previous) await previous;
+  try {
+    if (generation !== state.generation)
+      throw new Error('Playground run was stopped before execution');
+    return await action();
+  } finally {
+    release();
+    if (state.tail === tail) runningProjects.delete(projectId);
   }
 }
 async function ensureEnvironment(
   payload: PlaygroundJobPayload,
   limits: JudgeResourceLimits
 ) {
-  // One service process owns this pool. Serial creation prevents resource oversubscription.
-  const previous = creating;
-  let release!: () => void;
-  creating = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  await previous;
-  try {
+  return withPoolLock(async () => {
     validatePoolOwner();
-    cleanup ??= clearOrphanedEnvironments();
+    cleanup ??= clearOrphanedEnvironments().catch((error) => {
+      cleanup = null;
+      throw error;
+    });
     await cleanup;
     const image = parsePlaygroundImages()[payload.language];
     if (!image) throw new Error('Language unavailable');
@@ -233,30 +291,7 @@ async function ensureEnvironment(
     });
     touch(payload.projectId);
     return name;
-  } finally {
-    release();
-  }
-}
-async function waitForPendingCreation() {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    await Promise.race([
-      creating,
-      new Promise<never>((_, reject) => {
-        timer = setTimeout(
-          () =>
-            reject(
-              new Error(
-                'Playground creation is still pending; stop was not confirmed'
-              )
-            ),
-          15_000
-        );
-      }),
-    ]);
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
+  });
 }
 export async function getPlaygroundReadiness() {
   try {
@@ -285,7 +320,7 @@ export async function getPlaygroundReadiness() {
           image,
           'sh',
           '-c',
-          `test -x /usr/bin/python3 && command -v ${language === 'shell' ? 'sh' : judgeLanguageBinary(language as Exclude<PlaygroundLanguage, 'shell'>)} >/dev/null`,
+          `command -v python3 >/dev/null && command -v ${language === 'shell' ? 'sh' : judgeLanguageBinary(language as Exclude<PlaygroundLanguage, 'shell'>)} >/dev/null`,
         ],
         '',
         15000
@@ -324,11 +359,26 @@ export async function runPlaygroundJob(
   );
   validatePoolOwner();
   if (payload.operation === 'stop') {
+    const running = runningProjects.get(payload.projectId);
+    if (running) running.generation++;
     // Wait only for admitted creation, never the arbitrary user command.
-    await waitForPendingCreation();
-    await removeEnvironment(payload.projectId);
+    await withPoolLock(() => removeEnvironment(payload.projectId), true);
     return { code: 0, output: '', files: null, preview: null };
   }
+  if (payload.operation === 'run')
+    return withProjectRun(payload.projectId, () =>
+      executePlayground(payload, limits, save)
+    );
+  return executePlayground(payload, limits, save);
+}
+async function executePlayground(
+  payload: PlaygroundJobPayload,
+  limits: JudgeResourceLimits,
+  save?: (delta: {
+    files: { path: string; content: string }[];
+    paths: string[];
+  }) => Promise<void>
+) {
   const name = await ensureEnvironment(payload, limits);
   if (payload.operation === 'preview') {
     const url = `http://127.0.0.1:${payload.port}${payload.path}`;
@@ -336,7 +386,7 @@ export async function runPlaygroundJob(
       [
         'exec',
         name,
-        '/usr/bin/python3',
+        'python3',
         '-I',
         '-S',
         '-B',
@@ -357,7 +407,7 @@ export async function runPlaygroundJob(
       'exec',
       '--interactive',
       name,
-      '/usr/bin/python3',
+      'python3',
       '-I',
       '-S',
       '-B',
@@ -381,20 +431,29 @@ export async function runPlaygroundJob(
     payload.files!.map((file) => [file.path, file.content])
   );
   let saveChain = Promise.resolve();
+  let snapshotFailed = false;
   const snapshot = async () => {
-    const exported = await sandboxDocker([
-      'exec',
-      name,
-      '/usr/bin/python3',
-      '-I',
-      '-S',
-      '-B',
-      '-c',
-      PLAYGROUND_EXPORT_SCRIPT,
-      PLAYGROUND_PREVIEW_SCRIPT,
-    ]);
-    if (exported.code !== 0 || exported.exceeded)
-      throw new Error('Could not export project files');
+    const exported = await sandboxDocker(
+      [
+        'exec',
+        name,
+        'python3',
+        '-I',
+        '-S',
+        '-B',
+        '-c',
+        PLAYGROUND_EXPORT_SCRIPT,
+      ],
+      '',
+      15_000,
+      PLAYGROUND_EXPORT_BYTES
+    );
+    if (exported.code !== 0 || exported.exceeded || exported.timedOut) {
+      const fileError = exported.stderr.match(
+        /ValueError: ((?:Unsupported Drive file path|File exceeds Drive save limit|File grew beyond limit): [^\r\n]{1,240})/u
+      )?.[1];
+      throw new Error(fileError ?? 'Could not export project files');
+    }
     const files = PlaygroundFiles.parse(JSON.parse(exported.output)).sort(
       (a, b) => a.path.localeCompare(b.path)
     );
@@ -415,9 +474,14 @@ export async function runPlaygroundJob(
   };
   const background = setInterval(() => {
     saveChain = saveChain
-      .then(() => snapshot())
+      .then(() => (snapshotFailed ? undefined : snapshot()))
       .then(() => {})
-      .catch(() => {});
+      .catch(() => {
+        snapshotFailed = true;
+        console.warn(
+          'Managed playground background snapshot failed; run persistence is incomplete.'
+        );
+      });
   }, 30_000);
   let result: Awaited<ReturnType<typeof sandboxDocker>>;
   try {
@@ -441,6 +505,10 @@ export async function runPlaygroundJob(
         : 'Playground output limit exceeded'
     );
   }
+  if (snapshotFailed)
+    throw new Error(
+      'Playground background snapshot failed; project changes were not confirmed saved'
+    );
   const files = await snapshot();
   touch(payload.projectId);
   return {
