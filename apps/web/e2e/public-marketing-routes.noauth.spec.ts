@@ -358,7 +358,10 @@ test.describe('Public migrated marketing routes', () => {
         page
           .getByRole('heading', {
             level: 1,
-            name: /Your Team\.\s+One Workspace\./u,
+            name:
+              process.env.DOCKER_WEB_FRONTEND === 'tanstack'
+                ? /Work Smarter\.\s+Live Better\./u
+                : /Your Team\.\s+One Workspace\./u,
           })
           .first()
       ).toBeVisible({ timeout: 30_000 });
