@@ -4,14 +4,13 @@ import { sign } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
-
+import { isTuturuuuReviewEmail } from '../../packages/utils/src/email/reviewer-domain.mjs';
 import {
   BetaHistoryUnavailableError,
   ensureBuildWhatsNew,
   originalBuildHistory,
   uploadedBuildTestNotes,
 } from './build-test-notes.mjs';
-import { isTuturuuuReviewEmail } from '../../packages/utils/src/email/reviewer-domain.mjs';
 
 const APP_ID = 'com.tuturuuu.app.mobile';
 const APPLE_ORIGIN = 'https://api.appstoreconnect.apple.com';
