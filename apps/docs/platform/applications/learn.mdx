@@ -171,7 +171,10 @@ submission history through its permanent identity binding.
 These decisions apply to the Learn catalog, problem workspace, author forms, and
 shared Programming lab. Backend access, case capacity, pagination, history, and
 subject regressions live in `packages/education-core/src/education/programming-*.test.ts`
-and `apps/web/src/lib/programming-api.test.ts`. Learn actor/history regressions
+and `apps/web/src/lib/programming-api.test.ts`. The disposable actual Next/auth/API
+regression is `apps/web/e2e/programming-catalog.noauth.spec.ts`; it exercises RPC
+author writes, stale revisions, hidden-case filtering, and workspace isolation.
+Learn actor/history regressions
 live in `apps/learn/src/lib/programming/server.test.ts` and
 `apps/learn/src/lib/coding/programming-store.test.ts`; scoped draft regressions
 live in `apps/learn/src/lib/programming/drafts.test.ts`. The mounted canonical
