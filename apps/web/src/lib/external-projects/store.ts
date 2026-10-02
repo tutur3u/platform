@@ -1,3 +1,13 @@
+import {
+  buildDeliveryAssetUrl,
+  getExternalProjectAssetRevision,
+} from './asset-delivery-url';
+
+export {
+  buildDeliveryAssetUrl,
+  getExternalProjectAssetRevision,
+} from './asset-delivery-url';
+
 import { createHash } from 'node:crypto';
 import { deleteWorkspaceStorageObjectByPath } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -34,6 +44,7 @@ import type {
   YoolaExternalProjectLoreCapsuleLoadingItem,
   YoolaExternalProjectSectionLoadingItem,
 } from '@tuturuuu/types';
+import { safeExternalProjectDeliverySourceUrl } from './asset-delivery-url';
 import { invalidateWorkspaceExternalProjectCache } from './cache';
 import {
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
@@ -237,48 +248,6 @@ function findAssetCaption(
     | undefined
 ) {
   return asString(asJsonObject(asset?.metadata).caption);
-}
-
-export function buildDeliveryAssetUrl(
-  workspaceId: string,
-  asset: {
-    id: string;
-    updated_at: string;
-  },
-  options?: {
-    transform?: ImageTransformOptions;
-  }
-) {
-  const searchParams = new URLSearchParams();
-  searchParams.set('v', getExternalProjectAssetRevision(asset.updated_at));
-
-  if (options?.transform?.width !== undefined) {
-    searchParams.set('width', options.transform.width.toString());
-  }
-
-  if (options?.transform?.height !== undefined) {
-    searchParams.set('height', options.transform.height.toString());
-  }
-
-  if (options?.transform?.resize) {
-    searchParams.set('resize', options.transform.resize);
-  }
-
-  if (options?.transform?.quality !== undefined) {
-    searchParams.set('quality', options.transform.quality.toString());
-  }
-
-  if (options?.transform?.format) {
-    searchParams.set('format', options.transform.format);
-  }
-
-  const queryString = searchParams.toString();
-
-  return `/api/v1/workspaces/${workspaceId}/external-projects/assets/${asset.id}${queryString ? `?${queryString}` : ''}`;
-}
-
-export function getExternalProjectAssetRevision(updatedAt: string) {
-  return updatedAt.replace(/\D/g, '') || '0';
 }
 
 function getExternalProjectDeliveryRevision(
@@ -3006,7 +2975,10 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
             id: asset.id,
             metadata: asset.metadata,
             sort_order: asset.sort_order,
-            source_url: asset.source_url,
+            source_url: safeExternalProjectDeliverySourceUrl(
+              asset.source_url,
+              buildDeliveryAssetUrl(workspaceId, asset)
+            ),
             storage_path: asset.storage_path,
             updated_at: asset.updated_at,
             assetRevision: getExternalProjectAssetRevision(asset.updated_at),

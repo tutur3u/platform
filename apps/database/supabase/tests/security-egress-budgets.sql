@@ -1,0 +1,15 @@
+BEGIN;
+CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
+SET LOCAL search_path = public, extensions;
+SELECT plan(7);
+SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);
+SELECT is(public.reserve_security_budget('[{"key":"api-cost:v1:test-global","amount":1,"maximum":2,"ttl":120},{"key":"api-cost:v1:test-workspace","amount":1,"maximum":1,"ttl":120}]'::jsonb), ARRAY[1,0]::bigint[], 'reserves all dimensions');
+SELECT is(public.reserve_security_budget('[{"key":"api-cost:v1:test-global","amount":1,"maximum":2,"ttl":120},{"key":"api-cost:v1:test-workspace","amount":1,"maximum":1,"ttl":120}]'::jsonb), ARRAY[0,2]::bigint[], 'workspace exhaustion denies the whole reservation');
+SELECT is((SELECT used FROM private.security_budget_counters WHERE key='api-cost:v1:test-global'), 1::bigint, 'failed reservations do not increment earlier dimensions');
+SELECT is(public.reserve_security_budget('[{"key":"api-cost:v1:test-global","amount":2,"maximum":2,"ttl":120},{"key":"api-cost:v1:denied-new-key","amount":1,"maximum":1,"ttl":120}]'::jsonb), ARRAY[0,1]::bigint[], 'global exhaustion is checked first');
+SELECT is((SELECT count(*) FROM private.security_budget_counters WHERE key='api-cost:v1:denied-new-key'), 0::bigint, 'denied global requests cannot allocate new workspace counters');
+SELECT set_config('request.jwt.claims', '{"role":"authenticated"}', true);
+SELECT throws_ok($$SELECT public.reserve_security_budget('[{"key":"api-cost:v1:test-global","amount":1,"maximum":2,"ttl":120}]'::jsonb)$$, '42501', 'Service role required', 'user JWTs cannot reset or spend server budgets');
+SELECT ok(NOT has_function_privilege('anon', 'public.reserve_security_budget(jsonb)', 'EXECUTE'), 'anonymous requests cannot call the reservation RPC');
+SELECT * FROM finish();
+ROLLBACK;

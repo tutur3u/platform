@@ -1,3 +1,9 @@
+vi.mock('server-only', () => ({}));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn(),
+}));
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -101,7 +107,7 @@ describe('external project asset route', () => {
     });
 
     const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
     );
 
     const response = await GET(
@@ -170,7 +176,7 @@ describe('external project asset route', () => {
     });
 
     const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
     );
 
     const response = await GET(
@@ -233,7 +239,7 @@ describe('external project asset route', () => {
     });
 
     const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
     );
 
     const response = await GET(
@@ -311,7 +317,7 @@ describe('external project asset route', () => {
     });
 
     const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
     );
 
     const response = await GET(
@@ -386,7 +392,7 @@ describe('external project asset route', () => {
     });
 
     const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
     );
 
     const response = await GET(
@@ -416,7 +422,7 @@ describe('external project asset route', () => {
     });
 
     const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
     );
 
     const response = await GET(
@@ -468,7 +474,7 @@ describe('external project asset route', () => {
     });
 
     const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
     );
 
     const response = await GET(
@@ -502,7 +508,7 @@ describe('external project asset route', () => {
     });
 
     const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
     );
 
     const response = await PATCH(
@@ -546,7 +552,7 @@ describe('external project asset route', () => {
     });
 
     const { PATCH } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
     );
 
     const response = await PATCH(

@@ -1,0 +1,145 @@
+---
+title: Storage egress protection
+description: Bound private workspace downloads and respond to signed URL replay attacks.
+---
+
+## Download boundary
+
+Supabase-backed workspace read URLs created through `storage-core` and the SDK
+share APIs point to `/api/v1/storage/guarded-download/:token`. The token encrypts
+the upstream bearer URL with AES-GCM; callers never receive the Supabase URL.
+Existing Drive/Finance permission checks still control ticket issuance. Tickets
+remain bearer links: anyone with a ticket can read until it expires or is revoked,
+subject to the same shared download limits.
+
+The relay checks per-file and global request limits, inspects the object with HEAD,
+then atomically reserves its full size against global daily/monthly and workspace
+daily byte budgets before issuing a GET. Postgres serializes the multi-key checks.
+Aborted or failed downloads retain their reservation to keep accounting
+conservative. Single byte ranges are supported and reserve the full object size.
+Upstream redirects, unknown lengths, and bodies exceeding their reservation are
+rejected. Responses use `private, no-store`; upstream credentials and redirects
+are never forwarded. Missing or unavailable budget RPC denies downloads with 503.
+
+The SDK download route uses the same relay. Cloudflare R2 URLs retain their
+existing provider behavior. The future Rust dispatcher delegates protected
+storage download/share routes to live Next.js until the relay is ported.
+
+## Configuration
+
+Apply the budget migration before deploying, and use the same Supabase project
+and configuration on every web replica. Redis is not required:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| Supabase service role configuration | Required | Existing database reserves shared counters through a service-only RPC |
+| `WEB_APP_URL` | Required, with `NEXT_PUBLIC_WEB_APP_URL` / `NEXT_PUBLIC_APP_URL` fallback | Trusted public origin of the web relay |
+| `STORAGE_DOWNLOAD_SIGNING_SECRET` | `SUPABASE_SECRET_KEY` | Server-only encryption key; set a dedicated secret to rotate download tickets independently |
+| `STORAGE_DOWNLOAD_GLOBAL_DAILY_BYTES` | 5 GiB | Daily cap across all guarded workspaces |
+| `STORAGE_DOWNLOAD_GLOBAL_MONTHLY_BYTES` | 100 GiB | Monthly cap across all guarded workspaces |
+| `STORAGE_DOWNLOAD_WORKSPACE_DAILY_BYTES` | 2 GiB | Daily cap per workspace |
+| `STORAGE_DOWNLOAD_REQUESTS_PER_MINUTE` | 3000 | Requests including HEAD across the relay |
+| `STORAGE_DOWNLOAD_FILE_REQUESTS_PER_MINUTE` | 30 | Requests for one file, shared across tickets and IPs |
+| `STORAGE_DOWNLOADS_DISABLED` | `false` | Set `true` to deny ticket issuance and relay requests |
+| `STORAGE_DOWNLOAD_REVOKED_BEFORE` | `0` | Reject tickets issued at or before this Unix timestamp |
+
+Byte/request overrides must be positive safe integers. Invalid settings deny
+downloads. Windows follow UTC calendar days/months; rate limits reset each UTC
+minute. Budget exhaustion returns 429 with `Retry-After`. These limits protect
+guarded private workspace downloads, not all organization usage or all storage
+buckets. Other services and public assets can still incur charges. Review caps
+against legitimate traffic before release; video playback and export jobs can
+consume reservations faster because each range reserves the complete object.
+
+## Respond to an incident
+
+1. Export billing usage and available logs. In Logs Explorer, aggregate Storage
+   GET paths, cache hits, response length, timing, and source networks. Treat
+   user-agent labels as untrusted; they do not identify the operator.
+2. Confirm whether the attacked link is a guarded ticket or an old direct
+   Supabase signed URL. App rate limits cannot intercept direct CDN requests.
+3. For guarded links, set `STORAGE_DOWNLOADS_DISABLED=true` across web replicas
+   to stop downloads; use the revocation cutoff to invalidate existing tickets
+   before restoring service. These environment changes require a runtime rollout.
+4. For previously issued direct signed URLs, ask Supabase support about
+   revocation. If authorized, remove the attacked object through the Storage API
+   and wait for CDN invalidation; preserve any necessary copy first. Never delete
+   metadata directly in SQL or assume an app deployment invalidates CDN URLs.
+5. Review the organization's Spend Cap separately. It is a provider safeguard
+   for covered usage, can restrict service at quota, and does not erase an invoice.
+6. Open a billing incident ticket with the invoice number, dates, object path,
+   counts, and size. Request metering review and a discretionary credit without
+   assuming a refund is available.
+
+[Supabase signed URL guidance](https://supabase.com/docs/guides/storage/serving/downloads)
+and [cost controls](https://supabase.com/docs/guides/platform/cost-control) describe
+provider-side options. Never include raw signed URLs, tokens, or keys in tickets,
+logs, fixtures, or source.
+
+## Verification and release
+
+Run the storage-core token/budget/relay tests and the API-key reserved-path tests,
+then `bun check`. Use exact-commit CI for the real web build. Verify in an
+authorized deployed environment with a small synthetic file: read/HEAD, one
+range, tampered/expired tickets, rate/budget exhaustion, and budget RPC outage. Never
+load-test large production objects to prove the limiter; use mocked upstreams
+and a disposable Postgres database for concurrent budget tests.
+
+Protection starts only after deployment. Existing direct URLs remain outside
+the relay, and the organization Spend Cap remains an independent setting.
+
+## CMS and existing APIs
+
+The web proxy reserves a shared request slot before trusted CLI and versioned
+CMS asset bypasses. All existing web API routes share
+`API_GLOBAL_REQUESTS_PER_MINUTE` (default 10,000). Workspace CMS and external-app
+APIs additionally share `CMS_WORKSPACE_REQUESTS_PER_MINUTE` (default 600), across
+asset IDs, query strings, credentials and client IP addresses. OPTIONS does not
+consume a slot. Database failure or invalid configuration returns 503; exhausted
+limits return 429 with Retry-After. Existing authentication, scopes and caller
+limits still apply. Requests served entirely from a CDN cache may bypass the
+origin proxy; response byte protection applies at the download relay.
+
+Workspace CMS asset redirects are no-store. Stored source_url links pointing
+to the configured Supabase origin must be workspace-scoped signed private
+Storage URLs and are wrapped in guarded tickets. Public/raw Supabase source
+URLs are refused; migrate such records to managed workspace assets. Public
+delivery JSON also replaces Supabase source_url values with the asset API path. External
+hosts retain their normal URLs. WebGL server downloads use the same shared byte
+budgets as browser downloads. R2 delivery remains outside Supabase byte budgets.
+
+Before release, purge previously cached CMS asset redirects and revoke exposed
+Supabase URLs. Existing client-held URLs cannot be intercepted retrospectively.
+Public Supabase buckets and any unrelated direct signing call sites are not
+made private by an API proxy limit; audit them separately.
+
+## Postgres rollout and budget tradeoffs
+
+Apply `20261002153000_security_egress_budgets.sql` before the application rollout.
+The service-only RPC atomically checks all dimensions before incrementing any.
+Private counters have no browser access, store hashed file/workspace identities,
+and expire through a bounded pg_cron cleanup every minute. They never store
+request bodies, IP addresses, URLs, bearer tokens or user records. No per-request
+audit row and no Redis subscription are required.
+
+The RPC uses one transaction advisory lock with a 500 ms lock timeout and a
+2 second statement timeout. This favors a bounded bill over availability under
+a severe flood: database saturation returns 503 instead of allowing unmetered
+traffic. It adds an RPC to each origin API request and two to each download.
+Provider WAF controls should reject floods before they reach the application;
+these counters protect accepted origin traffic and do not eliminate database or
+application hosting costs. There is no replica-local allowance or Redis/Postgres
+backend switch that could reset the authoritative budget.
+
+Regenerate Supabase types after applying the migration locally. The server-only
+RPC client validates reservation responses and aborts stalled calls after three seconds.
+
+## CI contract gate
+
+`security-egress-contract.yaml` applies the complete migration schema in an
+isolated disposable Supabase database, requires every assertion in
+`security-egress-budgets.sql` to pass, and checks five concurrent database clients
+accept exactly 50 of 100 reservations against a shared allowance of 50. The job
+also generates Supabase types and uploads them as an artifact for the exact PR
+commit. CI must pass before merging; production migration application and
+activation remain separate from merging this change.
