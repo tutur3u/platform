@@ -64,16 +64,28 @@ async function readNetworkPolicy(run) {
   console.info('Programming policy checkpoint=daemon-json');
   const daemon = JSON.parse(await run(['cat', '/etc/docker/daemon.json']));
   console.info('Programming policy checkpoint=kernel-json');
-  const programs = JSON.parse(
-    await run([
+  const kernelOutput = await run([
       'bpftool',
       '-j',
       'cgroup',
       'show',
       networkPolicy.cgroupPath,
       'effective',
-    ])
-  );
+    ]);
+  let programs;
+  try {
+    programs = JSON.parse(kernelOutput);
+  } catch {
+    const shape = kernelOutput.startsWith('[')
+      ? 'array-prefix'
+      : kernelOutput.startsWith('{')
+        ? 'object-prefix'
+        : kernelOutput.length === 0
+          ? 'empty'
+          : 'non-json-prefix';
+    console.warn(`Programming policy mismatch=kernel-json shape=${shape}`);
+    throw new Error('Kernel filter inventory JSON unavailable');
+  }
   console.info('Programming policy checkpoint=slice-addresses');
   if (!Array.isArray(programs)) {
     console.warn('Programming policy mismatch=kernel-shape');
