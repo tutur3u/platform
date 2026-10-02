@@ -1,6 +1,7 @@
 ---
 title: Learn learner app
 description: Student and parent-facing education app for Tuturuuu workspaces.
+updatedAt: 2026-10-01
 ---
 
 Learn lives in `apps/learn` and runs locally on port `7812`. It is the learner-facing companion to the main Tuturuuu web platform: students and parents use Learn for lessons, practice, assignments, reports, marks, XP, streaks, and hearts, while teachers and admins manage education data in Teach.
@@ -21,7 +22,7 @@ to Web; they do not proxy a path that Learn implements locally.
 
 ## Programming
 
-The Learn Coding Lab is available inside eligible education workspaces. Its
+The Learn Programming workspace is available inside eligible education workspaces. Its
 default layout fills the available dashboard viewport: a compact challenge and
 language picker sits above a resizable problem pane, code editor, and test
 console. Narrow screens use vertically resizable panes. Monaco runs in the
@@ -95,7 +96,7 @@ XP awards and heart loss must go through the database RPCs `award_tulearn_xp` an
 
 Courses, modules, quiz sets, flashcards, assignments, monthly reports, and marks continue to reuse existing education and user-group tables.
 
-## Programming
+## Programming route and operations
 
 Learn owns the learner-facing Programming workspace at `/[wsId]/coding`. It starts with
 curated array, search, and stack exercises. Students in a workspace with
@@ -174,3 +175,5 @@ Deployment credentials must stay environment-scoped in GitHub Actions. The previ
 Preview dispatch is manual-only. Run `vercel-preview-learn.yaml` from `main`, set `preview_ref` to the reviewed branch, tag, or SHA, and keep `TRUSTED_PREVIEW_DEPLOY_ACTORS` limited to maintainers approved to run secret-backed preview builds. Manual production dispatch is only valid from `refs/heads/production`.
 
 `apps/learn/vercel.json` disables Vercel Git deployments and GitHub integration so preview and production deploys only happen through the CI workflows.
+
+The full-bleed shell measures its mobile navigation header, including safe-area padding and wrapped rows, and reserves bottom safe-area space inside the viewport. Disabled Run and Submit controls expose their tooltips to keyboard focus. Font loading failures retain fallback editor metrics without unhandled rejections. Source regression coverage is in `apps/learn/tests/programming-workspace/review-regressions.node-test.mjs`; real mobile and Next build checks remain separate verification gates.

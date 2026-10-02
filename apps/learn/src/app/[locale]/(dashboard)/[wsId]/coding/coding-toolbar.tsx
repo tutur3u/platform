@@ -85,7 +85,7 @@ export function CodingToolbar({
       </Select>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span>
+          <span className="inline-flex" tabIndex={disabled ? 0 : undefined}>
             <Button
               aria-label={t('runTests')}
               variant="outline"
@@ -102,7 +102,7 @@ export function CodingToolbar({
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span>
+          <span className="inline-flex" tabIndex={disabled ? 0 : undefined}>
             <Button
               aria-label={submitting ? t('submitting') : t('submit')}
               size="icon"

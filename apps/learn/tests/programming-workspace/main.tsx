@@ -6,7 +6,7 @@ Object.assign(window, { qaMonaco: monaco });
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider, useTheme } from 'next-themes';
-import { type ComponentProps, useState } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Structure } from '../../../../packages/ui/src/components/ui/custom/structure';
 import messages from '../../messages/en.json';
@@ -41,19 +41,41 @@ const queryClient = new QueryClient({
 });
 function Harness() {
   const [ready, setReady] = useState(false);
+  const [navigation, setNavigation] = useState(false);
+  const [wrappedHeader, setWrappedHeader] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const { setTheme } = useTheme();
-  Object.assign(window, { qa: { setReady, setTheme } });
+  useEffect(() => {
+    const qa = { setReady, setTheme, setNavigation, setWrappedHeader };
+    Object.assign(window, { qa });
+    return () => {
+      if ((window as Window & { qa?: typeof qa }).qa === qa)
+        delete (window as Window & { qa?: typeof qa }).qa;
+    };
+  }, [setTheme]);
   return (
     <Structure
       contentFullBleed
-      sidebarHidden
-      isCollapsed
-      setIsCollapsed={() => {}}
+      sidebarHidden={!navigation}
+      isCollapsed={collapsed}
+      setIsCollapsed={setCollapsed}
+      sidebarLabels={{
+        open: 'Open synthetic navigation',
+        close: 'Close synthetic navigation',
+      }}
+      mobileHeader={
+        <div
+          data-testid="synthetic-mobile-header"
+          style={{ maxWidth: wrappedHeader ? 90 : undefined }}
+        >
+          Synthetic Learn workspace
+        </div>
+      }
       sidebarHeader={null}
       sidebarContent={null}
       actions={null}
     >
-      <div className="h-dvh">
+      <div className="h-full min-h-0">
         <CodingLab
           availableLanguages={
             ready ? ['python', 'javascript', 'typescript'] : []

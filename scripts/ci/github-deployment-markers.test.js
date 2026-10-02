@@ -256,3 +256,65 @@ test('last successful marker lookup accepts inactive latest status after success
 
   assert.equal(found, sha);
 });
+
+test('Learn build marker cannot advance a deployed baseline', () => {
+  const found = runLastSuccessfulShaLookup({
+    deployments: [
+      {
+        sha: 'built',
+        payload: { markerKind: 'build', refName: 'main' },
+        statuses_url: 'https://api.example.test/statuses/build',
+      },
+      {
+        sha: 'deployed',
+        payload: { markerKind: 'deployment', refName: 'main' },
+        statuses_url: 'https://api.example.test/statuses/deploy',
+      },
+    ],
+    refName: 'main',
+    workflowName: 'vercel-preview-learn.yaml',
+    statuses: { build: [{ state: 'success' }], deploy: [{ state: 'success' }] },
+  });
+  assert.equal(found, 'deployed');
+});
+
+for (const workflowName of [
+  'vercel-preview-platform.yaml',
+  'vercel-production-platform.yaml',
+]) {
+  test(`${workflowName} retains existing build baseline behavior`, () => {
+    assert.equal(
+      runLastSuccessfulShaLookup({
+        deployments: [
+          {
+            sha: 'built',
+            payload: { markerKind: 'build', refName: 'main' },
+            statuses_url: 'https://api.example.test/statuses/build',
+          },
+        ],
+        refName: 'main',
+        workflowName,
+        statuses: { build: [{ state: 'success' }] },
+      }),
+      'built'
+    );
+  });
+}
+
+test('Learn build-only history has no deployed baseline', () => {
+  assert.equal(
+    runLastSuccessfulShaLookup({
+      deployments: [
+        {
+          sha: 'built',
+          payload: { markerKind: 'build', refName: 'main' },
+          statuses_url: 'https://api.example.test/statuses/build',
+        },
+      ],
+      refName: 'main',
+      workflowName: 'vercel-preview-learn.yaml',
+      statuses: { build: [{ state: 'success' }] },
+    }),
+    ''
+  );
+});

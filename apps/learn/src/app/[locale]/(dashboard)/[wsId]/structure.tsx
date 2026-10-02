@@ -73,7 +73,7 @@ export function Structure({
       brandHref={WEB_APP_URL}
       childContainerClassName={
         isCodingLab
-          ? 'flex h-[calc(100dvh-4.25rem)] min-h-0 w-full flex-col md:h-dvh'
+          ? 'flex h-full min-h-0 w-full flex-col'
           : 'mx-auto w-full max-w-[1500px] px-4 py-5 md:px-6 md:py-8'
       }
       contentFullBleed={isCodingLab}

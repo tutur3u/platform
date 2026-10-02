@@ -17,6 +17,7 @@ class ShellActionSpec extends Equatable {
     this.searchController,
     this.searchHint,
     this.onSearchChanged,
+    this.onSearchSubmitted,
     this.onCloseSearch,
   });
 
@@ -33,6 +34,7 @@ class ShellActionSpec extends Equatable {
   final TextEditingController? searchController;
   final String? searchHint;
   final ValueChanged<String>? onSearchChanged;
+  final ValueChanged<String>? onSearchSubmitted;
   final VoidCallback? onCloseSearch;
 
   @override
@@ -53,6 +55,7 @@ class ShellActionSpec extends Equatable {
     searchController,
     searchHint,
     onSearchChanged,
+    onSearchSubmitted,
     onCloseSearch,
   ];
 }

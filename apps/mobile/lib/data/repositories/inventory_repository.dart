@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/models/inventory/inventory_stock_health.dart';
 import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
@@ -16,9 +17,12 @@ part 'inventory_repository_sales_period_mutations.dart';
 part 'inventory_repository_sales_pending.dart';
 
 class InventoryRepository {
-  InventoryRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+  InventoryRepository({ApiClient? apiClient, CacheStore? cacheStore})
+    : _api = apiClient ?? ApiClient(),
+      _cacheStore = cacheStore ?? CacheStore.instance;
 
   final ApiClient _api;
+  final CacheStore _cacheStore;
 
   Map<String, dynamic> _buildProductPayload({
     required String name,
@@ -120,6 +124,14 @@ class InventoryRepository {
         .whereType<Map<String, dynamic>>()
         .map(InventoryLookupItem.fromJson)
         .toList(growable: false);
+  }
+
+  /// Reads confirmed server counts without a persistent aggregate cache.
+  Future<InventoryStockHealth> getStockHealth(String wsId) async {
+    final response = await _api.getJson(
+      InventoryEndpoints.analyticsSummary(wsId),
+    );
+    return InventoryStockHealth.fromJson(response);
   }
 
   Future<InventoryOverview> getOverview(
