@@ -4,6 +4,7 @@ import { ColorOperationError } from './protocol';
 const fixture = vi.hoisted(() => ({
   create: vi.fn(),
   reserve: vi.fn(),
+  reserveResponse: vi.fn(),
   execute: vi.fn(),
   readEvent: vi.fn(),
   deletionResult: vi.fn(),
@@ -23,6 +24,7 @@ import {
   handleGoogleColorRecovery,
   handleRecoverableGoogleDelete,
   handleRecoverableGooglePut,
+  handleRecoverableGoogleResponse,
 } from './route-handlers';
 
 const operationId = '00000000-0000-4000-8000-000000009851';
@@ -39,6 +41,7 @@ beforeEach(() => {
     identity: { connectionId: 'owned' },
   });
   fixture.reserve.mockResolvedValue({ id: operationId });
+  fixture.reserveResponse.mockResolvedValue({ id: operationId });
   fixture.execute.mockResolvedValue({ id: operationId, phase: 'applied' });
   fixture.readEvent.mockResolvedValue({ title: 'authoritative', locked: true });
   fixture.deletionResult.mockResolvedValue({
@@ -199,5 +202,25 @@ describe('generation-fenced Calendar mutation route contracts', () => {
     const response = await handleRecoverableGoogleDelete(args());
     expect(response.status).toBe(403);
     expect(fixture.reserve).not.toHaveBeenCalled();
+  });
+  it('settles a meeting response through the ledger before reporting delivery', async () => {
+    const result = await handleRecoverableGoogleResponse({
+      ...args(),
+      response: 'tentative',
+    });
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({ response: 'tentative' });
+    expect(fixture.reserveResponse).toHaveBeenCalledWith('tentative');
+    expect(fixture.execute).toHaveBeenCalledWith(operationId);
+    expect(fixture.readEvent).toHaveBeenCalledTimes(1);
+  });
+  it('does not report a superseded invitation response as delivered', async () => {
+    fixture.execute.mockResolvedValueOnce({ phase: 'superseded' });
+    const result = await handleRecoverableGoogleResponse({
+      ...args(),
+      response: 'declined',
+    });
+    expect(result.status).toBe(409);
+    expect(fixture.readEvent).not.toHaveBeenCalled();
   });
 });

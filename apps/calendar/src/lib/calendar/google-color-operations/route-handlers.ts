@@ -313,3 +313,35 @@ export async function handleRecoverableGoogleDelete(args: {
     return operationFailure(error, operationId);
   }
 }
+
+export async function handleRecoverableGoogleResponse(args: {
+  request: Request;
+  rawWsId: string;
+  eventId: string;
+  response: 'accepted' | 'declined' | 'tentative';
+}) {
+  let operationId: string | undefined;
+  try {
+    const service = await createRequestGoogleMutationService(
+      args.request,
+      args.rawWsId,
+      args.eventId
+    );
+    const operation = await service.reserveResponse(args.response);
+    operationId = operation.id;
+    const complete = await service.execute(operationId);
+    if (complete.phase !== 'applied')
+      return NextResponse.json(
+        {
+          error: 'Google invitation changed before the response completed',
+          operationId,
+        },
+        { status: 409 }
+      );
+    // Finalization owns the authoritative encrypted event projection.
+    await service.readEvent();
+    return NextResponse.json({ response: args.response });
+  } catch (error) {
+    return operationFailure(error, operationId);
+  }
+}

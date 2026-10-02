@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
+  googleColorOperationModeEnabled,
+  handleRecoverableGoogleResponse,
+} from '@/lib/calendar/google-color-operations/route-handlers';
+import {
   MeetingResponseError,
   respondToProviderMeeting,
 } from '@/lib/calendar/meeting-provider-response';
@@ -52,6 +56,16 @@ export async function POST(
         { error: 'Event not found' },
         { status: 404, headers }
       );
+    if (event.provider === 'google' && googleColorOperationModeEnabled()) {
+      const result = await handleRecoverableGoogleResponse({
+        request,
+        rawWsId,
+        eventId,
+        response: input.data.response,
+      });
+      result.headers.set('Cache-Control', headers['Cache-Control']);
+      return result;
+    }
     const source = await resolveCalendarSourceForEvent({
       sbAdmin,
       wsId,

@@ -475,8 +475,11 @@ state is private and never added to generic event scheduling metadata.
 
 The candidate slice is disabled unless the server-only
 `CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED` setting is `true`. That candidate
-mode supports same-source color, content/time/local-lock edits and deletion
-through the shared generation boundary. Source movement still returns 409 before
+mode supports same-source color, content/time/local-lock edits, invitation
+responses and deletion through the shared generation boundary. RSVP uses only
+the authenticated connected account's self attendee, seals the response against
+the original provider version, and projects the resulting event before reporting
+delivery. Cancelled meetings and superseded responses return a conflict. Source movement still returns 409 before
 side effects until its durable saga is implemented. A pending operation blocks
 content, color and delete successors. Attendee updates are `all` for content/time
 edits and deletion; color/local-lock-only edits use `none`. Recovery executes the
