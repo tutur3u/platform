@@ -1457,7 +1457,6 @@ function eventCardPropsEqual(previous: EventCardProps, next: EventCardProps) {
   }
 
   if (!datesEqual(previous.dates, next.dates)) return false;
-
   const left = previous.event as CalendarEvent & {
     _optimisticStatus?: string;
     _warning?: string;
@@ -1474,6 +1473,7 @@ function eventCardPropsEqual(previous: EventCardProps, next: EventCardProps) {
     left.start_at === right.start_at &&
     left.end_at === right.end_at &&
     left.color === right.color &&
+    left.scheduling_metadata === right.scheduling_metadata &&
     left.locked === right.locked &&
     left.provider === right.provider &&
     left.external_event_id === right.external_event_id &&

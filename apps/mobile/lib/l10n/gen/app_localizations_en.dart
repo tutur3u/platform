@@ -9481,6 +9481,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsTimezoneRateLimited => 'Too many requests. Please wait before retrying.';
+
+  @override
   String get settingsTimezoneError => 'Could not load or save timezone. Tap to retry.';
 
   @override
@@ -9491,4 +9494,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileTimelineTab => 'Timeline';
+
+  @override
+  String get profileTimelineShowDates => 'Show date selector';
+
+  @override
+  String get profileTimelineHideDates => 'Close dates and browse agenda';
+
+  @override
+  String get profileTimelineAgenda => 'Days with activity';
+
+  @override
+  String get profileTimelineDayEmpty => 'No activity was returned for this day.';
+
+  @override
+  String get profileTimelineHasActivity => 'Activity in loaded snapshot';
+
+  @override
+  String get profileTimelineMoreDays => 'Show more loaded days';
+
+  @override
+  String get inventoryStockHealthTitle => 'Stock health';
+
+  @override
+  String get inventoryStockHealthScope => 'Current active products · all stock rows, including archived warehouses';
+
+  @override
+  String inventoryStockHealthAsOf(String timestamp) {
+    return 'Server snapshot: $timestamp UTC';
+  }
+
+  @override
+  String get inventoryStockHealthIncomplete => 'Partial snapshot: some counts or the server timestamp are unavailable.';
+
+  @override
+  String get inventoryStockHealthUnavailable => 'Stock health is unavailable. Pull to refresh to try again.';
+
+  @override
+  String get inventoryStockHealthDenied => 'You do not have access to stock analytics.';
+
+  @override
+  String get inventoryStockHealthLoading => 'Loading stock health…';
+
+  @override
+  String get inventoryStockHealthActive => 'Active products';
+
+  @override
+  String get inventoryStockHealthUnconfigured => 'Products without stock rows';
+
+  @override
+  String get inventoryStockHealthLow => 'Low stock rows';
+
+  @override
+  String get inventoryStockHealthOut => 'Out of stock rows';
+
+  @override
+  String get inventoryStockHealthUnlimited => 'Unlimited stock rows';
+
+  @override
+  String get inventoryStockHealthOverlap => 'Low/out counts can overlap. Low/out quantity checks exclude Unlimited rows; Unlimited rows are counted separately. Bars compare row counts.';
+
+  @override
+  String get inventoryStockHealthUnknown => 'Unavailable';
 }

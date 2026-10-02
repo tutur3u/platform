@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import type { listCodingChallenges } from '@/lib/coding/challenges';
+import { CodingCases } from './coding-cases';
 
 type PublicChallenge = ReturnType<typeof listCodingChallenges>[number];
 
@@ -22,24 +23,8 @@ export function CodingProblem({ challenge }: { challenge: PublicChallenge }) {
       <h2 className="mt-7 border-b pb-2 font-semibold text-sm">
         {t('publicTests')}
       </h2>
-      <div className="mt-3 space-y-3">
-        {challenge.publicCases.map((testCase, index) => (
-          <div className="rounded-lg border p-3" key={testCase.input}>
-            <p className="mb-2 font-medium text-xs">
-              {t('publicCase', { number: index + 1 })}
-            </p>
-            <p className="mb-1 text-muted-foreground text-xs">{t('input')}</p>
-            <pre className="overflow-auto rounded-md bg-muted/60 p-2 font-mono text-xs">
-              {testCase.input}
-            </pre>
-            <p className="mt-3 mb-1 text-muted-foreground text-xs">
-              {t('expectedOutput')}
-            </p>
-            <pre className="overflow-auto rounded-md bg-muted/60 p-2 font-mono text-xs">
-              {testCase.output}
-            </pre>
-          </div>
-        ))}
+      <div className="mt-3">
+        <CodingCases cases={challenge.publicCases} key={challenge.slug} />
       </div>
       <p className="mt-5 text-muted-foreground text-xs">
         {t('hiddenCaseHint')}

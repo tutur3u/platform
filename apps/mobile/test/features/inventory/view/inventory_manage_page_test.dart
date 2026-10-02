@@ -331,7 +331,7 @@ void main() {
     h.complete(1, 'Owner B', manage: false);
     await tester.pumpAndSettle();
     expect(find.text('Owner B'), findsOneWidget);
-    expect(find.text('Add owner'), findsNothing);
+    expect(find.byTooltip('Add owner'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

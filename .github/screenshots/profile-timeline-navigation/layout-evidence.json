@@ -1,0 +1,282 @@
+{
+  "synthetic": true,
+  "installed_device_qa": false,
+  "cases": {
+    "agenda": {
+      "sha256": "3ef0fbdfe8bc892ff7f8ed98549c0418b090bf2fdb8e0cd5f56758d48bcaf2f3",
+      "metadata": {
+        "synthetic": true,
+        "realMobileTheme": true,
+        "titleBounds": "Rect.fromLTRB(97.0, 287.0, 190.7, 310.0)",
+        "titleInkPixels": 275,
+        "browser": [16, 16, 377, 836]
+      }
+    },
+    "selected-day": {
+      "sha256": "88314433e508cc1cf609378fecdc5a65db6e6fd3572fbc05ab8162f8990f93a4",
+      "metadata": {
+        "synthetic": true,
+        "realMobileTheme": true,
+        "titleBounds": "Rect.fromLTRB(97.0, 287.0, 190.7, 310.0)",
+        "titleInkPixels": 275,
+        "browser": [16, 16, 377, 836]
+      }
+    },
+    "empty-day": {
+      "sha256": "58df1c2cbf3f08ef21e536b4d473d0c05c7cfd2982b595673b53990f2e7368de",
+      "metadata": {
+        "synthetic": true,
+        "realMobileTheme": true,
+        "titleBounds": null,
+        "titleInkPixels": 0,
+        "browser": [16, 16, 377, 836]
+      }
+    },
+    "320-3x-agenda": {
+      "sha256": "b301a38f4ca622f8a8a78d8673f98c08a8c77b37bd425c4bbcfccd5d8187860c",
+      "metadata": {
+        "synthetic": true,
+        "width": 320,
+        "scale": 3,
+        "titleBounds": "Rect.fromLTRB(97.0, 649.0, 199.2, 718.0)",
+        "titleInkPixels": 1239
+      }
+    },
+    "320-3x-selected-day": {
+      "sha256": "33b606e9d168f4934407e3abbadb6655abdd574f42ad607bfa96a8403d0c193b",
+      "metadata": {
+        "synthetic": true,
+        "width": 320,
+        "scale": 3,
+        "titleBounds": "Rect.fromLTRB(97.0, 649.0, 199.2, 718.0)",
+        "titleInkPixels": 1239
+      }
+    }
+  },
+  "shell": {
+    "profile-overview-1.0": {
+      "sha256": "42a6bb878bef206db900482b30d7d56041ed3123e8699216beb586017db150f7",
+      "metadata": {
+        "synthetic": true,
+        "logicalWidth": 393,
+        "logicalHeight": 854,
+        "textScale": 1,
+        "navbar": "Rect.fromLTRB(0.0, 0.0, 393.0, 54.0)",
+        "selector": "Rect.fromLTRB(235.0, 4.0, 339.0, 50.0)",
+        "duplicateInlineSelector": false
+      }
+    },
+    "profile-timeline-1.0": {
+      "sha256": "eba9beae5f04e2cbb0974df46d04da84247165ec229deae7b53999d3ad9ccf0d",
+      "metadata": {
+        "synthetic": true,
+        "logicalWidth": 393,
+        "logicalHeight": 854,
+        "textScale": 1,
+        "navbar": "Rect.fromLTRB(0.0, 0.0, 393.0, 54.0)",
+        "selector": "Rect.fromLTRB(235.0, 4.0, 339.0, 50.0)",
+        "duplicateInlineSelector": false
+      }
+    },
+    "profile-overview-2.0": {
+      "sha256": "bbcfea78e542c3fc7a108e11c8b774e608008072a5fe6047c0a4c09d5fbacc9a",
+      "metadata": {
+        "synthetic": true,
+        "logicalWidth": 393,
+        "logicalHeight": 854,
+        "textScale": 2,
+        "navbar": "Rect.fromLTRB(0.0, 0.0, 393.0, 54.0)",
+        "selector": "Rect.fromLTRB(235.0, 4.0, 339.0, 50.0)",
+        "duplicateInlineSelector": false
+      }
+    },
+    "profile-timeline-2.0": {
+      "sha256": "fc1693b50b27c2af1b757dcf9e9e446b84abb6924d726667d16c1db912d2191e",
+      "metadata": {
+        "synthetic": true,
+        "logicalWidth": 393,
+        "logicalHeight": 854,
+        "textScale": 2,
+        "navbar": "Rect.fromLTRB(0.0, 0.0, 393.0, 54.0)",
+        "selector": "Rect.fromLTRB(235.0, 4.0, 339.0, 50.0)",
+        "duplicateInlineSelector": false
+      }
+    },
+    "profile-overview-3.0": {
+      "sha256": "bd04b842a3a5880ebc866a891223dd970d64eeffb548297447cba64a5fa4ecda",
+      "metadata": {
+        "synthetic": true,
+        "logicalWidth": 320,
+        "logicalHeight": 852,
+        "textScale": 3,
+        "navbar": "Rect.fromLTRB(0.0, 0.0, 320.0, 54.0)",
+        "selector": "Rect.fromLTRB(162.0, 4.0, 266.0, 50.0)",
+        "duplicateInlineSelector": false
+      }
+    },
+    "profile-timeline-3.0": {
+      "sha256": "45ab043b35caff752322dfdebdcb5e02986dbb608616d9bc202dd8575c095e53",
+      "metadata": {
+        "synthetic": true,
+        "logicalWidth": 320,
+        "logicalHeight": 852,
+        "textScale": 3,
+        "navbar": "Rect.fromLTRB(0.0, 0.0, 320.0, 54.0)",
+        "selector": "Rect.fromLTRB(162.0, 4.0, 266.0, 50.0)",
+        "duplicateInlineSelector": false
+      }
+    }
+  },
+  "correction": {
+    "selectedDate": "Reveal on open, selected date/week/viewport changes; preserve manual scroll on ordinary refresh.",
+    "emptyState": "Cold failure and partial/capped empty snapshots retain uncertainty; complete empty retry confirms absence."
+  },
+  "validation": {
+    "combined": {
+      "passed": 26,
+      "failed": 1,
+      "reason": "3x mounted fixture tapped scrolling header offscreen; corrected fixture restores header."
+    },
+    "finalShell": {
+      "passed": 3,
+      "failed": 0,
+      "pid": 17547,
+      "analysis": "one item clean"
+    },
+    "uniqueFocusedCasesCovered": 27,
+    "sourceAnalysis": "six items clean before fixture-only change; changed fixture analyzed clean after correction",
+    "commands": [
+      "flutter analyze --no-pub <six changed Dart items>",
+      "flutter test --no-pub --concurrency=1 <navigation edges, races, browser, overview shell>",
+      "flutter analyze --no-pub test/features/profile/view/profile_overview_shell_test.dart",
+      "flutter test --no-pub --concurrency=1 --plain-name 'authenticated Profile' test/features/profile/view/profile_overview_shell_test.dart"
+    ],
+    "fifo": true,
+    "noPub": true
+  },
+  "sourceSha256": {
+    "apps/docs/platform/features/mobile-workspace-tools.mdx": "251e5cc270130f34ef243f96aa6a3d3f8ccb71ecb7e76906f84ae1af1d3424b0",
+    "apps/mobile/lib/features/profile/view/profile_timeline_browser.dart": "0c1d72182e031f8fa7bcfefd4fa73bceecbbc93b395a867cfad40a80d89fe784",
+    "apps/mobile/lib/features/profile/view/profile_timeline_date_strip.dart": "5afaf805c7ab1211c393b2f8e9471afb420ccb8e4408229788343cd7bb6b6ca9",
+    "apps/mobile/lib/features/profile/view/profile_timeline_section.dart": "5628960eb7cf869b496e918a0bcc38b2474371abe71d275b8c542754fd4f336d",
+    "apps/mobile/test/features/profile/view/profile_timeline_navigation_edges_test.dart": "12a825a4d16b601d8cfdbf16e75d561ad4c7240626454389303da8d481051b4f",
+    "apps/mobile/test/features/profile/view/profile_timeline_races_test.dart": "ba9e826eb43355081db0bd49acb5ddcea98fbe859ed19d72b5b72476398dae96",
+    "apps/mobile/test/features/profile/view/profile_overview_shell_test.dart": "cef52ba4356e83585ce08edb38a498aa5e96248c967614705ef223cae98fa144",
+    "apps/mobile/test/features/profile/view/profile_timeline_browser_test.dart": "dd1fe693006e31511ae7c0bbb58396614f9e966da4cbfcbe23e9788ed55c0dfe"
+  },
+  "logSha256": {
+    "/tmp/profile-timeline-review-focused.log": "349c518e8243a7b79139224954c78e8b57a0cc6b9d9d602b834e5aaf8b1f08eb",
+    "/tmp/profile-timeline-review-analysis.log": "213d9536ba75f4a2b3bc73068546f0ff93c4cda184952aa1acc730c49936ce40",
+    "/tmp/profile-timeline-shell.log": "243cabb1e09e17be2c74e4cbd234b1ac00a71d9114f7dcbc50bc615e6442ff5b",
+    "/tmp/profile-timeline-shell-analysis.log": "ffcf53cb86fc206c707a4dbbeb04385e8c56fd35ef6182319f340850536bb09f"
+  },
+  "limits": [
+    "Full nonbuild mobile gate and exact-head CI remain parent-owned.",
+    "No installed-device QA or native builds.",
+    "Mounted shell uses this branch base; separate navbar #5701 is not imported. At 3x text the content is scrollable; captures are the actual visible viewport.",
+    "Snapshot has no server pagination cursor; no fabricated history."
+  ],
+  "historicalSourceSnapshot": "3c6dee418f484118c582e83dce022176f6183018",
+  "ciFixtureRepair": {
+    "previousHead": "3c6dee418f484118c582e83dce022176f6183018",
+    "failedJob": "https://github.com/tutur3u/platform/actions/runs/36831852534/job/110273766857",
+    "reproduction": {
+      "defaultFont": true,
+      "passed": 0,
+      "failed": 1,
+      "assertion": "60 min tracked missing at 3x; reproduced same CI assertion."
+    },
+    "cause": "Fixed 500-pixel Overview scroll depended on optional capture font; default widget-test font left the lazy activity section unmounted. Offset reset alone also did not reverse hiding shell chrome.",
+    "correction": "Scroll until actual ProfileActivitySection is visible, wait bounded for fetched value with assertion retained, reverse user scrolling before resetting offset and tapping real navbar target.",
+    "validation": {
+      "defaultFont": {
+        "passed": 9,
+        "failed": 0
+      },
+      "captureFont": {
+        "passed": 3,
+        "failed": 0
+      },
+      "analysis": "Changed fixture clean",
+      "fifo": true,
+      "noPub": true,
+      "concurrency": 1,
+      "fullGate": "Not run; parent owns exact-head CI and remaining full mobile gates."
+    },
+    "commands": [
+      "flutter analyze --no-pub test/features/profile/view/profile_overview_shell_test.dart",
+      "flutter test --no-pub --concurrency=1 test/features/profile/view/profile_overview_shell_test.dart (PROFILE_MATERIAL_FONT and capture output overrides unset)",
+      "flutter test --no-pub --concurrency=1 --plain-name 'authenticated Profile' test/features/profile/view/profile_overview_shell_test.dart (cached Roboto loaded via PROFILE_MATERIAL_FONT)"
+    ],
+    "sourceSha256": {
+      "apps/mobile/test/features/profile/view/profile_overview_shell_test.dart": "aa016282014a76991d6f78f2f70be01a90b0ce6c2ce983a767f34477218c4d24",
+      "apps/docs/platform/features/mobile-workspace-tools.mdx": "7e163e4f34ba19962d625a7606bc0c688f8d38d5c5ae9f95a2bc0a3a7a99a83a"
+    },
+    "logSha256": {
+      "/tmp/timeline-5706-ci-failure.log": "89b8b595dd7194533ce83813011f12b238962f99699f0bf1ad57a4888e729440",
+      "/tmp/timeline-ci-reproduce.log": "28e9afc0087c7bc7b5698f0f2ae38d00e59baa7025141e22921ba16c86d750a3",
+      "/tmp/timeline-ci-fixture-analysis.log": "bc32fc1954bc824aa60c1f2d36c1c157d2ce166151fe8806a08ab0268c941217",
+      "/tmp/timeline-ci-fixture-default.log": "2d53fb4f4d251d71df2e8bf6eda4e70c653fd4acc128d87aafc4de84fedf4641",
+      "/tmp/timeline-ci-fixture-roboto.log": "a850c8fa461325b422acb8f58b6cdc8028983fcfa52f7dd1f74fe1fe5fc01100"
+    },
+    "noRuntimeChanges": true,
+    "noScreenshotRegeneration": true
+  },
+  "transitionReviewCorrection": {
+    "previousHead": "e5903004abf924b5beb08d1d20ec28aa6a04101d",
+    "review": "https://github.com/tutur3u/platform/pull/5706#pullrequestreview-5377940571",
+    "findings": {
+      "n5i2a": "Confirmed: opening selector without anchor locked the default date during cold load. Only a real anchor or explicit date choice now locks selection.",
+      "n5i2x": "Confirmed: duplicate section/browser failure status. Section owns retry banner; standalone browser still reports unavailable/partial once.",
+      "n5i21": "Confirmed: stale empty cache announced absence during revalidation. Fixed skeleton/loading state persists until completed fresh response.",
+      "n5i27": "Qualification: e590 changes neither PNGs nor capture scaling versus3c. Captures intentionally use actual logical viewports at ratio1; uniform942px output is not their evidence contract. Docs now clarify source/dimensions; no PNG regeneration."
+    },
+    "reproduction": {
+      "passed": 1,
+      "failed": 4,
+      "scope": "Five mounted targeted transitions before runtime correction; explicit date choice already passed."
+    },
+    "validation": {
+      "passed": 38,
+      "failed": 0,
+      "analysis": "Four changed Dart items clean",
+      "normalFIFO": true,
+      "noPub": true,
+      "concurrency": 1,
+      "defaultFont": true,
+      "fullMobileGate": "Not run; parent owns full gate/current CI/fresh independent review/device QA/integration."
+    },
+    "commands": [
+      "flutter analyze --no-pub lib/features/profile/view/profile_timeline_browser.dart lib/features/profile/view/profile_timeline_section.dart test/features/profile/view/profile_timeline_browser_test.dart test/features/profile/view/profile_timeline_races_test.dart",
+      "flutter test --no-pub --concurrency=1 test/features/profile/view/profile_timeline_browser_test.dart test/features/profile/view/profile_timeline_races_test.dart test/features/profile/view/profile_timeline_navigation_edges_test.dart test/features/profile/view/profile_timeline_section_test.dart test/features/profile/profile_timeline_repository_test.dart test/features/profile/view/profile_overview_shell_test.dart"
+    ],
+    "sourceSha256": {
+      "apps/docs/platform/features/mobile-workspace-tools.mdx": "518205da1b3f948ef39222f750953f7174380fc4c29fa94d4b1bdde007042bd3",
+      "apps/mobile/lib/features/profile/view/profile_timeline_browser.dart": "d1f4cd4e14235e1665fb6780ffea9303c9ea7d92a4f13a0dff79527b66ea4075",
+      "apps/mobile/lib/features/profile/view/profile_timeline_section.dart": "acde846def6031f9b539671f97692f028ade387ab7b27e7cc5e17e587bffc4f6",
+      "apps/mobile/test/features/profile/view/profile_timeline_browser_test.dart": "6bf4fd5f51c1820e5de7912c3e365f38ba02a1d86db118da0f68ab5200add4f3",
+      "apps/mobile/test/features/profile/view/profile_timeline_races_test.dart": "429e09da982394a89ec7bd618179a53d013bda9a1da23f1989eeeaed238c884f"
+    },
+    "logSha256": {
+      "/tmp/timeline-review-transitions-before.log": "dbf46091c5b7dab88814e74e12f202a41280358799b5ade307ab511dfea399f6",
+      "/tmp/timeline-review-transitions-analysis.log": "62e1e91d6ceb6335de43450ab2ee631c8c0e95a3ddf7c523e9aafeb022c7beeb",
+      "/tmp/timeline-review-transitions-final.log": "cd8a2525c5a24c839fe4fd0bdc3627d5bdd02e81de741f6527d2798b9b564fd9"
+    },
+    "historicalPngSha256": {
+      "320-3x-selected-day.png": "33b606e9d168f4934407e3abbadb6655abdd574f42ad607bfa96a8403d0c193b",
+      "320-3x-agenda.png": "b301a38f4ca622f8a8a78d8673f98c08a8c77b37bd425c4bbcfccd5d8187860c",
+      "empty-day.png": "58df1c2cbf3f08ef21e536b4d473d0c05c7cfd2982b595673b53990f2e7368de",
+      "selected-day.png": "88314433e508cc1cf609378fecdc5a65db6e6fd3572fbc05ab8162f8990f93a4",
+      "agenda.png": "3ef0fbdfe8bc892ff7f8ed98549c0418b090bf2fdb8e0cd5f56758d48bcaf2f3",
+      "shell/profile-overview-2.0.png": "bbcfea78e542c3fc7a108e11c8b774e608008072a5fe6047c0a4c09d5fbacc9a",
+      "shell/profile-overview-1.0.png": "42a6bb878bef206db900482b30d7d56041ed3123e8699216beb586017db150f7",
+      "shell/profile-overview-3.0.png": "bd04b842a3a5880ebc866a891223dd970d64eeffb548297447cba64a5fa4ecda",
+      "shell/profile-timeline-2.0.png": "fc1693b50b27c2af1b757dcf9e9e446b84abb6924d726667d16c1db912d2191e",
+      "shell/profile-timeline-1.0.png": "eba9beae5f04e2cbb0974df46d04da84247165ec229deae7b53999d3ad9ccf0d",
+      "shell/profile-timeline-3.0.png": "45ab043b35caff752322dfdebdcb5e02986dbb608616d9bc202dd8575c095e53"
+    },
+    "capturesRegenerated": false,
+    "captureRatio": 1,
+    "captureWidths": [393, 320]
+  }
+}

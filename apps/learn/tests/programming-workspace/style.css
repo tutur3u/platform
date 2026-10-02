@@ -1,0 +1,28 @@
+@import "../../../../packages/ui/src/globals.css";
+@source "../../src/app";
+@font-face {
+  font-family: ProgrammingQA;
+  src: url("../../src/app/[locale]/(dashboard)/[wsId]/coding/fonts/JetBrainsMono-Regular.woff2")
+    format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+.qa-programming-font {
+  --font-programming-mono: ProgrammingQA;
+}
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Test-only simulated insets. Native env() values remain the default. */
+.safe-top {
+  padding-top: var(--qa-safe-top, env(safe-area-inset-top, 0px));
+}
+.safe-bottom {
+  padding-bottom: var(--qa-safe-bottom, env(safe-area-inset-bottom, 0px));
+}

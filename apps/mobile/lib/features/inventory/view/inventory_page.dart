@@ -8,12 +8,16 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/models/inventory/inventory_stock_health.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/inventory/view/inventory_checkout_page.dart';
 import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
+import 'package:mobile/features/inventory/widgets/inventory_low_stock_card.dart';
+import 'package:mobile/features/inventory/widgets/inventory_stock_health_panel.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -33,6 +37,9 @@ class InventoryPage extends StatefulWidget {
 class _InventoryPageState extends State<InventoryPage> {
   late final InventoryRepository _repository;
   Future<InventoryOverview>? _future;
+  Future<InventoryStockHealth>? _stockHealth;
+
+  String? get _actorId => context.read<AuthCubit>().state.user?.id;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -46,13 +53,22 @@ class _InventoryPageState extends State<InventoryPage> {
 
   Future<void> _reload({bool forceRefresh = false}) async {
     final wsId = _wsId;
-    if (wsId == null) return;
+    if (!mounted) return;
+    if (wsId == null || _actorId == null) {
+      setState(() {
+        _future = null;
+        _stockHealth = null;
+      });
+      return;
+    }
     final future = _repository.getOverview(wsId, forceRefresh: forceRefresh);
+    final stockHealth = _repository.getStockHealth(wsId);
     setState(() {
       _future = future;
+      _stockHealth = stockHealth;
     });
     try {
-      await future;
+      await Future.wait<Object>([future, stockHealth]);
     } on Object {
       // The FutureBuilder presents the retry state.
     }
@@ -67,16 +83,28 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   Widget build(BuildContext context) {
     return shad.Scaffold(
-      child: BlocListener<WorkspaceCubit, WorkspaceState>(
-        listenWhen: (previous, current) =>
-            previous.currentWorkspace?.id != current.currentWorkspace?.id,
-        listener: (context, state) => unawaited(_reload()),
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<WorkspaceCubit, WorkspaceState>(
+            listenWhen: (previous, current) =>
+                previous.currentWorkspace?.id != current.currentWorkspace?.id,
+            listener: (context, state) => unawaited(_reload()),
+          ),
+          BlocListener<AuthCubit, AuthState>(
+            listenWhen: (previous, current) =>
+                previous.user?.id != current.user?.id,
+            listener: (context, state) =>
+                unawaited(_reload(forceRefresh: true)),
+          ),
+        ],
         child: FutureBuilder<InventoryOverview>(
-          key: ValueKey(_wsId),
-          initialData: _wsId == null ? null : _repository.peekOverview(_wsId!),
+          key: ValueKey((_actorId, _wsId)),
+          initialData: _wsId == null || _actorId == null
+              ? null
+              : _repository.peekOverview(_wsId!),
           future: _future,
           builder: (context, snapshot) {
-            if (_wsId == null) {
+            if (_wsId == null || _actorId == null) {
               return const SizedBox.shrink();
             }
 
@@ -100,6 +128,7 @@ class _InventoryPageState extends State<InventoryPage> {
               child: NovaRefreshIndicator(
                 onRefresh: () => _reload(forceRefresh: true),
                 child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.fromLTRB(
                     16,
                     8,
@@ -111,34 +140,6 @@ class _InventoryPageState extends State<InventoryPage> {
                       title: l10n.inventoryTitle,
                       icon: Icons.inventory_2_outlined,
                       showHeader: false,
-                      metrics: [
-                        InventoryMetricTile(
-                          label: l10n.inventoryOverviewIncome,
-                          value: formatCurrency(
-                            overview.totals.totalIncome,
-                            'VND',
-                          ),
-                          icon: Icons.south_west_rounded,
-                          tint: FinancePalette.of(context).positive,
-                        ),
-                        InventoryMetricTile(
-                          label: l10n.inventoryOverviewExpense,
-                          value: formatCurrency(
-                            overview.totals.totalExpense,
-                            'VND',
-                          ),
-                          icon: Icons.north_east_rounded,
-                          tint: FinancePalette.of(context).negative,
-                        ),
-                        InventoryMetricTile(
-                          label: l10n.inventorySalesLabel,
-                          value: formatCurrency(
-                            overview.totals.inventorySalesRevenue,
-                            'VND',
-                          ),
-                          icon: Icons.point_of_sale_outlined,
-                        ),
-                      ],
                       actions: [
                         InventoryActionTile(
                           icon: Icons.point_of_sale_rounded,
@@ -168,6 +169,11 @@ class _InventoryPageState extends State<InventoryPage> {
                       ],
                     ),
                     const shad.Gap(24),
+                    InventoryStockHealthPanel(
+                      key: ValueKey(('stock-health', _actorId, _wsId)),
+                      future: _stockHealth,
+                    ),
+                    const shad.Gap(16),
                     FinanceSectionHeader(title: l10n.inventoryOverviewLowStock),
                     const shad.Gap(12),
                     if (overview.lowStockProducts.isEmpty)
@@ -180,60 +186,7 @@ class _InventoryPageState extends State<InventoryPage> {
                           .map(
                             (product) => Padding(
                               padding: const EdgeInsets.only(bottom: 12),
-                              child: FinancePanel(
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            product.productName ??
-                                                'Untitled product',
-                                            style: shad.Theme.of(context)
-                                                .typography
-                                                .large
-                                                .copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                          ),
-                                          const shad.Gap(4),
-                                          Text(
-                                            [
-                                                  product.ownerName,
-                                                  product.categoryName,
-                                                  product.warehouseName,
-                                                ]
-                                                .whereType<String>()
-                                                .where((e) => e.isNotEmpty)
-                                                .join(' • '),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const shad.Gap(12),
-                                    Text(
-                                      [
-                                        inventoryStockAmount(
-                                          context,
-                                          product.amount,
-                                        ),
-                                        inventoryStockAmount(
-                                          context,
-                                          product.minAmount ?? 0,
-                                        ),
-                                      ].join(' / '),
-                                      style: shad.Theme.of(context)
-                                          .typography
-                                          .large
-                                          .copyWith(
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              child: InventoryLowStockCard(product: product),
                             ),
                           ),
                     const shad.Gap(16),
@@ -270,18 +223,6 @@ class _InventoryPageState extends State<InventoryPage> {
                                                 ),
                                           ),
                                         ),
-                                        Text(
-                                          formatCurrency(
-                                            sale.paidAmount,
-                                            'VND',
-                                          ),
-                                          style: shad.Theme.of(context)
-                                              .typography
-                                              .large
-                                              .copyWith(
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                        ),
                                       ],
                                     ),
                                     const shad.Gap(6),
@@ -293,10 +234,10 @@ class _InventoryPageState extends State<InventoryPage> {
                                         if (sale.categoryName?.isNotEmpty ??
                                             false)
                                           sale.categoryName!,
-                                        DateFormat.yMMMd().add_jm().format(
-                                          sale.createdAt?.toLocal() ??
-                                              DateTime.now(),
-                                        ),
+                                        if (sale.createdAt != null)
+                                          DateFormat.yMMMd().add_jm().format(
+                                            sale.createdAt!.toLocal(),
+                                          ),
                                       ].join(' • '),
                                     ),
                                   ],
@@ -305,15 +246,6 @@ class _InventoryPageState extends State<InventoryPage> {
                             ),
                           ),
                     const shad.Gap(16),
-                    FinanceSectionHeader(title: l10n.inventoryOverviewOwners),
-                    const shad.Gap(12),
-                    _BreakdownList(entries: overview.ownerBreakdown),
-                    const shad.Gap(16),
-                    FinanceSectionHeader(
-                      title: l10n.inventoryOverviewCategories,
-                    ),
-                    const shad.Gap(12),
-                    _BreakdownList(entries: overview.categoryBreakdown),
                   ],
                 ),
               ),
@@ -321,74 +253,6 @@ class _InventoryPageState extends State<InventoryPage> {
           },
         ),
       ),
-    );
-  }
-}
-
-class _BreakdownList extends StatelessWidget {
-  const _BreakdownList({required this.entries});
-
-  final List<InventoryBreakdownEntry> entries;
-
-  @override
-  Widget build(BuildContext context) {
-    if (entries.isEmpty) {
-      return InventoryEmptyPanel(body: context.l10n.inventoryNoBreakdownData);
-    }
-
-    final maximum = entries
-        .take(5)
-        .fold<double>(
-          0,
-          (current, entry) => entry.revenue > current ? entry.revenue : current,
-        );
-
-    return Column(
-      children: entries
-          .take(5)
-          .map((entry) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: FinancePanel(
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            entry.label,
-                            style: shad.Theme.of(context).typography.small
-                                .copyWith(fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                        const shad.Gap(12),
-                        Text(
-                          formatCurrency(entry.revenue, 'VND'),
-                          style: shad.Theme.of(context).typography.small
-                              .copyWith(fontWeight: FontWeight.w800),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        minHeight: 5,
-                        value: maximum <= 0
-                            ? 0
-                            : (entry.revenue / maximum).clamp(0.0, 1.0),
-                        backgroundColor: FinancePalette.of(
-                          context,
-                        ).accent.withValues(alpha: 0.10),
-                        color: FinancePalette.of(context).accent,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          })
-          .toList(growable: false),
     );
   }
 }
