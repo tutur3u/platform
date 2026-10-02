@@ -39,6 +39,11 @@ else
   echo "apps/web/test-results/.last-run.json not found" > "$diagnostics_dir/playwright-last-run.json"
 fi
 
+if ! node scripts/ci/e2e-diagnostics-redact.js; then
+  echo "Unable to sanitize diagnostics; console output is blocked."
+  exit 1
+fi
+
 echo "::group::Docker containers for E2E project"
 cat "$diagnostics_dir/docker-containers.txt"
 echo "::endgroup::"

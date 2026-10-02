@@ -191,13 +191,12 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     /curl -k -i --max-time 10 "\$portless_login_url" > "\$diagnostics_dir\/portless-login\.txt"/u
   );
   assert.match(e2eJob, /apps\/web\/test-results\/\.last-run\.json/u);
-  assert.match(e2eJob, /sensitiveKeyValuePattern/u);
-  assert.match(e2eJob, /Authorization:\\s\*Bearer/u);
-  assert.match(e2eJob, /walkFiles\(diagnosticsDir\)/u);
+  const upload = readWorkflow('e2e-tests.yaml').jobs.e2e.steps.find(
+    (step) => step.name === 'Upload E2E failure artifact'
+  );
+  assert.equal(upload.with.path, 'tmp/e2e-diagnostics/');
+  assert.match(upload.if, /steps\.redact-diagnostics\.outcome == 'success'/u);
   assert.match(e2eJob, /name: e2e-failure-\$\{\{ matrix\.id \}\}/u);
-  assert.match(e2eJob, /tmp\/e2e-diagnostics\//u);
-  assert.match(e2eJob, /apps\/web\/blob-report\//u);
-  assert.match(e2eJob, /apps\/web\/test-results\//u);
   assert.match(e2eJob, /if-no-files-found: warn/u);
   assert.match(e2eJob, /retention-days: 7/u);
   assert.doesNotMatch(e2eJob, /name: playwright-report-/u);
@@ -300,6 +299,8 @@ test('E2E workflow retains the paused migration restart contract', () => {
 test('E2E proof reuse gates allocation and publishes only trusted successful counts', () => {
   const workflow = readWorkflow('e2e-tests.yaml');
   assert.equal(workflow.permissions.actions, 'read');
+  assert.ok(workflow.on.push.paths.includes('**'));
+  assert.ok(workflow.on.push.paths.includes('!apps/docs/**'));
   assert.match(
     workflow.jobs['prepare-e2e-images'].if,
     /outputs\.run_web == 'true'/u
@@ -324,11 +325,32 @@ test('E2E proof reuse gates allocation and publishes only trusted successful cou
     assert.equal(save.uses, 'actions/cache/save@v6');
     assert.equal(save.with.path, 'tmp/e2e-proof-receipt.json');
     assert.equal(save.with['restore-keys'], undefined);
+    const proofIndex = steps.indexOf(proof);
+    const secretCleanupIndex = steps.findIndex(
+      (step) => step.name === 'Remove Turbo BuildKit secret files'
+    );
+    if (id === 'e2e') {
+      assert.notEqual(
+        secretCleanupIndex,
+        -1,
+        'Web runners must remove Turbo secrets'
+      );
+      assert.ok(proofIndex > secretCleanupIndex);
+    } else {
+      assert.equal(
+        secretCleanupIndex,
+        -1,
+        'Inventory does not install Turbo secret files'
+      );
+    }
+    const stopIndex = steps.findIndex((step) =>
+      /\bbun sb:stop\b/u.test(step.run ?? '')
+    );
+    assert.notEqual(stopIndex, -1, `${id} must stop its Supabase fixture`);
+    assert.equal(steps[stopIndex].if, 'always()');
     assert.ok(
-      steps.indexOf(proof) >
-        steps.findIndex(
-          (step) => step.name === 'Remove Turbo BuildKit secret files'
-        )
+      proofIndex > stopIndex,
+      `${id} must finish fixture cleanup before proof`
     );
     assert.ok(
       steps.some((step) => /--reporter=[^\s]*json/u.test(step.run ?? ''))

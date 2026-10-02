@@ -25,6 +25,12 @@ test('translation checks run once per PR update and still cover both protected b
 test('exactly one E2E matrix job is eligible to write the shared Docker cache', () => {
   const workflow = readWorkflow('e2e-tests.yaml');
   const job = workflow.jobs.e2e;
+  assert.equal(
+    job.strategy.matrix,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
+    '${{ fromJSON(needs.relevance.outputs.matrix) }}',
+    'E2E must allocate the dynamic, uncached cohorts from the planner'
+  );
   const writer = job.steps.find(
     (step) => step.id === 'prepare-supabase-docker-cache'
   );

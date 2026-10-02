@@ -26,6 +26,27 @@ on:
       - "scripts/e2e-*"
       - "scripts/run-web-e2e-docker*"
       - "turbo.json"
+      - "!*.md"
+      - "!**/AGENTS.md"
+      - "!apps/docs/**"
+      - "!apps/mobile/**"
+      - "!apps/backend/**"
+      - "!apps/tanstack-web/**"
+      - "!docs/**"
+      - "!plans/**"
+      - "!plugins/**"
+      - "!skills/**"
+      - "!conductor/**"
+      - "!.agents/**"
+      - "!.agent/**"
+      - "!.claude/**"
+      - "!.codex/**"
+      - "!.cursor/**"
+      - "!.gemini/**"
+      - "!.opencode/**"
+      - "!.vscode/**"
+      - "!.windsurf/**"
+      - "!.zed/**"
   workflow_dispatch:
     inputs:
       supabase_image_transport:
@@ -345,6 +366,7 @@ jobs:
         run: bash scripts/ci/e2e-diagnostics.sh
 
       - name: Redact E2E diagnostics artifact
+        id: redact-diagnostics
         if: ${{ failure() }}
         run: node scripts/ci/e2e-diagnostics-redact.js
 
@@ -371,13 +393,10 @@ jobs:
 
       - name: Upload E2E failure artifact
         uses: actions/upload-artifact@v7
-        if: ${{ failure() }}
+        if: ${{ failure() && steps.redact-diagnostics.outcome == 'success' }}
         with:
           name: e2e-failure-${{ matrix.id }}
-          path: |
-            tmp/e2e-diagnostics/
-            apps/web/blob-report/
-            apps/web/test-results/
+          path: tmp/e2e-diagnostics/
           if-no-files-found: warn
           retention-days: 7
 
@@ -482,14 +501,17 @@ jobs:
         working-directory: apps/inventory
         run: bun test:e2e -- --reporter=line,html,json
 
+      - name: Sanitize cache E2E failure diagnostics
+        id: redact-inventory
+        if: ${{ failure() }}
+        run: node scripts/ci/e2e-diagnostics-redact.js --report tmp/e2e-inventory-results.json --output tmp/e2e-diagnostics/inventory-results.json
+
       - name: Upload cache E2E failure artifact
         uses: actions/upload-artifact@v7
-        if: ${{ failure() }}
+        if: ${{ failure() && steps.redact-inventory.outcome == 'success' }}
         with:
           name: inventory-storefront-cache-e2e
-          path: |
-            apps/inventory/playwright-report/
-            apps/inventory/test-results/
+          path: tmp/e2e-diagnostics/
           if-no-files-found: ignore
           retention-days: 7
 

@@ -305,7 +305,9 @@ formatting behavior, or repo-wide verification.
   checked-in `codeql.yml` manual-only so it provides an explicit fallback and
   satisfies the Security UI without duplicating push, pull-request, or cron
   runs.
-- E2E native push paths cover runtime, specs, shared packages, database,
+- E2E uses a `**` push-path catch-all so unknown runtime inputs reach the
+  planner, with explicit exclusions for known non-runtime apps, docs, and agent
+  tooling. Fingerprints cover runtime, specs, shared packages, database,
   dependencies and runner controls. The input-keyed planner may reuse only exact,
   fresh passing protected-main proofs; missing or uncertain evidence executes
   tests. Never cache failures, flaky/empty reports, or branch-authored successes.

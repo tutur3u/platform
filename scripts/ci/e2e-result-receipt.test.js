@@ -118,7 +118,7 @@ test('proof publication requires the actual runner to match the planned platform
     assert.equal(runnerMatches({ ...env, ...mismatch }), false);
 });
 
-test('a main success on a mismatched runner does not publish any receipt', (t) => {
+test('a main success publishes only when its actual runner matches the plan', (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-runner-mismatch-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   const report = path.join(dir, 'report.json');
@@ -158,4 +158,24 @@ test('a main success on a mismatched runner does not publish any receipt', (t) =
     fs.existsSync(path.join(dir, 'tmp/e2e-proof-receipt.json')),
     false
   );
+  execFileSync(
+    process.execPath,
+    [
+      '-e',
+      'const receipt=require(process.argv[1]).recordReceipt(JSON.parse(process.argv[2])); if (!receipt) process.exit(1)',
+      require.resolve('./e2e-result-receipt'),
+      JSON.stringify({ ...env, ImageVersion: 'planned' }),
+    ],
+    { cwd: dir }
+  );
+  assert.equal(
+    fs.readFileSync(output, 'utf8'),
+    'reusable=false\nreusable=true\n'
+  );
+  const saved = JSON.parse(
+    fs.readFileSync(path.join(dir, 'tmp/e2e-proof-receipt.json'), 'utf8')
+  );
+  assert.equal(saved.sha, provenance.sha);
+  assert.equal(saved.key, provenance.key);
+  assert.deepEqual(saved.stats, passing.stats);
 });

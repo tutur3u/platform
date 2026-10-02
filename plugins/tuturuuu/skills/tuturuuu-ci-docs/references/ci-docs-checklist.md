@@ -51,8 +51,9 @@ Use this checklist when changing CI, validators, docs, or repo automation.
   `dynamic/github-code-scanning/codeql` workflow. Keep `codeql.yml` as a
   manual-only JavaScript/TypeScript and Python fallback with no push,
   pull-request, or cron triggers.
-- Keep E2E commit-driven, with runtime/spec/schema/dependency/runner native
-  trigger paths and manual full dispatch; do not add a cron. Plan suites before
+- Keep E2E commit-driven, with a broad `**` push filter and explicit known
+  non-runtime exclusions and manual full dispatch; do not add a cron. Plan suites
+  before
   allocating heavy jobs. Omit a suite only for exact input-keyed passing evidence
   from protected main, within its freshness window. Unknown inputs or cache/API
   failures run tests. Branch runs, flaky/empty reports, and failures cannot
