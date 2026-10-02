@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -159,6 +160,44 @@ void main() {
         workspaceId: 'paged-calendar',
       );
       expect(rows.map((row) => row.id).toSet(), {'first', 'second'});
+      repository.dispose();
+    },
+  );
+  test(
+    'calendar read aborts an account switch before persisting the response',
+    () async {
+      var actor = 'calendar-account-a';
+      final api = _MockApiClient();
+      when(() => api.getJson(any())).thenAnswer((_) async {
+        actor = 'calendar-account-b';
+        return {
+          'data': [
+            {
+              'id': 'private-a',
+              'start_at': '2026-10-02T00:00:00Z',
+              'end_at': '2026-10-02T01:00:00Z',
+            },
+          ],
+        };
+      });
+      final repository = CalendarRepository(
+        apiClient: api,
+        currentUserId: () => actor,
+      );
+      await expectLater(
+        repository.getEvents('account-race'),
+        throwsA(isA<ApiException>()),
+      );
+      final stored = await CacheStore.instance.read<Object?>(
+        key: const CacheKey(
+          namespace: 'calendar.events',
+          userId: 'calendar-account-a',
+          workspaceId: 'account-race',
+          params: {'query': ''},
+        ),
+        decode: (value) => value,
+      );
+      expect(stored.hasValue, isFalse);
       repository.dispose();
     },
   );

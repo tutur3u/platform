@@ -4,10 +4,11 @@ List<InventorySalesPeriod> _overlayPendingSalesPeriods(
   String wsId,
   List<InventorySalesPeriod> confirmed, {
   required bool includeArchived,
+  required List<PendingMutationRecord> pending,
 }) {
   final rows = {for (final period in confirmed) period.id: period};
   final createPath = InventoryEndpoints.salesPeriods(wsId);
-  for (final edit in OfflineMutationQueue.instance.pending.value) {
+  for (final edit in pending) {
     if (edit.feature != 'inventory' || edit.workspaceId != wsId) continue;
     final id = edit.entityId;
     final payload = edit.payload;

@@ -1,6 +1,8 @@
 part of 'task_repository.dart';
 
 extension _TaskRepositoryLocal on TaskRepository {
+  bool _boardFlag(Map<String, dynamic> row, String name) =>
+      row[name] is bool ? row[name] == true : row['${name}_at'] != null;
   Future<Map<String, dynamic>> _readTaskResource(
     String wsId,
     String namespace,
@@ -62,6 +64,7 @@ extension _TaskRepositoryLocal on TaskRepository {
       return await _localBoardList(wsId, uri);
     }
     final base = '/api/v1/workspaces/$wsId/tasks';
+    if (uri.queryParameters['forTimeTracking'] == 'true') return null;
     if (uri.path != base && !uri.path.startsWith('$base/')) {
       return null;
     }
@@ -70,13 +73,9 @@ extension _TaskRepositoryLocal on TaskRepository {
       userId: currentCacheUserId(),
       workspaceId: wsId,
       namespaces: const [
-        'tasks.list',
         'tasks.boardTasks',
         'tasks.deletedTasks',
         'tasks.detail',
-        'tasks.mine',
-        'tasks.timeLinkOptions',
-        'tasks.projectLinkOptions',
       ],
     );
     if (rows.isEmpty &&
@@ -149,16 +148,23 @@ extension _TaskRepositoryLocal on TaskRepository {
       workspaceId: wsId,
       namespaces: const ['tasks.boards'],
     );
-    if (rows.isEmpty) {
-      return null;
-    }
     final base = '/api/v1/workspaces/$wsId/task-boards';
+    final pending = await OfflineMutationQueue.instance.listPending();
+    if (rows.isEmpty &&
+        !pending.any(
+          (item) =>
+              item.workspaceId == wsId &&
+              item.userId == currentCacheUserId() &&
+              item.path == base &&
+              item.method == 'POST',
+        ))
+      return null;
     final source = overlayPendingCollection(
       workspaceId: wsId,
       feature: 'tasks',
       pathContains: base,
       source: rows,
-      pending: (await OfflineMutationQueue.instance.listPending())
+      pending: pending
           .where(
             (item) =>
                 item.path == base || item.path == '$base/${item.entityId}',
@@ -170,10 +176,11 @@ extension _TaskRepositoryLocal on TaskRepository {
     final filtered = source
         .where(
           (row) => switch (status) {
-            'active' => row['archived_at'] == null && row['deleted_at'] == null,
+            'active' =>
+              !_boardFlag(row, 'archived') && !_boardFlag(row, 'deleted'),
             'archived' =>
-              row['archived_at'] != null && row['deleted_at'] == null,
-            'deleted' => row['deleted_at'] != null,
+              _boardFlag(row, 'archived') && !_boardFlag(row, 'deleted'),
+            'deleted' => _boardFlag(row, 'deleted'),
             _ => true,
           },
         )

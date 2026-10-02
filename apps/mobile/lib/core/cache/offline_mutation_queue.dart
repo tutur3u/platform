@@ -71,6 +71,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
   static final OfflineMutationQueue instance = OfflineMutationQueue._();
 
   final Map<String, OfflineMutationDispatcher> _dispatchers = {};
+  final Set<String> _cancelingIds = {};
   final ValueNotifier<List<PendingMutationRecord>> pending = ValueNotifier([]);
   final ValueNotifier<Set<String>> syncingIds = ValueNotifier({});
   final ValueNotifier<int> syncRevision = ValueNotifier(0);
@@ -157,9 +158,16 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       );
       try {
         final results = await _checkConnectivity();
-        if (!results.any((result) => result != ConnectivityResult.none)) return;
+        if (!results.any((result) => result != ConnectivityResult.none)) {
+          if (_syncRequested) continue;
+          return;
+        }
       } on Object {
         return;
+      }
+      if (_serverCooldownUntil != null &&
+          DateTime.now().isBefore(_serverCooldownUntil!)) {
+        continue;
       }
       await ApiClient.offlinePreparation(
         () => _store.refreshCachedResources(
@@ -275,10 +283,22 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     _scheduleSync();
   }
 
-  Future<void> cancel(String id) async {
+  Future<bool> cancel(String id) async {
     await init();
-    await _store.deletePendingMutation(id);
-    await refresh();
+    if (syncingIds.value.contains(id)) return false;
+    _cancelingIds.add(id);
+    try {
+      await _store.deletePendingMutation(id);
+      await refresh();
+      return true;
+    } finally {
+      final drain = _drainFuture;
+      if (drain == null) {
+        _cancelingIds.remove(id);
+      } else {
+        unawaited(drain.whenComplete(() => _cancelingIds.remove(id)));
+      }
+    }
   }
 
   Future<List<PendingMutationRecord>> listPending() async {
@@ -346,7 +366,11 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       }
 
       for (final record in records) {
-        if (record.userId == null || record.userId != _userId()) continue;
+        if (_cancelingIds.contains(record.id) ||
+            record.userId == null ||
+            record.userId != _userId()) {
+          continue;
+        }
         final scope = (record.feature, record.workspaceId);
         if (record.status != PendingMutationStatus.queued) {
           blockedScopes.add(scope);
@@ -378,8 +402,11 @@ class OfflineMutationQueue with WidgetsBindingObserver {
           await dispatcher(record);
           await _store.deletePendingMutation(record.id);
           try {
+            final module = record.feature == 'time_tracker'
+                ? 'timer'
+                : record.feature;
             await _store.invalidateTags(
-              {'module:${record.feature}'},
+              {'module:$module'},
               userId: record.userId,
               workspaceId: record.workspaceId,
             );

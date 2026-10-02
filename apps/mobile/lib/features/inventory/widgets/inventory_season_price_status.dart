@@ -47,7 +47,8 @@ class InventorySeasonPriceStatus extends StatelessWidget {
               ],
             ),
             Text(text),
-            if ((controller.hasPending || controller.offlineDraft) &&
+            if ((controller.hasPending ||
+                    (controller.offlineDraft && controller.ready)) &&
                 provenance.isNotEmpty)
               Text(provenance),
           ],

@@ -53,8 +53,10 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
   Future<void> _setLimit(int bytes) async {
     setState(() => _busy = true);
     try {
+      if (bytes < (_snapshot?.maxBytes ?? bytes)) {
+        OfflinePreparationCoordinator.instance.invalidateRetainedData();
+      }
       await CacheStore.instance.setMaxStorageBytes(bytes);
-      OfflinePreparationCoordinator.instance.invalidateRetainedData();
       await _refresh();
     } on Object {
       if (mounted) setState(() => _error = context.l10n.cacheStorageError);
@@ -84,8 +86,8 @@ class _CacheStorageSheetState extends State<CacheStorageSheet> {
     if (confirmed != true || !mounted) return;
     setState(() => _busy = true);
     try {
-      await CacheStore.instance.clearResourceCache();
       OfflinePreparationCoordinator.instance.invalidateRetainedData();
+      await CacheStore.instance.clearResourceCache();
       await _refresh();
     } on Object {
       if (mounted) setState(() => _error = context.l10n.cacheStorageError);

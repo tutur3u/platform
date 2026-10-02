@@ -17959,6 +17959,12 @@ abstract class AppLocalizations {
   /// **'Syncing…'**
   String get offlineEditSyncing;
 
+  /// No description provided for @inventorySetupSyncFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync this new item before editing or deleting it.'**
+  String get inventorySetupSyncFirst;
+
   /// No description provided for @offlineEditQueued.
   ///
   /// In en, this message translates to:
@@ -18604,7 +18610,7 @@ abstract class AppLocalizations {
   /// No description provided for @inventoryCheckoutCartRemoved.
   ///
   /// In en, this message translates to:
-  /// **'Removed {count} unavailable items. Review the cart before submitting.'**
+  /// **'{count, plural, one{Removed {count} unavailable item. Review the cart before submitting.} other{Removed {count} unavailable items. Review the cart before submitting.}}'**
   String inventoryCheckoutCartRemoved(int count);
 
   /// No description provided for @inventoryCheckoutPeriodRulesChanged.

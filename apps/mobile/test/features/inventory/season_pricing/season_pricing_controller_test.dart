@@ -199,6 +199,18 @@ void main() {
       expect(queued.single['inventory_request_id'], 'stable-id');
       expect(queued.single['inventory_period_id'], 'season');
       expect(controller.queuedOffline, isTrue);
+      expect(controller.completedInvoiceId, isNull);
+      expect(controller.queuedMutationId, 'stable-id');
+      expect(
+        (queued.single['products'] as List).single,
+        containsPair('price', 12.5),
+      );
+      expect(
+        (queued.single['products'] as List).single,
+        containsPair('price_id', 'quote-1'),
+      );
+      await expectLater(submit(), throwsStateError);
+      expect(queued, hasLength(1));
       expect(controller.operation, isNull);
       expect(controller.ready, isFalse);
     },

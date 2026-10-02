@@ -18,6 +18,7 @@ import 'package:mobile/core/cache/offline_network.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
@@ -63,6 +64,8 @@ class FinanceRepository
   @override
   final String? Function() _cacheUserId;
   final Future<bool> Function() _networkAvailable;
+
+  OfflineMutationQueue get mutationQueue => _mutationQueue;
 
   @override
   final ApiClient _api;
@@ -337,8 +340,23 @@ class FinanceRepository
       );
       wallet = Wallet.fromJson(response);
     } on Object catch (error) {
-      if (error is ApiException && error.statusCode == 404) return null;
-      if (!isOfflineTransportFailure(error)) rethrow;
+      if (error is ApiException && error.statusCode == 404) {
+        final pending = await _mutationQueue.listPending();
+        if (!pending.any(
+          (row) =>
+              row.feature == 'finance' &&
+              row.workspaceId == wsId &&
+              row.entityId == walletId &&
+              (row.path == FinanceEndpoints.wallets(wsId) ||
+                  row.path == FinanceEndpoints.wallet(wsId, walletId)),
+        )) {
+          return null;
+        }
+      }
+      if (!(error is ApiException && error.statusCode == 404) &&
+          !isOfflineTransportFailure(error)) {
+        rethrow;
+      }
       final local = await _localFinanceRows(wsId, const [
         'finance.wallets',
         'finance.walletDetail',
@@ -505,6 +523,7 @@ class FinanceRepository
     String? search,
     String? walletId,
   }) async {
+    final userId = _cacheUserId();
     if (cursor?.startsWith('local:') == true || !await _networkAvailable()) {
       return await _localTransactionPage(
         wsId,
@@ -533,6 +552,7 @@ class FinanceRepository
       );
 
       final page = InfiniteTransactionResponse.fromJson(response);
+      await _rememberTransactionCursor(wsId, userId, page, search, walletId);
       if (cursor == null &&
           (search == null || search.isEmpty) &&
           walletId == null) {

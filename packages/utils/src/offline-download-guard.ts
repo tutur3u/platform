@@ -28,7 +28,11 @@ export function isOfflineCapableRead(
     /^\/api\/v1\/mobile-calendar(?=\/api\/)/u,
     ''
   );
-  return READ_PATH.test(pathname) || USER_READ_PATH.test(pathname);
+  return (
+    READ_PATH.test(pathname) ||
+    USER_READ_PATH.test(pathname) ||
+    /^\/api\/v1\/exchange-rates\/?$/u.test(pathname)
+  );
 }
 
 function unavailable() {
@@ -73,7 +77,7 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
     if (!redis || !limiterRedis) return unavailable();
     const bearer = request.headers
       .get('authorization')
-      ?.match(/^Bearer ([^\s]+)$/i)?.[1];
+      ?.match(/^Bearer\s+([^\s]+)$/i)?.[1];
     const sessionKey = bearer
       ? await buildProxySessionSubjectKey('bearer', bearer)
       : await getProxySessionSubjectKeyFromCookieHeader(
@@ -81,8 +85,14 @@ export async function guardOfflineDownloadRequest(request: NextRequest) {
         );
     const ip = extractIPFromRequest(request.headers);
     // IP remains bounded even when a caller rotates unverified bearer values.
+    // Internal authenticated gateways may lack a client IP. Never combine
+    // their unrelated sessions into a shared unknown-IP bucket. Public ingress
+    // still supplies a real IP, retaining the rotating-token budget.
+    if (ip === 'unknown' && !sessionKey) return unavailable();
     const subjects = [
-      { key: `ip:${ip}`, minute: 1200, hour: 30000 },
+      ...(ip !== 'unknown'
+        ? [{ key: `ip:${ip}`, minute: 1200, hour: 30000 }]
+        : []),
       ...(sessionKey ? [{ key: sessionKey, minute: 600, hour: 12000 }] : []),
     ];
     for (const subject of subjects) {

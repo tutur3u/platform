@@ -22,32 +22,33 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     String? Function()? currentUserId,
   }) : _repo = financeRepository,
        _store = cacheStore ?? CacheStore.instance,
+       _mutationQueue = financeRepository.mutationQueue,
        _currentUserId = currentUserId ?? currentCacheUserId,
        super(initialState ?? const TransactionListState()) {
-    OfflineMutationQueue.instance.syncRevision.addListener(_onOfflineSync);
+    _mutationQueue.syncRevision.addListener(_onOfflineSync);
   }
 
   void _onOfflineSync() {
-    if (isClosed || _wsId.isEmpty) {
+    if (isClosed || _wsId.isEmpty || _requestedUserId != _currentUserId()) {
       return;
     }
-    unawaited(
-      _fetch(replaceExisting: true).then<void>((_) {}, onError: (Object _) {}),
-    );
+    unawaited(load(_wsId).then<void>((_) {}, onError: (Object _) {}));
   }
 
   @override
   Future<void> close() {
     _generation++;
-    OfflineMutationQueue.instance.syncRevision.removeListener(_onOfflineSync);
+    _mutationQueue.syncRevision.removeListener(_onOfflineSync);
     return super.close();
   }
 
   final FinanceRepository _repo;
+  final OfflineMutationQueue _mutationQueue;
   final CacheStore _store;
   final String? Function() _currentUserId;
   int _generation = 0;
   String? _loadedUserId;
+  String? _requestedUserId;
 
   bool _isCurrent(int generation, String? userId, String wsId, String search) =>
       !isClosed &&
@@ -111,24 +112,26 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     final userId = _currentUserId();
     final hasVisibleData =
         _loadedWorkspaceId == wsId && _loadedUserId == userId;
+    final search = hasVisibleData ? state.search : '';
     _wsId = wsId;
+    _requestedUserId = userId;
     emit(
       hasVisibleData
           ? state.copyWith(
-              search: '',
+              search: search,
               status: TransactionListStatus.loading,
               clearCursor: true,
               clearError: true,
             )
           : const TransactionListState(status: TransactionListStatus.loading),
     );
-    final cacheId = '${userId ?? 'anonymous'}::$wsId::';
+    final cacheId = '${userId ?? 'anonymous'}::$wsId::$search';
     final cached = _cache[cacheId];
     final diskCached = await _store.read<TransactionListState>(
-      key: _requestKey(wsId, userId, ''),
+      key: _requestKey(wsId, userId, search),
       decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
     );
-    if (!_isCurrent(generation, userId, wsId, '')) {
+    if (!_isCurrent(generation, userId, wsId, search)) {
       return;
     }
     final resolvedCached = cached?.state ?? diskCached.data;
@@ -158,7 +161,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
         workspaceCurrencyFuture,
         exchangeRatesFuture,
       ).wait;
-      if (!_isCurrent(generation, userId, wsId, '')) {
+      if (!_isCurrent(generation, userId, wsId, search)) {
         return;
       }
 
@@ -172,7 +175,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
 
       await _fetch(replaceExisting: true, generation: generation);
     } on Object catch (error) {
-      if (!_isCurrent(generation, userId, wsId, '')) {
+      if (!_isCurrent(generation, userId, wsId, search)) {
         return;
       }
       emit(
@@ -328,7 +331,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
       final visible = overlayPendingTransactions(
         _wsId,
         state.transactions,
-        OfflineMutationQueue.instance.pending.value,
+        _mutationQueue.pending.value,
         search: state.search,
       );
       if (visible.isNotEmpty) {

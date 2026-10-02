@@ -28,6 +28,14 @@ class ApiClient {
        _expectedUserId = expectedUserId,
        _clock = clock ?? DateTime.now;
 
+  static final Object _expectedUserKey = Object();
+
+  /// Pins an injected client's requests to one cache owner across async gaps.
+  static Future<T> runForUser<T>(
+    String userId,
+    Future<T> Function() operation,
+  ) => runZoned(operation, zoneValues: {_expectedUserKey: userId});
+
   static Future<T> offlinePreparation<T>(
     Future<T> Function() operation, {
     bool allowChallenge = true,
@@ -429,10 +437,15 @@ class ApiClient {
     return _handleResponse(response);
   }
 
+  /// Verifies the captured cache owner against the current authenticated user.
+  void checkUser(String expectedUserId) => _checkRequestUser(expectedUserId);
+
   void _checkRequestUser(String? userId) {
     if (userId == null ||
         _auth.currentUser?.id != userId ||
-        (_expectedUserId != null && _expectedUserId != userId)) {
+        (_expectedUserId != null && _expectedUserId != userId) ||
+        (Zone.current[_expectedUserKey] != null &&
+            Zone.current[_expectedUserKey] != userId)) {
       throw const ApiException(
         message: 'Account changed during request',
         statusCode: 401,

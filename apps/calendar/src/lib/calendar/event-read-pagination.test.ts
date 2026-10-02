@@ -35,6 +35,16 @@ describe('calendar read bounds', () => {
       expect(() => parseCalendarEventRead(params({ end_at }))).toThrow();
     }
   });
+  it('accepts exactly 400 days and rejects 401 days without pagination', () => {
+    const ending = (days: number) =>
+      new Date(Date.parse(start) + days * 86400000).toISOString();
+    expect(
+      parseCalendarEventRead(params({ end_at: ending(400) })).pageSize
+    ).toBeUndefined();
+    expect(() =>
+      parseCalendarEventRead(params({ end_at: ending(401) }))
+    ).toThrow('cannot exceed 400 days');
+  });
   it('allows full history only with bounded pagination', () => {
     expect(
       parseCalendarEventRead(

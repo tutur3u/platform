@@ -133,6 +133,7 @@ class MailCache {
           policy: _policy,
           decode: _decode,
           forceRefresh: true,
+          registerRefresh: false,
           tags: const ['mail.view'],
           fetch: () async {
             if (!_usable || _deniedWorkspaces.contains(wsId)) {

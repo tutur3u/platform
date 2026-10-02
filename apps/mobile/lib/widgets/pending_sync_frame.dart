@@ -47,8 +47,13 @@ class PendingSyncFrame extends StatelessWidget {
             record.payload?['client_destination_transaction_id'] == entityId ||
             Uri.tryParse(record.path)?.pathSegments.contains(entityId) ==
                 true) {
-          mutation = record;
-          break;
+          mutation ??= record;
+          if (OfflineMutationQueue.instance.syncingIds.value.contains(
+            record.id,
+          )) {
+            mutation = record;
+            break;
+          }
         }
       }
       if (mutation == null) return child;

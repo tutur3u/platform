@@ -42,6 +42,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
   bool restoring = true;
   bool journalFailed = false;
   String? completedInvoiceId;
+  String? queuedMutationId;
   String _draftLabels = '{}';
   bool get journalReady =>
       !restoring && !journalFailed && _actor != null && _workspace != null;
@@ -71,6 +72,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
   bool get ready =>
       journalReady &&
       completedInvoiceId == null &&
+      !queuedOffline &&
       scheduled &&
       (fresh || offlineDraft) &&
       !loading &&
@@ -101,6 +103,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
     _pending = null;
     operation = null;
     completedInvoiceId = null;
+    queuedMutationId = null;
     queuedOffline = false;
     restoring = true;
     journalFailed = false;
@@ -238,7 +241,10 @@ class InventorySeasonPricingController extends ChangeNotifier {
     Map<String, String> lineLabels = const {},
   }) async {
     await _restoreFuture;
-    if (sending || !journalReady || completedInvoiceId != null) {
+    if (sending ||
+        !journalReady ||
+        completedInvoiceId != null ||
+        queuedOffline) {
       throw StateError('Operation recovery required');
     }
     final admission = _generation;
@@ -306,7 +312,7 @@ class InventorySeasonPricingController extends ChangeNotifier {
         final id = await enqueueOffline!(_workspace!, _pending!);
         if (admission == _generation && !_disposed) {
           queuedOffline = true;
-          completedInvoiceId = id;
+          queuedMutationId = id;
           _pending = null;
           _notify();
         }

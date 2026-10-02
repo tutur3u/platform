@@ -20,9 +20,34 @@ import 'package:mobile/data/sources/api_client.dart';
 /// that encrypted fields (title, description, location) are returned
 /// as plaintext to the client.
 class CalendarRepository {
-  CalendarRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+  CalendarRepository({ApiClient? apiClient, String? Function()? currentUserId})
+    : _api = apiClient ?? ApiClient(),
+      _owner = currentUserId ?? currentCacheUserId;
 
   final ApiClient _api;
+  final String? Function() _owner;
+
+  void _checkOwner(String? userId) {
+    if (_owner() != userId) {
+      throw const ApiException(
+        message: 'Calendar account changed.',
+        statusCode: 401,
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> _readForOwner(
+    String path,
+    String? userId,
+  ) async {
+    _checkOwner(userId);
+    final value = userId == null
+        ? await _api.getJson(path)
+        : await ApiClient.runForUser(userId, () => _api.getJson(path));
+    _checkOwner(userId);
+    return value;
+  }
+
   final Map<String, DateTime> _historyWarmups = {};
 
   /// Download supported calendar years in bounded cursor pages and preserve
@@ -31,7 +56,7 @@ class CalendarRepository {
     String wsId, {
     String? Function()? cacheUserId,
   }) async {
-    final owner = cacheUserId ?? currentCacheUserId;
+    final owner = cacheUserId ?? _owner;
     final userId = owner();
     if (userId == null) {
       throw StateError('Sign in before preparing offline data.');
@@ -53,7 +78,11 @@ class CalendarRepository {
           if (cursor != null) 'cursor': cursor,
         },
       ).query;
-      final response = await _api.getJson('${_basePath(wsId)}?$query');
+      final response = await ApiClient.runForUser(
+        userId,
+        () => _api.getJson('${_basePath(wsId)}?$query'),
+      );
+      manifest.checkScope();
       if (response['data'] is! List || response['has_more'] is! bool) {
         throw const FormatException('Missing paginated calendar data.');
       }
@@ -106,7 +135,11 @@ class CalendarRepository {
     await manifest.verify();
     await manifest.reconcile(
       workspaceId: wsId,
-      namespaces: {'calendar.events'},
+      namespaces: {
+        'calendar.events',
+        'calendar.events.utc.v2',
+        'calendar.event.detail',
+      },
     );
     manifest.retain('calendar', wsId);
   }
@@ -114,9 +147,9 @@ class CalendarRepository {
   static String _basePath(String wsId) =>
       '/api/v1/workspaces/$wsId/calendar/events';
 
-  CacheKey _listKey(String wsId, String query) => CacheKey(
+  CacheKey _listKey(String wsId, String query, {String? userId}) => CacheKey(
     namespace: 'calendar.events',
-    userId: currentCacheUserId(),
+    userId: userId ?? _owner(),
     workspaceId: wsId,
     params: {'query': query},
   );
@@ -144,13 +177,26 @@ class CalendarRepository {
       query = '?${pairs.join('&')}';
     }
 
-    final key = _listKey(wsId, query);
+    final userId = _owner();
+    void checkOwner() {
+      if (_owner() != userId) {
+        throw const ApiException(
+          message: 'Calendar account changed.',
+          statusCode: 401,
+        );
+      }
+    }
+
+    final key = _listKey(wsId, query, userId: userId);
     final existing = await CacheStore.instance.read<List<CalendarEvent>>(
       key: key,
       decode: _decodeEvents,
     );
-    if (!existing.hasValue) {
+    checkOwner();
+    if (!existing.hasValue && !await hasNetworkConnection()) {
+      checkOwner();
       final local = await _localEvents(wsId);
+      checkOwner();
       if (local.isNotEmpty) {
         final matching = overlayPendingCalendarEvents(
           wsId,
@@ -161,6 +207,7 @@ class CalendarRepository {
         );
         await CacheStore.instance.write(
           key: key,
+          checkScope: checkOwner,
           policy: CachePolicies.moduleData,
           payload: matching.map((event) => event.toJson()).toList(),
           tags: ['module:calendar', 'workspace:$wsId'],
@@ -170,15 +217,22 @@ class CalendarRepository {
     List<CalendarEvent> events;
     try {
       final cached = await CacheStore.instance.prefetch<List<CalendarEvent>>(
-        key: _listKey(wsId, query),
+        key: key,
+        checkScope: checkOwner,
         policy: CachePolicies.moduleData,
         decode: _decodeEvents,
         fetch: () async {
-          final response = await _api.getJson('${_basePath(wsId)}$query');
+          checkOwner();
+          final response = await _readForOwner(
+            '${_basePath(wsId)}$query',
+            userId,
+          );
+          checkOwner();
           return response['data'] as List<dynamic>? ?? const [];
         },
         tags: ['module:calendar', 'workspace:$wsId'],
       );
+      checkOwner();
       events = cached.data ?? const [];
     } on Object catch (error) {
       if (!isOfflineTransportFailure(error)) {
@@ -194,13 +248,16 @@ class CalendarRepository {
         rethrow;
       }
     }
-    if (start != null) {
+    checkOwner();
+    if (start != null && !start.isAfter(DateTime.now())) {
       unawaited(_warmEarlierEvents(wsId, start));
     }
+    final pending = await OfflineMutationQueue.instance.listPending();
+    checkOwner();
     return overlayPendingCalendarEvents(
       wsId,
       events,
-      await OfflineMutationQueue.instance.listPending(),
+      pending,
       start: start,
       end: end,
     );
@@ -215,7 +272,7 @@ class CalendarRepository {
       );
 
   Future<void> _warmEarlierEventsImpl(String wsId, DateTime start) async {
-    final userId = currentCacheUserId();
+    final userId = _owner();
     if (userId == null) {
       return;
     }
@@ -226,7 +283,6 @@ class CalendarRepository {
         DateTime.now().difference(last) < const Duration(minutes: 15)) {
       return;
     }
-    _historyWarmups[key] = DateTime.now();
     final query = Uri(
       queryParameters: {
         'start_at': earlier.toIso8601String(),
@@ -234,18 +290,30 @@ class CalendarRepository {
       },
     ).query;
     try {
-      if (!await hasNetworkConnection() || userId != currentCacheUserId()) {
+      if (!await hasNetworkConnection() || userId != _owner()) {
         return;
       }
+      _historyWarmups[key] = DateTime.now();
+      if (_historyWarmups.length > 64) {
+        _historyWarmups.remove(_historyWarmups.keys.first);
+      }
       await CacheStore.instance.prefetch<List<CalendarEvent>>(
-        key: _listKey(wsId, '?$query'),
+        key: _listKey(wsId, '?$query', userId: userId),
+        checkScope: () {
+          if (userId != _owner()) throw StateError('Calendar account changed.');
+        },
         policy: CachePolicies.moduleData,
         decode: _decodeEvents,
         forceRefresh: true,
-        fetch: () async =>
-            (await _api.getJson('${_basePath(wsId)}?$query'))['data']
-                as List<dynamic>? ??
-            const [],
+        fetch: () async {
+          if (userId != _owner()) throw StateError('Calendar account changed.');
+          final response = await ApiClient.runForUser(
+            userId,
+            () => _api.getJson('${_basePath(wsId)}?$query'),
+          );
+          if (userId != _owner()) throw StateError('Calendar account changed.');
+          return response['data'] as List<dynamic>? ?? const [];
+        },
         tags: ['module:calendar', 'workspace:$wsId'],
       );
     } on Object {
@@ -254,24 +322,28 @@ class CalendarRepository {
   }
 
   Future<CalendarEvent?> getEventById(String wsId, String eventId) async {
+    final userId = _owner();
     try {
       final result = await CacheStore.instance.prefetch<CalendarEvent>(
         key: CacheKey(
           namespace: 'calendar.event.detail',
-          userId: currentCacheUserId(),
+          userId: userId,
           workspaceId: wsId,
           params: {'id': eventId},
         ),
+        checkScope: () => _checkOwner(userId),
         policy: CachePolicies.detail,
         decode: (payload) => CalendarEvent.fromJson(
           (payload! as Map<String, dynamic>).cast<String, dynamic>(),
         ),
-        fetch: () => _api.getJson('${_basePath(wsId)}/$eventId'),
+        fetch: () => _readForOwner('${_basePath(wsId)}/$eventId', userId),
         tags: ['module:calendar', 'workspace:$wsId'],
       );
+      _checkOwner(userId);
       final events = overlayPendingCalendarEvents(wsId, [
         if (result.data != null) result.data!,
       ], await OfflineMutationQueue.instance.listPending());
+      _checkOwner(userId);
       for (final event in events) {
         if (event.id == eventId) {
           return event;
@@ -316,7 +388,7 @@ class CalendarRepository {
   Future<List<CalendarEvent>> _localEvents(String wsId) async =>
       (await queryLocalRows(
         store: CacheStore.instance,
-        userId: currentCacheUserId(),
+        userId: _owner(),
         workspaceId: wsId,
         namespaces: const [
           'calendar.events',

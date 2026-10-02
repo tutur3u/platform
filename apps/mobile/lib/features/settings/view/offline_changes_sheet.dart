@@ -119,8 +119,9 @@ class _PendingChangeCard extends StatelessWidget {
       ),
     );
     if (confirmed != true) return;
-    await OfflineMutationQueue.instance.cancel(record.id);
-    unawaited(AppHaptics.drop());
+    if (await OfflineMutationQueue.instance.cancel(record.id)) {
+      unawaited(AppHaptics.drop());
+    }
   }
 
   @override

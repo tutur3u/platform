@@ -88,7 +88,15 @@ void main() {
             as Map;
     expect(body['inventory_period_id'], 'legacy-period');
     expect(body['price_mode'], 'custom');
-    expect(body['inventory_request_id'], matches(RegExp(r'^[0-9a-f-]{36}$')));
+    expect(
+      body['inventory_request_id'],
+      matches(
+        RegExp(
+          '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-'
+          r'[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+        ),
+      ),
+    );
     expect(body['products'], products);
     verifyNoMoreInteractions(api);
   });

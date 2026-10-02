@@ -70,7 +70,13 @@ extension _InventoryManageItemActions on _InventoryManagePageState {
       if (!mounted || _scope != scope) {
         return;
       }
-      showInventoryToast(context, error.toString(), destructive: true);
+      showInventoryToast(
+        context,
+        error is InventorySetupAwaitingSync
+            ? context.l10n.inventorySetupSyncFirst
+            : error.toString(),
+        destructive: true,
+      );
     }
   }
 }

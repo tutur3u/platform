@@ -100,7 +100,12 @@ extension FinanceRepositoryCheckpoints on FinanceRepository {
       if (!isOfflineTransportFailure(error)) rethrow;
       confirmed = const WalletCheckpointListResponse(data: [], intervals: []);
     }
-    return _overlayPendingCheckpoints(wsId, walletId, confirmed);
+    return _overlayPendingCheckpoints(
+      wsId,
+      walletId,
+      confirmed,
+      _mutationQueue.pending.value,
+    );
   }
 
   Future<WalletCheckpoint> createWalletCheckpoint({
@@ -296,14 +301,21 @@ WalletCheckpointListResponse _overlayPendingCheckpoints(
   String wsId,
   String walletId,
   WalletCheckpointListResponse confirmed,
+  List<PendingMutationRecord> pending,
 ) {
   final rows = {for (final row in confirmed.data) row.id: row};
   final collectionPath = FinanceEndpoints.walletCheckpoints(wsId, walletId);
-  for (final edit in OfflineMutationQueue.instance.pending.value) {
+  for (final edit in pending) {
     if (edit.feature != 'finance' || edit.workspaceId != wsId) continue;
     final id = edit.entityId;
     final payload = edit.payload;
-    if (id == null || payload == null) continue;
+    if (id == null) continue;
+    if (edit.method == 'DELETE' &&
+        edit.path == FinanceEndpoints.walletCheckpoint(wsId, walletId, id)) {
+      rows.remove(id);
+      continue;
+    }
+    if (payload == null) continue;
     final isCreate = edit.method == 'POST' && edit.path == collectionPath;
     final isBatch =
         edit.method == 'POST' &&

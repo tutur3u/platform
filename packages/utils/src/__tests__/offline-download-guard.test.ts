@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   set: vi.fn(),
   redis: vi.fn(),
   limiterRedis: vi.fn(),
+  ip: vi.fn(() => '192.0.2.1'),
 }));
 vi.mock('@upstash/ratelimit', () => ({
   Ratelimit: class {
@@ -25,7 +26,7 @@ vi.mock('@tuturuuu/turnstile/server', () => ({
   verifyTurnstileToken: mocks.verify,
 }));
 vi.mock('../abuse-protection/edge', () => ({
-  extractIPFromRequest: () => '192.0.2.1',
+  extractIPFromRequest: mocks.ip,
 }));
 vi.mock('../abuse-protection/edge-trust', () => ({
   getCachedTrustEntries: mocks.trust,
@@ -227,5 +228,31 @@ describe('offline download guards', () => {
   it('fails closed on limiter/store errors', async () => {
     mocks.limit.mockRejectedValue(new Error('unavailable'));
     expect((await guardOfflineDownloadRequest(request()))?.status).toBe(503);
+  });
+  it('keeps authenticated gateway sessions separate when the client IP is absent', async () => {
+    mocks.ip.mockReturnValueOnce('unknown');
+    expect(await guardOfflineDownloadRequest(request())).toBeNull();
+    expect(mocks.limit).toHaveBeenCalledTimes(2);
+    expect(
+      mocks.limit.mock.calls.every(([key]) =>
+        String(key).startsWith('session:')
+      )
+    ).toBe(true);
+  });
+  it('fails closed for an unknown anonymous address', async () => {
+    mocks.ip.mockReturnValueOnce('unknown');
+    expect(
+      (await guardOfflineDownloadRequest(request({ bearer: null })))?.status
+    ).toBe(503);
+    expect(mocks.limit).not.toHaveBeenCalled();
+  });
+  it('guards global exchange rates and accepts Bearer separator whitespace', async () => {
+    expect(
+      isOfflineCapableRead(request({ pathname: '/api/v1/exchange-rates' }))
+    ).toBe(true);
+    const input = request();
+    input.headers.set('authorization', 'Bearer   synthetic-session');
+    expect(await guardOfflineDownloadRequest(input)).toBeNull();
+    expect(mocks.limit).toHaveBeenCalledTimes(4);
   });
 });
