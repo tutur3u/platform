@@ -178,8 +178,8 @@ are enforced on each Judge container by Docker cgroups, with a conservative
 free-memory check before each case. The platform claim function caps concurrent
 Judge runs on a runner at the lower of its sandbox and instance maxima. Each
 container receives a share of the host CPU and memory budget divided by that
-ceiling. A single managed agent currently processes one Judge job at a time;
-additional agent processes can use the configured capacity. These settings do
+ceiling. A managed agent can dispatch independent Judge jobs concurrently within
+the configured process-wide sandbox budget. These settings do
 not limit the current trusted host commands, builds, previews, or tunnels.
 
 ## Judge setup
@@ -381,7 +381,8 @@ only brokers commands and opens previews.
 Agents keep heartbeats on a 20-second cadence while dispatching independent jobs
 concurrently, with at most eight active jobs. Judge cases share a process-wide
 sandbox budget and always use fresh isolated containers. Maintenance and CLI
-restart jobs drain active work before changing the agent. Readiness probes are
+restart jobs drain active work before changing the agent. An execution failure
+stops new dispatch and drains already active work before the agent exits. Readiness probes are
 cached for ten minutes and refreshed in the background; execution still fails
 closed if required isolation or language images are unavailable.
 
@@ -390,6 +391,12 @@ require gVisor and pinned language image digests, run unprivileged without host
 credentials, and disable network access by default. Project environments retain
 dependencies while warm, expire after fifteen idle minutes and have a two-hour
 maximum lifetime. Environment count is bounded by the runner's resource limits.
+A failed container removal retains its capacity reservation until a successful
+removal or healthy Docker inventory confirms the container is absent. Failed
+startup orphan cleanup blocks new environments rather than oversubscribing the host.
+Stopping waits for already admitted container creation, with a fifteen-second
+wait bound; a timeout reports an unconfirmed stop and retains capacity ownership.
+It does not wait for the arbitrary project command to finish.
 File inventories and changed bytes are exported separately; credentials and
 runner metadata never enter project files. The platform must provide its signed
 file-save callback before enabling the hosted playground workload.

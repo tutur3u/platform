@@ -48,7 +48,7 @@ for directory, folders, names in os.walk('/project',followlinks=False):
         total+=len(data)
         if total>2097152 or len(files)>=128: raise ValueError('Project exceeds Drive save limit')
         files.append({'path':os.path.relpath(path,'/project'),'content':content})
-print(json.dumps(files))
+print(json.dumps(files,ensure_ascii=False))
 `;
 
 // Bound response bytes and never follow redirects outside this container's loopback app.

@@ -123,6 +123,7 @@ export async function runDevboxAgentLoop({
   try {
     while (running) {
       if (Date.now() >= nextHeartbeatAt) await heartbeat();
+      if (failure) throw failure;
       if (
         controlOrigin &&
         !once &&
@@ -143,6 +144,7 @@ export async function runDevboxAgentLoop({
         path: controlOrigin ? '/v1/poll' : undefined,
         token,
       });
+      if (failure) throw failure;
       if (!pollResponse.ok) {
         throw new Error(
           `Devbox agent poll failed: ${formatResponseStatus(pollResponse.response)}`
@@ -162,6 +164,7 @@ export async function runDevboxAgentLoop({
             if (Date.now() >= nextHeartbeatAt) await heartbeat();
             if (failure) throw failure;
           }
+          if (failure) throw failure;
           const task = executeDevboxAgentJob(job, { baseUrl: origin, token })
             .then((result) => {
               const restart =
