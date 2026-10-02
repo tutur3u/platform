@@ -2,7 +2,7 @@ name: Disposable full-schema types (review candidate)
 on:
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: supabase-hosted-typegen
   cancel-in-progress: false
@@ -89,3 +89,28 @@ jobs:
       - name: Validate generated types and retain runner-local proof only
         if: success() && steps.lifecycle.outcome == 'success' && steps.cleanup.outcome == 'success'
         run: node apps/database/tests/programming-hosted-typegen-review/proposal.mjs validate
+      - name: Commit generated schema declarations to the exact backend candidate
+        if: success() && steps.lifecycle.outcome == 'success' && steps.cleanup.outcome == 'success'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('node:fs');
+            const crypto = require('node:crypto');
+            const expectedHead = '62f1180ad88bf6a582ec32ccc8271fe301b4919d';
+            const branch = 'feat/learn-programming-persistence';
+            const migration = fs.readFileSync('apps/database/supabase/migrations/20261001140000_learn_programming_problem_catalog.sql');
+            if (crypto.createHash('sha256').update(migration).digest('hex') !== '2895cf4d9e5d6cae17690c31eb4eecae02800de21730b3bdf6b8a67fc306e96f') throw new Error('Migration identity mismatch');
+            const repo = context.repo;
+            const ref = await github.rest.git.getRef({...repo, ref: `heads/${branch}`});
+            if (ref.data.object.sha !== expectedHead) throw new Error('Backend candidate advanced; refusing source write');
+            const commit = await github.rest.git.getCommit({...repo, commit_sha: expectedHead});
+            const content = fs.readFileSync('packages/types/src/supabase.ts', 'utf8');
+            for (const marker of ['programming_problems:', 'programming_problem_cases:', 'public:', 'private:', 'storage:']) {
+              if (!content.includes(marker)) throw new Error('Generated schema contract missing');
+            }
+            const blob = await github.rest.git.createBlob({...repo, content, encoding: 'utf-8'});
+            const tree = await github.rest.git.createTree({...repo, base_tree: commit.data.tree.sha, tree: [{path: 'packages/types/src/supabase.ts', mode: '100644', type: 'blob', sha: blob.data.sha}]});
+            if (tree.data.sha === commit.data.tree.sha) { core.info('Generated declarations already match backend source.'); return; }
+            const next = await github.rest.git.createCommit({...repo, message: 'chore(database): regenerate Programming schema declarations', tree: tree.data.sha, parents: [expectedHead]});
+            await github.rest.git.updateRef({...repo, ref: `heads/${branch}`, sha: next.data.sha, force: false});
+            core.info('Committed only generated schema declarations to the verified backend branch.');
