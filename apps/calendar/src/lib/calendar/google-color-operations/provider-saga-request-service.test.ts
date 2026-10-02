@@ -9,12 +9,13 @@ import { createRequestProviderSagaService } from './provider-saga-request-servic
 const mocks = vi.hoisted(() => ({
   authorization: vi.fn(),
   assertAllowed: vi.fn(),
+  getKey: vi.fn(),
 }));
 vi.mock('./provider-saga-request-access', () => ({
   createRequestProviderSagaAccess: () => mocks,
 }));
 vi.mock('../../workspace-encryption', () => ({
-  getWorkspaceKey: async () => Buffer.alloc(32, 8),
+  getWorkspaceKey: mocks.getKey,
 }));
 const scope = {
   wsId: '00000000-0000-4000-8000-000000008711',
@@ -43,6 +44,7 @@ const destination: SagaEndpoint = {
 };
 function fixture() {
   vi.clearAllMocks();
+  mocks.getKey.mockResolvedValue(Buffer.alloc(32, 8));
   const rpc = vi.fn(async (_name, params) =>
     params.p_action === 'lookup'
       ? { data: null, error: null }
@@ -243,6 +245,44 @@ it('captures Google move UID once inside the original encrypted journal and reje
     })
   ).rejects.toMatchObject({ reason: 'identity' });
   expect(f.provider.observe).toHaveBeenCalledTimes(1);
+});
+
+it('rejects an authoritative calendar-scoped label move before keys or admission', async () => {
+  const f = fixture();
+  vi.mocked(f.provider.observe).mockResolvedValueOnce({
+    absent: false,
+    eventId: 'original',
+    etag: 'original-version',
+    marker: null,
+    event: { iCalUID: 'synthetic-source-uid', eventLabelId: 'source-label' },
+  });
+  const service = await createRequestProviderSagaService(
+    new Request('https://example.test'),
+    scope.wsId,
+    scope.eventId,
+    { provider: () => f.provider, project: vi.fn() }
+  );
+  await expect(
+    service.reserve({
+      ...f.input,
+      binding: {
+        ...f.input.binding,
+        mode: 'google-move',
+        destination: {
+          ...destination,
+          identity: { ...destination.identity, providerEventId: 'original' },
+        },
+      },
+      payload: { ...f.input.payload, event: {} },
+    })
+  ).rejects.toMatchObject({ reason: 'conflict' });
+  expect(mocks.getKey).not.toHaveBeenCalled();
+  expect(
+    f.rpc.mock.calls.some(([, params]) => params.p_action === 'admit')
+  ).toBe(false);
+  expect(f.provider.move).not.toHaveBeenCalled();
+  expect(f.provider.insert).not.toHaveBeenCalled();
+  expect(f.provider.deleteSource).not.toHaveBeenCalled();
 });
 
 it('rejects attendee-bearing transfer before generation admission', async () => {

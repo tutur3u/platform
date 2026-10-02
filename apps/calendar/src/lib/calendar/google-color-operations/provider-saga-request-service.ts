@@ -170,6 +170,11 @@ export async function createRequestProviderSagaService(
             'Combined provider edits require durable admission'
           );
         if (provisional.mode === 'google-move') {
+          if (original.event.eventLabelId)
+            throw new ColorOperationError(
+              'conflict',
+              'Calendar-scoped label moves require reconciliation'
+            );
           const sourceICalUID = z
             .string()
             .min(1)
