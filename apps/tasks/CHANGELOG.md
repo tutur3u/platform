@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.36.3](https://github.com/tutur3u/platform/compare/tasks-v0.36.2...tasks-v0.36.3) (2026-10-02)
+
+
+### Bug Fixes
+
+* align plan, attachment, and storage access checks ([#5688](https://github.com/tutur3u/platform/issues/5688)) ([1987984](https://github.com/tutur3u/platform/commit/1987984c65dd37aff4ea545de894edbf76442d5e))
+* preserve attachment keys and task policy failure handling ([bc82c63](https://github.com/tutur3u/platform/commit/bc82c633e9d61074d100b4da80fdcf6d6870af96))
+* **tasks:** assert plan route response in regression test ([fdda420](https://github.com/tutur3u/platform/commit/fdda42001582119c6cee581ee97a29f33876c02c))
+* **tasks:** enforce actor-scoped plan and share authorization ([430f4db](https://github.com/tutur3u/platform/commit/430f4dbb0a97908beb753f045d36e7cf81952567))
+
 ## [0.36.2](https://github.com/tutur3u/platform/compare/tasks-v0.36.1...tasks-v0.36.2) (2026-09-28)
 
 
