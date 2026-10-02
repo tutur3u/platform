@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import {
   copyFile,
   mkdir,
   mkdtemp,
   readFile,
-  rename,
   rm,
   writeFile,
 } from 'node:fs/promises';
@@ -16,6 +15,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writeFileAtomically } from './atomic-file.js';
 
 import {
   ensureSupabaseBinary,
@@ -29,7 +29,7 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const DISPOSABLE_PREFIX = 'tuturuuu-supabase-';
-const METADATA_FILE = '.tuturuuu-isolated-supabase.json';
+export const METADATA_FILE = '.tuturuuu-isolated-supabase.json';
 const PORT_BLOCK_SIZE = 8;
 const PORT_SLOT_COUNT = 2500;
 const PORT_SLOT_ATTEMPTS = 8;
@@ -290,27 +290,12 @@ export function validateFocusedTestPath(repositoryRoot, testPath) {
   return normalized;
 }
 
-export async function writeMetadata(
-  disposableRoot,
-  metadata,
-  { write = writeFile, move = rename, remove = rm } = {}
-) {
-  const target = path.join(disposableRoot, METADATA_FILE);
-  const temporary = path.join(
-    disposableRoot,
-    `${METADATA_FILE}.${randomUUID()}.tmp`
+export async function writeMetadata(disposableRoot, metadata, options = {}) {
+  return writeFileAtomically(
+    path.join(disposableRoot, METADATA_FILE),
+    `${JSON.stringify(metadata, null, 2)}\n`,
+    { ...options, writeOptions: { flag: 'wx', mode: 0o600 } }
   );
-  try {
-    // A killed lifecycle may leave this temporary file partial, while the sole
-    // recovery record stays complete until same-directory atomic replacement.
-    await write(temporary, `${JSON.stringify(metadata, null, 2)}\n`, {
-      flag: 'wx',
-      mode: 0o600,
-    });
-    await move(temporary, target);
-  } finally {
-    await remove(temporary, { force: true });
-  }
 }
 
 export async function readLifecycleMetadata(disposableRoot, options) {

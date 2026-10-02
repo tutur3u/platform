@@ -14,6 +14,7 @@ import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
 import {
   cleanupInterruptedProject,
+  METADATA_FILE,
   readLifecycleMetadata,
   runIsolatedLifecycle,
   stageDisposableProject,
@@ -177,10 +178,7 @@ for (const [phase, previous] of [
       const interrupted = JSON.parse(readFileSync(marker, 'utf8'));
       assert.notEqual(
         interrupted.file,
-        path.join(
-          owned.metadata.disposableRoot,
-          '.tuturuuu-isolated-supabase.json'
-        )
+        path.join(owned.metadata.disposableRoot, METADATA_FILE)
       );
       assert.equal(readFileSync(interrupted.file, 'utf8').length, 17);
       const recovered = await readLifecycleMetadata(
@@ -219,3 +217,22 @@ for (const [phase, previous] of [
     }
   });
 }
+
+test('metadata preserves its original write failure when temp cleanup also fails', async () => {
+  const primary = new Error('synthetic write failure');
+  await assert.rejects(
+    writeMetadata(
+      '/synthetic-owned-root',
+      { status: 'staged' },
+      {
+        write: async () => {
+          throw primary;
+        },
+        remove: async () => {
+          throw new Error('synthetic cleanup failure');
+        },
+      }
+    ),
+    (error) => error === primary
+  );
+});

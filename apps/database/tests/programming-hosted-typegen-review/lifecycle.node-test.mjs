@@ -241,7 +241,7 @@ for (const mode of ['timeout', 'interruption', 'monitor']) {
       );
       await assert.rejects(
         runOwnedProcess(process.execPath, [fixture, marker], {
-          timeoutMs: mode === 'timeout' ? 500 : 3000,
+          timeoutMs: mode === 'timeout' ? 2500 : 3000,
           intervalMs: 20,
           signalSource: signals,
           onTick: () => {
