@@ -52,8 +52,11 @@ begin
     if tg_op = 'INSERT' and new.provider = 'google' then
       select * into op from private.calendar_google_color_operations h
         where h.ws_id=new.ws_id
-          and h.identity->>'calendarId'=coalesce(new.external_calendar_id,new.google_calendar_id)
-          and h.identity->>'providerEventId'=coalesce(new.external_event_id,new.google_event_id) for update;
+          and ((h.identity->>'calendarId'=coalesce(new.external_calendar_id,new.google_calendar_id)
+            and h.identity->>'providerEventId'=coalesce(new.external_event_id,new.google_event_id))
+          or exists(select 1 from private.calendar_provider_saga_scopes s where s.ws_id=h.ws_id and s.event_id=h.event_id
+            and s.provider='google' and s.calendar_id=coalesce(new.external_calendar_id,new.google_calendar_id)
+            and s.provider_event_id=coalesce(new.external_event_id,new.google_event_id))) for update;
       if found then
         if exists(select 1 from private.calendar_google_color_write_permits p
           where p.transaction_id=txid_current() and p.ws_id=op.ws_id and p.event_id=op.event_id
@@ -263,9 +266,15 @@ begin
       and created_at<now()-interval '30 minutes';
   insert into private.calendar_google_import_reads(ws_id,calendar_id,auth_token_id,generations)
   select p_ws_id,p_calendar_id,p_auth_token_id,coalesce(jsonb_object_agg(
-    identity->>'providerEventId',current_generation::text),'{}'::jsonb)
-  from private.calendar_google_color_operations
-  where ws_id=p_ws_id and identity->>'calendarId'=p_calendar_id
+    external_id,current_generation::text),'{}'::jsonb)
+  from (
+    select identity->>'providerEventId' as external_id,current_generation from private.calendar_google_color_operations
+      where ws_id=p_ws_id and identity->>'calendarId'=p_calendar_id
+    union
+    select s.provider_event_id,o.current_generation from private.calendar_provider_saga_scopes s
+      join private.calendar_google_color_operations o on o.ws_id=s.ws_id and o.event_id=s.event_id
+      where s.ws_id=p_ws_id and s.provider='google' and s.calendar_id=p_calendar_id
+  ) scopes
   returning * into capture;
   return jsonb_build_object('id',capture.id,'wsId',p_ws_id,'calendarId',p_calendar_id,
     'authTokenId',p_auth_token_id);
@@ -339,12 +348,16 @@ begin
         and coalesce(external_calendar_id,google_calendar_id)=capture.calendar_id
         and coalesce(external_event_id,google_event_id)=external_id for update;
     select * into op from private.calendar_google_color_operations
-      where ws_id=capture.ws_id and identity->>'calendarId'=capture.calendar_id
-        and identity->>'providerEventId'=external_id for update;
+      where ws_id=capture.ws_id and ((identity->>'calendarId'=capture.calendar_id and identity->>'providerEventId'=external_id)
+        or exists(select 1 from private.calendar_provider_saga_scopes s where s.ws_id=private.calendar_google_color_operations.ws_id
+          and s.event_id=private.calendar_google_color_operations.event_id and s.provider='google'
+          and s.calendar_id=capture.calendar_id and s.provider_event_id=external_id)) for update;
     reason:=null;
     if found then
       expected:=coalesce((capture.generations->>external_id)::bigint,0);
-      if capture.auth_token_id is null or op.identity->>'authTokenId' is distinct from capture.auth_token_id::text then
+      if op.identity->>'calendarId' is distinct from capture.calendar_id or op.identity->>'providerEventId' is distinct from external_id then
+        reason:='identity';
+      elsif capture.auth_token_id is null or op.identity->>'authTokenId' is distinct from capture.auth_token_id::text then
         reason:='identity';
       elsif op.phase in ('reserved','prepared','dispatched') then reason:='pending';
       elsif expected<>op.current_generation then reason:='generation';

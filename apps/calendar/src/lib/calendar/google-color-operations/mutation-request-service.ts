@@ -30,7 +30,7 @@ const Inspection = z.object({
       ]),
       identity: MutationIdentitySchema,
       intent: z.object({
-        kind: z.enum(['event', 'label', 'inherit', 'mutation']),
+        kind: z.enum(['event', 'label', 'inherit', 'mutation', 'saga']),
         connectionId: z.guid(),
       }),
     })

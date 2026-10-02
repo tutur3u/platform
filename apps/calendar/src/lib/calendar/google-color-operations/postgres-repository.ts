@@ -10,6 +10,8 @@ import {
   type ColorOperationRepository,
   sameColorOperationIdentity,
 } from './protocol';
+import { SagaBindingSchema } from './provider-saga-protocol';
+import { SealedJournalSchema } from './sealed-journal';
 
 const IdentitySchema = z
   .object({
@@ -44,6 +46,28 @@ const OperationSchema = z
       })
       .strict()
       .nullable(),
+  })
+  .strict();
+
+const SagaLedgerSchema = z
+  .object({
+    id: z.guid(),
+    generation: z.string().regex(/^[1-9][0-9]*$/),
+    requestHash: z.string().regex(/^[a-f0-9]{64}$/),
+    identity: IdentitySchema,
+    intent: z
+      .object({ kind: z.literal('saga'), connectionId: z.guid() })
+      .strict(),
+    phase: z.enum([
+      'prepared',
+      'dispatched',
+      'applied',
+      'superseded',
+      'canceled',
+    ]),
+    prepared: z
+      .object({ binding: SagaBindingSchema, journal: SealedJournalSchema })
+      .strict(),
   })
   .strict();
 
@@ -151,7 +175,11 @@ export async function inspectPostgresColorOperation(
     .object({
       generation: z.string().regex(/^(0|[1-9][0-9]*)$/),
       operation: z
-        .union([OperationSchema, GoogleMutationOperationSchema])
+        .union([
+          OperationSchema,
+          GoogleMutationOperationSchema,
+          SagaLedgerSchema,
+        ])
         .nullable(),
     })
     .strict()

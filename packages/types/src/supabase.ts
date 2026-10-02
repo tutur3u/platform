@@ -2411,6 +2411,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      calendar_provider_saga_scopes: {
+        Row: {
+          auth_token_id: string;
+          calendar_id: string;
+          event_id: string;
+          provider: string;
+          provider_event_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          auth_token_id: string;
+          calendar_id: string;
+          event_id: string;
+          provider: string;
+          provider_event_id: string;
+          ws_id: string;
+        };
+        Update: {
+          auth_token_id?: string;
+          calendar_id?: string;
+          event_id?: string;
+          provider?: string;
+          provider_event_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       calendar_user_workspace_preferences: {
         Row: {
           conflict_policy: string;
@@ -16301,6 +16328,16 @@ export type Database = {
           op: Database['private']['Tables']['calendar_google_color_operations']['Row'];
         };
         Returns: Json;
+      };
+      calendar_provider_saga_json: {
+        Args: {
+          op: Database['private']['Tables']['calendar_google_color_operations']['Row'];
+        };
+        Returns: Json;
+      };
+      calendar_saga_endpoint_allowed: {
+        Args: { actor: string; endpoint: Json; ws: string };
+        Returns: boolean;
       };
       can_deliver_mail_notification: {
         Args: { p_notification_id: string };
@@ -42316,6 +42353,16 @@ export type Database = {
         Returns: Json;
       };
       calendar_google_mutation_operation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_event_id: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      calendar_provider_saga_operation: {
         Args: {
           p_action: string;
           p_actor_id: string;

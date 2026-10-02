@@ -1,0 +1,182 @@
+import { describe, expect, it, vi } from 'vitest';
+import type { SagaBinding } from './provider-saga-protocol';
+import { createRequestProviderSagaAccess } from './provider-saga-request-access';
+
+const mocks = vi.hoisted(() => ({
+  authorize: vi.fn(),
+  resolveSource: vi.fn(),
+}));
+vi.mock('../../calendar-event-permission', () => ({
+  authorizeCalendarEventManagement: mocks.authorize,
+}));
+vi.mock('../source-resolver', () => ({
+  resolveCalendarSource: mocks.resolveSource,
+}));
+const binding: SagaBinding = {
+  operationId: '00000000-0000-4000-8000-000000008751',
+  generation: '1',
+  action: 'move',
+  mode: 'copy-delete',
+  baseETag: 'original',
+  source: {
+    provider: 'google',
+    workspaceCalendarId: null,
+    identity: {
+      wsId: '00000000-0000-4000-8000-000000008711',
+      eventId: '00000000-0000-4000-8000-000000008741',
+      connectionId: '00000000-0000-4000-8000-000000008731',
+      authTokenId: '00000000-0000-4000-8000-000000008721',
+      calendarId: 'old',
+      providerEventId: 'original',
+    },
+  },
+  destination: {
+    provider: 'google',
+    workspaceCalendarId: null,
+    identity: {
+      wsId: '00000000-0000-4000-8000-000000008711',
+      eventId: '00000000-0000-4000-8000-000000008741',
+      connectionId: '00000000-0000-4000-8000-000000008732',
+      authTokenId: '00000000-0000-4000-8000-000000008722',
+      calendarId: 'new',
+      providerEventId: 'tt00000000000040008000000000008751',
+    },
+  },
+};
+function fixture() {
+  vi.clearAllMocks();
+  let tokenActive = true;
+  let moved = false;
+  const filters: Array<[string, unknown]> = [];
+  const rpc = vi.fn().mockResolvedValue({
+    data: { phase: 'applied', prepared: { binding } },
+    error: null,
+  });
+  const admin = {
+    rpc,
+    from: vi.fn((table: string) => {
+      const captured = new Map<string, unknown>();
+      const query = {
+        select: () => query,
+        eq: (key: string, value: unknown) => {
+          captured.set(key, value);
+          filters.push([key, value]);
+          return query;
+        },
+        maybeSingle: async () => ({
+          error: null,
+          data:
+            table === 'workspace_calendar_events'
+              ? {
+                  provider: 'google',
+                  source_calendar_id: null,
+                  external_calendar_id: moved ? 'new' : 'old',
+                  external_event_id: moved
+                    ? binding.destination.provider === 'google'
+                      ? binding.destination.identity.providerEventId
+                      : ''
+                    : 'original',
+                }
+              : table === 'calendar_connections'
+                ? {
+                    auth_token_id:
+                      captured.get('id') ===
+                      '00000000-0000-4000-8000-000000008731'
+                        ? '00000000-0000-4000-8000-000000008721'
+                        : '00000000-0000-4000-8000-000000008722',
+                  }
+                : tokenActive
+                  ? {
+                      id: captured.get('id'),
+                      access_token: 'synthetic-fixture',
+                      refresh_token: 'synthetic-fixture',
+                    }
+                  : null,
+        }),
+      };
+      return query;
+    }),
+  };
+  mocks.authorize.mockResolvedValue({
+    userId: '00000000-0000-4000-8000-000000008701',
+    wsId: '00000000-0000-4000-8000-000000008711',
+    sbAdmin: admin,
+  });
+  mocks.resolveSource.mockImplementation(async ({ source }) => ({
+    ...source,
+    workspaceCalendarId: null,
+    externalCalendarId:
+      source.connectionId === '00000000-0000-4000-8000-000000008731'
+        ? 'old'
+        : 'new',
+    accessToken: 'stale-snapshot',
+    refreshToken: 'stale-snapshot',
+  }));
+  return {
+    filters,
+    rpc,
+    revoke: () => {
+      tokenActive = false;
+    },
+    move: () => {
+      moved = true;
+    },
+    access: createRequestProviderSagaAccess(
+      new Request('https://example.test'),
+      '00000000-0000-4000-8000-000000008711',
+      '00000000-0000-4000-8000-000000008741'
+    ),
+  };
+}
+describe('fresh dual-endpoint saga request authorization', () => {
+  it('reloads both exact actor-owned active tokens and replaces source snapshots', async () => {
+    const f = fixture();
+    const resolved = await f.access.resolveEndpoint(
+      binding,
+      binding.destination
+    );
+    expect(resolved.source.accessToken).toBe('synthetic-fixture');
+    expect(f.filters).toContainEqual([
+      'id',
+      '00000000-0000-4000-8000-000000008721',
+    ]);
+    expect(f.filters).toContainEqual([
+      'id',
+      '00000000-0000-4000-8000-000000008722',
+    ]);
+    expect(f.filters).toContainEqual([
+      'user_id',
+      '00000000-0000-4000-8000-000000008701',
+    ]);
+    expect(f.filters).toContainEqual(['is_active', true]);
+    f.revoke();
+    await expect(
+      f.access.resolveEndpoint(binding, binding.destination)
+    ).rejects.toMatchObject({ reason: 'unauthorized' });
+  });
+  it('denies a changed request actor on every subsequent provider resolution', async () => {
+    const f = fixture();
+    await f.access.assertAllowed(binding);
+    mocks.authorize.mockResolvedValueOnce({
+      userId: '00000000-0000-4000-8000-000000008702',
+    });
+    await expect(f.access.assertAllowed(binding)).rejects.toMatchObject({
+      reason: 'unauthorized',
+    });
+  });
+  it('accepts moved row only with the same terminal server binding, and rejects a forged terminal binding', async () => {
+    const f = fixture();
+    f.move();
+    await expect(f.access.assertAllowed(binding)).resolves.toBeUndefined();
+    f.rpc.mockResolvedValueOnce({
+      data: {
+        phase: 'applied',
+        prepared: { binding: { ...binding, baseETag: 'different' } },
+      },
+      error: null,
+    });
+    await expect(f.access.assertAllowed(binding)).rejects.toMatchObject({
+      reason: 'identity',
+    });
+  });
+});
