@@ -1,0 +1,607 @@
+import { execFileSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
+import path from 'node:path';
+import { expect, test } from '@playwright/test';
+import {
+  APP_SESSION_COOKIE_NAME,
+  createAppSessionToken,
+} from '@tuturuuu/auth/app-session';
+import {
+  assertSafeE2EEnvironment,
+  LOCAL_E2E_APP_COORDINATION_SECRET,
+} from './helpers/environment';
+import {
+  deleteRestRows,
+  postRestRow,
+  SUPABASE_URL,
+  serviceHeaders,
+} from './helpers/supabase-rest';
+
+const origin = process.env.LETTIN_BASE_URL;
+const workspaceId = randomUUID();
+let creatorId: string;
+const creatorEmail = `e2e-lettin-${workspaceId}@tuturuuu.com`;
+const appDirectory = path.resolve(process.cwd(), '../lettin');
+const token = () =>
+  createAppSessionToken(
+    {
+      email: creatorEmail,
+      originApp: 'web',
+      targetApp: 'lettin',
+      userId: creatorId,
+    },
+    {
+      secret:
+        process.env.TUTURUUU_APP_COORDINATION_SECRET ??
+        LOCAL_E2E_APP_COORDINATION_SECRET,
+    }
+  ).token;
+const draft = (title: string, kind = 'page') => ({
+  title,
+  kind,
+  description: '',
+  image: '',
+  credit: '',
+  tags: [],
+  links: [],
+  content: { type: 'doc', content: [{ type: 'paragraph' }] },
+});
+function localSql(sql: string) {
+  execFileSync(
+    'bunx',
+    [
+      '--no-install',
+      'wrangler',
+      'd1',
+      'execute',
+      'LETTIN_DB',
+      '--local',
+      '--command',
+      sql,
+    ],
+    { cwd: appDirectory, timeout: 60000, stdio: 'pipe' }
+  );
+}
+
+test.describe
+  .serial('Tulletin authenticated wiki and guest publishing', () => {
+    test.beforeAll(async ({ request }) => {
+      assertSafeE2EEnvironment();
+      expect(
+        origin,
+        'LETTIN_BASE_URL must be provided by the owned satellite runner'
+      ).toBeTruthy();
+      const account = await request.post(
+        `${SUPABASE_URL}/auth/v1/admin/users`,
+        {
+          headers: serviceHeaders(),
+          data: {
+            email: creatorEmail,
+            password: randomUUID(),
+            email_confirm: true,
+          },
+        }
+      );
+      expect(account.status(), await account.text()).toBe(200);
+      creatorId = (await account.json()).id;
+      // Wrangler and Next/OpenNext share the real local D1 persistence directory.
+      execFileSync(
+        'bunx',
+        [
+          '--no-install',
+          'wrangler',
+          'd1',
+          'migrations',
+          'apply',
+          'LETTIN_DB',
+          '--local',
+        ],
+        { cwd: appDirectory, timeout: 60000, stdio: 'pipe' }
+      );
+      localSql(
+        `INSERT OR IGNORE INTO creators(user_id) VALUES ('${creatorId}')`
+      );
+      await postRestRow({
+        request,
+        table: 'workspaces',
+        data: {
+          id: workspaceId,
+          creator_id: creatorId,
+          name: 'Synthetic Tulletin E2E',
+          personal: false,
+          handle: `e2e-lettin-${workspaceId.slice(0, 8)}`,
+        },
+      });
+    });
+    test.afterAll(async ({ request }) => {
+      localSql(
+        `DELETE FROM import_previews WHERE ws_id='${workspaceId}'; DELETE FROM creator_blacklist WHERE ws_id='${workspaceId}'; DELETE FROM worlds WHERE ws_id='${workspaceId}'; DELETE FROM creator_profiles WHERE user_id='${creatorId}'; DELETE FROM creators WHERE user_id='${creatorId}'`
+      );
+      await deleteRestRows({
+        request,
+        table: 'workspaces',
+        filter: `id=eq.${workspaceId}`,
+      });
+      await request.delete(`${SUPABASE_URL}/auth/v1/admin/users/${creatorId}`, {
+        headers: serviceHeaders(),
+      });
+    });
+
+    test('creates a project in the browser, edits Markdown, saves, and reloads', async ({
+      browser,
+    }) => {
+      test.setTimeout(180000);
+      const session = token();
+      const context = await browser.newContext({
+        ignoreHTTPSErrors: true,
+        extraHTTPHeaders: { authorization: `Bearer ${session}` },
+      });
+      await context.addCookies([
+        { name: APP_SESSION_COOKIE_NAME, value: session, url: origin! },
+      ]);
+      try {
+        const page = await context.newPage();
+        const errors: string[] = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        await page.goto(`${origin}/${workspaceId}/wiki`);
+        await page
+          .getByRole('button', { name: 'Start a project', exact: true })
+          .click();
+        await page
+          .getByRole('dialog')
+          .getByLabel('Title', { exact: true })
+          .fill('Synthetic browser notebook');
+        await page
+          .getByRole('button', { name: 'Create project', exact: true })
+          .click();
+        await expect(page).toHaveURL(/\/worlds\/[0-9a-f-]+/);
+        await page
+          .getByRole('button', { name: 'World notebook', exact: true })
+          .click();
+        await page
+          .getByRole('button', { name: 'Markdown', exact: true })
+          .click();
+        await page
+          .getByLabel('Markdown source', { exact: true })
+          .fill(
+            '# Synthetic chapter\n\n**A memorable opening.**\n\n- First scene\n- Second scene'
+          );
+        await expect(
+          page.getByRole('button', { name: 'Save draft', exact: true })
+        ).toBeDisabled();
+        await page
+          .getByRole('button', { name: 'Apply Markdown', exact: true })
+          .click();
+        await page
+          .getByRole('button', { name: 'Save draft', exact: true })
+          .click();
+        await expect(
+          page.getByText('Draft saved', { exact: true })
+        ).toBeVisible();
+        await page.reload();
+        await page
+          .getByRole('button', { name: 'World notebook', exact: true })
+          .click();
+        await expect(page.locator('.wiki-text-editor')).toContainText(
+          'A memorable opening.'
+        );
+        await expect(page.locator('.wiki-text-editor strong')).toContainText(
+          'A memorable opening.'
+        );
+        expect(errors).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    });
+
+    test('serves dedicated timeline and relationship pages and filters unpublished targets for guests', async ({
+      browser,
+      request,
+    }) => {
+      test.setTimeout(180000);
+      const headers = { authorization: `Bearer ${token()}` };
+      const api = `${origin}/api/v1/workspaces/${workspaceId}/lettin`;
+      const command = async (data: unknown) => {
+        const response = await request.post(api, { headers, data });
+        expect(response.status(), await response.text()).toBe(200);
+        return response.json();
+      };
+      const world = await command({
+        action: 'createWorld',
+        draft: {
+          ...draft('Synthetic published atlas', 'world'),
+          theme: { palette: 'forest', typography: 'clean', motion: 'reduced' },
+        },
+      });
+      const privateEntry = await command({
+        action: 'createEntry',
+        worldId: world.id,
+        draft: draft('Unpublished secret character', 'character'),
+      });
+      const event = await command({
+        action: 'createEntry',
+        worldId: world.id,
+        draft: draft('Synthetic crossing', 'event'),
+      });
+      await command({
+        action: 'saveEntry',
+        worldId: world.id,
+        entryId: event.id,
+        version: 1,
+        draft: {
+          ...draft('Synthetic crossing', 'event'),
+          wiki: {
+            aliases: ['Crossing'],
+            facts: [],
+            chronology: { order: -10, label: 'Before the first age', era: '' },
+            relationships: [
+              {
+                targetId: privateEntry.id,
+                kind: 'appears',
+                label: 'Private relationship',
+              },
+            ],
+          },
+        },
+      });
+      await command({
+        action: 'publishEntry',
+        worldId: world.id,
+        entryId: event.id,
+        version: 2,
+      });
+      await command({ action: 'publishWorld', worldId: world.id, version: 1 });
+      const context = await browser.newContext({
+        ignoreHTTPSErrors: true,
+        extraHTTPHeaders: headers,
+      });
+      try {
+        const page = await context.newPage();
+        await page.goto(`${origin}/${workspaceId}/wiki/${world.id}/timeline`);
+        await expect(page.locator('.wiki-studio')).toContainText(
+          'Before the first age'
+        );
+        await page.goto(
+          `${origin}/${workspaceId}/wiki/${world.id}/relationships`
+        );
+        await expect(page.locator('.wiki-connections')).toContainText(
+          'Unpublished secret character'
+        );
+      } finally {
+        await context.close();
+      }
+      const publicResponse = await request.get(
+        `${origin}/api/v1/lettin/worlds?worldId=${world.id}`
+      );
+      expect(publicResponse.status()).toBe(200);
+      const published = await publicResponse.text();
+      expect(published).not.toContain(privateEntry.id);
+      expect(published).not.toContain('Private relationship');
+      const guest = await browser.newContext({ ignoreHTTPSErrors: true });
+      try {
+        const page = await guest.newPage();
+        await page.goto(`${origin}/worlds/${world.id}`);
+        await expect(page.locator('[data-wiki-theme="forest"]')).toBeVisible();
+        await expect(
+          page.getByText('Unpublished secret character')
+        ).toHaveCount(0);
+        await expect(
+          page.locator('[data-wiki-motion="reduced"]')
+        ).toBeVisible();
+        const privateResponse = await guest.request.get(api);
+        expect(privateResponse.status()).toBe(401);
+        const importResponse = await guest.request.post(`${api}/exocorpse`, {
+          data: {
+            action: 'preview',
+            source: 'cms',
+            title: 'Unauthorized import',
+          },
+        });
+        expect(importResponse.status()).toBe(401);
+      } finally {
+        await guest.close();
+      }
+    });
+
+    test('manages a private blacklist through the real browser and API', async ({
+      browser,
+      request,
+    }) => {
+      test.setTimeout(180000);
+      const headers = { authorization: `Bearer ${token()}` };
+      const context = await browser.newContext({
+        ignoreHTTPSErrors: true,
+        extraHTTPHeaders: headers,
+      });
+      try {
+        const page = await context.newPage();
+        await page.goto(`${origin}/${workspaceId}/moderation`);
+        await page
+          .getByLabel('Account or name', { exact: true })
+          .fill('Synthetic blocked account');
+        await page
+          .getByLabel('Private notes', { exact: true })
+          .fill('Synthetic private safety note');
+        await page
+          .getByRole('button', { name: 'Add to blacklist', exact: true })
+          .click();
+        await expect(
+          page.getByText('Synthetic blocked account', { exact: true })
+        ).toBeVisible();
+        await page.reload();
+        await expect(
+          page.getByText('Synthetic private safety note', { exact: true })
+        ).toBeVisible();
+      } finally {
+        await context.close();
+      }
+      const guest = await request.get(
+        `${origin}/api/v1/workspaces/${workspaceId}/lettin/moderation`
+      );
+      expect(guest.status()).toBe(401);
+    });
+
+    test('imports a canonical export in the browser as private drafts', async ({
+      browser,
+    }) => {
+      test.setTimeout(180000);
+      const context = await browser.newContext({
+        ignoreHTTPSErrors: true,
+        extraHTTPHeaders: { authorization: `Bearer ${token()}` },
+      });
+      try {
+        const page = await context.newPage();
+        await page.goto(`${origin}/${workspaceId}/wiki`);
+        await page
+          .getByRole('button', { name: 'Import Exocorpse', exact: true })
+          .click();
+        const dialog = page.getByRole('dialog');
+        await dialog
+          .getByLabel('Title', { exact: true })
+          .fill('Synthetic imported notebook');
+        await dialog.getByLabel('Source', { exact: true }).selectOption('file');
+        await dialog
+          .getByLabel('Canonical JSON export', { exact: true })
+          .setInputFiles({
+            name: 'synthetic-export.json',
+            mimeType: 'application/json',
+            buffer: Buffer.from(
+              JSON.stringify({
+                adapter: 'exocorpse',
+                entries: [
+                  {
+                    entry: {
+                      stableSourceId: 'synthetic-hero',
+                      collectionSlug: 'characters',
+                      title: 'Synthetic imported hero',
+                    },
+                    blocks: [
+                      {
+                        blockType: 'markdown',
+                        content: { markdown: '**Synthetic biography**' },
+                      },
+                    ],
+                  },
+                  {
+                    entry: {
+                      stableSourceId: 'synthetic-blacklist',
+                      collectionSlug: 'commission-blacklist',
+                      title: 'Synthetic private imported account',
+                      summary: 'Synthetic private note',
+                    },
+                  },
+                ],
+              })
+            ),
+          });
+        await dialog
+          .getByRole('button', { name: 'Review import', exact: true })
+          .click();
+        await expect(
+          dialog.getByText('Synthetic imported hero', { exact: true })
+        ).toBeVisible();
+        await dialog
+          .getByRole('button', { name: 'Create private copy', exact: true })
+          .click();
+        await expect(page).toHaveURL(/\/wiki\/[0-9a-f-]+\/overview/);
+        await expect(page.locator('.wiki-studio')).toContainText(
+          'Synthetic imported hero'
+        );
+        const id = new URL(page.url()).pathname.split('/').at(-2);
+        const published = await context.request.get(
+          `${origin}/api/v1/lettin/worlds?worldId=${id}`
+        );
+        expect(await published.json()).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    });
+
+    test('saves canonical identity and a rich About profile with reload persistence', async ({
+      browser,
+    }) => {
+      test.setTimeout(180000);
+      const context = await browser.newContext({
+        ignoreHTTPSErrors: true,
+        extraHTTPHeaders: { authorization: `Bearer ${token()}` },
+      });
+      try {
+        const page = await context.newPage();
+        await page.goto(`${origin}/${workspaceId}/profile`);
+        const username = `synthetic_${workspaceId.replaceAll('-', '').slice(0, 16)}`;
+        await page
+          .getByLabel('Display name', { exact: true })
+          .fill('Synthetic storyteller');
+        await page.getByLabel('Username', { exact: true }).fill(username);
+        await page
+          .getByLabel('Banner URL', { exact: true })
+          .fill('https://example.test/banner.png');
+        await page
+          .getByRole('button', { name: 'Save profile', exact: true })
+          .click();
+        await expect(
+          page.getByText('Profile saved', { exact: true })
+        ).toBeVisible();
+        const response = await context.request.get(
+          `${origin}/api/v1/users/me/profile`
+        );
+        expect(response.status(), await response.text()).toBe(200);
+        expect(await response.json()).toMatchObject({
+          id: creatorId,
+          handle: username,
+          banner_url: 'https://example.test/banner.png',
+        });
+        await page
+          .getByRole('button', { name: 'About you', exact: true })
+          .click();
+        await page
+          .getByLabel('Creative headline', { exact: true })
+          .fill('Synthetic worldbuilder');
+        await page.getByLabel('Pronouns', { exact: true }).fill('they/them');
+        await page
+          .getByRole('button', { name: 'Markdown', exact: true })
+          .click();
+        await page
+          .getByLabel('Markdown source', { exact: true })
+          .fill('## Synthetic background\n\n**Building quiet worlds.**');
+        await page
+          .getByRole('button', { name: 'Apply Markdown', exact: true })
+          .click();
+        await page
+          .getByRole('button', { name: 'Save profile', exact: true })
+          .click();
+        await expect(
+          page.getByText('Profile saved', { exact: true })
+        ).toBeVisible();
+        await page.reload();
+        await page
+          .getByRole('button', { name: 'About you', exact: true })
+          .click();
+        await expect(
+          page.getByLabel('Creative headline', { exact: true })
+        ).toHaveValue('Synthetic worldbuilder');
+        await expect(page.locator('.notebook-prose')).toContainText(
+          'Building quiet worlds.'
+        );
+        await page.goto(`${origin}/creators/${username}`);
+        await expect(
+          page.getByText('Synthetic worldbuilder', { exact: true })
+        ).toBeVisible();
+        await expect(page.getByText(creatorEmail, { exact: true })).toHaveCount(
+          0
+        );
+      } finally {
+        await context.close();
+      }
+    });
+
+    test('hides imports from an ordinary creator and rejects direct calls', async ({
+      browser,
+      request,
+    }) => {
+      test.setTimeout(180000);
+      const account = await request.post(
+        `${SUPABASE_URL}/auth/v1/admin/users`,
+        {
+          headers: serviceHeaders(),
+          data: {
+            email: `synthetic-${workspaceId}@example.test`,
+            password: randomUUID(),
+            email_confirm: true,
+          },
+        }
+      );
+      expect(account.status()).toBe(200);
+      const user = await account.json();
+      const roleId = randomUUID();
+      let context: import('@playwright/test').BrowserContext | undefined;
+      try {
+        await postRestRow({
+          request,
+          table: 'workspace_members',
+          data: { type: 'MEMBER', user_id: user.id, ws_id: workspaceId },
+        });
+        await postRestRow({
+          request,
+          table: 'workspace_roles',
+          data: {
+            id: roleId,
+            name: 'Synthetic documents role',
+            ws_id: workspaceId,
+          },
+        });
+        await postRestRow({
+          request,
+          table: 'workspace_role_permissions',
+          data: {
+            enabled: true,
+            permission: 'manage_documents',
+            role_id: roleId,
+            ws_id: workspaceId,
+          },
+        });
+        await postRestRow({
+          request,
+          table: 'workspace_role_members',
+          data: { role_id: roleId, user_id: user.id },
+        });
+        localSql(`INSERT INTO creators(user_id) VALUES ('${user.id}')`);
+        const session = createAppSessionToken(
+          {
+            email: user.email,
+            originApp: 'web',
+            targetApp: 'lettin',
+            userId: user.id,
+          },
+          {
+            secret:
+              process.env.TUTURUUU_APP_COORDINATION_SECRET ??
+              LOCAL_E2E_APP_COORDINATION_SECRET,
+          }
+        ).token;
+        context = await browser.newContext({
+          ignoreHTTPSErrors: true,
+          extraHTTPHeaders: { authorization: `Bearer ${session}` },
+        });
+        const page = await context.newPage();
+        await page.goto(`${origin}/${workspaceId}/wiki`);
+        await expect(
+          page.getByRole('button', { name: 'Start a project', exact: true })
+        ).toBeVisible();
+        await expect(
+          page.getByRole('button', { name: 'Import Exocorpse', exact: true })
+        ).toHaveCount(0);
+        const response = await context.request.post(
+          `${origin}/api/v1/workspaces/${workspaceId}/lettin/exocorpse`,
+          {
+            data: {
+              action: 'preview',
+              source: 'file',
+              title: 'Forbidden import',
+              payload: {
+                entries: [
+                  {
+                    stableSourceId: 'synthetic',
+                    collectionSlug: 'characters',
+                    title: 'Synthetic',
+                  },
+                ],
+              },
+            },
+          }
+        );
+        expect(response.status()).toBe(403);
+      } finally {
+        await context?.close();
+        localSql(`DELETE FROM creators WHERE user_id='${user.id}'`);
+        await request.delete(`${SUPABASE_URL}/auth/v1/admin/users/${user.id}`, {
+          headers: serviceHeaders(),
+        });
+        await deleteRestRows({
+          request,
+          table: 'workspace_roles',
+          filter: `id=eq.${roleId}`,
+        });
+      }
+    });
+  });

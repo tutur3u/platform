@@ -8,6 +8,14 @@ const HOST_REDIS_REST_URL = 'http://127.0.0.1:8079';
 
 const OWNED_E2E_SATELLITES = Object.freeze([
   Object.freeze({
+    appEnv: { LETTIN_APP_URL: 'url', NEXT_PUBLIC_LETTIN_APP_URL: 'url' },
+    appName: 'lettin',
+    baseUrlEnv: 'LETTIN_BASE_URL',
+    port: '7833',
+    routeName: 'lettin.tuturuuu',
+    specs: ['lettin-wiki.noauth.spec.ts'],
+  }),
+  Object.freeze({
     appEnv: {
       CONTACTS_APP_URL: 'url',
       NEXT_PUBLIC_CONTACTS_APP_URL: 'url',

@@ -1,4 +1,14 @@
 import type {
+  CurrentUserProfileResponse,
+  UpdateCurrentUserProfilePayload,
+} from './user-profile-types';
+
+export type {
+  CurrentUserProfileResponse,
+  UpdateCurrentUserProfilePayload,
+} from './user-profile-types';
+
+import type {
   PostApprovalItem,
   PostLogEntry,
   ReportApprovalItem,
@@ -206,17 +216,6 @@ export function normalizeRootNavigationConfig(
   };
 }
 
-export type CurrentUserProfileResponse = {
-  id: string;
-  email: string | null;
-  display_name: string | null;
-  avatar_url: string | null;
-  full_name: string | null;
-  new_email: string | null;
-  created_at: string;
-  default_workspace_id: string | null;
-};
-
 export type CurrentUserDefaultWorkspaceResponse = {
   id: string;
   name: string;
@@ -346,12 +345,6 @@ export type UploadCurrentUserAvatarResult = {
   publicUrl: string;
   finalizeOk: boolean;
   finalizeError?: string;
-};
-
-export type UpdateCurrentUserProfilePayload = {
-  avatar_url?: string | null;
-  display_name?: string | null;
-  full_name?: string | null;
 };
 
 export type UpdatePlatformUserRolesPayload = {

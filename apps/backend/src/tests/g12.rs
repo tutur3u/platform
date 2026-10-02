@@ -435,7 +435,7 @@ async fn current_user_profile_reads_contact_data_from_supabase() {
     assert_eq!(calls[0].method, OutboundMethod::Get);
     assert_eq!(
         calls[0].url,
-        "https://project-ref.supabase.co/rest/v1/users?select=id%2Cdisplay_name%2Cavatar_url%2Ccreated_at&id=eq.app-session-user-1&limit=1"
+        "https://project-ref.supabase.co/rest/v1/users?select=id%2Cdisplay_name%2Cavatar_url%2Cbanner_url%2Cbio%2Chandle%2Ccreated_at&id=eq.app-session-user-1&limit=1"
     );
     assert_eq!(
         recorded_header(&calls[0], "apikey"),
@@ -556,19 +556,19 @@ async fn current_user_profile_patch_persists_to_supabase() {
 
     let calls = outbound.calls();
     assert_eq!(calls.len(), 1);
-    assert_eq!(calls[0].method, OutboundMethod::Patch);
+    assert_eq!(calls[0].method, OutboundMethod::Post);
     assert_eq!(
         calls[0].url,
-        "https://project-ref.supabase.co/rest/v1/users?id=eq.app-session-user-1"
+        "https://project-ref.supabase.co/rest/v1/rpc/update_public_user_profile"
     );
     assert_eq!(recorded_header(&calls[0], "prefer"), Some("return=minimal"));
     assert_eq!(
         serde_json::from_str::<Value>(calls[0].body.as_deref().unwrap()).unwrap(),
-        json!({
+        json!({ "p_user_id": "app-session-user-1", "p_patch": {
             "avatar_url": "https://cdn.example.test/avatar.png",
             "bio": null,
             "display_name": "Ada",
-        })
+        } })
     );
 }
 

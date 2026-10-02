@@ -13,9 +13,8 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   hasWebAppSessionTokenFromRequest: () => true,
 }));
 vi.mock('@tuturuuu/auth/proxy', async () => ({
-  ...(await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
-    '@tuturuuu/auth/proxy'
-  )),
+  // Exercise the real failure response without loading the unused Supabase refresh stack.
+  ...(await vi.importActual('../../../packages/auth/src/proxy/mfa-failure')),
   refreshAppSessionForRequest: mocks.refresh,
   consumeVerifyTokenRequest: async () => null,
   propagateAuthCookies: vi.fn(),
@@ -70,4 +69,22 @@ it('denies protected API access when MFA is required', async () => {
       )
     ).status
   ).toBe(403);
+});
+
+it('allows anonymous space discovery without refreshing a protected session', async () => {
+  mocks.refresh.mockResolvedValue({ ok: false, error: 'MFA required' });
+  const response = await proxy(
+    new NextRequest('https://lettin.tuturuuu.com/spaces')
+  );
+  expect(response.status).toBe(200);
+  expect(mocks.refresh).not.toHaveBeenCalled();
+});
+it('keeps workspace creative spaces protected', async () => {
+  mocks.refresh.mockResolvedValue({ ok: false, error: 'MFA required' });
+  const response = await proxy(
+    new NextRequest('https://lettin.tuturuuu.com/workspace/spaces/art')
+  );
+  expect(response.status).toBe(307);
+  expect(new URL(response.headers.get('location')!).pathname).toBe('/login');
+  expect(mocks.refresh).toHaveBeenCalled();
 });

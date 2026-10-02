@@ -106,6 +106,7 @@ test('supports explicit satellite enable and disable controls', () => {
       E2E_FORMS_SATELLITE_ENABLED: '0',
       E2E_INFRASTRUCTURE_SATELLITE_ENABLED: '0',
       E2E_MAIL_SATELLITE_ENABLED: '0',
+      E2E_LETTIN_SATELLITE_ENABLED: '0',
     }),
     false
   );
@@ -246,4 +247,11 @@ test('starts an owned satellite and reports an early readiness exit', async () =
     readiness,
     /forms satellite stopped before it became ready.*exit=1/u
   );
+});
+
+
+test('selects Tulletin only for its authenticated wiki browser suite', () => {
+  const selected = getRequiredOwnedSatellites(['lettin-wiki.noauth.spec.ts'], {});
+  assert.deepEqual(selected.map((satellite) => satellite.appName), ['lettin']);
+  assert.equal(getOwnedSatellitesPlaywrightEnv(selected, {}).LETTIN_BASE_URL, 'https://lettin.tuturuuu.localhost:1355');
 });

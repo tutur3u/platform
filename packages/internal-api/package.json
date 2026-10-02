@@ -27,6 +27,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
+    "./lettin-server": {
+      "types": "./dist/lettin-server.d.ts",
+      "import": "./dist/lettin-server.js",
+      "require": "./dist/lettin-server.js"
+    },
     "./lettin": {
       "types": "./dist/lettin.d.ts",
       "import": "./dist/lettin.js",
