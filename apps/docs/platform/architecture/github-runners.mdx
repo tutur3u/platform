@@ -38,8 +38,8 @@ Do not commit tokens or runner configuration credentials.
 
 Set repository variable `TUTURUUU_LINUX_RUNNERS_ENABLED` to `true` to route the
 Biome format/lint jobs and branch-name check here for `push` and
-`workflow_dispatch`. Memory-heavy monorepo type checks and other jobs retain their existing runner selection. The
-switchboard jobs still use GitHub-hosted runners. Pull-request events remain on
+`workflow_dispatch`. Memory-heavy monorepo type checks and other jobs retain their existing runner selection. The reusable CI switchboard also uses this pool for trusted pushes, manual
+dispatches, and schedules so local jobs can start when hosted runners are busy. Pull-request events remain on
 GitHub-hosted runners; the controller provisions only for repository pushes,
 manual dispatches, and scheduled runs.
 
