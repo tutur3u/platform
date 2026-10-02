@@ -1,10 +1,11 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { channelServerFrameSchema } from './schema';
 
 const cases = JSON.parse(
   readFileSync(
-    new URL('../../fixtures/channel-server-frames.json', import.meta.url),
+    resolve(__dirname, '../../fixtures/channel-server-frames.json'),
     'utf8'
   )
 ) as { name: string; valid: boolean; frame: unknown }[];
