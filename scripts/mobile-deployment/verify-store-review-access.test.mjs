@@ -194,13 +194,24 @@ test('metadata deferral preserves verified internal and external group assignmen
     },
   ];
   const readAccess = readinessApple({ ...configured, notes: '' }, calls);
+  const assigned = new Set();
   const apple = async (path, options = {}) => {
-    if (path === '/v1/apps/app/betaGroups?limit=200') return { data: groups };
+    if (path === '/v1/apps/app/betaGroups?limit=200') {
+      calls.push({ path, options });
+      return { data: groups };
+    }
+    if (path === '/v1/builds/build/relationships/betaGroups') {
+      calls.push({ path, options });
+      assert.equal(options.method, 'POST');
+      for (const group of JSON.parse(options.body).data) assigned.add(group.id);
+      return {};
+    }
     if (path === '/v1/builds/build?include=betaGroups') {
+      calls.push({ path, options });
       return {
         data: {
           relationships: {
-            betaGroups: { data: groups.map(({ id }) => ({ id })) },
+            betaGroups: { data: [...assigned].map((id) => ({ id })) },
           },
         },
       };
@@ -215,7 +226,17 @@ test('metadata deferral preserves verified internal and external group assignmen
     }),
     groups
   );
+  assert.deepEqual([...assigned].sort(), ['external', 'internal']);
+  const writes = calls.filter(({ options }) => options.method === 'POST');
+  assert.equal(writes.length, 2);
   assert.ok(
-    calls.every(({ options }) => !options.method || options.method === 'GET')
+    writes.every(
+      ({ path }) => path === '/v1/builds/build/relationships/betaGroups'
+    )
+  );
+  assert.ok(
+    writes.some(
+      ({ options }) => JSON.parse(options.body).data[0].id === 'internal'
+    )
   );
 });
