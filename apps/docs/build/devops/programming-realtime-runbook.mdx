@@ -269,3 +269,12 @@ can publish `document-checkpoint`; client attempts close with policy code 1008.
 `apps/meet-realtime/tests/documents-local-check.ts` covers conflict, recovery,
 rejoining, and forged save confirmations against local Cloudflare. These probes
 use a signed callback fixture; they do not prove production Drive availability.
+
+## Application build evidence
+
+`programming-app-builds.yaml` compiles Web, Learn and Infrastructure, including
+shared dependencies, on pull requests (including stacked branches). It uses
+synthetic public configuration and has read-only permissions; it does not deploy
+or load production credentials. Require its application jobs on the final SHA,
+alongside the Meet Cloudflare build and mobile checks. Local application builds
+remain prohibited on the shared development machine.
