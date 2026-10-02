@@ -1,0 +1,411 @@
+import { execFileSync } from 'node:child_process';
+import { createHash, randomUUID } from 'node:crypto';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statfsSync,
+  writeFileSync,
+} from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  chooseAvailablePortBlock,
+  deriveIsolatedIdentity,
+  isPortAvailable,
+  readLifecycleMetadata,
+  removeDisposableRoot,
+  stageDisposableProject,
+} from '../../scripts/run-supabase-isolated.js';
+import {
+  APPROVED_TYPEGEN_OUTPUT,
+  validateTypegenOutputPath,
+} from '../../scripts/run-supabase-isolated-typegen.js';
+import { verifyNetworkPolicy } from './network-policy.mjs';
+import { runOwnedProcess } from './process-group.mjs';
+
+export function typegenOutputForRepository(repositoryRoot) {
+  return validateTypegenOutputPath(repositoryRoot, APPROVED_TYPEGEN_OUTPUT);
+}
+
+export const limits = Object.freeze({
+  executionMs: 25 * 60_000,
+  cleanupMs: 3 * 60_000,
+  commandMs: 5_000,
+  initialFreeBytes: 14 * 1024 ** 3,
+  minimumFreeBytes: 8 * 1024 ** 3,
+  maximumDiskGrowthBytes: 10 * 1024 ** 3,
+  memoryBytes: 6 * 1024 ** 3,
+  cpus: 2,
+});
+export function assertDisk(initial, current) {
+  if (
+    initial < limits.initialFreeBytes ||
+    current < limits.minimumFreeBytes ||
+    initial - current > limits.maximumDiskGrowthBytes
+  ) {
+    throw new Error('Hosted disposable disk budget exceeded');
+  }
+}
+export function ownedNames(names, projectId) {
+  if (!/^tt-[a-z0-9-]+$/.test(projectId))
+    throw new Error('Invalid project identity');
+  return names.filter(
+    (name) => name.startsWith('supabase_') && name.endsWith(`_${projectId}`)
+  );
+}
+const repo = process.cwd();
+const helper = path.join(
+  repo,
+  'apps/database/scripts/run-supabase-isolated.js'
+);
+const output = path.join(
+  process.env.RUNNER_TEMP ?? os.tmpdir(),
+  'supabase-typegen-review'
+);
+const statePath = path.join(output, 'state.json');
+const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+function command(binary, args, timeout = limits.commandMs) {
+  return execFileSync(binary, args, {
+    encoding: 'utf8',
+    timeout,
+    maxBuffer: 4 * 1024 ** 2,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim();
+}
+function freeBytes() {
+  const disk = statfsSync(repo);
+  return disk.bavail * disk.bsize;
+}
+function names(kind) {
+  const args = {
+    container: ['ps', '-a', '--format', '{{.Names}}'],
+    volume: ['volume', 'ls', '--format', '{{.Name}}'],
+    network: ['network', 'ls', '--format', '{{.Name}}'],
+  }[kind];
+  if (!args) throw new Error('Unknown inventory kind');
+  return command('docker', args).split('\n').filter(Boolean);
+}
+
+function readState() {
+  return JSON.parse(readFileSync(statePath, 'utf8'));
+}
+function saveState(state) {
+  const temporary = `${statePath}.${randomUUID()}.tmp`;
+  try {
+    writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`, {
+      flag: 'wx',
+    });
+    renameSync(temporary, statePath);
+  } finally {
+    rmSync(temporary, { force: true });
+  }
+}
+function assertHosted() {
+  if (
+    process.env.GITHUB_ACTIONS !== 'true' ||
+    process.platform !== 'linux' ||
+    !process.env.SUPABASE_CLI_BINARY_OVERRIDE
+  ) {
+    throw new Error(
+      'Requires isolated Linux GitHub runner and explicit pinned CLI'
+    );
+  }
+}
+function migrationFingerprint() {
+  const files = command('git', [
+    'ls-files',
+    'apps/database/supabase/migrations',
+  ])
+    .split('\n')
+    .filter(Boolean)
+    .sort();
+  return hash(
+    files.map((file) => `${file}\0${hash(readFileSync(file))}`).join('\n')
+  );
+}
+async function prepare() {
+  assertHosted();
+  if (existsSync(statePath))
+    throw new Error('Refusing existing lifecycle state');
+  if (names('container').length || names('volume').length)
+    throw new Error('Requires empty dedicated Docker runner');
+  if (
+    names('network').some((name) => !['bridge', 'host', 'none'].includes(name))
+  )
+    throw new Error('Requires runner without custom Docker networks');
+  const free = freeBytes();
+  assertDisk(free, free);
+  const binary = process.env.SUPABASE_CLI_BINARY_OVERRIDE;
+  const cliVersion = command(binary, ['--version']);
+  const expectedVersion = JSON.parse(
+    readFileSync('apps/database/package.json', 'utf8')
+  ).devDependencies.supabase;
+  if (cliVersion !== expectedVersion)
+    throw new Error('Supabase CLI pin mismatch');
+  const services = JSON.parse(command(binary, ['services', '-o', 'json']));
+  const headSha = command('git', ['rev-parse', 'HEAD']);
+  const identity = deriveIsolatedIdentity({
+    headSha,
+    repositoryPath: path.join(
+      repo,
+      `run-${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT}`
+    ),
+  });
+  const block = await chooseAvailablePortBlock(identity);
+  const fields = {
+    cliVersion,
+    services,
+    limits,
+    initialFreeBytes: free,
+    minimumFreeBytesObserved: free,
+    migrationFingerprint: migrationFingerprint(),
+    network: verifyNetworkPolicy(),
+    images: {},
+    runSucceeded: false,
+    cleanupVerified: false,
+  };
+  mkdirSync(output, { recursive: true });
+  await stageAndRecord(
+    {
+      basePort: block.basePort,
+      headSha,
+      projectId: identity.projectId,
+      repositoryRoot: repo,
+      typegenOutput: typegenOutputForRepository(repo),
+    },
+    fields
+  );
+}
+export async function stageAndRecord(
+  options,
+  fields,
+  {
+    stage = stageDisposableProject,
+    record = saveState,
+    remove = removeDisposableRoot,
+  } = {}
+) {
+  let metadata;
+  try {
+    metadata = await stage(options);
+    // No fingerprint/provenance work or directory creation after staging and
+    // before this ownership write. A failed write removes this exact root.
+    const state = { ...fields, metadata };
+    record(state);
+    return state;
+  } catch (error) {
+    if (metadata) {
+      try {
+        await remove(metadata.disposableRoot);
+      } catch (cleanupError) {
+        throw new AggregateError(
+          [error, cleanupError],
+          `Prepare failed; scoped recovery metadata remains at ${metadata.disposableRoot}`
+        );
+      }
+    }
+    throw error;
+  }
+}
+function assertMetadata(state, metadata, repositoryRoot = repo) {
+  if (
+    metadata.projectId !== state.metadata.projectId ||
+    metadata.disposableRoot !== state.metadata.disposableRoot ||
+    metadata.repositoryRoot !== repositoryRoot ||
+    metadata.headSha !== state.metadata.headSha
+  ) {
+    throw new Error('Lifecycle identity changed');
+  }
+}
+export async function resumeRecordedProject(
+  state,
+  {
+    read = readLifecycleMetadata,
+    runner = runOwnedProcess,
+    onTick,
+    repositoryRoot = repo,
+  } = {}
+) {
+  const metadata = await read(state.metadata.disposableRoot);
+  assertMetadata(state, metadata, repositoryRoot);
+  validateTypegenOutputPath(repositoryRoot, metadata.typegenOutput);
+  if (metadata.typegenOutput !== APPROVED_TYPEGEN_OUTPUT)
+    throw new Error('Typegen output contract mismatch');
+  await runner(
+    process.execPath,
+    [helper, '--resume', metadata.disposableRoot],
+    {
+      timeoutMs: limits.executionMs,
+      onTick,
+    }
+  );
+}
+
+async function run() {
+  assertHosted();
+  const state = readState();
+  verifyNetworkPolicy(); // Fail closed before the CLI can start/apply SQL.
+  try {
+    await resumeRecordedProject(state, {
+      onTick: () => {
+        const free = freeBytes();
+        state.minimumFreeBytesObserved = Math.min(
+          state.minimumFreeBytesObserved,
+          free
+        );
+        assertDisk(state.initialFreeBytes, free);
+        const owned = ownedNames(names('container'), state.metadata.projectId);
+        if (owned.length > 32)
+          throw new Error('Disposable service count budget exceeded');
+        if (owned.length) {
+          let inspected = [];
+          try {
+            inspected = JSON.parse(command('docker', ['inspect', ...owned]));
+          } catch (error) {
+            // The supported helper removes containers during successful cleanup.
+            if (ownedNames(names('container'), state.metadata.projectId).length)
+              throw error;
+          }
+          for (const inspect of inspected) {
+            if (inspect.HostConfig.CgroupParent !== 'tuturuuu-typegen.slice')
+              throw new Error(
+                'Owned container escaped aggregate resource cgroup'
+              );
+            state.images[inspect.Name.replace(/^\//, '')] = inspect.Image;
+          }
+        }
+        saveState(state);
+      },
+    });
+    state.runSucceeded = true;
+  } catch (error) {
+    state.runSucceeded = false;
+    saveState(state);
+    throw error;
+  }
+  saveState(state);
+}
+
+async function cleanup() {
+  assertHosted();
+  if (!existsSync(statePath)) return;
+  await cleanupRecordedProject(readState());
+}
+export async function cleanupRecordedProject(
+  state,
+  {
+    exists = existsSync,
+    read = readLifecycleMetadata,
+    runner = runOwnedProcess,
+    inventory = names,
+    portAvailable = isPortAvailable,
+    record = saveState,
+    repositoryRoot = repo,
+  } = {}
+) {
+  if (exists(state.metadata.disposableRoot)) {
+    const metadata = await read(state.metadata.disposableRoot);
+    assertMetadata(state, metadata, repositoryRoot);
+    await runner(
+      process.execPath,
+      [helper, '--cleanup', metadata.disposableRoot],
+      {
+        timeoutMs: limits.cleanupMs,
+      }
+    );
+  }
+  if (
+    ownedNames(inventory('container'), state.metadata.projectId).length ||
+    ownedNames(inventory('volume'), state.metadata.projectId).length ||
+    ownedNames(inventory('network'), state.metadata.projectId).length ||
+    exists(state.metadata.disposableRoot)
+  ) {
+    throw new Error('Owned disposable resources remain');
+  }
+  const portsClosed = await Promise.all(
+    Array.from({ length: 8 }, (_, index) =>
+      portAvailable(state.metadata.basePort + index)
+    )
+  );
+  if (!portsClosed.every(Boolean))
+    throw new Error('Disposable port block remains occupied');
+  state.cleanupVerified = true;
+  record(state);
+}
+
+export function buildLocalProof(state, types) {
+  if (
+    !state.runSucceeded ||
+    !state.cleanupVerified ||
+    !Object.keys(state.images).length
+  ) {
+    throw new Error('No successful cleaned lifecycle proof');
+  }
+  const text = types.toString('utf8');
+  if (!types.length || !/export type Database\s*=/.test(text)) {
+    throw new Error('Generated database type declaration missing');
+  }
+  for (const schema of ['public', 'private', 'storage']) {
+    if (!text.includes(`  ${schema}: {`))
+      throw new Error('Generated schema declaration missing');
+  }
+  return {
+    headSha: state.metadata.headSha,
+    projectId: state.metadata.projectId,
+    cliVersion: state.cliVersion,
+    services: state.services,
+    network: state.network,
+    images: state.images,
+    migrationFingerprint: state.migrationFingerprint,
+    typesSha256: hash(types),
+    typesBytes: types.length,
+    schemas: ['public', 'private', 'storage'],
+    limits: state.limits,
+    initialFreeBytes: state.initialFreeBytes,
+    minimumFreeBytesObserved: state.minimumFreeBytesObserved,
+    cleanupVerified: true,
+    runId: process.env.GITHUB_RUN_ID,
+    runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+  };
+}
+function validate() {
+  assertHosted();
+  const proof = buildLocalProof(
+    readState(),
+    readFileSync('packages/types/src/supabase.ts')
+  );
+  const proofRoot = path.join(output, 'local-proof');
+  mkdirSync(proofRoot, { recursive: true });
+  writeFileSync(
+    path.join(proofRoot, 'provenance.json'),
+    `${JSON.stringify(proof, null, 2)}\n`
+  );
+  // Fixed status only. Neither generated declarations nor provenance/hashes are
+  // copied into logs, step summaries, outputs, caches or public artifacts.
+  console.log(
+    'Local output validation and scoped cleanup passed; no files uploaded.'
+  );
+}
+
+export async function main(mode) {
+  if (mode === 'prepare') return prepare();
+  if (mode === 'run') return run();
+  if (mode === 'cleanup') return cleanup();
+  if (mode === 'validate') return validate();
+  throw new Error('Expected prepare, run, cleanup, or validate');
+}
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  try {
+    await main(process.argv[2]);
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 1;
+  }
+}

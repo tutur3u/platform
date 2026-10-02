@@ -30,7 +30,8 @@ export async function getNavigationLinks(wsId: string): Promise<NavLink[]> {
     },
     {
       title: t('coding'),
-      href: `${base}/coding`,
+      href: `${base}/programming`,
+      aliases: [`${base}/coding`],
       icon: <Code2 className="size-4" />,
     },
     {

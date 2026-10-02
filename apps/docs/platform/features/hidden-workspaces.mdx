@@ -10,8 +10,11 @@ notifications. Only its owner can read or change the preference.
 
 ## Workspace sheet and recovery
 
-The web and mobile picker fills the screen, with the Tuturuuu logo, Workspaces
-heading, floating Search/Create controls, close and Back support. Search and
+The native mobile picker fills the screen, with the Tuturuuu logo, Workspaces
+heading, floating Search/Create controls, close and Back support. Browser workspace
+selectors, including apps/web and shared satellite selectors, use a standard anchored dropdown at every browser viewport,
+including narrow screens. Search stays visible, the list scrolls within the
+dropdown, and Escape/outside click closes it. Search and
 sorting retain workspace IDs and the objects from the rendered results. Duplicate
 names cannot substitute a different workspace when a list refreshes.
 
@@ -38,7 +41,7 @@ deterministic first visible workspace. Hiding the last visible workspace clears
 the active UI selection and opens the selection/recovery surface. The stored
 default remains unchanged and is skipped during normal mobile selection while
 Hidden. A browser keeps its existing authorized workspace URL when a choice is
-hidden; it offers no Hidden choices in the sheet. Existing authorized deep links
+hidden; it offers no Hidden choices in the dropdown. Existing authorized deep links
 and notification navigation may enter a Hidden workspace without restoring it.
 These rules change discovery, not permission checks.
 
@@ -113,6 +116,13 @@ workspace filters and root link-shortener filters. An optional Infrastructure
 Internal/root choice must also respect Hidden/unknown state. A
 current-workspace fallback does not reinsert a Hidden choice into those lists.
 Inventory continues using the selected authorized workspace and its currency.
+
+The dropdown interaction regression in
+`packages/ui/src/components/ui/custom/__tests__/workspace-picker-content.test.tsx`
+covers its bounded container, search, Hidden recovery, selection and Escape.
+The shared browser selector defaults to this presentation; apps/web also opts
+into it explicitly. The normal workspace-switching picker uses fullscreen only on native
+mobile. Settings retains its dedicated Hidden-workspace restore dialog.
 
 ## Verification and integration hold
 

@@ -1,0 +1,104 @@
+import { execFileSync } from 'node:child_process';
+
+export const networkPolicy = Object.freeze({
+  slice: 'tuturuuu-typegen.slice',
+  cgroupPath: '/sys/fs/cgroup/tuturuuu.slice/tuturuuu-typegen.slice',
+  containerPool: '172.28.0.0/16',
+  dns: ['127.0.0.1'],
+});
+export function assertNetworkPolicy({ daemon, programs, allow, deny }) {
+  if (
+    daemon['cgroup-parent'] !== networkPolicy.slice ||
+    JSON.stringify(daemon['default-address-pools']) !==
+      JSON.stringify([{ base: networkPolicy.containerPool, size: 24 }]) ||
+    JSON.stringify(daemon.dns) !== JSON.stringify(networkPolicy.dns) ||
+    daemon.ipv6 !== false
+  ) {
+    throw new Error('Disposable Docker network policy mismatch');
+  }
+  const allowed = allow.trim().split(/\s+/).sort();
+  if (
+    JSON.stringify(allowed) !==
+      JSON.stringify(['127.0.0.0/8', '172.28.0.0/16', '::1/128'].sort()) ||
+    JSON.stringify(deny.trim().split(/\s+/).sort()) !==
+      JSON.stringify(['0.0.0.0/0', '::/0'].sort())
+  ) {
+    throw new Error('Slice IP allow/deny policy mismatch');
+  }
+  const types = new Set(programs.map((program) => program.attach_type));
+  if (
+    !(types.has('ingress') || types.has('cgroup_inet_ingress')) ||
+    !(types.has('egress') || types.has('cgroup_inet_egress'))
+  ) {
+    throw new Error('Kernel IP filters missing; refusing lifecycle');
+  }
+}
+export const firewallRules = [
+  '-N TTR-TYPEGEN-EGRESS',
+  '-A TTR-TYPEGEN-EGRESS -i br+ -o br+ -m physdev --physdev-is-bridged -j RETURN',
+  '-A TTR-TYPEGEN-EGRESS -i br+ -j DROP',
+  '-A TTR-TYPEGEN-EGRESS -i docker0 -o docker0 -j RETURN',
+  '-A TTR-TYPEGEN-EGRESS -i docker0 -j DROP',
+  '-A TTR-TYPEGEN-EGRESS -j RETURN',
+];
+export function assertFirewallPolicy({ rules, dockerUser, forward }) {
+  if (
+    JSON.stringify(rules.trim().split('\n')) !==
+      JSON.stringify(firewallRules) ||
+    dockerUser.split('\n').find((rule) => rule.startsWith('-A ')) !==
+      '-A DOCKER-USER -j TTR-TYPEGEN-EGRESS' ||
+    forward.split('\n').find((rule) => rule.startsWith('-A ')) !==
+      '-A FORWARD -j TTR-TYPEGEN-EGRESS'
+  ) {
+    throw new Error('Bridge egress firewall missing or reordered');
+  }
+}
+export function verifyNetworkPolicy() {
+  const run = (args) =>
+    execFileSync('sudo', ['-n', ...args], {
+      encoding: 'utf8',
+      timeout: 5000,
+      maxBuffer: 1024 ** 2,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+  const daemon = JSON.parse(run(['cat', '/etc/docker/daemon.json']));
+  const programs = JSON.parse(
+    run([
+      'bpftool',
+      '-j',
+      'cgroup',
+      'show',
+      networkPolicy.cgroupPath,
+      'effective',
+    ])
+  );
+  const allow = run([
+    'systemctl',
+    'show',
+    networkPolicy.slice,
+    '-p',
+    'IPAddressAllow',
+    '--value',
+  ]);
+  const deny = run([
+    'systemctl',
+    'show',
+    networkPolicy.slice,
+    '-p',
+    'IPAddressDeny',
+    '--value',
+  ]);
+  assertNetworkPolicy({ daemon, programs, allow, deny });
+  for (const firewall of ['iptables', 'ip6tables']) {
+    assertFirewallPolicy({
+      rules: run([firewall, '-S', 'TTR-TYPEGEN-EGRESS']),
+      dockerUser: run([firewall, '-S', 'DOCKER-USER']),
+      forward: run([firewall, '-S', 'FORWARD']),
+    });
+  }
+  return {
+    ...networkPolicy,
+    firewallRules,
+    programIds: programs.map((program) => program.id),
+  };
+}

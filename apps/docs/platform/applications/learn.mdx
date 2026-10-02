@@ -51,7 +51,9 @@ hardware-normalized benchmark or rank users by these numbers. Hidden-case
 timings are omitted from learner responses.
 
 `packages/education-core` contains reusable server-only education domain logic;
-it does not own HTTP traffic. The Tulearn helpers in
+it does not own HTTP traffic. Programming catalog clients are exposed through
+`@tuturuuu/internal-api/programming`; keep new catalog consumers on that scoped
+entry point instead of extending the legacy education client module. The Tulearn helpers in
 `packages/internal-api/src/tulearn.ts` select the Learn origin for learner
 contracts. Explicit exceptions such as platform profile updates keep the Web
 origin.
@@ -98,14 +100,21 @@ Courses, modules, quiz sets, flashcards, assignments, monthly reports, and marks
 
 ## Programming route and operations
 
-Learn owns the learner-facing Programming workspace at `/[wsId]/coding`. It starts with
+Learn owns the learner-facing Programming workspace at `/[wsId]/programming`; `/[wsId]/coding` redirects there. It starts with
 curated array, search, and stack exercises. Students in a workspace with
 `ENABLE_EDUCATION=true` can submit solutions; parents with read-only learner
-access cannot. The initial challenge catalog is platform-authored and shared
-across eligible education workspaces. Python, JavaScript, TypeScript, C, C++,
+access cannot. The audited imported catalog is shared across eligible education workspaces; workspace managers can additionally author private workspace catalogs. Python, JavaScript, TypeScript, C, C++,
 Java, Rust, Go, Ruby, and PHP use the same standard-input/standard-output
 exercise contract. The selected language only becomes runnable when a platform
 Judge runner reports a cached pinned image for it.
+
+The fixed Judge command budget is 48,000 base64url characters for the combined
+source, catalog cases, and optional custom case. Individual field limits are upper
+bounds, not independently reserved capacity. Author saves reject catalogs that
+cannot fit even minimal source; execution validates the complete combined payload
+and rejects oversized commands before enqueue. Learners may reduce source or
+custom input to fit the shared budget. This applies to both workspace and imported
+catalogs and preserves the existing runner contract.
 
 The Programming workspace uses a full-bleed shell at this route, with shared
 Select, Button, Textarea, Tooltip, Tabs, and Accordion controls. Public test
@@ -145,21 +154,57 @@ Learn metadata and auth return URLs must resolve to absolute HTTP(S) app URLs. P
 
 Do not configure Learn return URLs with the retired `tulearn.tuturuuu.com` origin. Production learner redirects should use `https://learn.tuturuuu.com`, and teacher-facing redirects should use `https://teach.tuturuuu.com`.
 
+## Programming problem catalog
+
+Programming opens its authorized catalog at `/[wsId]/programming` and each problem
+at `/[wsId]/programming/problems/[problemId]`. The legacy `/coding` entry redirects
+only after learner access is checked. Catalog pages return at most 50 summaries
+and expose a UUID continuation cursor; a selected problem remains accessible even
+when it is outside the first catalog page.
+
+Workspace authors require workspace membership, `manage_users`, and enabled
+education. Author forms can create and revise workspace problems; imported global
+problems remain read-only. Up to nine cases can be stored per problem, reserving
+the existing runner's tenth slot for a learner's custom test. Revision conflicts
+preserve the author's form so another author's changes are not overwritten.
+Learners receive published problem data and visible cases; hidden cases remain
+behind the authorized server boundary.
+
+Editor code, language, custom input, and inspected result selection persist per
+tab in session storage scoped to actor, workspace, learner, and problem. When
+storage is unavailable, drafts use memory for the current tab. History and polling
+bind to the opaque problem UUID; only the three audited imported global problems
+may read never-bound legacy slug history. Deleting a problem preserves existing
+submission history through its permanent identity binding.
+
+These decisions apply to the Learn catalog, problem workspace, author forms, and
+shared Programming lab. Backend access, case capacity, pagination, history, and
+subject regressions live in `packages/education-core/src/education/programming-*.test.ts`
+and `apps/web/src/lib/programming-api.test.ts`. The disposable actual Next/auth/API
+regression is `apps/web/e2e/programming-catalog.noauth.spec.ts`; it exercises RPC
+author writes, stale revisions, hidden-case filtering, and workspace isolation.
+Learn actor/history regressions
+live in `apps/learn/src/lib/programming/server.test.ts` and
+`apps/learn/src/lib/coding/programming-store.test.ts`; scoped draft regressions
+live in `apps/learn/src/lib/programming/drafts.test.ts`. The mounted canonical
+harness in `apps/learn/tests/programming-workspace/run-canonical.mjs` uses synthetic
+Next navigation and server-action adapters and does not replace authenticated
+Next/API/database integration evidence.
+
 ## Verification
 
-After changing Learn routes, run focused route tests first. Finish Learn API or
-UI changes with the app typecheck, repository checks, and the owning app build:
+After changing Learn routes, run focused non-build route or component tests
+locally. Run applicable typecheck, lint, tests, and the owning Learn build in CI for
+the exact candidate commit. Do not run `bun check` or a product build locally;
+their task graphs may compile workspace dependencies.
 
-```bash
-bun type-check:learn
-bun check
-bun run --cwd apps/learn build
-```
-
-Schema changes additionally require `bun sb:up` and `bun sb:typegen`; message
-changes require `bun i18n:sort`. Run focused route or component tests around
-parent read-only access, student-only writes, XP idempotency, assignment
-completion, marks, and reports when those behaviors change.
+For the owning Learn build, dispatch `.github/workflows/vercel-preview-learn.yaml`
+on trusted `main` with `preview_ref` set to the immutable candidate SHA. Verify
+the checked-out source SHA and successful build step separately from preview
+deployment. Schema changes require disposable full-schema replay and generated
+types before integration; message changes require `bun i18n:sort`. Cover parent
+read-only access, student-only writes, XP idempotency, assignments, marks, and
+reports when those behaviors change.
 
 ## CI and deployment
 
@@ -168,7 +213,7 @@ Learn has dedicated Vercel workflows:
 - `.github/workflows/vercel-preview-learn.yaml`
 - `.github/workflows/vercel-production-learn.yaml`
 
-Both workflows are registered in `tuturuuu.ts` and use the shared `ci-check.yml` switchboard. They require environment-scoped Vercel credentials plus `VERCEL_LEARN_PROJECT_ID`; production Supabase values should live in the Vercel project environment rather than GitHub Actions.
+Production uses the shared workflow switchboard. Preview runs only by trusted manual dispatch on `main`, then checks out the supplied `preview_ref`. They require environment-scoped Vercel credentials plus `VERCEL_LEARN_PROJECT_ID`; production Supabase values should live in the Vercel project environment rather than GitHub Actions.
 
 Deployment credentials must stay environment-scoped in GitHub Actions. The preview job is bound to the `vercel-preview-learn` GitHub Environment, and the production job is bound to `vercel-production-learn`. Store `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_LEARN_PROJECT_ID` in those environments instead of repository-wide or organization-wide secrets. Production Supabase values remain in the Vercel project environment pulled by `vercel pull`. The repository-level `TURBO_TOKEN` and `TURBO_TEAM` variable are passed only to the wrapped `vercel build` step; never place them at workflow or job scope, and never expose the token to pull-request or Dependabot code.
 
@@ -177,3 +222,21 @@ Preview dispatch is manual-only. Run `vercel-preview-learn.yaml` from `main`, se
 `apps/learn/vercel.json` disables Vercel Git deployments and GitHub integration so preview and production deploys only happen through the CI workflows.
 
 The full-bleed shell measures its mobile navigation header, including safe-area padding and wrapped rows, and reserves bottom safe-area space inside the viewport. Disabled Run and Submit controls expose their tooltips to keyboard focus. Font loading failures retain fallback editor metrics without unhandled rejections. Source regression coverage is in `apps/learn/tests/programming-workspace/review-regressions.node-test.mjs`; real mobile and Next build checks remain separate verification gates.
+
+### Programming database acceptance
+
+The enabled `programming-database-contract.yaml` pull request gate checks out the
+exact source head and replays all repository migrations in an owned disposable
+Supabase project. `learn-programming-full-schema.sql` requires strict pgTAP success
+for grants, workspace boundaries, hidden-case redaction, stale revisions, invalid
+case visibility, and complete transaction rollback. Actual public schema types
+are uploaded under that source SHA after scoped cleanup succeeds; they are not
+committed by the workflow. The job has read-only repository permissions and a
+45-minute deadline. This gate validates the current catalog contract without
+activating the separate inert hosted typegen proposals.
+
+Run the finite parser and session regressions with
+`node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/tests/programming-disposable/session.test.mjs`.
+Use the repository isolated lifecycle for local schema acceptance, never a shared
+or production database. A failed migration, TAP assertion, type generation, or
+owned-project cleanup blocks acceptance.

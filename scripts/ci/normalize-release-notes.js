@@ -1,3 +1,4 @@
+const { isReleaseBookkeeping } = require('./release-note-policy');
 const fs = require('node:fs');
 const { execFileSync } = require('node:child_process');
 
@@ -20,6 +21,11 @@ function normalizeReleaseNotes(
   let entries = new Map();
   for (const line of lines) {
     if (/^#{2,3} /.test(line)) entries = new Map();
+    if (
+      /^[*-] /.test(line) &&
+      isReleaseBookkeeping(line.slice(2).replace(referencePattern, '').trim())
+    )
+      continue;
     const references = [...line.matchAll(referencePattern)].map(
       (match) => match[0]
     );
