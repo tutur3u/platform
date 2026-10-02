@@ -157,7 +157,7 @@ export function PublicWorld({
                       variant="outline"
                       onClick={() => select(e.id)}
                     >
-                      {e.draft.title}
+                      {e.published.title}
                     </Button>
                   ))}
                 </div>
