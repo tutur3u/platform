@@ -20,7 +20,7 @@ const Preparation = z
     journal: SealedMutationSchema,
   })
   .strict();
-const Operation = z
+export const GoogleMutationOperationSchema = z
   .object({
     id: z.guid(),
     generation: z.string().regex(/^[1-9][0-9]*$/),
@@ -75,7 +75,7 @@ export function createGoogleMutationRepository(args: {
             : 'storage',
         'Google mutation storage unavailable or changed'
       );
-    const parsed = Operation.safeParse(data);
+    const parsed = GoogleMutationOperationSchema.safeParse(data);
     if (
       !parsed.success ||
       parsed.data.id !== input.id ||

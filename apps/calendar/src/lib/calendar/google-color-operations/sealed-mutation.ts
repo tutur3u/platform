@@ -28,7 +28,10 @@ const Payload = z
     providerPatch: z.record(z.string(), z.unknown()),
     localPatch: z.record(z.string(), z.unknown()),
     providerOptions: z
-      .object({ sendUpdates: z.enum(['all', 'externalOnly', 'none']) })
+      .object({
+        sendUpdates: z.enum(['all', 'externalOnly', 'none']),
+        eventLabelVersion: z.union([z.literal(0), z.literal(1)]).optional(),
+      })
       .strict()
       .optional(),
   })

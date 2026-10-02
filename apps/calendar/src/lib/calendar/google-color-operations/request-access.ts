@@ -1,11 +1,30 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
+import { z } from 'zod';
 import { authorizeCalendarEventManagement } from '../../calendar-event-permission';
-import { resolveCalendarSourceForEvent } from '../source-resolver';
+import {
+  resolveCalendarSource,
+  resolveCalendarSourceForEvent,
+} from '../source-resolver';
 import {
   ColorOperationError,
   type ColorOperationIdentity,
   sameColorOperationIdentity,
 } from './protocol';
+
+const Tombstone = z.object({
+  id: z.guid(),
+  phase: z.enum(['applied', 'superseded']),
+  identity: z
+    .object({
+      wsId: z.guid(),
+      eventId: z.guid(),
+      connectionId: z.guid(),
+      authTokenId: z.guid(),
+      calendarId: z.string().min(1),
+      providerEventId: z.string().min(1),
+    })
+    .strict(),
+});
 
 /** Reconciliation accepts an operation ID, never an account/source override.
  * This request-bound resolver discovers exact identity from current server rows.
@@ -17,7 +36,9 @@ export function createRequestColorOperationAccess(
   dependencies = {
     authorize: authorizeCalendarEventManagement,
     resolveSource: resolveCalendarSourceForEvent,
-  }
+    resolveConnection: resolveCalendarSource,
+  },
+  options: { operationId?: () => string | undefined } = {}
 ) {
   let actorId: string | undefined;
   async function resolve(expected?: ColorOperationIdentity) {
@@ -36,12 +57,57 @@ export function createRequestColorOperationAccess(
       .eq('ws_id', access.wsId)
       .eq('id', eventId)
       .maybeSingle();
-    if (error || !event || event.provider !== 'google')
+    if (error)
+      throw new ColorOperationError(
+        'storage',
+        'Google operation event unavailable'
+      );
+    let tombstoneIdentity: ColorOperationIdentity | undefined;
+    if (!event && options.operationId?.()) {
+      const operationId = options.operationId();
+      const result = await access.sbAdmin.rpc(
+        'calendar_google_mutation_operation',
+        {
+          p_action: 'read',
+          p_ws_id: access.wsId,
+          p_event_id: eventId,
+          p_actor_id: access.userId,
+          p_input: { id: operationId },
+        }
+      );
+      const parsed = Tombstone.safeParse(result.data);
+      // The RPC only allows a missing event for a terminal confirmed deletion.
+      // Its token boundary is rechecked after workspace authorization and before resolving a client.
+      if (
+        result.error ||
+        !parsed.success ||
+        parsed.data.id !== operationId ||
+        parsed.data.identity.wsId !== access.wsId ||
+        parsed.data.identity.eventId !== eventId
+      )
+        throw new ColorOperationError(
+          'identity',
+          'Google deletion recovery unavailable'
+        );
+      tombstoneIdentity = parsed.data.identity;
+    }
+    if (
+      (!event && !tombstoneIdentity) ||
+      (event && event.provider !== 'google')
+    )
       throw new ColorOperationError(
         'identity',
         'Google operation event unavailable'
       );
-    const source = await dependencies.resolveSource({ ...access, event });
+    const source = tombstoneIdentity
+      ? await dependencies.resolveConnection({
+          ...access,
+          source: {
+            provider: 'google',
+            connectionId: tombstoneIdentity.connectionId,
+          },
+        })
+      : await dependencies.resolveSource({ ...access, event: event! });
     if (source.provider !== 'google' || !source.accessToken)
       throw new ColorOperationError(
         'identity',
@@ -70,7 +136,10 @@ export function createRequestColorOperationAccess(
       .eq('provider', 'google')
       .eq('is_active', true)
       .maybeSingle();
-    const providerEventId = event.external_event_id ?? event.google_event_id;
+    const providerEventId =
+      event?.external_event_id ??
+      event?.google_event_id ??
+      tombstoneIdentity?.providerEventId;
     if (tokenError || !token?.access_token || !providerEventId)
       throw new ColorOperationError(
         'unauthorized',
@@ -84,7 +153,11 @@ export function createRequestColorOperationAccess(
       calendarId: source.externalCalendarId,
       providerEventId,
     };
-    if (expected && !sameColorOperationIdentity(identity, expected))
+    if (
+      (expected && !sameColorOperationIdentity(identity, expected)) ||
+      (tombstoneIdentity &&
+        !sameColorOperationIdentity(identity, tombstoneIdentity))
+    )
       throw new ColorOperationError(
         'identity',
         'Google operation source changed'

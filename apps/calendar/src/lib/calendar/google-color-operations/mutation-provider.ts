@@ -71,6 +71,7 @@ export function createGoogleMutationProvider(args: {
       identity: ColorOperationIdentity;
       action: 'patch' | 'delete';
       sendUpdates?: 'all' | 'externalOnly' | 'none';
+      eventLabelVersion?: 0 | 1;
       providerPatch: Record<string, unknown>;
       localPatch?: { locked?: boolean };
     }): Promise<PreparedGoogleMutation> {
@@ -112,7 +113,10 @@ export function createGoogleMutationProvider(args: {
                 },
               },
         localPatch,
-        providerOptions: { sendUpdates: input.sendUpdates ?? 'none' },
+        providerOptions: {
+          sendUpdates: input.sendUpdates ?? 'none',
+          eventLabelVersion: input.eventLabelVersion ?? 1,
+        },
       };
       return { binding, journal: await codec.seal(binding, payload) };
     },
@@ -140,7 +144,7 @@ export function createGoogleMutationProvider(args: {
         await calendar.events.patch(
           {
             ...resource,
-            eventLabelVersion: 1,
+            eventLabelVersion: payload.providerOptions?.eventLabelVersion ?? 1,
             requestBody: payload.providerPatch as calendar_v3.Schema$Event,
           },
           options

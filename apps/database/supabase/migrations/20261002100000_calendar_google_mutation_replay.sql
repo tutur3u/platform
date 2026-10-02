@@ -43,7 +43,7 @@ begin
   end if;
   if p_action='inspect' then
     return jsonb_build_object('generation',coalesce(op.current_generation,0)::text,
-      'operation',case when op.intent->>'kind'='mutation' then private.calendar_google_color_operation_json(op) else null end);
+      'operation',case when op.operation_id is not null then private.calendar_google_color_operation_json(op) else null end);
   end if;
   operation_id := (p_input->>'id')::uuid;
   if p_action='admit' then
@@ -86,6 +86,16 @@ begin
       raise exception using errcode='40001',message='Google mutation changed';
     end if;
     if p_action='read' then return private.calendar_google_color_operation_json(op); end if;
+    if p_action='result' then
+      if op.phase not in ('applied','superseded') or op.completion->>'deleted' is distinct from 'true' then
+        raise exception using errcode='40001',message='Google deletion is not final';
+      end if;
+      -- Return only the stable deletion UI summary, never encrypted provider
+      -- content, stored request preparation, or unrelated event metadata.
+      return jsonb_build_object('operationId',op.operation_id::text,'deleted',true,
+        'linkedTaskId',op.completion->'linkedTaskId','skippedHabitId',op.completion->'skippedHabitId',
+        'skippedHabitDate',op.completion->'skippedHabitDate');
+    end if;
     generation := (p_input->>'generation')::bigint;
     if op.generation is distinct from generation or op.current_generation is distinct from generation then
       raise exception using errcode='40001',message='Google mutation generation changed';

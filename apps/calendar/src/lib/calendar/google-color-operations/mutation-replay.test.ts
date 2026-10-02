@@ -160,6 +160,22 @@ describe('encrypted immutable generic Google mutations', () => {
     for (const call of f.patch.mock.calls)
       expect(call[0].sendUpdates).toBe('all');
   });
+  it('seals the native palette protocol version for every immutable replay', async () => {
+    const f = fixture();
+    const prepared = await f.provider.prepare({
+      operationId: id,
+      generation: '1',
+      identity,
+      action: 'patch',
+      providerPatch: { colorId: '11', eventLabelId: '' },
+      sendUpdates: 'none',
+      eventLabelVersion: 0,
+    });
+    await f.provider.dispatch(identity, prepared);
+    await f.provider.dispatch(identity, prepared);
+    for (const call of f.patch.mock.calls)
+      expect(call[0].eventLabelVersion).toBe(0);
+  });
   it('reauthorizes a replay and never dispatches a tampered journal', async () => {
     const f = fixture();
     const prepared = await f.prepare();

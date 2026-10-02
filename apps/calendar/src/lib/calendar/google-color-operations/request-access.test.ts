@@ -12,11 +12,13 @@ vi.mock('../../calendar-event-permission', () => ({
 }));
 vi.mock('../source-resolver', () => ({
   resolveCalendarSourceForEvent: vi.fn(),
+  resolveCalendarSource: vi.fn(),
 }));
 
 import { createRequestColorOperationAccess } from './request-access';
 
-function fixture() {
+function fixture(operationId?: string) {
+  vi.clearAllMocks();
   const rows: Record<string, unknown> = {
     workspace_calendar_events: {
       provider: 'google',
@@ -31,6 +33,7 @@ function fixture() {
     },
   };
   const sbAdmin = {
+    rpc: vi.fn(async () => ({ data: null as unknown, error: null as unknown })),
     from: (table: string) => {
       const query = {
         select: () => query,
@@ -58,6 +61,7 @@ function fixture() {
     accountEmail: null,
     accountName: null,
   }));
+  const resolveConnection = vi.fn(async () => resolveSource());
   const access = createRequestColorOperationAccess(
     new Request('https://fixture.invalid'),
     'workspace',
@@ -65,9 +69,11 @@ function fixture() {
     {
       authorize,
       resolveSource,
-    } as unknown as Parameters<typeof createRequestColorOperationAccess>[3]
+      resolveConnection,
+    } as unknown as Parameters<typeof createRequestColorOperationAccess>[3],
+    { operationId: () => operationId }
   );
-  return { rows, authorize, resolveSource, access };
+  return { rows, authorize, resolveSource, resolveConnection, sbAdmin, access };
 }
 
 describe('request-bound color operation access', () => {
@@ -116,5 +122,122 @@ describe('request-bound color operation access', () => {
     await expect(f.access.assertAllowed(identity)).rejects.toMatchObject({
       reason: 'unauthorized',
     });
+  });
+});
+
+const deletionIdentity = {
+  wsId: '22222222-2222-4222-8222-222222222222',
+  eventId: '33333333-3333-4333-8333-333333333333',
+  connectionId: '44444444-4444-4444-8444-444444444444',
+  authTokenId: '55555555-5555-4555-8555-555555555555',
+  calendarId: 'calendar',
+  providerEventId: 'provider-event',
+};
+const deletionOperation = '11111111-1111-4111-8111-111111111111';
+function deletionFixture() {
+  const f = fixture(deletionOperation);
+  f.rows.workspace_calendar_events = null;
+  f.authorize.mockResolvedValue({
+    wsId: deletionIdentity.wsId,
+    userId: 'actor',
+    sbAdmin: f.sbAdmin,
+  });
+  f.resolveConnection.mockResolvedValue({
+    provider: 'google',
+    connectionId: deletionIdentity.connectionId,
+    externalCalendarId: 'calendar',
+    accessToken: 'verified-fixture',
+    refreshToken: null,
+    workspaceCalendarId: null,
+    label: 'calendar',
+    color: null,
+    accessRole: 'writer',
+    accountEmail: null,
+    accountName: null,
+  });
+  f.rows.calendar_connections = { auth_token_id: deletionIdentity.authTokenId };
+  f.rows.calendar_auth_tokens = {
+    id: deletionIdentity.authTokenId,
+    access_token: 'verified-fixture',
+    refresh_token: null,
+  };
+  f.sbAdmin.rpc.mockResolvedValue({
+    data: {
+      id: deletionOperation,
+      phase: 'applied',
+      identity: deletionIdentity,
+    },
+    error: null,
+  });
+  return f;
+}
+describe('confirmed deletion recovery access', () => {
+  it('recovers the exact server-bound connection after local deletion while reauthorizing the actor', async () => {
+    const f = deletionFixture();
+    const access = createRequestColorOperationAccess(
+      new Request('https://fixture.invalid'),
+      deletionIdentity.wsId,
+      deletionIdentity.eventId,
+      {
+        authorize: f.authorize,
+        resolveSource: f.resolveSource,
+        resolveConnection: f.resolveConnection,
+      } as unknown as Parameters<typeof createRequestColorOperationAccess>[3],
+      { operationId: () => deletionOperation }
+    );
+    const found = await access.discover();
+    await access.assertAllowed(found.identity);
+    expect(found.identity).toEqual(deletionIdentity);
+    expect(f.resolveSource).not.toHaveBeenCalled();
+    expect(f.resolveConnection).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        source: {
+          provider: 'google',
+          connectionId: deletionIdentity.connectionId,
+        },
+      })
+    );
+    expect(f.authorize).toHaveBeenCalledTimes(2);
+  });
+  it('rejects non-terminal, wrong-operation, and revoked-source recovery without producing credentials', async () => {
+    const f = deletionFixture();
+    const access = createRequestColorOperationAccess(
+      new Request('https://fixture.invalid'),
+      deletionIdentity.wsId,
+      deletionIdentity.eventId,
+      {
+        authorize: f.authorize,
+        resolveSource: f.resolveSource,
+        resolveConnection: f.resolveConnection,
+      } as unknown as Parameters<typeof createRequestColorOperationAccess>[3],
+      { operationId: () => deletionOperation }
+    );
+    f.sbAdmin.rpc.mockResolvedValueOnce({
+      data: {
+        id: deletionOperation,
+        phase: 'dispatched',
+        identity: deletionIdentity,
+      },
+      error: null,
+    });
+    await expect(access.discover()).rejects.toMatchObject({
+      reason: 'identity',
+    });
+    f.sbAdmin.rpc.mockResolvedValueOnce({
+      data: {
+        id: '77777777-7777-4777-8777-777777777777',
+        phase: 'applied',
+        identity: deletionIdentity,
+      },
+      error: null,
+    });
+    await expect(access.discover()).rejects.toMatchObject({
+      reason: 'identity',
+    });
+    f.rows.calendar_auth_tokens = null;
+    await expect(access.provider(deletionIdentity)).rejects.toMatchObject({
+      reason: 'unauthorized',
+    });
+    expect(m.credentials).not.toHaveBeenCalled();
   });
 });

@@ -63,6 +63,8 @@ commit;
 select dblink_connect('competitor','dbname=postgres user=postgres password=postgres host=127.0.0.1');
 begin;
 select is(public.fixture_color_call('reserve',public.fixture_color_input(0))->>'generation','1','color admission holds first generation');
+select is(public.fixture_mutation_call('inspect',jsonb_build_object('identity',public.fixture_color_input()->'identity'))->'operation'->'intent'->>'kind',
+ 'event','common inspection reports color operation kind for recovery dispatch');
 select dblink_send_query('competitor','select public.fixture_competing_admit()');
 -- Assert actual backend lock contention, not a timing-only in-process mock.
 do $$ declare deadline timestamptz := clock_timestamp()+interval '3 seconds'; begin
@@ -87,6 +89,8 @@ select throws_ok($$select public.fixture_mutation_call('admit',public.fixture_mu
 update public.workspace_calendar_events set scheduling_metadata=scheduling_metadata||'{"new_local_metadata":{"preserve":true}}'
  where id='00000000-0000-4000-8000-000000009741';
 select is(public.fixture_mutation_call('dispatch','{"id":"00000000-0000-4000-8000-000000009761","generation":"2"}')->>'phase','dispatched','dispatch recorded before external effect');
+select throws_ok($$select public.fixture_color_call('reserve',public.fixture_color_input(2,'00000000-0000-4000-8000-000000009762'))$$,
+ '40001',null,'color admission cannot bypass dispatched generic mutation');
 select throws_ok($$select public.fixture_mutation_call('cancel','{"id":"00000000-0000-4000-8000-000000009761","generation":"2"}')$$,
  '40001',null,'sent mutation cannot be canceled or lease-unlocked');
 select is(public.fixture_mutation_call('finalize',jsonb_build_object('id','00000000-0000-4000-8000-000000009761',
@@ -106,6 +110,10 @@ select is((select completion->>'skippedHabitId' from private.calendar_google_col
 select is(public.fixture_mutation_call('read','{"id":"00000000-0000-4000-8000-000000009761"}')->>'phase','applied','authorized terminal recovery survives local row deletion');
 select is((select current_generation from private.calendar_google_color_operations),3::bigint,'tombstone retains provider generation');
 select is((select count(*) from private.calendar_google_color_write_permits),0::bigint,'no capability survives finalization');
+select is(public.fixture_mutation_call('result','{"id":"00000000-0000-4000-8000-000000009761"}')->>'skippedHabitId',
+ '00000000-0000-4000-8000-000000009771','terminal response retains atomic deletion summary');
+select ok(not (public.fixture_mutation_call('result','{"id":"00000000-0000-4000-8000-000000009761"}') ? 'projection'),
+ 'deletion result exposes no provider projection or sealed intent');
 update public.calendar_auth_tokens set is_active=false where id='00000000-0000-4000-8000-000000009721';
 select throws_ok($$select public.fixture_mutation_call('read','{"id":"00000000-0000-4000-8000-000000009761"}')$$,
  '42501',null,'terminal deletion recovery still enforces fresh token authorization');

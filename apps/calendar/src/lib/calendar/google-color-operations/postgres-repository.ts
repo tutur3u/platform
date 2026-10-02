@@ -2,6 +2,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json } from '@tuturuuu/types/db';
 import { z } from 'zod';
 import { GoogleProviderColorChoiceSchema } from '../google-color-choices';
+import { GoogleMutationOperationSchema } from './mutation-repository';
 import {
   type ColorOperation,
   ColorOperationError,
@@ -149,7 +150,9 @@ export async function inspectPostgresColorOperation(
   const parsed = z
     .object({
       generation: z.string().regex(/^(0|[1-9][0-9]*)$/),
-      operation: OperationSchema.nullable(),
+      operation: z
+        .union([OperationSchema, GoogleMutationOperationSchema])
+        .nullable(),
     })
     .strict()
     .safeParse(data);
@@ -170,5 +173,12 @@ export async function inspectPostgresColorOperation(
       'identity',
       'Google operation identity changed'
     );
-  return parsed.data;
+  // A generic terminal operation still owns the current generation. It is not
+  // executable by the color service, but must not prevent a successor reservation.
+  // SQL rejects every pending generic operation before admitting that successor.
+  const color = OperationSchema.safeParse(parsed.data.operation);
+  return {
+    generation: parsed.data.generation,
+    operation: color.success ? color.data : null,
+  };
 }
