@@ -34,14 +34,12 @@ const {
 } = require('./e2e-tasks-satellite.js');
 const {
   getOwnedSatelliteDependencyBuildArgs,
-  getOwnedSatellitePortlessEnv,
   getOwnedSatellitesPlaywrightEnv,
   getRequiredOwnedSatellites,
   printOwnedSatelliteLog,
   shouldDiscoverOwnedSatellitesFromTestList,
-  startOwnedSatellite,
+  startOwnedSatelliteFixtures,
   stopOwnedSatellite,
-  waitForOwnedSatellite,
 } = require('./e2e-owned-satellites.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -2103,18 +2101,12 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       acceptedStatusCodes: DEFAULT_PORTLESS_READY_STATUS_CODES,
       timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS,
     });
-    for (const satellite of ownedSatellites) {
-      const runtime = startOwnedSatellite(satellite, { env });
-      ownedSatelliteRuntimes.push(runtime);
-      await ensurePortlessRoute({
-        env: getOwnedSatellitePortlessEnv(satellite, env),
-      });
-      await waitForOwnedSatellite(runtime, (url) =>
-        waitForUrl(url, {
-          timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS,
-        })
-      );
-    }
+    await startOwnedSatelliteFixtures(ownedSatellites, ownedSatelliteRuntimes, {
+      env,
+      ensurePortlessRoute,
+      waitForUrl: (url) =>
+        waitForUrl(url, { timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS }),
+    });
     playwrightEnv = getOwnedSatellitesPlaywrightEnv(ownedSatellites, env);
     if (tasksSatelliteRequired) {
       tasksSatellite = startTasksSatellite({ env });

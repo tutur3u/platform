@@ -187,9 +187,12 @@ export const PATCH = withSessionAuth(
 
       return NextResponse.json({ message: 'Profile updated successfully' });
     } catch (error) {
-      if (error instanceof z.ZodError) {
+      if (error instanceof z.ZodError || error instanceof SyntaxError) {
         return NextResponse.json(
-          { message: 'Invalid request data', errors: error.issues },
+          {
+            message: 'Invalid request data',
+            errors: error instanceof z.ZodError ? error.issues : undefined,
+          },
           { status: 400 }
         );
       }

@@ -253,6 +253,37 @@ function startOwnedSatellite(satellite, options = {}) {
   };
 }
 
+async function startOwnedSatelliteFixtures(
+  satellites,
+  runtimes,
+  { env, ensurePortlessRoute, waitForUrl }
+) {
+  // The app runs over HTTPS; profile media must use the same transport in E2E.
+  const supabase = new URL(
+    env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:8001'
+  );
+  if (!['127.0.0.1', 'localhost'].includes(supabase.hostname)) {
+    throw new Error('E2E Storage alias requires the local Supabase fixture');
+  }
+  await ensurePortlessRoute({
+    env: getOwnedSatellitePortlessEnv(
+      {
+        routeName: 'supabase.tuturuuu',
+        port: supabase.port || '80',
+      },
+      env
+    ),
+  });
+  for (const satellite of satellites) {
+    const runtime = startOwnedSatellite(satellite, { env });
+    runtimes.push(runtime);
+    await ensurePortlessRoute({
+      env: getOwnedSatellitePortlessEnv(satellite, env),
+    });
+    await waitForOwnedSatellite(runtime, waitForUrl);
+  }
+}
+
 async function waitForOwnedSatellite(runtime, waitForUrl) {
   const result = await Promise.race([
     waitForUrl(`${runtime.readinessUrl}/login`).then(() => ({ ready: true })),
@@ -311,6 +342,7 @@ module.exports = {
   shouldDiscoverOwnedSatellitesFromTestList,
   shouldStartOwnedSatellite,
   startOwnedSatellite,
+  startOwnedSatelliteFixtures,
   stopOwnedSatellite,
   waitForOwnedSatellite,
 };

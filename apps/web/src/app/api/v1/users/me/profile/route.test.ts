@@ -39,6 +39,17 @@ beforeEach(() => {
   f.rpc.mockResolvedValue({ error: null });
 });
 describe('Canonical profile API', () => {
+  it('rejects malformed JSON without touching the database', async () => {
+    const response = await PATCH(
+      new Request('https://example.test/api/v1/users/me/profile', {
+        method: 'PATCH',
+        body: '{',
+      }),
+      undefined as never
+    );
+    expect(response.status).toBe(400);
+    expect(f.rpc).not.toHaveBeenCalled();
+  });
   it('uses the authenticated actor and atomically reserves normalized usernames', async () => {
     const response = await PATCH(
       request({

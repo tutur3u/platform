@@ -9,6 +9,14 @@ vi.mock('@/lib/api-auth', () => ({
     withSessionAuthMock(handler, options),
 }));
 
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: vi.fn(),
+}));
+vi.mock('@tuturuuu/storage-core/profile-upload-budget', () => ({
+  reserveProfileUploadBudget: vi.fn(),
+  ProfileUploadError: class extends Error {},
+}));
+
 describe('current user avatar upload URL route', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -16,7 +24,7 @@ describe('current user avatar upload URL route', () => {
   });
 
   it('allows profile-write app sessions without broadening storage access', async () => {
-    await import('@/legacy-api-routes/v1/users/me/avatar/upload-url/route');
+    await import('@/app/api/v1/users/me/avatar/upload-url/route');
 
     expect(withSessionAuthMock).toHaveBeenCalledTimes(1);
     expect(withSessionAuthMock.mock.calls[0]?.[1]).toEqual({

@@ -141,12 +141,13 @@ Run these commands from `apps/lettin` through the shared resource queue:
 bun run cf:typegen
 ttr resources run -- bun run db:migrate:local
 ttr resources run -- bun run test
-ttr resources run -- bun run type-check
-ttr resources run -- bun run build:cloudflare
+
 ```
 
 Local development initializes Cloudflare bindings through OpenNext. For runtime
-verification, `bun run preview:cloudflare` serves the built Worker in workerd.
+verification, use the collaborative preview or a previously CI-built Worker.
+Do not run app or package builds on the agent machine. The exact-commit Lettin
+Cloudflare CI workflow provides the real build and type-check evidence.
 The storage tests use disposable Miniflare D1 and R2 resources and cover creator
 access, invitation delegation, conflicting writes, published snapshots, private
 relationships, and artwork publication/revocation.
@@ -189,8 +190,9 @@ bun run deploy:cloudflare
 domain. Verify the active Worker version and `/api/v1/lettin/health`, then verify
 central login, workspace switching, invite acceptance, collaborator roles,
 membership revocation, conflicting edits, artwork privacy, and anonymous published
-world browsing. Run `bun check` from the repository root before release; record
-unrelated repository blockers separately from Lettin's focused validation.
+world browsing. Require exact-commit CI test, lint, type-check, and real app build gates before
+release; record unrelated repository blockers separately from Lettin's focused
+validation. Do not run `bun check` locally because its task graph can build.
 
 Artwork cleanup runs before uploads and claims at most ten unused objects in that world per request after a seven-day grace period. Draft and published references are retained. Claimed objects cannot be newly referenced; failed R2 deletions remain queued for the next upload. A world with no further uploads retains its unused artwork.
 
@@ -252,3 +254,82 @@ on the shared Postgres counter foundation in storage anti-abuse PR #5736 and
 require the complete dependent release. The identity contract additionally tests
 reserved names, rolling-window boundaries, no-ops, direct-write enforcement,
 atomic rollback, byte/MIME ceilings, and raw upload denial.
+
+
+## Wiki, About profiles, and themes
+
+Workspace wiki pages have dedicated directories for characters, worlds, stories,
+locations, timeline events, relationships, roles, organizations, lore, and pages.
+Entries retain a canonical world owner and optimistic version checks. Typed
+relationships and backlinks are world-scoped: self-references, missing targets,
+and cross-world edges are rejected atomically. Public rendering drops edges to
+unpublished entries. Dates order the timeline; undated entries remain accessible.
+The satellite Structure shell shares workspace navigation, notifications, and
+account controls with other Tuturuuu apps.
+
+The in-house editor accepts rich text and Markdown source, including headings,
+lists, task lists, tables, links, images, and inline formatting. Applying Markdown
+is explicit; saving is disabled until source edits are applied or cancelled.
+Artwork must belong to the notebook. Published inline artwork follows the same
+privacy and retention rules as cover images. Unsupported embed HTML cannot grant
+access to private task or workspace data.
+
+Canonical identity is available to workspace members. Approved creators with
+`manage_documents` can additionally edit their About profile: creative headline,
+pronouns, location, interests, portfolio links, and rich biography. About data is
+owned by the creator in Lettin D1; public creator pages require a published
+notebook and never select private account fields. Paper is the default palette;
+forest, midnight, and rose are alternatives, with clean or editorial typography.
+World and About themes save with their content. Reduced motion respects user
+preference and the saved theme setting.
+
+## Exocorpse imports and private moderation
+
+Only actors with a verified `@tuturuuu.com` email, approved creator access, and
+workspace document-management permission can see or call the importer. CMS reads
+use the fixed source workspace `3385bd92-3d5e-42f6-b3ad-0d1394af3509` and additionally
+require its `manage_external_projects` permission. Canonical JSON file imports do
+not require source membership unless they copy managed CMS artwork. Reading the
+source does not modify it.
+
+Imports are reviewed before applying, bounded by source collection and payload
+limits, and copied into a private notebook. Stable source identifiers map wiki
+references; excluded or missing targets are omitted. Import application is
+transactional and idempotent. Managed images are copied into owned private target
+storage; a failed transaction cleans up its newly copied objects. Interactive CMS
+collections are excluded. No source content is included in repository fixtures.
+
+The creator blacklist is a private personal record, scoped to actor and workspace.
+It supports adding, editing, and removing records and importing source blacklist
+entries. It is never published alongside a notebook. It does not change anonymous
+public browsing or imply platform-wide account blocking.
+
+## Profile upload budgets and regression evidence
+
+Avatar and banner tickets always use PR #5736's atomic Postgres budget primitive,
+independently of its optional storage-egress activation flag. Per account, both
+media kinds share two tickets per UTC hour and ten per UTC calendar week. Avatars
+allow three tickets per UTC day; banners allow two. Their combined reserved bytes
+are capped at 16 MiB per day and 32 MiB per week. Global caps are 10,000 tickets
+and 16 GiB per UTC day. Weeks begin Monday. The full Storage bucket ceiling is
+charged, even for smaller files or unused tickets; clients cannot claim a lower
+size to bypass the budget. Quota failures return 429 with Retry-After; protection
+or schema outages return 503 and issue no ticket. Tickets are scoped to a fresh
+actor-owned object and prohibit overwrite. Images are public identity artwork.
+
+Coverage is in creator identity and profile-media pgTAP contracts, shared username
+and upload-budget tests, central profile/ticket API tests, actual editor Markdown
+round-trip tests, and Lettin's disposable D1/R2 tests. The owned satellite runner
+includes `lettin-wiki.noauth.spec.ts` for authenticated editing and reloads,
+public/private wiki projections, imports, blacklists, About profiles, actual
+banner uploads, Storage byte ceilings, and rename/upload quotas. CI/E2E success
+must be verified on the exact candidate before merging; test definitions alone
+are not runtime evidence.
+
+
+For a server using an internal HTTP Supabase origin, set
+`SUPABASE_PUBLIC_STORAGE_ORIGIN` to its externally reachable HTTPS Storage origin.
+Profile upload responses preserve the scoped path and signed token while using
+that public origin. The E2E runner registers `supabase.tuturuuu.localhost` through
+Portless and pins this setting in its disposable environment file, so banner
+uploads use real HTTPS and the production HTTPS profile validation stays intact.

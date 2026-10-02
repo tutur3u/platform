@@ -10,6 +10,7 @@ import {
   assertSafeE2EEnvironment,
   LOCAL_E2E_APP_COORDINATION_SECRET,
 } from './helpers/environment';
+import { assertLettinProfileLimits } from './helpers/lettin-profile-limits';
 import {
   deleteRestRows,
   postRestRow,
@@ -18,6 +19,8 @@ import {
 } from './helpers/supabase-rest';
 
 const origin = process.env.LETTIN_BASE_URL;
+const profileMediaPaths: { bucket: string; path: string }[] = [];
+let d1Ready = false;
 const workspaceId = randomUUID();
 let creatorId: string;
 const creatorEmail = `e2e-lettin-${workspaceId}@tuturuuu.com`;
@@ -84,6 +87,7 @@ test.describe
       );
       expect(account.status(), await account.text()).toBe(200);
       creatorId = (await account.json()).id;
+      expect(creatorId).toMatch(/^[0-9a-f-]{36}$/);
       // Wrangler and Next/OpenNext share the real local D1 persistence directory.
       execFileSync(
         'bunx',
@@ -98,6 +102,7 @@ test.describe
         ],
         { cwd: appDirectory, timeout: 60000, stdio: 'pipe' }
       );
+      d1Ready = true;
       localSql(
         `INSERT OR IGNORE INTO creators(user_id) VALUES ('${creatorId}')`
       );
@@ -114,9 +119,19 @@ test.describe
       });
     });
     test.afterAll(async ({ request }) => {
-      localSql(
-        `DELETE FROM import_previews WHERE ws_id='${workspaceId}'; DELETE FROM creator_blacklist WHERE ws_id='${workspaceId}'; DELETE FROM worlds WHERE ws_id='${workspaceId}'; DELETE FROM creator_profiles WHERE user_id='${creatorId}'; DELETE FROM creators WHERE user_id='${creatorId}'`
-      );
+      if (!creatorId) return;
+      for (const { bucket, path } of profileMediaPaths) {
+        if (!path?.startsWith(`${creatorId}/`))
+          throw new Error('Unsafe profile fixture cleanup path');
+        await request.delete(`${SUPABASE_URL}/storage/v1/object/${bucket}`, {
+          headers: serviceHeaders(),
+          data: { prefixes: [path] },
+        });
+      }
+      if (d1Ready)
+        localSql(
+          `DELETE FROM import_previews WHERE ws_id='${workspaceId}'; DELETE FROM creator_blacklist WHERE ws_id='${workspaceId}'; DELETE FROM worlds WHERE ws_id='${workspaceId}'; DELETE FROM creator_profiles WHERE user_id='${creatorId}'; DELETE FROM creators WHERE user_id='${creatorId}'`
+        );
       await deleteRestRows({
         request,
         table: 'workspaces',
@@ -432,10 +447,39 @@ test.describe
         await page
           .getByLabel('Display name', { exact: true })
           .fill('Synthetic storyteller');
+        for (const invalid of ['four', 'google', 'apple', 'microsoft']) {
+          await page.getByLabel('Username', { exact: true }).fill(invalid);
+          await expect(
+            page.getByRole('button', { name: 'Save profile', exact: true })
+          ).toBeDisabled();
+        }
         await page.getByLabel('Username', { exact: true }).fill(username);
-        await page
-          .getByLabel('Banner URL', { exact: true })
-          .fill('https://example.test/banner.png');
+        const bannerTicketResponse = page.waitForResponse(
+          (response) =>
+            response.url().endsWith('/api/v1/users/me/banner/upload-url') &&
+            response.request().method() === 'POST'
+        );
+        await page.getByLabel('Banner image', { exact: true }).setInputFiles({
+          name: 'synthetic-banner.png',
+          mimeType: 'image/png',
+          buffer: Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jB1sAAAAASUVORK5CYII=',
+            'base64'
+          ),
+        });
+        const signedBannerResponse = await bannerTicketResponse;
+        expect(
+          signedBannerResponse.ok(),
+          await signedBannerResponse.text()
+        ).toBe(true);
+        const bannerTicket = await signedBannerResponse.json();
+        profileMediaPaths.push({
+          bucket: 'banners',
+          path: bannerTicket.filePath,
+        });
+        await expect(
+          page.getByRole('button', { name: 'Save profile', exact: true })
+        ).toBeEnabled();
         await page
           .getByRole('button', { name: 'Save profile', exact: true })
           .click();
@@ -449,8 +493,26 @@ test.describe
         expect(await response.json()).toMatchObject({
           id: creatorId,
           handle: username,
-          banner_url: 'https://example.test/banner.png',
+          banner_url: expect.stringContaining(`/banners/${creatorId}/`),
         });
+        await page
+          .getByLabel('Username', { exact: true })
+          .fill(`${username}_new`);
+        await page
+          .getByRole('button', { name: 'Save profile', exact: true })
+          .click();
+        await expect(
+          page.getByText('You can change your username once every 14 days.', {
+            exact: true,
+          })
+        ).toBeVisible();
+        await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+        await assertLettinProfileLimits(
+          context.request,
+          origin!,
+          username,
+          (ticket) => profileMediaPaths.push(ticket)
+        );
         await page
           .getByRole('button', { name: 'About you', exact: true })
           .click();
