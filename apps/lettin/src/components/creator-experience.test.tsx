@@ -116,7 +116,7 @@ it('keeps a chosen creative space after invitation acceptance', async () => {
     )
   );
   expect(container.querySelector('a')?.getAttribute('href')).toBe(
-    '/en/workspace/spaces/art'
+    '/workspace/spaces/art'
   );
 });
 it('highlights the specific workspace section on nested routes', () => {
