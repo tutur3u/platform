@@ -60,6 +60,8 @@ Never deliberately dispatch untrusted code onto this host.
 
 Requires Docker Engine, Python 3, `gh` with repository admin access, and an
 active user systemd manager. Enable user lingering for reboot persistence.
+If `gh` credentials are stored in a desktop keyring, reconciliation requires
+that keyring to be unlocked after reboot; the service retries until it is available.
 The installation on this machine is under `/home/sokora/tuturuuu-runners`.
 The versioned source is in `infrastructure/github-runners`.
 
@@ -94,7 +96,9 @@ gh api repos/tutur3u/platform/actions/runners
 Check the timestamp in `status.json`: an old timestamp means reconciliation is
 failing. API errors prevent provisioning and do not terminate running jobs.
 Controller restarts recover managed containers from Docker labels and preserve
-running jobs. Completed containers are removed on the next successful poll;
+running jobs. A state-directory lock prevents concurrent controller instances
+from exceeding the pool cap. Stop the service before using `--once` manually.
+Completed containers are removed on the next successful poll;
 unused runners expire after five minutes. GitHub normally removes completed JIT
 registrations automatically; the controller removes stale owned registrations.
 It never manages other pools or existing macOS runners.

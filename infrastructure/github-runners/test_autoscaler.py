@@ -1,5 +1,8 @@
 import json
+import fcntl
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -65,6 +68,19 @@ class AutoscalerTests(unittest.TestCase):
              patch.object(scaler, "room", return_value=False), patch.object(scaler, "start") as start:
             scaler.tick(self.config)
             start.assert_not_called()
+
+    def test_second_controller_cannot_exceed_pool_capacity(self):
+        directory = Path(self.directory.name)
+        config_path = directory / "config.json"
+        config_path.write_text(json.dumps(self.config))
+        with (directory / "controller.lock").open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            result = subprocess.run([
+                sys.executable, str(Path(scaler.__file__).resolve()),
+                "--config", str(config_path), "--once",
+            ], capture_output=True, text=True, timeout=5)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("already active", result.stderr)
 
 
 if __name__ == "__main__":

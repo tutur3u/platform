@@ -2,6 +2,7 @@
 """A bounded, repository-scoped queue poller for ephemeral Docker runners."""
 import argparse
 import datetime as dt
+import fcntl
 import json
 import logging
 import os
@@ -199,6 +200,11 @@ def main():
     if not (1 <= config["max_runners"] <= 4 and config["cpus"] > 0 and config["memory_gib"] > 0):
         raise ValueError("Invalid limits (this host pool is capped at four runners)")
     Path(config["state_dir"]).mkdir(parents=True, exist_ok=True, mode=0o700)
+    lock = (Path(config["state_dir"]) / "controller.lock").open("a")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        parser.error("A controller is already active for this state directory")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     signal.signal(signal.SIGTERM, lambda *_: STOP.set())
     signal.signal(signal.SIGINT, lambda *_: STOP.set())
