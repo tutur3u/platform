@@ -18,7 +18,7 @@ vi.mock('@/lib/coding/store', () => ({
   listCodingExecutions: mocks.list,
   notifyProgrammingSubmission: vi.fn(),
 }));
-vi.mock('@tuturuuu/internal-api/education', () => ({
+vi.mock('@tuturuuu/internal-api/programming', () => ({
   getProgrammingProblem: mocks.get,
 }));
 vi.mock('next-intl/server', () => ({

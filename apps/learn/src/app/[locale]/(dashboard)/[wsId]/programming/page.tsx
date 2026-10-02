@@ -1,5 +1,5 @@
 import { InternalApiError } from '@tuturuuu/internal-api';
-import { listProgrammingProblems } from '@tuturuuu/internal-api/education';
+import { listProgrammingProblems } from '@tuturuuu/internal-api/programming';
 import { connection } from 'next/server';
 import {
   programmingApiOptions,

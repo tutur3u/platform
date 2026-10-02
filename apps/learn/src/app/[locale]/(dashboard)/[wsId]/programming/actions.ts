@@ -2,7 +2,7 @@
 import { enqueueProgrammingExecution } from '@tuturuuu/education-core/education/programming-execution';
 import { ProgrammingError } from '@tuturuuu/education-core/education/programming-model';
 import { ProgrammingProblemId } from '@tuturuuu/education-core/education/programming-schema';
-import { getProgrammingProblem } from '@tuturuuu/internal-api/education';
+import { getProgrammingProblem } from '@tuturuuu/internal-api/programming';
 import type { CodingExecutionKind } from '@/lib/coding/results';
 import {
   listCodingExecutions,
@@ -111,7 +111,7 @@ export async function saveProgrammingProblem(
     '@tuturuuu/education-core/education/programming-schema'
   );
   const { createProgrammingProblem, editProgrammingProblem } = await import(
-    '@tuturuuu/internal-api/education'
+    '@tuturuuu/internal-api/programming'
   );
   const { InternalApiError } = await import('@tuturuuu/internal-api');
   const parsed = ProgrammingProblemInputSchema.safeParse(payload);

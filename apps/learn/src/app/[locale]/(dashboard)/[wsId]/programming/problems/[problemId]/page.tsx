@@ -4,7 +4,7 @@ import {
   getProgrammingAuthorProblem,
   getProgrammingProblem,
   listProgrammingProblems,
-} from '@tuturuuu/internal-api/education';
+} from '@tuturuuu/internal-api/programming';
 import { Button } from '@tuturuuu/ui/button';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';

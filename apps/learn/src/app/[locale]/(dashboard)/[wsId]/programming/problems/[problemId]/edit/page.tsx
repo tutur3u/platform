@@ -1,6 +1,6 @@
 import { ProgrammingProblemId } from '@tuturuuu/education-core/education/programming-schema';
 import { InternalApiError } from '@tuturuuu/internal-api';
-import { getProgrammingAuthorProblem } from '@tuturuuu/internal-api/education';
+import { getProgrammingAuthorProblem } from '@tuturuuu/internal-api/programming';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';

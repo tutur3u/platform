@@ -1,4 +1,4 @@
-import { listProgrammingProblems } from '@tuturuuu/internal-api/education';
+import { listProgrammingProblems } from '@tuturuuu/internal-api/programming';
 import { connection } from 'next/server';
 import { redirect } from '@/i18n/navigation';
 import {
