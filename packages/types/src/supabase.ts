@@ -2284,6 +2284,7 @@ export type Database = {
           actor_id: string;
           completion: Json | null;
           created_at: string;
+          current_generation: number;
           event_id: string;
           generation: number;
           identity: Json;
@@ -2299,6 +2300,7 @@ export type Database = {
           actor_id: string;
           completion?: Json | null;
           created_at?: string;
+          current_generation?: number;
           event_id: string;
           generation: number;
           identity: Json;
@@ -2314,6 +2316,7 @@ export type Database = {
           actor_id?: string;
           completion?: Json | null;
           created_at?: string;
+          current_generation?: number;
           event_id?: string;
           generation?: number;
           identity?: Json;
@@ -2347,6 +2350,63 @@ export type Database = {
           generation?: number;
           operation_id?: string;
           transaction_id?: number;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_google_deferred_imports: {
+        Row: {
+          auth_scope: string;
+          calendar_id: string;
+          external_event_id: string;
+          observed_generation: number;
+          reason: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          auth_scope: string;
+          calendar_id: string;
+          external_event_id: string;
+          observed_generation: number;
+          reason: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          auth_scope?: string;
+          calendar_id?: string;
+          external_event_id?: string;
+          observed_generation?: number;
+          reason?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      calendar_google_import_reads: {
+        Row: {
+          auth_token_id: string | null;
+          calendar_id: string;
+          created_at: string;
+          generations: Json;
+          id: string;
+          ws_id: string;
+        };
+        Insert: {
+          auth_token_id?: string | null;
+          calendar_id: string;
+          created_at?: string;
+          generations: Json;
+          id?: string;
+          ws_id: string;
+        };
+        Update: {
+          auth_token_id?: string | null;
+          calendar_id?: string;
+          created_at?: string;
+          generations?: Json;
+          id?: string;
           ws_id?: string;
         };
         Relationships: [];
@@ -42114,6 +42174,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      apply_calendar_google_import: {
+        Args: { p_capture_id: string; p_events?: Json; p_tombstones?: Json };
+        Returns: Json;
+      };
       apply_hive_world_event: {
         Args: {
           p_actor_user_id: string;
@@ -42271,6 +42335,14 @@ export type Database = {
       can_publish_workspace_external_projects: {
         Args: { p_user_id?: string; p_ws_id: string };
         Returns: boolean;
+      };
+      capture_calendar_google_import: {
+        Args: {
+          p_auth_token_id?: string;
+          p_calendar_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       check_account_request: { Args: never; Returns: undefined };
       check_ai_credit_allowance: {
@@ -44972,6 +45044,14 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      list_deferred_calendar_google_imports: {
+        Args: {
+          p_auth_token_id?: string;
+          p_calendar_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       list_immediate_notification_email_configs: {
         Args: { p_notification_types: string[] };

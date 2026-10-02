@@ -6,8 +6,11 @@ import {
   googleColorCompatibilityValue,
   resolveGoogleEventColor,
 } from '@tuturuuu/utils/google-calendar-colors';
+import {
+  applyGoogleImport,
+  type GoogleImportCapture,
+} from '@tuturuuu/utils/google-calendar-import-fence';
 import { updateLastUpsert } from './calendar-sync-coordination';
-import { mergeGoogleSyncMetadata } from './google-calendar-sync-metadata';
 
 // Batch processing configuration
 const BATCH_SIZE = 100; // Process 100 events at a time for upserts
@@ -19,6 +22,7 @@ type SyncResult = {
   success: boolean;
   eventsSynced?: number;
   eventsDeleted?: number;
+  eventsDeferred?: number;
   error?: string;
 };
 
@@ -88,205 +92,61 @@ export const formatEventForDb = (
   };
 };
 
-// Core sync function for a single workspace with batch processing
+// The capture must precede the Google read, never be created from an old payload.
 const syncGoogleCalendarEventsForWorkspaceBatched = async (
   ws_id: string,
   events_to_sync: calendar_v3.Schema$Event[],
-  calendarId = 'primary',
-  colorContext: GoogleColorContext = {},
-  preserveExistingMetadata = false
+  calendarId: string,
+  colorContext: GoogleColorContext,
+  capture: GoogleImportCapture
 ): Promise<SyncResult> => {
-  console.log('Syncing Google Calendar events for workspace with batching.', {
-    wsId: ws_id,
-    totalEvents: events_to_sync.length,
-  });
-
   try {
+    if (capture.wsId !== ws_id || capture.calendarId !== calendarId)
+      throw new Error('Google import scope mismatch');
     const sbAdmin = await createAdminClient({ noCookie: true });
-    console.log('Created admin client successfully', { wsId: ws_id });
-
-    const rawEventsToUpsert: calendar_v3.Schema$Event[] = [];
-    const rawEventsToDelete: calendar_v3.Schema$Event[] = [];
-
-    for (const event of events_to_sync) {
-      if (event.status === 'cancelled' && event.id) {
-        rawEventsToDelete.push(event);
-      } else {
-        rawEventsToUpsert.push(event);
-      }
-    }
-
-    console.log('Event categorization:', {
-      wsId: ws_id,
-      totalEvents: events_to_sync.length,
-      eventsToUpsert: rawEventsToUpsert.length,
-      eventsToDelete: rawEventsToDelete.length,
-    });
-
-    // Format events for upsert
-    const formattedEvents = rawEventsToUpsert.map((event) =>
-      formatEventForDb(event, ws_id, calendarId, colorContext)
+    const upserts = events_to_sync
+      .filter((event) => event.status !== 'cancelled')
+      .map((event) => formatEventForDb(event, ws_id, calendarId, colorContext));
+    const tombstones = events_to_sync.flatMap((event) =>
+      event.status === 'cancelled' && event.id ? [event.id] : []
     );
-
-    // Format events for deletion
-    const formattedEventsToDelete = rawEventsToDelete.map((event) =>
-      formatEventForDb(event, ws_id, calendarId, colorContext)
-    );
-
-    console.log('Formatted events:', {
-      wsId: ws_id,
-      formattedEventsToUpsert: formattedEvents.length,
-      formattedEventsToDelete: formattedEventsToDelete.length,
-    });
-
-    let totalUpserted = 0;
-    let totalDeleted = 0;
-
-    // Process upserts in batches
-    if (formattedEvents.length > 0) {
-      console.log('Starting upsert batches...', { wsId: ws_id });
-      for (let i = 0; i < formattedEvents.length; i += BATCH_SIZE) {
-        let batch = formattedEvents.slice(i, i + BATCH_SIZE);
-        if (preserveExistingMetadata) {
-          const { data: existing, error: readError } = await sbAdmin
-            .from('workspace_calendar_events')
-            .select('external_event_id,scheduling_metadata')
-            .eq('ws_id', ws_id)
-            .eq('provider', 'google')
-            .eq('external_calendar_id', calendarId)
-            .in(
-              'external_event_id',
-              batch.flatMap((event) =>
-                event.external_event_id ? [event.external_event_id] : []
-              )
-            );
-          if (readError) throw readError;
-          batch = batch.map((event) => ({
-            ...event,
-            scheduling_metadata: mergeGoogleSyncMetadata(
-              existing?.find(
-                (row) => row.external_event_id === event.external_event_id
-              )?.scheduling_metadata,
-              event.scheduling_metadata
-            ),
-          }));
-        }
-        const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-
-        console.log(
-          `Processing upsert batch ${batchNumber} (${batch.length} events)`,
-          { wsId: ws_id }
-        );
-
-        const { error } = await sbAdmin
-          .from('workspace_calendar_events')
-          .upsert(batch, {
-            onConflict: 'ws_id,provider,external_calendar_id,external_event_id',
-            ignoreDuplicates: false,
-          });
-
-        if (error) {
-          console.error(`Error upserting batch ${batchNumber}:`, {
-            wsId: ws_id,
-            error: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint,
-            batchSize: batch.length,
-          });
-          throw error;
-        }
-
-        totalUpserted += batch.length;
-        console.log(
-          `Successfully upserted batch ${batchNumber} (${batch.length} events)`,
-          { wsId: ws_id }
-        );
-      }
-    } else {
-      console.log('No events to upsert', { wsId: ws_id });
+    let eventsSynced = 0;
+    let eventsDeleted = 0;
+    let eventsDeferred = 0;
+    for (let i = 0; i < upserts.length; i += BATCH_SIZE) {
+      const result = await applyGoogleImport(
+        sbAdmin,
+        capture,
+        upserts.slice(i, i + BATCH_SIZE)
+      );
+      eventsSynced += result.inserted + result.updated;
+      eventsDeferred += result.deferred;
     }
-
-    // Process deletes in batches
-    if (formattedEventsToDelete.length > 0) {
-      console.log('Starting delete batches...', { wsId: ws_id });
-      for (
-        let i = 0;
-        i < formattedEventsToDelete.length;
-        i += DELETE_BATCH_SIZE
-      ) {
-        const batch = formattedEventsToDelete.slice(i, i + DELETE_BATCH_SIZE);
-        const batchNumber = Math.floor(i / DELETE_BATCH_SIZE) + 1;
-
-        console.log(
-          `Processing delete batch ${batchNumber} (${batch.length} events)`,
-          { wsId: ws_id }
-        );
-
-        // Create delete conditions for this batch
-        const deleteConditions = batch
-          .map(
-            (e) =>
-              `and(ws_id.eq.${ws_id},provider.eq.google,external_calendar_id.eq.${e.external_calendar_id ?? 'primary'},external_event_id.eq.${e.external_event_id ?? ''})`
-          )
-          .join(',');
-
-        const { error: deleteError } = await sbAdmin
-          .from('workspace_calendar_events')
-          .delete()
-          .or(deleteConditions);
-
-        if (deleteError) {
-          console.error(`Error deleting batch ${batchNumber}:`, {
-            wsId: ws_id,
-            error: deleteError.message,
-            code: deleteError.code,
-            details: deleteError.details,
-            hint: deleteError.hint,
-            batchSize: batch.length,
-          });
-          throw deleteError;
-        }
-
-        totalDeleted += batch.length;
-        console.log(
-          `Successfully deleted batch ${batchNumber} (${batch.length} events)`,
-          { wsId: ws_id }
-        );
-      }
-    } else {
-      console.log('No events to delete', { wsId: ws_id });
+    for (let i = 0; i < tombstones.length; i += DELETE_BATCH_SIZE) {
+      const result = await applyGoogleImport(
+        sbAdmin,
+        capture,
+        [],
+        tombstones.slice(i, i + DELETE_BATCH_SIZE)
+      );
+      eventsDeleted += result.deleted;
+      eventsDeferred += result.deferred;
     }
-
-    // Update lastUpsert timestamp after successful sync
-    console.log('Updating lastUpsert timestamp...', { wsId: ws_id });
+    // Applied rows and deferred identities are durable before token advancement.
     await updateLastUpsert(ws_id, sbAdmin);
-    console.log('LastUpsert timestamp updated successfully', { wsId: ws_id });
-
-    console.log('Sync completed successfully:', {
-      wsId: ws_id,
-      totalUpserted,
-      totalDeleted,
-      success: true,
-    });
-
     return {
       ws_id,
       success: true,
-      eventsSynced: totalUpserted,
-      eventsDeleted: totalDeleted,
+      eventsSynced,
+      eventsDeleted,
+      eventsDeferred,
     };
-  } catch (error) {
-    console.error('Error in syncGoogleCalendarEventsForWorkspaceBatched:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      ws_id,
-      totalEvents: events_to_sync.length,
-    });
+  } catch {
+    console.error('Google calendar guarded batch persistence failed');
     return {
       ws_id,
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: 'Google calendar batch sync failed',
     };
   }
 };
@@ -343,22 +203,22 @@ export const syncWorkspaceBatched = async (payload: {
   events_to_sync: calendar_v3.Schema$Event[];
   calendarId?: string;
   colorContext?: GoogleColorContext;
-  preserveExistingMetadata?: boolean;
+  capture: GoogleImportCapture;
 }) => {
   const {
     ws_id,
     events_to_sync: events,
     calendarId,
     colorContext,
-    preserveExistingMetadata,
+    capture,
   } = payload;
 
   return syncGoogleCalendarEventsForWorkspaceBatched(
     ws_id,
     events,
-    calendarId,
-    colorContext,
-    preserveExistingMetadata
+    calendarId ?? 'primary',
+    colorContext ?? {},
+    capture
   );
 };
 

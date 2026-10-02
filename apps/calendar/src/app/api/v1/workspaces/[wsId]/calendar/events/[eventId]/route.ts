@@ -13,6 +13,11 @@ import {
   GoogleColorChoiceError,
   GoogleProviderColorChoiceSchema,
 } from '@/lib/calendar/google-color-choices';
+import {
+  googleColorOperationModeEnabled,
+  handleRecoverableGoogleColorPut,
+  unsupportedGoogleMutation,
+} from '@/lib/calendar/google-color-operations/route-handlers';
 import { refreshOwnedGoogleSourceColor } from '@/lib/calendar/google-source-color-refresh';
 import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
 import {
@@ -201,6 +206,18 @@ export async function PUT(request: Request, { params }: Params) {
         },
         { status: 409 }
       );
+    }
+
+    if (
+      googleColorOperationModeEnabled() &&
+      existingEvent.provider === 'google'
+    ) {
+      return handleRecoverableGoogleColorPut({
+        request,
+        rawWsId,
+        eventId,
+        updates,
+      });
     }
 
     const decryptedExisting = await decryptEventFromStorage(
@@ -567,6 +584,12 @@ export async function DELETE(request: Request, { params }: Params) {
         { status: 409 }
       );
     }
+
+    if (
+      googleColorOperationModeEnabled() &&
+      existingEvent.provider === 'google'
+    )
+      return unsupportedGoogleMutation();
 
     if (
       existingEvent.provider === 'google' ||

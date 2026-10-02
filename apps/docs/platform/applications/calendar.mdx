@@ -460,21 +460,41 @@ An authorized resumption must recheck Calendar management permission, connection
 owner and exact token/calendar/event identity. Only definitely-unsent reserved or
 prepared operations can cancel. Local commit failures remain recoverable.
 
-This is an unpublished implementation stage, not an enabled endpoint. The
-private RPC and transaction capability atomically merge Google color into latest
-metadata and commit sync/completion state together. Generation persists after
-completion; an unconditional import or competing write cannot overwrite that
-projection. Client roles cannot create/clear operation state or transaction
-capabilities. No credentials or customer backfill are stored in the ledger.
+This is an unpublished implementation stage. A bounded route slice now connects
+same-calendar color-only PUT to reservation, immutable conditional dispatch and
+atomic finalization. Dedicated authenticated `color-operation` GET/POST/DELETE
+handlers expose only operation ID/phase, execute recovery, or safely cancel an
+unsent operation. Recovery bodies accept only `operationId`; source, generation,
+prepared patches and force-clear overrides are never caller inputs. Reservation
+state is private and never added to generic event scheduling metadata.
 
-Do not release this migration on its own. Before enabling color writes, wire an
-authenticated reconcile path and every competing PUT/move/delete; implement
-pre-provider-read generation capture, guarded import/tombstone application and
-durable deferral before advancing a sync token. The existing sync coordination
-cooldown is not a lock. Google ETags are opaque equality tokens, not revisions
-that can be sorted. Google moves lack a documented conditional fence and remain
-a separate recovery scope. Local SQL and executor tests do not establish complete
-Google/local route ordering or importer recovery.
+The candidate slice is disabled unless the server-only
+`CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED` setting is `true`. In that mode all
+other updates to existing Google events, moves and deletes return 409 before
+provider, encryption or habit/task side effects. This deliberate limitation
+keeps decrypted content out of durable color records; encrypted content replay
+and conditional delete/move recovery are not implemented. Native/Microsoft
+routes retain their existing behavior. This mode is not approved for normal
+production mutation behavior. Mixed enabled/disabled API versions are also not
+a safe rollout: every provider writer must cooperate before color writes enable.
+
+The private RPC and transaction capability atomically merge Google color into
+latest metadata and commit sync/completion together. Generation persists after
+completion. Prepared import changes capture it before provider GET/list, apply
+through guarded transactions and durably defer conflicting identities before a
+sync token advances. Deferred replay captures again and fetches fresh provider
+state, rather than saving old content or credentials. The new SQL/types and
+combined route/import contracts still require isolated validation.
+
+Do not release either migration or enable the candidate setting on its own.
+Complete durable encrypted replay for normal competing PUTs and coherent
+delete/habit/task behavior, or explicitly approve the narrower color-only
+product limitation, before enabling writes. The sync coordination cooldown is
+not a lock. Google ETags are opaque equality tokens, not sortable revisions.
+Google moves lack a documented conditional fence and remain a separate recovery
+scope. Synthetic controlled overlapping routes demonstrate the intended
+ordering against an atomic storage double; they do not substitute for SQL,
+import, owning build or deployment proof.
 
 
 ## Calendar navigation dates and query boundaries

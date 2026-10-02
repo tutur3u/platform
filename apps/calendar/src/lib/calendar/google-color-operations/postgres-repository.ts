@@ -131,3 +131,44 @@ export function createPostgresColorOperationRepository(
     },
   };
 }
+
+/** Generation inspection is server-scoped. Reserve still compares atomically,
+ * so this read cannot authorize a stale successor or replace pending intent. */
+export async function inspectPostgresColorOperation(
+  sbAdmin: TypedSupabaseClient,
+  actorId: string,
+  identity: ColorOperationIdentity
+) {
+  const { data, error } = await sbAdmin.rpc('calendar_google_color_operation', {
+    p_action: 'inspect',
+    p_ws_id: identity.wsId,
+    p_event_id: identity.eventId,
+    p_actor_id: actorId,
+    p_input: { identity } as unknown as Json,
+  });
+  const parsed = z
+    .object({
+      generation: z.string().regex(/^(0|[1-9][0-9]*)$/),
+      operation: OperationSchema.nullable(),
+    })
+    .strict()
+    .safeParse(data);
+  if (error || !parsed.success)
+    throw new ColorOperationError(
+      error?.code === '42501'
+        ? 'unauthorized'
+        : error?.code === '40001'
+          ? 'conflict'
+          : 'storage',
+      'Google operation state is unavailable or changed'
+    );
+  if (
+    parsed.data.operation &&
+    !sameColorOperationIdentity(parsed.data.operation.identity, identity)
+  )
+    throw new ColorOperationError(
+      'identity',
+      'Google operation identity changed'
+    );
+  return parsed.data;
+}
