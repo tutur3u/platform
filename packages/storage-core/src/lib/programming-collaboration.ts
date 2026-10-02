@@ -148,15 +148,18 @@ export async function saveProgrammingRoomCheckpoint(
   payload: unknown,
   meetingId?: string,
   runId?: string,
-  runnerId?: string
+  runnerId?: string,
+  runnerExport = false
 ) {
   if (runId && runnerId) {
     const run = await getPlaygroundRun(ownerId, id, runId);
-    if (['succeeded', 'failed', 'cancelled'].includes(run.status))
+    if (['succeeded', 'failed', 'cancelled'].includes(run.status)) {
+      if (runnerExport) throw new AccountServiceError(409);
       return {
         ...(await savePlayground(ownerId, id, payload, undefined, meetingId)),
         runComplete: true,
       };
+    }
     if (run.status !== 'running') throw new AccountServiceError(409);
     const scope = await accountPrivateRpc<{
       actorId: string;
@@ -176,5 +179,6 @@ export async function saveProgrammingRoomCheckpoint(
       throw new AccountServiceError(403);
     return savePlayground(ownerId, id, payload, runId, meetingId);
   }
+  if (runnerExport) throw new AccountServiceError(403);
   return savePlayground(ownerId, id, payload, undefined, meetingId);
 }
