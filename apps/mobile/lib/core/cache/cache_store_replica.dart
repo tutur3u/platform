@@ -131,7 +131,37 @@ extension CacheStoreReplica on CacheStore {
       !source.namespace.contains('secret') &&
       !source.namespace.contains('token');
 
-  Future<void> _replaceReplicaSource(CachedResourceRecord source) async {
+  Future<void> _serializeReplicaSource(
+    String sourceKey,
+    Future<void> Function() operation,
+  ) async {
+    final previous = _replicaWrites[sourceKey];
+    final released = Completer<void>();
+    _replicaWrites[sourceKey] = released.future;
+    try {
+      await previous;
+      await operation();
+    } finally {
+      released.complete();
+      if (identical(_replicaWrites[sourceKey], released.future)) {
+        unawaited(_replicaWrites.remove(sourceKey));
+      }
+    }
+  }
+
+  Future<void> _replaceReplicaSource(
+    CachedResourceRecord source, {
+    void Function()? checkCurrent,
+  }) => _serializeReplicaSource(
+    source.key,
+    () => _replaceReplicaSourceUnlocked(source, checkCurrent: checkCurrent),
+  );
+
+  Future<void> _replaceReplicaSourceUnlocked(
+    CachedResourceRecord source, {
+    void Function()? checkCurrent,
+  }) async {
+    checkCurrent?.call();
     final sourceIndexKey = _replicaSourceKey(source.key);
     final previous =
         (_entityBox.get(sourceIndexKey) as List?)?.whereType<String>().toList(
@@ -165,9 +195,14 @@ extension CacheStoreReplica on CacheStore {
     }
     try {
       await _entityBox.putAll(next);
+      checkCurrent?.call();
       await _entityBox.put(sourceIndexKey, next.keys.toList(growable: false));
+      checkCurrent?.call();
       for (final key in previous) {
-        if (!next.containsKey(key)) await _entityBox.delete(key);
+        if (!next.containsKey(key)) {
+          await _entityBox.delete(key);
+          checkCurrent?.call();
+        }
       }
       _entityBytes +=
           next.values.fold<int>(
@@ -176,12 +211,22 @@ extension CacheStoreReplica on CacheStore {
           ) -
           priorBytes;
     } on Object {
+      // The per-source queue excludes newer writers while rollback removes
+      // this attempt's rows. Other resource sources have distinct entity keys.
+      await _entityBox.deleteAll({...previous, ...next.keys});
+      await _entityBox.delete(sourceIndexKey);
       _entityBytes = _countReplicaBytes();
       rethrow;
     }
   }
 
-  Future<void> _removeReplicaSource(String sourceKey) async {
+  Future<void> _removeReplicaSource(String sourceKey) =>
+      _serializeReplicaSource(
+        sourceKey,
+        () => _removeReplicaSourceUnlocked(sourceKey),
+      );
+
+  Future<void> _removeReplicaSourceUnlocked(String sourceKey) async {
     final indexKey = _replicaSourceKey(sourceKey);
     final keys =
         (_entityBox.get(indexKey) as List?)?.whereType<String>() ??
