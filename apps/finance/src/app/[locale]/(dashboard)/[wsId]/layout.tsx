@@ -14,6 +14,7 @@ import { FinanceCommandProvider } from '@tuturuuu/ui/finance/command/finance-com
 import { FinanceRouteProvider } from '@tuturuuu/ui/finance/finance-route-context';
 import { FinanceLayoutControls } from '@tuturuuu/ui/finance/shared/finance-layout-controls';
 import { QuickActions } from '@tuturuuu/ui/finance/shared/quick-actions';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import {
@@ -84,99 +85,106 @@ export default async function Layout({ children, params }: LayoutProps) {
   );
 
   return (
-    <SidebarProvider
-      initialBehavior={sidebarBehavior}
-      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
-    >
-      <Structure
-        wsId={wsId}
-        workspace={workspace}
-        defaultCollapsed={defaultCollapsed}
-        links={
-          await getNavigationLinks({
-            permissions: permissions ?? undefined,
-            personalOrWsId: workspaceSlug,
-          })
-        }
-        actions={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <NavbarActions userId={user.id} />
-          </Suspense>
-        }
-        notificationPopover={<NotificationPopover userId={user.id} />}
-        userPopover={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <UserNav hideMetadata />
-          </Suspense>
-        }
+    <WorkspaceVisibilityProvider actorId={user.id}>
+      <SidebarProvider
+        initialBehavior={sidebarBehavior}
+        initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
       >
-        <FinanceRouteProvider prefix="">
-          <RealtimeLogProvider wsId={wsId}>
-            <FinanceLayoutControls financePrefix="" />
-            {children}
-            <FinanceCommandProvider
-              wsId={wsId}
-              workspaceSlug={workspaceSlug}
-              currency={resolvedCurrency}
-              canCreateDebts={
-                permissions?.containsPermission('manage_finance') ?? false
+        <Structure
+          wsId={wsId}
+          workspace={workspace}
+          defaultCollapsed={defaultCollapsed}
+          links={
+            await getNavigationLinks({
+              permissions: permissions ?? undefined,
+              personalOrWsId: workspaceSlug,
+            })
+          }
+          actions={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
               }
-              canCreateInvoices={
-                permissions?.containsPermission('create_invoices') ?? false
+            >
+              <NavbarActions userId={user.id} />
+            </Suspense>
+          }
+          notificationPopover={<NotificationPopover userId={user.id} />}
+          userPopover={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
               }
-              canCreateRecurringTransactions={
-                permissions?.containsPermission('create_transactions') ?? false
-              }
-              canCreateTransactions={
-                permissions?.containsPermission('create_transactions') ?? false
-              }
-              canCreateWallets={
-                permissions?.containsPermission('create_wallets') ?? false
-              }
-              canExportFinanceData={
-                permissions?.containsPermission('export_finance_data') ?? false
-              }
-              canManageFinance={
-                permissions?.containsPermission('manage_finance') ?? false
-              }
-              canUpdateWallets={
-                permissions?.containsPermission('update_wallets') ?? false
-              }
-            />
-            <QuickActions
-              wsId={workspaceSlug}
-              canCreateDebts={
-                permissions?.containsPermission('manage_finance') ?? false
-              }
-              canCreateInvoices={
-                permissions?.containsPermission('create_invoices') ?? false
-              }
-              canCreateRecurringTransactions={
-                permissions?.containsPermission('create_transactions') ?? false
-              }
-              canCreateTransactions={
-                permissions?.containsPermission('create_transactions') ?? false
-              }
-              canCreateWallets={
-                permissions?.containsPermission('create_wallets') ?? false
-              }
-              canManageFinance={
-                permissions?.containsPermission('manage_finance') ?? false
-              }
-            />
-          </RealtimeLogProvider>
-        </FinanceRouteProvider>
-      </Structure>
-    </SidebarProvider>
+            >
+              <UserNav hideMetadata />
+            </Suspense>
+          }
+        >
+          <FinanceRouteProvider prefix="">
+            <RealtimeLogProvider wsId={wsId}>
+              <FinanceLayoutControls financePrefix="" />
+              {children}
+              <FinanceCommandProvider
+                wsId={wsId}
+                workspaceSlug={workspaceSlug}
+                currency={resolvedCurrency}
+                canCreateDebts={
+                  permissions?.containsPermission('manage_finance') ?? false
+                }
+                canCreateInvoices={
+                  permissions?.containsPermission('create_invoices') ?? false
+                }
+                canCreateRecurringTransactions={
+                  permissions?.containsPermission('create_transactions') ??
+                  false
+                }
+                canCreateTransactions={
+                  permissions?.containsPermission('create_transactions') ??
+                  false
+                }
+                canCreateWallets={
+                  permissions?.containsPermission('create_wallets') ?? false
+                }
+                canExportFinanceData={
+                  permissions?.containsPermission('export_finance_data') ??
+                  false
+                }
+                canManageFinance={
+                  permissions?.containsPermission('manage_finance') ?? false
+                }
+                canUpdateWallets={
+                  permissions?.containsPermission('update_wallets') ?? false
+                }
+              />
+              <QuickActions
+                wsId={workspaceSlug}
+                canCreateDebts={
+                  permissions?.containsPermission('manage_finance') ?? false
+                }
+                canCreateInvoices={
+                  permissions?.containsPermission('create_invoices') ?? false
+                }
+                canCreateRecurringTransactions={
+                  permissions?.containsPermission('create_transactions') ??
+                  false
+                }
+                canCreateTransactions={
+                  permissions?.containsPermission('create_transactions') ??
+                  false
+                }
+                canCreateWallets={
+                  permissions?.containsPermission('create_wallets') ?? false
+                }
+                canManageFinance={
+                  permissions?.containsPermission('manage_finance') ?? false
+                }
+              />
+            </RealtimeLogProvider>
+          </FinanceRouteProvider>
+        </Structure>
+      </SidebarProvider>
+    </WorkspaceVisibilityProvider>
   );
 }

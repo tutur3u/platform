@@ -2,7 +2,6 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LABEL_COLOR_PRESETS } from '../../utils/label-colors';
 
-// ── Hoisted mocks ──────────────────────────────────────────────────────────
 const {
   MockInternalApiError,
   mockCreateWorkspaceLabel,
@@ -87,6 +86,17 @@ vi.mock('@tuturuuu/internal-api', () => ({
   updateWorkspaceTaskList: vi.fn(),
 }));
 
+vi.mock('@tuturuuu/ui/hooks/use-workspace-visibility', () => ({
+  useWorkspaceActor: () => ({ actorId: 'user-1', assertActive: () => {} }),
+}));
+vi.mock('@tuturuuu/ui/hooks/use-visible-workspaces', () => ({
+  useVisibleWorkspaces: (enabled: boolean) =>
+    mockUseQuery({
+      queryKey: ['user-workspaces'],
+      queryFn: mockListWorkspaces,
+      enabled,
+    }),
+}));
 vi.mock('@tuturuuu/supabase/next/client', () => ({
   createClient: () => ({
     from: mockFrom,
@@ -118,10 +128,8 @@ vi.mock('@tuturuuu/utils/task-helper', () => ({
 
 global.fetch = mockFetch;
 
-// ── Import after mocks ─────────────────────────────────────────────────────
 import { useMyTasksState } from '../use-my-tasks-state';
 
-// ── Helpers ────────────────────────────────────────────────────────────────
 const DEFAULT_PROPS = {
   wsId: 'ws-1',
   userId: 'user-1',
@@ -130,11 +138,6 @@ const DEFAULT_PROPS = {
 
 /** Default mock setup — all queries return empty/loading state */
 function setupDefaultMocks() {
-  // useMyTasksQuery internally calls useQuery
-  // useCompletedTasksQuery internally calls useInfiniteQuery
-  // The hook also calls useQuery ~6 more times for workspaces, boards, labels, etc.
-  // We use mockImplementation to route by queryKey.
-
   mockUseQuery.mockImplementation((opts: Record<string, any>) => {
     const key = opts?.queryKey?.[0];
     if (key === 'my-tasks') {
@@ -152,7 +155,6 @@ function setupDefaultMocks() {
         isLoading: false,
       };
     }
-    // workspaces, boards, labels, projects, members, board-config
     return { data: undefined, isLoading: false };
   });
 
@@ -164,7 +166,6 @@ function setupDefaultMocks() {
     isFetchingNextPage: false,
   });
 
-  // useMutation is called twice: previewMutation, createTasksMutation
   mockUseMutation.mockReturnValue({
     mutate: vi.fn(),
     mutateAsync: vi.fn(),
@@ -201,7 +202,6 @@ function findQueryOptions(queryKey: string) {
     .find((options) => options.queryKey?.[0] === queryKey);
 }
 
-// ════════════════════════════════════════════════════════════════════════════
 describe('useMyTasksState', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -428,7 +428,6 @@ describe('useMyTasksState', () => {
     });
   });
 
-  // ── Initial state ────────────────────────────────────────────────────────
   describe('initial state', () => {
     it('has all sections collapsed by default', () => {
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
@@ -507,7 +506,6 @@ describe('useMyTasksState', () => {
     });
   });
 
-  // ── toggleSection ────────────────────────────────────────────────────────
   describe('toggleSection', () => {
     it('toggles a section from collapsed to expanded', () => {
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
@@ -517,7 +515,6 @@ describe('useMyTasksState', () => {
       });
 
       expect(result.current.collapsedSections.today).toBe(false);
-      // Other sections remain unchanged
       expect(result.current.collapsedSections.overdue).toBe(true);
       expect(result.current.collapsedSections.upcoming).toBe(true);
       expect(result.current.collapsedSections.completed).toBe(true);
@@ -553,12 +550,10 @@ describe('useMyTasksState', () => {
     });
   });
 
-  // ── handleClearDestination ───────────────────────────────────────────────
   describe('handleClearDestination', () => {
     it('resets board/list/title/mode', () => {
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
 
-      // Set some state first
       act(() => {
         result.current.setSelectedBoardId('board-1');
         result.current.setSelectedListId('list-1');

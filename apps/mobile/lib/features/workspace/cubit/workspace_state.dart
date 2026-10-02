@@ -17,7 +17,26 @@ class WorkspaceState extends Equatable {
     this.error,
     this.isCreating = false,
     this.emptyMembershipConfirmed = false,
+    this.hiddenWorkspaceIds = const [],
+    this.pendingVisibilityIds = const [],
+    this.visibilityStatus = WorkspaceStatus.initial,
+    this.visibilityError,
+    this.visibilityResolved = false,
   });
+
+  final List<String> hiddenWorkspaceIds;
+  final List<String> pendingVisibilityIds;
+  final WorkspaceStatus visibilityStatus;
+  final String? visibilityError;
+  final bool visibilityResolved;
+
+  /// UI-only list. Keep workspaces canonical for reminders and access.
+  List<Workspace> get visibleWorkspaces => workspaces
+      .where((workspace) => !hiddenWorkspaceIds.contains(workspace.id))
+      .toList(growable: false);
+  List<Workspace> get hiddenWorkspaces => workspaces
+      .where((workspace) => hiddenWorkspaceIds.contains(workspace.id))
+      .toList(growable: false);
 
   final WorkspaceStatus status;
   final List<Workspace> workspaces;
@@ -49,7 +68,19 @@ class WorkspaceState extends Equatable {
     Object? error = _sentinel,
     bool? isCreating,
     bool? emptyMembershipConfirmed,
+    List<String>? hiddenWorkspaceIds,
+    List<String>? pendingVisibilityIds,
+    WorkspaceStatus? visibilityStatus,
+    Object? visibilityError = _sentinel,
+    bool? visibilityResolved,
   }) => WorkspaceState(
+    visibilityResolved: visibilityResolved ?? this.visibilityResolved,
+    hiddenWorkspaceIds: hiddenWorkspaceIds ?? this.hiddenWorkspaceIds,
+    pendingVisibilityIds: pendingVisibilityIds ?? this.pendingVisibilityIds,
+    visibilityStatus: visibilityStatus ?? this.visibilityStatus,
+    visibilityError: visibilityError == _sentinel
+        ? this.visibilityError
+        : visibilityError as String?,
     status: status ?? this.status,
     workspaces: workspaces ?? this.workspaces,
     currentWorkspace: currentWorkspace == _sentinel
@@ -68,6 +99,11 @@ class WorkspaceState extends Equatable {
 
   @override
   List<Object?> get props => [
+    hiddenWorkspaceIds,
+    pendingVisibilityIds,
+    visibilityStatus,
+    visibilityResolved,
+    visibilityError,
     status,
     workspaces,
     currentWorkspace,

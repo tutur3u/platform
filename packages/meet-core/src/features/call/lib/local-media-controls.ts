@@ -40,6 +40,7 @@ export function createLocalMediaControls({
   let microphoneRevision = 0;
   let requestedMicrophone: boolean | null = null;
   let audioQueue = Promise.resolve();
+  let screenPending = false;
   const withAudio = <T>(operation: () => Promise<T>): Promise<T> => {
     const result = audioQueue.then(operation);
     audioQueue = result.then(
@@ -224,61 +225,87 @@ export function createLocalMediaControls({
   };
 
   const toggleScreenShare = async () => {
-    if (mediaRef.current.screenEnabled) {
-      for (const track of screenStreamRef.current?.getTracks() ?? []) {
-        track.stop();
-      }
-      screenStreamRef.current = null;
-      setScreenStream(null);
-      await applyMedia(
-        { ...mediaRef.current, screenEnabled: false },
-        localStreamRef.current
-      );
-      return;
-    }
-
-    const display = await navigator.mediaDevices
-      .getDisplayMedia(SCREEN_CAPTURE_OPTIONS)
-      .catch((error: unknown) => {
-        if (error instanceof Error && error.name === 'NotAllowedError')
-          return null;
-        throw error;
-      });
-    if (!display) return;
-    if (!activeRef.current) {
-      display.getTracks().forEach((track) => {
-        track.stop();
-      });
-      return;
-    }
-    screenStreamRef.current = display;
-    setScreenStream(display);
-    // Ending the share from the browser's own bar must update the room too.
-    display.getVideoTracks()[0]?.addEventListener('ended', () => {
-      if (screenStreamRef.current !== display) return;
-      for (const track of display.getTracks()) track.stop();
-      screenStreamRef.current = null;
-      setScreenStream(null);
-      void applyMedia(
-        { ...mediaRef.current, screenEnabled: false },
-        localStreamRef.current
-      ).catch(() => undefined);
-    });
-    for (const track of display.getAudioTracks())
-      track.addEventListener('ended', () => {
-        if (
-          screenStreamRef.current !== display ||
-          !mediaRef.current.screenEnabled
-        )
-          return;
-        void applyMedia({ ...mediaRef.current }, localStreamRef.current).catch(
-          () => undefined
+    if (screenPending) return;
+    screenPending = true;
+    try {
+      if (mediaRef.current.screenEnabled) {
+        await applyMedia(
+          { ...mediaRef.current, screenEnabled: false },
+          localStreamRef.current
         );
+        for (const track of screenStreamRef.current?.getTracks() ?? []) {
+          track.stop();
+        }
+        screenStreamRef.current = null;
+        setScreenStream(null);
+        return;
+      }
+
+      if (typeof navigator.mediaDevices?.getDisplayMedia !== 'function') {
+        throw new DOMException(
+          'Screen capture unavailable',
+          'NotSupportedError'
+        );
+      }
+      const display = await navigator.mediaDevices
+        .getDisplayMedia(SCREEN_CAPTURE_OPTIONS)
+        .catch((error: unknown) => {
+          if (error instanceof Error && error.name === 'NotAllowedError')
+            return null;
+          throw error;
+        });
+      if (!display) return;
+      if (!activeRef.current) {
+        display.getTracks().forEach((track) => {
+          track.stop();
+        });
+        return;
+      }
+      screenStreamRef.current = display;
+      setScreenStream(display);
+      // Ending the share from the browser's own bar must update the room too.
+      display.getVideoTracks()[0]?.addEventListener('ended', () => {
+        if (screenStreamRef.current !== display) return;
+        for (const track of display.getTracks()) track.stop();
+        screenStreamRef.current = null;
+        setScreenStream(null);
+        void applyMedia(
+          { ...mediaRef.current, screenEnabled: false },
+          localStreamRef.current
+        ).catch(() => undefined);
       });
-    await applyMedia(
-      { ...mediaRef.current, screenEnabled: true },
-      localStreamRef.current
-    );
+      for (const track of display.getAudioTracks())
+        track.addEventListener('ended', () => {
+          if (
+            screenStreamRef.current !== display ||
+            !mediaRef.current.screenEnabled
+          )
+            return;
+          void applyMedia(
+            { ...mediaRef.current },
+            localStreamRef.current
+          ).catch(() => undefined);
+        });
+      try {
+        await applyMedia(
+          { ...mediaRef.current, screenEnabled: true },
+          localStreamRef.current
+        );
+      } catch (error) {
+        // Capture must not continue invisibly after publication fails.
+        for (const track of display.getTracks()) track.stop();
+        screenStreamRef.current = null;
+        setScreenStream(null);
+        // Restore rendered state and presence through the same media flow.
+        await applyMedia(
+          { ...mediaRef.current, screenEnabled: false },
+          localStreamRef.current
+        ).catch(() => undefined);
+        throw error;
+      }
+    } finally {
+      screenPending = false;
+    }
   };
 
   return {

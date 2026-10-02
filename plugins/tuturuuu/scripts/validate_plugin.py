@@ -8,6 +8,8 @@ import re
 import sys
 from pathlib import Path
 
+from portable_mcp import validate_portable_mcp
+
 
 FRONTMATTER_RE = re.compile(r"\A---\n(?P<body>.*?)\n---\n", re.DOTALL)
 REFERENCE_RE = re.compile(r"`(references/[^`]+)`")
@@ -620,11 +622,13 @@ def validate_portable_text_under(plugin_root: Path) -> None:
         check_no_machine_paths(path, read_text(path))
 
 
+
 def main() -> None:
     plugin_root = Path(__file__).resolve().parents[1]
     repo_root = plugin_root.parents[1]
     manifest = load_manifest(plugin_root)
     validate_manifest(plugin_root, manifest)
+    validate_portable_mcp(plugin_root, manifest)
     validate_skills(plugin_root, manifest)
     validate_docs(repo_root)
     validate_commit_no_verify_guidance(repo_root, plugin_root, manifest)

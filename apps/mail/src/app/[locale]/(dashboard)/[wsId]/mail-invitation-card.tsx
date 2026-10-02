@@ -9,6 +9,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
+import { MailCalendarLink } from './mail-calendar-link';
 
 export function MailInvitationCard({
   workspaceId,
@@ -157,6 +158,11 @@ export function MailInvitationCard({
           {t('invitation_retry')}
         </Button>
       ) : null}
+      <MailCalendarLink
+        workspaceId={workspaceId}
+        mailboxId={mailboxId}
+        messageId={messageId}
+      />
     </section>
   );
 }

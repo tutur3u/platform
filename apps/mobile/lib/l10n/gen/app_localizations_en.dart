@@ -12,6 +12,33 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get workspaceHiddenTitle => 'Hidden workspaces';
+
+  @override
+  String get workspaceHideAction => 'Hide';
+
+  @override
+  String get workspaceRestoreAction => 'Restore';
+
+  @override
+  String get workspaceHiddenDescription => 'Only you can see this list. Hiding does not change membership or notifications.';
+
+  @override
+  String get workspaceHiddenEmpty => 'No Hidden workspaces';
+
+  @override
+  String get workspaceHiddenLoadError => 'Unable to refresh Hidden workspaces. Your saved list is kept.';
+
+  @override
+  String get workspaceHiddenUpdateError => 'Unable to save this change. Try again when connected.';
+
+  @override
+  String get workspaceAllHidden => 'Your workspaces are hidden. Restore one to continue.';
+
+  @override
+  String get workspacePickerClose => 'Close workspace picker';
+
+  @override
   String get commonLoading => 'Loading';
 
   @override
@@ -9447,6 +9474,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailInvitationFailed => 'Could not confirm your response. Retry the same response to check its status.';
 
   @override
+  String get mailCalendarLinkTitle => 'Link to Calendar';
+
+  @override
+  String get mailCalendarLinkUrl => 'Calendar event link';
+
+  @override
+  String get mailCalendarLinkPreview => 'Preview link';
+
+  @override
+  String get mailCalendarLinkConfirm => 'Confirm link';
+
+  @override
+  String get mailCalendarLinkOriginal => 'Original invitation';
+
+  @override
+  String get mailCalendarLinkSelected => 'Selected Calendar event';
+
+  @override
+  String get mailCalendarLinkNotice => 'Linking keeps both records. Replies still go to the original organizer.';
+
+  @override
+  String get mailCalendarLinkChanged => 'The invitation or event changed. Preview again.';
+
+  @override
+  String get mailCalendarLinkUnavailable => 'This event is unavailable in your account.';
+
+  @override
+  String get mailCalendarLinkFailed => 'Unable to update the link. Try again.';
+
+  @override
+  String get mailCalendarLinkInvalid => 'Paste a Calendar event link containing the selected event.';
+
+  @override
+  String get mailCalendarLinkLinked => 'Calendar event linked';
+
+  @override
+  String get mailCalendarLinkUnlink => 'Remove link';
+
+  @override
+  String get mailCalendarLinkOpen => 'Open linked event';
+
+  @override
   String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
     return '$leadTime · $occurrence ($timezone)';
   }
@@ -9514,6 +9583,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineMoreDays => 'Show more loaded days';
 
   @override
+  String meetNoticeJoined(String name) {
+    return '$name joined the meeting';
+  }
+
+  @override
+  String meetNoticeWaiting(String name) {
+    return '$name is asking to join';
+  }
+
+  @override
+  String meetNoticeChat(String name) {
+    return '$name sent a message';
+  }
+
+  @override
+  String get meetNoticeView => 'View';
+
+  @override
+  String get meetNotificationSound => 'Notification sound';
+
+  @override
+  String get meetShareScreen => 'Share screen';
+
+  @override
+  String get meetStopSharing => 'Stop sharing';
+
+  @override
+  String get meetScreenShareHint => 'Your selected screen will be visible to everyone in this meeting until you stop sharing. Use the system chooser to select what to share. System audio is not shared.';
+
+  @override
+  String get meetScreenShareFailed => 'Screen sharing did not start. Check capture permissions and try again.';
+
+  @override
   String get inventoryStockHealthTitle => 'Stock health';
 
   @override
@@ -9556,4 +9658,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryStockHealthUnknown => 'Unavailable';
+
+  @override
+  String get inventorySeasonPriceLoading => 'Checking current season prices…';
+
+  @override
+  String get inventorySeasonPriceUnavailable => 'Season prices unavailable or expired. Connect, refresh and review the cart before selling.';
+
+  @override
+  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone) {
+    return 'Season prices · $currency · as of $asOf (UTC) · season dates in $timeZone';
+  }
+
+  @override
+  String get inventorySeasonRecoveryTitle => 'Recover sale';
+
+  @override
+  String get inventorySeasonRecoveryCheck => 'Check sale result';
+
+  @override
+  String get inventorySeasonRecoveryUnavailable => 'Sale recovery storage is unavailable. Creation is blocked until this operation can be recovered safely.';
+
+  @override
+  String get inventorySeasonRetryPending => 'Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.';
+
+  @override
+  String get inventoryCheckoutScopeChanged => 'The account or workspace changed. Close this checkout and reopen the sale in its owning workspace.';
+
+  @override
+  String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
 }

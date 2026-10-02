@@ -97,6 +97,60 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @workspaceHiddenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden workspaces'**
+  String get workspaceHiddenTitle;
+
+  /// No description provided for @workspaceHideAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get workspaceHideAction;
+
+  /// No description provided for @workspaceRestoreAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get workspaceRestoreAction;
+
+  /// No description provided for @workspaceHiddenDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see this list. Hiding does not change membership or notifications.'**
+  String get workspaceHiddenDescription;
+
+  /// No description provided for @workspaceHiddenEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No Hidden workspaces'**
+  String get workspaceHiddenEmpty;
+
+  /// No description provided for @workspaceHiddenLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to refresh Hidden workspaces. Your saved list is kept.'**
+  String get workspaceHiddenLoadError;
+
+  /// No description provided for @workspaceHiddenUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to save this change. Try again when connected.'**
+  String get workspaceHiddenUpdateError;
+
+  /// No description provided for @workspaceAllHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Your workspaces are hidden. Restore one to continue.'**
+  String get workspaceAllHidden;
+
+  /// No description provided for @workspacePickerClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close workspace picker'**
+  String get workspacePickerClose;
+
   /// No description provided for @commonLoading.
   ///
   /// In en, this message translates to:
@@ -18037,6 +18091,90 @@ abstract class AppLocalizations {
   /// **'Could not confirm your response. Retry the same response to check its status.'**
   String get mailInvitationFailed;
 
+  /// No description provided for @mailCalendarLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to Calendar'**
+  String get mailCalendarLinkTitle;
+
+  /// No description provided for @mailCalendarLinkUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar event link'**
+  String get mailCalendarLinkUrl;
+
+  /// No description provided for @mailCalendarLinkPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview link'**
+  String get mailCalendarLinkPreview;
+
+  /// No description provided for @mailCalendarLinkConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm link'**
+  String get mailCalendarLinkConfirm;
+
+  /// No description provided for @mailCalendarLinkOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original invitation'**
+  String get mailCalendarLinkOriginal;
+
+  /// No description provided for @mailCalendarLinkSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected Calendar event'**
+  String get mailCalendarLinkSelected;
+
+  /// No description provided for @mailCalendarLinkNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Linking keeps both records. Replies still go to the original organizer.'**
+  String get mailCalendarLinkNotice;
+
+  /// No description provided for @mailCalendarLinkChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The invitation or event changed. Preview again.'**
+  String get mailCalendarLinkChanged;
+
+  /// No description provided for @mailCalendarLinkUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This event is unavailable in your account.'**
+  String get mailCalendarLinkUnavailable;
+
+  /// No description provided for @mailCalendarLinkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to update the link. Try again.'**
+  String get mailCalendarLinkFailed;
+
+  /// No description provided for @mailCalendarLinkInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a Calendar event link containing the selected event.'**
+  String get mailCalendarLinkInvalid;
+
+  /// No description provided for @mailCalendarLinkLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar event linked'**
+  String get mailCalendarLinkLinked;
+
+  /// No description provided for @mailCalendarLinkUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove link'**
+  String get mailCalendarLinkUnlink;
+
+  /// No description provided for @mailCalendarLinkOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open linked event'**
+  String get mailCalendarLinkOpen;
+
   /// No description provided for @remindersOccurrenceDetails.
   ///
   /// In en, this message translates to:
@@ -18163,6 +18301,60 @@ abstract class AppLocalizations {
   /// **'Show more loaded days'**
   String get profileTimelineMoreDays;
 
+  /// No description provided for @meetNoticeJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} joined the meeting'**
+  String meetNoticeJoined(String name);
+
+  /// No description provided for @meetNoticeWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is asking to join'**
+  String meetNoticeWaiting(String name);
+
+  /// No description provided for @meetNoticeChat.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} sent a message'**
+  String meetNoticeChat(String name);
+
+  /// No description provided for @meetNoticeView.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get meetNoticeView;
+
+  /// No description provided for @meetNotificationSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification sound'**
+  String get meetNotificationSound;
+
+  /// No description provided for @meetShareScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Share screen'**
+  String get meetShareScreen;
+
+  /// No description provided for @meetStopSharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing'**
+  String get meetStopSharing;
+
+  /// No description provided for @meetScreenShareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your selected screen will be visible to everyone in this meeting until you stop sharing. Use the system chooser to select what to share. System audio is not shared.'**
+  String get meetScreenShareHint;
+
+  /// No description provided for @meetScreenShareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen sharing did not start. Check capture permissions and try again.'**
+  String get meetScreenShareFailed;
+
   /// No description provided for @inventoryStockHealthTitle.
   ///
   /// In en, this message translates to:
@@ -18246,6 +18438,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unavailable'**
   String get inventoryStockHealthUnknown;
+
+  /// No description provided for @inventorySeasonPriceLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking current season prices…'**
+  String get inventorySeasonPriceLoading;
+
+  /// No description provided for @inventorySeasonPriceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Season prices unavailable or expired. Connect, refresh and review the cart before selling.'**
+  String get inventorySeasonPriceUnavailable;
+
+  /// No description provided for @inventorySeasonPriceAsOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Season prices · {currency} · as of {asOf} (UTC) · season dates in {timeZone}'**
+  String inventorySeasonPriceAsOf(String currency, String asOf, String timeZone);
+
+  /// No description provided for @inventorySeasonRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recover sale'**
+  String get inventorySeasonRecoveryTitle;
+
+  /// No description provided for @inventorySeasonRecoveryCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check sale result'**
+  String get inventorySeasonRecoveryCheck;
+
+  /// No description provided for @inventorySeasonRecoveryUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale recovery storage is unavailable. Creation is blocked until this operation can be recovered safely.'**
+  String get inventorySeasonRecoveryUnavailable;
+
+  /// No description provided for @inventorySeasonRetryPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale response uncertain. Check the recorded request before retrying its exact payload. You can leave and resume recovery in this account and workspace; do not create a replacement sale.'**
+  String get inventorySeasonRetryPending;
+
+  /// No description provided for @inventoryCheckoutScopeChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The account or workspace changed. Close this checkout and reopen the sale in its owning workspace.'**
+  String get inventoryCheckoutScopeChanged;
+
+  /// No description provided for @inventorySeasonHistoricalReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled sale history is read only here. Recorded prices are preserved.'**
+  String get inventorySeasonHistoricalReadOnly;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
