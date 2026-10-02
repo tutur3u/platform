@@ -14,6 +14,7 @@ export const registrationSchema = z.object({
   idToken: z.string().optional(),
   expiresAt: z.number().optional(),
   scopes: z.array(z.string()),
+  remoteRevoked: z.boolean().optional(),
 });
 export type ChatGPTRegistration = z.infer<typeof registrationSchema>;
 const storeSchema = z.object({
@@ -73,6 +74,7 @@ async function readStore(path: string): Promise<ChatGPTStore> {
 
 async function writeStore(path: string, store: ChatGPTStore) {
   const temporary = `${path}.${randomUUID()}.tmp`;
+  let failed = false;
   try {
     const file = await open(temporary, 'wx', 0o600);
     try {
@@ -82,8 +84,13 @@ async function writeStore(path: string, store: ChatGPTStore) {
       await file.close();
     }
     await rename(temporary, path);
+  } catch (error) {
+    failed = true;
+    throw error;
   } finally {
-    await rm(temporary, { force: true });
+    await rm(temporary, { force: true }).catch((error) => {
+      if (!failed) throw error;
+    });
   }
 }
 
@@ -101,7 +108,7 @@ export async function withChatGPTStore<T>(
   const path = credentialPath(userId);
   const lock = `${path}.lock`;
   let acquired = false;
-  for (let attempt = 0; attempt < 100; attempt++) {
+  for (let attempt = 0; attempt < 300; attempt++) {
     try {
       await mkdir(lock, { mode: 0o700 });
       acquired = true;

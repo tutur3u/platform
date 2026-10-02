@@ -39,7 +39,7 @@ async function main() {
     const imported = JSON.parse(await readFile(values.import, 'utf8')) as {
       registrations?: unknown[];
     };
-    if (!Array.isArray(imported.registrations))
+    if (!imported || !Array.isArray(imported.registrations))
       throw new Error('Invalid credential import');
     const registrations = imported.registrations.map((entry) =>
       registrationSchema.parse(entry)
@@ -181,7 +181,21 @@ async function main() {
   }
 }
 
-main().catch(() => {
+main().catch((error: unknown) => {
+  const safeMessages = [
+    'ChatGPT sign-in timed out',
+    'Unknown saved ChatGPT registration',
+    'Invalid credential import',
+    'Account identity mismatch',
+    'Could not open the system browser',
+    'ChatGPT authorization was declined',
+    'ChatGPT credential file must have owner-only permissions',
+    'Invalid Tuturuuu user ID',
+    'ChatGPT storage must be a private directory',
+    'ChatGPT connection is busy; retry shortly',
+  ];
+  if (error instanceof Error && safeMessages.includes(error.message))
+    console.error(error.message);
   console.error(
     'ChatGPT connection could not be completed. Check arguments and protected storage permissions, then retry.'
   );

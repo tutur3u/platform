@@ -74,6 +74,11 @@ export function createPOST(
         model: string | undefined
       ) => Promise<LanguageModel>;
       onError: () => string;
+      errorResponse?: (error: unknown) => {
+        message: string;
+        status: number;
+        code: string;
+      };
     };
     /** Gateway provider prefix for bare model names (e.g., 'openai', 'anthropic', 'vertex'). Defaults to 'google'. */
     defaultProvider?: string;
@@ -147,13 +152,14 @@ export function createPOST(
             user.id,
             model
           );
-        } catch {
+        } catch (error) {
+          const failure = _options.subscription.errorResponse?.(error);
           return NextResponse.json(
             {
-              error: _options.subscription.onError(),
-              code: 'CHATGPT_CONNECTION_REQUIRED',
+              error: failure?.message ?? _options.subscription.onError(),
+              code: failure?.code ?? 'CHATGPT_CONNECTION_REQUIRED',
             },
-            { status: 403 }
+            { status: failure?.status ?? 403 }
           );
         }
       }
@@ -381,6 +387,7 @@ export function createPOST(
         chatId,
         req,
         {
+          excludeAudioVideoFiles: !!subscriptionModel,
           attachYoutubeVideoInput:
             resolvedModelId.toLowerCase().startsWith('google/') ||
             resolvedModelId.toLowerCase().startsWith('google-vertex/'),
@@ -660,11 +667,15 @@ export function createPOST(
           });
         }
       }
-      if (_options.subscription)
+      if (_options.subscription) {
+        console.error('ChatGPT request failed', {
+          errorType: error instanceof Error ? error.name : 'UnknownError',
+        });
         return NextResponse.json(
           { error: _options.subscription.onError() },
           { status: 502 }
         );
+      }
       if (error instanceof Error) {
         console.log(error.message);
         return NextResponse.json(

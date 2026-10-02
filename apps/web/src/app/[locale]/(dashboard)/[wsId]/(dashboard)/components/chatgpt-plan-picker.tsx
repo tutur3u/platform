@@ -17,8 +17,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-
-const QUERY_KEY = ['chatgpt-connections'];
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 
 export function ChatGPTPlanPicker({
   model,
@@ -27,25 +26,40 @@ export function ChatGPTPlanPicker({
   model: AIModelUI;
   onChange: (model: AIModelUI) => void;
 }) {
+  const { activeAccountId } = useAccountSwitcher();
+  const queryKey = ['chatgpt-connections', activeAccountId];
   const t = useTranslations('dashboard.mira_chat.chatgpt');
   const queryClient = useQueryClient();
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [remoteRevocationUnconfirmed, setRemoteRevocationUnconfirmed] =
     useState(false);
-  const { data, isFetching, refetch } = useQuery({
-    queryKey: QUERY_KEY,
+  const { data, isFetching, isError, refetch } = useQuery({
+    queryKey,
     queryFn: () => getChatGPTConnections(),
     staleTime: 60_000,
     retry: false,
   });
   const disconnect = useMutation({
     mutationFn: (clientId: string) => disconnectChatGPT(clientId),
-    onSuccess: async ({ remoteRevoked }) => {
+    onSuccess: async ({ remoteRevoked }, clientId) => {
+      if (model.value.startsWith(`chatgpt/${clientId}/`))
+        onChange({ ...model, disabled: true });
       setRemoteRevocationUnconfirmed(!remoteRevoked);
-      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey });
     },
   });
-  if (!data?.enabled) return null;
+  if (data?.enabled === false || (!data && !isError)) return null;
+  if (!data)
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => void refetch()}
+        disabled={isFetching}
+      >
+        {t('refresh')}
+      </Button>
+    );
   const active = model.value.startsWith('chatgpt/');
   const selectedClient = active ? model.value.split('/')[1] : undefined;
 
@@ -57,6 +71,7 @@ export function ChatGPTPlanPicker({
       (entry) => value === `chatgpt/${account.clientId}/${entry.slug}`
     );
     if (!account || !choice) return;
+    setRemoteRevocationUnconfirmed(false);
     onChange({ value, provider: 'chatgpt', label: choice.display_name });
     const welcomeKey = `chatgpt-plan-welcome:${data?.userId}:${account.clientId}`;
     if (localStorage.getItem(welcomeKey) !== 'seen') {
@@ -155,7 +170,10 @@ export function ChatGPTPlanPicker({
                 size="sm"
                 variant="outline"
                 disabled={disconnect.isPending}
-                onClick={() => disconnect.mutate(selectedClient)}
+                onClick={() => {
+                  onChange({ ...model, disabled: true });
+                  disconnect.mutate(selectedClient);
+                }}
               >
                 {t('disconnect')}
               </Button>

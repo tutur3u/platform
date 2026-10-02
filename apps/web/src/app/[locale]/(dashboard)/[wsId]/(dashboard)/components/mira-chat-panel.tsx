@@ -154,6 +154,7 @@ export default function MiraChatPanel({
   } = useMiraChatAttachments({
     wsId,
     deleteFileFailedMessage: t('delete_file_failed'),
+    textAndImagesOnly: model.value.startsWith('chatgpt/'),
   });
 
   const {
@@ -228,6 +229,7 @@ export default function MiraChatPanel({
 
   const sendMessageWithCurrentConfig = useCallback(
     async (message: UIMessage) => {
+      if (model.disabled) return false;
       try {
         await flushLiveConversation();
       } catch {
@@ -240,7 +242,7 @@ export default function MiraChatPanel({
       await sendMessage(message, { body: chatRequestBody });
       return true;
     },
-    [chatRequestBody, sendMessage, flushLiveConversation]
+    [model.disabled, chatRequestBody, sendMessage, flushLiveConversation]
   );
   sendMessageRef.current = sendMessageWithCurrentConfig;
 
@@ -248,7 +250,8 @@ export default function MiraChatPanel({
     (nextModel: typeof model) => {
       if (
         nextModel.value === model.value &&
-        nextModel.provider === model.provider
+        nextModel.provider === model.provider &&
+        nextModel.disabled === model.disabled
       ) {
         return;
       }
@@ -457,7 +460,8 @@ export default function MiraChatPanel({
               inputRef={inputRef}
               isBusy={isBusy}
               disabled={
-                voiceActive && (!live.composer || live.composer.connecting)
+                model.disabled ||
+                (voiceActive && (!live.composer || live.composer.connecting))
               }
               onFileRemove={handleFileRemove}
               onFilesSelected={

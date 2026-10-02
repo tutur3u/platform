@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { chatGPTErrorResponse } from '@/lib/chatgpt/errors';
 import { getChatGPTAccess, parseChatGPTModel } from '@/lib/chatgpt/provider';
 import { chatGPTEnabled } from '@/lib/chatgpt/storage';
 
@@ -39,10 +40,11 @@ export const POST = withSessionAuth(async (request, { user, supabase }) => {
         { status: 500 }
       );
     return NextResponse.json({ id: data.id, title }, { status: 201 });
-  } catch {
+  } catch (error) {
+    const failure = chatGPTErrorResponse(error);
     return NextResponse.json(
-      { error: 'Reconnect your ChatGPT account' },
-      { status: 403 }
+      { error: failure.message, code: failure.code },
+      { status: failure.status }
     );
   }
 });

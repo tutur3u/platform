@@ -100,6 +100,13 @@ describe('ChatGPT account management API', () => {
     expect(saved?.refreshToken).toBeUndefined();
     expect(saved?.accessToken).toBeUndefined();
     expect(saved?.idToken).toBeUndefined();
+    const retry = await DELETE(
+      new Request('http://localhost/api/v1/users/chatgpt', {
+        method: 'DELETE',
+        body: JSON.stringify({ clientId: 'oaiapp_test' }),
+      }) as NextRequest
+    );
+    expect(await retry.json()).toEqual({ remoteRevoked: false });
   });
   it('keeps hosted deployments disabled even if the feature flag is set', async () => {
     vi.stubEnv('TUTURUUU_DEPLOYMENT_MODE', 'hosted');

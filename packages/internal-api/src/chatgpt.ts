@@ -27,6 +27,7 @@ export function disconnectChatGPT(
     '/api/v1/users/chatgpt',
     {
       method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ clientId }),
     }
   );
@@ -40,6 +41,7 @@ export function createChatGPTChat(
     '/api/ai/chatgpt/new',
     {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     }
   );

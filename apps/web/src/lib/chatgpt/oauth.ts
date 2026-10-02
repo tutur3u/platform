@@ -1,6 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { z } from 'zod';
+import { ChatGPTError } from './errors';
 import type { ChatGPTRegistration } from './storage';
 
 export const OPENAI_ISSUER = 'https://auth.openai.com';
@@ -15,7 +16,7 @@ const tokensSchema = z.object({
   id_token: z.string().min(1).optional(),
   token_type: z.literal('Bearer'),
   expires_in: z.number().positive(),
-  scope: z.string(),
+  scope: z.string().optional(),
 });
 
 export function createAuthorization(
@@ -78,7 +79,13 @@ async function exchangeToken(parameters: Record<string, string>) {
     signal: AbortSignal.timeout(15_000),
   });
   if (!response.ok)
-    throw new Error('ChatGPT token exchange failed; reconnect your account');
+    throw new ChatGPTError(
+      'ChatGPT token exchange failed; retry or reconnect your account',
+      response.status === 400 || response.status === 401 ? 403 : 503,
+      response.status === 400 || response.status === 401
+        ? 'CHATGPT_CONNECTION_REQUIRED'
+        : 'CHATGPT_UNAVAILABLE'
+    );
   return tokensSchema.parse(await response.json());
 }
 
@@ -109,7 +116,9 @@ export async function completeAuthorization(
   ) {
     throw new Error('ChatGPT account identity did not match');
   }
-  const scopes = tokens.scope.split(/\s+/);
+  const scopes = (tokens.scope ?? attempt.url.searchParams.get('scope')!).split(
+    /\s+/
+  );
   if (!scopes.includes('chatgpt.tokens.use.direct'))
     throw new Error('ChatGPT plan permission was not granted');
   return {
@@ -126,16 +135,24 @@ export async function completeAuthorization(
 
 export async function refreshRegistration(registration: ChatGPTRegistration) {
   if (!registration.accessToken || !registration.refreshToken)
-    throw new Error('Reconnect your ChatGPT account');
+    throw new ChatGPTError(
+      'Reconnect your ChatGPT account',
+      403,
+      'CHATGPT_CONNECTION_REQUIRED'
+    );
   if ((registration.expiresAt ?? 0) > Date.now() + 60_000) return;
   const tokens = await exchangeToken({
     grant_type: 'refresh_token',
     client_id: registration.clientId,
     refresh_token: registration.refreshToken,
   });
-  const scopes = tokens.scope.split(/\s+/);
+  const scopes = tokens.scope ? tokens.scope.split(/\s+/) : registration.scopes;
   if (!scopes.includes('chatgpt.tokens.use.direct'))
-    throw new Error('ChatGPT plan permission is no longer available');
+    throw new ChatGPTError(
+      'ChatGPT plan permission is no longer available',
+      403,
+      'CHATGPT_CONNECTION_REQUIRED'
+    );
   Object.assign(registration, {
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token ?? registration.refreshToken,

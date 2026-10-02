@@ -81,6 +81,7 @@ describe('ChatGPT OAuth public client', () => {
   });
   it.each([
     'valid',
+    'omitted-scope',
     'wrong-nonce',
     'wrong-audience',
     'expired',
@@ -116,9 +117,11 @@ describe('ChatGPT OAuth public client', () => {
           token_type: 'Bearer',
           expires_in: 3600,
           scope:
-            variant === 'no-plan-scope'
-              ? 'openid'
-              : 'openid chatgpt.tokens.use.direct',
+            variant === 'omitted-scope'
+              ? undefined
+              : variant === 'no-plan-scope'
+                ? 'openid'
+                : 'openid chatgpt.tokens.use.direct',
         })
       )
     );
@@ -128,34 +131,37 @@ describe('ChatGPT OAuth public client', () => {
       ),
       attempt
     );
-    if (variant === 'valid')
+    if (variant === 'valid' || variant === 'omitted-scope')
       expect((await result).subject).toBe('synthetic-subject');
     else await expect(result).rejects.toThrow();
   });
-  it('refreshes with the issued client and atomically replaces rotating tokens', async () => {
-    const registration = {
-      clientId: 'oaiapp_test',
-      subject: 'synthetic-subject',
-      accessToken: 'synthetic-old',
-      refreshToken: 'synthetic-old-refresh',
-      scopes: ['chatgpt.tokens.use.direct'],
-      expiresAt: 0,
-    };
-    const fetchMock = vi.fn().mockResolvedValue(
-      Response.json({
-        access_token: 'synthetic-new',
-        refresh_token: 'synthetic-new-refresh',
-        token_type: 'Bearer',
-        expires_in: 3600,
-        scope: 'chatgpt.tokens.use.direct',
-      })
-    );
-    vi.stubGlobal('fetch', fetchMock);
-    await refreshRegistration(registration);
-    expect(registration.refreshToken).toBe('synthetic-new-refresh');
-    expect(String(fetchMock.mock.calls[0]?.[1].body)).toContain(
-      'client_id=oaiapp_test'
-    );
-    expect(String(fetchMock.mock.calls[0]?.[1].body)).not.toContain('scope=');
-  });
+  it.each([true, false])(
+    'refreshes rotating tokens with optional unchanged scope: %s',
+    async (includeScope) => {
+      const registration = {
+        clientId: 'oaiapp_test',
+        subject: 'synthetic-subject',
+        accessToken: 'synthetic-old',
+        refreshToken: 'synthetic-old-refresh',
+        scopes: ['chatgpt.tokens.use.direct'],
+        expiresAt: 0,
+      };
+      const fetchMock = vi.fn().mockResolvedValue(
+        Response.json({
+          access_token: 'synthetic-new',
+          refresh_token: 'synthetic-new-refresh',
+          token_type: 'Bearer',
+          expires_in: 3600,
+          scope: includeScope ? 'chatgpt.tokens.use.direct' : undefined,
+        })
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      await refreshRegistration(registration);
+      expect(registration.refreshToken).toBe('synthetic-new-refresh');
+      expect(String(fetchMock.mock.calls[0]?.[1].body)).toContain(
+        'client_id=oaiapp_test'
+      );
+      expect(String(fetchMock.mock.calls[0]?.[1].body)).not.toContain('scope=');
+    }
+  );
 });

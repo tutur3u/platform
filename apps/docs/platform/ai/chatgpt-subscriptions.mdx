@@ -1,5 +1,6 @@
 ---
-title: ChatGPT Subscriptions
+title: ChatGPT subscriptions
+updatedAt: 2026-10-02
 description: Use a personal ChatGPT plan for eligible chat requests in a local or self-hosted Tuturuuu installation.
 ---
 
@@ -14,9 +15,9 @@ Use a Node.js web runtime with persistent, private filesystem storage. Set these
 server environment variables and restart the web app:
 
 ```sh
-TUTURUUU_DEPLOYMENT_MODE=self-hosted
-OPENAI_CHATGPT_ENABLED=true
-CHATGPT_SUBSCRIPTIONS_DIR=/absolute/private/path/chatgpt
+export TUTURUUU_DEPLOYMENT_MODE=self-hosted
+export OPENAI_CHATGPT_ENABLED=true
+export CHATGPT_SUBSCRIPTIONS_DIR=/absolute/private/path/chatgpt
 ```
 
 Mount that directory persistently for containers. Restrict it to the runtime owner;
@@ -67,12 +68,14 @@ filter the subscription catalog. **Using ChatGPT plan** remains visible near the
 composer, with a link to [Manage usage](https://chatgpt.com/settings/usage).
 
 ChatGPT mode supports streaming chat with text and compatible image/file inputs.
+Models use their default reasoning settings.
 It sends the required conversation history to the public Responses API with
 `store: false` and `stream: true`. It does not use ChatGPT's private backend API.
 ChatGPT mode currently does not run Mira workspace tools, memory-provider calls,
 web search, voice, transcription, or image generation. Select a Tuturuuu model
-explicitly to use those existing features. Unsupported audio/video attachments
-are rejected before subscription inference.
+explicitly to use those existing features. Unsupported audio/video uploads are filtered before upload, existing thread
+audio/video files are excluded, and explicit audio/video inputs are rejected
+before subscription inference.
 
 Subscription requests bypass Tuturuuu model allocation, credit preflight, output
 credit caps, memory-provider wrappers, and credit deductions. New conversations
@@ -89,7 +92,7 @@ confirmed, disconnect the app in ChatGPT Settings too.
 ## Operations and verification
 
 Filesystem locks serialize refreshes across workers sharing the directory. If a
-process dies while holding a `.lock` directory, requests fail closed after ten
+process dies while holding a `.lock` directory, requests fail closed after thirty
 seconds. Confirm no server worker or connection utility is using that registration
 before removing only its stale lock directory. Do not delete credential files to
 clear a lock. Use a shared filesystem that provides atomic directory creation and

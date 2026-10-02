@@ -75,69 +75,71 @@ export default function MiraChatInputToolbar({
 
       <div className="h-4 w-px bg-border/50" />
 
-      {/* Thinking mode */}
-      <Tooltip open={isThinkingMenuOpen ? false : undefined}>
-        <DropdownMenu
-          open={isThinkingMenuOpen}
-          onOpenChange={setIsThinkingMenuOpen}
-        >
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="h-7 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
-                aria-label={t('thinking_mode_label')}
+      {/* Subscription models use their provider defaults. */}
+      {!model.value.startsWith('chatgpt/') && (
+        <Tooltip open={isThinkingMenuOpen ? false : undefined}>
+          <DropdownMenu
+            open={isThinkingMenuOpen}
+            onOpenChange={setIsThinkingMenuOpen}
+          >
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+                  aria-label={t('thinking_mode_label')}
+                >
+                  {thinkingMode === 'thinking' ? (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  ) : (
+                    <Zap className="h-3.5 w-3.5" />
+                  )}
+                  {thinkingMode === 'thinking'
+                    ? t('thinking_mode_thinking')
+                    : t('thinking_mode_fast')}
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent>
+              {thinkingMode === 'thinking'
+                ? `${t('thinking_mode_thinking')} — ${t('thinking_mode_thinking_desc')}`
+                : `${t('thinking_mode_fast')} — ${t('thinking_mode_fast_desc')}`}
+            </TooltipContent>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuItem
+                onSelect={() => {
+                  onThinkingModeChange('fast');
+                  setIsThinkingMenuOpen(false);
+                }}
+                title={t('thinking_mode_fast_desc')}
+                className="gap-2"
               >
-                {thinkingMode === 'thinking' ? (
-                  <Sparkles className="h-3.5 w-3.5" />
-                ) : (
-                  <Zap className="h-3.5 w-3.5" />
-                )}
-                {thinkingMode === 'thinking'
-                  ? t('thinking_mode_thinking')
-                  : t('thinking_mode_fast')}
-              </Button>
-            </DropdownMenuTrigger>
-          </TooltipTrigger>
-          <TooltipContent>
-            {thinkingMode === 'thinking'
-              ? `${t('thinking_mode_thinking')} — ${t('thinking_mode_thinking_desc')}`
-              : `${t('thinking_mode_fast')} — ${t('thinking_mode_fast_desc')}`}
-          </TooltipContent>
-          <DropdownMenuContent align="start" className="w-44">
-            <DropdownMenuItem
-              onSelect={() => {
-                onThinkingModeChange('fast');
-                setIsThinkingMenuOpen(false);
-              }}
-              title={t('thinking_mode_fast_desc')}
-              className="gap-2"
-            >
-              <Zap className="h-3.5 w-3.5" />
-              {t('thinking_mode_fast')}
-              <span className="ml-auto text-muted-foreground text-xs">
-                {hotkeyLabels.fastMode}
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => {
-                onThinkingModeChange('thinking');
-                setIsThinkingMenuOpen(false);
-              }}
-              title={t('thinking_mode_thinking_desc')}
-              className="gap-2"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              {t('thinking_mode_thinking')}
-              <span className="ml-auto text-muted-foreground text-xs">
-                {hotkeyLabels.thinkingMode}
-              </span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </Tooltip>
+                <Zap className="h-3.5 w-3.5" />
+                {t('thinking_mode_fast')}
+                <span className="ml-auto text-muted-foreground text-xs">
+                  {hotkeyLabels.fastMode}
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  onThinkingModeChange('thinking');
+                  setIsThinkingMenuOpen(false);
+                }}
+                title={t('thinking_mode_thinking_desc')}
+                className="gap-2"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                {t('thinking_mode_thinking')}
+                <span className="ml-auto text-muted-foreground text-xs">
+                  {hotkeyLabels.thinkingMode}
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </Tooltip>
+      )}
 
       {/* Credit source */}
       {!model.value.startsWith('chatgpt/') &&

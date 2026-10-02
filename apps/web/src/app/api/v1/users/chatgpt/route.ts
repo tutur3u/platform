@@ -22,21 +22,22 @@ export const GET = withSessionAuth(async (_request, { user }) => {
           entry.scopes.includes('chatgpt.tokens.use.direct'),
       }))
     );
-    const catalog = [];
-    for (const account of accounts) {
-      let models: Awaited<ReturnType<typeof listChatGPTModels>> = [];
-      let available = account.connected;
-      if (available) {
-        try {
-          models = await listChatGPTModels(
-            await getChatGPTAccess(user.id, account.clientId)
-          );
-        } catch {
-          available = false;
+    const catalog = await Promise.all(
+      accounts.map(async (account) => {
+        let models: Awaited<ReturnType<typeof listChatGPTModels>> = [];
+        let available = account.connected;
+        if (available) {
+          try {
+            models = await listChatGPTModels(
+              await getChatGPTAccess(user.id, account.clientId)
+            );
+          } catch {
+            available = false;
+          }
         }
-      }
-      catalog.push({ ...account, available, models });
-    }
+        return { ...account, available, models };
+      })
+    );
     return NextResponse.json(
       { enabled: true, userId: user.id, accounts: catalog },
       { headers: { 'Cache-Control': 'no-store' } }
@@ -69,7 +70,10 @@ export const DELETE = withSessionAuth(async (request, { user }) => {
         (entry) => entry.clientId === parsed.data.clientId
       );
       if (!registration) return true;
-      const confirmed = await revokeRegistration(registration);
+      const confirmed = registration.refreshToken
+        ? await revokeRegistration(registration)
+        : registration.remoteRevoked === true;
+      registration.remoteRevoked = confirmed;
       delete registration.accessToken;
       delete registration.refreshToken;
       delete registration.idToken;

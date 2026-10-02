@@ -1,5 +1,6 @@
 import { createOpenAI } from '@tuturuuu/ai/openai';
 import { z } from 'zod';
+import { ChatGPTError } from './errors';
 import { refreshRegistration } from './oauth';
 import { chatGPTEnabled, withChatGPTStore } from './storage';
 
@@ -16,7 +17,11 @@ const modelsSchema = z.object({
 export function parseChatGPTModel(value: string) {
   const match = /^chatgpt\/(oaiapp_[a-zA-Z0-9_-]+)\/([^/]+)$/.exec(value);
   if (!match)
-    throw new Error('Select a model from your connected ChatGPT account');
+    throw new ChatGPTError(
+      'Select a model from your connected ChatGPT account',
+      400,
+      'CHATGPT_INVALID_MODEL'
+    );
   return { clientId: match[1]!, slug: match[2]! };
 }
 
@@ -30,7 +35,11 @@ export async function getChatGPTAccess(userId: string, clientId: string) {
       (entry) => entry.clientId === clientId
     );
     if (!registration?.scopes.includes('chatgpt.tokens.use.direct'))
-      throw new Error('Reconnect your ChatGPT account');
+      throw new ChatGPTError(
+        'Reconnect your ChatGPT account',
+        403,
+        'CHATGPT_CONNECTION_REQUIRED'
+      );
     await refreshRegistration(registration);
     return registration.accessToken!;
   });
@@ -57,7 +66,6 @@ export function prepareChatGPTRequest(body: Record<string, unknown>) {
     'model',
     'input',
     'instructions',
-    'reasoning',
     'text',
     'include',
   ]);
@@ -155,8 +163,10 @@ export async function resolveChatGPTModel(
   const accessToken = await getChatGPTAccess(userId, clientId);
   const models = await listChatGPTModels(accessToken);
   if (!models.some((model) => model.slug === slug))
-    throw new Error(
-      'The selected model is unavailable for this ChatGPT account'
+    throw new ChatGPTError(
+      'The selected model is unavailable for this ChatGPT account',
+      400,
+      'CHATGPT_MODEL_UNAVAILABLE'
     );
   return createOpenAI({
     apiKey: accessToken,

@@ -1,6 +1,7 @@
 import { createPOST } from '@tuturuuu/ai/chat/google/route';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { chatGPTErrorResponse } from '@/lib/chatgpt/errors';
 import {
   CHATGPT_USAGE_ERROR,
   resolveChatGPTModel,
@@ -21,6 +22,7 @@ const handler = createPOST({
   },
   subscription: {
     resolveModel: resolveChatGPTModel,
+    errorResponse: chatGPTErrorResponse,
     onError: () => CHATGPT_USAGE_ERROR,
   },
 });

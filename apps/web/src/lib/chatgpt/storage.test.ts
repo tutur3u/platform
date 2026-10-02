@@ -11,6 +11,8 @@ let directory: string;
 beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), 'tuturuuu-chatgpt-test-'));
   vi.stubEnv('CHATGPT_SUBSCRIPTIONS_DIR', directory);
+  vi.stubEnv('OPENAI_CHATGPT_ENABLED', 'false');
+  vi.stubEnv('TUTURUUU_DEPLOYMENT_MODE', 'hosted');
 });
 afterEach(async () => {
   vi.unstubAllEnvs();
@@ -40,8 +42,10 @@ describe('protected ChatGPT runtime storage', () => {
     expect(
       await withChatGPTStore(userB, async (store) => store.registrations)
     ).toEqual([]);
-    expect((await stat(credentialPath(userA))).mode & 0o777).toBe(0o600);
-    expect((await stat(directory)).mode & 0o777).toBe(0o700);
+    if (process.platform !== 'win32') {
+      expect((await stat(credentialPath(userA))).mode & 0o777).toBe(0o600);
+      expect((await stat(directory)).mode & 0o777).toBe(0o700);
+    }
     expect(() => credentialPath('../other-user')).toThrow();
   });
   it('serializes concurrent credential mutations without losing a rotating token', async () => {
@@ -63,10 +67,12 @@ describe('protected ChatGPT runtime storage', () => {
   });
   it('rejects permissive credential files and symlinked credentials', async () => {
     await withChatGPTStore(userA, async () => null);
-    await chmod(credentialPath(userA), 0o644);
-    await expect(withChatGPTStore(userA, async () => null)).rejects.toThrow(
-      'owner-only'
-    );
+    if (process.platform !== 'win32') {
+      await chmod(credentialPath(userA), 0o644);
+      await expect(withChatGPTStore(userA, async () => null)).rejects.toThrow(
+        'owner-only'
+      );
+    }
     await symlink(credentialPath(userA), credentialPath(userB));
     await expect(withChatGPTStore(userB, async () => null)).rejects.toThrow();
   });
