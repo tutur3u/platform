@@ -428,6 +428,19 @@ describe('conditionally fenced same-account Google move', () => {
     ).rejects.toMatchObject({ reason: 'unavailable' });
     expect(resolve).not.toHaveBeenCalled();
   });
+  it('rejects an authoritative calendar-scoped label before any move effects', async () => {
+    const original = { ...sourceEvent(), eventLabelId: 'source-label' };
+    events.set('source/original', original);
+    await expect(
+      movingAdapter().move(atomic, movePayload)
+    ).rejects.toMatchObject({
+      reason: 'conflict',
+    });
+    expect(move).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
+    expect(events.get('source/original')).toEqual(original);
+    expect(events.has('destination/original')).toBe(false);
+  });
   it('refuses attendee notifications pending acceptance and rechecks actor revocation before dispatch', async () => {
     events.set('source/original', {
       ...sourceEvent(),

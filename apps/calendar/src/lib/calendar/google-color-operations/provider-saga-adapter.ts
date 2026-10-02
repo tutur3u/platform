@@ -239,6 +239,9 @@ export function createProviderSagaAdapter(args: {
       if (initial.original.event.iCalUID !== payload.sourceICalUID)
         throw failure('identity');
       if (initial.original.etag !== binding.baseETag) throw failure('conflict');
+      // Calendar-scoped label transfer has not passed provider acceptance.
+      // Check the authoritative source observation, never caller intent.
+      if (initial.original.event.eventLabelId) throw failure('conflict');
       // Attendee notification behavior has not passed provider acceptance.
       if (
         Array.isArray(initial.original.event.attendees) &&
