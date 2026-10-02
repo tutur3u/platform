@@ -78,3 +78,46 @@ test('all live failure uploads require sanitized text and exclude raw traces/rep
       collector.indexOf('echo "::group::')
   );
 });
+
+test('unstructured credential header records and collections cannot leak later values', () => {
+  for (const input of [
+    'request headers: [{"name":"Authorization","value":"Bearer fixture-private"}]',
+    "request headers: [{ name: 'Cookie', value: 'opaque=fixture-private' }]",
+    "headers: { value: 'fixture-private', name: 'Authorization' }",
+    "headers: { name: 'Cookie',\n value: 'fixture-private' }",
+    'TOKEN=["fixture-first","fixture-second"]',
+    'SESSION={first:"fixture-first",second:"fixture-second"}',
+  ])
+    assert.doesNotMatch(sanitize(input, {}), /fixture-/u);
+});
+
+test('symlinked diagnostics root or parent blocks output before writing', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-diagnostics-links-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  for (const parent of [true, false]) {
+    const cwd = path.join(dir, parent ? 'parent' : 'root');
+    const target = path.join(dir, parent ? 'parent-target' : 'root-target');
+    fs.mkdirSync(cwd);
+    fs.mkdirSync(target);
+    fs.writeFileSync(path.join(cwd, 'raw.json'), '{"status":"failed"}');
+    if (!parent) fs.mkdirSync(path.join(cwd, 'tmp'));
+    fs.symlinkSync(
+      target,
+      path.join(cwd, parent ? 'tmp' : 'tmp/e2e-diagnostics')
+    );
+    assert.throws(() =>
+      execFileSync(
+        process.execPath,
+        [
+          require.resolve('./e2e-diagnostics-redact'),
+          '--report',
+          'raw.json',
+          '--output',
+          'tmp/e2e-diagnostics/report.json',
+        ],
+        { cwd, stdio: 'pipe' }
+      )
+    );
+    assert.deepEqual(fs.readdirSync(target), []);
+  }
+});

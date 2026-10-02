@@ -10,6 +10,14 @@ const sensitiveQuery =
 const jwt = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g;
 
 function redactText(value, env = process.env) {
+  // Unstructured log formats cannot safely preserve credential-valued arrays
+  // or header records. Omit that file rather than publishing partial redaction.
+  const structuredHeader =
+    /["']?name["']?\s*:\s*["'][^"']*(?:token|secret|key|password|cookie|credential|authorization|session)[^"']*["']/i;
+  const sensitiveCollection =
+    /["']?[A-Z0-9_-]*(?:TOKEN|SECRET|KEY|PASSWORD|COOKIE|CREDENTIAL|AUTHORIZATION|SESSION)[A-Z0-9_-]*["']?\s*[:=]\s*[[{]/i;
+  if (structuredHeader.test(value) || sensitiveCollection.test(value))
+    return '<redacted: structured credential diagnostics omitted>\n';
   let result = value;
   for (const [name, secret] of Object.entries(env)) {
     if (sensitiveName.test(name) && secret?.length >= 8)
@@ -65,11 +73,39 @@ function walkFiles(dir) {
   });
 }
 
+function assertLocalPath(file) {
+  const relative = path.relative(process.cwd(), path.resolve(file));
+  if (relative.startsWith('..') || path.isAbsolute(relative))
+    throw new Error('Diagnostics path must be local');
+  let current = process.cwd();
+  for (const part of relative.split(path.sep)) {
+    current = path.join(current, part);
+    let stat;
+    try {
+      stat = fs.lstatSync(current);
+    } catch (error) {
+      if (error.code === 'ENOENT') continue;
+      throw error;
+    }
+    if (stat.isSymbolicLink())
+      throw new Error('Unsupported diagnostic symlink');
+  }
+}
+
 function main(args = process.argv.slice(2)) {
   const diagnosticsDir = path.join('tmp', 'e2e-diagnostics');
+  assertLocalPath(diagnosticsDir);
   if (args.length) {
     if (args.length !== 4 || args[0] !== '--report' || args[2] !== '--output')
       throw new Error('Invalid diagnostics arguments');
+    assertLocalPath(args[1]);
+    assertLocalPath(args[3]);
+    if (
+      !path
+        .resolve(args[3])
+        .startsWith(`${path.resolve(diagnosticsDir)}${path.sep}`)
+    )
+      throw new Error('Output must be in diagnostics directory');
     const content = fs.existsSync(args[1])
       ? fs.readFileSync(args[1], 'utf8')
       : 'No completed Playwright report was produced.\n';

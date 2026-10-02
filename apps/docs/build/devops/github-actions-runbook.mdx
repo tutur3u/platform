@@ -562,7 +562,8 @@ source/run provenance, not raw reports, credentials, or customer data. Failure
 artifacts contain sanitized text diagnostics only; raw traces, blob reports,
 HTML reports, and test-result directories are not uploaded. Sanitize collected
 server/probe output before printing console groups, and block artifact upload
-if sanitization fails. Cancelled workflows do not allocate new E2E cohorts;
+if sanitization fails. Omit unstructured files containing credential-valued
+collections or header records; reject symlinked diagnostics paths. Cancelled workflows do not allocate new E2E cohorts;
 started jobs retain their cleanup steps. Branch
 runs cannot publish trusted proofs. Manual dispatch always runs all suites;
 there is no cron. Increment repository variable `E2E_RESULT_CACHE_EPOCH` to
