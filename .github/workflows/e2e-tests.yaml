@@ -5,28 +5,48 @@ on:
     branches-ignore:
       - production
     paths:
-      - ".github/actions/run-with-turbo-remote-cache/**"
-      - ".github/actions/setup-bun-with-retry/**"
-      - ".github/actions/setup-supabase-cli-with-retry/**"
-      - ".github/actions/setup-supabase-baseline/**"
+      # Unknown future runtime inputs must reach the conservative planner too.
+      - "**"
+      - ".github/actions/**"
       - ".github/workflows/e2e-tests.yaml"
-      - "apps/**/Dockerfile*"
-      - "apps/**/e2e/**"
-      - "apps/**/package.json"
-      - "apps/**/playwright.config.*"
-      - "apps/database/**"
+      - "apps/**"
+      - "packages/**"
       - "bun.lock"
+      - "bunfig.toml"
+      - "docker-compose/**"
       - "docker-compose*.yml"
       - "package.json"
-      - "packages/*/package.json"
-      - "packages/devbox/src/e2e-harness*"
+      - "tsconfig*.json"
       - "scripts/ci/e2e-*"
       - "scripts/ci/release-only-changes.*"
       - "scripts/ci/supabase-baseline*"
       - "scripts/ci/run-with-backoff.sh"
       - "scripts/docker-web.js"
+      - "scripts/docker-web/**"
       - "scripts/e2e-*"
+      - "scripts/run-web-e2e-docker*"
       - "turbo.json"
+      - "!*.md"
+      - "!**/AGENTS.md"
+      - "!apps/docs/**"
+      - "!apps/mobile/**"
+      - "!apps/backend/**"
+      - "!apps/tanstack-web/**"
+      - "!docs/**"
+      - "!plans/**"
+      - "!plugins/**"
+      - "!skills/**"
+      - "!conductor/**"
+      - "!.agents/**"
+      - "!.agent/**"
+      - "!.claude/**"
+      - "!.codex/**"
+      - "!.cursor/**"
+      - "!.gemini/**"
+      - "!.opencode/**"
+      - "!.vscode/**"
+      - "!.windsurf/**"
+      - "!.zed/**"
   workflow_dispatch:
     inputs:
       supabase_image_transport:
@@ -44,6 +64,7 @@ concurrency:
 permissions:
   contents: read
   deployments: read
+  actions: read
   packages: read
 
 env:
@@ -61,12 +82,17 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       run_e2e: ${{ steps.detect.outputs.run_e2e }}
+      run_web: ${{ steps.plan.outputs.run_web }}
+      run_inventory: ${{ steps.plan.outputs.run_inventory }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      inventory_key: ${{ steps.plan.outputs.inventory_key }}
+      runner_context: ${{ steps.plan.outputs.runner_context }}
     steps:
       - name: Check out code and comparison history
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          sparse-checkout: scripts/ci/release-only-changes.js
+          sparse-checkout: scripts/ci
           sparse-checkout-cone-mode: false
 
       - name: Detect release-only changes
@@ -82,10 +108,19 @@ jobs:
             echo "run_e2e=$result" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Reuse successful unchanged E2E suites
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          E2E_ENABLED: ${{ steps.detect.outputs.run_e2e }}
+          EVENT_NAME: ${{ github.event_name }}
+          E2E_RESULT_CACHE_EPOCH: ${{ vars.E2E_RESULT_CACHE_EPOCH || '1' }}
+        run: node scripts/ci/e2e-result-plan.js
+
   prepare-e2e-images:
     name: Prepare E2E image bundle
     needs: relevance
-    if: github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true'
+    if: github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' && needs.relevance.outputs.run_web == 'true'
     continue-on-error: true
     timeout-minutes: 45
     runs-on: ubuntu-latest
@@ -110,20 +145,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Free runner disk for E2E image bundle
-        run: |
-          df -h /
-          docker system prune -af --volumes || true
-          docker builder prune -af || true
-          sudo rm -rf \
-            /usr/share/dotnet \
-            /usr/local/lib/android \
-            /usr/local/share/boost \
-            /usr/share/swift \
-            /opt/az \
-            /opt/ghc \
-            /opt/google \
-            /opt/hostedtoolcache/CodeQL || true
-          df -h /
+        run: bash scripts/ci/e2e-free-disk.sh
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
@@ -207,7 +229,7 @@ jobs:
   e2e:
     name: Playwright E2E (${{ matrix.label }})
     needs: [relevance, prepare-e2e-images]
-    if: ${{ always() && github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' }}
+    if: ${{ always() && !cancelled() && github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' && needs.relevance.outputs.run_web == 'true' }}
     timeout-minutes: 45
     runs-on: ubuntu-latest
     permissions:
@@ -215,64 +237,7 @@ jobs:
       packages: read
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - label: 1/4
-            id: 1
-            mode: shard
-            shard: 1
-            total_shards: 4
-          - label: 2/4
-            id: 2
-            mode: shard
-            shard: 2
-            total_shards: 4
-          - label: 3/4
-            id: 3
-            mode: shard
-            shard: 3
-            total_shards: 4
-          - label: 4/4
-            id: 4
-            mode: shard
-            shard: 4
-            total_shards: 4
-          - label: workspace-invite-api
-            id: workspace-invite-api
-            mode: workspace-invite-api
-            shard: 1
-            spec: workspace-invitations.noauth.spec.ts
-            total_shards: 1
-          - label: workspace-invite-contacts
-            id: workspace-invite-contacts
-            mode: workspace-invite-contacts
-            shard: 1
-            spec: workspace-invite-cross-app-access.noauth.spec.ts
-            total_shards: 1
-          - label: workspace-invite-finance
-            id: workspace-invite-finance
-            mode: workspace-invite-finance
-            shard: 1
-            spec: workspace-invite-finance-access.noauth.spec.ts
-            total_shards: 1
-          - label: workspace-invite-mail
-            id: workspace-invite-mail
-            mode: workspace-invite-mail
-            shard: 1
-            spec: workspace-invite-mail-access.noauth.spec.ts
-            total_shards: 1
-          - label: workspace-invite-tasks
-            id: workspace-invite-tasks
-            mode: workspace-invite-tasks
-            shard: 1
-            spec: workspace-invite-tasks-access.noauth.spec.ts
-            total_shards: 1
-          - label: invite-account-shapes
-            id: invite-account-shapes
-            mode: invite-account-shapes
-            shard: 1
-            spec: workspace-invite-account-shapes.noauth.spec.ts
-            total_shards: 1
+      matrix: ${{ fromJSON(needs.relevance.outputs.matrix) }}
 
     env:
       BASE_URL: https://tuturuuu.localhost:1355
@@ -287,6 +252,7 @@ jobs:
       DOCKER_WEB_COMPOSE_PROJECT_NAME: ttr-e2e-${{ github.run_id }}-${{ matrix.id }}
       E2E_SHARD_INDEX: ${{ matrix.shard }}
       E2E_TOTAL_SHARDS: ${{ matrix.total_shards }}
+      PLAYWRIGHT_JSON_OUTPUT_FILE: ${{ github.workspace }}/tmp/e2e-web-results.json
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:8001
       PORTLESS_PORT: "1355"
 
@@ -295,20 +261,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Free runner disk for Dockerized E2E
-        run: |
-          df -h /
-          docker system prune -af --volumes || true
-          docker builder prune -af || true
-          sudo rm -rf \
-            /usr/share/dotnet \
-            /usr/local/lib/android \
-            /usr/local/share/boost \
-            /usr/share/swift \
-            /opt/az \
-            /opt/ghc \
-            /opt/google \
-            /opt/hostedtoolcache/CodeQL || true
-          df -h /
+        run: bash scripts/ci/e2e-free-disk.sh
 
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry
@@ -398,7 +351,7 @@ jobs:
         run: |
           mkdir -p ../../tmp/e2e-diagnostics
           set -o pipefail
-          bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }} --grep-invert "workspace invitation|Workspace invitation" 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
+          bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }} --grep-invert "workspace invitation|Workspace invitation" --reporter=line,blob,json 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
 
       - name: Run dedicated workspace invitation Playwright suite
         if: matrix.mode != 'shard'
@@ -406,134 +359,16 @@ jobs:
         run: |
           mkdir -p ../../tmp/e2e-diagnostics
           set -o pipefail
-          bun test:e2e -- "e2e/${{ matrix.spec }}" --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
+          bun test:e2e -- "e2e/${{ matrix.spec }}" --reporter=line,json 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
 
       - name: Collect Dockerized E2E diagnostics
         if: ${{ failure() }}
-        run: |
-          set +e
-          diagnostics_dir="tmp/e2e-diagnostics"
-          mkdir -p "$diagnostics_dir"
-
-          {
-            printf 'run_id=%s\n' "${GITHUB_RUN_ID}"
-            printf 'job=%s\n' "${GITHUB_JOB}"
-            printf 'sha=%s\n' "${GITHUB_SHA}"
-            printf 'ref=%s\n' "${GITHUB_REF}"
-            printf 'shard=%s/%s\n' "${E2E_SHARD_INDEX}" "${E2E_TOTAL_SHARDS}"
-            printf 'base_url=%s\n' "${BASE_URL}"
-            printf 'portless_port=%s\n' "${PORTLESS_PORT}"
-            printf 'docker_web_proxy_host_port=%s\n' "${DOCKER_WEB_PROXY_HOST_PORT:-7803}"
-            printf 'compose_project=%s\n' "${DOCKER_WEB_COMPOSE_PROJECT_NAME}"
-            date -u +"collected_at=%Y-%m-%dT%H:%M:%SZ"
-          } > "$diagnostics_dir/summary.txt"
-
-          if [ -f tmp/e2e/web.env ]; then
-            sed -E 's/^([^=]+)=.*/\1=<redacted>/' tmp/e2e/web.env > "$diagnostics_dir/web-env.keys.txt"
-          else
-            echo "tmp/e2e/web.env not found" > "$diagnostics_dir/web-env.keys.txt"
-          fi
-
-          docker ps -a --filter "label=com.docker.compose.project=${DOCKER_WEB_COMPOSE_PROJECT_NAME}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" > "$diagnostics_dir/docker-containers.txt" 2>&1 || true
-          docker compose --env-file tmp/e2e/web.env -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" ps -a > "$diagnostics_dir/docker-compose-ps.txt" 2>&1 || true
-          docker compose --env-file tmp/e2e/web.env -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" logs --tail=1000 web-proxy web-blue web-green hive-blue hive-green hive-realtime meet-realtime markitdown storage-unzip-proxy web-cron-runner > "$diagnostics_dir/docker-compose-services.log" 2>&1 || true
-          docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" > "$diagnostics_dir/docker-images.txt" 2>&1 || true
-          web_proxy_login_url="http://127.0.0.1:${DOCKER_WEB_PROXY_HOST_PORT:-7803}/login"
-          curl -i --max-time 10 "$web_proxy_login_url" > "$diagnostics_dir/web-proxy-login.txt" 2>&1 || true
-          bun x portless list > "$diagnostics_dir/portless-list.txt" 2>&1 || true
-          portless_login_url="${BASE_URL%/}/login"
-          curl -k -i --max-time 10 "$portless_login_url" > "$diagnostics_dir/portless-login.txt" 2>&1 || true
-          bun sb:status > "$diagnostics_dir/supabase-status.txt" 2>&1 || true
-
-          if [ -f apps/web/test-results/.last-run.json ]; then
-            cp apps/web/test-results/.last-run.json "$diagnostics_dir/playwright-last-run.json"
-          else
-            echo "apps/web/test-results/.last-run.json not found" > "$diagnostics_dir/playwright-last-run.json"
-          fi
-
-          echo "::group::Docker containers for E2E project"
-          cat "$diagnostics_dir/docker-containers.txt"
-          echo "::endgroup::"
-
-          echo "::group::Docker Compose status"
-          cat "$diagnostics_dir/docker-compose-ps.txt"
-          echo "::endgroup::"
-
-          echo "::group::Docker Compose logs"
-          tail -n 300 "$diagnostics_dir/docker-compose-services.log"
-          echo "::endgroup::"
-
-          echo "::group::Docker web proxy login probe"
-          cat "$diagnostics_dir/web-proxy-login.txt"
-          echo "::endgroup::"
-
-          echo "::group::Supabase status"
-          cat "$diagnostics_dir/supabase-status.txt"
-          echo "::endgroup::"
-
-          echo "::group::Portless login probe"
-          cat "$diagnostics_dir/portless-login.txt"
-          echo "::endgroup::"
-
-          echo "::group::Playwright last run"
-          cat "$diagnostics_dir/playwright-last-run.json"
-          echo "::endgroup::"
+        run: bash scripts/ci/e2e-diagnostics.sh
 
       - name: Redact E2E diagnostics artifact
+        id: redact-diagnostics
         if: ${{ failure() }}
-        run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-          const path = require('node:path');
-
-          const diagnosticsDir = path.join('tmp', 'e2e-diagnostics');
-          const sensitiveEnvNamePattern =
-            /(token|secret|key|password|cookie|credential|authorization|session)/i;
-          const sensitiveKeyValuePattern =
-            /\b([A-Z0-9_]*(?:TOKEN|SECRET|KEY|PASSWORD|COOKIE|CREDENTIAL|AUTHORIZATION|SESSION)[A-Z0-9_]*)\s*[:=]\s*("[^"\n]*"|'[^'\n]*'|[^\s,;}\]]+)/gi;
-          const sensitiveQueryPattern =
-            /([?&](?:access[_-]?token|api[_-]?key|authorization|code|cookie|key|password|refresh[_-]?token|secret|session|token)=)[^&\s]+/gi;
-          const bearerPattern = /\b(Authorization:\s*Bearer\s+)[^\s'"]+/gi;
-          const jwtPattern =
-            /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g;
-
-          function walkFiles(dir) {
-            if (!fs.existsSync(dir)) return [];
-
-            return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-              const entryPath = path.join(dir, entry.name);
-              if (entry.isDirectory()) return walkFiles(entryPath);
-              return entry.isFile() ? [entryPath] : [];
-            });
-          }
-
-          const literalSecrets = Object.entries(process.env)
-            .filter(([name, value]) => sensitiveEnvNamePattern.test(name) && value)
-            .map(([, value]) => value)
-            .filter((value) => value.length >= 8);
-
-          function redact(value) {
-            let redacted = value;
-
-            for (const secret of literalSecrets) {
-              redacted = redacted.split(secret).join('<redacted>');
-            }
-
-            return redacted
-              .replace(bearerPattern, '$1<redacted>')
-              .replace(sensitiveQueryPattern, '$1<redacted>')
-              .replace(sensitiveKeyValuePattern, '$1=<redacted>')
-              .replace(jwtPattern, '<redacted-jwt>');
-          }
-
-          for (const filePath of walkFiles(diagnosticsDir)) {
-            const original = fs.readFileSync(filePath, 'utf8');
-            const redacted = redact(original);
-            if (redacted !== original) {
-              fs.writeFileSync(filePath, redacted);
-            }
-          }
-          NODE
+        run: node scripts/ci/e2e-diagnostics-redact.js
 
       - name: Save Supabase Docker images for cache
         id: prepare-supabase-docker-cache
@@ -558,13 +393,10 @@ jobs:
 
       - name: Upload E2E failure artifact
         uses: actions/upload-artifact@v7
-        if: ${{ failure() }}
+        if: ${{ failure() && steps.redact-diagnostics.outcome == 'success' }}
         with:
           name: e2e-failure-${{ matrix.id }}
-          path: |
-            tmp/e2e-diagnostics/
-            apps/web/blob-report/
-            apps/web/test-results/
+          path: tmp/e2e-diagnostics/
           if-no-files-found: warn
           retention-days: 7
 
@@ -578,33 +410,41 @@ jobs:
         if: always()
         run: rm -f "$RUNNER_TEMP/turbo-team" "$RUNNER_TEMP/turbo-token"
 
+      - name: Record successful E2E proof
+        id: proof
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          E2E_EXPECTED_RUNNER: ${{ needs.relevance.outputs.runner_context }}
+          E2E_SUITE_ID: ${{ matrix.id }}
+          E2E_PROOF_KEY: ${{ matrix.cache_key }}
+          E2E_RESULTS_PATH: tmp/e2e-web-results.json
+        run: node scripts/ci/e2e-result-receipt.js
+
+      - name: Cache successful E2E proof
+        if: success() && steps.proof.outputs.reusable == 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: tmp/e2e-proof-receipt.json
+          key: ${{ matrix.cache_key }}
+
   inventory-storefront-cache-e2e:
     name: Inventory / Storefront cache contract
     needs: relevance
-    if: github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true'
+    if: github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' && needs.relevance.outputs.run_inventory == 'true'
     timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:
       contents: read
+
+    env:
+      PLAYWRIGHT_JSON_OUTPUT_FILE: ${{ github.workspace }}/tmp/e2e-inventory-results.json
 
     steps:
       - name: Check out code
         uses: actions/checkout@v7
 
       - name: Free runner disk for cross-app cache E2E
-        run: |
-          df -h /
-          docker system prune -af --volumes || true
-          sudo rm -rf \
-            /usr/share/dotnet \
-            /usr/local/lib/android \
-            /usr/local/share/boost \
-            /usr/share/swift \
-            /opt/az \
-            /opt/ghc \
-            /opt/google \
-            /opt/hostedtoolcache/CodeQL || true
-          df -h /
+        run: bash scripts/ci/e2e-free-disk.sh
 
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry
@@ -659,22 +499,42 @@ jobs:
 
       - name: Verify cache invalidation and instant navigation
         working-directory: apps/inventory
-        run: bun test:e2e -- --reporter=line,html
+        run: bun test:e2e -- --reporter=line,html,json
+
+      - name: Sanitize cache E2E failure diagnostics
+        id: redact-inventory
+        if: ${{ failure() }}
+        run: node scripts/ci/e2e-diagnostics-redact.js --report tmp/e2e-inventory-results.json --output tmp/e2e-diagnostics/inventory-results.json
 
       - name: Upload cache E2E failure artifact
         uses: actions/upload-artifact@v7
-        if: ${{ failure() }}
+        if: ${{ failure() && steps.redact-inventory.outcome == 'success' }}
         with:
           name: inventory-storefront-cache-e2e
-          path: |
-            apps/inventory/playwright-report/
-            apps/inventory/test-results/
+          path: tmp/e2e-diagnostics/
           if-no-files-found: ignore
           retention-days: 7
 
       - name: Stop local Supabase
         if: always()
         run: bun sb:stop || true
+
+      - name: Record successful E2E proof
+        id: proof
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          E2E_EXPECTED_RUNNER: ${{ needs.relevance.outputs.runner_context }}
+          E2E_SUITE_ID: inventory-storefront
+          E2E_PROOF_KEY: ${{ needs.relevance.outputs.inventory_key }}
+          E2E_RESULTS_PATH: tmp/e2e-inventory-results.json
+        run: node scripts/ci/e2e-result-receipt.js
+
+      - name: Cache successful E2E proof
+        if: success() && steps.proof.outputs.reusable == 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: tmp/e2e-proof-receipt.json
+          key: ${{ needs.relevance.outputs.inventory_key }}
 
   migration-e2e:
     name: Migration E2E (${{ matrix.mode }})
@@ -724,20 +584,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Free runner disk for Dockerized migration E2E
-        run: |
-          df -h /
-          docker system prune -af --volumes || true
-          docker builder prune -af || true
-          sudo rm -rf \
-            /usr/share/dotnet \
-            /usr/local/lib/android \
-            /usr/local/share/boost \
-            /usr/share/swift \
-            /opt/az \
-            /opt/ghc \
-            /opt/google \
-            /opt/hostedtoolcache/CodeQL || true
-          df -h /
+        run: bash scripts/ci/e2e-free-disk.sh
 
       - name: Setup Supabase CLI
         if: matrix.setup_supabase == 'true'
@@ -835,7 +682,7 @@ jobs:
   cleanup-e2e-images:
     name: Clean up E2E image bundle
     needs: [relevance, prepare-e2e-images, e2e, migration-e2e]
-    if: ${{ always() && github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' }}
+    if: ${{ always() && github.ref != 'refs/heads/production' && needs.relevance.outputs.run_e2e == 'true' && needs.relevance.outputs.run_web == 'true' }}
     timeout-minutes: 10
     runs-on: ubuntu-latest
     permissions:

@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import planner from './e2e-result-plan.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -16,8 +17,8 @@ test('invite account-shape E2E has an isolated matrix runner', () => {
     'utf8'
   );
 
-  assert.match(workflow, /label: invite-account-shapes/u);
-  assert.match(workflow, /mode: invite-account-shapes/u);
+  const matrix = planner.DEFAULT_MATRIX;
+  assert.match(workflow, /fromJSON\(needs\.relevance\.outputs\.matrix\)/u);
   for (const suite of [
     'workspace-invite-api',
     'workspace-invite-contacts',
@@ -25,17 +26,16 @@ test('invite account-shape E2E has an isolated matrix runner', () => {
     'workspace-invite-mail',
     'workspace-invite-tasks',
   ]) {
-    assert.match(workflow, new RegExp(`label: ${suite}`, 'u'));
-    assert.match(workflow, new RegExp(`mode: ${suite}`, 'u'));
+    assert.ok(
+      matrix.some((entry) => entry.label === suite && entry.mode === suite)
+    );
   }
-  const generalShardEntries = workflow.match(
-    /- label: \d+\/4\n\s+id: \d+\n\s+mode: shard\n\s+shard: \d+\n\s+total_shards: 4/gu
+  const shards = matrix.filter((entry) => entry.mode === 'shard');
+  assert.deepEqual(
+    shards.map((entry) => entry.shard),
+    [1, 2, 3, 4]
   );
-  assert.equal(
-    generalShardEntries?.length,
-    4,
-    'the ordinary suite must remain balanced across four shards'
-  );
+  assert.ok(shards.every((entry) => entry.total_shards === 4));
   assert.match(
     workflow,
     /--grep-invert "workspace invitation\|Workspace invitation"/u,
@@ -50,7 +50,7 @@ test('invite account-shape E2E has an isolated matrix runner', () => {
     'workspace-invite-account-shapes.noauth.spec.ts',
   ]) {
     assert.ok(
-      workflow.includes(`spec: ${spec}`),
+      matrix.some((entry) => entry.spec === spec),
       `the dedicated matrix must register ${spec}`
     );
   }

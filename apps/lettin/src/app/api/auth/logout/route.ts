@@ -4,7 +4,7 @@ import { WEB_APP_URL } from '@/constants/common';
 
 function getCentralLogoutUrl() {
   const url = new URL('/logout', WEB_APP_URL);
-  url.searchParams.set('from', 'Lettin');
+  url.searchParams.set('from', 'Tulletin');
   return url;
 }
 
