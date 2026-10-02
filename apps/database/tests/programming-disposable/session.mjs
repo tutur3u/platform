@@ -18,13 +18,19 @@ export function boundedSession(child, text, timeoutMs, graceMs = 1000) {
   locked.catch(() => {});
   done.catch(() => {});
   let escalation;
-  const timer = setTimeout(() => {
-    const error = new Error('Fixture session deadline exceeded');
+  const timer = setTimeout(
+    () => fail('Fixture session deadline exceeded'),
+    timeoutMs
+  );
+  function fail(message) {
+    clearTimeout(timer);
+    const error = new Error(message);
     lockedReject(error);
     doneReject(error);
-    child.kill('SIGTERM');
+    clearTimeout(escalation);
     escalation = setTimeout(() => child.kill('SIGKILL'), graceMs);
-  }, timeoutMs);
+    child.kill('SIGTERM');
+  }
   function clearTimers() {
     clearTimeout(timer);
     clearTimeout(escalation);
@@ -37,11 +43,9 @@ export function boundedSession(child, text, timeoutMs, graceMs = 1000) {
     errors += data;
   });
   child.on('error', () => {
-    clearTimers();
-    const error = new Error('Fixture session failed to start');
-    lockedReject(error);
-    doneReject(error);
+    fail('Fixture session failed to start');
   });
+  child.stdin.on('error', () => fail('Fixture session input failed'));
   child.on('close', (code) => {
     clearTimers();
     if (!output.includes('FIXTURE_LOCKED'))
