@@ -16,6 +16,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/inventory/view/inventory_checkout_page.dart';
 import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
+import 'package:mobile/features/inventory/widgets/inventory_low_stock_card.dart';
 import 'package:mobile/features/inventory/widgets/inventory_stock_health_panel.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -185,60 +186,7 @@ class _InventoryPageState extends State<InventoryPage> {
                           .map(
                             (product) => Padding(
                               padding: const EdgeInsets.only(bottom: 12),
-                              child: FinancePanel(
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            product.productName ??
-                                                'Untitled product',
-                                            style: shad.Theme.of(context)
-                                                .typography
-                                                .large
-                                                .copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                          ),
-                                          const shad.Gap(4),
-                                          Text(
-                                            [
-                                                  product.ownerName,
-                                                  product.categoryName,
-                                                  product.warehouseName,
-                                                ]
-                                                .whereType<String>()
-                                                .where((e) => e.isNotEmpty)
-                                                .join(' • '),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const shad.Gap(12),
-                                    Text(
-                                      [
-                                        inventoryStockAmount(
-                                          context,
-                                          product.amount,
-                                        ),
-                                        inventoryStockAmount(
-                                          context,
-                                          product.minAmount ?? 0,
-                                        ),
-                                      ].join(' / '),
-                                      style: shad.Theme.of(context)
-                                          .typography
-                                          .large
-                                          .copyWith(
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              child: InventoryLowStockCard(product: product),
                             ),
                           ),
                     const shad.Gap(16),

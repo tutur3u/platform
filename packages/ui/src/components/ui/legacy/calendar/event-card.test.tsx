@@ -113,6 +113,45 @@ describe('EventCard read-only adapter events', () => {
     expect(card.style.opacity).toBe('1');
   });
 
+  it('updates the same mounted card when only provider metadata changes', () => {
+    const event: CalendarEvent = {
+      id: 'metadata-rerender',
+      title: 'Provider event',
+      color: 'BLUE',
+      start_at: '2026-06-26T08:30:00.000Z',
+      end_at: '2026-06-26T09:30:00.000Z',
+      scheduling_metadata: {
+        google_color: { version: 1, inherited: false, background: '#00ff88' },
+      },
+    };
+    const client = new QueryClient();
+    const dates = [new Date('2026-06-26T00:00:00.000Z')];
+    const card = (value: CalendarEvent) => (
+      <QueryClientProvider client={client}>
+        <EventCard dates={dates} event={value} wsId="workspace-1" />
+      </QueryClientProvider>
+    );
+    const view = render(card(event));
+    const element = screen.getByTestId('calendar-event-metadata-rerender');
+    expect(element.style.backgroundColor).toBe('rgb(0, 255, 136)');
+    view.rerender(
+      card({
+        ...event,
+        scheduling_metadata: {
+          google_color: { version: 1, inherited: false, background: '#000044' },
+        },
+      })
+    );
+    expect(screen.getByTestId('calendar-event-metadata-rerender')).toBe(
+      element
+    );
+    expect(element.style.backgroundColor).toBe('rgb(0, 0, 68)');
+    expect(element.style.color).toBe('rgb(255, 255, 255)');
+    expect(element.style.opacity).toBe('1');
+    view.rerender(card({ ...event, scheduling_metadata: null }));
+    expect(element.style.backgroundColor).toBe('rgb(33, 150, 243)');
+  });
+
   it('keeps pending and past fills opaque, and reveals lower stacks by hiding upper cards', () => {
     calendarMocks.preservePastEventOpacity = false;
     calendarMocks.hoveredBaseEventId = 'base';

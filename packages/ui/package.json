@@ -167,7 +167,7 @@
     "vaul": "^1.1.2",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
     "y-protocols": "^1.0.7",
-    "yjs": "^13.6.32",
+    "yjs": "^13.6.33",
     "zod": "^4.6.2"
   },
   "devDependencies": {

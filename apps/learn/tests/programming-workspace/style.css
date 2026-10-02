@@ -9,7 +9,6 @@
 }
 .qa-programming-font {
   --font-programming-mono: ProgrammingQA;
-  --font-mono: ProgrammingQA, monospace;
 }
 html,
 body,
@@ -18,4 +17,12 @@ body,
   min-height: 100%;
   background: var(--background);
   color: var(--foreground);
+}
+
+/* Test-only simulated insets. Native env() values remain the default. */
+.safe-top {
+  padding-top: var(--qa-safe-top, env(safe-area-inset-top, 0px));
+}
+.safe-bottom {
+  padding-bottom: var(--qa-safe-bottom, env(safe-area-inset-bottom, 0px));
 }
