@@ -545,16 +545,32 @@ explicit workflow file without duplicating managed push or pull-request scans.
 Do not add automatic or cron triggers to the fallback; `bun git-sync` mirrors
 the already-scanned `main` commit to `production`.
 
-`e2e-tests.yaml` uses native push paths for E2E specs, Playwright and Docker
-configuration, database fixtures, dependency manifests, lockfiles, and its own
-runner scripts. Normal application source-only commits do not create the image
-bundle and its downstream Playwright jobs. A small relevance job also compares
-matching pushes against their previous SHA. It skips image builds and Playwright
-when only Release Please versions, changelogs, and release badge metadata
-changed. This also skips the Inventory / Storefront cache contract job.
-Dependency edits, unknown changes, and unavailable comparison history run E2E.
-Run `node --test scripts/ci/release-only-changes.test.js` to check this gate.
-E2E has no cron trigger; maintainers can still dispatch an intentional full run.
+`e2e-tests.yaml` covers application source, E2E specs, shared packages, database
+fixtures, dependencies, Docker configuration, and runner scripts. A broad `**`
+push filter reaches unknown future inputs; explicit negative paths omit known
+non-runtime apps, documentation, and agent tooling. Its planner
+hashes each suite's tracked inputs before allocating Docker or Playwright jobs.
+Only an exact, same-day success cache from protected `main` can omit a suite.
+Keys include shared runtime/schema/auth helpers, the suite's specs and satellite,
+workflow/toolchain inputs, runner image, and `E2E_RESULT_CACHE_EPOCH` (default `1`).
+General shards conservatively share all web spec inputs because changing test
+counts can redistribute Playwright shards. Shared API/package changes invalidate
+all dependent suites; an unrelated suite's cached proof can remain valid.
+Missing, unavailable, or uncertain evidence runs tests. Failed, flaky, empty,
+and malformed reports never publish proofs. Cached receipts contain counts and
+source/run provenance, not raw reports, credentials, or customer data. Failure
+artifacts contain sanitized text diagnostics only; raw traces, blob reports,
+HTML reports, and test-result directories are not uploaded. Sanitize collected
+server/probe output before printing console groups, and block artifact upload
+if sanitization fails. Omit unstructured files containing credential-valued
+collections or header records; reject symlinked diagnostics paths. Cancelled workflows do not allocate new E2E cohorts;
+started jobs retain their cleanup steps. Branch
+runs cannot publish trusted proofs. Manual dispatch always runs all suites;
+there is no cron. Increment repository variable `E2E_RESULT_CACHE_EPOCH` to
+invalidate all proofs. A new UTC day refreshes proofs on the next relevant push.
+Release-only changes retain the existing skip. Validate with
+`node --test scripts/ci/e2e-result-plan.test.js scripts/ci/e2e-result-receipt.test.js`.
+
 `docker-setup-check.yaml`, `turbo-unit-tests.yaml`, `codecov.yaml`, and
 `type-check.yaml` use the same gate before their expensive jobs, so version-only
 package manifest edits do not rebuild images or repeat unchanged tests and type
