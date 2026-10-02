@@ -710,6 +710,11 @@ twice and rejects a changed main head. Production sync uses
 commit instead of silently adopting newer work. The run summary distinguishes
 planned work, a completed local merge, dry runs, and completed promotion.
 
+Both initial validation and advanced-main retries derive their build filters from
+`package.json`'s canonical `setup` script through `scripts/ci/build-release-setup.mjs`.
+The helper parses arguments without executing setup shell text, and both paths
+use the same step-scoped Turbo remote-cache wrapper.
+
 If another PR lands on `main` during release validation, the push step fetches
 and merges the new head, reinstalls its frozen dependency graph and rebuilds the
 dist-only setup packages before rerunning `bun check`. Affected mobile changes

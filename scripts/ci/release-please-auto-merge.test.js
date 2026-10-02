@@ -143,12 +143,10 @@ test('release merge builds the dist-only packages before running bun check', () 
     'the workspace must be built before bun check runs'
   );
 
-  for (const filter of setupFilters) {
-    assert.ok(
-      workflow.includes(`--filter=${filter}`),
-      `the workflow must build ${filter}, the same package bun setup builds`
-    );
-  }
+  assert.match(
+    workflow,
+    /command: node scripts\/ci\/build-release-setup\.mjs --concurrency=4/
+  );
 });
 
 test('release merge installs the Flutter toolchain bun check:mobile needs', () => {
@@ -408,9 +406,12 @@ function simulateAdvancedMain({ mobile = false, failInstall = false } = {}) {
     workflow.indexOf('- name: Wait for exact main CI before production')
   );
   const script = step
-    .slice(step.indexOf('run: |') + 'run: |'.length)
+    .slice(
+      step.indexOf('command: |') + 'command: |'.length,
+      step.indexOf('          token:')
+    )
     .split('\n')
-    .map((line) => line.replace(/^ {10}/, ''))
+    .map((line) => line.replace(/^ {12}/, ''))
     .join('\n');
   // Execute the actual retry shell, replacing only external commands. An
   // advanced checkout requires dependency setup before validation can succeed.
@@ -449,6 +450,7 @@ function simulateAdvancedMain({ mobile = false, failInstall = false } = {}) {
         *) return 94 ;;
       esac
     }
+    node() { [[ "$1" == scripts/ci/build-release-setup.mjs ]] || return 93; bun turbo:local; }
     flutter() { echo "flutter $*"; }
     bash() { shift; "$@"; }
   `;
@@ -493,4 +495,57 @@ test('failed frozen install never validates or pushes the advanced release head'
   const result = simulateAdvancedMain({ failInstall: true });
   assert.equal(result.status, 97, result.stderr);
   assert.deepEqual(result.stdout.trim().split('\n'), ['merge', 'install']);
+});
+
+test('setup filters follow changed canonical package scripts without executing shell text', async () => {
+  const { releaseSetupArgs } = await import('./build-release-setup.mjs');
+  const setup =
+    'bun i && bun portless:setup && bun turbo:local run build -F @tuturuuu/types -F changed_package';
+  assert.deepEqual(releaseSetupArgs(setup, 2), [
+    'turbo:local',
+    'run',
+    'build',
+    '--concurrency=2',
+    '--filter=@tuturuuu/types',
+    '--filter=changed_package',
+  ]);
+  for (const invalid of [
+    `${setup} && echo unsafe`,
+    `${setup} -F $(echo)`,
+    `${setup} -F`,
+    setup.replace(' -F changed_package', ' --filter=changed_package'),
+  ])
+    assert.throws(() => releaseSetupArgs(invalid, 2));
+});
+test('initial and advanced setup use the same step-scoped remote cache wrapper', () => {
+  const initial = workflow.slice(
+    workflow.indexOf('- name: Build workspace setup'),
+    workflow.indexOf('- name: Setup Flutter')
+  );
+  const retry = workflow.slice(
+    workflow.indexOf('- name: Push verified release merge to main'),
+    workflow.indexOf('- name: Wait for exact main CI before production')
+  );
+  for (const step of [initial, retry]) {
+    assert.match(
+      step,
+      /uses: \.\/\.github\/actions\/run-with-turbo-remote-cache/
+    );
+    assert.match(step, /token: .*secrets\.TURBO_TOKEN/);
+    assert.match(step, /team: .*vars\.TURBO_TEAM/);
+  }
+});
+
+test('release setup refuses local invocation before running a build', () => {
+  const result = spawnSync(
+    process.execPath,
+    ['scripts/ci/build-release-setup.mjs', '--concurrency=2'],
+    {
+      cwd: repoRoot,
+      env: { ...process.env, CI: 'false' },
+      encoding: 'utf8',
+    }
+  );
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Release setup build is CI-only/);
 });
