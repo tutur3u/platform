@@ -37,3 +37,14 @@ prove full production-schema replay, PostgREST/API integration, or generated typ
 Type generation requires a separately approved compatible path and must preserve
 the existing full public schema; the one-container fixture does not admit a second
 metadata service or type generation against an ordinary local database.
+
+The separate `supabase/tests/learn-programming-full-schema.sql` fixture runs after
+replaying the complete repository migrations in an owned disposable Supabase
+project. It checks browser grants and RLS, workspace membership, hidden-case DTOs,
+stale revisions, and atomic rollback of invalid judge cases against the real
+schema. It creates only synthetic identities inside a rolled-back transaction.
+Use the repository isolated lifecycle with this focused test and the approved
+`packages/types/src/supabase.ts` output; do not generate types from the minimal
+baseline above. A successful lifecycle must include scoped stop/removal as well
+as migration, SQL, and type-generation results. Neither fixture executes user
+code or enables a runner.
