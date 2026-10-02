@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Privacy Policy',
-  description:
-    'Privacy Policy for Tuturuuu JSC — how we collect, process, and protect your data as an open-source platform.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.privacy',
   pathname: '/privacy',
 });
 

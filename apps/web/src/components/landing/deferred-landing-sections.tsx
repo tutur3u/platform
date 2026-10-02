@@ -66,7 +66,7 @@ function LazyLandingSection({
  * Scrolls to the URL's hash target on load and keeps it pinned while the
  * deferred sections above it mount and grow the page.
  *
- * The browser's native scroll-to-hash fires before those `ssr: false` sections
+ * The browser's native scroll-to-hash fires before deferred interactive sections
  * exist, so it finds nothing. This re-pins on every frame — with `instant` to
  * override the global `scroll-behavior: smooth` — until the target's position
  * settles or a manual scroll takes over.
@@ -136,7 +136,7 @@ const ProblemSection = dynamic(
     import('@/components/landing/problem/problem-section').then(
       (module) => module.ProblemSection
     ),
-  { loading: SectionFallback, ssr: false }
+  { loading: SectionFallback }
 );
 
 const OutcomesSection = dynamic(
@@ -144,7 +144,7 @@ const OutcomesSection = dynamic(
     import('@/components/landing/outcomes/outcomes-section').then(
       (module) => module.OutcomesSection
     ),
-  { loading: SectionFallback, ssr: false }
+  { loading: SectionFallback }
 );
 
 const DemoSection = dynamic(
@@ -160,7 +160,7 @@ const PricingSection = dynamic(
     import('@/components/landing/pricing/pricing-section').then(
       (module) => module.PricingSection
     ),
-  { loading: SectionFallback, ssr: false }
+  { loading: SectionFallback }
 );
 
 const AISection = dynamic(
@@ -168,7 +168,7 @@ const AISection = dynamic(
     import('@/components/landing/ai/ai-section').then(
       (module) => module.AISection
     ),
-  { loading: SectionFallback, ssr: false }
+  { loading: SectionFallback }
 );
 
 const GithubStats = dynamic(
@@ -184,7 +184,7 @@ const CTASection = dynamic(
     import('@/components/landing/cta/cta-section').then(
       (module) => module.CTASection
     ),
-  { loading: SectionFallback, ssr: false }
+  { loading: SectionFallback }
 );
 
 /**
@@ -194,12 +194,8 @@ const CTASection = dynamic(
 export function DeferredProblemSection() {
   return (
     <>
-      <LazyLandingSection rootMargin="1200px 0px">
-        <ProblemSection />
-      </LazyLandingSection>
-      <LazyLandingSection rootMargin="1200px 0px">
-        <OutcomesSection />
-      </LazyLandingSection>
+      <ProblemSection />
+      <OutcomesSection />
     </>
   );
 }
@@ -211,18 +207,12 @@ export function DeferredLandingSections() {
       <LazyLandingSection>
         <DemoSection />
       </LazyLandingSection>
-      <LazyLandingSection>
-        <AISection />
-      </LazyLandingSection>
+      <AISection />
       <LazyLandingSection>
         <GithubStats />
       </LazyLandingSection>
-      <LazyLandingSection>
-        <PricingSection />
-      </LazyLandingSection>
-      <LazyLandingSection>
-        <CTASection />
-      </LazyLandingSection>
+      <PricingSection />
+      <CTASection />
     </>
   );
 }

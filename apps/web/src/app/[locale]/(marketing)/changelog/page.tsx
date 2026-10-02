@@ -5,7 +5,7 @@ import { SectionEyebrow } from '@/components/landing/shared/section-shell';
 import { ActionLink } from '@/components/marketing/action-link';
 import { PageHero } from '@/components/marketing/page-hero';
 import { StatStrip } from '@/components/marketing/stat-strip';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 import {
   type CategoryLabels,
   type ChangelogEntry,
@@ -35,10 +35,8 @@ import {
 } from './components/release-query';
 import { ReleasesSection } from './components/releases-section';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Product Changelog',
-  description:
-    'Every Tuturuuu release, filterable by package, change type and version — plus the product updates behind them.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.changelog',
   pathname: '/changelog',
 });
 

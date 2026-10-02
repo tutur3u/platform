@@ -9,6 +9,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { HeroAtmosphere } from '@/components/landing/shared/atmosphere';
 import { ActionLink } from '@/components/marketing/action-link';
@@ -49,6 +50,7 @@ interface ChangelogEntryRecord {
   cover_image_url: string | null;
   published_at: string;
   created_at: string;
+  updated_at: string | null;
 }
 
 interface Props {
@@ -102,7 +104,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ...metadata.openGraph,
       type: 'article',
       publishedTime: changelog.published_at,
-      modifiedTime: changelog.created_at,
+      modifiedTime: changelog.updated_at || changelog.published_at,
       authors: ['Tuturuuu Team'],
       tags: [changelog.category, 'changelog', 'update'],
     },
@@ -286,6 +288,7 @@ const defaultContent: JSONContent = {
 async function getChangelog(
   slug: string
 ): Promise<ChangelogEntryRecord | null> {
+  await connection();
   const supabase = await createClient();
 
   // `maybeSingle` rather than `single`: a slug that does not exist is a 404,
@@ -311,6 +314,7 @@ async function getChangelog(
     ...data,
     content: (data.content as JSONContent | null) ?? defaultContent,
     published_at: data.published_at,
+    updated_at: data.updated_at,
     created_at: data.created_at,
   };
 }
@@ -319,6 +323,7 @@ async function getAdjacentChangelogs(publishedAt: string): Promise<{
   previous: { slug: string; title: string } | null;
   next: { slug: string; title: string } | null;
 }> {
+  await connection();
   const supabase = await createClient();
 
   // Both ends are legitimately empty at the edges of the list, so these are

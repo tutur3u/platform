@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Bug Bounty Program',
-  description:
-    'Report potential vulnerabilities through the Tuturuuu responsible disclosure program.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.security_bug_bounty',
   pathname: '/security/bug-bounty',
 });
 
