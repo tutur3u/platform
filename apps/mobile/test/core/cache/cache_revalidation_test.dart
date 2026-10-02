@@ -68,6 +68,133 @@ void main() {
     await Hive.close();
     await directory.delete(recursive: true);
   });
+  test('clear during replica indexing cannot resurrect cleared rows', () async {
+    const target = CacheKey(
+      namespace: 'finance.wallets',
+      userId: 'user',
+      workspaceId: 'ws',
+      params: {'path': '/indexing'},
+    );
+    var checks = 0;
+    Future<void>? clearing;
+    final writing = store.write(
+      key: target,
+      policy: CachePolicies.moduleData,
+      payload: const [
+        {'id': 'late'},
+      ],
+      checkScope: () {
+        checks++;
+        if (checks == 5) {
+          clearing = store.clearScope(
+            userId: 'user',
+            workspaceId: 'ws',
+            namespace: 'finance.wallets',
+            resourceOnly: true,
+          );
+        }
+      },
+    );
+    await expectLater(writing, throwsStateError);
+    expect(clearing, isNotNull);
+    await clearing;
+    expect(
+      await store.queryReplica(
+        namespace: 'finance.wallets',
+        userId: 'user',
+        workspaceId: 'ws',
+      ),
+      isEmpty,
+    );
+    expect(store.peek(key: target, decode: (raw) => raw).hasValue, isFalse);
+    await store.write(
+      key: target,
+      policy: CachePolicies.moduleData,
+      payload: const [
+        {'id': 'new'},
+      ],
+    );
+    expect(
+      (await store.queryReplica(
+        namespace: 'finance.wallets',
+        userId: 'user',
+        workspaceId: 'ws',
+      )).single.id,
+      'new',
+    );
+  });
+
+  test(
+    'invalidated replica rollback preserves a newer same-key writer',
+    () async {
+      const target = CacheKey(
+        namespace: 'finance.wallets',
+        userId: 'user',
+        workspaceId: 'ws',
+        params: {'path': '/concurrent'},
+      );
+      var checks = 0;
+      Future<void>? newer;
+      final older = store.write(
+        key: target,
+        policy: CachePolicies.moduleData,
+        payload: const [
+          {'id': 'older'},
+        ],
+        checkScope: () {
+          if (++checks == 5) {
+            newer = store.write(
+              key: target,
+              policy: CachePolicies.moduleData,
+              payload: const [
+                {'id': 'newer'},
+              ],
+            );
+          }
+        },
+      );
+      await expectLater(older, throwsStateError);
+      expect(newer, isNotNull);
+      await newer;
+      final rows = await store.queryReplica(
+        namespace: 'finance.wallets',
+        userId: 'user',
+        workspaceId: 'ws',
+      );
+      expect(rows.map((row) => row.id), unorderedEquals(['old', 'newer']));
+    },
+  );
+
+  test('owner change during persistence stops replica publication', () async {
+    const target = CacheKey(
+      namespace: 'finance.wallets',
+      userId: 'user',
+      workspaceId: 'ws',
+      params: {'path': '/owner'},
+    );
+    var checks = 0;
+    await expectLater(
+      store.write(
+        key: target,
+        policy: CachePolicies.moduleData,
+        payload: const [
+          {'id': 'late-owner'},
+        ],
+        checkScope: () {
+          if (++checks == 2) throw StateError('Account changed');
+        },
+      ),
+      throwsStateError,
+    );
+    final rows = await store.queryReplica(
+      namespace: 'finance.wallets',
+      userId: 'user',
+      workspaceId: 'ws',
+    );
+    expect(rows.any((row) => row.id == 'late-owner'), isFalse);
+    expect(rows.single.id, 'old');
+  });
+
   test('local snapshot cannot replace reconnect network refresher', () async {
     when(() => api.getJsonList(path)).thenAnswer(
       (_) async => [

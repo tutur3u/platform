@@ -223,7 +223,25 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
 
   Future<void> _loadInitial({bool showLoader = true}) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (wsId == null) {
+      ++_initialLoadGeneration;
+      ++_requestToken;
+      if (mounted) {
+        setState(() {
+          _isLoadingInitial = false;
+          _isLoadingMore = false;
+          _wallet = null;
+          _transactions = const [];
+          _stats = null;
+          _exchangeRates = const [];
+          _workspaceCurrency = '';
+          _nextCursor = null;
+          _hasMore = false;
+          _error = null;
+        });
+      }
+      return;
+    }
     final loadGeneration = ++_initialLoadGeneration;
     setState(() {
       _isLoadingInitial = true;

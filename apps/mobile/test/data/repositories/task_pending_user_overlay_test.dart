@@ -129,7 +129,7 @@ void main() {
         ],
       );
       expect(move('review').completed.single.id, 'one');
-      expect(move('closed').today, isEmpty);
+      expect(move('closed').totalActiveTasks, 1);
     },
   );
 }

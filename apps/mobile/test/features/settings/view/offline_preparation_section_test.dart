@@ -140,7 +140,11 @@ void main() {
 
       await tester.pump();
       expect(
-        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        tester
+            .widget<FilledButton>(
+              find.byWidgetPredicate((widget) => widget is FilledButton),
+            )
+            .onPressed,
         isNull,
       );
       expect(financeCalls, 0);

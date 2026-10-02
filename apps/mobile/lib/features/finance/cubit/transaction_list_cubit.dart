@@ -112,7 +112,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     final userId = _currentUserId();
     final hasVisibleData =
         _loadedWorkspaceId == wsId && _loadedUserId == userId;
-    final search = hasVisibleData ? state.search : '';
+    final search = hasVisibleData && _wsId == wsId ? state.search : '';
     _wsId = wsId;
     _requestedUserId = userId;
     emit(
