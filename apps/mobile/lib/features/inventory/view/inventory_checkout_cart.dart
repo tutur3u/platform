@@ -33,14 +33,12 @@ extension _InventoryCheckoutCart on _InventoryCheckoutPageState {
                     value: _walletId,
                     child: Text(widget.sale?.walletName ?? _walletId!),
                   ),
-                ..._wallets
-                    .map(
-                      (wallet) => DropdownMenuItem<String>(
-                        value: wallet.id,
-                        child: Text(wallet.name ?? ''),
-                      ),
-                    )
-                    .toList(growable: false),
+                ..._wallets.map(
+                  (wallet) => DropdownMenuItem<String>(
+                    value: wallet.id,
+                    child: Text(wallet.name ?? ''),
+                  ),
+                ),
               ],
               onChanged: _saving || _reviewingCart || _season.hasPending
                   ? null
@@ -117,14 +115,12 @@ extension _InventoryCheckoutCart on _InventoryCheckoutPageState {
                         widget.sale?.categoryName ?? _manualCategoryId!,
                       ),
                     ),
-                  ..._categories
-                      .map(
-                        (category) => DropdownMenuItem<String>(
-                          value: category.id,
-                          child: Text(category.name ?? ''),
-                        ),
-                      )
-                      .toList(growable: false),
+                  ..._categories.map(
+                    (category) => DropdownMenuItem<String>(
+                      value: category.id,
+                      child: Text(category.name ?? ''),
+                    ),
+                  ),
                 ],
                 onChanged: _saving || _reviewingCart || _season.hasPending
                     ? null
