@@ -225,7 +225,7 @@ async function assertProcessesGone(pids) {
     'owned fake subprocess descendants remain'
   );
 }
-for (const mode of ['timeout', 'interruption', 'monitor']) {
+for (const mode of ['timeout', 'interruption', 'monitor', 'diagnostic']) {
   test(`owned process group kills fake helper and fake CLI on ${mode}`, async () => {
     const root = await mkdtemp(
       path.join(os.tmpdir(), 'typegen-process-contract-')
@@ -241,7 +241,7 @@ for (const mode of ['timeout', 'interruption', 'monitor']) {
         import { spawn } from 'node:child_process';
         import { writeFileSync } from 'node:fs';
         const child = spawn(process.execPath, ['-e', 'process.on("SIGTERM",()=>{});setInterval(()=>{},1000)'], { stdio:'ignore' });
-        child.once('spawn',()=>writeFileSync(process.argv[2],JSON.stringify([process.pid,child.pid])));
+        child.once('spawn',()=>{writeFileSync(process.argv[2],JSON.stringify([process.pid,child.pid]));process.stderr.write('FATAL: synthetic diagnostic');});
         process.on('SIGTERM',()=>{});
         setInterval(()=>{},1000);
       `
@@ -251,6 +251,13 @@ for (const mode of ['timeout', 'interruption', 'monitor']) {
           timeoutMs: mode === 'timeout' ? 2500 : 3000,
           intervalMs: 20,
           signalSource: signals,
+          ...(mode === 'diagnostic'
+            ? {
+                onDiagnostic: () => {
+                  throw new Error('synthetic diagnostic callback failure');
+                },
+              }
+            : {}),
           onTick: () => {
             if (existsSync(marker)) {
               if (mode === 'interruption') signals.emit('SIGTERM');
@@ -263,11 +270,15 @@ for (const mode of ['timeout', 'interruption', 'monitor']) {
           ? /time budget exceeded/
           : mode === 'monitor'
             ? /resource violation/
-            : /interrupted/
+            : mode === 'diagnostic'
+              ? /diagnostic callback failure/
+              : /interrupted/
       );
       pids = JSON.parse(await readFile(marker, 'utf8'));
       await assertProcessesGone(pids);
     } finally {
+      if (!pids && existsSync(marker))
+        pids = JSON.parse(await readFile(marker, 'utf8'));
       if (pids)
         for (const pid of pids) if (alive(pid)) process.kill(pid, 'SIGKILL');
       await rm(root, { recursive: true, force: true });

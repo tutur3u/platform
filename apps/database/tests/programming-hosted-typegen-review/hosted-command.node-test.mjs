@@ -123,21 +123,32 @@ test('non-Docker policy subprocesses also receive only admitted environment', as
 });
 test('actual fake Node command observes private environment instead of inherited values', async (t) => {
   const { context } = await fixture(t);
-  const result = await runHostedCommand(
-    process.execPath,
-    [
-      '-e',
-      'console.log(JSON.stringify({cwd:process.cwd(),home:process.env.HOME,host:process.env.DOCKER_HOST,context:process.env.DOCKER_CONTEXT??null,token:process.env.SUPABASE_ACCESS_TOKEN??null}))',
-    ],
-    { context }
+  const previous = Object.fromEntries(
+    Object.keys(conflicts).map((key) => [key, process.env[key]])
   );
-  assert.deepEqual(JSON.parse(result), {
-    cwd: context.cwd,
-    home: context.env.HOME,
-    host: hostedDockerEndpoint,
-    context: null,
-    token: null,
-  });
+  try {
+    Object.assign(process.env, conflicts);
+    const result = await runHostedCommand(
+      process.execPath,
+      [
+        '-e',
+        'console.log(JSON.stringify({cwd:process.cwd(),home:process.env.HOME,host:process.env.DOCKER_HOST,context:process.env.DOCKER_CONTEXT??null,token:process.env.SUPABASE_ACCESS_TOKEN??null}))',
+      ],
+      { context }
+    );
+    assert.deepEqual(JSON.parse(result), {
+      cwd: context.cwd,
+      home: context.env.HOME,
+      host: hostedDockerEndpoint,
+      context: null,
+      token: null,
+    });
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
 test('dirty Docker config and directory replacement fail before any inventory command', async (t) => {
   const { base, context } = await fixture(t);

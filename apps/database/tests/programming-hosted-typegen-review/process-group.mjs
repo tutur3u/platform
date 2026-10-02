@@ -54,7 +54,12 @@ export function runOwnedProcess(
         for (const [kind, pattern] of patterns) {
           if (!observed.has(kind) && pattern.test(pending)) {
             observed.add(kind);
-            onDiagnostic(kind);
+            try {
+              onDiagnostic(kind);
+            } catch (error) {
+              abort(error);
+              return;
+            }
           }
         }
       });
