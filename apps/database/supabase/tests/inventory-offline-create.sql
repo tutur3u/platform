@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(59);
+select plan(63);
 
 insert into auth.users(id) values
  ('00005743-0000-4000-8000-000000000001'),
@@ -138,5 +138,23 @@ select isnt((select response->'data'->>'id' from contract_results where kind='is
  'same operation ID in another workspace has independent ownership');
 select is((select count(*) from private.inventory_offline_create_receipts),9::bigint,
  'isolated workspace publishes its own scoped receipt');
+insert into contract_results values ('unlimited_product',
+ public.fixture_inventory_create(140,'product',jsonb_set(
+  jsonb_set(public.fixture_inventory_product_payload(),'{name}','"Synthetic unlimited product"'),
+  '{inventory,0,amount}','null')));
+select ok((select amount is null from private.inventory_products where product_id=
+ (select (response->'data'->>'id')::uuid from contract_results where kind='unlimited_product')),
+ 'unlimited stock retains its null quantity');
+select is((select count(*) from public.product_stock_changes where product_id=
+ (select (response->'data'->>'id')::uuid from contract_results where kind='unlimited_product')),
+ 0::bigint,'unlimited stock does not invent an initial movement');
+select is(public.fixture_inventory_create(140,'product',jsonb_set(
+ jsonb_set(public.fixture_inventory_product_payload(),'{name}','"Synthetic unlimited product"'),
+ '{inventory,0,amount}','null'))->'data'->>'id',
+ (select response->'data'->>'id' from contract_results where kind='unlimited_product'),
+ 'unlimited stock retries preserve the original authoritative ID');
+select is((select count(*) from private.inventory_audit_logs where entity_id=
+ (select (response->'data'->>'id')::uuid from contract_results where kind='unlimited_product')),
+ 1::bigint,'unlimited stock retry preserves a single audit event');
 select * from finish();
 rollback;

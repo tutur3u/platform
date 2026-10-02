@@ -2638,6 +2638,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class self-hosted ChatGPT plan sharing. Preserve deployment gating, session-only actor ownership, protected per-user filesystem credentials, serialized OAuth refresh, account-specific models and direct subscription billing. Hosted integration remains disabled pending OpenAI access. Rust implementation pending."
+    },
+    "api:/api/v1/workspaces/:wsId/inventory/offline-mutations:apps/web/src/app/api/v1/workspaces/[wsId]/inventory/offline-mutations/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class, captured-actor and workspace-authorized native offline create contract. Kind-specific current permissions and strict payload validation precede a private transactional RPC that atomically commits authoritative IDs, stock, audit and deduplicated receipts. No legacy POST fallback; unavailable schema returns retryable contract-unavailable 503. Rust mutation parity pending; current production remains Next.js."
     }
   }
 }

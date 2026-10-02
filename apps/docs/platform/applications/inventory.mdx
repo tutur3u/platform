@@ -286,3 +286,17 @@ by applying the complete schema in a disposable hosted database, running strict
 `packages/types/src/supabase.ts` as an artifact. A queued workflow is not schema
 or type parity evidence. This contract checkpoint alone does not enable the
 native scheduler or replace the current sync-first safety guard.
+
+The new `/api/v1/workspaces/:wsId/inventory/offline-mutations` POST route
+accepts an operation identity, an explicit create kind and a strictly validated
+payload. Current workspace membership and the owning kind permission are checked
+on every retry, even when a prior receipt exists; a revoked grant denies the
+request. Inventory stock initialization additionally requires stock permission.
+Finance categories use `create_transactions` and accept Inventory or Finance
+app sessions. Receipt identities have no TTL or automatic pruning.
+
+Recognized responses carry `X-Tuturuuu-Offline-Contract`. Missing RPC/schema
+returns `OFFLINE_CONTRACT_UNAVAILABLE` with 503; an unknown route on an older
+deployment has no contract header. These rollout gaps must retain the operation
+and retry automatically, while a marked domain 404 or permission 403 is permanent.
+The native implementation must never fall back to an undeduplicated create POST.
