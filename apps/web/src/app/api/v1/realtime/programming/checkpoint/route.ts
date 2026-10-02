@@ -16,7 +16,8 @@ export async function POST(request: Request) {
   if (
     !token.success ||
     token.data.exp * 1000 <= Date.now() ||
-    token.data.kind !== 'checkpoint' ||
+    !['checkpoint', 'runner-files'].includes(token.data.kind) ||
+    (token.data.kind === 'runner-files' && !token.data.runId) ||
     !!token.data.runId !== !!token.data.runnerId ||
     token.data.role !== 'owner' ||
     token.data.resource !== 'playground' ||
@@ -50,7 +51,8 @@ export async function POST(request: Request) {
         parsed.data,
         token.data.meetingId,
         token.data.runId,
-        token.data.runnerId
+        token.data.runnerId,
+        token.data.kind === 'runner-files'
       )
     );
   } catch {

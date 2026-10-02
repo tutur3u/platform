@@ -32,6 +32,10 @@ const checkpoints: {
   revision: number;
 }[] = [];
 let revision = 1;
+let activeRun: string | undefined;
+let rejectRunnerCommit = false;
+let holdRunnerCommit: Promise<void> | undefined;
+let runnerCommitStarted = false;
 function ticket(
   kind: CollaborationTicket['kind'],
   role: CollaborationTicket['role'] = 'owner',
@@ -118,7 +122,14 @@ const callback = Bun.serve({
       verifyRealtimePayload(raw, secret)
     );
     if (scope.roomId !== roomId) return new Response(null, { status: 403 });
-    assert.equal(scope.kind, 'checkpoint');
+    assert(['checkpoint', 'runner-files'].includes(scope.kind));
+    if (scope.kind === 'runner-files') {
+      runnerCommitStarted = true;
+      if (holdRunnerCommit) await holdRunnerCommit;
+      // Models the authoritative SQL commit, not a token-time/preflight check.
+      if (rejectRunnerCommit || scope.runId !== activeRun)
+        return new Response(null, { status: 409 });
+    }
     assert.equal(scope.role, 'owner');
     assert.equal(scope.ownerId, ownerId);
     assert.equal(scope.resourceId, resourceId);
@@ -240,6 +251,7 @@ try {
   );
   const runId = randomUUID();
   const runnerId = randomUUID();
+  activeRun = runId;
   const baseline = Object.fromEntries(
     programmingDocumentSnapshot(owner.doc).files.map((file) => [
       file.path,
@@ -305,6 +317,13 @@ try {
       ),
     'runner output joins the same collaborative document'
   );
+  await until(
+    () =>
+      editor.messages.some(
+        (message) => message.type === 'saved' && message.revision === revision
+      ),
+    'committed runner export acknowledges the saved revision'
+  );
   assert.deepEqual(
     programmingDocumentSnapshot(editor.doc).files.map((file) => file.path),
     ['generated.txt', 'main.py', 'notes.txt']
@@ -323,8 +342,8 @@ try {
   );
   assert.equal(
     checkpoints.length,
-    callbackCount,
-    'an acknowledged retry spends no Drive bandwidth'
+    callbackCount + 1,
+    'even an acknowledged retry revalidates the current run lease'
   );
   owner.doc.getMap<Y.Text>('files').get('generated.txt')!.insert(0, 'editor ');
   owner.update();
@@ -357,6 +376,146 @@ try {
       (file) => file.path === 'generated.txt'
     )?.content,
     'editor runner output'
+  );
+  // A still-valid signed token cannot mutate a cancelled or superseded run.
+  const beforeRejected = programmingDocumentSnapshot(editor.doc);
+  const beforeMessages = editor.messages.length;
+  const beforeCallbacks = checkpoints.length;
+  const stalePayload = {
+    revision,
+    baseline: Object.fromEntries(
+      beforeRejected.files.map((file) => [
+        file.path,
+        createHash('sha256').update(file.content).digest('hex'),
+      ])
+    ),
+    paths: [...exportBody.paths, 'stale.txt'],
+    files: [{ path: 'stale.txt', content: 'must never publish' }],
+  };
+  for (const state of ['cancelled', 'new-run']) {
+    activeRun = state === 'cancelled' ? undefined : randomUUID();
+    assert.equal(
+      (
+        await request(
+          'runner-files',
+          'POST',
+          stalePayload,
+          ticket('runner-files', 'owner', { runId, runnerId })
+        )
+      ).status,
+      409
+    );
+    assert.deepEqual(programmingDocumentSnapshot(editor.doc), beforeRejected);
+  }
+  // Cancellation during the commit await also cannot leak candidate Yjs bytes.
+  activeRun = runId;
+  runnerCommitStarted = false;
+  let releaseCommit!: () => void;
+  holdRunnerCommit = new Promise<void>((resolve) => {
+    releaseCommit = resolve;
+  });
+  const racingExport = request(
+    'runner-files',
+    'POST',
+    stalePayload,
+    ticket('runner-files', 'owner', { runId, runnerId })
+  );
+  await until(
+    () => runnerCommitStarted,
+    'runner checkpoint is awaiting lease commit'
+  );
+  assert.deepEqual(programmingDocumentSnapshot(editor.doc), beforeRejected);
+  rejectRunnerCommit = true;
+  releaseCommit();
+  assert.equal((await racingExport).status, 409);
+  holdRunnerCommit = undefined;
+  rejectRunnerCommit = false;
+  await Bun.sleep(100);
+  assert.deepEqual(programmingDocumentSnapshot(editor.doc), beforeRejected);
+  assert.equal(checkpoints.length, beforeCallbacks);
+  assert.equal(
+    editor.messages.length,
+    beforeMessages,
+    'rejected exports do not publish update, saved or error messages'
+  );
+  const afterRejection = await connect('owner');
+  assert.deepEqual(
+    programmingDocumentSnapshot(afterRejection.doc),
+    beforeRejected,
+    'rejected candidates never enter durable room state'
+  );
+  // Room edits arriving during a successful candidate commit remain unsaved
+  // until their own checkpoint, and are never replaced by the older snapshot.
+  const nextRun = randomUUID();
+  activeRun = nextRun;
+  runnerCommitStarted = false;
+  holdRunnerCommit = new Promise<void>((resolve) => {
+    releaseCommit = resolve;
+  });
+  const concurrentExport = request(
+    'runner-files',
+    'POST',
+    {
+      ...stalePayload,
+      revision,
+      files: [
+        ...stalePayload.files,
+        { path: 'main.py', content: 'runner replacement' },
+      ],
+    },
+    ticket('runner-files', 'owner', { runId: nextRun, runnerId })
+  );
+  await until(() => runnerCommitStarted, 'new run candidate awaits commit');
+  owner.doc
+    .getMap<Y.Text>('files')
+    .get('notes.txt')!
+    .insert(0, 'during commit ');
+  owner.doc
+    .getMap<Y.Text>('files')
+    .get('main.py')!
+    .insert(0, '# during commit\n');
+  owner.update();
+  await until(
+    () =>
+      programmingDocumentSnapshot(editor.doc).files.some(
+        (file) =>
+          file.path === 'notes.txt' &&
+          file.content === 'during commit editor only'
+      ),
+    'editor update is admitted during candidate network I/O'
+  );
+  releaseCommit();
+  assert.equal((await concurrentExport).status, 200);
+  holdRunnerCommit = undefined;
+  await until(
+    () =>
+      programmingDocumentSnapshot(editor.doc).files.some(
+        (file) => file.path === 'stale.txt'
+      ),
+    'authorized candidate reaches participants'
+  );
+  assert.equal(
+    programmingDocumentSnapshot(editor.doc).files.find(
+      (file) => file.path === 'notes.txt'
+    )?.content,
+    'during commit editor only'
+  );
+  assert(
+    programmingDocumentSnapshot(editor.doc)
+      .files.find((file) => file.path === 'main.py')
+      ?.content.startsWith('# during commit\n'),
+    'newer same-file edit wins over the committed runner replacement'
+  );
+  assert.equal((await request('checkpoint', 'POST', {})).status, 200);
+  assert(
+    checkpoints
+      .at(-1)!
+      .files.some(
+        (file) =>
+          file.path === 'notes.txt' &&
+          file.content === 'during commit editor only'
+      ),
+    'newer editor bytes receive their own checkpoint'
   );
   owner.doc.getMap<Y.Text>('files').set('../escape', new Y.Text('bad'));
   owner.update();

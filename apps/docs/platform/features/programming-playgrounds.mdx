@@ -78,9 +78,19 @@ and operational diagnostics.
 
 ### Runner exports and collaborative edits
 
-Runner file exports join the same durable Yjs document as web and mobile editors
-before entering the owner's personal Drive revision stream. The runner sends its
-complete path inventory and only changed bytes. A file changed only in the editor
+Runner exports first commit against the current database run lease and Drive
+revision, then join the durable Yjs document and participant broadcasts. A
+previously issued runner ticket cannot admit files after cancellation or a newer
+run takes over; a rejected commit leaves the live room unchanged. Ordinary room
+edits may clear terminal run metadata and continue saving after a run finishes.
+If an editor changes a runner-touched file while its Drive commit is awaiting a
+response, the newer editor content or deletion is preserved in the room and
+checkpointed separately. A lost HTTP acknowledgement after a successful database
+commit can leave the room's revision behind Drive; later saves fail with a
+conflict rather than overwriting it. Automatic lost-response reconciliation is
+not implemented, and reconnecting alone is not a recovery guarantee.
+
+The runner sends its complete path inventory and only changed bytes. A file changed only in the editor
 is retained; files created by the runner appear in every participant's editor.
 If both sides change the same file, or the runner deletes a file edited by a
 participant, the export is rejected with a visible save conflict. Retrying an
@@ -89,4 +99,5 @@ Learn projects and admitted Meet programming rooms. Failed initial template save
 release only an unpublished project's quota; existing projects are retained.
 
 Regression evidence: `runner-files.test.ts`, the local programming Worker probe,
-`playground-service.test.ts`, and the hosted-playgrounds pgTAP suite.
+`playground-service.test.ts`, `programming-collaboration.test.ts`, and the
+hosted-playgrounds pgTAP suite.

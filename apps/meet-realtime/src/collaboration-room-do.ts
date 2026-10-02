@@ -308,25 +308,89 @@ export class CollaborationRoomDurableObject implements DurableObject {
         PlaygroundFiles.parse(programmingDocumentSnapshot(candidate).files);
         if (Y.encodeStateAsUpdate(candidate).byteLength > 3_000_000)
           throw new Error('Document exceeds budget');
+        const original = programmingDocumentSnapshot(this.doc);
+        const snapshot = programmingDocumentSnapshot(candidate);
+        const hashes = Object.fromEntries(
+          snapshot.files.map((file) => [
+            file.path,
+            createHash('sha256').update(file.content).digest('hex'),
+          ])
+        );
+        // Commit the candidate against the live run lease before it can reach
+        // the durable room or any audience. A signed ticket is not a lease.
+        const commit = this.sendCheckpoint(
+          snapshot,
+          'runner-files',
+          ticket.runId,
+          ticket.runnerId
+        );
+        this.checkpointing = commit.then(
+          () => undefined,
+          () => undefined
+        );
+        let saved: { revision: number; runComplete?: boolean };
+        try {
+          saved = await commit;
+        } finally {
+          this.checkpointing = null;
+        }
+        // An editor can change a runner-touched file while Drive is committing.
+        // Preserve that newer edit (including deletion) in the live room; its
+        // divergence remains dirty and receives a separate checkpoint.
+        const before = new Map(
+          original.files.map((file) => [file.path, file.content])
+        );
+        const committed = new Map(
+          snapshot.files.map((file) => [file.path, file.content])
+        );
+        const latest = new Map(
+          programmingDocumentSnapshot(this.doc).files.map((file) => [
+            file.path,
+            file.content,
+          ])
+        );
+        const preserve = [
+          ...new Set([...before.keys(), ...committed.keys()]),
+        ].filter(
+          (path) =>
+            before.get(path) !== committed.get(path) &&
+            latest.get(path) !== before.get(path)
+        );
+        const vector = Y.encodeStateVector(this.doc);
         Y.applyUpdate(this.doc, result.update);
+        const files = this.doc.getMap<Y.Text>('files');
+        this.doc.transact(() => {
+          for (const path of preserve) {
+            const content = latest.get(path);
+            if (content === undefined) files.delete(path);
+            else files.set(path, new Y.Text(content));
+          }
+        }, 'concurrent-editor');
+        result.update = Y.encodeStateAsUpdate(this.doc, vector);
+        metadata.revision = saved.revision;
+        metadata.fileHashes = hashes;
+        metadata.checkpointHash = createHash('sha256')
+          .update(JSON.stringify(snapshot))
+          .digest('hex');
+        this.dirty =
+          JSON.stringify(snapshot) !==
+          JSON.stringify(programmingDocumentSnapshot(this.doc));
       } finally {
         candidate.destroy();
       }
-      if (metadata.runId !== ticket.runId) metadata.runnerNeedsAck = true;
+      metadata.runnerNeedsAck = false;
       metadata.runId = ticket.runId;
       metadata.runnerId = ticket.runnerId;
       metadata.runnerHashes = result.hashes;
-      this.dirty = true;
       await this.state.storage.put({
         [KEY]: Y.encodeStateAsUpdate(this.doc),
         metadata,
       });
       this.broadcast({ type: 'update', update: encoded(result.update) });
-      await this.checkpoint();
+      this.broadcast({ type: 'saved', revision: metadata.revision });
+      if (this.dirty) await this.scheduleAlarm();
       return Response.json({ revision: metadata.revision });
     } catch {
-      this.broadcast({ type: 'save-error' });
-      await this.scheduleAlarm();
       return new Response(null, { status: 409 });
     }
   }
@@ -443,21 +507,49 @@ export class CollaborationRoomDurableObject implements DurableObject {
       return;
     }
     const hashes = await this.fileHashes(snapshot.files);
-    const changed = snapshot.files.filter(
-      (file) => this.metadata!.fileHashes?.[file.path] !== hashes[file.path]
+    const saved = await this.sendCheckpoint(
+      snapshot,
+      'checkpoint',
+      this.metadata.runId,
+      this.metadata.runnerId
     );
+    if (saved.runComplete) {
+      delete this.metadata.runId;
+      delete this.metadata.runnerId;
+      delete this.metadata.runnerHashes;
+    }
+    this.metadata.runnerNeedsAck = false;
+    this.metadata.revision = saved.revision;
+    this.metadata.checkpointHash = digest;
+    this.metadata.fileHashes = hashes;
+    // New updates arriving during network I/O must schedule another checkpoint.
+    this.dirty =
+      JSON.stringify(snapshot) !==
+      JSON.stringify(programmingDocumentSnapshot(this.doc));
+    await this.state.storage.put('metadata', this.metadata);
+    this.broadcast({ type: 'saved', revision: saved.revision });
+  }
+  private async sendCheckpoint(
+    snapshot: ReturnType<typeof programmingDocumentSnapshot>,
+    kind: 'checkpoint' | 'runner-files',
+    runId?: string,
+    runnerId?: string
+  ) {
+    if (!this.env.PLATFORM_API_BASE_URL)
+      throw new Error('Checkpoint endpoint missing');
+    const hashes = await this.fileHashes(snapshot.files);
     const token = signRealtimePayload(
       {
         aud: 'tuturuuu.collaboration',
-        kind: 'checkpoint',
-        runId: this.metadata.runId,
-        runnerId: this.metadata.runnerId,
-        roomId: this.metadata.roomId,
-        resourceId: this.metadata.resourceId,
+        kind,
+        runId,
+        runnerId,
+        roomId: this.metadata!.roomId,
+        resourceId: this.metadata!.resourceId,
         resource: 'playground',
-        meetingId: this.metadata.meetingId,
-        ownerId: this.metadata.ownerId,
-        userId: this.metadata.ownerId,
+        meetingId: this.metadata!.meetingId,
+        ownerId: this.metadata!.ownerId,
+        userId: this.metadata!.ownerId,
         role: 'owner',
         displayName: 'Checkpoint',
         exp: Math.floor(Date.now() / 1000) + 30,
@@ -479,10 +571,13 @@ export class CollaborationRoomDurableObject implements DurableObject {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          files: changed,
+          files: snapshot.files.filter(
+            (file) =>
+              this.metadata!.fileHashes?.[file.path] !== hashes[file.path]
+          ),
           paths: snapshot.files.map((file) => file.path),
           command: snapshot.command,
-          revision: this.metadata.revision,
+          revision: this.metadata!.revision,
         }),
         signal: AbortSignal.timeout(30000),
         redirect: 'manual',
@@ -495,23 +590,9 @@ export class CollaborationRoomDurableObject implements DurableObject {
     };
     if (
       !Number.isSafeInteger(saved.revision) ||
-      saved.revision < this.metadata.revision
+      saved.revision < this.metadata!.revision
     )
       throw new Error('Invalid checkpoint revision');
-    if (saved.runComplete) {
-      delete this.metadata.runId;
-      delete this.metadata.runnerId;
-      delete this.metadata.runnerHashes;
-    }
-    this.metadata.runnerNeedsAck = false;
-    this.metadata.revision = saved.revision;
-    this.metadata.checkpointHash = digest;
-    this.metadata.fileHashes = hashes;
-    // New updates arriving during network I/O must schedule another checkpoint.
-    this.dirty =
-      JSON.stringify(snapshot) !==
-      JSON.stringify(programmingDocumentSnapshot(this.doc));
-    await this.state.storage.put('metadata', this.metadata);
-    this.broadcast({ type: 'saved', revision: saved.revision });
+    return saved;
   }
 }
