@@ -46,6 +46,27 @@ payment providers, stock ledgers, scoped analytics, costing or effective season
 pricing. Those require their existing authorized API contracts and separate
 verification; today's catalog price must not replace historical sold prices.
 
+## Automatic offline dependency sync implementation
+
+A separate stacked implementation is in progress to replace the sync-first
+restriction with automatic prerequisite handling. This section describes that
+implementation contract; the current safety guard remains active until the
+runtime change and its validation are complete.
+
+A queued product write must wait for referenced Inventory owners, manufacturers,
+categories, units, warehouses and Finance categories to be created, regardless
+of enqueue order. Dependencies and mappings belong to the authenticated account,
+workspace and resource type. Related mutations retain their per-entity order;
+independent ready writes can progress. Missing prerequisites and dependency
+cycles remain visible without deleting queued work.
+
+Setup create APIs must return authoritative IDs and provide a retry-safe
+operation identity before the client automatically retries an uncertain create.
+After acknowledgment, the queue persists the mapping and rewrites dependent
+paths/payload references. An acknowledged create must not be sent again because
+mapping storage or cache refresh failed. Automatic sync must preserve user data
+across account switches, restart, retry and temporary network loss.
+
 The app is a registered Tuturuuu satellite app. It uses Tuturuuu app-session
 auth for `targetApp: 'inventory'`, exposes local `/verify-token` and
 `/api/auth/verify-app-token` handoff routes, and forwards fallback `/api/*`
