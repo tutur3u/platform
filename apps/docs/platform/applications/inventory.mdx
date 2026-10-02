@@ -31,9 +31,9 @@ Manage clears previous rows and add controls when the authenticated account or
 selected workspace changes. An open setup sheet cannot submit into a different
 account/workspace scope. These UI safeguards supplement server authorization.
 
-Native product create/update rejects a category or warehouse that is still a
-pending setup create without a server-ID mapping, before sending or queueing the
-product. Existing mappings are resolved within the owning account and workspace.
+Native product create/update rejects an owner, manufacturer, category, unit,
+warehouse, or Finance category that is still a pending setup create without a
+server-ID mapping, before sending or queueing the product. Existing mappings are resolved within the owning account and workspace.
 The editor asks the user to sync first; confirmed references remain usable. This
 rule does not detect a stale selection after a successful setup create whose API
 returns no server ID; that contract/provenance follow-up is tracked in
