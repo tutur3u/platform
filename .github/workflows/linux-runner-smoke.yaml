@@ -23,7 +23,7 @@ jobs:
   smoke:
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true' && vars.TUTURUUU_LINUX_RUNNERS_ENABLED == 'true'
-    runs-on: tuturuuu-linux
+    runs-on: [self-hosted, Linux, X64, tuturuuu-linux]
     timeout-minutes: 10
     strategy:
       fail-fast: false
