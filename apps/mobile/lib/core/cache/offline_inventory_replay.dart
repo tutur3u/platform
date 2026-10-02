@@ -315,7 +315,7 @@ extension OfflineInventoryReplay on OfflineMutationQueue {
             (node) =>
                 !attempted.contains(node.record.id) &&
                 // One verification opportunity per active Save. Automatic
-                // retries become noninteractive after its foreground scope ends.
+                // retries stay silent after its foreground scope ends.
                 !_foregroundVerificationPending(node.record.id) &&
                 !_cancelingIds.contains(node.record.id) &&
                 !(OfflineInventoryMutation.fromRecord(

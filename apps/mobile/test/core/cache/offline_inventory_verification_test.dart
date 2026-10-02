@@ -77,7 +77,7 @@ void main() {
       authClient: client,
       httpClient: MockClient((request) async {
         requests.add(request);
-        return respond(request);
+        return await respond(request);
       }),
     );
     harness = await OfflineInventoryHarness.create(api);
@@ -114,7 +114,8 @@ void main() {
         'synthetic-one-use-token',
       );
       expect(requests.first.body, requests.last.body);
-      expect(jsonDecode(requests.first.body)['operation_id'], localId);
+      final body = jsonDecode(requests.first.body) as Map<String, dynamic>;
+      expect(body['operation_id'], localId);
       expect(await harness.queue.listPending(), isEmpty);
       expect(ApiVerification.token, isNull);
     },

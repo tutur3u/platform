@@ -301,7 +301,8 @@ void main() {
       final payloadKind = testCase.offline ? 'offline queue' : 'PATCH';
       testWidgets(
         testCase.verification
-            ? 'canceled verification closes editor with one visible pending Save'
+            ? 'canceled verification closes editor '
+                  'with one visible pending Save'
             : testCase.clearQuantity
             ? 'clearing finite quantity saves null and reloads as unlimited'
             : 'unrelated edit preserves stock amount $amount '
