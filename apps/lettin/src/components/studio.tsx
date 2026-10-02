@@ -1,32 +1,29 @@
 'use client';
+
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, Plus, Sprout } from '@tuturuuu/icons';
+import { ArrowLeft, ArrowUpRight, BookOpen, Sprout } from '@tuturuuu/icons';
 import { getLettinOverview } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
-import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
-import { Link, useRouter } from '@/i18n/navigation';
+import { Link } from '@/i18n/navigation';
 import { AccessPanel } from './access-panel';
-import { emptyDraft, useLettinMutation } from './use-lettin';
+import { CreateWorld } from './create-world';
+import { CreativeSpaces } from './creative-spaces';
+import { SpaceArtwork } from './space-artwork';
+import { belongsToSpace, type CreativeSpace } from './spaces';
+import { useLettinMutation } from './use-lettin';
+import { WorldShelf } from './world-shelf';
+
 export function Studio({
   wsId,
   invitation,
+  space,
 }: {
   wsId: string;
   invitation?: string;
+  space?: CreativeSpace;
 }) {
   const t = useTranslations('lettin');
-  const router = useRouter();
-  const [title, setTitle] = useState('');
   const query = useQuery({
     queryKey: ['lettin', wsId],
     queryFn: () => getLettinOverview(wsId),
@@ -46,62 +43,34 @@ export function Studio({
       </div>
     );
   const data = query.data;
+  const shelf = space
+    ? data.worlds.filter((world) => belongsToSpace(world.draft, space))
+    : data.worlds;
   return (
     <main className="mx-auto max-w-[90rem] space-y-10 px-5 py-10 md:px-10">
-      <div className="lettin-section-heading flex flex-wrap items-end justify-between gap-5">
+      {space && (
+        <Link
+          href={`/${wsId}`}
+          className="inline-flex items-center gap-2 text-sm"
+        >
+          <ArrowLeft size={16} />
+          {t('myWorlds')}
+        </Link>
+      )}
+      <div
+        className={`${space ? `space-header space-header-${space}` : ''} lettin-section-heading flex flex-wrap items-end justify-between gap-5`}
+      >
+        {space && <SpaceArtwork space={space} />}
         <div>
-          <p className="lettin-kicker mb-5">{t('privateStudio')}</p>
-          <h1>{t('myWorlds')}</h1>
-          <p className="lettin-serif mt-4 text-lg">{t('studioDescription')}</p>
+          <h1>{t(space ? `space${space}Title` : 'myWorlds')}</h1>
+          <p className="lettin-summary mt-4 max-w-xl text-lg">
+            {t(space ? `space${space}Hint` : 'studioDescription')}
+          </p>
         </div>
-        {data.canCreate && (
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus />
-                {t('newWorld')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t('newWorld')}</DialogTitle>
-                <DialogDescription>{t('draftHint')}</DialogDescription>
-              </DialogHeader>
-              <form
-                className="space-y-4"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  try {
-                    const result = await mutation.mutateAsync({
-                      action: 'createWorld',
-                      draft: emptyDraft(title),
-                    });
-                    router.push(`/${wsId}/worlds/${result.id}`);
-                  } catch {}
-                }}
-              >
-                <label className="block space-y-2">
-                  {t('title')}
-                  <Input
-                    required
-                    maxLength={160}
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                  />
-                </label>
-                <Button disabled={mutation.isPending || !title.trim()}>
-                  {t('create')}
-                </Button>
-                {mutation.errorMessage && (
-                  <p role="alert">{mutation.errorMessage}</p>
-                )}
-              </form>
-            </DialogContent>
-          </Dialog>
-        )}
+        {data.canCreate && <CreateWorld wsId={wsId} initialStarter={space} />}
       </div>
       {invitation && !data.approved && (
-        <section className="notebook-paper space-y-3 rounded-xl p-6">
+        <section className="notebook-paper space-y-3 p-6">
           <h2 className="text-2xl">{t('invitation')}</h2>
           <p>{t('acceptHint')}</p>
           <Button
@@ -118,58 +87,33 @@ export function Studio({
         </section>
       )}
       {!data.approved ? (
-        <section className="notebook-paper rounded-xl p-10">
+        <section className="notebook-paper p-10">
           <Sprout className="mb-5 size-9" />
           <h2 className="text-3xl">{t('inviteOnly')}</h2>
           <p className="mt-3 max-w-xl text-muted-foreground">
             {t('inviteOnlyHint')}
           </p>
+          <Link className="lettin-secondary-link mt-6" href="/worlds">
+            {t('exploreWorlds')}
+            <ArrowUpRight size={16} />
+          </Link>
         </section>
       ) : !data.canCreate ? (
         <p role="status">{t('permissionRequired')}</p>
-      ) : data.worlds.length === 0 ? (
-        <section className="notebook-paper rounded-xl px-8 py-16 text-center">
+      ) : shelf.length === 0 ? (
+        <section className="notebook-paper px-8 py-16 text-center">
           <BookOpen className="mx-auto mb-5 size-10" />
-          <h2 className="text-3xl">{t('emptyWorlds')}</h2>
-          <p className="mt-3 text-muted-foreground">{t('emptyWorldsHint')}</p>
+          <h2 className="text-3xl">
+            {t(space ? 'emptySpace' : 'emptyWorlds')}
+          </h2>
+          <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
+            {t(space ? 'emptySpaceHint' : 'emptyWorldsHint')}
+          </p>
         </section>
       ) : (
-        <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
-          {data.worlds.map((world) => (
-            <Link
-              key={world.id}
-              href={`/${wsId}/worlds/${world.id}`}
-              className="notebook-cover block overflow-hidden focus-visible:outline-2 focus-visible:outline-ring"
-            >
-              <div className="flex h-44 items-center justify-center overflow-hidden bg-secondary">
-                {world.draft.image ? (
-                  // biome-ignore lint/performance/noImgElement: Artwork must bypass optimizer caching so private media access can be revoked.
-                  <img
-                    src={world.draft.image}
-                    alt=""
-                    className="size-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <BookOpen className="size-14 -rotate-6 text-primary" />
-                )}
-              </div>
-              <div className="p-6">
-                <p className="inline-block bg-foreground px-2 py-1 font-black text-[10px] text-primary-foreground uppercase tracking-widest">
-                  {t(world.published_at ? 'published' : 'draft')}
-                </p>
-                <h2 className="mt-4 break-words text-4xl uppercase leading-none">
-                  {world.draft.title}
-                </h2>
-                <p className="lettin-serif mt-3 line-clamp-2 text-sm leading-relaxed">
-                  {world.draft.description || t('worldWaiting')}
-                </p>
-                <p className="mt-4 text-xs">{t(world.role)}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <WorldShelf key={space ?? 'all'} wsId={wsId} shelf={shelf} />
       )}
+      {!space && <CreativeSpaces wsId={wsId} />}
       {mutation.errorMessage && <p role="alert">{mutation.errorMessage}</p>}
       {(data.canInvite || data.isAdmin || data.invitations.length > 0) && (
         <AccessPanel wsId={wsId} data={data} />
