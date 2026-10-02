@@ -42523,6 +42523,16 @@ export type Database = {
         };
         Returns: Json;
       };
+      calendar_native_generation_mutation: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_event_id: string;
+          p_input?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       calendar_provider_saga_operation: {
         Args: {
           p_action: string;
