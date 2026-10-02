@@ -333,3 +333,11 @@ Profile upload responses preserve the scoped path and signed token while using
 that public origin. The E2E runner registers `supabase.tuturuuu.localhost` through
 Portless and pins this setting in its disposable environment file, so banner
 uploads use real HTTPS and the production HTTPS profile validation stays intact.
+
+Legacy null-owner handle reservations are reconciled only for a unique existing
+canonical profile. Non-null ownership is never reassigned, unmatched reservations
+remain unavailable, and unchanged legacy handles consume no change allowance.
+The full-schema seed preserves its synthetic names while assigning each profile
+reservation to its real actor. Regression evidence is the dependent identity
+fixture `public-creator-identity.sql`; ordinary authenticated handle INSERTs are
+denied so new claims use the atomic profile RPC.
