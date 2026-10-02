@@ -10,12 +10,14 @@ const withoutNul = (max: number) =>
 const localizedText = (max: number) =>
   z
     .object({
-      en: withoutNul(max)
-        .transform((value) => value.trim())
-        .refine((value) => value.length > 0),
-      vi: withoutNul(max)
-        .transform((value) => value.trim())
-        .refine((value) => value.length > 0),
+      en: z
+        .string()
+        .refine((value) => !value.includes('\0'))
+        .pipe(z.string().trim().min(1).max(max)),
+      vi: z
+        .string()
+        .refine((value) => !value.includes('\0'))
+        .pipe(z.string().trim().min(1).max(max)),
     })
     .strict();
 
