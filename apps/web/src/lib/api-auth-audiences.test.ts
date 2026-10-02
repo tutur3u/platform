@@ -37,6 +37,17 @@ describe('shared app-session API audiences', () => {
       ],
     });
   });
+  it('adds Git only to Hidden discovery and mutation audience', () => {
+    expect(
+      getDefaultAppSessionVerificationOptions(
+        '/api/v1/users/me/hidden-workspaces'
+      ).targetApp
+    ).toContain('git');
+    expect(
+      getDefaultAppSessionVerificationOptions('/api/v1/users/me/profile')
+        .targetApp
+    ).not.toContain('git');
+  });
   it('allows Meet user settings without widening unrelated APIs', () => {
     expect(
       getDefaultAppSessionVerificationOptions(

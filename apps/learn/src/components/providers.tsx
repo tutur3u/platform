@@ -1,8 +1,8 @@
-'use client';
-
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import type { ReactNode } from 'react';
 import { ClientProviders } from './client-providers';
 
-export function Providers({ children }: { children: ReactNode }) {
-  return <ClientProviders>{children}</ClientProviders>;
+export async function Providers({ children }: { children: ReactNode }) {
+  const user = await getSatelliteAppSessionUser('learn');
+  return <ClientProviders actorId={user?.id}>{children}</ClientProviders>;
 }

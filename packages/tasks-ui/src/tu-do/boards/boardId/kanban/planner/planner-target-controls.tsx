@@ -14,6 +14,7 @@ type BoardOption = {
 };
 
 interface PlannerTargetControlsProps {
+  workspaceActionsDisabled?: boolean;
   addWorkspacePending: boolean;
   boards: BoardOption[];
   createItemPending: boolean;
@@ -35,6 +36,7 @@ interface PlannerTargetControlsProps {
 }
 
 export function PlannerTargetControls({
+  workspaceActionsDisabled = false,
   addWorkspacePending,
   boards,
   createItemPending,
@@ -104,7 +106,9 @@ export function PlannerTargetControls({
           variant={targetIsIntended ? 'secondary' : 'outline'}
           size="sm"
           onClick={onAddWorkspace}
-          disabled={targetIsIntended || addWorkspacePending}
+          disabled={
+            workspaceActionsDisabled || targetIsIntended || addWorkspacePending
+          }
           className="h-9"
         >
           {targetIsIntended ? t('intended_workspace') : t('add_workspace')}
@@ -129,7 +133,9 @@ export function PlannerTargetControls({
           type="button"
           size="sm"
           onClick={onCreateItem}
-          disabled={!taskTitle.trim() || createItemPending}
+          disabled={
+            workspaceActionsDisabled || !taskTitle.trim() || createItemPending
+          }
           className="h-9 gap-2"
         >
           {createItemPending && <Loader2 className="h-4 w-4 animate-spin" />}

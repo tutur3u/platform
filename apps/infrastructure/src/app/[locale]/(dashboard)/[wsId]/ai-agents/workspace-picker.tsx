@@ -1,8 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { Building2, Check, ChevronsUpDown, Loader2 } from '@tuturuuu/icons';
-import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -12,12 +10,14 @@ import {
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
+import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
+import { useWorkspaceVisibility } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   getAiAgentWorkspaceSearchValue,
   mergeInternalAiAgentWorkspaceOption,
@@ -29,6 +29,7 @@ export function WorkspacePicker({
   includeInternalWorkspace = false,
   name = 'workspaceId',
   onValueChange,
+  onAvailabilityChange,
   value,
 }: {
   defaultValue?: string | null;
@@ -36,6 +37,7 @@ export function WorkspacePicker({
   includeInternalWorkspace?: boolean;
   name?: string;
   onValueChange?: (value: string) => void;
+  onAvailabilityChange?: (available: boolean) => void;
   value?: string;
 }) {
   const t = useTranslations('ai-agents-settings');
@@ -44,34 +46,53 @@ export function WorkspacePicker({
     defaultValue ?? ''
   );
   const selectedId = value ?? internalSelectedId;
-  const { data: workspaces, isLoading } = useQuery({
-    queryFn: () => listWorkspaces(),
-    queryKey: ['ai-agents', 'workspaces'],
-    staleTime: 60_000,
-  });
+  const { data: workspaces, isLoading } = useVisibleWorkspaces();
+  const visibility = useWorkspaceVisibility();
   const workspaceOptions = useMemo(
     () =>
       mergeInternalAiAgentWorkspaceOption(workspaces, {
-        includeInternal: includeInternalWorkspace,
+        includeInternal:
+          includeInternalWorkspace &&
+          visibility.known &&
+          !visibility.hiddenIds.includes(
+            '00000000-0000-0000-0000-000000000000'
+          ),
         label: t('workspace.internal'),
       }),
-    [includeInternalWorkspace, t, workspaces]
+    [
+      includeInternalWorkspace,
+      t,
+      workspaces,
+      visibility.known,
+      visibility.hiddenIds,
+    ]
   );
   const selectedWorkspace = useMemo(
     () =>
       workspaceOptions.find((workspace) => workspace.id === selectedId) ?? null,
     [selectedId, workspaceOptions]
   );
-  const selectedLabel =
-    selectedWorkspace?.name || selectedId || t('workspace.select');
+  useEffect(() => {
+    onAvailabilityChange?.(
+      Boolean(selectedWorkspace) && !isLoading && visibility.known
+    );
+  }, [selectedWorkspace, isLoading, visibility.known, onAvailabilityChange]);
+  const selectedLabel = selectedWorkspace?.name || t('workspace.select');
 
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{t('fields.workspace_id')}</Label>
-      <Input id={id} name={name} readOnly type="hidden" value={selectedId} />
+      <Input
+        id={id}
+        name={name}
+        readOnly
+        type="hidden"
+        value={selectedWorkspace?.id ?? ''}
+      />
       <Popover onOpenChange={setOpen} open={open}>
         <PopoverTrigger asChild>
           <Button
+            aria-label={t('fields.workspace_id')}
             aria-expanded={open}
             className="h-10 w-full justify-between"
             role="combobox"

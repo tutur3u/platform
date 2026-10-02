@@ -1,4 +1,6 @@
 import '@/lib/dayjs-setup';
+import { getSupabaseSessionUser } from '@tuturuuu/auth/supabase-session-user';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { type AbstractIntlMessages, NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import type { ReactNode } from 'react';
@@ -26,17 +28,25 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function Providers({
+export async function Providers({
   children,
   messages,
 }: {
   children: ReactNode;
   messages?: Record<string, unknown>;
 }) {
+  const user = await getSupabaseSessionUser();
+  const content = <ClientProviders>{children}</ClientProviders>;
   return (
     <QueryProvider>
       <NextIntlClientProvider messages={messages as AbstractIntlMessages}>
-        <ClientProviders>{children}</ClientProviders>
+        {user?.id ? (
+          <WorkspaceVisibilityProvider actorId={user.id}>
+            {content}
+          </WorkspaceVisibilityProvider>
+        ) : (
+          content
+        )}
       </NextIntlClientProvider>
     </QueryProvider>
   );

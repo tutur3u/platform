@@ -97,6 +97,60 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @workspaceHiddenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden workspaces'**
+  String get workspaceHiddenTitle;
+
+  /// No description provided for @workspaceHideAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get workspaceHideAction;
+
+  /// No description provided for @workspaceRestoreAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get workspaceRestoreAction;
+
+  /// No description provided for @workspaceHiddenDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see this list. Hiding does not change membership or notifications.'**
+  String get workspaceHiddenDescription;
+
+  /// No description provided for @workspaceHiddenEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No Hidden workspaces'**
+  String get workspaceHiddenEmpty;
+
+  /// No description provided for @workspaceHiddenLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to refresh Hidden workspaces. Your saved list is kept.'**
+  String get workspaceHiddenLoadError;
+
+  /// No description provided for @workspaceHiddenUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to save this change. Try again when connected.'**
+  String get workspaceHiddenUpdateError;
+
+  /// No description provided for @workspaceAllHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Your workspaces are hidden. Restore one to continue.'**
+  String get workspaceAllHidden;
+
+  /// No description provided for @workspacePickerClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close workspace picker'**
+  String get workspacePickerClose;
+
   /// No description provided for @commonLoading.
   ///
   /// In en, this message translates to:
@@ -18036,6 +18090,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not confirm your response. Retry the same response to check its status.'**
   String get mailInvitationFailed;
+
+  /// No description provided for @mailCalendarLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to Calendar'**
+  String get mailCalendarLinkTitle;
+
+  /// No description provided for @mailCalendarLinkUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar event link'**
+  String get mailCalendarLinkUrl;
+
+  /// No description provided for @mailCalendarLinkPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview link'**
+  String get mailCalendarLinkPreview;
+
+  /// No description provided for @mailCalendarLinkConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm link'**
+  String get mailCalendarLinkConfirm;
+
+  /// No description provided for @mailCalendarLinkOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original invitation'**
+  String get mailCalendarLinkOriginal;
+
+  /// No description provided for @mailCalendarLinkSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected Calendar event'**
+  String get mailCalendarLinkSelected;
+
+  /// No description provided for @mailCalendarLinkNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Linking keeps both records. Replies still go to the original organizer.'**
+  String get mailCalendarLinkNotice;
+
+  /// No description provided for @mailCalendarLinkChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The invitation or event changed. Preview again.'**
+  String get mailCalendarLinkChanged;
+
+  /// No description provided for @mailCalendarLinkUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This event is unavailable in your account.'**
+  String get mailCalendarLinkUnavailable;
+
+  /// No description provided for @mailCalendarLinkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to update the link. Try again.'**
+  String get mailCalendarLinkFailed;
+
+  /// No description provided for @mailCalendarLinkInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a Calendar event link containing the selected event.'**
+  String get mailCalendarLinkInvalid;
+
+  /// No description provided for @mailCalendarLinkLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar event linked'**
+  String get mailCalendarLinkLinked;
+
+  /// No description provided for @mailCalendarLinkUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove link'**
+  String get mailCalendarLinkUnlink;
+
+  /// No description provided for @mailCalendarLinkOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open linked event'**
+  String get mailCalendarLinkOpen;
 
   /// No description provided for @remindersOccurrenceDetails.
   ///

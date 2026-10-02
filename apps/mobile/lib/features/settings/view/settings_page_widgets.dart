@@ -22,6 +22,10 @@ class _SettingsOverviewSection extends StatelessWidget {
               l10n.settingsNoWorkspaceSelected,
           onTap: () => context.push(Routes.settingsWorkspace),
         ),
+        const HiddenWorkspacesSettingsRow(
+          key: ValueKey('settings-hidden-workspaces-row'),
+          grouped: true,
+        ),
         SettingsTile(
           key: const ValueKey('settings-you-row'),
           grouped: true,

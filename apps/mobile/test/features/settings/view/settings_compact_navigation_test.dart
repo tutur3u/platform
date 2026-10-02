@@ -49,8 +49,10 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 import '../../../helpers/helpers.dart';
 
 part 'settings_compact_harness.dart';
+part 'settings_hidden_recovery_checks.dart';
 
 void main() {
+  registerHiddenRecoveryChecks();
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await supa.Supabase.initialize(

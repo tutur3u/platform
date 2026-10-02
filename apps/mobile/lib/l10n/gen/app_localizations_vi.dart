@@ -12,6 +12,33 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';
+
+  @override
+  String get workspaceHideAction => 'Ẩn';
+
+  @override
+  String get workspaceRestoreAction => 'Hiện lại';
+
+  @override
+  String get workspaceHiddenDescription => 'Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.';
+
+  @override
+  String get workspaceHiddenEmpty => 'Không có không gian làm việc đã ẩn';
+
+  @override
+  String get workspaceHiddenLoadError => 'Không thể làm mới danh sách đã ẩn. Danh sách đã lưu được giữ lại.';
+
+  @override
+  String get workspaceHiddenUpdateError => 'Không thể lưu thay đổi. Hãy thử lại khi có kết nối.';
+
+  @override
+  String get workspaceAllHidden => 'Các không gian làm việc của bạn đã bị ẩn. Hiện lại một không gian để tiếp tục.';
+
+  @override
+  String get workspacePickerClose => 'Đóng danh sách không gian làm việc';
+
+  @override
   String get commonLoading => 'Đang tải';
 
   @override
@@ -9379,6 +9406,48 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailInvitationFailed => 'Chưa xác nhận được phản hồi. Thử lại cùng phản hồi để kiểm tra trạng thái.';
+
+  @override
+  String get mailCalendarLinkTitle => 'Liên kết với Lịch';
+
+  @override
+  String get mailCalendarLinkUrl => 'Liên kết sự kiện Lịch';
+
+  @override
+  String get mailCalendarLinkPreview => 'Xem trước liên kết';
+
+  @override
+  String get mailCalendarLinkConfirm => 'Xác nhận liên kết';
+
+  @override
+  String get mailCalendarLinkOriginal => 'Lời mời gốc';
+
+  @override
+  String get mailCalendarLinkSelected => 'Sự kiện Lịch đã chọn';
+
+  @override
+  String get mailCalendarLinkNotice => 'Liên kết giữ cả hai bản ghi. Phản hồi vẫn gửi đến người tổ chức ban đầu.';
+
+  @override
+  String get mailCalendarLinkChanged => 'Lời mời hoặc sự kiện đã thay đổi. Vui lòng xem trước lại.';
+
+  @override
+  String get mailCalendarLinkUnavailable => 'Sự kiện này không khả dụng trong tài khoản của bạn.';
+
+  @override
+  String get mailCalendarLinkFailed => 'Không thể cập nhật liên kết. Vui lòng thử lại.';
+
+  @override
+  String get mailCalendarLinkInvalid => 'Dán liên kết Lịch của sự kiện đã chọn.';
+
+  @override
+  String get mailCalendarLinkLinked => 'Đã liên kết sự kiện Lịch';
+
+  @override
+  String get mailCalendarLinkUnlink => 'Gỡ liên kết';
+
+  @override
+  String get mailCalendarLinkOpen => 'Mở sự kiện đã liên kết';
 
   @override
   String remindersOccurrenceDetails(String leadTime, String occurrence, String timezone) {
