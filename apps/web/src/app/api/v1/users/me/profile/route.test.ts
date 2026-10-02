@@ -5,6 +5,8 @@ const f = vi.hoisted(() => ({
   admin: vi.fn(),
   read: vi.fn(),
   actor: 'resolved-actor',
+  current: vi.fn(),
+  eq: vi.fn(),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: f.admin,
@@ -37,6 +39,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   f.admin.mockResolvedValue({ rpc: f.rpc });
   f.rpc.mockResolvedValue({ error: null });
+  f.current.mockResolvedValue({ data: { handle: null }, error: null });
+  f.eq.mockReturnValue({ maybeSingle: f.current });
+  f.read.mockReturnValue({ select: vi.fn().mockReturnValue({ eq: f.eq }) });
 });
 describe('Canonical profile API', () => {
   it('rejects malformed JSON without touching the database', async () => {
@@ -86,13 +91,6 @@ describe('Canonical profile API', () => {
     expect(f.read).not.toHaveBeenCalled();
   });
   it.each([
-    { handle: '_invalid' },
-    { handle: 'ab' },
-    { handle: 'four' },
-    { handle: 'google' },
-    { handle: 'apple' },
-    { handle: 'microsoft' },
-    { handle: 'support' },
     { banner_url: 'javascript:alert(1)' },
     { banner_url: 'https://' },
     { avatar_url: 'https://' },
@@ -105,6 +103,44 @@ describe('Canonical profile API', () => {
       expect(f.rpc).not.toHaveBeenCalled();
     }
   );
+  it.each(['old', 'google', 'Legacy_Name'])(
+    'preserves an unchanged legacy handle %s for the locked SQL comparison',
+    async (handle) => {
+      f.current.mockResolvedValue({ data: { handle }, error: null });
+      expect(
+        (await PATCH(request({ handle }), undefined as never)).status
+      ).toBe(200);
+      expect(f.rpc).toHaveBeenCalledWith('update_public_user_profile', {
+        p_user_id: f.actor,
+        p_patch: { handle },
+      });
+    }
+  );
+  it.each([
+    '_invalid',
+    'ab',
+    'four',
+    'google',
+    'apple',
+    'microsoft',
+    'support',
+  ])(
+    'rejects a changed invalid handle %s after actor-scoped comparison',
+    async (handle) => {
+      expect(
+        (await PATCH(request({ handle }), undefined as never)).status
+      ).toBe(400);
+      expect(f.rpc).not.toHaveBeenCalled();
+      expect(f.eq).toHaveBeenCalledWith('id', f.actor);
+    }
+  );
+  it('fails closed when the current username cannot be verified', async () => {
+    f.current.mockResolvedValue({ data: null, error: { code: 'XX000' } });
+    expect(
+      (await PATCH(request({ handle: 'old' }), undefined as never)).status
+    ).toBe(503);
+    expect(f.rpc).not.toHaveBeenCalled();
+  });
   it('fails visibly when the identity migration is pending', async () => {
     f.rpc.mockResolvedValue({ error: { code: 'PGRST202' } });
     expect(

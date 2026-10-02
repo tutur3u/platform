@@ -341,3 +341,9 @@ The full-schema seed preserves its synthetic names while assigning each profile
 reservation to its real actor. Regression evidence is the dependent identity
 fixture `public-creator-identity.sql`; ordinary authenticated handle INSERTs are
 denied so new claims use the atomic profile RPC.
+
+Both Web and Rust profile PATCH paths preserve bounded unchanged legacy handles
+verbatim after checking only the authenticated actor’s canonical handle. Changed
+invalid handles return 400 without claiming a reservation; the locked atomic SQL
+RPC repeats the new-handle checks and remains authoritative across concurrent saves. API regressions cover
+short, reserved, and historically mixed-case no-ops and SQL error mapping.
