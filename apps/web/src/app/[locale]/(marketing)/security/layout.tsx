@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Security and Data Protection',
-  description:
-    'Read about the Tuturuuu approach to security, compliance, and data protection.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'marketingSeo.security',
   pathname: '/security',
 });
 

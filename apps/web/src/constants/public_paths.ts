@@ -23,6 +23,7 @@ export const APP_PUBLIC_PATHS = [
   '/contributors',
   '/blog',
   '/faq',
+  '/legal',
   '/terms',
   '/privacy',
   '/community-guidelines',

@@ -7,12 +7,13 @@ import {
 import { getTranslations } from 'next-intl/server';
 import { HeroAtmosphere } from '@/components/landing/shared/atmosphere';
 import { getDesktopRelease } from '@/lib/desktop-downloads.server';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 import { MobileDownloads } from './mobile-downloads';
 
-export async function generateMetadata() {
-  const t = await getTranslations('desktop_download');
-  return { title: t('title'), description: t('description') };
-}
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'desktop_download',
+  pathname: '/download',
+});
 
 export default async function DownloadPage() {
   const [t, release] = await Promise.all([

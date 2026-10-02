@@ -9,7 +9,8 @@ import type { ReactNode } from 'react';
  * Every section previously hand-rolled its own `initial`/`whileInView` pair
  * with slightly different distances, delays and easings. These presets keep the
  * page feeling like a single designed object, and honour reduced-motion in one
- * place instead of six.
+ * place instead of six. Server-rendered copy stays visible without JavaScript;
+ * scroll enhancement moves it into place without hiding the content.
  */
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -29,8 +30,6 @@ interface RevealProps {
   direction?: RevealDirection;
   delay?: number;
   duration?: number;
-  /** Adds a defocus-to-focus pass; use sparingly, it is the expensive one. */
-  blur?: boolean;
   once?: boolean;
 }
 
@@ -40,7 +39,6 @@ export function Reveal({
   direction = 'up',
   delay = 0,
   duration = 0.7,
-  blur = false,
   once = true,
 }: RevealProps) {
   const reduced = useReducedMotion();
@@ -53,10 +51,9 @@ export function Reveal({
     <motion.div
       className={className}
       initial={{
-        opacity: 0,
+        opacity: 1,
         ...offset,
         ...(direction === 'scale' ? { scale: 0.96 } : {}),
-        ...(blur ? { filter: 'blur(10px)' } : {}),
       }}
       transition={{ duration, delay, ease: EASE }}
       viewport={{ once, margin: '-80px' }}
@@ -65,7 +62,6 @@ export function Reveal({
         x: 0,
         y: 0,
         scale: 1,
-        ...(blur ? { filter: 'blur(0px)' } : {}),
       }}
     >
       {children}
@@ -116,7 +112,7 @@ export function RevealItem({
     <motion.div
       className={className}
       variants={{
-        hidden: { opacity: 0, y: 24 },
+        hidden: { opacity: 1, y: 24 },
         visible: {
           opacity: 1,
           y: 0,

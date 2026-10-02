@@ -31,7 +31,7 @@ export function AISection() {
       title={t('title')}
     >
       <div className="grid gap-20 sm:gap-24">
-        <Reveal blur direction="scale">
+        <Reveal direction="scale">
           <MiraShowcase />
         </Reveal>
 

@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import {
   DeferredLandingSections,
   DeferredProblemSection,
@@ -6,12 +7,39 @@ import {
 import { FeaturesBento } from '@/components/landing/features/features-bento';
 import { HeroSection } from '@/components/landing/hero/hero-section';
 import { ProductMarquee } from '@/components/landing/shared/product-marquee';
+import { TeamFaq } from '@/components/landing/team-faq';
+import {
+  createHomepageStructuredData,
+  serializeStructuredData,
+} from '@/lib/seo/structured-data';
 
-export default function MarketingPage() {
+export default async function MarketingPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
+  const t = await getTranslations({
+    locale: normalizedLocale,
+    namespace: 'marketingSeo.home',
+  });
+  const structuredData = createHomepageStructuredData({
+    locale: normalizedLocale,
+    title: t('title'),
+    description: t('description'),
+  });
   return (
     // The marketing layout reserves navbar height for inner pages; the landing
     // hero renders under the transparent navbar instead, so cancel that padding.
     <main className="relative mx-auto -mt-20 w-full overflow-x-hidden">
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD is serialized with HTML script terminators escaped.
+        dangerouslySetInnerHTML={{
+          __html: serializeStructuredData(structuredData),
+        }}
+      />
       {/* Page vignette — keeps the edges of the canvas darker than the centre
           so section blooms read as light sources rather than flat fills. */}
       <div
@@ -37,6 +65,7 @@ export default function MarketingPage() {
 
       {/* Demo -> AI -> Social proof -> Pricing -> CTA */}
       <DeferredLandingSections />
+      <TeamFaq />
     </main>
   );
 }
