@@ -9710,5 +9710,5 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryCheckoutPeriodRulesChanged => 'Một số sản phẩm không phù hợp với kỳ bán hàng này. Đối soát giỏ hàng để tiếp tục.';
 
   @override
-  String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi chỉnh sửa hoặc xóa.';
+  String get inventorySetupSyncFirst => 'Đồng bộ mục mới này trước khi sử dụng, chỉnh sửa hoặc xóa.';
 }

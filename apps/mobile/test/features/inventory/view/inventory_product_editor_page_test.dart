@@ -289,6 +289,7 @@ void main() {
             ));
           });
           final mutations = _OnlineMutationQueue();
+          when(mutations.listPending).thenAnswer((_) async => []);
           when(
             () => mutations.enqueueIfOffline(
               feature: 'inventory',
@@ -322,7 +323,9 @@ void main() {
                   apiClient: api,
                   cacheStore: cache,
                   mutationQueue: mutations,
-                  cacheUserId: () => 'editor-actor',
+                  // This payload fixture has no authenticated ID-mapping store.
+                  // Owner-scoped mapping is covered by repository tests.
+                  cacheUserId: () => null,
                   amount: amount,
                 ),
                 financeRepository: financeRepository,

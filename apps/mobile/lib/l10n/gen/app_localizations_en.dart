@@ -9777,5 +9777,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryCheckoutPeriodRulesChanged => 'Some items do not match this period. Reconcile the cart to continue.';
 
   @override
-  String get inventorySetupSyncFirst => 'Sync this new item before editing or deleting it.';
+  String get inventorySetupSyncFirst => 'Sync this new item before using, editing, or deleting it.';
 }

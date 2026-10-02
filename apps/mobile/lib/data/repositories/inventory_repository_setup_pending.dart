@@ -40,6 +40,56 @@ extension InventorySetupOfflineWrites on InventoryRepository {
     }
   }
 
+  Future<Map<String, dynamic>> _confirmedProductPayload(
+    String wsId,
+    Map<String, dynamic> payload,
+  ) async {
+    final owner = _cacheUserId();
+    final pending = await _mutationQueue.listPending();
+    final mappings = owner == null
+        ? <String, String>{}
+        : await _cacheStore.localIdMappings(
+            userId: owner,
+            workspaceId: wsId,
+            feature: 'inventory',
+          );
+    if (owner != null) _api.checkUser(owner);
+    String resolve(String path, String id) {
+      final mapped = mappings[id];
+      if (mapped != null && mapped != id) return mapped;
+      if (pending.any(
+        (item) =>
+            item.feature == 'inventory' &&
+            item.workspaceId == wsId &&
+            (owner == null || item.userId == owner) &&
+            item.path == path &&
+            item.method == 'POST' &&
+            item.entityId == id,
+      )) {
+        throw InventorySetupAwaitingSync();
+      }
+      return id;
+    }
+
+    return {
+      ...payload,
+      'category_id': resolve(
+        InventoryEndpoints.productCategories(wsId),
+        payload['category_id'] as String,
+      ),
+      'inventory': [
+        for (final row in payload['inventory'] as List<Map<String, Object?>>)
+          {
+            ...row,
+            'warehouse_id': resolve(
+              InventoryEndpoints.productWarehouses(wsId),
+              row['warehouse_id']! as String,
+            ),
+          },
+      ],
+    };
+  }
+
   Future<void> updateSetupItem({
     required String wsId,
     required InventorySetupKind kind,

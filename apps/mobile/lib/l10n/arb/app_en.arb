@@ -4124,5 +4124,5 @@
             }
         }
     },
-    "inventorySetupSyncFirst": "Sync this new item before editing or deleting it."
+    "inventorySetupSyncFirst": "Sync this new item before using, editing, or deleting it."
 }
