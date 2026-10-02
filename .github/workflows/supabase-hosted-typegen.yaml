@@ -45,6 +45,12 @@ jobs:
           printf '[Slice]\nCPUQuota=200%%\nMemoryMax=6G\nMemorySwapMax=0\nIPAddressDeny=any\nIPAddressAllow=localhost 172.28.0.0/16\n' | sudo tee /etc/systemd/system/tuturuuu-typegen.slice.d/limits.conf >/dev/null
           sudo systemctl daemon-reload
           sudo systemctl start tuturuuu-typegen.slice
+          sudo systemd-run --unit=tuturuuu-typegen-admission --slice=tuturuuu-typegen.slice --property=Type=exec /bin/sleep infinity >/dev/null 2>&1
+          test -d /sys/fs/cgroup/tuturuuu.slice/tuturuuu-typegen.slice
+          if ! sudo bpftool -j cgroup show /sys/fs/cgroup/tuturuuu.slice/tuturuuu-typegen.slice effective >/dev/null 2>&1; then
+            printf 'Kernel slice inspection failed before project preparation.\n'
+            exit 1
+          fi
           sudo python3 - <<'PYCONFIG'
           import json
           from pathlib import Path
@@ -114,3 +120,6 @@ jobs:
             const next = await github.rest.git.createCommit({...repo, message: 'chore(database): regenerate Programming schema declarations', tree: tree.data.sha, parents: [expectedHead]});
             await github.rest.git.updateRef({...repo, ref: `heads/${branch}`, sha: next.data.sha, force: false});
             core.info('Committed only generated schema declarations to the verified backend branch.');
+      - name: Stop the inert slice admission service
+        if: always()
+        run: sudo systemctl stop tuturuuu-typegen-admission.service
